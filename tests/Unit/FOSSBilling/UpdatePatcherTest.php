@@ -1265,8 +1265,10 @@ test('applyCorePatches runs a portable schema sync instead of legacy patches on 
         FOSSBilling\Doctrine\SchemaInstaller::createSchema($entityManager);
 
         // Simulate a PostgreSQL/SQLite install that predates a table current entity metadata
-        // knows about - the same situation a real upgrade would hit.
-        $connection->executeStatement('DROP TABLE custom_pages');
+        // knows about - the same situation a real upgrade would hit. `currency` is a core-module
+        // table (see ModuleEntityScope), so it's always in scope for the ambient sync below,
+        // unlike an extension's own table - see the gating tests further down.
+        $connection->executeStatement('DROP TABLE currency');
 
         $pdo = Mockery::mock(PDO::class);
         $pdo->shouldNotReceive('prepare');
@@ -1282,7 +1284,7 @@ test('applyCorePatches runs a portable schema sync instead of legacy patches on 
 
         $patcher->applyCorePatches(force: true);
 
-        expect($connection->createSchemaManager()->tablesExist(['custom_pages']))->toBeTrue();
+        expect($connection->createSchemaManager()->tablesExist(['currency']))->toBeTrue();
     });
 });
 
@@ -1291,7 +1293,7 @@ test('applyCorePatches also runs a portable schema sync after legacy patches on 
         $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
         $entityManager = FOSSBilling\Doctrine\EntityManagerFactory::create($connection);
         FOSSBilling\Doctrine\SchemaInstaller::createSchema($entityManager);
-        $connection->executeStatement('DROP TABLE custom_pages');
+        $connection->executeStatement('DROP TABLE currency');
 
         // The legacy patch loop still needs a patch level to compare against - report the latest
         // one so getPatches() finds nothing pending and the loop body never runs. That isolates
@@ -1303,6 +1305,70 @@ test('applyCorePatches also runs a portable schema sync after legacy patches on 
 
         $pdo = Mockery::mock(PDO::class);
         $pdo->shouldReceive('prepare')->once()->andReturn($statement);
+
+        $di = new Pimple\Container();
+        $di['pdo'] = $pdo;
+        $di['em'] = $entityManager;
+        $di['logger'] = new Tests\Helpers\TestLogger();
+
+        $patcher = new UpdatePatcher();
+        $patcher->setDi($di);
+
+        $patcher->applyCorePatches(force: true);
+
+        expect($connection->createSchemaManager()->tablesExist(['currency']))->toBeTrue();
+    });
+});
+
+/*
+ * Regression coverage for the gating ModuleEntityScope adds: the ambient sync above must not undo
+ * SchemaInstaller's fresh-install gating by unconditionally recreating an inactive extension's
+ * table on every request, as if it had been activated.
+ */
+test('applyCorePatches never recreates an inactive extension\'s table via the ambient schema sync', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+        $entityManager = FOSSBilling\Doctrine\EntityManagerFactory::create($connection);
+        FOSSBilling\Doctrine\SchemaInstaller::createSchema($entityManager);
+
+        // custompages is neither a core module nor one of content.sql's default-active
+        // extensions, so a fresh install never creates its table - nothing here to "predate".
+        expect($connection->createSchemaManager()->tablesExist(['custom_pages']))->toBeFalse();
+
+        $pdo = Mockery::mock(PDO::class);
+        $pdo->shouldNotReceive('prepare');
+        $pdo->shouldNotReceive('query');
+
+        $di = new Pimple\Container();
+        $di['pdo'] = $pdo;
+        $di['em'] = $entityManager;
+        $di['logger'] = new Tests\Helpers\TestLogger();
+
+        $patcher = new UpdatePatcher();
+        $patcher->setDi($di);
+
+        $patcher->applyCorePatches(force: true);
+
+        expect($connection->createSchemaManager()->tablesExist(['custom_pages']))->toBeFalse();
+    });
+});
+
+test('applyCorePatches does resync an extension\'s table once it is marked installed', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+        $entityManager = FOSSBilling\Doctrine\EntityManagerFactory::create($connection);
+        FOSSBilling\Doctrine\SchemaInstaller::createSchema($entityManager);
+
+        // Simulate the module having been activated (its own install() hook already ran once,
+        // creating its table) and then predating a later metadata change - the same situation
+        // a currently-installed extension's table missing a new column would hit.
+        FOSSBilling\Doctrine\SchemaSynchronizer::syncEntities($entityManager, [Box\Mod\Custompages\Entity\CustomPage::class]);
+        $connection->executeStatement("INSERT INTO extension (type, name, status, version) VALUES ('mod', 'custompages', 'installed', '1.0.0')");
+        $connection->executeStatement('DROP TABLE custom_pages');
+
+        $pdo = Mockery::mock(PDO::class);
+        $pdo->shouldNotReceive('prepare');
+        $pdo->shouldNotReceive('query');
 
         $di = new Pimple\Container();
         $di['pdo'] = $pdo;

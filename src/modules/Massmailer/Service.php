@@ -107,10 +107,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         // Raw MySQL-only DDL here (backticks, ENGINE=InnoDB) would fail outright on
         // PostgreSQL/SQLite. mod_massmailer already exists in structure.sql, so this hook is
         // already redundant on MySQL fresh installs - it's only load-bearing on PG/SQLite,
-        // where nothing else creates the table. SchemaSynchronizer::sync() creates (or catches
-        // up) every entity's table from current metadata, additively and safely, on every
-        // platform.
-        \FOSSBilling\Doctrine\SchemaSynchronizer::sync($this->di['em']);
+        // where nothing else creates the table. SchemaSynchronizer::syncEntities() creates (or
+        // catches up) just this module's own table from current metadata, additively and
+        // safely, scoped so installing this one extension never reports every *other* table in
+        // the app as missing.
+        \FOSSBilling\Doctrine\SchemaSynchronizer::syncEntities($this->di['em'], [MassmailerMessage::class]);
 
         // default config values
         $extensionService->setConfig(['ext' => 'mod_massmailer', 'limit' => '2', 'interval' => '10', 'test_client_id' => 1]);

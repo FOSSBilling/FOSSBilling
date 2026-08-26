@@ -24,12 +24,31 @@ use Doctrine\ORM\Tools\SchemaTool;
  * This only works because the entity mapping is already portable: no `columnDefinition`, no
  * `unsigned` options, no native enum types, safe `AUTO` id generation (see the DB-portability
  * audit this followed). A schema generated this way is only as portable as that mapping stays.
+ *
+ * Deliberately does not materialize every entity's table. Only core modules ({@see
+ * \FOSSBilling\Module::CORE_MODULES}) and the fixed set of extensions `content.sql` pre-seeds as
+ * installed ({@see ModuleEntityScope}) get their tables here - everything else (custom_pages,
+ * mod_massmailer, service_apikey, and any future extension) gets its table only when actually
+ * activated, via that module's own `install()` hook calling {@see SchemaSynchronizer::syncEntities()}
+ * - the same mechanism a runtime activation already triggers through
+ * `Box\Mod\Extension\Service::activateExistingExtension()`. Eagerly creating every entity's table
+ * regardless of activation state used to be relied on as an accidental safety net for those
+ * modules' own (formerly non-portable) install() hooks; now that those hooks are portable in
+ * their own right, a fresh install's schema matches what "installed" actually means from the
+ * very first request, on every platform.
  */
 final class SchemaInstaller
 {
     public static function createSchema(EntityManagerInterface $entityManager): void
     {
-        $metadata = $entityManager->getMetadataFactory()->getAllMetadata();
+        $metadata = array_values(array_filter(
+            $entityManager->getMetadataFactory()->getAllMetadata(),
+            static function ($classMetadata): bool {
+                $module = ModuleEntityScope::moduleForEntityClass($classMetadata->getName());
+
+                return $module === null || ModuleEntityScope::isEagerAtInstall($module);
+            },
+        ));
         if ($metadata === []) {
             return;
         }

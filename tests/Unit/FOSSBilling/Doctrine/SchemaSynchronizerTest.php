@@ -26,6 +26,17 @@ function schemaSynchronizerFixture(): array
 
     SchemaInstaller::createSchema($entityManager);
 
+    // SchemaInstaller deliberately leaves non-core, non-default-active extensions' tables
+    // uncreated (see ModuleEntityScope) - these tests exercise sync()/syncEntities() against a
+    // database current with *all* entity metadata, the same state a real install reaches once
+    // every extension it has is activated, so materialize those tables the same way each
+    // module's own install() hook would.
+    SchemaSynchronizer::syncEntities($entityManager, [
+        Box\Mod\Custompages\Entity\CustomPage::class,
+        Box\Mod\Massmailer\Entity\MassmailerMessage::class,
+        Box\Mod\Serviceapikey\Entity\ServiceApiKey::class,
+    ]);
+
     return [$connection, $entityManager];
 }
 
@@ -188,4 +199,71 @@ test('sync never adds a foreign key constraint to an existing table', function (
     ));
     expect($foreignKeys)->toBe([])
         ->and($skippedForeignKeyMessages)->toHaveCount(1);
+});
+
+test('syncEntities creates only the given entity\'s table, reporting no unrelated tables as missing', function (): void {
+    $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $entityManager = EntityManagerFactory::create($connection);
+
+    expect($connection->createSchemaManager()->tablesExist(['custom_pages']))->toBeFalse();
+
+    $result = SchemaSynchronizer::syncEntities($entityManager, [Box\Mod\Custompages\Entity\CustomPage::class]);
+
+    expect($connection->createSchemaManager()->tablesExist(['custom_pages']))->toBeTrue()
+        // Every other entity's table is absent from this brand-new database too, but none of
+        // them were ever compared - scoping to just CustomPage means nothing outside it is
+        // reported as "missing from metadata", unlike a full sync() against an empty database.
+        ->and($result['skipped'])->toBe([]);
+});
+
+test('syncEntities is a no-op when the entity\'s table is already current', function (): void {
+    [, $entityManager] = schemaSynchronizerFixture();
+
+    $result = SchemaSynchronizer::syncEntities($entityManager, [Box\Mod\Custompages\Entity\CustomPage::class]);
+
+    expect($result['applied'])->toBe([])
+        ->and($result['skipped'])->toBe([]);
+});
+
+test('syncEntities never drops a column the target entity no longer maps, but leaves unrelated tables untouched', function (): void {
+    [$connection, $entityManager] = schemaSynchronizerFixture();
+
+    $connection->executeStatement('ALTER TABLE custom_pages ADD COLUMN legacy_unmapped_column TEXT');
+    // A completely unrelated table is missing a column too - syncEntities() must never see it,
+    // let alone report or fix it, since only CustomPage was asked for.
+    $connection->executeStatement('ALTER TABLE post DROP COLUMN description');
+
+    $result = SchemaSynchronizer::syncEntities($entityManager, [Box\Mod\Custompages\Entity\CustomPage::class]);
+
+    $columnNames = array_map(
+        static fn ($column) => $column->getName(),
+        $connection->createSchemaManager()->listTableColumns('custom_pages'),
+    );
+    // introspectTableByUnquotedName() (what introspectOnly() uses) quotes the column name
+    // differently than a full introspectSchema() would in the resulting skip message - cosmetic
+    // only, the column itself is identical and just as untouched either way - so this asserts
+    // on substrings rather than the exact string sync()'s equivalent test asserts on.
+    expect($columnNames)->toContain('legacy_unmapped_column')
+        ->and($result['skipped'])->toHaveCount(1)
+        ->and($result['skipped'][0])->toContain('custom_pages')
+        ->and($result['skipped'][0])->toContain('legacy_unmapped_column')
+        ->and($result['skipped'][0])->toContain('exists in the database but not in entity metadata');
+});
+
+/*
+ * Regression test for a real bug found wiring syncEntities() into UpdatePatcher::
+ * applyCorePatches() against a live MariaDB database: Transaction::class maps to the literal
+ * table name "`transaction`" (backtick-quoted in the name string itself, to escape the SQL
+ * keyword) - Name::toString() renders that back out *quoted*, and passing that quoted string to
+ * tablesExist()/introspectTableByUnquotedName() (which both want the raw unquoted name) made an
+ * already-existing `transaction` table always look missing from introspection, so the comparator
+ * tried to CREATE TABLE `transaction` again and failed outright with "table already exists".
+ */
+test('syncEntities is a no-op for an entity whose table name is itself quoted (a reserved SQL word)', function (): void {
+    [, $entityManager] = schemaSynchronizerFixture();
+
+    $result = SchemaSynchronizer::syncEntities($entityManager, [Box\Mod\Invoice\Entity\Transaction::class]);
+
+    expect($result['applied'])->toBe([])
+        ->and($result['skipped'])->toBe([]);
 });
