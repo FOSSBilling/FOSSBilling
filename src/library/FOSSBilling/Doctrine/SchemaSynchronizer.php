@@ -11,7 +11,9 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Doctrine;
 
+use Doctrine\DBAL\Schema\AbstractSchemaManager;
 use Doctrine\DBAL\Schema\ComparatorConfig;
+use Doctrine\DBAL\Schema\Schema;
 use Doctrine\DBAL\Schema\SchemaDiff;
 use Doctrine\DBAL\Schema\TableDiff;
 use Doctrine\ORM\EntityManagerInterface;
@@ -57,6 +59,20 @@ final class SchemaSynchronizer
      * Applies any additive schema changes and returns what happened. Never drops or alters
      * existing tables, columns, indexes, or foreign keys - only creates what's missing.
      *
+     * Compares against the *whole* live database, so every table with no corresponding entity
+     * anywhere in current metadata is reported in `skipped` - a full audit of every structural
+     * difference at once, third-party tables included.
+     *
+     * No current call site in this codebase actually wants that: a module materializing just its
+     * own table(s) from its own `install()` hook, or the ambient per-module gating
+     * {@see \FOSSBilling\UpdatePatcher::applyCorePatches()} needs (see {@see ModuleEntityScope}),
+     * both use {@see self::syncEntities()} instead, which doesn't produce noise for every
+     * unrelated table in the database - so this method is untouched production code today,
+     * exercised only by its own tests. Kept anyway, deliberately, as the one API on this class
+     * that can answer "what, if anything, has drifted from entity metadata across the *entire*
+     * schema" - syncEntities() can't answer that by design, since it only ever looks at the
+     * tables belonging to the entities it's given.
+     *
      * @return array{applied: list<string>, skipped: list<string>}
      */
     public static function sync(EntityManagerInterface $entityManager): array
@@ -66,12 +82,57 @@ final class SchemaSynchronizer
             return ['applied' => [], 'skipped' => []];
         }
 
+        return self::apply($entityManager, $metadata, restrictComparisonToOwnTables: false);
+    }
+
+    /**
+     * Same additive-only guarantee as {@see self::sync()}, but scoped to exactly the given
+     * entity classes: only those entities' own tables are compared against the live database,
+     * so a module materializing just its own table on install never reports every *other*
+     * table in the app as "missing from metadata" - there's nothing to skip, because nothing
+     * outside the given entities was ever compared in the first place.
+     *
+     * @param non-empty-list<class-string> $entityClasses
+     *
+     * @return array{applied: list<string>, skipped: list<string>}
+     */
+    public static function syncEntities(EntityManagerInterface $entityManager, array $entityClasses): array
+    {
+        $metadataFactory = $entityManager->getMetadataFactory();
+        $metadata = array_map(
+            $metadataFactory->getMetadataFor(...),
+            $entityClasses,
+        );
+
+        return self::apply($entityManager, $metadata, restrictComparisonToOwnTables: true);
+    }
+
+    /**
+     * @param list<\Doctrine\ORM\Mapping\ClassMetadata> $metadata
+     *
+     * @return array{applied: list<string>, skipped: list<string>}
+     */
+    private static function apply(EntityManagerInterface $entityManager, array $metadata, bool $restrictComparisonToOwnTables): array
+    {
         $connection = $entityManager->getConnection();
         $schemaManager = $connection->createSchemaManager();
         $platform = $connection->getDatabasePlatform();
 
         $toSchema = (new SchemaTool($entityManager))->getSchemaFromMetadata($metadata);
-        $fromSchema = $schemaManager->introspectSchema();
+        $fromSchema = $restrictComparisonToOwnTables
+            ? self::introspectOnly($schemaManager, array_map(
+                // Name::toString() renders a *quoted* representation for any identifier defined
+                // quoted (e.g. Transaction::class's table name is the literal string
+                // "`transaction`", to escape the reserved word) - passing that straight to
+                // tablesExist()/introspectTableByUnquotedName() below, which both want the raw
+                // unquoted name, would make an already-existing quoted-name table always look
+                // missing (never matching by its quoted string) and fail outright with "already
+                // exists" once the comparator tried to recreate it. getValue() is the raw
+                // underlying name with quoting stripped, exactly what those two want.
+                static fn ($table): string => $table->getObjectName()->getUnqualifiedName()->getValue(),
+                $toSchema->getTables(),
+            ))
+            : $schemaManager->introspectSchema();
 
         $comparator = class_exists(ComparatorConfig::class)
             ? $schemaManager->createComparator((new ComparatorConfig())->withReportModifiedIndexes(false))
@@ -87,6 +148,26 @@ final class SchemaSynchronizer
         }
 
         return ['applied' => $applied, 'skipped' => $skipped];
+    }
+
+    /**
+     * Introspects only the named tables (skipping ones that don't exist yet, so a brand-new
+     * table shows up as "created", not as some impossible diff against nothing) instead of the
+     * whole database - what {@see self::syncEntities()} compares against, so tables outside the
+     * given entity list never enter the comparison at all.
+     *
+     * @param list<string> $tableNames
+     */
+    private static function introspectOnly(AbstractSchemaManager $schemaManager, array $tableNames): Schema
+    {
+        $tables = [];
+        foreach ($tableNames as $name) {
+            if ($schemaManager->tablesExist([$name])) {
+                $tables[] = $schemaManager->introspectTableByUnquotedName($name);
+            }
+        }
+
+        return new Schema($tables);
     }
 
     /**

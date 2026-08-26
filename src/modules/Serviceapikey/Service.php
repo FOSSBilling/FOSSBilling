@@ -242,9 +242,10 @@ class Service implements InjectionAwareInterface
         // PostgreSQL/SQLite. On MySQL, structure.sql doesn't create service_apikey either -
         // UpdatePatcher::patch111() does, as a startup-safety-net fix - so this hook is already
         // redundant there and only load-bearing on PG/SQLite fresh installs where nothing else
-        // creates the table. SchemaSynchronizer::sync() creates (or catches up) every entity's
-        // table from current metadata, additively and safely, on every platform.
-        \FOSSBilling\Doctrine\SchemaSynchronizer::sync($this->di['em']);
+        // creates the table. SchemaSynchronizer::syncEntities() creates (or catches up) just
+        // this module's own table from current metadata, additively and safely, scoped so
+        // installing this one extension never reports every *other* table in the app as missing.
+        \FOSSBilling\Doctrine\SchemaSynchronizer::syncEntities($this->di['em'], [ServiceApiKey::class]);
 
         return true;
     }
