@@ -82,22 +82,14 @@ function apiEndpoint(FOSSBilling\Api\AbstractApi $api): FOSSBilling\Api\Abstract
 {
     $api->setDi(Tests\Helpers\container());
 
-    // Ensure every test endpoint has an identity so strict AbstractApi::getIdentity() does not throw.
     try {
         $api->getIdentity();
     } catch (\Throwable) {
-        $isAdmin = str_contains($api::class, '\\Api\\Admin');
-        $isClient = str_contains($api::class, '\\Api\\Client');
-        try {
-            if ($isAdmin) {
-                $api->setIdentity(\Tests\Helpers\admin());
-            } elseif ($isClient) {
-                $api->setIdentity(\Tests\Helpers\client());
-            } else {
-                $api->setIdentity(new \FOSSBilling\Identity\Guest());
-            }
-        } catch (\Throwable) {
-        }
+        $api->setIdentity(match (true) {
+            str_contains($api::class, '\\Api\\Admin') => \Tests\Helpers\admin(),
+            str_contains($api::class, '\\Api\\Client') => \Tests\Helpers\client(),
+            default => new \FOSSBilling\Identity\Guest(),
+        });
     }
 
     return $api;

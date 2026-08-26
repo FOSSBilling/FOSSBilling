@@ -16,12 +16,13 @@ use Box\Mod\Staff\Entity\Admin;
 use FOSSBilling\Exception\BaseException;
 use FOSSBilling\Identity\Guest;
 use FOSSBilling\Interfaces\InjectionAwareInterface;
+use FOSSBilling\Module;
 use Pimple\Container;
 
 abstract class AbstractApi implements InjectionAwareInterface
 {
     protected string $ip = '';
-    protected ?object $module = null;
+    protected ?Module $module = null;
     protected ?object $service = null;
 
     /** @var Client|Admin|Guest|null */
@@ -39,12 +40,12 @@ abstract class AbstractApi implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function setModule(object $module): void
+    public function setModule(Module $module): void
     {
         $this->module = $module;
     }
 
-    public function getModule(): object
+    public function getModule(): Module
     {
         if ($this->module === null) {
             throw new BaseException('Module object is not set for the service');
