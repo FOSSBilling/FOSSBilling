@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2025 FOSSBilling
+ * Copyright 2022-2026 FOSSBilling
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -15,8 +15,8 @@ use Box\Mod\Massmailer\Entity\MassmailerMessage;
 use Box\Mod\Massmailer\Repository\MassmailerMessageRepository;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\ParameterType;
-use FOSSBilling\Enums\ClientOrderStatusEnum;
-use FOSSBilling\Enums\ClientStatusEnum;
+use Box\Mod\Client\Enum\Status as ClientStatus;
+use Box\Mod\Order\Enum\Status as OrderStatus;
 use FOSSBilling\Exception\InformationException;
 use FOSSBilling\System\Environment;
 
@@ -33,17 +33,17 @@ class Service implements \FOSSBilling\Interfaces\InjectionAwareInterface
         self::FILTER_HAS_ORDER_WITH_STATUS,
     ];
     private const array CLIENT_STATUSES = [
-        ClientStatusEnum::ACTIVE->value,
-        ClientStatusEnum::SUSPENDED->value,
-        ClientStatusEnum::CANCELED->value,
+        ClientStatus::ACTIVE->value,
+        ClientStatus::SUSPENDED->value,
+        ClientStatus::CANCELED->value,
     ];
     private const array ORDER_STATUSES = [
-        ClientOrderStatusEnum::PENDING_SETUP->value,
-        ClientOrderStatusEnum::FAILED_SETUP->value,
-        ClientOrderStatusEnum::FAILED_RENEW->value,
-        ClientOrderStatusEnum::ACTIVE->value,
-        ClientOrderStatusEnum::CANCELED->value,
-        ClientOrderStatusEnum::SUSPENDED->value,
+        OrderStatus::PENDING_SETUP->value,
+        OrderStatus::FAILED_SETUP->value,
+        OrderStatus::FAILED_RENEW->value,
+        OrderStatus::ACTIVE->value,
+        OrderStatus::CANCELED->value,
+        OrderStatus::SUSPENDED->value,
     ];
 
     protected ?\Pimple\Container $di = null;

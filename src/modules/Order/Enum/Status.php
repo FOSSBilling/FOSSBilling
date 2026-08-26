@@ -9,7 +9,7 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling\Enums;
+namespace Box\Mod\Order\Enum;
 
 /**
  * Canonical client order lifecycle status.
@@ -18,7 +18,7 @@ namespace FOSSBilling\Enums;
  * column values and the `Order::STATUS_*` constants so the enum is
  * interchangeable with the entity code paths.
  */
-enum ClientOrderStatusEnum: string
+enum Status: string
 {
     case PENDING_SETUP = 'pending_setup';
     case FAILED_SETUP = 'failed_setup';
