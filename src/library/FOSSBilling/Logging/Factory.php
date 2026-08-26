@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2025 FOSSBilling
+ * Copyright 2022-2026 FOSSBilling
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -19,7 +19,7 @@ use Symfony\Component\Filesystem\Path;
 
 class Factory
 {
-    protected $logger;
+    protected array $logger = [];
     public string $dateFormat = 'd-M-Y H:i:s e';
     public string $outputFormat = "[%datetime%] %channel%.%level_name%: %message% %context% %extra%\n";
 
