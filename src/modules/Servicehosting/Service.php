@@ -150,7 +150,7 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        if (Tools::normalizeBoolean($data['reseller'] ?? false) !== Tools::normalizeBoolean($productConfig['reseller'] ?? false)) {
+        if (\FOSSBilling\Utils\Normalizer::normalizeBoolean($data['reseller'] ?? false) !== \FOSSBilling\Utils\Normalizer::normalizeBoolean($productConfig['reseller'] ?? false)) {
             throw new InformationException('The requested configuration does not match the selected product.', null, 705);
         }
     }
@@ -197,7 +197,7 @@ class Service implements InjectionAwareInterface
         $model->setSld($c['sld']);
         $model->setTld($c['tld']);
         $model->setIp($server->getIp());
-        $model->setReseller(Tools::normalizeBoolean($c['reseller'] ?? false));
+        $model->setReseller(\FOSSBilling\Utils\Normalizer::normalizeBoolean($c['reseller'] ?? false));
 
         $this->di['em']->persist($model);
         $this->di['em']->flush();
@@ -230,7 +230,7 @@ class Service implements InjectionAwareInterface
         $alreadyProvisioned = !empty($model->getUsername());
 
         // Generate a password for the service
-        $pass = $this->di['tools']->generatePassword($serverManager->getPasswordLength(), true);
+        $pass = \FOSSBilling\Security\Credential::generatePassword($serverManager->getPasswordLength(), true);
 
         // If a password is already specified in the order's configuration, use that instead
         if (isset($config['password']) && !empty($config['password'])) {
@@ -336,7 +336,7 @@ class Service implements InjectionAwareInterface
         $serverManager = $this->_getServerManagerForOrder($model);
 
         // As we replace the password internally with asterisks, generate a new password
-        $pass = $this->di['tools']->generatePassword($serverManager->getPasswordLength(), true);
+        $pass = \FOSSBilling\Security\Credential::generatePassword($serverManager->getPasswordLength(), true);
         $model->setPass($pass);
 
         // Retrieve the adapter and account, then create the account on the server
@@ -568,7 +568,7 @@ class Service implements InjectionAwareInterface
             ->setClient($server_client)
             ->setPackage($package)
             ->setUsername($model->getUsername())
-            ->setReseller(Tools::normalizeBoolean($model->isReseller()))
+            ->setReseller(\FOSSBilling\Utils\Normalizer::normalizeBoolean($model->isReseller()))
             ->setDomain($model->getSld() . $model->getTld())
             ->setPassword($model->getPass())
             ->setNs1($server->getNs1())
@@ -632,7 +632,7 @@ class Service implements InjectionAwareInterface
             $result['max_accounts'] = $model->getMaxAccounts();
             $result['manager'] = $model->getManager();
             $result['config'] = json_decode($model->getConfig() ?? '', true) ?? [];
-            $result['port'] = Tools::normalizePort($model->getPort());
+            $result['port'] = \FOSSBilling\Utils\Normalizer::normalizePort($model->getPort());
             $result['passwordLength'] = $model->getPasswordLength();
             $result['created_at'] = $this->formatDateTime($model->getCreatedAt());
             $result['updated_at'] = $this->formatDateTime($model->getUpdatedAt());
@@ -1001,7 +1001,7 @@ class Service implements InjectionAwareInterface
             $model->setAssignedIps(self::processAssignedIPs($assigned_ips));
         }
 
-        $model->setActive(Tools::normalizeBoolean($data['active'] ?? true));
+        $model->setActive(\FOSSBilling\Utils\Normalizer::normalizeBoolean($data['active'] ?? true));
         $model->setStatusUrl($data['status_url'] ?? null);
         $model->setMaxAccounts(isset($data['max_accounts']) ? (int) $data['max_accounts'] : null);
 
@@ -1014,11 +1014,11 @@ class Service implements InjectionAwareInterface
         $model->setUsername($data['username'] ?? null);
         $model->setPassword($data['password'] ?? null);
         $model->setAccesshash($data['accesshash'] ?? null);
-        $normalizedPort = Tools::normalizePort($data['port'] ?? null);
+        $normalizedPort = \FOSSBilling\Utils\Normalizer::normalizePort($data['port'] ?? null);
         $model->setPort($normalizedPort !== null ? (string) $normalizedPort : null);
         $model->setConfig(isset($data['config']) ? json_encode($data['config']) : null);
         $model->setPasswordLength(is_numeric($data['passwordLength'] ?? '') ? intval($data['passwordLength']) : null);
-        $model->setSecure(Tools::normalizeBoolean($data['secure'] ?? true));
+        $model->setSecure(\FOSSBilling\Utils\Normalizer::normalizeBoolean($data['secure'] ?? true));
 
         $this->di['em']->persist($model);
         $this->di['em']->flush();
@@ -1051,7 +1051,7 @@ class Service implements InjectionAwareInterface
             $model->setAssignedIps(self::processAssignedIPs($assigned_ips));
         }
 
-        $model->setActive(array_key_exists('active', $data) ? Tools::normalizeBoolean($data['active']) : $model->isActive());
+        $model->setActive(array_key_exists('active', $data) ? \FOSSBilling\Utils\Normalizer::normalizeBoolean($data['active']) : $model->isActive());
         $model->setStatusUrl($data['status_url'] ?? $model->getStatusUrl());
         $model->setMaxAccounts(array_key_exists('max_accounts', $data) ? ($data['max_accounts'] !== null ? (int) $data['max_accounts'] : null) : $model->getMaxAccounts());
         $model->setNs1($data['ns1'] ?? $model->getNs1());
@@ -1064,10 +1064,10 @@ class Service implements InjectionAwareInterface
             }
             $model->setManager($data['manager']);
         }
-        $port = Tools::normalizePort($data['port'] ?? null);
+        $port = \FOSSBilling\Utils\Normalizer::normalizePort($data['port'] ?? null);
         $model->setPort($port !== null ? (string) $port : $model->getPort());
         $model->setConfig(isset($data['config']) ? json_encode($data['config']) : $model->getConfig());
-        $model->setSecure(array_key_exists('secure', $data) ? Tools::normalizeBoolean($data['secure']) : $model->isSecure());
+        $model->setSecure(array_key_exists('secure', $data) ? \FOSSBilling\Utils\Normalizer::normalizeBoolean($data['secure']) : $model->isSecure());
         $model->setUsername($this->normalizeCredential('username', $data['username'] ?? null, $model->getUsername(), $model->getId(), false));
         $model->setPassword($this->normalizeCredential('password', $data['password'] ?? null, $model->getPassword(), $model->getId(), true));
         $model->setAccesshash($this->normalizeCredential('accesshash', $data['accesshash'] ?? null, $model->getAccesshash(), $model->getId(), true));
@@ -1118,7 +1118,7 @@ class Service implements InjectionAwareInterface
         $config = [];
         $config['ip'] = $model->getIp();
         $config['host'] = $model->getHostname();
-        $config['port'] = Tools::normalizePort($model->getPort());
+        $config['port'] = \FOSSBilling\Utils\Normalizer::normalizePort($model->getPort());
         $config['config'] = [];
         $config['config'] = json_decode($model->getConfig() ?? '', true) ?? [];
         $config['secure'] = $model->isSecure();

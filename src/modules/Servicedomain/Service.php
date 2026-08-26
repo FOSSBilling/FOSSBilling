@@ -736,7 +736,7 @@ class Service implements \FOSSBilling\Interfaces\InjectionAwareInterface
         $contact
             ->setEmail($email)
             ->setUsername($email)
-            ->setPassword($this->di['tools']->generatePassword(10))
+            ->setPassword(\FOSSBilling\Security\Credential::generatePassword(10))
             ->setFirstname($first_name)
             ->setLastname($last_name)
             ->setCity($city)
@@ -1294,14 +1294,14 @@ class Service implements \FOSSBilling\Interfaces\InjectionAwareInterface
     public function registrarRm(TldRegistrar $model): bool
     {
         $domains = $this->getDomainRepository()->findBy(['registrar' => $model]);
-        $count = \FOSSBilling\Tools::safeCount($domains);
+        $count = \FOSSBilling\Utils\Arr::safeCount($domains);
 
         if ($count > 0) {
             throw new \FOSSBilling\Exception\InformationException('Registrar is used by :count: domains', [':count:' => $count], 707);
         }
 
         $tlds = $this->getTldRepository()->findBy(['registrar' => $model]);
-        $count = \FOSSBilling\Tools::safeCount($tlds);
+        $count = \FOSSBilling\Utils\Arr::safeCount($tlds);
 
         if ($count > 0) {
             throw new \FOSSBilling\Exception\InformationException('Registrar is used by :count: TLDs', [':count:' => $count], 707);

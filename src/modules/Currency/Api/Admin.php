@@ -127,7 +127,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         }
 
         $conversionRate = $data['conversion_rate'] ?? null;
-        $isRateManual = Tools::normalizeBoolean($data['is_rate_manual'] ?? false);
+        $isRateManual = \FOSSBilling\Utils\Normalizer::normalizeBoolean($data['is_rate_manual'] ?? false);
 
         return $service->createCurrency($data['code'] ?? null, $conversionRate, $isRateManual);
     }
@@ -149,7 +149,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $conversionRate = $data['conversion_rate'] ?? null;
         $isRateManual = array_key_exists('is_rate_manual', $data)
-            ? Tools::normalizeBoolean($data['is_rate_manual'])
+            ? \FOSSBilling\Utils\Normalizer::normalizeBoolean($data['is_rate_manual'])
             : null;
         $formatting = array_intersect_key($data, [
             'format_pattern' => true,

@@ -62,7 +62,7 @@ test('getSearchQueryBuilder filters by client_id, status, currency and approved'
         ->and($query->getParameter('approved')->getValue())->toBeTrue();
 });
 
-test('getSearchQueryBuilder normalizes the approved filter via Tools::normalizeBoolean', function (): void {
+test('getSearchQueryBuilder normalizes the approved filter via \FOSSBilling\Utils\Normalizer::normalizeBoolean', function (): void {
     $repository = invoiceEntityManager()->getRepository(Invoice::class);
 
     foreach ([1, '1', true, 'on', 'true'] as $truthy) {

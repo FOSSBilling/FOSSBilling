@@ -38,7 +38,7 @@ class Server_Manager_Plesk extends Server_Manager
      */
     public function init(): void
     {
-        $this->_config['port'] = FOSSBilling\Tools::normalizePort($this->_config['port'] ?? null, 8443);
+        $this->_config['port'] = \FOSSBilling\Utils\Normalizer::normalizePort($this->_config['port'] ?? null, 8443);
         $this->_client = new Client($this->_config['host'], $this->_config['port']);
         $this->_client->setCredentials($this->_config['username'], $this->_config['password']);
     }
@@ -136,7 +136,7 @@ class Server_Manager_Plesk extends Server_Manager
                 // throw new Server_Exception('Out of free IP addresses');
             }
             */
-            if (FOSSBilling\Tools::safeCount($ips['exclusive']) > 0) {
+            if (\FOSSBilling\Utils\Arr::safeCount($ips['exclusive']) > 0) {
                 $ips['exclusive'] = array_values($ips['exclusive']);
                 $rand = array_rand($ips['exclusive']);
                 $account->setIp($ips['exclusive'][$rand]['ip']);
@@ -527,15 +527,15 @@ class Server_Manager_Plesk extends Server_Manager
                     ],
                     [
                         'name' => 'manage_crontab',
-                        'value' => FOSSBilling\Tools::normalizeBoolean($package->getCustomValue('cron')) ? 'true' : 'false',
+                        'value' => \FOSSBilling\Utils\Normalizer::normalizeBoolean($package->getCustomValue('cron')) ? 'true' : 'false',
                     ],
                     [
                         'name' => 'manage_anonftp',
-                        'value' => FOSSBilling\Tools::normalizeBoolean($package->getCustomValue('aftp')) ? 'true' : 'false',
+                        'value' => \FOSSBilling\Utils\Normalizer::normalizeBoolean($package->getCustomValue('aftp')) ? 'true' : 'false',
                     ],
                     [
                         'name' => 'manage_sh_access',
-                        'value' => FOSSBilling\Tools::normalizeBoolean($package->getCustomValue('ssh')) ? 'true' : 'false',
+                        'value' => \FOSSBilling\Utils\Normalizer::normalizeBoolean($package->getCustomValue('ssh')) ? 'true' : 'false',
                     ],
                     [
                         'name' => 'manage_maillists',
@@ -555,7 +555,7 @@ class Server_Manager_Plesk extends Server_Manager
                     ],
                     [
                         'name' => 'manage_not_chroot_shell',
-                        'value' => FOSSBilling\Tools::normalizeBoolean($package->getCustomValue('ssh')) ? 'true' : 'false',
+                        'value' => \FOSSBilling\Utils\Normalizer::normalizeBoolean($package->getCustomValue('ssh')) ? 'true' : 'false',
                     ],
                     [
                         'name' => 'manage_domain_aliases',
@@ -567,7 +567,7 @@ class Server_Manager_Plesk extends Server_Manager
                     ],
                     [
                         'name' => 'manage_spamfilter',
-                        'value' => FOSSBilling\Tools::normalizeBoolean($package->getCustomValue('spam')) ? 'true' : 'false',
+                        'value' => \FOSSBilling\Utils\Normalizer::normalizeBoolean($package->getCustomValue('spam')) ? 'true' : 'false',
                     ],
                 ],
             ],

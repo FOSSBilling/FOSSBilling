@@ -18,7 +18,6 @@ use FOSSBilling\Security\Crypt;
 use FOSSBilling\System\Config;
 use FOSSBilling\System\Environment;
 use FOSSBilling\System\Version;
-use FOSSBilling\Tools;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -108,7 +107,7 @@ class Patcher implements InjectionAwareInterface
         $newConfig['i18n']['date_format'] ??= 'medium';
         $newConfig['i18n']['time_format'] ??= 'short';
         $newConfig['db']['driver'] ??= 'pdo_mysql';
-        $newConfig['db']['port'] = Tools::normalizePort($newConfig['db']['port'] ?? null, 3306);
+        $newConfig['db']['port'] = \FOSSBilling\Utils\Normalizer::normalizePort($newConfig['db']['port'] ?? null, 3306);
         unset(
             $newConfig['api']['rate_span'],
             $newConfig['api']['rate_limit'],
@@ -1075,7 +1074,6 @@ class Patcher implements InjectionAwareInterface
     private function patch53(): void
     {
         $pdo = $this->getPdo();
-        $tools = $this->di['tools'];
         $now = date('Y-m-d H:i:s');
 
         $pdo->beginTransaction();
@@ -1092,7 +1090,7 @@ class Patcher implements InjectionAwareInterface
                 ]);
 
                 foreach ($adminIds as $adminId) {
-                    $adminUpdateStmt->bindValue('api_token', $tools->generatePassword(32));
+                    $adminUpdateStmt->bindValue('api_token', \FOSSBilling\Security\Credential::generatePassword(32));
                     $adminUpdateStmt->bindValue('updated_at', $now);
                     $adminUpdateStmt->bindValue('id', (int) $adminId, \PDO::PARAM_INT);
                     $adminUpdateStmt->execute();
@@ -1110,7 +1108,7 @@ class Patcher implements InjectionAwareInterface
                 ]);
 
                 foreach ($clientIds as $clientId) {
-                    $clientUpdateStmt->bindValue('api_token', $tools->generatePassword(32));
+                    $clientUpdateStmt->bindValue('api_token', \FOSSBilling\Security\Credential::generatePassword(32));
                     $clientUpdateStmt->bindValue('updated_at', $now);
                     $clientUpdateStmt->bindValue('id', (int) $clientId, \PDO::PARAM_INT);
                     $clientUpdateStmt->execute();

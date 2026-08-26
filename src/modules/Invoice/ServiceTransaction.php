@@ -164,7 +164,7 @@ class ServiceTransaction implements InjectionAwareInterface
     {
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminTransactionCreate', 'params' => $data]);
 
-        $skip_validation = Tools::normalizeBoolean($data['skip_validation'] ?? false);
+        $skip_validation = \FOSSBilling\Utils\Normalizer::normalizeBoolean($data['skip_validation'] ?? false);
         if (!empty($data['gateway_id'])) {
             try {
                 $gateway = $this->di['em']->getRepository(PayGateway::class)->find((int) $data['gateway_id']);

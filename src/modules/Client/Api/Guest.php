@@ -99,7 +99,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             $service->sendEmailConfirmationForClient($client);
         }
 
-        if (Tools::normalizeBoolean($config['auto_login_after_signup'] ?? true, true)) {
+        if (\FOSSBilling\Utils\Normalizer::normalizeBoolean($config['auto_login_after_signup'] ?? true, true)) {
             try {
                 $this->login(['email' => $client->getEmail(), 'password' => $data['password']]);
             } catch (\Throwable $e) {
@@ -306,8 +306,8 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             $title = $field['title'] ?? '';
 
             $field['title'] = is_scalar($title) ? (string) $title : '';
-            $field['active'] = Tools::normalizeBoolean($field['active'] ?? false);
-            $field['required'] = Tools::normalizeBoolean($field['required'] ?? false);
+            $field['active'] = \FOSSBilling\Utils\Normalizer::normalizeBoolean($field['active'] ?? false);
+            $field['required'] = \FOSSBilling\Utils\Normalizer::normalizeBoolean($field['required'] ?? false);
             $customFields[$fieldName] = $field;
         }
 

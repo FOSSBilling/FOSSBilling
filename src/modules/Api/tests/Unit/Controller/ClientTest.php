@@ -14,14 +14,14 @@ class ClientTestRateLimiterDouble
     {
     }
 
-    public function consume(string $policy, string $subject, int $tokens = 1): FOSSBilling\Security\RateLimitResult
+    public function consume(string $policy, string $subject, int $tokens = 1): \FOSSBilling\Security\RateLimitResult
     {
         $this->calls[] = [$policy, $subject, $tokens];
 
-        return new FOSSBilling\Security\RateLimitResult($policy, false, 100, 99);
+        return new \FOSSBilling\Security\RateLimitResult($policy, false, 100, 99);
     }
 
-    public function consumeOrThrow(string $policy, string $subject, int $tokens = 1): FOSSBilling\Security\RateLimitResult
+    public function consumeOrThrow(string $policy, string $subject, int $tokens = 1): \FOSSBilling\Security\RateLimitResult
     {
         return $this->consume($policy, $subject, $tokens);
     }

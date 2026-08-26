@@ -14,7 +14,7 @@ test('crypt', function (): void {
     $key = 'le password';
     $text = 'foo bar';
 
-    $crypt = new FOSSBilling\Security\Crypt();
+    $crypt = new \FOSSBilling\Security\Crypt();
     $encoded = $crypt->encrypt($text, $key);
     $decoded = $crypt->decrypt($encoded, $key);
     expect($decoded)->toEqual($text);

@@ -55,7 +55,7 @@ test('create returns int', function (): void {
     $serviceMock->shouldReceive('checkExtraRequiredFields')->atLeast()->once();
     $serviceMock->shouldReceive('checkCustomFields')->atLeast()->once();
 
-    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class);
+    $validatorMock = Mockery::mock(\FOSSBilling\Validation\Validator::class);
     $validatorMock->shouldReceive('isPasswordStrong')->atLeast()->once();
     $validatorMock->shouldReceive('passwordsMatch')->atLeast()->once();
 
@@ -98,7 +98,7 @@ test('create throws exception when client exists', function (): void {
 
     $model = createEntity(Box\Mod\Client\Entity\Client::class);
 
-    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class);
+    $validatorMock = Mockery::mock(\FOSSBilling\Validation\Validator::class);
     $validatorMock->shouldReceive('isPasswordStrong')->atLeast()->once();
     $validatorMock->shouldReceive('passwordsMatch')->atLeast()->once();
 
@@ -177,7 +177,7 @@ test('login returns array', function (): void {
     $eventMock = Mockery::mock('\Box_EventManager');
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
-    $sessionMock = Mockery::mock(FOSSBilling\Security\Session::class);
+    $sessionMock = Mockery::mock(\FOSSBilling\Security\Session::class);
     $sessionMock->shouldReceive('set')->atLeast()->once();
     $sessionMock->shouldReceive('getId')->atLeast()->once();
     $sessionMock->shouldReceive('regenerateId')->atLeast()->once();
@@ -306,7 +306,7 @@ test('updatePassword returns true', function (): void {
     $eventMock = Mockery::mock('\Box_EventManager');
     $eventMock->shouldReceive('fire')->times(2);
 
-    $passwordMock = Mockery::mock(FOSSBilling\Security\PasswordManager::class);
+    $passwordMock = Mockery::mock(\FOSSBilling\Security\PasswordManager::class);
     $passwordMock->shouldReceive('hashIt')->atLeast()->once();
 
     $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);

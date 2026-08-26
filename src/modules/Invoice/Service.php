@@ -764,7 +764,7 @@ class Service implements InjectionAwareInterface
             return true;
         }
 
-        $execute = Tools::normalizeBoolean($data['execute'] ?? false);
+        $execute = \FOSSBilling\Utils\Normalizer::normalizeBoolean($data['execute'] ?? false);
         $payGateway = $this->validateAdminMarkAsPaidRequest($data, $invoice);
         $transactionId = isset($data['transactionId']) ? trim((string) $data['transactionId']) : null;
 
@@ -1597,7 +1597,7 @@ class Service implements InjectionAwareInterface
         $orderService = $this->di['mod_service']('Order');
         $orders = $orderService->getSoonExpiringActiveOrders();
 
-        if (Tools::safeCount($orders) == 0) {
+        if (\FOSSBilling\Utils\Arr::safeCount($orders) == 0) {
             return true;
         }
 
@@ -2137,7 +2137,7 @@ class Service implements InjectionAwareInterface
                 ->setTax($item['tax'])
                 ->setQuantity($item['quantity']);
             $items[] = $pi;
-            if (is_null($first_title) && Tools::safeCount($proforma['lines']) == 1) {
+            if (is_null($first_title) && \FOSSBilling\Utils\Arr::safeCount($proforma['lines']) == 1) {
                 $first_title = $item['title'];
             }
         }

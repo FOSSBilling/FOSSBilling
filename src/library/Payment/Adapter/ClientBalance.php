@@ -76,7 +76,7 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\Interfaces\InjectionA
         }
 
         $ipnUrl = $this->getServiceUrl($invoice_id);
-        $invoiceUrl = $this->di['tools']->url('invoice/' . $invoiceModel->getHash());
+        $invoiceUrl = $this->di['url']->link('invoice/' . $invoiceModel->getHash());
 
         return "<script>
                 document.addEventListener('DOMContentLoaded', function() {

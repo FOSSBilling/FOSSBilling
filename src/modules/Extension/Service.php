@@ -310,7 +310,7 @@ class Service implements InjectionAwareInterface
             }
         }
         // groups sorting
-        $nav = $this->di['tools']->sortByOneKey($nav, 'index');
+        $nav = \FOSSBilling\Utils\Arr::sortByOneKey($nav, 'index');
         foreach ($subpages as $page) {
             if (!isset($page['location'])) {
                 $this->di['logger']->error('Invalid module menu item: ' . print_r($page, true));
@@ -332,7 +332,7 @@ class Service implements InjectionAwareInterface
 
         // submenu sorting
         foreach ($nav as &$group) {
-            $group['subpages'] = $this->di['tools']->sortByOneKey($group['subpages'], 'index');
+            $group['subpages'] = \FOSSBilling\Utils\Arr::sortByOneKey($group['subpages'], 'index');
             $group['uri'] = $this->resolveNavigationGroupUri($group);
         }
 

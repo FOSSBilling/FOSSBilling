@@ -142,7 +142,7 @@ class Service
             throw new \FOSSBilling\Exception\BaseException('Custom page not found');
         }
 
-        $slug = $this->di['tools']->slug($slug);
+        $slug = \FOSSBilling\Utils\Str::slug($slug);
         $existing = $this->pageRepository->findOneBySlugExcludingId($slug, (int) $id);
         if ($existing instanceof CustomPage) {
             throw new \FOSSBilling\Exception\BaseException('You need to set unique slug.', null, 9999);
@@ -177,10 +177,10 @@ class Service
      */
     private function generateUniqueSlug(string $title): string
     {
-        $slug = $this->fitSlug($this->di['tools']->slug($title), null);
+        $slug = $this->fitSlug(\FOSSBilling\Utils\Str::slug($title), null);
         $i = 0;
         while ($this->pageRepository->findOneBySlug($slug) instanceof CustomPage) {
-            $slug = $this->fitSlug($this->di['tools']->slug($title), ++$i);
+            $slug = $this->fitSlug(\FOSSBilling\Utils\Str::slug($title), ++$i);
         }
 
         return $slug;

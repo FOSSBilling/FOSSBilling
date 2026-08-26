@@ -64,8 +64,8 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         $c = $this->get($data);
 
         $price = $data['price'] ?? 0;
-        $convert = Tools::normalizeBoolean($data['convert'] ?? true, true);
-        $withoutCurrency = Tools::normalizeBoolean($data['without_currency'] ?? false);
+        $convert = \FOSSBilling\Utils\Normalizer::normalizeBoolean($data['convert'] ?? true, true);
+        $withoutCurrency = \FOSSBilling\Utils\Normalizer::normalizeBoolean($data['without_currency'] ?? false);
 
         $p = floatval($price);
         if ($convert) {

@@ -243,7 +243,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             'SELECT id FROM service_domain WHERE LOWER(TRIM(TRAILING \'.\' FROM TRIM(tld))) IN (?, ?)',
             [$normalizedTld, ltrim((string) $normalizedTld, '.')],
         );
-        $count = \FOSSBilling\Tools::safeCount($service_domains);
+        $count = \FOSSBilling\Utils\Arr::safeCount($service_domains);
         if ($count > 0) {
             throw new \FOSSBilling\Exception\InformationException('TLD is used by :count: domains', [':count:' => $count], 707);
         }

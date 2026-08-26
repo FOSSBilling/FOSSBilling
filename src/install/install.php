@@ -149,7 +149,7 @@ final class FOSSBilling_Installer
                     $this->session->set('currency_code', $this->request->request->get('currency_code'));
                     // Handle database information
                     $this->session->set('database_hostname', $this->request->request->get('database_hostname'));
-                    $databasePort = FOSSBilling\Tools::normalizePort($this->request->request->get('database_port'));
+                    $databasePort = \FOSSBilling\Utils\Normalizer::normalizePort($this->request->request->get('database_port'));
                     if ($databasePort === null) {
                         throw new Exception('Database port is invalid.');
                     }
@@ -274,7 +274,7 @@ final class FOSSBilling_Installer
         $databaseName = $this->quoteMysqlIdentifier((string) $this->session->get('database_name'));
 
         // Open the connection
-        $databasePort = FOSSBilling\Tools::normalizePort($this->session->get('database_port'), 3306);
+        $databasePort = \FOSSBilling\Utils\Normalizer::normalizePort($this->session->get('database_port'), 3306);
 
         $this->pdo = new PDO('mysql:host=' . $this->session->get('database_hostname') . ';port=' . $databasePort,
             $this->session->get('database_username'),
@@ -405,7 +405,7 @@ final class FOSSBilling_Installer
         }
 
         // Create default administrator
-        $passwordObject = new FOSSBilling\Security\PasswordManager();
+        $passwordObject = new \FOSSBilling\Security\PasswordManager();
         $stmt = $this->pdo->prepare('INSERT INTO admin (name, email, pass, created_at, updated_at, api_token) VALUES(:admin_name, :admin_email, :admin_password, NOW(), NOW(), :api_token);');
         $stmt->execute([
             'admin_name' => $this->session->get('admin_name'),
@@ -560,7 +560,7 @@ final class FOSSBilling_Installer
         $data['db'] = [
             'driver' => 'pdo_mysql',
             'host' => $this->session->get('database_hostname'),
-            'port' => FOSSBilling\Tools::normalizePort($this->session->get('database_port'), 3306),
+            'port' => \FOSSBilling\Utils\Normalizer::normalizePort($this->session->get('database_port'), 3306),
             'name' => $this->session->get('database_name'),
             'user' => $this->session->get('database_username'),
             'password' => $this->session->get('database_password'),

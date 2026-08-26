@@ -1560,7 +1560,7 @@ class Service implements InjectionAwareInterface
     public function enrichPromoApiArray(array $result, $deep = false, $identity = null): array
     {
         $products = !empty($result['products']) ? $this->getProductTitlesByIds($this->decodePromoSelection($result['products'])) : null;
-        $clientGroups = !empty($result['client_groups']) ? $this->di['tools']->getPairsForTableByIds('client_group', $this->decodePromoSelection($result['client_groups'])) : null;
+        $clientGroups = !empty($result['client_groups']) ? $this->di['arr']->getPairsForTableByIds('client_group', $this->decodePromoSelection($result['client_groups'])) : null;
         $usageStats = $deep ? $this->getPromoUsageStatsByValues((int) $result['id'], (int) ($result['used'] ?? 0), isset($result['maxuses']) ? (int) $result['maxuses'] : null) : null;
         $redemptionCount = $usageStats['recorded_applications'] ?? $this->getPromoRedemptionCountById((int) $result['id']);
 
@@ -1865,10 +1865,10 @@ class Service implements InjectionAwareInterface
 
     private function generateUniqueProductSlug(string $title): string
     {
-        $slug = $this->di['tools']->slug($title);
+        $slug = \FOSSBilling\Utils\Str::slug($title);
 
         while ($this->getProductRepository()->findOneBy(['slug' => $slug]) instanceof Product) {
-            $slug = $this->di['tools']->slug($title) . '-' . random_int(1, 9999);
+            $slug = \FOSSBilling\Utils\Str::slug($title) . '-' . random_int(1, 9999);
         }
 
         return $slug;
@@ -2346,7 +2346,7 @@ class Service implements InjectionAwareInterface
         $addonQty = $this->di['period']($addonPeriod)->getQty();
 
         $freeDomainPeriods = $addon['config']['free_domain_periods'] ?? [];
-        if (\FOSSBilling\Tools::safeCount($freeDomainPeriods) > 0) {
+        if (\FOSSBilling\Utils\Arr::safeCount($freeDomainPeriods) > 0) {
             if ($addonPeriod === $period && in_array($addonPeriod, $freeDomainPeriods, true)) {
                 return $referenceQty;
             }

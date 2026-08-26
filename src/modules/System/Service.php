@@ -599,7 +599,7 @@ class Service
     {
         if ($fetchExternalIp) {
             try {
-                return $this->di['tools']->getExternalIP();
+                return $this->di['network']->getExternalIP();
             } catch (\Exception) {
                 return '';
             }

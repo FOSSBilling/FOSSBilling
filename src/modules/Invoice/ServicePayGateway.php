@@ -366,14 +366,14 @@ class ServicePayGateway implements InjectionAwareInterface
         $publicPath = Path::join(PATH_ROOT, 'public', 'gateways', $filename);
 
         if ($this->filesystem->exists($libraryPath)) {
-            return $this->di['tools']->url("/library/Payment/Adapter/{$filename}");
+            return $this->di['url']->link("/library/Payment/Adapter/{$filename}");
         }
 
         if ($this->filesystem->exists($publicPath)) {
-            return $this->di['tools']->url("/public/gateways/{$filename}");
+            return $this->di['url']->link("/public/gateways/{$filename}");
         }
 
-        return $this->di['tools']->url('/public/gateways/default.png');
+        return $this->di['url']->link('/public/gateways/default.png');
     }
 
     public function canPerformRecurrentPayment(PayGateway $model): bool
@@ -397,11 +397,11 @@ class ServicePayGateway implements InjectionAwareInterface
         $defaults['cancel_url'] = $this->getCancelUrl($pg, $model);
         $defaults['notify_url'] = $this->getCallbackUrl($pg, $model);
         $defaults['redirect_url'] = $this->getCallbackRedirect($pg, $model);
-        $defaults['continue_shopping_url'] = $this->di['tools']->url('/order');
+        $defaults['continue_shopping_url'] = $this->di['url']->link('/order');
         $defaults['single_page'] = true;
         if ($model instanceof Invoice) {
-            $defaults['thankyou_url'] = $this->di['url']->link("/invoice/thank-you/{$model->getHash()}", ['restore_token' => Tools::createSessionRestoreToken($this->di['session']->getId())]);
-            $defaults['invoice_url'] = $this->di['tools']->url("/invoice/{$model->getHash()}");
+            $defaults['thankyou_url'] = $this->di['url']->link("/invoice/thank-you/{$model->getHash()}", ['restore_token' => \FOSSBilling\Security\Credential::createSessionRestoreToken($this->di['session']->getId())]);
+            $defaults['invoice_url'] = $this->di['url']->link("/invoice/{$model->getHash()}");
         }
 
         if (isset($optional['auto_redirect'])) {
@@ -526,19 +526,19 @@ class ServicePayGateway implements InjectionAwareInterface
     private function getReturnUrl(PayGateway $pg, ?Invoice $model = null): string
     {
         if ($model instanceof Invoice) {
-            return $this->di['url']->link("/invoice/{$model->getHash()}", ['status' => 'ok', 'restore_token' => Tools::createSessionRestoreToken($this->di['session']->getId())]);
+            return $this->di['url']->link("/invoice/{$model->getHash()}", ['status' => 'ok', 'restore_token' => \FOSSBilling\Security\Credential::createSessionRestoreToken($this->di['session']->getId())]);
         }
 
-        return $this->di['url']->link('/invoice', ['status' => 'ok', 'restore_token' => Tools::createSessionRestoreToken($this->di['session']->getId())]);
+        return $this->di['url']->link('/invoice', ['status' => 'ok', 'restore_token' => \FOSSBilling\Security\Credential::createSessionRestoreToken($this->di['session']->getId())]);
     }
 
     private function getCancelUrl(PayGateway $pg, ?Invoice $model = null): string
     {
         if ($model instanceof Invoice) {
-            return $this->di['url']->link("/invoice/{$model->getHash()}", ['status' => 'cancel', 'restore_token' => Tools::createSessionRestoreToken($this->di['session']->getId())]);
+            return $this->di['url']->link("/invoice/{$model->getHash()}", ['status' => 'cancel', 'restore_token' => \FOSSBilling\Security\Credential::createSessionRestoreToken($this->di['session']->getId())]);
         }
 
-        return $this->di['url']->link('/invoice', ['status' => 'cancel', 'restore_token' => Tools::createSessionRestoreToken($this->di['session']->getId())]);
+        return $this->di['url']->link('/invoice', ['status' => 'cancel', 'restore_token' => \FOSSBilling\Security\Credential::createSessionRestoreToken($this->di['session']->getId())]);
     }
 
     private function getCallbackRedirect(PayGateway $pg, ?Invoice $model = null): string

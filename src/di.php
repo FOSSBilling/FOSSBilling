@@ -76,10 +76,10 @@ $di['logger'] = function () use ($di) {
  *
  * @param void
  *
- * @return FOSSBilling\Security\Crypt
+ * @return \FOSSBilling\Security\Crypt
  */
 $di['crypt'] = function () use ($di) {
-    $crypt = new FOSSBilling\Security\Crypt();
+    $crypt = new \FOSSBilling\Security\Crypt();
     $crypt->setDi($di);
 
     return $crypt;
@@ -245,7 +245,7 @@ $di['session'] = function () use ($di) {
         'cookie_samesite' => $cookieParams['samesite'],
         'serialize_handler' => 'php',
     ], $handler);
-    $session = new FOSSBilling\Security\Session(new SymfonySession($storage), $cookieParams);
+    $session = new \FOSSBilling\Security\Session(new SymfonySession($storage), $cookieParams);
     $session->setDi($di);
     $session->setupSession();
 
@@ -287,7 +287,7 @@ $di['http_client'] = fn (): HttpClientInterface => HttpClient::create([
 $di['filesystem'] = fn (): Filesystem => new Filesystem();
 
 $di['rate_limiter'] = function () use ($di) {
-    $rateLimiter = new FOSSBilling\Security\RateLimiter();
+    $rateLimiter = new \FOSSBilling\Security\RateLimiter();
     $rateLimiter->setDi($di);
 
     return $rateLimiter;
@@ -366,7 +366,7 @@ $di['is_admin_logged'] = function () use ($di) {
  */
 $di['loggedin_client'] = function () use ($di) {
     $di['is_client_logged'];
-    /** @var FOSSBilling\Security\Session $session */
+    /** @var \FOSSBilling\Security\Session $session */
     $session = $di['session'];
     $client_id = $session->get('client_id');
 
@@ -407,7 +407,7 @@ $di['loggedin_admin'] = function () use ($di) {
     }
 
     $di['is_admin_logged'];
-    /** @var FOSSBilling\Security\Session $session */
+    /** @var \FOSSBilling\Security\Session $session */
     $session = $di['session'];
     $admin = $session->get('admin');
 
@@ -440,7 +440,7 @@ $di['set_return_uri'] = function () use ($di): void {
         $url .= '?' . http_build_query($query);
     }
 
-    /** @var FOSSBilling\Security\Session $session */
+    /** @var \FOSSBilling\Security\Session $session */
     $session = $di['session'];
     $session->set('redirect_uri', $url);
 };
@@ -532,8 +532,15 @@ $di['api_system'] = function () use ($di) {
     return $api;
 };
 
-$di['tools'] = function () use ($di) {
-    $service = new FOSSBilling\Tools();
+$di['arr'] = function () use ($di) {
+    $service = new \FOSSBilling\Utils\Arr();
+    $service->setDi($di);
+
+    return $service;
+};
+
+$di['network'] = function () use ($di) {
+    $service = new \FOSSBilling\Utils\Network();
     $service->setDi($di);
 
     return $service;
@@ -546,7 +553,7 @@ $di['tools'] = function () use ($di) {
  * @return \FOSSBilling\Validation\DomainValidator
  */
 $di['domainValidator'] = function () use ($di) {
-    $validator = new FOSSBilling\Validation\DomainValidator();
+    $validator = new \FOSSBilling\Validation\DomainValidator();
     $validator->setDi($di);
 
     return $validator;
@@ -559,7 +566,7 @@ $di['domainValidator'] = function () use ($di) {
  * @return \FOSSBilling\Validation\Validator
  */
 $di['validator'] = function () use ($di) {
-    $validator = new FOSSBilling\Validation\Validator();
+    $validator = new \FOSSBilling\Validation\Validator();
     $validator->setDi($di);
 
     return $validator;
@@ -706,7 +713,7 @@ $di['geoip'] = function () use ($di) {
  *
  * @return \FOSSBilling\Security\PasswordManager
  */
-$di['password'] = fn (): FOSSBilling\Security\PasswordManager => new FOSSBilling\Security\PasswordManager();
+$di['password'] = fn (): \FOSSBilling\Security\PasswordManager => new \FOSSBilling\Security\PasswordManager();
 
 /*
  * Creates a new FOSSBilling\I18n\Translator object and sets the specified text domain, locale, and other options.

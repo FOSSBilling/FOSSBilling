@@ -292,7 +292,7 @@ class TwigFactory
         }
 
         return [
-            'signature' => new Markup(Tools::sanitizeContent($signature), 'UTF-8'),
+            'signature' => new Markup(\FOSSBilling\Sanitizer\Sanitizer::sanitizeContent($signature), 'UTF-8'),
         ];
     }
 

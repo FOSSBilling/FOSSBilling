@@ -37,7 +37,7 @@ test('login without password', function (): void {
     $guestApi = apiEndpoint(new Box\Mod\Staff\Api\Guest());
 
     $di = container();
-    $di['validator'] = new FOSSBilling\Validation\Validator();
+    $di['validator'] = new \FOSSBilling\Validation\Validator();
 
     $guestApi->setDi($di);
     expect(fn () => $guestApi->login(['email' => 'email@domain.com']))->toThrow(FOSSBilling\Exception\BaseException::class);
@@ -65,7 +65,7 @@ test('successful login', function (): void {
     ->atLeast()->once()
     ->andReturn([]);
 
-    $sessionMock = Mockery::mock(FOSSBilling\Security\Session::class);
+    $sessionMock = Mockery::mock(\FOSSBilling\Security\Session::class);
     $sessionMock->shouldReceive('delete')->atLeast()->once();
 
     $di = container();
@@ -74,7 +74,7 @@ test('successful login', function (): void {
     $toolsMock->shouldReceive('validateAndSanitizeEmail')->atLeast()->once();
     $di['tools'] = $toolsMock;
     $di['session'] = $sessionMock;
-    $di['validator'] = new FOSSBilling\Validation\Validator();
+    $di['validator'] = new \FOSSBilling\Validation\Validator();
 
     $guestApi = apiEndpoint(new Box\Mod\Staff\Api\Guest());
     $guestApi->setMod($modMock);
@@ -101,7 +101,7 @@ test('login check ip exception', function (): void {
     $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
     $toolsMock->shouldReceive('validateAndSanitizeEmail')->atLeast()->once();
     $di['tools'] = $toolsMock;
-    $di['validator'] = new FOSSBilling\Validation\Validator();
+    $di['validator'] = new \FOSSBilling\Validation\Validator();
 
     $guestApi = apiEndpoint(new Box\Mod\Staff\Api\Guest());
     $guestApi->setMod($modMock);
@@ -133,7 +133,7 @@ test('updatePassword invalidates existing sessions', function (): void {
     $eventMock = Mockery::mock('\Box_EventManager');
     $eventMock->shouldReceive('fire')->times(2);
 
-    $passwordMock = Mockery::mock(FOSSBilling\Security\PasswordManager::class);
+    $passwordMock = Mockery::mock(\FOSSBilling\Security\PasswordManager::class);
     $passwordMock->shouldReceive('hashIt')->atLeast()->once();
 
     $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);

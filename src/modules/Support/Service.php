@@ -1020,7 +1020,7 @@ class Service implements \FOSSBilling\Interfaces\InjectionAwareInterface
             throw new InformationException("We currently aren't accepting support tickets from unregistered users. Please use another contact method.");
         }
 
-        $data['email'] = $this->di['tools']->validateAndSanitizeEmail($data['email']);
+        $data['email'] = \FOSSBilling\Validation\EmailValidator::validateAndSanitizeEmail($data['email']);
         $data['content'] ??= $data['message'] ?? null;
 
         SupportTicketValidator::validateTicketCreation($data);
@@ -1436,7 +1436,7 @@ class Service implements \FOSSBilling\Interfaces\InjectionAwareInterface
         $extensionService = $this->di['mod_service']('extension');
         $config = $extensionService->getConfig('mod_support');
 
-        return Tools::normalizeBoolean($config['kb_enable'] ?? true, true);
+        return \FOSSBilling\Utils\Normalizer::normalizeBoolean($config['kb_enable'] ?? true, true);
     }
 
     public function kbArticleViewsEnabled(): bool
@@ -1444,7 +1444,7 @@ class Service implements \FOSSBilling\Interfaces\InjectionAwareInterface
         $extensionService = $this->di['mod_service']('extension');
         $config = $extensionService->getConfig('mod_support');
 
-        return Tools::normalizeBoolean($config['kb_article_views_enable'] ?? true, true);
+        return \FOSSBilling\Utils\Normalizer::normalizeBoolean($config['kb_article_views_enable'] ?? true, true);
     }
 
     public function kbSuggestionsEnabled(string $area): bool
@@ -1466,7 +1466,7 @@ class Service implements \FOSSBilling\Interfaces\InjectionAwareInterface
         $extensionService = $this->di['mod_service']('extension');
         $config = $extensionService->getConfig('mod_support');
 
-        return Tools::normalizeBoolean($config[$key] ?? false);
+        return \FOSSBilling\Utils\Normalizer::normalizeBoolean($config[$key] ?? false);
     }
 
     public function kbRm(KbArticle $model): void
@@ -1488,7 +1488,7 @@ class Service implements \FOSSBilling\Interfaces\InjectionAwareInterface
         $model = (new KbArticle())
             ->setCategory($category)
             ->setTitle($title)
-            ->setSlug($this->di['tools']->slug($title))
+            ->setSlug(\FOSSBilling\Utils\Str::slug($title))
             ->setStatus($status)
             ->setContent($content);
 
@@ -1578,7 +1578,7 @@ class Service implements \FOSSBilling\Interfaces\InjectionAwareInterface
         $model = (new KbArticleCategory())
             ->setTitle($title)
             ->setDescription($description)
-            ->setSlug($this->di['tools']->slug($title));
+            ->setSlug(\FOSSBilling\Utils\Str::slug($title));
 
         $this->di['em']->persist($model);
         $this->di['em']->flush();

@@ -420,7 +420,7 @@ class Service implements InjectionAwareInterface
     {
         $cartProducts = $this->findCartProducts($cart);
 
-        return \FOSSBilling\Tools::safeCount($cartProducts) == 0;
+        return \FOSSBilling\Utils\Arr::safeCount($cartProducts) == 0;
     }
 
     public function rm(Cart $cart): bool
@@ -605,7 +605,7 @@ class Service implements InjectionAwareInterface
     {
         $cart = $this->getSessionCart();
         $ca = $this->toApiArray($cart);
-        if (\FOSSBilling\Tools::safeCount($ca['items']) == 0) {
+        if (\FOSSBilling\Utils\Arr::safeCount($ca['items']) == 0) {
             throw new \FOSSBilling\Exception\InformationException('Cannot checkout an empty cart');
         }
 

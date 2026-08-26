@@ -63,7 +63,7 @@ class Server_Manager_CWP extends Server_Manager
         }
         $this->_config['accesshash'] = trim((string) $this->_config['accesshash']);
 
-        $this->_config['port'] = FOSSBilling\Tools::normalizePort($this->_config['port'] ?? null, 2304);
+        $this->_config['port'] = \FOSSBilling\Utils\Normalizer::normalizePort($this->_config['port'] ?? null, 2304);
     }
 
     /**
@@ -141,7 +141,7 @@ class Server_Manager_CWP extends Server_Manager
         }
 
         $new->setPackage($acc['account_info']['package_name']);
-        $new->setReseller(FOSSBilling\Tools::normalizeBoolean($acc['account_info']['reseller'] ?? false));
+        $new->setReseller(\FOSSBilling\Utils\Normalizer::normalizeBoolean($acc['account_info']['reseller'] ?? false));
 
         return $new;
     }
@@ -379,7 +379,7 @@ class Server_Manager_CWP extends Server_Manager
      */
     private function request(string $func, array $data): mixed
     {
-        $verifyTls = FOSSBilling\Tools::normalizeBoolean($this->_config['config']['tls_verify'] ?? true, true);
+        $verifyTls = \FOSSBilling\Utils\Normalizer::normalizeBoolean($this->_config['config']['tls_verify'] ?? true, true);
 
         // Add the access hash to the data array
         $data['key'] = $this->_config['accesshash'];

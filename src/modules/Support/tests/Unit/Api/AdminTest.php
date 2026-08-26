@@ -1213,7 +1213,7 @@ test('kb category get', function (): void {
         ->andReturn(adminSupportKbCategoryFixture());
 
     $di = container();
-    $di['validator'] = new FOSSBilling\Validation\Validator();
+    $di['validator'] = new \FOSSBilling\Validation\Validator();
 
     $adminApi->setDi($di);
 
@@ -1252,7 +1252,7 @@ test('kb category get not found exception', function (): void {
 
     $di = container();
 
-    $di['validator'] = new FOSSBilling\Validation\Validator();
+    $di['validator'] = new \FOSSBilling\Validation\Validator();
     $adminApi->setDi($di);
 
     $kbService = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
@@ -1313,7 +1313,7 @@ test('kb category update', function (): void {
         ->andReturn($repo);
 
     $di = container();
-    $di['validator'] = new FOSSBilling\Validation\Validator();
+    $di['validator'] = new \FOSSBilling\Validation\Validator();
 
     $adminApi->setDi($di);
 
@@ -1357,7 +1357,7 @@ test('kb category update not found', function (): void {
         ->andReturn($repo);
 
     $di = container();
-    $di['validator'] = new FOSSBilling\Validation\Validator();
+    $di['validator'] = new \FOSSBilling\Validation\Validator();
 
     $adminApi->setDi($di);
 
@@ -1393,7 +1393,7 @@ test('kb category delete', function (): void {
         ->andReturn($repo);
 
     $di = container();
-    $di['validator'] = new FOSSBilling\Validation\Validator();
+    $di['validator'] = new \FOSSBilling\Validation\Validator();
 
     $adminApi->setDi($di);
 
@@ -1433,7 +1433,7 @@ test('kb category delete not found', function (): void {
         ->andReturn($repo);
 
     $di = container();
-    $di['validator'] = new FOSSBilling\Validation\Validator();
+    $di['validator'] = new \FOSSBilling\Validation\Validator();
 
     $adminApi->setDi($di);
 

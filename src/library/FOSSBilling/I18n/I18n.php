@@ -76,7 +76,7 @@ class I18n
 
     private static function isBrowserLocaleDetectionEnabled(): bool
     {
-        return Tools::normalizeBoolean(Config::getProperty('i18n.auto_detect_locale', true), true);
+        return \FOSSBilling\Utils\Normalizer::normalizeBoolean(Config::getProperty('i18n.auto_detect_locale', true), true);
     }
 
     /**

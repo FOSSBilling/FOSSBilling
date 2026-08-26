@@ -122,7 +122,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $session->set('client_id', $client->getId());
         $this->getDi()['logger']->info('Logged in as client #{client_id}', ['client_id' => $client->getId()]);
 
-        if (Tools::normalizeBoolean($data['strip_admin_identity'] ?? false)) {
+        if (\FOSSBilling\Utils\Normalizer::normalizeBoolean($data['strip_admin_identity'] ?? false)) {
             $session->destroy('admin');
             $this->getDi()['logger']->info('Stripped admin identity from session after logging in as client #{client_id}', ['client_id' => $client->getId()]);
         }
@@ -193,7 +193,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
                 ? null
                 : $this->getDi()['tools']->validateAndSanitizeEmail($data['billing_email']);
         }
-        $data['send_welcome_email'] = Tools::normalizeBoolean($data['send_welcome_email'] ?? true, true);
+        $data['send_welcome_email'] = \FOSSBilling\Utils\Normalizer::normalizeBoolean($data['send_welcome_email'] ?? true, true);
 
         $service = $this->getService();
         if ($service->emailAlreadyRegistered($data['email'])) {
@@ -331,13 +331,13 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         // Special handling for the phone country codes
         $phoneCountryCode = $data['phone_cc'] ?? $client->getPhoneCc();
         if (!empty($phoneCountryCode)) {
-            $client->setPhoneCc((string) Tools::validatePhoneCC($phoneCountryCode));
+            $client->setPhoneCc((string) \FOSSBilling\Validation\PhoneValidator::validatePhoneCC($phoneCountryCode));
         }
 
         // Special handling for the phone number itself
         $phone = $data['phone'] ?? $client->getPhone();
         if (!empty($phone) && is_string($phone)) {
-            $client->setPhone(Tools::validatePhoneNumber($phone));
+            $client->setPhone(\FOSSBilling\Validation\PhoneValidator::validatePhoneNumber($phone));
         }
 
         $previousStatus = $client->getStatus();
@@ -685,7 +685,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $clients = $this->getDi()['em']->getRepository(Client::class)->findBy(['clientGroup' => $model]);
 
-        if (Tools::safeCount($clients) > 0) {
+        if (\FOSSBilling\Utils\Arr::safeCount($clients) > 0) {
             throw new InformationException('Group has clients assigned. Please reassign them first.');
         }
 

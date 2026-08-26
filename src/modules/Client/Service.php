@@ -168,7 +168,7 @@ class Service implements InjectionAwareInterface
 
     public function generateEmailConfirmationLink($client_id)
     {
-        $hash = strtolower((string) $this->di['tools']->generatePassword(50));
+        $hash = strtolower((string) \FOSSBilling\Security\Credential::generatePassword(50));
 
         $this->di['dbal']->insert('extension_meta', [
             'extension' => 'mod_client',
@@ -179,7 +179,7 @@ class Service implements InjectionAwareInterface
             'updated_at' => date('Y-m-d H:i:s'),
         ]);
 
-        return $this->di['tools']->url('/client/confirm-email/' . $hash);
+        return $this->di['url']->link('/client/confirm-email/' . $hash);
     }
 
     public static function onAfterClientSignUp(\Box_Event $event): bool
@@ -597,7 +597,7 @@ class Service implements InjectionAwareInterface
 
     private function createClient(array $data): Client
     {
-        $password = $data['password'] ?? $this->di['tools']->generatePassword(32, true);
+        $password = $data['password'] ?? \FOSSBilling\Security\Credential::generatePassword(32, true);
 
         $client = new Client();
         $client->setAuthType($data['auth_type'] ?? null);
@@ -612,12 +612,12 @@ class Service implements InjectionAwareInterface
 
         $phoneCC = $data['phone_cc'] ?? null;
         if (!empty($phoneCC)) {
-            $client->setPhoneCc((string) Tools::validatePhoneCC($phoneCC));
+            $client->setPhoneCc((string) \FOSSBilling\Validation\PhoneValidator::validatePhoneCC($phoneCC));
         }
 
         $phone = $data['phone'] ?? null;
         if (!empty($phone) && is_string($phone)) {
-            $client->setPhone(Tools::validatePhoneNumber($phone));
+            $client->setPhone(\FOSSBilling\Validation\PhoneValidator::validatePhoneNumber($phone));
         }
 
         $client->setAid($data['aid'] ?? null);
@@ -699,7 +699,7 @@ class Service implements InjectionAwareInterface
         unset($eventParams['password'], $eventParams['password_confirm']);
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminCreateClient', 'params' => $eventParams]);
         $client = $this->createClient($data);
-        if (Tools::normalizeBoolean($data['send_welcome_email'] ?? true, true)) {
+        if (\FOSSBilling\Utils\Normalizer::normalizeBoolean($data['send_welcome_email'] ?? true, true)) {
             $this->sendAdminCreatedWelcomeEmailForClient($client);
         }
         $this->di['events_manager']->fire(['event' => 'onAfterAdminCreateClient', 'params' => ['id' => $client->getId()]]);

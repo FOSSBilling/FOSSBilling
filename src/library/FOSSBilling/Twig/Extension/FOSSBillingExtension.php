@@ -212,7 +212,7 @@ class FOSSBillingExtension
             return '';
         }
 
-        return \FOSSBilling\Tools::humanReadableBytes($size);
+        return \FOSSBilling\Utils\Format::humanReadableBytes($size);
     }
 
     /**

@@ -117,7 +117,7 @@ class Helpdesk implements ApiArrayInterface, TimestampInterface
 
     public function setCanReopen(mixed $canReopen): self
     {
-        $this->canReopen = $canReopen === null ? null : Tools::normalizeBoolean($canReopen);
+        $this->canReopen = $canReopen === null ? null : \FOSSBilling\Utils\Normalizer::normalizeBoolean($canReopen);
 
         return $this;
     }

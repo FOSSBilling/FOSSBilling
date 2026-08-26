@@ -89,7 +89,7 @@ test('getSessionCart returns existing cart', function (): void {
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')->with(Cart::class)->andReturn($cartRepo);
 
-    $sessionMock = Mockery::mock(FOSSBilling\Security\Session::class)->shouldIgnoreMissing();
+    $sessionMock = Mockery::mock(\FOSSBilling\Security\Session::class)->shouldIgnoreMissing();
     $sessionMock->shouldReceive('getId')->atLeast()->once()->andReturn($session_id);
 
     $di = container();
@@ -120,7 +120,7 @@ test('getSessionCart creates a new cart when one does not exist', function (?int
     $emMock->shouldReceive('persist')->atLeast()->once();
     $emMock->shouldReceive('flush')->atLeast()->once();
 
-    $sessionMock = Mockery::mock(FOSSBilling\Security\Session::class)->shouldIgnoreMissing();
+    $sessionMock = Mockery::mock(\FOSSBilling\Security\Session::class)->shouldIgnoreMissing();
     $sessionMock->shouldReceive('getId')->atLeast()->once()->andReturn($session_id);
     $sessionMock->shouldReceive('get')->atLeast()->once()->andReturn($sessionGetWillReturn);
 
@@ -190,7 +190,7 @@ test('getSessionCart reloads the existing cart after a concurrent insert wins', 
     $currencyService = Mockery::mock(CurrencyService::class);
     $currencyService->shouldReceive('getCurrencyRepository')->once()->andReturn($currencyRepository);
 
-    $session = Mockery::mock(FOSSBilling\Security\Session::class);
+    $session = Mockery::mock(\FOSSBilling\Security\Session::class);
     $session->shouldReceive('getId')->once()->andReturn($sessionId);
     $session->shouldReceive('get')->once()->with('client_id')->andReturn(null);
 
@@ -1245,7 +1245,7 @@ test('addItem throws exception when recurring payment period param missing', fun
 
         return $serviceHostingServiceMock;
     });
-    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class)->shouldIgnoreMissing();
+    $validatorMock = Mockery::mock(\FOSSBilling\Validation\Validator::class)->shouldIgnoreMissing();
     $validatorMock->shouldReceive('checkRequiredParamsForArray')->andThrow(new FOSSBilling\Exception\BaseException('Period parameter not passed'));
     $di['validator'] = $validatorMock;
     $productService->setDi($di);
@@ -1281,7 +1281,7 @@ test('addItem throws exception when recurring payment period is not enabled', fu
 
         return $serviceHostingServiceMock;
     });
-    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class)->shouldIgnoreMissing();
+    $validatorMock = Mockery::mock(\FOSSBilling\Validation\Validator::class)->shouldIgnoreMissing();
     $di['validator'] = $validatorMock;
     $productService->setDi($di);
     $serviceMock->setDi($di);

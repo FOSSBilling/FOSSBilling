@@ -43,7 +43,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         return [
             'locale' => (string) Config::getProperty('i18n.locale', 'en_US'),
-            'auto_detect_locale' => Tools::normalizeBoolean(Config::getProperty('i18n.auto_detect_locale', true), true),
+            'auto_detect_locale' => \FOSSBilling\Utils\Normalizer::normalizeBoolean(Config::getProperty('i18n.auto_detect_locale', true), true),
         ];
     }
 
@@ -74,7 +74,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             Config::setProperty('i18n.locale', $data['locale']);
         }
 
-        Config::setProperty('i18n.auto_detect_locale', Tools::normalizeBoolean($data['auto_detect_locale'] ?? true, true));
+        Config::setProperty('i18n.auto_detect_locale', \FOSSBilling\Utils\Normalizer::normalizeBoolean($data['auto_detect_locale'] ?? true, true));
 
         return true;
     }
@@ -120,7 +120,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         // other Redis fields doesn't require re-entering it. The explicit "clear" checkbox is
         // what lets an admin actually remove a previously-set password.
         $redisPassword = $data['redis_password'] ?? '';
-        if ($redisPassword === '' && !Tools::normalizeBoolean($data['redis_password_clear'] ?? false, false)) {
+        if ($redisPassword === '' && !\FOSSBilling\Utils\Normalizer::normalizeBoolean($data['redis_password_clear'] ?? false, false)) {
             $redisPassword = Config::getProperty('cache.redis.password');
         }
 
@@ -128,13 +128,13 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             'driver' => $driver,
             'redis' => [
                 'host' => $data['redis_host'] ?? '127.0.0.1',
-                'port' => Tools::normalizePort($data['redis_port'] ?? null, 6379),
+                'port' => \FOSSBilling\Utils\Normalizer::normalizePort($data['redis_port'] ?? null, 6379),
                 'password' => $redisPassword ?: null,
                 'database' => (int) ($data['redis_database'] ?? 0),
             ],
             'memcached' => [
                 'host' => $data['memcached_host'] ?? '127.0.0.1',
-                'port' => Tools::normalizePort($data['memcached_port'] ?? null, 11211),
+                'port' => \FOSSBilling\Utils\Normalizer::normalizePort($data['memcached_port'] ?? null, 11211),
             ],
         ];
 
@@ -209,7 +209,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('system', 'manage_settings');
 
-        $fetchExternalIp = Tools::normalizeBoolean($data['ip'] ?? false);
+        $fetchExternalIp = \FOSSBilling\Utils\Normalizer::normalizeBoolean($data['ip'] ?? false);
 
         return $this->getService()->getEnv($fetchExternalIp);
     }
@@ -460,7 +460,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('system', 'manage_network_interface');
 
-        return $this->di['tools']->listHttpInterfaces();
+        return $this->di['network']->listHttpInterfaces();
     }
 
     public function set_interface_ip($data): bool
@@ -478,7 +478,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         if (isset($data['custom_interface'])) {
             $custom = $data['custom_interface'];
-            if ($custom !== '' && !Tools::isValidHttpInterface($custom)) {
+            if ($custom !== '' && !\FOSSBilling\Utils\Network::isValidHttpInterface($custom)) {
                 throw new \FOSSBilling\Exception\BaseException('Invalid custom interface. Must be a valid IP address or hostname.');
             }
             $config['custom_interface_ip'] = $custom;

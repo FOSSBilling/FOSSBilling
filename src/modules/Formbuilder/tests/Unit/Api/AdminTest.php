@@ -143,7 +143,7 @@ test('gets a form', function (): void {
     $expectation->atLeast()->once();
     $expectation->andReturn([]);
 
-    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class);
+    $validatorMock = Mockery::mock(\FOSSBilling\Validation\Validator::class);
     /** @var Mockery\Expectation $validatorExpectation */
     $validatorExpectation = $validatorMock->shouldReceive('checkRequiredParamsForArray');
     $validatorExpectation->atLeast()->once();
@@ -167,7 +167,7 @@ test('gets form fields', function (): void {
     $expectation->atLeast()->once();
     $expectation->andReturn([]);
 
-    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class);
+    $validatorMock = Mockery::mock(\FOSSBilling\Validation\Validator::class);
     /** @var Mockery\Expectation $validatorExpectation */
     $validatorExpectation = $validatorMock->shouldReceive('checkRequiredParamsForArray');
     $validatorExpectation->atLeast()->once();
@@ -191,7 +191,7 @@ test('gets a field', function (): void {
     $expectation->atLeast()->once();
     $expectation->andReturn([]);
 
-    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class);
+    $validatorMock = Mockery::mock(\FOSSBilling\Validation\Validator::class);
     /** @var Mockery\Expectation $validatorExpectation */
     $validatorExpectation = $validatorMock->shouldReceive('checkRequiredParamsForArray');
     $validatorExpectation->atLeast()->once();
@@ -231,7 +231,7 @@ test('deletes a form', function (): void {
     $expectation->atLeast()->once();
     $expectation->andReturn(true);
 
-    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class);
+    $validatorMock = Mockery::mock(\FOSSBilling\Validation\Validator::class);
     /** @var Mockery\Expectation $validatorExpectation */
     $validatorExpectation = $validatorMock->shouldReceive('checkRequiredParamsForArray');
     $validatorExpectation->atLeast()->once();
@@ -256,7 +256,7 @@ test('deletes a field', function (): void {
     $expectation->atLeast()->once();
     $expectation->andReturn(true);
 
-    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class);
+    $validatorMock = Mockery::mock(\FOSSBilling\Validation\Validator::class);
     /** @var Mockery\Expectation $validatorExpectation */
     $validatorExpectation = $validatorMock->shouldReceive('checkRequiredParamsForArray');
     $validatorExpectation->atLeast()->once();
@@ -289,7 +289,7 @@ test('updates a field', function (): void {
     $expectation2->atLeast()->once();
     $expectation2->andReturn(true);
 
-    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class);
+    $validatorMock = Mockery::mock(\FOSSBilling\Validation\Validator::class);
     /** @var Mockery\Expectation $validatorExpectation */
     $validatorExpectation = $validatorMock->shouldReceive('checkRequiredParamsForArray');
     $validatorExpectation->atLeast()->once();

@@ -68,7 +68,7 @@ class DriverManagerFactory
         }
 
         $dbConfig['driver'] ??= self::normalizeDriver($dbConfig['type'] ?? 'pdo_mysql');
-        $dbConfig['port'] = Tools::normalizePort($dbConfig['port'] ?? null, 3306);
+        $dbConfig['port'] = \FOSSBilling\Utils\Normalizer::normalizePort($dbConfig['port'] ?? null, 3306);
 
         return $dbConfig;
     }

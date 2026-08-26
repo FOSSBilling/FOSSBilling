@@ -107,7 +107,7 @@ function hasDatabaseTables(): bool
 
     $host = $dbConfig['host'] ?? '';
     $database = $dbConfig['name'] ?? '';
-    $port = Tools::normalizePort($dbConfig['port'] ?? null, 3306);
+    $port = \FOSSBilling\Utils\Normalizer::normalizePort($dbConfig['port'] ?? null, 3306);
     if ($host === '' || $database === '') {
         return true;
     }
@@ -327,7 +327,7 @@ function init(): void
     define('SYSTEM_URL', $scheme . $url);
 
     // Set the default interface.
-    define('BIND_TO', Tools::getDefaultInterface());
+    define('BIND_TO', \FOSSBilling\Utils\Network::getDefaultInterface());
 
     // Load the DI container.
     global $di;

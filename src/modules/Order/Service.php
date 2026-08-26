@@ -301,7 +301,7 @@ class Service implements InjectionAwareInterface
     protected function _getServiceClassName(Order $order): string
     {
         $serviceType = $order->getServiceType();
-        $s = $this->di['tools']->to_camel_case($serviceType, true);
+        $s = \FOSSBilling\Utils\Str::toCamelCase($serviceType, true);
 
         return 'Service' . ucfirst((string) $s);
     }
@@ -345,7 +345,7 @@ class Service implements InjectionAwareInterface
         $serviceTypeName = str_starts_with($className, 'Model_Service')
             ? substr($className, strlen('Model_Service'))
             : (new \ReflectionClass($service))->getShortName();
-        $type = $this->di['tools']->from_camel_case($serviceTypeName);
+        $type = \FOSSBilling\Utils\Str::fromCamelCase($serviceTypeName);
         $serviceId = method_exists($service, 'getId') ? $service->getId() : $service->id;
 
         return $this->getOrderRepository()->findOneByServiceTypeAndServiceId($type, (int) $serviceId);
@@ -829,7 +829,7 @@ class Service implements InjectionAwareInterface
         }
 
         $invoice = null;
-        $markInvoicePaid = \FOSSBilling\Tools::normalizeBoolean($data['mark_invoice_paid'] ?? false);
+        $markInvoicePaid = \FOSSBilling\Utils\Normalizer::normalizeBoolean($data['mark_invoice_paid'] ?? false);
 
         $id = $this->di['em']->wrapInTransaction(function () use (
             $client,

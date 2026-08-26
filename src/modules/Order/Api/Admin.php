@@ -105,7 +105,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('order', 'manage');
 
-        $markInvoicePaid = Tools::normalizeBoolean($data['mark_invoice_paid'] ?? false);
+        $markInvoicePaid = \FOSSBilling\Utils\Normalizer::normalizeBoolean($data['mark_invoice_paid'] ?? false);
         $data['mark_invoice_paid'] = $markInvoicePaid;
 
         if ($markInvoicePaid) {
@@ -197,7 +197,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('order', 'manage');
 
         $order = $this->_getOrder($data);
-        $skip_event = Tools::normalizeBoolean($data['skip_event'] ?? false);
+        $skip_event = \FOSSBilling\Utils\Normalizer::normalizeBoolean($data['skip_event'] ?? false);
 
         $reason = $data['reason'] ?? null;
 
@@ -234,8 +234,8 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('order', 'manage');
 
         $order = $this->_getOrder($data);
-        $skip_event = Tools::normalizeBoolean($data['skip_event'] ?? false);
-        $cancelAtPeriodEnd = Tools::normalizeBoolean($data['cancel_at_period_end'] ?? false);
+        $skip_event = \FOSSBilling\Utils\Normalizer::normalizeBoolean($data['skip_event'] ?? false);
+        $cancelAtPeriodEnd = \FOSSBilling\Utils\Normalizer::normalizeBoolean($data['cancel_at_period_end'] ?? false);
 
         $reason = $data['reason'] ?? null;
 
@@ -288,8 +288,8 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('order', 'manage');
 
         $order = $this->_getOrder($data);
-        $delete_addons = Tools::normalizeBoolean($data['delete_addons'] ?? false);
-        $forceDelete = Tools::normalizeBoolean($data['force_delete'] ?? false);
+        $delete_addons = \FOSSBilling\Utils\Normalizer::normalizeBoolean($data['delete_addons'] ?? false);
+        $forceDelete = \FOSSBilling\Utils\Normalizer::normalizeBoolean($data['force_delete'] ?? false);
 
         if ($delete_addons) {
             $list = $this->getService()->getOrderAddonsList($order);
@@ -516,7 +516,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('order', 'manage');
 
-        $delete_addons = Tools::normalizeBoolean($data['delete_addons'] ?? false);
+        $delete_addons = \FOSSBilling\Utils\Normalizer::normalizeBoolean($data['delete_addons'] ?? false);
 
         foreach ($data['ids'] as $id) {
             $this->delete(['id' => $id, 'delete_addons' => $delete_addons]);

@@ -111,6 +111,6 @@ class Admin implements \FOSSBilling\Interfaces\InjectionAwareInterface
             $redirect_to = '/' . trim((string) $r, '/');
         }
 
-        return $app->redirectUrl($this->di['tools']->url($redirect_to), 301);
+        return $app->redirectUrl($this->di['url']->link($redirect_to), 301);
     }
 }

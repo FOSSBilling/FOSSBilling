@@ -228,7 +228,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $data['config'] = [
             'userprefix' => $data['userprefix'] ?? null,
-            'tls_verify' => Tools::normalizeBoolean($data['tls_verify'] ?? true, true),
+            'tls_verify' => \FOSSBilling\Utils\Normalizer::normalizeBoolean($data['tls_verify'] ?? true, true),
         ];
 
         return (int) $service->createServer($data['name'], $data['ip'], $data['manager'], $data);
@@ -306,7 +306,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $data['config'] = $existingConfig;
         $data['config']['userprefix'] = $data['userprefix'] ?? ($existingConfig['userprefix'] ?? null);
-        $data['config']['tls_verify'] = Tools::normalizeBoolean($data['tls_verify'] ?? ($existingConfig['tls_verify'] ?? true), true);
+        $data['config']['tls_verify'] = \FOSSBilling\Utils\Normalizer::normalizeBoolean($data['tls_verify'] ?? ($existingConfig['tls_verify'] ?? true), true);
 
         $updated = (bool) $service->updateServer($model, $data);
 

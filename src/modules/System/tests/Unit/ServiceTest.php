@@ -393,7 +393,7 @@ test('getPendingMessages returns pending messages from session', function (): vo
     $service = new Service();
     $di = container();
 
-    $sessionMock = Mockery::mock(FOSSBilling\Security\Session::class);
+    $sessionMock = Mockery::mock(\FOSSBilling\Security\Session::class);
     $sessionMock->shouldReceive('get')->atLeast()->once()
         ->with('pending_messages')
         ->andReturn([]);
@@ -409,7 +409,7 @@ test('getPendingMessages returns empty array when session returns non-array', fu
     $service = new Service();
     $di = container();
 
-    $sessionMock = Mockery::mock(FOSSBilling\Security\Session::class);
+    $sessionMock = Mockery::mock(\FOSSBilling\Security\Session::class);
     $sessionMock->shouldReceive('get')->atLeast()->once()
         ->with('pending_messages')
         ->andReturn(null);
@@ -429,7 +429,7 @@ test('setPendingMessage adds message to pending messages', function (): void {
 
     $di = container();
 
-    $sessionMock = Mockery::mock(FOSSBilling\Security\Session::class);
+    $sessionMock = Mockery::mock(\FOSSBilling\Security\Session::class);
     $sessionMock->shouldReceive('set')->atLeast()->once()
         ->with('pending_messages', Mockery::any());
 
@@ -446,7 +446,7 @@ test('clearPendingMessages clears pending messages', function (): void {
     $service = new Service();
     $di = container();
 
-    $sessionMock = Mockery::mock(FOSSBilling\Security\Session::class);
+    $sessionMock = Mockery::mock(\FOSSBilling\Security\Session::class);
     $sessionMock->shouldReceive('delete')->atLeast()->once()
         ->with('pending_messages');
     $di['session'] = $sessionMock;

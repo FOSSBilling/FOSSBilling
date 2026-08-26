@@ -81,7 +81,7 @@ test('changes admin password', function (): void {
         ->atLeast()->once()
         ->andReturn(true);
 
-    $passwordMock = Mockery::mock(FOSSBilling\Security\PasswordManager::class);
+    $passwordMock = Mockery::mock(\FOSSBilling\Security\PasswordManager::class);
     $passwordMock->shouldReceive('hashIt')
         ->with($password);
 
@@ -274,7 +274,7 @@ test('changes client password', function (): void {
 
     $password = 'new password';
 
-    $passwordMock = Mockery::mock(FOSSBilling\Security\PasswordManager::class);
+    $passwordMock = Mockery::mock(\FOSSBilling\Security\PasswordManager::class);
     $passwordMock->shouldReceive('hashIt')
         ->with($password);
 
@@ -292,7 +292,7 @@ test('changes client password', function (): void {
 });
 
 test('logs out client', function (): void {
-    $sessionMock = Mockery::mock(FOSSBilling\Security\Session::class);
+    $sessionMock = Mockery::mock(\FOSSBilling\Security\Session::class);
     $sessionMock->shouldReceive('destroy')
         ->atLeast()->once();
 

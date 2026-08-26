@@ -792,7 +792,7 @@ test('adminCreateClient returns int', function (): void {
     $eventManagerMock->shouldReceive('fire')
         ->twice();
 
-    $passwordMock = Mockery::mock(FOSSBilling\Security\PasswordManager::class);
+    $passwordMock = Mockery::mock(\FOSSBilling\Security\PasswordManager::class);
     $passwordMock->shouldReceive('hashIt')
         ->atLeast()->once()
         ->with($data['password']);

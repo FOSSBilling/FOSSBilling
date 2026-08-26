@@ -367,7 +367,7 @@ class Service implements InjectionAwareInterface
             $productModel->setConfig(json_encode($config, JSON_THROW_ON_ERROR));
             $productModel->setUpdatedAt(new \DateTime());
 
-            if (Tools::normalizeBoolean($config['update_orders'] ?? false)) {
+            if (\FOSSBilling\Utils\Normalizer::normalizeBoolean($config['update_orders'] ?? false)) {
                 $this->addFileToExistingOrders($productModel, $fileDefinition);
             }
         });
@@ -387,7 +387,7 @@ class Service implements InjectionAwareInterface
         $this->di['em']->wrapInTransaction(function () use ($product, $config, $index): void {
             $product->setConfig(json_encode($config, JSON_THROW_ON_ERROR));
 
-            if (Tools::normalizeBoolean($config['update_orders'] ?? false)) {
+            if (\FOSSBilling\Utils\Normalizer::normalizeBoolean($config['update_orders'] ?? false)) {
                 $this->updateFileInExistingOrders($product, $config[self::FILES_CONFIG_KEY][$index]);
             }
         });
@@ -406,7 +406,7 @@ class Service implements InjectionAwareInterface
         $this->di['em']->wrapInTransaction(function () use ($product, $config, $fileKey): void {
             $product->setConfig(json_encode($config, JSON_THROW_ON_ERROR));
 
-            if (Tools::normalizeBoolean($config['update_orders'] ?? false)) {
+            if (\FOSSBilling\Utils\Normalizer::normalizeBoolean($config['update_orders'] ?? false)) {
                 $this->removeFileFromExistingOrders($product, $fileKey);
             }
         });
@@ -498,7 +498,7 @@ class Service implements InjectionAwareInterface
     public function saveProductConfig(Product $productModel, $data): bool
     {
         $config = json_decode($productModel->getConfig() ?? '', true) ?: [];
-        $config['update_orders'] = Tools::normalizeBoolean($data['update_orders'] ?? false);
+        $config['update_orders'] = \FOSSBilling\Utils\Normalizer::normalizeBoolean($data['update_orders'] ?? false);
         $updatedAt = new \DateTime();
         $productModel->setConfig(json_encode($config, JSON_THROW_ON_ERROR));
         $productModel->setUpdatedAt($updatedAt);

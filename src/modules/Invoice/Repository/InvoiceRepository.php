@@ -66,7 +66,7 @@ class InvoiceRepository extends EntityRepository
 
         $approved = $data['approved'] ?? null;
         if ($approved !== null && $approved !== '') {
-            $qb->andWhere('i.approved = :approved')->setParameter('approved', Tools::normalizeBoolean($approved));
+            $qb->andWhere('i.approved = :approved')->setParameter('approved', \FOSSBilling\Utils\Normalizer::normalizeBoolean($approved));
         }
 
         $status = $data['status'] ?? null;

@@ -201,7 +201,7 @@ class CacheFactory
     private static function buildRedisDsn(array $redisConfig): string
     {
         $host = $redisConfig['host'] ?? '127.0.0.1';
-        $port = Tools::normalizePort($redisConfig['port'] ?? null, 6379);
+        $port = \FOSSBilling\Utils\Normalizer::normalizePort($redisConfig['port'] ?? null, 6379);
         $database = (int) ($redisConfig['database'] ?? 0);
 
         $auth = '';
@@ -215,7 +215,7 @@ class CacheFactory
     private static function buildMemcachedDsn(array $memcachedConfig): string
     {
         $host = $memcachedConfig['host'] ?? '127.0.0.1';
-        $port = Tools::normalizePort($memcachedConfig['port'] ?? null, 11211);
+        $port = \FOSSBilling\Utils\Normalizer::normalizePort($memcachedConfig['port'] ?? null, 11211);
 
         return sprintf('memcached://%s:%d', $host, $port);
     }

@@ -140,7 +140,7 @@ test('updates a field', function (string $fieldType, int|string $fieldId): void 
     $di['dbal'] = $dbal;
     $di['logger'] = new Tests\Helpers\TestLogger();
 
-    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class);
+    $validatorMock = Mockery::mock(\FOSSBilling\Validation\Validator::class);
     $validatorMock->shouldReceive('checkRequiredParamsForArray');
     $di['validator'] = $validatorMock;
 
@@ -342,7 +342,7 @@ test('gets a field', function (): void {
     $dbal->shouldReceive('executeQuery')->once()->andReturn($dbalResult);
 
     $di = container();
-    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class);
+    $validatorMock = Mockery::mock(\FOSSBilling\Validation\Validator::class);
     $validatorMock->shouldReceive('checkRequiredParamsForArray');
     $di['validator'] = $validatorMock;
     $di['dbal'] = $dbal;

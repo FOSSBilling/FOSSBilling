@@ -445,7 +445,7 @@ class Service implements InjectionAwareInterface
         $id = $data['id'] ?? null;
         $search = $data['search'] ?? null;
         $status = $data['status'] ?? null;
-        $no_cron = Tools::normalizeBoolean($data['no_cron'] ?? null, true);
+        $no_cron = \FOSSBilling\Utils\Normalizer::normalizeBoolean($data['no_cron'] ?? null, true);
 
         $where = [];
         $bindings = [];
@@ -487,10 +487,10 @@ class Service implements InjectionAwareInterface
             return $cron;
         }
 
-        $cronEmail = $this->di['tools']->generatePassword() . '@' . $this->di['tools']->generatePassword() . '.com';
+        $cronEmail = \FOSSBilling\Security\Credential::generatePassword() . '@' . \FOSSBilling\Security\Credential::generatePassword() . '.com';
         $cronEmail = filter_var($cronEmail, FILTER_SANITIZE_EMAIL);
 
-        $cronPass = $this->di['password']->hashIt($this->di['tools']->generatePassword(256, 4));
+        $cronPass = $this->di['password']->hashIt(\FOSSBilling\Security\Credential::generatePassword(256, 4));
 
         // Two cron runs can race to create the cron admin. Insert via the DBAL
         // connection (not an ORM flush) so a constraint violation doesn't close the

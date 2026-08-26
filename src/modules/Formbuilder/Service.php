@@ -89,7 +89,7 @@ class Service implements InjectionAwareInterface
     {
         $unique = array_unique($array);
 
-        return \FOSSBilling\Tools::safeCount($array) === count($unique);
+        return \FOSSBilling\Utils\Arr::safeCount($array) === count($unique);
     }
 
     public function addNewForm($data): int
@@ -223,7 +223,7 @@ class Service implements InjectionAwareInterface
             }
 
             if ($field['type'] == 'textarea') {
-                if (\FOSSBilling\Tools::safeCount($field['textarea_size']) != count(array_filter($field['textarea_size'], is_numeric(...)))) {
+                if (\FOSSBilling\Utils\Arr::safeCount($field['textarea_size']) != count(array_filter($field['textarea_size'], is_numeric(...)))) {
                     throw new \FOSSBilling\Exception\InformationException('Textarea size options must be integer values', null, 3510);
                 }
 

@@ -72,7 +72,7 @@ class ActivityClientEmail implements ApiArrayInterface, TimestampInterface
             'sender' => $this->sender,
             'recipients' => $this->recipients,
             'subject' => $this->subject,
-            'content_html' => Tools::sanitizeContent($this->contentHtml ?? ''),
+            'content_html' => \FOSSBilling\Sanitizer\Sanitizer::sanitizeContent($this->contentHtml ?? ''),
             'content_text' => $this->contentText,
             'has_attachment' => $this->attachmentName !== null,
             'created_at' => $this->getCreatedAt()?->format('Y-m-d H:i:s'),

@@ -68,7 +68,7 @@ class Service implements InjectionAwareInterface
         $event_params['id'] = $admin->getId();
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffApiKeyChange', 'params' => $event_params]);
 
-        $admin->setApiToken($this->di['tools']->generatePassword(32));
+        $admin->setApiToken(\FOSSBilling\Security\Credential::generatePassword(32));
         $this->di['em']->persist($admin);
         $this->di['em']->flush();
 
@@ -136,7 +136,7 @@ class Service implements InjectionAwareInterface
         }
 
         if (!empty($email)) {
-            $this->di['tools']->validateAndSanitizeEmail($data['email']);
+            \FOSSBilling\Validation\EmailValidator::validateAndSanitizeEmail($data['email']);
 
             $clientService = $this->di['mod_service']('client');
             if ($clientService->emailAlreadyRegistered($email, $client)) {
@@ -156,11 +156,11 @@ class Service implements InjectionAwareInterface
         }
 
         if (isset($data['phone_cc']) && $data['phone_cc'] !== '') {
-            $client->setPhoneCc((string) Tools::validatePhoneCC($data['phone_cc']));
+            $client->setPhoneCc((string) \FOSSBilling\Validation\PhoneValidator::validatePhoneCC($data['phone_cc']));
         }
 
         if (isset($data['phone']) && is_string($data['phone']) && $data['phone'] !== '') {
-            $client->setPhone(Tools::validatePhoneNumber($data['phone']));
+            $client->setPhone(\FOSSBilling\Validation\PhoneValidator::validatePhoneNumber($data['phone']));
         }
 
         $client->setFirstName($data['first_name'] ?? $client->getFirstName());
@@ -227,7 +227,7 @@ class Service implements InjectionAwareInterface
 
     public function resetApiKey(Client $client): ?string
     {
-        $client->setApiToken($this->di['tools']->generatePassword(32));
+        $client->setApiToken(\FOSSBilling\Security\Credential::generatePassword(32));
 
         $this->di['em']->persist($client);
         $this->di['em']->flush();

@@ -403,7 +403,7 @@ document.addEventListener('DOMContentLoaded', function() {
         ];
 
         $rows = $this->di['em']->getConnection()->fetchAllAssociative($sql, $bindings);
-        if (FOSSBilling\Tools::safeCount($rows) > 1) {
+        if (\FOSSBilling\Utils\Arr::safeCount($rows) > 1) {
             return true;
         }
 

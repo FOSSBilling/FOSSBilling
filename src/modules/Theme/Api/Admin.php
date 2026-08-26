@@ -51,7 +51,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             throw new \FOSSBilling\Exception\InformationException('Invalid "client" parameter.');
         }
 
-        $client = Tools::normalizeBoolean($data['client'] ?? true, true);
+        $client = \FOSSBilling\Utils\Normalizer::normalizeBoolean($data['client'] ?? true, true);
 
         return $this->getService()->getThemeConfig($client, null);
     }

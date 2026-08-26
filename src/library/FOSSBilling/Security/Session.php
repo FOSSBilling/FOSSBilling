@@ -274,7 +274,7 @@ class Session implements InjectionAwareInterface
             return;
         }
 
-        $sessionId = Tools::validateSessionRestoreToken($restoreToken);
+        $sessionId = \FOSSBilling\Security\Credential::validateSessionRestoreToken($restoreToken);
         if ($sessionId !== null) {
             $this->session->setId($sessionId);
         }

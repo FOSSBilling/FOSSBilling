@@ -100,8 +100,8 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('extension', 'view');
 
-        $data['disabled'] = Tools::normalizeBoolean($data['disabled'] ?? false);
-        $data['details'] = Tools::normalizeBoolean($data['details'] ?? true, true);
+        $data['disabled'] = \FOSSBilling\Utils\Normalizer::normalizeBoolean($data['disabled'] ?? false);
+        $data['details'] = \FOSSBilling\Utils\Normalizer::normalizeBoolean($data['details'] ?? true, true);
 
         return \FOSSBilling\I18n\I18n::getLocales($data['details'], $data['disabled']);
     }

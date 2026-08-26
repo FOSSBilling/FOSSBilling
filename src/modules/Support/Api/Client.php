@@ -81,7 +81,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
     ])]
     public function ticket_create(array $data): int
     {
-        $data['content'] = \FOSSBilling\Tools::sanitizeMarkdownContent($data['content']);
+        $data['content'] = \FOSSBilling\Sanitizer\Sanitizer::sanitizeMarkdownContent($data['content']);
 
         /** @var \Box\Mod\Support\Repository\HelpdeskRepository $repo */
         $repo = $this->getService()->getHelpdeskRepository();
@@ -102,7 +102,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['id' => 'Ticket ID was not passed', 'content' => 'Ticket content required'])]
     public function ticket_reply(array $data): bool
     {
-        $data['content'] = \FOSSBilling\Tools::sanitizeMarkdownContent($data['content']);
+        $data['content'] = \FOSSBilling\Sanitizer\Sanitizer::sanitizeMarkdownContent($data['content']);
 
         $client = $this->getIdentity();
         $ticket = $this->getService()->getSupportTicketRepository()->findOneByClient((int) $client->getId(), (int) $data['id']);
