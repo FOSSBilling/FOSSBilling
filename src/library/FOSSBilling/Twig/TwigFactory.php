@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2025 FOSSBilling.
+ * Copyright 2022-2026 FOSSBilling.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -19,8 +19,7 @@ use FOSSBilling\Http\RequestFactory;
 use FOSSBilling\I18n\I18n;
 use FOSSBilling\System\Config;
 use FOSSBilling\System\Version;
-use FOSSBilling\Tools;
-use FOSSBilling\Twig\Enum\AppArea;
+use FOSSBilling\Twig\AppArea;
 use FOSSBilling\Twig\Extension\ApiExtension;
 use FOSSBilling\Twig\Extension\DebugBarExtension;
 use FOSSBilling\Twig\Extension\FOSSBillingExtension;

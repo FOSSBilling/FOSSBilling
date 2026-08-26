@@ -10,7 +10,7 @@
 
 declare(strict_types=1);
 
-use FOSSBilling\Twig\Enum\AppArea;
+use FOSSBilling\Twig\AppArea;
 use FOSSBilling\Twig\TwigLoader;
 use Twig\Error\LoaderError;
 

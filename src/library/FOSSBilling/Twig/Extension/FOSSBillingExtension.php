@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2025 FOSSBilling.
+ * Copyright 2022-2026 FOSSBilling.
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -15,7 +15,7 @@ use Composer\InstalledVersions;
 use DiceBear\Avatar;
 use DiceBear\Style;
 use FOSSBilling\System\Environment as AppEnvironment;
-use FOSSBilling\Twig\Enum\AppArea;
+use FOSSBilling\Twig\AppArea;
 use Symfony\Component\Filesystem\Path;
 use Twig\Attribute\AsTwigFilter;
 use Twig\Attribute\AsTwigFunction;
