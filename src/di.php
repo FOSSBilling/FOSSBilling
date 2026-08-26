@@ -488,7 +488,7 @@ $di['api_dispatcher'] = function () use ($di): FOSSBilling\Api\Dispatcher {
 
 $di['api_proxy'] = $di->protect(function (string $role) use ($di): FOSSBilling\Api\Proxy {
     $identity = $di['api_identity']($role);
-    $api = new FOSSBilling\Api\Proxy($identity->getIdentity());
+    $api = new FOSSBilling\Api\Proxy($identity);
     $api->setDi($di);
 
     return $api;

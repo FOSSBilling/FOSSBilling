@@ -24,7 +24,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
      */
     public function run(array $data = []): bool
     {
-        $config = $this->getMod()->getConfig();
+        $config = $this->getModule()->getConfig();
         $allowGuest = $config['guest_cron'] ?? false;
         if (!$allowGuest) {
             throw new InformationException('You do not have permission to perform this action', [], 403);

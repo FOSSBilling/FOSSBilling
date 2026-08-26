@@ -63,7 +63,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         ];
 
         if ($guestCron) {
-            $existing = $this->getMod()->getConfig();
+            $existing = $this->getModule()->getConfig();
             $existingHash = (string) ($existing['cron_hash'] ?? '');
             $data['cron_hash'] = $existingHash !== '' ? $existingHash : bin2hex(random_bytes(32));
         } else {
@@ -80,7 +80,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('cron', 'manage');
 
-        $config = $this->getMod()->getConfig();
+        $config = $this->getModule()->getConfig();
         $config['cron_hash'] = bin2hex(random_bytes(32));
         $config['ext'] = 'mod_cron';
 

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2025 FOSSBilling
+ * Copyright 2022-2026 FOSSBilling
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -16,13 +16,16 @@ use Pimple\Container;
 
 final class Proxy implements InjectionAwareInterface
 {
-    protected string $type;
     protected ?Container $di = null;
+    private readonly Identity $caller;
     private ?Dispatcher $dispatcher = null;
 
-    public function __construct(protected object $identity)
+    /**
+     * @param object $identity Raw identity object or pre-wrapped Identity VO
+     */
+    public function __construct(object $identity)
     {
-        $this->type = Identity::typeFromObject($identity);
+        $this->caller = $identity instanceof Identity ? $identity : new Identity($identity);
     }
 
     public function setDi(Container $di): void
@@ -32,22 +35,22 @@ final class Proxy implements InjectionAwareInterface
 
     public function getIdentity(): object
     {
-        return $this->identity;
+        return $this->caller->getIdentity();
     }
 
     public function getType(): string
     {
-        return $this->type;
+        return $this->caller->getRole()->value;
     }
 
     public function call(string $method, array $data = []): mixed
     {
-        return $this->getDispatcher()->dispatch($this->identity, $method, $data);
+        return $this->getDispatcher()->dispatch($this->caller, $method, $data);
     }
 
-    public function __call($method, $arguments)
+    public function __call(string $method, array $arguments): mixed
     {
-        return $this->getDispatcher()->dispatchWithArguments($this->identity, (string) $method, $arguments);
+        return $this->getDispatcher()->dispatchWithArguments($this->caller, $method, $arguments);
     }
 
     private function getDispatcher(): Dispatcher

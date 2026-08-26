@@ -77,7 +77,7 @@ test('successful login', function (): void {
     $di['validator'] = new \FOSSBilling\Validation\Validator();
 
     $guestApi = apiEndpoint(new Box\Mod\Staff\Api\Guest());
-    $guestApi->setMod($modMock);
+    $guestApi->setModule($modMock);
     $guestApi->setService($serviceMock);
     $guestApi->setDi($di);
     $result = $guestApi->login(['email' => 'email@domain.com', 'password' => 'pass']);
@@ -104,7 +104,7 @@ test('login check ip exception', function (): void {
     $di['validator'] = new \FOSSBilling\Validation\Validator();
 
     $guestApi = apiEndpoint(new Box\Mod\Staff\Api\Guest());
-    $guestApi->setMod($modMock);
+    $guestApi->setModule($modMock);
     $guestApi->setDi($di);
     $ip = '192.168.0.1';
     $guestApi->setIp($ip);
@@ -152,7 +152,7 @@ test('updatePassword invalidates existing sessions', function (): void {
     $di['password'] = $passwordMock;
     $di['mod_service'] = $di->protect(moduleService(['email' => $emailServiceMock, 'profile' => $profileServiceMock]));
 
-    $guestApi->setMod($modMock);
+    $guestApi->setModule($modMock);
     $guestApi->setDi($di);
 
     $guestApi->update_password([

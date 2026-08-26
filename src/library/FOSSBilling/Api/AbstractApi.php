@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2025 FOSSBilling
+ * Copyright 2022-2026 FOSSBilling
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -11,29 +11,22 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Api;
 
+use Box\Mod\Client\Entity\Client;
+use Box\Mod\Staff\Entity\Admin;
 use FOSSBilling\Exception\BaseException;
+use FOSSBilling\Identity\Guest;
 use FOSSBilling\Interfaces\InjectionAwareInterface;
 use FOSSBilling\Module;
 use Pimple\Container;
 
-class AbstractApi implements InjectionAwareInterface
+abstract class AbstractApi implements InjectionAwareInterface
 {
-    /**
-     * @var string - request ip
-     */
-    protected $ip;
-
-    /**
-     * @var Module
-     */
-    protected $mod;
-
+    protected string $ip = '';
+    protected ?Module $module = null;
     protected ?object $service = null;
 
-    /**
-     * @var \Box\Mod\Client\Entity\Client|\Box\Mod\Staff\Entity\Admin|\FOSSBilling\Identity\Guest
-     */
-    protected $identity;
+    /** @var Client|Admin|Guest|null */
+    protected Client|Admin|Guest|null $identity = null;
 
     protected ?Container $di = null;
 
@@ -47,40 +40,34 @@ class AbstractApi implements InjectionAwareInterface
         return $this->di;
     }
 
-    /**
-     * @param Module $mod
-     */
-    public function setMod($mod): void
+    public function setModule(Module $module): void
     {
-        $this->mod = $mod;
+        $this->module = $module;
     }
 
-    /**
-     * @return Module
-     */
-    public function getMod()
+    public function getModule(): Module
     {
-        // @phpstan-ignore isset.property (Runtime check to ensure mod is set)
-        if (!isset($this->mod)) {
-            throw new BaseException('Mod object is not set for the service');
+        if ($this->module === null) {
+            throw new BaseException('Module object is not set for the service');
         }
 
-        return $this->mod;
+        return $this->module;
     }
 
-    /**
-     * @param \Box\Mod\Client\Entity\Client|\Box\Mod\Staff\Entity\Admin|\FOSSBilling\Identity\Guest $identity
-     */
-    public function setIdentity($identity): void
+    public function setIdentity(Client|Admin|Guest $identity): void
     {
         $this->identity = $identity;
     }
 
     /**
-     * @return \Box\Mod\Client\Entity\Client|\Box\Mod\Staff\Entity\Admin|\FOSSBilling\Identity\Guest
+     * @return Client|Admin|Guest
      */
-    public function getIdentity()
+    public function getIdentity(): Client|Admin|Guest
     {
+        if ($this->identity === null) {
+            throw new BaseException('Identity is not set for the API');
+        }
+
         return $this->identity;
     }
 
@@ -98,23 +85,17 @@ class AbstractApi implements InjectionAwareInterface
         return $this->service;
     }
 
-    /**
-     * @param string $ip
-     */
-    public function setIp($ip): void
+    public function setIp(string $ip): void
     {
         $this->ip = $ip;
     }
 
-    /**
-     * @return string
-     */
-    public function getIp()
+    public function getIp(): string
     {
         return $this->ip;
     }
 
-    // Wraps checkPermissionsAndThrowException, always forwarding $this->identity so cron/IPN contexts work without an active session.
+    // Wraps checkPermissionsAndThrowException, always forwarding identity so cron/IPN contexts work without an active session.
     protected function checkPermissions(string $module, ?string $key = null, mixed $constraint = null): void
     {
         $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException($module, $key, $constraint, $this->identity);

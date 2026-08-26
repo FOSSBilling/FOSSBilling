@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2025 FOSSBilling
+ * Copyright 2022-2026 FOSSBilling
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -42,7 +42,10 @@ final class Dispatcher implements InjectionAwareInterface
             throw new BaseException('Method :method must contain underscore', [':method' => $method], 710);
         }
 
-        $role = Identity::typeFromObject($identity);
+        $caller = $identity instanceof Identity ? $identity : new Identity($identity);
+        $role = $caller->getRole();
+        $rawIdentity = $caller->getIdentity();
+
         $parts = explode('_', $method);
         $mod = strtolower($parts[0]);
         unset($parts[0]);
@@ -63,16 +66,16 @@ final class Dispatcher implements InjectionAwareInterface
          * This is to make sure update finalization still works when there are changes to the
          * permission system and patches need to be applied before everything starts working again.
          */
-        if ($role === 'admin' && !$this->isAllowedAdminFinalizationCall($mod, $method)) {
+        if ($role === Role::Admin && !$this->isAllowedAdminFinalizationCall($mod, $method)) {
             $staffService = $this->getDi()['mod_service']('Staff');
-            if (!$staffService->hasPermission($identity, $mod)) {
+            if (!$staffService->hasPermission($rawIdentity, $mod)) {
                 throw new BaseException('You do not have access to the :mod module', [':mod' => $mod], 725);
             }
         }
 
-        $apiClass = '\Box\Mod\\' . ucfirst($mod) . '\Api\\' . ucfirst($role);
+        $apiClass = '\Box\Mod\\' . ucfirst($mod) . '\Api\\' . ucfirst($role->value);
         if (!class_exists($apiClass)) {
-            throw new BaseException(':type API call :method does not exist in module :module', [':type' => ucfirst($role), ':method' => $methodName, ':module' => $mod], 740);
+            throw new BaseException(':type API call :method does not exist in module :module', [':type' => ucfirst($role->value), ':method' => $methodName, ':module' => $mod], 740);
         }
 
         $api = new $apiClass();
@@ -82,8 +85,8 @@ final class Dispatcher implements InjectionAwareInterface
 
         $module = $this->getDi()['mod']($mod);
         $api->setDi($this->di);
-        $api->setMod($module);
-        $api->setIdentity($identity);
+        $api->setModule($module);
+        $api->setIdentity($rawIdentity);
         $api->setIp($this->getDi()['request']->getClientIp());
         if ($module->hasService()) {
             $api->setService($this->getDi()['mod_service']($mod));
@@ -92,7 +95,7 @@ final class Dispatcher implements InjectionAwareInterface
         if (!method_exists($api, $methodName) || !is_callable([$api, $methodName])) {
             $reflector = new \ReflectionClass($api);
             if (!$reflector->hasMethod('__call')) {
-                throw new BaseException(':type API call :method does not exist in module :module', [':type' => ucfirst($role), ':method' => $methodName, ':module' => $mod], 740);
+                throw new BaseException(':type API call :method does not exist in module :module', [':type' => ucfirst($role->value), ':method' => $methodName, ':module' => $mod], 740);
             }
         }
 

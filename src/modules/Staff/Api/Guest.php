@@ -37,7 +37,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         try {
             $data['email'] = $this->getDi()['tools']->validateAndSanitizeEmail($data['email'], true, false);
 
-            $config = $this->getMod()->getConfig();
+            $config = $this->getModule()->getConfig();
 
             // check ip
             if (!empty($config['allowed_ips']) && isset($config['check_ip']) && $config['check_ip']) {
@@ -64,7 +64,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         try {
             $this->getDi()['rate_limiter']->consumeOrThrow('staff_password_reset_confirm_post_ip', (string) $this->getIp());
 
-            $config = $this->getMod()->getConfig();
+            $config = $this->getModule()->getConfig();
             if (isset($config['public']['reset_pw']) && $config['public']['reset_pw'] == '0') {
                 throw new \FOSSBilling\Exception\InformationException('Password reset has been disabled');
             }
@@ -134,7 +134,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['email' => 'Email required'])]
     public function passwordreset(array $data): bool
     {
-        $config = $this->getMod()->getConfig();
+        $config = $this->getModule()->getConfig();
         if (isset($config['public']['reset_pw']) && $config['public']['reset_pw'] == '0') {
             throw new \FOSSBilling\Exception\InformationException('Password reset has been disabled');
         }
