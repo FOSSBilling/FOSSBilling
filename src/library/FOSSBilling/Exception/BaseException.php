@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2025 FOSSBilling
+ * Copyright 2022-2026 FOSSBilling
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -54,41 +54,41 @@ class BaseException extends \Exception
      * We have slightly modified it for our purposes
      * https://stackoverflow.com/a/32365961.
      */
-    private function stackTrace($Length = 25, $protected = false): string
+    private function stackTrace(int $length = 25, bool $protected = false): string
     {
-        $stack = debug_backtrace($Length);
+        $stack = debug_backtrace($length);
         $output = '';
 
-        $stackLen = count($stack);
-        for ($i = 1; $i < $stackLen; ++$i) {
+        $stackLength = count($stack);
+        for ($i = 1; $i < $stackLength; ++$i) {
             $entry = $stack[$i];
 
             $func = $entry['function'] . '(';
             if (isset($entry['args'])) {
-                $argsLen = count($entry['args']);
-                for ($j = 0; $j < $argsLen; ++$j) {
-                    $my_entry = $entry['args'][$j];
+                $argsLength = count($entry['args']);
+                for ($j = 0; $j < $argsLength; ++$j) {
+                    $arg = $entry['args'][$j];
                     if ($protected) {
                         $func .= '***';
-                    } elseif (is_string($my_entry)) {
-                        $func .= $my_entry;
+                    } elseif (is_string($arg)) {
+                        $func .= $arg;
                     }
-                    if ($j < $argsLen - 1) {
+                    if ($j < $argsLength - 1) {
                         $func .= ', ';
                     }
                 }
             }
             $func .= ')';
 
-            $entry_file = 'NO_FILE';
+            $entryFile = 'NO_FILE';
             if (array_key_exists('file', $entry)) {
-                $entry_file = str_replace(PATH_ROOT, '', $entry['file']);
+                $entryFile = str_replace(PATH_ROOT, '', $entry['file']);
             }
-            $entry_line = 'NO_LINE';
+            $entryLine = 'NO_LINE';
             if (array_key_exists('line', $entry)) {
-                $entry_line = $entry['line'];
+                $entryLine = $entry['line'];
             }
-            $output .= $entry_file . ':' . $entry_line . ' - ' . $func . PHP_EOL;
+            $output .= $entryFile . ':' . $entryLine . ' - ' . $func . PHP_EOL;
         }
 
         return $output;

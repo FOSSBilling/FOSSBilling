@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2025 FOSSBilling
+ * Copyright 2022-2026 FOSSBilling
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -13,17 +13,4 @@ namespace FOSSBilling\Exception;
 
 class InformationException extends BaseException
 {
-    /**
-     * Creates a new translated information exception.
-     *
-     * @param string     $message   error message
-     * @param array|null $variables translation variables
-     * @param int        $code      the exception code
-     * @param bool       $protected if the variables in this should be considered protect, if so, hide them from the stack trace
-     */
-    public function __construct(string $message, ?array $variables = null, int $code = 0, bool $protected = false)
-    {
-        // Pass the message to the parent
-        parent::__construct($message, $variables, $code, $protected);
-    }
 }
