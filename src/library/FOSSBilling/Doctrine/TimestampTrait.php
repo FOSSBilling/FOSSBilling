@@ -18,14 +18,14 @@ use Doctrine\ORM\Mapping as ORM;
  *
  * Classes that use this trait should:
  *  - Add the class-level `#[ORM\HasLifecycleCallbacks]` attribute
- *  - Implement {@see \FOSSBilling\Doctrine\TimestampInterface}
+ *  - Implement {@see TimestampInterface}
  *
  * The trait provides:
  *  - `createdAt` and `updatedAt` properties mapped to the `created_at` / `updated_at`
  *    `DATETIME_MUTABLE` columns
  *  - `onPrePersist()` lifecycle callback that initialises both timestamps
  *  - `onPreUpdate()` lifecycle callback that bumps `updatedAt`
- *  - Getter and setter methods satisfying {@see \FOSSBilling\Doctrine\TimestampInterface}
+ *  - Getter and setter methods satisfying {@see TimestampInterface}
  *
  * Special-cases:
  *  - Entities that must not auto-bump `updatedAt` on every Doctrine update (e.g. when

@@ -13,8 +13,8 @@ namespace Box\Mod\Servicelicense\Entity;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use FOSSBilling\Doctrine\TimestampTrait;
 use FOSSBilling\Doctrine\TimestampInterface;
+use FOSSBilling\Doctrine\TimestampTrait;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Servicelicense\Repository\ServiceLicenseRepository::class)]
 #[ORM\Table(name: 'service_license')]

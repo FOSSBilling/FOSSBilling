@@ -25,9 +25,9 @@ use function Tests\Helpers\createEntity;
 function getAllowedRateLimiter(): object
 {
     return new class {
-        public function consumeOrThrow(string $policy, string $subject, int $tokens = 1): \FOSSBilling\Security\RateLimitResult
+        public function consumeOrThrow(string $policy, string $subject, int $tokens = 1): FOSSBilling\Security\RateLimitResult
         {
-            return new \FOSSBilling\Security\RateLimitResult($policy, false, 10, 9);
+            return new FOSSBilling\Security\RateLimitResult($policy, false, 10, 9);
         }
     };
 }
@@ -64,7 +64,7 @@ test('setCurrency returns true', function (): void {
     $serviceMock->shouldReceive('getSessionCart')->atLeast()->once()->andReturn(createEntity(Box\Mod\Cart\Entity\Cart::class));
     $serviceMock->shouldReceive('changeCartCurrency')->atLeast()->once()->andReturn(true);
 
-    $validatorMock = Mockery::mock(\FOSSBilling\Validation\Validator::class)->shouldIgnoreMissing();
+    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class)->shouldIgnoreMissing();
 
     $currencyMock = Mockery::mock(Currency::class)->shouldIgnoreMissing();
 
@@ -95,7 +95,7 @@ test('setCurrency throws exception when currency is not found', function (): voi
     $serviceMock->shouldNotReceive('getSessionCart');
     $serviceMock->shouldNotReceive('changeCartCurrency');
 
-    $validatorMock = Mockery::mock(\FOSSBilling\Validation\Validator::class)->shouldIgnoreMissing();
+    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class)->shouldIgnoreMissing();
 
     $currencyRepositoryMock = Mockery::mock(CurrencyRepository::class)->makePartial();
     $currencyRepositoryMock->shouldReceive('findOneByCode')->atLeast()->once()->andReturn(null);

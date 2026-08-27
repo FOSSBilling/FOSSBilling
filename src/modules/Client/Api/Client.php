@@ -67,7 +67,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
             return true;
         }
 
-        $this->getDi()['rate_limiter']->consumeOrThrow('client_email_verification_resend_ip', (string) $this->getIp());
+        $this->getDi()['rate_limiter']->consumeOrThrow('client_email_verification_resend_ip', $this->getIp());
         $clientId = $client->getId();
         $this->getDi()['rate_limiter']->consumeOrThrow('client_email_verification_resend_account', 'client:' . $clientId);
 

@@ -13,8 +13,8 @@ namespace Box\Mod\Servicedomain\Entity;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use FOSSBilling\Doctrine\TimestampTrait;
 use FOSSBilling\Doctrine\TimestampInterface;
+use FOSSBilling\Doctrine\TimestampTrait;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Servicedomain\Repository\DomainRepository::class)]
 #[ORM\Table(name: 'service_domain')]

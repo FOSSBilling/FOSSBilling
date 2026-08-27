@@ -95,7 +95,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['promocode' => 'Promo code was not passed'])]
     public function apply_promo($data)
     {
-        $this->getDi()['rate_limiter']->consumeOrThrow('cart_promo_apply_ip', (string) $this->getIp());
+        $this->getDi()['rate_limiter']->consumeOrThrow('cart_promo_apply_ip', $this->getIp());
 
         $promo = $this->getService()->findActivePromoByCode($data['promocode']);
         if (!$promo instanceof Promo) {

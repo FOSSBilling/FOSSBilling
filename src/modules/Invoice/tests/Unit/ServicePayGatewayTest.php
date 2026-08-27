@@ -466,7 +466,6 @@ test('gets payment adapter', function (): void {
     $urlMock->shouldReceive('link')
         ->atLeast()->once();
 
-
     $service = payGatewayService();
     $service->getDi()['url'] = $urlMock;
     $service->getDi()['tools'] = $toolsMock;
@@ -496,7 +495,6 @@ test('throws exception when payment gateway adapter class is missing', function 
     $urlMock = Mockery::mock(FOSSBilling\Url::class);
     $urlMock->shouldReceive('link')
         ->atLeast()->once();
-
 
     $service = payGatewayService();
     $service->getDi()['url'] = $urlMock;

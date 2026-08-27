@@ -276,7 +276,7 @@ test('testAccountGetList', function (): void {
     $serviceMock
     ->shouldReceive('getAccountsBatchForApi')
     ->once()
-    ->with([['id' => 1]], null)
+    ->with([['id' => 1]], Mockery::type('object'))
     ->andReturn([['id' => 1, 'order' => null]]);
 
     $pagerMock = Mockery::mock(FOSSBilling\Pagination\Service::class)->makePartial();
@@ -308,7 +308,7 @@ test('testServerGetList', function (): void {
     $serviceMock
     ->shouldReceive('toHostingServerApiArray')
     ->once()
-    ->with($server, false, null)
+    ->with($server, false, Mockery::type('object'))
     ->andReturn(['id' => 1]);
 
     $pagerMock = Mockery::mock(FOSSBilling\Pagination\Service::class)->makePartial();
@@ -545,7 +545,7 @@ test('testHpGetList', function (): void {
     $serviceMock
     ->shouldReceive('toHostingHpApiArray')
     ->once()
-    ->with($hp, false, null)
+    ->with($hp, false, Mockery::type('object'))
     ->andReturn(['id' => 1]);
 
     $pagerMock = Mockery::mock(FOSSBilling\Pagination\Service::class)->makePartial();

@@ -115,12 +115,12 @@ function buildDatabaseProbeDsn(string $driver, array $dbConfig): ?array
 
     return match ($driver) {
         'pdo_mysql' => [
-            sprintf('mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4', $host, \FOSSBilling\Utils\Normalizer::normalizePort($dbConfig['port'] ?? null, 3306), $database),
+            sprintf('mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4', $host, FOSSBilling\Utils\Normalizer::normalizePort($dbConfig['port'] ?? null, 3306), $database),
             $dbConfig['user'] ?? '',
             $dbConfig['password'] ?? '',
         ],
         'pdo_pgsql' => [
-            sprintf('pgsql:host=%s;port=%s;dbname=%s', $host, \FOSSBilling\Utils\Normalizer::normalizePort($dbConfig['port'] ?? null, 5432), $database),
+            sprintf('pgsql:host=%s;port=%s;dbname=%s', $host, FOSSBilling\Utils\Normalizer::normalizePort($dbConfig['port'] ?? null, 5432), $database),
             $dbConfig['user'] ?? '',
             $dbConfig['password'] ?? '',
         ],
@@ -373,7 +373,7 @@ function init(): void
     define('SYSTEM_URL', $scheme . $url);
 
     // Set the default interface.
-    define('BIND_TO', \FOSSBilling\Utils\Network::getDefaultInterface());
+    define('BIND_TO', FOSSBilling\Utils\Network::getDefaultInterface());
 
     // Load the DI container.
     global $di;

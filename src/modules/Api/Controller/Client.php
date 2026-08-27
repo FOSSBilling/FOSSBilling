@@ -17,9 +17,9 @@ namespace Box\Mod\Api\Controller;
 
 use Box\Mod\Client\Entity\Client as ClientEntity;
 use Box\Mod\Staff\Entity\Admin;
+use FOSSBilling\Container\InjectionAwareInterface;
 use FOSSBilling\Http\ApiResponseFactory;
 use FOSSBilling\Http\ResponseFactory;
-use FOSSBilling\Container\InjectionAwareInterface;
 use FOSSBilling\Security\AuthenticationRequiredException;
 use FOSSBilling\Security\EmailValidationRequiredException;
 use FOSSBilling\System\Config;

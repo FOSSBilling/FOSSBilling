@@ -13,9 +13,9 @@ namespace Box\Mod\Email\Entity;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use FOSSBilling\Doctrine\TimestampTrait;
 use FOSSBilling\Api\ArrayInterface;
 use FOSSBilling\Doctrine\TimestampInterface;
+use FOSSBilling\Doctrine\TimestampTrait;
 
 /**
  * Pending email in the queue processed by the email-batch cron task.

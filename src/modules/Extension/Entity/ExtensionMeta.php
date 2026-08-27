@@ -13,9 +13,9 @@ namespace Box\Mod\Extension\Entity;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use FOSSBilling\Doctrine\TimestampTrait;
 use FOSSBilling\Api\ArrayInterface;
 use FOSSBilling\Doctrine\TimestampInterface;
+use FOSSBilling\Doctrine\TimestampTrait;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Extension\Repository\ExtensionMetaRepository::class)]
 #[ORM\Table(name: 'extension_meta')]

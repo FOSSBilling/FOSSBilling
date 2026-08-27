@@ -10,7 +10,7 @@ declare(strict_types=1);
  */
 
 use FOSSBilling\Doctrine\DriverManagerFactory;
-use FOSSBilling\Exception;
+use FOSSBilling\Exception\BaseException as Exception;
 use Symfony\Component\Filesystem\Filesystem;
 
 /**
@@ -21,7 +21,7 @@ use Symfony\Component\Filesystem\Filesystem;
 function withDbConfig(array $dbConfig, callable $callback): mixed
 {
     $filesystem = new Filesystem();
-    $config = FOSSBilling\Config::getConfig();
+    $config = FOSSBilling\System\Config::getConfig();
     $config['db'] = $dbConfig;
     $filesystem->dumpFile(PATH_CONFIG, '<?php return ' . var_export($config, true) . ';');
     clearstatcache(true, PATH_CONFIG);

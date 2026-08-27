@@ -19,7 +19,6 @@ use FOSSBilling\Http\RequestFactory;
 use FOSSBilling\I18n\I18n;
 use FOSSBilling\System\Config;
 use FOSSBilling\System\Version;
-use FOSSBilling\Twig\AppArea;
 use FOSSBilling\Twig\Extension\ApiExtension;
 use FOSSBilling\Twig\Extension\DebugBarExtension;
 use FOSSBilling\Twig\Extension\FOSSBillingExtension;

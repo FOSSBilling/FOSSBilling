@@ -13,9 +13,9 @@ namespace FOSSBilling\Api;
 
 use Box\Mod\Client\Entity\Client;
 use Box\Mod\Staff\Entity\Admin;
+use FOSSBilling\Container\InjectionAwareInterface;
 use FOSSBilling\Exception\BaseException;
 use FOSSBilling\Identity\Guest;
-use FOSSBilling\Container\InjectionAwareInterface;
 use FOSSBilling\Module;
 use Pimple\Container;
 
@@ -25,7 +25,6 @@ abstract class AbstractApi implements InjectionAwareInterface
     protected ?Module $module = null;
     protected ?object $service = null;
 
-    /** @var Client|Admin|Guest|null */
     protected Client|Admin|Guest|null $identity = null;
 
     protected ?Container $di = null;
@@ -59,9 +58,6 @@ abstract class AbstractApi implements InjectionAwareInterface
         $this->identity = $identity;
     }
 
-    /**
-     * @return Client|Admin|Guest
-     */
     public function getIdentity(): Client|Admin|Guest
     {
         if ($this->identity === null) {

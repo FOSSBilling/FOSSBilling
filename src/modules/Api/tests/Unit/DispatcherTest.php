@@ -17,24 +17,14 @@ function createApiDispatcherDi(bool $extensionActive = true, bool $moduleHasServ
         }
     };
 
-    $extensionModule = new readonly class($extensionService) {
-        public function __construct(private object $extensionService)
-        {
-        }
+    $extensionModule = Mockery::mock(FOSSBilling\Module::class)->shouldIgnoreMissing();
+    $extensionModule->shouldReceive('hasService')->andReturn(true);
+    $extensionModule->shouldReceive('getService')->andReturn($extensionService);
+    $extensionModule->shouldReceive('getName')->andReturn('extension');
 
-        public function getService(): object
-        {
-            return $this->extensionService;
-        }
-
-        public function hasService(): bool
-        {
-            return true;
-        }
-    };
-
-    $module = \Mockery::mock(\FOSSBilling\Module::class)->shouldIgnoreMissing();
+    $module = Mockery::mock(FOSSBilling\Module::class)->shouldIgnoreMissing();
     $module->shouldReceive('hasService')->andReturn($moduleHasService);
+    $module->shouldReceive('getName')->andReturn('system');
 
     $systemService = new class {
         public function getPeriod(string $code): string

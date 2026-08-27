@@ -84,11 +84,18 @@ function apiEndpoint(FOSSBilling\Api\AbstractApi $api): FOSSBilling\Api\Abstract
 
     try {
         $api->getIdentity();
-    } catch (\Throwable) {
+    } catch (Throwable) {
+        $realClass = $api::class;
+        // Mockery mocks have names like Mockery_2_Box_Mod_..._Api_Admin; unwrap to the mocked class.
+        if (str_starts_with($realClass, 'Mockery_') && ($parent = get_parent_class($api)) !== false) {
+            $realClass = $parent;
+        }
+        // Normalise both namespace separators for checks (mocks use underscores).
+        $normalised = str_replace(['\\', '_'], '\\', $realClass);
         $api->setIdentity(match (true) {
-            str_contains($api::class, '\\Api\\Admin') => \Tests\Helpers\admin(),
-            str_contains($api::class, '\\Api\\Client') => \Tests\Helpers\client(),
-            default => new \FOSSBilling\Identity\Guest(),
+            str_contains($normalised, '\\Api\\Admin') => \Tests\Helpers\admin(),
+            str_contains($normalised, '\\Api\\Client') => \Tests\Helpers\client(),
+            default => new FOSSBilling\Identity\Guest(),
         });
     }
 

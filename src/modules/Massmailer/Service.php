@@ -11,12 +11,12 @@ declare(strict_types=1);
 
 namespace Box\Mod\Massmailer;
 
+use Box\Mod\Client\Enum\Status as ClientStatus;
 use Box\Mod\Massmailer\Entity\MassmailerMessage;
 use Box\Mod\Massmailer\Repository\MassmailerMessageRepository;
+use Box\Mod\Order\Enum\Status as OrderStatus;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\ParameterType;
-use Box\Mod\Client\Enum\Status as ClientStatus;
-use Box\Mod\Order\Enum\Status as OrderStatus;
 use FOSSBilling\Exception\InformationException;
 use FOSSBilling\System\Environment;
 

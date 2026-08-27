@@ -14,14 +14,14 @@ use function Tests\Datasets\domainProvider;
 use function Tests\Datasets\emailProvider;
 
 test('is sld valid', function (string $domain, bool $expected): void {
-    $validate = new \FOSSBilling\Validation\Validator();
+    $validate = new FOSSBilling\Validation\Validator();
     expect($validate->isSldValid($domain))->toEqual($expected);
 })->with('domainProvider');
 
 dataset('domainProvider', fn (): array => domainProvider());
 
 test('is email valid using builtin filter', function (string $email, bool $expected): void {
-    $validate = new \FOSSBilling\Validation\Validator();
+    $validate = new FOSSBilling\Validation\Validator();
     expect($validate->isEmailValid($email))->toEqual($expected);
 })->with('emailProvider');
 
@@ -49,7 +49,7 @@ dataset('requiredParamsProvider', fn (): array => [
 ]);
 
 test('check required params for array', function (array $data, array $required, array $variables, bool $expectException): void {
-    $validate = new \FOSSBilling\Validation\Validator();
+    $validate = new FOSSBilling\Validation\Validator();
 
     if ($expectException) {
         expect(fn () => $validate->checkRequiredParamsForArray($required, $data, $variables))
@@ -62,7 +62,7 @@ test('check required params for array', function (array $data, array $required, 
 })->with('requiredParamsProvider');
 
 test('check required params passes with all required', function (): void {
-    $validate = new \FOSSBilling\Validation\Validator();
+    $validate = new FOSSBilling\Validation\Validator();
 
     $data = [
         'id' => 1,
@@ -82,7 +82,7 @@ test('check required params passes with all required', function (): void {
 });
 
 test('check required params fails with missing key', function (): void {
-    $validate = new \FOSSBilling\Validation\Validator();
+    $validate = new FOSSBilling\Validation\Validator();
 
     $data = ['id' => 1];
     $required = [
@@ -95,7 +95,7 @@ test('check required params fails with missing key', function (): void {
 });
 
 test('check required params fails with empty value', function (): void {
-    $validate = new \FOSSBilling\Validation\Validator();
+    $validate = new FOSSBilling\Validation\Validator();
 
     $data = ['name' => ''];
     $required = [
@@ -107,7 +107,7 @@ test('check required params fails with empty value', function (): void {
 });
 
 test('check required params fails with null value', function (): void {
-    $validate = new \FOSSBilling\Validation\Validator();
+    $validate = new FOSSBilling\Validation\Validator();
 
     $data = ['name' => null];
     $required = [
@@ -119,7 +119,7 @@ test('check required params fails with null value', function (): void {
 });
 
 test('check required params with zero value passes', function (): void {
-    $validate = new \FOSSBilling\Validation\Validator();
+    $validate = new FOSSBilling\Validation\Validator();
 
     $data = ['amount' => 0];
     $required = [
@@ -132,7 +132,7 @@ test('check required params with zero value passes', function (): void {
 });
 
 test('check required params with false value fails', function (): void {
-    $validate = new \FOSSBilling\Validation\Validator();
+    $validate = new FOSSBilling\Validation\Validator();
 
     $data = ['enabled' => false];
     $required = [
@@ -144,7 +144,7 @@ test('check required params with false value fails', function (): void {
 });
 
 test('check required params with custom error code', function (): void {
-    $validate = new \FOSSBilling\Validation\Validator();
+    $validate = new FOSSBilling\Validation\Validator();
 
     $data = [];
     $required = ['id' => 'ID is required'];
@@ -160,7 +160,7 @@ test('check required params with custom error code', function (): void {
 });
 
 test('check required params with message placeholder', function (): void {
-    $validate = new \FOSSBilling\Validation\Validator();
+    $validate = new FOSSBilling\Validation\Validator();
 
     $data = [];
     $required = ['key' => 'Key :key must be set'];
@@ -171,7 +171,7 @@ test('check required params with message placeholder', function (): void {
 });
 
 test('check required params with multiple placeholders', function (): void {
-    $validate = new \FOSSBilling\Validation\Validator();
+    $validate = new FOSSBilling\Validation\Validator();
 
     $data = [];
     $required = ['key' => 'Key :key must be set for array :array'];
@@ -185,7 +185,7 @@ test('check required params with multiple placeholders', function (): void {
 });
 
 test('check required params with whitespace fails', function (): void {
-    $validate = new \FOSSBilling\Validation\Validator();
+    $validate = new FOSSBilling\Validation\Validator();
 
     $data = ['name' => '   '];
     $required = ['name' => 'Name is required'];

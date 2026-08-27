@@ -158,11 +158,11 @@ test('login returns admin details on successful login', function (): void {
         ->with($email)
         ->andReturn($admin);
 
-    $sessionMock = Mockery::mock(\FOSSBilling\Security\Session::class);
+    $sessionMock = Mockery::mock(FOSSBilling\Security\Session::class);
     $sessionMock->shouldReceive('regenerateId')->atLeast()->once();
     $sessionMock->shouldReceive('set')->atLeast()->once();
 
-    $passwordMock = Mockery::mock(\FOSSBilling\Security\PasswordManager::class);
+    $passwordMock = Mockery::mock(FOSSBilling\Security\PasswordManager::class);
     $passwordMock->shouldReceive('verify')->atLeast()->once()
         ->with($password, $admin->getPass())
         ->andReturn(true);
@@ -206,11 +206,11 @@ test('login retries connecting event listeners once before firing the login even
         ->with($email)
         ->andReturn($admin);
 
-    $sessionMock = Mockery::mock(\FOSSBilling\Security\Session::class);
+    $sessionMock = Mockery::mock(FOSSBilling\Security\Session::class);
     $sessionMock->shouldReceive('regenerateId')->atLeast()->once();
     $sessionMock->shouldReceive('set')->atLeast()->once();
 
-    $passwordMock = Mockery::mock(\FOSSBilling\Security\PasswordManager::class);
+    $passwordMock = Mockery::mock(FOSSBilling\Security\PasswordManager::class);
     $passwordMock->shouldReceive('verify')->atLeast()->once()
         ->with($password, $admin->getPass())
         ->andReturn(true);
@@ -258,11 +258,11 @@ test('login still succeeds, and logs a warning, when both attempts to connect ev
         ->with($email)
         ->andReturn($admin);
 
-    $sessionMock = Mockery::mock(\FOSSBilling\Security\Session::class);
+    $sessionMock = Mockery::mock(FOSSBilling\Security\Session::class);
     $sessionMock->shouldReceive('regenerateId')->atLeast()->once();
     $sessionMock->shouldReceive('set')->atLeast()->once();
 
-    $passwordMock = Mockery::mock(\FOSSBilling\Security\PasswordManager::class);
+    $passwordMock = Mockery::mock(FOSSBilling\Security\PasswordManager::class);
     $passwordMock->shouldReceive('verify')->atLeast()->once()
         ->with($password, $admin->getPass())
         ->andReturn(true);
@@ -316,7 +316,7 @@ test('login throws exception when credentials are invalid', function (): void {
         ->with($email)
         ->andReturn(null);
 
-    $passwordMock = Mockery::mock(\FOSSBilling\Security\PasswordManager::class);
+    $passwordMock = Mockery::mock(FOSSBilling\Security\PasswordManager::class);
     $passwordMock->shouldReceive('dummyVerify')->atLeast()->once()
         ->with($password);
 
@@ -382,12 +382,12 @@ test('hasPermission stays fail-closed outside cron context when no admin is logg
     $di = container();
     $di['auth'] = $auth;
     $di['loggedin_admin'] = function (): never {
-        throw new \FOSSBilling\Security\AuthenticationRequiredException('admin');
+        throw new FOSSBilling\Security\AuthenticationRequiredException('admin');
     };
     $service->setDi($di);
 
     expect(fn () => $service->hasPermission(null, 'order'))
-        ->toThrow(\FOSSBilling\Security\AuthenticationRequiredException::class);
+        ->toThrow(FOSSBilling\Security\AuthenticationRequiredException::class);
 });
 
 test('hasPermission returns false for staff without groups', function (): void {
@@ -1152,7 +1152,7 @@ test('getCronAdmin creates and returns new cron admin', function (): void {
     $adminRepository->expects('findOneBy')->with(['systemName' => Admin::SYSTEM_CRON])->twice()
         ->andReturn(null, $adminModel);
 
-    $passwordMock = Mockery::mock(\FOSSBilling\Security\PasswordManager::class);
+    $passwordMock = Mockery::mock(FOSSBilling\Security\PasswordManager::class);
     $passwordMock->expects('hashIt')->once()->andReturn('hashed-cron-password');
 
     $captured = null;
@@ -1192,7 +1192,7 @@ test('getCronAdmin recovers from a concurrent-creation race', function (): void 
     $adminRepository->expects('findOneBy')->with(['systemName' => Admin::SYSTEM_CRON])->twice()
         ->andReturn(null, $adminModel);
 
-    $passwordMock = Mockery::mock(\FOSSBilling\Security\PasswordManager::class);
+    $passwordMock = Mockery::mock(FOSSBilling\Security\PasswordManager::class);
     $passwordMock->expects('hashIt')->once();
 
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
@@ -1390,7 +1390,7 @@ test('changePassword updates admin password', function (): void {
 
     $logStub = $this->createStub(FOSSBilling\Logging\Logger::class);
 
-    $passwordMock = Mockery::mock(\FOSSBilling\Security\PasswordManager::class);
+    $passwordMock = Mockery::mock(FOSSBilling\Security\PasswordManager::class);
     $passwordMock->shouldReceive('hashIt')->atLeast()->once()
         ->with($plainTextPassword);
 
@@ -1433,7 +1433,7 @@ test('create creates new admin account', function (): void {
 
     $logStub = $this->createStub(FOSSBilling\Logging\Logger::class);
 
-    $passwordMock = Mockery::mock(\FOSSBilling\Security\PasswordManager::class);
+    $passwordMock = Mockery::mock(FOSSBilling\Security\PasswordManager::class);
     $passwordMock->shouldReceive('hashIt')->atLeast()->once()
         ->with($data['password']);
 
@@ -1507,7 +1507,7 @@ test('create throws exception for duplicate email', function (): void {
 
     $logStub = $this->createStub(FOSSBilling\Logging\Logger::class);
 
-    $passwordMock = Mockery::mock(\FOSSBilling\Security\PasswordManager::class);
+    $passwordMock = Mockery::mock(FOSSBilling\Security\PasswordManager::class);
     $passwordMock->shouldReceive('hashIt')->atLeast()->once()
         ->with($data['password']);
 
@@ -2212,7 +2212,7 @@ test('authorizeAdmin returns null when email not found', function (): void {
         ->with($email)
         ->andReturn(null);
 
-    $passwordMock = Mockery::mock(\FOSSBilling\Security\PasswordManager::class);
+    $passwordMock = Mockery::mock(FOSSBilling\Security\PasswordManager::class);
     $passwordMock->shouldReceive('dummyVerify')->atLeast()->once()
         ->with($password);
 
@@ -2238,7 +2238,7 @@ test('authorizeAdmin returns admin model on success', function (): void {
         ->with($email)
         ->andReturn($model);
 
-    $passwordMock = Mockery::mock(\FOSSBilling\Security\PasswordManager::class);
+    $passwordMock = Mockery::mock(FOSSBilling\Security\PasswordManager::class);
     $passwordMock->shouldReceive('verify')->atLeast()->once()
         ->with($password, $model->getPass())
         ->andReturn(true);

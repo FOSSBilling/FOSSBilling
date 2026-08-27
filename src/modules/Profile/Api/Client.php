@@ -133,7 +133,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
 
         $client = $this->getClientEntity();
 
-        $this->getDi()['rate_limiter']->consumeOrThrow('profile_password_change_ip', (string) $this->getIp());
+        $this->getDi()['rate_limiter']->consumeOrThrow('profile_password_change_ip', $this->getIp());
         $this->getDi()['rate_limiter']->consumeOrThrow('profile_password_change_account', 'client:' . $client->getId());
 
         if (!$this->getDi()['password']->verify($data['current_password'], $client->getPass())) {

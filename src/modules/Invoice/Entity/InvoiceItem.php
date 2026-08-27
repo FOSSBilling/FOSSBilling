@@ -13,9 +13,9 @@ namespace Box\Mod\Invoice\Entity;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use FOSSBilling\Doctrine\TimestampTrait;
 use FOSSBilling\Api\ArrayInterface;
 use FOSSBilling\Doctrine\TimestampInterface;
+use FOSSBilling\Doctrine\TimestampTrait;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Invoice\Repository\InvoiceItemRepository::class)]
 #[ORM\Table(name: 'invoice_item')]

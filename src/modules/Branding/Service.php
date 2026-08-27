@@ -11,8 +11,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Branding;
 
-use FOSSBilling\Container\InjectionAwareInterface;
 use Box\Mod\Widgets\ProviderInterface;
+use FOSSBilling\Container\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface, ProviderInterface
 {

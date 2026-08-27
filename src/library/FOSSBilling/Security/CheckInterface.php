@@ -11,8 +11,6 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Security;
 
-use FOSSBilling\Security\CheckResult;
-
 interface CheckInterface
 {
     /**

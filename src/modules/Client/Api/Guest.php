@@ -69,7 +69,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['email' => 'Email required', 'first_name' => 'First name required', 'password' => 'Password required', 'password_confirm' => 'Password confirmation required'])]
     public function create($data = []): int
     {
-        $this->getDi()['rate_limiter']->consumeOrThrow('client_signup', (string) $this->getIp());
+        $this->getDi()['rate_limiter']->consumeOrThrow('client_signup', $this->getIp());
 
         $config = $this->getDi()['mod_config']('client');
 
@@ -176,7 +176,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             // Sanitize email
             $data['email'] = \FOSSBilling\Validation\EmailValidator::validateAndSanitizeEmail($data['email']);
 
-            $ipLimit = $this->getDi()['rate_limiter']->consume('client_password_reset_ip', (string) $this->getIp());
+            $ipLimit = $this->getDi()['rate_limiter']->consume('client_password_reset_ip', $this->getIp());
             if ($ipLimit->isLimited()) {
                 $this->getDi()['logger']->withChannel('security')->info('Client password reset rate limited from IP {ip}.', ['ip' => $this->getIp()]);
 
@@ -225,7 +225,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         $startedAt = microtime(true);
 
         try {
-            $this->getDi()['rate_limiter']->consumeOrThrow('client_password_reset_confirm_post_ip', (string) $this->getIp());
+            $this->getDi()['rate_limiter']->consumeOrThrow('client_password_reset_confirm_post_ip', $this->getIp());
 
             $this->getDi()['events_manager']->fire(['event' => 'onBeforeClientProfilePasswordReset', 'params' => $data['hash']]);
 

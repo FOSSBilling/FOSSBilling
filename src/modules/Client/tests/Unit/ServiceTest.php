@@ -53,6 +53,13 @@ test('generateEmailConfirmationLink returns string', function (): void {
 
     $model = createEntity(Box\Mod\Extension\Entity\ExtensionMeta::class);
 
+    $urlMock = Mockery::mock(FOSSBilling\Url::class);
+    $urlMock->shouldReceive('link')
+        ->atLeast()->once()
+        ->andReturnUsing(fn (string $path): string => 'https://fossbilling.org' . $path);
+
+    $di = container();
+    $di['url'] = $urlMock;
 
     $service->setDi($di);
 
@@ -782,7 +789,7 @@ test('adminCreateClient returns int', function (): void {
     $eventManagerMock->shouldReceive('fire')
         ->twice();
 
-    $passwordMock = Mockery::mock(\FOSSBilling\Security\PasswordManager::class);
+    $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
     $passwordMock->shouldReceive('hashIt')
         ->atLeast()->once()
         ->with($data['password']);

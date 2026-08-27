@@ -10,7 +10,7 @@ declare(strict_types=1);
  */
 
 use FOSSBilling\Doctrine\DriverManagerFactory;
-use FOSSBilling\Requirements;
+use FOSSBilling\System\Requirements;
 
 test('required_extensions no longer hardcodes a single PDO driver', function (): void {
     $requirements = new Requirements();

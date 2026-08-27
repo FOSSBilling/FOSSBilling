@@ -13,8 +13,8 @@ namespace Box\Mod\Staff\Entity;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use FOSSBilling\Doctrine\CreatedAtTrait;
 use FOSSBilling\Api\ArrayInterface;
+use FOSSBilling\Doctrine\CreatedAtTrait;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Staff\Repository\AdminGroupMemberRepository::class)]
 #[ORM\Table(name: 'admin_group_member')]

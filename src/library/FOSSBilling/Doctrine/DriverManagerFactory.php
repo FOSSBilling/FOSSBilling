@@ -13,8 +13,8 @@ namespace FOSSBilling\Doctrine;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
-use FOSSBilling\System\Config;
 use FOSSBilling\Exception\BaseException as Exception;
+use FOSSBilling\System\Config;
 
 class DriverManagerFactory
 {

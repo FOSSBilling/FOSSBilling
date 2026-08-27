@@ -363,7 +363,7 @@ test('get selected addons for cart returns prepared addon items', function (): v
     $parentProduct = productTestCreateProductEntity(10);
     $addon = productTestCreateProductEntity(20)->setStatus('enabled')->setType(Service::CUSTOM)->setIsAddon(true);
 
-    $validator = Mockery::mock(\FOSSBilling\Validation\Validator::class);
+    $validator = Mockery::mock(FOSSBilling\Validation\Validator::class);
     $validator->shouldNotReceive('checkRequiredParamsForArray');
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
@@ -1108,7 +1108,6 @@ test('create addon', function (): void {
     $di = container();
     $di['em'] = productTestCreateEntityManagerWithRepositories($productRepo, null, productTestCreateProductEntity($newProductId), productTestCreateProductPaymentEntity(1));
     $di['logger'] = new FOSSBilling\Logging\Logger();
-    $di['tools'] = $toolMock;
 
     $service->setDi($di);
 

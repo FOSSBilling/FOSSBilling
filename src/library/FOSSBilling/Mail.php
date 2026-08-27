@@ -195,7 +195,7 @@ class Mail
         }
 
         $host = urlencode(trim((string) $options['smtp_host']));
-        $port = \FOSSBilling\Utils\Normalizer::normalizePort($options['smtp_port']);
+        $port = Utils\Normalizer::normalizePort($options['smtp_port']);
         if ($port === null) {
             throw new InformationException('SMTP port is invalid');
         }

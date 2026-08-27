@@ -18,8 +18,8 @@ use Box\Mod\Invoice\Entity\InvoiceItem;
 use Box\Mod\Invoice\Repository\InvoiceItemRepository;
 use Box\Mod\Order\Entity\Order;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
-use FOSSBilling\Doctrine\EntityManagerFactory;
 use FOSSBilling\Container\InjectionAwareInterface;
+use FOSSBilling\Doctrine\EntityManagerFactory;
 use FOSSBilling\Validation\PriceValidator;
 
 class ServiceInvoiceItem implements InjectionAwareInterface

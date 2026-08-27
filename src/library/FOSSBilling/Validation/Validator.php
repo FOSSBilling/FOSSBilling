@@ -16,7 +16,7 @@ use FOSSBilling\Container\InjectionAwareInterface;
 class Validator implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
-    private DomainValidator $domainValidator;
+    private readonly DomainValidator $domainValidator;
 
     public function __construct()
     {

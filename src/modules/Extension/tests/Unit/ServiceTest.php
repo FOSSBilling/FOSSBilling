@@ -299,6 +299,7 @@ test('getAdminNavigation returns admin navigation', function (): void {
 
     $di = container();
     $di['mod'] = $di->protect(fn ($name): Mockery\MockInterface => $modMock);
+    $di['tools'] = new FOSSBilling\Tools();
     $di['em'] = extensionBuildEm($extensionRepository);
 
     $service->setDi($di);
@@ -342,7 +343,7 @@ test('update throws exception for extensions that need manual update', function 
     $service->setDi($di);
 
     expect(fn () => $service->update($ext))
-        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Visit the extension directory for more information on updating this extension.');
+        ->toThrow(FOSSBilling\Exception::class, 'Visit the extension directory for more information on updating this extension.');
 });
 
 test('activate activates an extension', function (): void {
@@ -441,7 +442,7 @@ test('deactivate throws exception for core modules', function (): void {
     $service->setDi($di);
 
     expect(fn (): bool => $service->deactivate($ext))
-        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Core modules are an integral part of the FOSSBilling system and cannot be deactivated.');
+        ->toThrow(FOSSBilling\Exception::class, 'Core modules are an integral part of the FOSSBilling system and cannot be deactivated.');
 });
 
 test('deactivate deactivates hook extension', function (): void {
@@ -701,7 +702,7 @@ test('getConfig returns extension config', function (): void {
         ->once()
         ->andReturn($meta);
 
-    $cryptMock = Mockery::mock(\FOSSBilling\Security\Crypt::class);
+    $cryptMock = Mockery::mock(FOSSBilling\Security\Crypt::class);
     $cryptMock->shouldReceive('decrypt')->atLeast()->once();
 
     $em = extensionBuildEm(null, $metaRepo);
@@ -761,6 +762,29 @@ test('setConfig sets extension config', function (): void {
         ->once()
         ->andReturn([]);
 
+    $toolsMock = Mockery::mock(FOSSBilling\Utils\Str::class);
+
+    $cryptMock = Mockery::mock(FOSSBilling\Security\Crypt::class);
+    $cryptMock->shouldReceive('encrypt')
+        ->atLeast()
+        ->once()
+        ->andReturn('encryptedConfig');
+
+    $metaRepo = Mockery::mock(ExtensionMetaRepository::class);
+    $metaRepo->shouldReceive('findOneByExtensionAndScope')
+        ->atLeast()
+        ->once()
+        ->andReturn(null);
+
+    $em = extensionBuildEm(null, $metaRepo);
+    $em->shouldReceive('persist')->atLeast()->once();
+    $em->shouldReceive('flush')->atLeast()->once();
+
+    $eventMock = Mockery::mock(Box_EventManager::class);
+    $eventMock->shouldReceive('fire')->atLeast()->once();
+
+    $di = container();
+    $di['em'] = $em;
     $di['crypt'] = $cryptMock;
     $di['events_manager'] = $eventMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
@@ -811,7 +835,7 @@ test('hasManagePermission denies access when module does not declare manage_sett
         ]);
 
     expect(fn () => $serviceMock->hasManagePermission('mod_support'))
-        ->toThrow(new FOSSBilling\Exception\InformationException('You do not have permission to perform this action', [], 403));
+        ->toThrow(new FOSSBilling\InformationException('You do not have permission to perform this action', [], 403));
 });
 
 test('hasManagePermission allows access when module declares manage_settings and user has it', function (): void {
@@ -859,7 +883,7 @@ test('hasManagePermission allows access when module declares manage_settings and
         ]);
 
     expect(fn () => $serviceMock->hasManagePermission('mod_email'))
-        ->not->toThrow(new FOSSBilling\Exception\InformationException('You do not have permission to perform this action', [], 403));
+        ->not->toThrow(new FOSSBilling\InformationException('You do not have permission to perform this action', [], 403));
 });
 
 test('hasManagePermission denies configuration of inactive modules without the manage_extensions permission', function (): void {
@@ -871,7 +895,7 @@ test('hasManagePermission denies configuration of inactive modules without the m
         ->with('extension', 'manage_extensions')
         ->atLeast()
         ->once()
-        ->andThrow(new FOSSBilling\Exception\InformationException('You need the "extension.manage_extensions" permission to perform this action', [], 403));
+        ->andThrow(new FOSSBilling\InformationException('You need the "extension.manage_extensions" permission to perform this action', [], 403));
 
     $modMock = Mockery::mock(FOSSBilling\Module::class);
     $modMock->shouldReceive('getCoreModules')
@@ -895,7 +919,7 @@ test('hasManagePermission denies configuration of inactive modules without the m
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->hasManagePermission('mod_support'))
-        ->toThrow(new FOSSBilling\Exception\InformationException('You need the "extension.manage_extensions" permission to perform this action', [], 403));
+        ->toThrow(new FOSSBilling\InformationException('You need the "extension.manage_extensions" permission to perform this action', [], 403));
 });
 
 test('hasManagePermission allows configuration of inactive modules with the manage_extensions permission', function (): void {
@@ -930,7 +954,7 @@ test('hasManagePermission allows configuration of inactive modules with the mana
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->hasManagePermission('mod_support'))
-        ->not->toThrow(new FOSSBilling\Exception\InformationException('You need the "extension.manage_extensions" permission to perform this action', [], 403));
+        ->not->toThrow(new FOSSBilling\InformationException('You need the "extension.manage_extensions" permission to perform this action', [], 403));
 });
 
 test('setConfig denies inactive module configuration without touching storage when the manage_extensions permission is missing', function (): void {
@@ -942,7 +966,7 @@ test('setConfig denies inactive module configuration without touching storage wh
         ->with('extension', 'manage_extensions')
         ->atLeast()
         ->once()
-        ->andThrow(new FOSSBilling\Exception\InformationException('You need the "extension.manage_extensions" permission to perform this action', [], 403));
+        ->andThrow(new FOSSBilling\InformationException('You need the "extension.manage_extensions" permission to perform this action', [], 403));
 
     $metaRepository = Mockery::mock(ExtensionMetaRepository::class);
     $metaRepository->shouldNotReceive('findOneByExtensionAndScope');
@@ -969,5 +993,5 @@ test('setConfig denies inactive module configuration without touching storage wh
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->setConfig(['ext' => 'mod_support']))
-        ->toThrow(new FOSSBilling\Exception\InformationException('You need the "extension.manage_extensions" permission to perform this action', [], 403));
+        ->toThrow(new FOSSBilling\InformationException('You need the "extension.manage_extensions" permission to perform this action', [], 403));
 });

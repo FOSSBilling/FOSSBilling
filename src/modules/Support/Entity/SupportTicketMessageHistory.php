@@ -14,9 +14,9 @@ namespace Box\Mod\Support\Entity;
 use Box\Mod\Support\Repository\SupportTicketMessageHistoryRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use FOSSBilling\Doctrine\TimestampTrait;
 use FOSSBilling\Api\ArrayInterface;
 use FOSSBilling\Doctrine\TimestampInterface;
+use FOSSBilling\Doctrine\TimestampTrait;
 
 /**
  * A snapshot of a support ticket message's content taken immediately before an

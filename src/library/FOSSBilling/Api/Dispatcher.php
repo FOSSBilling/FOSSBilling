@@ -11,9 +11,9 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Api;
 
+use FOSSBilling\Container\InjectionAwareInterface;
 use FOSSBilling\Exception\BaseException;
 use FOSSBilling\Exception\InformationException;
-use FOSSBilling\Container\InjectionAwareInterface;
 use FOSSBilling\Validation\Api\RequiredParams;
 use Pimple\Container;
 

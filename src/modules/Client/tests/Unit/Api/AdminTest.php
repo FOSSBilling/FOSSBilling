@@ -112,14 +112,14 @@ test('login returns array', function (): void {
     $serviceMock = Mockery::mock(Box\Mod\Client\Service::class);
     $serviceMock->shouldReceive('toSessionArray')->atLeast()->once()->andReturn($sessionArray);
 
-    $sessionMock = Mockery::mock(\FOSSBilling\Security\Session::class);
+    $sessionMock = Mockery::mock(FOSSBilling\Session::class);
     $sessionMock->shouldReceive('set')->atLeast()->once();
 
     $di = container();
     $di['mod_service'] = $di->protect(moduleService(['client' => $serviceMock]));
     $di['session'] = $sessionMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $validatorStub = $this->createStub(\FOSSBilling\Validation\Validator::class);
+    $validatorStub = $this->createStub(FOSSBilling\Validation\Validator::class);
     $di['validator'] = $validatorStub;
 
     $adminClient->setDi($di);
@@ -145,6 +145,8 @@ test('create returns int', function (): void {
     $eventMock = Mockery::mock('\Box_EventManager');
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
+    $di = container();
+    $di['events_manager'] = $eventMock;
 
     $adminClient->setDi($di);
     $adminClient->setService($serviceMock);
@@ -164,6 +166,7 @@ test('create throws exception when email is already registered', function (): vo
     $serviceMock = Mockery::mock(Box\Mod\Client\Service::class);
     $serviceMock->shouldReceive('emailAlreadyRegistered')->atLeast()->once()->andReturn(true);
 
+    $di = container();
 
     $adminClient->setDi($di);
     $adminClient->setService($serviceMock);
@@ -184,7 +187,7 @@ test('delete returns true', function (): void {
     $di = container();
     $di['events_manager'] = $eventMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $validatorStub = $this->createStub(\FOSSBilling\Validation\Validator::class);
+    $validatorStub = $this->createStub(FOSSBilling\Validation\Validator::class);
     $di['validator'] = $validatorStub;
 
     $adminClient->setDi($di);
@@ -241,6 +244,10 @@ test('update returns true', function (): void {
     $eventMock = Mockery::mock('\Box_EventManager');
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
+    $di = container();
+    $di['mod_service'] = $di->protect(moduleService(['client' => $serviceMock]));
+    $di['events_manager'] = $eventMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
 
     $adminClient->setDi($di);
     $result = $adminClient->update($data);
@@ -364,8 +371,7 @@ test('update throws exception when email is already registered', function (): vo
     $di['mod_service'] = $di->protect(moduleService(['client' => $serviceMock]));
     $di['events_manager'] = $eventMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['validator'] = new \FOSSBilling\Validation\Validator();
-
+    $di['validator'] = new FOSSBilling\Validation\Validator();
 
     $adminClient->setDi($di);
 
@@ -378,7 +384,7 @@ test('update throws exception when id is not passed', function (): void {
 
     $di = container();
 
-    $di['validator'] = new \FOSSBilling\Validation\Validator();
+    $di['validator'] = new FOSSBilling\Validation\Validator();
     $adminClient->setDi($di);
 
     // Validate required parameters before calling update
@@ -399,7 +405,7 @@ test('changePassword returns true', function (): void {
     $eventMock = Mockery::mock('\Box_EventManager');
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
-    $passwordMock = Mockery::mock(\FOSSBilling\Security\PasswordManager::class);
+    $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
     $passwordMock->shouldReceive('hashIt')->atLeast()->once()->with($data['password']);
 
     $profileService = Mockery::mock(Box\Mod\Profile\Service::class);
@@ -409,7 +415,7 @@ test('changePassword returns true', function (): void {
     $di['events_manager'] = $eventMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['password'] = $passwordMock;
-    $validatorStub = $this->createStub(\FOSSBilling\Validation\Validator::class);
+    $validatorStub = $this->createStub(FOSSBilling\Validation\Validator::class);
     $di['validator'] = $validatorStub;
     $di['mod_service'] = $di->protect(moduleService(['profile' => $profileService]));
 
@@ -427,7 +433,7 @@ test('changePassword throws exception when passwords do not match', function ():
         'password_confirm' => 'NotIdentical',
     ];
 
-    $validatorStub = new \FOSSBilling\Validation\Validator();
+    $validatorStub = new FOSSBilling\Validation\Validator();
 
     $di = container();
     $di['validator'] = $validatorStub;
@@ -486,7 +492,7 @@ test('balanceDelete returns true', function (): void {
 
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $validatorStub = $this->createStub(\FOSSBilling\Validation\Validator::class);
+    $validatorStub = $this->createStub(FOSSBilling\Validation\Validator::class);
     $di['validator'] = $validatorStub;
 
     $adminClient->setDi($di);
@@ -509,7 +515,7 @@ test('balanceAddFunds returns true', function (): void {
     $di = container();
     $di['mod_service'] = $di->protect(moduleService(['client' => $serviceMock]));
 
-    $validatorStub = $this->createStub(\FOSSBilling\Validation\Validator::class);
+    $validatorStub = $this->createStub(FOSSBilling\Validation\Validator::class);
     $di['validator'] = $validatorStub;
 
     $adminClient->setDi($di);
@@ -619,7 +625,7 @@ test('groupUpdate returns true', function (): void {
 
     $di = container();
 
-    $validatorStub = $this->createStub(\FOSSBilling\Validation\Validator::class);
+    $validatorStub = $this->createStub(FOSSBilling\Validation\Validator::class);
     $di['validator'] = $validatorStub;
 
     $adminClient->setDi($di);
@@ -641,7 +647,7 @@ test('groupDelete returns true', function (): void {
 
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $validatorStub = $this->createStub(\FOSSBilling\Validation\Validator::class);
+    $validatorStub = $this->createStub(FOSSBilling\Validation\Validator::class);
     $di['validator'] = $validatorStub;
 
     $adminClient->setDi($di);
@@ -657,7 +663,7 @@ test('groupGet returns array', function (): void {
     $data['id'] = '2';
 
     $di = container();
-    $validatorStub = $this->createStub(\FOSSBilling\Validation\Validator::class);
+    $validatorStub = $this->createStub(FOSSBilling\Validation\Validator::class);
     $di['validator'] = $validatorStub;
 
     $adminClient->setDi($di);
@@ -672,7 +678,7 @@ test('batchDelete returns true', function (): void {
     $activityMock = Mockery::mock(Box\Mod\Client\Api\Admin::class)->makePartial();
     $activityMock->shouldReceive('delete')->atLeast()->once()->andReturn(true);
 
-    $validatorStub = $this->createStub(\FOSSBilling\Validation\Validator::class);
+    $validatorStub = $this->createStub(FOSSBilling\Validation\Validator::class);
 
     $di = container();
     $di['validator'] = $validatorStub;

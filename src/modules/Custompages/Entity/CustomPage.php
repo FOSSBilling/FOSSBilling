@@ -13,8 +13,8 @@ namespace Box\Mod\Custompages\Entity;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use FOSSBilling\Doctrine\CreatedAtTrait;
 use FOSSBilling\Api\ArrayInterface;
+use FOSSBilling\Doctrine\CreatedAtTrait;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Custompages\Repository\CustomPageRepository::class)]
 #[ORM\Table(name: 'custom_pages')]

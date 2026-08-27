@@ -62,7 +62,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         $startedAt = microtime(true);
 
         try {
-            $this->getDi()['rate_limiter']->consumeOrThrow('staff_password_reset_confirm_post_ip', (string) $this->getIp());
+            $this->getDi()['rate_limiter']->consumeOrThrow('staff_password_reset_confirm_post_ip', $this->getIp());
 
             $config = $this->getModule()->getConfig();
             if (isset($config['public']['reset_pw']) && $config['public']['reset_pw'] == '0') {
@@ -145,7 +145,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             $this->getDi()['events_manager']->fire(['event' => 'onBeforePasswordResetStaff']);
             $data['email'] = \FOSSBilling\Validation\EmailValidator::validateAndSanitizeEmail($data['email']);
 
-            $ipLimit = $this->getDi()['rate_limiter']->consume('staff_password_reset_ip', (string) $this->getIp());
+            $ipLimit = $this->getDi()['rate_limiter']->consume('staff_password_reset_ip', $this->getIp());
             if ($ipLimit->isLimited()) {
                 $this->getDi()['logger']->withChannel('security')->info('Staff password reset rate limited from IP {ip}: email {email}', ['ip' => $this->getIp(), 'email' => $data['email']]);
 

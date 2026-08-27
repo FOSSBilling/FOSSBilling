@@ -14,8 +14,8 @@ namespace Box\Mod\Servicedownloadable\Entity;
 use Box\Mod\Servicedownloadable\Repository\ServiceDownloadableFileRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use FOSSBilling\Doctrine\TimestampTrait;
 use FOSSBilling\Doctrine\TimestampInterface;
+use FOSSBilling\Doctrine\TimestampTrait;
 
 #[ORM\Entity(repositoryClass: ServiceDownloadableFileRepository::class)]
 #[ORM\Table(name: 'service_downloadable_file')]

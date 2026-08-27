@@ -28,7 +28,7 @@ test('gets dependency injection container', function (): void {
 test('gets product list', function (): void {
     $api = apiEndpoint(new Admin());
     $serviceMock = Mockery::mock(Service::class);
-    $serviceMock->shouldReceive('getPaginatedProducts')->once()->with([], null)->andReturn(['list' => []]);
+    $serviceMock->shouldReceive('getPaginatedProducts')->once()->with([], Mockery::type('object'))->andReturn(['list' => []]);
 
     $api->setService($serviceMock);
     $api->setDi(container());

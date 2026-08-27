@@ -447,7 +447,7 @@ test('delete exception', function (): void {
     $dispatcher->validateRequiredParams($adminApi, 'delete', []);
 
     $di = container();
-    $di['validator'] = new \FOSSBilling\Validation\Validator();
+    $di['validator'] = new FOSSBilling\Validation\Validator();
     $adminApi->setDi($di);
     $adminApi->setService($service);
     $adminApi->delete([]);
@@ -468,7 +468,7 @@ test('delete', function (): void {
     ->andReturn(true);
 
     $di = container();
-    $di['validator'] = new \FOSSBilling\Validation\Validator();
+    $di['validator'] = new FOSSBilling\Validation\Validator();
     $adminApi->setDi($di);
     $adminApi->setService($service);
 

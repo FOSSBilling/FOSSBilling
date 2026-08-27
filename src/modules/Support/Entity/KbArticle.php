@@ -13,9 +13,9 @@ namespace Box\Mod\Support\Entity;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use FOSSBilling\Doctrine\TimestampTrait;
 use FOSSBilling\Api\ArrayInterface;
 use FOSSBilling\Doctrine\TimestampInterface;
+use FOSSBilling\Doctrine\TimestampTrait;
 
 // This entity intentionally does not use a PreUpdate callback.
 // View counter updates should not affect updatedAt (it is used as the "last updated" timestamp).

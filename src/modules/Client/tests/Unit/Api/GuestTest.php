@@ -55,10 +55,13 @@ test('create returns int', function (): void {
     $serviceMock->shouldReceive('checkExtraRequiredFields')->atLeast()->once();
     $serviceMock->shouldReceive('checkCustomFields')->atLeast()->once();
 
-    $validatorMock = Mockery::mock(\FOSSBilling\Validation\Validator::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class);
     $validatorMock->shouldReceive('isPasswordStrong')->atLeast()->once();
     $validatorMock->shouldReceive('passwordsMatch')->atLeast()->once();
 
+    $di = container();
+    $di['mod_config'] = $di->protect(fn ($name): array => $configArr);
+    $di['validator'] = $validatorMock;
 
     $guestClient->setDi($di);
     $guestClient->setService($serviceMock);
@@ -91,14 +94,13 @@ test('create throws exception when client exists', function (): void {
 
     $model = createEntity(Box\Mod\Client\Entity\Client::class);
 
-    $validatorMock = Mockery::mock(\FOSSBilling\Validation\Validator::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class);
     $validatorMock->shouldReceive('isPasswordStrong')->atLeast()->once();
     $validatorMock->shouldReceive('passwordsMatch')->atLeast()->once();
 
     $di = container();
     $di['mod_config'] = $di->protect(fn ($name): array => $configArr);
     $di['validator'] = $validatorMock;
-
 
     $guestClient->setDi($di);
     $guestClient->setService($serviceMock);
@@ -167,9 +169,9 @@ test('login returns array', function (): void {
     $eventMock = Mockery::mock('\Box_EventManager');
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
-    $sessionMock = Mockery::mock(\FOSSBilling\Security\Session::class);
+    $sessionMock = Mockery::mock(FOSSBilling\Session::class);
     $sessionMock->shouldReceive('set')->atLeast()->once();
-    $sessionMock->shouldReceive('getId')->atLeast()->once();
+    $sessionMock->shouldReceive('getId')->atLeast()->once()->andReturn('test_session_id');
     $sessionMock->shouldReceive('regenerateId')->atLeast()->once();
     $sessionMock->shouldReceive('delete')->atLeast()->once();
 
@@ -177,6 +179,10 @@ test('login returns array', function (): void {
     $cartServiceMock->shouldReceive('transferFromOtherSession')->atLeast()->once()
         ->andReturn(true);
 
+    $di = container();
+    $di['events_manager'] = $eventMock;
+    $di['session'] = $sessionMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod_service'] = $di->protect(moduleService(['cart' => $cartServiceMock]));
 
     $guestClient->setDi($di);
@@ -208,6 +214,11 @@ test('resetPassword returns true with new flow', function (): void {
     $serviceMock->shouldReceive('createPasswordResetRequestForClient')->atLeast()->once()->andReturn('hashedString');
     $serviceMock->shouldReceive('sendPasswordResetRequestEmailForClient')->atLeast()->once();
 
+    $di = container();
+    $di['em'] = $em;
+    $di['events_manager'] = $eventMock;
+    $di['mod_service'] = $di->protect(moduleService(['client' => $serviceMock]));
+    $di['logger'] = new Tests\Helpers\TestLogger();
 
     $guestClient->setDi($di);
 
@@ -235,7 +246,6 @@ test('resetPassword returns true when email not found', function (): void {
     $di['em'] = $em;
     $di['events_manager'] = $eventMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
-
 
     $guestClient->setDi($di);
 
@@ -276,7 +286,7 @@ test('updatePassword returns true', function (): void {
     $eventMock = Mockery::mock('\Box_EventManager');
     $eventMock->shouldReceive('fire')->times(2);
 
-    $passwordMock = Mockery::mock(\FOSSBilling\Security\PasswordManager::class);
+    $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
     $passwordMock->shouldReceive('hashIt')->atLeast()->once();
 
     $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);

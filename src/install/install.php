@@ -150,7 +150,7 @@ final class FOSSBilling_Installer
 
                     // Handle database information
                     $databaseDriver = (string) $this->request->request->get('database_driver', 'pdo_mysql');
-                    if (!in_array($databaseDriver, \FOSSBilling\Doctrine\DriverManagerFactory::SUPPORTED_DRIVERS, true)) {
+                    if (!in_array($databaseDriver, FOSSBilling\Doctrine\DriverManagerFactory::SUPPORTED_DRIVERS, true)) {
                         throw new Exception('Unsupported database driver.');
                     }
                     $this->session->set('database_driver', $databaseDriver);
@@ -159,7 +159,7 @@ final class FOSSBilling_Installer
                         $this->session->set('database_path', $this->request->request->get('database_path'));
                     } else {
                         $this->session->set('database_hostname', $this->request->request->get('database_hostname'));
-                        $databasePort = \FOSSBilling\Utils\Normalizer::normalizePort($this->request->request->get('database_port'));
+                        $databasePort = FOSSBilling\Utils\Normalizer::normalizePort($this->request->request->get('database_port'));
                         if ($databasePort === null) {
                             throw new Exception('Database port is invalid.');
                         }
@@ -305,7 +305,7 @@ final class FOSSBilling_Installer
         $databaseName = $this->quoteMysqlIdentifier((string) $this->session->get('database_name'));
 
         // Open the connection
-        $databasePort = \FOSSBilling\Utils\Normalizer::normalizePort($this->session->get('database_port'), 3306);
+        $databasePort = FOSSBilling\Utils\Normalizer::normalizePort($this->session->get('database_port'), 3306);
 
         $this->pdo = new PDO('mysql:host=' . $this->session->get('database_hostname') . ';port=' . $databasePort,
             $this->session->get('database_username'),
@@ -355,7 +355,7 @@ final class FOSSBilling_Installer
     private function connectPostgres(): void
     {
         $host = (string) $this->session->get('database_hostname');
-        $port = \FOSSBilling\Utils\Normalizer::normalizePort($this->session->get('database_port'), 5432);
+        $port = FOSSBilling\Utils\Normalizer::normalizePort($this->session->get('database_port'), 5432);
         $user = (string) $this->session->get('database_username');
         $password = (string) $this->session->get('database_password');
         $databaseName = (string) $this->session->get('database_name');
@@ -522,7 +522,7 @@ final class FOSSBilling_Installer
         $now = new DateTimeImmutable();
         FOSSBilling\Doctrine\InstallSeeder::seedContent($this->connection, $entityManager, $contentSql, $now);
 
-        $passwordObject = new \FOSSBilling\Security\PasswordManager();
+        $passwordObject = new FOSSBilling\Security\PasswordManager();
         FOSSBilling\Doctrine\InstallSeeder::seedAdmin(
             $this->connection,
             (string) $this->session->get('admin_name'),
@@ -675,7 +675,7 @@ final class FOSSBilling_Installer
             : [
                 'driver' => $driver,
                 'host' => $this->session->get('database_hostname'),
-                'port' => \FOSSBilling\Utils\Normalizer::normalizePort($this->session->get('database_port'), $driver === 'pdo_pgsql' ? 5432 : 3306),
+                'port' => FOSSBilling\Utils\Normalizer::normalizePort($this->session->get('database_port'), $driver === 'pdo_pgsql' ? 5432 : 3306),
                 'name' => $this->session->get('database_name'),
                 'user' => $this->session->get('database_username'),
                 'password' => $this->session->get('database_password'),

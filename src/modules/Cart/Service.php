@@ -22,8 +22,8 @@ use Box\Mod\Order\Entity\Order;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Product\Entity\Promo;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
-use FOSSBilling\Doctrine\EntityManagerFactory;
 use FOSSBilling\Container\InjectionAwareInterface;
+use FOSSBilling\Doctrine\EntityManagerFactory;
 
 class Service implements InjectionAwareInterface
 {

@@ -6,7 +6,7 @@ use FOSSBilling\Security\RateLimitResult;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\HttpFoundation\Request;
 
-function createRateLimiter(string $requestIp, array $whitelist = [], ?bool $enabled = null): \FOSSBilling\Security\RateLimiter
+function createRateLimiter(string $requestIp, array $whitelist = [], ?bool $enabled = null): FOSSBilling\Security\RateLimiter
 {
     $di = new Pimple\Container();
     $di['rate_limit_cache'] = new ArrayAdapter();
@@ -14,7 +14,7 @@ function createRateLimiter(string $requestIp, array $whitelist = [], ?bool $enab
     $request->shouldReceive('getClientIp')->andReturn($requestIp);
     $di['request'] = $request;
 
-    $limiter = new class($whitelist, $enabled) extends \FOSSBilling\Security\RateLimiter {
+    $limiter = new class($whitelist, $enabled) extends FOSSBilling\Security\RateLimiter {
         public function __construct(private readonly array $whitelist, private readonly ?bool $enabled)
         {
         }
@@ -81,7 +81,7 @@ test('consume or throw raises rate limit exception', function (): void {
     $limiter->consume('client_password_reset_email', $subject, 3);
 
     expect(fn (): RateLimitResult => $limiter->consumeOrThrow('client_password_reset_email', $subject))
-        ->toThrow(function (\FOSSBilling\Security\RateLimitException $exception): void {
+        ->toThrow(function (FOSSBilling\Security\RateLimitException $exception): void {
             expect($exception->getCode())->toBe(429);
             expect($exception->getMessage())->toBe('Rate limit exceeded. Please try again later.');
             expect($exception->getRateLimitResult()->getPolicy())->toBe('client_password_reset_email');

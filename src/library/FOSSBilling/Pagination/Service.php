@@ -13,9 +13,9 @@ namespace FOSSBilling\Pagination;
 
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\Pagination\Paginator as DoctrinePaginator;
-use FOSSBilling\Exception\InformationException;
 use FOSSBilling\Api\ArrayInterface;
 use FOSSBilling\Container\InjectionAwareInterface;
+use FOSSBilling\Exception\InformationException;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
 

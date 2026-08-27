@@ -13,9 +13,9 @@ namespace Box\Mod\Profile;
 
 use Box\Mod\Client\Entity\Client;
 use Box\Mod\Staff\Entity\Admin;
+use FOSSBilling\Container\InjectionAwareInterface;
 use FOSSBilling\Exception\InformationException;
 use FOSSBilling\I18n\I18n;
-use FOSSBilling\Container\InjectionAwareInterface;
 use Symfony\Component\Intl\Countries;
 use Symfony\Component\Intl\Locales;
 

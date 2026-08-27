@@ -63,6 +63,7 @@ test('generates new api key', function (): void {
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['events_manager'] = $emMock;
+    $di['tools'] = new FOSSBilling\Tools();
 
     $model = createEntity(Box\Mod\Staff\Entity\Admin::class);
 
@@ -80,7 +81,7 @@ test('changes admin password', function (): void {
         ->atLeast()->once()
         ->andReturn(true);
 
-    $passwordMock = Mockery::mock(\FOSSBilling\Security\PasswordManager::class);
+    $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
     $passwordMock->shouldReceive('hashIt')
         ->with($password);
 
@@ -111,6 +112,19 @@ test('updates client', function (): void {
             'disable_change_email' => 0,
         ]);
 
+    $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
+    $toolsMock->shouldReceive('validateAndSanitizeEmail');
+
+    $clientServiceMock = Mockery::mock(Box\Mod\Client\Service::class);
+    $clientServiceMock->shouldReceive('emailAlreadyRegistered')
+        ->andReturn(false);
+
+    $di = container();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['events_manager'] = $emMock;
+    $di['mod_service'] = $di->protect(fn ($name): Mockery\MockInterface => $clientServiceMock);
+    $di['mod'] = $di->protect(fn (): Mockery\MockInterface => $modMock);
+    $di['tools'] = $toolsMock;
 
     $model = createEntity(Box\Mod\Client\Entity\Client::class);
 
@@ -196,7 +210,7 @@ test('throws exception when email change is not allowed', function (): void {
     $service->setDi($di);
 
     expect(fn (): bool => $service->updateClient($model, $data))
-        ->toThrow(FOSSBilling\Exception\BaseException::class);
+        ->toThrow(FOSSBilling\Exception::class);
 });
 
 test('throws exception when email already registered', function (): void {
@@ -212,6 +226,20 @@ test('throws exception when email already registered', function (): void {
             'disable_change_email' => 0,
         ]);
 
+    $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
+    $toolsMock->shouldReceive('validateAndSanitizeEmail');
+
+    $clientServiceMock = Mockery::mock(Box\Mod\Client\Service::class);
+    $clientServiceMock->shouldReceive('emailAlreadyRegistered')
+        ->atLeast()->once()
+        ->andReturn(true);
+
+    $di = container();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['events_manager'] = $emMock;
+    $di['mod_service'] = $di->protect(fn ($name): Mockery\MockInterface => $clientServiceMock);
+    $di['mod'] = $di->protect(fn (): Mockery\MockInterface => $modMock);
+    $di['tools'] = $toolsMock;
 
     $model = createEntity(Box\Mod\Client\Entity\Client::class);
 
@@ -221,12 +249,13 @@ test('throws exception when email already registered', function (): void {
     $service->setDi($di);
 
     expect(fn (): bool => $service->updateClient($model, $data))
-        ->toThrow(FOSSBilling\Exception\BaseException::class);
+        ->toThrow(FOSSBilling\Exception::class);
 });
 
 test('resets api key', function (): void {
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['tools'] = new FOSSBilling\Tools();
 
     $model = createEntity(Box\Mod\Client\Entity\Client::class);
 
@@ -245,7 +274,7 @@ test('changes client password', function (): void {
 
     $password = 'new password';
 
-    $passwordMock = Mockery::mock(\FOSSBilling\Security\PasswordManager::class);
+    $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
     $passwordMock->shouldReceive('hashIt')
         ->with($password);
 
@@ -263,7 +292,7 @@ test('changes client password', function (): void {
 });
 
 test('logs out client', function (): void {
-    $sessionMock = Mockery::mock(\FOSSBilling\Security\Session::class);
+    $sessionMock = Mockery::mock(FOSSBilling\Session::class);
     $sessionMock->shouldReceive('destroy')
         ->atLeast()->once();
 
@@ -307,16 +336,16 @@ test('invalidates client sessions stored in Symfony attribute format', function 
 });
 
 test('i18n::validateTimezone returns null for null and empty input', function (): void {
-    expect(FOSSBilling\I18n\I18n::validateTimezone(null))->toBeNull();
-    expect(FOSSBilling\I18n\I18n::validateTimezone(''))->toBeNull();
+    expect(FOSSBilling\i18n::validateTimezone(null))->toBeNull();
+    expect(FOSSBilling\i18n::validateTimezone(''))->toBeNull();
 });
 
 test('i18n::validateTimezone accepts any IANA identifier', function (): void {
-    expect(FOSSBilling\I18n\I18n::validateTimezone('America/New_York'))->toBe('America/New_York');
-    expect(FOSSBilling\I18n\I18n::validateTimezone('Asia/Tokyo'))->toBe('Asia/Tokyo');
-    expect(FOSSBilling\I18n\I18n::validateTimezone('UTC'))->toBe('UTC');
+    expect(FOSSBilling\i18n::validateTimezone('America/New_York'))->toBe('America/New_York');
+    expect(FOSSBilling\i18n::validateTimezone('Asia/Tokyo'))->toBe('Asia/Tokyo');
+    expect(FOSSBilling\i18n::validateTimezone('UTC'))->toBe('UTC');
 });
 
 test('i18n::validateTimezone throws InformationException for unknown identifier', function (): void {
-    expect(fn (): ?string => FOSSBilling\I18n\I18n::validateTimezone('Mars/Olympus'))->toThrow(FOSSBilling\Exception\InformationException::class);
+    expect(fn (): ?string => FOSSBilling\i18n::validateTimezone('Mars/Olympus'))->toThrow(FOSSBilling\InformationException::class);
 });

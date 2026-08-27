@@ -13,8 +13,8 @@ namespace Box\Mod\Client\Entity;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use FOSSBilling\Doctrine\TimestampTrait;
 use FOSSBilling\Doctrine\TimestampInterface;
+use FOSSBilling\Doctrine\TimestampTrait;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Client\Repository\ClientGroupRepository::class)]
 #[ORM\Table(name: 'client_group')]

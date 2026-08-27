@@ -13,7 +13,6 @@ namespace Box\Mod\Widgets;
 
 use Box\Mod\Extension\Entity\Extension;
 use FOSSBilling\Container\InjectionAwareInterface;
-use Box\Mod\Widgets\ProviderInterface;
 use Symfony\Contracts\Cache\ItemInterface;
 
 class Service implements InjectionAwareInterface

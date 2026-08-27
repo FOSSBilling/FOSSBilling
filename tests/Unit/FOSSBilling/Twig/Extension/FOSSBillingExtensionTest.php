@@ -103,7 +103,7 @@ test('daysleft returns 0 for null', function (): void {
 
 test('fileSize returns formatted string for a size', function (): void {
     $extension = makeFossBillingTwigExtension();
-    expect($extension->fileSize(1024))->toBe(\FOSSBilling\Utils\Format::humanReadableBytes(1024));
+    expect($extension->fileSize(1024))->toBe(FOSSBilling\Utils\Format::humanReadableBytes(1024));
 });
 
 test('fileSize returns empty string for null', function (): void {

@@ -6,8 +6,8 @@ namespace Box\Mod\Order\Entity;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use FOSSBilling\Doctrine\TimestampTrait;
 use FOSSBilling\Doctrine\TimestampInterface;
+use FOSSBilling\Doctrine\TimestampTrait;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Order\Repository\OrderRepository::class)]
 #[ORM\Table(name: 'client_order')]

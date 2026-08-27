@@ -79,7 +79,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
     ])]
     public function check($data): bool
     {
-        $this->getDi()['rate_limiter']->consumeOrThrow('domain_lookup_ip', (string) $this->getIp());
+        $this->getDi()['rate_limiter']->consumeOrThrow('domain_lookup_ip', $this->getIp());
 
         $sld = htmlspecialchars((string) $data['sld'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
         $validator = $this->getDi()['validator'];
@@ -114,7 +114,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
     ])]
     public function can_be_transferred($data): bool
     {
-        $this->getDi()['rate_limiter']->consumeOrThrow('domain_lookup_ip', (string) $this->getIp());
+        $this->getDi()['rate_limiter']->consumeOrThrow('domain_lookup_ip', $this->getIp());
 
         $tld = $this->getService()->tldFindOneByTld($data['tld']);
         if (!$tld instanceof Tld) {

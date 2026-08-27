@@ -211,7 +211,7 @@ test('update page applies setters and returns id', function (): void {
 
     $repo = Mockery::mock(Box\Mod\Custompages\Repository\CustomPageRepository::class);
     $repo->expects('find')->with(5)->andReturn($page);
-    $repo->expects('findOneBySlugExcludingId')->with('new', 5)->andReturn(null);
+    $repo->expects('findOneBySlugExcludingId')->with('new-slug', 5)->andReturn(null);
 
     $em = Mockery::mock(EntityManagerInterface::class);
     $em->allows('getRepository')->with(CustomPage::class)->andReturn($repo);
@@ -231,7 +231,7 @@ test('update page applies setters and returns id', function (): void {
     expect($page->getDescription())->toBe('d');
     expect($page->getKeywords())->toBe('k');
     expect($page->getContent())->toBe('new content');
-    expect($page->getSlug())->toBe('new');
+    expect($page->getSlug())->toBe('new-slug');
 });
 
 test('delete page by scalar removes the entity', function (): void {
@@ -355,7 +355,7 @@ test('update page surfaces a concurrent constraint violation as the uniqueness e
     $repo = Mockery::mock(Box\Mod\Custompages\Repository\CustomPageRepository::class);
     $repo->expects('find')->with(5)->andReturn($page);
     // App-level check passes (no conflict visible yet), but the DB rejects the concurrent slug.
-    $repo->expects('findOneBySlugExcludingId')->with('new', 5)->andReturn(null);
+    $repo->expects('findOneBySlugExcludingId')->with('new-slug', 5)->andReturn(null);
 
     $em = Mockery::mock(EntityManagerInterface::class);
     $em->allows('getRepository')->with(CustomPage::class)->andReturn($repo);
@@ -398,7 +398,7 @@ test('create page truncates a long title slug to fit varchar 255', function (): 
     $service = new Service();
     $service->setDi($di);
 
-    $service->createPage('Long Title', '', '', 'content');
+    $service->createPage(str_repeat('a', 260), '', '', 'content');
 
     expect(strlen($captured['slug']))->toBe(255);
 });
@@ -432,7 +432,7 @@ test('create page reserves room for the suffix when truncating a conflicting lon
     $service = new Service();
     $service->setDi($di);
 
-    $service->createPage('Long Title', '', '', 'content');
+    $service->createPage(str_repeat('a', 300), '', '', 'content');
 
     expect($captured['slug'])->toBe(str_repeat('a', 253) . '-1');
     expect(strlen($captured['slug']))->toBe(255);

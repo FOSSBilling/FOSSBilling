@@ -37,7 +37,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         }
 
         $data['email'] = \FOSSBilling\Validation\EmailValidator::validateAndSanitizeEmail($data['email']);
-        $this->getDi()['rate_limiter']->consumeOrThrow('guest_ticket_create', (string) $this->getIp());
+        $this->getDi()['rate_limiter']->consumeOrThrow('guest_ticket_create', $this->getIp());
 
         $data['content'] = \FOSSBilling\Sanitizer\Sanitizer::sanitizeMarkdownContent($content);
 

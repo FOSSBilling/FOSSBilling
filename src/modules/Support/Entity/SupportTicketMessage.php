@@ -14,9 +14,9 @@ namespace Box\Mod\Support\Entity;
 use Box\Mod\Support\Repository\SupportTicketMessageRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use FOSSBilling\Doctrine\TimestampTrait;
 use FOSSBilling\Api\ArrayInterface;
 use FOSSBilling\Doctrine\TimestampInterface;
+use FOSSBilling\Doctrine\TimestampTrait;
 
 /**
  * A message in a support ticket thread. One ticket has many messages, ordered

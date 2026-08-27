@@ -16,7 +16,7 @@ function createMassmailerDi(?Connection $dbal = null): Pimple\Container
     $em->shouldReceive('getRepository')->with(MassmailerMessage::class)->andReturn($repo);
     $di['em'] = $em;
     $di['dbal'] = $dbal ?? DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
-    $di['validator'] = new \FOSSBilling\Validation\Validator();
+    $di['validator'] = new FOSSBilling\Validation\Validator();
 
     return $di;
 }

@@ -113,7 +113,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $staff = $this->getAdminEntity();
 
-        $this->getDi()['rate_limiter']->consumeOrThrow('profile_password_change_ip', (string) $this->getIp());
+        $this->getDi()['rate_limiter']->consumeOrThrow('profile_password_change_ip', $this->getIp());
         $this->getDi()['rate_limiter']->consumeOrThrow('profile_password_change_account', 'admin:' . $staff->getId());
 
         if (!$this->getDi()['password']->verify($data['current_password'], $staff->getPass())) {

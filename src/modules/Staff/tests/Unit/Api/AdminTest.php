@@ -157,7 +157,7 @@ test('change password', function (): void {
         'password_confirm' => 'test!23A',
     ];
 
-    $validatorMock = Mockery::mock(\FOSSBilling\Validation\Validator::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class);
     $validatorMock
     ->shouldReceive('passwordsMatch')
     ->atLeast()->once();
@@ -208,7 +208,7 @@ test('change password weak password', function (): void {
         'password_confirm' => 'weak',
     ];
 
-    $validatorMock = Mockery::mock(\FOSSBilling\Validation\Validator::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class);
     $validatorMock
         ->shouldReceive('passwordsMatch')
         ->atLeast()->once();
@@ -242,7 +242,7 @@ test('create', function (): void {
     ->atLeast()->once()
     ->andReturn($newStaffId);
 
-    $validatorMock = Mockery::mock(\FOSSBilling\Validation\Validator::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class);
     $validatorMock
     ->shouldReceive('isPasswordStrong')
     ->atLeast()->once()
@@ -250,7 +250,6 @@ test('create', function (): void {
 
     $di = container();
     $di['validator'] = $validatorMock;
-
 
     $api->setDi($di);
     $api->setService($serviceMock);

@@ -13,8 +13,8 @@ namespace Box\Mod\Currency;
 
 use Box\Mod\Currency\Entity\Currency;
 use Box\Mod\Currency\Repository\CurrencyRepository;
-use FOSSBilling\Exception\InformationException;
 use FOSSBilling\Container\InjectionAwareInterface;
+use FOSSBilling\Exception\InformationException;
 use Symfony\Component\Intl\Currencies;
 use Symfony\Contracts\Cache\ItemInterface;
 use Twig\Extra\Intl\IntlExtension;

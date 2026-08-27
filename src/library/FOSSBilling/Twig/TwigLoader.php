@@ -11,7 +11,6 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Twig;
 
-use FOSSBilling\Twig\AppArea;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;

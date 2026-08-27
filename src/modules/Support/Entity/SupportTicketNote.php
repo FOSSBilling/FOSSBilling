@@ -14,9 +14,9 @@ namespace Box\Mod\Support\Entity;
 use Box\Mod\Support\Repository\SupportTicketNoteRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use FOSSBilling\Doctrine\TimestampTrait;
 use FOSSBilling\Api\ArrayInterface;
 use FOSSBilling\Doctrine\TimestampInterface;
+use FOSSBilling\Doctrine\TimestampTrait;
 
 /**
  * An internal note on a support ticket — visible to staff but not to the

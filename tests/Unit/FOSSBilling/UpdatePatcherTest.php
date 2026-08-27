@@ -1072,7 +1072,7 @@ test('require transfer code patch is a no-op when the column already exists', fu
 });
 
 test('admin salt column drop patch is numbered 113', function (): void {
-    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 112);
+    $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 112);
 
     expect($patches)->toHaveKey(113)
         ->and($patches[113][1])->toBe('patch113');
@@ -1090,7 +1090,7 @@ test('admin salt column drop patch is a no-op when the column is already gone', 
     $di = new Pimple\Container();
     $di['pdo'] = $pdo;
 
-    $patcher = new UpdatePatcher();
+    $patcher = new Patcher();
     $patcher->setDi($di);
     (new ReflectionMethod($patcher, 'patch113'))->invoke($patcher);
 });
@@ -1110,13 +1110,13 @@ test('admin salt column drop patch drops the column when it still exists', funct
     $di = new Pimple\Container();
     $di['pdo'] = $pdo;
 
-    $patcher = new UpdatePatcher();
+    $patcher = new Patcher();
     $patcher->setDi($di);
     (new ReflectionMethod($patcher, 'patch113'))->invoke($patcher);
 });
 
 test('cart unique session_id patch is numbered 114', function (): void {
-    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 113);
+    $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 113);
 
     expect($patches)->toHaveKey(114)
         ->and($patches[114][1])->toBe('patch114');
@@ -1144,7 +1144,7 @@ test('cart unique session_id patch is a no-op when the index is already unique a
     $di = new Pimple\Container();
     $di['pdo'] = $pdo;
 
-    $patcher = new UpdatePatcher();
+    $patcher = new Patcher();
     $patcher->setDi($di);
     (new ReflectionMethod($patcher, 'patch114'))->invoke($patcher);
 });
@@ -1190,7 +1190,7 @@ test('cart unique session_id patch reconciles duplicate sessions then converts t
     $di = new Pimple\Container();
     $di['pdo'] = $pdo;
 
-    $patcher = new UpdatePatcher();
+    $patcher = new Patcher();
     $patcher->setDi($di);
     (new ReflectionMethod($patcher, 'patch114'))->invoke($patcher);
 });
@@ -1218,7 +1218,7 @@ function withDbDriverConfig(array $dbConfig, Closure $callback): void
 {
     $filesystem = new Filesystem();
     $original = $filesystem->readFile(PATH_CONFIG);
-    $config = FOSSBilling\Config::getConfig();
+    $config = FOSSBilling\System\Config::getConfig();
     $config['db'] = $dbConfig;
     $filesystem->dumpFile(PATH_CONFIG, '<?php return ' . var_export($config, true) . ';');
     clearstatcache(true, PATH_CONFIG);
@@ -1247,7 +1247,7 @@ test('applyCorePatches never runs a legacy MySQL patch on a non-MySQL driver, ev
         $di['pdo'] = $pdo;
         $di['logger'] = new Tests\Helpers\TestLogger();
 
-        $patcher = new UpdatePatcher();
+        $patcher = new Patcher();
         $patcher->setDi($di);
 
         // force: true is exactly the path finalizeUpdateLocked() calls unconditionally on every
@@ -1279,7 +1279,7 @@ test('applyCorePatches runs a portable schema sync instead of legacy patches on 
         $di['em'] = $entityManager;
         $di['logger'] = new Tests\Helpers\TestLogger();
 
-        $patcher = new UpdatePatcher();
+        $patcher = new Patcher();
         $patcher->setDi($di);
 
         $patcher->applyCorePatches(force: true);
@@ -1298,7 +1298,7 @@ test('applyCorePatches also runs a portable schema sync after legacy patches on 
         // The legacy patch loop still needs a patch level to compare against - report the latest
         // one so getPatches() finds nothing pending and the loop body never runs. That isolates
         // this test to proving the sync step runs afterward, not re-testing the patches themselves.
-        $latestPatchLevel = (new UpdatePatcher())->latestPatchLevel();
+        $latestPatchLevel = (new Patcher())->latestPatchLevel();
         $statement = Mockery::mock(PDOStatement::class);
         $statement->shouldReceive('execute')->once()->andReturn(true);
         $statement->shouldReceive('fetchColumn')->once()->andReturn((string) $latestPatchLevel);
@@ -1311,7 +1311,7 @@ test('applyCorePatches also runs a portable schema sync after legacy patches on 
         $di['em'] = $entityManager;
         $di['logger'] = new Tests\Helpers\TestLogger();
 
-        $patcher = new UpdatePatcher();
+        $patcher = new Patcher();
         $patcher->setDi($di);
 
         $patcher->applyCorePatches(force: true);
@@ -1344,7 +1344,7 @@ test('applyCorePatches never recreates an inactive extension\'s table via the am
         $di['em'] = $entityManager;
         $di['logger'] = new Tests\Helpers\TestLogger();
 
-        $patcher = new UpdatePatcher();
+        $patcher = new Patcher();
         $patcher->setDi($di);
 
         $patcher->applyCorePatches(force: true);
@@ -1375,7 +1375,7 @@ test('applyCorePatches does resync an extension\'s table once it is marked insta
         $di['em'] = $entityManager;
         $di['logger'] = new Tests\Helpers\TestLogger();
 
-        $patcher = new UpdatePatcher();
+        $patcher = new Patcher();
         $patcher->setDi($di);
 
         $patcher->applyCorePatches(force: true);
@@ -1411,7 +1411,7 @@ test('applyCorePatches logs, rather than throws, when scope discovery itself fai
         $di['em'] = $entityManager;
         $di['logger'] = $logger;
 
-        $patcher = new UpdatePatcher();
+        $patcher = new Patcher();
         $patcher->setDi($di);
 
         // Must not throw - the whole point of the try/catch this scope discovery has to live
@@ -1433,7 +1433,7 @@ test('availablePatches reports 0 on a non-MySQL driver regardless of the last_pa
         $di = new Pimple\Container();
         $di['pdo'] = $pdo;
 
-        $patcher = new UpdatePatcher();
+        $patcher = new Patcher();
         $patcher->setDi($di);
 
         expect($patcher->availablePatches())->toBe(0);

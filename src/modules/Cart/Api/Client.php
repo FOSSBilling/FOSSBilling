@@ -23,7 +23,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
      */
     public function checkout($data)
     {
-        $this->getDi()['rate_limiter']->consumeOrThrow('order_generation_ip', (string) $this->getIp());
+        $this->getDi()['rate_limiter']->consumeOrThrow('order_generation_ip', $this->getIp());
 
         $gateway_id = $data['gateway_id'] ?? null;
         $cart = $this->getService()->getSessionCart();

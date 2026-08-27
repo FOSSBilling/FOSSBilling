@@ -272,7 +272,10 @@ class Service implements InjectionAwareInterface
         return $mods;
     }
 
-    public function getAdminNavigation($admin, $url = null)
+    /**
+     * @return mixed[]
+     */
+    public function getAdminNavigation($admin, $url = null): array
     {
         $staff_service = $this->di['mod_service']('staff');
         $nav = [];

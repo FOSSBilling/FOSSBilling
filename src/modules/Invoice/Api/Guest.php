@@ -34,7 +34,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             throw new \FOSSBilling\Exception\InformationException('Invalid invoice hash', null, 4001);
         }
 
-        $this->getDi()['rate_limiter']->consumeOrThrow('invoice_get_ip', (string) $this->getIp());
+        $this->getDi()['rate_limiter']->consumeOrThrow('invoice_get_ip', $this->getIp());
         $this->getDi()['rate_limiter']->consumeOrThrow('invoice_get_hash', (string) $data['hash']);
 
         $model = $this->getService()->getInvoiceRepository()->findByHash((string) $data['hash']);
@@ -89,7 +89,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             throw new \FOSSBilling\Exception\InformationException('Payment method not found. Missing param gateway_id', null, 811);
         }
 
-        $this->getDi()['rate_limiter']->consumeOrThrow('invoice_payment_ip', (string) $this->getIp());
+        $this->getDi()['rate_limiter']->consumeOrThrow('invoice_payment_ip', $this->getIp());
         $this->getDi()['rate_limiter']->consumeOrThrow('invoice_payment_hash', (string) $data['hash']);
 
         return $this->getService()->processInvoice($data);
@@ -115,7 +115,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             throw new \FOSSBilling\Exception\BaseException('Invalid invoice hash', null, 4001);
         }
 
-        $this->getDi()['rate_limiter']->consumeOrThrow('invoice_pdf_ip', (string) $this->getIp());
+        $this->getDi()['rate_limiter']->consumeOrThrow('invoice_pdf_ip', $this->getIp());
         $this->getDi()['rate_limiter']->consumeOrThrow('invoice_pdf_hash', (string) $data['hash']);
 
         return $this->getService()->generatePDF($data['hash'], $this->getIdentity());

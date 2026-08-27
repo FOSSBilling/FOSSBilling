@@ -20,9 +20,9 @@ use Box\Mod\Client\Repository\ClientGroupRepository;
 use Box\Mod\Client\Repository\ClientPasswordResetRepository;
 use Box\Mod\Client\Repository\ClientRepository;
 use Box\Mod\Staff\Entity\Admin;
+use FOSSBilling\Container\InjectionAwareInterface;
 use FOSSBilling\Exception\InformationException;
 use FOSSBilling\I18n\I18n;
-use FOSSBilling\Container\InjectionAwareInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Intl\Countries;
 use Symfony\Component\Intl\Locales;
@@ -167,7 +167,7 @@ class Service implements InjectionAwareInterface
 
     public function generateEmailConfirmationLink($client_id)
     {
-        $hash = strtolower((string) \FOSSBilling\Security\Credential::generatePassword(50));
+        $hash = strtolower(\FOSSBilling\Security\Credential::generatePassword(50));
 
         $this->di['dbal']->insert('extension_meta', [
             'extension' => 'mod_client',

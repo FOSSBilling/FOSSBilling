@@ -15,7 +15,7 @@ test('configureCsrf expires the legacy cookie with matching attributes', functio
     $di['request'] = $request;
     $di['cookie_queue'] = new CookieQueue();
 
-    $session = Mockery::mock(\FOSSBilling\Security\Session::class);
+    $session = Mockery::mock(FOSSBilling\Security\Session::class);
     $session->shouldReceive('get')->once()->with('csrf_token')->andReturn('current-token');
     $di['session'] = $session;
 

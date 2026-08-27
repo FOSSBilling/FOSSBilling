@@ -11,8 +11,8 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Security;
 
-use FOSSBilling\Exception\BaseException as Exception;
 use FOSSBilling\Container\InjectionAwareInterface;
+use FOSSBilling\Exception\BaseException as Exception;
 use FOSSBilling\System\Config;
 use Pimple\Container;
 

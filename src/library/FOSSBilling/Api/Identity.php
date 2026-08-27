@@ -17,9 +17,9 @@ use FOSSBilling\Identity\Guest;
 
 final readonly class Identity
 {
-    private readonly Role $role;
+    private Role $role;
 
-    public function __construct(private readonly object $identity)
+    public function __construct(private object $identity)
     {
         $this->role = self::typeFromObject($identity);
     }
@@ -45,7 +45,7 @@ final readonly class Identity
     }
 
     /**
-     * @deprecated Use getRole() instead — kept for backwards compatibility, returns Role::value.
+     * @deprecated use getRole() instead — kept for backwards compatibility, returns Role::value
      */
     public function getType(): string
     {

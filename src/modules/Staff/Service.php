@@ -23,8 +23,8 @@ use Box\Mod\Staff\Repository\AdminRepository;
 use Box\Mod\Support\Entity\Helpdesk;
 use Box\Mod\Support\Entity\SupportTicket;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
-use FOSSBilling\I18n\I18n;
 use FOSSBilling\Container\InjectionAwareInterface;
+use FOSSBilling\I18n\I18n;
 use FOSSBilling\Pagination\Options;
 
 class Service implements InjectionAwareInterface

@@ -11,9 +11,9 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Update;
 
+use FOSSBilling\Container\InjectionAwareInterface;
 use FOSSBilling\Exception\BaseException;
 use FOSSBilling\Exception\InformationException;
-use FOSSBilling\Container\InjectionAwareInterface;
 use FOSSBilling\System\Config;
 use FOSSBilling\System\Environment;
 use FOSSBilling\System\Version;

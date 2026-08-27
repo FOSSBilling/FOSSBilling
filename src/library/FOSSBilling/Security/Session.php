@@ -11,8 +11,8 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Security;
 
-use FOSSBilling\Http\CookieNames;
 use FOSSBilling\Container\InjectionAwareInterface;
+use FOSSBilling\Http\CookieNames;
 use FOSSBilling\System\Config;
 use FOSSBilling\System\Environment;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
@@ -273,7 +273,7 @@ class Session implements InjectionAwareInterface
             return;
         }
 
-        $sessionId = \FOSSBilling\Security\Credential::validateSessionRestoreToken($restoreToken);
+        $sessionId = Credential::validateSessionRestoreToken($restoreToken);
         if ($sessionId !== null) {
             $this->session->setId($sessionId);
         }
