@@ -118,7 +118,7 @@ class Client implements InjectionAwareInterface
     {
         $subject = (string) $this->_getIp();
 
-        if ($method === 'staff_login' || $method === 'client_login') {
+        if (($method === 'staff_login' || $method === 'client_login') && $role !== 'admin') {
             $policy = 'api_login';
         } elseif ($role === 'guest') {
             $policy = 'api_guest';

@@ -83,20 +83,20 @@
         },
         {
             "name": "dicebear/core",
-            "version": "v10.6.1",
+            "version": "v10.7.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/dicebear/dicebear-php.git",
-                "reference": "6c756b2ceca097140c2fe1e2ca0032c142d0bbf7"
+                "reference": "f1dfa9dfe2395f8c1357607bcfce3af572d462bc"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/dicebear/dicebear-php/zipball/6c756b2ceca097140c2fe1e2ca0032c142d0bbf7",
-                "reference": "6c756b2ceca097140c2fe1e2ca0032c142d0bbf7",
+                "url": "https://api.github.com/repos/dicebear/dicebear-php/zipball/f1dfa9dfe2395f8c1357607bcfce3af572d462bc",
+                "reference": "f1dfa9dfe2395f8c1357607bcfce3af572d462bc",
                 "shasum": ""
             },
             "require": {
-                "dicebear/schema": "^1.4.0",
+                "dicebear/schema": "^1.5.1",
                 "ext-mbstring": "*",
                 "opis/json-schema": "^2.6",
                 "php": ">=8.2"
@@ -123,9 +123,9 @@
                 "svg"
             ],
             "support": {
-                "source": "https://github.com/dicebear/dicebear-php/tree/v10.6.1"
+                "source": "https://github.com/dicebear/dicebear-php/tree/v10.7.0"
             },
-            "time": "2026-08-18T21:26:09+00:00"
+            "time": "2026-08-26T20:29:07+00:00"
         },
         {
             "name": "dicebear/schema",
@@ -162,16 +162,16 @@
         },
         {
             "name": "dicebear/styles",
-            "version": "v10.5.0",
+            "version": "v10.6.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/dicebear/styles.git",
-                "reference": "ce7a25b8de0f086291c1395757354dfe9282d4f0"
+                "reference": "22a9abebc54ed68275da811573204ad83db646b8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/dicebear/styles/zipball/ce7a25b8de0f086291c1395757354dfe9282d4f0",
-                "reference": "ce7a25b8de0f086291c1395757354dfe9282d4f0",
+                "url": "https://api.github.com/repos/dicebear/styles/zipball/22a9abebc54ed68275da811573204ad83db646b8",
+                "reference": "22a9abebc54ed68275da811573204ad83db646b8",
                 "shasum": ""
             },
             "type": "library",
@@ -179,9 +179,9 @@
             "description": "Official DiceBear avatar styles.",
             "support": {
                 "issues": "https://github.com/dicebear/styles/issues",
-                "source": "https://github.com/dicebear/styles/tree/v10.5.0"
+                "source": "https://github.com/dicebear/styles/tree/v10.6.0"
             },
-            "time": "2026-08-16T08:59:52+00:00"
+            "time": "2026-08-26T20:01:26+00:00"
         },
         {
             "name": "doctrine/collections",
@@ -3598,16 +3598,16 @@
         },
         {
             "name": "stripe/stripe-php",
-            "version": "v21.2.1",
+            "version": "v21.3.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/stripe/stripe-php.git",
-                "reference": "da798f6224c5ff6f89d8d78025044f418ee27db8"
+                "reference": "fe99159b9ee0a74be3c12c0305e5338e0b9905c3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/stripe/stripe-php/zipball/da798f6224c5ff6f89d8d78025044f418ee27db8",
-                "reference": "da798f6224c5ff6f89d8d78025044f418ee27db8",
+                "url": "https://api.github.com/repos/stripe/stripe-php/zipball/fe99159b9ee0a74be3c12c0305e5338e0b9905c3",
+                "reference": "fe99159b9ee0a74be3c12c0305e5338e0b9905c3",
                 "shasum": ""
             },
             "require": {
@@ -3654,9 +3654,9 @@
             ],
             "support": {
                 "issues": "https://github.com/stripe/stripe-php/issues",
-                "source": "https://github.com/stripe/stripe-php/tree/v21.2.1"
+                "source": "https://github.com/stripe/stripe-php/tree/v21.3.0"
             },
-            "time": "2026-08-20T21:06:13+00:00"
+            "time": "2026-08-27T04:12:06+00:00"
         },
         {
             "name": "symfony/cache",
@@ -7399,16 +7399,16 @@
         },
         {
             "name": "friendsofphp/php-cs-fixer",
-            "version": "v3.95.22",
+            "version": "v3.95.23",
             "source": {
                 "type": "git",
                 "url": "https://github.com/PHP-CS-Fixer/PHP-CS-Fixer.git",
-                "reference": "482722e0783c16325a07a998a0d9eda560f9be99"
+                "reference": "b2932a5af3157a0c28324b1efe5e3b556dee09c4"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PHP-CS-Fixer/PHP-CS-Fixer/zipball/482722e0783c16325a07a998a0d9eda560f9be99",
-                "reference": "482722e0783c16325a07a998a0d9eda560f9be99",
+                "url": "https://api.github.com/repos/PHP-CS-Fixer/PHP-CS-Fixer/zipball/b2932a5af3157a0c28324b1efe5e3b556dee09c4",
+                "reference": "b2932a5af3157a0c28324b1efe5e3b556dee09c4",
                 "shasum": ""
             },
             "require": {
@@ -7491,7 +7491,7 @@
             ],
             "support": {
                 "issues": "https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/issues",
-                "source": "https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/tree/v3.95.22"
+                "source": "https://github.com/PHP-CS-Fixer/PHP-CS-Fixer/tree/v3.95.23"
             },
             "funding": [
                 {
@@ -7499,7 +7499,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-08-24T10:37:43+00:00"
+            "time": "2026-08-26T19:54:54+00:00"
         },
         {
             "name": "hamcrest/hamcrest-php",

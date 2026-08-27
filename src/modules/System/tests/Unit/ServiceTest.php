@@ -342,7 +342,7 @@ test('templateExists returns false when paths are empty', function (): void {
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $themeServiceMock);
     $service->setDi($di);
 
-    $result = $service->templateExists('defaultFile.cp');
+    $result = $service->templateExists('layout.html.twig');
     expect($result)->toBeBool();
     expect($result)->toBeFalse();
 });

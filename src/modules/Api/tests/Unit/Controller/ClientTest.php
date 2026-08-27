@@ -320,3 +320,23 @@ test('non-AJAX client login returns a redirect response', function (): void {
         ->and($response->isRedirect())->toBeTrue()
         ->and($response->headers->get('Location'))->toBe('https://client.example.test/');
 });
+
+test('guest client login is throttled under the anti-brute-force api_login policy', function (): void {
+    [$controller, $rateLimitCalls] = createTestController();
+
+    invokeApiCall($controller, 'guest', 'client', 'client_login', []);
+
+    expect($rateLimitCalls->getArrayCopy())->toBe([['api_login', '127.0.0.1', 1]]);
+});
+
+test('admin impersonation of client login is not throttled under the guest api_login policy', function (): void {
+    [$controller, $rateLimitCalls] = createTestController(['admin' => ['id' => 7]]);
+    $controller->hasValidSession = true;
+
+    invokeApiCall($controller, 'admin', 'client', 'client_login', []);
+
+    expect($rateLimitCalls->getArrayCopy())->toBe([
+        ['api_authenticated_ip', '127.0.0.1', 1],
+        ['api_authenticated_account', 'admin:7', 1],
+    ]);
+});
