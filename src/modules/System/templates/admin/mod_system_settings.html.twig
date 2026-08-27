@@ -625,12 +625,9 @@
         });
     });
 
-    const redisTlsToggle = document.getElementById('redis_tls_enabled');
-    if (redisTlsToggle) {
-        redisTlsToggle.addEventListener('change', function() {
-            document.getElementById('redis-tls-options').style.display = this.checked ? 'flex' : 'none';
-        });
-    }
+    document.getElementById('redis_tls_enabled').addEventListener('change', function() {
+        document.getElementById('redis-tls-options').style.display = this.checked ? 'flex' : 'none';
+    });
 </script>
 {% endblock %}
 
