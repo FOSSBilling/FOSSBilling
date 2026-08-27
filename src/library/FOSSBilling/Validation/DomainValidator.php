@@ -15,6 +15,7 @@ use FOSSBilling\Container\InjectionAwareInterface;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Contracts\Cache\ItemInterface;
+use Symfony\Contracts\HttpClient\Exception\ExceptionInterface;
 
 class DomainValidator implements InjectionAwareInterface
 {
@@ -78,11 +79,19 @@ class DomainValidator implements InjectionAwareInterface
             $item->expiresAfter(86400);
 
             $httpClient = $this->di['http_client'];
-            $response = $httpClient->request('GET', 'https://publicsuffix.org/list/public_suffix_list.dat');
             $dbPath = Path::join(PATH_CACHE, 'tlds.txt');
 
-            if ($response->getStatusCode() === 200) {
-                $this->filesystem->dumpFile($dbPath, $response->getContent());
+            try {
+                $response = $httpClient->request('GET', 'https://publicsuffix.org/list/public_suffix_list.dat');
+                $content = $response->getStatusCode() === 200 ? $response->getContent() : null;
+            } catch (ExceptionInterface) {
+                // Network/transport failure (DNS, TLS, connection refused, unsupported address family, etc.)
+                // Fall back below instead of letting this bubble up and break the calling flow (e.g. checkout).
+                $content = null;
+            }
+
+            if ($content !== null) {
+                $this->filesystem->dumpFile($dbPath, $content);
             } else {
                 $item->expiresAfter(3600);
 
