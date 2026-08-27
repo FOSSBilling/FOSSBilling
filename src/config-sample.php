@@ -194,6 +194,39 @@ return [
             'port' => 6379,
             'password' => null,
             'database' => 0,
+
+            /*
+             * TLS ('rediss://') for the connection to the Redis server. Also configurable from
+             * the admin area under System > Settings > Cache.
+             *
+             * This matters most when 'host' is anything other than a loopback address
+             * (127.0.0.1, ::1, localhost) AND 'password' is set: in that case, without TLS, the
+             * password and every cached value would cross the network in plain text, so
+             * CacheFactory refuses to connect at all until either TLS is enabled here or the
+             * connection is moved to a loopback address. A loopback connection, or one with no
+             * password configured, is never blocked - TLS there is optional hardening, not a
+             * requirement. Note this deliberately does not try to recognize a "trusted private
+             * network" host (a Docker service name, a VPC-internal IP) as exempt the way loopback
+             * is: there's no reliable way to tell those apart from a genuinely remote host from
+             * the hostname/IP alone, so an admin relying on network isolation instead of TLS
+             * should leave 'password' unset rather than expect this check to special-case it.
+             */
+            'tls' => [
+                'enabled' => false,
+
+                // Verify the server's certificate, and that its certificate name matches 'host'.
+                // Leave both enabled unless you have a specific reason not to.
+                'verify_peer' => true,
+                'verify_peer_name' => true,
+
+                // Path to a CA bundle to trust, if the Redis server's certificate isn't signed by
+                // a CA your system already trusts.
+                'cafile' => null,
+
+                // Only for a self-signed certificate in a development/testing environment - never
+                // enable this in production.
+                'allow_self_signed' => false,
+            ],
         ],
 
         /*

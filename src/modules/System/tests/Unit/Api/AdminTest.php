@@ -116,6 +116,65 @@ test('update cache settings clears the previously configured backend, not just t
     }
 });
 
+test('update cache settings saves and reads back the redis TLS options', function (): void {
+    $api = apiEndpoint(new Box\Mod\System\Api\Admin());
+    $originalConfig = Config::getConfig();
+
+    try {
+        $api->update_cache_settings([
+            'driver' => 'filesystem',
+            'redis_tls_enabled' => '1',
+            'redis_tls_verify_peer' => '0',
+            'redis_tls_verify_peer_name' => '0',
+            'redis_tls_allow_self_signed' => '1',
+            'redis_tls_cafile' => '/etc/ssl/certs/redis-ca.pem',
+        ]);
+
+        $settings = $api->cache_settings();
+        expect($settings['redis_tls_enabled'])->toBeTrue();
+        expect($settings['redis_tls_verify_peer'])->toBeFalse();
+        expect($settings['redis_tls_verify_peer_name'])->toBeFalse();
+        expect($settings['redis_tls_allow_self_signed'])->toBeTrue();
+        expect($settings['redis_tls_cafile'])->toBe('/etc/ssl/certs/redis-ca.pem');
+
+        // The template pairs every TLS checkbox with a hidden "0" input (same trick already used
+        // for redis_password_clear), so an unchecked box still submits explicit "0" rather than
+        // being left out of the request entirely - this is what that resulting request looks like.
+        $api->update_cache_settings([
+            'driver' => 'filesystem',
+            'redis_tls_enabled' => '0',
+            'redis_tls_verify_peer' => '0',
+            'redis_tls_verify_peer_name' => '0',
+            'redis_tls_allow_self_signed' => '0',
+            'redis_tls_cafile' => '',
+        ]);
+
+        $settings = $api->cache_settings();
+        expect($settings['redis_tls_enabled'])->toBeFalse();
+        expect($settings['redis_tls_verify_peer'])->toBeFalse();
+        expect($settings['redis_tls_verify_peer_name'])->toBeFalse();
+        expect($settings['redis_tls_allow_self_signed'])->toBeFalse();
+        expect($settings['redis_tls_cafile'])->toBe('');
+    } finally {
+        Config::setConfig($originalConfig, false);
+    }
+});
+
+test('update cache settings rejects a redis password on a non-loopback host with TLS disabled', function (): void {
+    $api = apiEndpoint(new Box\Mod\System\Api\Admin());
+    $originalConfig = Config::getConfig();
+
+    try {
+        expect(fn (): bool => $api->update_cache_settings([
+            'driver' => 'redis',
+            'redis_host' => 'redis.example.com',
+            'redis_password' => 'secret',
+        ]))->toThrow(FOSSBilling\Exception::class, 'without TLS enabled');
+    } finally {
+        Config::setConfig($originalConfig, false);
+    }
+});
+
 test('messages', function (): void {
     $api = apiEndpoint(new Box\Mod\System\Api\Admin());
     $data = [];
