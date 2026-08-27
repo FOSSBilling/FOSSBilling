@@ -347,6 +347,43 @@ test('templateExists returns false when paths are empty', function (): void {
     expect($result)->toBeFalse();
 });
 
+test('templateExists rejects path traversal and other malicious input (GHSA-fm3x-cx5r-wwgp)', function (): void {
+    $service = new Service();
+
+    // Theme base directory, containing a legitimate template plus a sibling
+    // "sensitive" file that a traversal payload could otherwise reach.
+    $baseDir = sys_get_temp_dir() . '/fb_theme_' . uniqid();
+    mkdir($baseDir, 0o755, true);
+    file_put_contents($baseDir . '/layout.html.twig', 'test');
+    $outsideFile = dirname($baseDir) . '/secret.html.twig';
+    file_put_contents($outsideFile, 'secret');
+
+    $themeServiceMock = Mockery::mock(Box\Mod\Theme\Service::class)->makePartial();
+    $themeServiceMock->shouldReceive('getThemeConfig')->andReturn(['paths' => [$baseDir]]);
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $themeServiceMock);
+    $service->setDi($di);
+
+    // Sanity check: a legitimate in-base template still resolves, so the
+    // assertions below aren't just exercising an always-false code path.
+    expect($service->templateExists('layout.html.twig'))->toBeTrue();
+
+    // Traversal payloads that would otherwise resolve to the real file
+    // outside the theme directory, or to sensitive OS/application paths.
+    expect($service->templateExists('../secret.html.twig'))->toBeFalse();
+    expect($service->templateExists('../../../../../../etc/passwd'))->toBeFalse();
+    expect($service->templateExists('../../../../config.php'))->toBeFalse();
+    expect($service->templateExists('..\\..\\secret.html.twig'))->toBeFalse();
+    expect($service->templateExists("layout.html.twig\0.png"))->toBeFalse();
+    expect($service->templateExists('/etc/passwd'))->toBeFalse();
+    expect($service->templateExists(''))->toBeFalse();
+
+    unlink($baseDir . '/layout.html.twig');
+    unlink($outsideFile);
+    rmdir($baseDir);
+});
+
 test('clearCache clears cache directory', function (): void {
     $service = new Service();
     // Use a temporary directory for testing instead of PATH_CACHE
