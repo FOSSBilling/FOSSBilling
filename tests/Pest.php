@@ -100,11 +100,11 @@ function apiEndpoint(FOSSBilling\Api\AbstractApi $api): FOSSBilling\Api\Abstract
         if (str_starts_with($realClass, 'Mockery_') && ($parent = get_parent_class($api)) !== false) {
             $realClass = $parent;
         }
-        // Normalise both namespace separators for checks (mocks use underscores).
-        $normalised = str_replace(['\\', '_'], '\\', $realClass);
+        // Normalize both namespace separators for checks (mocks use underscores).
+        $normalized = str_replace(['\\', '_'], '\\', $realClass);
         $api->setIdentity(match (true) {
-            str_contains($normalised, '\\Api\\Admin') => \Tests\Helpers\admin(),
-            str_contains($normalised, '\\Api\\Client') => \Tests\Helpers\client(),
+            str_contains($normalized, '\\Api\\Admin') => \Tests\Helpers\admin(),
+            str_contains($normalized, '\\Api\\Client') => \Tests\Helpers\client(),
             default => new FOSSBilling\Identity\Guest(),
         });
     }
