@@ -94,13 +94,17 @@ class CacheFactory
      * $fallbackOnFailure is false, connection/extension problems are thrown as a FOSSBilling
      * Exception with a specific reason instead of silently degrading to filesystem.
      *
-     * @throws BaseException if the driver is unsupported, or (when $fallbackOnFailure is false) unreachable
+     * @throws BaseException if the driver is unsupported, if a remote driver is selected without an
+     *                       installation identifier configured, or (when $fallbackOnFailure is false)
+     *                       the backend is unreachable
      */
     public static function createFromConfig(array $cacheConfig, string $namespace, int $defaultLifetime, bool $fallbackOnFailure): CacheItemPoolInterface
     {
+        $instanceId = (string) Config::getProperty('info.instance_id', '');
+
         // Scope every pool to this installation, so installs that happen to share a Redis
         // database or Memcached server don't collide on the same cache keys.
-        $namespace = self::scopeNamespaceToInstallation($namespace);
+        $namespace = self::scopeNamespaceToInstallation($namespace, $instanceId);
 
         $rawDriver = $cacheConfig['driver'] ?? 'filesystem';
         $driver = Driver::tryFrom($rawDriver);
@@ -110,6 +114,16 @@ class CacheFactory
 
         if ($driver === Driver::Filesystem) {
             return new FilesystemAdapter($namespace, $defaultLifetime, PATH_CACHE);
+        }
+
+        // Every install/upgrade path generates info.instance_id, but a manually edited config.php
+        // could leave it blank - silently sharing the unscoped namespace with another install. This
+        // sits outside the try/catch below on purpose: from create() (fallbackOnFailure: true) it's
+        // caught by create()'s own outer catch and degrades to filesystem like any other
+        // misconfiguration; from createFromConfig() directly (fallbackOnFailure: false), it reaches
+        // the caller as this specific message instead of the generic "could not connect" one below.
+        if ($instanceId === '') {
+            throw new BaseException('The ":driver" cache driver requires an installation identifier ("info.instance_id" in the configuration file) so that installations sharing the same server don\'t collide. Reinstall or update FOSSBilling to have one generated automatically, or set it manually.', [':driver' => $driver]);
         }
 
         try {
@@ -135,11 +149,15 @@ class CacheFactory
     /**
      * Clears every cache pool FOSSBilling knows about. Best-effort: a misconfigured or
      * unreachable backend must not prevent the rest of the cache from being cleared.
+     *
+     * Pass an explicit $cacheConfig to clear a backend other than the currently configured
+     * one - e.g. the previous backend right after the admin settings form switches drivers,
+     * since by then the live configuration already points at the new one.
      */
-    public static function clearAll(): void
+    public static function clearAll(?array $cacheConfig = null): void
     {
         foreach (self::ALL_NAMESPACES as $namespace) {
-            self::clearNamespace($namespace);
+            self::clearNamespace($namespace, $cacheConfig);
         }
     }
 
@@ -150,11 +168,16 @@ class CacheFactory
      * but not the flush command) - callers that already did the work clear() is meant to follow up
      * (writing a new config file, wiping the filesystem cache directory) must not have that
      * reported as their own failure.
+     *
+     * Pass an explicit $cacheConfig for the same reason as {@see self::clearAll()}.
      */
-    public static function clearNamespace(string $namespace): void
+    public static function clearNamespace(string $namespace, ?array $cacheConfig = null): void
     {
         try {
-            self::create($namespace)->clear();
+            $pool = $cacheConfig !== null
+                ? self::createFromConfig($cacheConfig, $namespace, 0, fallbackOnFailure: true)
+                : self::create($namespace);
+            $pool->clear();
         } catch (\Throwable) {
             // Clearing the cache is best-effort; a failure here shouldn't halt execution.
         }
@@ -182,10 +205,8 @@ class CacheFactory
      * installs pointed at the same Redis/Memcached server don't read or overwrite each other's
      * cache entries.
      */
-    private static function scopeNamespaceToInstallation(string $namespace): string
+    private static function scopeNamespaceToInstallation(string $namespace, string $instanceId): string
     {
-        $instanceId = (string) Config::getProperty('info.instance_id', '');
-
         if ($instanceId === '') {
             return $namespace;
         }
@@ -195,13 +216,67 @@ class CacheFactory
 
     private static function createRedisAdapter(array $redisConfig, string $namespace, int $defaultLifetime): RedisAdapter
     {
+        // Checked ahead of the extension-availability check below: whether a configuration is
+        // internally safe to use doesn't depend on what happens to be installed on this server,
+        // and doing it first lets this be validated in environments without the redis extension.
+        self::assertRedisTransportIsSafe($redisConfig);
+
         if (!class_exists(\Redis::class) && !class_exists(\Relay\Relay::class) && !class_exists(\RedisCluster::class)) {
             throw new BaseException('The "redis" cache driver requires the PHP redis (or relay) extension to be installed.');
         }
 
-        $connection = RedisAdapter::createConnection(self::buildRedisDsn($redisConfig));
+        $connection = RedisAdapter::createConnection(self::buildRedisDsn($redisConfig), self::buildRedisConnectionOptions($redisConfig));
 
         return new RedisAdapter($connection, $namespace, $defaultLifetime);
+    }
+
+    /**
+     * Rejects a password-authenticated Redis connection to a non-loopback host when TLS isn't
+     * enabled - without it, both the password and every cached value would cross the network in
+     * plaintext. A loopback host (127.0.0.1/::1/localhost) is exempt, since that traffic never
+     * leaves the machine regardless of TLS. This intentionally does NOT try to recognize "trusted
+     * private network" hosts (a Docker service name, a VPC-internal IP): there's no reliable way
+     * to tell those apart from a genuinely remote host from the hostname/IP alone, so an admin
+     * relying on that kind of network for security should leave the Redis password unset rather
+     * than expect this check to special-case their setup.
+     *
+     * @throws BaseException if the connection would send a password over an unencrypted network hop
+     */
+    private static function assertRedisTransportIsSafe(array $redisConfig): void
+    {
+        if (empty($redisConfig['password'])) {
+            return;
+        }
+
+        if (\FOSSBilling\Utils\Normalizer::normalizeBoolean($redisConfig['tls']['enabled'] ?? false, false)) {
+            return;
+        }
+
+        $host = (string) ($redisConfig['host'] ?? '127.0.0.1');
+        if (self::isLoopbackHost($host)) {
+            return;
+        }
+
+        throw new BaseException('Refusing to send the Redis password to ":host" without TLS enabled. Enable "cache.redis.tls.enabled", or connect over a loopback address (127.0.0.1/::1/localhost) instead.', [':host' => $host]);
+    }
+
+    private static function isLoopbackHost(string $host): bool
+    {
+        $host = strtolower(trim($host));
+
+        if ($host === 'localhost') {
+            return true;
+        }
+
+        // Strip brackets from a literal IPv6 host, e.g. "[::1]".
+        $host = trim($host, '[]');
+
+        $ip = filter_var($host, FILTER_VALIDATE_IP);
+        if ($ip === false) {
+            return false;
+        }
+
+        return $ip === '::1' || str_starts_with($ip, '127.');
     }
 
     private static function createMemcachedAdapter(array $memcachedConfig, string $namespace, int $defaultLifetime): MemcachedAdapter
@@ -220,13 +295,42 @@ class CacheFactory
         $host = $redisConfig['host'] ?? '127.0.0.1';
         $port = \FOSSBilling\Utils\Normalizer::normalizePort($redisConfig['port'] ?? null, 6379);
         $database = (int) ($redisConfig['database'] ?? 0);
+        $scheme = \FOSSBilling\Utils\Normalizer::normalizeBoolean($redisConfig['tls']['enabled'] ?? false, false) ? 'rediss' : 'redis';
 
         $auth = '';
         if (!empty($redisConfig['password'])) {
             $auth = rawurlencode((string) $redisConfig['password']) . '@';
         }
 
-        return sprintf('redis://%s%s:%d%s', $auth, $host, $port, $database !== 0 ? '/' . $database : '');
+        return sprintf('%s://%s%s:%d%s', $scheme, $auth, $host, $port, $database !== 0 ? '/' . $database : '');
+    }
+
+    /**
+     * Builds the connection-options array passed as RedisAdapter::createConnection()'s second
+     * argument. The 'ssl' key maps directly onto PHP's SSL stream-context options
+     * (https://www.php.net/manual/en/context.ssl.php) - the same shape Symfony's Redis adapter
+     * documents for TLS. Only populated when TLS is enabled; a plaintext connection has nothing
+     * to configure here.
+     */
+    private static function buildRedisConnectionOptions(array $redisConfig): array
+    {
+        $tlsConfig = $redisConfig['tls'] ?? [];
+
+        if (!\FOSSBilling\Utils\Normalizer::normalizeBoolean($tlsConfig['enabled'] ?? false, false)) {
+            return [];
+        }
+
+        $ssl = [
+            'verify_peer' => \FOSSBilling\Utils\Normalizer::normalizeBoolean($tlsConfig['verify_peer'] ?? true, true),
+            'verify_peer_name' => \FOSSBilling\Utils\Normalizer::normalizeBoolean($tlsConfig['verify_peer_name'] ?? true, true),
+            'allow_self_signed' => \FOSSBilling\Utils\Normalizer::normalizeBoolean($tlsConfig['allow_self_signed'] ?? false, false),
+        ];
+
+        if (!empty($tlsConfig['cafile'])) {
+            $ssl['cafile'] = (string) $tlsConfig['cafile'];
+        }
+
+        return ['ssl' => $ssl];
     }
 
     private static function buildMemcachedDsn(array $memcachedConfig): string
