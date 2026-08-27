@@ -340,3 +340,17 @@ test('admin impersonation of client login is not throttled under the guest api_l
         ['api_authenticated_account', 'admin:7', 1],
     ]);
 });
+
+test('an unauthenticated request to the admin client_login route is still throttled under api_login', function (): void {
+    [$controller, $rateLimitCalls] = createTestController();
+    $controller->hasValidSession = false;
+
+    try {
+        invokeApiCall($controller, 'admin', 'client', 'client_login', []);
+        expect(true)->toBeFalse('Expected authentication to fail');
+    } catch (InformationException $e) {
+        expect($e->getCode())->toBe(201);
+    }
+
+    expect($rateLimitCalls->getArrayCopy())->toBe([['api_login', '127.0.0.1', 1]]);
+});

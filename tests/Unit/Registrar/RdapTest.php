@@ -94,6 +94,16 @@ test('the most specific known zone of a multi-label domain is queried', function
         ->and($tracker->urls[1])->toBe('https://registry.nominet.uk/rdap/domain/example.co.uk');
 });
 
+test('an HTTPS server is tried before an HTTP one listed first in the bootstrap registry', function (): void {
+    [$rdap, $tracker] = createRdapClient(
+        [[['com'], ['http://rdap.example.com/com/v1/', 'https://rdap.example.com/com/v1/']]],
+        fn (): MockResponse => new MockResponse('', ['http_code' => 404]),
+    );
+
+    expect($rdap->isDomainAvailable('example.com'))->toBeTrue()
+        ->and($tracker->urls[1])->toBe('https://rdap.example.com/com/v1/domain/example.com');
+});
+
 test('domains under zones without an RDAP service are left undetermined without issuing a domain query', function (): void {
     [$rdap, $tracker] = createRdapClient([[['com'], ['https://rdap.example.com/com/v1/']]]);
 

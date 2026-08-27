@@ -251,3 +251,60 @@ test('registerDomain sends the .fr registry consent attribute alongside the FrCo
     expect($body['attr-name1'])->toBe('tnc');
     expect($body['attr-value1'])->toBe('Y');
 });
+
+test('registerDomain applies the .fr handling for an uppercase .FR tld', function (): void {
+    // Regression test for a case-sensitivity gap: the TLD is normally lowercased before it ever
+    // reaches this adapter (Servicedomain\Service::normalizeTld()), but a legacy or manually
+    // entered uppercase TLD must still trigger the same FrContact/tnc handling as '.fr'.
+    $responses = [
+        json_encode(['status' => 'ERROR', 'message' => 'Order not found']), // domains/orderid (via _hasCompletedOrder)
+        json_encode(['customerid' => '555']), // customers/details
+        json_encode(['recsonpage' => 0]), // contacts/search (general Contact) -> none found
+        '111111', // contacts/add (general Contact) -> id
+        json_encode(['recsonpage' => 0]), // contacts/search (FrContact) -> none found
+        '222222', // contacts/add (FrContact) -> id
+        json_encode(['status' => 'Success']), // domains/register
+    ];
+    $bodies = [];
+
+    $httpClient = new MockHttpClient(function (string $method, string $url, array $options) use (&$responses, &$bodies): MockResponse {
+        $bodies[] = $options['body'] ?? null;
+
+        return new MockResponse(array_shift($responses));
+    });
+    $adapter = createResellerclubAdapter($httpClient);
+    $domain = createResellerclubDomain(tld: '.FR')
+        ->setContactRegistrar(createResellerclubTestContact())
+        ->setRegistrationPeriod(1)
+        ->setNs1('ns1.example.com')
+        ->setNs2('ns2.example.com');
+
+    expect($adapter->registerDomain($domain))->toBeTrue();
+
+    parse_str((string) $bodies[5], $frContactBody);
+    expect($frContactBody['type'])->toBe('FrContact');
+
+    parse_str((string) end($bodies), $body);
+    expect($body['tech-contact-id'])->toBe('-1');
+    expect($body['billing-contact-id'])->toBe('-1');
+    expect($body['attr-name1'])->toBe('tnc');
+    expect($body['attr-value1'])->toBe('Y');
+});
+
+test('the API key is redacted from the debug log of a GET request', function (): void {
+    $httpClient = new MockHttpClient(fn (): MockResponse => new MockResponse('true'));
+    $adapter = createResellerclubAdapter($httpClient);
+    $logger = new Tests\Helpers\TestLogger();
+    $adapter->setLog($logger);
+
+    $adapter->isDomaincanBeTransferred(createResellerclubDomain());
+
+    $messages = array_map(fn (array $call): string => (string) $call['params'][0], $logger->calls);
+    $debugMessages = array_filter($messages, fn (string $message): bool => str_starts_with($message, 'API REQUEST: '));
+
+    expect($debugMessages)->not->toBeEmpty();
+    foreach ($debugMessages as $message) {
+        expect($message)->not->toContain('secret');
+        expect($message)->toContain('api-key=%2A%2A%2A');
+    }
+});

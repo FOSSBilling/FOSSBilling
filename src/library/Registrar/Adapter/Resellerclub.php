@@ -278,7 +278,9 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             return true;
         }
 
-        $tld = $domain->getTld();
+        // Normalized case-insensitively: the special-TLD checks below (.fr, .de, .asia, .au) compare
+        // with ==, and a legacy or manually-entered uppercase TLD would silently skip them otherwise.
+        $tld = strtolower((string) $domain->getTld());
         $customer = $this->_getCustomerDetails($domain);
         $customer_id = $customer['customerid'];
 
@@ -613,7 +615,9 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
                 ]);
             } else {
                 $result = $client->request('GET', $callUrl . '?' . $this->_formatParams($params));
-                $this->getLog()->debug('API REQUEST: ' . $callUrl . '?' . $this->_formatParams($params));
+                $loggedParams = $params;
+                $loggedParams['api-key'] = '***';
+                $this->getLog()->debug('API REQUEST: ' . $callUrl . '?' . $this->_formatParams($loggedParams));
             }
             $this->getLog()->info('API RESULT: ' . $result->getContent(false));
         } catch (HttpExceptionInterface $error) {
@@ -688,6 +692,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
 
     private function _getAllContacts($tld, $customer_id, Registrar_Domain_Contact $client, bool $replaceExisting = true): array
     {
+        $tld = strtolower((string) $tld);
         if ($tld[0] != '.') {
             $tld = '.' . $tld; // $tld must start with a dot(.)
         }

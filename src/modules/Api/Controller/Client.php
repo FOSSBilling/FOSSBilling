@@ -116,7 +116,14 @@ class Client implements InjectionAwareInterface
     {
         $subject = (string) $this->_getIp();
 
-        if (($method === 'staff_login' || $method === 'client_login') && $role !== 'admin') {
+        // $role only reflects which API namespace was requested, not whether the caller has
+        // actually authenticated yet - checkPreAuthRateLimit() runs before that. Exempting
+        // client_login/staff_login from the anti-brute-force policy must require a real,
+        // already-established admin session, or an unauthenticated caller could bypass it
+        // entirely by just requesting the admin route.
+        $isAuthenticatedAdmin = $role === 'admin' && $this->hasAuthenticatedSession('admin');
+
+        if (($method === 'staff_login' || $method === 'client_login') && !$isAuthenticatedAdmin) {
             $policy = 'api_login';
         } elseif ($role === 'guest') {
             $policy = 'api_guest';

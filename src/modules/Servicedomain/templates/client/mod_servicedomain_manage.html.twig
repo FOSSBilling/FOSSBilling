@@ -289,7 +289,7 @@
 
                     FOSSBilling.api.client.post('servicedomain/sync', { order_id: {{ order.id }} },
                         () => {
-                            FOSSBilling.message('{{ 'Domain synchronized with registrar'|trans }}');
+                            FOSSBilling.message({{ 'Domain synchronized with registrar'|trans|json_encode|raw }});
                             window.location.reload();
                         });
                 });

@@ -117,7 +117,7 @@ class Registrar_Rdap
 
             $servers = $bootstrap[implode('.', $labels)] ?? null;
             if ($servers !== null && $servers !== []) {
-                return $servers;
+                return self::preferHttps($servers);
             }
         }
 
@@ -126,6 +126,25 @@ class Registrar_Rdap
         }
 
         return null;
+    }
+
+    /**
+     * Tries HTTPS servers before HTTP ones, per RFC 9224 §4.1, so an on-path attacker can't force
+     * an unencrypted query by having an HTTP entry ordered first in the bootstrap registry.
+     * Otherwise preserves the registry's original ordering within each group.
+     *
+     * @param list<string> $servers
+     *
+     * @return list<string>
+     */
+    private static function preferHttps(array $servers): array
+    {
+        $isHttps = static fn (string $server): bool => str_starts_with($server, 'https://');
+
+        return [
+            ...array_values(array_filter($servers, $isHttps)),
+            ...array_values(array_filter($servers, static fn (string $server): bool => !$isHttps($server))),
+        ];
     }
 
     /**

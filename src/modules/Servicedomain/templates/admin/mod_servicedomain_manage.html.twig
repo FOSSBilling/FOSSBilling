@@ -309,7 +309,7 @@
         document.getElementById('domain-sync').addEventListener('click', function(event) {
             FOSSBilling.api.admin.post('servicedomain/sync', { order_id: {{ order.id }} },
                 (result) => {
-                    FOSSBilling.message("{{ 'Domain synchronized with registrar'|trans }}");
+                    FOSSBilling.message({{ 'Domain synchronized with registrar'|trans|json_encode|raw }});
                     window.location.reload();
                 });
         });
