@@ -17,6 +17,7 @@ namespace Box\Mod\System\Api;
 
 use FOSSBilling\Cache\CacheFactory;
 use FOSSBilling\Config;
+use FOSSBilling\Doctrine\EntityManagerFactory;
 use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
 
@@ -143,9 +144,21 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             CacheFactory::createFromConfig($newCacheConfig, CacheFactory::NAMESPACE_CONNECTION_TEST, 60, fallbackOnFailure: false);
         }
 
+        // Config::setConfig() below clears the pools for the new driver (it reads the live
+        // config, which by then already points at the new one). Capture the outgoing config
+        // now so its backend can be cleared too, after the switch - otherwise entries left
+        // behind there (e.g. a Redis database the admin is switching away from) could reappear
+        // if this setting is ever reverted.
+        $oldCacheConfig = Config::getProperty('cache', []);
+
         $config = Config::getConfig();
         $config['cache'] = $newCacheConfig;
         Config::setConfig($config);
+
+        if (is_array($oldCacheConfig)) {
+            CacheFactory::clearAll($oldCacheConfig);
+            CacheFactory::clearNamespace(EntityManagerFactory::metadataCacheNamespace(), $oldCacheConfig);
+        }
 
         return true;
     }

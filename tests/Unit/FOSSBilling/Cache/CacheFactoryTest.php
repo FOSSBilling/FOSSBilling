@@ -26,11 +26,6 @@ afterEach(function (): void {
     Config::setConfig($this->cacheFactoryOriginalConfig, false);
 });
 
-function hasRedisExtension(): bool
-{
-    return class_exists(Redis::class) || class_exists(Relay\Relay::class) || class_exists(RedisCluster::class);
-}
-
 function setCacheConfig(?array $cacheConfig): void
 {
     $config = Config::getConfig();
@@ -199,3 +194,30 @@ test('clearAll never throws even with a misconfigured driver', function (): void
 
     CacheFactory::clearAll();
 })->expectNotToPerformAssertions();
+
+test('clearAll clears the pools for an explicitly given configuration, not just the live one', function (): void {
+    // The live configuration stays on filesystem throughout; only the explicit config passed
+    // to clearAll() below points at redis. This is the shape of a driver switch: by the time
+    // the previous backend needs clearing, the live configuration already points at the new one.
+    setCacheConfig(['driver' => 'filesystem']);
+
+    if (hasRedisExtension()) {
+        $this->markTestSkipped('This test requires an environment without the redis/relay extension.');
+    }
+
+    CacheFactory::clearAll(['driver' => 'redis', 'redis' => ['host' => '127.0.0.1', 'port' => 6379]]);
+})->expectNotToPerformAssertions();
+
+test('clearNamespace clears the pool for an explicitly given configuration, not just the live one', function (): void {
+    setCacheConfig(['driver' => 'filesystem']);
+    $pool = CacheFactory::create('cache_factory_test');
+    $item = $pool->getItem('regression_probe');
+    $item->set('value');
+    $pool->save($item);
+
+    // Passing the live filesystem config explicitly must reach the same pool as the live config
+    // does implicitly.
+    CacheFactory::clearNamespace('cache_factory_test', ['driver' => 'filesystem']);
+
+    expect(CacheFactory::create('cache_factory_test')->getItem('regression_probe')->isHit())->toBeFalse();
+});
