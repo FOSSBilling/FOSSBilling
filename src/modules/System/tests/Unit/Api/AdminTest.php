@@ -86,7 +86,7 @@ test('update cache settings rejects a remote driver when no installation identif
         Config::setConfig($config, false);
 
         expect(fn () => $api->update_cache_settings(['driver' => 'redis']))
-            ->toThrow(FOSSBilling\Exception::class, 'installation identifier');
+            ->toThrow(FOSSBilling\Exception\BaseException::class, 'installation identifier');
     } finally {
         Config::setConfig($originalConfig, false);
     }
@@ -169,7 +169,7 @@ test('update cache settings rejects a redis password on a non-loopback host with
             'driver' => 'redis',
             'redis_host' => 'redis.example.com',
             'redis_password' => 'secret',
-        ]))->toThrow(FOSSBilling\Exception::class, 'without TLS enabled');
+        ]))->toThrow(FOSSBilling\Exception\BaseException::class, 'without TLS enabled');
     } finally {
         Config::setConfig($originalConfig, false);
     }

@@ -123,7 +123,7 @@ class CacheFactory
         // misconfiguration; from createFromConfig() directly (fallbackOnFailure: false), it reaches
         // the caller as this specific message instead of the generic "could not connect" one below.
         if ($instanceId === '') {
-            throw new BaseException('The ":driver" cache driver requires an installation identifier ("info.instance_id" in the configuration file) so that installations sharing the same server don\'t collide. Reinstall or update FOSSBilling to have one generated automatically, or set it manually.', [':driver' => $driver]);
+            throw new BaseException('The ":driver" cache driver requires an installation identifier ("info.instance_id" in the configuration file) so that installations sharing the same server don\'t collide. Reinstall or update FOSSBilling to have one generated automatically, or set it manually.', [':driver' => $driver->value]);
         }
 
         try {

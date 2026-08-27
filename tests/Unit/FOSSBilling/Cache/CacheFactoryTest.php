@@ -173,7 +173,7 @@ test('rejects a redis password on a non-loopback host with TLS disabled', functi
         'cache_factory_test',
         0,
         false,
-    ))->toThrow(Exception::class, 'without TLS enabled');
+    ))->toThrow(BaseException::class, 'without TLS enabled');
 });
 
 test('allows a redis password on a non-loopback host once TLS is enabled', function (): void {
@@ -185,7 +185,7 @@ test('allows a redis password on a non-loopback host once TLS is enabled', funct
         'cache_factory_test',
         0,
         false,
-    ))->toThrow(Exception::class, hasRedisExtension() ? 'Could not connect' : 'requires the PHP redis');
+    ))->toThrow(BaseException::class, hasRedisExtension() ? 'Could not connect' : 'requires the PHP redis');
 });
 
 dataset('loopback hosts', ['127.0.0.1', '127.0.0.53', '::1', '[::1]', 'localhost', 'LOCALHOST']);
@@ -198,7 +198,7 @@ test('allows a redis password on a loopback host without TLS', function (string 
         'cache_factory_test',
         0,
         false,
-    ))->toThrow(Exception::class, hasRedisExtension() ? 'Could not connect' : 'requires the PHP redis');
+    ))->toThrow(BaseException::class, hasRedisExtension() ? 'Could not connect' : 'requires the PHP redis');
 })->with('loopback hosts');
 
 test('allows a redis connection on a non-loopback host with no password regardless of TLS', function (): void {
@@ -207,7 +207,7 @@ test('allows a redis connection on a non-loopback host with no password regardle
         'cache_factory_test',
         0,
         false,
-    ))->toThrow(Exception::class, hasRedisExtension() ? 'Could not connect' : 'requires the PHP redis');
+    ))->toThrow(BaseException::class, hasRedisExtension() ? 'Could not connect' : 'requires the PHP redis');
 });
 
 test('cache pools are isolated per installation instance id', function (): void {
@@ -236,14 +236,14 @@ test('rejects saving a remote cache driver when no installation identifier is co
         'cache_factory_test',
         0,
         false,
-    ))->toThrow(Exception::class, 'installation identifier');
+    ))->toThrow(BaseException::class, 'installation identifier');
 
     expect(fn () => CacheFactory::createFromConfig(
         ['driver' => 'memcached', 'memcached' => ['host' => '127.0.0.1', 'port' => 11211]],
         'cache_factory_test',
         0,
         false,
-    ))->toThrow(Exception::class, 'installation identifier');
+    ))->toThrow(BaseException::class, 'installation identifier');
 });
 
 test('falls back to the filesystem cache at runtime when a remote driver is configured but no installation identifier is set', function (): void {
