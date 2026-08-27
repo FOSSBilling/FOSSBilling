@@ -26,11 +26,6 @@ afterEach(function (): void {
     Config::setConfig($this->cacheFactoryOriginalConfig, false);
 });
 
-function hasRedisExtension(): bool
-{
-    return class_exists(Redis::class) || class_exists(Relay\Relay::class) || class_exists(RedisCluster::class);
-}
-
 function setCacheConfig(?array $cacheConfig): void
 {
     $config = Config::getConfig();
