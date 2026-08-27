@@ -186,18 +186,21 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
     /**
      * Check if passed file name template exists for admin area.
-     *
-     * @return bool
      */
-    public function template_exists($data)
+    public function template_exists($data): bool
     {
         $this->checkPermissions('system', 'manage_settings');
 
-        if (!isset($data['file'])) {
+        if (!isset($data['file']) || !is_string($data['file'])) {
             return false;
         }
 
-        return $this->getService()->templateExists($data['file'], $this->getIdentity());
+        $file = trim($data['file']);
+        if ($file === '' || str_contains($file, "\0")) {
+            return false;
+        }
+
+        return $this->getService()->templateExists($file, $this->getIdentity());
     }
 
     /**
