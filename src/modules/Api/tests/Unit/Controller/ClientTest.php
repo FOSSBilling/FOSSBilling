@@ -321,7 +321,7 @@ test('non-AJAX client login returns a redirect response', function (): void {
         ->and($response->headers->get('Location'))->toBe('https://client.example.test/');
 });
 
-test('guest client login is throttled under the anti-bruteforce api_login policy', function (): void {
+test('guest client login is throttled under the anti-brute-force api_login policy', function (): void {
     [$controller, $rateLimitCalls] = createTestController();
 
     invokeApiCall($controller, 'guest', 'client', 'client_login', []);
