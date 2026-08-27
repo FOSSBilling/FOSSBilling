@@ -185,6 +185,48 @@ test('cache pools are isolated per installation instance id', function (): void 
     $poolA2->deleteItem('shared-key');
 });
 
+test('rejects saving a remote cache driver when no installation identifier is configured', function (): void {
+    setInstanceId('');
+
+    expect(fn () => CacheFactory::createFromConfig(
+        ['driver' => 'redis', 'redis' => ['host' => '127.0.0.1', 'port' => 6379]],
+        'cache_factory_test',
+        0,
+        false,
+    ))->toThrow(Exception::class, 'installation identifier');
+
+    expect(fn () => CacheFactory::createFromConfig(
+        ['driver' => 'memcached', 'memcached' => ['host' => '127.0.0.1', 'port' => 11211]],
+        'cache_factory_test',
+        0,
+        false,
+    ))->toThrow(Exception::class, 'installation identifier');
+});
+
+test('falls back to the filesystem cache at runtime when a remote driver is configured but no installation identifier is set', function (): void {
+    setInstanceId('');
+    setCacheConfig(['driver' => 'redis', 'redis' => ['host' => '127.0.0.1', 'port' => 6379]]);
+
+    $pool = CacheFactory::create('cache_factory_test');
+
+    $item = $pool->getItem('probe');
+    $item->set('value');
+    $pool->save($item);
+
+    expect($pool->getItem('probe')->get())->toBe('value');
+
+    $pool->deleteItem('probe');
+});
+
+test('a blank installation identifier does not affect the filesystem driver', function (): void {
+    setInstanceId('');
+    setCacheConfig(['driver' => 'filesystem']);
+
+    $pool = CacheFactory::create('cache_factory_test');
+
+    expect($pool)->toBeInstanceOf(CacheItemPoolInterface::class);
+});
+
 test('clearAll never throws even with a misconfigured driver', function (): void {
     if (hasRedisExtension()) {
         $this->markTestSkipped('This test requires an environment without the redis/relay extension.');

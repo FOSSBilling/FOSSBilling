@@ -76,6 +76,22 @@ test('update cache settings clears the saved redis password only when explicitly
     }
 });
 
+test('update cache settings rejects a remote driver when no installation identifier is configured', function (): void {
+    $api = apiEndpoint(new Box\Mod\System\Api\Admin());
+    $originalConfig = Config::getConfig();
+
+    try {
+        $config = Config::getConfig();
+        $config['info']['instance_id'] = '';
+        Config::setConfig($config, false);
+
+        expect(fn () => $api->update_cache_settings(['driver' => 'redis']))
+            ->toThrow(FOSSBilling\Exception::class, 'installation identifier');
+    } finally {
+        Config::setConfig($originalConfig, false);
+    }
+});
+
 test('update cache settings clears the previously configured backend, not just the new one', function (): void {
     if (hasRedisExtension()) {
         $this->markTestSkipped('This test requires an environment without the redis/relay extension.');

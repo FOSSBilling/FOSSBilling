@@ -95,13 +95,17 @@ class CacheFactory
      * $fallbackOnFailure is false, connection/extension problems are thrown as a FOSSBilling
      * Exception with a specific reason instead of silently degrading to filesystem.
      *
-     * @throws Exception if the driver is unsupported, or (when $fallbackOnFailure is false) unreachable
+     * @throws Exception if the driver is unsupported, if a remote driver is selected without an
+     *                   installation identifier configured, or (when $fallbackOnFailure is false)
+     *                   the backend is unreachable
      */
     public static function createFromConfig(array $cacheConfig, string $namespace, int $defaultLifetime, bool $fallbackOnFailure): CacheItemPoolInterface
     {
+        $instanceId = (string) Config::getProperty('info.instance_id', '');
+
         // Scope every pool to this installation, so installs that happen to share a Redis
         // database or Memcached server don't collide on the same cache keys.
-        $namespace = self::scopeNamespaceToInstallation($namespace);
+        $namespace = self::scopeNamespaceToInstallation($namespace, $instanceId);
 
         $driver = $cacheConfig['driver'] ?? 'filesystem';
 
@@ -111,6 +115,16 @@ class CacheFactory
 
         if ($driver === 'filesystem') {
             return new FilesystemAdapter($namespace, $defaultLifetime, PATH_CACHE);
+        }
+
+        // Every install/upgrade path generates info.instance_id, but a manually edited config.php
+        // could leave it blank - silently sharing the unscoped namespace with another install. This
+        // sits outside the try/catch below on purpose: from create() (fallbackOnFailure: true) it's
+        // caught by create()'s own outer catch and degrades to filesystem like any other
+        // misconfiguration; from createFromConfig() directly (fallbackOnFailure: false), it reaches
+        // the caller as this specific message instead of the generic "could not connect" one below.
+        if ($instanceId === '') {
+            throw new Exception('The ":driver" cache driver requires an installation identifier ("info.instance_id" in the configuration file) so that installations sharing the same server don\'t collide. Reinstall or update FOSSBilling to have one generated automatically, or set it manually.', [':driver' => $driver]);
         }
 
         try {
@@ -192,10 +206,8 @@ class CacheFactory
      * installs pointed at the same Redis/Memcached server don't read or overwrite each other's
      * cache entries.
      */
-    private static function scopeNamespaceToInstallation(string $namespace): string
+    private static function scopeNamespaceToInstallation(string $namespace, string $instanceId): string
     {
-        $instanceId = (string) Config::getProperty('info.instance_id', '');
-
         if ($instanceId === '') {
             return $namespace;
         }
