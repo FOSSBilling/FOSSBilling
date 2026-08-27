@@ -11,6 +11,8 @@
 declare(strict_types=1);
 
 use Box\Mod\System\Service;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Filesystem\Path;
 
 use function Tests\Helpers\container;
 
@@ -307,7 +309,7 @@ test('getMessages returns system messages', function (): void {
     $latestVersion = '1.0.0';
     $type = 'info';
 
-    $filesystemMock = Mockery::mock(Symfony\Component\Filesystem\Filesystem::class);
+    $filesystemMock = Mockery::mock(Filesystem::class);
     $filesystemMock->allows()->exists(Mockery::any())->andReturn(false);
     $systemServiceMock = Mockery::mock(new Service($filesystemMock))->makePartial();
     $systemServiceMock->allows()->getParamValue(Mockery::any())->andReturn(false);
@@ -345,6 +347,45 @@ test('templateExists returns false when paths are empty', function (): void {
     $result = $service->templateExists('layout.html.twig');
     expect($result)->toBeBool();
     expect($result)->toBeFalse();
+});
+
+test('templateExists rejects unsafe file paths', function (): void {
+    $service = new Service();
+    $filesystem = new Filesystem();
+
+    // Unique fixture root so parallel test runs, and this test's own
+    // cleanup, can't collide with anything else in the shared system temp
+    // directory. The base and outside directories both live under it.
+    $fixtureRoot = sys_get_temp_dir() . '/fb_template_exists_' . uniqid();
+    $baseDir = Path::join($fixtureRoot, 'theme');
+    $outsideFile = Path::join($fixtureRoot, 'outside.html.twig');
+
+    $filesystem->dumpFile(Path::join($baseDir, 'layout.html.twig'), 'test');
+    $filesystem->dumpFile($outsideFile, 'outside');
+
+    $themeServiceMock = Mockery::mock(Box\Mod\Theme\Service::class)->makePartial();
+    $themeServiceMock->shouldReceive('getThemeConfig')->andReturn(['paths' => [$baseDir]]);
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $themeServiceMock);
+    $service->setDi($di);
+
+    try {
+        // Sanity check: a legitimate in-base template still resolves, so the
+        // assertions below aren't just exercising an always-false code path.
+        expect($service->templateExists('layout.html.twig'))->toBeTrue();
+
+        // Inputs that must never resolve, even though the target file genuinely
+        // exists just outside the theme's base directory.
+        expect($service->templateExists('../outside.html.twig'))->toBeFalse();
+        expect($service->templateExists('../../../../../../outside.html.twig'))->toBeFalse();
+        expect($service->templateExists('..\\..\\outside.html.twig'))->toBeFalse();
+        expect($service->templateExists("layout.html.twig\0.png"))->toBeFalse();
+        expect($service->templateExists('/outside.html.twig'))->toBeFalse();
+        expect($service->templateExists(''))->toBeFalse();
+    } finally {
+        $filesystem->remove($fixtureRoot);
+    }
 });
 
 test('clearCache clears cache directory', function (): void {
