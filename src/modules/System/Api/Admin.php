@@ -136,7 +136,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             'redis' => [
                 'host' => $data['redis_host'] ?? '127.0.0.1',
                 'port' => Tools::normalizePort($data['redis_port'] ?? null, 6379),
-                'password' => $redisPassword ?: null,
+                'password' => $redisPassword !== '' ? $redisPassword : null,
                 'database' => (int) ($data['redis_database'] ?? 0),
                 'tls' => [
                     'enabled' => Tools::normalizeBoolean($data['redis_tls_enabled'] ?? false, false),

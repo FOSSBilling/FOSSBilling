@@ -287,10 +287,17 @@
                 document.getElementById('domain-sync').addEventListener('click', function(event) {
                     event.preventDefault();
 
+                    const syncButton = event.currentTarget;
+                    syncButton.disabled = true;
+
                     FOSSBilling.api.client.post('servicedomain/sync', { order_id: {{ order.id }} },
                         () => {
                             FOSSBilling.message({{ 'Domain synchronized with registrar'|trans|json_encode|raw }});
                             window.location.reload();
+                        },
+                        (error) => {
+                            syncButton.disabled = false;
+                            FOSSBilling.message(`${error.message} (${error.code})`, 'error');
                         });
                 });
             });

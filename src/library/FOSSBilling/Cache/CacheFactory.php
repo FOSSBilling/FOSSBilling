@@ -225,7 +225,7 @@ class CacheFactory
      */
     private static function assertRedisTransportIsSafe(array $redisConfig): void
     {
-        if (empty($redisConfig['password'])) {
+        if (!self::hasRedisPassword($redisConfig)) {
             return;
         }
 
@@ -279,11 +279,22 @@ class CacheFactory
         $scheme = Tools::normalizeBoolean($redisConfig['tls']['enabled'] ?? false, false) ? 'rediss' : 'redis';
 
         $auth = '';
-        if (!empty($redisConfig['password'])) {
+        if (self::hasRedisPassword($redisConfig)) {
             $auth = rawurlencode((string) $redisConfig['password']) . '@';
         }
 
         return sprintf('%s://%s%s:%d%s', $scheme, $auth, $host, $port, $database !== 0 ? '/' . $database : '');
+    }
+
+    /**
+     * Whether a Redis password is configured. Checked against null/'' explicitly rather than
+     * with empty()/truthiness, since a literal "0" password is valid but falsy in PHP.
+     */
+    private static function hasRedisPassword(array $redisConfig): bool
+    {
+        $password = $redisConfig['password'] ?? null;
+
+        return $password !== null && $password !== '';
     }
 
     /**

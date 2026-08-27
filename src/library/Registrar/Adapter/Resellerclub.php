@@ -641,7 +641,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
 
         $decoded = json_decode($trimmedContent, true);
         if (json_last_error() === JSON_ERROR_NONE && is_scalar($decoded)) {
-            return $trimmedContent;
+            return (string) $decoded;
         }
 
         $json = $result->toArray(false);

@@ -155,6 +155,17 @@ test('allows a redis connection on a non-loopback host with no password regardle
     ))->toThrow(Exception::class, hasRedisExtension() ? 'Could not connect' : 'requires the PHP redis');
 });
 
+test('a literal "0" redis password is not treated as unset', function (): void {
+    // "0" is falsy in PHP, so empty()/?: would silently drop it. It must still trigger the
+    // transport-safety check on a non-loopback host with TLS disabled, same as any other password.
+    expect(fn () => CacheFactory::createFromConfig(
+        ['driver' => 'redis', 'redis' => ['host' => 'redis.example.com', 'password' => '0']],
+        'cache_factory_test',
+        0,
+        false,
+    ))->toThrow(Exception::class, 'without TLS enabled');
+});
+
 test('cache pools are isolated per installation instance id', function (): void {
     setInstanceId('install-a');
     $poolA = CacheFactory::create('cache_factory_test');

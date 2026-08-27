@@ -76,6 +76,20 @@ test('update cache settings clears the saved redis password only when explicitly
     }
 });
 
+test('update cache settings preserves a literal "0" redis password', function (): void {
+    // "0" is falsy in PHP, so a naive ?: fallback would silently drop it as if the field was left
+    // blank.
+    $api = apiEndpoint(new Box\Mod\System\Api\Admin());
+    $originalConfig = Config::getConfig();
+
+    try {
+        $api->update_cache_settings(['driver' => 'filesystem', 'redis_password' => '0']);
+        expect(Config::getProperty('cache.redis.password'))->toBe('0');
+    } finally {
+        Config::setConfig($originalConfig, false);
+    }
+});
+
 test('update cache settings clears the previously configured backend, not just the new one', function (): void {
     if (hasRedisExtension()) {
         $this->markTestSkipped('This test requires an environment without the redis/relay extension.');

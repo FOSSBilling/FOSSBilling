@@ -61,6 +61,16 @@ test('a bare numeric response (e.g. domains/orderid) is still returned as-is', f
     expect($result)->toBe('98765');
 });
 
+test('isDomaincanBeTransferred returns true for a quoted JSON string response', function (): void {
+    // The registrar isn't consistent about formatting: a properly JSON-encoded string like
+    // '"true"' must decode to the same result as the bare, unquoted 'true' response covered above,
+    // not fail the strtolower(...) == 'true' comparison because the quotes were never stripped.
+    $httpClient = new MockHttpClient(fn (): MockResponse => new MockResponse('"true"'));
+    $adapter = createResellerclubAdapter($httpClient);
+
+    expect($adapter->isDomaincanBeTransferred(createResellerclubDomain()))->toBeTrue();
+});
+
 test('a bare "null" response is not silently treated as a scalar', function (): void {
     // Regression guard for the scalar short-circuit above: json_decode('null') also returns
     // null with no decode error, but null isn't a usable scalar result (e.g. getDomainDetails()
