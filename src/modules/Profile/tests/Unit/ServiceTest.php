@@ -63,7 +63,6 @@ test('generates new api key', function (): void {
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['events_manager'] = $emMock;
-    $di['tools'] = new FOSSBilling\Tools();
 
     $model = createEntity(Box\Mod\Staff\Entity\Admin::class);
 
@@ -112,9 +111,6 @@ test('updates client', function (): void {
             'disable_change_email' => 0,
         ]);
 
-    $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
-    $toolsMock->shouldReceive('validateAndSanitizeEmail');
-
     $clientServiceMock = Mockery::mock(Box\Mod\Client\Service::class);
     $clientServiceMock->shouldReceive('emailAlreadyRegistered')
         ->andReturn(false);
@@ -124,7 +120,6 @@ test('updates client', function (): void {
     $di['events_manager'] = $emMock;
     $di['mod_service'] = $di->protect(fn ($name): Mockery\MockInterface => $clientServiceMock);
     $di['mod'] = $di->protect(fn (): Mockery\MockInterface => $modMock);
-    $di['tools'] = $toolsMock;
 
     $model = createEntity(Box\Mod\Client\Entity\Client::class);
 
@@ -226,9 +221,6 @@ test('throws exception when email already registered', function (): void {
             'disable_change_email' => 0,
         ]);
 
-    $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
-    $toolsMock->shouldReceive('validateAndSanitizeEmail');
-
     $clientServiceMock = Mockery::mock(Box\Mod\Client\Service::class);
     $clientServiceMock->shouldReceive('emailAlreadyRegistered')
         ->atLeast()->once()
@@ -239,7 +231,6 @@ test('throws exception when email already registered', function (): void {
     $di['events_manager'] = $emMock;
     $di['mod_service'] = $di->protect(fn ($name): Mockery\MockInterface => $clientServiceMock);
     $di['mod'] = $di->protect(fn (): Mockery\MockInterface => $modMock);
-    $di['tools'] = $toolsMock;
 
     $model = createEntity(Box\Mod\Client\Entity\Client::class);
 
@@ -255,7 +246,6 @@ test('throws exception when email already registered', function (): void {
 test('resets api key', function (): void {
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['tools'] = new FOSSBilling\Tools();
 
     $model = createEntity(Box\Mod\Client\Entity\Client::class);
 
