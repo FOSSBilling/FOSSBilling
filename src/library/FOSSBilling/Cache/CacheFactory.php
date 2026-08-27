@@ -112,19 +112,12 @@ class CacheFactory
             return new FilesystemAdapter($namespace, $defaultLifetime, PATH_CACHE);
         }
 
-        // A remote cache backend namespaces its keys by info.instance_id (see
-        // scopeNamespaceToInstallation() above) precisely so that multiple FOSSBilling installs
-        // pointed at the same Redis/Memcached server don't read or overwrite each other's cache
-        // entries. Every supported install/upgrade path generates this id (see install.php and
-        // UpdatePatcher::applyCorePatches()), but a manually edited or hand-crafted config.php
-        // could still leave it blank - in which case the namespace silently falls back to the
-        // unscoped one and that isolation is lost. Refuse to build the pool at all rather than
-        // let that happen quietly. This intentionally sits outside the try/catch below: thrown
-        // from create() (fallbackOnFailure: true), it's caught by create()'s own outer catch and
-        // degrades to the filesystem cache like any other misconfiguration; thrown from
-        // createFromConfig() directly (fallbackOnFailure: false, e.g. the admin settings form),
-        // it surfaces to the caller as this specific, actionable message instead of being
-        // reworded by the generic "could not connect" handling below.
+        // Every install/upgrade path generates info.instance_id, but a manually edited config.php
+        // could leave it blank - silently sharing the unscoped namespace with another install. This
+        // sits outside the try/catch below on purpose: from create() (fallbackOnFailure: true) it's
+        // caught by create()'s own outer catch and degrades to filesystem like any other
+        // misconfiguration; from createFromConfig() directly (fallbackOnFailure: false), it reaches
+        // the caller as this specific message instead of the generic "could not connect" one below.
         if ($instanceId === '') {
             throw new Exception('The ":driver" cache driver requires an installation identifier ("info.instance_id" in the configuration file) so that installations sharing the same server don\'t collide. Reinstall or update FOSSBilling to have one generated automatically, or set it manually.', [':driver' => $driver]);
         }
