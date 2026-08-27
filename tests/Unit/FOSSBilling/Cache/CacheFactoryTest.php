@@ -112,6 +112,49 @@ test('rejects saving a memcached configuration when the memcached extension is u
     ))->toThrow(Exception::class, 'requires the PHP memcached');
 });
 
+test('rejects a redis password on a non-loopback host with TLS disabled', function (): void {
+    expect(fn () => CacheFactory::createFromConfig(
+        ['driver' => 'redis', 'redis' => ['host' => 'redis.example.com', 'password' => 'secret']],
+        'cache_factory_test',
+        0,
+        false,
+    ))->toThrow(Exception::class, 'without TLS enabled');
+});
+
+test('allows a redis password on a non-loopback host once TLS is enabled', function (): void {
+    // Neither the redis/relay extension nor a reachable TLS Redis server is guaranteed here, so
+    // this still throws either way - just never the transport-safety exception, proving TLS
+    // being enabled was what let it past that specific check.
+    expect(fn () => CacheFactory::createFromConfig(
+        ['driver' => 'redis', 'redis' => ['host' => 'redis.example.com', 'password' => 'secret', 'tls' => ['enabled' => true]]],
+        'cache_factory_test',
+        0,
+        false,
+    ))->toThrow(Exception::class, hasRedisExtension() ? 'Could not connect' : 'requires the PHP redis');
+});
+
+dataset('loopback hosts', ['127.0.0.1', '127.0.0.53', '::1', '[::1]', 'localhost', 'LOCALHOST']);
+
+test('allows a redis password on a loopback host without TLS', function (string $host): void {
+    // Same reasoning as above: this still throws either way, just never the transport-safety
+    // exception, proving the loopback host was what let it past that specific check.
+    expect(fn () => CacheFactory::createFromConfig(
+        ['driver' => 'redis', 'redis' => ['host' => $host, 'password' => 'secret']],
+        'cache_factory_test',
+        0,
+        false,
+    ))->toThrow(Exception::class, hasRedisExtension() ? 'Could not connect' : 'requires the PHP redis');
+})->with('loopback hosts');
+
+test('allows a redis connection on a non-loopback host with no password regardless of TLS', function (): void {
+    expect(fn () => CacheFactory::createFromConfig(
+        ['driver' => 'redis', 'redis' => ['host' => 'redis.example.com']],
+        'cache_factory_test',
+        0,
+        false,
+    ))->toThrow(Exception::class, hasRedisExtension() ? 'Could not connect' : 'requires the PHP redis');
+});
+
 test('cache pools are isolated per installation instance id', function (): void {
     setInstanceId('install-a');
     $poolA = CacheFactory::create('cache_factory_test');
