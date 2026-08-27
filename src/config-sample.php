@@ -186,20 +186,10 @@ return [
             'database' => 0,
 
             /*
-             * TLS ('rediss://') for the connection to the Redis server. Also configurable from
-             * the admin area under System > Settings > Cache.
-             *
-             * This matters most when 'host' is anything other than a loopback address
-             * (127.0.0.1, ::1, localhost) AND 'password' is set: in that case, without TLS, the
-             * password and every cached value would cross the network in plain text, so
-             * CacheFactory refuses to connect at all until either TLS is enabled here or the
-             * connection is moved to a loopback address. A loopback connection, or one with no
-             * password configured, is never blocked - TLS there is optional hardening, not a
-             * requirement. Note this deliberately does not try to recognize a "trusted private
-             * network" host (a Docker service name, a VPC-internal IP) as exempt the way loopback
-             * is: there's no reliable way to tell those apart from a genuinely remote host from
-             * the hostname/IP alone, so an admin relying on network isolation instead of TLS
-             * should leave 'password' unset rather than expect this check to special-case it.
+             * TLS ('rediss://') for the connection to the Redis server. Required whenever
+             * 'password' is set and 'host' isn't a loopback address (127.0.0.1, ::1, localhost) -
+             * see CacheFactory::assertRedisTransportIsSafe() for why. Also configurable from the
+             * admin area under System > Settings > Cache.
              */
             'tls' => [
                 'enabled' => false,
