@@ -145,6 +145,18 @@ $di['db'] = function () use ($di) {
     $freeze = Config::getProperty('db.freeze', true);
     $mapper->freeze($freeze);
 
+    // RedBean's writer cache assumes it's the only thing writing to the
+    // database: it only invalidates on RedBean's own write queries, so it
+    // has no way to know when Doctrine ($di['em'], a separate connection)
+    // has just written a row. Without this, a RedBean read that repeats an
+    // earlier RedBean read of the same row - even one issued after a
+    // Doctrine write in between - returns the same stale cached result.
+    // See Order\Service::_callOnService(), which converts to a legacy order
+    // via RedBean on every action call; a later action in the same request
+    // (e.g. activate, right after create sets the order's service_id via
+    // Doctrine) would otherwise see the pre-update row.
+    $mapper->useWriterCache(false);
+
     $db = new Box_Database();
     $db->setDi($di);
     $db->setDataMapper($mapper);
