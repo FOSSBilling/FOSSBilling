@@ -520,8 +520,16 @@ class Service
         }
     }
 
-    public function templateExists($file, $identity = null): bool
+    public function templateExists(string $file, ?\Model_Admin $identity = null): bool
     {
+        $file = trim($file);
+        if ($file === '' || str_contains($file, "\0") || Path::isAbsolute($file) || str_contains($file, '..') || str_contains($file, '\\')) {
+            return false;
+        }
+        if (!preg_match('/\A[a-zA-Z0-9_\-\/]+\.html\.twig\z/', $file)) {
+            return false;
+        }
+
         if ($identity instanceof \Model_Admin) {
             $client = false;
         } else {
@@ -530,7 +538,13 @@ class Service
         $themeService = $this->di['mod_service']('theme');
         $theme = $themeService->getThemeConfig($client);
         foreach ($theme['paths'] as $path) {
-            if ($this->filesystem->exists(Path::join($path, $file))) {
+            $candidate = Path::join($path, $file);
+            $canonicalBase = Path::canonicalize($path);
+            $canonicalCandidate = Path::canonicalize($candidate);
+            if (!Path::isBasePath($canonicalBase, $canonicalCandidate)) {
+                continue;
+            }
+            if ($this->filesystem->exists($canonicalCandidate)) {
                 return true;
             }
         }
