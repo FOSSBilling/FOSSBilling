@@ -194,6 +194,29 @@ return [
             'port' => 6379,
             'password' => null,
             'database' => 0,
+
+            /*
+             * TLS ('rediss://') for the connection to the Redis server. Required whenever
+             * 'password' is set and 'host' isn't a loopback address (127.0.0.1, ::1, localhost) -
+             * see CacheFactory::assertRedisTransportIsSafe() for why. Also configurable from the
+             * admin area under System > Settings > Cache.
+             */
+            'tls' => [
+                'enabled' => false,
+
+                // Verify the server's certificate, and that its certificate name matches 'host'.
+                // Leave both enabled unless you have a specific reason not to.
+                'verify_peer' => true,
+                'verify_peer_name' => true,
+
+                // Path to a CA bundle to trust, if the Redis server's certificate isn't signed by
+                // a CA your system already trusts.
+                'cafile' => null,
+
+                // Only for a self-signed certificate in a development/testing environment - never
+                // enable this in production.
+                'allow_self_signed' => false,
+            ],
         ],
 
         /*

@@ -94,6 +94,11 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             'redis_port' => (int) Config::getProperty('cache.redis.port', 6379),
             'redis_password_set' => Config::getProperty('cache.redis.password') !== null,
             'redis_database' => (int) Config::getProperty('cache.redis.database', 0),
+            'redis_tls_enabled' => Tools::normalizeBoolean(Config::getProperty('cache.redis.tls.enabled', false), false),
+            'redis_tls_verify_peer' => Tools::normalizeBoolean(Config::getProperty('cache.redis.tls.verify_peer', true), true),
+            'redis_tls_verify_peer_name' => Tools::normalizeBoolean(Config::getProperty('cache.redis.tls.verify_peer_name', true), true),
+            'redis_tls_allow_self_signed' => Tools::normalizeBoolean(Config::getProperty('cache.redis.tls.allow_self_signed', false), false),
+            'redis_tls_cafile' => (string) Config::getProperty('cache.redis.tls.cafile', ''),
             'memcached_host' => (string) Config::getProperty('cache.memcached.host', '127.0.0.1'),
             'memcached_port' => (int) Config::getProperty('cache.memcached.port', 11211),
         ];
@@ -104,7 +109,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * The new settings are validated by attempting to connect to the configured backend before
      * anything is saved, so a mistyped host/port/password is rejected with a clear reason rather
-     * than being written and silently falling back to the filesystem cache later.
+     * than being written and silently falling back to the filesystem cache later. That same
+     * validation also rejects a Redis password on a non-loopback host with TLS disabled, since
+     * that combination would send the password in plain text (see CacheFactory).
      *
      * @throws \FOSSBilling\Exception
      */
@@ -132,6 +139,13 @@ class Admin extends \FOSSBilling\Api\AbstractApi
                 'port' => Tools::normalizePort($data['redis_port'] ?? null, 6379),
                 'password' => $redisPassword ?: null,
                 'database' => (int) ($data['redis_database'] ?? 0),
+                'tls' => [
+                    'enabled' => Tools::normalizeBoolean($data['redis_tls_enabled'] ?? false, false),
+                    'verify_peer' => Tools::normalizeBoolean($data['redis_tls_verify_peer'] ?? true, true),
+                    'verify_peer_name' => Tools::normalizeBoolean($data['redis_tls_verify_peer_name'] ?? true, true),
+                    'allow_self_signed' => Tools::normalizeBoolean($data['redis_tls_allow_self_signed'] ?? false, false),
+                    'cafile' => ($data['redis_tls_cafile'] ?? '') !== '' ? $data['redis_tls_cafile'] : null,
+                ],
             ],
             'memcached' => [
                 'host' => $data['memcached_host'] ?? '127.0.0.1',

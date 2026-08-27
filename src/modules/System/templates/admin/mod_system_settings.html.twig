@@ -307,6 +307,45 @@
                                     </div>
                                 </div>
                                 <div class="form-hint mt-2">{{ 'Requires the PHP redis (or relay) extension.'|trans }}</div>
+
+                                <hr>
+
+                                <div class="form-check form-switch mb-2">
+                                    <input type="hidden" name="redis_tls_enabled" value="0">
+                                    <input class="form-check-input" id="redis_tls_enabled" type="checkbox" name="redis_tls_enabled" value="1"{% if cache_settings.redis_tls_enabled %} checked{% endif %}>
+                                    <label class="form-check-label" for="redis_tls_enabled">{{ 'Use TLS'|trans }}</label>
+                                </div>
+                                <p class="text-secondary">{{ 'Required whenever a password is set above and the host isn\'t a loopback address (127.0.0.1, ::1, localhost) - otherwise the password and cached data would be sent in plain text.'|trans }}</p>
+
+                                <div class="row g-3" id="redis-tls-options"{% if not cache_settings.redis_tls_enabled %} style="display:none;"{% endif %}>
+                                    <div class="col-lg-6">
+                                        <label class="form-check form-switch">
+                                            <input type="hidden" name="redis_tls_verify_peer" value="0">
+                                            <input class="form-check-input" type="checkbox" name="redis_tls_verify_peer" value="1"{% if cache_settings.redis_tls_verify_peer %} checked{% endif %}>
+                                            <span class="form-check-label">{{ 'Verify server certificate'|trans }}</span>
+                                        </label>
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <label class="form-check form-switch">
+                                            <input type="hidden" name="redis_tls_verify_peer_name" value="0">
+                                            <input class="form-check-input" type="checkbox" name="redis_tls_verify_peer_name" value="1"{% if cache_settings.redis_tls_verify_peer_name %} checked{% endif %}>
+                                            <span class="form-check-label">{{ 'Verify certificate hostname'|trans }}</span>
+                                        </label>
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <label class="form-label" for="redis_tls_cafile">{{ 'CA Bundle Path'|trans }}</label>
+                                        <input class="form-control" id="redis_tls_cafile" type="text" name="redis_tls_cafile" value="{{ cache_settings.redis_tls_cafile }}" placeholder="{{ '(system default)'|trans }}">
+                                        <div class="form-hint">{{ 'Only needed if the Redis server\'s certificate isn\'t signed by a CA your system already trusts.'|trans }}</div>
+                                    </div>
+                                    <div class="col-lg-6">
+                                        <label class="form-check form-switch mt-4 mt-lg-0">
+                                            <input type="hidden" name="redis_tls_allow_self_signed" value="0">
+                                            <input class="form-check-input" type="checkbox" name="redis_tls_allow_self_signed" value="1"{% if cache_settings.redis_tls_allow_self_signed %} checked{% endif %}>
+                                            <span class="form-check-label">{{ 'Allow self-signed certificate'|trans }}</span>
+                                        </label>
+                                        <div class="form-hint">{{ 'Development/testing only - never enable this in production.'|trans }}</div>
+                                    </div>
+                                </div>
                             </fieldset>
 
                             <fieldset class="cache-memcached"{% if cache_settings.driver != 'memcached' %} style="display:none;"{% endif %}>
@@ -584,6 +623,10 @@
             redisFieldset.style.display = this.value === 'redis' ? 'block' : 'none';
             memcachedFieldset.style.display = this.value === 'memcached' ? 'block' : 'none';
         });
+    });
+
+    document.getElementById('redis_tls_enabled').addEventListener('change', function() {
+        document.getElementById('redis-tls-options').style.display = this.checked ? 'flex' : 'none';
     });
 </script>
 {% endblock %}

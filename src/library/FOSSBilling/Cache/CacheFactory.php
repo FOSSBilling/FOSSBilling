@@ -217,13 +217,67 @@ class CacheFactory
 
     private static function createRedisAdapter(array $redisConfig, string $namespace, int $defaultLifetime): RedisAdapter
     {
+        // Checked ahead of the extension-availability check below: whether a configuration is
+        // internally safe to use doesn't depend on what happens to be installed on this server,
+        // and doing it first lets this be validated in environments without the redis extension.
+        self::assertRedisTransportIsSafe($redisConfig);
+
         if (!class_exists(\Redis::class) && !class_exists(\Relay\Relay::class) && !class_exists(\RedisCluster::class)) {
             throw new Exception('The "redis" cache driver requires the PHP redis (or relay) extension to be installed.');
         }
 
-        $connection = RedisAdapter::createConnection(self::buildRedisDsn($redisConfig));
+        $connection = RedisAdapter::createConnection(self::buildRedisDsn($redisConfig), self::buildRedisConnectionOptions($redisConfig));
 
         return new RedisAdapter($connection, $namespace, $defaultLifetime);
+    }
+
+    /**
+     * Rejects a password-authenticated Redis connection to a non-loopback host when TLS isn't
+     * enabled - without it, both the password and every cached value would cross the network in
+     * plaintext. A loopback host (127.0.0.1/::1/localhost) is exempt, since that traffic never
+     * leaves the machine regardless of TLS. This intentionally does NOT try to recognize "trusted
+     * private network" hosts (a Docker service name, a VPC-internal IP): there's no reliable way
+     * to tell those apart from a genuinely remote host from the hostname/IP alone, so an admin
+     * relying on that kind of network for security should leave the Redis password unset rather
+     * than expect this check to special-case their setup.
+     *
+     * @throws Exception if the connection would send a password over an unencrypted network hop
+     */
+    private static function assertRedisTransportIsSafe(array $redisConfig): void
+    {
+        if (empty($redisConfig['password'])) {
+            return;
+        }
+
+        if (Tools::normalizeBoolean($redisConfig['tls']['enabled'] ?? false, false)) {
+            return;
+        }
+
+        $host = (string) ($redisConfig['host'] ?? '127.0.0.1');
+        if (self::isLoopbackHost($host)) {
+            return;
+        }
+
+        throw new Exception('Refusing to send the Redis password to ":host" without TLS enabled. Enable "cache.redis.tls.enabled", or connect over a loopback address (127.0.0.1/::1/localhost) instead.', [':host' => $host]);
+    }
+
+    private static function isLoopbackHost(string $host): bool
+    {
+        $host = strtolower(trim($host));
+
+        if ($host === 'localhost') {
+            return true;
+        }
+
+        // Strip brackets from a literal IPv6 host, e.g. "[::1]".
+        $host = trim($host, '[]');
+
+        $ip = filter_var($host, FILTER_VALIDATE_IP);
+        if ($ip === false) {
+            return false;
+        }
+
+        return $ip === '::1' || str_starts_with($ip, '127.');
     }
 
     private static function createMemcachedAdapter(array $memcachedConfig, string $namespace, int $defaultLifetime): MemcachedAdapter
@@ -242,13 +296,42 @@ class CacheFactory
         $host = $redisConfig['host'] ?? '127.0.0.1';
         $port = Tools::normalizePort($redisConfig['port'] ?? null, 6379);
         $database = (int) ($redisConfig['database'] ?? 0);
+        $scheme = Tools::normalizeBoolean($redisConfig['tls']['enabled'] ?? false, false) ? 'rediss' : 'redis';
 
         $auth = '';
         if (!empty($redisConfig['password'])) {
             $auth = rawurlencode((string) $redisConfig['password']) . '@';
         }
 
-        return sprintf('redis://%s%s:%d%s', $auth, $host, $port, $database !== 0 ? '/' . $database : '');
+        return sprintf('%s://%s%s:%d%s', $scheme, $auth, $host, $port, $database !== 0 ? '/' . $database : '');
+    }
+
+    /**
+     * Builds the connection-options array passed as RedisAdapter::createConnection()'s second
+     * argument. The 'ssl' key maps directly onto PHP's SSL stream-context options
+     * (https://www.php.net/manual/en/context.ssl.php) - the same shape Symfony's Redis adapter
+     * documents for TLS. Only populated when TLS is enabled; a plaintext connection has nothing
+     * to configure here.
+     */
+    private static function buildRedisConnectionOptions(array $redisConfig): array
+    {
+        $tlsConfig = $redisConfig['tls'] ?? [];
+
+        if (!Tools::normalizeBoolean($tlsConfig['enabled'] ?? false, false)) {
+            return [];
+        }
+
+        $ssl = [
+            'verify_peer' => Tools::normalizeBoolean($tlsConfig['verify_peer'] ?? true, true),
+            'verify_peer_name' => Tools::normalizeBoolean($tlsConfig['verify_peer_name'] ?? true, true),
+            'allow_self_signed' => Tools::normalizeBoolean($tlsConfig['allow_self_signed'] ?? false, false),
+        ];
+
+        if (!empty($tlsConfig['cafile'])) {
+            $ssl['cafile'] = (string) $tlsConfig['cafile'];
+        }
+
+        return ['ssl' => $ssl];
     }
 
     private static function buildMemcachedDsn(array $memcachedConfig): string
