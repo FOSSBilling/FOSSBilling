@@ -63,7 +63,8 @@
         "falsey",
         "unindexed",
         "catchable",
-        "nelexa"
+        "nelexa",
+        "rediss"
     ],
 
     "ignoreWords": [
