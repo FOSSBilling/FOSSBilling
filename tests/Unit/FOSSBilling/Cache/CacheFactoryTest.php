@@ -133,6 +133,24 @@ test('allows a redis password on a non-loopback host once TLS is enabled', funct
     ))->toThrow(Exception::class, hasRedisExtension() ? 'Could not connect' : 'requires the PHP redis');
 });
 
+test('rejects a redis password on a non-loopback host when TLS is enabled but peer verification is disabled', function (): void {
+    expect(fn () => CacheFactory::createFromConfig(
+        ['driver' => 'redis', 'redis' => ['host' => 'redis.example.com', 'password' => 'secret', 'tls' => ['enabled' => true, 'verify_peer' => false]]],
+        'cache_factory_test',
+        0,
+        false,
+    ))->toThrow(Exception::class, 'certificate verification disabled');
+});
+
+test('rejects a redis password on a non-loopback host when TLS is enabled but peer name verification is disabled', function (): void {
+    expect(fn () => CacheFactory::createFromConfig(
+        ['driver' => 'redis', 'redis' => ['host' => 'redis.example.com', 'password' => 'secret', 'tls' => ['enabled' => true, 'verify_peer_name' => false]]],
+        'cache_factory_test',
+        0,
+        false,
+    ))->toThrow(Exception::class, 'certificate verification disabled');
+});
+
 dataset('loopback hosts', ['127.0.0.1', '127.0.0.53', '::1', '[::1]', 'localhost', 'LOCALHOST']);
 
 test('allows a redis password on a loopback host without TLS', function (string $host): void {
@@ -248,3 +266,26 @@ test('clearAll clears the pools for an explicitly given configuration, not just 
 
     CacheFactory::clearAll(['driver' => 'redis', 'redis' => ['host' => '127.0.0.1', 'port' => 6379]]);
 })->expectNotToPerformAssertions();
+
+dataset('IPv6 hosts needing brackets', [
+    '::1' => ['::1', '[::1]'],
+    'a non-loopback IPv6 address' => ['2001:db8::1', '[2001:db8::1]'],
+]);
+
+test('bare IPv6 hosts are bracketed for DSN construction', function (string $host, string $expected): void {
+    $bracket = new ReflectionMethod(CacheFactory::class, 'bracketIpv6Host');
+
+    expect($bracket->invoke(null, $host))->toBe($expected);
+})->with('IPv6 hosts needing brackets');
+
+test('an already-bracketed IPv6 host is left unchanged', function (): void {
+    $bracket = new ReflectionMethod(CacheFactory::class, 'bracketIpv6Host');
+
+    expect($bracket->invoke(null, '[::1]'))->toBe('[::1]');
+});
+
+test('a hostname or IPv4 address is left unchanged when bracketing for DSN construction', function (string $host): void {
+    $bracket = new ReflectionMethod(CacheFactory::class, 'bracketIpv6Host');
+
+    expect($bracket->invoke(null, $host))->toBe($host);
+})->with(['redis.example.com', '127.0.0.1']);

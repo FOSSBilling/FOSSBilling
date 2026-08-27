@@ -229,16 +229,23 @@ class CacheFactory
             return;
         }
 
-        if (Tools::normalizeBoolean($redisConfig['tls']['enabled'] ?? false, false)) {
-            return;
-        }
-
         $host = (string) ($redisConfig['host'] ?? '127.0.0.1');
         if (self::isLoopbackHost($host)) {
             return;
         }
 
-        throw new Exception('Refusing to send the Redis password to ":host" without TLS enabled. Enable "cache.redis.tls.enabled", or connect over a loopback address (127.0.0.1/::1/localhost) instead.', [':host' => $host]);
+        $tlsConfig = $redisConfig['tls'] ?? [];
+        if (!Tools::normalizeBoolean($tlsConfig['enabled'] ?? false, false)) {
+            throw new Exception('Refusing to send the Redis password to ":host" without TLS enabled. Enable "cache.redis.tls.enabled", or connect over a loopback address (127.0.0.1/::1/localhost) instead.', [':host' => $host]);
+        }
+
+        // TLS alone only encrypts the connection - without verifying the server's certificate,
+        // an on-path attacker can still present their own certificate and relay the connection,
+        // defeating the point of enabling TLS at all. A self-signed deployment should set
+        // "allow_self_signed" (and optionally "cafile"), not disable verification.
+        if (!Tools::normalizeBoolean($tlsConfig['verify_peer'] ?? true, true) || !Tools::normalizeBoolean($tlsConfig['verify_peer_name'] ?? true, true)) {
+            throw new Exception('Refusing to send the Redis password to ":host" with certificate verification disabled. Enable "cache.redis.tls.verify_peer" and "cache.redis.tls.verify_peer_name" - for a self-signed certificate, use "cache.redis.tls.allow_self_signed" and "cache.redis.tls.cafile" instead of disabling verification.', [':host' => $host]);
+        }
     }
 
     private static function isLoopbackHost(string $host): bool
@@ -260,6 +267,20 @@ class CacheFactory
         return $ip === '::1' || str_starts_with($ip, '127.');
     }
 
+    /**
+     * Wraps a bare IPv6 host literal in brackets (e.g. "::1" -> "[::1]"), as DSN syntax requires,
+     * since ":" is also the port separator. Leaves hostnames, IPv4 addresses, and already-bracketed
+     * hosts unchanged.
+     */
+    private static function bracketIpv6Host(string $host): string
+    {
+        if (str_starts_with($host, '[')) {
+            return $host;
+        }
+
+        return filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) !== false ? '[' . $host . ']' : $host;
+    }
+
     private static function createMemcachedAdapter(array $memcachedConfig, string $namespace, int $defaultLifetime): MemcachedAdapter
     {
         if (!class_exists(\Memcached::class)) {
@@ -273,7 +294,7 @@ class CacheFactory
 
     private static function buildRedisDsn(array $redisConfig): string
     {
-        $host = $redisConfig['host'] ?? '127.0.0.1';
+        $host = self::bracketIpv6Host((string) ($redisConfig['host'] ?? '127.0.0.1'));
         $port = Tools::normalizePort($redisConfig['port'] ?? null, 6379);
         $database = (int) ($redisConfig['database'] ?? 0);
         $scheme = Tools::normalizeBoolean($redisConfig['tls']['enabled'] ?? false, false) ? 'rediss' : 'redis';
@@ -327,7 +348,7 @@ class CacheFactory
 
     private static function buildMemcachedDsn(array $memcachedConfig): string
     {
-        $host = $memcachedConfig['host'] ?? '127.0.0.1';
+        $host = self::bracketIpv6Host((string) ($memcachedConfig['host'] ?? '127.0.0.1'));
         $port = Tools::normalizePort($memcachedConfig['port'] ?? null, 11211);
 
         return sprintf('memcached://%s:%d', $host, $port);
