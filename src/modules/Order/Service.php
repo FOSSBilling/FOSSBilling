@@ -1055,8 +1055,7 @@ class Service implements InjectionAwareInterface
             $period,
             $price,
             $product,
-            $quantity,
-            &$invoice
+            $quantity
         ) {
             $order = new Order();
             $order->setClientId($client instanceof ClientEntity ? $client->getId() : (int) $client->id);
@@ -1130,18 +1129,28 @@ class Service implements InjectionAwareInterface
                 $this->di['em']->flush();
             }
 
-            if ($invoiceOption == 'issue-invoice') {
-                $invoiceService = $this->di['mod_service']('invoice');
-
-                try {
-                    $invoice = $invoiceService->generateForOrder($this->getLegacyOrder($order));
-                } catch (InformationException $e) {
-                    $this->di['logger']->warning($e->getMessage());
-                }
-            }
-
             return $orderId;
         });
+
+        $order = $this->getOrderRepository()->find($id);
+        if (!$order instanceof Order) {
+            throw new \FOSSBilling\Exception('Order not found');
+        }
+
+        // Issuing the invoice reads the order back via the legacy RedBean
+        // connection (getLegacyOrder()), which is separate from Doctrine's
+        // connection and cannot see rows from a still-open Doctrine
+        // transaction. This must run after wrapInTransaction() above has
+        // committed, not inside it.
+        if ($invoiceOption == 'issue-invoice') {
+            $invoiceService = $this->di['mod_service']('invoice');
+
+            try {
+                $invoice = $invoiceService->generateForOrder($this->getLegacyOrder($order));
+            } catch (InformationException $e) {
+                $this->di['logger']->warning($e->getMessage());
+            }
+        }
 
         if ($invoice instanceof \Model_Invoice) {
             $invoiceService = $this->di['mod_service']('invoice');
@@ -1161,11 +1170,6 @@ class Service implements InjectionAwareInterface
                     $this->di['logger']->info($noteException->getMessage());
                 }
             }
-        }
-
-        $order = $this->getOrderRepository()->find($id);
-        if (!$order instanceof Order) {
-            throw new \FOSSBilling\Exception('Order not found');
         }
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderCreate', 'params' => ['id' => $order->getId()], 'subject' => $this->getProductType($product)]);
