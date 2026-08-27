@@ -137,6 +137,78 @@ test('throws exception for transfer order data with invalid tld', function (arra
     ];
 });
 
+test('throws exception when a tld requires a transfer code and none is provided', function (?string $transferCode): void {
+    $tldModel = new Model_Tld();
+    $tldModel->loadBean(new Tests\Helpers\DummyBean());
+    $tldModel->tld = '.com';
+    $tldModel->active = true;
+    $tldModel->require_transfer_code = true;
+
+    $data = [
+        'action' => 'transfer',
+        'transfer_sld' => 'example',
+        'transfer_tld' => '.com',
+    ];
+    if ($transferCode !== null) {
+        $data['transfer_code'] = $transferCode;
+    }
+
+    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock->shouldReceive('isSldValid')->atLeast()->once()->andReturn(true);
+    $validatorMock->shouldReceive('checkRequiredParamsForArray')->zeroOrMoreTimes();
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('tldFindOneByTld')->atLeast()->once()->andReturn($tldModel);
+    $serviceMock->shouldReceive('canBeTransferred')->atLeast()->once()->andReturn(true);
+
+    $di = container();
+    $di['validator'] = $validatorMock;
+    $serviceMock->setDi($di);
+
+    expect(fn () => $serviceMock->validateOrderData($data))
+        ->toThrow(FOSSBilling\InformationException::class, 'A transfer code (EPP/auth code) is required to transfer example.com');
+})->with([
+    'missing entirely' => [null],
+    'blank string' => [''],
+    'whitespace only' => ['   '],
+]);
+
+test('accepts a transfer order data when the transfer code requirement is satisfied', function (bool $requireTransferCode, ?string $transferCode): void {
+    $tldModel = new Model_Tld();
+    $tldModel->loadBean(new Tests\Helpers\DummyBean());
+    $tldModel->tld = '.com';
+    $tldModel->active = true;
+    $tldModel->require_transfer_code = $requireTransferCode;
+
+    $data = [
+        'action' => 'transfer',
+        'transfer_sld' => 'example',
+        'transfer_tld' => '.com',
+    ];
+    if ($transferCode !== null) {
+        $data['transfer_code'] = $transferCode;
+    }
+
+    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock->shouldReceive('isSldValid')->atLeast()->once()->andReturn(true);
+    $validatorMock->shouldReceive('checkRequiredParamsForArray')->zeroOrMoreTimes();
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('tldFindOneByTld')->atLeast()->once()->andReturn($tldModel);
+    $serviceMock->shouldReceive('canBeTransferred')->atLeast()->once()->andReturn(true);
+
+    $di = container();
+    $di['validator'] = $validatorMock;
+    $serviceMock->setDi($di);
+
+    $serviceMock->validateOrderData($data);
+
+    expect($data['period'])->toBe('1Y');
+})->with([
+    'code required and provided' => [true, 'EPPCODE123'],
+    'code not required and omitted' => [false, null],
+]);
+
 test('throws exception for register order data with invalid tld', function (array $data, array $isSldValidArr, array $tldFindOneByTldArr, array $isDomainAvailable): void {
     $service = new Service();
     $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
@@ -1154,7 +1226,52 @@ test('syncWhois stores null dates when registrar dates are unavailable', functio
     $service->syncWhoisPublic($model, $order);
 
     expect($model->expires_at)->toBeNull()
-        ->and($model->registered_at)->toBeNull();
+        ->and($model->registered_at)->toBeNull()
+        ->and($model->synced_at)->not->toBeNull();
+});
+
+test('synchronizes domain with registrar', function (): void {
+    $model = new Model_ServiceDomain();
+    $model->loadBean(new Tests\Helpers\DummyBean());
+
+    $order = new Model_ClientOrder();
+    $order->loadBean(new Tests\Helpers\DummyBean());
+
+    $orderServiceMock = Mockery::mock(OrderService::class);
+    $orderServiceMock->shouldReceive('getServiceOrder')
+        ->once()
+        ->with($model)
+        ->andReturn($order);
+
+    $service = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $service->shouldReceive('syncWhois')
+        ->once()
+        ->with($model, $order);
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn ($name): Mockery\MockInterface => $orderServiceMock);
+    $service->setDi($di);
+
+    $service->synchronizeDomain($model);
+});
+
+test('throws when synchronizing a domain without an order', function (): void {
+    $model = new Model_ServiceDomain();
+    $model->loadBean(new Tests\Helpers\DummyBean());
+
+    $orderServiceMock = Mockery::mock(OrderService::class);
+    $orderServiceMock->shouldReceive('getServiceOrder')
+        ->once()
+        ->with($model)
+        ->andReturn(null);
+
+    $service = new Service();
+    $di = container();
+    $di['mod_service'] = $di->protect(fn ($name): Mockery\MockInterface => $orderServiceMock);
+    $service->setDi($di);
+
+    expect(fn () => $service->synchronizeDomain($model))
+        ->toThrow(FOSSBilling\Exception::class);
 });
 
 test('converts to api array', function (?Model_Admin $identity, string $dbLoadCalled): void {
@@ -1173,6 +1290,7 @@ test('converts to api array', function (?Model_Admin $identity, string $dbLoadCa
     $model->locked = 'locked';
     $model->registered_at = date('Y-m-d H:i:s');
     $model->expires_at = date('Y-m-d H:i:s');
+    $model->synced_at = date('Y-m-d H:i:s');
 
     $model->contact_first_name = 'first_name';
     $model->contact_last_name = 'last_name';
@@ -1217,6 +1335,7 @@ test('converts to api array', function (?Model_Admin $identity, string $dbLoadCa
     expect($result)->toHaveKey('locked');
     expect($result)->toHaveKey('registered_at');
     expect($result)->toHaveKey('expires_at');
+    expect($result)->toHaveKey('synced_at');
     expect($result)->toHaveKey('contact');
 
     $contact = $result['contact'];
@@ -1246,6 +1365,7 @@ test('converts to api array', function (?Model_Admin $identity, string $dbLoadCa
     expect($result['locked'])->toBe($model->locked);
     expect($result['registered_at'])->toBe($model->registered_at);
     expect($result['expires_at'])->toBe($model->expires_at);
+    expect($result['synced_at'])->toBe($model->synced_at);
 
     expect($contact['first_name'])->toBe($model->contact_first_name);
     expect($contact['last_name'])->toBe($model->contact_last_name);
@@ -1554,6 +1674,7 @@ test('converts tld to api array', function (): void {
     $model->active = 1;
     $model->allow_register = 1;
     $model->allow_transfer = 1;
+    $model->require_transfer_code = 1;
     $model->min_years = 2;
     $model->periods = '5,2,2,10';
     $model->tld_registrar_id = 1;
@@ -1568,6 +1689,7 @@ test('converts tld to api array', function (): void {
     expect($result)->toHaveKey('active');
     expect($result)->toHaveKey('allow_register');
     expect($result)->toHaveKey('allow_transfer');
+    expect($result)->toHaveKey('require_transfer_code');
     expect($result)->toHaveKey('min_years');
     expect($result)->toHaveKey('periods');
     expect($result)->toHaveKey('registrar');
@@ -1584,6 +1706,7 @@ test('converts tld to api array', function (): void {
     expect($result['active'])->toBe($model->active);
     expect($result['allow_register'])->toBe($model->allow_register);
     expect($result['allow_transfer'])->toBe($model->allow_transfer);
+    expect($result['require_transfer_code'])->toBe((bool) $model->require_transfer_code);
     expect($result['min_years'])->toBe($model->min_years);
     expect($result['periods'])->toBe([2, 5, 10]);
 
@@ -1914,6 +2037,99 @@ test('converts registrar to api array', function (): void {
     $serviceMock->registrarToApiArray($model);
 });
 
+test('converts registrar to api array masks secrets for an admin', function (): void {
+    $service = new Service();
+    $di = container();
+    $service->setDi($di);
+
+    $model = new Model_TldRegistrar();
+    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model->id = 1;
+    $model->name = 'Namecheap';
+    $model->registrar = 'Namecheap';
+    $model->test_mode = false;
+    $model->config = json_encode([
+        'api-user-id' => 'reseller-id',
+        'api-key' => 'super-secret-key',
+        'username' => 'my-username',
+    ]);
+
+    $result = $service->registrarToApiArray($model);
+
+    expect($result['secret_fields'])->toContain('api-key');
+    expect($result['secret_fields'])->not->toContain('api-user-id');
+    expect($result['secret_fields'])->not->toContain('username');
+    expect($result['config']['api-user-id'])->toBe('reseller-id');
+    expect($result['config']['api-key'])->toBeNull();
+    expect($result['config']['api-key_set'])->toBeTrue();
+});
+
+test('registrarUpdate keeps the existing secret when the incoming value is blank', function (): void {
+    $service = new Service();
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('store')->atLeast()->once();
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['loggedin_admin'] = new Model_Admin();
+    $service->setDi($di);
+
+    $model = new Model_TldRegistrar();
+    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model->id = 1;
+    $model->registrar = 'Namecheap';
+    $model->config = json_encode([
+        'api-user-id' => 'reseller-id',
+        'api-key' => 'existing-secret',
+        'username' => 'existing-username',
+        'ip' => '127.0.0.1',
+    ]);
+
+    $result = $service->registrarUpdate($model, [
+        'config' => [
+            'api-key' => Service::REGISTRAR_CREDENTIAL_KEEP_SENTINEL,
+            'api-user-id' => 'new-reseller-id',
+        ],
+    ]);
+
+    expect($result)->toBeTrue();
+    $config = json_decode((string) $model->config, true);
+    expect($config['api-key'])->toBe('existing-secret');
+    expect($config['api-user-id'])->toBe('new-reseller-id');
+});
+
+test('registrarUpdate rotates a secret when a new value is submitted', function (): void {
+    $service = new Service();
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('store')->atLeast()->once();
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['loggedin_admin'] = new Model_Admin();
+    $service->setDi($di);
+
+    $model = new Model_TldRegistrar();
+    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model->id = 1;
+    $model->registrar = 'Namecheap';
+    $model->config = json_encode([
+        'api-user-id' => 'reseller-id',
+        'api-key' => 'old-secret',
+        'username' => 'existing-username',
+        'ip' => '127.0.0.1',
+    ]);
+
+    $result = $service->registrarUpdate($model, ['config' => ['api-key' => 'new-secret']]);
+
+    expect($result)->toBeTrue();
+    $config = json_decode((string) $model->config, true);
+    expect($config['api-key'])->toBe('new-secret');
+});
+
 test('creates tld', function (): void {
     $service = Mockery::mock(Service::class)->makePartial();
     $service->shouldReceive('registrarValidateConfiguration')->once();
@@ -1927,6 +2143,7 @@ test('creates tld', function (): void {
         'periods' => '5,1,1,3',
         'allow_register' => 1,
         'allow_transfer' => 1,
+        'require_transfer_code' => 1,
         'updated_at' => date('Y-m-d H:i:s'),
         'created_at' => date('Y-m-d H:i:s'),
     ];
@@ -1960,6 +2177,43 @@ test('creates tld', function (): void {
     expect($tldModel->tld)->toBe('.com.ua');
     expect($tldModel->active)->toBeTruthy();
     expect($tldModel->periods)->toBe('1,3,5');
+    expect($tldModel->require_transfer_code)->toBeTruthy();
+});
+
+test('defaults require transfer code to false when creating a tld', function (): void {
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('registrarValidateConfiguration')->once();
+    $data = [
+        'tld' => '.com',
+        'tld_registrar_id' => 1,
+        'price_registration' => 1,
+        'price_renew' => 1,
+        'price_transfer' => 1,
+    ];
+
+    $tldModel = new Model_Tld();
+    $tldModel->loadBean(new Tests\Helpers\DummyBean());
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('getExistingModelById')
+        ->once()
+        ->with('TldRegistrar', 1, 'Registrar not found')
+        ->andReturn(new Model_TldRegistrar());
+    $dbMock->shouldReceive('store')
+        ->atLeast()->once()
+        ->andReturn(1);
+    $dbMock->shouldReceive('dispense')
+        ->atLeast()->once()
+        ->andReturn($tldModel);
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $service->setDi($di);
+
+    $service->tldCreate($data);
+
+    expect($tldModel->require_transfer_code)->toBeFalsy();
 });
 
 test('updates tld', function (): void {
@@ -1975,6 +2229,7 @@ test('updates tld', function (): void {
         'periods' => '10,2',
         'allow_register' => true,
         'allow_transfer' => true,
+        'require_transfer_code' => true,
         'active' => true,
         'updated_at' => date('Y-m-d H:i:s'),
         'created_at' => date('Y-m-d H:i:s'),
@@ -2005,6 +2260,29 @@ test('updates tld', function (): void {
 
     expect($result)->toBeTrue();
     expect($model->periods)->toBe('2,10');
+    expect($model->require_transfer_code)->toBeTruthy();
+});
+
+test('preserves require transfer code when updating a tld without the field', function (): void {
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('registrarValidateConfiguration')->never();
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('store')->atLeast()->once();
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $service->setDi($di);
+
+    $model = new Model_Tld();
+    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model->tld = '.com';
+    $model->require_transfer_code = true;
+
+    $service->tldUpdate($model, ['tld' => '.com']);
+
+    expect($model->require_transfer_code)->toBeTruthy();
 });
 
 test('clears tld periods when an empty value is provided', function (): void {

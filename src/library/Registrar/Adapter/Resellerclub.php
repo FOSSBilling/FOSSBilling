@@ -68,6 +68,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
                         'label' => 'ResellerClub API Key',
                         'description' => 'You can get this at ResellerClub control panel, go to Settings -> API',
                         'required' => false,
+                        'secret' => true,
                     ],
                 ],
             ],
@@ -76,23 +77,26 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
 
     public function isDomainAvailable(Registrar_Domain $domain): bool
     {
+        $sld = strtolower((string) $domain->getSld());
+        $tld = strtolower((string) $domain->getTld());
+        $domainName = $sld . $tld;
+
         $params = [
-            'domain-name' => $domain->getSld(),
-            'tlds' => [$domain->getTld(false)],
+            'domain-name' => $sld,
+            'tlds' => [ltrim($tld, '.')],
             'suggest-alternative' => false,
         ];
 
         $result = $this->_makeRequest('domains/available', $params);
-        if (!isset($result[$domain->getName()])) {
-            return true;
+        // the response is keyed by domain name, but the casing of that key isn't guaranteed to match what we sent
+        $result = array_change_key_case((array) $result, CASE_LOWER);
+        if (!isset($result[$domainName]['status'])) {
+            $placeholders = [':action:' => 'domains/available', ':type:' => 'ResellerClub'];
+
+            throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
         }
 
-        $check = $result[$domain->getName()];
-        if ($check && $check['status'] == 'available') {
-            return true;
-        }
-
-        return false;
+        return strtolower((string) $result[$domainName]['status']) === 'available';
     }
 
     public function isDomaincanBeTransferred(Registrar_Domain $domain): bool
@@ -129,33 +133,28 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
 
     public function modifyContact(Registrar_Domain $domain): bool
     {
+        // ResellerClub deprecated contacts/modify in December 2016 due to ICANN's IRTP-C policy:
+        // https://manage.resellerclub.com/kb/answer/791. Existing contacts can no longer be edited
+        // in place; instead new contacts have to be created and then associated with the domain
+        // order via domains/modify-contact. See https://github.com/FOSSBilling/FOSSBilling/issues/2365.
+        // Reuse _getAllContacts() (as registerDomain() already does) rather than assigning a single
+        // general contact to every role, since several TLDs (e.g. .uk, .de, .ru) require their own
+        // contact type and don't allow a general contact for all four roles. Pass replaceExisting:
+        // false so it only adds the new contact(s) - contacts/search isn't scoped to this domain's
+        // order, so the default replace-existing behaviour could delete an unrelated active contact
+        // belonging to the same customer.
         $customer = $this->_getCustomerDetails($domain);
-        $cdetails = $this->_getDefaultContactDetails($domain, $customer['customerid']);
-        $contact_id = $cdetails['Contact']['registrant'];
+        [$reg_contact_id, $admin_contact_id, $tech_contact_id, $billing_contact_id] = $this->_getAllContacts($domain->getTld(), $customer['customerid'], $domain->getContactRegistrar(), replaceExisting: false);
 
-        $c = $domain->getContactRegistrar();
-
-        $required_params = [
-            'contact-id' => $contact_id,
-            'name' => $c->getName(),
-            'company' => $c->getCompany(),
-            'email' => $c->getEmail(),
-            'address-line-1' => $c->getAddress1(),
-            'city' => $c->getCity(),
-            'zipcode' => $c->getZip(),
-            'phone-cc' => $c->getTelCc(),
-            'phone' => $c->getTel(),
-            'country' => $c->getCountry(),
+        $params = [
+            'order-id' => $this->_getDomainOrderId($domain),
+            'reg-contact-id' => $reg_contact_id,
+            'admin-contact-id' => $admin_contact_id,
+            'tech-contact-id' => $tech_contact_id,
+            'billing-contact-id' => $billing_contact_id,
         ];
 
-        $optional_params = [
-            'address-line-2' => $c->getAddress2(),
-            'address-line-3' => $c->getAddress3(),
-            'state' => $c->getState(),
-        ];
-
-        $params = [...$optional_params, ...$required_params];
-        $result = $this->_makeRequest('contacts/modify', $params, 'POST');
+        $result = $this->_makeRequest('domains/modify-contact', $params, 'POST');
 
         return $result['status'] == 'Success';
     }
@@ -279,7 +278,9 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             return true;
         }
 
-        $tld = $domain->getTld();
+        // Normalized case-insensitively: the special-TLD checks below (.fr, .de, .asia, .au) compare
+        // with ==, and a legacy or manually-entered uppercase TLD would silently skip them otherwise.
+        $tld = strtolower((string) $domain->getTld());
         $customer = $this->_getCustomerDetails($domain);
         $customer_id = $customer['customerid'];
 
@@ -315,6 +316,14 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
 
         if ($tld == '.de') {
             $params['ns'] = ['dns1.directi.com', 'dns2.directi.com', 'dns3.directi.com', 'dns4.directi.com'];
+        }
+
+        // ResellerClub is contractually required to display a notice - and get consent via this tnc
+        // attribute - before sharing a European Registrant/Admin Organization contact's personal
+        // information with the .fr registry. See https://manage.resellerclub.com/kb/answer/752
+        if ($tld == '.fr') {
+            $params['attr-name1'] = 'tnc';
+            $params['attr-value1'] = 'Y';
         }
 
         if ($tld == '.au' || $tld == '.net.au' || $tld == '.com.au') {
@@ -606,7 +615,9 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
                 ]);
             } else {
                 $result = $client->request('GET', $callUrl . '?' . $this->_formatParams($params));
-                $this->getLog()->debug('API REQUEST: ' . $callUrl . '?' . $this->_formatParams($params));
+                $loggedParams = $params;
+                $loggedParams['api-key'] = '***';
+                $this->getLog()->debug('API REQUEST: ' . $callUrl . '?' . $this->_formatParams($loggedParams));
             }
             $this->getLog()->info('API RESULT: ' . $result->getContent(false));
         } catch (HttpExceptionInterface $error) {
@@ -617,12 +628,22 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         }
 
         $content = $result->getContent(false);
-        if (in_array($content, ['true', 'false'], true)) {
-            return $content;
+        $trimmedContent = trim($content);
+
+        // Some endpoints (e.g. domains/validate-transfer, domains/orderid) respond with a bare
+        // scalar instead of a JSON object, which would make toArray() below throw "JSON content
+        // was expected to decode to an array". Match booleans case-insensitively and trimmed,
+        // since the registrar isn't consistent about formatting - see
+        // https://github.com/FOSSBilling/FOSSBilling/issues/2939.
+        if (in_array(strtolower($trimmedContent), ['true', 'false'], true)) {
+            return strtolower($trimmedContent);
         }
-        if (is_numeric($content)) {
-            return $content;
+
+        $decoded = json_decode($trimmedContent, true);
+        if (json_last_error() === JSON_ERROR_NONE && is_scalar($decoded)) {
+            return (string) $decoded;
         }
+
         $json = $result->toArray(false);
 
         if (isset($json['status']) && $json['status'] == 'ERROR') {
@@ -669,8 +690,9 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         return preg_replace('~%5B(\d+)%5D~', '', $params);
     }
 
-    private function _getAllContacts($tld, $customer_id, Registrar_Domain_Contact $client): array
+    private function _getAllContacts($tld, $customer_id, Registrar_Domain_Contact $client, bool $replaceExisting = true): array
     {
+        $tld = strtolower((string) $tld);
         if ($tld[0] != '.') {
             $tld = '.' . $tld; // $tld must start with a dot(.)
         }
@@ -705,7 +727,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         }
 
         // create general contact id
-        $reg_contact_id = $this->_getContact($contact, $customer_id, $contact['type']);
+        $reg_contact_id = $this->_getContact($contact, $customer_id, $contact['type'], $replaceExisting);
 
         if ($tld == '.nl') {
             $contact['type'] = 'NlContact';
@@ -719,6 +741,11 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
 
         if ($tld == '.eu') {
             $contact['type'] = 'EuContact';
+        }
+
+        // @see https://manage.resellerclub.com/kb/answer/790 for the FrContact type
+        if ($tld == '.fr') {
+            $contact['type'] = 'FrContact';
         }
 
         if ($tld == '.cn') {
@@ -837,7 +864,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
 
         $special_contact_id = null;
         if ($contact['type'] != 'Contact') {
-            $special_contact_id = $this->_getContact($contact, $customer_id, $contact['type']);
+            $special_contact_id = $this->_getContact($contact, $customer_id, $contact['type'], $replaceExisting);
         }
 
         // by default special contact is also admin, tech and billing contact, but not always
@@ -851,36 +878,46 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             $tech_contact_id = -1;
         }
 
-        if (in_array($tld, ['.uk', '.co.uk', '.org.uk', '.nz', '.ru', '.com.ru', '.org.ru', '.net.ru', '.eu', '.ca', '.nl'])) {
+        // @see https://manage.resellerclub.com/kb/answer/752 - .FR requires tech-contact-id to be -1,
+        // but (unlike .uk/.ru/.eu above) it still expects a real admin-contact-id.
+        if ($tld == '.fr') {
+            $tech_contact_id = -1;
+        }
+
+        if (in_array($tld, ['.uk', '.co.uk', '.org.uk', '.nz', '.ru', '.com.ru', '.org.ru', '.net.ru', '.eu', '.ca', '.nl', '.fr'])) {
             $billing_contact_id = -1;
         }
 
         // general contact is special contact for these TLD'S
-        if (in_array($tld, ['.de', '.nl', '.ru', '.es', '.uk', '.co.uk', '.org.uk', '.eu', '.com.ru', '.net.ru', '.org.ru', '.co'])) {
+        if (in_array($tld, ['.de', '.nl', '.ru', '.es', '.uk', '.co.uk', '.org.uk', '.eu', '.com.ru', '.net.ru', '.org.ru', '.co', '.fr'])) {
             $reg_contact_id = $special_contact_id;
         }
 
         return [$reg_contact_id, $admin_contact_id, $tech_contact_id, $billing_contact_id];
     }
 
-    private function _getContact($contact, $customer_id, $type = 'Contact')
+    private function _getContact($contact, $customer_id, $type = 'Contact', bool $replaceExisting = true)
     {
-        try {
-            $params = [
-                'customer-id' => $customer_id,
-                'no-of-records' => 20,
-                'page-no' => 1,
-                'status' => 'Active',
-                'type' => $type,
-            ];
-            $result = $this->_makeRequest('contacts/search', $params, 'GET', 'json');
-            if ($result['recsonpage'] < 1) {
-                throw new Registrar_Exception('Contact not found');
+        // contacts/search isn't scoped to a domain/order, so this only replaces an existing contact
+        // when the caller has confirmed there's nothing else relying on it (e.g. during registration).
+        if ($replaceExisting) {
+            try {
+                $params = [
+                    'customer-id' => $customer_id,
+                    'no-of-records' => 20,
+                    'page-no' => 1,
+                    'status' => 'Active',
+                    'type' => $type,
+                ];
+                $result = $this->_makeRequest('contacts/search', $params, 'GET', 'json');
+                if ($result['recsonpage'] < 1) {
+                    throw new Registrar_Exception('Contact not found');
+                }
+                $existing_contact_id = $result['result'][0]['entity.entityid'];
+                $this->_makeRequest('contacts/delete', ['contact-id' => $existing_contact_id], 'POST');
+            } catch (Registrar_Exception $e) {
+                $this->getLog()->info($e->getMessage());
             }
-            $existing_contact_id = $result['result'][0]['entity.entityid'];
-            $this->_makeRequest('contacts/delete', ['contact-id' => $existing_contact_id], 'POST');
-        } catch (Registrar_Exception $e) {
-            $this->getLog()->info($e->getMessage());
         }
 
         return $this->_makeRequest('contacts/add', $contact, 'POST');

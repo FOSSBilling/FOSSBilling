@@ -33,6 +33,7 @@
         "jambroseclarke",
         "Egulias",
         "ICANN",
+        "IRTP",
         "failovers",
         "Autosize",
         "analyse",
@@ -62,7 +63,8 @@
         "falsey",
         "unindexed",
         "catchable",
-        "nelexa"
+        "nelexa",
+        "rediss"
     ],
 
     "ignoreWords": [
@@ -212,12 +214,16 @@
         "topnav",
         "yourparamvalue",
         "userid",
+        "customerid",
+        "recsonpage",
         "subkey",
         "blockquote",
         "floatright",
         "copyfields",
         "mydomain",
         "WHOIS",
+        "RDAP",
+        "exämple",
         "supportticket",
         "massmailer",
         "kbcategories",

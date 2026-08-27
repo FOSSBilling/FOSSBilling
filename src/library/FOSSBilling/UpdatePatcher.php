@@ -508,6 +508,7 @@ class UpdatePatcher implements InjectionAwareInterface
             96 => 'patch96',
             97 => 'patch97',
             98 => 'patch98',
+            99 => 'patch99',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -2442,6 +2443,16 @@ class UpdatePatcher implements InjectionAwareInterface
             'UPDATE pay_gateway SET allow_single = 1 WHERE gateway = :gateway AND allow_single = 0',
             ['gateway' => 'ClientBalance']
         );
+    }
+
+    private function patch99(): void
+    {
+        // Adds an admin-configurable per-TLD flag to require the transfer code (EPP/auth
+        // code) during domain transfer checkout, instead of silently accepting a blank
+        // value that only fails later at the registrar. See issue #2335.
+        if (!$this->tableHasColumn('tld', 'require_transfer_code')) {
+            $this->executeSql('ALTER TABLE `tld` ADD COLUMN `require_transfer_code` tinyint(1) DEFAULT NULL AFTER `allow_transfer`');
+        }
     }
 
     private function generateDownloadableStoredFilename(): string

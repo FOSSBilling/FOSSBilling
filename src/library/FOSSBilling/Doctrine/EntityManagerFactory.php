@@ -15,8 +15,8 @@ use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Mapping\UnderscoreNamingStrategy;
 use Doctrine\ORM\ORMSetup;
 use Doctrine\ORM\Proxy\ProxyFactory;
+use FOSSBilling\Cache\CacheFactory;
 use FOSSBilling\Environment;
-use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
 
@@ -32,7 +32,11 @@ class EntityManagerFactory
         );
         $moduleEntityPaths = array_values($moduleEntityPaths);
 
-        $cache = new FilesystemAdapter('doctrine', 0, PATH_CACHE);
+        // ORMSetup uses this as the metadata, query, AND result cache. Always pass an explicit,
+        // non-null pool here: if `cache` is omitted, Doctrine silently probes for APCu/Memcached/Redis
+        // on localhost with no authentication (see ORMSetup::createCacheInstance()), which would let
+        // whatever happens to be installed on the host override the admin's configured cache driver.
+        $cache = CacheFactory::create(CacheFactory::NAMESPACE_DOCTRINE);
 
         $config = ORMSetup::createAttributeMetadataConfig(
             paths: $moduleEntityPaths,

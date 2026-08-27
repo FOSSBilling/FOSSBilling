@@ -18,6 +18,13 @@ use Symfony\Component\Finder\Finder;
 
 class Service implements \FOSSBilling\InjectionAwareInterface
 {
+    /**
+     * Sent by the admin UI in place of a secret registrar config field's value
+     * to mean "keep the currently stored value". Blank input means the same
+     * thing; this sentinel exists only for clients that can't send an empty string.
+     */
+    public const string REGISTRAR_CREDENTIAL_KEEP_SENTINEL = '__KEEP__';
+
     protected ?\Pimple\Container $di = null;
     private Filesystem $filesystem;
 
@@ -138,6 +145,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $domain = $data['transfer_sld'] . $tld->tld;
             if (!$this->canBeTransferred($tld, $data['transfer_sld'])) {
                 throw new \FOSSBilling\InformationException(':domain cannot be transferred!', [':domain' => $domain]);
+            }
+
+            if ($tld->require_transfer_code && trim((string) ($data['transfer_code'] ?? '')) === '') {
+                throw new \FOSSBilling\InformationException('A transfer code (EPP/auth code) is required to transfer :domain', [':domain' => $domain]);
             }
 
             $data['period'] = '1Y';
@@ -400,9 +411,20 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $model->details = serialize($whois);
         $model->expires_at = $this->formatRegistrarTimestamp($whois->getExpirationTime());
         $model->registered_at = $this->formatRegistrarTimestamp($whois->getRegistrationTime());
+        $model->synced_at = date('Y-m-d H:i:s');
         $model->updated_at = date('Y-m-d H:i:s');
 
         $this->di['db']->store($model);
+    }
+
+    public function synchronizeDomain(\Model_ServiceDomain $model): void
+    {
+        $order = $this->di['mod_service']('order')->getServiceOrder($model);
+        if (!$order instanceof \Model_ClientOrder) {
+            throw new \FOSSBilling\Exception('Domain order not found');
+        }
+
+        $this->syncWhois($model, $order);
     }
 
     public function updateNameservers(\Model_ServiceDomain $model, $data): bool
@@ -642,6 +664,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             'locked' => $model->locked,
             'registered_at' => $model->registered_at,
             'expires_at' => $model->expires_at,
+            'synced_at' => $model->synced_at,
             'contact' => [
                 'first_name' => $model->contact_first_name,
                 'last_name' => $model->contact_last_name,
@@ -831,6 +854,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $model->periods = array_key_exists('periods', $data) ? $data['periods'] : null;
         $model->allow_register = isset($data['allow_register']) ? (bool) $data['allow_register'] : true;
         $model->allow_transfer = isset($data['allow_transfer']) ? (bool) $data['allow_transfer'] : true;
+        $model->require_transfer_code = isset($data['require_transfer_code']) ? (bool) $data['require_transfer_code'] : false;
         $model->active = isset($data['active']) ? (bool) $data['active'] : true;
         $model->updated_at = date('Y-m-d H:i:s');
         $model->created_at = date('Y-m-d H:i:s');
@@ -860,6 +884,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $model->periods = array_key_exists('periods', $data) ? $data['periods'] : $model->periods;
         $model->allow_register = $data['allow_register'] ?? $model->allow_register;
         $model->allow_transfer = $data['allow_transfer'] ?? $model->allow_transfer;
+        $model->require_transfer_code = array_key_exists('require_transfer_code', $data) ? (bool) $data['require_transfer_code'] : $model->require_transfer_code;
         $model->active = $data['active'] ?? $model->active;
         $model->updated_at = date('Y-m-d H:i:s');
 
@@ -1025,6 +1050,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             'active' => $model->active,
             'allow_register' => $model->allow_register,
             'allow_transfer' => $model->allow_transfer,
+            'require_transfer_code' => (bool) $model->require_transfer_code,
             'min_years' => $model->min_years,
             'periods' => $this->getTldPeriodsArray($model),
         ];
@@ -1267,8 +1293,15 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $model->name = $data['title'] ?? $model->name;
         $model->test_mode = $data['test_mode'] ?? $model->test_mode;
         if (isset($data['config']) && is_array($data['config'])) {
-            $configuration = array_replace($this->registrarGetConfiguration($model), $data['config']);
+            $existingConfiguration = $this->registrarGetConfiguration($model);
+            $configuration = $existingConfiguration;
             $adapterConfiguration = $this->registrarGetRegistrarAdapterConfig($model);
+            $secretFields = $this->resolveRegistrarSecretFields($model, $adapterConfiguration);
+            foreach ($data['config'] as $key => $value) {
+                $configuration[$key] = in_array($key, $secretFields, true)
+                    ? $this->normalizeRegistrarSecretValue((string) $key, $value, $existingConfiguration[$key] ?? null, $model)
+                    : $value;
+            }
 
             foreach ($adapterConfiguration['form'] ?? [] as $field => $element) {
                 $options = $element[1] ?? [];
@@ -1286,6 +1319,32 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->di['logger']->info('Updated domain registrar %s configuration', $model->registrar);
 
         return true;
+    }
+
+    /**
+     * Returns the value to store for a secret registrar config field. Blank,
+     * whitespace-only or {@see REGISTRAR_CREDENTIAL_KEEP_SENTINEL} inputs preserve
+     * the existing value; everything else replaces it. A successful rotation is
+     * logged (the value itself is never logged).
+     */
+    private function normalizeRegistrarSecretValue(string $field, mixed $incoming, mixed $existing, \Model_TldRegistrar $model): mixed
+    {
+        if ($incoming === null || !is_scalar($incoming)) {
+            return $existing;
+        }
+
+        $incoming = (string) $incoming;
+
+        if (trim($incoming) === '' || $incoming === self::REGISTRAR_CREDENTIAL_KEEP_SENTINEL) {
+            return $existing;
+        }
+
+        if ($incoming !== $existing) {
+            $adminId = $this->di['loggedin_admin']->id ?? 'unknown';
+            $this->di['logger']->info('Rotated {field} for domain registrar {registrar_id} by admin {admin_id}', ['field' => $field, 'registrar_id' => (string) $model->id, 'admin_id' => (string) $adminId]);
+        }
+
+        return $incoming;
     }
 
     public function registrarRm(\Model_TldRegistrar $model): bool
@@ -1317,14 +1376,59 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         $c = $this->registrarGetRegistrarAdapterConfig($model);
 
+        $config = $this->registrarGetConfiguration($model);
+        $secretFields = $this->resolveRegistrarSecretFields($model, $c);
+        foreach ($secretFields as $field) {
+            $value = $config[$field] ?? null;
+            $config[$field] = null;
+            $config[$field . '_set'] = $value !== null && $value !== '';
+        }
+
         return [
             'id' => $model->id,
             'title' => $model->name,
             'label' => $c['label'],
-            'config' => $this->registrarGetConfiguration($model),
+            'config' => $config,
+            'secret_fields' => $secretFields,
             'form' => $c['form'],
             'test_mode' => $model->test_mode,
         ];
+    }
+
+    /**
+     * Config field names for this registrar's adapter whose stored values must
+     * be hidden in the API and admin UI: the adapter's own declared secrets
+     * plus any form field marked `'secret' => true`. Takes the already-resolved
+     * {@see registrarGetRegistrarAdapterConfig()} output so callers that need
+     * it anyway don't fetch it twice.
+     *
+     * @return string[]
+     */
+    private function resolveRegistrarSecretFields(\Model_TldRegistrar $model, array $adapterConfiguration): array
+    {
+        $secrets = [];
+
+        try {
+            $class = $this->registrarGetRegistrarAdapterClassName($model);
+            if (is_callable($class . '::getSecretFields')) {
+                $declared = $class::getSecretFields();
+                $secrets = array_merge($secrets, $declared);
+            }
+        } catch (\Throwable) {
+            // Registrar adapter could not be resolved; fall back to the form's own 'secret' flags below.
+        }
+
+        $form = $adapterConfiguration['form'] ?? [];
+        if (is_array($form)) {
+            foreach ($form as $name => $element) {
+                $options = $element[1] ?? [];
+                if (!empty($options['secret'])) {
+                    $secrets[] = (string) $name;
+                }
+            }
+        }
+
+        return array_values(array_unique($secrets));
     }
 
     public function updateDomain(\Model_ServiceDomain $s, $data): bool

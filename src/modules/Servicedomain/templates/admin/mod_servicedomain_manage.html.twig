@@ -61,6 +61,10 @@
                         <td class="text-end">{{ 'Expires At'|trans }}:</td>
                         <td>{{ service.expires_at|format_date }}</td>
                     </tr>
+                    <tr>
+                        <td class="text-end">{{ 'Last Synced'|trans }}:</td>
+                        <td id="synced-at-value">{{ service.synced_at ? service.synced_at|format_date : 'Never'|trans }}</td>
+                    </tr>
                 </tbody>
             </table>
         </div>
@@ -69,6 +73,12 @@
             <div class="btn-list justify-content-center">
                 {{ order_actions|default('') }}
                 {% if order.status == 'active' %}
+                <button class="btn btn-secondary" type="button" id="domain-sync">
+                    <svg class="icon">
+                        <use href="#refresh" />
+                    </svg>
+                    <span>{{ 'Sync Now'|trans }}</span>
+                </button>
                 <a class="btn btn-primary" type="button" id="get-epp">
                     <svg class="icon">
                         <use href="#key" />
@@ -293,6 +303,21 @@
             FOSSBilling.api.admin.post('servicedomain/get_transfer_code', { order_id: {{ order.id}} },
                 (result) => {
                     FOSSBilling.message("{{ 'Domain transfer code is: '|trans }}" + result);
+                });
+        });
+
+        document.getElementById('domain-sync').addEventListener('click', function(event) {
+            const syncButton = event.currentTarget;
+            syncButton.disabled = true;
+
+            FOSSBilling.api.admin.post('servicedomain/sync', { order_id: {{ order.id }} },
+                (result) => {
+                    FOSSBilling.message({{ 'Domain synchronized with registrar'|trans|json_encode|raw }});
+                    window.location.reload();
+                },
+                (error) => {
+                    syncButton.disabled = false;
+                    FOSSBilling.message(`${error.message} (${error.code})`, 'error');
                 });
         });
     });

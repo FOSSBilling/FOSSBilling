@@ -1,0 +1,291 @@
+<?php
+
+declare(strict_types=1);
+/**
+ * Copyright 2022-2026 FOSSBilling
+ * SPDX-License-Identifier: Apache-2.0.
+ *
+ * @copyright FOSSBilling (https://www.fossbilling.org)
+ * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
+ */
+
+use FOSSBilling\Cache\CacheFactory;
+use FOSSBilling\Config;
+use FOSSBilling\Exception;
+use Psr\Cache\CacheItemPoolInterface;
+
+beforeEach(function (): void {
+    $this->cacheFactoryOriginalConfig = Config::getConfig();
+});
+
+afterEach(function (): void {
+    // $clearCache=false: none of these tests need the full cache-clearing side effects,
+    // and skipping it keeps the suite from depending on any real Redis/Memcached backend.
+    Config::setConfig($this->cacheFactoryOriginalConfig, false);
+});
+
+function hasRedisExtension(): bool
+{
+    return class_exists(Redis::class) || class_exists(Relay\Relay::class) || class_exists(RedisCluster::class);
+}
+
+function setCacheConfig(?array $cacheConfig): void
+{
+    $config = Config::getConfig();
+    if ($cacheConfig === null) {
+        unset($config['cache']);
+    } else {
+        $config['cache'] = $cacheConfig;
+    }
+    Config::setConfig($config, false);
+}
+
+function setInstanceId(string $instanceId): void
+{
+    $config = Config::getConfig();
+    $config['info']['instance_id'] = $instanceId;
+    Config::setConfig($config, false);
+}
+
+test('defaults to a working filesystem cache when no cache configuration is set', function (): void {
+    setCacheConfig(null);
+
+    $pool = CacheFactory::create('cache_factory_test');
+
+    expect($pool)->toBeInstanceOf(CacheItemPoolInterface::class);
+
+    $item = $pool->getItem('probe');
+    $item->set('value');
+    $pool->save($item);
+
+    expect($pool->getItem('probe')->get())->toBe('value');
+
+    $pool->deleteItem('probe');
+});
+
+test('rejects an unsupported cache driver', function (): void {
+    expect(fn () => CacheFactory::createFromConfig(['driver' => 'memory'], 'cache_factory_test', 0, true))
+        ->toThrow(Exception::class, 'Unsupported cache driver');
+});
+
+test('falls back to the filesystem cache at runtime when the configured driver is unreachable', function (): void {
+    if (hasRedisExtension()) {
+        $this->markTestSkipped('This test requires an environment without the redis/relay extension.');
+    }
+
+    setCacheConfig(['driver' => 'redis', 'redis' => ['host' => '127.0.0.1', 'port' => 6379]]);
+
+    $pool = CacheFactory::create('cache_factory_test');
+
+    $item = $pool->getItem('probe');
+    $item->set('value');
+    $pool->save($item);
+
+    expect($pool->getItem('probe')->get())->toBe('value');
+
+    $pool->deleteItem('probe');
+});
+
+test('rejects saving a redis configuration when the redis extension is unavailable', function (): void {
+    if (hasRedisExtension()) {
+        $this->markTestSkipped('This test requires an environment without the redis/relay extension.');
+    }
+
+    expect(fn () => CacheFactory::createFromConfig(
+        ['driver' => 'redis', 'redis' => ['host' => '127.0.0.1', 'port' => 6379]],
+        'cache_factory_test',
+        0,
+        false,
+    ))->toThrow(Exception::class, 'requires the PHP redis');
+});
+
+test('rejects saving a memcached configuration when the memcached extension is unavailable', function (): void {
+    if (class_exists(Memcached::class)) {
+        $this->markTestSkipped('This test requires an environment without the memcached extension.');
+    }
+
+    expect(fn () => CacheFactory::createFromConfig(
+        ['driver' => 'memcached', 'memcached' => ['host' => '127.0.0.1', 'port' => 11211]],
+        'cache_factory_test',
+        0,
+        false,
+    ))->toThrow(Exception::class, 'requires the PHP memcached');
+});
+
+test('rejects a redis password on a non-loopback host with TLS disabled', function (): void {
+    expect(fn () => CacheFactory::createFromConfig(
+        ['driver' => 'redis', 'redis' => ['host' => 'redis.example.com', 'password' => 'secret']],
+        'cache_factory_test',
+        0,
+        false,
+    ))->toThrow(Exception::class, 'without TLS enabled');
+});
+
+test('allows a redis password on a non-loopback host once TLS is enabled', function (): void {
+    // Neither the redis/relay extension nor a reachable TLS Redis server is guaranteed here, so
+    // this still throws either way - just never the transport-safety exception, proving TLS
+    // being enabled was what let it past that specific check.
+    expect(fn () => CacheFactory::createFromConfig(
+        ['driver' => 'redis', 'redis' => ['host' => 'redis.example.com', 'password' => 'secret', 'tls' => ['enabled' => true]]],
+        'cache_factory_test',
+        0,
+        false,
+    ))->toThrow(Exception::class, hasRedisExtension() ? 'Could not connect' : 'requires the PHP redis');
+});
+
+test('rejects a redis password on a non-loopback host when TLS is enabled but peer verification is disabled', function (): void {
+    expect(fn () => CacheFactory::createFromConfig(
+        ['driver' => 'redis', 'redis' => ['host' => 'redis.example.com', 'password' => 'secret', 'tls' => ['enabled' => true, 'verify_peer' => false]]],
+        'cache_factory_test',
+        0,
+        false,
+    ))->toThrow(Exception::class, 'certificate verification disabled');
+});
+
+test('rejects a redis password on a non-loopback host when TLS is enabled but peer name verification is disabled', function (): void {
+    expect(fn () => CacheFactory::createFromConfig(
+        ['driver' => 'redis', 'redis' => ['host' => 'redis.example.com', 'password' => 'secret', 'tls' => ['enabled' => true, 'verify_peer_name' => false]]],
+        'cache_factory_test',
+        0,
+        false,
+    ))->toThrow(Exception::class, 'certificate verification disabled');
+});
+
+dataset('loopback hosts', ['127.0.0.1', '127.0.0.53', '::1', '[::1]', 'localhost', 'LOCALHOST']);
+
+test('allows a redis password on a loopback host without TLS', function (string $host): void {
+    // Same reasoning as above: this still throws either way, just never the transport-safety
+    // exception, proving the loopback host was what let it past that specific check.
+    expect(fn () => CacheFactory::createFromConfig(
+        ['driver' => 'redis', 'redis' => ['host' => $host, 'password' => 'secret']],
+        'cache_factory_test',
+        0,
+        false,
+    ))->toThrow(Exception::class, hasRedisExtension() ? 'Could not connect' : 'requires the PHP redis');
+})->with('loopback hosts');
+
+test('allows a redis connection on a non-loopback host with no password regardless of TLS', function (): void {
+    expect(fn () => CacheFactory::createFromConfig(
+        ['driver' => 'redis', 'redis' => ['host' => 'redis.example.com']],
+        'cache_factory_test',
+        0,
+        false,
+    ))->toThrow(Exception::class, hasRedisExtension() ? 'Could not connect' : 'requires the PHP redis');
+});
+
+test('a literal "0" redis password is not treated as unset', function (): void {
+    // "0" is falsy in PHP, so empty()/?: would silently drop it. It must still trigger the
+    // transport-safety check on a non-loopback host with TLS disabled, same as any other password.
+    expect(fn () => CacheFactory::createFromConfig(
+        ['driver' => 'redis', 'redis' => ['host' => 'redis.example.com', 'password' => '0']],
+        'cache_factory_test',
+        0,
+        false,
+    ))->toThrow(Exception::class, 'without TLS enabled');
+});
+
+test('cache pools are isolated per installation instance id', function (): void {
+    setInstanceId('install-a');
+    $poolA = CacheFactory::create('cache_factory_test');
+    $item = $poolA->getItem('shared-key');
+    $item->set('value-a');
+    $poolA->save($item);
+
+    setInstanceId('install-b');
+    $poolB = CacheFactory::create('cache_factory_test');
+    expect($poolB->getItem('shared-key')->isHit())->toBeFalse();
+
+    setInstanceId('install-a');
+    $poolA2 = CacheFactory::create('cache_factory_test');
+    expect($poolA2->getItem('shared-key')->get())->toBe('value-a');
+
+    $poolA2->deleteItem('shared-key');
+});
+
+test('rejects saving a remote cache driver when no installation identifier is configured', function (): void {
+    setInstanceId('');
+
+    expect(fn () => CacheFactory::createFromConfig(
+        ['driver' => 'redis', 'redis' => ['host' => '127.0.0.1', 'port' => 6379]],
+        'cache_factory_test',
+        0,
+        false,
+    ))->toThrow(Exception::class, 'installation identifier');
+
+    expect(fn () => CacheFactory::createFromConfig(
+        ['driver' => 'memcached', 'memcached' => ['host' => '127.0.0.1', 'port' => 11211]],
+        'cache_factory_test',
+        0,
+        false,
+    ))->toThrow(Exception::class, 'installation identifier');
+});
+
+test('falls back to the filesystem cache at runtime when a remote driver is configured but no installation identifier is set', function (): void {
+    setInstanceId('');
+    setCacheConfig(['driver' => 'redis', 'redis' => ['host' => '127.0.0.1', 'port' => 6379]]);
+
+    $pool = CacheFactory::create('cache_factory_test');
+
+    $item = $pool->getItem('probe');
+    $item->set('value');
+    $pool->save($item);
+
+    expect($pool->getItem('probe')->get())->toBe('value');
+
+    $pool->deleteItem('probe');
+});
+
+test('a blank installation identifier does not affect the filesystem driver', function (): void {
+    setInstanceId('');
+    setCacheConfig(['driver' => 'filesystem']);
+
+    $pool = CacheFactory::create('cache_factory_test');
+
+    expect($pool)->toBeInstanceOf(CacheItemPoolInterface::class);
+});
+
+test('clearAll never throws even with a misconfigured driver', function (): void {
+    if (hasRedisExtension()) {
+        $this->markTestSkipped('This test requires an environment without the redis/relay extension.');
+    }
+
+    setCacheConfig(['driver' => 'redis', 'redis' => ['host' => '127.0.0.1', 'port' => 6379]]);
+
+    CacheFactory::clearAll();
+})->expectNotToPerformAssertions();
+
+test('clearAll clears the pools for an explicitly given configuration, not just the live one', function (): void {
+    // The live configuration stays on filesystem throughout; only the explicit config passed
+    // to clearAll() below points at redis. This is the shape of a driver switch: by the time
+    // the previous backend needs clearing, the live configuration already points at the new one.
+    setCacheConfig(['driver' => 'filesystem']);
+
+    if (hasRedisExtension()) {
+        $this->markTestSkipped('This test requires an environment without the redis/relay extension.');
+    }
+
+    CacheFactory::clearAll(['driver' => 'redis', 'redis' => ['host' => '127.0.0.1', 'port' => 6379]]);
+})->expectNotToPerformAssertions();
+
+dataset('IPv6 hosts needing brackets', [
+    '::1' => ['::1', '[::1]'],
+    'a non-loopback IPv6 address' => ['2001:db8::1', '[2001:db8::1]'],
+]);
+
+test('bare IPv6 hosts are bracketed for DSN construction', function (string $host, string $expected): void {
+    $bracket = new ReflectionMethod(CacheFactory::class, 'bracketIpv6Host');
+
+    expect($bracket->invoke(null, $host))->toBe($expected);
+})->with('IPv6 hosts needing brackets');
+
+test('an already-bracketed IPv6 host is left unchanged', function (): void {
+    $bracket = new ReflectionMethod(CacheFactory::class, 'bracketIpv6Host');
+
+    expect($bracket->invoke(null, '[::1]'))->toBe('[::1]');
+});
+
+test('a hostname or IPv4 address is left unchanged when bracketing for DSN construction', function (string $host): void {
+    $bracket = new ReflectionMethod(CacheFactory::class, 'bracketIpv6Host');
+
+    expect($bracket->invoke(null, $host))->toBe($host);
+})->with(['redis.example.com', '127.0.0.1']);

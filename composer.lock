@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "38fc7436dd7776432192c06dc2e7f30e",
+    "content-hash": "ed45286392b7859639653564f143c0e8",
     "packages": [
         {
             "name": "dflydev/dot-access-data",
@@ -1392,68 +1392,6 @@
                 }
             ],
             "time": "2026-07-16T22:23:49+00:00"
-        },
-        {
-            "name": "io-developer/php-whois",
-            "version": "4.1.10",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/io-developer/php-whois.git",
-                "reference": "ea4cf52832fe8ff56fc4937138467819aa2829c1"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/io-developer/php-whois/zipball/ea4cf52832fe8ff56fc4937138467819aa2829c1",
-                "reference": "ea4cf52832fe8ff56fc4937138467819aa2829c1",
-                "shasum": ""
-            },
-            "require": {
-                "ext-curl": "*",
-                "ext-json": "*",
-                "ext-mbstring": "*",
-                "php": ">=7.2",
-                "symfony/polyfill-intl-idn": "^1.27"
-            },
-            "require-dev": {
-                "phpunit/phpunit": "^8.0"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "Iodev\\": "src/Iodev/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Sergey Sedyshev",
-                    "email": "i.o.developer@gmail.com",
-                    "homepage": "https://github.com/io-developer"
-                }
-            ],
-            "description": "PHP WHOIS provides parsed and raw whois lookup of domains and ASN routes. PHP 5.4+ and 7+ compatible ",
-            "homepage": "https://github.com/io-developer/php-whois",
-            "keywords": [
-                "asn",
-                "domain",
-                "info",
-                "lookup",
-                "parser",
-                "php",
-                "query",
-                "routes",
-                "tld",
-                "whois",
-                "црщшы"
-            ],
-            "support": {
-                "issues": "https://github.com/io-developer/php-whois/issues",
-                "source": "https://github.com/io-developer/php-whois/tree/4.1.10"
-            },
-            "time": "2023-01-25T14:42:45+00:00"
         },
         {
             "name": "jean85/pretty-package-versions",
@@ -11329,6 +11267,7 @@
     "prefer-lowest": false,
     "platform": {
         "php": ">=8.3",
+        "php-64bit": "*",
         "ext-curl": "*",
         "ext-intl": "*",
         "ext-mbstring": "*",

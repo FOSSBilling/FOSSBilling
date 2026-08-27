@@ -39,6 +39,7 @@
     },
     "require": {
         "php": ">=8.3",
+        "php-64bit": "*",
         "ext-curl": "*",
         "ext-intl": "*",
         "ext-mbstring": "*",
@@ -51,7 +52,6 @@
         "egulias/email-validator": "^4.0.4",
         "filp/whoops": "^2.18.4",
         "gabordemooij/redbean": "^5.7.5",
-        "io-developer/php-whois": "^4.1.10",
         "league/commonmark": "^2.8",
         "league/csv": "^9.28",
         "liborm85/composer-vendor-cleaner": "^1.7.1",

@@ -15,6 +15,7 @@ use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception\DeadlockException;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use FOSSBilling\Cache\CacheFactory;
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
 use FOSSBilling\GeoIP\Reader;
@@ -520,8 +521,16 @@ class Service
         }
     }
 
-    public function templateExists($file, $identity = null): bool
+    public function templateExists(string $file, ?\Model_Admin $identity = null): bool
     {
+        $file = trim($file);
+        if ($file === '' || str_contains($file, "\0") || Path::isAbsolute($file) || str_contains($file, '..') || str_contains($file, '\\')) {
+            return false;
+        }
+        if (!preg_match('/\A[a-zA-Z0-9_\-\/]+\.html\.twig\z/', $file)) {
+            return false;
+        }
+
         if ($identity instanceof \Model_Admin) {
             $client = false;
         } else {
@@ -530,7 +539,13 @@ class Service
         $themeService = $this->di['mod_service']('theme');
         $theme = $themeService->getThemeConfig($client);
         foreach ($theme['paths'] as $path) {
-            if ($this->filesystem->exists(Path::join($path, $file))) {
+            $candidate = Path::join($path, $file);
+            $canonicalBase = Path::canonicalize($path);
+            $canonicalCandidate = Path::canonicalize($candidate);
+            if (!Path::isBasePath($canonicalBase, $canonicalCandidate)) {
+                continue;
+            }
+            if ($this->filesystem->exists($canonicalCandidate)) {
                 return true;
             }
         }
@@ -611,6 +626,10 @@ class Service
         $path = $cachePath ?? PATH_CACHE;
         $this->filesystem->remove($path);
         $this->filesystem->mkdir($path);
+
+        // Also flush the configured application/rate-limiter/Doctrine cache pools, which may be
+        // backed by Redis or Memcached rather than the filesystem path cleared above.
+        CacheFactory::clearAll();
 
         return true;
     }
@@ -721,9 +740,10 @@ class Service
         $geoipReader->updateDefaultDatabases();
 
         try {
-            // Prune the FS cache
+            // Prune the cache. Only filesystem-backed pools support this; Redis/Memcached
+            // expire entries on their own and don't implement PruneableInterface.
             $cache = $di['cache'];
-            if ($cache->prune()) {
+            if ($cache instanceof \Symfony\Component\Cache\PruneableInterface && $cache->prune()) {
                 $di['logger']->setChannel('cron')->info('Pruned the filesystem cache');
             }
         } catch (\Exception $e) {

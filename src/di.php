@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManager;
+use FOSSBilling\Cache\CacheFactory;
 use FOSSBilling\Config;
 use FOSSBilling\Doctrine\DriverManagerFactory;
 use FOSSBilling\Doctrine\EntityManagerFactory;
@@ -19,8 +20,8 @@ use FOSSBilling\Http\RequestFactory;
 use FOSSBilling\Security\AuthenticationRequiredException;
 use FOSSBilling\Security\EmailValidationRequiredException;
 use FOSSBilling\Version;
+use Psr\Cache\CacheItemPoolInterface;
 use RedBeanPHP\Facade;
-use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpClient\HttpClient;
@@ -274,15 +275,18 @@ $di['session'] = function () use ($di) {
 $di['request'] = $request;
 
 /*
+ * The general-purpose application cache. Backed by the filesystem by default; can be configured
+ * to use Redis or Memcached instead via the `cache` block in the FOSSBilling configuration file.
+ *
  * @param void
  *
- * @link https://symfony.com/doc/current/components/cache/adapters/filesystem_adapter.html
+ * @link https://symfony.com/doc/current/components/cache.html
  *
- * @return FilesystemAdapter
+ * @return CacheItemPoolInterface
  */
-$di['cache'] = fn (): FilesystemAdapter => new FilesystemAdapter('sf_cache', 24 * 60 * 60, PATH_CACHE);
+$di['cache'] = fn (): CacheItemPoolInterface => CacheFactory::create(CacheFactory::NAMESPACE_APP, 24 * 60 * 60);
 
-$di['rate_limit_cache'] = fn (): FilesystemAdapter => new FilesystemAdapter('rate_limit', 24 * 60 * 60, PATH_CACHE);
+$di['rate_limit_cache'] = fn (): CacheItemPoolInterface => CacheFactory::create(CacheFactory::NAMESPACE_RATE_LIMIT, 24 * 60 * 60);
 
 $di['http_client'] = fn (): HttpClientInterface => HttpClient::create([
     'bindto' => BIND_TO,

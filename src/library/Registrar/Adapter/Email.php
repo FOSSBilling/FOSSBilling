@@ -8,9 +8,6 @@ declare(strict_types=1);
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
-
-use Iodev\Whois\Factory;
-
 class Registrar_Adapter_Email extends Registrar_AdapterAbstract
 {
     protected $config;
@@ -24,12 +21,7 @@ class Registrar_Adapter_Email extends Registrar_AdapterAbstract
             throw new Registrar_Exception('The ":domain_registrar" domain registrar is not fully configured. Please configure the :missing', [':domain_registrar' => 'Email', ':missing' => 'email'], 3001);
         }
 
-        if (isset($options['use_whois'])) {
-            $this->config['use_whois'] = (bool) $options['use_whois'];
-        } else {
-            $this->config['use_whois'] = false;
-        }
-
+        $this->config['use_rdap'] = (bool) ($options['use_rdap'] ?? $options['use_whois'] ?? false);
         $this->config['from'] = $this->config['email'];
     }
 
@@ -43,9 +35,9 @@ class Registrar_Adapter_Email extends Registrar_AdapterAbstract
                     'description' => 'Email to Send Domain Change Notifications',
                 ],
                 ],
-                'use_whois' => ['radio', [
+                'use_rdap' => ['radio', [
                     'multiOptions' => ['1' => 'Yes', '0' => 'No'],
-                    'label' => 'Use WHOIS to Check for Domain Availability',
+                    'label' => 'Use RDAP Registry Lookups to Check for Domain Availability',
                 ],
                 ],
             ],
@@ -56,13 +48,16 @@ class Registrar_Adapter_Email extends Registrar_AdapterAbstract
     {
         $this->getLog()->debug('Checking domain availability: ' . $domain->getName());
 
-        if ($this->config['use_whois']) {
-            $whois = Factory::get()->createWhois();
-
-            return $whois->isDomainAvailable($domain->getName());
+        if (!$this->config['use_rdap']) {
+            throw new Registrar_Exception(':type: registrar is unable to :action:', [':type:' => 'Email', ':action:' => 'determine domain availability']);
         }
 
-        throw new Registrar_Exception(':type: registrar is unable to :action:', [':type:' => 'Email', ':action:' => 'determine domain availability']);
+        $result = $this->getRdap()->isDomainAvailable($domain->getName());
+        if ($result !== null) {
+            return $result;
+        }
+
+        throw new Registrar_Exception('Unable to determine the availability of :domain via RDAP', [':domain' => $domain->getName()]);
     }
 
     public function isDomaincanBeTransferred(Registrar_Domain $domain): never

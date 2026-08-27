@@ -25,6 +25,11 @@ abstract class Registrar_AdapterAbstract
     protected ?Model_ClientOrder $_order = null;
 
     /**
+     * Lazily created RDAP client, shared by all availability checks of the adapter.
+     */
+    protected ?Registrar_Rdap $_rdap = null;
+
+    /**
      * Return array with configuration.
      *
      * Must be overridden in adapter class
@@ -32,6 +37,19 @@ abstract class Registrar_AdapterAbstract
      * @return array
      */
     abstract public static function getConfig();
+
+    /**
+     * Config field names whose stored values must be hidden in the API and admin UI.
+     * Adapters should mark the relevant fields in their {@see self::getConfig()} form
+     * with `'secret' => true` instead of overriding this; it exists as an escape hatch
+     * for fields that need masking but are not declared through the form schema.
+     *
+     * @return string[]
+     */
+    public static function getSecretFields(): array
+    {
+        return [];
+    }
 
     /**
      * Checks if a domain is available for registration.
@@ -223,6 +241,14 @@ abstract class Registrar_AdapterAbstract
     public function getHttpClient(): Symfony\Contracts\HttpClient\HttpClientInterface
     {
         return Symfony\Component\HttpClient\HttpClient::create(['bindto' => BIND_TO]);
+    }
+
+    /**
+     * Creates an RDAP client for registry-based domain availability lookups.
+     */
+    protected function getRdap(): Registrar_Rdap
+    {
+        return $this->_rdap ??= new Registrar_Rdap($this->getHttpClient(), $this->getLog());
     }
 
     /**

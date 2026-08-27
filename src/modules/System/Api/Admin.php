@@ -15,6 +15,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\System\Api;
 
+use FOSSBilling\Cache\CacheFactory;
 use FOSSBilling\Config;
 use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
@@ -79,6 +80,100 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
+     * Returns the cache backend settings stored in the FOSSBilling config file.
+     * The Redis password, if set, is never returned.
+     */
+    public function cache_settings(): array
+    {
+        $this->checkPermissions('system', 'manage_settings');
+
+        return [
+            'driver' => (string) Config::getProperty('cache.driver', 'filesystem'),
+            'redis_host' => (string) Config::getProperty('cache.redis.host', '127.0.0.1'),
+            'redis_port' => (int) Config::getProperty('cache.redis.port', 6379),
+            'redis_password_set' => Config::getProperty('cache.redis.password') !== null,
+            'redis_database' => (int) Config::getProperty('cache.redis.database', 0),
+            'redis_tls_enabled' => Tools::normalizeBoolean(Config::getProperty('cache.redis.tls.enabled', false), false),
+            'redis_tls_verify_peer' => Tools::normalizeBoolean(Config::getProperty('cache.redis.tls.verify_peer', true), true),
+            'redis_tls_verify_peer_name' => Tools::normalizeBoolean(Config::getProperty('cache.redis.tls.verify_peer_name', true), true),
+            'redis_tls_allow_self_signed' => Tools::normalizeBoolean(Config::getProperty('cache.redis.tls.allow_self_signed', false), false),
+            'redis_tls_cafile' => (string) Config::getProperty('cache.redis.tls.cafile', ''),
+            'memcached_host' => (string) Config::getProperty('cache.memcached.host', '127.0.0.1'),
+            'memcached_port' => (int) Config::getProperty('cache.memcached.port', 11211),
+        ];
+    }
+
+    /**
+     * Updates the cache backend settings stored in the FOSSBilling config file.
+     *
+     * The new settings are validated by attempting to connect to the configured backend before
+     * anything is saved, so a mistyped host/port/password is rejected with a clear reason rather
+     * than being written and silently falling back to the filesystem cache later. That same
+     * validation also rejects a Redis password on a non-loopback host with TLS disabled, since
+     * that combination would send the password in plain text (see CacheFactory).
+     *
+     * @throws \FOSSBilling\Exception
+     */
+    public function update_cache_settings($data): bool
+    {
+        $this->checkPermissions('system', 'update_params');
+
+        $driver = $data['driver'] ?? 'filesystem';
+        if (!in_array($driver, CacheFactory::SUPPORTED_DRIVERS, true)) {
+            throw new \FOSSBilling\Exception('Unsupported cache driver: :driver', [':driver' => $driver]);
+        }
+
+        // Keep the existing password when the admin leaves the field blank, so re-saving the
+        // other Redis fields doesn't require re-entering it. The explicit "clear" checkbox is
+        // what lets an admin actually remove a previously-set password.
+        $redisPassword = $data['redis_password'] ?? '';
+        if ($redisPassword === '' && !Tools::normalizeBoolean($data['redis_password_clear'] ?? false, false)) {
+            $redisPassword = Config::getProperty('cache.redis.password');
+        }
+
+        $newCacheConfig = [
+            'driver' => $driver,
+            'redis' => [
+                'host' => $data['redis_host'] ?? '127.0.0.1',
+                'port' => Tools::normalizePort($data['redis_port'] ?? null, 6379),
+                'password' => $redisPassword !== '' ? $redisPassword : null,
+                'database' => (int) ($data['redis_database'] ?? 0),
+                'tls' => [
+                    'enabled' => Tools::normalizeBoolean($data['redis_tls_enabled'] ?? false, false),
+                    'verify_peer' => Tools::normalizeBoolean($data['redis_tls_verify_peer'] ?? true, true),
+                    'verify_peer_name' => Tools::normalizeBoolean($data['redis_tls_verify_peer_name'] ?? true, true),
+                    'allow_self_signed' => Tools::normalizeBoolean($data['redis_tls_allow_self_signed'] ?? false, false),
+                    'cafile' => ($data['redis_tls_cafile'] ?? '') !== '' ? $data['redis_tls_cafile'] : null,
+                ],
+            ],
+            'memcached' => [
+                'host' => $data['memcached_host'] ?? '127.0.0.1',
+                'port' => Tools::normalizePort($data['memcached_port'] ?? null, 11211),
+            ],
+        ];
+
+        // Filesystem can't fail to connect, so only redis/memcached need the eager check.
+        if ($driver !== 'filesystem') {
+            CacheFactory::createFromConfig($newCacheConfig, CacheFactory::NAMESPACE_CONNECTION_TEST, 60, fallbackOnFailure: false);
+        }
+
+        // Config::setConfig() below already clears the pools for the new driver; also clear
+        // the previously configured one, so entries left behind there (e.g. a Redis database
+        // the admin is switching away from) don't reappear if this setting is ever reverted.
+        $oldCacheConfig = Config::getProperty('cache', []);
+
+        $config = Config::getConfig();
+        $config['cache'] = $newCacheConfig;
+        Config::setConfig($config);
+
+        if (is_array($oldCacheConfig)) {
+            CacheFactory::clearAll($oldCacheConfig);
+        }
+
+        return true;
+    }
+
+    /**
      * System messages about working environment.
      *
      * @return array
@@ -114,18 +209,21 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
     /**
      * Check if passed file name template exists for admin area.
-     *
-     * @return bool
      */
-    public function template_exists($data)
+    public function template_exists($data): bool
     {
         $this->checkPermissions('system', 'manage_settings');
 
-        if (!isset($data['file'])) {
+        if (!isset($data['file']) || !is_string($data['file'])) {
             return false;
         }
 
-        return $this->getService()->templateExists($data['file'], $this->getIdentity());
+        $file = trim($data['file']);
+        if ($file === '' || str_contains($file, "\0")) {
+            return false;
+        }
+
+        return $this->getService()->templateExists($file, $this->getIdentity());
     }
 
     /**

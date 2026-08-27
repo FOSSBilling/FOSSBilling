@@ -74,6 +74,19 @@ class Client extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
+     * Synchronize domain registration details with the registrar.
+     *
+     * @return true
+     */
+    public function sync($data)
+    {
+        $s = $this->_getService($data);
+        $this->getService()->synchronizeDomain($s);
+
+        return true;
+    }
+
+    /**
      * Retrieve domain transfer code.
      *
      * @return string - transfer code
