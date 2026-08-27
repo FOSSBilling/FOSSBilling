@@ -11,6 +11,9 @@ declare(strict_types=1);
 
 namespace Box\Mod\Hook;
 
+use Box\Mod\Extension\Entity\Extension;
+use Box\Mod\Extension\Entity\ExtensionMeta;
+use Box\Mod\Extension\Repository\ExtensionRepository;
 use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
@@ -94,10 +97,10 @@ class Service implements InjectionAwareInterface
             $event->setReturnValue(false);
         } else {
             $di = $event->getDi();
-            $ext = $di['db']->load('extension', $params['id']);
-            if (is_object($ext) && $ext->type == 'mod') {
+            $ext = $di['em']->getRepository(Extension::class)->find((int) $params['id']);
+            if ($ext !== null && $ext->getType() === Extension::TYPE_MOD) {
                 $service = $di['mod_service']('hook');
-                $service->batchConnect($ext->name);
+                $service->batchConnect($ext->getName());
             }
             $event->setReturnValue(true);
         }
@@ -113,7 +116,7 @@ class Service implements InjectionAwareInterface
                 AND rel_type = 'mod'
                 AND rel_id = :mod
                 AND meta_key = 'listener'";
-            $di['db']->exec($q, ['mod' => $params['id']]);
+            $di['em']->getConnection()->executeStatement($q, ['mod' => $params['id']]);
         }
 
         $event->setReturnValue(true);
@@ -154,8 +157,8 @@ class Service implements InjectionAwareInterface
                 }
 
                 foreach ($mods as $m) {
-                    $ext = $this->di['db']->findOne('extension', "type = 'mod' AND name = :mod AND status = 'installed'", ['mod' => $m]);
-                    if (!$ext && !$extensionService->isCoreModule($m)) {
+                    $installed = $this->getExtensionRepository()->existsActiveByTypeAndName(Extension::TYPE_MOD, $m);
+                    if (!$installed && !$extensionService->isCoreModule($m)) {
                         continue;
                     }
 
@@ -217,20 +220,19 @@ class Service implements InjectionAwareInterface
             AND meta_key = 'listener'
             AND meta_value = :event
         ";
-        if ($this->di['db']->getCell($q, ['mod' => $mod, 'event' => $event])) {
+        if ($this->di['em']->getConnection()->fetchOne($q, ['mod' => $mod, 'event' => $event])) {
             // already connected
             return true;
         }
 
-        $meta = $this->di['db']->dispense('extension_meta');
-        $meta->extension = 'mod_hook';
-        $meta->rel_type = 'mod';
-        $meta->rel_id = $mod;
-        $meta->meta_key = 'listener';
-        $meta->meta_value = $event;
-        $meta->created_at = date('Y-m-d H:i:s');
-        $meta->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($meta);
+        $meta = new ExtensionMeta();
+        $meta->setExtension('mod_hook');
+        $meta->setRelType('mod');
+        $meta->setRelId($mod);
+        $meta->setMetaKey('listener');
+        $meta->setMetaValue($event);
+        $this->di['em']->persist($meta);
+        $this->di['em']->flush();
 
         return true;
     }
@@ -248,7 +250,7 @@ class Service implements InjectionAwareInterface
             AND rel_type = 'mod'
             AND meta_key = 'listener'
         ";
-        $list = $this->di['db']->getAll($sql);
+        $list = $this->di['em']->getConnection()->fetchAllAssociative($sql);
         $extensionService = $this->di['mod_service']('extension');
         foreach ($list as $listener) {
             try {
@@ -258,7 +260,7 @@ class Service implements InjectionAwareInterface
                 // disconnect modules without service class
                 $mod = $this->di['mod']($mod_name);
                 if (!$mod->hasService()) {
-                    $this->di['db']->exec($rm_sql, ['id' => $listener['id']]);
+                    $this->di['em']->getConnection()->executeStatement($rm_sql, ['id' => $listener['id']]);
 
                     continue;
                 }
@@ -267,21 +269,26 @@ class Service implements InjectionAwareInterface
                 $s = $mod->getService();
                 $reflector = new \ReflectionClass($s);
                 if (!$reflector->hasMethod($event) || !$this->canBeConnected($reflector->getMethod($event))) {
-                    $this->di['db']->exec($rm_sql, ['id' => $listener['id']]);
+                    $this->di['em']->getConnection()->executeStatement($rm_sql, ['id' => $listener['id']]);
 
                     continue;
                 }
 
                 // If the listener is for a module that's not installed and is **not** a core module, remove the listener
-                $ext = $this->di['db']->findOne('extension', "type = 'mod' AND name = :mod AND status = 'installed'", ['mod' => $mod_name]);
-                if (!$ext && !$extensionService->isCoreModule($mod_name)) {
-                    $this->di['db']->exec($rm_sql, ['id' => $listener['id']]);
+                $installed = $this->getExtensionRepository()->existsActiveByTypeAndName(Extension::TYPE_MOD, $mod_name);
+                if (!$installed && !$extensionService->isCoreModule($mod_name)) {
+                    $this->di['em']->getConnection()->executeStatement($rm_sql, ['id' => $listener['id']]);
 
                     continue;
                 }
             } catch (\Exception $e) {
-                error_log($e->getMessage());
+                $this->di['logger']->error($e->getMessage());
             }
         }
+    }
+
+    private function getExtensionRepository(): ExtensionRepository
+    {
+        return $this->di['em']->getRepository(Extension::class);
     }
 }

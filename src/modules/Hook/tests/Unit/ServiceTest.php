@@ -11,6 +11,7 @@
 declare(strict_types=1);
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 
 test('gets dependency injection container', function (): void {
     $service = new Box\Mod\Hook\Service();
@@ -52,24 +53,22 @@ test('handles on after admin activate extension', function (): void {
     $expectation2 = $eventMock->shouldReceive('setReturnValue');
     $expectation2->atLeast()->once();
 
-    $model = new Model_Extension();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $model->id = 1;
-    $model->type = 'mod';
+    $extension = createEntity(Box\Mod\Extension\Entity\Extension::class, ['id' => 1, 'type' => 'mod', 'name' => 'activity']);
 
-    $dbMock = Mockery::mock('\Box_Database');
+    $extensionRepository = Mockery::mock(Box\Mod\Extension\Repository\ExtensionRepository::class);
     /** @var Mockery\Expectation $expectation3 */
-    $expectation3 = $dbMock->shouldReceive('load');
+    $expectation3 = $extensionRepository->shouldReceive('find');
     $expectation3->atLeast()->once();
-    $expectation3->andReturn($model);
+    $expectation3->andReturn($extension);
 
     $hookService = Mockery::mock(Box\Mod\Hook\Service::class);
     /** @var Mockery\Expectation $expectation4 */
     $expectation4 = $hookService->shouldReceive('batchConnect');
     $expectation4->atLeast()->once();
+    $expectation4->with('activity');
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\Extension\Entity\Extension::class)->andReturn($extensionRepository);
     $di['mod_service'] = $di->protect(fn ($name): Mockery\MockInterface => $hookService);
 
     /** @var Mockery\Expectation $expectation5 */
@@ -119,13 +118,13 @@ test('handles on after admin deactivate extension', function (): void {
     $expectation2 = $eventMock->shouldReceive('setReturnValue');
     $expectation2->atLeast()->once();
 
-    $dbMock = Mockery::mock('\Box_Database');
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
     /** @var Mockery\Expectation $expectation3 */
-    $expectation3 = $dbMock->shouldReceive('exec');
+    $expectation3 = $connection->shouldReceive('executeStatement');
     $expectation3->atLeast()->once();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
 
     /** @var Mockery\Expectation $expectation4 */
     $expectation4 = $eventMock->shouldReceive('getDi');
@@ -145,59 +144,28 @@ test('batch connects', function (): void {
 
     $data['mods'] = [$mod];
 
-    $dbMock = Mockery::mock('\Box_Database');
-    /** @var Mockery\Expectation $expectation1 */
-    $expectation1 = $dbMock->shouldReceive('getCell');
-    $expectation1->atLeast()->once();
-    $expectation1->andReturn(false);
-    $dbMock->shouldReceive('exec')
-        ->byDefault();
-
-    $extensionModel = new Model_ExtensionMeta();
-    $extensionModel->loadBean(new Tests\Helpers\DummyBean());
-
-    /** @var Mockery\Expectation $expectation2 */
-    $expectation2 = $dbMock->shouldReceive('dispense');
-    $expectation2->atLeast()->once();
-    $expectation2->andReturn($extensionModel);
-
-    /** @var Mockery\Expectation $expectation3 */
-    $expectation3 = $dbMock->shouldReceive('store');
-    $expectation3->atLeast()->once();
-
-    $returnArr = [
-        [
-            'id' => 2,
-            'rel_id' => 1,
-            'meta_value' => 'testValue',
-        ],
-    ];
-    /** @var Mockery\Expectation $expectation4 */
-    $expectation4 = $dbMock->shouldReceive('getAll');
-    $expectation4->atLeast()->once();
-    $expectation4->andReturn($returnArr);
-
     $activityServiceMock = Mockery::mock(Box\Mod\Activity\Service::class);
 
     $boxModMock = Mockery::mock(FOSSBilling\Module::class);
-    /** @var Mockery\Expectation $expectation5 */
-    $expectation5 = $boxModMock->shouldReceive('hasService');
-    $expectation5->atLeast()->once();
-    $expectation5->andReturn(true);
-    /** @var Mockery\Expectation $expectation6 */
-    $expectation6 = $boxModMock->shouldReceive('getService');
-    $expectation6->andReturn($activityServiceMock);
-    /** @var Mockery\Expectation $expectation7 */
-    $expectation7 = $boxModMock->shouldReceive('getName');
-    $expectation7->andReturn('activity');
+    /** @var Mockery\Expectation $expectation1 */
+    $expectation1 = $boxModMock->shouldReceive('hasService');
+    $expectation1->atLeast()->once();
+    $expectation1->andReturn(true);
+    /** @var Mockery\Expectation $expectation2 */
+    $expectation2 = $boxModMock->shouldReceive('getService');
+    $expectation2->andReturn($activityServiceMock);
+    /** @var Mockery\Expectation $expectation3 */
+    $expectation3 = $boxModMock->shouldReceive('getName');
+    $expectation3->andReturn('activity');
 
     $extensionServiceMock = Mockery::mock(Box\Mod\Extension\Service::class);
 
-    $di = container();
-    $di['db'] = $dbMock;
-    $dbMock->shouldReceive('findOne')
+    $extensionRepository = Mockery::mock(Box\Mod\Extension\Repository\ExtensionRepository::class);
+    $extensionRepository->shouldReceive('existsActiveByTypeAndName')
         ->byDefault()
-        ->andReturn(new Model_Extension());
+        ->andReturn(true);
+
+    $di = container();
     $di['mod'] = $di->protect(fn () => $boxModMock);
     $di['mod_service'] = $di->protect(function ($name) use ($extensionServiceMock) {
         if ($name == 'extension') {
@@ -212,17 +180,39 @@ test('batch connects', function (): void {
 
     $connectionMock = Mockery::mock(Doctrine\DBAL\Connection::class);
     $connectionMock->shouldReceive('fetchOne')
-        ->once()
         ->with('SELECT GET_LOCK(:name, 5)', ['name' => 'fossbilling_hook_batch_connect'])
         ->andReturn(1);
+    /** @var Mockery\Expectation $expectation4 */
+    $expectation4 = $connectionMock->shouldReceive('fetchOne')
+        ->with(Mockery::on(fn ($sql): bool => !str_contains((string) $sql, 'GET_LOCK')), Mockery::any());
+    $expectation4->atLeast()->once();
+    $expectation4->andReturn(false);
+    $connectionMock->shouldReceive('executeStatement')
+        ->byDefault();
+    $connectionMock->shouldReceive('executeStatement')
+        ->with('SELECT RELEASE_LOCK(:name)', ['name' => 'fossbilling_hook_batch_connect'])
+        ->once();
     $connectionMock->shouldReceive('transactional')
         ->once()
         ->andReturnUsing(fn (callable $callback) => $callback());
-    $connectionMock->shouldReceive('executeStatement')
-        ->once()
-        ->with('SELECT RELEASE_LOCK(:name)', ['name' => 'fossbilling_hook_batch_connect']);
+
+    $returnArr = [
+        [
+            'id' => 2,
+            'rel_id' => 1,
+            'meta_value' => 'testValue',
+        ],
+    ];
+    /** @var Mockery\Expectation $expectation5 */
+    $expectation5 = $connectionMock->shouldReceive('fetchAllAssociative');
+    $expectation5->atLeast()->once();
+    $expectation5->andReturn($returnArr);
+
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('getConnection')->andReturn($connectionMock);
+    $emMock->shouldReceive('getRepository')->with(Box\Mod\Extension\Entity\Extension::class)->andReturn($extensionRepository);
+    $emMock->shouldReceive('persist')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once();
     $di['em'] = $emMock;
 
     $service->setDi($di);
