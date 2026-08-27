@@ -139,3 +139,16 @@ test('clearAll never throws even with a misconfigured driver', function (): void
 
     CacheFactory::clearAll();
 })->expectNotToPerformAssertions();
+
+test('clearAll clears the pools for an explicitly given configuration, not just the live one', function (): void {
+    // The live configuration stays on filesystem throughout; only the explicit config passed
+    // to clearAll() below points at redis. This is the shape of a driver switch: by the time
+    // the previous backend needs clearing, the live configuration already points at the new one.
+    setCacheConfig(['driver' => 'filesystem']);
+
+    if (hasRedisExtension()) {
+        $this->markTestSkipped('This test requires an environment without the redis/relay extension.');
+    }
+
+    CacheFactory::clearAll(['driver' => 'redis', 'redis' => ['host' => '127.0.0.1', 'port' => 6379]]);
+})->expectNotToPerformAssertions();

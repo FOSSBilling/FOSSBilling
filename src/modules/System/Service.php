@@ -740,9 +740,10 @@ class Service
         $geoipReader->updateDefaultDatabases();
 
         try {
-            // Prune the FS cache
+            // Prune the cache. Only filesystem-backed pools support this; Redis/Memcached
+            // expire entries on their own and don't implement PruneableInterface.
             $cache = $di['cache'];
-            if ($cache->prune()) {
+            if ($cache instanceof \Symfony\Component\Cache\PruneableInterface && $cache->prune()) {
                 $di['logger']->setChannel('cron')->info('Pruned the filesystem cache');
             }
         } catch (\Exception $e) {

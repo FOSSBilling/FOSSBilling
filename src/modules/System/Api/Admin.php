@@ -143,9 +143,18 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             CacheFactory::createFromConfig($newCacheConfig, CacheFactory::NAMESPACE_CONNECTION_TEST, 60, fallbackOnFailure: false);
         }
 
+        // Config::setConfig() below already clears the pools for the new driver; also clear
+        // the previously configured one, so entries left behind there (e.g. a Redis database
+        // the admin is switching away from) don't reappear if this setting is ever reverted.
+        $oldCacheConfig = Config::getProperty('cache', []);
+
         $config = Config::getConfig();
         $config['cache'] = $newCacheConfig;
         Config::setConfig($config);
+
+        if (is_array($oldCacheConfig)) {
+            CacheFactory::clearAll($oldCacheConfig);
+        }
 
         return true;
     }

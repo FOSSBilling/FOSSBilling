@@ -76,6 +76,30 @@ test('update cache settings clears the saved redis password only when explicitly
     }
 });
 
+test('update cache settings clears the previously configured backend, not just the new one', function (): void {
+    if (hasRedisExtension()) {
+        $this->markTestSkipped('This test requires an environment without the redis/relay extension.');
+    }
+
+    $api = apiEndpoint(new Box\Mod\System\Api\Admin());
+    $originalConfig = Config::getConfig();
+
+    try {
+        // Seed a redis config directly (bypassing the API's own eager-connect check on save,
+        // since no redis server is reachable in this test environment).
+        $config = Config::getConfig();
+        $config['cache'] = ['driver' => 'redis', 'redis' => ['host' => '127.0.0.1', 'port' => 6379]];
+        Config::setConfig($config, false);
+
+        // Switching back to filesystem must not throw even though clearing the previous
+        // (unreachable) redis backend is attempted as part of the switch.
+        expect(fn () => $api->update_cache_settings(['driver' => 'filesystem']))->not->toThrow(Throwable::class);
+        expect(Config::getProperty('cache.driver'))->toBe('filesystem');
+    } finally {
+        Config::setConfig($originalConfig, false);
+    }
+});
+
 test('messages', function (): void {
     $api = apiEndpoint(new Box\Mod\System\Api\Admin());
     $data = [];

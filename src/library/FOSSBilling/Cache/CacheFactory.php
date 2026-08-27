@@ -131,12 +131,19 @@ class CacheFactory
     /**
      * Clears every cache pool FOSSBilling knows about. Best-effort: a misconfigured or
      * unreachable backend must not prevent the rest of the cache from being cleared.
+     *
+     * Pass an explicit $cacheConfig to clear a backend other than the currently configured
+     * one - e.g. the previous backend right after the admin settings form switches drivers,
+     * since by then the live configuration already points at the new one.
      */
-    public static function clearAll(): void
+    public static function clearAll(?array $cacheConfig = null): void
     {
         foreach (self::ALL_NAMESPACES as $namespace) {
             try {
-                self::create($namespace)->clear();
+                $pool = $cacheConfig !== null
+                    ? self::createFromConfig($cacheConfig, $namespace, 0, fallbackOnFailure: true)
+                    : self::create($namespace);
+                $pool->clear();
             } catch (\Throwable) {
                 // Clearing the cache is best-effort; a failure here shouldn't halt execution.
             }
