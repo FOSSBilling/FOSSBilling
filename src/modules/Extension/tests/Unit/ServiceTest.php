@@ -761,7 +761,6 @@ test('setConfig sets extension config', function (): void {
         ->once()
         ->andReturn([]);
 
-
     $cryptMock = Mockery::mock(FOSSBilling\Security\Crypt::class);
     $cryptMock->shouldReceive('encrypt')
         ->atLeast()
