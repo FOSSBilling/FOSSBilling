@@ -30,9 +30,9 @@ use Symfony\Component\HtmlSanitizer\HtmlSanitizerInterface;
  */
 final class HtmlSanitizerFactory
 {
-    private const ALLOWED_LINK_SCHEMES = ['http', 'https', 'mailto', 'tel'];
+    private const array ALLOWED_LINK_SCHEMES = ['http', 'https', 'mailto', 'tel'];
 
-    private const ALLOWED_MEDIA_SCHEMES = ['http', 'https'];
+    private const array ALLOWED_MEDIA_SCHEMES = ['http', 'https'];
 
     /** @var array<string, HtmlSanitizerInterface> */
     private static array $sanitizers = [];
