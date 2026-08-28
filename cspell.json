@@ -91,7 +91,10 @@
         "tablename",
         "indexname",
         "dedup",
-        "commonmark"
+        "commonmark",
+        "GHSA",
+        "macrovector",
+        "rubygems"
     ],
 
     "ignoreWords": [
@@ -649,6 +652,7 @@
         ".gitignore",
         "src/.htaccess",
         "Dockerfile",
-        ".ddev/**"
+        ".ddev/**",
+        ".agents/skills/**"
     ]
 }
