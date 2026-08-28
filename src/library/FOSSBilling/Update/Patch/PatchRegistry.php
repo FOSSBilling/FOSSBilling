@@ -87,7 +87,6 @@ final class PatchRegistry
         97 => Patch97::class,
         99 => Patch99::class,
         100 => Patch100::class,
-        // 101 removed: ADD INDEX client_order_unpaid_invoice_id_idx is redundant with Order.php:19 and SchemaSynchronizer's additive sync.
         102 => Patch102::class,
         103 => Patch103::class,
         104 => Patch104::class,
@@ -101,7 +100,6 @@ final class PatchRegistry
         112 => Patch112::class,
         113 => Patch113::class,
         114 => Patch114::class,
-        115 => Patch115::class,
         116 => Patch116::class,
     ];
 }
