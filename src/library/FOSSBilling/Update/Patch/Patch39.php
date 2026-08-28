@@ -23,9 +23,11 @@ class Patch39 implements PatchInterface
 
     public function apply(Patcher $patcher): void
     {
-        // The Serbian language was incorrectly placed into a folder named `srp` by Crowdin which is now corrected for via the locale repo and as such we need to delete the old directory.
-        // @see https://github.com/FOSSBilling/locale/issues/212
+        // Superset of 38 + 39: Ispconfig3/Virtualmin managers + srp locale fix.
+        // 38 is now a gap; this single patch deletes all 3 orphans idempotently.
         $fileActions = [
+            Path::join(PATH_LIBRARY, 'Server', 'Manager', 'Ispconfig3.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Server', 'Manager', 'Virtualmin.php') => 'unlink',
             Path::join(PATH_LANGS, 'srp') => 'unlink',
         ];
         $patcher->executeFileActions($fileActions);

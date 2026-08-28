@@ -27,7 +27,7 @@ final class PatchRegistry
         35 => Patch35::class,
         36 => Patch36::class,
         37 => Patch37::class,
-        38 => Patch38::class,
+        // 38 removed: Ispconfig3/Virtualmin cleanup is now handled by Patch39 superset.
         39 => Patch39::class,
         40 => Patch40::class,
         41 => Patch41::class,
