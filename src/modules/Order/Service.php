@@ -163,7 +163,7 @@ class Service implements InjectionAwareInterface
         ];
     }
 
-    public static function onAfterAdminOrderActivate(\Box_Event $event): void
+    public static function onAfterAdminOrderActivate(\FOSSBilling\Event\Event $event): void
     {
         $params = $event->getParameters();
         $order_id = $params['id'];
@@ -191,7 +191,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    private static function sendOrderLifecycleEmail(\Box_Event $event, string $templateSuffix, string $logAction, bool $includeService = true): void
+    private static function sendOrderLifecycleEmail(\FOSSBilling\Event\Event $event, string $templateSuffix, string $logAction, bool $includeService = true): void
     {
         $params = $event->getParameters();
         $orderId = $params['id'];
@@ -223,27 +223,27 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public static function onAfterAdminOrderRenew(\Box_Event $event): void
+    public static function onAfterAdminOrderRenew(\FOSSBilling\Event\Event $event): void
     {
         self::sendOrderLifecycleEmail($event, 'renewed', 'renewal');
     }
 
-    public static function onAfterAdminOrderSuspend(\Box_Event $event): void
+    public static function onAfterAdminOrderSuspend(\FOSSBilling\Event\Event $event): void
     {
         self::sendOrderLifecycleEmail($event, 'suspended', 'suspension');
     }
 
-    public static function onAfterAdminOrderUnsuspend(\Box_Event $event): void
+    public static function onAfterAdminOrderUnsuspend(\FOSSBilling\Event\Event $event): void
     {
         self::sendOrderLifecycleEmail($event, 'unsuspended', 'unsuspension');
     }
 
-    public static function onAfterAdminOrderCancel(\Box_Event $event): void
+    public static function onAfterAdminOrderCancel(\FOSSBilling\Event\Event $event): void
     {
         self::sendOrderLifecycleEmail($event, 'canceled', 'cancellation', false);
     }
 
-    public static function onAfterAdminOrderUncancel(\Box_Event $event): void
+    public static function onAfterAdminOrderUncancel(\FOSSBilling\Event\Event $event): void
     {
         self::sendOrderLifecycleEmail($event, 'renewed', 'uncancel');
     }

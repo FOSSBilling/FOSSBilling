@@ -97,7 +97,7 @@ test('runCrons isolates failures in core batch tasks', function (string $failedT
     $updateFinalization = Mockery::mock();
     $updateFinalization->shouldReceive('isRequired')->once()->andReturnFalse();
 
-    $eventsManager = Mockery::mock('\\Box_EventManager');
+    $eventsManager = Mockery::mock('\\FOSSBilling\Event\Manager');
     $eventsManager->shouldReceive('fire')->twice();
 
     $systemService = Mockery::mock(Box\Mod\System\Service::class);

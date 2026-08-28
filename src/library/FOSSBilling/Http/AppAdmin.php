@@ -2,18 +2,21 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2025 FOSSBilling
+ * Copyright 2022-2026 FOSSBilling
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
+namespace FOSSBilling\Http;
+
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
+use Twig\Environment;
 
-class Box_AppAdmin extends Box_App
+class AppAdmin extends App
 {
     public function init(): void
     {
@@ -43,7 +46,7 @@ class Box_AppAdmin extends Box_App
         $service = $this->di['mod_service']('Staff');
 
         if ($this->mod !== 'extension' && $this->di['auth']->isAdminLoggedIn() && !$service->hasPermission(null, $this->mod)) {
-            $e = new FOSSBilling\Exception\InformationException('You do not have permission to access the :mod: module', [':mod:' => $this->mod], 403);
+            $e = new \FOSSBilling\Exception\InformationException('You do not have permission to access the :mod: module', [':mod:' => $this->mod], 403);
 
             return $this->errorResponse($e, 403);
         }
@@ -51,7 +54,7 @@ class Box_AppAdmin extends Box_App
         return null;
     }
 
-    #[Override]
+    #[\Override]
     public function render($fileName, $variableArray = []): string
     {
         $template = $this->getTwig()->load(Path::changeExtension($fileName, '.html.twig'));
@@ -59,7 +62,7 @@ class Box_AppAdmin extends Box_App
         return $template->render($variableArray);
     }
 
-    #[Override]
+    #[\Override]
     public function redirect($path): RedirectResponse
     {
         return $this->responseFactory()->redirect($this->di['url']->adminLink($path));
@@ -68,7 +71,7 @@ class Box_AppAdmin extends Box_App
     /**
      * Get Twig environment for admin area.
      */
-    protected function getTwig(): Twig\Environment
+    protected function getTwig(): Environment
     {
         $twigFactory = $this->di['twig_factory'];
 

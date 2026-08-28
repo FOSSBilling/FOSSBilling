@@ -2,13 +2,18 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2025 FOSSBilling
+ * Copyright 2022-2026 FOSSBilling
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
-class Box_EventDispatcher
+
+namespace FOSSBilling\Event;
+
+use FOSSBilling\Utils\Arr;
+
+class Dispatcher
 {
     protected $listeners = [];
 
@@ -30,11 +35,11 @@ class Box_EventDispatcher
     /**
      * Notifies all listeners of a given event.
      *
-     * @param Box_Event $event A Box_Event instance
+     * @param Event $event A Event instance
      *
-     * @return Box_Event The Box_Event instance
+     * @return Event The Event instance
      */
-    public function notify(Box_Event $event)
+    public function notify(Event $event)
     {
         foreach ($this->getListeners($event->getName()) as $listener) {
             call_user_func($listener, $event);
@@ -46,12 +51,12 @@ class Box_EventDispatcher
     /**
      * Filters a value by calling all listeners of a given event.
      *
-     * @param Box_Event $event A Box_Event instance
-     * @param mixed     $value The value to be filtered
+     * @param Event $event A Event instance
+     * @param mixed $value The value to be filtered
      *
-     * @return Box_Event The Box_Event instance
+     * @return Event The Event instance
      */
-    public function filter(Box_Event $event, mixed $value)
+    public function filter(Event $event, mixed $value)
     {
         foreach ($this->getListeners($event->getName()) as $listener) {
             $value = call_user_func_array($listener, [$event, $value]);
@@ -75,7 +80,7 @@ class Box_EventDispatcher
             $this->listeners[$name] = [];
         }
 
-        return (bool) FOSSBilling\Utils\Arr::safeCount($this->listeners[$name]);
+        return (bool) Arr::safeCount($this->listeners[$name]);
     }
 
     /**

@@ -144,7 +144,7 @@ class Service implements \FOSSBilling\Container\InjectionAwareInterface
         ];
     }
 
-    public static function onAfterClientOpenTicket(\Box_Event $event): void
+    public static function onAfterClientOpenTicket(\FOSSBilling\Event\Event $event): void
     {
         $di = $event->getDi();
         $params = $event->getParameters();
@@ -172,7 +172,7 @@ class Service implements \FOSSBilling\Container\InjectionAwareInterface
         }
     }
 
-    public static function onAfterAdminOpenTicket(\Box_Event $event): void
+    public static function onAfterAdminOpenTicket(\FOSSBilling\Event\Event $event): void
     {
         $di = $event->getDi();
         $supportService = $di['mod_service']('support');
@@ -199,7 +199,7 @@ class Service implements \FOSSBilling\Container\InjectionAwareInterface
         }
     }
 
-    public static function onAfterAdminCloseTicket(\Box_Event $event): void
+    public static function onAfterAdminCloseTicket(\FOSSBilling\Event\Event $event): void
     {
         $di = $event->getDi();
         $supportService = $di['mod_service']('support');
@@ -226,7 +226,7 @@ class Service implements \FOSSBilling\Container\InjectionAwareInterface
         }
     }
 
-    public static function onAfterAdminReplyTicket(\Box_Event $event): void
+    public static function onAfterAdminReplyTicket(\FOSSBilling\Event\Event $event): void
     {
         $di = $event->getDi();
         $supportService = $di['mod_service']('support');

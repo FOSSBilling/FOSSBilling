@@ -276,7 +276,7 @@ test('updateParams updates system parameters in a single flush', function (): vo
         'company_email' => 'work@example.eu',
     ];
 
-    $eventMock = Mockery::mock('\Box_EventManager');
+    $eventMock = Mockery::mock('\FOSSBilling\Event\Manager');
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
     $logStub = $this->createStub(FOSSBilling\Logging\Logger::class);

@@ -84,7 +84,7 @@ class Admin implements \FOSSBilling\Container\InjectionAwareInterface
         ];
     }
 
-    public function register(\Box_App &$app): void
+    public function register(\FOSSBilling\Http\App &$app): void
     {
         $app->get('/invoice', 'get_index', [], static::class);
         $app->get('/invoice/subscriptions', 'get_subscriptions', [], static::class);
@@ -100,14 +100,14 @@ class Admin implements \FOSSBilling\Container\InjectionAwareInterface
         $app->get('/invoice/pdf/:hash', 'get_pdf', ['hash' => '[a-z0-9]+'], static::class);
     }
 
-    public function get_taxes(\Box_App $app): string
+    public function get_taxes(\FOSSBilling\Http\App $app): string
     {
         $this->di['is_admin_logged'];
 
         return $app->render('mod_invoice_tax');
     }
 
-    public function get_tax(\Box_App $app, $id): string
+    public function get_tax(\FOSSBilling\Http\App $app, $id): string
     {
         $api = $this->di['api_admin'];
         $tax = $api->invoice_tax_get(['id' => $id]);
@@ -115,14 +115,14 @@ class Admin implements \FOSSBilling\Container\InjectionAwareInterface
         return $app->render('mod_invoice_taxupdate', ['tax' => $tax]);
     }
 
-    public function get_index(\Box_App $app): string
+    public function get_index(\FOSSBilling\Http\App $app): string
     {
         $this->di['is_admin_logged'];
 
         return $app->render('mod_invoice_index');
     }
 
-    public function get_invoice(\Box_App $app, $id): string
+    public function get_invoice(\FOSSBilling\Http\App $app, $id): string
     {
         $api = $this->di['api_admin'];
         $invoice = $api->invoice_get(['id' => $id]);
@@ -130,7 +130,7 @@ class Admin implements \FOSSBilling\Container\InjectionAwareInterface
         return $app->render('mod_invoice_invoice', ['invoice' => $invoice]);
     }
 
-    public function get_transaction(\Box_App $app, $id): string
+    public function get_transaction(\FOSSBilling\Http\App $app, $id): string
     {
         $api = $this->di['api_admin'];
         $tx = $api->invoice_transaction_get(['id' => $id]);
@@ -138,28 +138,28 @@ class Admin implements \FOSSBilling\Container\InjectionAwareInterface
         return $app->render('mod_invoice_transaction', ['transaction' => $tx]);
     }
 
-    public function get_transactions(\Box_App $app): string
+    public function get_transactions(\FOSSBilling\Http\App $app): string
     {
         $this->di['is_admin_logged'];
 
         return $app->render('mod_invoice_transactions');
     }
 
-    public function get_failed_items(\Box_App $app): string
+    public function get_failed_items(\FOSSBilling\Http\App $app): string
     {
         $this->di['is_admin_logged'];
 
         return $app->render('mod_invoice_failed_items');
     }
 
-    public function get_subscriptions(\Box_App $app): string
+    public function get_subscriptions(\FOSSBilling\Http\App $app): string
     {
         $this->di['is_admin_logged'];
 
         return $app->render('mod_invoice_subscriptions');
     }
 
-    public function get_subscription(\Box_App $app, $id): string
+    public function get_subscription(\FOSSBilling\Http\App $app, $id): string
     {
         $api = $this->di['api_admin'];
         $tx = $api->invoice_subscription_get(['id' => $id]);
@@ -167,14 +167,14 @@ class Admin implements \FOSSBilling\Container\InjectionAwareInterface
         return $app->render('mod_invoice_subscription', ['subscription' => $tx]);
     }
 
-    public function get_gateways(\Box_App $app): string
+    public function get_gateways(\FOSSBilling\Http\App $app): string
     {
         $this->di['is_admin_logged'];
 
         return $app->render('mod_invoice_gateways');
     }
 
-    public function get_gateway(\Box_App $app, $id): string
+    public function get_gateway(\FOSSBilling\Http\App $app, $id): string
     {
         $api = $this->di['api_admin'];
         $gateway = $api->invoice_gateway_get(['id' => $id]);
@@ -182,7 +182,7 @@ class Admin implements \FOSSBilling\Container\InjectionAwareInterface
         return $app->render('mod_invoice_gateway', ['gateway' => $gateway]);
     }
 
-    public function get_pdf(\Box_App $app, $hash): Response
+    public function get_pdf(\FOSSBilling\Http\App $app, $hash): Response
     {
         $api = $this->di['api_guest'];
         $data = [

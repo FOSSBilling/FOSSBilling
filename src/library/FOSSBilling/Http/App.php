@@ -2,36 +2,35 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2025 FOSSBilling
+ * Copyright 2022-2026 FOSSBilling
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
+namespace FOSSBilling\Http;
+
 use DebugBar\DataCollector\TimeDataCollector;
 use DebugBar\StandardDebugBar;
 use FOSSBilling\Container\InjectionAwareInterface;
-use FOSSBilling\Http\RequestFactory;
-use FOSSBilling\Http\ResponseFactory;
-use FOSSBilling\Http\RouteDefinition;
-use FOSSBilling\Http\RouteMatcher;
 use FOSSBilling\Security\AuthenticationRequiredException;
 use FOSSBilling\Security\EmailValidationRequiredException;
 use FOSSBilling\System\Config;
+use Pimple\Container;
 use Symfony\Component\HttpFoundation\IpUtils;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class Box_App
+class App
 {
     /** @var RouteDefinition[] */
     protected array $routeDefinitions = [];
     /** @var RouteDefinition[] */
     protected array $sharedRouteDefinitions = [];
-    protected ArrayObject $options;
-    protected ?Pimple\Container $di = null;
+    protected \ArrayObject $options;
+    protected ?Container $di = null;
     protected string $ext = 'html.twig';
     protected string $mod = 'index';
     protected string $url = '/';
@@ -44,7 +43,7 @@ class Box_App
 
     public function __construct(array|object $options = [], ?StandardDebugBar $debugBar = null)
     {
-        $this->options = new ArrayObject($options);
+        $this->options = new \ArrayObject($options);
 
         if (!$debugBar) {
             $this->debugBar = new StandardDebugBar();
@@ -53,7 +52,7 @@ class Box_App
         }
     }
 
-    public function setDi(Pimple\Container $di): void
+    public function setDi(Container $di): void
     {
         $this->di = $di;
         $this->request = $di['request'];
@@ -102,7 +101,7 @@ class Box_App
         return null;
     }
 
-    public function show404(Exception $e): Response
+    public function show404(\Exception $e): Response
     {
         $this->di['logger']->withChannel('routing')->info($e->getMessage());
 
@@ -159,7 +158,7 @@ class Box_App
         return $this->responseFactory()->html($this->render($fileName, $variableArray), $statusCode, $headers);
     }
 
-    public function errorResponse(Exception $e, ?int $statusCode = null, array $headers = []): Response
+    public function errorResponse(\Exception $e, ?int $statusCode = null, array $headers = []): Response
     {
         return $this->responseFactory()->error($this->render('error', ['exception' => $e]), $e, $statusCode, $headers);
     }
@@ -231,7 +230,7 @@ class Box_App
 
         $timeCollector->startMeasure('executeShared', 'Reflecting module controller (shared mapping)');
         $class = $this->createSharedController($classname);
-        $reflection = new ReflectionMethod($class::class, $methodName);
+        $reflection = new \ReflectionMethod($class::class, $methodName);
         $args = $this->buildControllerArguments($reflection, $params, true);
         $timeCollector->stopMeasure('executeShared');
 
@@ -255,7 +254,7 @@ class Box_App
 
         $timeCollector->startMeasure('execute', 'Reflecting module controller');
 
-        $reflection = new ReflectionMethod(static::class, $methodName);
+        $reflection = new \ReflectionMethod(static::class, $methodName);
         $args = $this->buildControllerArguments($reflection, $params);
 
         $timeCollector->stopMeasure('execute');
@@ -263,7 +262,7 @@ class Box_App
         return $reflection->invokeArgs($this, $args);
     }
 
-    private function buildControllerArguments(ReflectionMethod $reflection, array $params, bool $includeApp = false): array
+    private function buildControllerArguments(\ReflectionMethod $reflection, array $params, bool $includeApp = false): array
     {
         $args = $includeApp ? [$this] : [];
 
@@ -391,7 +390,7 @@ class Box_App
 
         try {
             return $allowedIPs !== [] && IpUtils::checkIp($visitorIP, $allowedIPs);
-        } catch (InvalidArgumentException) {
+        } catch (\InvalidArgumentException) {
             return false;
         }
     }
@@ -419,8 +418,8 @@ class Box_App
             // Check the allowlists
             if ($this->checkAdminPrefix() && $this->checkAllowedURLs() && $this->checkAllowedIPs()) {
                 if ($this->mod == 'api') {
-                    $exc = new FOSSBilling\Exception\InformationException('The system is undergoing maintenance. Please try again later', [], 503);
-                    $apiController = new Box\Mod\Api\Controller\Client();
+                    $exc = new \FOSSBilling\Exception\InformationException('The system is undergoing maintenance. Please try again later', [], 503);
+                    $apiController = new \Box\Mod\Api\Controller\Client();
                     $apiController->setDi($this->di);
 
                     return $apiController->renderJson(null, $exc);
@@ -448,7 +447,7 @@ class Box_App
         }
         $this->stopMeasureIfStarted($timeCollector, 'mapping');
 
-        $e = new FOSSBilling\Exception\InformationException('Page :url not found', [':url' => $this->url], 404);
+        $e = new \FOSSBilling\Exception\InformationException('Page :url not found', [':url' => $this->url], 404);
 
         return $this->show404($e);
     }

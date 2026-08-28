@@ -124,7 +124,7 @@ test('updatePassword invalidates existing sessions', function (): void {
     $passwordResetRepository = Mockery::mock(Box\Mod\Staff\Repository\AdminPasswordResetRepository::class);
     $passwordResetRepository->shouldReceive('findOneByHash')->once()->with('hashedString')->andReturn($passwordReset);
 
-    $eventMock = Mockery::mock('\Box_EventManager');
+    $eventMock = Mockery::mock('\FOSSBilling\Event\Manager');
     $eventMock->shouldReceive('fire')->times(2);
 
     $passwordMock = Mockery::mock(FOSSBilling\Security\PasswordManager::class);

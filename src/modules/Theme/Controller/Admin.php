@@ -27,7 +27,7 @@ class Admin implements \FOSSBilling\Container\InjectionAwareInterface
         return $this->di;
     }
 
-    public function register(\Box_App &$app): void
+    public function register(\FOSSBilling\Http\App &$app): void
     {
         $app->get('/theme/:theme', 'get_theme', ['theme' => '[a-z0-9-_]+'], static::class);
         $app->post('/theme/:theme', 'save_theme_settings', ['theme' => '[a-z0-9-_]+'], static::class);
@@ -36,7 +36,7 @@ class Admin implements \FOSSBilling\Container\InjectionAwareInterface
     /**
      * Save theme settings.
      */
-    public function save_theme_settings(\Box_App $app, $theme): Response
+    public function save_theme_settings(\FOSSBilling\Http\App $app, $theme): Response
     {
         $body = $app->getRequest()->request->all();
         $this->di['events_manager']->fire(['event' => 'onBeforeThemeSettingsSave', 'params' => $body]);
@@ -85,7 +85,7 @@ class Admin implements \FOSSBilling\Container\InjectionAwareInterface
         return $app->redirect($red_url);
     }
 
-    public function get_theme(\Box_App $app, $theme): string
+    public function get_theme(\FOSSBilling\Http\App $app, $theme): string
     {
         $this->di['is_admin_logged'];
 

@@ -31,7 +31,7 @@ test('gets admin identity array', function (): void {
 });
 
 test('updates admin', function (): void {
-    $emMock = Mockery::mock('\Box_EventManager');
+    $emMock = Mockery::mock('\FOSSBilling\Event\Manager');
     $emMock->shouldReceive('fire')
         ->atLeast()->once()
         ->andReturn(true);
@@ -55,7 +55,7 @@ test('updates admin', function (): void {
 });
 
 test('generates new api key', function (): void {
-    $emMock = Mockery::mock('\Box_EventManager');
+    $emMock = Mockery::mock('\FOSSBilling\Event\Manager');
     $emMock->shouldReceive('fire')
         ->atLeast()->once()
         ->andReturn(true);
@@ -75,7 +75,7 @@ test('generates new api key', function (): void {
 
 test('changes admin password', function (): void {
     $password = 'new_pass';
-    $emMock = Mockery::mock('\Box_EventManager');
+    $emMock = Mockery::mock('\FOSSBilling\Event\Manager');
     $emMock->shouldReceive('fire')
         ->atLeast()->once()
         ->andReturn(true);
@@ -99,7 +99,7 @@ test('changes admin password', function (): void {
 });
 
 test('updates client', function (): void {
-    $emMock = Mockery::mock('\Box_EventManager');
+    $emMock = Mockery::mock('\FOSSBilling\Event\Manager');
     $emMock->shouldReceive('fire')
         ->atLeast()->once()
         ->andReturn(true);
@@ -174,7 +174,7 @@ test('updates client', function (): void {
 });
 
 test('throws exception when email change is not allowed', function (): void {
-    $emMock = Mockery::mock('\Box_EventManager');
+    $emMock = Mockery::mock('\FOSSBilling\Event\Manager');
     $emMock->shouldReceive('fire')
         ->atLeast()->once()
         ->andReturn(true);
@@ -209,7 +209,7 @@ test('throws exception when email change is not allowed', function (): void {
 });
 
 test('throws exception when email already registered', function (): void {
-    $emMock = Mockery::mock('\Box_EventManager');
+    $emMock = Mockery::mock('\FOSSBilling\Event\Manager');
     $emMock->shouldReceive('fire')
         ->atLeast()->once()
         ->andReturn(true);
@@ -257,7 +257,7 @@ test('resets api key', function (): void {
 });
 
 test('changes client password', function (): void {
-    $emMock = Mockery::mock('\Box_EventManager');
+    $emMock = Mockery::mock('\FOSSBilling\Event\Manager');
     $emMock->shouldReceive('fire')
         ->atLeast()->once()
         ->andReturn(true);

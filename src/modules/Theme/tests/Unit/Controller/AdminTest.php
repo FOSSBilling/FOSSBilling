@@ -63,7 +63,7 @@ test('getDi returns dependency injection container', function (): void {
 
 test('register configures routes', function (): void {
     $controller = new Box\Mod\Theme\Controller\Admin();
-    $boxAppMock = Mockery::mock('\Box_App');
+    $boxAppMock = Mockery::mock('\FOSSBilling\Http\App');
     $boxAppMock->shouldReceive('get')
         ->atLeast()
         ->once();
@@ -78,7 +78,7 @@ test('getTheme renders theme preset', function (): void {
     $controller = new Box\Mod\Theme\Controller\Admin();
     $di = container();
 
-    $boxAppMock = Mockery::mock('\Box_App');
+    $boxAppMock = Mockery::mock('\FOSSBilling\Http\App');
     $boxAppMock->shouldReceive('render')
         ->atLeast()
         ->once()
@@ -188,7 +188,7 @@ test('save theme settings reads body from request and strips preset control keys
         'save-current-setting-preset' => 'My Preset',
     ]);
 
-    $boxAppMock = Mockery::mock('\Box_App');
+    $boxAppMock = Mockery::mock('\FOSSBilling\Http\App');
     $boxAppMock->shouldReceive('getRequest')->once()->andReturn($request);
     $boxAppMock->shouldReceive('redirect')
         ->once()

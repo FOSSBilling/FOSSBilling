@@ -637,7 +637,7 @@ test('activateExistingExtension activates existing extension', function (): void
     $em->shouldReceive('persist')->atLeast()->once();
     $em->shouldReceive('flush')->atLeast()->once();
 
-    $eventMock = Mockery::mock(Box_EventManager::class);
+    $eventMock = Mockery::mock(FOSSBilling\Event\Manager::class);
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
     $di = container();
@@ -672,7 +672,7 @@ test('activateExistingExtension throws exception on activation failure', functio
         ->once()
         ->andReturn($model);
 
-    $eventMock = Mockery::mock(Box_EventManager::class);
+    $eventMock = Mockery::mock(FOSSBilling\Event\Manager::class);
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
     $em = extensionBuildEm($extensionRepository);
@@ -777,7 +777,7 @@ test('setConfig sets extension config', function (): void {
     $em->shouldReceive('persist')->atLeast()->once();
     $em->shouldReceive('flush')->atLeast()->once();
 
-    $eventMock = Mockery::mock(Box_EventManager::class);
+    $eventMock = Mockery::mock(FOSSBilling\Event\Manager::class);
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
     $di = container();

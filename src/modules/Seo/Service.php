@@ -140,7 +140,7 @@ class Service implements InjectionAwareInterface
         return $details;
     }
 
-    public static function onBeforeAdminCronRun(\Box_Event $event): bool
+    public static function onBeforeAdminCronRun(\FOSSBilling\Event\Event $event): bool
     {
         $di = $event->getDi();
         $extensionService = $di['mod_service']('extension');

@@ -18,7 +18,7 @@ use function Tests\Helpers\container;
 
 test('register configures routes', function (): void {
     $controller = new Admin();
-    $boxAppMock = Mockery::mock('\Box_App');
+    $boxAppMock = Mockery::mock('\FOSSBilling\Http\App');
     $boxAppMock->shouldReceive('get')->atLeast()->once();
 
     $controller->register($boxAppMock);
@@ -35,7 +35,7 @@ test('get login redirects to default url when r parameter is absent', function (
     $controller->setDi($di);
 
     $capturedUrl = null;
-    $boxAppMock = Mockery::mock('\Box_App');
+    $boxAppMock = Mockery::mock('\FOSSBilling\Http\App');
     $boxAppMock->shouldReceive('getRequest')->once()->andReturn(Request::create('/client/login/5'));
     $boxAppMock->shouldReceive('redirectUrl')
         ->once()
@@ -63,7 +63,7 @@ test('get login redirects to r target when r parameter is present', function ():
     $controller->setDi($di);
 
     $capturedUrl = null;
-    $boxAppMock = Mockery::mock('\Box_App');
+    $boxAppMock = Mockery::mock('\FOSSBilling\Http\App');
     $boxAppMock->shouldReceive('getRequest')->once()->andReturn(Request::create('/client/login/5?r=/client/manage/5'));
     $boxAppMock->shouldReceive('redirectUrl')
         ->once()

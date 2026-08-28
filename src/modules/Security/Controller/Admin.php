@@ -62,7 +62,7 @@ class Admin implements \FOSSBilling\Container\InjectionAwareInterface
         ];
     }
 
-    public function register(\Box_App &$app): void
+    public function register(\FOSSBilling\Http\App &$app): void
     {
         $app->get('/security', 'get_index', [], static::class);
         $app->get('/security/', 'get_index', [], static::class);
@@ -70,14 +70,14 @@ class Admin implements \FOSSBilling\Container\InjectionAwareInterface
         $app->get('/security/rate-limits', 'rate_limits', [], static::class);
     }
 
-    public function get_index(\Box_App $app): string
+    public function get_index(\FOSSBilling\Http\App $app): string
     {
         $this->di['is_admin_logged'];
 
         return $app->render('mod_security_index');
     }
 
-    public function ip_lookup(\Box_App $app): string
+    public function ip_lookup(\FOSSBilling\Http\App $app): string
     {
         $this->di['is_admin_logged'];
         $record = [];
@@ -93,7 +93,7 @@ class Admin implements \FOSSBilling\Container\InjectionAwareInterface
         return $app->render('mod_security_iplookup', ['record' => $record]);
     }
 
-    public function rate_limits(\Box_App $app): string
+    public function rate_limits(\FOSSBilling\Http\App $app): string
     {
         $this->di['is_admin_logged'];
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('security', 'view');

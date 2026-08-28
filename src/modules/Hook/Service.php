@@ -91,7 +91,7 @@ class Service implements InjectionAwareInterface
         return $row;
     }
 
-    public static function onAfterAdminActivateExtension(\Box_Event $event): void
+    public static function onAfterAdminActivateExtension(\FOSSBilling\Event\Event $event): void
     {
         $params = $event->getParameters();
         if (!isset($params['id'])) {
@@ -107,7 +107,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public static function onAfterAdminDeactivateExtension(\Box_Event $event): void
+    public static function onAfterAdminDeactivateExtension(\FOSSBilling\Event\Event $event): void
     {
         $di = $event->getDi();
         $params = $event->getParameters();
@@ -190,7 +190,7 @@ class Service implements InjectionAwareInterface
         }
 
         $type = $parameters[0]->getType() instanceof \ReflectionNamedType ? $parameters[0]->getType()->getName() : null;
-        if ($type == 'Box_Event' || $type == "\Box_Event") {
+        if ($type == 'FOSSBilling\Event\Event' || $type == "\FOSSBilling\Event\Event") {
             return true;
         }
 

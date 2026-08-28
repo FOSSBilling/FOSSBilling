@@ -720,7 +720,7 @@ class Service
         return true;
     }
 
-    public static function onBeforeAdminCronRun(\Box_Event $event): void
+    public static function onBeforeAdminCronRun(\FOSSBilling\Event\Event $event): void
     {
         $di = $event->getDi();
         /** @var Reader $geoipReader */

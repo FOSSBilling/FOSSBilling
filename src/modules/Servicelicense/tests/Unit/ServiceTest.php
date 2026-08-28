@@ -227,7 +227,7 @@ test('reset', function (): void {
     $service = new Service();
     $serviceLicenseModel = new ServiceLicense();
 
-    $eventMock = Mockery::mock(Box_EventManager::class);
+    $eventMock = Mockery::mock(FOSSBilling\Event\Manager::class);
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
     $em = Mockery::mock(EntityManagerInterface::class);

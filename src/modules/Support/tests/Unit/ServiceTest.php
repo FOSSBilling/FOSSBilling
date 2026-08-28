@@ -214,7 +214,7 @@ test('handles after client open ticket event', function (): void {
     $di['loggedin_client'] = createEntity(Client::class);
     $serviceMock->setDi($di);
 
-    $eventMock = Mockery::mock('\Box_Event');
+    $eventMock = Mockery::mock('\FOSSBilling\Event\Event');
     $eventMock->shouldReceive('getDi')
         ->atLeast()->once()
         ->andReturn($di);
@@ -261,7 +261,7 @@ test('handles after admin open ticket event', function (): void {
     $di['loggedin_admin'] = \Tests\Helpers\admin();
     $serviceMock->setDi($di);
 
-    $eventMock = Mockery::mock('\Box_Event');
+    $eventMock = Mockery::mock('\FOSSBilling\Event\Event');
     $eventMock->shouldReceive('getDi')
         ->atLeast()->once()
         ->andReturn($di);
@@ -308,7 +308,7 @@ test('handles after admin close ticket event', function (): void {
     $di['loggedin_admin'] = \Tests\Helpers\admin();
     $serviceMock->setDi($di);
 
-    $eventMock = Mockery::mock('\Box_Event');
+    $eventMock = Mockery::mock('\FOSSBilling\Event\Event');
     $eventMock->shouldReceive('getDi')
         ->atLeast()->once()
         ->andReturn($di);
@@ -355,7 +355,7 @@ test('handles after admin reply ticket event', function (): void {
     $di['loggedin_admin'] = \Tests\Helpers\admin();
     $serviceMock->setDi($di);
 
-    $eventMock = Mockery::mock('\Box_Event');
+    $eventMock = Mockery::mock('\FOSSBilling\Event\Event');
     $eventMock->shouldReceive('getDi')
         ->atLeast()->once()
         ->andReturn($di);
@@ -407,7 +407,7 @@ test('handles guest ticket with regular client open event', function (): void {
     };
     $serviceMock->setDi($di);
 
-    $eventMock = Mockery::mock('\Box_Event');
+    $eventMock = Mockery::mock('\FOSSBilling\Event\Event');
     $eventMock->shouldReceive('getDi')
         ->atLeast()->once()
         ->andReturn($di);
@@ -645,7 +645,7 @@ test('closes a ticket', function ($identity): void {
     supportWireKbRepositories($emMock);
     $emMock->shouldReceive('flush')->atLeast()->once();
 
-    $eventMock = Mockery::mock('\Box_EventManager');
+    $eventMock = Mockery::mock('\FOSSBilling\Event\Manager');
     $eventMock->shouldReceive('fire');
 
     $di = container();
@@ -1725,7 +1725,7 @@ test('public close ticket', function (Box\Mod\Staff\Entity\Admin|FOSSBilling\Ide
     supportWireKbRepositories($emMock);
     $emMock->shouldReceive('flush')->atLeast()->once();
 
-    $eventMock = Mockery::mock('\Box_EventManager');
+    $eventMock = Mockery::mock('\FOSSBilling\Event\Manager');
     $eventMock->shouldReceive('fire')
         ->atLeast()->once();
 
@@ -1776,7 +1776,7 @@ test('guest ticket reply', function (): void {
         ->atLeast()->once()
         ->andReturn('127.0.0.1');
 
-    $eventMock = Mockery::mock('\Box_EventManager');
+    $eventMock = Mockery::mock('\FOSSBilling\Event\Manager');
     $eventMock->shouldReceive('fire')
         ->atLeast()->once();
 
@@ -1954,7 +1954,7 @@ test('ticket reply', function (Box\Mod\Staff\Entity\Admin|Client $identity): voi
         });
     $emMock->shouldReceive('flush')->atLeast()->once();
 
-    $eventMock = Mockery::mock('\Box_EventManager');
+    $eventMock = Mockery::mock('\FOSSBilling\Event\Manager');
     $eventMock->shouldReceive('fire')
         ->atLeast()->once();
 
@@ -1994,7 +1994,7 @@ test('ticket create for admin', function (): void {
         });
     $emMock->shouldReceive('flush')->atLeast()->once();
 
-    $eventMock = Mockery::mock('\Box_EventManager');
+    $eventMock = Mockery::mock('\FOSSBilling\Event\Manager');
     $eventMock->shouldReceive('fire')
         ->atLeast()->once();
 
@@ -2045,7 +2045,7 @@ test('ticket create for client', function (): void {
         ->andReturn(supportCannedResponseFixture());
     supportWireKbRepositories($emMock, cannedRepo: $cannedRepoMock);
 
-    $eventMock = Mockery::mock('\Box_EventManager');
+    $eventMock = Mockery::mock('\FOSSBilling\Event\Manager');
     $eventMock->shouldReceive('fire')
         ->atLeast()->once();
 

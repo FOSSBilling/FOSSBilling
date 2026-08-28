@@ -361,7 +361,7 @@ test('handles after admin invoice payment received event', function (): void {
         ->atLeast()->once()
         ->andReturn(null);
 
-    $eventMock = Mockery::mock('\Box_Event');
+    $eventMock = Mockery::mock('\FOSSBilling\Event\Event');
     $eventMock->shouldReceive('getParameters')
         ->atLeast()->once();
 
@@ -410,7 +410,7 @@ test('handles after admin invoice reminder sent event', function (): void {
         ->atLeast()->once()
         ->andReturn(null);
 
-    $eventMock = Mockery::mock('\Box_Event');
+    $eventMock = Mockery::mock('\FOSSBilling\Event\Event');
     $eventMock->shouldReceive('getParameters')
         ->atLeast()->once();
 
@@ -451,7 +451,7 @@ test('handles after admin invoice reminder sent event', function (): void {
 });
 
 test('handles after admin cron run event', function (): void {
-    $eventMock = Mockery::mock('\Box_Event');
+    $eventMock = Mockery::mock('\FOSSBilling\Event\Event');
 
     $remove_after_days = 64;
     $systemServiceMock = Mockery::mock(SystemService::class);
@@ -515,7 +515,7 @@ test('handles event after invoice is due', function (): void {
         ->atLeast()->once()
         ->andReturn(null);
 
-    $eventMock = Mockery::mock('\Box_Event');
+    $eventMock = Mockery::mock('\FOSSBilling\Event\Event');
     $params = ['days_passed' => 5, 'id' => 1];
     $eventMock->shouldReceive('getParameters')
         ->atLeast()->once()
@@ -569,7 +569,7 @@ test('skips overdue invoice reminder when the invoice was already claimed', func
     $serviceMock->shouldReceive('getInvoicePdfAttachment')
         ->never();
 
-    $eventMock = Mockery::mock('\\Box_Event');
+    $eventMock = Mockery::mock('\\FOSSBilling\Event\Event');
     $eventMock->shouldReceive('getParameters')
         ->atLeast()->once()
         ->andReturn(['days_passed' => 5, 'id' => 1]);
@@ -627,7 +627,7 @@ test('releases the claim when sending the overdue invoice email fails', function
         ->atLeast()->once()
         ->andReturn(null);
 
-    $eventMock = Mockery::mock('\Box_Event');
+    $eventMock = Mockery::mock('\FOSSBilling\Event\Event');
     $params = ['days_passed' => 5, 'id' => 1];
     $eventMock->shouldReceive('getParameters')
         ->atLeast()->once()
@@ -691,7 +691,7 @@ test('releases the overdue reminder claim when invoice client data is unavailabl
     $serviceMock->shouldReceive('getInvoicePdfAttachment')
         ->never();
 
-    $eventMock = Mockery::mock('\Box_Event');
+    $eventMock = Mockery::mock('\FOSSBilling\Event\Event');
     $eventMock->shouldReceive('getParameters')
         ->atLeast()->once()
         ->andReturn(['days_passed' => 5, 'id' => 1]);
@@ -752,7 +752,7 @@ test('handles event before invoice is due', function (): void {
         ->once()
         ->andReturnTrue();
 
-    $eventMock = Mockery::mock('\Box_Event');
+    $eventMock = Mockery::mock('\FOSSBilling\Event\Event');
     $eventMock->shouldReceive('getParameters')
         ->atLeast()->once()
         ->andReturn(['days_left' => 7, 'id' => 1]);
@@ -800,7 +800,7 @@ test('releases the claim when sending the before-due invoice reminder fails', fu
         ->once()
         ->andThrow(new Exception('DB write failed'));
 
-    $eventMock = Mockery::mock('\Box_Event');
+    $eventMock = Mockery::mock('\FOSSBilling\Event\Event');
     $eventMock->shouldReceive('getParameters')
         ->atLeast()->once()
         ->andReturn(['days_left' => 7, 'id' => 1]);
@@ -854,7 +854,7 @@ test('skips before due invoice reminder when the invoice was already claimed', f
     $serviceMock->shouldReceive('sendInvoiceReminder')
         ->never();
 
-    $eventMock = Mockery::mock('\Box_Event');
+    $eventMock = Mockery::mock('\FOSSBilling\Event\Event');
     $eventMock->shouldReceive('getParameters')
         ->atLeast()->once()
         ->andReturn(['days_left' => 7, 'id' => 1]);
@@ -896,7 +896,7 @@ test('skips before due invoice reminder when interval does not match', function 
     $serviceMock->shouldReceive('sendInvoiceReminder')
         ->never();
 
-    $eventMock = Mockery::mock('\Box_Event');
+    $eventMock = Mockery::mock('\FOSSBilling\Event\Event');
     $eventMock->shouldReceive('getParameters')
         ->atLeast()->once()
         ->andReturn(['days_left' => 3, 'id' => 1]);
@@ -932,7 +932,7 @@ test('skips before due invoice reminder when intervals are blank', function (): 
     $serviceMock->shouldReceive('sendInvoiceReminder')
         ->never();
 
-    $eventMock = Mockery::mock('\Box_Event');
+    $eventMock = Mockery::mock('\FOSSBilling\Event\Event');
     $eventMock->shouldReceive('getParameters')
         ->atLeast()->once()
         ->andReturn(['days_left' => 7, 'id' => 1]);
@@ -994,7 +994,7 @@ test('marks invoice as paid', function (): void {
         ->atLeast()->once()
         ->andReturn($currencyRepositoryMock);
 
-    $eventManagerMock = Mockery::mock('\Box_EventManager');
+    $eventManagerMock = Mockery::mock('\FOSSBilling\Event\Manager');
     $eventManagerMock->shouldReceive('fire')
         ->atLeast()->once();
 
@@ -1323,7 +1323,7 @@ test('approves an invoice', function (): void {
 
     $invoiceModel = createEntity(Invoice::class);
 
-    $eventManagerMock = Mockery::mock('\Box_EventManager');
+    $eventManagerMock = Mockery::mock('\FOSSBilling\Event\Manager');
     $eventManagerMock->shouldReceive('fire')
         ->atLeast()->once();
 
@@ -1544,7 +1544,7 @@ test('refunds invoice with negative invoice logic', function (): void {
 
     $invoiceItemModel = createEntity(InvoiceItem::class, []);
 
-    $eventManagerMock = Mockery::mock('\Box_EventManager');
+    $eventManagerMock = Mockery::mock('\FOSSBilling\Event\Manager');
     $eventManagerMock->shouldReceive('fire')
         ->atLeast()->once();
 
@@ -1617,7 +1617,7 @@ test('updates an invoice', function (): void {
 
     $invoiceItemModel = createEntity(InvoiceItem::class, []);
 
-    $eventManagerMock = Mockery::mock('\Box_EventManager');
+    $eventManagerMock = Mockery::mock('\FOSSBilling\Event\Manager');
     $eventManagerMock->shouldReceive('fire')
         ->atLeast()->once();
 
@@ -1697,7 +1697,7 @@ test('deletes invoice by admin', function (): void {
 
     $invoiceModel = createEntity(Invoice::class);
 
-    $eventManagerMock = Mockery::mock('\Box_EventManager');
+    $eventManagerMock = Mockery::mock('\FOSSBilling\Event\Manager');
     $eventManagerMock->shouldReceive('fire')
         ->atLeast()->once();
 
@@ -1727,7 +1727,7 @@ test('renews an invoice', function (): void {
         ->once()
         ->andReturn($invoiceModel);
 
-    $eventManagerMock = Mockery::mock('\Box_EventManager');
+    $eventManagerMock = Mockery::mock('\FOSSBilling\Event\Manager');
     $eventManagerMock->shouldReceive('fire')
         ->atLeast()->once();
 
@@ -2218,7 +2218,7 @@ test('sends reminders in batch at most once per day', function (): void {
         ->with(['once_per_day' => true])
         ->andReturnTrue();
 
-    $eventManagerMock = Mockery::mock('\Box_EventManager');
+    $eventManagerMock = Mockery::mock('\FOSSBilling\Event\Manager');
     $eventManagerMock->shouldReceive('fire')
         ->atLeast()->once();
 
@@ -2247,7 +2247,7 @@ test('does not log reminder batch as executed when it is throttled', function ()
         ->once()
         ->andReturnFalse();
 
-    $eventManagerMock = Mockery::mock('\\Box_EventManager');
+    $eventManagerMock = Mockery::mock('\\FOSSBilling\Event\Manager');
     $eventManagerMock->shouldReceive('fire')
         ->once()
         ->with(['event' => 'onBeforeAdminInvoiceSendReminders']);
@@ -2286,7 +2286,7 @@ test('fires due events via the pending reminder fallback when the primary batch 
         ->twice()
         ->andReturn([['id' => 2, 'days_left' => 7]], []);
 
-    $eventManagerMock = Mockery::mock('\\Box_EventManager');
+    $eventManagerMock = Mockery::mock('\\FOSSBilling\Event\Manager');
     $eventManagerMock->shouldReceive('fire')
         ->once()
         ->with(['event' => 'onBeforeAdminInvoiceSendReminders']);
@@ -2332,7 +2332,7 @@ test('guards the primary reminder batch throttle while the fallback still dispat
         ->times(4)
         ->andReturn([['id' => 1, 'days_left' => 7]], [], [], []);
 
-    $eventManagerMock = Mockery::mock('\\Box_EventManager');
+    $eventManagerMock = Mockery::mock('\\FOSSBilling\Event\Manager');
     $eventManagerMock->shouldReceive('fire')
         ->twice()
         ->with(['event' => 'onBeforeAdminInvoiceSendReminders']);
@@ -2378,7 +2378,7 @@ test('invokes due event in batch', function (): void {
         ->atLeast()->once()
         ->andReturn([['id' => 1]]);
 
-    $eventManagerMock = Mockery::mock('\Box_EventManager');
+    $eventManagerMock = Mockery::mock('\FOSSBilling\Event\Manager');
     $eventManagerMock->shouldReceive('fire')
         ->atLeast()->once();
 
@@ -2417,7 +2417,7 @@ test('sends invoice reminder', function (): void {
     $service = new Service();
     $invoiceModel = createEntity(Invoice::class);
 
-    $eventManagerMock = Mockery::mock('\Box_EventManager');
+    $eventManagerMock = Mockery::mock('\FOSSBilling\Event\Manager');
     $eventManagerMock->shouldReceive('fire')
         ->atLeast()->once();
 
@@ -3130,7 +3130,7 @@ test('markAsPaid transitions a deposit invoice to paid status', function (): voi
     $invoiceItemService->shouldReceive('getTotal')
         ->andReturn(30.0);
 
-    $eventsManager = Mockery::mock('\Box_EventManager');
+    $eventsManager = Mockery::mock('\FOSSBilling\Event\Manager');
     $eventsManager->shouldReceive('fire')
         ->atLeast()->once();
 

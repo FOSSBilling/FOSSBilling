@@ -40,21 +40,21 @@ class Admin implements \FOSSBilling\Container\InjectionAwareInterface
         ];
     }
 
-    public function register(\Box_App &$app): void
+    public function register(\FOSSBilling\Http\App &$app): void
     {
         $app->get('/servicehosting', 'get_index', null, static::class);
         $app->get('/servicehosting/plan/:id', 'get_plan', ['id' => '[0-9]+'], static::class);
         $app->get('/servicehosting/server/:id', 'get_server', ['id' => '[0-9]+'], static::class);
     }
 
-    public function get_index(\Box_App $app): string
+    public function get_index(\FOSSBilling\Http\App $app): string
     {
         $this->di['is_admin_logged'];
 
         return $app->render('mod_servicehosting_index');
     }
 
-    public function get_plan(\Box_App $app, $id): string
+    public function get_plan(\FOSSBilling\Http\App $app, $id): string
     {
         $api = $this->di['api_admin'];
         $hp = $api->servicehosting_hp_get(['id' => $id]);
@@ -62,7 +62,7 @@ class Admin implements \FOSSBilling\Container\InjectionAwareInterface
         return $app->render('mod_servicehosting_hp', ['hp' => $hp]);
     }
 
-    public function get_server(\Box_App $app, $id): string
+    public function get_server(\FOSSBilling\Http\App $app, $id): string
     {
         $api = $this->di['api_admin'];
         $server = $api->servicehosting_server_get(['id' => $id]);

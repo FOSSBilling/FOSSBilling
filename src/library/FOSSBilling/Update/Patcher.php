@@ -685,6 +685,7 @@ class Patcher implements InjectionAwareInterface
             113 => 'patch113',
             114 => 'patch114',
             115 => 'patch115',
+            116 => 'patch116',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -2935,6 +2936,23 @@ class Patcher implements InjectionAwareInterface
             Path::join(PATH_LIBRARY, 'FOSSBilling', 'Twig', 'Enum'),
             Path::join(PATH_LIBRARY, 'FOSSBilling', 'Interfaces'),
             Path::join(PATH_LIBRARY, 'FOSSBilling', 'Enums'),
+        ]);
+    }
+
+    private function patch116(): void
+    {
+        $this->executeFileActions([
+            Path::join(PATH_LIBRARY, 'Box', 'App.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Box', 'AppAdmin.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Box', 'AppClient.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Box', 'Authorization.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Box', 'Event.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Box', 'EventDispatcher.php') => 'unlink',
+            Path::join(PATH_LIBRARY, 'Box', 'EventManager.php') => 'unlink',
+        ]);
+
+        $this->removeEmptyDirectories([
+            Path::join(PATH_LIBRARY, 'Box'),
         ]);
     }
 

@@ -28,7 +28,7 @@ class Admin implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function register(\Box_App &$app): void
+    public function register(\FOSSBilling\Http\App &$app): void
     {
         $app->get('', 'get_index', [], static::class);
         $app->get('/', 'get_index', [], static::class);
@@ -36,7 +36,7 @@ class Admin implements InjectionAwareInterface
         $app->get('/index/', 'get_index', [], static::class);
     }
 
-    public function get_index(\Box_App $app): string|Response
+    public function get_index(\FOSSBilling\Http\App $app): string|Response
     {
         if ($this->di['auth']->isAdminLoggedIn()) {
             return $app->render('mod_index_dashboard');

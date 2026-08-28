@@ -181,7 +181,7 @@ class Service implements InjectionAwareInterface
         return $this->di['url']->link('/client/confirm-email/' . $hash);
     }
 
-    public static function onAfterClientSignUp(\Box_Event $event): bool
+    public static function onAfterClientSignUp(\FOSSBilling\Event\Event $event): bool
     {
         $di = $event->getDi();
         $params = $event->getParameters();
@@ -1025,7 +1025,7 @@ class Service implements InjectionAwareInterface
      *
      * @return void
      */
-    public static function onBeforeAdminCronRun(\Box_Event $event): void
+    public static function onBeforeAdminCronRun(\FOSSBilling\Event\Event $event): void
     {
         $di = $event->getDi();
 

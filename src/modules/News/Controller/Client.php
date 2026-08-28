@@ -25,18 +25,18 @@ class Client implements \FOSSBilling\Container\InjectionAwareInterface
         return $this->di;
     }
 
-    public function register(\Box_App &$app): void
+    public function register(\FOSSBilling\Http\App &$app): void
     {
         $app->get('/news', 'get_news', [], static::class);
         $app->get('/news/:slug', 'get_news_item', ['slug' => '[a-z0-9-]+'], static::class);
     }
 
-    public function get_news(\Box_App $app): string
+    public function get_news(\FOSSBilling\Http\App $app): string
     {
         return $app->render('mod_news_index');
     }
 
-    public function get_news_item(\Box_App $app, $slug): string
+    public function get_news_item(\FOSSBilling\Http\App $app, $slug): string
     {
         $post = $this->di['api_guest']->news_get(['slug' => $slug]);
 

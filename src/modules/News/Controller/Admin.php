@@ -40,7 +40,7 @@ class Admin implements \FOSSBilling\Container\InjectionAwareInterface
         ];
     }
 
-    public function register(\Box_App &$app): void
+    public function register(\FOSSBilling\Http\App &$app): void
     {
         $app->get('/news', 'get_index', [], static::class);
         $app->get('/news/', 'get_index', [], static::class);
@@ -49,14 +49,14 @@ class Admin implements \FOSSBilling\Container\InjectionAwareInterface
         $app->get('/news/post/:id', 'get_post', ['id' => '[0-9]+'], static::class);
     }
 
-    public function get_index(\Box_App $app): string
+    public function get_index(\FOSSBilling\Http\App $app): string
     {
         $this->di['is_admin_logged'];
 
         return $app->render('mod_news_index');
     }
 
-    public function get_post(\Box_App $app, $id): string
+    public function get_post(\FOSSBilling\Http\App $app, $id): string
     {
         $api = $this->di['api_admin'];
         $post = $api->news_get(['id' => $id]);

@@ -58,7 +58,7 @@ class Service implements InjectionAwareInterface
         ];
     }
 
-    public static function onBeforeClientSignUp(\Box_Event $event): void
+    public static function onBeforeClientSignUp(\FOSSBilling\Event\Event $event): void
     {
         $di = $event->getDi();
         $antispamService = $di['mod_service']('Antispam');
@@ -68,7 +68,7 @@ class Service implements InjectionAwareInterface
         $antispamService->checkHoneypot($event);
     }
 
-    public static function onBeforeClientOpenTicket(\Box_Event $event): void
+    public static function onBeforeClientOpenTicket(\FOSSBilling\Event\Event $event): void
     {
         if ($event->getParameters()['author_role'] !== 'guest') {
             return;
@@ -81,42 +81,42 @@ class Service implements InjectionAwareInterface
         $antispamService->isTemp($event);
     }
 
-    public static function onBeforeClientProfileUpdate(\Box_Event $event): void
+    public static function onBeforeClientProfileUpdate(\FOSSBilling\Event\Event $event): void
     {
         $di = $event->getDi();
         $antispamService = $di['mod_service']('Antispam');
         $antispamService->isBlockedIp($event);
     }
 
-    public static function onBeforeAdminClientUpdate(\Box_Event $event): void
+    public static function onBeforeAdminClientUpdate(\FOSSBilling\Event\Event $event): void
     {
         $di = $event->getDi();
         $antispamService = $di['mod_service']('Antispam');
         $antispamService->isBlockedIp($event);
     }
 
-    public static function onBeforeClientUpdate(\Box_Event $event): void
+    public static function onBeforeClientUpdate(\FOSSBilling\Event\Event $event): void
     {
         $di = $event->getDi();
         $antispamService = $di['mod_service']('Antispam');
         $antispamService->isBlockedIp($event);
     }
 
-    public static function onBeforeClientLogin(\Box_Event $event): void
+    public static function onBeforeClientLogin(\FOSSBilling\Event\Event $event): void
     {
         $di = $event->getDi();
         $antispamService = $di['mod_service']('Antispam');
         $antispamService->isBlockedIp($event);
     }
 
-    public static function onBeforeAdminLogin(\Box_Event $event): void
+    public static function onBeforeAdminLogin(\FOSSBilling\Event\Event $event): void
     {
         $di = $event->getDi();
         $antispamService = $di['mod_service']('Antispam');
         $antispamService->isBlockedIp($event);
     }
 
-    public function isBlockedIp(\Box_Event $event): void
+    public function isBlockedIp(\FOSSBilling\Event\Event $event): void
     {
         $di = $event->getDi();
         $config = $di['mod_config']('Antispam');
@@ -129,7 +129,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public function isSpam(\Box_Event $event): void
+    public function isSpam(\FOSSBilling\Event\Event $event): void
     {
         $di = $event->getDi();
         $params = $event->getParameters();
@@ -249,7 +249,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public function isTemp(\Box_Event $event): void
+    public function isTemp(\FOSSBilling\Event\Event $event): void
     {
         $di = $event->getDi();
         $config = $di['mod_config']('Antispam');
@@ -264,7 +264,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public function checkHoneypot(\Box_Event $event): void
+    public function checkHoneypot(\FOSSBilling\Event\Event $event): void
     {
         $di = $event->getDi();
         $config = $di['mod_config']('Antispam');

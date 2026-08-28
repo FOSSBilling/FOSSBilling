@@ -44,7 +44,7 @@ test('handles on after admin activate extension', function (): void {
         'id' => 1,
     ];
 
-    $eventMock = Mockery::mock('\Box_Event');
+    $eventMock = Mockery::mock('\FOSSBilling\Event\Event');
     /** @var Mockery\Expectation $expectation1 */
     $expectation1 = $eventMock->shouldReceive('getParameters');
     $expectation1->atLeast()->once();
@@ -77,7 +77,7 @@ test('handles on after admin activate extension', function (): void {
     $expectation5->andReturn($di);
 
     $service->setDi($di);
-    /* @var \Box_Event $eventMock */
+    /* @var \FOSSBilling\Event\Event $eventMock */
     $service->onAfterAdminActivateExtension($eventMock);
     $result = true;
     expect($result)->toBeTrue();
@@ -87,7 +87,7 @@ test('handles on after admin activate extension with missing id', function (): v
     $service = new Box\Mod\Hook\Service();
     $eventParams = [];
 
-    $eventMock = Mockery::mock('\Box_Event');
+    $eventMock = Mockery::mock('\FOSSBilling\Event\Event');
     /** @var Mockery\Expectation $expectation1 */
     $expectation1 = $eventMock->shouldReceive('getParameters');
     $expectation1->atLeast()->once();
@@ -96,7 +96,7 @@ test('handles on after admin activate extension with missing id', function (): v
     $expectation2 = $eventMock->shouldReceive('setReturnValue');
     $expectation2->atLeast()->once();
 
-    /* @var \Box_Event $eventMock */
+    /* @var \FOSSBilling\Event\Event $eventMock */
     $service->onAfterAdminActivateExtension($eventMock);
     $result = false;
     expect($result)->toBeFalse();
@@ -109,7 +109,7 @@ test('handles on after admin deactivate extension', function (): void {
         'id' => 1,
     ];
 
-    $eventMock = Mockery::mock('\Box_Event');
+    $eventMock = Mockery::mock('\FOSSBilling\Event\Event');
     /** @var Mockery\Expectation $expectation1 */
     $expectation1 = $eventMock->shouldReceive('getParameters');
     $expectation1->atLeast()->once();
@@ -132,7 +132,7 @@ test('handles on after admin deactivate extension', function (): void {
     $expectation4->andReturn($di);
 
     $service->setDi($di);
-    /* @var \Box_Event $eventMock */
+    /* @var \FOSSBilling\Event\Event $eventMock */
     $service->onAfterAdminDeactivateExtension($eventMock);
     $result = true;
     expect($result)->toBeTrue();

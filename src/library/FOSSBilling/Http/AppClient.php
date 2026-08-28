@@ -2,17 +2,23 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2025 FOSSBilling
+ * Copyright 2022-2026 FOSSBilling
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
+namespace FOSSBilling\Http;
+
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpFoundation\Response;
+use Twig\Environment;
+use Twig\Error\LoaderError;
+use Twig\Error\RuntimeError;
+use Twig\Error\SyntaxError;
 
-class Box_AppClient extends Box_App
+class AppClient extends App
 {
     protected function init(): void
     {
@@ -73,12 +79,12 @@ class Box_AppClient extends Box_App
             }
 
             return $this->responseFactory()->html($content);
-        } catch (FOSSBilling\Exception\InformationException $e) {
+        } catch (\FOSSBilling\Exception\InformationException $e) {
             // @phpstan-ignore if.alwaysFalse (DEBUG is a runtime constant that may be true during debugging)
             if (DEBUG) {
                 $this->di['logger']->withChannel('routing')->debug($e->getMessage());
             }
-        } catch (Twig\Error\LoaderError|Twig\Error\RuntimeError|Twig\Error\SyntaxError $e) {
+        } catch (LoaderError|RuntimeError|SyntaxError $e) {
             // A real template bug, not a missing page. Surface as a 500 so the
             // next regression of this shape (issue #3818) cannot hide behind a
             // generic 404.
@@ -91,11 +97,11 @@ class Box_AppClient extends Box_App
                 ]
             );
 
-            $internal = new FOSSBilling\Exception\InformationException('The requested page could not be rendered.', [], 500);
+            $internal = new \FOSSBilling\Exception\InformationException('The requested page could not be rendered.', [], 500);
 
             return $this->errorResponse($internal);
         }
-        $e = new FOSSBilling\Exception\InformationException('Page :url not found', [':url' => $this->url], 404);
+        $e = new \FOSSBilling\Exception\InformationException('Page :url not found', [':url' => $this->url], 404);
 
         $this->di['logger']->withChannel('routing')->info($e->getMessage());
 
@@ -105,15 +111,15 @@ class Box_AppClient extends Box_App
     /**
      * @param string $fileName
      */
-    #[Override]
+    #[\Override]
     public function render($fileName, $variableArray = [], $ext = 'html.twig'): string
     {
         try {
             $template = $this->getTwig()->load(Path::changeExtension($fileName, $ext));
-        } catch (Twig\Error\LoaderError $e) {
+        } catch (LoaderError $e) {
             $this->di['logger']->withChannel('routing')->info($e->getMessage());
 
-            throw new FOSSBilling\Exception\InformationException('Page not found', null, 404);
+            throw new \FOSSBilling\Exception\InformationException('Page not found', null, 404);
         }
 
         return $template->render($variableArray);
@@ -122,7 +128,7 @@ class Box_AppClient extends Box_App
     /**
      * Get Twig environment for client area.
      */
-    protected function getTwig(): Twig\Environment
+    protected function getTwig(): Environment
     {
         $twigFactory = $this->di['twig_factory'];
 

@@ -262,7 +262,7 @@ class Module implements InjectionAwareInterface
         return $this->module;
     }
 
-    public function registerClientRoutes(\Box_App &$app): bool
+    public function registerClientRoutes(Http\App &$app): bool
     {
         if ($this->hasClientController()) {
             $cc = $this->getClientController();

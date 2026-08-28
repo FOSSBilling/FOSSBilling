@@ -21,19 +21,19 @@ class BoxAppRouteDispatchSharedController implements FOSSBilling\Container\Injec
         $this->di = $di;
     }
 
-    public function priority(Box_App $app, string $id): string
+    public function priority(FOSSBilling\Http\App $app, string $id): string
     {
         return 'shared:' . $id;
     }
 
-    public function injected(Box_App $app): string
+    public function injected(FOSSBilling\Http\App $app): string
     {
         return $this->di instanceof Pimple\Container && $this->di['shared_marker'] === 'available'
             ? 'di:available'
             : 'di:missing';
     }
 
-    public function collectDebugbar(Box_App $app): string
+    public function collectDebugbar(FOSSBilling\Http\App $app): string
     {
         $app->getDebugBar()->getData();
 
@@ -41,7 +41,7 @@ class BoxAppRouteDispatchSharedController implements FOSSBilling\Container\Injec
     }
 }
 
-class BoxAppRouteDispatchApp extends Box_App
+class BoxAppRouteDispatchApp extends FOSSBilling\Http\App
 {
     public function __construct(private readonly string $routeMode)
     {
@@ -123,7 +123,7 @@ class BoxAppRouteDispatchApp extends Box_App
     }
 }
 
-class BoxAppMaintenanceCheckApp extends Box_App
+class BoxAppMaintenanceCheckApp extends FOSSBilling\Http\App
 {
     public function adminPrefixAllowed(): bool
     {

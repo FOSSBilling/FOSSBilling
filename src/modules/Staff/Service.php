@@ -265,7 +265,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public static function onAfterClientOrderCreate(\Box_Event $event): void
+    public static function onAfterClientOrderCreate(\FOSSBilling\Event\Event $event): void
     {
         $di = $event->getDi();
         $params = $event->getParameters();
@@ -289,7 +289,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public static function onAfterAdminOrderSuspend(\Box_Event $event): void
+    public static function onAfterAdminOrderSuspend(\FOSSBilling\Event\Event $event): void
     {
         $di = $event->getDi();
         $params = $event->getParameters();
@@ -314,7 +314,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public static function onAfterClientOpenTicket(\Box_Event $event): void
+    public static function onAfterClientOpenTicket(\FOSSBilling\Event\Event $event): void
     {
         $di = $event->getDi();
         $params = $event->getParameters();
@@ -347,7 +347,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public static function onAfterClientReplyTicket(\Box_Event $event): void
+    public static function onAfterClientReplyTicket(\FOSSBilling\Event\Event $event): void
     {
         $params = $event->getParameters();
         $di = $event->getDi();
@@ -369,7 +369,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public static function onAfterClientCloseTicket(\Box_Event $event): void
+    public static function onAfterClientCloseTicket(\FOSSBilling\Event\Event $event): void
     {
         $params = $event->getParameters();
         $di = $event->getDi();
@@ -410,7 +410,7 @@ class Service implements InjectionAwareInterface
         return $ticket;
     }
 
-    public static function onAfterClientSignUp(\Box_Event $event): bool
+    public static function onAfterClientSignUp(\FOSSBilling\Event\Event $event): bool
     {
         $params = $event->getParameters();
         $di = $event->getDi();

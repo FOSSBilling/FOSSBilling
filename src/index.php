@@ -67,11 +67,11 @@ if (strncasecmp($url, ADMIN_PREFIX, strlen(ADMIN_PREFIX)) === 0) {
     $urlWithoutQueryString = parse_url($url, PHP_URL_PATH) ?? $url;
     $adminRelativeUrl = str_replace(ADMIN_PREFIX, '', (string) $urlWithoutQueryString);
     $appUrl = $adminRelativeUrl;
-    $app = new Box_AppAdmin([], $debugBar);
+    $app = new FOSSBilling\Http\AppAdmin([], $debugBar);
 } else {
     define('ADMIN_AREA', false);
     $appUrl = $url;
-    $app = new Box_AppClient([], $debugBar);
+    $app = new FOSSBilling\Http\AppClient([], $debugBar);
 }
 
 $app->setUrl($appUrl);

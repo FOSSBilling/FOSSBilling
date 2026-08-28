@@ -149,7 +149,7 @@ test('login returns admin details on successful login', function (): void {
 
     $admin = \Tests\Helpers\admin(['id' => 1, 'email' => $email, 'name' => 'Admin', 'pass' => 'hashedPassword']);
 
-    $emMock = Mockery::mock('\Box_EventManager');
+    $emMock = Mockery::mock('\FOSSBilling\Event\Manager');
     $emMock->shouldReceive('fire')->atLeast()->once()
         ->andReturn(true);
 
@@ -197,7 +197,7 @@ test('login retries connecting event listeners once before firing the login even
 
     $admin = \Tests\Helpers\admin(['id' => 1, 'email' => $email, 'name' => 'Admin', 'pass' => 'hashedPassword']);
 
-    $emMock = Mockery::mock('\Box_EventManager');
+    $emMock = Mockery::mock('\FOSSBilling\Event\Manager');
     $emMock->shouldReceive('fire')->atLeast()->once()
         ->andReturn(true);
 
@@ -249,7 +249,7 @@ test('login still succeeds, and logs a warning, when both attempts to connect ev
 
     $admin = \Tests\Helpers\admin(['id' => 1, 'email' => $email, 'name' => 'Admin', 'pass' => 'hashedPassword']);
 
-    $emMock = Mockery::mock('\Box_EventManager');
+    $emMock = Mockery::mock('\FOSSBilling\Event\Manager');
     $emMock->shouldReceive('fire')->atLeast()->once()
         ->andReturn(true);
 
@@ -307,7 +307,7 @@ test('login throws exception when credentials are invalid', function (): void {
     $password = 'pass';
     $ip = '127.0.0.1';
 
-    $emMock = Mockery::mock('\Box_EventManager');
+    $emMock = Mockery::mock('\FOSSBilling\Event\Manager');
     $emMock->shouldReceive('fire')->atLeast()->once()
         ->andReturn(true);
 
@@ -358,7 +358,7 @@ test('hasPermission falls back to cron admin only within cron context', function
         ->once()
         ->andReturn($cronAdmin);
 
-    $auth = Mockery::mock(Box_Authorization::class);
+    $auth = Mockery::mock(FOSSBilling\Security\Authorization::class);
     $auth->shouldReceive('isAdminLoggedIn')
         ->once()
         ->andReturn(false);
@@ -375,7 +375,7 @@ test('hasPermission stays fail-closed outside cron context when no admin is logg
     $service = Mockery::mock(Service::class)->makePartial();
     $service->shouldNotReceive('getCronAdmin');
 
-    $auth = Mockery::mock(Box_Authorization::class);
+    $auth = Mockery::mock(FOSSBilling\Security\Authorization::class);
     $auth->shouldReceive('isAdminLoggedIn')
         ->andReturn(false);
 
@@ -459,7 +459,7 @@ test('onAfterAdminOrderSuspend sends a staff notification', function (): void {
         'email' => $emailService,
     });
 
-    $event = Mockery::mock(Box_Event::class);
+    $event = Mockery::mock(FOSSBilling\Event\Event::class);
     $event->shouldReceive('getDi')->once()->andReturn($di);
     $event->shouldReceive('getParameters')->once()->andReturn(['id' => 42]);
 
@@ -467,7 +467,7 @@ test('onAfterAdminOrderSuspend sends a staff notification', function (): void {
 });
 
 test('onAfterClientReplyTicket sends email notification', function (): void {
-    $eventMock = Mockery::mock('\Box_Event');
+    $eventMock = Mockery::mock('\FOSSBilling\Event\Event');
     $ticketId = 42;
     $clientId = 7;
     $ticketModel = (new Box\Mod\Support\Entity\SupportTicket())
@@ -534,7 +534,7 @@ test('onAfterClientReplyTicket sends email notification', function (): void {
 });
 
 test('onAfterClientReplyTicket still sends when its client no longer exists', function (): void {
-    $eventMock = Mockery::mock('\\Box_Event');
+    $eventMock = Mockery::mock('\\FOSSBilling\Event\Event');
     $ticketId = 42;
     $clientId = 7;
     $ticketModel = (new Box\Mod\Support\Entity\SupportTicket())
@@ -579,7 +579,7 @@ test('onAfterClientReplyTicket still sends when its client no longer exists', fu
 });
 
 test('onAfterClientReplyTicket handles email exception', function (): void {
-    $eventMock = Mockery::mock('\Box_Event');
+    $eventMock = Mockery::mock('\FOSSBilling\Event\Event');
 
     $supportServiceMock = Mockery::mock(Box\Mod\Support\Service::class);
     $supportServiceMock->shouldReceive('getTicketById')->atLeast()->once()
@@ -613,7 +613,7 @@ test('onAfterClientReplyTicket handles email exception', function (): void {
 });
 
 test('onAfterClientCloseTicket sends email notification', function (): void {
-    $eventMock = Mockery::mock('\Box_Event');
+    $eventMock = Mockery::mock('\FOSSBilling\Event\Event');
 
     $supportServiceMock = Mockery::mock(Box\Mod\Support\Service::class);
     $supportServiceMock->shouldReceive('getTicketById')->atLeast()->once()
@@ -647,7 +647,7 @@ test('onAfterClientCloseTicket sends email notification', function (): void {
 });
 
 test('onAfterClientCloseTicket handles email exception', function (): void {
-    $eventMock = Mockery::mock('\Box_Event');
+    $eventMock = Mockery::mock('\FOSSBilling\Event\Event');
 
     $supportServiceMock = Mockery::mock(Box\Mod\Support\Service::class);
     $supportServiceMock->shouldReceive('getTicketById')->atLeast()->once()
@@ -681,7 +681,7 @@ test('onAfterClientCloseTicket handles email exception', function (): void {
 });
 
 test('onAfterClientOpenTicket sends guest email notification', function (): void {
-    $eventMock = Mockery::mock('\Box_Event');
+    $eventMock = Mockery::mock('\FOSSBilling\Event\Event');
 
     $supportServiceMock = Mockery::mock(Box\Mod\Support\Service::class);
     $supportServiceMock->shouldReceive('getTicketById')->atLeast()->once()
@@ -715,7 +715,7 @@ test('onAfterClientOpenTicket sends guest email notification', function (): void
 });
 
 test('onAfterClientOpenTicket handles guest email exception', function (): void {
-    $eventMock = Mockery::mock('\Box_Event');
+    $eventMock = Mockery::mock('\FOSSBilling\Event\Event');
 
     $supportServiceMock = Mockery::mock(Box\Mod\Support\Service::class);
     $supportServiceMock->shouldReceive('getTicketById')->atLeast()->once()
@@ -749,7 +749,7 @@ test('onAfterClientOpenTicket handles guest email exception', function (): void 
 });
 
 test('onAfterClientReplyTicket sends guest email notification', function (): void {
-    $eventMock = Mockery::mock('\Box_Event');
+    $eventMock = Mockery::mock('\FOSSBilling\Event\Event');
 
     $supportServiceMock = Mockery::mock(Box\Mod\Support\Service::class);
     $supportServiceMock->shouldReceive('getTicketById')->atLeast()->once()
@@ -783,7 +783,7 @@ test('onAfterClientReplyTicket sends guest email notification', function (): voi
 });
 
 test('onAfterClientReplyTicket handles guest email exception', function (): void {
-    $eventMock = Mockery::mock('\Box_Event');
+    $eventMock = Mockery::mock('\FOSSBilling\Event\Event');
 
     $supportServiceMock = Mockery::mock(Box\Mod\Support\Service::class);
     $supportServiceMock->shouldReceive('getTicketById')->atLeast()->once()
@@ -817,7 +817,7 @@ test('onAfterClientReplyTicket handles guest email exception', function (): void
 });
 
 test('onAfterClientSignUp sends sanitized client details in the email variables', function (): void {
-    $eventMock = Mockery::mock('\Box_Event');
+    $eventMock = Mockery::mock('\FOSSBilling\Event\Event');
     $clientId = 42;
     $client = createEntity(Box\Mod\Client\Entity\Client::class);
     $clientDetails = [
@@ -865,7 +865,7 @@ test('onAfterClientSignUp sends sanitized client details in the email variables'
 });
 
 test('onAfterClientSignUp handles email exception', function (): void {
-    $eventMock = Mockery::mock('\Box_Event');
+    $eventMock = Mockery::mock('\FOSSBilling\Event\Event');
     $clientId = 42;
     $client = createEntity(Box\Mod\Client\Entity\Client::class);
 
@@ -903,7 +903,7 @@ test('onAfterClientSignUp handles email exception', function (): void {
 });
 
 test('onAfterClientCloseTicket handles guest email exception', function (): void {
-    $eventMock = Mockery::mock('\Box_Event');
+    $eventMock = Mockery::mock('\FOSSBilling\Event\Event');
 
     $supportServiceMock = Mockery::mock(Box\Mod\Support\Service::class);
     $supportServiceMock->shouldReceive('getTicketById')->atLeast()->once()
@@ -984,7 +984,7 @@ test('onAfterClientOpenTicket sends mod_staff_ticket_open email', function (): v
     $admin = \Tests\Helpers\admin();
     $di['loggedin_admin'] = $admin;
 
-    $eventMock = Mockery::mock('\Box_Event');
+    $eventMock = Mockery::mock('\FOSSBilling\Event\Event');
     $eventMock->shouldReceive('getDi')->atLeast()->once()
         ->andReturn($di);
 
@@ -1045,7 +1045,7 @@ test('onAfterClientOpenTicket sends mod_support_helpdesk_ticket_open email', fun
     $admin = \Tests\Helpers\admin();
     $di['loggedin_admin'] = $admin;
 
-    $eventMock = Mockery::mock('\Box_Event');
+    $eventMock = Mockery::mock('\FOSSBilling\Event\Event');
     $eventMock->shouldReceive('getDi')->atLeast()->once()
         ->andReturn($di);
 
@@ -1252,7 +1252,7 @@ test('update updates admin details', function (): void {
 
     $adminModel = \Tests\Helpers\admin();
 
-    $eventsMock = Mockery::mock('\Box_EventManager');
+    $eventsMock = Mockery::mock('\FOSSBilling\Event\Manager');
     $eventsMock->shouldReceive('fire')->atLeast()->once();
 
     $logStub = $this->createStub(FOSSBilling\Logging\Logger::class);
@@ -1282,7 +1282,7 @@ test('update rejects deactivating last active super administrator', function ():
     $groupMemberRepository->shouldReceive('adminBelongsToSystemGroup')->once()->with(3, AdminGroup::SYSTEM_SUPER_ADMIN)->andReturn(true);
     $groupMemberRepository->shouldReceive('countActiveMembersInSystemGroup')->once()->with(AdminGroup::SYSTEM_SUPER_ADMIN)->andReturn(1);
 
-    $eventsMock = Mockery::mock('\Box_EventManager');
+    $eventsMock = Mockery::mock('\FOSSBilling\Event\Manager');
     $eventsMock->shouldReceive('fire')->atLeast()->once();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
@@ -1301,7 +1301,7 @@ test('update rejects deactivating last active super administrator', function ():
 test('update rejects deactivating own staff account', function (): void {
     $adminModel = \Tests\Helpers\admin(['id' => 10, 'status' => Admin::STATUS_ACTIVE]);
 
-    $eventsMock = Mockery::mock('\Box_EventManager');
+    $eventsMock = Mockery::mock('\FOSSBilling\Event\Manager');
     $eventsMock->shouldReceive('fire')->atLeast()->once();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
@@ -1320,7 +1320,7 @@ test('update rejects deactivating own staff account', function (): void {
 test('delete removes admin account', function (): void {
     $adminModel = \Tests\Helpers\admin(['id' => 5]);
 
-    $eventsMock = Mockery::mock('\Box_EventManager');
+    $eventsMock = Mockery::mock('\FOSSBilling\Event\Manager');
     $eventsMock->shouldReceive('fire')->atLeast()->once();
 
     $logStub = $this->createStub(FOSSBilling\Logging\Logger::class);
@@ -1385,7 +1385,7 @@ test('changePassword updates admin password', function (): void {
     $plainTextPassword = 'password';
     $adminModel = \Tests\Helpers\admin();
 
-    $eventsMock = Mockery::mock('\Box_EventManager');
+    $eventsMock = Mockery::mock('\FOSSBilling\Event\Manager');
     $eventsMock->shouldReceive('fire')->atLeast()->once();
 
     $logStub = $this->createStub(FOSSBilling\Logging\Logger::class);
@@ -1428,7 +1428,7 @@ test('create creates new admin account', function (): void {
     $group = new AdminGroup();
     staffSetEntityId($group, 2);
 
-    $eventsMock = Mockery::mock('\Box_EventManager');
+    $eventsMock = Mockery::mock('\FOSSBilling\Event\Manager');
     $eventsMock->shouldReceive('fire')->atLeast()->once();
 
     $logStub = $this->createStub(FOSSBilling\Logging\Logger::class);
@@ -1485,7 +1485,7 @@ test('create throws exception for duplicate email', function (): void {
     $group = new AdminGroup();
     staffSetEntityId($group, 2);
 
-    $eventsMock = Mockery::mock('\Box_EventManager');
+    $eventsMock = Mockery::mock('\FOSSBilling\Event\Manager');
     $eventsMock->shouldReceive('fire')->atLeast()->once();
 
     $groupRepository = Mockery::mock(AdminGroupRepository::class)->shouldReceive('findById')->once()->with(2)->andReturn($group)->getMock();

@@ -37,14 +37,14 @@ class Client implements \FOSSBilling\Container\InjectionAwareInterface
      * Always use your module prefix to avoid conflicts with other modules
      * in future.
      *
-     * @param \Box_App $app - returned by reference
+     * @param \FOSSBilling\Http\App $app - returned by reference
      */
-    public function register(\Box_App &$app): void
+    public function register(\FOSSBilling\Http\App &$app): void
     {
         $app->get('/custompages/:slug', 'get_page', ['slug' => '[a-z0-9-]+'], static::class);
     }
 
-    public function get_page(\Box_App $app, $slug): string|Response
+    public function get_page(\FOSSBilling\Http\App $app, $slug): string|Response
     {
         $service = new \Box\Mod\Custompages\Service();
         $service->setDi($this->di);

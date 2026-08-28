@@ -67,7 +67,7 @@ test('creates a subscription', function (): void {
     $em->shouldReceive('persist')->atLeast()->once();
     $em->shouldReceive('flush')->atLeast()->once();
 
-    $eventsMock = Mockery::mock('\Box_EventManager');
+    $eventsMock = Mockery::mock('\FOSSBilling\Event\Manager');
     $eventsMock->shouldReceive('fire')
         ->atLeast()->once();
 
@@ -377,7 +377,7 @@ test('deletes a subscription', function (): void {
     $em->shouldReceive('remove')->atLeast()->once();
     $em->shouldReceive('flush')->atLeast()->once();
 
-    $eventsMock = Mockery::mock('\Box_EventManager');
+    $eventsMock = Mockery::mock('\FOSSBilling\Event\Manager');
     $eventsMock->shouldReceive('fire')
         ->atLeast()->once();
 

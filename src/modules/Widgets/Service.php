@@ -202,7 +202,7 @@ class Service implements InjectionAwareInterface
     /**
      * Event handler: Invalidate cache when a module is activated.
      */
-    public static function onAfterAdminActivateExtension(\Box_Event $event): void
+    public static function onAfterAdminActivateExtension(\FOSSBilling\Event\Event $event): void
     {
         $params = $event->getParameters();
 
@@ -221,7 +221,7 @@ class Service implements InjectionAwareInterface
     /**
      * Event handler: Invalidate cache when a module is deactivated.
      */
-    public static function onAfterAdminDeactivateExtension(\Box_Event $event): void
+    public static function onAfterAdminDeactivateExtension(\FOSSBilling\Event\Event $event): void
     {
         $params = $event->getParameters();
 

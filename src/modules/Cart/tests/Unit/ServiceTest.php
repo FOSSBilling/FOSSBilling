@@ -663,7 +663,7 @@ test('checkoutCart returns array with expected keys', function (): void {
     $serviceMock->shouldReceive('rm')->atLeast()->once()->andReturn(true);
     $serviceMock->shouldReceive('isPromoAvailableForClientGroup')->atLeast()->once()->andReturn(true);
 
-    $eventMock = Mockery::mock(Box_EventManager::class)->shouldIgnoreMissing();
+    $eventMock = Mockery::mock(FOSSBilling\Event\Manager::class)->shouldIgnoreMissing();
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
     $invoice = createEntity(Invoice::class);
@@ -1228,7 +1228,7 @@ test('addItem throws exception when recurring payment period param missing', fun
 
     $data = [];
 
-    $eventMock = Mockery::mock(Box_EventManager::class)->shouldIgnoreMissing();
+    $eventMock = Mockery::mock(FOSSBilling\Event\Manager::class)->shouldIgnoreMissing();
     $eventMock->shouldReceive('fire')->atLeast()->once();
     $serviceHostingServiceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class)->shouldIgnoreMissing();
 
@@ -1262,7 +1262,7 @@ test('addItem throws exception when recurring payment period is not enabled', fu
 
     $data = ['period' => '1W'];
 
-    $eventMock = Mockery::mock(Box_EventManager::class)->shouldIgnoreMissing();
+    $eventMock = Mockery::mock(FOSSBilling\Event\Manager::class)->shouldIgnoreMissing();
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
     $serviceHostingServiceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class)->shouldIgnoreMissing();
@@ -1299,7 +1299,7 @@ test('addItem throws exception when out of stock', function (): void {
 
     $data = [];
 
-    $eventMock = Mockery::mock(Box_EventManager::class)->shouldIgnoreMissing();
+    $eventMock = Mockery::mock(FOSSBilling\Event\Manager::class)->shouldIgnoreMissing();
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
     $serviceHostingServiceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class)->shouldIgnoreMissing();
@@ -1346,7 +1346,7 @@ test('addItem rejects cumulative stock overflow', function (): void {
     $existingCartProduct->product_id = 7;
     $existingCartProduct->config = json_encode(['quantity' => 1]);
 
-    $eventMock = Mockery::mock(Box_EventManager::class)->shouldIgnoreMissing();
+    $eventMock = Mockery::mock(FOSSBilling\Event\Manager::class)->shouldIgnoreMissing();
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
     $serviceHostingServiceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class)->shouldIgnoreMissing();
@@ -1396,7 +1396,7 @@ test('addItem rejects duplicate domain register', function (): void {
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')->with(CartProduct::class)->andReturn($cartProductRepo);
 
-    $eventMock = Mockery::mock(Box_EventManager::class)->shouldIgnoreMissing();
+    $eventMock = Mockery::mock(FOSSBilling\Event\Manager::class)->shouldIgnoreMissing();
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
@@ -1439,7 +1439,7 @@ test('addItem rejects duplicate domain transfer', function (): void {
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')->with(CartProduct::class)->andReturn($cartProductRepo);
 
-    $eventMock = Mockery::mock(Box_EventManager::class)->shouldIgnoreMissing();
+    $eventMock = Mockery::mock(FOSSBilling\Event\Manager::class)->shouldIgnoreMissing();
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
@@ -1484,7 +1484,7 @@ test('addItem rejects duplicate domain nested', function (): void {
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')->with(CartProduct::class)->andReturn($cartProductRepo);
 
-    $eventMock = Mockery::mock(Box_EventManager::class)->shouldIgnoreMissing();
+    $eventMock = Mockery::mock(FOSSBilling\Event\Manager::class)->shouldIgnoreMissing();
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
@@ -1520,7 +1520,7 @@ test('addItem for hosting type returns true', function (): void {
 
     $data = [];
 
-    $eventMock = Mockery::mock(Box_EventManager::class)->shouldIgnoreMissing();
+    $eventMock = Mockery::mock(FOSSBilling\Event\Manager::class)->shouldIgnoreMissing();
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
     $productDomainModel = createProductEntity(type: 'domain');
@@ -1569,7 +1569,7 @@ test('addItem for license type returns true', function (): void {
 
     $data = [];
 
-    $eventMock = Mockery::mock(Box_EventManager::class)->shouldIgnoreMissing();
+    $eventMock = Mockery::mock(FOSSBilling\Event\Manager::class)->shouldIgnoreMissing();
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
     $serviceLicenseServiceMock = Mockery::mock(Box\Mod\Servicelicense\Service::class)->shouldIgnoreMissing();
@@ -1615,7 +1615,7 @@ test('addItem for custom type returns true', function (): void {
 
     $data = [];
 
-    $eventMock = Mockery::mock(Box_EventManager::class)->shouldIgnoreMissing();
+    $eventMock = Mockery::mock(FOSSBilling\Event\Manager::class)->shouldIgnoreMissing();
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
     $serviceCustomServiceMock = Mockery::mock(Box\Mod\Servicecustom\Service::class);
@@ -1913,7 +1913,7 @@ test('addItem strips client-injected hosting_plan_id', function (): void {
         'multiple' => 1,
     ];
 
-    $eventMock = Mockery::mock(Box_EventManager::class)->shouldIgnoreMissing();
+    $eventMock = Mockery::mock(FOSSBilling\Event\Manager::class)->shouldIgnoreMissing();
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
     $productDomainModel = createProductEntity(type: 'domain');

@@ -2,24 +2,29 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2025 FOSSBilling
+ * Copyright 2022-2026 FOSSBilling
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
-class Box_EventManager implements FOSSBilling\Container\InjectionAwareInterface
+
+namespace FOSSBilling\Event;
+
+use FOSSBilling\Container\InjectionAwareInterface;
+
+class Manager implements InjectionAwareInterface
 {
-    protected ?Pimple\Container $di = null;
+    protected ?\Pimple\Container $di = null;
 
     public const GLOBAL_LISTENER_NAME = 'onEveryEvent';
 
-    public function setDi(Pimple\Container $di): void
+    public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
     }
 
-    public function getDi(): ?Pimple\Container
+    public function getDi(): ?\Pimple\Container
     {
         return $this->di;
     }
@@ -44,9 +49,9 @@ class Box_EventManager implements FOSSBilling\Container\InjectionAwareInterface
         }
         $this->di['logger']->withChannel('event')->debug('Fired event: {event}', $eventContext);
 
-        $e = new Box_Event($subject, $event, $params);
+        $e = new Event($subject, $event, $params);
         $e->setDi($this->di);
-        $disp = new Box_EventDispatcher();
+        $disp = new Dispatcher();
 
         $eventName = $e->getName();
 
@@ -59,8 +64,8 @@ class Box_EventManager implements FOSSBilling\Container\InjectionAwareInterface
     }
 
     /**
-     * @param Box_EventDispatcher $disp
-     * @param string              $event
+     * @param Dispatcher $disp
+     * @param string     $event
      */
     private function _connectDatabaseHooks(&$disp, $event, ?string $dispatchEventName = null): void
     {
@@ -89,7 +94,7 @@ class Box_EventManager implements FOSSBilling\Container\InjectionAwareInterface
                 if (method_exists($s, $event)) {
                     $disp->connect($dispatchEvent, [$s::class, $event]);
                 }
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 $this->di['logger']->withChannel('event')->error($e->getMessage());
             }
         }

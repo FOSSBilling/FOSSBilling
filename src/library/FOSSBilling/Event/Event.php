@@ -2,15 +2,20 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2025 FOSSBilling
+ * Copyright 2022-2026 FOSSBilling
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
-class Box_Event implements ArrayAccess, FOSSBilling\Container\InjectionAwareInterface
+
+namespace FOSSBilling\Event;
+
+use FOSSBilling\Container\InjectionAwareInterface;
+
+class Event implements \ArrayAccess, InjectionAwareInterface
 {
-    protected ?Pimple\Container $di = null;
+    protected ?\Pimple\Container $di = null;
     protected $value;
     protected $processed = false;
 
@@ -25,12 +30,12 @@ class Box_Event implements ArrayAccess, FOSSBilling\Container\InjectionAwareInte
     {
     }
 
-    public function setDi(Pimple\Container $di): void
+    public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
     }
 
-    public function getDi(): ?Pimple\Container
+    public function getDi(): ?\Pimple\Container
     {
         return $this->di;
     }
@@ -137,7 +142,7 @@ class Box_Event implements ArrayAccess, FOSSBilling\Container\InjectionAwareInte
     public function offsetGet(mixed $name): mixed
     {
         if (!array_key_exists($name, $this->parameters)) {
-            throw new InvalidArgumentException("The event '{$this->name}' has no '{$name}' parameter.");
+            throw new \InvalidArgumentException("The event '{$this->name}' has no '{$name}' parameter.");
         }
 
         return $this->parameters[$name];

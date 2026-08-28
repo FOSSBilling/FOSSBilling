@@ -13,13 +13,13 @@ declare(strict_types=1);
 use Symfony\Component\HttpFoundation\Request;
 
 /**
- * Build a Box_AppClient that overrides render() with a caller-supplied
+ * Build a FOSSBilling\Http\AppClient that overrides render() with a caller-supplied
  * callback, so the get_custom_page catch-block logic can be exercised
  * without spinning up a Twig environment.
  */
-function appClientWithRender(callable $render, bool $clientLoggedIn = false): Box_AppClient
+function appClientWithRender(callable $render, bool $clientLoggedIn = false): FOSSBilling\Http\AppClient
 {
-    $app = new class($render) extends Box_AppClient {
+    $app = new class($render) extends FOSSBilling\Http\AppClient {
         /** @var callable */
         private $renderCallback;
 
@@ -58,7 +58,7 @@ function appClientWithRender(callable $render, bool $clientLoggedIn = false): Bo
     };
     $di['request'] = Request::create('http://localhost/test');
     $di['mod_service'] = $di->protect(static fn (): object => $extensionService);
-    $di['auth'] = Mockery::mock(Box_Authorization::class)
+    $di['auth'] = Mockery::mock(FOSSBilling\Security\Authorization::class)
         ->shouldReceive('isClientLoggedIn')->andReturn($clientLoggedIn)->getMock();
     $di['url'] = Mockery::mock(FOSSBilling\Url::class)
         ->shouldReceive('link')->andReturnArg(0)->getMock();

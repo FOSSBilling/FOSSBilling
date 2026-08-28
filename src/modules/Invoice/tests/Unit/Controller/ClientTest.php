@@ -23,7 +23,7 @@ test('invoice browser controller redirects denied invoice access to invoice list
         }
     };
 
-    $app = Mockery::mock(Box_App::class);
+    $app = Mockery::mock(FOSSBilling\Http\App::class);
     $app->shouldReceive('redirect')
         ->once()
         ->with('invoice')

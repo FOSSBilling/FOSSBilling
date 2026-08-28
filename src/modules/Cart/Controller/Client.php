@@ -25,12 +25,12 @@ class Client implements \FOSSBilling\Container\InjectionAwareInterface
         return $this->di;
     }
 
-    public function register(\Box_App &$app): void
+    public function register(\FOSSBilling\Http\App &$app): void
     {
         $app->get('/cart', 'get_cart', [], static::class);
     }
 
-    public function get_cart(\Box_App $app): string
+    public function get_cart(\FOSSBilling\Http\App $app): string
     {
         return $app->render('mod_cart_index');
     }

@@ -28,7 +28,7 @@ class Client implements \FOSSBilling\Container\InjectionAwareInterface
         return $this->di;
     }
 
-    public function register(\Box_App &$app): void
+    public function register(\FOSSBilling\Http\App &$app): void
     {
         $app->get('/invoice', 'get_invoices', [], static::class);
         $app->post('/invoice', 'get_invoices', [], static::class);
@@ -42,14 +42,14 @@ class Client implements \FOSSBilling\Container\InjectionAwareInterface
         $app->get('/invoice/pdf/:hash', 'get_pdf', ['hash' => '[a-z0-9]+'], static::class);
     }
 
-    public function get_invoices(\Box_App $app): string
+    public function get_invoices(\FOSSBilling\Http\App $app): string
     {
         $this->di['is_client_logged'];
 
         return $app->render('mod_invoice_index');
     }
 
-    public function get_invoice(\Box_App $app, $hash): string|Response
+    public function get_invoice(\FOSSBilling\Http\App $app, $hash): string|Response
     {
         $data = [
             'hash' => $hash,
@@ -62,7 +62,7 @@ class Client implements \FOSSBilling\Container\InjectionAwareInterface
         return $app->render('mod_invoice_invoice', ['invoice' => $invoice]);
     }
 
-    public function get_invoice_print(\Box_App $app, $hash): string|Response
+    public function get_invoice_print(\FOSSBilling\Http\App $app, $hash): string|Response
     {
         $data = [
             'hash' => $hash,
@@ -75,7 +75,7 @@ class Client implements \FOSSBilling\Container\InjectionAwareInterface
         return $app->render('mod_invoice_print', ['invoice' => $invoice]);
     }
 
-    public function get_thankyoupage(\Box_App $app, $hash): string|Response
+    public function get_thankyoupage(\FOSSBilling\Http\App $app, $hash): string|Response
     {
         $data = [
             'hash' => $hash,
@@ -88,7 +88,7 @@ class Client implements \FOSSBilling\Container\InjectionAwareInterface
         return $app->render('mod_invoice_thankyou', ['invoice' => $invoice]);
     }
 
-    public function get_banklink(\Box_App $app, $hash, $id): string|Response
+    public function get_banklink(\FOSSBilling\Http\App $app, $hash, $id): string|Response
     {
         $data = [
             'allow_subscription' => $app->getRequest()->query->getBoolean('allow_subscription', true),
@@ -116,7 +116,7 @@ class Client implements \FOSSBilling\Container\InjectionAwareInterface
         return $app->render('mod_invoice_banklink', ['payment' => $payment, 'invoice' => $invoice]);
     }
 
-    public function get_pdf(\Box_App $app, $hash): Response
+    public function get_pdf(\FOSSBilling\Http\App $app, $hash): Response
     {
         $api = $this->di['api_guest'];
         $data = [
@@ -140,7 +140,7 @@ class Client implements \FOSSBilling\Container\InjectionAwareInterface
         return $response;
     }
 
-    private function getInvoiceOrRedirect(\Box_App $app, array $data): array|Response
+    private function getInvoiceOrRedirect(\FOSSBilling\Http\App $app, array $data): array|Response
     {
         $api = $this->di['api_guest'];
 

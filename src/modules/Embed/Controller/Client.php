@@ -30,14 +30,14 @@ class Client implements \FOSSBilling\Container\InjectionAwareInterface
      * Always use your module prefix to avoid conflicts with other modules
      * in future.
      *
-     * @param \Box_App $app - returned by reference
+     * @param \FOSSBilling\Http\App $app - returned by reference
      */
-    public function register(\Box_App &$app): void
+    public function register(\FOSSBilling\Http\App &$app): void
     {
         $app->get('/embed/:what', 'get_object', ['what' => '[a-z0-9-]+'], static::class);
     }
 
-    public function get_object(\Box_App $app, $what): string
+    public function get_object(\FOSSBilling\Http\App $app, $what): string
     {
         $tpl = 'mod_embed_' . $what;
 

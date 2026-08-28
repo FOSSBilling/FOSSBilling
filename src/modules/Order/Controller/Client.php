@@ -25,7 +25,7 @@ class Client implements \FOSSBilling\Container\InjectionAwareInterface
         return $this->di;
     }
 
-    public function register(\Box_App &$app): void
+    public function register(\FOSSBilling\Http\App &$app): void
     {
         $app->get('/order', 'get_products', [], static::class);
         $app->get('/order/service', 'get_orders', [], static::class);
@@ -34,12 +34,12 @@ class Client implements \FOSSBilling\Container\InjectionAwareInterface
         $app->get('/order/service/manage/:id', 'get_order', ['id' => '[0-9]+'], static::class);
     }
 
-    public function get_products(\Box_App $app): string
+    public function get_products(\FOSSBilling\Http\App $app): string
     {
         return $app->render('mod_order_index');
     }
 
-    public function get_configure_product_by_slug(\Box_App $app, $slug): string
+    public function get_configure_product_by_slug(\FOSSBilling\Http\App $app, $slug): string
     {
         $api = $this->di['api_guest'];
         $product = $api->product_get(['slug' => $slug]);
@@ -51,7 +51,7 @@ class Client implements \FOSSBilling\Container\InjectionAwareInterface
         return $app->render('mod_order_product', ['product' => $product]);
     }
 
-    public function get_configure_product(\Box_App $app, $id): string
+    public function get_configure_product(\FOSSBilling\Http\App $app, $id): string
     {
         $api = $this->di['api_guest'];
         $product = $api->product_get(['id' => $id]);
@@ -63,14 +63,14 @@ class Client implements \FOSSBilling\Container\InjectionAwareInterface
         return $app->render('mod_order_product', ['product' => $product]);
     }
 
-    public function get_orders(\Box_App $app): string
+    public function get_orders(\FOSSBilling\Http\App $app): string
     {
         $this->di['is_client_logged'];
 
         return $app->render('mod_order_list');
     }
 
-    public function get_order(\Box_App $app, $id): string
+    public function get_order(\FOSSBilling\Http\App $app, $id): string
     {
         $api = $this->di['api_client'];
         $data = [

@@ -17,7 +17,7 @@ use function Tests\Helpers\container;
 
 test('register configures routes', function (): void {
     $controller = new Admin();
-    $boxAppMock = Mockery::mock('\Box_App');
+    $boxAppMock = Mockery::mock('\FOSSBilling\Http\App');
     $boxAppMock->shouldReceive('get')->atLeast()->once();
     $boxAppMock->shouldReceive('post')->atLeast()->once();
 
@@ -49,7 +49,7 @@ test('get new forwards product and client ids from request body', function (): v
         'client_id' => '9',
     ]);
 
-    $boxAppMock = Mockery::mock('\Box_App');
+    $boxAppMock = Mockery::mock('\FOSSBilling\Http\App');
     $boxAppMock->shouldReceive('getRequest')->once()->andReturn($request);
     $boxAppMock->shouldReceive('render')
         ->once()
@@ -73,7 +73,7 @@ test('get new forwards null ids when request body is empty', function (): void {
 
     $request = Request::create('/order/new', 'POST');
 
-    $boxAppMock = Mockery::mock('\Box_App');
+    $boxAppMock = Mockery::mock('\FOSSBilling\Http\App');
     $boxAppMock->shouldReceive('getRequest')->once()->andReturn($request);
     $boxAppMock->shouldReceive('render')
         ->once()

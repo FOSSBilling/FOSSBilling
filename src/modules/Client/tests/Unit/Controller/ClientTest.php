@@ -30,7 +30,7 @@ test('password reset confirmation passes the validated hash to the template', fu
     $controller = new Client();
     $controller->setDi($di);
 
-    $boxAppMock = Mockery::mock('\Box_App');
+    $boxAppMock = Mockery::mock('\FOSSBilling\Http\App');
     $boxAppMock->shouldReceive('render')
         ->once()
         ->with('mod_client_set_new_password', ['hash' => $hash])

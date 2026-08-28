@@ -582,7 +582,7 @@ test('processes a transaction', function (): void {
     $em = Mockery::mock(EntityManagerInterface::class);
     $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($transactionRepo);
 
-    $eventsMock = Mockery::mock('\Box_EventManager');
+    $eventsMock = Mockery::mock('\FOSSBilling\Event\Manager');
     $eventsMock->shouldReceive('fire')
         ->atLeast()->once();
 

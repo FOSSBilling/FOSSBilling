@@ -40,19 +40,19 @@ test('fetchNavigation returns array', function (): void {
 
 test('register configures routes', function (): void {
     $controller = new Box\Mod\Activity\Controller\Admin();
-    $boxAppMock = Mockery::mock('\Box_App');
+    $boxAppMock = Mockery::mock('\FOSSBilling\Http\App');
     /** @var Mockery\Expectation $expectation */
     $expectation = $boxAppMock->shouldReceive('get');
     $expectation->atLeast()->once();
     $expectation->with('/activity', 'get_index', [], Box\Mod\Activity\Controller\Admin::class);
 
-    /* @var \Box_App $boxAppMock */
+    /* @var \FOSSBilling\Http\App $boxAppMock */
     $controller->register($boxAppMock);
 });
 
 test('getIndex renders activity index', function (): void {
     $controller = new Box\Mod\Activity\Controller\Admin();
-    $boxAppMock = Mockery::mock('\Box_App');
+    $boxAppMock = Mockery::mock('\FOSSBilling\Http\App');
     /** @var Mockery\Expectation $expectation */
     $expectation = $boxAppMock->shouldReceive('render');
     $expectation->atLeast()->once();
@@ -63,6 +63,6 @@ test('getIndex renders activity index', function (): void {
 
     $controller->setDi($di);
 
-    /* @var \Box_App $boxAppMock */
+    /* @var \FOSSBilling\Http\App $boxAppMock */
     $controller->get_index($boxAppMock);
 });

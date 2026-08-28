@@ -189,10 +189,10 @@ $di['cookie_queue'] = fn (): FOSSBilling\Http\CookieQueue => new FOSSBilling\Htt
  *
  * @param void
  *
- * @return \Box_EventManager
+ * @return \FOSSBilling\Event\Manager
  */
 $di['events_manager'] = function () use ($di) {
-    $service = new Box_EventManager();
+    $service = new FOSSBilling\Event\Manager();
     $service->setDi($di);
 
     return $service;
@@ -297,11 +297,11 @@ $di['rate_limiter'] = function () use ($di) {
  *
  * @param void
  *
- * @return Box_Authorization
+ * @return FOSSBilling\Security\Authorization
  *
- * @var Box_Authorization $di['auth']
+ * @var FOSSBilling\Security\Authorization $di['auth']
  */
-$di['auth'] = fn (): Box_Authorization => new Box_Authorization($di);
+$di['auth'] = fn (): FOSSBilling\Security\Authorization => new FOSSBilling\Security\Authorization($di);
 
 /*
  * Checks whether a client is logged in and throws an exception or redirects to the login page if not.
@@ -315,7 +315,7 @@ $di['auth'] = fn (): Box_Authorization => new Box_Authorization($di);
  * @throws \HttpException If a client is not logged in and the request is a browser request.
  */
 $di['is_client_logged'] = function () use ($di) {
-    /** @var Box_Authorization $auth */
+    /** @var FOSSBilling\Security\Authorization $auth */
     $auth = $di['auth'];
     if (!$auth->isClientLoggedIn()) {
         throw new AuthenticationRequiredException('client');
@@ -348,7 +348,7 @@ $di['is_client_email_validated'] = $di->protect(function ($model) use ($di) {
  *
  */
 $di['is_admin_logged'] = function () use ($di) {
-    /** @var Box_Authorization $auth */
+    /** @var FOSSBilling\Security\Authorization $auth */
     $auth = $di['auth'];
     if (!$auth->isAdminLoggedIn()) {
         throw new AuthenticationRequiredException('admin');
@@ -656,7 +656,7 @@ $di['period'] = $di->protect(fn (string $code): FOSSBilling\Period => new FOSSBi
  *
  * @param void
  *
- * @return \Box_Theme The current client area theme.
+ * @return \Box\Mod\Theme\Model\Theme The current client area theme.
  */
 $di['theme'] = function () use ($di) {
     $service = $di['mod_service']('theme');

@@ -25,12 +25,12 @@ class Client implements \FOSSBilling\Container\InjectionAwareInterface
         return $this->di;
     }
 
-    public function register(\Box_App &$app): void
+    public function register(\FOSSBilling\Http\App &$app): void
     {
         $app->get('/formbuilder/:id', 'get_form', ['id' => '[0-9]+'], static::class);
     }
 
-    public function get_form(\Box_App $app, $id): string
+    public function get_form(\FOSSBilling\Http\App $app, $id): string
     {
         return $app->render('mod_formbuilder_build', ['id' => $id]);
     }

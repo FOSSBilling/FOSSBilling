@@ -34,7 +34,7 @@ test('get_settings returns a 403 response when the module settings cannot be man
 
     $expectedResponse = new Response('denied', 403);
 
-    $app = Mockery::mock(Box_App::class);
+    $app = Mockery::mock(FOSSBilling\Http\App::class);
     $app->shouldReceive('errorResponse')
         ->once()
         ->with(Mockery::type(InformationException::class), 403)
@@ -60,7 +60,7 @@ test('get_settings renders the settings page for modules the staff member may ma
 
     $controller->setDi($di);
 
-    $app = Mockery::mock(Box_App::class);
+    $app = Mockery::mock(FOSSBilling\Http\App::class);
     $app->shouldReceive('render')
         ->once()
         ->with('mod_sample_settings')

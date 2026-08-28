@@ -67,7 +67,7 @@ class TwigFactory
         $adminTimezone = null;
 
         $auth = $this->di['auth'] ?? null;
-        if ($auth instanceof \Box_Authorization) {
+        if ($auth instanceof \FOSSBilling\Security\Authorization) {
             if ($auth->isClientLoggedIn()) {
                 $client = $this->di['em']->getRepository(\Box\Mod\Client\Entity\Client::class)->find($this->di['session']->get('client_id'));
                 $clientTimezone = $client?->getTimezone();

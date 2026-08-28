@@ -41,7 +41,7 @@ class Client implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function register(\Box_App &$app): void
+    public function register(\FOSSBilling\Http\App &$app): void
     {
         $allowedRouteRoles = $this->registerAllowedRouteRoles();
         $app->post('/api/:role/:class/:method', 'post_method', $allowedRouteRoles, static::class);
@@ -52,21 +52,21 @@ class Client implements InjectionAwareInterface
         $app->post('/api/:page', 'show_error', ['page' => '(.?)+'], static::class);
     }
 
-    public function show_error(\Box_App $app, $page): Response
+    public function show_error(\FOSSBilling\Http\App $app, $page): Response
     {
         $exc = new \FOSSBilling\Exception\BaseException('Unknown API call :call', [':call' => $page], 879);
 
         return $this->renderJson(null, $exc);
     }
 
-    public function get_method(\Box_App $app, $role, $class, $method): Response
+    public function get_method(\FOSSBilling\Http\App $app, $role, $class, $method): Response
     {
         $call = $class . '_' . $method;
 
         return $this->tryCall($role, $class, $call, $app->getRequest()->query->all());
     }
 
-    public function post_method(\Box_App $app, $role, $class, $method): Response
+    public function post_method(\FOSSBilling\Http\App $app, $role, $class, $method): Response
     {
         try {
             $p = $app->getRequest()->getPayload()->all();

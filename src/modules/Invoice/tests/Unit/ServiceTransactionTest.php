@@ -51,7 +51,7 @@ test('gets dependency injection container', function (): void {
 });
 
 test('updates a transaction', function (): void {
-    $eventsMock = Mockery::mock('\Box_EventManager');
+    $eventsMock = Mockery::mock('\FOSSBilling\Event\Manager');
     $eventsMock->shouldReceive('fire')
         ->atLeast()->once();
 
@@ -91,7 +91,7 @@ test('updates a transaction', function (): void {
 });
 
 test('throws exception when creating transaction with missing invoice id', function (): void {
-    $eventsMock = Mockery::mock('\Box_EventManager');
+    $eventsMock = Mockery::mock('\FOSSBilling\Event\Manager');
     $eventsMock->shouldReceive('fire')
         ->atLeast()->once();
 
@@ -107,7 +107,7 @@ test('throws exception when creating transaction with missing invoice id', funct
 });
 
 test('throws exception when creating transaction with missing gateway id', function (): void {
-    $eventsMock = Mockery::mock('\Box_EventManager');
+    $eventsMock = Mockery::mock('\FOSSBilling\Event\Manager');
     $eventsMock->shouldReceive('fire')
         ->atLeast()->once();
 
@@ -279,7 +279,7 @@ test('preProcessTransaction marks error on a generic exception', function (): vo
     $em->shouldReceive('flush')->once();
     $em->shouldReceive('refresh')->with($transactionModel)->once();
 
-    $eventsMock = Mockery::mock('\Box_EventManager');
+    $eventsMock = Mockery::mock('\FOSSBilling\Event\Manager');
     $eventsMock->shouldNotReceive('fire');
 
     $di = container();
@@ -415,7 +415,7 @@ test('_subscribe creates and persists a subscription from an approved transactio
     });
     $em->shouldReceive('flush')->atLeast()->once();
 
-    $eventsMock = Mockery::mock('\Box_EventManager');
+    $eventsMock = Mockery::mock('\FOSSBilling\Event\Manager');
     $eventsMock->shouldReceive('fire');
 
     $di = container();
@@ -471,7 +471,7 @@ test('_unsubscribe looks up the subscription by sid and delegates to the subscri
     $em->shouldReceive('getRepository')->with(Subscription::class)->andReturn($subscriptionRepo);
     $em->shouldReceive('flush')->atLeast()->once();
 
-    $eventsMock = Mockery::mock('\Box_EventManager');
+    $eventsMock = Mockery::mock('\FOSSBilling\Event\Manager');
     $eventsMock->shouldReceive('fire');
 
     $di = container();

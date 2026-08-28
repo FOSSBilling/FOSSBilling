@@ -450,7 +450,7 @@ class Service implements InjectionAwareInterface
         return $result;
     }
 
-    public static function onAfterAdminInvoicePaymentReceived(\Box_Event $event): bool
+    public static function onAfterAdminInvoicePaymentReceived(\FOSSBilling\Event\Event $event): bool
     {
         $params = $event->getParameters();
         $di = $event->getDi();
@@ -473,7 +473,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public static function onAfterInvoiceCreate(\Box_Event $event): bool
+    public static function onAfterInvoiceCreate(\FOSSBilling\Event\Event $event): bool
     {
         $params = $event->getParameters();
         $di = $event->getDi();
@@ -494,7 +494,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public static function onAfterAdminInvoiceApprove(\Box_Event $event): bool
+    public static function onAfterAdminInvoiceApprove(\FOSSBilling\Event\Event $event): bool
     {
         $params = $event->getParameters();
         $di = $event->getDi();
@@ -541,7 +541,7 @@ class Service implements InjectionAwareInterface
         $this->di['mod_service']('email')->sendTemplate($email);
     }
 
-    public static function onAfterAdminInvoiceReminderSent(\Box_Event $event): void
+    public static function onAfterAdminInvoiceReminderSent(\FOSSBilling\Event\Event $event): void
     {
         $params = $event->getParameters();
         $di = $event->getDi();
@@ -574,7 +574,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public static function onEventBeforeInvoiceIsDue(\Box_Event $event): void
+    public static function onEventBeforeInvoiceIsDue(\FOSSBilling\Event\Event $event): void
     {
         $params = $event->getParameters();
         $di = $event->getDi();
@@ -619,7 +619,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public static function onAfterAdminCronRun(\Box_Event $event): void
+    public static function onAfterAdminCronRun(\FOSSBilling\Event\Event $event): void
     {
         $di = $event->getDi();
         $systemService = $di['mod_service']('System');
@@ -638,7 +638,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public static function onEventAfterInvoiceIsDue(\Box_Event $event): void
+    public static function onEventAfterInvoiceIsDue(\FOSSBilling\Event\Event $event): void
     {
         $params = $event->getParameters();
         $di = $event->getDi();
