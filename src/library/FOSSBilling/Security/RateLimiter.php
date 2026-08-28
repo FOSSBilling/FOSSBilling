@@ -59,6 +59,7 @@ class RateLimiter implements InjectionAwareInterface
                 'staff_password_reset_confirm_ip' => ['policy' => 'fixed_window', 'limit' => 20, 'interval' => '60 seconds'],
                 'staff_password_reset_confirm_post_ip' => ['policy' => 'fixed_window', 'limit' => 20, 'interval' => '60 seconds'],
                 'client_signup' => ['policy' => 'fixed_window', 'limit' => 5, 'interval' => '1 hour'],
+                'client_signup_email' => ['policy' => 'fixed_window', 'limit' => 5, 'interval' => '1 hour'],
                 'guest_ticket_create' => ['policy' => 'fixed_window', 'limit' => 3, 'interval' => '1 hour'],
                 'order_generation_ip' => ['policy' => 'fixed_window', 'limit' => 15, 'interval' => '1 hour'],
                 'domain_lookup_ip' => ['policy' => 'fixed_window', 'limit' => 60, 'interval' => '1 hour'],
