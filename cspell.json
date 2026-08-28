@@ -80,7 +80,10 @@
         "entrancy",
         "writability",
         "rediss",
-        "dedup"
+        "dedup",
+        "GHSA",
+        "macrovector",
+        "rubygems"
     ],
 
     "ignoreWords": [
@@ -638,6 +641,7 @@
         ".gitignore",
         "src/.htaccess",
         "Dockerfile",
-        ".ddev/**"
+        ".ddev/**",
+        ".agents/skills/**"
     ]
 }
