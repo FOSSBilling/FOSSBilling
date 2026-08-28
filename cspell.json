@@ -89,7 +89,8 @@
         "FileCache",
         "schemaname",
         "tablename",
-        "indexname"
+        "indexname",
+        "dedup"
     ],
 
     "ignoreWords": [
