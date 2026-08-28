@@ -51,16 +51,17 @@ Cypress.Commands.add('testClient', (overrides = {}) => {
   }).then((response) => {
     expect(response.status).to.eq(200);
     expect(response.body.error).to.eq(null);
-    expect(response.body.result, 'client id').to.exist;
-
-    const createdClient = {
-      ...client,
-      id: response.body.result,
-    };
+    // guest/client/create no longer returns the new client's id (doing so
+    // would reopen the email-enumeration issue it was hardened against) — it
+    // now returns a plain success boolean. Nothing here needs the id: specs
+    // only ever use the email/password to log in as this client, so recovering
+    // it isn't worth the extra guest-facing request (which would itself eat
+    // into the same signup rate limit this fix introduced).
+    expect(response.body.result).to.eq(true);
 
     return cy.clearCookies()
       .then(() => cy.clearLocalStorage())
-      .then(() => createdClient);
+      .then(() => client);
   });
 });
 

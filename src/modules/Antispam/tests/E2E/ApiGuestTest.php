@@ -20,17 +20,30 @@ test('disposable email check', function (): void {
     $result = ApiClient::request('admin/extension/config_save', ['ext' => 'mod_antispam', 'check_temp_emails' => true]);
     expect($result->wasSuccessful())->toBeTrue();
 
+    // Unique per run: guest/client/create now rate-limits repeated attempts
+    // for the same email (client_signup_email), so a fixed address would
+    // silently return true without creating a client on a rerun within the
+    // same hour, breaking the assertions below.
+    $email = 'email_' . bin2hex(random_bytes(12)) . '@yopmail.net';
+    $existingAccount = ApiClient::request('admin/client/get', ['email' => $email]);
+    expect($existingAccount->wasSuccessful())->toBeFalse();
+
     $password = 'A1a' . bin2hex(random_bytes(6));
     $result = ApiClient::request('guest/client/create', [
-        'email' => 'email@yopmail.net',
+        'email' => $email,
         'first_name' => 'Test',
         'password' => $password,
         'password_confirm' => $password,
     ]);
 
     if ($result->wasSuccessful()) {
-        $id = intval($result->getResult());
-        ApiClient::request('admin/client/delete', ['id' => $id]);
+        // guest/client/create no longer returns the new client's id (doing so
+        // would reopen the email-enumeration issue it was hardened against),
+        // so look the account up by the email we just registered instead.
+        $lookup = ApiClient::request('admin/client/get', ['email' => $email]);
+        if ($lookup->wasSuccessful()) {
+            ApiClient::request('admin/client/delete', ['id' => $lookup->getResult()['id']]);
+        }
         $this->markTestSkipped('Disposable email domain list unavailable in this environment');
     }
 
@@ -42,20 +55,29 @@ test('stop forum spam', function (): void {
     $result = ApiClient::request('admin/extension/config_save', ['ext' => 'mod_antispam', 'sfs' => true]);
     expect($result->wasSuccessful())->toBeTrue();
 
+    // Unique per run: see the comment in the 'disposable email check' test above.
+    $email = 'email_' . bin2hex(random_bytes(12)) . '@example.com';
+    $existingAccount = ApiClient::request('admin/client/get', ['email' => $email]);
+    expect($existingAccount->wasSuccessful())->toBeFalse();
+
     $password = 'A1a' . bin2hex(random_bytes(6));
     $result = ApiClient::request('guest/client/create', [
-        'email' => 'email@example.com',
+        'email' => $email,
         'first_name' => 'Test',
         'password' => $password,
         'password_confirm' => $password,
     ]);
 
     expect($result->wasSuccessful())->toBeTrue();
-    expect($result->getResult())->toBeNumeric();
+    expect($result->getResult())->toBeTrue();
 
-    $id = intval($result->getResult());
+    // guest/client/create no longer returns the new client's id (doing so
+    // would reopen the email-enumeration issue it was hardened against), so
+    // look the account up by the email we just registered instead.
+    $lookup = ApiClient::request('admin/client/get', ['email' => $email]);
+    expect($lookup->wasSuccessful())->toBeTrue();
 
-    $result = ApiClient::request('admin/client/delete', ['id' => $id]);
+    $result = ApiClient::request('admin/client/delete', ['id' => $lookup->getResult()['id']]);
     expect($result->wasSuccessful())->toBeTrue();
     expect($result->getResult())->toBeTrue();
 });
