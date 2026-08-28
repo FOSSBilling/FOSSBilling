@@ -570,7 +570,16 @@
         "createacct",
         "setupreseller",
         "setacls",
-        "acllist"
+        "acllist",
+        "creationtime",
+        "domsecret",
+        "isprivacyprotected",
+        "admincontact",
+        "contactid",
+        "emailaddr",
+        "telno",
+        "telnocc",
+        "actionstatus"
     ],
     "ignorePaths": [
         "node_modules/**",
