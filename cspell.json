@@ -90,7 +90,8 @@
         "schemaname",
         "tablename",
         "indexname",
-        "dedup"
+        "dedup",
+        "commonmark"
     ],
 
     "ignoreWords": [
