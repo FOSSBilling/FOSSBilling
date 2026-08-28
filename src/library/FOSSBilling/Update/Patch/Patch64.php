@@ -13,6 +13,7 @@ namespace FOSSBilling\Update\Patch;
 
 use FOSSBilling\Update\Patcher;
 use Symfony\Component\Filesystem\Path;
+use Symfony\Component\Finder\Finder;
 
 class Patch64 implements PatchInterface
 {
@@ -23,8 +24,8 @@ class Patch64 implements PatchInterface
 
     public function apply(Patcher $patcher): void
     {
-        $patcher->migrateGatewayAssetsToPublicDirectory();
-        $patcher->migrateDefaultBrandingAssetsToPublicDirectory();
+        $this->migrateGatewayAssetsToPublicDirectory($patcher);
+        $this->migrateDefaultBrandingAssetsToPublicDirectory($patcher);
 
         $patcher->executeFileActions([
             Path::join(PATH_LIBRARY, 'Api', 'API.js') => 'unlink',
@@ -53,5 +54,71 @@ class Patch64 implements PatchInterface
             Path::join(PATH_THEMES, 'huraga', 'assets', 'build', 'img', 'logo_white.svg') => 'unlink',
             Path::join(PATH_THEMES, 'huraga', 'assets', 'build', 'favicon.ico') => 'unlink',
         ]);
+    }
+
+    private function migrateDefaultBrandingAssetsToPublicDirectory(Patcher $patcher): void
+    {
+        $settings = [
+            'company_logo' => [
+                'public/branding/logo.svg',
+                'themes/huraga/assets/img/logo.svg',
+                'themes/huraga/assets/build/img/logo.svg',
+            ],
+            'company_logo_dark' => [
+                'public/branding/logo-dark.svg',
+                'themes/huraga/assets/img/logo_white.svg',
+                'themes/huraga/assets/build/img/logo_white.svg',
+            ],
+            'company_favicon' => [
+                'public/branding/favicon.ico',
+                'themes/huraga/assets/favicon.ico',
+                'themes/huraga/assets/build/favicon.ico',
+            ],
+        ];
+
+        foreach ($settings as $param => $values) {
+            $newValue = $values[0];
+            $oldValues = array_slice($values, 1);
+
+            foreach ($oldValues as $oldValue) {
+                $patcher->executeSql('UPDATE setting SET value = :new_value WHERE param = :param AND value = :old_value', [
+                    'new_value' => $newValue,
+                    'param' => $param,
+                    'old_value' => $oldValue,
+                ]);
+            }
+        }
+    }
+
+    private function migrateGatewayAssetsToPublicDirectory(Patcher $patcher): void
+    {
+        $publicGatewayAssetsPath = Path::join(PATH_ROOT, 'public', 'gateways');
+        $oldGatewayAssetPaths = array_unique([
+            Path::join(PATH_ROOT, 'data', 'assets', 'gateways'),
+            Path::join(PATH_DATA, 'assets', 'gateways'),
+            Path::join(PATH_ROOT, 'public', 'assets', 'gateways'),
+        ]);
+
+        foreach ($oldGatewayAssetPaths as $oldGatewayAssetsPath) {
+            if (!$patcher->filesystem->exists($oldGatewayAssetsPath)) {
+                continue;
+            }
+
+            $patcher->filesystem->mkdir($publicGatewayAssetsPath, 0o755);
+
+            $finder = new Finder();
+            $finder->files()->in($oldGatewayAssetsPath)->depth('== 0');
+
+            foreach ($finder as $file) {
+                $target = Path::join($publicGatewayAssetsPath, $file->getFilename());
+                if (!$patcher->filesystem->exists($target)) {
+                    $patcher->filesystem->copy($file->getPathname(), $target);
+                }
+            }
+
+            $patcher->executeFileActions([
+                $oldGatewayAssetsPath => 'unlink',
+            ]);
+        }
     }
 }
