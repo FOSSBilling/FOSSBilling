@@ -101,9 +101,7 @@ class Reader
 
         $this->reader = new MaxMindReader($database);
 
-        if ($locale === null) {
-            $locale = Config::getProperty('i18n.locale', 'en_US');
-        }
+        $locale ??= Config::getProperty('i18n.locale', 'en_US');
 
         $original = $locale;
         if (str_contains((string) $locale, '_')) {

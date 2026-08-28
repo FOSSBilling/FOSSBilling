@@ -83,27 +83,21 @@ class Service implements InjectionAwareInterface
 
     public function getOrderRepository(): OrderRepository
     {
-        if ($this->orderRepository === null) {
-            $this->orderRepository = $this->di['em']->getRepository(Order::class);
-        }
+        $this->orderRepository ??= $this->di['em']->getRepository(Order::class);
 
         return $this->orderRepository;
     }
 
     public function getOrderMetaRepository(): OrderMetaRepository
     {
-        if ($this->orderMetaRepository === null) {
-            $this->orderMetaRepository = $this->di['em']->getRepository(OrderMeta::class);
-        }
+        $this->orderMetaRepository ??= $this->di['em']->getRepository(OrderMeta::class);
 
         return $this->orderMetaRepository;
     }
 
     public function getOrderStatusRepository(): OrderStatusRepository
     {
-        if ($this->orderStatusRepository === null) {
-            $this->orderStatusRepository = $this->di['em']->getRepository(OrderStatus::class);
-        }
+        $this->orderStatusRepository ??= $this->di['em']->getRepository(OrderStatus::class);
 
         return $this->orderStatusRepository;
     }

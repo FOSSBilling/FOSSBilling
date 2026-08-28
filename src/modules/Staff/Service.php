@@ -202,9 +202,7 @@ class Service implements InjectionAwareInterface
     {
         $alwaysAllowed = ['index', 'dashboard', 'profile'];
 
-        if (is_null($member)) {
-            $member = $this->getLoggedInAdminOrCronAdmin();
-        }
+        $member ??= $this->getLoggedInAdminOrCronAdmin();
 
         if ($member->isCron() || in_array($module, $alwaysAllowed)) {
             return true;

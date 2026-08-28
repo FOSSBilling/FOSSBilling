@@ -29,9 +29,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
     protected function getOrderRepository(): OrderRepository
     {
-        if ($this->orderRepository === null) {
-            $this->orderRepository = $this->getDi()['em']->getRepository(Order::class);
-        }
+        $this->orderRepository ??= $this->getDi()['em']->getRepository(Order::class);
 
         return $this->orderRepository;
     }

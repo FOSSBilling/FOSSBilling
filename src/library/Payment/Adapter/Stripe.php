@@ -634,12 +634,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Container\InjectionAwareInte
 
         $eventGatewayId = $this->getGatewayIdFromStripeObject($stripeObject);
 
-        // Older Stripe objects predate gateway_id metadata. Resolve them via
-        // their local invoice/subscription association so upgrades do not
-        // break in-flight payments or existing recurring subscriptions.
-        if ($eventGatewayId === null) {
-            $eventGatewayId = $this->getInvoiceGatewayId($stripeObject->metadata->invoice_id ?? null);
-        }
+        $eventGatewayId ??= $this->getInvoiceGatewayId($stripeObject->metadata->invoice_id ?? null);
 
         if ($eventGatewayId === null && str_starts_with((string) ($event->type ?? ''), 'customer.subscription.')) {
             $eventGatewayId = $this->getLocalSubscriptionGatewayId($stripeObject->id ?? null);

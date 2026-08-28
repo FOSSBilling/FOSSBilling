@@ -25,9 +25,7 @@ class Dispatcher
      */
     public function connect($name, mixed $listener): void
     {
-        if (!isset($this->listeners[$name])) {
-            $this->listeners[$name] = [];
-        }
+        $this->listeners[$name] ??= [];
 
         $this->listeners[$name][] = $listener;
     }
@@ -76,9 +74,7 @@ class Dispatcher
      */
     public function hasListeners($name): bool
     {
-        if (!isset($this->listeners[$name])) {
-            $this->listeners[$name] = [];
-        }
+        $this->listeners[$name] ??= [];
 
         return (bool) Arr::safeCount($this->listeners[$name]);
     }

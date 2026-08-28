@@ -755,9 +755,7 @@ class Service implements InjectionAwareInterface
                         ];
                     }
 
-                    if ($master_order === null) {
-                        $master_order = $order;
-                    }
+                    $master_order ??= $order;
 
                     ++$i;
                 }

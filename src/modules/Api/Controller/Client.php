@@ -102,9 +102,7 @@ class Client implements InjectionAwareInterface
 
     private function _loadConfig(): void
     {
-        if (is_null($this->apiConfig)) {
-            $this->apiConfig = Config::getProperty('api', []);
-        }
+        $this->apiConfig ??= Config::getProperty('api', []);
     }
 
     private function checkUpdateFinalization(string $role, string $class, string $method): void

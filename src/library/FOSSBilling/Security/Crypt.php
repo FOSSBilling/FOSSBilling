@@ -133,9 +133,7 @@ class Crypt implements InjectionAwareInterface
 
     private function resolvePassphrase(?string $pass = null): string
     {
-        if ($pass === null) {
-            $pass = Config::getProperty('info.salt');
-        }
+        $pass ??= Config::getProperty('info.salt');
 
         return (string) $pass;
     }
