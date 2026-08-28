@@ -83,7 +83,10 @@
         "rediss",
         "checkperm",
         "superset",
-        "orphans"
+        "orphans",
+        "idempotently",
+        "gaps",
+        "FileCache"
     ],
 
     "ignoreWords": [
