@@ -592,40 +592,6 @@ class Patcher implements InjectionAwareInterface
         return array_map(fn (string $patchClass): array => [new $patchClass(), 'apply'], $patchesToApply);
     }
 
-    public function restoreLegacyDefaultEmailTemplates(array $legacyHashes): void
-    {
-        $templates = $this->fetchAll('SELECT id, action_code, subject, content FROM email_template WHERE is_overridden = 1 AND is_custom = 0');
-
-        foreach ($templates as $template) {
-            $code = (string) ($template['action_code'] ?? '');
-            if (!isset($legacyHashes[$code])) {
-                continue;
-            }
-
-            $subject = (string) ($template['subject'] ?? '');
-            $content = (string) ($template['content'] ?? '');
-
-            [$oldSubjectHash, $oldContentHash] = $legacyHashes[$code];
-            if (hash('sha256', $subject) !== $oldSubjectHash || hash('sha256', $content) !== $oldContentHash) {
-                continue;
-            }
-
-            $default = $this->getDefaultEmailTemplateData($code);
-            if ($default === null) {
-                continue;
-            }
-
-            $this->executeSql(
-                'UPDATE email_template SET is_overridden = 0, subject = :subject, content = :content WHERE id = :id',
-                [
-                    'subject' => $default['subject'],
-                    'content' => $default['content'],
-                    'id' => $template['id'],
-                ]
-            );
-        }
-    }
-
     public function refreshComposerAutoloader(): void
     {
         $uuidClass = Uuid::class;
@@ -665,45 +631,6 @@ class Patcher implements InjectionAwareInterface
                 require $path;
             }
         });
-    }
-
-    public function getDefaultEmailTemplateData(string $code): ?array
-    {
-        $path = $this->getDefaultEmailTemplatePath($code);
-        if ($path === null) {
-            return null;
-        }
-
-        $template = $this->filesystem->readFile($path);
-
-        $subject = ucwords(str_replace('_', ' ', $code));
-        preg_match('#{%\s*block subject\s*%}(.*?){%\s*endblock\s*%}#s', $template, $subjectMatches);
-        if (isset($subjectMatches[1])) {
-            $subject = $subjectMatches[1];
-        }
-
-        $content = '';
-        preg_match('/{%.?block content.?%}((.*?\n)+){%.?endblock.?%}/m', $template, $contentMatches);
-        if (isset($contentMatches[1])) {
-            $content = $contentMatches[1];
-        }
-
-        return [
-            'subject' => $subject,
-            'content' => $content,
-        ];
-    }
-
-    public function getDefaultEmailTemplatePath(string $code): ?string
-    {
-        $matches = [];
-        if (!preg_match('/mod_([a-zA-Z0-9]+)_([a-zA-Z0-9]+)/i', $code, $matches)) {
-            return null;
-        }
-
-        $path = Path::join(PATH_MODS, ucfirst($matches[1]), 'templates/email', "{$code}.html.twig");
-
-        return $this->filesystem->exists($path) ? $path : null;
     }
 
     public function removeEmptyDirectories(array $directories): void
