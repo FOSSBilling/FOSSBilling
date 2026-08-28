@@ -677,7 +677,7 @@ class Patcher implements InjectionAwareInterface
         $template = $this->filesystem->readFile($path);
 
         $subject = ucwords(str_replace('_', ' ', $code));
-        preg_match('#{%\\s*block subject\\s*%}(.*?){%\\s*endblock\\s*%}#s', $template, $subjectMatches);
+        preg_match('#{%\s*block subject\s*%}(.*?){%\s*endblock\s*%}#s', $template, $subjectMatches);
         if (isset($subjectMatches[1])) {
             $subject = $subjectMatches[1];
         }
