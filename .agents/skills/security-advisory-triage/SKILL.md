@@ -27,11 +27,16 @@ plausible."
    gives you the reporter's summary, description, severity, CVSS, CWEs, and state
    (`triage`/`draft`/`published`/`closed`). Read the whole thing before touching code.
 
-2. **Confirm you're looking at current code.** Before you verify anything, check
-   that your working tree matches the branch the report claims to target:
-   `git merge-base --is-ancestor origin/main HEAD` (or whatever branch is relevant).
-   A "verified" conclusion built on stale code isn't a verification at all. This
-   is cheap to check and easy to skip by accident, so make it a reflex.
+2. **Confirm you're looking at current code, exactly.** Fetch the branch the
+   report claims to target (`git fetch origin main`, or whatever branch is
+   relevant) and require a clean worktree (`git status --porcelain` empty).
+   Then compare revisions exactly: `git rev-parse HEAD` must equal
+   `git rev-parse origin/main`. An ancestor check alone (`git merge-base
+   --is-ancestor origin/main HEAD`) isn't enough. It passes even if
+   `origin/main` is stale relative to the actual remote, or if your checkout
+   has extra local commits the report never saw, and it doesn't catch
+   uncommitted changes either. A "verified" conclusion built on the wrong code
+   state isn't a verification at all, so make the exact check a reflex.
 
 3. **Trace the full path, not just the quoted lines.** Reporters usually quote two
    or three lines as evidence. Read those lines for real, but don't stop there.
@@ -47,14 +52,22 @@ plausible."
    authorization checks) by grepping/reading for it yourself. Absence claims are
    exactly the kind of thing worth double-checking, not assuming.
 
-4. **Pull related history for context.** `gh api /repos/{owner}/{repo}/security-advisories`
-   lists every advisory in the repo, including closed and draft ones most people
-   never look at. Skim titles for anything thematically close to the current
-   report and read the close ones in full. This surfaces real things: a prior
-   closed report about a related bug class, or a PR that hardened sibling code
-   but happened to miss the exact path being reported now. That kind of context
-   turns "here's a bug" into "here's why it slipped through," which is both more
-   convincing and useful for Stage 2's Details section later.
+4. **Pull related history for context.** Query every advisory state
+   explicitly rather than trusting an unfiltered call: `gh api --method GET
+   /repos/{owner}/{repo}/security-advisories -f state=<published|draft|triage|closed>
+   --paginate`, once per state. A maintainer-authenticated session may find the
+   unfiltered call already returns everything (it did when this was tested
+   directly against this repo), but that can depend on token permissions, so
+   don't rely on it. `--method GET` matters here: `gh api` defaults to POST
+   whenever you pass `-f` without it, which for this endpoint hits the
+   advisory-*creation* path instead and fails outright, so it's worth getting
+   right the first time rather than debugging a confusing error. Skim titles
+   for anything thematically close to the current report and read the close
+   ones in full. This surfaces real things: a prior closed report about a
+   related bug class, or a PR that hardened sibling code but happened to miss
+   the exact path being reported now. That kind of context turns "here's a
+   bug" into "here's why it slipped through," which is both more convincing
+   and useful for Stage 2's Details section later.
 
 5. **If unit tests exist for the relevant code, read them.** They're often the
    fastest, most authoritative way to confirm exact behavior (exception messages,
@@ -69,10 +82,13 @@ plausible."
    honest verdict, not validating the reporter's framing.
 
 **Confidentiality note:** if the advisory is unpublished (`published_at: null`,
-state `triage`/`draft`), treat the GHSA ID and exploit details as sensitive while
-you work. Don't put them in public commit messages, PR titles/bodies, branch
-names, or CI run titles; this has actually leaked before. Keep working notes in
-a scratchpad or a private location instead.
+state `triage`/`draft`), treat the GHSA ID and exploit details as sensitive
+everywhere, not just in committed artifacts. Don't put them in public commit
+messages, PR titles/bodies, branch names, or CI run titles; this has actually
+leaked before. The same caution applies to chat, code review comments, and any
+other tool output: only share specifics with a requester and channel you've
+actually confirmed are private to this advisory's disclosure. Keep working
+notes in a scratchpad or a private location instead.
 
 ## Stage 2: Refine the advisory and apply it
 
@@ -93,7 +109,7 @@ way it got built in the first place. If you ever suspect it's drifted from
 reality (a new published advisory breaks one of its rules), re-derive by
 sampling directly:
 
-```
+```shell
 gh api /repos/{owner}/{repo}/security-advisories --paginate
 # then fetch several state=published ones in full and diff their structure
 ```
@@ -151,11 +167,19 @@ kind of thing the user will keep correcting a little at a time if you don't.
 
 ### Apply it, but only once approved
 
-The GHSA API has two places that both need updating on every advisory (the
-description body, and a separate structured `vulnerabilities[0]` field), and
-it's easy to only remember one. See `references/house-style.md` for exactly
-what that second field is and the ecosystem-enum gotcha that will otherwise
-produce a confusing 422.
+Applying a refined advisory is normally two separate PATCH calls, and it's
+easy to only remember the first:
+
+1. The top-level fields: `summary` (title), `description` (the Markdown
+   sections above), `cwe_ids`, and either `cvss_vector_string` or `severity`
+   (the API rejects a request setting both).
+2. The separate structured `vulnerabilities` field: an array, not a single
+   object. Don't assume index `[0]` is the whole story; check how many
+   entries actually exist. FOSSBilling is one application rather than a
+   multi-package repo, so one entry is the norm here, but confirm it rather
+   than assume it. See `references/house-style.md` for what belongs in each
+   entry and the ecosystem-enum gotcha that will otherwise produce a
+   confusing 422.
 
 Treat `gh api --method PATCH .../security-advisories/{ghsa_id}` as a real,
 external, semi-irreversible action, even while the advisory is still

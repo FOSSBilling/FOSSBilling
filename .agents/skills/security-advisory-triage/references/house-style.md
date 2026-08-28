@@ -18,7 +18,7 @@ maintainer-authored rewrite that actually gets published.
 
 ## Section order
 
-```
+```markdown
 ## Summary
 ## Impact
 ## Affected Versions
@@ -113,11 +113,16 @@ instead.
 
 ## Severity / CVSS
 
-This repo scores **CVSS v4 only**. Every published advisory checked has
-`cvss_v3: null` and a populated `cvss_v4` field; don't carry over a v3.1
-vector just because the reporter submitted one. Do NOT restate the vector
-or score anywhere in the description body; it lives solely in the
-advisory's `cvss_vector_string` API field.
+This repo scores **CVSS v4 only**. On a GET, every published advisory
+checked has a null `cvss_severities.cvss_v3` and a populated
+`cvss_severities.cvss_v4` (GitHub nests both under `cvss_severities` on
+read); don't carry over a v3.1 vector just because the reporter submitted
+one. Do NOT restate the vector or score anywhere in the description body.
+On a PATCH, it's a different shape than the read: the top-level
+`cvss_vector_string` field, not the nested read path. The API also rejects
+a request that sets both `severity` and `cvss_vector_string` at once; pick
+one (this repo's convention is to always send `cvss_vector_string` and let
+GitHub derive `severity` from it).
 
 Compute the score with a real tool rather than by hand. CVSS v4's base
 score comes from a nested lookup table (the "macrovector"), not a formula,
@@ -174,17 +179,25 @@ fits naturally.
 
 ## Applying changes to the live advisory
 
-Two places need updating, and it's easy to only remember one:
+Two PATCH calls' worth of fields, and it's easy to only remember the prose:
 
-1. The **description body** (the Markdown sections above).
-2. A **separate structured field**, `vulnerabilities[0]`:
-   `package.ecosystem` / `package.name` / `vulnerable_version_range` /
-   `patched_versions`. This is what machine-readable consumers (OSV,
-   Dependabot-style tooling) actually key off, and it's easy to leave
-   silently inheriting whatever the original reporter typed if you only
-   ever edit the prose. Explicitly review and PATCH it too, every time,
-   even if the values turn out unchanged from the reporter's submission.
-   That should be a deliberate confirmation, not an accident of omission.
+1. **Top-level fields**: `summary` (title), `description` (the Markdown
+   sections above), `cwe_ids`, and either `cvss_vector_string` or `severity`
+   (the API rejects setting both at once; see Severity / CVSS above).
+2. A **separate structured field**, `vulnerabilities`: an array, not a
+   single object. Don't assume index `[0]` is the whole story; check how
+   many entries actually exist. FOSSBilling is a single application rather
+   than a multi-package repo, so one entry is the norm, but confirm it. Each
+   entry is shaped `package.ecosystem` / `package.name` /
+   `vulnerable_version_range` / `patched_versions`, which is what
+   machine-readable consumers (OSV, Dependabot-style tooling) actually key
+   off. It's easy to leave this silently inheriting whatever the original
+   reporter typed if you only ever edit the prose; explicitly review and
+   PATCH it too, every time, even if the values turn out unchanged from the
+   reporter's submission. That should be a deliberate confirmation, not an
+   accident of omission. When you do PATCH it, send the complete object for
+   each entry (all four fields), not just the one you're changing; treat it
+   as a full replacement rather than assume it merges.
 
 **Ecosystem enum gotcha:** FOSSBilling is an application, not a
 package-registry library, so the correct `package.ecosystem` value is the
@@ -232,3 +245,18 @@ if you need the specifics):
 - v1.7: caught the skill itself violating its own em-dash/filler-word rule
   throughout (SKILL.md and this file). Rewritten. Lesson: apply the Voice
   section to the skill's own prose, not just to advisory drafts it produces.
+- v1.8: after external review, corrected several claims that hadn't been
+  verified directly. CVSS section now distinguishes the nested read path
+  (`cvss_severities.cvss_v3`/`cvss_v4`) from the flat write field
+  (`cvss_vector_string`), and notes `severity`/`cvss_vector_string` are
+  mutually exclusive on write. The live-advisory PATCH checklist now lists
+  the actual top-level fields (`summary`, `description`, `cwe_ids`,
+  `cvss_vector_string`/`severity`) instead of just "the description body",
+  notes `vulnerabilities` is an array (don't assume `[0]` is everything),
+  and says to send the complete object per entry on write rather than a
+  partial one. Confirmed directly against this repo that an unfiltered
+  `security-advisories` call already returns every state for a
+  maintainer-authenticated token, but the guidance still recommends explicit
+  per-state queries for portability, plus the `gh api -f` without
+  `--method GET` footgun (silently POSTs to the advisory-creation endpoint
+  instead) is now called out explicitly, since it's real and easy to hit.
