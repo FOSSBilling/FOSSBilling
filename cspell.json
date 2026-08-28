@@ -79,7 +79,8 @@
         "namedlock",
         "entrancy",
         "writability",
-        "rediss"
+        "rediss",
+        "checkperm"
     ],
 
     "ignoreWords": [
