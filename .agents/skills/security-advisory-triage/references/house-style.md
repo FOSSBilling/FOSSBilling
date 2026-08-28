@@ -189,15 +189,17 @@ Two PATCH calls' worth of fields, and it's easy to only remember the prose:
    many entries actually exist. FOSSBilling is a single application rather
    than a multi-package repo, so one entry is the norm, but confirm it. Each
    entry is shaped `package.ecosystem` / `package.name` /
-   `vulnerable_version_range` / `patched_versions`, which is what
-   machine-readable consumers (OSV, Dependabot-style tooling) actually key
-   off. It's easy to leave this silently inheriting whatever the original
-   reporter typed if you only ever edit the prose; explicitly review and
-   PATCH it too, every time, even if the values turn out unchanged from the
-   reporter's submission. That should be a deliberate confirmation, not an
-   accident of omission. When you do PATCH it, send the complete object for
-   each entry (all four fields), not just the one you're changing; treat it
-   as a full replacement rather than assume it merges.
+   `vulnerable_version_range` / `patched_versions` / `vulnerable_functions`,
+   which is what machine-readable consumers (OSV, Dependabot-style tooling)
+   actually key off. It's easy to leave this silently inheriting whatever
+   the original reporter typed if you only ever edit the prose; explicitly
+   review and PATCH it too, every time, even if the values turn out
+   unchanged from the reporter's submission. That should be a deliberate
+   confirmation, not an accident of omission. When you do PATCH it, send the
+   complete object for each entry, including `vulnerable_functions` even
+   when it's an empty array, not just the one field you're changing; treat
+   it as a full replacement rather than assume it merges, so anything you
+   omit is anything you erase.
 
 **Ecosystem enum gotcha:** FOSSBilling is an application, not a
 package-registry library, so the correct `package.ecosystem` value is the
@@ -260,3 +262,9 @@ if you need the specifics):
   per-state queries for portability, plus the `gh api -f` without
   `--method GET` footgun (silently POSTs to the advisory-creation endpoint
   instead) is now called out explicitly, since it's real and easy to hit.
+- v1.9: the v1.8 "send the complete object" instruction listed only four
+  `vulnerabilities` entry fields and omitted `vulnerable_functions`, which
+  is a real field on the object (this session's own successful PATCH sent
+  it as `[]`). Following the v1.8 guidance literally would have wiped
+  `vulnerable_functions` on any advisory where it's populated. Added it to
+  the field list.
