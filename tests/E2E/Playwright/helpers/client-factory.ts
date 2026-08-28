@@ -41,8 +41,28 @@ export async function createTestClient(request: APIRequestContext): Promise<Test
     throw new Error(`Client creation returned an unexpected response: ${JSON.stringify(body)}`);
   }
 
+  // guest/client/create no longer returns the new client's id (doing so would
+  // reopen the email-enumeration issue it was hardened against), so recover it
+  // by logging in with the credentials we just registered instead.
+  const loginResponse = await request.post('/api/guest/client/login', {
+    data: {
+      email: client.email,
+      password: client.password,
+    },
+  });
+
+  if (!loginResponse.ok()) {
+    throw new Error(`Client login after creation failed with HTTP ${loginResponse.status()}: ${await loginResponse.text()}`);
+  }
+
+  const loginBody = await loginResponse.json();
+
+  if (loginBody.error !== null || !loginBody.result?.id) {
+    throw new Error(`Client login after creation returned an unexpected response: ${JSON.stringify(loginBody)}`);
+  }
+
   return {
     ...client,
-    id: body.result,
+    id: loginBody.result.id,
   };
 }
