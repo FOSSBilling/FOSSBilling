@@ -24,7 +24,10 @@ test('disposable email check', function (): void {
     // for the same email (client_signup_email), so a fixed address would
     // silently return true without creating a client on a rerun within the
     // same hour, breaking the assertions below.
-    $email = 'email_' . uniqid() . '@yopmail.net';
+    $email = 'email_' . bin2hex(random_bytes(12)) . '@yopmail.net';
+    $existingAccount = ApiClient::request('admin/client/get', ['email' => $email]);
+    expect($existingAccount->wasSuccessful())->toBeFalse();
+
     $password = 'A1a' . bin2hex(random_bytes(6));
     $result = ApiClient::request('guest/client/create', [
         'email' => $email,
@@ -53,7 +56,10 @@ test('stop forum spam', function (): void {
     expect($result->wasSuccessful())->toBeTrue();
 
     // Unique per run: see the comment in the 'disposable email check' test above.
-    $email = 'email_' . uniqid() . '@example.com';
+    $email = 'email_' . bin2hex(random_bytes(12)) . '@example.com';
+    $existingAccount = ApiClient::request('admin/client/get', ['email' => $email]);
+    expect($existingAccount->wasSuccessful())->toBeFalse();
+
     $password = 'A1a' . bin2hex(random_bytes(6));
     $result = ApiClient::request('guest/client/create', [
         'email' => $email,
