@@ -231,14 +231,6 @@ class Patcher implements InjectionAwareInterface
     }
 
     /**
-     * @deprecated use {@see self::isLegacyPatchDriver()} instead
-     */
-    public function isMysqlDriver(): bool
-    {
-        return $this->isLegacyPatchDriver();
-    }
-
-    /**
      * Brings the live schema up to date with current Doctrine entity metadata - see
      * {@see SchemaSynchronizer} for exactly what this does and does not cover (additive structural
      * changes only, never a substitute for the legacy patches' data transformations).

@@ -43,12 +43,4 @@ final readonly class Identity
     {
         return $this->role;
     }
-
-    /**
-     * @deprecated use getRole() instead — kept for backwards compatibility, returns Role::value
-     */
-    public function getType(): string
-    {
-        return $this->role->value;
-    }
 }
