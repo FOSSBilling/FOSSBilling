@@ -347,6 +347,19 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
 
     public function renewDomain(Registrar_Domain $domain): bool
     {
+        // ResellerClub requires the domain's current expiry date (in epoch seconds) on every
+        // renewal request, as a safeguard against renewing against stale data. FOSSBilling only
+        // learns that date via a prior successful WHOIS sync, so a domain whose sync never
+        // completed (e.g. it ran too soon after registration, before the registry had propagated
+        // the record) reaches here with no expiration time cached locally. Sending the request
+        // without exp-date fails with "Required parameter missing: exp-date", and since the
+        // renewal never succeeds, the sync that would have fixed it for next time never runs
+        // either - the domain is stuck failing every renewal attempt. Fetch it fresh instead of
+        // giving up. See https://github.com/FOSSBilling/FOSSBilling/issues/4229.
+        if (empty($domain->getExpirationTime())) {
+            $this->getDomainDetails($domain);
+        }
+
         $params = [
             'order-id' => $this->_getDomainOrderId($domain),
             'years' => $domain->getRegistrationPeriod(),
