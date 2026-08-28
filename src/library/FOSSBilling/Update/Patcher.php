@@ -11,7 +11,6 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Update;
 
-use Box\Mod\Extension\Entity\Extension;
 use FOSSBilling\Container\InjectionAwareInterface;
 use FOSSBilling\Doctrine\DriverManagerFactory;
 use FOSSBilling\Doctrine\ModuleEntityScope;
@@ -31,7 +30,6 @@ class Patcher implements InjectionAwareInterface
 {
     public ?\Pimple\Container $di = null;
     public Filesystem $filesystem;
-    public array $downloadableStorageMigrationMap = [];
 
     public function __construct()
     {
@@ -706,128 +704,6 @@ class Patcher implements InjectionAwareInterface
         $path = Path::join(PATH_MODS, ucfirst($matches[1]), 'templates/email', "{$code}.html.twig");
 
         return $this->filesystem->exists($path) ? $path : null;
-    }
-
-    public function generateDownloadableStoredFilename(): string
-    {
-        do {
-            $storedFilename = bin2hex(random_bytes(32));
-            $filePath = Path::join(PATH_UPLOADS, $storedFilename);
-        } while ($this->filesystem->exists($filePath));
-
-        return $storedFilename;
-    }
-
-    public function copyLegacyDownloadableFile(string $filename): ?string
-    {
-        if (isset($this->downloadableStorageMigrationMap[$filename])) {
-            return $this->downloadableStorageMigrationMap[$filename];
-        }
-
-        $legacyPath = Path::join(PATH_UPLOADS, md5($filename));
-        if (!$this->filesystem->exists($legacyPath)) {
-            return null;
-        }
-
-        $storedFilename = $this->generateDownloadableStoredFilename();
-        $this->filesystem->copy($legacyPath, Path::join(PATH_UPLOADS, $storedFilename));
-        $this->downloadableStorageMigrationMap[$filename] = $storedFilename;
-
-        return $storedFilename;
-    }
-
-    public function migrateDownloadableProductStorageKeys(): void
-    {
-        $products = $this->fetchAll("SELECT id, config FROM product WHERE type = 'downloadable'");
-
-        foreach ($products as $product) {
-            $config = json_decode((string) $product['config'], true) ?: [];
-            if (!isset($config['filename']) || isset($config['stored_filename'])) {
-                continue;
-            }
-
-            $storedFilename = $this->copyLegacyDownloadableFile((string) $config['filename']);
-            if ($storedFilename === null) {
-                continue;
-            }
-
-            $config['stored_filename'] = $storedFilename;
-            $this->executeSql('UPDATE product SET config = :config, updated_at = :updated_at WHERE id = :id', [
-                'config' => json_encode($config),
-                'updated_at' => date('Y-m-d H:i:s'),
-                'id' => $product['id'],
-            ]);
-        }
-    }
-
-    public function migrateDownloadableServiceStorageKeys(): void
-    {
-        $services = $this->fetchAll('SELECT sd.id, sd.filename, sd.stored_filename, co.id AS order_id, co.config AS order_config FROM service_downloadable sd LEFT JOIN client_order co ON sd.id = co.service_id AND co.service_type = "downloadable" WHERE sd.filename IS NOT NULL AND sd.filename != ""');
-        $processedServiceUpdates = [];
-
-        foreach ($services as $service) {
-            if (!empty($service['stored_filename'])) {
-                $storedFilename = (string) $service['stored_filename'];
-            } else {
-                $serviceId = (int) $service['id'];
-                if (isset($processedServiceUpdates[$serviceId])) {
-                    $storedFilename = $this->copyLegacyDownloadableFile((string) $service['filename']);
-                } else {
-                    $storedFilename = $this->copyLegacyDownloadableFile((string) $service['filename']);
-                    if ($storedFilename === null) {
-                        continue;
-                    }
-
-                    $this->executeSql('UPDATE service_downloadable SET stored_filename = :stored_filename, updated_at = :updated_at WHERE id = :id', [
-                        'stored_filename' => $storedFilename,
-                        'updated_at' => date('Y-m-d H:i:s'),
-                        'id' => $service['id'],
-                    ]);
-                    $processedServiceUpdates[$serviceId] = true;
-                }
-            }
-
-            if (empty($service['order_id'])) {
-                continue;
-            }
-
-            $orderConfig = json_decode($service['order_config'] ?? '', true) ?: [];
-            if (isset($orderConfig['stored_filename'])) {
-                continue;
-            }
-
-            $orderConfig['filename'] ??= $service['filename'];
-            $orderConfig['stored_filename'] = $storedFilename;
-            $this->executeSql('UPDATE client_order SET config = :config, updated_at = :updated_at WHERE id = :id', [
-                'config' => json_encode($orderConfig),
-                'updated_at' => date('Y-m-d H:i:s'),
-                'id' => $service['order_id'],
-            ]);
-        }
-    }
-
-    public function migrateDownloadableOrderStorageKeys(): void
-    {
-        $orders = $this->fetchAll("SELECT id, config FROM client_order WHERE service_type = 'downloadable' AND config LIKE '%filename%'");
-
-        foreach ($orders as $order) {
-            $config = json_decode($order['config'] ?? '', true) ?: [];
-            if (!isset($config['filename']) || isset($config['stored_filename'])) {
-                continue;
-            }
-
-            $storedFilename = $this->copyLegacyDownloadableFile((string) $config['filename']);
-            if ($storedFilename === null) {
-                continue;
-            }
-
-            $config['stored_filename'] = $storedFilename;
-            $this->executeSql('UPDATE client_order SET config = :config, updated_at = :updated_at WHERE id = :id', [
-                'config' => json_encode($config),
-                'updated_at' => date('Y-m-d H:i:s'),
-                'id' => $order['id'],
-            ]);
-        }
     }
 
     public function removeEmptyDirectories(array $directories): void
