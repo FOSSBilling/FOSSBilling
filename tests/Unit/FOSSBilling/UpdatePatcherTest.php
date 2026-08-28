@@ -25,13 +25,6 @@ test('stock reservation backfill patch follows the TLD periods patch', function 
         ->and($patches[100][1])->toBe('apply');
 });
 
-test('unpaid invoice id index patch follows the stock reservation backfill patch', function (): void {
-    $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 100);
-
-    expect($patches)->toHaveKey(101)
-        ->and($patches[101][1])->toBe('apply');
-});
-
 test('manual currency rate patch follows the currency formatting patch', function (): void {
     $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 93);
 
@@ -510,49 +503,8 @@ test('stock reservation backfill patch stops once a product is already oversold'
     (new FOSSBilling\Update\Patch\Patch100())->apply($patcher);
 });
 
-test('unpaid invoice id index patch adds the index for existing installs', function (): void {
-    $indexes = Mockery::mock(PDOStatement::class);
-    $indexes->expects('execute')->with([])->andReturnTrue();
-    $indexes->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([]);
-
-    $addIndex = Mockery::mock(PDOStatement::class);
-    $addIndex->expects('execute')->with([])->andReturnTrue();
-
-    $pdo = Mockery::mock(PDO::class);
-    $pdo->expects('prepare')->with('SHOW INDEX FROM `client_order`')->andReturn($indexes);
-    $pdo->expects('prepare')
-        ->with('ALTER TABLE `client_order` ADD INDEX `client_order_unpaid_invoice_id_idx` (`unpaid_invoice_id`)')
-        ->andReturn($addIndex);
-
-    $di = new Pimple\Container();
-    $di['pdo'] = $pdo;
-
-    $patcher = new Patcher();
-    $patcher->setDi($di);
-    (new FOSSBilling\Update\Patch\Patch101())->apply($patcher);
-});
-
-test('unpaid invoice id index patch is a no-op when the index already exists', function (): void {
-    $indexes = Mockery::mock(PDOStatement::class);
-    $indexes->expects('execute')->with([])->andReturnTrue();
-    $indexes->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
-        ['Key_name' => 'client_order_unpaid_invoice_id_idx'],
-    ]);
-
-    $pdo = Mockery::mock(PDO::class);
-    $pdo->expects('prepare')->with('SHOW INDEX FROM `client_order`')->andReturn($indexes);
-    $pdo->shouldNotReceive('prepare')->with('ALTER TABLE `client_order` ADD INDEX `client_order_unpaid_invoice_id_idx` (`unpaid_invoice_id`)');
-
-    $di = new Pimple\Container();
-    $di['pdo'] = $pdo;
-
-    $patcher = new Patcher();
-    $patcher->setDi($di);
-    (new FOSSBilling\Update\Patch\Patch101())->apply($patcher);
-});
-
-test('custom pages slug unique patch follows the unpaid invoice id index patch', function (): void {
-    $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 101);
+test('custom pages slug unique patch follows the stock reservation backfill patch', function (): void {
+    $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 100);
 
     expect($patches)->toHaveKey(102)
         ->and($patches[102][1])->toBe('apply');
