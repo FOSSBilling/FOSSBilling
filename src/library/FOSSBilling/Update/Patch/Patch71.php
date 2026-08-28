@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch71 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 71;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // Ensure the invoice table has the gateway_id, text_1, and text_2

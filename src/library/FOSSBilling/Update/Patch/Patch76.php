@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch76 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 76;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // The `activity_client_email` table was missing an `updated_at` column,

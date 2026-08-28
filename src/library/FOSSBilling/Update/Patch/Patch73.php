@@ -17,11 +17,6 @@ use Symfony\Component\Filesystem\Path;
 
 class Patch73 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 73;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // Merge guest/public support tickets into the regular support ticket tables.

@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch87 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 87;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // Carries the same attachment (e.g. a PDF invoice) into the sent-email activity log, so

@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch103 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 103;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // Money columns: replace legacy DOUBLE/VARCHAR storage with DECIMAL so

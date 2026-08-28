@@ -19,11 +19,6 @@ use Symfony\Component\Finder\Finder;
 
 class Patch56 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 56;
-    }
-
     public function apply(Patcher $patcher): void
     {
         $length = $patcher->getColumnLength('tld', 'tld');

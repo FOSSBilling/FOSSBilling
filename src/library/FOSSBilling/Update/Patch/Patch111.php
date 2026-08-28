@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch111 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 111;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // The Serviceapikey module (PR #4055) added the ServiceApiKey Doctrine entity but

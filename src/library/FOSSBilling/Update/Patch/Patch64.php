@@ -17,11 +17,6 @@ use Symfony\Component\Finder\Finder;
 
 class Patch64 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 64;
-    }
-
     public function apply(Patcher $patcher): void
     {
         $this->migrateGatewayAssetsToPublicDirectory($patcher);

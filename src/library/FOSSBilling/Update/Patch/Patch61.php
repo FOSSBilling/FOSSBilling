@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch61 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 61;
-    }
-
     public function apply(Patcher $patcher): void
     {
         $columns = [];

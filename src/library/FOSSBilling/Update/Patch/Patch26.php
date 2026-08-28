@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch26 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 26;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // Migration steps from BoxBilling to FOSSBilling - added favicon settings.

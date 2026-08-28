@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch82 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 82;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // Per-staff-group restriction of "sent to staff" email notifications.

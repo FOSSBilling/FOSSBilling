@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch42 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 42;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // This patch will migrate previous currency exchange rate data provider settings to the new ones

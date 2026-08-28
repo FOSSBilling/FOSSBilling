@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch85 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 85;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // Raises the client custom field cap from 10 to 20.

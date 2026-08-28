@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch77 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 77;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // The email queue table was renamed from `mod_email_queue` to

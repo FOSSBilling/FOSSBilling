@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch104 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 104;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // Legacy RedBeanPHP installs stored `0` rather than NULL for clients with no

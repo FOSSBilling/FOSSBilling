@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch63 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 63;
-    }
-
     public function apply(Patcher $patcher): void
     {
         if ($patcher->tableHasColumn('currency', 'title')) {

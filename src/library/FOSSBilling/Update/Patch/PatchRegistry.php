@@ -19,13 +19,11 @@ final class PatchRegistry
         27 => Patch27::class,
         28 => Patch28::class,
         29 => Patch29::class,
-        // 30-32 removed: guzzlehttp/htaccess/phpmailer/FileCache cleanups are now handled by Patch33 superset.
         33 => Patch33::class,
         34 => Patch34::class,
         35 => Patch35::class,
         36 => Patch36::class,
         37 => Patch37::class,
-        // 38 removed: Ispconfig3/Virtualmin cleanup is now handled by Patch39 superset.
         39 => Patch39::class,
         40 => Patch40::class,
         41 => Patch41::class,

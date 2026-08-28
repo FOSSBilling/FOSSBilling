@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch74 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 74;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // Backfill hashes NULLed by the original revision of patch67.

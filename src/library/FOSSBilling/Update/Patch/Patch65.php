@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch65 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 65;
-    }
-
     public function apply(Patcher $patcher): void
     {
         if (!$patcher->tableHasColumn('service_downloadable', 'stored_filename')) {

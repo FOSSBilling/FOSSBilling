@@ -17,11 +17,6 @@ use Symfony\Component\Finder\Finder;
 
 class Patch51 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 51;
-    }
-
     public function apply(Patcher $patcher): void
     {
         $oldDir = Path::join(PATH_MODS, 'Invoice', 'pdf_template');

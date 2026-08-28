@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch60 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 60;
-    }
-
     public function apply(Patcher $patcher): void
     {
         $patcher->executeSql("DELETE FROM extension_meta WHERE extension = 'mod_hook' AND rel_type = 'mod' AND rel_id = 'Paidsupport' AND meta_key = 'listener'");

@@ -16,11 +16,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch68 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 68;
-    }
-
     public function apply(Patcher $patcher): void
     {
         $row = $patcher->fetchOne(

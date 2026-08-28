@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch110 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 110;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // These columns were declared int(11) in structure.sql while the primary key

@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch69 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 69;
-    }
-
     public function apply(Patcher $patcher): void
     {
         if (!$patcher->tableHasColumn('email_template', 'last_error')) {

@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch89 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 89;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // Allows invoice notifications to be sent to an address separate from the client's login email.

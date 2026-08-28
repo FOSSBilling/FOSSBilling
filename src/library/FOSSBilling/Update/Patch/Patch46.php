@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch46 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 46;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // Normalize legacy values before converting to restrictive ENUM columns.

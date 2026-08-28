@@ -15,7 +15,5 @@ use FOSSBilling\Update\Patcher;
 
 interface PatchInterface
 {
-    public function getVersion(): int;
-
     public function apply(Patcher $patcher): void;
 }

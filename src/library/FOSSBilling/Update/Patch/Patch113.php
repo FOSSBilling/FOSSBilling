@@ -17,11 +17,6 @@ use Symfony\Component\Filesystem\Path;
 
 class Patch113 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 113;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // admin.salt is dead weight from a pre-password_hash() auth scheme - nothing in the

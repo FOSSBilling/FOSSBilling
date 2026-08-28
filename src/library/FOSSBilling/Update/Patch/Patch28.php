@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch28 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 28;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // Patch to remove .html from email templates action code.

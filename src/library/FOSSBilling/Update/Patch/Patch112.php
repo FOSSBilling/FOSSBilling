@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch112 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 112;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // Adds an admin-configurable per-TLD flag to require the transfer code (EPP/auth

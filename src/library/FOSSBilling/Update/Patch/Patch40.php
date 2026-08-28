@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch40 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 40;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // Added `passwordLength` field to server managers

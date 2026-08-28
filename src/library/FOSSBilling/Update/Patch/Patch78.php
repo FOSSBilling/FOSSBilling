@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch78 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 78;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // Rework admin groups and permissions

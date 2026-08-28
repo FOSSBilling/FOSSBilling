@@ -16,15 +16,8 @@ use Symfony\Component\Filesystem\Path;
 
 class Patch39 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 39;
-    }
-
     public function apply(Patcher $patcher): void
     {
-        // Superset of 38 + 39: Ispconfig3/Virtualmin managers + srp locale fix.
-        // 38 is now a gap; this single patch deletes all 3 orphans idempotently.
         $fileActions = [
             Path::join(PATH_LIBRARY, 'Server', 'Manager', 'Ispconfig3.php') => 'unlink',
             Path::join(PATH_LIBRARY, 'Server', 'Manager', 'Virtualmin.php') => 'unlink',

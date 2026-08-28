@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch47 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 47;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // Migrate "membership" product type to "custom" product type

@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch67 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 67;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // Add hash_expires_at column to invoice table. New invoices (and resends of

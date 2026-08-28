@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch53 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 53;
-    }
-
     public function apply(Patcher $patcher): void
     {
         $pdo = $patcher->getPdo();

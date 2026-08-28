@@ -16,11 +16,6 @@ use Symfony\Component\Filesystem\Path;
 
 class Patch116 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 116;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // Superset of 115 + 116: library reorg orphans (FOSSBilling/*) + Box/* move (4b7bf9acf).

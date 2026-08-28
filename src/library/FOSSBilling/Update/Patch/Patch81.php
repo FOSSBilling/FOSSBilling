@@ -16,11 +16,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch81 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 81;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // Per-user timezone for clients and staff. NULL falls back to the system `i18n.timezone` config.

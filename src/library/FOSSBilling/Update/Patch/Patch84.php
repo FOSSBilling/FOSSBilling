@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch84 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 84;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // Admins can now edit ticket replies; this table snapshots a message's prior content on each edit.

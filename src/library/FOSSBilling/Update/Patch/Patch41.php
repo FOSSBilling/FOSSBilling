@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch41 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 41;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // Remove the  `manifest` column from the extensions table since it's no longer used

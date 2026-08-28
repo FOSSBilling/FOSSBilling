@@ -16,11 +16,6 @@ use Symfony\Component\Filesystem\Path;
 
 class Patch105 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 105;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // Remove core files that were deleted or moved after the 0.8.5 release.

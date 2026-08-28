@@ -16,15 +16,8 @@ use Symfony\Component\Filesystem\Path;
 
 class Patch33 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 33;
-    }
-
     public function apply(Patcher $patcher): void
     {
-        // Superset of 30-33: guzzlehttp/htaccess/phpmailer/FileCache cleanups.
-        // 30-32 are now gaps; this single patch deletes all 19 orphans idempotently.
         $fileActions = [
             Path::join(PATH_VENDOR, 'guzzlehttp') => 'unlink',
             Path::join(PATH_ROOT, 'htaccess.txt') => 'unlink',

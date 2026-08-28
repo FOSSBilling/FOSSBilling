@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch90 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 90;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // Patch 57 used hashes from templates newer than the last 0.7 release. During a

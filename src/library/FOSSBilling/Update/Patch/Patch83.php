@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch83 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 83;
-    }
-
     public function apply(Patcher $patcher): void
     {
         if (!$patcher->tableHasIndex('invoice_item', 'invoice_item_pending_renewal_idx')) {

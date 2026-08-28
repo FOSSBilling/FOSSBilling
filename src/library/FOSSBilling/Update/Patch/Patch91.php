@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch91 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 91;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // ClientBalance did not declare its one-time payment capability, so the gateway

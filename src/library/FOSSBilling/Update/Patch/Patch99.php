@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch99 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 99;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // Lets admins restrict a TLD's registration period to an explicit set of years

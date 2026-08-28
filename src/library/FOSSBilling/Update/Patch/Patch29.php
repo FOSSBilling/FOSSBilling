@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch29 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 29;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // Patch to update email templates to use format_date/format_datetime filters

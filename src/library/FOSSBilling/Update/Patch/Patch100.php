@@ -16,11 +16,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch100 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 100;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // Backfills stock reservations for orders that pre-date this version, since activation

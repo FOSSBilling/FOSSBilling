@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch50 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 50;
-    }
-
     public function apply(Patcher $patcher): void
     {
         $patcher->migrateEncryptedColumn('email_template', 'id', 'vars', 'vars IS NOT NULL AND vars != :empty', [

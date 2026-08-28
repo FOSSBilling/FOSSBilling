@@ -17,11 +17,6 @@ use Symfony\Component\Filesystem\Path;
 
 class Patch66 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 66;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // The original removal/migration patches for these modules only handled their data

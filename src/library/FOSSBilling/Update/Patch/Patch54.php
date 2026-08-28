@@ -16,11 +16,6 @@ use Symfony\Component\Filesystem\Path;
 
 class Patch54 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 54;
-    }
-
     public function apply(Patcher $patcher): void
     {
         if (!$patcher->tableHasIndex('api_request', 'api_request_ip_created')) {

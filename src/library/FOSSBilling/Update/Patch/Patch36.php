@@ -17,17 +17,10 @@ use Symfony\Component\Filesystem\Path;
 
 class Patch36 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 36;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // Patch to complete merging the Kb and Support modules.
         // @see https://github.com/FOSSBilling/FOSSBilling/pull/1180
-
-        // Renames the "kb_article" and "kb_article_category" tables to "support_kb_article" and "support_kb_article_category", respectively.
         $q = 'RENAME TABLE kb_article TO support_kb_article, kb_article_category TO support_kb_article_category;';
         $patcher->executeSql($q);
 
@@ -50,7 +43,6 @@ class Patch36 implements PatchInterface
         } catch (\Exception) {
         }
 
-        // Finally, remove old Kb extension files/folders.
         $fileActions = [
             Path::join(PATH_MODS, 'Kb') => 'unlink',
         ];

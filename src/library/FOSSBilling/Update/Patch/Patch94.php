@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch94 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 94;
-    }
-
     public function apply(Patcher $patcher): void
     {
         if (!$patcher->tableHasColumn('currency', 'is_rate_manual')) {

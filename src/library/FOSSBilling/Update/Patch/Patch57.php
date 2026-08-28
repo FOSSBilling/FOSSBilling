@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch57 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 57;
-    }
-
     public function apply(Patcher $patcher): void
     {
         $legacyHashes = [

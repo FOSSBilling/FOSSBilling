@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch27 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 27;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // Migration steps to create table to allow admin users to do password reset.

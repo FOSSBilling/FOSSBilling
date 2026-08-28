@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch70 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 70;
-    }
-
     public function apply(Patcher $patcher): void
     {
         $patcher->executeSql(

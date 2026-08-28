@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch58 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 58;
-    }
-
     public function apply(Patcher $patcher): void
     {
         $gateways = $patcher->fetchAll(

@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch106 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 106;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // Symfony stores application attributes in a different session format

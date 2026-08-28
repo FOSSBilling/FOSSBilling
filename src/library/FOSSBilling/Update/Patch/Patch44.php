@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch44 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 44;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // Add ipn_hash column to transaction table and index it for fast duplicate detection.

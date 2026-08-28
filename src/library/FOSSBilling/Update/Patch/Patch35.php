@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch35 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 35;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // Adds the new "created_at" to the session table, to ensure sessions are destroyed after they reach their maximum age.

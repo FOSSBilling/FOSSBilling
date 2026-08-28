@@ -16,11 +16,6 @@ use Symfony\Component\Filesystem\Path;
 
 class Patch48 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 48;
-    }
-
     public function apply(Patcher $patcher): void
     {
         $filesystem = $patcher->filesystem;

@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch25 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 25;
-    }
-
     public function apply(Patcher $patcher): void
     {
         $patcher->executeSql('UPDATE email_template SET content = REPLACE(content, :old_filter, :new_filter)', [

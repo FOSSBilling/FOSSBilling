@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch102 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 102;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // Enforce unique slugs on custom_pages at the DB level (matches the CustomPage

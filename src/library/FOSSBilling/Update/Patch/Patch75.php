@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch75 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 75;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // Drop the legacy `client.document_type` and `client.document_nr` columns.

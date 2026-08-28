@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch52 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 52;
-    }
-
     public function apply(Patcher $patcher): void
     {
         $columns = $patcher->getTableColumns('email_template');

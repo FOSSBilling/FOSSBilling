@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch34 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 34;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // Adds the new "fingerprint" to the session table, to allow us to fingerprint devices and help prevent against attacks such as session hijacking.

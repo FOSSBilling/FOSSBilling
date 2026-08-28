@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch109 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 109;
-    }
-
     public function apply(Patcher $patcher): void
     {
         if (!$patcher->tableHasColumn('product', 'suspension_grace_days')) {

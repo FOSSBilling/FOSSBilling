@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch108 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 108;
-    }
-
     public function apply(Patcher $patcher): void
     {
         if (!$patcher->tableExists('service_downloadable_file')) {

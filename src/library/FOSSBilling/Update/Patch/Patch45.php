@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch45 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 45;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // Drop updated_at column from activity tables

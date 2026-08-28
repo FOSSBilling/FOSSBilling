@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch96 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 96;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // Unique constraint on client_balance.invoice_item_id prevents duplicate credits

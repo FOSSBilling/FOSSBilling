@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch97 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 97;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // Failed execution attempt counter for the bounded-retry logic in

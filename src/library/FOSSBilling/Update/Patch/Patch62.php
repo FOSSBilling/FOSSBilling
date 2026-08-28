@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch62 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 62;
-    }
-
     public function apply(Patcher $patcher): void
     {
         $patcher->executeSql("UPDATE invoice_item SET period = NULL WHERE period IN ('0', '')");

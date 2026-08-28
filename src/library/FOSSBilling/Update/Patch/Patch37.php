@@ -17,11 +17,6 @@ use Symfony\Component\Filesystem\Path;
 
 class Patch37 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 37;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // Patch to completely remove the outdated queue module.
@@ -29,7 +24,6 @@ class Patch37 implements PatchInterface
 
         try {
             $ext_service = $patcher->di['mod_service']('extension');
-            // If the queue extension exists, uninstall it.
             $queue_ext = $ext_service->getExtensionRepository()->findOneByTypeAndName('mod', 'queue');
             if ($queue_ext instanceof Extension) {
                 $ext_service->deactivate($queue_ext);
@@ -38,7 +32,6 @@ class Patch37 implements PatchInterface
         } catch (\Exception) {
         }
 
-        // Finally, remove old queue module from the disk.
         $fileActions = [
             Path::join(PATH_MODS, 'Queue') => 'unlink',
         ];

@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch88 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 88;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // Invoice reminder batches now query unpaid/approved invoices by due date on every cron

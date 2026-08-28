@@ -17,11 +17,6 @@ use Symfony\Component\Filesystem\Path;
 
 class Patch55 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 55;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // Migrate Spamchecker module to Anti-Spam module

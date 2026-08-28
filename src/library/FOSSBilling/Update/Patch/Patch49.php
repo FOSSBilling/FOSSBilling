@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch49 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 49;
-    }
-
     public function apply(Patcher $patcher): void
     {
         $q = "UPDATE setting SET value = 'public/branding/logo.svg' WHERE param = 'company_logo' AND value = 'themes/huraga/assets/img/logo.svg';";

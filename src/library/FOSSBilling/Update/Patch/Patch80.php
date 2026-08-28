@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch80 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 80;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // #3856 started requiring an explicit "manage_settings" permission to view or edit a

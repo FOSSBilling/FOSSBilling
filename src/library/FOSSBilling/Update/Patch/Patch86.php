@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch86 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 86;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // Allows queued emails (e.g. invoice notifications) to carry a file attachment such as a PDF copy.

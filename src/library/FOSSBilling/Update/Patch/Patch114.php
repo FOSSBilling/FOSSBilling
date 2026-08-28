@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch114 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 114;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // Enforce unique session_id on cart at the DB level (matches the Cart entity

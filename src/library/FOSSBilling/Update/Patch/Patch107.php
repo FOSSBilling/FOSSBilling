@@ -15,11 +15,6 @@ use FOSSBilling\Update\Patcher;
 
 class Patch107 implements PatchInterface
 {
-    public function getVersion(): int
-    {
-        return 107;
-    }
-
     public function apply(Patcher $patcher): void
     {
         // Move product_payment's fixed w/m/q/b/a/bia/tria recurring pricing columns into a
