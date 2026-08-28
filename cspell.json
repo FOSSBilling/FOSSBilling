@@ -80,7 +80,9 @@
         "entrancy",
         "writability",
         "rediss",
-        "checkperm"
+        "checkperm",
+        "superset",
+        "orphans"
     ],
 
     "ignoreWords": [
