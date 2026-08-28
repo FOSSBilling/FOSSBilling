@@ -20,7 +20,11 @@ test('disposable email check', function (): void {
     $result = ApiClient::request('admin/extension/config_save', ['ext' => 'mod_antispam', 'check_temp_emails' => true]);
     expect($result->wasSuccessful())->toBeTrue();
 
-    $email = 'email@yopmail.net';
+    // Unique per run: guest/client/create now rate-limits repeated attempts
+    // for the same email (client_signup_email), so a fixed address would
+    // silently return true without creating a client on a rerun within the
+    // same hour, breaking the assertions below.
+    $email = 'email_' . uniqid() . '@yopmail.net';
     $password = 'A1a' . bin2hex(random_bytes(6));
     $result = ApiClient::request('guest/client/create', [
         'email' => $email,
@@ -48,7 +52,8 @@ test('stop forum spam', function (): void {
     $result = ApiClient::request('admin/extension/config_save', ['ext' => 'mod_antispam', 'sfs' => true]);
     expect($result->wasSuccessful())->toBeTrue();
 
-    $email = 'email@example.com';
+    // Unique per run: see the comment in the 'disposable email check' test above.
+    $email = 'email_' . uniqid() . '@example.com';
     $password = 'A1a' . bin2hex(random_bytes(6));
     $result = ApiClient::request('guest/client/create', [
         'email' => $email,
