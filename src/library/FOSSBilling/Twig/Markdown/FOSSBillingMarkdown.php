@@ -56,6 +56,6 @@ class FOSSBillingMarkdown implements MarkdownInterface
     {
         $html = $this->converter->convert($body)->getContent();
 
-        return HtmlSanitizerFactory::getMarkdownSanitizer()->sanitize($html);
+        return HtmlSanitizerFactory::sanitize($html, 'markdown');
     }
 }

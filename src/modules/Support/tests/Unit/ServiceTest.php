@@ -1924,7 +1924,7 @@ test('gets message history', function (): void {
     $service->setDi($di);
 
     $result = $service->getMessageHistory($message);
-    expect($result)->toBe([[...$history->toApiArray(), 'content_html' => "<p><strong>Original</strong> content</p>\n"]]);
+    expect($result)->toBe([[...$history->toApiArray(), 'content_html' => '<p><strong>Original</strong> content</p>']]);
 });
 
 dataset('ticketReplyProvider', function () {

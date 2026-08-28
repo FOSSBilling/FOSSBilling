@@ -549,11 +549,7 @@ class Service
             }
         );
 
-        if ($rendered === '') {
-            return '';
-        }
-
-        return trim(HtmlSanitizerFactory::getAdapterSanitizer()->sanitize(str_replace("\0", '', $rendered)));
+        return HtmlSanitizerFactory::sanitize($rendered, 'adapter');
     }
 
     /**

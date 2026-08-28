@@ -451,7 +451,7 @@ class FOSSBillingExtension
             return '';
         }
 
-        return HtmlSanitizerFactory::getSanitizer($context ?? 'content')->sanitize($html);
+        return HtmlSanitizerFactory::sanitize($html, $context ?? 'content');
     }
 
     #[AsTwigFilter('sanitize_markdown', isSafe: ['html'])]

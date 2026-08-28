@@ -159,7 +159,7 @@ test('ActivityClientEmail toApiArray returns sanitized API array', function (): 
         'sender' => $sender,
         'recipients' => $recipients,
         'subject' => $subject,
-        'content_html' => trim(FOSSBilling\HtmlSanitizerFactory::getContentSanitizer()->sanitize(str_replace("\0", '', $content_html))),
+        'content_html' => FOSSBilling\HtmlSanitizerFactory::sanitize($content_html, 'content'),
         'content_text' => $content_text,
         'has_attachment' => false,
         'created_at' => $created->format('Y-m-d H:i:s'),

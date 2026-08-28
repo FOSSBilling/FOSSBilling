@@ -36,7 +36,7 @@ function renderHuragaFooterLinkCheckboxes(array $settings): array
         ['settings' => $settings],
         'Theme settings template',
     );
-    $html = trim(HtmlSanitizerFactory::getThemeSettingsSanitizer()->sanitize(str_replace("\0", '', $html)));
+    $html = HtmlSanitizerFactory::sanitize($html, 'theme_settings');
 
     $document = new DOMDocument();
     $previousLibxmlErrorsSetting = libxml_use_internal_errors(true);

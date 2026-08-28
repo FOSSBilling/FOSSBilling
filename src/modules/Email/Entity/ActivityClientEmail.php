@@ -68,12 +68,7 @@ class ActivityClientEmail implements ArrayInterface, TimestampInterface
 
     public function toApiArray(): array
     {
-        $contentHtml = $this->contentHtml ?? '';
-        if ($contentHtml === '' || trim($contentHtml) === '') {
-            $sanitizedHtml = '';
-        } else {
-            $sanitizedHtml = trim(\FOSSBilling\HtmlSanitizerFactory::getContentSanitizer()->sanitize(str_replace("\0", '', $contentHtml)));
-        }
+        $sanitizedHtml = \FOSSBilling\HtmlSanitizerFactory::sanitize($this->contentHtml ?? '', 'content');
 
         return [
             'id' => $this->id,

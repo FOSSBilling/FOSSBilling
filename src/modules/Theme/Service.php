@@ -274,11 +274,7 @@ class Service implements InjectionAwareInterface
             }
         );
 
-        if ($rendered === '') {
-            return '';
-        }
-
-        return trim(HtmlSanitizerFactory::getThemeSettingsSanitizer()->sanitize(str_replace("\0", '', $rendered)));
+        return HtmlSanitizerFactory::sanitize($rendered, 'theme_settings');
     }
 
     public function getCurrentAdminAreaTheme(): array

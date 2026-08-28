@@ -85,9 +85,7 @@ final class HtmlSanitizerFactory
     {
         return self::createBaseConfig()
             ->allowRelativeLinks()
-            ->allowRelativeMedias()
-            ->allowLinkSchemes(self::ALLOWED_LINK_SCHEMES)
-            ->allowMediaSchemes(self::ALLOWED_MEDIA_SCHEMES);
+            ->allowRelativeMedias();
     }
 
     /**
@@ -165,5 +163,22 @@ final class HtmlSanitizerFactory
             'theme_settings' => self::getThemeSettingsSanitizer(),
             default => self::getContentSanitizer(),
         };
+    }
+
+    /**
+     * Convenience wrapper that mirrors Symfony's sanitize() but centralizes
+     * the null-byte strip and trim that Symfony handles as `�` (visible) while
+     * FOSSBilling historically strips silently to `''`. Keeps the 7 HTML call
+     * sites from duplicating `str_replace("\0",'',…)` + `trim()`.
+     *
+     * @param 'content'|'markdown'|'adapter'|'theme_settings' $context
+     */
+    public static function sanitize(string $html, string $context = 'content'): string
+    {
+        if ($html === '') {
+            return '';
+        }
+
+        return trim(self::getSanitizer($context)->sanitize(str_replace("\0", '', $html)));
     }
 }
