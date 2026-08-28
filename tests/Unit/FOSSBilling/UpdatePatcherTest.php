@@ -10,33 +10,33 @@ test('currency formatting patch follows the client balance gateway repair', func
     $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 89);
 
     expect($patches)->toHaveKey(90)
-        ->and($patches[90][1])->toBe('patch90')
+        ->and($patches[90][1])->toBe('apply')
         ->and($patches)->toHaveKey(91)
-        ->and($patches[91][1])->toBe('patch91')
+        ->and($patches[91][1])->toBe('apply')
         ->and($patches)->not->toHaveKey(92)
         ->and($patches)->toHaveKey(93)
-        ->and($patches[93][1])->toBe('patch93');
+        ->and($patches[93][1])->toBe('apply');
 });
 
 test('stock reservation backfill patch follows the TLD periods patch', function (): void {
     $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 99);
 
     expect($patches)->toHaveKey(100)
-        ->and($patches[100][1])->toBe('patch100');
+        ->and($patches[100][1])->toBe('apply');
 });
 
 test('unpaid invoice id index patch follows the stock reservation backfill patch', function (): void {
     $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 100);
 
     expect($patches)->toHaveKey(101)
-        ->and($patches[101][1])->toBe('patch101');
+        ->and($patches[101][1])->toBe('apply');
 });
 
 test('manual currency rate patch follows the currency formatting patch', function (): void {
     $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 93);
 
     expect($patches)->toHaveKey(94)
-        ->and($patches[94][1])->toBe('patch94');
+        ->and($patches[94][1])->toBe('apply');
 });
 
 test('client balance unique credit patch follows the manual currency rate patch, skipping the removed number 95', function (): void {
@@ -44,21 +44,21 @@ test('client balance unique credit patch follows the manual currency rate patch,
 
     expect($patches)->not->toHaveKey(95)
         ->and($patches)->toHaveKey(96)
-        ->and($patches[96][1])->toBe('patch96');
+        ->and($patches[96][1])->toBe('apply');
 });
 
 test('client balance unique credit patch is still offered to installs already at patch level 95', function (): void {
     $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 95);
 
     expect($patches)->toHaveKey(96)
-        ->and($patches[96][1])->toBe('patch96');
+        ->and($patches[96][1])->toBe('apply');
 });
 
 test('invoice item attempts patch follows the client balance credit patch', function (): void {
     $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 96);
 
     expect($patches)->toHaveKey(97)
-        ->and($patches[97][1])->toBe('patch97');
+        ->and($patches[97][1])->toBe('apply');
 });
 
 test('invoice item attempts patch adds the column for existing installs', function (): void {
@@ -80,7 +80,7 @@ test('invoice item attempts patch adds the column for existing installs', functi
 
     $patcher = new Patcher();
     $patcher->setDi($di);
-    (new ReflectionMethod($patcher, 'patch97'))->invoke($patcher);
+    (new FOSSBilling\Update\Patch\Patch97())->apply($patcher);
 });
 
 test('invoice item attempts patch is a no-op when the column already exists', function (): void {
@@ -97,7 +97,7 @@ test('invoice item attempts patch is a no-op when the column already exists', fu
 
     $patcher = new Patcher();
     $patcher->setDi($di);
-    (new ReflectionMethod($patcher, 'patch97'))->invoke($patcher);
+    (new FOSSBilling\Update\Patch\Patch97())->apply($patcher);
 });
 
 test('fresh installs start at the latest patch level', function (): void {
@@ -148,9 +148,9 @@ test('session storage migration follows the obsolete core file cleanup', functio
     $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 104);
 
     expect($patches)->toHaveKey(105)
-        ->and($patches[105][1])->toBe('patch105')
+        ->and($patches[105][1])->toBe('apply')
         ->and($patches)->toHaveKey(106)
-        ->and($patches[106][1])->toBe('patch106');
+        ->and($patches[106][1])->toBe('apply');
 });
 
 test('obsolete empty directories are removed without deleting hidden files', function (): void {
@@ -205,7 +205,7 @@ test('client balance unique credit patch adds column and index for existing inst
 
     $patcher = new Patcher();
     $patcher->setDi($di);
-    (new ReflectionMethod($patcher, 'patch96'))->invoke($patcher);
+    (new FOSSBilling\Update\Patch\Patch96())->apply($patcher);
 });
 
 test('suspension grace patch indexes existing order tables', function (): void {
@@ -241,7 +241,7 @@ test('suspension grace patch indexes existing order tables', function (): void {
 
     $patcher = new Patcher();
     $patcher->setDi($di);
-    (new ReflectionMethod($patcher, 'patch109'))->invoke($patcher);
+    (new FOSSBilling\Update\Patch\Patch109())->apply($patcher);
 });
 
 test('client balance gateway patch restores one-time payments', function (): void {
@@ -260,7 +260,7 @@ test('client balance gateway patch restores one-time payments', function (): voi
 
     $patcher = new Patcher();
     $patcher->setDi($di);
-    (new ReflectionMethod($patcher, 'patch91'))->invoke($patcher);
+    (new FOSSBilling\Update\Patch\Patch91())->apply($patcher);
 });
 
 test('legacy email patch restores untouched 0.7.2 defaults without replacing customizations', function (): void {
@@ -303,7 +303,7 @@ test('legacy email patch restores untouched 0.7.2 defaults without replacing cus
 
     $patcher = new Patcher();
     $patcher->setDi($di);
-    (new ReflectionMethod($patcher, 'patch90'))->invoke($patcher);
+    (new FOSSBilling\Update\Patch\Patch90())->apply($patcher);
 });
 
 test('stock reservation backfill patch is a no-op when there is nothing to backfill', function (): void {
@@ -321,7 +321,7 @@ test('stock reservation backfill patch is a no-op when there is nothing to backf
 
     $patcher = new Patcher();
     $patcher->setDi($di);
-    (new ReflectionMethod($patcher, 'patch100'))->invoke($patcher);
+    (new FOSSBilling\Update\Patch\Patch100())->apply($patcher);
 });
 
 test('stock reservation backfill patch orders candidates by creation time, not id', function (): void {
@@ -342,7 +342,7 @@ test('stock reservation backfill patch orders candidates by creation time, not i
 
     $patcher = new Patcher();
     $patcher->setDi($di);
-    (new ReflectionMethod($patcher, 'patch100'))->invoke($patcher);
+    (new FOSSBilling\Update\Patch\Patch100())->apply($patcher);
 });
 
 test('stock reservation backfill patch reserves stock for a pending order and decrements it', function (): void {
@@ -391,7 +391,7 @@ test('stock reservation backfill patch reserves stock for a pending order and de
 
     $patcher = new Patcher();
     $patcher->setDi($di);
-    (new ReflectionMethod($patcher, 'patch100'))->invoke($patcher);
+    (new FOSSBilling\Update\Patch\Patch100())->apply($patcher);
 });
 
 test('stock reservation backfill patch skips orders with a non-positive quantity', function (): void {
@@ -416,7 +416,7 @@ test('stock reservation backfill patch skips orders with a non-positive quantity
 
     $patcher = new Patcher();
     $patcher->setDi($di);
-    (new ReflectionMethod($patcher, 'patch100'))->invoke($patcher);
+    (new FOSSBilling\Update\Patch\Patch100())->apply($patcher);
 });
 
 test('stock reservation backfill patch rolls back if a statement fails partway through', function (): void {
@@ -446,7 +446,7 @@ test('stock reservation backfill patch rolls back if a statement fails partway t
     $patcher = new Patcher();
     $patcher->setDi($di);
 
-    expect(fn (): mixed => (new ReflectionMethod($patcher, 'patch100'))->invoke($patcher))
+    expect(fn (): mixed => (new FOSSBilling\Update\Patch\Patch100())->apply($patcher))
         ->toThrow(PDOException::class, 'gone away');
 });
 
@@ -507,7 +507,7 @@ test('stock reservation backfill patch stops once a product is already oversold'
 
     $patcher = new Patcher();
     $patcher->setDi($di);
-    (new ReflectionMethod($patcher, 'patch100'))->invoke($patcher);
+    (new FOSSBilling\Update\Patch\Patch100())->apply($patcher);
 });
 
 test('unpaid invoice id index patch adds the index for existing installs', function (): void {
@@ -529,7 +529,7 @@ test('unpaid invoice id index patch adds the index for existing installs', funct
 
     $patcher = new Patcher();
     $patcher->setDi($di);
-    (new ReflectionMethod($patcher, 'patch101'))->invoke($patcher);
+    (new FOSSBilling\Update\Patch\Patch101())->apply($patcher);
 });
 
 test('unpaid invoice id index patch is a no-op when the index already exists', function (): void {
@@ -548,14 +548,14 @@ test('unpaid invoice id index patch is a no-op when the index already exists', f
 
     $patcher = new Patcher();
     $patcher->setDi($di);
-    (new ReflectionMethod($patcher, 'patch101'))->invoke($patcher);
+    (new FOSSBilling\Update\Patch\Patch101())->apply($patcher);
 });
 
 test('custom pages slug unique patch follows the unpaid invoice id index patch', function (): void {
     $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 101);
 
     expect($patches)->toHaveKey(102)
-        ->and($patches[102][1])->toBe('patch102');
+        ->and($patches[102][1])->toBe('apply');
 });
 
 test('custom pages slug unique patch is a no-op when the table does not exist', function (): void {
@@ -574,7 +574,7 @@ test('custom pages slug unique patch is a no-op when the table does not exist', 
 
     $patcher = new Patcher();
     $patcher->setDi($di);
-    (new ReflectionMethod($patcher, 'patch102'))->invoke($patcher);
+    (new FOSSBilling\Update\Patch\Patch102())->apply($patcher);
 });
 
 test('custom pages slug unique patch reconciles duplicates then adds the index', function (): void {
@@ -627,7 +627,7 @@ test('custom pages slug unique patch reconciles duplicates then adds the index',
 
     $patcher = new Patcher();
     $patcher->setDi($di);
-    (new ReflectionMethod($patcher, 'patch102'))->invoke($patcher);
+    (new FOSSBilling\Update\Patch\Patch102())->apply($patcher);
 });
 
 test('custom pages slug unique patch skips an occupied suffix before renaming', function (): void {
@@ -686,7 +686,7 @@ test('custom pages slug unique patch skips an occupied suffix before renaming', 
 
     $patcher = new Patcher();
     $patcher->setDi($di);
-    (new ReflectionMethod($patcher, 'patch102'))->invoke($patcher);
+    (new FOSSBilling\Update\Patch\Patch102())->apply($patcher);
 });
 
 test('custom pages slug unique patch truncates long duplicate slugs to fit varchar 255', function (): void {
@@ -745,7 +745,7 @@ test('custom pages slug unique patch truncates long duplicate slugs to fit varch
 
     $patcher = new Patcher();
     $patcher->setDi($di);
-    (new ReflectionMethod($patcher, 'patch102'))->invoke($patcher);
+    (new FOSSBilling\Update\Patch\Patch102())->apply($patcher);
 });
 
 test('custom pages slug unique patch is a no-op when the index already exists', function (): void {
@@ -778,14 +778,14 @@ test('custom pages slug unique patch is a no-op when the index already exists', 
 
     $patcher = new Patcher();
     $patcher->setDi($di);
-    (new ReflectionMethod($patcher, 'patch102'))->invoke($patcher);
+    (new FOSSBilling\Update\Patch\Patch102())->apply($patcher);
 });
 
 test('client group patch follows the money column decimal patch', function (): void {
     $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 103);
 
     expect($patches)->toHaveKey(104)
-        ->and($patches[104][1])->toBe('patch104');
+        ->and($patches[104][1])->toBe('apply');
 });
 
 test('client group patch normalizes legacy zero group ids to null', function (): void {
@@ -802,14 +802,14 @@ test('client group patch normalizes legacy zero group ids to null', function ():
 
     $patcher = new Patcher();
     $patcher->setDi($di);
-    (new ReflectionMethod($patcher, 'patch104'))->invoke($patcher);
+    (new FOSSBilling\Update\Patch\Patch104())->apply($patcher);
 });
 
 test('custom recurring billing periods patch is numbered 107, out of sequence', function (): void {
     $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 106);
 
     expect($patches)->toHaveKey(107)
-        ->and($patches[107][1])->toBe('patch107');
+        ->and($patches[107][1])->toBe('apply');
 });
 
 test('custom recurring billing periods patch is not skipped by 0.8-next installs already at patch level 98', function (): void {
@@ -822,16 +822,16 @@ test('custom recurring billing periods patch is not skipped by 0.8-next installs
 
     expect($allPatches)->not->toHaveKey(98)
         ->and($patches)->toHaveKey(107)
-        ->and($patches[107][1])->toBe('patch107');
+        ->and($patches[107][1])->toBe('apply');
 });
 
 test('downloadable file and suspension grace patches are numbered 108 and 109, out of sequence', function (): void {
     $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 107);
 
     expect($patches)->toHaveKey(108)
-        ->and($patches[108][1])->toBe('patch108')
+        ->and($patches[108][1])->toBe('apply')
         ->and($patches)->toHaveKey(109)
-        ->and($patches[109][1])->toBe('patch109');
+        ->and($patches[109][1])->toBe('apply');
 });
 
 test('downloadable file and suspension grace patches are not skipped by 0.8-next installs already at patch level 98', function (): void {
@@ -845,16 +845,16 @@ test('downloadable file and suspension grace patches are not skipped by 0.8-next
     expect($allPatches)->not->toHaveKey(92)
         ->and($allPatches)->not->toHaveKey(95)
         ->and($patches)->toHaveKey(108)
-        ->and($patches[108][1])->toBe('patch108')
+        ->and($patches[108][1])->toBe('apply')
         ->and($patches)->toHaveKey(109)
-        ->and($patches[109][1])->toBe('patch109');
+        ->and($patches[109][1])->toBe('apply');
 });
 
 test('foreign key width patch is numbered 110', function (): void {
     $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 109);
 
     expect($patches)->toHaveKey(110)
-        ->and($patches[110][1])->toBe('patch110');
+        ->and($patches[110][1])->toBe('apply');
 });
 
 test('foreign key width patch widens narrow gateway_id columns but leaves already-wide columns alone', function (): void {
@@ -913,7 +913,7 @@ test('foreign key width patch widens narrow gateway_id columns but leaves alread
 
     $patcher = new Patcher();
     $patcher->setDi($di);
-    (new ReflectionMethod($patcher, 'patch110'))->invoke($patcher);
+    (new FOSSBilling\Update\Patch\Patch110())->apply($patcher);
 });
 
 test('foreign key width patch widens a narrow column even when MySQL omits the display width', function (): void {
@@ -966,14 +966,14 @@ test('foreign key width patch widens a narrow column even when MySQL omits the d
 
     $patcher = new Patcher();
     $patcher->setDi($di);
-    (new ReflectionMethod($patcher, 'patch110'))->invoke($patcher);
+    (new FOSSBilling\Update\Patch\Patch110())->apply($patcher);
 });
 
 test('service apikey table patch is numbered 111', function (): void {
     $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 110);
 
     expect($patches)->toHaveKey(111)
-        ->and($patches[111][1])->toBe('patch111');
+        ->and($patches[111][1])->toBe('apply');
 });
 
 test('service apikey table patch is a no-op when the table already exists', function (): void {
@@ -996,7 +996,7 @@ test('service apikey table patch is a no-op when the table already exists', func
 
     $patcher = new Patcher();
     $patcher->setDi($di);
-    (new ReflectionMethod($patcher, 'patch111'))->invoke($patcher);
+    (new FOSSBilling\Update\Patch\Patch111())->apply($patcher);
 });
 
 test('service apikey table patch creates the table when it is missing', function (): void {
@@ -1022,14 +1022,14 @@ test('service apikey table patch creates the table when it is missing', function
 
     $patcher = new Patcher();
     $patcher->setDi($di);
-    (new ReflectionMethod($patcher, 'patch111'))->invoke($patcher);
+    (new FOSSBilling\Update\Patch\Patch111())->apply($patcher);
 });
 
 test('require transfer code patch is numbered 112', function (): void {
     $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 111);
 
     expect($patches)->toHaveKey(112)
-        ->and($patches[112][1])->toBe('patch112');
+        ->and($patches[112][1])->toBe('apply');
 });
 
 test('require transfer code patch adds the column for existing installs', function (): void {
@@ -1051,7 +1051,7 @@ test('require transfer code patch adds the column for existing installs', functi
 
     $patcher = new Patcher();
     $patcher->setDi($di);
-    (new ReflectionMethod($patcher, 'patch112'))->invoke($patcher);
+    (new FOSSBilling\Update\Patch\Patch112())->apply($patcher);
 });
 
 test('require transfer code patch is a no-op when the column already exists', function (): void {
@@ -1068,14 +1068,14 @@ test('require transfer code patch is a no-op when the column already exists', fu
 
     $patcher = new Patcher();
     $patcher->setDi($di);
-    (new ReflectionMethod($patcher, 'patch112'))->invoke($patcher);
+    (new FOSSBilling\Update\Patch\Patch112())->apply($patcher);
 });
 
 test('admin salt column drop patch is numbered 113', function (): void {
     $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 112);
 
     expect($patches)->toHaveKey(113)
-        ->and($patches[113][1])->toBe('patch113');
+        ->and($patches[113][1])->toBe('apply');
 });
 
 test('admin salt column drop patch is a no-op when the column is already gone', function (): void {
@@ -1092,7 +1092,7 @@ test('admin salt column drop patch is a no-op when the column is already gone', 
 
     $patcher = new Patcher();
     $patcher->setDi($di);
-    (new ReflectionMethod($patcher, 'patch113'))->invoke($patcher);
+    (new FOSSBilling\Update\Patch\Patch113())->apply($patcher);
 });
 
 test('admin salt column drop patch drops the column when it still exists', function (): void {
@@ -1112,14 +1112,14 @@ test('admin salt column drop patch drops the column when it still exists', funct
 
     $patcher = new Patcher();
     $patcher->setDi($di);
-    (new ReflectionMethod($patcher, 'patch113'))->invoke($patcher);
+    (new FOSSBilling\Update\Patch\Patch113())->apply($patcher);
 });
 
 test('cart unique session_id patch is numbered 114', function (): void {
     $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 113);
 
     expect($patches)->toHaveKey(114)
-        ->and($patches[114][1])->toBe('patch114');
+        ->and($patches[114][1])->toBe('apply');
 });
 
 test('cart unique session_id patch is a no-op when the index is already unique and there are no duplicates', function (): void {
@@ -1146,7 +1146,7 @@ test('cart unique session_id patch is a no-op when the index is already unique a
 
     $patcher = new Patcher();
     $patcher->setDi($di);
-    (new ReflectionMethod($patcher, 'patch114'))->invoke($patcher);
+    (new FOSSBilling\Update\Patch\Patch114())->apply($patcher);
 });
 
 test('cart unique session_id patch reconciles duplicate sessions then converts the index to unique', function (): void {
@@ -1192,7 +1192,7 @@ test('cart unique session_id patch reconciles duplicate sessions then converts t
 
     $patcher = new Patcher();
     $patcher->setDi($di);
-    (new ReflectionMethod($patcher, 'patch114'))->invoke($patcher);
+    (new FOSSBilling\Update\Patch\Patch114())->apply($patcher);
 });
 
 /**
