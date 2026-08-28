@@ -1818,7 +1818,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         $customerId = $this->getOrCreateCustomer($invoice);
         $priceId = $this->getOrCreatePriceId($invoice);
 
-        $setupIntent = $this->stripe->setupIntents->create([
+        $setupIntentParams = [
             'customer' => $customerId,
             'payment_method_types' => ['card'],
             'usage' => 'off_session',
@@ -1827,7 +1827,19 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
                 'price_id' => $priceId,
                 'gateway_id' => (string) $this->config['gateway_id'],
             ],
-        ], ['idempotency_key' => 'setup_invoice_' . $invoice->getId()]);
+        ];
+        // Hashing the resolved params into the key, like _generateForm() does for
+        // one-time payments, covers the case where they legitimately differ between
+        // two loads of the same invoice's checkout page (e.g. an admin edits the
+        // invoice's items/amount between them) - reusing a plain invoice-id key
+        // across that would hit the same idempotency_error this file exists to avoid.
+        $idempotencyKey = sprintf(
+            'setup_invoice_%d_gateway_%d_%s',
+            $invoice->getId(),
+            $this->config['gateway_id'],
+            hash('sha256', json_encode($setupIntentParams, JSON_THROW_ON_ERROR))
+        );
+        $setupIntent = $this->stripe->setupIntents->create($setupIntentParams, ['idempotency_key' => $idempotencyKey]);
 
         $pubKey = ($this->config['test_mode']) ? $this->config['test_pub_key'] : $this->config['pub_key'];
 

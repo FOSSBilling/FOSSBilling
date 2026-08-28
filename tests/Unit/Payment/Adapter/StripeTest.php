@@ -1311,9 +1311,27 @@ describe('_generateSubscriptionForm', function (): void {
 
         $setupIntent = Stripe\SetupIntent::constructFrom(['id' => 'seti_lock', 'client_secret' => 'seti_lock_secret']);
         $setupIntentsMock = Mockery::mock();
+        $capturedParams = null;
         $setupIntentsMock->shouldReceive('create')
             ->once()
-            ->with(Mockery::any(), ['idempotency_key' => 'setup_invoice_40'])
+            ->with(
+                Mockery::on(function (array $params) use (&$capturedParams): bool {
+                    $capturedParams = $params;
+
+                    return true;
+                }),
+                Mockery::on(function (array $options) use (&$capturedParams): bool {
+                    // The key is hashed from the actual request params (like _generateForm()
+                    // does for one-time payments), not just the invoice ID, so it changes if a
+                    // repeated load resolves a different customer/price for this invoice.
+                    $expectedKey = sprintf(
+                        'setup_invoice_40_gateway_1_%s',
+                        hash('sha256', json_encode($capturedParams, JSON_THROW_ON_ERROR))
+                    );
+
+                    return ($options['idempotency_key'] ?? null) === $expectedKey;
+                })
+            )
             ->andReturn($setupIntent);
 
         $stripeMock = Mockery::mock(StripeClient::class);
@@ -1337,6 +1355,76 @@ describe('_generateSubscriptionForm', function (): void {
         $html = invokePrivateMethod($this->adapter, '_generateSubscriptionForm', [$invoiceModel]);
 
         expect($html)->toContain('seti_lock_secret');
+    });
+
+    test('changes the idempotency key when the resolved customer/price differ for the same invoice', function (): void {
+        // Regression coverage for https://github.com/FOSSBilling/FOSSBilling/issues/4228: reusing
+        // a plain invoice-id idempotency key across two different resolved customer/price pairs
+        // (e.g. an admin edits the invoice's items/amount between two checkout page loads) is
+        // exactly the parameter-mismatch bug this file exists to avoid, so the key must be hashed
+        // from the actual request params too - matching _generateForm()'s existing pattern.
+        $resolveKeyFor = function (string $externalCustomerId, string $externalPriceId): ?string {
+            $adapter = new Payment_Adapter_Stripe([
+                'test_mode' => true,
+                'test_api_key' => 'sk_test_dummy',
+                'test_pub_key' => 'pk_test_dummy',
+                'test_webhook_secret' => TEST_WEBHOOK_SECRET,
+                'gateway_id' => 1,
+            ]);
+
+            $invoiceModel = createEntity(Invoice::class, [
+                'id' => 41,
+                'currency' => 'USD',
+                'buyer_email' => 'reprice@example.com',
+                'buyer_first_name' => 'Re',
+                'buyer_last_name' => 'Price',
+                'client_id' => 20,
+            ]);
+
+            $customerRepo = Mockery::mock(PayGatewayCustomerRepository::class);
+            $customerRepo->shouldReceive('findOneByGatewayAndClient')->andReturn(
+                createEntity(PayGatewayCustomer::class, ['external_customer_id' => $externalCustomerId])
+            );
+            $productRepo = Mockery::mock(PayGatewayProductRepository::class);
+            $productRepo->shouldReceive('findOneByGatewayAndCacheKey')->andReturn(
+                createEntity(PayGatewayProduct::class, ['external_price_id' => $externalPriceId])
+            );
+
+            $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+            $connection->shouldReceive('fetchAllAssociative')->andReturn([['title' => 'Test Product']]);
+
+            $di = container();
+            $di['em']->shouldReceive('getConnection')->andReturn($connection);
+            $di['em']->shouldReceive('getRepository')->with(PayGatewayCustomer::class)->andReturn($customerRepo);
+            $di['em']->shouldReceive('getRepository')->with(PayGatewayProduct::class)->andReturn($productRepo);
+            $adapter->setDi($di);
+
+            $capturedKey = null;
+            $setupIntentsMock = Mockery::mock();
+            $setupIntentsMock->shouldReceive('create')
+                ->once()
+                ->with(Mockery::any(), Mockery::on(function (array $options) use (&$capturedKey): bool {
+                    $capturedKey = $options['idempotency_key'] ?? null;
+
+                    return true;
+                }))
+                ->andReturn(Stripe\SetupIntent::constructFrom(['id' => 'seti_x', 'client_secret' => 'secret_x']));
+
+            $stripeMock = Mockery::mock(StripeClient::class);
+            $stripeMock->setupIntents = $setupIntentsMock;
+            setPrivateProperty($adapter, 'stripe', $stripeMock);
+
+            invokePrivateMethod($adapter, 'generateSubscriptionFormUnderLock', [$invoiceModel]);
+
+            return $capturedKey;
+        };
+
+        $firstKey = $resolveKeyFor('cus_a', 'price_a');
+        $secondKey = $resolveKeyFor('cus_a', 'price_b');
+
+        expect($firstKey)->not->toBeNull()
+            ->and($secondKey)->not->toBeNull()
+            ->and($firstKey)->not->toBe($secondKey);
     });
 });
 
