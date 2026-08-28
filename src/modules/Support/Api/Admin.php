@@ -74,9 +74,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $this->getService()->getTicketById((int) $data['id']);
 
-        // Sanitize subject if provided
+        // Sanitize subject if provided — plain text, no HTML
         if (isset($data['subject'])) {
-            $data['subject'] = \FOSSBilling\Sanitizer\Sanitizer::sanitizeContent($data['subject'], false);
+            $data['subject'] = htmlspecialchars(trim(strip_tags(str_replace("\0", '', $data['subject']))), ENT_QUOTES | ENT_HTML5, 'UTF-8', false);
         }
 
         return $this->getService()->ticketUpdate($model, $data);
@@ -90,7 +90,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('support', 'manage_tickets');
 
-        $data['content'] = \FOSSBilling\Sanitizer\Sanitizer::sanitizeMarkdownContent($data['content']);
+        $data['content'] = trim(str_replace("\0", '', $data['content']));
 
         $model = $this->getService()->getTicketMessageById((int) $data['id']);
 
@@ -133,7 +133,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('support', 'manage_tickets');
 
-        $data['content'] = \FOSSBilling\Sanitizer\Sanitizer::sanitizeMarkdownContent($data['content']);
+        $data['content'] = trim(str_replace("\0", '', $data['content']));
 
         $ticket = $this->getService()->getTicketById((int) $data['id']);
 
@@ -170,7 +170,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('support', 'manage_tickets');
 
-        $data['content'] = \FOSSBilling\Sanitizer\Sanitizer::sanitizeMarkdownContent($data['content']);
+        $data['content'] = trim(str_replace("\0", '', $data['content']));
 
         /** @var \Box\Mod\Support\Repository\HelpdeskRepository $repo */
         $repo = $this->getService()->getHelpdeskRepository();
@@ -663,8 +663,8 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $articleCategoryId = (int) $data['kb_article_category_id'];
         $status = $data['status'] ?? KbArticle::DRAFT;
 
-        $title = \FOSSBilling\Sanitizer\Sanitizer::sanitizePlainText($data['title']);
-        $content = isset($data['content']) ? \FOSSBilling\Sanitizer\Sanitizer::sanitizeMarkdownContent($data['content']) : null;
+        $title = trim(strip_tags(str_replace("\0", '', $data['title'])));
+        $content = isset($data['content']) ? trim(str_replace("\0", '', $data['content'])) : null;
 
         return $this->getService()->kbCreateArticle($articleCategoryId, $title, $status, $content);
     }
@@ -685,10 +685,10 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('support', 'manage_kb');
 
         $articleCategoryId = isset($data['kb_article_category_id']) ? (int) $data['kb_article_category_id'] : null;
-        $title = isset($data['title']) ? \FOSSBilling\Sanitizer\Sanitizer::sanitizePlainText($data['title']) : null;
+        $title = isset($data['title']) ? trim(strip_tags(str_replace("\0", '', $data['title']))) : null;
         $slug = $data['slug'] ?? null;
         $status = $data['status'] ?? null;
-        $content = isset($data['content']) ? \FOSSBilling\Sanitizer\Sanitizer::sanitizeMarkdownContent($data['content']) : null;
+        $content = isset($data['content']) ? trim(str_replace("\0", '', $data['content'])) : null;
         $views = isset($data['views']) ? (int) $data['views'] : null;
 
         return $this->getService()->kbUpdateArticle((int) $data['id'], $articleCategoryId, $title, $slug, $status, $content, $views);

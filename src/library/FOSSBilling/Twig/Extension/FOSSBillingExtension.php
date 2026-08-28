@@ -14,6 +14,7 @@ namespace FOSSBilling\Twig\Extension;
 use Composer\InstalledVersions;
 use DiceBear\Avatar;
 use DiceBear\Style;
+use FOSSBilling\HtmlSanitizerFactory;
 use FOSSBilling\System\Environment as AppEnvironment;
 use FOSSBilling\Twig\AppArea;
 use Symfony\Component\Filesystem\Path;
@@ -441,5 +442,21 @@ class FOSSBillingExtension
         }
 
         return $this->di['url']->link($path, $query);
+    }
+
+    #[AsTwigFilter('sanitize_html', isSafe: ['html'])]
+    public function sanitizeHtml(?string $html, ?string $context = null): string
+    {
+        if ($html === null || $html === '') {
+            return '';
+        }
+
+        return HtmlSanitizerFactory::getSanitizer($context ?? 'content')->sanitize($html);
+    }
+
+    #[AsTwigFilter('sanitize_markdown', isSafe: ['html'])]
+    public function sanitizeMarkdown(?string $html): string
+    {
+        return $this->sanitizeHtml($html, 'markdown');
     }
 }

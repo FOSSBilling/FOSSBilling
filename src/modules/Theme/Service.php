@@ -14,7 +14,7 @@ namespace Box\Mod\Theme;
 use Box\Mod\Extension\Entity\ExtensionMeta;
 use Box\Mod\Extension\Repository\ExtensionMetaRepository;
 use FOSSBilling\Container\InjectionAwareInterface;
-use FOSSBilling\Sanitizer\BrowserHtmlSanitizer;
+use FOSSBilling\HtmlSanitizerFactory;
 use FOSSBilling\Twig\SandboxedStringRenderer;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -274,7 +274,11 @@ class Service implements InjectionAwareInterface
             }
         );
 
-        return BrowserHtmlSanitizer::sanitizeThemeSettingsHtml($rendered);
+        if ($rendered === '') {
+            return '';
+        }
+
+        return trim(HtmlSanitizerFactory::getThemeSettingsSanitizer()->sanitize(str_replace("\0", '', $rendered)));
     }
 
     public function getCurrentAdminAreaTheme(): array

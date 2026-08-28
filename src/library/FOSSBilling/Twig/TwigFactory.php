@@ -289,8 +289,10 @@ class TwigFactory
             $signature = (string) ($this->di['api_guest']->system_company()['signature'] ?? '');
         }
 
+        $sanitizedSignature = $signature === '' ? '' : \FOSSBilling\HtmlSanitizerFactory::getContentSanitizer()->sanitize(str_replace("\0", '', $signature));
+
         return [
-            'signature' => new Markup(\FOSSBilling\Sanitizer\Sanitizer::sanitizeContent($signature), 'UTF-8'),
+            'signature' => new Markup(trim($sanitizedSignature), 'UTF-8'),
         ];
     }
 

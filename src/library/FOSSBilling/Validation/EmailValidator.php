@@ -27,7 +27,7 @@ final class EmailValidator
 
     public static function validateAndSanitizeEmail(string $email, bool $throw = true, bool $checkDNS = true): mixed
     {
-        $email = htmlspecialchars($email);
+        $email = trim($email);
 
         $validator = new EguliasValidator();
         if (Environment::isProduction() && $checkDNS) {

@@ -11,7 +11,7 @@
 declare(strict_types=1);
 
 use Box\Mod\Theme\Model\Theme;
-use FOSSBilling\Sanitizer\BrowserHtmlSanitizer;
+use FOSSBilling\HtmlSanitizerFactory;
 use FOSSBilling\Twig\SandboxedStringRenderer;
 use Twig\Environment;
 use Twig\Loader\ArrayLoader;
@@ -36,7 +36,7 @@ function renderHuragaFooterLinkCheckboxes(array $settings): array
         ['settings' => $settings],
         'Theme settings template',
     );
-    $html = BrowserHtmlSanitizer::sanitizeThemeSettingsHtml($html);
+    $html = trim(HtmlSanitizerFactory::getThemeSettingsSanitizer()->sanitize(str_replace("\0", '', $html)));
 
     $document = new DOMDocument();
     $previousLibxmlErrorsSetting = libxml_use_internal_errors(true);

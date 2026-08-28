@@ -26,6 +26,7 @@ final class AdapterPolicy
             'currency_name', 'currency_symbol',
             'country_name',
             'url', 'daysleft', 'trans',
+            'sanitize_html', 'sanitize_markdown',
             'period_title',
             'number_format',
             'round', 'abs', 'json_encode',

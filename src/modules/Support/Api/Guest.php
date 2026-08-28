@@ -39,7 +39,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         $data['email'] = \FOSSBilling\Validation\EmailValidator::validateAndSanitizeEmail($data['email']);
         $this->getDi()['rate_limiter']->consumeOrThrow('guest_ticket_create', $this->getIp());
 
-        $data['content'] = \FOSSBilling\Sanitizer\Sanitizer::sanitizeMarkdownContent($content);
+        $data['content'] = trim(str_replace("\0", '', $content));
 
         return $this->getService()->ticketCreateForGuest($data);
     }
@@ -82,7 +82,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             throw new \FOSSBilling\Exception\InformationException('Message cannot be empty');
         }
 
-        $message = \FOSSBilling\Sanitizer\Sanitizer::sanitizeMarkdownContent($message);
+        $message = trim(str_replace("\0", '', $message));
 
         return $this->getService()->ticketReply($guestTicket, new \FOSSBilling\Identity\Guest(), $message);
     }

@@ -23,7 +23,7 @@ use FOSSBilling\Doctrine\EntityManagerFactory;
 use FOSSBilling\Doctrine\RowLock;
 use FOSSBilling\GeoIP\Reader;
 use FOSSBilling\Period;
-use FOSSBilling\Sanitizer\BrowserHtmlSanitizer;
+use FOSSBilling\HtmlSanitizerFactory;
 use FOSSBilling\SentryHelper;
 use FOSSBilling\System\Config;
 use FOSSBilling\System\Environment;
@@ -549,7 +549,11 @@ class Service
             }
         );
 
-        return BrowserHtmlSanitizer::sanitizeAdapterHtml($rendered);
+        if ($rendered === '') {
+            return '';
+        }
+
+        return trim(HtmlSanitizerFactory::getAdapterSanitizer()->sanitize(str_replace("\0", '', $rendered)));
     }
 
     /**

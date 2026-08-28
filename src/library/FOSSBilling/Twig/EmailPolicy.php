@@ -37,6 +37,7 @@ final class EmailPolicy
             'country_name',
             // FOSSBillingExtension
             'url', 'daysleft', 'trans',
+            'sanitize_html', 'sanitize_markdown',
             // LegacyExtension
             'period_title',
             // MarkdownExtension

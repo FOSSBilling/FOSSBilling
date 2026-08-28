@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Twig\Markdown;
 
+use FOSSBilling\HtmlSanitizerFactory;
 use League\CommonMark\Environment\Environment;
 use League\CommonMark\Extension\CommonMark\CommonMarkCoreExtension;
 use League\CommonMark\Extension\DefaultAttributes\DefaultAttributesExtension;
@@ -53,6 +54,8 @@ class FOSSBillingMarkdown implements MarkdownInterface
 
     public function convert(string $body): string
     {
-        return $this->converter->convert($body)->getContent();
+        $html = $this->converter->convert($body)->getContent();
+
+        return HtmlSanitizerFactory::getMarkdownSanitizer()->sanitize($html);
     }
 }

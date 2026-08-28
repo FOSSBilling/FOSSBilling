@@ -68,13 +68,20 @@ class ActivityClientEmail implements ArrayInterface, TimestampInterface
 
     public function toApiArray(): array
     {
+        $contentHtml = $this->contentHtml ?? '';
+        if ($contentHtml === '' || trim($contentHtml) === '') {
+            $sanitizedHtml = '';
+        } else {
+            $sanitizedHtml = trim(\FOSSBilling\HtmlSanitizerFactory::getContentSanitizer()->sanitize(str_replace("\0", '', $contentHtml)));
+        }
+
         return [
             'id' => $this->id,
             'client_id' => $this->clientId,
             'sender' => $this->sender,
             'recipients' => $this->recipients,
             'subject' => $this->subject,
-            'content_html' => \FOSSBilling\Sanitizer\Sanitizer::sanitizeContent($this->contentHtml ?? ''),
+            'content_html' => $sanitizedHtml,
             'content_text' => $this->contentText,
             'has_attachment' => $this->attachmentName !== null,
             'created_at' => $this->getCreatedAt()?->format('Y-m-d H:i:s'),
