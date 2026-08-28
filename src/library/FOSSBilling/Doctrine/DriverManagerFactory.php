@@ -85,8 +85,9 @@ class DriverManagerFactory
         $dbConfig['driver'] = self::normalizeDriver($dbConfig['driver'] ?? $dbConfig['type'] ?? 'pdo_mysql');
 
         // pdo_sqlite connects to a file path (or memory) rather than a host:port, so a port is meaningless.
-        if ($dbConfig['driver'] !== 'pdo_sqlite') {
-            $defaultPort = self::DEFAULT_PORTS[$dbConfig['driver']] ?? self::DEFAULT_PORTS['pdo_mysql'];
+        $driver = Driver::tryFrom($dbConfig['driver']);
+        if ($driver === null || !$driver->isSqlite()) {
+            $defaultPort = $driver?->defaultPort() ?? self::DEFAULT_PORTS[$dbConfig['driver']] ?? self::DEFAULT_PORTS['pdo_mysql'];
             $dbConfig['port'] = \FOSSBilling\Utils\Normalizer::normalizePort($dbConfig['port'] ?? null, $defaultPort);
         }
 
@@ -135,8 +136,9 @@ class DriverManagerFactory
     private static function buildConnectionParams(array $dbConfig, array $driverOptions): array
     {
         $driver = $dbConfig['driver'];
+        $driverEnum = Driver::tryFrom($driver);
 
-        if ($driver === 'pdo_sqlite') {
+        if ($driverEnum?->isSqlite() === true) {
             $params = [
                 'driver' => $driver,
                 'driverOptions' => $driverOptions,
@@ -174,12 +176,9 @@ class DriverManagerFactory
             'driverOptions' => $driverOptions,
         ];
 
-        if ($driver === 'pdo_mysql') {
-            $charset = $dbConfig['charset'] ?? 'utf8';
-            if (!in_array($charset, self::SUPPORTED_CHARSETS, true)) {
-                $charset = 'utf8';
-            }
-            $params['charset'] = $charset;
+        if ($driverEnum?->isMysql() === true) {
+            $charset = Charset::tryFrom($dbConfig['charset'] ?? 'utf8') ?? Charset::Utf8;
+            $params['charset'] = $charset->value;
         } elseif (isset($dbConfig['charset'])) {
             // MySQL's charset vocabulary (utf8/utf8mb4/latin1) doesn't apply to other platforms,
             // so only pass one through when the operator has explicitly configured it (e.g. 'UTF8' for PostgreSQL).
@@ -198,7 +197,7 @@ class DriverManagerFactory
      */
     private static function applySessionSettings(Connection $connection, array $dbConfig): void
     {
-        if (($dbConfig['driver'] ?? null) !== 'pdo_mysql') {
+        if (Driver::tryFrom($dbConfig['driver'] ?? '')?->isMysql() !== true) {
             return;
         }
 
@@ -222,11 +221,8 @@ class DriverManagerFactory
 
     private static function normalizeDriver(string $driver): string
     {
-        return match ($driver) {
-            'mysql', 'mariadb' => 'pdo_mysql',
-            'pgsql', 'postgres', 'postgresql' => 'pdo_pgsql',
-            'sqlite', 'sqlite3' => 'pdo_sqlite',
-            default => $driver,
-        };
+        $resolved = Driver::tryFromAlias($driver);
+
+        return $resolved instanceof Driver ? $resolved->value : $driver;
     }
 }

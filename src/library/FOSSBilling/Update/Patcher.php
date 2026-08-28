@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace FOSSBilling\Update;
 
 use FOSSBilling\Container\InjectionAwareInterface;
+use FOSSBilling\Doctrine\Driver;
 use FOSSBilling\Doctrine\DriverManagerFactory;
 use FOSSBilling\Doctrine\ModuleEntityScope;
 use FOSSBilling\Doctrine\SchemaSynchronizer;
@@ -114,19 +115,14 @@ class Patcher implements InjectionAwareInterface
         $newConfig['i18n']['date_format'] ??= 'medium';
         $newConfig['i18n']['time_format'] ??= 'short';
         $newConfig['db']['driver'] ??= 'pdo_mysql';
-        // Normalize driver aliases (mysql -> pdo_mysql etc.) and handle per-driver port defaults; pdo_sqlite has no port.
         $rawDriver = $newConfig['db']['driver'] ?? 'pdo_mysql';
-        $normalizedDriver = match ($rawDriver) {
-            'mysql', 'mariadb' => 'pdo_mysql',
-            'pgsql', 'postgres', 'postgresql' => 'pdo_pgsql',
-            'sqlite', 'sqlite3' => 'pdo_sqlite',
-            default => $rawDriver,
-        };
+        $driver = Driver::tryFromAlias($rawDriver);
+        $normalizedDriver = $driver instanceof Driver ? $driver->value : $rawDriver;
         $newConfig['db']['driver'] = $normalizedDriver;
-        if ($normalizedDriver === 'pdo_sqlite') {
+        if ($driver instanceof Driver && $driver->isSqlite()) {
             unset($newConfig['db']['port']);
         } else {
-            $defaultPort = $normalizedDriver === 'pdo_pgsql' ? 5432 : 3306;
+            $defaultPort = $driver instanceof Driver && $driver->defaultPort() !== null ? $driver->defaultPort() : 3306;
             $newConfig['db']['port'] = \FOSSBilling\Utils\Normalizer::normalizePort($newConfig['db']['port'] ?? null, $defaultPort);
         }
         unset(
@@ -223,7 +219,9 @@ class Patcher implements InjectionAwareInterface
     public function isLegacyPatchDriver(): bool
     {
         try {
-            return DriverManagerFactory::getDatabaseConfig()['driver'] === 'pdo_mysql';
+            $driver = Driver::tryFrom(DriverManagerFactory::getDatabaseConfig()['driver'] ?? '');
+
+            return $driver?->isMysql() === true;
         } catch (\Throwable) {
             // Can't determine the driver - don't guess. Fail safe by not running MySQL-only DDL.
             return false;
@@ -410,11 +408,12 @@ class Patcher implements InjectionAwareInterface
         $params = [];
 
         try {
-            $driver = DriverManagerFactory::getDatabaseConfig()['driver'];
+            $driver = Driver::tryFrom(DriverManagerFactory::getDatabaseConfig()['driver'] ?? 'pdo_mysql');
         } catch (\Throwable) {
-            $driver = 'pdo_mysql';
+            $driver = Driver::PdoMysql;
         }
-        $quote = static fn (string $id): string => $driver === 'pdo_mysql' ? sprintf('`%s`', $id) : sprintf('"%s"', $id);
+        $isMysql = $driver?->isMysql() === true;
+        $quote = static fn (string $id): string => $isMysql ? sprintf('`%s`', $id) : sprintf('"%s"', $id);
 
         foreach ($data as $column => $value) {
             $placeholder = "set_{$column}";
@@ -455,19 +454,19 @@ class Patcher implements InjectionAwareInterface
         }
 
         try {
-            $driver = DriverManagerFactory::getDatabaseConfig()['driver'];
+            $driver = Driver::tryFrom(DriverManagerFactory::getDatabaseConfig()['driver'] ?? 'pdo_mysql');
         } catch (\Throwable) {
-            $driver = 'pdo_mysql';
+            $driver = Driver::PdoMysql;
         }
 
-        if ($driver === 'pdo_pgsql') {
+        if ($driver === Driver::PdoPgsql) {
             return (bool) $this->fetchOne(
                 "SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = :table LIMIT 1",
                 ['table' => $table],
             );
         }
 
-        if ($driver === 'pdo_sqlite') {
+        if ($driver === Driver::PdoSqlite) {
             return (bool) $this->fetchOne(
                 "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = :table LIMIT 1",
                 ['table' => $table],
@@ -496,12 +495,12 @@ class Patcher implements InjectionAwareInterface
         $this->quoteIdentifier($table);
 
         try {
-            $driver = DriverManagerFactory::getDatabaseConfig()['driver'];
+            $driver = Driver::tryFrom(DriverManagerFactory::getDatabaseConfig()['driver'] ?? 'pdo_mysql');
         } catch (\Throwable) {
-            $driver = 'pdo_mysql';
+            $driver = Driver::PdoMysql;
         }
 
-        if ($driver !== 'pdo_mysql') {
+        if ($driver?->isMysql() !== true) {
             if ($this->di instanceof \Pimple\Container && $this->di->offsetExists('em')) {
                 try {
                     $schemaManager = $this->di['em']->getConnection()->createSchemaManager();
@@ -516,14 +515,14 @@ class Patcher implements InjectionAwareInterface
                 }
             }
 
-            if ($driver === 'pdo_pgsql') {
+            if ($driver === Driver::PdoPgsql) {
                 return $this->fetchFirstColumn(
                     "SELECT column_name FROM information_schema.columns WHERE table_name = :table AND table_schema = 'public' ORDER BY ordinal_position",
                     ['table' => $table],
                 );
             }
 
-            if ($driver === 'pdo_sqlite') {
+            if ($driver === Driver::PdoSqlite) {
                 $rows = $this->fetchAll('PRAGMA table_info(' . $this->quoteIdentifier($table) . ')');
 
                 return array_map(static fn (array $r): string => (string) ($r['name'] ?? ''), $rows);
@@ -541,12 +540,12 @@ class Patcher implements InjectionAwareInterface
         $this->quoteIdentifier($column);
 
         try {
-            $driver = DriverManagerFactory::getDatabaseConfig()['driver'];
+            $driver = Driver::tryFrom(DriverManagerFactory::getDatabaseConfig()['driver'] ?? 'pdo_mysql');
         } catch (\Throwable) {
-            $driver = 'pdo_mysql';
+            $driver = Driver::PdoMysql;
         }
 
-        if ($driver !== 'pdo_mysql') {
+        if ($driver?->isMysql() !== true) {
             if ($this->di instanceof \Pimple\Container && $this->di->offsetExists('em')) {
                 try {
                     $schemaManager = $this->di['em']->getConnection()->createSchemaManager();
@@ -588,12 +587,12 @@ class Patcher implements InjectionAwareInterface
         $this->quoteIdentifier($column);
 
         try {
-            $driver = DriverManagerFactory::getDatabaseConfig()['driver'];
+            $driver = Driver::tryFrom(DriverManagerFactory::getDatabaseConfig()['driver'] ?? 'pdo_mysql');
         } catch (\Throwable) {
-            $driver = 'pdo_mysql';
+            $driver = Driver::PdoMysql;
         }
 
-        if ($driver !== 'pdo_mysql') {
+        if ($driver?->isMysql() !== true) {
             if ($this->di instanceof \Pimple\Container && $this->di->offsetExists('em')) {
                 try {
                     $schemaManager = $this->di['em']->getConnection()->createSchemaManager();
@@ -631,12 +630,12 @@ class Patcher implements InjectionAwareInterface
         $this->quoteIdentifier($table);
 
         try {
-            $driver = DriverManagerFactory::getDatabaseConfig()['driver'];
+            $driver = Driver::tryFrom(DriverManagerFactory::getDatabaseConfig()['driver'] ?? 'pdo_mysql');
         } catch (\Throwable) {
-            $driver = 'pdo_mysql';
+            $driver = Driver::PdoMysql;
         }
 
-        if ($driver !== 'pdo_mysql') {
+        if ($driver?->isMysql() !== true) {
             if ($this->di instanceof \Pimple\Container && $this->di->offsetExists('em')) {
                 try {
                     $schemaManager = $this->di['em']->getConnection()->createSchemaManager();
@@ -656,14 +655,14 @@ class Patcher implements InjectionAwareInterface
                 }
             }
 
-            if ($driver === 'pdo_pgsql') {
+            if ($driver === Driver::PdoPgsql) {
                 return (bool) $this->fetchOne(
                     "SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND tablename = :table AND indexname = :index LIMIT 1",
                     ['table' => $table, 'index' => $indexName],
                 );
             }
 
-            if ($driver === 'pdo_sqlite') {
+            if ($driver === Driver::PdoSqlite) {
                 return (bool) $this->fetchOne(
                     "SELECT 1 FROM sqlite_master WHERE type = 'index' AND tbl_name = :table AND name = :index LIMIT 1",
                     ['table' => $table, 'index' => $indexName],
