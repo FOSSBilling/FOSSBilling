@@ -1149,7 +1149,7 @@ test('cart unique session_id patch reconciles duplicate sessions then converts t
 
 /**
  * These patches are raw MySQL/MariaDB DDL with no PostgreSQL/SQLite equivalent - see
- * UpdatePatcher::isMysqlDriver(). Swaps the real config.php's `db.driver`, mirroring
+ * {@see Patcher::isLegacyPatchDriver()}. Swaps the real config.php's `db.driver`, mirroring
  * DriverManagerFactoryTest's config-swap pattern, since getDatabaseConfig() reads it directly.
  */
 function withNonMysqlDbDriver(Closure $callback): void

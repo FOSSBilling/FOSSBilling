@@ -24,9 +24,9 @@ use Doctrine\ORM\Tools\SchemaTool;
  * for installs that were created after {@see SchemaInstaller} started generating their schema from
  * that same metadata.
  *
- * This exists because {@see \FOSSBilling\UpdatePatcher}'s ~80 historical patches are raw MySQL/
+ * This exists because {@see \FOSSBilling\Update\Patcher}'s ~80 historical patches are raw MySQL/
  * MariaDB DDL (and, in several cases, one-time data transformations tied to a specific historical
- * release) with no portable equivalent - see `UpdatePatcher::isMysqlDriver()`. Porting each of them
+ * release) with no portable equivalent - see {@see \FOSSBilling\Update\Patcher::isLegacyPatchDriver()}. Porting each of them
  * is out of scope here. What this class covers instead: every *future* structural change lands on
  * entity metadata first, the same source fresh installs already build from, so diffing live schema
  * against current metadata keeps an existing PostgreSQL/SQLite install from drifting out of date as

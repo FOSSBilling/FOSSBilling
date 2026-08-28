@@ -53,7 +53,7 @@ class Patcher implements InjectionAwareInterface
     {
         // These are MySQL/MariaDB-only patches (see applyCorePatches()) - never "pending" on
         // another platform, regardless of what the last_patch bookkeeping row says.
-        if (!$this->isMysqlDriver()) {
+        if (!$this->isLegacyPatchDriver()) {
             return 0;
         }
 
@@ -114,7 +114,21 @@ class Patcher implements InjectionAwareInterface
         $newConfig['i18n']['date_format'] ??= 'medium';
         $newConfig['i18n']['time_format'] ??= 'short';
         $newConfig['db']['driver'] ??= 'pdo_mysql';
-        $newConfig['db']['port'] = \FOSSBilling\Utils\Normalizer::normalizePort($newConfig['db']['port'] ?? null, 3306);
+        // Normalize driver aliases (mysql -> pdo_mysql etc.) and handle per-driver port defaults; pdo_sqlite has no port.
+        $rawDriver = $newConfig['db']['driver'] ?? 'pdo_mysql';
+        $normalizedDriver = match ($rawDriver) {
+            'mysql', 'mariadb' => 'pdo_mysql',
+            'pgsql', 'postgres', 'postgresql' => 'pdo_pgsql',
+            'sqlite', 'sqlite3' => 'pdo_sqlite',
+            default => $rawDriver,
+        };
+        $newConfig['db']['driver'] = $normalizedDriver;
+        if ($normalizedDriver === 'pdo_sqlite') {
+            unset($newConfig['db']['port']);
+        } else {
+            $defaultPort = $normalizedDriver === 'pdo_pgsql' ? 5432 : 3306;
+            $newConfig['db']['port'] = \FOSSBilling\Utils\Normalizer::normalizePort($newConfig['db']['port'] ?? null, $defaultPort);
+        }
         unset(
             $newConfig['api']['rate_span'],
             $newConfig['api']['rate_limit'],
@@ -171,7 +185,7 @@ class Patcher implements InjectionAwareInterface
         }
 
         // The patches below are raw MySQL/MariaDB DDL (backtick identifiers, ENGINE=, SHOW COLUMNS
-        // introspection, ON DUPLICATE KEY UPDATE, ...) with no PostgreSQL/SQLite equivalent, and
+        // introspection, ...) with no PostgreSQL/SQLite equivalent, and
         // several of them are one-time data transformations tied to a specific historical release
         // (splitting/merging tables, rewriting existing rows) that can't be ported by rewriting SQL
         // syntax alone. Porting all of that is out of scope; see SchemaSynchronizer's docblock. On
@@ -182,10 +196,8 @@ class Patcher implements InjectionAwareInterface
         // treat every patch as pending. Without this check, that combined with a missing/stale
         // update-finalization state would make the very next page load - see
         // UpdateFinalization::finalizePendingUpdate(), called unconditionally from every request -
-        // start executing MySQL-only DDL against a non-MySQL database. That fails partway through
-        // (setPatchLevel() itself uses ON DUPLICATE KEY UPDATE), leaving the schema in a state no
-        // later patch or install can cleanly recover from.
-        if ($this->isMysqlDriver()) {
+        // start executing MySQL-only DDL against a non-MySQL database.
+        if ($this->isLegacyPatchDriver()) {
             $patchLevel = $this->getPatchLevel();
             $patches = $this->getPatches($patchLevel);
             foreach ($patches as $patchLevel => $patch) {
@@ -203,10 +215,12 @@ class Patcher implements InjectionAwareInterface
     }
 
     /**
-     * Whether the configured database driver is MySQL/MariaDB - the only platform
-     * {@see self::applyCorePatches()}'s raw SQL patches are written for.
+     * Whether the legacy MySQL-only patch loop should run.
+     *
+     * The historical patches 25-116 are raw MySQL/MariaDB DDL — the only platform
+     * {@see self::applyCorePatches()}'s legacy SQL patches are written for.
      */
-    public function isMysqlDriver(): bool
+    public function isLegacyPatchDriver(): bool
     {
         try {
             return DriverManagerFactory::getDatabaseConfig()['driver'] === 'pdo_mysql';
@@ -214,6 +228,14 @@ class Patcher implements InjectionAwareInterface
             // Can't determine the driver - don't guess. Fail safe by not running MySQL-only DDL.
             return false;
         }
+    }
+
+    /**
+     * @deprecated use {@see self::isLegacyPatchDriver()} instead
+     */
+    public function isMysqlDriver(): bool
+    {
+        return $this->isLegacyPatchDriver();
     }
 
     /**
@@ -395,20 +417,27 @@ class Patcher implements InjectionAwareInterface
         $where = [];
         $params = [];
 
+        try {
+            $driver = DriverManagerFactory::getDatabaseConfig()['driver'];
+        } catch (\Throwable) {
+            $driver = 'pdo_mysql';
+        }
+        $quote = static fn (string $id): string => $driver === 'pdo_mysql' ? sprintf('`%s`', $id) : sprintf('"%s"', $id);
+
         foreach ($data as $column => $value) {
             $placeholder = "set_{$column}";
-            $set[] = sprintf('`%s` = :%s', $this->quoteIdentifier($column), $placeholder);
+            $set[] = sprintf('%s = :%s', $quote($this->quoteIdentifier($column)), $placeholder);
             $params[$placeholder] = $value;
         }
 
         foreach ($criteria as $column => $value) {
             $placeholder = "where_{$column}";
-            $where[] = sprintf('`%s` = :%s', $this->quoteIdentifier($column), $placeholder);
+            $where[] = sprintf('%s = :%s', $quote($this->quoteIdentifier($column)), $placeholder);
             $params[$placeholder] = $value;
         }
 
         $this->executeSql(
-            sprintf('UPDATE `%s` SET %s WHERE %s', $this->quoteIdentifier($table), implode(', ', $set), implode(' AND ', $where)),
+            sprintf('UPDATE %s SET %s WHERE %s', $quote($this->quoteIdentifier($table)), implode(', ', $set), implode(' AND ', $where)),
             $params
         );
     }
@@ -420,6 +449,39 @@ class Patcher implements InjectionAwareInterface
 
     public function tableExists(string $table): bool
     {
+        $this->quoteIdentifier($table);
+
+        if ($this->di instanceof \Pimple\Container && $this->di->offsetExists('em')) {
+            try {
+                $connection = $this->di['em']->getConnection();
+                $schemaManager = $connection->createSchemaManager();
+
+                return $schemaManager->tablesExist([$table]);
+            } catch (\Throwable) {
+                // fall through to driver-specific query
+            }
+        }
+
+        try {
+            $driver = DriverManagerFactory::getDatabaseConfig()['driver'];
+        } catch (\Throwable) {
+            $driver = 'pdo_mysql';
+        }
+
+        if ($driver === 'pdo_pgsql') {
+            return (bool) $this->fetchOne(
+                "SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = :table LIMIT 1",
+                ['table' => $table],
+            );
+        }
+
+        if ($driver === 'pdo_sqlite') {
+            return (bool) $this->fetchOne(
+                "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = :table LIMIT 1",
+                ['table' => $table],
+            );
+        }
+
         return (bool) $this->fetchOne(
             'SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table LIMIT 1',
             ['table' => $table],
@@ -439,6 +501,43 @@ class Patcher implements InjectionAwareInterface
 
     public function getTableColumns(string $table): array
     {
+        $this->quoteIdentifier($table);
+
+        try {
+            $driver = DriverManagerFactory::getDatabaseConfig()['driver'];
+        } catch (\Throwable) {
+            $driver = 'pdo_mysql';
+        }
+
+        if ($driver !== 'pdo_mysql') {
+            if ($this->di instanceof \Pimple\Container && $this->di->offsetExists('em')) {
+                try {
+                    $schemaManager = $this->di['em']->getConnection()->createSchemaManager();
+                    if (!$schemaManager->tablesExist([$table])) {
+                        return [];
+                    }
+                    $columns = $schemaManager->listTableColumns($table);
+
+                    return array_map(static fn ($col) => $col->getName(), array_values($columns));
+                } catch (\Throwable) {
+                    // fall through
+                }
+            }
+
+            if ($driver === 'pdo_pgsql') {
+                return $this->fetchFirstColumn(
+                    "SELECT column_name FROM information_schema.columns WHERE table_name = :table AND table_schema = 'public' ORDER BY ordinal_position",
+                    ['table' => $table],
+                );
+            }
+
+            if ($driver === 'pdo_sqlite') {
+                $rows = $this->fetchAll('PRAGMA table_info(' . $this->quoteIdentifier($table) . ')');
+
+                return array_map(static fn (array $r): string => (string) ($r['name'] ?? ''), $rows);
+            }
+        }
+
         $columns = $this->fetchAll(sprintf('SHOW COLUMNS FROM `%s`', $this->quoteIdentifier($table)));
 
         return array_map(static fn (array $column): string => (string) $column['Field'], $columns);
@@ -446,6 +545,38 @@ class Patcher implements InjectionAwareInterface
 
     public function getColumnLength(string $table, string $column): ?int
     {
+        $this->quoteIdentifier($table);
+        $this->quoteIdentifier($column);
+
+        try {
+            $driver = DriverManagerFactory::getDatabaseConfig()['driver'];
+        } catch (\Throwable) {
+            $driver = 'pdo_mysql';
+        }
+
+        if ($driver !== 'pdo_mysql') {
+            if ($this->di instanceof \Pimple\Container && $this->di->offsetExists('em')) {
+                try {
+                    $schemaManager = $this->di['em']->getConnection()->createSchemaManager();
+                    if (!$schemaManager->tablesExist([$table])) {
+                        return null;
+                    }
+                    $columns = $schemaManager->listTableColumns($table);
+                    foreach ($columns as $col) {
+                        if (strcasecmp($col->getName(), $column) === 0) {
+                            return $col->getLength();
+                        }
+                    }
+
+                    return null;
+                } catch (\Throwable) {
+                    // fall through
+                }
+            }
+
+            return null;
+        }
+
         $rows = $this->fetchAll(sprintf('SHOW COLUMNS FROM `%s` LIKE :column', $this->quoteIdentifier($table)), [
             'column' => $column,
         ]);
@@ -461,6 +592,41 @@ class Patcher implements InjectionAwareInterface
 
     public function getColumnType(string $table, string $column): ?string
     {
+        $this->quoteIdentifier($table);
+        $this->quoteIdentifier($column);
+
+        try {
+            $driver = DriverManagerFactory::getDatabaseConfig()['driver'];
+        } catch (\Throwable) {
+            $driver = 'pdo_mysql';
+        }
+
+        if ($driver !== 'pdo_mysql') {
+            if ($this->di instanceof \Pimple\Container && $this->di->offsetExists('em')) {
+                try {
+                    $schemaManager = $this->di['em']->getConnection()->createSchemaManager();
+                    if (!$schemaManager->tablesExist([$table])) {
+                        return null;
+                    }
+                    $columns = $schemaManager->listTableColumns($table);
+                    foreach ($columns as $col) {
+                        if (strcasecmp($col->getName(), $column) === 0) {
+                            $type = $col->getType()->getName();
+                            $length = $col->getLength();
+
+                            return $length !== null ? sprintf('%s(%d)', $type, $length) : $type;
+                        }
+                    }
+
+                    return null;
+                } catch (\Throwable) {
+                    // fall through
+                }
+            }
+
+            return null;
+        }
+
         $rows = $this->fetchAll(sprintf('SHOW COLUMNS FROM `%s` LIKE :column', $this->quoteIdentifier($table)), [
             'column' => $column,
         ]);
@@ -470,6 +636,49 @@ class Patcher implements InjectionAwareInterface
 
     public function tableHasIndex(string $table, string $indexName): bool
     {
+        $this->quoteIdentifier($table);
+
+        try {
+            $driver = DriverManagerFactory::getDatabaseConfig()['driver'];
+        } catch (\Throwable) {
+            $driver = 'pdo_mysql';
+        }
+
+        if ($driver !== 'pdo_mysql') {
+            if ($this->di instanceof \Pimple\Container && $this->di->offsetExists('em')) {
+                try {
+                    $schemaManager = $this->di['em']->getConnection()->createSchemaManager();
+                    if (!$schemaManager->tablesExist([$table])) {
+                        return false;
+                    }
+                    $indexes = $schemaManager->listTableIndexes($table);
+                    foreach ($indexes as $name => $index) {
+                        if (strcasecmp($name, $indexName) === 0 || strcasecmp($index->getName(), $indexName) === 0) {
+                            return true;
+                        }
+                    }
+
+                    return false;
+                } catch (\Throwable) {
+                    // fall through
+                }
+            }
+
+            if ($driver === 'pdo_pgsql') {
+                return (bool) $this->fetchOne(
+                    "SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND tablename = :table AND indexname = :index LIMIT 1",
+                    ['table' => $table, 'index' => $indexName],
+                );
+            }
+
+            if ($driver === 'pdo_sqlite') {
+                return (bool) $this->fetchOne(
+                    "SELECT 1 FROM sqlite_master WHERE type = 'index' AND tbl_name = :table AND name = :index LIMIT 1",
+                    ['table' => $table, 'index' => $indexName],
+                );
+            }
+        }
+
         $indexes = $this->fetchAll(sprintf('SHOW INDEX FROM `%s`', $this->quoteIdentifier($table)));
         foreach ($indexes as $index) {
             if (($index['Key_name'] ?? null) === $indexName) {
@@ -563,16 +772,30 @@ class Patcher implements InjectionAwareInterface
     {
         $now = date('Y-m-d H:i:s');
 
-        $this->executeSql(
-            'INSERT INTO setting (param, value, public, created_at, updated_at) VALUES (:param, :value, 0, :created_at, :updated_at)
-             ON DUPLICATE KEY UPDATE value = :value, updated_at = :updated_at',
-            [
-                'param' => 'last_patch',
-                'value' => $patchLevel,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ]
-        );
+        $exists = $this->fetchOne('SELECT 1 FROM setting WHERE param = :param LIMIT 1', [
+            'param' => 'last_patch',
+        ]);
+
+        if ($exists) {
+            $this->executeSql(
+                'UPDATE setting SET value = :value, updated_at = :updated_at WHERE param = :param',
+                [
+                    'param' => 'last_patch',
+                    'value' => $patchLevel,
+                    'updated_at' => $now,
+                ]
+            );
+        } else {
+            $this->executeSql(
+                'INSERT INTO setting (param, value, public, created_at, updated_at) VALUES (:param, :value, 0, :created_at, :updated_at)',
+                [
+                    'param' => 'last_patch',
+                    'value' => $patchLevel,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]
+            );
+        }
     }
 
     /**
