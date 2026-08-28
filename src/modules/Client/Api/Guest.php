@@ -93,11 +93,13 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             $email = $this->getDi()['tools']->validateAndSanitizeEmail($email);
             $email = strtolower(trim((string) $email));
 
+            $this->checkCaptchaIfEnabled($data);
+
             // Keyed independently of the IP limiter above so that spreading
             // probes across IPs doesn't help an attacker hammer one address.
+            // Consumed only after the CAPTCHA check so a stream of invalid
+            // CAPTCHA submissions can't burn through one address's quota.
             $emailLimit = $this->getDi()['rate_limiter']->consume('client_signup_email', $email);
-
-            $this->checkCaptchaIfEnabled($data);
 
             $autoLogin = Tools::normalizeBoolean($config['auto_login_after_signup'] ?? true, true);
 
