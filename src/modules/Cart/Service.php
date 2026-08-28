@@ -966,9 +966,7 @@ class Service implements InjectionAwareInterface
         ?Cart $cart = null,
         ?array $cartProducts = null,
     ): array {
-        if ($cart === null) {
-            $cart = $cartProduct->getCart();
-        }
+        $cart ??= $cartProduct->getCart();
         if (!$cart instanceof Cart) {
             throw new \FOSSBilling\Exception\BaseException('Cart not found');
         }
