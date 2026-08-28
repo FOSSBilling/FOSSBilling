@@ -86,7 +86,10 @@
         "orphans",
         "idempotently",
         "gaps",
-        "FileCache"
+        "FileCache",
+        "schemaname",
+        "tablename",
+        "indexname"
     ],
 
     "ignoreWords": [
