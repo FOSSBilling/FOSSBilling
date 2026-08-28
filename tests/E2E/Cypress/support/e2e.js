@@ -51,11 +51,27 @@ Cypress.Commands.add('testClient', (overrides = {}) => {
   }).then((response) => {
     expect(response.status).to.eq(200);
     expect(response.body.error).to.eq(null);
-    expect(response.body.result, 'client id').to.exist;
+    expect(response.body.result).to.eq(true);
+
+    // guest/client/create no longer returns the new client's id (doing so
+    // would reopen the email-enumeration issue it was hardened against), so
+    // recover it by logging in with the credentials we just registered.
+    return cy.request({
+      method: 'POST',
+      url: '/api/guest/client/login',
+      body: {
+        email: client.email,
+        password: client.password,
+      },
+    });
+  }).then((loginResponse) => {
+    expect(loginResponse.status).to.eq(200);
+    expect(loginResponse.body.error).to.eq(null);
+    expect(loginResponse.body.result?.id, 'client id').to.exist;
 
     const createdClient = {
       ...client,
-      id: response.body.result,
+      id: loginResponse.body.result.id,
     };
 
     return cy.clearCookies()
