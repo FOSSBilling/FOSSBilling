@@ -46,7 +46,7 @@ class Patch102 implements PatchInterface
                 continue;
             }
 
-            $newSlug = $patcher->allocateUniqueCustomPageSlug($slug);
+            $newSlug = $this->allocateUniqueCustomPageSlug($patcher, $slug);
             $patcher->executeSql(
                 'UPDATE custom_pages SET slug = :slug WHERE id = :id',
                 ['slug' => $newSlug, 'id' => $id]
@@ -56,5 +56,31 @@ class Patch102 implements PatchInterface
         if (!$patcher->tableHasIndex('custom_pages', 'uniq_custom_pages_slug')) {
             $patcher->executeSql('ALTER TABLE `custom_pages` ADD UNIQUE INDEX `uniq_custom_pages_slug` (`slug`)');
         }
+    }
+
+    private function allocateUniqueCustomPageSlug(Patcher $patcher, string $base): string
+    {
+        $suffix = 2;
+        while (true) {
+            $candidate = $this->fitCustomPageSlug($base, $suffix);
+            $owner = $patcher->fetchOne(
+                'SELECT id FROM custom_pages WHERE slug = :slug LIMIT 1',
+                ['slug' => $candidate]
+            );
+            if ($owner === false) {
+                return $candidate;
+            }
+            ++$suffix;
+        }
+    }
+
+    private function fitCustomPageSlug(string $base, int $suffix): string
+    {
+        $suffixStr = '-' . $suffix;
+        if (strlen($base) + strlen($suffixStr) <= 255) {
+            return $base . $suffixStr;
+        }
+
+        return substr($base, 0, 255 - strlen($suffixStr)) . $suffixStr;
     }
 }
