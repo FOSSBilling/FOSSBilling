@@ -1276,7 +1276,7 @@ test('handles on before admin cron run event', function (): void {
         ->andReturn(true);
     $di['mod_service'] = $di->protect(fn ($serviceName): Mockery\MockInterface => $serviceMock);
 
-    $boxEventMock = Mockery::mock('\FOSSBilling\Event\Event');
+    $boxEventMock = Mockery::mock(FOSSBilling\Event\Event::class);
     $boxEventMock->shouldReceive('getDi')
         ->atLeast()->once()
         ->andReturn($di);

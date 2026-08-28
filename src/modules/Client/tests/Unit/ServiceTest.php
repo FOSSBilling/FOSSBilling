@@ -77,7 +77,7 @@ test('onAfterClientSignUp returns true', function (): void {
         'id' => 1,
     ];
 
-    $eventMock = Mockery::mock('\FOSSBilling\Event\Event');
+    $eventMock = Mockery::mock(FOSSBilling\Event\Event::class);
     $eventMock->shouldReceive('getParameters')
         ->atLeast()->once()
         ->andReturn($eventParams);
@@ -103,7 +103,7 @@ test('onAfterClientSignUp returns true', function (): void {
 
 test('onAfterClientSignUp with email confirmation required returns true', function (): void {
     $service = new Box\Mod\Client\Service();
-    $eventMock = Mockery::mock('\FOSSBilling\Event\Event');
+    $eventMock = Mockery::mock(FOSSBilling\Event\Event::class);
     $eventParams = [
         'password' => 'testPassword',
         'id' => 1,
@@ -150,7 +150,7 @@ test('onAfterClientSignUp handles exception gracefully', function (): void {
         'id' => 1,
     ];
 
-    $eventMock = Mockery::mock('\FOSSBilling\Event\Event');
+    $eventMock = Mockery::mock(FOSSBilling\Event\Event::class);
     $eventMock->shouldReceive('getParameters')
         ->atLeast()->once()
         ->andReturn($eventParams);
@@ -785,7 +785,7 @@ test('adminCreateClient returns int', function (): void {
         'aid' => 'LEGACY-1001',
     ];
 
-    $eventManagerMock = Mockery::mock('\FOSSBilling\Event\Manager');
+    $eventManagerMock = Mockery::mock(FOSSBilling\Event\Manager::class);
     $eventManagerMock->shouldReceive('fire')
         ->twice();
 
@@ -850,7 +850,7 @@ test('authorizeClient returns null when email not found', function (): void {
     $email = 'example@fossbilling.vm';
     $password = '123456';
 
-    $authMock = Mockery::mock('\FOSSBilling\Security\Authorization');
+    $authMock = Mockery::mock(FOSSBilling\Security\Authorization::class);
     $authMock->shouldReceive('authorizeUser')
         ->atLeast()->once()
         ->with(null, $password)
@@ -878,7 +878,7 @@ test('authorizeClient returns Client', function (): void {
         ->with(['email' => $email, 'status' => 'active'])
         ->andReturn($clientModel);
 
-    $authMock = Mockery::mock('\FOSSBilling\Security\Authorization');
+    $authMock = Mockery::mock(FOSSBilling\Security\Authorization::class);
     $authMock->shouldReceive('authorizeUser')
         ->atLeast()->once()
         ->with($clientModel, $password)
@@ -910,7 +910,7 @@ test('authorizeClient with confirmed email returns Client', function (): void {
         ->with(['email' => $email, 'status' => 'active'])
         ->andReturn($clientModel);
 
-    $authMock = Mockery::mock('\FOSSBilling\Security\Authorization');
+    $authMock = Mockery::mock(FOSSBilling\Security\Authorization::class);
     $authMock->shouldReceive('authorizeUser')
         ->atLeast()->once()
         ->with($clientModel, $password)

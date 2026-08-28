@@ -48,7 +48,7 @@ test('call fires event', function (): void {
     $api = apiEndpoint(new Box\Mod\Hook\Api\Admin());
     $data['event'] = 'testEvent';
 
-    $eventManager = Mockery::mock('\FOSSBilling\Event\Manager');
+    $eventManager = Mockery::mock(FOSSBilling\Event\Manager::class);
     /** @var Mockery\Expectation $expectation */
     $expectation = $eventManager->shouldReceive('fire');
     $expectation->atLeast()->once();

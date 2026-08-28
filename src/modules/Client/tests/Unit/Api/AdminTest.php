@@ -142,7 +142,7 @@ test('create returns int', function (): void {
     $serviceMock->shouldReceive('emailAlreadyRegistered')->atLeast()->once()->andReturn(false);
     $serviceMock->shouldReceive('adminCreateClient')->atLeast()->once()->andReturn(1);
 
-    $eventMock = Mockery::mock('\FOSSBilling\Event\Manager');
+    $eventMock = Mockery::mock(FOSSBilling\Event\Manager::class);
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
     $di = container();
@@ -178,7 +178,7 @@ test('delete returns true', function (): void {
     $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
     $data = ['id' => 1];
 
-    $eventMock = Mockery::mock('\FOSSBilling\Event\Manager');
+    $eventMock = Mockery::mock(FOSSBilling\Event\Manager::class);
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
     $serviceMock = Mockery::mock(Box\Mod\Client\Service::class)->makePartial();
@@ -241,7 +241,7 @@ test('update returns true', function (): void {
     $serviceMock->shouldReceive('emailAlreadyRegistered')->atLeast()->once()->andReturn(false);
     $serviceMock->shouldReceive('canChangeCurrency')->atLeast()->once()->andReturn(true);
 
-    $eventMock = Mockery::mock('\FOSSBilling\Event\Manager');
+    $eventMock = Mockery::mock(FOSSBilling\Event\Manager::class);
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
     $di = container();
@@ -364,7 +364,7 @@ test('update throws exception when email is already registered', function (): vo
     $serviceMock = Mockery::mock(Box\Mod\Client\Service::class);
     $serviceMock->shouldReceive('emailAlreadyRegistered')->atLeast()->once()->andReturn(true);
 
-    $eventMock = Mockery::mock('\FOSSBilling\Event\Manager');
+    $eventMock = Mockery::mock(FOSSBilling\Event\Manager::class);
     $eventMock->shouldReceive('fire');
 
     $di = container();
@@ -402,7 +402,7 @@ test('changePassword returns true', function (): void {
         'password_confirm' => 'strongPass',
     ];
 
-    $eventMock = Mockery::mock('\FOSSBilling\Event\Manager');
+    $eventMock = Mockery::mock(FOSSBilling\Event\Manager::class);
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
     $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);

@@ -13,7 +13,7 @@ namespace FOSSBilling\Update\Patch;
 
 final class PatchRegistry
 {
-    public const MAP = [
+    public const array MAP = [
         25 => Patch25::class,
         26 => Patch26::class,
         27 => Patch27::class,

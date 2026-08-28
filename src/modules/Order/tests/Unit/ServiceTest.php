@@ -3765,7 +3765,7 @@ test('batchCancelUnpaid returns false and does not query orders when auto remova
     $service = new Service();
 
     $di = container();
-    $di['events_manager'] = Mockery::mock('\FOSSBilling\Event\Manager')->shouldIgnoreMissing();
+    $di['events_manager'] = Mockery::mock(FOSSBilling\Event\Manager::class)->shouldIgnoreMissing();
     $di['mod'] = $di->protect(fn (string $name): object => new class {
         public function getConfig(): array
         {
@@ -3800,7 +3800,7 @@ test('deleteFromOrder removes client_order_meta rows before removing the order',
     $productService->shouldReceive('releaseReservedPromoRedemptionsForOrder')->once()->with($order, 'order_deleted');
     $productService->shouldReceive('releaseReservedStockForOrder')->once()->with($order, 'order_deleted');
 
-    $eventsManager = Mockery::mock('\FOSSBilling\Event\Manager')->shouldIgnoreMissing();
+    $eventsManager = Mockery::mock(FOSSBilling\Event\Manager::class)->shouldIgnoreMissing();
 
     $di = container();
     $di['events_manager'] = $eventsManager;
@@ -3828,7 +3828,7 @@ test('batchCancelUnpaid removes each stale unpaid order and fires events', funct
     $emMock->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepository);
     $emMock->shouldReceive('refresh')->twice();
 
-    $eventsManager = Mockery::mock('\FOSSBilling\Event\Manager');
+    $eventsManager = Mockery::mock(FOSSBilling\Event\Manager::class);
     $eventsManager->shouldReceive('fire')->once()->with(['event' => 'onBeforeAdminBatchCancelUnpaidOrders']);
     $eventsManager->shouldReceive('fire')->once()->with(['event' => 'onAfterAdminBatchCancelUnpaidOrders']);
 
@@ -3865,7 +3865,7 @@ test('batchCancelUnpaid falls back to the 7 day default when the configured valu
 
     $di = container();
     $di['em'] = $emMock;
-    $di['events_manager'] = Mockery::mock('\FOSSBilling\Event\Manager')->shouldIgnoreMissing();
+    $di['events_manager'] = Mockery::mock(FOSSBilling\Event\Manager::class)->shouldIgnoreMissing();
     $di['mod'] = $di->protect(fn (string $name): object => new class {
         public function getConfig(): array
         {
@@ -3912,7 +3912,7 @@ test('batchCancelUnpaid removes the linked unpaid invoice before deleting the or
 
     $di = container();
     $di['em'] = $emMock;
-    $di['events_manager'] = Mockery::mock('\FOSSBilling\Event\Manager')->shouldIgnoreMissing();
+    $di['events_manager'] = Mockery::mock(FOSSBilling\Event\Manager::class)->shouldIgnoreMissing();
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod'] = $di->protect(fn (string $name): object => new class {
         public function getConfig(): array
@@ -3958,7 +3958,7 @@ test('batchCancelUnpaid resolves a shared invoice once and still removes every s
 
     $di = container();
     $di['em'] = $emMock;
-    $di['events_manager'] = Mockery::mock('\FOSSBilling\Event\Manager')->shouldIgnoreMissing();
+    $di['events_manager'] = Mockery::mock(FOSSBilling\Event\Manager::class)->shouldIgnoreMissing();
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod'] = $di->protect(fn (string $name): object => new class {
         public function getConfig(): array
@@ -4014,7 +4014,7 @@ test('batchCancelUnpaid does not delete a sibling order when removing the shared
 
     $di = container();
     $di['em'] = $emMock;
-    $di['events_manager'] = Mockery::mock('\FOSSBilling\Event\Manager')->shouldIgnoreMissing();
+    $di['events_manager'] = Mockery::mock(FOSSBilling\Event\Manager::class)->shouldIgnoreMissing();
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod'] = $di->protect(fn (string $name): object => new class {
         public function getConfig(): array
@@ -4060,7 +4060,7 @@ test('batchCancelUnpaid leaves the order alone when its invoice was paid since s
 
     $di = container();
     $di['em'] = $emMock;
-    $di['events_manager'] = Mockery::mock('\FOSSBilling\Event\Manager')->shouldIgnoreMissing();
+    $di['events_manager'] = Mockery::mock(FOSSBilling\Event\Manager::class)->shouldIgnoreMissing();
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod'] = $di->protect(fn (string $name): object => new class {
         public function getConfig(): array
@@ -4105,7 +4105,7 @@ test('batchCancelUnpaid removes the order without touching the invoice when it w
 
     $di = container();
     $di['em'] = $emMock;
-    $di['events_manager'] = Mockery::mock('\FOSSBilling\Event\Manager')->shouldIgnoreMissing();
+    $di['events_manager'] = Mockery::mock(FOSSBilling\Event\Manager::class)->shouldIgnoreMissing();
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod'] = $di->protect(fn (string $name): object => new class {
         public function getConfig(): array
@@ -4139,7 +4139,7 @@ test('batchCancelUnpaid logs and continues when removing one stale order fails',
 
     $di = container();
     $di['em'] = $emMock;
-    $di['events_manager'] = Mockery::mock('\FOSSBilling\Event\Manager')->shouldIgnoreMissing();
+    $di['events_manager'] = Mockery::mock(FOSSBilling\Event\Manager::class)->shouldIgnoreMissing();
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod'] = $di->protect(fn (string $name): object => new class {
         public function getConfig(): array
@@ -4182,7 +4182,7 @@ test('batchCancelUnpaid skips an order that changed status while the batch was r
 
     $di = container();
     $di['em'] = $emMock;
-    $di['events_manager'] = Mockery::mock('\FOSSBilling\Event\Manager')->shouldIgnoreMissing();
+    $di['events_manager'] = Mockery::mock(FOSSBilling\Event\Manager::class)->shouldIgnoreMissing();
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod'] = $di->protect(fn (string $name): object => new class {
         public function getConfig(): array

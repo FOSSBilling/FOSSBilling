@@ -40,7 +40,7 @@ test('fetchNavigation returns array', function (): void {
 
 test('register configures routes', function (): void {
     $controller = new Box\Mod\Activity\Controller\Admin();
-    $boxAppMock = Mockery::mock('\FOSSBilling\Http\App');
+    $boxAppMock = Mockery::mock(FOSSBilling\Http\App::class);
     /** @var Mockery\Expectation $expectation */
     $expectation = $boxAppMock->shouldReceive('get');
     $expectation->atLeast()->once();
@@ -52,7 +52,7 @@ test('register configures routes', function (): void {
 
 test('getIndex renders activity index', function (): void {
     $controller = new Box\Mod\Activity\Controller\Admin();
-    $boxAppMock = Mockery::mock('\FOSSBilling\Http\App');
+    $boxAppMock = Mockery::mock(FOSSBilling\Http\App::class);
     /** @var Mockery\Expectation $expectation */
     $expectation = $boxAppMock->shouldReceive('render');
     $expectation->atLeast()->once();

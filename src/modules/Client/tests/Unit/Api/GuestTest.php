@@ -166,7 +166,7 @@ test('login returns array', function (): void {
     ->atLeast()->once()
     ->andReturn([]);
 
-    $eventMock = Mockery::mock('\FOSSBilling\Event\Manager');
+    $eventMock = Mockery::mock(FOSSBilling\Event\Manager::class);
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
     $sessionMock = Mockery::mock(FOSSBilling\Session::class);
@@ -197,7 +197,7 @@ test('resetPassword returns true with new flow', function (): void {
     $guestClient = apiEndpoint(new Box\Mod\Client\Api\Guest());
     $data['email'] = 'John@exmaple.com';
 
-    $eventMock = Mockery::mock('\FOSSBilling\Event\Manager');
+    $eventMock = Mockery::mock(FOSSBilling\Event\Manager::class);
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
     $modelClient = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1, 'status' => Box\Mod\Client\Entity\Client::ACTIVE]);
@@ -230,7 +230,7 @@ test('resetPassword returns true when email not found', function (): void {
     $guestClient = apiEndpoint(new Box\Mod\Client\Api\Guest());
     $data['email'] = 'joghn@example.eu';
 
-    $eventMock = Mockery::mock('\FOSSBilling\Event\Manager');
+    $eventMock = Mockery::mock(FOSSBilling\Event\Manager::class);
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
     $clientRepository = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
@@ -283,7 +283,7 @@ test('updatePassword returns true', function (): void {
         default => Mockery::mock()->shouldIgnoreMissing(),
     });
 
-    $eventMock = Mockery::mock('\FOSSBilling\Event\Manager');
+    $eventMock = Mockery::mock(FOSSBilling\Event\Manager::class);
     $eventMock->shouldReceive('fire')->times(2);
 
     $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
@@ -316,7 +316,7 @@ test('updatePassword throws exception when reset not found', function (): void {
         'password_confirm' => 'NewPassword1',
     ];
 
-    $eventMock = Mockery::mock('\FOSSBilling\Event\Manager');
+    $eventMock = Mockery::mock(FOSSBilling\Event\Manager::class);
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
     $di = container();

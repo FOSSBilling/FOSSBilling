@@ -190,7 +190,7 @@ class Service implements InjectionAwareInterface
         }
 
         $type = $parameters[0]->getType() instanceof \ReflectionNamedType ? $parameters[0]->getType()->getName() : null;
-        if ($type == 'FOSSBilling\Event\Event' || $type == "\FOSSBilling\Event\Event") {
+        if ($type == \FOSSBilling\Event\Event::class || $type == \FOSSBilling\Event\Event::class) {
             return true;
         }
 

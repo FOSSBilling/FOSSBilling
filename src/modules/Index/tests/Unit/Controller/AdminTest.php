@@ -23,7 +23,7 @@ test('di returns the dependency injection container', function (): void {
 });
 
 test('register registers controller routes', function (): void {
-    $boxAppMock = Mockery::mock('\FOSSBilling\Http\App');
+    $boxAppMock = Mockery::mock(FOSSBilling\Http\App::class);
     /** @var Mockery\Expectation $expectation */
     $expectation = $boxAppMock->shouldReceive('get');
     $expectation->times(4);
@@ -33,13 +33,13 @@ test('register registers controller routes', function (): void {
 });
 
 test('getIndex renders dashboard when admin is logged in', function (): void {
-    $boxAppMock = Mockery::mock('\FOSSBilling\Http\App');
+    $boxAppMock = Mockery::mock(FOSSBilling\Http\App::class);
     /** @var Mockery\Expectation $expectation1 */
     $expectation1 = $boxAppMock->shouldReceive('render');
     $expectation1->atLeast()->once();
     $expectation1->with('mod_index_dashboard');
 
-    $authorizationMock = Mockery::mock('\FOSSBilling\Security\Authorization');
+    $authorizationMock = Mockery::mock(FOSSBilling\Security\Authorization::class);
     /** @var Mockery\Expectation $expectation2 */
     $expectation2 = $authorizationMock->shouldReceive('isAdminLoggedIn');
     $expectation2->atLeast()->once();

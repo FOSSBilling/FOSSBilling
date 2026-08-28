@@ -44,7 +44,7 @@ test('handles on after admin activate extension', function (): void {
         'id' => 1,
     ];
 
-    $eventMock = Mockery::mock('\FOSSBilling\Event\Event');
+    $eventMock = Mockery::mock(FOSSBilling\Event\Event::class);
     /** @var Mockery\Expectation $expectation1 */
     $expectation1 = $eventMock->shouldReceive('getParameters');
     $expectation1->atLeast()->once();
@@ -87,7 +87,7 @@ test('handles on after admin activate extension with missing id', function (): v
     $service = new Box\Mod\Hook\Service();
     $eventParams = [];
 
-    $eventMock = Mockery::mock('\FOSSBilling\Event\Event');
+    $eventMock = Mockery::mock(FOSSBilling\Event\Event::class);
     /** @var Mockery\Expectation $expectation1 */
     $expectation1 = $eventMock->shouldReceive('getParameters');
     $expectation1->atLeast()->once();
@@ -109,7 +109,7 @@ test('handles on after admin deactivate extension', function (): void {
         'id' => 1,
     ];
 
-    $eventMock = Mockery::mock('\FOSSBilling\Event\Event');
+    $eventMock = Mockery::mock(FOSSBilling\Event\Event::class);
     /** @var Mockery\Expectation $expectation1 */
     $expectation1 = $eventMock->shouldReceive('getParameters');
     $expectation1->atLeast()->once();

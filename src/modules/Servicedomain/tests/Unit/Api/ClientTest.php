@@ -36,7 +36,7 @@ test('updates nameservers', function (): void {
 
     $clientApiMock->setService($serviceMock);
 
-    $eventMock = Mockery::mock('\FOSSBilling\Event\Manager');
+    $eventMock = Mockery::mock(FOSSBilling\Event\Manager::class);
     $eventMock->shouldReceive('fire')
         ->atLeast()->once();
 

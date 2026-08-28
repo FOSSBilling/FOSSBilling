@@ -795,7 +795,7 @@ test('removeCurrency deletes currency by code', function (): void {
     $emMock->shouldReceive('flush')
         ->atLeast()->once();
 
-    $manager = Mockery::mock('FOSSBilling\Event\Manager');
+    $manager = Mockery::mock(FOSSBilling\Event\Manager::class);
     $manager->shouldReceive('fire')
         ->atLeast()->once()
         ->andReturn(true);
