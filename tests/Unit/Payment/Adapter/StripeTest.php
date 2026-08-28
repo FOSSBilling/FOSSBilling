@@ -1230,6 +1230,165 @@ describe('processPaymentIntent', function (): void {
     });
 });
 
+describe('processSetupIntent', function (): void {
+    test('rejects a setup intent whose metadata invoice_id does not match the resolved invoice', function (): void {
+        // Regression coverage: unlike the webhook flow (which derives the invoice from the setup
+        // intent's own metadata), the redirect flow resolves $invoice and $setupIntent
+        // independently, from separate query parameters on the redirect URL (see
+        // resolveInvoice()). Without this check, a request naming a victim's invoice_id alongside
+        // the requester's own completed setup intent would subscribe/charge the requester but
+        // credit and mark paid whatever invoice_id was supplied.
+        $victimInvoice = createEntity(Invoice::class, ['id' => 90, 'client_id' => 5]);
+
+        $setupIntent = Stripe\SetupIntent::constructFrom([
+            'id' => 'seti_attacker',
+            'status' => 'succeeded',
+            'payment_method' => 'pm_attacker',
+            'customer' => 'cus_attacker',
+            'metadata' => ['invoice_id' => '999', 'gateway_id' => '1', 'price_id' => 'price_attacker'],
+        ]);
+
+        $setupIntentsMock = Mockery::mock();
+        $setupIntentsMock->shouldReceive('retrieve')->once()->with('seti_attacker', [])->andReturn($setupIntent);
+
+        $stripeMock = Mockery::mock(StripeClient::class);
+        $stripeMock->setupIntents = $setupIntentsMock;
+        $stripeMock->subscriptions = Mockery::mock(); // no expectations - must not be touched
+        setPrivateProperty($this->adapter, 'stripe', $stripeMock);
+
+        $tx = buildTransaction();
+        $tx->id = 700;
+        $this->adapter->setDi(container());
+
+        $apiAdmin = Mockery::mock();
+        $apiAdmin->shouldNotReceive('invoice_subscription_create');
+        $apiAdmin->shouldNotReceive('client_balance_add_funds');
+
+        invokePrivateMethod($this->adapter, 'processSetupIntent', [
+            $apiAdmin,
+            $tx,
+            $victimInvoice,
+            ['get' => ['setup_intent' => 'seti_attacker']],
+            1,
+        ]);
+
+        expect($tx->status)->toBe(Transaction::STATUS_ERROR);
+    });
+
+    test('rejects a setup intent whose metadata gateway_id does not match the current gateway', function (): void {
+        $invoice = createEntity(Invoice::class, ['id' => 91, 'client_id' => 5]);
+
+        $setupIntent = Stripe\SetupIntent::constructFrom([
+            'id' => 'seti_wrong_gateway',
+            'status' => 'succeeded',
+            'payment_method' => 'pm_x',
+            'customer' => 'cus_x',
+            'metadata' => ['invoice_id' => '91', 'gateway_id' => '2', 'price_id' => 'price_x'],
+        ]);
+
+        $setupIntentsMock = Mockery::mock();
+        $setupIntentsMock->shouldReceive('retrieve')->once()->with('seti_wrong_gateway', [])->andReturn($setupIntent);
+
+        $stripeMock = Mockery::mock(StripeClient::class);
+        $stripeMock->setupIntents = $setupIntentsMock;
+        $stripeMock->subscriptions = Mockery::mock();
+        setPrivateProperty($this->adapter, 'stripe', $stripeMock);
+
+        $tx = buildTransaction();
+        $tx->id = 701;
+        $this->adapter->setDi(container());
+
+        $apiAdmin = Mockery::mock();
+        $apiAdmin->shouldNotReceive('invoice_subscription_create');
+
+        invokePrivateMethod($this->adapter, 'processSetupIntent', [
+            $apiAdmin,
+            $tx,
+            $invoice,
+            ['get' => ['setup_intent' => 'seti_wrong_gateway']],
+            1,
+        ]);
+
+        expect($tx->status)->toBe(Transaction::STATUS_ERROR);
+    });
+
+    test('proceeds when the setup intent metadata matches the resolved invoice and gateway', function (): void {
+        $invoice = createEntity(Invoice::class, ['id' => 92, 'client_id' => 5, 'currency' => 'USD']);
+
+        $setupIntent = Stripe\SetupIntent::constructFrom([
+            'id' => 'seti_matching',
+            'status' => 'succeeded',
+            'payment_method' => 'pm_match',
+            'customer' => 'cus_match',
+            'metadata' => ['invoice_id' => '92', 'gateway_id' => '1', 'price_id' => 'price_match'],
+        ]);
+
+        $setupIntentsMock = Mockery::mock();
+        $setupIntentsMock->shouldReceive('retrieve')->once()->with('seti_matching', [])->andReturn($setupIntent);
+
+        $subscription = Stripe\Subscription::constructFrom(['id' => 'sub_match', 'latest_invoice' => null]);
+        $subscriptionsMock = Mockery::mock();
+        $subscriptionsMock->shouldReceive('create')->once()->andReturn($subscription);
+
+        $stripeMock = Mockery::mock(StripeClient::class);
+        $stripeMock->setupIntents = $setupIntentsMock;
+        $stripeMock->subscriptions = $subscriptionsMock;
+        setPrivateProperty($this->adapter, 'stripe', $stripeMock);
+
+        $tx = buildTransaction();
+        $tx->id = 702;
+        $this->adapter->setDi(container());
+
+        $apiAdmin = Mockery::mock();
+        $apiAdmin->shouldReceive('invoice_subscription_create')->once()->andReturn(1);
+
+        invokePrivateMethod($this->adapter, 'processSetupIntent', [
+            $apiAdmin,
+            $tx,
+            $invoice,
+            ['get' => ['setup_intent' => 'seti_matching']],
+            1,
+        ]);
+
+        expect($tx->status)->toBe(Transaction::STATUS_PROCESSED)
+            ->and($tx->s_id)->toBe('sub_match');
+    });
+});
+
+describe('createStripeSubscription', function (): void {
+    test('changes the idempotency key when the resolved price differs for the same invoice', function (): void {
+        // Regression coverage for https://github.com/FOSSBilling/FOSSBilling/issues/4228: the
+        // same invoice can produce setup intents bound to different prices over time (e.g. a
+        // stale setup intent's late webhook arriving after a reload already completed checkout
+        // with a different one) - reusing a plain invoice-id idempotency key across that would
+        // hit an idempotency_error instead of the expected/handled idempotency_key_in_use race.
+        $invoice = createEntity(Invoice::class, ['id' => 93, 'client_id' => 5]);
+        $setupIntent = Stripe\SetupIntent::constructFrom(['id' => 'seti_x', 'payment_method' => 'pm_x']);
+
+        $capturedKeys = [];
+        $subscriptionsMock = Mockery::mock();
+        $subscriptionsMock->shouldReceive('create')
+            ->twice()
+            ->with(Mockery::any(), Mockery::on(function (array $options) use (&$capturedKeys): bool {
+                $capturedKeys[] = $options['idempotency_key'] ?? null;
+
+                return true;
+            }))
+            ->andReturn(Stripe\Subscription::constructFrom(['id' => 'sub_x']));
+
+        $stripeMock = Mockery::mock(StripeClient::class);
+        $stripeMock->subscriptions = $subscriptionsMock;
+        setPrivateProperty($this->adapter, 'stripe', $stripeMock);
+        $this->adapter->setDi(container());
+
+        invokePrivateMethod($this->adapter, 'createStripeSubscription', ['cus_a', 'price_a', $setupIntent, $invoice]);
+        invokePrivateMethod($this->adapter, 'createStripeSubscription', ['cus_a', 'price_b', $setupIntent, $invoice]);
+
+        expect($capturedKeys)->toHaveCount(2)
+            ->and($capturedKeys[0])->not->toBe($capturedKeys[1]);
+    });
+});
+
 test('releases the Stripe object lock when processing fails', function (): void {
     $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
     expectStripeObjectLock($dbalMock, 'pi_failure', 2);

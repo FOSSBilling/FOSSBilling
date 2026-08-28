@@ -477,7 +477,14 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         $tx->setTxnStatus($setupIntent->status);
         $tx->setTxnId($setupIntent->id);
 
-        if ($setupIntent->status === 'succeeded' && $invoice instanceof Invoice) {
+        // $invoice and $setupIntent are resolved independently, from separate
+        // query parameters on the redirect URL (see resolveInvoice()) - unlike
+        // the webhook flow, which derives the invoice from the setup intent's
+        // own metadata and so can't have this mismatch. Without this check, a
+        // request naming a victim's invoice alongside the requester's own
+        // completed setup intent would subscribe/charge the requester but
+        // credit and mark paid whatever invoice_id was supplied.
+        if ($setupIntent->status === 'succeeded' && $invoice instanceof Invoice && $this->setupIntentBelongsToInvoice($setupIntent, $invoice, $gateway_id)) {
             $customerId = $this->resolveSubscriptionCustomerId($setupIntent, $invoice);
             $priceId = $this->resolveSubscriptionPriceId($setupIntent, $invoice);
 
@@ -531,6 +538,23 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
         $tx->setUpdatedAt(new DateTime());
         $this->di['em']->flush();
+    }
+
+    /**
+     * Verify a setup intent was actually created for this invoice on this
+     * gateway, per the metadata _generateSubscriptionForm() stamped onto it
+     * when creating it - see processSetupIntent()'s call site for why this
+     * check exists.
+     */
+    private function setupIntentBelongsToInvoice(Stripe\SetupIntent $setupIntent, Invoice $invoice, int $gatewayId): bool
+    {
+        $metadataInvoiceId = $setupIntent->metadata->invoice_id ?? null;
+        $metadataGatewayId = $setupIntent->metadata->gateway_id ?? null;
+
+        return $metadataInvoiceId !== null
+            && (int) $metadataInvoiceId === $invoice->getId()
+            && $metadataGatewayId !== null
+            && (int) $metadataGatewayId === $gatewayId;
     }
 
     /**
@@ -1439,7 +1463,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
     private function createStripeSubscription(string $customerId, string $priceId, Stripe\SetupIntent $setupIntent, Invoice $invoice): Stripe\Subscription
     {
-        return $this->stripe->subscriptions->create([
+        $subscriptionParams = [
             'customer' => $customerId,
             'items' => [[
                 'price' => $priceId,
@@ -1451,7 +1475,22 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
                 'client_id' => (string) $invoice->getClientId(),
                 'gateway_id' => (string) $this->config['gateway_id'],
             ],
-        ], ['idempotency_key' => 'sub_invoice_' . $invoice->getId()]);
+        ];
+        // Hashing the resolved params into the key, like _generateForm() and
+        // generateSubscriptionFormUnderLock() do, covers the same invoice
+        // producing setup intents with different customers/prices over time
+        // (e.g. a stale setup intent's late webhook arriving after a reload
+        // already completed checkout with a different one) - reusing a plain
+        // invoice-id key across that would hit an idempotency_error instead
+        // of the expected/handled idempotency_key_in_use race.
+        $idempotencyKey = sprintf(
+            'sub_invoice_%d_gateway_%d_%s',
+            $invoice->getId(),
+            $this->config['gateway_id'],
+            hash('sha256', json_encode($subscriptionParams, JSON_THROW_ON_ERROR))
+        );
+
+        return $this->stripe->subscriptions->create($subscriptionParams, ['idempotency_key' => $idempotencyKey]);
     }
 
     /**
