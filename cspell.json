@@ -83,7 +83,8 @@
         "dedup",
         "GHSA",
         "macrovector",
-        "rubygems"
+        "rubygems",
+        "Åland"
     ],
 
     "ignoreWords": [
