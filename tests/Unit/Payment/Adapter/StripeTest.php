@@ -2,11 +2,18 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Invoice\Entity\PayGatewayCustomer;
+use Box\Mod\Invoice\Entity\PayGatewayProduct;
+use Box\Mod\Invoice\Repository\PayGatewayCustomerRepository;
+use Box\Mod\Invoice\Repository\PayGatewayProductRepository;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use Doctrine\ORM\EntityManagerInterface;
 use Payment_Adapter_Stripe;
 use Stripe\StripeClient;
 use Tests\Helpers\DummyBean;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 
 const TEST_WEBHOOK_SECRET = 'whsec_test_dummy';
 
@@ -18,7 +25,35 @@ beforeEach(function (): void {
         'test_webhook_secret' => TEST_WEBHOOK_SECRET,
         'gateway_id' => 1,
     ]);
+
+    // cacheGatewayCustomer()/cacheGatewayProduct() open their own isolated
+    // EntityManager rather than using $di['em'] - default that to a no-op
+    // stub so tests don't hit a real database; tests that care about the
+    // cache write override this.
+    setPrivateProperty($this->adapter, 'entityManagerFactory', fn (): object => noOpEntityManagerMock());
 });
+
+function noOpEntityManagerMock(): Mockery\MockInterface
+{
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('persist')->byDefault();
+    $em->shouldReceive('flush')->byDefault();
+    $em->shouldReceive('isOpen')->byDefault()->andReturn(true);
+
+    return $em;
+}
+
+function uniqueConstraintViolationException(): UniqueConstraintViolationException
+{
+    $driverException = new class extends Exception implements Doctrine\DBAL\Driver\Exception {
+        public function getSQLState(): ?string
+        {
+            return '23000';
+        }
+    };
+
+    return new UniqueConstraintViolationException($driverException, null);
+}
 
 test('cancels a Stripe subscription', function (): void {
     $subscriptionsMock = Mockery::mock();
@@ -1223,6 +1258,409 @@ describe('handleSetupIntentSucceededWebhook', function (): void {
 
         expect($tx->invoice_id)->toBe(25)
             ->and($tx->s_id)->toBe('sub_new_123');
+    });
+});
+
+describe('processSetupIntent', function (): void {
+    test('rejects a setup intent whose metadata invoice_id does not match the resolved invoice', function (): void {
+        // Regression coverage: unlike the webhook flow (which derives the invoice from the setup
+        // intent's own metadata), the redirect flow resolves $invoice and $setupIntent
+        // independently, from separate query parameters on the redirect URL (see
+        // resolveInvoice()). Without this check, a request naming a victim's invoice_id alongside
+        // the requester's own completed setup intent would subscribe/charge the requester but
+        // credit and mark paid whatever invoice_id was supplied.
+        $victimInvoice = new Model_Invoice();
+        $victimInvoice->loadBean(new DummyBean());
+        $victimInvoice->id = 90;
+        $victimInvoice->client_id = 5;
+
+        $setupIntent = Stripe\SetupIntent::constructFrom([
+            'id' => 'seti_attacker',
+            'status' => 'succeeded',
+            'payment_method' => 'pm_attacker',
+            'customer' => 'cus_attacker',
+            'metadata' => ['invoice_id' => '999', 'gateway_id' => '1', 'price_id' => 'price_attacker'],
+        ]);
+
+        $setupIntentsMock = Mockery::mock();
+        $setupIntentsMock->shouldReceive('retrieve')->once()->with('seti_attacker', [])->andReturn($setupIntent);
+
+        $stripeMock = Mockery::mock(StripeClient::class);
+        $stripeMock->setupIntents = $setupIntentsMock;
+        $stripeMock->subscriptions = Mockery::mock(); // no expectations - must not be touched
+        setPrivateProperty($this->adapter, 'stripe', $stripeMock);
+
+        $tx = buildTransaction();
+        $tx->id = 700;
+        $this->adapter->setDi(container());
+
+        $apiAdmin = Mockery::mock();
+        $apiAdmin->shouldNotReceive('invoice_subscription_create');
+        $apiAdmin->shouldNotReceive('client_balance_add_funds');
+
+        invokePrivateMethod($this->adapter, 'processSetupIntent', [
+            $apiAdmin,
+            $tx,
+            $victimInvoice,
+            ['get' => ['setup_intent' => 'seti_attacker']],
+            1,
+        ]);
+
+        expect($tx->status)->toBe(Model_Transaction::STATUS_ERROR);
+    });
+
+    test('rejects a setup intent whose metadata gateway_id does not match the current gateway', function (): void {
+        $invoice = new Model_Invoice();
+        $invoice->loadBean(new DummyBean());
+        $invoice->id = 91;
+        $invoice->client_id = 5;
+
+        $setupIntent = Stripe\SetupIntent::constructFrom([
+            'id' => 'seti_wrong_gateway',
+            'status' => 'succeeded',
+            'payment_method' => 'pm_x',
+            'customer' => 'cus_x',
+            'metadata' => ['invoice_id' => '91', 'gateway_id' => '2', 'price_id' => 'price_x'],
+        ]);
+
+        $setupIntentsMock = Mockery::mock();
+        $setupIntentsMock->shouldReceive('retrieve')->once()->with('seti_wrong_gateway', [])->andReturn($setupIntent);
+
+        $stripeMock = Mockery::mock(StripeClient::class);
+        $stripeMock->setupIntents = $setupIntentsMock;
+        $stripeMock->subscriptions = Mockery::mock();
+        setPrivateProperty($this->adapter, 'stripe', $stripeMock);
+
+        $tx = buildTransaction();
+        $tx->id = 701;
+        $this->adapter->setDi(container());
+
+        $apiAdmin = Mockery::mock();
+        $apiAdmin->shouldNotReceive('invoice_subscription_create');
+
+        invokePrivateMethod($this->adapter, 'processSetupIntent', [
+            $apiAdmin,
+            $tx,
+            $invoice,
+            ['get' => ['setup_intent' => 'seti_wrong_gateway']],
+            1,
+        ]);
+
+        expect($tx->status)->toBe(Model_Transaction::STATUS_ERROR);
+    });
+
+    test('proceeds when the setup intent metadata matches the resolved invoice and gateway', function (): void {
+        $invoice = new Model_Invoice();
+        $invoice->loadBean(new DummyBean());
+        $invoice->id = 92;
+        $invoice->client_id = 5;
+        $invoice->currency = 'USD';
+
+        $setupIntent = Stripe\SetupIntent::constructFrom([
+            'id' => 'seti_matching',
+            'status' => 'succeeded',
+            'payment_method' => 'pm_match',
+            'customer' => 'cus_match',
+            'metadata' => ['invoice_id' => '92', 'gateway_id' => '1', 'price_id' => 'price_match'],
+        ]);
+
+        $setupIntentsMock = Mockery::mock();
+        $setupIntentsMock->shouldReceive('retrieve')->once()->with('seti_matching', [])->andReturn($setupIntent);
+
+        $subscription = Stripe\Subscription::constructFrom(['id' => 'sub_match', 'latest_invoice' => null]);
+        $subscriptionsMock = Mockery::mock();
+        $subscriptionsMock->shouldReceive('create')->once()->andReturn($subscription);
+
+        $stripeMock = Mockery::mock(StripeClient::class);
+        $stripeMock->setupIntents = $setupIntentsMock;
+        $stripeMock->subscriptions = $subscriptionsMock;
+        setPrivateProperty($this->adapter, 'stripe', $stripeMock);
+
+        $tx = buildTransaction();
+        $tx->id = 702;
+        $this->adapter->setDi(container());
+
+        $apiAdmin = Mockery::mock();
+        $apiAdmin->shouldReceive('invoice_subscription_create')->once()->andReturn(1);
+
+        invokePrivateMethod($this->adapter, 'processSetupIntent', [
+            $apiAdmin,
+            $tx,
+            $invoice,
+            ['get' => ['setup_intent' => 'seti_matching']],
+            1,
+        ]);
+
+        expect($tx->status)->toBe(Model_Transaction::STATUS_PROCESSED)
+            ->and($tx->s_id)->toBe('sub_match');
+    });
+});
+
+describe('getOrCreateCustomer', function (): void {
+    test('returns the cached customer ID without touching Stripe', function (): void {
+        $invoiceModel = new Model_Invoice();
+        $invoiceModel->loadBean(new DummyBean());
+        $invoiceModel->id = 50;
+        $invoiceModel->client_id = 9;
+
+        $cached = createEntity(PayGatewayCustomer::class, ['external_customer_id' => 'cus_cached']);
+        $customerRepo = Mockery::mock(PayGatewayCustomerRepository::class);
+        $customerRepo->shouldReceive('findOneByGatewayAndClient')->once()->with(1, 9, true)->andReturn($cached);
+
+        $stripeMock = Mockery::mock(StripeClient::class);
+        $stripeMock->customers = Mockery::mock(); // no expectations - must not be called
+        setPrivateProperty($this->adapter, 'stripe', $stripeMock);
+
+        $di = container();
+        $di['em']->shouldReceive('getRepository')->with(PayGatewayCustomer::class)->andReturn($customerRepo);
+        $this->adapter->setDi($di);
+
+        $result = invokePrivateMethod($this->adapter, 'getOrCreateCustomer', [$invoiceModel]);
+
+        expect($result)->toBe('cus_cached');
+    });
+
+    test('resolves and caches a new customer on a cache miss', function (): void {
+        $invoiceModel = new Model_Invoice();
+        $invoiceModel->loadBean(new DummyBean());
+        $invoiceModel->id = 51;
+        $invoiceModel->client_id = 10;
+        $invoiceModel->buyer_email = 'newcustomer@example.com';
+        $invoiceModel->buyer_first_name = 'New';
+        $invoiceModel->buyer_last_name = 'Customer';
+
+        $customerRepo = Mockery::mock(PayGatewayCustomerRepository::class);
+        $customerRepo->shouldReceive('findOneByGatewayAndClient')->once()->with(1, 10, true)->andReturn(null);
+
+        $customer = Stripe\Customer::constructFrom(['id' => 'cus_fresh']);
+        $customersMock = Mockery::mock();
+        $customersMock->shouldReceive('search')->once()->andReturn(Stripe\SearchResult::constructFrom(['data' => []]));
+        $customersMock->shouldReceive('create')->once()->andReturn($customer);
+
+        $stripeMock = Mockery::mock(StripeClient::class);
+        $stripeMock->customers = $customersMock;
+        setPrivateProperty($this->adapter, 'stripe', $stripeMock);
+
+        $isolatedEm = noOpEntityManagerMock();
+        $isolatedEm->shouldReceive('persist')->once()->with(Mockery::type(PayGatewayCustomer::class));
+        $isolatedEm->shouldReceive('flush')->once();
+        setPrivateProperty($this->adapter, 'entityManagerFactory', fn (): object => $isolatedEm);
+
+        $di = container();
+        $di['em']->shouldReceive('getRepository')->with(PayGatewayCustomer::class)->andReturn($customerRepo);
+        $this->adapter->setDi($di);
+
+        $result = invokePrivateMethod($this->adapter, 'getOrCreateCustomer', [$invoiceModel]);
+
+        expect($result)->toBe('cus_fresh');
+    });
+
+    test('returns the winning row instead of its own resolved ID when a concurrent request caches first', function (): void {
+        // Two requests for the same (gateway, client) can both miss the cache read in
+        // getOrCreateCustomer() and each resolve their own Stripe customer before either persists.
+        // The unique constraint stops both rows from existing; cacheGatewayCustomer() must then
+        // re-read and return the winner's ID rather than the one this request resolved, so every
+        // caller converges on one customer.
+        $invoiceModel = new Model_Invoice();
+        $invoiceModel->loadBean(new DummyBean());
+        $invoiceModel->id = 52;
+        $invoiceModel->client_id = 11;
+        $invoiceModel->buyer_email = 'raced@example.com';
+        $invoiceModel->buyer_first_name = 'Raced';
+        $invoiceModel->buyer_last_name = 'Customer';
+
+        $customerRepo = Mockery::mock(PayGatewayCustomerRepository::class);
+        $customerRepo->shouldReceive('findOneByGatewayAndClient')->once()->with(1, 11, true)->andReturn(null);
+
+        $customer = Stripe\Customer::constructFrom(['id' => 'cus_this_request']);
+        $customersMock = Mockery::mock();
+        $customersMock->shouldReceive('search')->once()->andReturn(Stripe\SearchResult::constructFrom(['data' => []]));
+        $customersMock->shouldReceive('create')->once()->andReturn($customer);
+
+        $stripeMock = Mockery::mock(StripeClient::class);
+        $stripeMock->customers = $customersMock;
+        setPrivateProperty($this->adapter, 'stripe', $stripeMock);
+
+        $winningRow = createEntity(PayGatewayCustomer::class, ['external_customer_id' => 'cus_other_request_won']);
+        $isolatedEmRepo = Mockery::mock(PayGatewayCustomerRepository::class);
+        $isolatedEmRepo->shouldReceive('findOneByGatewayAndClient')->once()->with(1, 11, true)->andReturn($winningRow);
+        $isolatedEm = noOpEntityManagerMock();
+        $isolatedEm->shouldReceive('flush')->once()->andThrow(uniqueConstraintViolationException());
+        $isolatedEm->shouldReceive('getRepository')->with(PayGatewayCustomer::class)->andReturn($isolatedEmRepo);
+        setPrivateProperty($this->adapter, 'entityManagerFactory', fn (): object => $isolatedEm);
+
+        $di = container();
+        $di['em']->shouldReceive('getRepository')->with(PayGatewayCustomer::class)->andReturn($customerRepo);
+        $this->adapter->setDi($di);
+
+        $result = invokePrivateMethod($this->adapter, 'getOrCreateCustomer', [$invoiceModel]);
+
+        expect($result)->toBe('cus_other_request_won');
+    });
+});
+
+describe('getOrCreatePriceId', function (): void {
+    test('returns the cached price ID without touching Stripe', function (): void {
+        $invoiceModel = new Model_Invoice();
+        $invoiceModel->loadBean(new DummyBean());
+        $invoiceModel->id = 60;
+        $invoiceModel->currency = 'USD';
+
+        $cacheKey = hash('sha256', implode('|', ['Test Product', 'usd', 0, 'month', '1']));
+        $cached = createEntity(PayGatewayProduct::class, ['external_price_id' => 'price_cached']);
+        $productRepo = Mockery::mock(PayGatewayProductRepository::class);
+        $productRepo->shouldReceive('findOneByGatewayAndCacheKey')->once()->with(1, $cacheKey)->andReturn($cached);
+
+        $stripeMock = Mockery::mock(StripeClient::class);
+        $stripeMock->products = Mockery::mock(); // no expectations - must not be called
+        $stripeMock->prices = Mockery::mock(); // no expectations - must not be called
+        setPrivateProperty($this->adapter, 'stripe', $stripeMock);
+
+        $dbMock = Mockery::mock('\Box_Database');
+        $dbMock->shouldReceive('getAll')->andReturn([['title' => 'Test Product']]);
+
+        $di = container();
+        $di['db'] = $dbMock;
+        $di['em']->shouldReceive('getRepository')->with(PayGatewayProduct::class)->andReturn($productRepo);
+        $this->adapter->setDi($di);
+
+        $result = invokePrivateMethod($this->adapter, 'getOrCreatePriceId', [$invoiceModel]);
+
+        expect($result)->toBe('price_cached');
+    });
+
+    test('resolves and caches a new product/price on a cache miss', function (): void {
+        $invoiceModel = new Model_Invoice();
+        $invoiceModel->loadBean(new DummyBean());
+        $invoiceModel->id = 61;
+        $invoiceModel->currency = 'USD';
+
+        $cacheKey = hash('sha256', implode('|', ['Test Product', 'usd', 0, 'month', '1']));
+        $productRepo = Mockery::mock(PayGatewayProductRepository::class);
+        $productRepo->shouldReceive('findOneByGatewayAndCacheKey')->once()->with(1, $cacheKey)->andReturn(null);
+
+        $product = Stripe\Product::constructFrom(['id' => 'prod_fresh']);
+        $productsMock = Mockery::mock();
+        $productsMock->shouldReceive('search')->once()->andReturn(Stripe\SearchResult::constructFrom(['data' => []]));
+        $productsMock->shouldReceive('create')->once()->andReturn($product);
+
+        $price = Stripe\Price::constructFrom(['id' => 'price_fresh', 'unit_amount' => null]);
+        $pricesMock = Mockery::mock();
+        $pricesMock->shouldReceive('all')->once()->andReturn(Stripe\Collection::constructFrom(['data' => []]));
+        $pricesMock->shouldReceive('create')->once()->andReturn($price);
+
+        $stripeMock = Mockery::mock(StripeClient::class);
+        $stripeMock->products = $productsMock;
+        $stripeMock->prices = $pricesMock;
+        setPrivateProperty($this->adapter, 'stripe', $stripeMock);
+
+        $isolatedEm = noOpEntityManagerMock();
+        $isolatedEm->shouldReceive('persist')->once()->with(Mockery::type(PayGatewayProduct::class));
+        $isolatedEm->shouldReceive('flush')->once();
+        setPrivateProperty($this->adapter, 'entityManagerFactory', fn (): object => $isolatedEm);
+
+        $dbMock = Mockery::mock('\Box_Database');
+        $dbMock->shouldReceive('getAll')->andReturn([['title' => 'Test Product']]);
+
+        $di = container();
+        $di['db'] = $dbMock;
+        $di['em']->shouldReceive('getRepository')->with(PayGatewayProduct::class)->andReturn($productRepo);
+        $this->adapter->setDi($di);
+
+        $result = invokePrivateMethod($this->adapter, 'getOrCreatePriceId', [$invoiceModel]);
+
+        expect($result)->toBe('price_fresh');
+    });
+
+    test('returns the winning row instead of its own resolved ID when a concurrent request caches first', function (): void {
+        // Mirrors getOrCreateCustomer's equivalent case: the unique constraint stops two
+        // product/price rows existing for the same (gateway, cache key), so the loser here must
+        // re-read and return the winner's price ID rather than the one it just resolved.
+        $invoiceModel = new Model_Invoice();
+        $invoiceModel->loadBean(new DummyBean());
+        $invoiceModel->id = 62;
+        $invoiceModel->currency = 'USD';
+
+        $cacheKey = hash('sha256', implode('|', ['Test Product', 'usd', 0, 'month', '1']));
+        $productRepo = Mockery::mock(PayGatewayProductRepository::class);
+        $productRepo->shouldReceive('findOneByGatewayAndCacheKey')->once()->with(1, $cacheKey)->andReturn(null);
+
+        $product = Stripe\Product::constructFrom(['id' => 'prod_this_request']);
+        $productsMock = Mockery::mock();
+        $productsMock->shouldReceive('search')->once()->andReturn(Stripe\SearchResult::constructFrom(['data' => []]));
+        $productsMock->shouldReceive('create')->once()->andReturn($product);
+
+        $price = Stripe\Price::constructFrom(['id' => 'price_this_request', 'unit_amount' => null]);
+        $pricesMock = Mockery::mock();
+        $pricesMock->shouldReceive('all')->once()->andReturn(Stripe\Collection::constructFrom(['data' => []]));
+        $pricesMock->shouldReceive('create')->once()->andReturn($price);
+
+        $stripeMock = Mockery::mock(StripeClient::class);
+        $stripeMock->products = $productsMock;
+        $stripeMock->prices = $pricesMock;
+        setPrivateProperty($this->adapter, 'stripe', $stripeMock);
+
+        $winningRow = createEntity(PayGatewayProduct::class, ['external_price_id' => 'price_other_request_won']);
+        $isolatedEmRepo = Mockery::mock(PayGatewayProductRepository::class);
+        $isolatedEmRepo->shouldReceive('findOneByGatewayAndCacheKey')->once()->with(1, $cacheKey)->andReturn($winningRow);
+        $isolatedEm = noOpEntityManagerMock();
+        $isolatedEm->shouldReceive('flush')->once()->andThrow(uniqueConstraintViolationException());
+        $isolatedEm->shouldReceive('getRepository')->with(PayGatewayProduct::class)->andReturn($isolatedEmRepo);
+        setPrivateProperty($this->adapter, 'entityManagerFactory', fn (): object => $isolatedEm);
+
+        $dbMock = Mockery::mock('\Box_Database');
+        $dbMock->shouldReceive('getAll')->andReturn([['title' => 'Test Product']]);
+
+        $di = container();
+        $di['db'] = $dbMock;
+        $di['em']->shouldReceive('getRepository')->with(PayGatewayProduct::class)->andReturn($productRepo);
+        $this->adapter->setDi($di);
+
+        $result = invokePrivateMethod($this->adapter, 'getOrCreatePriceId', [$invoiceModel]);
+
+        expect($result)->toBe('price_other_request_won');
+    });
+});
+
+describe('newIsolatedEntityManager', function (): void {
+    test('memoizes the isolated EntityManager while it stays open', function (): void {
+        // Resolving a customer and a product/price on the same checkout - the common case for a
+        // client's first invoice - must not pay for a fresh EntityManagerFactory::create() twice.
+        $callCount = 0;
+        $em = noOpEntityManagerMock();
+        setPrivateProperty($this->adapter, 'entityManagerFactory', function () use (&$callCount, $em): object {
+            ++$callCount;
+
+            return $em;
+        });
+
+        $first = invokePrivateMethod($this->adapter, 'newIsolatedEntityManager');
+        $second = invokePrivateMethod($this->adapter, 'newIsolatedEntityManager');
+
+        expect($first)->toBe($em)
+            ->and($second)->toBe($em)
+            ->and($callCount)->toBe(1);
+    });
+
+    test('rebuilds once the memoized EntityManager reports itself closed', function (): void {
+        // Mirrors Doctrine's own behavior: a flush() that hits a unique constraint violation
+        // leaves the EntityManager closed, regardless of what the caller does (see
+        // cacheGatewayCustomer()'s docblock) - so the stale instance must not be reused.
+        $closedEm = noOpEntityManagerMock();
+        $closedEm->shouldReceive('isOpen')->andReturn(false);
+
+        $freshEm = noOpEntityManagerMock();
+
+        $queue = [$closedEm, $freshEm];
+        setPrivateProperty($this->adapter, 'entityManagerFactory', function () use (&$queue): object {
+            return array_shift($queue);
+        });
+
+        $first = invokePrivateMethod($this->adapter, 'newIsolatedEntityManager');
+        $second = invokePrivateMethod($this->adapter, 'newIsolatedEntityManager');
+
+        expect($first)->toBe($closedEm)
+            ->and($second)->toBe($freshEm);
     });
 });
 

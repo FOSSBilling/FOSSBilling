@@ -350,6 +350,15 @@ class ServicePayGateway implements InjectionAwareInterface
     public function delete(\Model_PayGateway $model): bool
     {
         $id = $model->id;
+
+        // Invoice/Subscription/Transaction rows referencing this gateway block
+        // deletion above as real business/audit records, but PayGatewayCustomer/
+        // PayGatewayProduct are pure cache with no meaning once the gateway is
+        // gone - no FK constraint exists to cascade this automatically (this
+        // schema has never had real FK constraints), so clean them up explicitly.
+        $this->di['em']->getConnection()->executeStatement('DELETE FROM pay_gateway_customer WHERE pay_gateway_id = :id', ['id' => $id]);
+        $this->di['em']->getConnection()->executeStatement('DELETE FROM pay_gateway_product WHERE pay_gateway_id = :id', ['id' => $id]);
+
         $this->di['db']->trash($model);
         $this->di['logger']->info('Removed payment gateway %s', $id);
 

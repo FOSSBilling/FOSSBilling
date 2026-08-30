@@ -313,13 +313,23 @@ test('deletes a gateway', function (): void {
     $service = new ServicePayGateway();
     $payGatewayModel = new Model_PayGateway();
     $payGatewayModel->loadBean(new Tests\Helpers\DummyBean());
+    $payGatewayModel->id = 5;
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('trash')
         ->atLeast()->once();
 
+    $connectionMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connectionMock->shouldReceive('executeStatement')
+        ->once()
+        ->with('DELETE FROM pay_gateway_customer WHERE pay_gateway_id = :id', ['id' => 5]);
+    $connectionMock->shouldReceive('executeStatement')
+        ->once()
+        ->with('DELETE FROM pay_gateway_product WHERE pay_gateway_id = :id', ['id' => 5]);
+
     $di = container();
     $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($connectionMock);
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $service->setDi($di);
