@@ -7,10 +7,10 @@
     <meta charset="utf-8">
     <title>{{ (settings.meta_title_prefix|default('') ~ ' ' ~ block('meta_title') ~ ' ' ~ settings.meta_title_suffix|default(''))|trim }}</title>
 
-    <meta name="description" content="{% block meta_description %}{{ settings.meta_description }}{% endblock %}">
-    <meta name="keywords" content="{{ settings.meta_keywords }}">
-    <meta name="robots" content="{{ settings.meta_robots }}">
-    <meta name="author" content="{{ settings.meta_author }}">
+    <meta name="description" content="{% block meta_description %}{{ settings.meta_description|default('') }}{% endblock %}">
+    <meta name="keywords" content="{{ settings.meta_keywords|default('') }}">
+    <meta name="robots" content="{{ settings.meta_robots|default('') }}">
+    <meta name="author" content="{{ settings.meta_author|default('') }}">
     <meta name="generator" content="FOSSBilling">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="color-scheme" content="light dark">
