@@ -3330,6 +3330,61 @@ test('generateRenewalInvoiceForSubscriptionPayment uses the original order and n
     expect($result->id)->toBe(99);
 });
 
+test('generateRenewalInvoiceForSubscriptionPayment still renews an order the batch-suspend cron already suspended', function (string $status): void {
+    // A gateway's subscription-payment IPN can legitimately arrive after the
+    // batch-suspend cron has already suspended the order for missing its
+    // expiry, or after a prior renewal attempt left it failed_renew.
+    $subscription = new Model_Subscription();
+    $subscription->loadBean(new Tests\Helpers\DummyBean());
+    $subscription->rel_type = 'invoice';
+    $subscription->rel_id = 82;
+
+    $invoiceItem = new Model_InvoiceItem();
+    $invoiceItem->loadBean(new Tests\Helpers\DummyBean());
+    $invoiceItem->rel_id = 82;
+
+    $originalOrder = new Model_ClientOrder();
+    $originalOrder->loadBean(new Tests\Helpers\DummyBean());
+    $originalOrder->status = $status;
+    $originalOrder->product_id = 1;
+
+    $renewalInvoice = new Model_Invoice();
+    $renewalInvoice->loadBean(new Tests\Helpers\DummyBean());
+    $renewalInvoice->id = 99;
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('findOne')
+        ->with('Subscription', 'sid = :sid', Mockery::any())
+        ->andReturn($subscription);
+    $dbMock->shouldReceive('findOne')
+        ->with('InvoiceItem', Mockery::any(), Mockery::any())
+        ->andReturn($invoiceItem);
+    $dbMock->shouldReceive('load')
+        ->with('ClientOrder', 82)
+        ->andReturn($originalOrder);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('generateForOrder')
+        ->with(Mockery::on(fn ($order): bool => $order === $originalOrder))
+        ->once()
+        ->andReturn($renewalInvoice);
+    $serviceMock->shouldReceive('approveInvoice')
+        ->once();
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $serviceMock->setDi($di);
+
+    $result = $serviceMock->generateRenewalInvoiceForSubscriptionPayment('I-TEST123', 1);
+
+    expect($result)->toBeInstanceOf(Model_Invoice::class);
+    expect($result->id)->toBe(99);
+})->with([
+    'suspended' => Model_ClientOrder::STATUS_SUSPENDED,
+    'failed renew' => Model_ClientOrder::STATUS_FAILED_RENEW,
+]);
+
 test('markAsPaid transitions a deposit invoice to paid status', function (): void {
     $service = new Service();
 
