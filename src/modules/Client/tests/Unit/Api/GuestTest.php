@@ -22,7 +22,7 @@ test('getDi returns dependency injection container', function (): void {
     expect($getDi)->toEqual($di);
 });
 
-test('create returns int', function (): void {
+test('create returns true and creates the account for a new email', function (): void {
     $guestClient = apiEndpoint(new Box\Mod\Client\Api\Guest());
     $configArr = [
         'disable_signup' => false,
@@ -50,7 +50,7 @@ test('create returns int', function (): void {
 
     $serviceMock
     ->shouldReceive('guestCreateClient')
-    ->atLeast()->once()
+    ->once()
     ->andReturn($model);
     $serviceMock->shouldReceive('checkExtraRequiredFields')->atLeast()->once();
     $serviceMock->shouldReceive('checkCustomFields')->atLeast()->once();
@@ -68,11 +68,10 @@ test('create returns int', function (): void {
 
     $result = $guestClient->create($data);
 
-    expect($result)->toBeInt();
-    expect($result)->toEqual($model->getId());
+    expect($result)->toBeTrue();
 });
 
-test('create throws exception when client exists', function (): void {
+test('create returns true without creating a duplicate account or disclosing that the email exists', function (): void {
     $guestClient = apiEndpoint(new Box\Mod\Client\Api\Guest());
     $configArr = [
         'disable_signup' => false,
@@ -91,8 +90,11 @@ test('create throws exception when client exists', function (): void {
     ->andReturn(true);
     $serviceMock->shouldReceive('checkExtraRequiredFields')->atLeast()->once();
     $serviceMock->shouldReceive('checkCustomFields')->atLeast()->once();
-
-    $model = createEntity(Box\Mod\Client\Entity\Client::class);
+    // The submitted (attacker-controlled) password won't match the real
+    // account's password, so the fallback login attempt fails just like an
+    // ordinary bad-password login would.
+    $serviceMock->shouldReceive('authorizeClient')->atLeast()->once()->andReturn(null);
+    $serviceMock->shouldNotReceive('guestCreateClient');
 
     $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class);
     $validatorMock->shouldReceive('isPasswordStrong')->atLeast()->once();
@@ -105,8 +107,63 @@ test('create throws exception when client exists', function (): void {
     $guestClient->setDi($di);
     $guestClient->setService($serviceMock);
 
-    $guestClient->create($data);
-})->throws(FOSSBilling\Exception\BaseException::class, 'This email address is already registered.');
+    $result = $guestClient->create($data);
+
+    expect($result)->toBeTrue();
+});
+
+test('create returns true without creating an account when the per-email signup rate limit is hit', function (): void {
+    $guestClient = apiEndpoint(new Box\Mod\Client\Api\Guest());
+    $configArr = [
+        'disable_signup' => false,
+    ];
+    $data = [
+        'email' => 'test@email.com',
+        'first_name' => 'John',
+        'password' => 'testpassword',
+        'password_confirm' => 'testpassword',
+    ];
+
+    $serviceMock = Mockery::mock(Box\Mod\Client\Service::class);
+    // Never reached: the email limiter short-circuits before the existence
+    // check, so a fresh (not-yet-registered) email can't burn through this
+    // path repeatedly to have its true existence state observed.
+    $serviceMock->shouldNotReceive('clientAlreadyExists');
+    $serviceMock->shouldReceive('checkExtraRequiredFields')->atLeast()->once();
+    $serviceMock->shouldReceive('checkCustomFields')->atLeast()->once();
+    $serviceMock->shouldReceive('authorizeClient')->atLeast()->once()->andReturn(null);
+    $serviceMock->shouldNotReceive('guestCreateClient');
+
+    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class);
+    $validatorMock->shouldReceive('isPasswordStrong')->atLeast()->once();
+    $validatorMock->shouldReceive('passwordsMatch')->atLeast()->once();
+
+    $rateLimiterMock = new class {
+        public function consume(string $policyName, string $subject, int $tokens = 1): FOSSBilling\Security\RateLimitResult
+        {
+            $limited = $policyName === 'client_signup_email';
+
+            return new FOSSBilling\Security\RateLimitResult($policyName, $limited, null, null);
+        }
+
+        public function consumeOrThrow(string $policyName, string $subject, int $tokens = 1): FOSSBilling\Security\RateLimitResult
+        {
+            return $this->consume($policyName, $subject, $tokens);
+        }
+    };
+
+    $di = container();
+    $di['mod_config'] = $di->protect(fn ($name): array => $configArr);
+    $di['validator'] = $validatorMock;
+    $di['rate_limiter'] = $rateLimiterMock;
+
+    $guestClient->setDi($di);
+    $guestClient->setService($serviceMock);
+
+    $result = $guestClient->create($data);
+
+    expect($result)->toBeTrue();
+});
 
 test('create throws exception when signup is disabled', function (): void {
     $guestClient = apiEndpoint(new Box\Mod\Client\Api\Guest());

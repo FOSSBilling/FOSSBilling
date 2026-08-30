@@ -277,11 +277,11 @@ class Service implements InjectionAwareInterface
             switch ($type) {
                 case 'admin':
                     $admin = $this->di['session']->get('admin');
-                    $id = $admin['id'];
+                    $id = (int) $admin['id'];
 
                     break;
                 case 'client':
-                    $id = $this->di['session']->get('client_id');
+                    $id = (int) $this->di['session']->get('client_id');
 
                     break;
             }

@@ -78,7 +78,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         }
 
         $countries = [];
-        foreach (preg_split('/\R/', $configuredCountries) as $line) {
+        foreach (preg_split('/\R/u', $configuredCountries) as $line) {
             $parts = explode('=', trim($line), 2);
             if (count($parts) !== 2) {
                 continue;

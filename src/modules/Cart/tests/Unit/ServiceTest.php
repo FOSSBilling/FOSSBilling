@@ -889,6 +889,113 @@ test('createFromCart with promo entity uses product promo service', function ():
     expect(count($result[2]))->toBe(1);
 });
 
+test('createFromCart sets the unpaid invoice id on orders when checkout produces an unpaid invoice', function (): void {
+    $cart = createEntity(Cart::class);
+    $cart->id = 3;
+    $cart->currency_id = 2;
+
+    $client = createEntity(Client::class);
+    $client->id = 9;
+    $client->currency = 'USD';
+
+    $currency = Mockery::mock(Currency::class)->makePartial();
+    $currency->shouldReceive('getCode')->once()->andReturn('USD');
+    $currency->shouldReceive('getConversionRate')->atLeast()->once()->andReturn(1.0);
+
+    $currencyRepository = Mockery::mock(CurrencyRepository::class);
+    $currencyRepository->shouldReceive('find')->once()->with(2)->andReturn($currency);
+
+    $currencyService = Mockery::mock(CurrencyService::class);
+    $currencyService->shouldReceive('getCurrencyRepository')->once()->andReturn($currencyRepository);
+
+    $clientService = Mockery::mock(Box\Mod\Client\Service::class);
+    $clientService->shouldReceive('isClientTaxable')->once()->with($client)->andReturn(false);
+
+    $product = new Product();
+    $productIdReflection = new ReflectionProperty($product, 'id');
+    $productIdReflection->setValue($product, 5);
+    $product->setStatus('enabled');
+    $product->setType('service');
+    $product->setSetup('manual');
+
+    $cartProduct = createEntity(CartProduct::class);
+    $cartProduct->id = 13;
+
+    $productService = Mockery::mock(ProductService::class);
+    $productService->shouldReceive('findProductById')->twice()->with(5)->andReturn($product);
+    $productService->shouldReceive('reserveStockForOrder')->once()->with(Mockery::type(Order::class));
+
+    // Regression test for GH-4246: prepareInvoice()/approveInvoice() must hand back a
+    // Doctrine Invoice entity whose getId() is strictly ?int, matching what
+    // Order::setUnpaidInvoiceId() declares. Before the Invoice module was migrated to
+    // Doctrine, this was a RedBean bean whose ->id was a string, which made every
+    // gateway-backed checkout that left an invoice unpaid crash with a TypeError.
+    $invoice = createEntity(Invoice::class, ['id' => 555]);
+    expect($invoice->getStatus())->toBe(Invoice::STATUS_UNPAID);
+
+    $invoiceService = Mockery::mock(Box\Mod\Invoice\Service::class);
+    $invoiceService->shouldReceive('prepareInvoice')->once()->with($client, Mockery::type('array'))->andReturn($invoice);
+    $invoiceService->shouldReceive('approveInvoice')->once()->with($invoice, Mockery::type('array'))->andReturn(true);
+
+    $clientBalanceService = Mockery::mock(Box\Mod\Client\ServiceBalance::class);
+    $clientBalanceService->shouldReceive('getClientBalance')->once()->with($client)->andReturn(0.0);
+
+    $orderService = Mockery::mock(Box\Mod\Order\Service::class)->makePartial();
+    $orderService->shouldReceive('saveStatusChange')->once()->with(Mockery::type(Order::class), 'Order Created');
+    $orderService->shouldReceive('toApiArray')->once()->with(Mockery::type(Order::class), false, $client)->andReturn([
+        'product_id' => 5,
+        'total' => 0,
+        'discount' => 0,
+    ]);
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('wrapInTransaction')->once()->with(Mockery::type(Closure::class))->andReturnUsing(fn (Closure $callback) => $callback());
+    $emMock->shouldReceive('persist')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once();
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('getSessionCart')->once()->andReturn($cart);
+    $serviceMock->shouldReceive('toApiArray')->once()->with($cart)->andReturn([
+        'items' => [['id' => 1]],
+        'total' => 100,
+    ]);
+    $serviceMock->shouldReceive('getCartProducts')->once()->with($cart)->andReturn([$cartProduct]);
+    $serviceMock->shouldReceive('cartProductToApiArray')->once()->with($cartProduct)->andReturn([
+        'product_id' => 5,
+        'form_id' => null,
+        'title' => 'Example product',
+        'type' => 'service',
+        'unit' => 'service',
+        'period' => '1M',
+        'quantity' => 1,
+        'price' => 100,
+        'discount_price' => 0,
+        'setup_price' => 0,
+        'discount_setup' => 0,
+        'notes' => null,
+    ]);
+    $serviceMock->shouldReceive('isStockAvailable')->once()->with($product, 1)->andReturn(true);
+
+    $di = container();
+    $di['em'] = $emMock;
+    $di['mod_service'] = $di->protect(fn ($serviceName, $sub = '') => match ($serviceName . $sub) {
+        'currency' => $currencyService,
+        'client' => $clientService,
+        'Product' => $productService,
+        'order', 'Order' => $orderService,
+        'Invoice' => $invoiceService,
+        'ClientBalance' => $clientBalanceService,
+        default => null,
+    });
+
+    $serviceMock->setDi($di);
+    [$masterOrder, $invoiceModel, $ids] = $serviceMock->createFromCart($client);
+
+    expect($invoiceModel)->toBe($invoice);
+    expect($masterOrder->getUnpaidInvoiceId())->toBe(555);
+    expect($ids)->toBeArray()->toHaveCount(1);
+});
+
 test('createFromCart compensates promo usage on transaction failure', function (): void {
     $cart = createEntity(Cart::class);
     $cart->id = 3;
