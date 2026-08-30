@@ -30,12 +30,11 @@ jobs:
           export-env: true
         env:
           OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
-          # Sentry auth token (project:releases + org:read scopes) stored in 1Password.
+          # Sentry (GitHub CI/CD) credentials stored in 1Password.
           SENTRY_AUTH_TOKEN: op://mkqkefntgcmjlgyxzeaekzuuvq/hw6jxytb2lqqjl5zzu4jjqztke/credential
 
       - name: 'Report Release to Sentry'
         id: sentry-release
-        # Deliberately no continue-on-error - see PR description.
         uses: getsentry/action-release@ff07929a6537bac57790c3451cf4d364aca38528 # v3.7.0
         env:
           SENTRY_ORG: fossbilling
