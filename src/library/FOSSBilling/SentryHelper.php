@@ -29,6 +29,13 @@ class SentryHelper
      */
     final public const string last_change = '0.6.0';
 
+    /**
+     * `package@version` is required for Sentry to parse a release as semver - not composer.json's
+     * "fossbilling/fossbilling" package name, since Sentry release identifiers can't contain "/".
+     * Keep release-sentry.yml's `version:` input in sync with this.
+     */
+    private const string SENTRY_RELEASE_PACKAGE = 'fossbilling';
+
     // A full list of our own modules which we want to receive error reports for
     private const array ALLOWED_MODULES = [
         'activity',
@@ -173,7 +180,9 @@ class SentryHelper
             'ignore_exceptions' => [InformationException::class],
 
             'environment' => Environment::getCurrentEnvironment(),
-            'release' => Version::VERSION,
+
+            // Only affects releases from here on - see SENTRY_RELEASE_PACKAGE.
+            'release' => self::SENTRY_RELEASE_PACKAGE . '@' . Version::VERSION,
 
             // This option is disabled by default, but we set it to false here to be explicit & ensure it can never change unexpectedly.
             'send_default_pii' => false,
