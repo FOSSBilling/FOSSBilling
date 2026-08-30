@@ -37,7 +37,7 @@ class SentryHelper
     /**
      * `package@version` is required for Sentry to parse a release as semver - not composer.json's
      * "fossbilling/fossbilling" package name, since Sentry release identifiers can't contain "/".
-     * Keep release-sentry.yml's `version:` input in sync with this.
+     * Keep release-sentry.yml's `release:` input in sync with this.
      */
     private const string SENTRY_RELEASE_PACKAGE = 'fossbilling';
 
