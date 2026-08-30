@@ -37,10 +37,13 @@ jobs:
           SENTRY_ORG: fossbilling
           SENTRY_PROJECT: fossbilling
         with:
-          # Matches the FOSSBILLING_VERSION build arg baked into Version::VERSION (see
-          # create-release.yml / Dockerfile), which is what SentryHelper::registerSentry()
-          # reports on every event's `release` field.
-          version: ${{ github.ref_name }}
+          # Must exactly match what SentryHelper::registerSentry() sends as the `release`
+          # option on every event (SentryHelper::SENTRY_RELEASE_PACKAGE . '@' .
+          # Version::VERSION - see that comment for why the "fossbilling@" prefix matters),
+          # or this release and the events it's meant to cover won't line up.
+          # Version::VERSION is set from this same tag via the FOSSBILLING_VERSION build arg
+          # - see create-release.yml / Dockerfile.
+          version: fossbilling@${{ github.ref_name }}
           # Associates the commit range since the previous release Sentry knows about (needs
           # the full history from the checkout step's fetch-depth: 0) so Sentry can show
           # suspect commits and diffs per release, not just tag issues with a version string.

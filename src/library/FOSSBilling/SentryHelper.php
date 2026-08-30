@@ -29,6 +29,14 @@ class SentryHelper
      */
     final public const string last_change = '0.6.0';
 
+    /**
+     * The "package" identifier used as the `package@version` prefix on the release string we
+     * report to Sentry - see the `'release'` option in registerSentry() for why this exists.
+     * If this ever changes, release-sentry.yml's `version:` input must be updated to match, or
+     * events and the Sentry release Sentry-side will silently stop lining up.
+     */
+    private const string SENTRY_RELEASE_PACKAGE = 'fossbilling';
+
     // A full list of our own modules which we want to receive error reports for
     private const array ALLOWED_MODULES = [
         'activity',
@@ -173,7 +181,22 @@ class SentryHelper
             'ignore_exceptions' => [InformationException::class],
 
             'environment' => Environment::getCurrentEnvironment(),
-            'release' => Version::VERSION,
+
+            /*
+             * `package@version` is the format Sentry documents for release identifiers it can parse as
+             * semver - a bare version string like "0.8.6" isn't recognized, which silently degrades
+             * regression detection (e.g. "resolved in next release") to comparing release *creation
+             * dates* instead of version order. That's unreliable for us specifically: old releases only
+             * get a dateCreated once some install still running them sends its first event under the
+             * current Sentry project, which can happen years after the version actually shipped.
+             *
+             * We can't rewrite what already-shipped releases reported, so every release before this
+             * comment was added keeps using its bare version string; only newly-cut releases pick up
+             * the semver-parseable format. `self::SENTRY_RELEASE_PACKAGE` deliberately isn't
+             * composer.json's "fossbilling/fossbilling" package name - Sentry release identifiers can't
+             * contain a "/".
+             */
+            'release' => self::SENTRY_RELEASE_PACKAGE . '@' . Version::VERSION,
 
             // This option is disabled by default, but we set it to false here to be explicit & ensure it can never change unexpectedly.
             'send_default_pii' => false,
