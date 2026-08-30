@@ -14,7 +14,9 @@ jobs:
     name: 'Report Release to Sentry'
     permissions:
       contents: read
-    runs-on: ubuntu-slim
+    # getsentry/action-release runs as a docker:// container action on Linux, which ubuntu-slim
+    # can't support (unprivileged, no Docker daemon).
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - name: 'Checkout Repository'
@@ -28,6 +30,7 @@ jobs:
         uses: 1password/load-secrets-action@70062d7a876d3eb6334754fa26efd2fbd90c32f2 # v5.0.1
         with:
           export-env: true
+          version: '2.39.0'
         env:
           OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
           # Sentry (GitHub CI/CD) credentials stored in 1Password.
@@ -41,6 +44,6 @@ jobs:
           SENTRY_PROJECT: fossbilling
         with:
           # Must match SentryHelper::SENTRY_RELEASE_PACKAGE . '@' . Version::VERSION exactly.
-          version: fossbilling@${{ github.ref_name }}
+          release: fossbilling@${{ github.ref_name }}
           set_commits: auto
           finalize: true
