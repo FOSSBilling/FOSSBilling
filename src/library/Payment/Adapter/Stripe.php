@@ -9,6 +9,10 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
+use Box\Mod\Invoice\Entity\PayGatewayCustomer;
+use Box\Mod\Invoice\Entity\PayGatewayProduct;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use FOSSBilling\Doctrine\EntityManagerFactory;
 use Stripe\StripeClient;
 use Symfony\Component\Intl\Currencies;
 
@@ -17,6 +21,19 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
     protected ?Pimple\Container $di = null;
 
     private StripeClient $stripe;
+
+    /**
+     * Overrides how newIsolatedEntityManager() obtains its EntityManager -
+     * null in production. Tests substitute a mock via reflection instead of
+     * exercising the real factory.
+     */
+    /** @phpstan-ignore property.unusedType (only ever set via reflection, from tests) */
+    private ?Closure $entityManagerFactory = null;
+
+    /**
+     * Memoized isolated EntityManager - see newIsolatedEntityManager().
+     */
+    private ?Doctrine\ORM\EntityManagerInterface $isolatedEntityManager = null;
 
     /**
      * Stripe webhook event types that this adapter processes.
@@ -46,6 +63,34 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
     public function getDi(): ?Pimple\Container
     {
         return $this->di;
+    }
+
+    /**
+     * Building this opens a genuinely separate database connection - see
+     * cacheGatewayCustomer() for why isolation from $this->di['em'] is
+     * needed. EntityManagerFactory::create() opens a fresh connection on
+     * every call (no shared/memoized connection on this branch), so simply
+     * calling it again here - rather than reusing $this->di['em'] - is
+     * already enough to get one.
+     *
+     * Memoized per adapter instance (one request each) so that resolving
+     * both a customer and a product/price on the same checkout - the common
+     * case for a client's first invoice - doesn't pay for that connection,
+     * and EntityManagerFactory::create()'s metadata/cache bootstrap, twice.
+     * A flush() that hits a unique constraint violation leaves Doctrine's
+     * EntityManager closed (it does this itself, regardless of what callers
+     * do), so the memoized instance is discarded and rebuilt once that
+     * happens rather than reused into an unusable state.
+     */
+    private function newIsolatedEntityManager(): Doctrine\ORM\EntityManagerInterface
+    {
+        if ($this->isolatedEntityManager !== null && $this->isolatedEntityManager->isOpen()) {
+            return $this->isolatedEntityManager;
+        }
+
+        return $this->isolatedEntityManager = $this->entityManagerFactory !== null
+            ? ($this->entityManagerFactory)()
+            : EntityManagerFactory::create();
     }
 
     public function __construct(private $config)
@@ -411,11 +456,19 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         $tx->txn_status = $setupIntent->status;
         $tx->txn_id = $setupIntent->id;
 
-        if ($setupIntent->status === 'succeeded' && $invoice instanceof Model_Invoice) {
-            $customer = $this->getOrCreateCustomer($invoice);
+        // $invoice and $setupIntent are resolved independently, from separate
+        // query parameters on the redirect URL (see resolveInvoice()) - unlike
+        // the webhook flow, which derives the invoice from the setup intent's
+        // own metadata and so can't have this mismatch. Without this check, a
+        // request naming a victim's invoice alongside the requester's own
+        // completed setup intent would subscribe/charge the requester but
+        // credit and mark paid whatever invoice_id was supplied.
+        if ($setupIntent->status === 'succeeded' && $invoice instanceof Model_Invoice && $this->setupIntentBelongsToInvoice($setupIntent, $invoice, $gateway_id)) {
+            $customerId = $this->resolveSubscriptionCustomerId($setupIntent, $invoice);
+            $priceId = $this->resolveSubscriptionPriceId($setupIntent, $invoice);
 
             try {
-                $subscription = $this->createStripeSubscription($customer, $setupIntent, $invoice);
+                $subscription = $this->createStripeSubscription($customerId, $priceId, $setupIntent, $invoice);
             } catch (Stripe\Exception\ApiErrorException $e) {
                 // Only handle the expected race where the setup_intent.succeeded
                 // webhook created the subscription concurrently with the same
@@ -427,7 +480,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
                 // Webhook beat us here — find the subscription it created.
                 $subscriptions = $this->stripe->subscriptions->all([
-                    'customer' => $customer->id,
+                    'customer' => $customerId,
                     'limit' => 1,
                 ]);
                 $subscription = count($subscriptions->data) > 0 ? $subscriptions->data[0] : null;
@@ -464,6 +517,23 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
         $tx->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($tx);
+    }
+
+    /**
+     * Verify a setup intent was actually created for this invoice on this
+     * gateway, per the metadata _generateSubscriptionForm() stamped onto it
+     * when creating it - see processSetupIntent()'s call site for why this
+     * check exists.
+     */
+    private function setupIntentBelongsToInvoice(Stripe\SetupIntent $setupIntent, Model_Invoice $invoice, int $gatewayId): bool
+    {
+        $metadataInvoiceId = $setupIntent->metadata->invoice_id ?? null;
+        $metadataGatewayId = $setupIntent->metadata->gateway_id ?? null;
+
+        return $metadataInvoiceId !== null
+            && (int) $metadataInvoiceId === (int) $invoice->id
+            && $metadataGatewayId !== null
+            && (int) $metadataGatewayId === $gatewayId;
     }
 
     /**
@@ -1056,14 +1126,15 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         $this->di['db']->store($tx);
 
         $invoice = $this->di['db']->getExistingModelById('Invoice', (int) $invoiceId);
-        $customer = $this->getOrCreateCustomer($invoice);
+        $customerId = $this->resolveSubscriptionCustomerId($setupIntent, $invoice);
+        $priceId = $this->resolveSubscriptionPriceId($setupIntent, $invoice);
 
         // createStripeSubscription uses an idempotency key based on the
         // invoice ID, so this is safe even if the redirect flow races.
         // If both fire simultaneously, Stripe returns the same subscription
         // to the first and a "concurrent request" error to the second.
         try {
-            $subscription = $this->createStripeSubscription($customer, $setupIntent, $invoice);
+            $subscription = $this->createStripeSubscription($customerId, $priceId, $setupIntent, $invoice);
         } catch (Stripe\Exception\ApiErrorException $e) {
             // Only treat idempotency conflicts as the expected race with the
             // redirect flow; rethrow all other API errors (card declined, auth
@@ -1281,7 +1352,42 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         return str_replace(['\\', '\''], ['\\\\', '\\\''], $value);
     }
 
-    private function getOrCreateCustomer(Model_Invoice $invoice): Stripe\Customer
+    /**
+     * Resolve a Stripe customer ID for this invoice's client, preferring a
+     * locally cached ID over asking Stripe - see the class-level fix this
+     * belongs to (#4228/#4231) for why: two callers each re-deriving the
+     * same customer via Stripe's Search API, which is only eventually
+     * consistent, could mint duplicate customers under a race (webhook vs.
+     * redirect, a reloaded checkout page, a duplicate tab), which then
+     * submit mismatched parameters under the same subscription idempotency
+     * key and get a hard idempotency_error.
+     */
+    private function getOrCreateCustomer(Model_Invoice $invoice): string
+    {
+        $gatewayId = (int) $this->config['gateway_id'];
+        $clientId = (int) $invoice->client_id;
+
+        $cached = $this->di['em']->getRepository(PayGatewayCustomer::class)
+            ->findOneByGatewayAndClient($gatewayId, $clientId);
+        if ($cached instanceof PayGatewayCustomer) {
+            return $cached->getExternalCustomerId();
+        }
+
+        $customerId = $this->resolveCustomerIdFromStripe($invoice);
+
+        return $this->cacheGatewayCustomer($gatewayId, $clientId, $customerId);
+    }
+
+    /**
+     * Resolve a Stripe customer ID for an invoice that isn't cached locally
+     * yet - via a one-time Search API lookup (so a buyer who already has a
+     * Stripe customer from before this cache existed doesn't get a second
+     * one created for them), falling back to creating a new customer. Only
+     * ever reached on a cache miss, so the Search API's eventual
+     * consistency isn't a steady-state concern here the way it was when
+     * every checkout depended on it for dedup.
+     */
+    private function resolveCustomerIdFromStripe(Model_Invoice $invoice): string
     {
         $validatedEmail = filter_var($invoice->buyer_email, FILTER_VALIDATE_EMAIL);
 
@@ -1290,12 +1396,10 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
                 'query' => "email:'" . $this->escapeStripeSearchValue($validatedEmail) . "'",
                 'limit' => 1,
             ]);
-        } else {
-            $customers = (object) ['data' => []];
-        }
 
-        if (count($customers->data) > 0) {
-            return $customers->data[0];
+            if (count($customers->data) > 0) {
+                return $customers->data[0]->id;
+            }
         }
 
         return $this->stripe->customers->create([
@@ -1308,18 +1412,59 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
                 'postal_code' => $invoice->buyer_zip,
                 'country' => $invoice->buyer_country,
             ],
-        ]);
+        ])->id;
     }
 
-    private function createStripeSubscription(Stripe\Customer $customer, Stripe\SetupIntent $setupIntent, Model_Invoice $invoice): Stripe\Subscription
+    /**
+     * Persist a resolved customer ID so future lookups for this (gateway,
+     * client) pair are a local read, and return the ID that ends up
+     * cached. Uses its own isolated EntityManager (see
+     * newIsolatedEntityManager()) rather than the shared $di['em'] - a
+     * unique constraint violation would otherwise leave the EntityManager
+     * other callers in this request rely on (e.g. to flush the
+     * transaction/invoice being processed) in a closed, unusable state.
+     *
+     * Two requests for the same (gateway, client) can both miss the cache
+     * read in getOrCreateCustomer() and each resolve their own Stripe
+     * customer before either persists here. The unique constraint on
+     * (pay_gateway_id, client_id) stops both rows from existing; the loser
+     * re-reads and returns the winner's ID instead of its own, so every
+     * caller converges on one customer - the loser's own Stripe customer
+     * just ends up orphaned, unused but harmless.
+     */
+    private function cacheGatewayCustomer(int $gatewayId, int $clientId, string $externalCustomerId): string
     {
-        $product = $this->getOrCreateProduct($invoice);
-        $price = $this->getOrCreatePrice($product, $invoice);
+        $em = $this->newIsolatedEntityManager();
 
-        return $this->stripe->subscriptions->create([
-            'customer' => $customer->id,
+        try {
+            $record = new PayGatewayCustomer();
+            $record->setPayGatewayId($gatewayId);
+            $record->setClientId($clientId);
+            $record->setExternalCustomerId($externalCustomerId);
+
+            $em->persist($record);
+            $em->flush();
+
+            return $externalCustomerId;
+        } catch (UniqueConstraintViolationException) {
+            // flush() leaves $em itself closed at this point (Doctrine's own
+            // behavior on a failed commit) - reads still work fine on a
+            // closed EntityManager, only further writes would need
+            // newIsolatedEntityManager() to hand out a fresh one.
+            /** @var Box\Mod\Invoice\Repository\PayGatewayCustomerRepository $repository */
+            $repository = $em->getRepository(PayGatewayCustomer::class);
+            $winner = $repository->findOneByGatewayAndClient($gatewayId, $clientId);
+
+            return $winner instanceof PayGatewayCustomer ? $winner->getExternalCustomerId() : $externalCustomerId;
+        }
+    }
+
+    private function createStripeSubscription(string $customerId, string $priceId, Stripe\SetupIntent $setupIntent, Model_Invoice $invoice): Stripe\Subscription
+    {
+        $subscriptionParams = [
+            'customer' => $customerId,
             'items' => [[
-                'price' => $price->id,
+                'price' => $priceId,
             ]],
             'default_payment_method' => $setupIntent->payment_method,
             'description' => $this->getInvoiceTitle($invoice),
@@ -1328,10 +1473,90 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
                 'client_id' => $invoice->client_id,
                 'gateway_id' => (string) $this->config['gateway_id'],
             ],
-        ], ['idempotency_key' => 'sub_invoice_' . $invoice->id]);
+        ];
+        // Hashing the resolved params into the key, like _generateForm() and
+        // generateSubscriptionFormUnderLock() do, covers the same invoice
+        // producing setup intents with different customers/prices over time
+        // (e.g. a stale setup intent's late webhook arriving after a reload
+        // already completed checkout with a different one) - reusing a plain
+        // invoice-id key across that would hit an idempotency_error instead
+        // of the expected/handled idempotency_key_in_use race.
+        $idempotencyKey = sprintf(
+            'sub_invoice_%d_gateway_%d_%s',
+            $invoice->id,
+            $this->config['gateway_id'],
+            hash('sha256', json_encode($subscriptionParams, JSON_THROW_ON_ERROR))
+        );
+
+        return $this->stripe->subscriptions->create($subscriptionParams, ['idempotency_key' => $idempotencyKey]);
     }
 
-    private function getOrCreateProduct(Model_Invoice $invoice): Stripe\Product
+    /**
+     * Resolve the Stripe customer to subscribe, preferring the customer
+     * already attached to the setup intent (set once in
+     * _generateSubscriptionForm()) over asking getOrCreateCustomer() again.
+     *
+     * Both the redirect flow (processSetupIntent) and the webhook flow
+     * (handleSetupIntentSucceededWebhook) can run for the same invoice, and
+     * createStripeSubscription() relies on both submitting identical
+     * parameters under the same idempotency key. getOrCreateCustomer() is
+     * safe to call from both now (see its docblock), but reading the ID
+     * already sitting on the setup intent both flows already fetched skips
+     * a redundant cache lookup for no behavioral difference.
+     */
+    private function resolveSubscriptionCustomerId(Stripe\SetupIntent $setupIntent, Model_Invoice $invoice): string
+    {
+        if (!empty($setupIntent->customer)) {
+            return is_string($setupIntent->customer) ? $setupIntent->customer : $setupIntent->customer->id;
+        }
+
+        return $this->getOrCreateCustomer($invoice);
+    }
+
+    /**
+     * Resolve the Stripe price to subscribe to, preferring the price ID
+     * already stored in the setup intent's metadata (set once in
+     * _generateSubscriptionForm()) over asking getOrCreatePriceId() again -
+     * see resolveSubscriptionCustomerId() for why that's just avoiding a
+     * redundant lookup rather than a correctness requirement.
+     */
+    private function resolveSubscriptionPriceId(Stripe\SetupIntent $setupIntent, Model_Invoice $invoice): string
+    {
+        $priceId = $setupIntent->metadata->price_id ?? null;
+        if (!empty($priceId)) {
+            return $priceId;
+        }
+
+        return $this->getOrCreatePriceId($invoice);
+    }
+
+    /**
+     * Resolve the Stripe price ID for an invoice's product, preferring a
+     * locally cached ID (see {@see PayGatewayProduct}) over asking Stripe -
+     * for the same reason, and via the same pattern, as
+     * {@see getOrCreateCustomer()}.
+     */
+    private function getOrCreatePriceId(Model_Invoice $invoice): string
+    {
+        $gatewayId = (int) $this->config['gateway_id'];
+        $productName = $this->getInvoiceProductName($invoice);
+        $amount = $this->getAmountInCents($invoice);
+        $currency = strtolower($invoice->currency);
+        $interval = $this->convertPeriodToStripe($this->getSubscriptionPeriodForInvoice($invoice));
+        $cacheKey = $this->buildProductCacheKey($productName, $currency, $amount, $interval);
+
+        $cached = $this->di['em']->getRepository(PayGatewayProduct::class)
+            ->findOneByGatewayAndCacheKey($gatewayId, $cacheKey);
+        if ($cached instanceof PayGatewayProduct) {
+            return $cached->getExternalPriceId();
+        }
+
+        [$externalProductId, $externalPriceId] = $this->resolvePriceFromStripe($productName, $amount, $currency, $interval, $invoice);
+
+        return $this->cacheGatewayProduct($gatewayId, $cacheKey, $productName, $externalProductId, $externalPriceId);
+    }
+
+    private function getInvoiceProductName(Model_Invoice $invoice): string
     {
         $invoiceItems = $this->di['db']->getAll(
             'SELECT title FROM invoice_item WHERE invoice_id = :invoice_id',
@@ -1342,30 +1567,34 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             throw new RuntimeException('No invoice items found for invoice ID: ' . $invoice->id);
         }
 
-        $productName = $invoiceItems[0]['title'];
+        return $invoiceItems[0]['title'];
+    }
 
+    private function buildProductCacheKey(string $productName, string $currency, int $amount, string $interval): string
+    {
+        return hash('sha256', implode('|', [$productName, $currency, $amount, $interval]));
+    }
+
+    /**
+     * Resolve a Stripe product/price pair that isn't cached locally yet -
+     * via a one-time Search/List lookup, falling back to creating them.
+     * Only ever reached on a cache miss - see resolveCustomerIdFromStripe().
+     *
+     * @return array{0: string, 1: string} the external product ID and price ID
+     */
+    private function resolvePriceFromStripe(string $productName, int $amount, string $currency, string $interval, Model_Invoice $invoice): array
+    {
         $products = $this->stripe->products->search([
             'query' => "name:'" . $this->escapeStripeSearchValue($productName) . "'",
             'limit' => 1,
         ]);
 
-        if (count($products->data) > 0) {
-            return $products->data[0];
-        }
-
-        return $this->stripe->products->create([
-            'name' => $productName,
-            'description' => $this->getInvoiceTitle($invoice),
-        ]);
-    }
-
-    private function getOrCreatePrice(Stripe\Product $product, Model_Invoice $invoice): Stripe\Price
-    {
-        $amount = $this->getAmountInCents($invoice);
-        $currency = strtolower($invoice->currency);
-        $interval = $this->convertPeriodToStripe(
-            $this->getSubscriptionPeriodForInvoice($invoice)
-        );
+        $product = count($products->data) > 0
+            ? $products->data[0]
+            : $this->stripe->products->create([
+                'name' => $productName,
+                'description' => $this->getInvoiceTitle($invoice),
+            ]);
 
         $prices = $this->stripe->prices->all([
             'product' => $product->id,
@@ -1376,16 +1605,49 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
         foreach ($prices->data as $existingPrice) {
             if ($existingPrice->unit_amount === $amount) {
-                return $existingPrice;
+                return [$product->id, $existingPrice->id];
             }
         }
 
-        return $this->stripe->prices->create([
+        $price = $this->stripe->prices->create([
             'product' => $product->id,
             'unit_amount' => $amount,
             'currency' => $currency,
             'recurring' => ['interval' => $interval],
         ]);
+
+        return [$product->id, $price->id];
+    }
+
+    /**
+     * Persist a resolved product/price pair and return the price ID that
+     * ends up cached - see cacheGatewayCustomer() for why this uses its own
+     * isolated EntityManager and re-reads the winner on a unique constraint
+     * violation.
+     */
+    private function cacheGatewayProduct(int $gatewayId, string $cacheKey, string $name, string $externalProductId, string $externalPriceId): string
+    {
+        $em = $this->newIsolatedEntityManager();
+
+        try {
+            $record = new PayGatewayProduct();
+            $record->setPayGatewayId($gatewayId);
+            $record->setCacheKey($cacheKey);
+            $record->setName($name);
+            $record->setExternalProductId($externalProductId);
+            $record->setExternalPriceId($externalPriceId);
+
+            $em->persist($record);
+            $em->flush();
+
+            return $externalPriceId;
+        } catch (UniqueConstraintViolationException) {
+            /** @var Box\Mod\Invoice\Repository\PayGatewayProductRepository $repository */
+            $repository = $em->getRepository(PayGatewayProduct::class);
+            $winner = $repository->findOneByGatewayAndCacheKey($gatewayId, $cacheKey);
+
+            return $winner instanceof PayGatewayProduct ? $winner->getExternalPriceId() : $externalPriceId;
+        }
     }
 
     private function getSubscriptionPeriodForInvoice(Model_Invoice $invoice): string
@@ -1526,20 +1788,50 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
     protected function _generateSubscriptionForm(Model_Invoice $invoice): string
     {
-        $customer = $this->getOrCreateCustomer($invoice);
-        $product = $this->getOrCreateProduct($invoice);
-        $price = $this->getOrCreatePrice($product, $invoice);
+        // This is the sole point where the Stripe customer/product/price are
+        // resolved for a subscription checkout, but the checkout page can be
+        // loaded more than once for the same invoice (a reload, a duplicate
+        // tab, the user pressing back and forward). getOrCreateCustomer()
+        // and getOrCreatePriceId() are each individually safe to call from
+        // two such loads at once (see their docblocks), but locking on the
+        // invoice ID here still avoids two loads redundantly repeating the
+        // same cache lookups and Stripe calls, and the idempotency key on
+        // setupIntents->create() below makes a second load reuse the very
+        // same setup intent instead of creating another one.
+        return $this->withStripeObjectLock(
+            'gen_subscription_form_invoice_' . $invoice->id,
+            (int) $this->config['gateway_id'],
+            fn (): string => $this->generateSubscriptionFormUnderLock($invoice)
+        );
+    }
 
-        $setupIntent = $this->stripe->setupIntents->create([
-            'customer' => $customer->id,
+    private function generateSubscriptionFormUnderLock(Model_Invoice $invoice): string
+    {
+        $customerId = $this->getOrCreateCustomer($invoice);
+        $priceId = $this->getOrCreatePriceId($invoice);
+
+        $setupIntentParams = [
+            'customer' => $customerId,
             'payment_method_types' => ['card'],
             'usage' => 'off_session',
             'metadata' => [
                 'invoice_id' => $invoice->id,
-                'price_id' => $price->id,
+                'price_id' => $priceId,
                 'gateway_id' => (string) $this->config['gateway_id'],
             ],
-        ]);
+        ];
+        // Hashing the resolved params into the key, like _generateForm() does for
+        // one-time payments, covers the case where they legitimately differ between
+        // two loads of the same invoice's checkout page (e.g. an admin edits the
+        // invoice's items/amount between them) - reusing a plain invoice-id key
+        // across that would hit the same idempotency_error this file exists to avoid.
+        $idempotencyKey = sprintf(
+            'setup_invoice_%d_gateway_%d_%s',
+            $invoice->id,
+            $this->config['gateway_id'],
+            hash('sha256', json_encode($setupIntentParams, JSON_THROW_ON_ERROR))
+        );
+        $setupIntent = $this->stripe->setupIntents->create($setupIntentParams, ['idempotency_key' => $idempotencyKey]);
 
         $pubKey = ($this->config['test_mode']) ? $this->config['test_pub_key'] : $this->config['pub_key'];
 

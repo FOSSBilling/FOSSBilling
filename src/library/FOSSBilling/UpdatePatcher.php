@@ -509,6 +509,7 @@ class UpdatePatcher implements InjectionAwareInterface
             97 => 'patch97',
             98 => 'patch98',
             99 => 'patch99',
+            100 => 'patch100',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -2452,6 +2453,42 @@ class UpdatePatcher implements InjectionAwareInterface
         // value that only fails later at the registrar. See issue #2335.
         if (!$this->tableHasColumn('tld', 'require_transfer_code')) {
             $this->executeSql('ALTER TABLE `tld` ADD COLUMN `require_transfer_code` tinyint(1) DEFAULT NULL AFTER `allow_transfer`');
+        }
+    }
+
+    private function patch100(): void
+    {
+        // Caches for Payment_Adapter_Stripe::getOrCreateCustomer()/getOrCreatePriceId() - see
+        // those and Box\Mod\Invoice\Entity\PayGatewayCustomer/PayGatewayProduct for why: without
+        // a local cache, two requests resolving the same Stripe customer/product/price via
+        // Stripe's Search API - which is only eventually consistent - can race and create
+        // duplicates, then submit mismatched params under the same idempotency key.
+        if (!$this->tableExists('pay_gateway_customer')) {
+            $this->executeSql('CREATE TABLE `pay_gateway_customer` (
+                `id` bigint(20) NOT NULL AUTO_INCREMENT,
+                `pay_gateway_id` bigint(20) NOT NULL,
+                `client_id` bigint(20) NOT NULL,
+                `external_customer_id` varchar(255) NOT NULL,
+                `created_at` datetime DEFAULT NULL,
+                `updated_at` datetime DEFAULT NULL,
+                PRIMARY KEY (`id`),
+                UNIQUE KEY `pay_gateway_customer_gateway_client` (`pay_gateway_id`, `client_id`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8;');
+        }
+
+        if (!$this->tableExists('pay_gateway_product')) {
+            $this->executeSql('CREATE TABLE `pay_gateway_product` (
+                `id` bigint(20) NOT NULL AUTO_INCREMENT,
+                `pay_gateway_id` bigint(20) NOT NULL,
+                `cache_key` varchar(64) NOT NULL,
+                `name` varchar(255) NOT NULL,
+                `external_product_id` varchar(255) NOT NULL,
+                `external_price_id` varchar(255) NOT NULL,
+                `created_at` datetime DEFAULT NULL,
+                `updated_at` datetime DEFAULT NULL,
+                PRIMARY KEY (`id`),
+                UNIQUE KEY `pay_gateway_product_gateway_cache_key` (`pay_gateway_id`, `cache_key`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8;');
         }
     }
 

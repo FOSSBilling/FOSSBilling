@@ -65,7 +65,8 @@
         "catchable",
         "nelexa",
         "rediss",
-        "Åland"
+        "Åland",
+        "dedup"
     ],
 
     "ignoreWords": [
