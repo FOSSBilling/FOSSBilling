@@ -554,7 +554,7 @@ class Patcher implements InjectionAwareInterface
                     }
                     $columns = $schemaManager->listTableColumns($table);
                     foreach ($columns as $col) {
-                        if (strcasecmp($col->getName(), $column) === 0) {
+                        if (strcasecmp((string) $col->getName(), $column) === 0) {
                             return $col->getLength();
                         }
                     }
@@ -601,7 +601,7 @@ class Patcher implements InjectionAwareInterface
                     }
                     $columns = $schemaManager->listTableColumns($table);
                     foreach ($columns as $col) {
-                        if (strcasecmp($col->getName(), $column) === 0) {
+                        if (strcasecmp((string) $col->getName(), $column) === 0) {
                             $type = $col->getType()->getName();
                             $length = $col->getLength();
 
@@ -644,7 +644,7 @@ class Patcher implements InjectionAwareInterface
                     }
                     $indexes = $schemaManager->listTableIndexes($table);
                     foreach ($indexes as $name => $index) {
-                        if (strcasecmp($name, $indexName) === 0 || strcasecmp($index->getName(), $indexName) === 0) {
+                        if (strcasecmp((string) $name, $indexName) === 0 || strcasecmp((string) $index->getName(), $indexName) === 0) {
                             return true;
                         }
                     }

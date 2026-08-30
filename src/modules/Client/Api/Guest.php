@@ -72,7 +72,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         $startedAt = microtime(true);
 
         try {
-            $this->getDi()['rate_limiter']->consumeOrThrow('client_signup', (string) $this->getIp());
+            $this->getDi()['rate_limiter']->consumeOrThrow('client_signup', $this->getIp());
 
             $config = $this->getDi()['mod_config']('client');
 

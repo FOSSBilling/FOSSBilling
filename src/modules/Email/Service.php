@@ -327,7 +327,7 @@ class Service implements \FOSSBilling\Container\InjectionAwareInterface
         if (isset($customer) && !empty($customer['timezone'])) {
             $recipientTimezone = (string) $customer['timezone'];
         } elseif (isset($oneStaff) && !empty($oneStaff['timezone'] ?? null)) {
-            $recipientTimezone = (string) $oneStaff['timezone'];
+            $recipientTimezone = $oneStaff['timezone'];
         }
 
         [$subject, $content] = $this->_parse($template, $vars, $recipientTimezone);

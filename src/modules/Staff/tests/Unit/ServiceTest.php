@@ -1107,9 +1107,9 @@ test('getSearchQuery never selects sensitive admin columns', function (): void {
     $service->setDi($di);
     [$query] = $service->getSearchQuery([]);
 
-    expect(str_contains($query, '*'))->toBeFalse($query);
+    expect(str_contains((string) $query, '*'))->toBeFalse($query);
     foreach (['pass', 'salt', 'api_token', 'hash', 'config'] as $sensitiveColumn) {
-        expect(preg_match('/\b' . preg_quote($sensitiveColumn, '/') . '\b/', $query))->toBe(0, "Query unexpectedly selects '$sensitiveColumn': $query");
+        expect(preg_match('/\b' . preg_quote($sensitiveColumn, '/') . '\b/', (string) $query))->toBe(0, "Query unexpectedly selects '$sensitiveColumn': $query");
     }
 });
 

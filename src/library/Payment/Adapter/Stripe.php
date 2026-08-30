@@ -1195,7 +1195,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Container\InjectionAwareInte
         $sd = [
             'client_id' => $invoice->getClientId(),
             'gateway_id' => $gateway_id,
-            'currency' => strtoupper($invoice->getCurrency()),
+            'currency' => strtoupper((string) $invoice->getCurrency()),
             'sid' => $subscription->id,
             'status' => 'active',
             'period' => $this->getSubscriptionPeriodForInvoice($invoice),
@@ -1543,7 +1543,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Container\InjectionAwareInte
         $gatewayId = (int) $this->config['gateway_id'];
         $productName = $this->getInvoiceProductName($invoice);
         $amount = $this->getAmountInCents($invoice);
-        $currency = strtolower($invoice->getCurrency());
+        $currency = strtolower((string) $invoice->getCurrency());
         $recurring = $this->getStripeRecurringParams($this->getSubscriptionPeriodForInvoice($invoice));
         $cacheKey = $this->buildProductCacheKey($productName, $currency, $amount, $recurring);
 
@@ -1737,7 +1737,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Container\InjectionAwareInte
     {
         $intentParams = [
             'amount' => $this->getAmountInMinorUnits($invoice),
-            'currency' => strtolower($invoice->getCurrency()),
+            'currency' => strtolower((string) $invoice->getCurrency()),
             'description' => $this->getInvoiceTitle($invoice),
             'automatic_payment_methods' => ['enabled' => true],
             'receipt_email' => $invoice->getBuyerEmail(),

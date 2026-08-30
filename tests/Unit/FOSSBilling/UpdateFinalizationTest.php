@@ -92,7 +92,7 @@ test('does not re-run a finalized update before the session service is initializ
     $finalization->finalizePendingUpdate();
 
     $state = json_decode(
-        $this->updateFinalizationFilesystem->readFile($this->updateFinalizationStatePath),
+        (string) $this->updateFinalizationFilesystem->readFile($this->updateFinalizationStatePath),
         true,
         512,
         JSON_THROW_ON_ERROR
@@ -167,7 +167,7 @@ test('completion restores captured maintenance mode and records the current vers
     $finalization->completeFinalization();
 
     $completedState = json_decode(
-        $this->updateFinalizationFilesystem->readFile($this->updateFinalizationStatePath),
+        (string) $this->updateFinalizationFilesystem->readFile($this->updateFinalizationStatePath),
         true,
         512,
         JSON_THROW_ON_ERROR
