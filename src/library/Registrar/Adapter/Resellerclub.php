@@ -13,6 +13,7 @@ declare(strict_types=1);
  * HTTP API documentation http://cp.onlyfordemo.net/kb/answer/744
  */
 
+use Symfony\Contracts\HttpClient\Exception\DecodingExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface;
 
 class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
@@ -653,7 +654,15 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             return $trimmedContent;
         }
 
-        $json = $result->toArray(false);
+        try {
+            $json = $result->toArray(false);
+        } catch (DecodingExceptionInterface $error) {
+            // A 2xx response with a non-JSON body (e.g. an HTML error/rate-limit/WAF page) - see #4220 for the same class of issue.
+            $e = new Registrar_Exception("HttpClientException: {$error->getMessage()}.");
+            $this->getLog()->error($e->getMessage());
+
+            throw $e;
+        }
 
         if (isset($json['status']) && $json['status'] == 'ERROR') {
             $this->getLog()->error('ResellerClub error: ' . $json['message']);

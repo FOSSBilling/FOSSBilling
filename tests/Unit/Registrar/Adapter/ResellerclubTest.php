@@ -64,12 +64,25 @@ test('a bare numeric response (e.g. domains/orderid) is still returned as-is', f
 test('a bare "null" response is not silently treated as a scalar', function (): void {
     // Regression guard for the scalar short-circuit above: json_decode('null') also returns
     // null with no decode error, but null isn't a usable scalar result (e.g. getDomainDetails()
-    // would go on to index it like an array), so it must fall through to toArray() instead.
+    // would go on to index it like an array), so it must fall through to toArray() instead,
+    // which now surfaces as a clean Registrar_Exception rather than a leaked Symfony one.
     $httpClient = new MockHttpClient(fn (): MockResponse => new MockResponse('null'));
     $adapter = createResellerclubAdapter($httpClient);
 
     expect(fn (): bool => $adapter->isDomaincanBeTransferred(createResellerclubDomain()))
-        ->toThrow(Symfony\Component\HttpClient\Exception\JsonException::class);
+        ->toThrow(Registrar_Exception::class);
+});
+
+test('a non-JSON response (e.g. an HTML error/rate-limit page) throws a Registrar_Exception instead of leaking a JsonException', function (): void {
+    // Regression test for FOSSBILLING-N7M: a 2xx response whose body isn't valid JSON at all (an
+    // HTML error page, a WAF block page, a truncated response) made toArray() throw Symfony's raw
+    // JsonException uncaught - only the 4xx/5xx and bare-scalar cases were handled. See #4220 for
+    // the same class of issue fixed elsewhere (PSL download).
+    $httpClient = new MockHttpClient(fn (): MockResponse => new MockResponse('<html>Rate limit exceeded</html>'));
+    $adapter = createResellerclubAdapter($httpClient);
+
+    expect(fn (): bool => $adapter->isDomaincanBeTransferred(createResellerclubDomain()))
+        ->toThrow(Registrar_Exception::class);
 });
 
 test('an error-object response still throws a Registrar_Exception', function (): void {
