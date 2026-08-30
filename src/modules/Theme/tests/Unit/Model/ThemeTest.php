@@ -66,6 +66,21 @@ test('get preset from settings data file', function () use ($existingTheme): voi
     expect($result)->toBeArray();
 });
 
+test('preset settings fall back to the shipped .example template when settings_data.json is missing', function () use ($existingTheme): void {
+    // This dev checkout has no real settings_data.json, only the tracked .example, so this
+    // exercises the fallback directly against the actual shipped file.
+    $theme = new Box\Mod\Theme\Model\Theme($existingTheme);
+
+    expect(file_exists(Symfony\Component\Filesystem\Path::join($theme->getPathConfig(), 'settings_data.json')))->toBeFalse();
+
+    $presets = $theme->getPresetsFromSettingsDataFile();
+    expect($presets)->not->toBeEmpty()
+        ->and($presets)->toHaveKey('Default');
+
+    $default = $theme->getPresetFromSettingsDataFile('Default');
+    expect($default)->toHaveKey('side_menu_dashboard');
+});
+
 test('get url', function () use ($existingTheme): void {
     $theme = new Box\Mod\Theme\Model\Theme($existingTheme);
     $result = $theme->getUrl();
