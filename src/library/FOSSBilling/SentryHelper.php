@@ -189,6 +189,9 @@ class SentryHelper
 
             // Stack traces aren't that much data to send and are valuable for us, so let's always send them.
             'attach_stacktrace' => true,
+
+            // Strips the install's own filesystem path from stack trace filenames - otherwise leaks per-install hosting details (usernames, domains) to Sentry.
+            'prefixes' => [PATH_ROOT],
         ];
 
         /*
