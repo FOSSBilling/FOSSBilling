@@ -24,6 +24,15 @@ jobs:
           ref: ${{ github.ref_name }}
           persist-credentials: false
 
+      - name: 'Load Sentry Auth Token'
+        uses: 1password/load-secrets-action@70062d7a876d3eb6334754fa26efd2fbd90c32f2 # v5.0.1
+        with:
+          export-env: true
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+          # Sentry auth token (project:releases + org:read scopes) stored in 1Password.
+          SENTRY_AUTH_TOKEN: op://mkqkefntgcmjlgyxzeaekzuuvq/hw6jxytb2lqqjl5zzu4jjqztke/credential
+
       - name: 'Report Release to Sentry'
         id: sentry-release
         # No continue-on-error here: this workflow runs after the release is already
@@ -33,7 +42,7 @@ jobs:
         # of quietly reporting nothing again.
         uses: getsentry/action-release@ff07929a6537bac57790c3451cf4d364aca38528 # v3.7.0
         env:
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          # SENTRY_AUTH_TOKEN comes from the 'Load Sentry Auth Token' step above (export-env: true).
           SENTRY_ORG: fossbilling
           SENTRY_PROJECT: fossbilling
         with:
