@@ -1,0 +1,48 @@
+name: Report Release to Sentry
+
+on:
+  release:
+    types:
+      - published
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  report-release:
+    name: 'Report Release to Sentry'
+    permissions:
+      contents: read
+    runs-on: ubuntu-slim
+    timeout-minutes: 10
+    steps:
+      - name: 'Checkout Repository'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          ref: ${{ github.ref_name }}
+          persist-credentials: false
+
+      - name: 'Report Release to Sentry'
+        id: sentry-release
+        # No continue-on-error here: this workflow runs after the release is already
+        # published, so a failure can't block or undo anything - but it also means a
+        # silently-swallowed failure (expired token, wrong org/project, Sentry outage) would
+        # have no other signal. Let it fail loudly so it shows up in the Actions tab instead
+        # of quietly reporting nothing again.
+        uses: getsentry/action-release@ff07929a6537bac57790c3451cf4d364aca38528 # v3.7.0
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: fossbilling
+          SENTRY_PROJECT: fossbilling
+        with:
+          # Matches the FOSSBILLING_VERSION build arg baked into Version::VERSION (see
+          # create-release.yml / Dockerfile), which is what SentryHelper::registerSentry()
+          # reports on every event's `release` field.
+          version: ${{ github.ref_name }}
+          # Associates the commit range since the previous release Sentry knows about (needs
+          # the full history from the checkout step's fetch-depth: 0) so Sentry can show
+          # suspect commits and diffs per release, not just tag issues with a version string.
+          set_commits: auto
+          finalize: true
