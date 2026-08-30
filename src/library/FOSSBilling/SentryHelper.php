@@ -27,7 +27,7 @@ class SentryHelper
      * If you modify what's reported, update this to the version number to the release that includes your changes.
      * This is important as we rely on it to inform the user that they may want to review what's been changed.
      */
-    final public const string last_change = '0.6.0';
+    final public const string last_change = '0.8.7';
 
     /**
      * `package@version` is required for Sentry to parse a release as semver - not composer.json's
@@ -189,6 +189,10 @@ class SentryHelper
 
             // Stack traces aren't that much data to send and are valuable for us, so let's always send them.
             'attach_stacktrace' => true,
+
+            // Strips the install's own filesystem path from stack trace filenames - otherwise leaks per-install hosting details (usernames, domains) to Sentry.
+            // PATH_ROOT goes first so it always wins; the include_path entries are the SDK's own default and are kept as a fallback for paths reached via a symlinked docroot.
+            'prefixes' => [PATH_ROOT, ...array_filter(explode(PATH_SEPARATOR, get_include_path() ?: ''))],
         ];
 
         /*
