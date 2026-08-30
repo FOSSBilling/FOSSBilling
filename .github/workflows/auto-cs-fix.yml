@@ -61,6 +61,16 @@ jobs:
         id: php_cs_fixer
         run: php src/vendor/bin/php-cs-fixer fix
 
+      - name: 'Load Secrets for FOSSBilling Bot'
+        uses: 1password/load-secrets-action@70062d7a876d3eb6334754fa26efd2fbd90c32f2 # v5.0.1
+        with:
+          export-env: true
+          version: '2.39.0'
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+          # FOSSBilling Bot (GitHub CI/CD) credentials stored in 1Password.
+          GH_TOKEN: op://mkqkefntgcmjlgyxzeaekzuuvq/yyxe5dc4jyw45h2pagqhl7576i/credential
+
       - name: Create Pull Request
         id: create_pr
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8
@@ -70,7 +80,7 @@ jobs:
           branch: chore/cs-fix
           body: Automated run of PHP-CS-Fixer and Rector to ensure code styling, quality, and modern practices.
           delete-branch: true
-          token: ${{ secrets.BOT_TOKEN }}
+          token: ${{ env.GH_TOKEN }}
           committer: FOSSBilling Bot <fossbilling-bot>
           author: FOSSBilling Bot <fossbilling-bot>
           labels: skip-changelog
