@@ -27,10 +27,17 @@ use FOSSBilling\Interfaces\TimestampInterface;
  * is still RedBean-only, and FOSSBilling's schema has never had real FK
  * constraints, so there's nothing to cascade off of - ServicePayGateway::
  * delete() cleans up matching rows explicitly instead.
+ *
+ * `testMode` is part of the row's identity, not just informational: a
+ * gateway's test and live Stripe API keys are two entirely separate
+ * customer namespaces (same PayGateway row, since test_mode is just a
+ * config toggle on it, not a distinct gateway). Without this, flipping a
+ * gateway between test and live mode would look up - and then try to
+ * charge - a customer ID that only exists in the other one.
  */
 #[ORM\Entity(repositoryClass: \Box\Mod\Invoice\Repository\PayGatewayCustomerRepository::class)]
 #[ORM\Table(name: 'pay_gateway_customer')]
-#[ORM\UniqueConstraint(name: 'pay_gateway_customer_gateway_client', columns: ['pay_gateway_id', 'client_id'])]
+#[ORM\UniqueConstraint(name: 'pay_gateway_customer_gateway_client_mode', columns: ['pay_gateway_id', 'client_id', 'test_mode'])]
 #[ORM\HasLifecycleCallbacks]
 class PayGatewayCustomer implements TimestampInterface
 {
@@ -47,6 +54,9 @@ class PayGatewayCustomer implements TimestampInterface
 
     #[ORM\Column(name: 'client_id', type: Types::BIGINT)]
     private ?int $clientId = null;
+
+    #[ORM\Column(name: 'test_mode', type: Types::BOOLEAN)]
+    private bool $testMode = false;
 
     #[ORM\Column(name: 'external_customer_id', type: Types::STRING, length: 255)]
     private ?string $externalCustomerId = null;
@@ -76,6 +86,18 @@ class PayGatewayCustomer implements TimestampInterface
     public function setClientId(?int $clientId): self
     {
         $this->clientId = $clientId;
+
+        return $this;
+    }
+
+    public function isTestMode(): bool
+    {
+        return $this->testMode;
+    }
+
+    public function setTestMode(bool $testMode): self
+    {
+        $this->testMode = $testMode;
 
         return $this;
     }

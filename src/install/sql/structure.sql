@@ -777,11 +777,12 @@ CREATE TABLE `pay_gateway_customer` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `pay_gateway_id` bigint(20) NOT NULL,
   `client_id` bigint(20) NOT NULL,
+  `test_mode` tinyint(1) NOT NULL DEFAULT 0,
   `external_customer_id` varchar(255) NOT NULL,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `pay_gateway_customer_gateway_client` (`pay_gateway_id`,`client_id`)
+  UNIQUE KEY `pay_gateway_customer_gateway_client_mode` (`pay_gateway_id`,`client_id`,`test_mode`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 

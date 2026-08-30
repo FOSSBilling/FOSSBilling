@@ -1366,16 +1366,17 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
     {
         $gatewayId = (int) $this->config['gateway_id'];
         $clientId = (int) $invoice->client_id;
+        $testMode = (bool) $this->config['test_mode'];
 
         $cached = $this->di['em']->getRepository(PayGatewayCustomer::class)
-            ->findOneByGatewayAndClient($gatewayId, $clientId);
+            ->findOneByGatewayAndClient($gatewayId, $clientId, $testMode);
         if ($cached instanceof PayGatewayCustomer) {
             return $cached->getExternalCustomerId();
         }
 
         $customerId = $this->resolveCustomerIdFromStripe($invoice);
 
-        return $this->cacheGatewayCustomer($gatewayId, $clientId, $customerId);
+        return $this->cacheGatewayCustomer($gatewayId, $clientId, $testMode, $customerId);
     }
 
     /**
@@ -1424,15 +1425,15 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
      * other callers in this request rely on (e.g. to flush the
      * transaction/invoice being processed) in a closed, unusable state.
      *
-     * Two requests for the same (gateway, client) can both miss the cache
-     * read in getOrCreateCustomer() and each resolve their own Stripe
+     * Two requests for the same (gateway, client, mode) can both miss the
+     * cache read in getOrCreateCustomer() and each resolve their own Stripe
      * customer before either persists here. The unique constraint on
-     * (pay_gateway_id, client_id) stops both rows from existing; the loser
-     * re-reads and returns the winner's ID instead of its own, so every
-     * caller converges on one customer - the loser's own Stripe customer
-     * just ends up orphaned, unused but harmless.
+     * (pay_gateway_id, client_id, test_mode) stops both rows from existing;
+     * the loser re-reads and returns the winner's ID instead of its own, so
+     * every caller converges on one customer - the loser's own Stripe
+     * customer just ends up orphaned, unused but harmless.
      */
-    private function cacheGatewayCustomer(int $gatewayId, int $clientId, string $externalCustomerId): string
+    private function cacheGatewayCustomer(int $gatewayId, int $clientId, bool $testMode, string $externalCustomerId): string
     {
         $em = $this->newIsolatedEntityManager();
 
@@ -1440,6 +1441,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             $record = new PayGatewayCustomer();
             $record->setPayGatewayId($gatewayId);
             $record->setClientId($clientId);
+            $record->setTestMode($testMode);
             $record->setExternalCustomerId($externalCustomerId);
 
             $em->persist($record);
@@ -1453,7 +1455,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             // newIsolatedEntityManager() to hand out a fresh one.
             /** @var Box\Mod\Invoice\Repository\PayGatewayCustomerRepository $repository */
             $repository = $em->getRepository(PayGatewayCustomer::class);
-            $winner = $repository->findOneByGatewayAndClient($gatewayId, $clientId);
+            $winner = $repository->findOneByGatewayAndClient($gatewayId, $clientId, $testMode);
 
             return $winner instanceof PayGatewayCustomer ? $winner->getExternalCustomerId() : $externalCustomerId;
         }
@@ -1543,7 +1545,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         $amount = $this->getAmountInCents($invoice);
         $currency = strtolower($invoice->currency);
         $interval = $this->convertPeriodToStripe($this->getSubscriptionPeriodForInvoice($invoice));
-        $cacheKey = $this->buildProductCacheKey($productName, $currency, $amount, $interval);
+        $cacheKey = $this->buildProductCacheKey($productName, $currency, $amount, $interval, (bool) $this->config['test_mode']);
 
         $cached = $this->di['em']->getRepository(PayGatewayProduct::class)
             ->findOneByGatewayAndCacheKey($gatewayId, $cacheKey);
@@ -1570,9 +1572,18 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         return $invoiceItems[0]['title'];
     }
 
-    private function buildProductCacheKey(string $productName, string $currency, int $amount, string $interval): string
+    /**
+     * $testMode is folded into the hash rather than a separate column
+     * (unlike PayGatewayCustomer's own testMode column - there's no natural
+     * hash to fold it into a bare (gateway, client) pair): a gateway's test
+     * and live Stripe API keys are two entirely separate product/price
+     * namespaces, so without this a gateway flipped between test and live
+     * mode would look up - and try to charge - a price ID that only exists
+     * in the other one.
+     */
+    private function buildProductCacheKey(string $productName, string $currency, int $amount, string $interval, bool $testMode): string
     {
-        return hash('sha256', implode('|', [$productName, $currency, $amount, $interval]));
+        return hash('sha256', implode('|', [$productName, $currency, $amount, $interval, $testMode ? '1' : '0']));
     }
 
     /**

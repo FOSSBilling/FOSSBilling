@@ -16,13 +16,15 @@ use Doctrine\ORM\EntityRepository;
 
 class PayGatewayCustomerRepository extends EntityRepository
 {
-    public function findOneByGatewayAndClient(int $gatewayId, int $clientId): ?PayGatewayCustomer
+    public function findOneByGatewayAndClient(int $gatewayId, int $clientId, bool $testMode): ?PayGatewayCustomer
     {
         return $this->createQueryBuilder('c')
             ->andWhere('c.payGatewayId = :gateway_id')
             ->andWhere('c.clientId = :client_id')
+            ->andWhere('c.testMode = :test_mode')
             ->setParameter('gateway_id', $gatewayId)
             ->setParameter('client_id', $clientId)
+            ->setParameter('test_mode', $testMode)
             ->setMaxResults(1)
             ->getQuery()
             ->getOneOrNullResult();

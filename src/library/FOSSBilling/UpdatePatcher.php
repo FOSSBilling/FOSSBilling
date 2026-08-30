@@ -2464,15 +2464,21 @@ class UpdatePatcher implements InjectionAwareInterface
         // Stripe's Search API - which is only eventually consistent - can race and create
         // duplicates, then submit mismatched params under the same idempotency key.
         if (!$this->tableExists('pay_gateway_customer')) {
+            // test_mode is part of the row's identity, not just informational: a gateway's
+            // test and live API keys are two entirely separate customer namespaces (same
+            // PayGateway row, since test_mode is just a config toggle on it), so without
+            // this, flipping a gateway between test and live mode would look up - and try
+            // to charge - a customer ID that only exists in the other one.
             $this->executeSql('CREATE TABLE `pay_gateway_customer` (
                 `id` bigint(20) NOT NULL AUTO_INCREMENT,
                 `pay_gateway_id` bigint(20) NOT NULL,
                 `client_id` bigint(20) NOT NULL,
+                `test_mode` tinyint(1) NOT NULL DEFAULT 0,
                 `external_customer_id` varchar(255) NOT NULL,
                 `created_at` datetime DEFAULT NULL,
                 `updated_at` datetime DEFAULT NULL,
                 PRIMARY KEY (`id`),
-                UNIQUE KEY `pay_gateway_customer_gateway_client` (`pay_gateway_id`, `client_id`)
+                UNIQUE KEY `pay_gateway_customer_gateway_client_mode` (`pay_gateway_id`, `client_id`, `test_mode`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8;');
         }
 
