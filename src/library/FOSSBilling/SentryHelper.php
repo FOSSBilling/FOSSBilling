@@ -128,14 +128,13 @@ class SentryHelper
             'http_client' => $httpClient,
 
             /*
-             * Every PHP version bump deprecates a fresh batch of constants/casts/signatures, and instances
-             * running ahead of our tested PHP baseline (or simply on an older FOSSBilling release) throw these
-             * on effectively every request. Since we don't control when self-hosted instances upgrade PHP,
-             * these deprecation notices are unbounded and drown out real errors instead of being one-time noise.
-             * `error_reporting(E_ALL)` (see load.php) means the SDK's ErrorListenerIntegration would otherwise
-             * capture E_DEPRECATED same as any other error. We deliberately keep E_USER_DEPRECATED enabled:
-             * that's our own trigger_error() calls flagging things we should investigate (see
-             * Currency\Service::getExchangeRateAPIRates()), not interpreter noise.
+             * Every PHP version bump deprecates a fresh batch of constants/casts/signatures, and we don't
+             * control when self-hosted instances upgrade PHP - so on an instance running ahead of our tested
+             * baseline, these fire on effectively every request, forever. `error_reporting(E_ALL)` (see
+             * load.php) means the SDK's ErrorListenerIntegration would otherwise capture E_DEPRECATED same as
+             * any other error. We deliberately keep E_USER_DEPRECATED enabled: that's our own trigger_error()
+             * calls flagging things we should investigate (see Currency\Service::getExchangeRateAPIRates()),
+             * not interpreter noise.
              *
              * Deliberately not also excluding E_STRICT: referencing that constant at all triggers its own
              * "Constant E_STRICT is deprecated" notice as of PHP 8.4, and E_STRICT hasn't been a real error
