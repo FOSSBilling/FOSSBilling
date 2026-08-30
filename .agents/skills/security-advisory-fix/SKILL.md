@@ -158,12 +158,20 @@ Once the design is settled:
    parameter is required") rather than guessing which path's config to use.
    Passing `--config` explicitly sidesteps the ambiguity regardless of how
    many files follow. This catches most things, but know its ceiling going
-   in. The E2E suites need
-   `APP_URL`/`TEST_API_KEY` or a live instance to run, and network-timing
-   dependent behavior (rate limits under real request latency, for example)
-   plain doesn't reproduce in a unit test's mocked DI container no matter how
-   it's stubbed. Real regressions in that territory only ever surface once
-   CI actually runs them; expect that, don't be surprised by it later.
+   in: `composer test`'s default suites are Unit and Modules only, so it
+   silently skips anything under `tests/E2E` or `src/modules/*/tests/E2E`,
+   which is exactly where a vulnerability regression test for something
+   network- or live-instance-shaped is likely to live. Those need
+   `APP_URL`/`TEST_API_KEY` (Playwright specs need `PLAYWRIGHT_BASE_URL`,
+   `ADMIN_EMAIL`, `ADMIN_PASSWORD`) or a live instance to run at all, and
+   network-timing dependent behavior (rate limits under real request
+   latency, for example) plain doesn't reproduce in a unit test's mocked DI
+   container no matter how it's stubbed. If your environment actually has
+   those available, run the E2E suite too before pushing
+   (`composer test -- --testsuite E2E`, `npm run pw:run`), not just the
+   default suites; if it doesn't, that's fine, but know that a regression in
+   that territory won't surface until CI actually runs it, so don't be
+   surprised by it later.
 
 ## Stage 3: Open the PR and handle review
 
@@ -217,6 +225,14 @@ route around whatever broke while getting it.
 Reply to and resolve each review thread you actually acted on (including an
 "already fixed, here's why" reply for stale ones). Skip threads you didn't
 act on rather than resolving them as a formality.
+
+A CI-green PR with every review thread resolved is not the same thing as a
+mergeable PR. `CONTRIBUTING.md` requires two maintainer reviews before
+anything merges, a real approval gate separate from CI and separate from
+automated review tools, and it's not this skill's place to merge around it
+even if the tooling you're working in happens to have the permission to.
+Get the fix and its tests in front of maintainers and leave the merge itself
+to them.
 
 ## Stage 4: After merge
 
