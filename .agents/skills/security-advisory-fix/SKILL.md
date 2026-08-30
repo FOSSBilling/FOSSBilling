@@ -173,6 +173,12 @@ Once the design is settled:
    that territory won't surface until CI actually runs it, so don't be
    surprised by it later.
 
+   All of the above is PHP-side. If the fix (or its regression test) touches
+   browser/theme code instead, run the frontend equivalent too:
+   `npm run test:js` for the JS unit suite and `npm run build` (which
+   type-checks via `tsc` as part of running) so a broken build doesn't ship
+   alongside a passing PHP suite.
+
 ## Stage 3: Open the PR and handle review
 
 Open the PR with the same plain, symptom-based naming as the branch. No
