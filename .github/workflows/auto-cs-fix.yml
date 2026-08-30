@@ -44,6 +44,7 @@ jobs:
         uses: 1password/load-secrets-action@70062d7a876d3eb6334754fa26efd2fbd90c32f2 # v5.0.1
         with:
           export-env: true
+          version: '2.39.0'
         env:
           OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
           # FOSSBilling Bot (GitHub CI/CD) credentials stored in 1Password.
