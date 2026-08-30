@@ -228,7 +228,6 @@ jobs:
           aws s3 cp "${asset}" "s3://${AWS_S3_BUCKET}/${key}" \
             --endpoint-url "${AWS_S3_ENDPOINT}" \
             --metadata="digest=${FOSSBILLING_RELEASE_DIGEST},version=${RELEASE_VERSION}" \
-            --acl public-read \
             --no-progress
 
           echo "url=https://download.fossbilling.org/${key}" >> "${GITHUB_OUTPUT}"
