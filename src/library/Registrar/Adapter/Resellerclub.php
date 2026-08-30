@@ -656,7 +656,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
 
         try {
             $json = $result->toArray(false);
-        } catch (DecodingExceptionInterface $error) {
+        } catch (DecodingExceptionInterface) {
             // A 2xx response with a non-JSON body (e.g. an HTML error/rate-limit/WAF page) - see #4220 for the same class of issue.
             // Symfony's exception message embeds the full request URL, which for a GET request includes
             // auth-userid/api-key in the query string - never log or surface that, log a fixed message instead.
