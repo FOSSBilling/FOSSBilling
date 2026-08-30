@@ -68,46 +68,80 @@ class Guest extends \FOSSBilling\Api\AbstractApi
      * @optional string $custom_20 - Custom field 20
      */
     #[RequiredParams(['email' => 'Email required', 'first_name' => 'First name required', 'password' => 'Password required', 'password_confirm' => 'Password confirmation required'])]
-    public function create($data = []): int
+    public function create($data = []): bool
     {
-        $this->getDi()['rate_limiter']->consumeOrThrow('client_signup', (string) $this->getIp());
+        $startedAt = microtime(true);
 
-        $config = $this->getDi()['mod_config']('client');
+        try {
+            $this->getDi()['rate_limiter']->consumeOrThrow('client_signup', (string) $this->getIp());
 
-        if (isset($config['disable_signup']) && $config['disable_signup']) {
-            throw new \FOSSBilling\InformationException('New registrations are temporarily disabled');
-        }
+            $config = $this->getDi()['mod_config']('client');
 
-        $this->getDi()['validator']->passwordsMatch($data);
-
-        $this->getService()->checkExtraRequiredFields($data);
-        $this->getService()->checkCustomFields($data);
-
-        $this->getDi()['validator']->isPasswordStrong($data['password']);
-        $service = $this->getService();
-
-        $email = $data['email'] ?? null;
-        $email = $this->getDi()['tools']->validateAndSanitizeEmail($email);
-        $email = strtolower(trim((string) $email));
-        if ($service->clientAlreadyExists($email)) {
-            throw new \FOSSBilling\InformationException('This email address is already registered.');
-        }
-
-        $client = $service->guestCreateClient($data);
-
-        if (isset($config['require_email_confirmation']) && (bool) $config['require_email_confirmation']) {
-            $service->sendEmailConfirmationForClient($client);
-        }
-
-        if (Tools::normalizeBoolean($config['auto_login_after_signup'] ?? true, true)) {
-            try {
-                $this->login(['email' => $client->getEmail(), 'password' => $data['password']]);
-            } catch (\Throwable $e) {
-                $this->getDi()['logger']->error($e->getMessage());
+            if (isset($config['disable_signup']) && $config['disable_signup']) {
+                throw new \FOSSBilling\InformationException('New registrations are temporarily disabled');
             }
-        }
 
-        return (int) $client->getId();
+            $this->getDi()['validator']->passwordsMatch($data);
+
+            $this->getService()->checkExtraRequiredFields($data);
+            $this->getService()->checkCustomFields($data);
+
+            $this->getDi()['validator']->isPasswordStrong($data['password']);
+            $service = $this->getService();
+
+            $email = $data['email'] ?? null;
+            $email = $this->getDi()['tools']->validateAndSanitizeEmail($email);
+            $email = strtolower(trim((string) $email));
+
+            $this->checkCaptchaIfEnabled($data);
+
+            // Keyed independently of the IP limiter above so that spreading
+            // probes across IPs doesn't help an attacker hammer one address.
+            // Consumed only after the CAPTCHA check so a stream of invalid
+            // CAPTCHA submissions can't burn through one address's quota.
+            $emailLimit = $this->getDi()['rate_limiter']->consume('client_signup_email', $email);
+
+            $autoLogin = Tools::normalizeBoolean($config['auto_login_after_signup'] ?? true, true);
+
+            if ($emailLimit->isLimited() || $service->clientAlreadyExists($email)) {
+                // Never disclose whether this address is already registered:
+                // no distinct error, no duplicate row, and the same return
+                // value as a genuine signup below. Falling through to an
+                // ordinary login attempt keeps the response and any session
+                // side effects identical to the success path, reusing
+                // login()'s own timing- and message-safe handling instead of
+                // reimplementing it here.
+                $this->getDi()['logger']->withChannel('security')->info('Client signup declined for an existing or rate-limited email from IP {ip}.', ['ip' => $this->getIp()]);
+
+                if ($autoLogin) {
+                    try {
+                        $this->login(['email' => $email, 'password' => $data['password']]);
+                    } catch (\Throwable $e) {
+                        $this->getDi()['logger']->error($e->getMessage());
+                    }
+                }
+
+                return true;
+            }
+
+            $client = $service->guestCreateClient($data);
+
+            if (isset($config['require_email_confirmation']) && (bool) $config['require_email_confirmation']) {
+                $service->sendEmailConfirmationForClient($client);
+            }
+
+            if ($autoLogin) {
+                try {
+                    $this->login(['email' => $client->getEmail(), 'password' => $data['password']]);
+                } catch (\Throwable $e) {
+                    $this->getDi()['logger']->error($e->getMessage());
+                }
+            }
+
+            return true;
+        } finally {
+            RandomizedTimeFloor::apply($startedAt, 300, 450);
+        }
     }
 
     /**

@@ -83,7 +83,8 @@
         "dedup",
         "GHSA",
         "macrovector",
-        "rubygems"
+        "rubygems",
+        "Åland"
     ],
 
     "ignoreWords": [
@@ -277,6 +278,7 @@
         "multisite",
         "mcrypt",
         "stopforumspam",
+        "yopmail",
         "Internetbs",
         "binded",
         "tada",
