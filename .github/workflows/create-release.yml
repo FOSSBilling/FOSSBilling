@@ -203,7 +203,35 @@ jobs:
         run: |
           mkdir -p ../dist
           zip -qr "../dist/FOSSBilling-${RELEASE_VERSION}.zip" .
+
+          echo "FOSSBILLING_RELEASE_DIGEST=sha256:$(sha256sum "../dist/FOSSBilling-${RELEASE_VERSION}.zip" | awk '{print $1}')" >> "$GITHUB_ENV"
         working-directory: ./release-tree
+
+      - name: 'Upload Release Archive to R2'
+        id: r2-upload
+        # Mirrors the release archive to our own IPv6-reachable storage, alongside the
+        # GitHub release asset. github.com and api.github.com have no AAAA record, so
+        # installs on IPv6-only hosts cannot download an update from GitHub at all -
+        # see https://github.com/FOSSBilling/FOSSBilling/issues/2479. This mirror is
+        # what api.fossbilling.net's `download_url` should point update clients to.
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.CF_R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.CF_R2_SECRET_ACCESS_KEY }}
+          AWS_S3_ENDPOINT: ${{ vars.CF_R2_ENDPOINT_URL }}
+          AWS_S3_BUCKET: ${{ vars.CF_R2_DOWNLOAD_BUCKET }}
+          AWS_REGION: 'auto'
+        run: |
+          asset="./dist/FOSSBilling-${RELEASE_VERSION}.zip"
+          key="releases/${RELEASE_VERSION}/FOSSBilling-${RELEASE_VERSION}.zip"
+
+          aws s3 cp "${asset}" "s3://${AWS_S3_BUCKET}/${key}" \
+            --endpoint-url "${AWS_S3_ENDPOINT}" \
+            --metadata="digest=${FOSSBILLING_RELEASE_DIGEST},version=${RELEASE_VERSION}" \
+            --acl public-read \
+            --no-progress
+
+          echo "url=https://download.fossbilling.org/${key}" >> "${GITHUB_OUTPUT}"
 
       - name: 'Create or Update GitHub Release'
         id: release
@@ -273,7 +301,9 @@ jobs:
           | Release notes | `${{ inputs.release_notes }}` |
           | Previous tag | `${{ steps.notes-context.outputs.previous_tag || 'n/a' }}` |
           | Archive | `FOSSBilling-${{ inputs.version }}.zip` |
+          | Digest | `${{ env.FOSSBILLING_RELEASE_DIGEST }}` |
           | Docker build | `${{ steps.build.outcome }}` |
           | Archive creation | `${{ steps.archive.outcome }}` |
+          | R2 mirror | `${{ steps.r2-upload.outputs.url }}` |
           | Release operation | `${{ steps.release.outputs.operation || steps.release.outcome }}` |
           EOF
