@@ -89,18 +89,14 @@ class Service implements InjectionAwareInterface
 
     public function getInvoiceItemRepository(): InvoiceItemRepository
     {
-        if ($this->invoiceItemRepository === null) {
-            $this->invoiceItemRepository = $this->di['em']->getRepository(InvoiceItem::class);
-        }
+        $this->invoiceItemRepository ??= $this->di['em']->getRepository(InvoiceItem::class);
 
         return $this->invoiceItemRepository;
     }
 
     public function getInvoiceRepository(): InvoiceRepository
     {
-        if ($this->invoiceRepository === null) {
-            $this->invoiceRepository = $this->di['em']->getRepository(Invoice::class);
-        }
+        $this->invoiceRepository ??= $this->di['em']->getRepository(Invoice::class);
 
         return $this->invoiceRepository;
     }
