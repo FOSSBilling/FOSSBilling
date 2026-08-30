@@ -221,7 +221,6 @@ jobs:
         run: |
           aws s3 sync "${SOURCE_DIR}" "s3://${AWS_S3_BUCKET}/" \
             --endpoint-url "${AWS_S3_ENDPOINT}" \
-            --acl public-read \
             --follow-symlinks \
             --no-progress
         env:
