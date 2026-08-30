@@ -35,26 +35,13 @@ jobs:
 
       - name: 'Report Release to Sentry'
         id: sentry-release
-        # No continue-on-error here: this workflow runs after the release is already
-        # published, so a failure can't block or undo anything - but it also means a
-        # silently-swallowed failure (expired token, wrong org/project, Sentry outage) would
-        # have no other signal. Let it fail loudly so it shows up in the Actions tab instead
-        # of quietly reporting nothing again.
+        # Deliberately no continue-on-error - see PR description.
         uses: getsentry/action-release@ff07929a6537bac57790c3451cf4d364aca38528 # v3.7.0
         env:
-          # SENTRY_AUTH_TOKEN comes from the 'Load Sentry Auth Token' step above (export-env: true).
           SENTRY_ORG: fossbilling
           SENTRY_PROJECT: fossbilling
         with:
-          # Must exactly match what SentryHelper::registerSentry() sends as the `release`
-          # option on every event (SentryHelper::SENTRY_RELEASE_PACKAGE . '@' .
-          # Version::VERSION - see that comment for why the "fossbilling@" prefix matters),
-          # or this release and the events it's meant to cover won't line up.
-          # Version::VERSION is set from this same tag via the FOSSBILLING_VERSION build arg
-          # - see create-release.yml / Dockerfile.
+          # Must match SentryHelper::SENTRY_RELEASE_PACKAGE . '@' . Version::VERSION exactly.
           version: fossbilling@${{ github.ref_name }}
-          # Associates the commit range since the previous release Sentry knows about (needs
-          # the full history from the checkout step's fetch-depth: 0) so Sentry can show
-          # suspect commits and diffs per release, not just tag issues with a version string.
           set_commits: auto
           finalize: true
