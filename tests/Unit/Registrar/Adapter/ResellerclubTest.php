@@ -83,6 +83,36 @@ test('an error-object response still throws a Registrar_Exception', function ():
         ->toThrow(Registrar_Exception::class);
 });
 
+test('a GET request never logs its auth-userid/api-key in the debug-level "API REQUEST" log', function (): void {
+    // includeAuthorizationParams() appends auth-userid/api-key to every request, and GET requests
+    // put them straight into the query string. _makeRequest() logs that query string at debug
+    // level on every single call (unlike the narrower error-path leak fixed for #4254, which only
+    // covered the JSON-decoding-failure log line), so the debug log must redact both params too.
+    $logger = new class extends Psr\Log\AbstractLogger {
+        /** @var list<string> */
+        public array $debugMessages = [];
+
+        public function log($level, string|Stringable $message, array $context = []): void
+        {
+            if ($level === Psr\Log\LogLevel::DEBUG) {
+                $this->debugMessages[] = (string) $message;
+            }
+        }
+    };
+    $httpClient = new MockHttpClient(fn (): MockResponse => new MockResponse('true'));
+    $adapter = createResellerclubAdapter($httpClient);
+    $adapter->setLog($logger);
+
+    $adapter->isDomaincanBeTransferred(createResellerclubDomain());
+
+    $logged = implode("\n", $logger->debugMessages);
+    expect($logger->debugMessages)->not->toBeEmpty()
+        ->and($logged)->toContain('API REQUEST')
+        ->and($logged)->not->toContain('secret') // the api-key configured in createResellerclubAdapter()
+        ->and($logged)->not->toContain('auth-userid=12345')
+        ->and($logged)->toContain('api-key=');
+});
+
 function createResellerclubTestContact(): Registrar_Domain_Contact
 {
     return (new Registrar_Domain_Contact())

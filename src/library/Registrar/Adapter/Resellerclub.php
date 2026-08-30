@@ -626,7 +626,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
                 ]);
             } else {
                 $result = $client->request('GET', $callUrl . '?' . $this->_formatParams($params));
-                $this->getLog()->debug('API REQUEST: ' . $callUrl . '?' . $this->_formatParams($params));
+                $this->getLog()->debug('API REQUEST: ' . $callUrl . '?' . $this->_formatParams($this->_redactAuthParams($params)));
             }
             $this->getLog()->info('API RESULT: ' . $result->getContent(false));
         } catch (HttpExceptionInterface $error) {
@@ -677,6 +677,23 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         }
 
         return $json;
+    }
+
+    /**
+     * Redact auth-userid/api-key from params before they're logged. includeAuthorizationParams()
+     * adds these to every request, so the debug-level "API REQUEST" log would otherwise leak
+     * ResellerClub credentials on every single call - see the credential leak fixed in #4254 for
+     * the same category of issue on the error path.
+     */
+    private function _redactAuthParams(array $params): array
+    {
+        foreach (['auth-userid', 'api-key'] as $key) {
+            if (isset($params[$key])) {
+                $params[$key] = '***REDACTED***';
+            }
+        }
+
+        return $params;
     }
 
     /**
