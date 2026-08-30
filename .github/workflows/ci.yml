@@ -218,7 +218,6 @@ jobs:
           aws s3 sync "${SOURCE_DIR}" "s3://${AWS_S3_BUCKET}/" \
             --endpoint-url "${AWS_S3_ENDPOINT}" \
             --metadata="digest=${{ env.FOSSBILLING_PREVIEW_DIGEST }},commit-sha=${{ github.sha }}" \
-            --acl public-read \
             --follow-symlinks \
             --no-progress
         env:
