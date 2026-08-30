@@ -216,6 +216,89 @@ test('modifyContact assigns per-role contact IDs for .fr, which only forces tech
     expect($body['billing-contact-id'])->toBe('-1');
 });
 
+test('renewDomain fetches fresh domain details to fill in exp-date when it is not already cached', function (): void {
+    // Regression test for #4229: FOSSBilling only learns a domain's expiration time via a prior
+    // WHOIS sync. When that sync never completed (e.g. it ran too soon after registration), the
+    // domain reaches renewDomain() with no expiration time, and ResellerClub rejects the renewal
+    // outright with "Required parameter missing: exp-date" - which then also prevents the WHOIS
+    // sync that would fix it for next time, since that only runs after a successful renewal. The
+    // adapter must fetch the expiry itself instead of sending an incomplete request.
+    $requests = [];
+    $bodies = [];
+    $responses = [
+        '112233', // domains/orderid (via getDomainDetails)
+        json_encode([ // domains/details
+            'creationtime' => 1577836800,
+            'endtime' => 1893456000,
+            'domsecret' => 'epp-code',
+            'isprivacyprotected' => 'false',
+            'admincontact' => [
+                'contactid' => '998877',
+                'name' => 'Jane Doe',
+                'emailaddr' => 'jane@example.com',
+                'company' => '',
+                'telno' => '5551234567',
+                'telnocc' => '1',
+                'address1' => '1 Example St',
+                'city' => 'Example City',
+                'country' => 'US',
+                'state' => '',
+                'zip' => '12345',
+            ],
+        ]),
+        '112233', // domains/orderid (for the renew request itself)
+        json_encode(['actionstatus' => 'Success']), // domains/renew
+    ];
+
+    $httpClient = new MockHttpClient(function (string $method, string $url, array $options) use (&$requests, &$responses, &$bodies): MockResponse {
+        $requests[] = $method . ' ' . parse_url($url, PHP_URL_PATH);
+        $bodies[] = $options['body'] ?? null;
+
+        return new MockResponse(array_shift($responses));
+    });
+    $adapter = createResellerclubAdapter($httpClient);
+    $domain = createResellerclubDomain()->setRegistrationPeriod(1);
+
+    expect($adapter->renewDomain($domain))->toBeTrue();
+    expect($requests)->toBe([
+        'GET /api/domains/orderid.json',
+        'GET /api/domains/details.json',
+        'GET /api/domains/orderid.json',
+        'POST /api/domains/renew.json',
+    ]);
+
+    parse_str((string) end($bodies), $body);
+    expect($body['exp-date'])->toBe('1893456000');
+    expect($domain->getExpirationTime())->toBe(1893456000);
+});
+
+test('renewDomain does not re-fetch domain details when an expiration time is already known', function (): void {
+    $requests = [];
+    $bodies = [];
+    $responses = [
+        '112233', // domains/orderid (for the renew request)
+        json_encode(['actionstatus' => 'Success']), // domains/renew
+    ];
+
+    $httpClient = new MockHttpClient(function (string $method, string $url, array $options) use (&$requests, &$responses, &$bodies): MockResponse {
+        $requests[] = $method . ' ' . parse_url($url, PHP_URL_PATH);
+        $bodies[] = $options['body'] ?? null;
+
+        return new MockResponse(array_shift($responses));
+    });
+    $adapter = createResellerclubAdapter($httpClient);
+    $domain = createResellerclubDomain()->setRegistrationPeriod(1)->setExpirationTime(1893456000);
+
+    expect($adapter->renewDomain($domain))->toBeTrue();
+    expect($requests)->toBe([
+        'GET /api/domains/orderid.json',
+        'POST /api/domains/renew.json',
+    ]);
+
+    parse_str((string) end($bodies), $body);
+    expect($body['exp-date'])->toBe('1893456000');
+});
+
 test('registerDomain sends the .fr registry consent attribute alongside the FrContact IDs', function (): void {
     // Regression test for #77: .fr requires accepting the registry's data-sharing terms via a tnc
     // attribute on domains/register, on top of the FrContact type/contact-id handling above. See
