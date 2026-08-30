@@ -89,18 +89,14 @@ class Service implements InjectionAwareInterface
 
     public function getInvoiceItemRepository(): InvoiceItemRepository
     {
-        if ($this->invoiceItemRepository === null) {
-            $this->invoiceItemRepository = $this->di['em']->getRepository(InvoiceItem::class);
-        }
+        $this->invoiceItemRepository ??= $this->di['em']->getRepository(InvoiceItem::class);
 
         return $this->invoiceItemRepository;
     }
 
     public function getInvoiceRepository(): InvoiceRepository
     {
-        if ($this->invoiceRepository === null) {
-            $this->invoiceRepository = $this->di['em']->getRepository(Invoice::class);
-        }
+        $this->invoiceRepository ??= $this->di['em']->getRepository(Invoice::class);
 
         return $this->invoiceRepository;
     }
@@ -2617,7 +2613,18 @@ class Service implements InjectionAwareInterface
             // products like domain registrations where multiple orders share
             // the same product — it would find an unrelated order and generate
             // a renewal invoice for the wrong service.
-            if ($originalOrder->getStatus() !== Order::STATUS_ACTIVE) {
+            //
+            // Accept the same "still renewable" statuses generateForOrder() itself
+            // recognizes below, not just active: the batch-suspend cron can suspend
+            // an order (on expiry) before a delayed gateway subscription-payment IPN
+            // for that same renewal arrives. generateForOrder() already reuses any
+            // unpaid invoice the cron generated ahead of time, so this lets that
+            // invoice be paid and the order un-suspended/renewed as normal.
+            if (!in_array($originalOrder->getStatus(), [
+                Order::STATUS_ACTIVE,
+                Order::STATUS_SUSPENDED,
+                Order::STATUS_FAILED_RENEW,
+            ], true)) {
                 return null;
             }
 
