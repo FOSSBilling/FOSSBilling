@@ -136,9 +136,13 @@ class SentryHelper
              * capture E_DEPRECATED same as any other error. We deliberately keep E_USER_DEPRECATED enabled:
              * that's our own trigger_error() calls flagging things we should investigate (see
              * Currency\Service::getExchangeRateAPIRates()), not interpreter noise.
-             * E_STRICT has been a no-op since PHP 8.4 but is excluded for clarity/future-proofing.
+             *
+             * Deliberately not also excluding E_STRICT: referencing that constant at all triggers its own
+             * "Constant E_STRICT is deprecated" notice as of PHP 8.4, and E_STRICT hasn't been a real error
+             * level PHP ever raises since 8.0 anyway (its cases were folded into E_DEPRECATED/E_WARNING), so
+             * excluding it buys nothing.
              */
-            'error_types' => E_ALL & ~E_DEPRECATED & ~E_STRICT,
+            'error_types' => E_ALL & ~E_DEPRECATED,
 
             'before_send' => function (Event $event, ?EventHint $hint) use ($serverSoftware): ?Event {
                 $module = null;
