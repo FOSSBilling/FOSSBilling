@@ -13,6 +13,7 @@ declare(strict_types=1);
  * HTTP API documentation http://cp.onlyfordemo.net/kb/answer/744
  */
 
+use Symfony\Contracts\HttpClient\Exception\DecodingExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface;
 
 class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
@@ -626,7 +627,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
                 ]);
             } else {
                 $result = $client->request('GET', $callUrl . '?' . $this->_formatParams($params));
-                $this->getLog()->debug('API REQUEST: ' . $callUrl . '?' . $this->_formatParams($params));
+                $this->getLog()->debug('API REQUEST: ' . $callUrl . '?' . $this->_formatParams($this->_redactAuthParams($params)));
             }
             $this->getLog()->info('API RESULT: ' . $result->getContent(false));
         } catch (HttpExceptionInterface $error) {
@@ -653,7 +654,17 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             return $trimmedContent;
         }
 
-        $json = $result->toArray(false);
+        try {
+            $json = $result->toArray(false);
+        } catch (DecodingExceptionInterface) {
+            // A 2xx response with a non-JSON body (e.g. an HTML error/rate-limit/WAF page) - see #4220 for the same class of issue.
+            // Symfony's exception message embeds the full request URL, which for a GET request includes
+            // auth-userid/api-key in the query string - never log or surface that, log a fixed message instead.
+            $this->getLog()->error("ResellerClub API response for {$url} could not be decoded as JSON.");
+            $placeholders = [':action:' => $url, ':type:' => 'ResellerClub'];
+
+            throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
+        }
 
         if (isset($json['status']) && $json['status'] == 'ERROR') {
             $this->getLog()->error('ResellerClub error: ' . $json['message']);
@@ -677,6 +688,23 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         }
 
         return $json;
+    }
+
+    /**
+     * Redact auth-userid/api-key from params before they're logged. includeAuthorizationParams()
+     * adds these to every request, so the debug-level "API REQUEST" log would otherwise leak
+     * ResellerClub credentials on every single call - see the credential leak fixed in #4254 for
+     * the same category of issue on the error path.
+     */
+    private function _redactAuthParams(array $params): array
+    {
+        foreach (['auth-userid', 'api-key'] as $key) {
+            if (isset($params[$key])) {
+                $params[$key] = '***REDACTED***';
+            }
+        }
+
+        return $params;
     }
 
     /**
