@@ -658,10 +658,12 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
             $json = $result->toArray(false);
         } catch (DecodingExceptionInterface $error) {
             // A 2xx response with a non-JSON body (e.g. an HTML error/rate-limit/WAF page) - see #4220 for the same class of issue.
-            $e = new Registrar_Exception("HttpClientException: {$error->getMessage()}.");
-            $this->getLog()->error($e->getMessage());
+            // Symfony's exception message embeds the full request URL, which for a GET request includes
+            // auth-userid/api-key in the query string - never log or surface that, log a fixed message instead.
+            $this->getLog()->error("ResellerClub API response for {$url} could not be decoded as JSON.");
+            $placeholders = [':action:' => $url, ':type:' => 'ResellerClub'];
 
-            throw $e;
+            throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
         }
 
         if (isset($json['status']) && $json['status'] == 'ERROR') {

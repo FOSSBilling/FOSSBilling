@@ -85,6 +85,36 @@ test('a non-JSON response (e.g. an HTML error/rate-limit page) throws a Registra
         ->toThrow(Registrar_Exception::class);
 });
 
+test('a non-JSON response never logs the request URL, since it carries auth-userid and api-key in the query string', function (): void {
+    // CodeRabbit finding on #4254: Symfony's DecodingExceptionInterface message embeds the full
+    // request URL, which for a GET request (as used here) includes ResellerClub credentials in the
+    // query string - the error handler must log a fixed message instead of the raw exception message.
+    // Scoped to error-level messages: the pre-existing debug-level "API REQUEST" log already includes
+    // the full URL for every call, which is a separate, pre-existing issue outside this fix's scope.
+    $logger = new class extends Psr\Log\AbstractLogger {
+        /** @var list<string> */
+        public array $errorMessages = [];
+
+        public function log($level, string|Stringable $message, array $context = []): void
+        {
+            if ($level === Psr\Log\LogLevel::ERROR) {
+                $this->errorMessages[] = (string) $message;
+            }
+        }
+    };
+    $httpClient = new MockHttpClient(fn (): MockResponse => new MockResponse('<html>Rate limit exceeded</html>'));
+    $adapter = createResellerclubAdapter($httpClient);
+    $adapter->setLog($logger);
+
+    expect(fn (): bool => $adapter->isDomaincanBeTransferred(createResellerclubDomain()))
+        ->toThrow(Registrar_Exception::class);
+
+    $logged = implode("\n", $logger->errorMessages);
+    expect($logged)->not->toContain('secret') // the api-key configured in createResellerclubAdapter()
+        ->and($logged)->not->toContain('auth-userid')
+        ->and($logged)->not->toContain('api-key');
+});
+
 test('an error-object response still throws a Registrar_Exception', function (): void {
     $httpClient = new MockHttpClient(fn (): MockResponse => new MockResponse(json_encode([
         'status' => 'ERROR',
