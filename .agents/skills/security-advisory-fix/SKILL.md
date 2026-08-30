@@ -86,8 +86,9 @@ next to the obviously-correct answer, but options that trade real things
 against each other: how much existing behavior or API contract changes, how
 completely the underlying issue closes versus just becoming harder to
 exploit, how much UX or performance cost it adds. Recommend one, but put the
-real choice to the user with `AskUserQuestion` rather than deciding and
-presenting the result as a fait accompli. This matters most exactly when the
+real choice to the user with an explicit question (`AskUserQuestion` in
+Claude Code) rather than deciding and presenting the result as a fait
+accompli. This matters most exactly when the
 strongest fix would change public behavior other things might depend on.
 That's a call the user should get to make deliberately, with the tradeoff
 stated plainly, not discover after the fact in a diff.
@@ -169,6 +170,21 @@ Once the design is settled:
 Open the PR with the same plain, symptom-based naming as the branch. No
 advisory ID anywhere in the title or body either, even once the fix is
 written and the temptation is to just describe what was actually wrong.
+
+Naming carefully doesn't make this disclosure-free: the diff itself, whatever
+it's titled, is now visible to anyone with read access to the repo, before
+the advisory is published. This project's accepted practice is to ship the
+fix that way anyway (a working patch reaching anyone tracking `main`
+immediately outweighs holding it back for a slower private-disclosure
+process), and to hold the advisory's own *publication* for a window
+afterward instead, separately (see Stage 4). That's a real, deliberate
+tradeoff, not an oversight, so don't second-guess it by default. But it's a
+tradeoff made for this project's normal case, not a universal constant. If
+something about this specific advisory argues for more caution than usual
+(an unusually severe impact, a likely well-resourced attacker actively
+watching the repo), or if you're applying this skill somewhere that hasn't
+made this same call, confirm with the user before pushing anything rather
+than assuming the general practice applies unconditionally.
 
 ### Responding to CI and review comments
 
