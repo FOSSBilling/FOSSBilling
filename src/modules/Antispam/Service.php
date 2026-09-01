@@ -60,6 +60,10 @@ class Service implements InjectionAwareInterface
 
     public static function onBeforeClientSignUp(\Box_Event $event): void
     {
+        // Client\Api\Guest::create() already verifies the CAPTCHA before firing
+        // this event, so isSpam() below must not check it again: CAPTCHA
+        // tokens are single-use, and a second siteverify call would fail and
+        // reject every genuine signup.
         $di = $event->getDi();
         $antispamService = $di['mod_service']('Antispam');
         $antispamService->isBlockedIp($event);
@@ -77,6 +81,7 @@ class Service implements InjectionAwareInterface
         $di = $event->getDi();
         $antispamService = $di['mod_service']('Antispam');
         $antispamService->isBlockedIp($event);
+        $antispamService->checkCaptcha($event->getParameters());
         $antispamService->isSpam($event);
         $antispamService->isTemp($event);
     }
@@ -140,8 +145,6 @@ class Service implements InjectionAwareInterface
         ];
 
         $config = $di['mod_config']('Antispam');
-
-        $this->checkCaptcha($params);
 
         if (isset($config['sfs']) && $config['sfs']) {
             $antispamService = $di['mod_service']('Antispam');

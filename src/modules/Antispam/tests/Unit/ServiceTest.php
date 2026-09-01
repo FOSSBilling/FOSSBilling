@@ -49,6 +49,8 @@ test('on before client open ticket checks guest submissions', function (): void 
     $spamCheckerService = Mockery::mock(Box\Mod\Antispam\Service::class);
     $spamCheckerService->shouldReceive('isBlockedIp')
         ->atLeast()->once();
+    $spamCheckerService->shouldReceive('checkCaptcha')
+        ->atLeast()->once();
     $spamCheckerService->shouldReceive('isSpam')
         ->atLeast()->once();
     $spamCheckerService->shouldReceive('isTemp')
@@ -71,6 +73,7 @@ test('on before client open ticket skips client submissions', function (): void 
     $service = new Box\Mod\Antispam\Service();
     $spamCheckerService = Mockery::mock(Box\Mod\Antispam\Service::class);
     $spamCheckerService->shouldReceive('isBlockedIp')->never();
+    $spamCheckerService->shouldReceive('checkCaptcha')->never();
     $spamCheckerService->shouldReceive('isSpam')->never();
     $spamCheckerService->shouldReceive('isTemp')->never();
 
@@ -82,6 +85,27 @@ test('on before client open ticket skips client submissions', function (): void 
         ->andReturn(['author_role' => 'client', 'client_id' => 1]);
 
     $service->onBeforeClientOpenTicket($boxEventMock);
+});
+
+test('is spam does not re-verify the captcha during signup', function (): void {
+    // The signup API already verifies the CAPTCHA before this event fires;
+    // isSpam() re-checking it would fail every signup since CAPTCHA tokens
+    // are single-use.
+    $service = Mockery::mock(Box\Mod\Antispam\Service::class)->makePartial();
+    $service->shouldReceive('checkCaptcha')->never();
+
+    $di = container();
+    $di['mod_config'] = $di->protect(fn (): array => ['sfs' => false]);
+
+    $boxEventMock = Mockery::mock('\Box_Event');
+    $boxEventMock->shouldReceive('getDi')
+        ->atLeast()->once()
+        ->andReturn($di);
+    $boxEventMock->shouldReceive('getParameters')
+        ->atLeast()->once()
+        ->andReturn(['ip' => '1.2.3.4', 'email' => 'test@example.com']);
+
+    $service->isSpam($boxEventMock);
 });
 
 test('is blocked ip ip not blocked', function (): void {
