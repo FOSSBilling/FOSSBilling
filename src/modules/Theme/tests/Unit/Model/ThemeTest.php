@@ -71,7 +71,8 @@ test('preset settings fall back to the shipped .example template when settings_d
     // exercises the fallback directly against the actual shipped file.
     $theme = new Box\Mod\Theme\Model\Theme($existingTheme);
 
-    expect(file_exists(Symfony\Component\Filesystem\Path::join($theme->getPathConfig(), 'settings_data.json')))->toBeFalse();
+    $filesystem = new Symfony\Component\Filesystem\Filesystem();
+    expect($filesystem->exists(Symfony\Component\Filesystem\Path::join($theme->getPathConfig(), 'settings_data.json')))->toBeFalse();
 
     $presets = $theme->getPresetsFromSettingsDataFile();
     expect($presets)->not->toBeEmpty()
