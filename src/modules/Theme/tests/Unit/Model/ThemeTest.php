@@ -66,6 +66,34 @@ test('get preset from settings data file', function () use ($existingTheme): voi
     expect($result)->toBeArray();
 });
 
+test('preset settings fall back to the shipped .example template when settings_data.json is missing', function () use ($existingTheme): void {
+    // A dev checkout can have a real settings_data.json (e.g. from previously saving theme
+    // settings locally), so move it out of the way for the duration of this test rather than
+    // assuming it's absent.
+    $theme = new Box\Mod\Theme\Model\Theme($existingTheme);
+    $filesystem = new Symfony\Component\Filesystem\Filesystem();
+    $realFile = Symfony\Component\Filesystem\Path::join($theme->getPathConfig(), 'settings_data.json');
+    $backupFile = $realFile . '.bak-' . bin2hex(random_bytes(4));
+    $hadRealFile = $filesystem->exists($realFile);
+
+    if ($hadRealFile) {
+        $filesystem->rename($realFile, $backupFile);
+    }
+
+    try {
+        $presets = $theme->getPresetsFromSettingsDataFile();
+        expect($presets)->not->toBeEmpty()
+            ->and($presets)->toHaveKey('Default');
+
+        $default = $theme->getPresetFromSettingsDataFile('Default');
+        expect($default)->toHaveKey('side_menu_dashboard');
+    } finally {
+        if ($hadRealFile) {
+            $filesystem->rename($backupFile, $realFile);
+        }
+    }
+});
+
 test('get url', function () use ($existingTheme): void {
     $theme = new Box\Mod\Theme\Model\Theme($existingTheme);
     $result = $theme->getUrl();

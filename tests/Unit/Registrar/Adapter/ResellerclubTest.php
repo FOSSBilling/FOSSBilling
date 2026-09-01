@@ -64,12 +64,55 @@ test('a bare numeric response (e.g. domains/orderid) is still returned as-is', f
 test('a bare "null" response is not silently treated as a scalar', function (): void {
     // Regression guard for the scalar short-circuit above: json_decode('null') also returns
     // null with no decode error, but null isn't a usable scalar result (e.g. getDomainDetails()
-    // would go on to index it like an array), so it must fall through to toArray() instead.
+    // would go on to index it like an array), so it must fall through to toArray() instead,
+    // which now surfaces as a clean Registrar_Exception rather than a leaked Symfony one.
     $httpClient = new MockHttpClient(fn (): MockResponse => new MockResponse('null'));
     $adapter = createResellerclubAdapter($httpClient);
 
     expect(fn (): bool => $adapter->isDomaincanBeTransferred(createResellerclubDomain()))
-        ->toThrow(Symfony\Component\HttpClient\Exception\JsonException::class);
+        ->toThrow(Registrar_Exception::class);
+});
+
+test('a non-JSON response (e.g. an HTML error/rate-limit page) throws a Registrar_Exception instead of leaking a JsonException', function (): void {
+    // Regression test for FOSSBILLING-N7M: a 2xx response whose body isn't valid JSON at all (an
+    // HTML error page, a WAF block page, a truncated response) made toArray() throw Symfony's raw
+    // JsonException uncaught - only the 4xx/5xx and bare-scalar cases were handled. See #4220 for
+    // the same class of issue fixed elsewhere (PSL download).
+    $httpClient = new MockHttpClient(fn (): MockResponse => new MockResponse('<html>Rate limit exceeded</html>'));
+    $adapter = createResellerclubAdapter($httpClient);
+
+    expect(fn (): bool => $adapter->isDomaincanBeTransferred(createResellerclubDomain()))
+        ->toThrow(Registrar_Exception::class);
+});
+
+test('a non-JSON response never logs the request URL, since it carries auth-userid and api-key in the query string', function (): void {
+    // CodeRabbit finding on #4254: Symfony's DecodingExceptionInterface message embeds the full
+    // request URL, which for a GET request (as used here) includes ResellerClub credentials in the
+    // query string - the error handler must log a fixed message instead of the raw exception message.
+    // Scoped to error-level messages: the pre-existing debug-level "API REQUEST" log already includes
+    // the full URL for every call, which is a separate, pre-existing issue outside this fix's scope.
+    $logger = new class extends Psr\Log\AbstractLogger {
+        /** @var list<string> */
+        public array $errorMessages = [];
+
+        public function log($level, string|Stringable $message, array $context = []): void
+        {
+            if ($level === Psr\Log\LogLevel::ERROR) {
+                $this->errorMessages[] = (string) $message;
+            }
+        }
+    };
+    $httpClient = new MockHttpClient(fn (): MockResponse => new MockResponse('<html>Rate limit exceeded</html>'));
+    $adapter = createResellerclubAdapter($httpClient);
+    $adapter->setLog($logger);
+
+    expect(fn (): bool => $adapter->isDomaincanBeTransferred(createResellerclubDomain()))
+        ->toThrow(Registrar_Exception::class);
+
+    $logged = implode("\n", $logger->errorMessages);
+    expect($logged)->not->toContain('secret') // the api-key configured in createResellerclubAdapter()
+        ->and($logged)->not->toContain('auth-userid')
+        ->and($logged)->not->toContain('api-key');
 });
 
 test('an error-object response still throws a Registrar_Exception', function (): void {
@@ -81,6 +124,36 @@ test('an error-object response still throws a Registrar_Exception', function ():
 
     expect(fn (): bool => $adapter->isDomaincanBeTransferred(createResellerclubDomain()))
         ->toThrow(Registrar_Exception::class);
+});
+
+test('a GET request never logs its auth-userid/api-key in the debug-level "API REQUEST" log', function (): void {
+    // includeAuthorizationParams() appends auth-userid/api-key to every request, and GET requests
+    // put them straight into the query string. _makeRequest() logs that query string at debug
+    // level on every single call (unlike the narrower error-path leak fixed for #4254, which only
+    // covered the JSON-decoding-failure log line), so the debug log must redact both params too.
+    $logger = new class extends Psr\Log\AbstractLogger {
+        /** @var list<string> */
+        public array $debugMessages = [];
+
+        public function log($level, string|Stringable $message, array $context = []): void
+        {
+            if ($level === Psr\Log\LogLevel::DEBUG) {
+                $this->debugMessages[] = (string) $message;
+            }
+        }
+    };
+    $httpClient = new MockHttpClient(fn (): MockResponse => new MockResponse('true'));
+    $adapter = createResellerclubAdapter($httpClient);
+    $adapter->setLog($logger);
+
+    $adapter->isDomaincanBeTransferred(createResellerclubDomain());
+
+    $logged = implode("\n", $logger->debugMessages);
+    expect($logger->debugMessages)->not->toBeEmpty()
+        ->and($logged)->toContain('API REQUEST')
+        ->and($logged)->not->toContain('secret') // the api-key configured in createResellerclubAdapter()
+        ->and($logged)->not->toContain('auth-userid=12345')
+        ->and($logged)->toContain('api-key=');
 });
 
 function createResellerclubTestContact(): Registrar_Domain_Contact

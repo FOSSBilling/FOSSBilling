@@ -139,6 +139,22 @@ class SentryHelper
             // We explicitly set the HTTP client to use the Symfony HTTP client to provide wider support VS their default cURL client.
             'http_client' => $httpClient,
 
+            /*
+             * Every PHP version bump deprecates a fresh batch of constants/casts/signatures, and we don't
+             * control when self-hosted instances upgrade PHP - so on an instance running ahead of our tested
+             * baseline, these fire on effectively every request, forever. `error_reporting(E_ALL)` (see
+             * load.php) means the SDK's ErrorListenerIntegration would otherwise capture E_DEPRECATED same as
+             * any other error. We deliberately keep E_USER_DEPRECATED enabled: that's our own trigger_error()
+             * calls flagging things we should investigate (see Currency\Service::getExchangeRateAPIRates()),
+             * not interpreter noise.
+             *
+             * Deliberately not also excluding E_STRICT: referencing that constant at all triggers its own
+             * "Constant E_STRICT is deprecated" notice as of PHP 8.4, and E_STRICT hasn't been a real error
+             * level PHP ever raises since 8.0 anyway (its cases were folded into E_DEPRECATED/E_WARNING), so
+             * excluding it buys nothing.
+             */
+            'error_types' => E_ALL & ~E_DEPRECATED,
+
             'before_send' => function (Event $event, ?EventHint $hint) use ($serverSoftware): ?Event {
                 $module = null;
                 $theme = null;

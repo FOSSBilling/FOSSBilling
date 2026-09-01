@@ -116,7 +116,12 @@ class Theme
     {
         $cp = $this->getPathSettingsDataFile();
         if (!self::getFilesystem()->exists($cp)) {
-            return [];
+            // Fall back to the shipped template (see install.php) rather than an empty array,
+            // which every template rendering `settings.*` would otherwise crash on.
+            $cp .= '.example';
+            if (!self::getFilesystem()->exists($cp)) {
+                return [];
+            }
         }
 
         $json = self::getFilesystem()->readFile($cp);

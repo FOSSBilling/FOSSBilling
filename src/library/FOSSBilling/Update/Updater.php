@@ -48,6 +48,10 @@ class Updater implements InjectionAwareInterface
     private array $allowedDownloadPrefixes = [
         'https://github.com/FOSSBilling/FOSSBilling/releases/',
         'https://api.github.com/repos/FOSSBilling/FOSSBilling/releases/assets/',
+        // Mirrored on our own IPv6-reachable storage - github.com and api.github.com
+        // have no AAAA record, so IPv6-only hosts can't reach either prefix above.
+        // See https://github.com/FOSSBilling/FOSSBilling/issues/2479.
+        'https://download.fossbilling.org/releases/',
     ];
     private Filesystem $filesystem;
 
