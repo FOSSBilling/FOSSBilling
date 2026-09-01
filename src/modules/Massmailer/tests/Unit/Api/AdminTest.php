@@ -60,7 +60,7 @@ test('update stores normalized filter', function (): void {
 
 test('get_test_client returns the configured test client email', function (): void {
     // Regression test: get_test_client() previously read $client->email directly off the
-    // Client entity returned by ClientService::get(), which fatals since that property is
+    // Client entity returned by ClientService::get(), which throws since that property is
     // private (Client::getEmail() is the accessor) - see the sibling bug in
     // Massmailer\Service::sendMessage(), covered in ServiceTest.php.
     $client = (new Box\Mod\Client\Entity\Client())->setEmail('test-client@example.com');

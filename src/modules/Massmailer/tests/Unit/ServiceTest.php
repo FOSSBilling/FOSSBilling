@@ -40,9 +40,9 @@ function seedReceiverTables(Connection $dbal): void
     $dbal->executeStatement("INSERT INTO client_order (id, client_id, product_id, status) VALUES (1, 1, 10, 'active'), (2, 2, 10, 'suspended'), (3, 3, 11, 'active')");
 }
 
-test('sendMessage builds the mail payload from the client entity without fataling', function (): void {
+test('sendMessage builds the mail payload from the client entity without a fatal error', function (): void {
     // Regression test: sendMessage() previously read $client->email/first_name/last_name
-    // directly off the Client entity returned by ClientService::get(), which fatals since
+    // directly off the Client entity returned by ClientService::get(), which throws since
     // those properties are private (getEmail()/getFirstName()/getLastName() are the
     // accessors) - only reachable in production, since !Environment::isProduction() short-
     // circuits the actual send, but the fatal happens while building $data, before that check.
