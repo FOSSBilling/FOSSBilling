@@ -440,11 +440,9 @@ test('gets all not execute paid items excluding executed and failed', function (
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getAll')
-        ->withArgs(function (string $sql, array $bindings): bool {
-            return str_contains($sql, 'NOT IN (:status_executed, :status_failed)')
-                && $bindings[':status_executed'] === Model_InvoiceItem::STATUS_EXECUTED
-                && $bindings[':status_failed'] === Model_InvoiceItem::STATUS_FAILED;
-        })
+        ->withArgs(fn (string $sql, array $bindings): bool => str_contains($sql, 'NOT IN (:status_executed, :status_failed)')
+            && $bindings[':status_executed'] === Model_InvoiceItem::STATUS_EXECUTED
+            && $bindings[':status_failed'] === Model_InvoiceItem::STATUS_FAILED)
         ->once()
         ->andReturn([]);
 
@@ -461,10 +459,8 @@ test('gets failed items', function (): void {
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getAll')
-        ->withArgs(function (string $sql, array $bindings): bool {
-            return str_contains($sql, 'WHERE status = :status')
-                && $bindings[':status'] === Model_InvoiceItem::STATUS_FAILED;
-        })
+        ->withArgs(fn (string $sql, array $bindings): bool => str_contains($sql, 'WHERE status = :status')
+            && $bindings[':status'] === Model_InvoiceItem::STATUS_FAILED)
         ->once()
         ->andReturn([['id' => 5, 'status' => Model_InvoiceItem::STATUS_FAILED, 'attempts' => 3]]);
 
@@ -518,6 +514,6 @@ test('requeueItem throws when the item is not in a failed state', function (): v
     $di['db'] = $dbMock;
     $service->setDi($di);
 
-    expect(fn () => $service->requeueItem(8))
+    expect(fn (): Model_InvoiceItem => $service->requeueItem(8))
         ->toThrow(FOSSBilling\InformationException::class, 'Invoice item is not in a failed state');
 });

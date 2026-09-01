@@ -297,7 +297,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $admin = $this->di['em']->getRepository(Admin::class)->find((int) $data['to_admin']);
             if ($admin instanceof Admin && $admin->getId() !== null) {
                 $oneStaff = [
-                    'id' => (int) $admin->getId(),
+                    'id' => $admin->getId(),
                     'email' => $admin->getEmail(),
                     'name' => $admin->getName(),
                     'signature' => $admin->getSignature(),

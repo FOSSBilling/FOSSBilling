@@ -84,9 +84,7 @@ class Currency implements ApiArrayInterface, TimestampInterface
 
     public function getConversionRate(): float
     {
-        if ($this->conversionRateFloat === null) {
-            $this->conversionRateFloat = (float) $this->conversionRate;
-        }
+        $this->conversionRateFloat ??= (float) $this->conversionRate;
 
         return $this->conversionRateFloat;
     }

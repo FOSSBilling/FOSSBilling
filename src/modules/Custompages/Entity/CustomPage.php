@@ -48,9 +48,7 @@ class CustomPage implements ApiArrayInterface
     #[ORM\PrePersist]
     public function onPrePersist(): void
     {
-        if ($this->createdAt === null) {
-            $this->createdAt = new \DateTime();
-        }
+        $this->createdAt ??= new \DateTime();
     }
 
     public function toApiArray(): array

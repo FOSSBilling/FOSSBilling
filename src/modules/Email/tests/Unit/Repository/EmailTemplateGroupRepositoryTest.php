@@ -29,7 +29,7 @@ function templateGroupEntityManager(): EntityManager
 test('countTemplatesUsingGroup counts distinct templates per group', function (): void {
     $entityManager = templateGroupEntityManager();
     $metadata = array_map(
-        static fn (string $class): object => $entityManager->getClassMetadata($class),
+        $entityManager->getClassMetadata(...),
         [EmailTemplate::class, EmailTemplateGroup::class],
     );
     (new Doctrine\ORM\Tools\SchemaTool($entityManager))->createSchema($metadata);

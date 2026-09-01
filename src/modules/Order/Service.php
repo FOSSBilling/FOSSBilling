@@ -49,7 +49,7 @@ class Service implements InjectionAwareInterface
 
     public const META_CANCEL_AT_PERIOD_END = 'cancel_at_period_end';
 
-    private const BUILT_IN_SERVICE_TYPES = [
+    private const array BUILT_IN_SERVICE_TYPES = [
         \Box\Mod\Product\Service::CUSTOM,
         \Box\Mod\Product\Service::LICENSE,
         \Box\Mod\Product\Service::DOWNLOADABLE,
@@ -76,27 +76,21 @@ class Service implements InjectionAwareInterface
 
     public function getOrderRepository(): OrderRepository
     {
-        if ($this->orderRepository === null) {
-            $this->orderRepository = $this->di['em']->getRepository(Order::class);
-        }
+        $this->orderRepository ??= $this->di['em']->getRepository(Order::class);
 
         return $this->orderRepository;
     }
 
     public function getOrderMetaRepository(): OrderMetaRepository
     {
-        if ($this->orderMetaRepository === null) {
-            $this->orderMetaRepository = $this->di['em']->getRepository(OrderMeta::class);
-        }
+        $this->orderMetaRepository ??= $this->di['em']->getRepository(OrderMeta::class);
 
         return $this->orderMetaRepository;
     }
 
     public function getOrderStatusRepository(): OrderStatusRepository
     {
-        if ($this->orderStatusRepository === null) {
-            $this->orderStatusRepository = $this->di['em']->getRepository(OrderStatus::class);
-        }
+        $this->orderStatusRepository ??= $this->di['em']->getRepository(OrderStatus::class);
 
         return $this->orderStatusRepository;
     }
@@ -511,7 +505,7 @@ class Service implements InjectionAwareInterface
         };
     }
 
-    private const SERVICE_ENTITY_TYPE_MAP = [
+    private const array SERVICE_ENTITY_TYPE_MAP = [
         \Box\Mod\Servicelicense\Entity\ServiceLicense::class => \Box\Mod\Product\Service::LICENSE,
         \Box\Mod\Servicecustom\Entity\ServiceCustom::class => \Box\Mod\Product\Service::CUSTOM,
         \Box\Mod\Serviceapikey\Entity\ServiceApiKey::class => \Box\Mod\Product\Service::APIKEY,

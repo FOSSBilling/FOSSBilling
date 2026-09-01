@@ -45,7 +45,7 @@ class DomainPricingRepository
                 'allow_register' => $tld['allow_register'],
                 'allow_transfer' => $tld['allow_transfer'],
                 'min_years' => $tld['min_years'],
-                'periods' => $tld['periods'] !== null && $tld['periods'] !== '' ? array_map('intval', explode(',', (string) $tld['periods'])) : null,
+                'periods' => $tld['periods'] !== null && $tld['periods'] !== '' ? array_map(intval(...), explode(',', (string) $tld['periods'])) : null,
                 'registrar' => [
                     'id' => $tld['tld_registrar_id'],
                     'title' => $tld['name'],

@@ -138,7 +138,7 @@ class Service implements InjectionAwareInterface
             if ($i++ >= $iterations) {
                 throw new \FOSSBilling\Exception('Maximum number of iterations reached while generating license key');
             }
-        } while ($this->getRepository()->findByLicenseKey($licenseKey) !== null);
+        } while ($this->getRepository()->findByLicenseKey($licenseKey) instanceof ServiceLicense);
 
         $model->setLicenseKey($licenseKey);
         $this->di['em']->flush();
@@ -329,7 +329,7 @@ class Service implements InjectionAwareInterface
         return [];
     }
 
-    public function getOwnerName(ServiceLicense $model)
+    public function getOwnerName(ServiceLicense $model): string
     {
         $clientId = $model->getClientId();
         if ($clientId === null) {
