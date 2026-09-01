@@ -73,7 +73,7 @@ test('preset settings fall back to the shipped .example template when settings_d
     $theme = new Box\Mod\Theme\Model\Theme($existingTheme);
     $filesystem = new Symfony\Component\Filesystem\Filesystem();
     $realFile = Symfony\Component\Filesystem\Path::join($theme->getPathConfig(), 'settings_data.json');
-    $backupFile = $realFile . '.bak';
+    $backupFile = $realFile . '.bak-' . bin2hex(random_bytes(4));
     $hadRealFile = $filesystem->exists($realFile);
 
     if ($hadRealFile) {
