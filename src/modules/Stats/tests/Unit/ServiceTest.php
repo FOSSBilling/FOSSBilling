@@ -70,12 +70,13 @@ test('getSummary counts client rows into the correct day/month buckets on SQLite
     $today = new DateTimeImmutable('today');
     $yesterdayIsSameMonth = $today->modify('-1 day')->format('Y-m') === $today->format('Y-m');
     $expectedThisMonth = 2 + ($yesterdayIsSameMonth ? 1 : 0);
+    $expectedLastMonth = $yesterdayIsSameMonth ? 0 : 1;
 
     expect($result['clients_total'])->toBe(4)
         ->and($result['clients_today'])->toBe(2)
         ->and($result['clients_yesterday'])->toBe(1)
         ->and($result['clients_this_month'])->toBe($expectedThisMonth)
-        ->and($result['clients_last_month'])->toBe(0);
+        ->and($result['clients_last_month'])->toBe($expectedLastMonth);
 });
 
 test('getSummaryIncome sums paid invoices into the correct day bucket on SQLite', function (): void {
