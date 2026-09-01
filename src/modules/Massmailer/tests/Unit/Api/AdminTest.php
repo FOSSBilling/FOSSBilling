@@ -6,6 +6,7 @@ use Box\Mod\Massmailer\Entity\MassmailerMessage;
 use Box\Mod\Massmailer\Repository\MassmailerMessageRepository;
 use FOSSBilling\InformationException;
 
+use function Tests\Helpers\container;
 use function Tests\Helpers\moduleService;
 
 function createMassmailerAdminDi(MassmailerMessage $message, bool $expectFlush = true): Pimple\Container
@@ -55,6 +56,29 @@ test('update stores normalized filter', function (): void {
 
     expect($result)->toBeTrue();
     expect($model->getFilter())->toBe('{"client_status":["active","canceled"],"has_order_with_status":["active","suspended"]}');
+});
+
+test('get_test_client returns the configured test client email', function (): void {
+    // Regression test: get_test_client() previously read $client->email directly off the
+    // Client entity returned by ClientService::get(), which fatals since that property is
+    // private (Client::getEmail() is the accessor) - see the sibling bug in
+    // Massmailer\Service::sendMessage(), covered in ServiceTest.php.
+    $client = (new Box\Mod\Client\Entity\Client())->setEmail('test-client@example.com');
+
+    $clientService = Mockery::mock(Box\Mod\Client\Service::class);
+    $clientService->shouldReceive('get')->with(['id' => 5])->once()->andReturn($client);
+
+    $modMock = Mockery::mock();
+    $modMock->shouldReceive('getConfig')->andReturn(['test_client_id' => 5]);
+
+    $di = container();
+    $di['mod_service'] = $di->protect(moduleService(['client' => $clientService]));
+    $di['mod'] = $di->protect(fn (): Mockery\MockInterface => $modMock);
+
+    $api = apiEndpoint(new Box\Mod\Massmailer\Api\Admin());
+    $api->setDi($di);
+
+    expect($api->get_test_client())->toBe('test-client@example.com');
 });
 
 test('update rejects invalid filter', function (): void {

@@ -8,6 +8,8 @@ use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
 use FOSSBilling\InformationException;
 
+use function Tests\Helpers\moduleService;
+
 function createMassmailerDi(?Connection $dbal = null): Pimple\Container
 {
     $di = new Pimple\Container();
@@ -37,6 +39,41 @@ function seedReceiverTables(Connection $dbal): void
     $dbal->executeStatement("INSERT INTO client (id, status, client_group_id) VALUES (1, 'active', 1), (2, 'canceled', 1), (3, 'active', 2)");
     $dbal->executeStatement("INSERT INTO client_order (id, client_id, product_id, status) VALUES (1, 1, 10, 'active'), (2, 2, 10, 'suspended'), (3, 3, 11, 'active')");
 }
+
+test('sendMessage builds the mail payload from the client entity without fataling', function (): void {
+    // Regression test: sendMessage() previously read $client->email/first_name/last_name
+    // directly off the Client entity returned by ClientService::get(), which fatals since
+    // those properties are private (getEmail()/getFirstName()/getLastName() are the
+    // accessors) - only reachable in production, since !Environment::isProduction() short-
+    // circuits the actual send, but the fatal happens while building $data, before that check.
+    $client = (new Box\Mod\Client\Entity\Client())
+        ->setEmail('client@example.com')
+        ->setFirstName('Jane')
+        ->setLastName('Doe');
+
+    $clientService = Mockery::mock(Box\Mod\Client\Service::class);
+    $clientService->shouldReceive('get')->with(['id' => 5])->twice()->andReturn($client);
+    $clientService->shouldReceive('toApiArray')->with($client, true, null)->once()->andReturn([]);
+
+    $systemService = Mockery::mock(Box\Mod\System\Service::class);
+    $systemService->shouldReceive('renderEmailTplString')->twice()->andReturn('');
+
+    $extensionService = Mockery::mock(Box\Mod\Extension\Service::class);
+    $extensionService->shouldReceive('isExtensionActive')->with('mod', 'demo')->once()->andReturn(false);
+
+    $model = (new MassmailerMessage())->setSubject('subject')->setContent('content');
+
+    $service = new Box\Mod\Massmailer\Service();
+    $di = createMassmailerDi();
+    $di['mod_service'] = $di->protect(moduleService([
+        'client' => $clientService,
+        'system' => $systemService,
+        'extension' => $extensionService,
+    ]));
+    $service->setDi($di);
+
+    expect($service->sendMessage($model, 5))->toBeTrue();
+});
 
 test('normalize filter returns canonical enum values', function (): void {
     $service = new Box\Mod\Massmailer\Service();

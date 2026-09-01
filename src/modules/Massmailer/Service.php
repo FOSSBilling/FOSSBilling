@@ -234,8 +234,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $client = $clientService->get(['id' => $client_id]);
 
         $data = [
-            'to' => $client->email,
-            'to_name' => $client->first_name . ' ' . $client->last_name,
+            'to' => $client->getEmail(),
+            'to_name' => $client->getFirstName() . ' ' . $client->getLastName(),
             'from' => $model->getFromEmail(),
             'from_name' => $model->getFromName(),
             'subject' => $ps,
