@@ -440,12 +440,12 @@ class Payment_Adapter_Stripe implements FOSSBilling\Container\InjectionAwareInte
 
             $clientService->addFunds($client, $bd['amount'], $bd['description'], $bd);
 
-            if ($tx->getInvoice() && $invoice && !$invoiceService->isInvoiceTypeDeposit($invoice)) {
+            if ($tx->getInvoice() instanceof \Box\Mod\Invoice\Entity\Invoice && $invoice instanceof \Box\Mod\Invoice\Entity\Invoice && !$invoiceService->isInvoiceTypeDeposit($invoice)) {
                 if (!$invoice->isApproved()) {
                     $invoiceService->approveInvoice($invoice, ['use_credits' => false]);
                 }
                 $invoiceService->payInvoiceWithCredits($invoice);
-            } elseif ($tx->getInvoice() && $invoice && $invoiceService->isInvoiceTypeDeposit($invoice)) {
+            } elseif ($tx->getInvoice() instanceof \Box\Mod\Invoice\Entity\Invoice && $invoice instanceof \Box\Mod\Invoice\Entity\Invoice && $invoiceService->isInvoiceTypeDeposit($invoice)) {
                 $invoiceService->markAsPaid($invoice);
             } elseif (!$tx->getInvoice()) {
                 $invoiceService->doBatchPayWithCredits(['client_id' => (int) $client->getId()]);
@@ -1272,12 +1272,12 @@ class Payment_Adapter_Stripe implements FOSSBilling\Container\InjectionAwareInte
 
         $clientService->addFunds($client, $bd['amount'], $bd['description'], $bd);
 
-        if ($tx->getInvoice() && $invoice && !$invoiceService->isInvoiceTypeDeposit($invoice)) {
+        if ($tx->getInvoice() instanceof \Box\Mod\Invoice\Entity\Invoice && $invoice instanceof \Box\Mod\Invoice\Entity\Invoice && !$invoiceService->isInvoiceTypeDeposit($invoice)) {
             if (!$invoice->isApproved()) {
                 $invoiceService->approveInvoice($invoice, ['use_credits' => false]);
             }
             $invoiceService->payInvoiceWithCredits($invoice);
-        } elseif ($tx->getInvoice() && $invoice && $invoiceService->isInvoiceTypeDeposit($invoice)) {
+        } elseif ($tx->getInvoice() instanceof \Box\Mod\Invoice\Entity\Invoice && $invoice instanceof \Box\Mod\Invoice\Entity\Invoice && $invoiceService->isInvoiceTypeDeposit($invoice)) {
             $invoiceService->markAsPaid($invoice);
         } elseif (!$tx->getInvoice()) {
             $invoiceService->doBatchPayWithCredits(['client_id' => (int) $client->getId()]);
