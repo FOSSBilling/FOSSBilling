@@ -21,8 +21,8 @@ use Twig\Extra\Intl\IntlExtension;
 
 class Service implements InjectionAwareInterface
 {
-    private const AMOUNT_PLACEHOLDER = '{amount}';
-    private const MAX_FRACTION_DIGITS = 6;
+    private const string AMOUNT_PLACEHOLDER = '{amount}';
+    private const int MAX_FRACTION_DIGITS = 6;
 
     protected ?\Pimple\Container $di = null;
     protected ?CurrencyRepository $currencyRepository = null;

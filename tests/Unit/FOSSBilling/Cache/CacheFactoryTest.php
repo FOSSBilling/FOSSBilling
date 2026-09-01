@@ -64,7 +64,7 @@ test('defaults to a working filesystem cache when no cache configuration is set'
 });
 
 test('rejects an unsupported cache driver', function (): void {
-    expect(fn () => CacheFactory::createFromConfig(['driver' => 'memory'], 'cache_factory_test', 0, true))
+    expect(fn (): CacheItemPoolInterface => CacheFactory::createFromConfig(['driver' => 'memory'], 'cache_factory_test', 0, true))
         ->toThrow(Exception::class, 'Unsupported cache driver');
 });
 
@@ -91,7 +91,7 @@ test('rejects saving a redis configuration when the redis extension is unavailab
         $this->markTestSkipped('This test requires an environment without the redis/relay extension.');
     }
 
-    expect(fn () => CacheFactory::createFromConfig(
+    expect(fn (): CacheItemPoolInterface => CacheFactory::createFromConfig(
         ['driver' => 'redis', 'redis' => ['host' => '127.0.0.1', 'port' => 6379]],
         'cache_factory_test',
         0,
@@ -104,7 +104,7 @@ test('rejects saving a memcached configuration when the memcached extension is u
         $this->markTestSkipped('This test requires an environment without the memcached extension.');
     }
 
-    expect(fn () => CacheFactory::createFromConfig(
+    expect(fn (): CacheItemPoolInterface => CacheFactory::createFromConfig(
         ['driver' => 'memcached', 'memcached' => ['host' => '127.0.0.1', 'port' => 11211]],
         'cache_factory_test',
         0,
@@ -113,7 +113,7 @@ test('rejects saving a memcached configuration when the memcached extension is u
 });
 
 test('rejects a redis password on a non-loopback host with TLS disabled', function (): void {
-    expect(fn () => CacheFactory::createFromConfig(
+    expect(fn (): CacheItemPoolInterface => CacheFactory::createFromConfig(
         ['driver' => 'redis', 'redis' => ['host' => 'redis.example.com', 'password' => 'secret']],
         'cache_factory_test',
         0,
@@ -125,7 +125,7 @@ test('allows a redis password on a non-loopback host once TLS is enabled', funct
     // Neither the redis/relay extension nor a reachable TLS Redis server is guaranteed here, so
     // this still throws either way - just never the transport-safety exception, proving TLS
     // being enabled was what let it past that specific check.
-    expect(fn () => CacheFactory::createFromConfig(
+    expect(fn (): CacheItemPoolInterface => CacheFactory::createFromConfig(
         ['driver' => 'redis', 'redis' => ['host' => 'redis.example.com', 'password' => 'secret', 'tls' => ['enabled' => true]]],
         'cache_factory_test',
         0,
@@ -134,7 +134,7 @@ test('allows a redis password on a non-loopback host once TLS is enabled', funct
 });
 
 test('rejects a redis password on a non-loopback host when TLS is enabled but peer verification is disabled', function (): void {
-    expect(fn () => CacheFactory::createFromConfig(
+    expect(fn (): CacheItemPoolInterface => CacheFactory::createFromConfig(
         ['driver' => 'redis', 'redis' => ['host' => 'redis.example.com', 'password' => 'secret', 'tls' => ['enabled' => true, 'verify_peer' => false]]],
         'cache_factory_test',
         0,
@@ -143,7 +143,7 @@ test('rejects a redis password on a non-loopback host when TLS is enabled but pe
 });
 
 test('rejects a redis password on a non-loopback host when TLS is enabled but peer name verification is disabled', function (): void {
-    expect(fn () => CacheFactory::createFromConfig(
+    expect(fn (): CacheItemPoolInterface => CacheFactory::createFromConfig(
         ['driver' => 'redis', 'redis' => ['host' => 'redis.example.com', 'password' => 'secret', 'tls' => ['enabled' => true, 'verify_peer_name' => false]]],
         'cache_factory_test',
         0,
@@ -156,7 +156,7 @@ dataset('loopback hosts', ['127.0.0.1', '127.0.0.53', '::1', '[::1]', 'localhost
 test('allows a redis password on a loopback host without TLS', function (string $host): void {
     // Same reasoning as above: this still throws either way, just never the transport-safety
     // exception, proving the loopback host was what let it past that specific check.
-    expect(fn () => CacheFactory::createFromConfig(
+    expect(fn (): CacheItemPoolInterface => CacheFactory::createFromConfig(
         ['driver' => 'redis', 'redis' => ['host' => $host, 'password' => 'secret']],
         'cache_factory_test',
         0,
@@ -165,7 +165,7 @@ test('allows a redis password on a loopback host without TLS', function (string 
 })->with('loopback hosts');
 
 test('allows a redis connection on a non-loopback host with no password regardless of TLS', function (): void {
-    expect(fn () => CacheFactory::createFromConfig(
+    expect(fn (): CacheItemPoolInterface => CacheFactory::createFromConfig(
         ['driver' => 'redis', 'redis' => ['host' => 'redis.example.com']],
         'cache_factory_test',
         0,
@@ -176,7 +176,7 @@ test('allows a redis connection on a non-loopback host with no password regardle
 test('a literal "0" redis password is not treated as unset', function (): void {
     // "0" is falsy in PHP, so empty()/?: would silently drop it. It must still trigger the
     // transport-safety check on a non-loopback host with TLS disabled, same as any other password.
-    expect(fn () => CacheFactory::createFromConfig(
+    expect(fn (): CacheItemPoolInterface => CacheFactory::createFromConfig(
         ['driver' => 'redis', 'redis' => ['host' => 'redis.example.com', 'password' => '0']],
         'cache_factory_test',
         0,
@@ -205,14 +205,14 @@ test('cache pools are isolated per installation instance id', function (): void 
 test('rejects saving a remote cache driver when no installation identifier is configured', function (): void {
     setInstanceId('');
 
-    expect(fn () => CacheFactory::createFromConfig(
+    expect(fn (): CacheItemPoolInterface => CacheFactory::createFromConfig(
         ['driver' => 'redis', 'redis' => ['host' => '127.0.0.1', 'port' => 6379]],
         'cache_factory_test',
         0,
         false,
     ))->toThrow(Exception::class, 'installation identifier');
 
-    expect(fn () => CacheFactory::createFromConfig(
+    expect(fn (): CacheItemPoolInterface => CacheFactory::createFromConfig(
         ['driver' => 'memcached', 'memcached' => ['host' => '127.0.0.1', 'port' => 11211]],
         'cache_factory_test',
         0,

@@ -1258,9 +1258,7 @@ class Service implements InjectionAwareInterface
 
     public function toHostingHpApiArray(\Model_ServiceHostingHp $model, $deep = false, $identity = null): array
     {
-        if (is_null($model->config)) {
-            $model->config = '';
-        }
+        $model->config ??= '';
 
         return [
             'id' => $model->id,

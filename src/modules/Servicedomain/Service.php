@@ -854,7 +854,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $model->periods = array_key_exists('periods', $data) ? $data['periods'] : null;
         $model->allow_register = isset($data['allow_register']) ? (bool) $data['allow_register'] : true;
         $model->allow_transfer = isset($data['allow_transfer']) ? (bool) $data['allow_transfer'] : true;
-        $model->require_transfer_code = isset($data['require_transfer_code']) ? (bool) $data['require_transfer_code'] : false;
+        $model->require_transfer_code = isset($data['require_transfer_code']) && (bool) $data['require_transfer_code'];
         $model->active = isset($data['active']) ? (bool) $data['active'] : true;
         $model->updated_at = date('Y-m-d H:i:s');
         $model->created_at = date('Y-m-d H:i:s');
@@ -938,7 +938,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             return null;
         }
 
-        $years = array_filter(array_map('trim', explode(',', $periods)), fn ($year): bool => $year !== '');
+        $years = array_filter(array_map(trim(...), explode(',', $periods)), fn ($year): bool => $year !== '');
 
         $normalized = [];
         foreach ($years as $year) {
@@ -972,7 +972,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             return null;
         }
 
-        $years = array_unique(array_map('intval', explode(',', (string) $tld->periods)));
+        $years = array_unique(array_map(intval(...), explode(',', (string) $tld->periods)));
         sort($years);
 
         return $years;
@@ -1299,7 +1299,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $secretFields = $this->resolveRegistrarSecretFields($model, $adapterConfiguration);
             foreach ($data['config'] as $key => $value) {
                 $configuration[$key] = in_array($key, $secretFields, true)
-                    ? $this->normalizeRegistrarSecretValue((string) $key, $value, $existingConfiguration[$key] ?? null, $model)
+                    ? $this->normalizeRegistrarSecretValue($key, $value, $existingConfiguration[$key] ?? null, $model)
                     : $value;
             }
 

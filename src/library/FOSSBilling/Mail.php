@@ -20,8 +20,8 @@ use Symfony\Component\Mime\Email;
 class Mail
 {
     private readonly Email $email;
-    private ?string $transport = null;
-    private ?string $dsn = null;
+    private readonly ?string $transport;
+    private readonly ?string $dsn;
 
     /**
      * Constructor for creating an email message. The custom DSN will be used if you either don't provide a transport or use 'custom' for it.

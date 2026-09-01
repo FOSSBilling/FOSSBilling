@@ -476,7 +476,7 @@ test('applyPromo throws exception when cart is empty', function (): void {
     $service = new Service();
     $service->setDi($di);
 
-    expect(fn () => $service->applyPromo($cart, $promo))->toThrow(FOSSBilling\Exception::class);
+    expect(fn (): bool => $service->applyPromo($cart, $promo))->toThrow(FOSSBilling\Exception::class);
 });
 
 test('rm returns true', function (): void {

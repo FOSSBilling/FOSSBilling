@@ -159,9 +159,7 @@ class Box_Period
 
     public function getExpirationTime(?int $now = null): int|false
     {
-        if ($now === null) {
-            $now = time();
-        }
+        $now ??= time();
 
         $shift = match ($this->unit) {
             self::UNIT_DAY => 'days',

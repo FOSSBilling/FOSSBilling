@@ -78,7 +78,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
      *
      * @return true
      */
-    public function sync($data)
+    public function sync($data): bool
     {
         $s = $this->_getService($data);
         $this->getService()->synchronizeDomain($s);

@@ -113,7 +113,7 @@ class Validate
                 return [];
             }
 
-            $validTlds = array_filter($database, fn ($tld): bool => !str_starts_with((string) $tld, '/'));
+            $validTlds = array_filter($database, fn ($tld): bool => !str_starts_with($tld, '/'));
 
             $result = [];
             foreach ($validTlds as $tld) {

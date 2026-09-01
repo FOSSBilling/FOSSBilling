@@ -223,7 +223,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function resetApiKey(Client $client)
+    public function resetApiKey(Client $client): ?string
     {
         $client->setApiToken($this->di['tools']->generatePassword(32));
 

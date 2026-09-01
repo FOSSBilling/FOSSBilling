@@ -133,18 +133,14 @@ class Service implements InjectionAwareInterface
 
     public function getDomainPricingRepository(): DomainPricingRepository
     {
-        if ($this->domainPricingRepository === null) {
-            $this->domainPricingRepository = new DomainPricingRepository($this->getDbalConnection());
-        }
+        $this->domainPricingRepository ??= new DomainPricingRepository($this->getDbalConnection());
 
         return $this->domainPricingRepository;
     }
 
     public function getProductOrderRepository(): ProductOrderRepository
     {
-        if ($this->productOrderRepository === null) {
-            $this->productOrderRepository = new ProductOrderRepository($this->getDbalConnection());
-        }
+        $this->productOrderRepository ??= new ProductOrderRepository($this->getDbalConnection());
 
         return $this->productOrderRepository;
     }

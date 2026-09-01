@@ -183,7 +183,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             $this->getDi()['session']->delete('redirect_uri');
 
             if (!empty($client->getLang())) {
-                $this->getDi()['cookie_queue']->queue(CookieNames::LOCALE, (string) $client->getLang(), strtotime('+1 month'), '/');
+                $this->getDi()['cookie_queue']->queue(CookieNames::LOCALE, $client->getLang(), strtotime('+1 month'), '/');
             }
 
             $this->getDi()['mod_service']('cart')->transferFromOtherSession($oldSession);

@@ -419,12 +419,12 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
             $clientService->addFunds($client, $bd['amount'], $bd['description'], $bd);
 
-            if ($tx->invoice_id && $invoice && !$invoiceService->isInvoiceTypeDeposit($invoice)) {
+            if ($tx->invoice_id && $invoice instanceof Model_Invoice && !$invoiceService->isInvoiceTypeDeposit($invoice)) {
                 if (!$invoice->approved) {
                     $invoiceService->approveInvoice($invoice, ['use_credits' => false]);
                 }
                 $invoiceService->payInvoiceWithCredits($invoice);
-            } elseif ($tx->invoice_id && $invoice && $invoiceService->isInvoiceTypeDeposit($invoice)) {
+            } elseif ($tx->invoice_id && $invoice instanceof Model_Invoice && $invoiceService->isInvoiceTypeDeposit($invoice)) {
                 $invoiceService->markAsPaid($invoice);
             } elseif (!$tx->invoice_id) {
                 $invoiceService->doBatchPayWithCredits(['client_id' => $client->id]);
@@ -692,9 +692,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         // Older Stripe objects predate gateway_id metadata. Resolve them via
         // their local invoice/subscription association so upgrades do not
         // break in-flight payments or existing recurring subscriptions.
-        if ($eventGatewayId === null) {
-            $eventGatewayId = $this->getInvoiceGatewayId($stripeObject->metadata->invoice_id ?? null);
-        }
+        $eventGatewayId ??= $this->getInvoiceGatewayId($stripeObject->metadata->invoice_id ?? null);
 
         if ($eventGatewayId === null && str_starts_with((string) ($event->type ?? ''), 'customer.subscription.')) {
             $eventGatewayId = $this->getLocalSubscriptionGatewayId($stripeObject->id ?? null);
@@ -1274,12 +1272,12 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
         $clientService->addFunds($client, $bd['amount'], $bd['description'], $bd);
 
-        if ($tx->invoice_id && $invoice && !$invoiceService->isInvoiceTypeDeposit($invoice)) {
+        if ($tx->invoice_id && $invoice instanceof Model_Invoice && !$invoiceService->isInvoiceTypeDeposit($invoice)) {
             if (!$invoice->approved) {
                 $invoiceService->approveInvoice($invoice, ['use_credits' => false]);
             }
             $invoiceService->payInvoiceWithCredits($invoice);
-        } elseif ($tx->invoice_id && $invoice && $invoiceService->isInvoiceTypeDeposit($invoice)) {
+        } elseif ($tx->invoice_id && $invoice instanceof Model_Invoice && $invoiceService->isInvoiceTypeDeposit($invoice)) {
             $invoiceService->markAsPaid($invoice);
         } elseif (!$tx->invoice_id) {
             $invoiceService->doBatchPayWithCredits(['client_id' => $client->id]);

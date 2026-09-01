@@ -551,7 +551,7 @@ test('get service custom by order id rejects order owned by another client', fun
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderService);
     $service->setDi($di);
 
-    expect(fn () => $service->getServiceCustomByOrderId(1, 42))
+    expect(fn (): ?\Box\Mod\Servicecustom\Entity\ServiceCustom => $service->getServiceCustomByOrderId(1, 42))
         ->toThrow(FOSSBilling\InformationException::class, 'Order not found');
 });
 
@@ -568,7 +568,7 @@ test('get service custom by order id order service not found exception', functio
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderService);
     $service->setDi($di);
 
-    expect(fn () => $service->getServiceCustomByOrderId(1))
+    expect(fn (): ?\Box\Mod\Servicecustom\Entity\ServiceCustom => $service->getServiceCustomByOrderId(1))
         ->toThrow(Exception::class);
 });
 
@@ -599,7 +599,7 @@ test('get service custom by order id rejects expired order for client context', 
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderService);
     $service->setDi($di);
 
-    expect(fn () => $service->getServiceCustomByOrderId(1, 42))
+    expect(fn (): ?\Box\Mod\Servicecustom\Entity\ServiceCustom => $service->getServiceCustomByOrderId(1, 42))
         ->toThrow(FOSSBilling\InformationException::class, 'Subscription expired');
 });
 

@@ -99,7 +99,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
     /**
      * Retrieve current API key.
      */
-    public function api_key_get($data)
+    public function api_key_get($data): ?string
     {
         $client = $this->getClientEntity();
 

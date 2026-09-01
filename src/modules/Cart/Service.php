@@ -224,10 +224,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    /**
-     * @return Cart
-     */
-    public function getSessionCart(?string $sessionID = null)
+    public function getSessionCart(?string $sessionID = null): Cart
     {
         $sessionID ??= $this->di['session']->getId();
         $cart = $this->getCartRepository()->findBySessionId($sessionID);
@@ -473,7 +470,7 @@ class Service implements InjectionAwareInterface
             $config_main = json_decode($this->cartProductConfig($cartProduct) ?? '', true);
             $domain_name = $config_main['domain_name'] ?? '';
             $allCartProducts = $this->findCartProducts($cart);
-            foreach ((array) $allCartProducts as $cProduct) {
+            foreach ($allCartProducts as $cProduct) {
                 $config = json_decode($this->cartProductConfig($cProduct) ?? '', true);
                 if (isset($config['parent_id']) && $config['parent_id'] == $this->cartProductProductId($cartProduct)) {
                     $domain_name_addon = $config['domain_name'] ?? '';
@@ -911,9 +908,7 @@ class Service implements InjectionAwareInterface
                         ];
                     }
 
-                    if ($master_order === null) {
-                        $master_order = $order;
-                    }
+                    $master_order ??= $order;
 
                     ++$i;
                 }
@@ -1115,11 +1110,9 @@ class Service implements InjectionAwareInterface
         Cart|\Model_Cart|null $cart = null,
         ?array $cartProducts = null,
     ): array {
-        if ($cart === null) {
-            $cart = $cartProduct instanceof CartProduct
-                ? $this->getCartRepository()->find((int) $this->cartProductCartId($cartProduct))
-                : $this->di['db']->findOne('Cart', 'id = ?', [(int) $this->cartProductCartId($cartProduct)]);
-        }
+        $cart ??= $cartProduct instanceof CartProduct
+            ? $this->getCartRepository()->find((int) $this->cartProductCartId($cartProduct))
+            : $this->di['db']->findOne('Cart', 'id = ?', [(int) $this->cartProductCartId($cartProduct)]);
         if (!$cart instanceof Cart && !$cart instanceof \Model_Cart) {
             throw new \FOSSBilling\Exception('Cart not found');
         }

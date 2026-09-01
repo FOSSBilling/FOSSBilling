@@ -226,11 +226,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
     /**
      * Re-queue a failed invoice item for execution by resetting its status and attempt counter.
-     *
-     * @return bool
      */
     #[RequiredParams(['id' => 'Invoice item ID was not passed'])]
-    public function item_requeue($data)
+    public function item_requeue($data): bool
     {
         $this->checkPermissions('invoice', 'manage_invoices');
 

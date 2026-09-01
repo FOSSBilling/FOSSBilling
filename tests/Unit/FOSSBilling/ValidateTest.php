@@ -33,12 +33,12 @@ test('is tld valid falls back gracefully when the PSL download fails at the tran
     ]));
 
     $di = new Pimple\Container();
-    $di['cache'] = fn () => new ArrayAdapter();
-    $di['http_client'] = fn () => $httpClient;
+    $di['cache'] = fn (): ArrayAdapter => new ArrayAdapter();
+    $di['http_client'] = fn (): MockHttpClient => $httpClient;
     $validate->setDi($di);
 
     // Must not let the transport exception bubble up and break the caller (e.g. checkout).
-    expect(fn () => $validate->isTldValid('com'))->not->toThrow(Throwable::class);
+    expect(fn (): bool => $validate->isTldValid('com'))->not->toThrow(Throwable::class);
 
     // Falls back to the simple regex-based check since the PSL couldn't be fetched.
     expect($validate->isTldValid('com'))->toBeTrue();

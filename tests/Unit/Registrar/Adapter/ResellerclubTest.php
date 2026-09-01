@@ -149,7 +149,7 @@ test('an error-object response still throws a Registrar_Exception', function ():
     ])));
     $adapter = createResellerclubAdapter($httpClient);
 
-    expect(fn () => $adapter->isDomaincanBeTransferred(createResellerclubDomain()))
+    expect(fn (): bool => $adapter->isDomaincanBeTransferred(createResellerclubDomain()))
         ->toThrow(Registrar_Exception::class);
 });
 

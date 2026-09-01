@@ -31,7 +31,7 @@ class ServiceBalance implements InjectionAwareInterface
 
     public function getClientBalance(Client|\Model_Client $c): float
     {
-        return (float) $this->clientTotal($c);
+        return $this->clientTotal($c);
     }
 
     public function clientTotal(Client|\Model_Client $c): float
