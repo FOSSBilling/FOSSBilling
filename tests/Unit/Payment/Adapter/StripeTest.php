@@ -1249,8 +1249,11 @@ describe('handleSetupIntentSucceededWebhook', function (): void {
         $di['db'] = $dbMock;
         $this->adapter->setDi($di);
 
+        $apiAdmin = Mockery::mock();
+        $apiAdmin->shouldReceive('invoice_subscription_create')->once()->andReturn(1);
+
         invokePrivateMethod($this->adapter, 'handleSetupIntentSucceededWebhook', [
-            Mockery::mock(),
+            $apiAdmin,
             $tx,
             $event,
             1,
