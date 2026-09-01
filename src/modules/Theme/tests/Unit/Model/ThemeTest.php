@@ -67,19 +67,31 @@ test('get preset from settings data file', function () use ($existingTheme): voi
 });
 
 test('preset settings fall back to the shipped .example template when settings_data.json is missing', function () use ($existingTheme): void {
-    // This dev checkout has no real settings_data.json, only the tracked .example, so this
-    // exercises the fallback directly against the actual shipped file.
+    // A dev checkout can have a real settings_data.json (e.g. from previously saving theme
+    // settings locally), so move it out of the way for the duration of this test rather than
+    // assuming it's absent.
     $theme = new Box\Mod\Theme\Model\Theme($existingTheme);
-
     $filesystem = new Symfony\Component\Filesystem\Filesystem();
-    expect($filesystem->exists(Symfony\Component\Filesystem\Path::join($theme->getPathConfig(), 'settings_data.json')))->toBeFalse();
+    $realFile = Symfony\Component\Filesystem\Path::join($theme->getPathConfig(), 'settings_data.json');
+    $backupFile = $realFile . '.bak';
+    $hadRealFile = $filesystem->exists($realFile);
 
-    $presets = $theme->getPresetsFromSettingsDataFile();
-    expect($presets)->not->toBeEmpty()
-        ->and($presets)->toHaveKey('Default');
+    if ($hadRealFile) {
+        $filesystem->rename($realFile, $backupFile);
+    }
 
-    $default = $theme->getPresetFromSettingsDataFile('Default');
-    expect($default)->toHaveKey('side_menu_dashboard');
+    try {
+        $presets = $theme->getPresetsFromSettingsDataFile();
+        expect($presets)->not->toBeEmpty()
+            ->and($presets)->toHaveKey('Default');
+
+        $default = $theme->getPresetFromSettingsDataFile('Default');
+        expect($default)->toHaveKey('side_menu_dashboard');
+    } finally {
+        if ($hadRealFile) {
+            $filesystem->rename($backupFile, $realFile);
+        }
+    }
 });
 
 test('get url', function () use ($existingTheme): void {
