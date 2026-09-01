@@ -37,9 +37,7 @@ class ServiceTransaction implements InjectionAwareInterface
 
     public function getTransactionRepository(): TransactionRepository
     {
-        if ($this->transactionRepository === null) {
-            $this->transactionRepository = $this->di['em']->getRepository(Transaction::class);
-        }
+        $this->transactionRepository ??= $this->di['em']->getRepository(Transaction::class);
 
         return $this->transactionRepository;
     }

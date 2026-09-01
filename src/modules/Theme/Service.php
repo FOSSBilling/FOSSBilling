@@ -182,9 +182,7 @@ class Service implements InjectionAwareInterface
 
     public function getThemeSettings(Model\Theme $theme, $preset = null)
     {
-        if (is_null($preset)) {
-            $preset = $this->getCurrentThemePreset($theme);
-        }
+        $preset ??= $this->getCurrentThemePreset($theme);
 
         $meta = $this->getExtensionMetaRepository()->findOneByExtensionAndScope('mod_theme', (string) $preset, 'settings', $theme->getName());
         if ($meta instanceof ExtensionMeta) {
