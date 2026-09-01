@@ -138,7 +138,7 @@ class Service implements InjectionAwareInterface
             if ($i++ >= $iterations) {
                 throw new \FOSSBilling\Exception\BaseException('Maximum number of iterations reached while generating license key');
             }
-        } while ($this->getRepository()->findByLicenseKey($licenseKey) instanceof \Box\Mod\Servicelicense\Entity\ServiceLicense);
+        } while ($this->getRepository()->findByLicenseKey($licenseKey) instanceof ServiceLicense);
 
         $model->setLicenseKey($licenseKey);
         $this->di['em']->flush();
