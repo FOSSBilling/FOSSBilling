@@ -755,9 +755,7 @@ class Service implements InjectionAwareInterface
                         ];
                     }
 
-                    if ($master_order === null) {
-                        $master_order = $order;
-                    }
+                    $master_order ??= $order;
 
                     ++$i;
                 }
@@ -968,9 +966,7 @@ class Service implements InjectionAwareInterface
         ?Cart $cart = null,
         ?array $cartProducts = null,
     ): array {
-        if ($cart === null) {
-            $cart = $cartProduct->getCart();
-        }
+        $cart ??= $cartProduct->getCart();
         if (!$cart instanceof Cart) {
             throw new \FOSSBilling\Exception('Cart not found');
         }

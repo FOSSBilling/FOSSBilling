@@ -20,9 +20,7 @@ class Box_EventDispatcher
      */
     public function connect($name, mixed $listener): void
     {
-        if (!isset($this->listeners[$name])) {
-            $this->listeners[$name] = [];
-        }
+        $this->listeners[$name] ??= [];
 
         $this->listeners[$name][] = $listener;
     }
@@ -71,9 +69,7 @@ class Box_EventDispatcher
      */
     public function hasListeners($name): bool
     {
-        if (!isset($this->listeners[$name])) {
-            $this->listeners[$name] = [];
-        }
+        $this->listeners[$name] ??= [];
 
         return (bool) FOSSBilling\Tools::safeCount($this->listeners[$name]);
     }
