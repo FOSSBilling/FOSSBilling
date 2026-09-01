@@ -50,7 +50,7 @@ test('on before client open ticket checks guest submissions', function (): void 
     $spamCheckerService->shouldReceive('isBlockedIp')
         ->atLeast()->once();
     $spamCheckerService->shouldReceive('checkCaptcha')
-        ->atLeast()->once();
+        ->once();
     $spamCheckerService->shouldReceive('isSpam')
         ->atLeast()->once();
     $spamCheckerService->shouldReceive('isTemp')
