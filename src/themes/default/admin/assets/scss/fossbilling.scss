@@ -1,5 +1,6 @@
 @use "flags";
 @use "theme_settings";
+@use "../../../../../../frontend/styles/shared-theme";
 
 .sticky-nav .nav-link {
   color: var(--tblr-body-color) !important;
@@ -281,12 +282,6 @@ body {
 
 .fb-modal-subsection-body {
     padding: 0 0 0.85rem;
-}
-
-.fb-phone-country-code {
-    width: 5.5rem;
-    flex: 0 0 5.5rem;
-    max-width: 5.5rem;
 }
 
 @media (min-width: 992px) {

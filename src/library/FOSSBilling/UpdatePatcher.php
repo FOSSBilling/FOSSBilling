@@ -678,6 +678,7 @@ class UpdatePatcher implements InjectionAwareInterface
             112 => 'patch112',
             113 => 'patch113',
             114 => 'patch114',
+            115 => 'patch115',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -2832,6 +2833,40 @@ class UpdatePatcher implements InjectionAwareInterface
         if ($this->tableHasColumn('admin', 'salt')) {
             $this->executeSql('ALTER TABLE `admin` DROP COLUMN `salt`');
         }
+    }
+
+    private function patch115(): void
+    {
+        // Bundle the shipped themes into one package: admin_default -> default/admin,
+        // huraga -> default/client. Third-party themes are untouched.
+        $filesystem = $this->filesystem;
+
+        $moves = [
+            'admin_default' => Path::join('default', 'admin'),
+            'huraga' => Path::join('default', 'client'),
+        ];
+
+        foreach ($moves as $oldName => $newRelativePath) {
+            $oldPath = Path::join(PATH_THEMES, $oldName);
+            $newPath = Path::join(PATH_THEMES, $newRelativePath);
+
+            if ($filesystem->exists($oldPath) && !$filesystem->exists($newPath)) {
+                $filesystem->mkdir(Path::getDirectory($newPath));
+                $filesystem->rename($oldPath, $newPath);
+            }
+        }
+
+        // Safe/no-op if a row doesn't currently hold the old value.
+        $this->executeSql('UPDATE setting SET value = :new_value WHERE param = :param AND value = :old_value', [
+            'new_value' => 'default/admin',
+            'param' => 'admin_theme',
+            'old_value' => 'admin_default',
+        ]);
+        $this->executeSql('UPDATE setting SET value = :new_value WHERE param = :param AND value = :old_value', [
+            'new_value' => 'default/client',
+            'param' => 'theme',
+            'old_value' => 'huraga',
+        ]);
     }
 
     private function patch114(): void

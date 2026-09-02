@@ -304,7 +304,7 @@ LOCK TABLES `setting` WRITE;
 
 INSERT INTO `setting` (`id`, `param`, `value`, `public`, `category`, `hash`, `created_at`, `updated_at`)
 VALUES
-	(1,'last_patch','114',0,NULL,NULL,NOW(),NOW()),
+	(1,'last_patch','115',0,NULL,NULL,NOW(),NOW()),
 	(2,'company_name','Company Name',0,NULL,NULL,NOW(),NOW()),
 	(3,'company_email','support@yourcompany.com',0,NULL,NULL,NOW(),NOW()),
 	(4,'company_signature','FOSSBilling.org - Client Management, Invoicing and Support Software',0,NULL,NULL,NOW(),NOW()),
@@ -321,7 +321,7 @@ VALUES
 	(15,'invoice_due_days','5',0,NULL,NULL,NOW(),NOW()),
 	(16,'invoice_auto_approval','1',0,NULL,NULL,NOW(),NOW()),
 	(17,'invoice_issue_days_before_expire','14',0,NULL,NULL,NOW(),NOW()),
-	(18,'theme','huraga',0,NULL,NULL,NOW(),NOW()),
+	(18,'theme','default/client',0,NULL,NULL,NOW(),NOW()),
 	(19,'issue_invoice_days_before_expire','7',0,NULL,NULL,NOW(),NOW()),
 	(20,'invoice_refund_logic','credit_note',0,NULL,NULL,NOW(),NOW()),
 	(21,'invoice_cn_series','CN-',0,NULL,NULL,NOW(),NOW()),

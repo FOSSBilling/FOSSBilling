@@ -18,10 +18,10 @@
     "frontend/types/**/*.d.ts",
     "frontend/**/*.ts",
     "frontend/**/*.mts",
-    "src/themes/admin_default/**/*.ts",
-    "src/themes/admin_default/**/*.mts",
-    "src/themes/huraga/**/*.ts",
-    "src/themes/huraga/**/*.mts"
+    "src/themes/default/admin/**/*.ts",
+    "src/themes/default/admin/**/*.mts",
+    "src/themes/default/client/**/*.ts",
+    "src/themes/default/client/**/*.mts"
   ],
   "exclude": [
     "**/assets/build/**",

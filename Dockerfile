@@ -80,14 +80,14 @@ FROM node:${NODE_VERSION}-bookworm-slim AS frontend-assets
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-COPY src/themes/admin_default/package.json src/themes/admin_default/package.json
-COPY src/themes/huraga/package.json src/themes/huraga/package.json
+COPY src/themes/default/admin/package.json src/themes/default/admin/package.json
+COPY src/themes/default/client/package.json src/themes/default/client/package.json
 
 RUN --mount=type=cache,target=/root/.npm npm ci
 
 COPY tsconfig.json ./
-COPY src/themes/admin_default ./src/themes/admin_default
-COPY src/themes/huraga ./src/themes/huraga
+COPY src/themes/default/admin ./src/themes/default/admin
+COPY src/themes/default/client ./src/themes/default/client
 COPY src/modules ./src/modules
 COPY frontend ./frontend
 
@@ -110,8 +110,8 @@ COPY src ./src
 COPY README.md LICENSE ./src/
 COPY --from=php-vendor /app/src/vendor ./src/vendor
 COPY --from=frontend-assets /app/src/public/assets ./src/public/assets
-COPY --from=frontend-assets /app/src/themes/admin_default/assets/build ./src/themes/admin_default/assets/build
-COPY --from=frontend-assets /app/src/themes/huraga/assets/build ./src/themes/huraga/assets/build
+COPY --from=frontend-assets /app/src/themes/default/admin/assets/build ./src/themes/default/admin/assets/build
+COPY --from=frontend-assets /app/src/themes/default/client/assets/build ./src/themes/default/client/assets/build
 
 RUN set -eux; \
   find ./src/modules -type d -name tests -prune -exec rm -rf {} +; \

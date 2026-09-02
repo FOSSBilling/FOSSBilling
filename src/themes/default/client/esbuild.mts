@@ -7,13 +7,13 @@ import {
   prepareThemeBuildDirs,
   sharedLoaders,
   writeAssetManifest,
-} from '../../../frontend/tools/esbuild-helpers.mts';
-import { buildIconSprite } from '../../../frontend/tools/icon-sprite.mts';
+} from '../../../../frontend/tools/esbuild-helpers.mts';
+import { buildIconSprite } from '../../../../frontend/tools/icon-sprite.mts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const isProduction = process.env.NODE_ENV === 'production';
 const purgeSafelist = [/^hide-/, /^iti/];
-const rootDir = resolve(__dirname, '../../..');
+const rootDir = resolve(__dirname, '../../../..');
 const nodeModulesDir = resolve(rootDir, 'node_modules');
 
 async function build() {
@@ -73,10 +73,10 @@ async function build() {
     });
 
     await writeAssetManifest(paths.buildDir, {
-      'build/huraga.js': '/themes/huraga/assets/build/js/huraga.js',
-      'build/vendor.css': '/themes/huraga/assets/build/css/vendor.css',
-      'build/huraga.css': '/themes/huraga/assets/build/css/huraga.css',
-      'build/symbol/icons-sprite.svg': '/themes/huraga/assets/build/symbol/icons-sprite.svg',
+      'build/huraga.js': '/themes/default/client/assets/build/js/huraga.js',
+      'build/vendor.css': '/themes/default/client/assets/build/css/vendor.css',
+      'build/huraga.css': '/themes/default/client/assets/build/css/huraga.css',
+      'build/symbol/icons-sprite.svg': '/themes/default/client/assets/build/symbol/icons-sprite.svg',
     });
 
     const duration = ((Date.now() - startTime) / 1000).toFixed(2);

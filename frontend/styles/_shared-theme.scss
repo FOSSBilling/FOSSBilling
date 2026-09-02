@@ -1,0 +1,10 @@
+// Rules genuinely identical between the default admin and client themes.
+// Deliberately small and conservative: most component styling is
+// framework-specific (Tabler vs Bootstrap custom properties) and stays
+// duplicated on purpose rather than forcing a shared abstraction here.
+
+.fb-phone-country-code {
+    width: 5.5rem;
+    flex: 0 0 5.5rem;
+    max-width: 5.5rem;
+}

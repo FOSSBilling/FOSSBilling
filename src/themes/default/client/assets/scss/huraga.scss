@@ -1,4 +1,5 @@
 @use "flags";
+@use "../../../../../../frontend/styles/shared-theme";
 
 html {
     font-size: 1rem;
@@ -145,12 +146,6 @@ body {
     .btn-check:checked + .btn {
         border-color: transparent;
     }
-}
-
-.fb-phone-country-code {
-    width: 5.5rem;
-    flex: 0 0 5.5rem;
-    max-width: 5.5rem;
 }
 
 .iti {

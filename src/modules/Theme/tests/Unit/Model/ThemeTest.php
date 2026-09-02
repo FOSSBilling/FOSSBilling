@@ -10,7 +10,7 @@
 
 declare(strict_types=1);
 
-$existingTheme = 'huraga';
+$existingTheme = 'default/client';
 
 test('get name', function () use ($existingTheme): void {
     $themeModel = new Box\Mod\Theme\Model\Theme($existingTheme);
@@ -22,12 +22,6 @@ test('not existing theme', function (): void {
     expect(function () use ($themeName): void {
         new Box\Mod\Theme\Model\Theme($themeName);
     })->toThrow(FOSSBilling\Exception::class, "Theme '{$themeName}' does not exist.");
-});
-
-test('is admin area theme', function () use ($existingTheme): void {
-    $theme = new Box\Mod\Theme\Model\Theme($existingTheme);
-    $result = $theme->isAdminAreaTheme();
-    expect($result)->toBeBool();
 });
 
 test('is assets path writable', function () use ($existingTheme): void {
@@ -126,4 +120,14 @@ test('get path settings data file', function () use ($existingTheme): void {
     $result = $theme->getPathSettingsDataFile();
     expect($result)->toBeString();
     expect(str_contains($result, 'settings_data.json'))->toBeTrue();
+});
+
+test('a package-shaped name (containing a slash) resolves paths correctly', function (): void {
+    $theme = new Box\Mod\Theme\Model\Theme('default/admin');
+
+    expect($theme->getName())->toBe('default/admin')
+        ->and($theme->getPath())->toBe(Symfony\Component\Filesystem\Path::join(PATH_THEMES, 'default', 'admin'))
+        ->and($theme->getPathHtml())->toBe(Symfony\Component\Filesystem\Path::join(PATH_THEMES, 'default', 'admin', 'html'))
+        ->and($theme->getPathConfig())->toBe(Symfony\Component\Filesystem\Path::join(PATH_THEMES, 'default', 'admin', 'config'))
+        ->and($theme->getUrl())->toContain('default/admin');
 });

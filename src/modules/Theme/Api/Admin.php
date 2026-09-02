@@ -86,21 +86,29 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
-     * Set new theme as default.
+     * Set new theme as default for an area. The caller must state the area
+     * via `client` rather than having it inferred from the theme code, since
+     * a package-shaped code (e.g. `default/admin`) can't be reliably
+     * classified by name alone.
      */
     #[RequiredParams(['code' => 'Theme code was not passed'])]
     public function select($data): bool
     {
         $this->checkPermissions('theme', 'manage');
 
-        $theme = $this->getService()->getTheme($data['code']);
+        if (!array_key_exists('client', $data)) {
+            throw new \FOSSBilling\InformationException('The "client" parameter is required.');
+        }
+        if ($this->isInvalidClientParameter($data['client'])) {
+            throw new \FOSSBilling\InformationException('Invalid "client" parameter.');
+        }
+        $client = Tools::normalizeBoolean($data['client'], true);
+
+        // Confirm the theme actually exists before persisting the selection.
+        $this->getService()->getTheme($data['code']);
 
         $systemService = $this->getDi()['mod_service']('system');
-        if ($theme->isAdminAreaTheme()) {
-            $systemService->setParamValue('admin_theme', $data['code']);
-        } else {
-            $systemService->setParamValue('theme', $data['code']);
-        }
+        $systemService->setParamValue($client ? 'theme' : 'admin_theme', $data['code']);
 
         // Clear theme cache so subsequent calls get the updated theme
         \Box\Mod\Theme\Service::clearThemeCache();
