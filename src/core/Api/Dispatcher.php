@@ -87,7 +87,8 @@ final class Dispatcher implements InjectionAwareInterface
         $api->setDi($this->di);
         $api->setModule($module);
         $api->setIdentity($rawIdentity);
-        $api->setIp($this->getDi()['request']->getClientIp());
+        // CLI contexts (cron, IPN) have no REMOTE_ADDR, so getClientIp() returns null there.
+        $api->setIp($this->getDi()['request']->getClientIp() ?? '');
         if ($module->hasService()) {
             $api->setService($this->getDi()['mod_service']($mod));
         }

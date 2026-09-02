@@ -46,7 +46,7 @@ class Reader
      */
     public static function getCountryDatabase(): string
     {
-        return Path::join(PATH_LIBRARY, 'FOSSBilling', 'GeoIP', 'Databases', 'CC0-Country.mmdb');
+        return Path::join(PATH_CORE, 'GeoIP', 'Databases', 'CC0-Country.mmdb');
     }
 
     /**
@@ -54,7 +54,7 @@ class Reader
      */
     public static function getAsnDatabase(): string
     {
-        return Path::join(PATH_LIBRARY, 'FOSSBilling', 'GeoIP', 'Databases', 'PDDL-ASN.mmdb');
+        return Path::join(PATH_CORE, 'GeoIP', 'Databases', 'PDDL-ASN.mmdb');
     }
 
     /**
