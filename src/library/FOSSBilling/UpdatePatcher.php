@@ -190,6 +190,12 @@ class UpdatePatcher implements InjectionAwareInterface
             }
         }
 
+        // Portable (plain UPDATE ... WHERE, no MySQL-specific syntax) and idempotent, so it
+        // runs on every platform rather than being folded into the MySQL-only patch loop above -
+        // a PostgreSQL/SQLite install predating this change never runs patch115() at all, and
+        // would otherwise be left with an unrenamed theme and orphaned saved settings forever.
+        $this->migrateThemePackageLayout();
+
         // Additive structural sync runs on every platform, MySQL/MariaDB included: it picks up any
         // column/table/index that's on entity metadata but not yet applied, without needing a
         // hand-written patch for it - the only mechanism at all on PostgreSQL/SQLite, and on
@@ -2837,36 +2843,73 @@ class UpdatePatcher implements InjectionAwareInterface
 
     private function patch115(): void
     {
-        // Bundle the shipped themes into one package: admin_default -> default/admin,
-        // huraga -> default/client. Third-party themes are untouched.
+        $this->migrateThemePackageLayout();
+    }
+
+    /**
+     * Bundles the shipped themes into one package: admin_default -> default/admin,
+     * huraga -> default/client. Third-party themes are untouched.
+     *
+     * Unlike the raw-DDL patches above, this is plain, portable SQL (no backticks,
+     * ENGINE=, or ON DUPLICATE KEY UPDATE) and a filesystem rename - neither is
+     * MySQL-specific, so this is called both from patch115() (for MySQL/MariaDB's
+     * sequential patch-level bookkeeping) and unconditionally from
+     * applyCorePatches() below, so PostgreSQL/SQLite installs - which never run the
+     * patchNNN() loop at all - still get migrated. Every step is idempotent, so
+     * running it twice on a MySQL/MariaDB install (once via patch115(), once via
+     * the unconditional call) is a harmless no-op the second time.
+     */
+    private function migrateThemePackageLayout(): void
+    {
         $filesystem = $this->filesystem;
 
-        $moves = [
-            'admin_default' => Path::join('default', 'admin'),
-            'huraga' => Path::join('default', 'client'),
+        // Each shipped theme's old code, new code, and the setting param that selects it.
+        $renames = [
+            'admin_default' => ['newCode' => 'default/admin', 'settingParam' => 'admin_theme'],
+            'huraga' => ['newCode' => 'default/client', 'settingParam' => 'theme'],
         ];
 
-        foreach ($moves as $oldName => $newRelativePath) {
-            $oldPath = Path::join(PATH_THEMES, $oldName);
-            $newPath = Path::join(PATH_THEMES, $newRelativePath);
+        foreach ($renames as $oldCode => $rename) {
+            $oldPath = Path::join(PATH_THEMES, $oldCode);
+            $newPath = Path::join(PATH_THEMES, $rename['newCode']);
 
             if ($filesystem->exists($oldPath) && !$filesystem->exists($newPath)) {
                 $filesystem->mkdir(Path::getDirectory($newPath));
                 $filesystem->rename($oldPath, $newPath);
             }
-        }
 
-        // Safe/no-op if a row doesn't currently hold the old value.
-        $this->executeSql('UPDATE setting SET value = :new_value WHERE param = :param AND value = :old_value', [
-            'new_value' => 'default/admin',
-            'param' => 'admin_theme',
-            'old_value' => 'admin_default',
-        ]);
-        $this->executeSql('UPDATE setting SET value = :new_value WHERE param = :param AND value = :old_value', [
-            'new_value' => 'default/client',
-            'param' => 'theme',
-            'old_value' => 'huraga',
-        ]);
+            // A code-only deploy (e.g. `git pull`) already moves every tracked file via the
+            // checkout itself, before this ever runs - the rename above then finds $newPath
+            // already there and skips. What's left behind at $oldPath at that point is only
+            // ever gitignored leftovers (a rebuilt assets/build/, huraga's regenerable
+            // config/settings_data.json cache - the setting it holds is now in the database,
+            // migrated below), never the theme's real tracked content, so it's safe to discard
+            // outright once $newPath confirms the theme is available at its new home.
+            if ($filesystem->exists($oldPath) && $filesystem->exists($newPath)) {
+                $filesystem->remove($oldPath);
+            }
+
+            // Safe/no-op if the row doesn't currently hold the old value.
+            $this->executeSql('UPDATE setting SET value = :new_value WHERE param = :param AND value = :old_value', [
+                'new_value' => $rename['newCode'],
+                'param' => $rename['settingParam'],
+                'old_value' => $oldCode,
+            ]);
+
+            // Saved theme settings/presets live in extension_meta, keyed by the theme's
+            // name string (Theme\Service::updateSettings()/setCurrentThemePreset()) -
+            // 'settings' rows in rel_id, the 'preset'/'current' row in meta_key. Without
+            // this, a staff member's customized theme settings would silently fall back
+            // to the shipped defaults once the theme is renamed.
+            $this->executeSql("UPDATE extension_meta SET rel_id = :new_code WHERE extension = 'mod_theme' AND rel_type = 'settings' AND rel_id = :old_code", [
+                'new_code' => $rename['newCode'],
+                'old_code' => $oldCode,
+            ]);
+            $this->executeSql("UPDATE extension_meta SET meta_key = :new_code WHERE extension = 'mod_theme' AND rel_type = 'preset' AND rel_id = 'current' AND meta_key = :old_code", [
+                'new_code' => $rename['newCode'],
+                'old_code' => $oldCode,
+            ]);
+        }
     }
 
     private function patch114(): void

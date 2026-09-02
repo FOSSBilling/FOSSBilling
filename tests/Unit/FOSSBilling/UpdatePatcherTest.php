@@ -1237,10 +1237,37 @@ function withDbDriverConfig(array $dbConfig, Closure $callback): void
     }
 }
 
+/**
+ * A PDOStatement stub whose execute() always succeeds, for tests that don't care about the
+ * theme-migration calls' specific SQL/params - only that they don't blow up an otherwise
+ * unrelated PDO mock, since migrateThemePackageLayout() now runs unconditionally regardless of
+ * driver (see the dedicated tests above asserting its exact SQL/params).
+ */
+function mockPdoAllowingThemeMigrationCalls(): Mockery\MockInterface
+{
+    $statement = Mockery::mock(PDOStatement::class);
+    $statement->shouldReceive('execute')->andReturnTrue();
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->shouldReceive('prepare')
+        ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'UPDATE setting') || str_starts_with($sql, 'UPDATE extension_meta')))
+        ->andReturn($statement);
+
+    return $pdo;
+}
+
 test('applyCorePatches never runs a legacy MySQL patch on a non-MySQL driver, even if the patch level looks stale', function (): void {
     withNonMysqlDbDriver(function (): void {
+        // migrateThemePackageLayout() is portable (plain UPDATE ... WHERE, no backticks/DDL) and
+        // runs unconditionally regardless of driver - see the test below. Accept only that shape
+        // here; anything else (backtick-quoted identifiers, ALTER TABLE, SHOW COLUMNS, ...) would
+        // mean a legacy MySQL-only patch ran, which this test exists to catch.
+        $statement = Mockery::mock(PDOStatement::class);
+        $statement->shouldReceive('execute')->andReturn(true);
         $pdo = Mockery::mock(PDO::class);
-        $pdo->shouldNotReceive('prepare');
+        $pdo->shouldReceive('prepare')
+            ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'UPDATE setting') || str_starts_with($sql, 'UPDATE extension_meta')))
+            ->andReturn($statement);
         $pdo->shouldNotReceive('query');
 
         $di = new Pimple\Container();
@@ -1253,7 +1280,152 @@ test('applyCorePatches never runs a legacy MySQL patch on a non-MySQL driver, ev
         // force: true is exactly the path finalizeUpdateLocked() calls unconditionally on every
         // request when finalization state is missing/stale - this must never touch the database
         // via a legacy MySQL-only patch. With no entity manager in $di, there is also nothing for
-        // the portable schema sync to run against, so this is a full no-op end to end.
+        // the portable schema sync to run against, so this is a full no-op end to end beyond the
+        // portable theme-migration calls asserted above.
+        $patcher->applyCorePatches(force: true);
+    });
+});
+
+test('migrateThemePackageLayout renames admin_default/huraga when only the old directory exists', function (): void {
+    $adminDefault = Path::join(PATH_THEMES, 'admin_default');
+    $huraga = Path::join(PATH_THEMES, 'huraga');
+    $defaultAdmin = Path::join(PATH_THEMES, 'default', 'admin');
+    $defaultClient = Path::join(PATH_THEMES, 'default', 'client');
+
+    $filesystem = Mockery::mock(Filesystem::class);
+    $filesystem->shouldReceive('exists')->with($adminDefault)->andReturnTrue();
+    $filesystem->shouldReceive('exists')->with($huraga)->andReturnTrue();
+    $filesystem->shouldReceive('exists')->with($defaultAdmin)->andReturnFalse();
+    $filesystem->shouldReceive('exists')->with($defaultClient)->andReturnFalse();
+    $filesystem->expects('mkdir')->with(Path::join(PATH_THEMES, 'default'))->twice();
+    $filesystem->expects('rename')->with($adminDefault, $defaultAdmin)->once();
+    $filesystem->expects('rename')->with($huraga, $defaultClient)->once();
+    $filesystem->shouldNotReceive('remove');
+
+    $di = new Pimple\Container();
+    $di['pdo'] = mockPdoAllowingThemeMigrationCalls();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['filesystem'] = $filesystem;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'migrateThemePackageLayout'))->invoke($patcher);
+});
+
+test('migrateThemePackageLayout discards leftover old directories once a code-only deploy already created the new one', function (): void {
+    $adminDefault = Path::join(PATH_THEMES, 'admin_default');
+    $huraga = Path::join(PATH_THEMES, 'huraga');
+    $defaultAdmin = Path::join(PATH_THEMES, 'default', 'admin');
+    $defaultClient = Path::join(PATH_THEMES, 'default', 'client');
+
+    // Simulates a `git pull`/checkout deploy: the tracked files already moved via the checkout
+    // itself, so both old and new paths exist - only gitignored leftovers (rebuilt assets/build/,
+    // huraga's regenerable settings_data.json cache) remain at the old path.
+    $filesystem = Mockery::mock(Filesystem::class);
+    $filesystem->shouldReceive('exists')->with($adminDefault)->andReturnTrue();
+    $filesystem->shouldReceive('exists')->with($huraga)->andReturnTrue();
+    $filesystem->shouldReceive('exists')->with($defaultAdmin)->andReturnTrue();
+    $filesystem->shouldReceive('exists')->with($defaultClient)->andReturnTrue();
+    $filesystem->shouldNotReceive('mkdir');
+    $filesystem->shouldNotReceive('rename');
+    $filesystem->expects('remove')->with($adminDefault)->once();
+    $filesystem->expects('remove')->with($huraga)->once();
+
+    $di = new Pimple\Container();
+    $di['pdo'] = mockPdoAllowingThemeMigrationCalls();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['filesystem'] = $filesystem;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'migrateThemePackageLayout'))->invoke($patcher);
+});
+
+test('migrateThemePackageLayout does nothing on a fresh install where neither old directory ever existed', function (): void {
+    $filesystem = Mockery::mock(Filesystem::class);
+    $filesystem->shouldReceive('exists')->andReturnFalse();
+    $filesystem->shouldNotReceive('mkdir');
+    $filesystem->shouldNotReceive('rename');
+    $filesystem->shouldNotReceive('remove');
+
+    $di = new Pimple\Container();
+    $di['pdo'] = mockPdoAllowingThemeMigrationCalls();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['filesystem'] = $filesystem;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'migrateThemePackageLayout'))->invoke($patcher);
+});
+
+test('applyCorePatches migrates the theme setting values on a non-MySQL driver, since patch115 never runs there', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        $adminThemeStatement = Mockery::mock(PDOStatement::class);
+        $adminThemeStatement->expects('execute')
+            ->with(['new_value' => 'default/admin', 'param' => 'admin_theme', 'old_value' => 'admin_default'])
+            ->andReturnTrue();
+        $clientThemeStatement = Mockery::mock(PDOStatement::class);
+        $clientThemeStatement->expects('execute')
+            ->with(['new_value' => 'default/client', 'param' => 'theme', 'old_value' => 'huraga'])
+            ->andReturnTrue();
+        $extensionMetaStatement = Mockery::mock(PDOStatement::class);
+        $extensionMetaStatement->shouldReceive('execute')->andReturnTrue();
+
+        $pdo = Mockery::mock(PDO::class);
+        $pdo->expects('prepare')
+            ->with('UPDATE setting SET value = :new_value WHERE param = :param AND value = :old_value')
+            ->twice()
+            ->andReturn($adminThemeStatement, $clientThemeStatement);
+        $pdo->shouldReceive('prepare')
+            ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'UPDATE extension_meta')))
+            ->andReturn($extensionMetaStatement);
+
+        $di = new Pimple\Container();
+        $di['pdo'] = $pdo;
+        $di['logger'] = new Tests\Helpers\TestLogger();
+
+        $patcher = new UpdatePatcher();
+        $patcher->setDi($di);
+
+        $patcher->applyCorePatches(force: true);
+    });
+});
+
+test('applyCorePatches migrates saved theme settings/presets in extension_meta on a non-MySQL driver', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        // rel_id/meta_key rename runs once per theme (admin_default, then huraga), so each SQL
+        // text is prepared twice - once per code pair, each with its own params.
+        $settingsAdmin = Mockery::mock(PDOStatement::class);
+        $settingsAdmin->expects('execute')->with(['new_code' => 'default/admin', 'old_code' => 'admin_default'])->andReturnTrue();
+        $settingsClient = Mockery::mock(PDOStatement::class);
+        $settingsClient->expects('execute')->with(['new_code' => 'default/client', 'old_code' => 'huraga'])->andReturnTrue();
+        $presetAdmin = Mockery::mock(PDOStatement::class);
+        $presetAdmin->expects('execute')->with(['new_code' => 'default/admin', 'old_code' => 'admin_default'])->andReturnTrue();
+        $presetClient = Mockery::mock(PDOStatement::class);
+        $presetClient->expects('execute')->with(['new_code' => 'default/client', 'old_code' => 'huraga'])->andReturnTrue();
+        $otherStatement = Mockery::mock(PDOStatement::class);
+        $otherStatement->shouldReceive('execute')->andReturnTrue();
+
+        $pdo = Mockery::mock(PDO::class);
+        $pdo->expects('prepare')
+            ->with("UPDATE extension_meta SET rel_id = :new_code WHERE extension = 'mod_theme' AND rel_type = 'settings' AND rel_id = :old_code")
+            ->twice()
+            ->andReturn($settingsAdmin, $settingsClient);
+        $pdo->expects('prepare')
+            ->with("UPDATE extension_meta SET meta_key = :new_code WHERE extension = 'mod_theme' AND rel_type = 'preset' AND rel_id = 'current' AND meta_key = :old_code")
+            ->twice()
+            ->andReturn($presetAdmin, $presetClient);
+        $pdo->shouldReceive('prepare')
+            ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'UPDATE setting')))
+            ->andReturn($otherStatement);
+
+        $di = new Pimple\Container();
+        $di['pdo'] = $pdo;
+        $di['logger'] = new Tests\Helpers\TestLogger();
+
+        $patcher = new UpdatePatcher();
+        $patcher->setDi($di);
+
         $patcher->applyCorePatches(force: true);
     });
 });
@@ -1270,9 +1442,7 @@ test('applyCorePatches runs a portable schema sync instead of legacy patches on 
         // unlike an extension's own table - see the gating tests further down.
         $connection->executeStatement('DROP TABLE currency');
 
-        $pdo = Mockery::mock(PDO::class);
-        $pdo->shouldNotReceive('prepare');
-        $pdo->shouldNotReceive('query');
+        $pdo = mockPdoAllowingThemeMigrationCalls();
 
         $di = new Pimple\Container();
         $di['pdo'] = $pdo;
@@ -1303,7 +1473,7 @@ test('applyCorePatches also runs a portable schema sync after legacy patches on 
         $statement->shouldReceive('execute')->once()->andReturn(true);
         $statement->shouldReceive('fetchColumn')->once()->andReturn((string) $latestPatchLevel);
 
-        $pdo = Mockery::mock(PDO::class);
+        $pdo = mockPdoAllowingThemeMigrationCalls();
         $pdo->shouldReceive('prepare')->once()->andReturn($statement);
 
         $di = new Pimple\Container();
@@ -1335,8 +1505,7 @@ test('applyCorePatches never recreates an inactive extension\'s table via the am
         // extensions, so a fresh install never creates its table - nothing here to "predate".
         expect($connection->createSchemaManager()->tablesExist(['custom_pages']))->toBeFalse();
 
-        $pdo = Mockery::mock(PDO::class);
-        $pdo->shouldNotReceive('prepare');
+        $pdo = mockPdoAllowingThemeMigrationCalls();
         $pdo->shouldNotReceive('query');
 
         $di = new Pimple\Container();
@@ -1366,8 +1535,7 @@ test('applyCorePatches does resync an extension\'s table once it is marked insta
         $connection->executeStatement("INSERT INTO extension (type, name, status, version) VALUES ('mod', 'custompages', 'installed', '1.0.0')");
         $connection->executeStatement('DROP TABLE custom_pages');
 
-        $pdo = Mockery::mock(PDO::class);
-        $pdo->shouldNotReceive('prepare');
+        $pdo = mockPdoAllowingThemeMigrationCalls();
         $pdo->shouldNotReceive('query');
 
         $di = new Pimple\Container();
@@ -1401,8 +1569,7 @@ test('applyCorePatches logs, rather than throws, when scope discovery itself fai
         ]);
         $entityManager = FOSSBilling\Doctrine\EntityManagerFactory::create($brokenConnection);
 
-        $pdo = Mockery::mock(PDO::class);
-        $pdo->shouldNotReceive('prepare');
+        $pdo = mockPdoAllowingThemeMigrationCalls();
         $pdo->shouldNotReceive('query');
 
         $logger = new Tests\Helpers\TestLogger();
