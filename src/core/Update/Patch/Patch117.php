@@ -18,12 +18,9 @@ class Patch117 implements PatchInterface
 {
     public function apply(Patcher $patcher): void
     {
-        // The FOSSBilling\Core\ classes moved from library/FOSSBilling to core/ (see commit
-        // "Move src/library/FOSSBilling to src/core"). Patch116 already deleted the
-        // loose files orphaned by the earlier in-directory reorg; everything that
-        // remains under library/FOSSBilling is now obsolete, so delete the whole
-        // tree. The PSR-0 adapter layer (library/Payment, library/Registrar,
-        // library/Server) and TranslationFunctions.php stay.
+        // library/FOSSBilling moved to core/ in 58cd89d61. Patch116 already removed the
+        // in-directory reorg orphans; everything left here is obsolete. The PSR-0 adapter
+        // layer (Payment/Registrar/Server) and TranslationFunctions.php stay.
         $patcher->executeFileActions([
             Path::join(PATH_LIBRARY, 'FOSSBilling') => 'unlink',
         ]);
