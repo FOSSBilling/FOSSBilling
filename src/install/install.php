@@ -32,6 +32,7 @@ ini_set('error_log', 'php_error.log');
 // Define required paths.
 define('PATH_ROOT', dirname(__DIR__));
 define('PATH_LIBRARY', PATH_ROOT . DIRECTORY_SEPARATOR . 'library');
+define('PATH_CORE', PATH_ROOT . DIRECTORY_SEPARATOR . 'core');
 define('PATH_VENDOR', PATH_ROOT . DIRECTORY_SEPARATOR . 'vendor');
 
 // Check vendor folder exists and load Composer autoloader.

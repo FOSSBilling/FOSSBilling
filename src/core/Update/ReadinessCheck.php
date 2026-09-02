@@ -61,6 +61,7 @@ final readonly class ReadinessCheck
             Path::join($this->pathData, 'log') => 'data/log/',
             Path::join($this->pathData, 'uploads') => 'data/uploads/',
             Path::join($this->pathRoot, 'vendor') => 'vendor/ (extraction overwrites Composer dependencies)',
+            Path::join($this->pathRoot, 'core') => 'core/',
             Path::join($this->pathRoot, 'library') => 'library/',
             Path::join($this->pathRoot, 'modules') => 'modules/',
             Path::join($this->pathRoot, 'themes') => 'themes/',

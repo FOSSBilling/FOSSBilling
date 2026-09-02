@@ -635,7 +635,7 @@
         "package.json",
         "src/library/Registrar/**",
         "src/library/Server/Manager/**",
-        "src/library/Box/**",
+        "src/core/**",
         "src/library/Payment/Adapter/**",
         "src/locale/**",
         "src/modules/System/Service.php",

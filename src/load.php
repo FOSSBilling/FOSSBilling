@@ -290,6 +290,7 @@ function preInit(): void
     // Define global paths.
     define('PATH_LIBRARY', Path::join(PATH_ROOT, 'library'));
     require Path::join(PATH_LIBRARY, 'TranslationFunctions.php');
+    define('PATH_CORE', Path::join(PATH_ROOT, 'core'));
     define('PATH_THEMES', Path::join(PATH_ROOT, 'themes'));
     define('PATH_MODS', Path::join(PATH_ROOT, 'modules'));
     define('PATH_LANGS', Path::join(PATH_ROOT, 'locale'));
@@ -302,17 +303,17 @@ function preInit(): void
     define('PATH_CONFIG', Path::join(PATH_ROOT, 'config.php'));
 
     // Load required FOSSBilling libraries.
-    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'ErrorPage.php');
-    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'SentryHelper.php');
-    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'System', 'Environment.php');
-    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'ApiResponseFactory.php');
-    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'ExceptionResponseFactory.php');
-    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'RequestFactory.php');
-    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'ResponseFactory.php');
-    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'RouteDefinition.php');
-    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'RouteMatch.php');
-    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'RouteMatcher.php');
-    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'System', 'Config.php');
+    require Path::join(PATH_CORE, 'Http', 'ErrorPage.php');
+    require Path::join(PATH_CORE, 'SentryHelper.php');
+    require Path::join(PATH_CORE, 'System', 'Environment.php');
+    require Path::join(PATH_CORE, 'Http', 'ApiResponseFactory.php');
+    require Path::join(PATH_CORE, 'Http', 'ExceptionResponseFactory.php');
+    require Path::join(PATH_CORE, 'Http', 'RequestFactory.php');
+    require Path::join(PATH_CORE, 'Http', 'ResponseFactory.php');
+    require Path::join(PATH_CORE, 'Http', 'RouteDefinition.php');
+    require Path::join(PATH_CORE, 'Http', 'RouteMatch.php');
+    require Path::join(PATH_CORE, 'Http', 'RouteMatcher.php');
+    require Path::join(PATH_CORE, 'System', 'Config.php');
 }
 
 /*

@@ -330,7 +330,7 @@ test('rejects update metadata without an API digest', function (): void {
 });
 
 test('isSafeArchiveEntry accepts a normal relative entry', function (): void {
-    expect(Updater::isSafeArchiveEntry('src/library/FOSSBilling/Update.php'))->toBeTrue();
+    expect(Updater::isSafeArchiveEntry('src/core/Update/Updater.php'))->toBeTrue();
 });
 
 test('isSafeArchiveEntry rejects a forward-slash traversal segment', function (): void {

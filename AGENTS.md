@@ -12,20 +12,20 @@ FOSSBilling is a free and open-source billing and client management solution des
     * Use `Filesystem`, `Path`, and `Finder` for filesystem operations instead of native PHP functions (e.g., `$filesystem->exists()` instead of `file_exists()`, `Finder` instead of `glob()`).
   * [Twig](https://twig.symfony.com/): Template engine for rendering views
     * API endpoints are injected as parameters to Twig. See the "Interacting with the FOSSBilling API" section.
-    * Twig environments are created via `TwigFactory` at `src/library/FOSSBilling/Twig/TwigFactory.php`.
+    * Twig environments are created via `TwigFactory` at `src/core/Twig/TwigFactory.php`.
     * Three environment types: **admin**, **client**, and **email** (sandboxed for security).
     * Email templates use a sandboxed environment (`EmailPolicy.php`) that restricts allowed tags/filters/functions.
   * [RedBeanPHP](https://redbeanphp.com/): ORM for database interactions in legacy modules.
   * [Doctrine DBAL/ORM](https://doctrine-project.org/): ORM and DBAL for modern modules.
     * FOSSBilling is in the process of migrating modules and core parts from RedBeanPHP to Doctrine one by one.
-    * The entity manager is available as `$di['em']`. It comes from the EntityManagerFactory in `/src/library/FOSSBilling/Doctrine/EntityManagerFactory.php`.
+    * The entity manager is available as `$di['em']`. It comes from the EntityManagerFactory in `/src/core/Doctrine/EntityManagerFactory.php`.
     * Entities and repositories reside under `/src/modules/*/Entity/{Entity}.php` and `/src/modules/*/Repository/{EntityRepository}.php`.
     * The FOSSBilling project is in the process of gradually phasing out RedBeanPHP in favor of Doctrine ORM.
     * When writing new pieces of code, avoid RedBeanPHP.
     * If you are assisting with the migration from RedBeanPHP to Doctrine, do your best to keep compatibility with the existing table structure.
-    * When refactoring API endpoints, check how the `$di['pager']` works in `src/library/FOSSBilling/Pagination.php`. `paginateDoctrineQuery()` replaces `getPaginatedResultSet()` for entities that implement `ApiArrayInterface`; use `paginateMappedQuery()` when the API shape needs service-context mapping (identity/deep flags, cross-module lookups, joined scalars).
+    * When refactoring API endpoints, check how the `$di['pager']` works in `src/core/Pagination/Service.php`. `paginateDoctrineQuery()` replaces `getPaginatedResultSet()` for entities that implement `ApiArrayInterface`; use `paginateMappedQuery()` when the API shape needs service-context mapping (identity/deep flags, cross-module lookups, joined scalars).
     * Id and foreign-key columns are `Types::BIGINT` almost everywhere (matching `bigint(20)` in `src/install/sql/structure.sql`), typed `?int` on the PHP side, not `int|string`. This is intentional, not an oversight: `Doctrine\DBAL\Types\BigIntType::convertToPHPValue()` only widens to `string` when a value doesn't fit PHP's native `int`, which cannot happen here — MySQL's signed `BIGINT` range matches PHP's native 64-bit `int` range exactly, none of these columns are `UNSIGNED`, and Composer enforces a 64-bit PHP 8.3+ runtime through the `php-64bit` platform requirement. Keep new id/FK columns `Types::BIGINT`/`?int` for consistency, and cross-reference `structure.sql` before ever declaring one `Types::INTEGER` — a narrower id/FK column than the primary key it references is a real bug (see issue #4187), not a cosmetic mismatch.
-  * [Monolog](https://github.com/Seldaek/monolog): Logging framework. Used via `$di['logger']` (`/src/library/FOSSBilling/Monolog.php`).
+  * [Monolog](https://github.com/Seldaek/monolog): Logging framework. Used via `$di['logger']` (`/src/core/Logging/Factory.php`).
   * [dompdf](https://github.com/dompdf/dompdf): PDF generation for invoices and documents
   * [Pimple](https://github.com/silexphp/Pimple): Dependency injection container, see `src/di.php`.
 * **Frontend:** Modern JavaScript and CSS with npm package management. Key dependencies include:
@@ -58,7 +58,7 @@ FOSSBilling follows a modular architecture with clear separation of concerns:
   * **Extension Modules:** Extend FOSSBilling with additional functionality
   * Module templates are organized in `templates/admin/`, `templates/client/`, and `templates/email/` subdirectories.
 * **Themes:** Located in `src/themes/` for customizing the user interface
-* **Libraries:** Core libraries and third-party integrations in `src/library/`
+* **Core framework:** First-party namespaced classes in `src/core/`; legacy PSR-0 adapter layer (`Payment_`, `Registrar_`, `Server_`) in `src/library/`
 * **Public assets:** Located in `src/public/` for public core assets, branding assets, and gateway icons. Generated core browser assets are built into `src/public/assets`.
 * **Configuration:** Environment-specific configurations and dependency injection setup
 
@@ -209,7 +209,7 @@ tests/                         # Pest, live API, and end-to-end test structure
   </svg>
   ```
 
-* Check the available Twig filters and functions in `src/library/FOSSBilling/Twig/Extension/FOSSBillingExtension.php` and `src/library/FOSSBilling/Twig/Extension/LegacyExtension.php`. Use these where applicable.
+* Check the available Twig filters and functions in `src/core/Twig/Extension/FOSSBillingExtension.php` and `src/core/Twig/Extension/LegacyExtension.php`. Use these where applicable.
   * `ApiExtension.php` provides `fb_api`, `fb_api_form`, `fb_api_link` helpers and `|api_url` filter.
   * Twig extensions use PHP 8 attributes (`#[AsTwigFunction]`, `#[AsTwigFilter]`).
   * Use `|asset_url` for current-theme assets and `|public_asset_url` for shared core public assets in `src/public/assets`.

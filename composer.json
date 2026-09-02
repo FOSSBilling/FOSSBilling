@@ -101,7 +101,7 @@
             "Server_": "src/library/"
         },
         "psr-4": {
-            "FOSSBilling\\": "src/library/FOSSBilling/",
+            "FOSSBilling\\": "src/core/",
             "Box\\Mod\\": "src/modules/"
         },
         "classmap": [

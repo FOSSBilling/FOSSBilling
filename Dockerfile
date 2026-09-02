@@ -57,6 +57,7 @@ RUN apt-get update \
 FROM composer-base AS php-vendor
 
 COPY composer.json composer.lock ./
+COPY src/core ./src/core
 COPY src/library ./src/library
 COPY src/modules ./src/modules
 
@@ -68,6 +69,7 @@ RUN --mount=type=cache,target=/tmp/composer-cache,id=composer-prod \
 
 FROM composer-base AS php-dev-vendor
 COPY composer.json composer.lock ./
+COPY src/core ./src/core
 COPY src/library ./src/library
 COPY src/modules ./src/modules
 
@@ -127,8 +129,8 @@ RUN set -eux; \
   FOSSBILLING_VERSION="${FOSSBILLING_VERSION}" \
   FOSSBILLING_VERSION_TRUNCATE="${FOSSBILLING_VERSION_TRUNCATE}" \
   SENTRY_DSN="${SENTRY_DSN}" \
-  php -r '$version = getenv("FOSSBILLING_VERSION") ?: "0.0.1"; $truncate = (int) (getenv("FOSSBILLING_VERSION_TRUNCATE") ?: 0); if ($truncate > 0) { $version = substr($version, 0, $truncate); } $versionFile = "./src/library/FOSSBilling/System/Version.php"; $contents = file_get_contents($versionFile); $quote = chr(39); $pattern = "/public const string VERSION = " . $quote . "[^" . $quote . "]+" . $quote . ";/"; $replacement = "public const string VERSION = " . var_export($version, true) . ";"; $contents = preg_replace($pattern, $replacement, $contents, 1, $count); if ($contents === null || $count !== 1) { fwrite(STDERR, "Failed to replace FOSSBilling version.\n"); exit(1); } file_put_contents($versionFile, $contents); $dsn = getenv("SENTRY_DSN"); if ($dsn !== false && $dsn !== "") { $sentryFile = "./src/library/FOSSBilling/SentryHelper.php"; file_put_contents($sentryFile, str_replace("--replace--this--during--release--process--", $dsn, file_get_contents($sentryFile))); }'; \
-  php -r '$composer = json_decode(file_get_contents("./composer.json"), true, 512, JSON_THROW_ON_ERROR); $composer["autoload"]["psr-4"]["FOSSBilling\\"] = "library/FOSSBilling/"; $composer["autoload"]["psr-4"]["Box\\Mod\\"] = "modules/"; $composer["autoload"]["classmap"] = ["library/"]; $composer["config"]["vendor-dir"] = "vendor"; file_put_contents("./src/composer.json", json_encode($composer, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . PHP_EOL);'; \
+  php -r '$version = getenv("FOSSBILLING_VERSION") ?: "0.0.1"; $truncate = (int) (getenv("FOSSBILLING_VERSION_TRUNCATE") ?: 0); if ($truncate > 0) { $version = substr($version, 0, $truncate); } $versionFile = "./src/core/System/Version.php"; $contents = file_get_contents($versionFile); $quote = chr(39); $pattern = "/public const string VERSION = " . $quote . "[^" . $quote . "]+" . $quote . ";/"; $replacement = "public const string VERSION = " . var_export($version, true) . ";"; $contents = preg_replace($pattern, $replacement, $contents, 1, $count); if ($contents === null || $count !== 1) { fwrite(STDERR, "Failed to replace FOSSBilling version.\n"); exit(1); } file_put_contents($versionFile, $contents); $dsn = getenv("SENTRY_DSN"); if ($dsn !== false && $dsn !== "") { $sentryFile = "./src/core/SentryHelper.php"; file_put_contents($sentryFile, str_replace("--replace--this--during--release--process--", $dsn, file_get_contents($sentryFile))); }'; \
+  php -r '$composer = json_decode(file_get_contents("./composer.json"), true, 512, JSON_THROW_ON_ERROR); $composer["autoload"]["psr-4"]["FOSSBilling\\"] = "core/"; $composer["autoload"]["psr-4"]["Box\\Mod\\"] = "modules/"; $composer["autoload"]["classmap"] = ["library/"]; $composer["config"]["vendor-dir"] = "vendor"; file_put_contents("./src/composer.json", json_encode($composer, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . PHP_EOL);'; \
   composer --no-plugins dump-autoload --working-dir=./src --no-dev --optimize --no-interaction; \
   rm ./composer.json ./src/composer.json; \
   chmod -R u=rwX,go=rX ./src
