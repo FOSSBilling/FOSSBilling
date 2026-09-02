@@ -15,6 +15,20 @@ runs:
       with:
         php-version: ${{ inputs.php-version }}
 
+    # The php-build vendor cache is keyed on composer.lock's hash, which does not
+    # change when only composer.json's autoload config changes. On a cache hit the
+    # install step is skipped entirely, leaving a stale vendor/autoload.php that
+    # can no longer resolve moved/renamed PSR-4 prefixes (e.g. the library-to-core
+    # reorganization), so Rector fatals with "class/trait not found" while loading
+    # analyzed files. Re-dumping the autoloader from the current composer.json
+    # keeps a cached vendor tree consistent with the checked-out sources.
+    - name: Refresh Composer Autoloader
+      uses: php-actions/composer@v6
+      with:
+        command: dump-autoload
+        php_version: ${{ inputs.php-version }}
+        php_extensions: intl
+
     - name: Set up PHP
       uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
       with:
