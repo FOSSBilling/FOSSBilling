@@ -14,7 +14,7 @@ namespace Box\Mod\Support\Repository;
 use Box\Mod\Support\Entity\SupportTicket;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
-use FOSSBilling\Doctrine\SqlExpr;
+use FOSSBilling\Core\Doctrine\SqlExpr;
 
 class SupportTicketRepository extends EntityRepository
 {
@@ -138,7 +138,7 @@ class SupportTicketRepository extends EntityRepository
     {
         $ticket = $this->find($id);
         if (!$ticket instanceof SupportTicket) {
-            throw new \FOSSBilling\Exception\InformationException('Ticket not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Ticket not found');
         }
 
         return $ticket;
@@ -177,7 +177,7 @@ class SupportTicketRepository extends EntityRepository
     {
         $ticket = $this->findOneByClient($clientId, $id);
         if (!$ticket instanceof SupportTicket) {
-            throw new \FOSSBilling\Exception\InformationException('Ticket not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Ticket not found');
         }
 
         return $ticket;

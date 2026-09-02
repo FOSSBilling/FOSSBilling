@@ -9,9 +9,9 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling\System;
+namespace FOSSBilling\Core\System;
 
-use FOSSBilling\Doctrine\DriverManagerFactory;
+use FOSSBilling\Core\Doctrine\DriverManagerFactory;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 

@@ -11,10 +11,10 @@ declare(strict_types=1);
 
 namespace Box\Mod\Client\Controller;
 
-use FOSSBilling\Security\RandomizedTimeFloor;
+use FOSSBilling\Core\Security\RandomizedTimeFloor;
 use Symfony\Component\HttpFoundation\Response;
 
-class Client implements \FOSSBilling\Container\InjectionAwareInterface
+class Client implements \FOSSBilling\Core\Container\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 
@@ -28,7 +28,7 @@ class Client implements \FOSSBilling\Container\InjectionAwareInterface
         return $this->di;
     }
 
-    public function register(\FOSSBilling\Http\App &$app): void
+    public function register(\FOSSBilling\Core\Http\App &$app): void
     {
         $app->get('/client/reset-password-confirm/:hash', 'get_reset_password_confirm', ['hash' => '[a-z0-9]+'], static::class);
         $app->get('/client', 'get_client_index', [], static::class);
@@ -37,14 +37,14 @@ class Client implements \FOSSBilling\Container\InjectionAwareInterface
         $app->get('/client/confirm-email/:hash', 'get_client_confirmation', ['page' => '[a-z0-9-]+'], static::class);
     }
 
-    public function get_client_index(\FOSSBilling\Http\App $app): string
+    public function get_client_index(\FOSSBilling\Core\Http\App $app): string
     {
         $this->di['is_client_logged'];
 
         return $app->render('mod_client_index');
     }
 
-    public function get_client_confirmation(\FOSSBilling\Http\App $app, $hash): string|Response
+    public function get_client_confirmation(\FOSSBilling\Core\Http\App $app, $hash): string|Response
     {
         if ($error = $this->checkPageRateLimit($app, 'client_email_confirm_ip')) {
             return $error;
@@ -65,7 +65,7 @@ class Client implements \FOSSBilling\Container\InjectionAwareInterface
         return $app->redirect('/');
     }
 
-    public function get_client_logout(\FOSSBilling\Http\App $app): Response
+    public function get_client_logout(\FOSSBilling\Core\Http\App $app): Response
     {
         $api = $this->di['api_client'];
         $api->profile_logout();
@@ -73,7 +73,7 @@ class Client implements \FOSSBilling\Container\InjectionAwareInterface
         return $app->redirect('/');
     }
 
-    public function get_client_page(\FOSSBilling\Http\App $app, $page): string
+    public function get_client_page(\FOSSBilling\Core\Http\App $app, $page): string
     {
         $this->di['is_client_logged'];
         $template = 'mod_client_' . $page;
@@ -81,7 +81,7 @@ class Client implements \FOSSBilling\Container\InjectionAwareInterface
         return $app->render($template);
     }
 
-    public function get_reset_password_confirm(\FOSSBilling\Http\App $app, $hash): string|Response
+    public function get_reset_password_confirm(\FOSSBilling\Core\Http\App $app, $hash): string|Response
     {
         if ($error = $this->checkPageRateLimit($app, 'client_password_reset_confirm_ip')) {
             return $error;
@@ -108,7 +108,7 @@ class Client implements \FOSSBilling\Container\InjectionAwareInterface
         return $app->redirect('/');
     }
 
-    private function checkPageRateLimit(\FOSSBilling\Http\App $app, string $policy): ?Response
+    private function checkPageRateLimit(\FOSSBilling\Core\Http\App $app, string $policy): ?Response
     {
         $result = $this->di['rate_limiter']->consume($policy, (string) $this->di['request']->getClientIp());
         if (!$result->isLimited()) {
@@ -120,6 +120,6 @@ class Client implements \FOSSBilling\Container\InjectionAwareInterface
             $headers['Retry-After'] = (string) $result->getRetryAfterSeconds();
         }
 
-        return $app->errorResponse(new \FOSSBilling\Security\RateLimitException($result), 429, $headers);
+        return $app->errorResponse(new \FOSSBilling\Core\Security\RateLimitException($result), 429, $headers);
     }
 }

@@ -9,22 +9,22 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling\Twig;
+namespace FOSSBilling\Core\Twig;
 
 use Box\Mod\Currency\Entity\Currency;
 use DebugBar\Bridge\Twig\NamespacedTwigProfileCollector;
 use DebugBar\StandardDebugBar;
-use FOSSBilling\Http\CookieNames;
-use FOSSBilling\Http\RequestFactory;
-use FOSSBilling\I18n\I18n;
-use FOSSBilling\System\Config;
-use FOSSBilling\System\Version;
-use FOSSBilling\Twig\Extension\ApiExtension;
-use FOSSBilling\Twig\Extension\DebugBarExtension;
-use FOSSBilling\Twig\Extension\FOSSBillingExtension;
-use FOSSBilling\Twig\Extension\LegacyExtension;
-use FOSSBilling\Twig\Markdown\FOSSBillingMarkdown;
-use FOSSBilling\Url;
+use FOSSBilling\Core\Http\CookieNames;
+use FOSSBilling\Core\Http\RequestFactory;
+use FOSSBilling\Core\I18n\I18n;
+use FOSSBilling\Core\System\Config;
+use FOSSBilling\Core\System\Version;
+use FOSSBilling\Core\Twig\Extension\ApiExtension;
+use FOSSBilling\Core\Twig\Extension\DebugBarExtension;
+use FOSSBilling\Core\Twig\Extension\FOSSBillingExtension;
+use FOSSBilling\Core\Twig\Extension\LegacyExtension;
+use FOSSBilling\Core\Twig\Markdown\FOSSBillingMarkdown;
+use FOSSBilling\Core\Url;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Intl\Currencies;
 use Twig\Environment;
@@ -67,7 +67,7 @@ class TwigFactory
         $adminTimezone = null;
 
         $auth = $this->di['auth'] ?? null;
-        if ($auth instanceof \FOSSBilling\Security\Authorization) {
+        if ($auth instanceof \FOSSBilling\Core\Security\Authorization) {
             if ($auth->isClientLoggedIn()) {
                 $client = $this->di['em']->getRepository(\Box\Mod\Client\Entity\Client::class)->find($this->di['session']->get('client_id'));
                 $clientTimezone = $client?->getTimezone();
@@ -289,7 +289,7 @@ class TwigFactory
             $signature = (string) ($this->di['api_guest']->system_company()['signature'] ?? '');
         }
 
-        $sanitizedSignature = \FOSSBilling\HtmlSanitizerFactory::sanitize($signature, 'content');
+        $sanitizedSignature = \FOSSBilling\Core\HtmlSanitizerFactory::sanitize($signature, 'content');
 
         return [
             'signature' => new Markup($sanitizedSignature, 'UTF-8'),
@@ -519,7 +519,7 @@ class TwigFactory
 
     private function configureDebugging(Environment $twig, StandardDebugBar $debugBar): void
     {
-        if (\FOSSBilling\System\Environment::isDevelopment()) {
+        if (\FOSSBilling\Core\System\Environment::isDevelopment()) {
             $profile = new Profile();
             $twig->addExtension(new ProfilerExtension($profile));
             $collector = new NamespacedTwigProfileCollector($profile);

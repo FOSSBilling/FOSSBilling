@@ -11,8 +11,8 @@
 declare(strict_types=1);
 
 use Box\Mod\Theme\Model\Theme;
-use FOSSBilling\HtmlSanitizerFactory;
-use FOSSBilling\Twig\SandboxedStringRenderer;
+use FOSSBilling\Core\HtmlSanitizerFactory;
+use FOSSBilling\Core\Twig\SandboxedStringRenderer;
 use Twig\Environment;
 use Twig\Loader\ArrayLoader;
 use Twig\TwigFilter;
@@ -63,7 +63,7 @@ test('getDi returns dependency injection container', function (): void {
 
 test('register configures routes', function (): void {
     $controller = new Box\Mod\Theme\Controller\Admin();
-    $boxAppMock = Mockery::mock(FOSSBilling\Http\App::class);
+    $boxAppMock = Mockery::mock(FOSSBilling\Core\Http\App::class);
     $boxAppMock->shouldReceive('get')
         ->atLeast()
         ->once();
@@ -78,7 +78,7 @@ test('getTheme renders theme preset', function (): void {
     $controller = new Box\Mod\Theme\Controller\Admin();
     $di = container();
 
-    $boxAppMock = Mockery::mock(FOSSBilling\Http\App::class);
+    $boxAppMock = Mockery::mock(FOSSBilling\Core\Http\App::class);
     $boxAppMock->shouldReceive('render')
         ->atLeast()
         ->once()
@@ -130,7 +130,7 @@ test('getTheme renders theme preset', function (): void {
         ->andReturn([]);
 
     // Create a mod mock that returns the service via getService()
-    $modMock = Mockery::mock(FOSSBilling\Module::class);
+    $modMock = Mockery::mock(FOSSBilling\Core\Module::class);
     $modMock->shouldReceive('getService')
         ->atLeast()
         ->once()
@@ -166,7 +166,7 @@ test('save theme settings reads body from request and strips preset control keys
     $themeServiceMock->shouldReceive('regenerateThemeCssAndJsFiles');
     $themeServiceMock->shouldReceive('regenerateThemeSettingsDataFile');
 
-    $modMock = Mockery::mock(FOSSBilling\Module::class);
+    $modMock = Mockery::mock(FOSSBilling\Core\Module::class);
     $modMock->shouldReceive('getService')->andReturn($themeServiceMock);
 
     $eventsManager = Mockery::mock();
@@ -188,7 +188,7 @@ test('save theme settings reads body from request and strips preset control keys
         'save-current-setting-preset' => 'My Preset',
     ]);
 
-    $boxAppMock = Mockery::mock(FOSSBilling\Http\App::class);
+    $boxAppMock = Mockery::mock(FOSSBilling\Core\Http\App::class);
     $boxAppMock->shouldReceive('getRequest')->once()->andReturn($request);
     $boxAppMock->shouldReceive('redirect')
         ->once()

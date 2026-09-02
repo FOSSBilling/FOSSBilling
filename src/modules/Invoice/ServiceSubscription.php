@@ -17,7 +17,7 @@ use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Subscription;
 use Box\Mod\Invoice\Repository\SubscriptionRepository;
 use Box\Mod\Order\Entity\Order;
-use FOSSBilling\Container\InjectionAwareInterface;
+use FOSSBilling\Core\Container\InjectionAwareInterface;
 
 class ServiceSubscription implements InjectionAwareInterface
 {
@@ -79,7 +79,7 @@ class ServiceSubscription implements InjectionAwareInterface
     {
         $model = $this->subscriptionRepository->find($id);
         if ($model === null) {
-            throw new \FOSSBilling\Exception\BaseException('Subscription not found');
+            throw new \FOSSBilling\Core\Exception\BaseException('Subscription not found');
         }
 
         return $this->persistUpdate($model, ['status' => $status]);
@@ -172,12 +172,12 @@ class ServiceSubscription implements InjectionAwareInterface
     {
         $subscriptionId = trim((string) $model->getSid());
         if ($subscriptionId === '') {
-            throw new \FOSSBilling\Exception\InformationException('The subscription cannot be canceled at the end of its billing period because it has no gateway ID.');
+            throw new \FOSSBilling\Core\Exception\InformationException('The subscription cannot be canceled at the end of its billing period because it has no gateway ID.');
         }
 
         $adapter = $this->getGatewayAdapter($model);
         if (!method_exists($adapter, 'cancelSubscriptionAtPeriodEnd')) {
-            throw new \FOSSBilling\Exception\InformationException('The payment gateway does not support cancellation at the end of the billing period.');
+            throw new \FOSSBilling\Core\Exception\InformationException('The payment gateway does not support cancellation at the end of the billing period.');
         }
 
         $adapter->cancelSubscriptionAtPeriodEnd($subscriptionId);
@@ -202,7 +202,7 @@ class ServiceSubscription implements InjectionAwareInterface
     {
         $gateway = $model->getPayGateway();
         if (!$gateway instanceof PayGateway) {
-            throw new \FOSSBilling\Exception\BaseException('Payment gateway not found');
+            throw new \FOSSBilling\Core\Exception\BaseException('Payment gateway not found');
         }
         $payGatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
 
@@ -235,7 +235,7 @@ class ServiceSubscription implements InjectionAwareInterface
     {
         $subscription = $this->subscriptionRepository->find($id);
         if ($subscription === null) {
-            throw new \FOSSBilling\Exception\BaseException('Subscription not found');
+            throw new \FOSSBilling\Core\Exception\BaseException('Subscription not found');
         }
 
         if ($subscription->getStatus() === self::STATUS_PENDING_CANCELLATION && $subscription->getRelType() === 'invoice') {

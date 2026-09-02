@@ -50,7 +50,7 @@ test('free tlds product type is not hosting', function (): void {
     $productService = Mockery::mock(Box\Mod\Product\Service::class);
     $productService->shouldReceive('findProductById')->once()->with(1)->andReturn($model);
 
-    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class)->shouldIgnoreMissing();
+    $validatorMock = Mockery::mock(FOSSBilling\Core\Validation\Validator::class)->shouldIgnoreMissing();
 
     $di['validator'] = $validatorMock;
     $di['mod_service'] = $di->protect(function (string $service) use ($productService) {
@@ -67,5 +67,5 @@ test('free tlds product type is not hosting', function (): void {
     $api->setDi($di);
 
     expect(fn () => $api->free_tlds(['product_id' => 1]))
-        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Product type is invalid');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Product type is invalid');
 });

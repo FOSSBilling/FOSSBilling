@@ -11,10 +11,10 @@ declare(strict_types=1);
 
 namespace Box\Mod\Security\Checks;
 
-use FOSSBilling\Security\CheckResult;
-use FOSSBilling\Security\CheckResultStatus;
+use FOSSBilling\Core\Security\CheckResult;
+use FOSSBilling\Core\Security\CheckResultStatus;
 
-class generalCheck implements \FOSSBilling\Security\CheckInterface
+class generalCheck implements \FOSSBilling\Core\Security\CheckInterface
 {
     private int $okay = 0;
     private int $warn = 1;
@@ -35,7 +35,7 @@ class generalCheck implements \FOSSBilling\Security\CheckInterface
         $status = $this->okay;
         $message = '';
 
-        $config = \FOSSBilling\System\Config::getConfig();
+        $config = \FOSSBilling\Core\System\Config::getConfig();
 
         /*
          * Security settings
@@ -76,7 +76,7 @@ class generalCheck implements \FOSSBilling\Security\CheckInterface
             $message .= '- ' . __trans('Warning: FOSSBilling is configured to update to non-release versions of FOSSBilling.') . "\n";
             $status = $status <= $this->warn ? $this->warn : $status;
         }
-        if (\FOSSBilling\System\Version::isPreviewVersion()) {
+        if (\FOSSBilling\Core\System\Version::isPreviewVersion()) {
             $message .= '- ' . __trans('Warning: You appear to be using a non-release version of FOSSBilling.') . "\n";
             $status = $status <= $this->warn ? $this->warn : $status;
         }

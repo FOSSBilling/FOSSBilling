@@ -13,7 +13,7 @@ namespace Box\Mod\Extension\Entity;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use FOSSBilling\Api\ArrayInterface;
+use FOSSBilling\Core\Api\ArrayInterface;
 
 /**
  * Installed extension record.

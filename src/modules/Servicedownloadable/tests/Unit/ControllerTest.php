@@ -17,7 +17,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 use function Tests\Helpers\container;
 
-final class ServiceDownloadableControllerRouteTestApp extends FOSSBilling\Http\App
+final class ServiceDownloadableControllerRouteTestApp extends FOSSBilling\Core\Http\App
 {
     public function __construct(private readonly string $area)
     {

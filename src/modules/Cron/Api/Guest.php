@@ -15,9 +15,9 @@ declare(strict_types=1);
 
 namespace Box\Mod\Cron\Api;
 
-use FOSSBilling\Exception\InformationException;
+use FOSSBilling\Core\Exception\InformationException;
 
-class Guest extends \FOSSBilling\Api\AbstractApi
+class Guest extends \FOSSBilling\Core\Api\AbstractApi
 {
     /**
      * Runs cron if the guest API cron endpoint is enabled via the module's settings.

@@ -13,7 +13,7 @@ namespace Box\Mod\Activity\Repository;
 
 use Box\Mod\Activity\Entity\ActivityAdminHistory;
 use Doctrine\ORM\EntityRepository;
-use FOSSBilling\Exception\InformationException;
+use FOSSBilling\Core\Exception\InformationException;
 
 class ActivityAdminHistoryRepository extends EntityRepository
 {

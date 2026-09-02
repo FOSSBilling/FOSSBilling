@@ -9,7 +9,7 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling\Update;
+namespace FOSSBilling\Core\Update;
 
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;

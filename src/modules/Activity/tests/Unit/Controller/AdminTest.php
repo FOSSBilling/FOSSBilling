@@ -25,7 +25,7 @@ test('fetchNavigation returns array', function (): void {
     $di = container();
     $link = 'activity';
 
-    $urlMock = Mockery::mock(FOSSBilling\Url::class);
+    $urlMock = Mockery::mock(FOSSBilling\Core\Url::class);
     /** @var Mockery\Expectation $expectation */
     $expectation = $urlMock->shouldReceive('adminLink');
     $expectation->atLeast()->once();
@@ -40,19 +40,19 @@ test('fetchNavigation returns array', function (): void {
 
 test('register configures routes', function (): void {
     $controller = new Box\Mod\Activity\Controller\Admin();
-    $boxAppMock = Mockery::mock(FOSSBilling\Http\App::class);
+    $boxAppMock = Mockery::mock(FOSSBilling\Core\Http\App::class);
     /** @var Mockery\Expectation $expectation */
     $expectation = $boxAppMock->shouldReceive('get');
     $expectation->atLeast()->once();
     $expectation->with('/activity', 'get_index', [], Box\Mod\Activity\Controller\Admin::class);
 
-    /* @var \FOSSBilling\Http\App $boxAppMock */
+    /* @var \FOSSBilling\Core\Http\App $boxAppMock */
     $controller->register($boxAppMock);
 });
 
 test('getIndex renders activity index', function (): void {
     $controller = new Box\Mod\Activity\Controller\Admin();
-    $boxAppMock = Mockery::mock(FOSSBilling\Http\App::class);
+    $boxAppMock = Mockery::mock(FOSSBilling\Core\Http\App::class);
     /** @var Mockery\Expectation $expectation */
     $expectation = $boxAppMock->shouldReceive('render');
     $expectation->atLeast()->once();
@@ -63,6 +63,6 @@ test('getIndex renders activity index', function (): void {
 
     $controller->setDi($di);
 
-    /* @var \FOSSBilling\Http\App $boxAppMock */
+    /* @var \FOSSBilling\Core\Http\App $boxAppMock */
     $controller->get_index($boxAppMock);
 });

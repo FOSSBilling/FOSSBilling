@@ -29,10 +29,10 @@ use Box\Mod\Product\Repository\PromoRepository;
 use Box\Mod\Servicedomain\Entity\Tld;
 use Box\Mod\Staff\Entity\Admin;
 use Doctrine\ORM\QueryBuilder;
-use FOSSBilling\Container\InjectionAwareInterface;
-use FOSSBilling\Pagination\Options;
-use FOSSBilling\Period;
-use FOSSBilling\Validation\NonNegativeIntegerValidator;
+use FOSSBilling\Core\Container\InjectionAwareInterface;
+use FOSSBilling\Core\Pagination\Options;
+use FOSSBilling\Core\Period;
+use FOSSBilling\Core\Validation\NonNegativeIntegerValidator;
 
 class Service implements InjectionAwareInterface
 {
@@ -70,7 +70,7 @@ class Service implements InjectionAwareInterface
     {
         if ($this->promoRedemptionRepository === null) {
             if ($this->di === null) {
-                throw new \FOSSBilling\Exception\BaseException('The dependency injection container has not been set.');
+                throw new \FOSSBilling\Core\Exception\BaseException('The dependency injection container has not been set.');
             }
 
             $this->promoRedemptionRepository = $this->di['em']->getRepository(PromoRedemption::class);
@@ -83,7 +83,7 @@ class Service implements InjectionAwareInterface
     {
         if ($this->promoRepository === null) {
             if ($this->di === null) {
-                throw new \FOSSBilling\Exception\BaseException('The dependency injection container has not been set.');
+                throw new \FOSSBilling\Core\Exception\BaseException('The dependency injection container has not been set.');
             }
 
             $this->promoRepository = $this->di['em']->getRepository(Promo::class);
@@ -96,7 +96,7 @@ class Service implements InjectionAwareInterface
     {
         if ($this->productRepository === null) {
             if ($this->di === null) {
-                throw new \FOSSBilling\Exception\BaseException('The dependency injection container has not been set.');
+                throw new \FOSSBilling\Core\Exception\BaseException('The dependency injection container has not been set.');
             }
 
             $this->productRepository = $this->di['em']->getRepository(Product::class);
@@ -109,7 +109,7 @@ class Service implements InjectionAwareInterface
     {
         if ($this->productCategoryRepository === null) {
             if ($this->di === null) {
-                throw new \FOSSBilling\Exception\BaseException('The dependency injection container has not been set.');
+                throw new \FOSSBilling\Core\Exception\BaseException('The dependency injection container has not been set.');
             }
 
             $this->productCategoryRepository = $this->di['em']->getRepository(ProductCategory::class);
@@ -122,7 +122,7 @@ class Service implements InjectionAwareInterface
     {
         if ($this->productPaymentRepository === null) {
             if ($this->di === null) {
-                throw new \FOSSBilling\Exception\BaseException('The dependency injection container has not been set.');
+                throw new \FOSSBilling\Core\Exception\BaseException('The dependency injection container has not been set.');
             }
 
             $this->productPaymentRepository = $this->di['em']->getRepository(ProductPayment::class);
@@ -298,7 +298,7 @@ class Service implements InjectionAwareInterface
 
             $addon = $this->getAddonById((int) $addonId);
             if (!$addon instanceof Product || $addon->getStatus() !== 'enabled' || !in_array((int) $addonId, $validAddons)) {
-                throw new \FOSSBilling\Exception\InformationException('One or more of your selected add-ons are invalid for the associated product.');
+                throw new \FOSSBilling\Core\Exception\InformationException('One or more of your selected add-ons are invalid for the associated product.');
             }
         }
     }
@@ -370,7 +370,7 @@ class Service implements InjectionAwareInterface
             return $this->toProductPaymentApiArray($productPayment);
         }
 
-        throw new \FOSSBilling\Exception\BaseException('Product pricing could not be determined.');
+        throw new \FOSSBilling\Core\Exception\BaseException('Product pricing could not be determined.');
     }
 
     public function getProductUnit(Product $product): string
@@ -459,7 +459,7 @@ class Service implements InjectionAwareInterface
             $types = $this->getPaymentTypes();
 
             if (!isset($data['pricing']['type']) || !array_key_exists($data['pricing']['type'], $types)) {
-                throw new \FOSSBilling\Exception\InformationException('Pricing type is required');
+                throw new \FOSSBilling\Core\Exception\InformationException('Pricing type is required');
             }
             $productPayment = $this->requireProductPayment($model->getProductPayment());
             $this->applyPricingToProductPayment($productPayment, $data['pricing']);
@@ -608,7 +608,7 @@ class Service implements InjectionAwareInterface
     {
         $orderService = $this->di['mod_service']('order');
         if ($orderService->productHasOrders($product)) {
-            throw new \FOSSBilling\Exception\InformationException('Cannot remove product which has active orders.');
+            throw new \FOSSBilling\Core\Exception\InformationException('Cannot remove product which has active orders.');
         }
         $id = $product->getId();
         $this->di['em']->remove($product);
@@ -666,7 +666,7 @@ class Service implements InjectionAwareInterface
     public function removeProductCategory(ProductCategory $category): bool
     {
         if ($this->getProductRepository()->hasProductsInCategory((int) $category->getId())) {
-            throw new \FOSSBilling\Exception\InformationException('Cannot remove product category with products');
+            throw new \FOSSBilling\Core\Exception\InformationException('Cannot remove product category with products');
         }
         $id = $category->getId();
         $this->di['em']->remove($category);
@@ -795,7 +795,7 @@ class Service implements InjectionAwareInterface
 
         $upgrade = $this->findProductById($upgradeProductId);
 
-        throw new \FOSSBilling\Exception\InformationException('Sorry, but ":product" is not allowed to be upgraded to ":upgrade"', [':product' => $product->getTitle() ?? 'unknown', ':upgrade' => $upgrade->getTitle() ?? 'unknown']);
+        throw new \FOSSBilling\Core\Exception\InformationException('Sorry, but ":product" is not allowed to be upgraded to ":upgrade"', [':product' => $product->getTitle() ?? 'unknown', ':upgrade' => $upgrade->getTitle() ?? 'unknown']);
     }
 
     /**
@@ -834,7 +834,7 @@ class Service implements InjectionAwareInterface
     {
         $category = $this->getProductCategoryRepository()->findById($id);
         if (!$category instanceof ProductCategory) {
-            throw new \FOSSBilling\Exception\InformationException('Category not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Category not found');
         }
 
         return $category;
@@ -927,7 +927,7 @@ class Service implements InjectionAwareInterface
                 $this->di['validator']->checkRequiredParamsForArray($required, $addonConfig);
 
                 if (!$this->isProductPeriodEnabled($addon, (string) $addonConfig['period'])) {
-                    throw new \FOSSBilling\Exception\InformationException('Selected billing period is invalid for the selected add-on');
+                    throw new \FOSSBilling\Core\Exception\InformationException('Selected billing period is invalid for the selected add-on');
                 }
             }
 
@@ -973,7 +973,7 @@ class Service implements InjectionAwareInterface
         );
 
         if ($updated === 0) {
-            throw new \FOSSBilling\Exception\InformationException('Product :id is out of stock.', [':id' => $resolvedProduct->getId()], 831);
+            throw new \FOSSBilling\Core\Exception\InformationException('Product :id is out of stock.', [':id' => $resolvedProduct->getId()], 831);
         }
 
         // The statement above bypassed the entity, so bring the in-memory copy back in line.
@@ -1235,7 +1235,7 @@ class Service implements InjectionAwareInterface
     public function createPromo($code, $type, $value, $products, $periods, $clientGroups, $data): int
     {
         if ($this->getPromoRepository()->findOneBy(['code' => $code]) instanceof Promo) {
-            throw new \FOSSBilling\Exception\InformationException('This promotion code already exists.');
+            throw new \FOSSBilling\Core\Exception\InformationException('This promotion code already exists.');
         }
 
         $promo = new Promo();
@@ -1296,7 +1296,7 @@ class Service implements InjectionAwareInterface
     {
         $promo = $this->getPromoRepository()->find($id);
         if (!$promo instanceof Promo) {
-            throw new \FOSSBilling\Exception\InformationException('Promo not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Promo not found');
         }
 
         return $promo;
@@ -1375,7 +1375,7 @@ class Service implements InjectionAwareInterface
         $promoId = (int) ($this->getPromoSourceArray($promo)['id'] ?? 0);
         $affectedRows = $this->getPromoRepository()->incrementUsageIfAvailable($promoId, new \DateTimeImmutable());
         if ($affectedRows === 0) {
-            throw new \FOSSBilling\Exception\InformationException('This promo code has reached its maximum number of uses.');
+            throw new \FOSSBilling\Core\Exception\InformationException('This promo code has reached its maximum number of uses.');
         }
     }
 
@@ -1516,7 +1516,7 @@ class Service implements InjectionAwareInterface
         if ($product->getType() !== self::DOMAIN) {
             try {
                 $promo = $this->findPromoById((int) $promoId);
-            } catch (\FOSSBilling\Exception\BaseException) {
+            } catch (\FOSSBilling\Core\Exception\BaseException) {
                 return null;
             }
         } else {
@@ -1532,7 +1532,7 @@ class Service implements InjectionAwareInterface
             $currencyRepository = $currencyService->getCurrencyRepository();
             $rate = $currencyRepository->getRateByCode($currency);
             if ($rate === null) {
-                throw new \FOSSBilling\Exception\BaseException("Currency conversion rate cannot be determined for code {$currency}");
+                throw new \FOSSBilling\Core\Exception\BaseException("Currency conversion rate cannot be determined for code {$currency}");
             }
 
             $discountAmount *= $rate;
@@ -1560,7 +1560,7 @@ class Service implements InjectionAwareInterface
     public function enrichPromoApiArray(array $result, $deep = false, $identity = null): array
     {
         $products = !empty($result['products']) ? $this->getProductTitlesByIds($this->decodePromoSelection($result['products'])) : null;
-        $clientGroups = !empty($result['client_groups']) ? (new \FOSSBilling\Utils\Arr())->getPairsForTableByIds('client_group', $this->decodePromoSelection($result['client_groups'])) : null;
+        $clientGroups = !empty($result['client_groups']) ? (new \FOSSBilling\Core\Utils\Arr())->getPairsForTableByIds('client_group', $this->decodePromoSelection($result['client_groups'])) : null;
         $usageStats = $deep ? $this->getPromoUsageStatsByValues((int) $result['id'], (int) ($result['used'] ?? 0), isset($result['maxuses']) ? (int) $result['maxuses'] : null) : null;
         $redemptionCount = $usageStats['recorded_applications'] ?? $this->getPromoRedemptionCountById((int) $result['id']);
 
@@ -1701,7 +1701,7 @@ class Service implements InjectionAwareInterface
         if (($data['code'] ?? null) !== null && $data['code'] !== $promo->getCode()) {
             $existing = $this->getPromoRepository()->findOneBy(['code' => $data['code']]);
             if ($existing instanceof Promo && $existing->getId() !== $promo->getId()) {
-                throw new \FOSSBilling\Exception\InformationException('This promotion code already exists.');
+                throw new \FOSSBilling\Core\Exception\InformationException('This promotion code already exists.');
             }
         }
 
@@ -1718,7 +1718,7 @@ class Service implements InjectionAwareInterface
         $promo = $model;
         $promoId = (int) $promo->getId();
         if ($this->hasPromoRedemptionHistoryById($promoId)) {
-            throw new \FOSSBilling\Exception\InformationException('Promotions with redemption history cannot be deleted. Disable the promotion instead.');
+            throw new \FOSSBilling\Core\Exception\InformationException('Promotions with redemption history cannot be deleted. Disable the promotion instead.');
         }
 
         $this->di['em']->remove($promo);
@@ -1797,7 +1797,7 @@ class Service implements InjectionAwareInterface
             return $this->getEnabledProductPaymentPeriod($pp, (string) ($config['period'] ?? ''))->getSetupPrice();
         }
 
-        throw new \FOSSBilling\Exception\BaseException('Unknown period selected for setup price');
+        throw new \FOSSBilling\Core\Exception\BaseException('Unknown period selected for setup price');
     }
 
     public function getProductPrice(Product $product, ?array $config = null): float|int|string
@@ -1818,13 +1818,13 @@ class Service implements InjectionAwareInterface
 
         if ($pp->getType() == ProductPayment::RECURRENT) {
             if (!isset($config['period'])) {
-                throw new \FOSSBilling\Exception\BaseException('Product :id payment type is recurrent, but period was not selected', [':id' => $product->getId()]);
+                throw new \FOSSBilling\Core\Exception\BaseException('Product :id payment type is recurrent, but period was not selected', [':id' => $product->getId()]);
             }
 
             return $this->getEnabledProductPaymentPeriod($pp, (string) $config['period'])->getPrice();
         }
 
-        throw new \FOSSBilling\Exception\BaseException('Unknown Period selected for price');
+        throw new \FOSSBilling\Core\Exception\BaseException('Unknown Period selected for price');
     }
 
     private function getEnabledProductPaymentPeriod(ProductPayment $pp, string $code): ProductPaymentPeriod
@@ -1832,13 +1832,13 @@ class Service implements InjectionAwareInterface
         // Validate the code shape/range up front so a malformed period gives a clear error.
         try {
             $code = (new Period($code))->getCode();
-        } catch (\FOSSBilling\Exception\BaseException) {
-            throw new \FOSSBilling\Exception\InformationException('Selected billing period is not available for this product');
+        } catch (\FOSSBilling\Core\Exception\BaseException) {
+            throw new \FOSSBilling\Core\Exception\InformationException('Selected billing period is not available for this product');
         }
 
         $period = $pp->getPeriod($code);
         if (!$period instanceof ProductPaymentPeriod || !$period->isEnabled()) {
-            throw new \FOSSBilling\Exception\InformationException('Selected billing period is not available for this product');
+            throw new \FOSSBilling\Core\Exception\InformationException('Selected billing period is not available for this product');
         }
 
         return $period;
@@ -1847,7 +1847,7 @@ class Service implements InjectionAwareInterface
     private function requireProductPayment(?ProductPayment $productPayment): ProductPayment
     {
         if (!$productPayment instanceof ProductPayment) {
-            throw new \FOSSBilling\Exception\InformationException('Product payment not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Product payment not found');
         }
 
         return $productPayment;
@@ -1865,10 +1865,10 @@ class Service implements InjectionAwareInterface
 
     private function generateUniqueProductSlug(string $title): string
     {
-        $slug = \FOSSBilling\Utils\Str::slug($title);
+        $slug = \FOSSBilling\Core\Utils\Str::slug($title);
 
         while ($this->getProductRepository()->findOneBy(['slug' => $slug]) instanceof Product) {
-            $slug = \FOSSBilling\Utils\Str::slug($title) . '-' . random_int(1, 9999);
+            $slug = \FOSSBilling\Core\Utils\Str::slug($title) . '-' . random_int(1, 9999);
         }
 
         return $slug;
@@ -1926,8 +1926,8 @@ class Service implements InjectionAwareInterface
 
                 try {
                     $code = (new Period((string) $rawCode))->getCode();
-                } catch (\FOSSBilling\Exception\BaseException) {
-                    throw new \FOSSBilling\Exception\InformationException('Invalid billing period :period', [':period' => (string) $rawCode]);
+                } catch (\FOSSBilling\Core\Exception\BaseException) {
+                    throw new \FOSSBilling\Core\Exception\InformationException('Invalid billing period :period', [':period' => (string) $rawCode]);
                 }
 
                 $submittedCodes[$code] = true;
@@ -1947,7 +1947,7 @@ class Service implements InjectionAwareInterface
             }
 
             if ($submittedCodes === []) {
-                throw new \FOSSBilling\Exception\InformationException('At least one billing period must be configured for a recurring product');
+                throw new \FOSSBilling\Core\Exception\InformationException('At least one billing period must be configured for a recurring product');
             }
 
             foreach ($existingByCode as $code => $existingPeriod) {
@@ -1962,7 +1962,7 @@ class Service implements InjectionAwareInterface
     {
         $product = $this->getProductRepository()->find($id);
         if (!$product instanceof Product) {
-            throw new \FOSSBilling\Exception\InformationException('Product not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Product not found');
         }
 
         return $product;
@@ -1972,7 +1972,7 @@ class Service implements InjectionAwareInterface
     {
         $type = $product->getType();
         if ($type === null || $type === '') {
-            throw new \FOSSBilling\Exception\BaseException('Product type could not be determined.');
+            throw new \FOSSBilling\Core\Exception\BaseException('Product type could not be determined.');
         }
 
         return $this->di['mod_service']('service' . $type);
@@ -2210,7 +2210,7 @@ class Service implements InjectionAwareInterface
         $tld = '';
 
         if (!isset($config['action'])) {
-            throw new \FOSSBilling\Exception\BaseException('Could not determine domain price. Domain action is missing', null, 498);
+            throw new \FOSSBilling\Core\Exception\BaseException('Could not determine domain price. Domain action is missing', null, 498);
         }
 
         if ($config['action'] === 'register') {
@@ -2223,7 +2223,7 @@ class Service implements InjectionAwareInterface
 
         $tld = $tldService->findOneByTld($tld);
         if (!$tld instanceof Tld) {
-            throw new \FOSSBilling\Exception\BaseException('Unknown TLD. Could not determine registration price');
+            throw new \FOSSBilling\Core\Exception\BaseException('Unknown TLD. Could not determine registration price');
         }
 
         return $tld;
@@ -2346,7 +2346,7 @@ class Service implements InjectionAwareInterface
         $addonQty = $this->di['period']($addonPeriod)->getQty();
 
         $freeDomainPeriods = $addon['config']['free_domain_periods'] ?? [];
-        if (\FOSSBilling\Utils\Arr::safeCount($freeDomainPeriods) > 0) {
+        if (\FOSSBilling\Core\Utils\Arr::safeCount($freeDomainPeriods) > 0) {
             if ($addonPeriod === $period && in_array($addonPeriod, $freeDomainPeriods, true)) {
                 return $referenceQty;
             }

@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Orderbutton;
 
-use FOSSBilling\Container\InjectionAwareInterface;
+use FOSSBilling\Core\Container\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {

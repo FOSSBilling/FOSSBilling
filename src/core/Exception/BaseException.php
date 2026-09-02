@@ -9,10 +9,10 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling\Exception;
+namespace FOSSBilling\Core\Exception;
 
-use FOSSBilling\System\Config;
-use FOSSBilling\System\Environment;
+use FOSSBilling\Core\System\Config;
+use FOSSBilling\Core\System\Environment;
 
 /**
  * The base FOSSBilling exception class. Implements translation and stacktrace logging.

@@ -16,7 +16,7 @@ use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\InvoiceItem;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
-use FOSSBilling\Doctrine\RowLock;
+use FOSSBilling\Core\Doctrine\RowLock;
 
 class InvoiceRepository extends EntityRepository
 {
@@ -77,7 +77,7 @@ class InvoiceRepository extends EntityRepository
 
         $approved = $data['approved'] ?? null;
         if ($approved !== null && $approved !== '') {
-            $qb->andWhere('i.approved = :approved')->setParameter('approved', \FOSSBilling\Utils\Normalizer::normalizeBoolean($approved));
+            $qb->andWhere('i.approved = :approved')->setParameter('approved', \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($approved));
         }
 
         $status = $data['status'] ?? null;
@@ -190,7 +190,7 @@ class InvoiceRepository extends EntityRepository
         $connection = $this->getEntityManager()->getConnection();
 
         if (!$connection->isTransactionActive()) {
-            throw new \FOSSBilling\Exception\BaseException('Invoice status cannot be locked outside of a transaction.');
+            throw new \FOSSBilling\Core\Exception\BaseException('Invoice status cannot be locked outside of a transaction.');
         }
 
         $status = $connection->fetchOne(

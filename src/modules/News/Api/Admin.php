@@ -12,10 +12,10 @@ declare(strict_types=1);
 namespace Box\Mod\News\Api;
 
 use Box\Mod\News\Entity\Post;
-use FOSSBilling\Pagination\Options;
-use FOSSBilling\Validation\Api\RequiredParams;
+use FOSSBilling\Core\Pagination\Options;
+use FOSSBilling\Core\Validation\Api\RequiredParams;
 
-class Admin extends \FOSSBilling\Api\AbstractApi
+class Admin extends \FOSSBilling\Core\Api\AbstractApi
 {
     /**
      * Get paginated list of news items (any status).
@@ -42,7 +42,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @param array $data ['id' => int|null, 'slug' => string|null]
      *
-     * @throws \FOSSBilling\Exception\InformationException if ID/slug is missing or news item not found
+     * @throws \FOSSBilling\Core\Exception\InformationException if ID/slug is missing or news item not found
      */
     public function get(array $data): array
     {
@@ -52,7 +52,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $slug = $data['slug'] ?? null;
 
         if (!$id && !$slug) {
-            throw new \FOSSBilling\Exception\BaseException('ID or slug is required.');
+            throw new \FOSSBilling\Core\Exception\BaseException('ID or slug is required.');
         }
 
         /** @var \Box\Mod\News\Repository\PostRepository $repo */
@@ -66,7 +66,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         }
 
         if (!$post instanceof Post) {
-            throw new \FOSSBilling\Exception\InformationException('News item not found.');
+            throw new \FOSSBilling\Core\Exception\InformationException('News item not found.');
         }
 
         /** @todo Doctrine: Replace with actual Admin entity once it's migrated to Doctrine. */
@@ -91,7 +91,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $post = $repo->find($data['id']);
 
         if (!$post instanceof Post) {
-            throw new \FOSSBilling\Exception\InformationException('News item not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('News item not found');
         }
 
         $service = $this->getService();
@@ -132,7 +132,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('news', 'manage');
 
-        $post = new Post($data['title'], \FOSSBilling\Utils\Str::slug($data['title']));
+        $post = new Post($data['title'], \FOSSBilling\Core\Utils\Str::slug($data['title']));
 
         $post->setAdminId($this->getIdentity()->getId())
              ->setContent($data['content'] ?? null)
@@ -161,7 +161,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $post = $repo->find($data['id']);
 
         if (!$post instanceof Post) {
-            throw new \FOSSBilling\Exception\InformationException('News item not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('News item not found');
         }
 
         $this->getDi()['em']->remove($post);

@@ -9,7 +9,7 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling\Http;
+namespace FOSSBilling\Core\Http;
 
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -46,7 +46,7 @@ class AppAdmin extends App
         $service = $this->di['mod_service']('Staff');
 
         if ($this->mod !== 'extension' && $this->di['auth']->isAdminLoggedIn() && !$service->hasPermission(null, $this->mod)) {
-            $e = new \FOSSBilling\Exception\InformationException('You do not have permission to access the :mod: module', [':mod:' => $this->mod], 403);
+            $e = new \FOSSBilling\Core\Exception\InformationException('You do not have permission to access the :mod: module', [':mod:' => $this->mod], 403);
 
             return $this->errorResponse($e, 403);
         }

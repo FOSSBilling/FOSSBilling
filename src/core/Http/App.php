@@ -9,14 +9,14 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling\Http;
+namespace FOSSBilling\Core\Http;
 
 use DebugBar\DataCollector\TimeDataCollector;
 use DebugBar\StandardDebugBar;
-use FOSSBilling\Container\InjectionAwareInterface;
-use FOSSBilling\Security\AuthenticationRequiredException;
-use FOSSBilling\Security\EmailValidationRequiredException;
-use FOSSBilling\System\Config;
+use FOSSBilling\Core\Container\InjectionAwareInterface;
+use FOSSBilling\Core\Security\AuthenticationRequiredException;
+use FOSSBilling\Core\Security\EmailValidationRequiredException;
+use FOSSBilling\Core\System\Config;
 use Pimple\Container;
 use Symfony\Component\HttpFoundation\IpUtils;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -418,7 +418,7 @@ class App
             // Check the allowlists
             if ($this->checkAdminPrefix() && $this->checkAllowedURLs() && $this->checkAllowedIPs()) {
                 if ($this->mod == 'api') {
-                    $exc = new \FOSSBilling\Exception\InformationException('The system is undergoing maintenance. Please try again later', [], 503);
+                    $exc = new \FOSSBilling\Core\Exception\InformationException('The system is undergoing maintenance. Please try again later', [], 503);
                     $apiController = new \Box\Mod\Api\Controller\Client();
                     $apiController->setDi($this->di);
 
@@ -447,7 +447,7 @@ class App
         }
         $this->stopMeasureIfStarted($timeCollector, 'mapping');
 
-        $e = new \FOSSBilling\Exception\InformationException('Page :url not found', [':url' => $this->url], 404);
+        $e = new \FOSSBilling\Core\Exception\InformationException('Page :url not found', [':url' => $this->url], 404);
 
         return $this->show404($e);
     }

@@ -9,11 +9,11 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling\Twig\Extension;
+namespace FOSSBilling\Core\Twig\Extension;
 
 use DebugBar\JavascriptRenderer;
 use DebugBar\StandardDebugBar;
-use FOSSBilling\System\Environment;
+use FOSSBilling\Core\System\Environment;
 use Twig\Attribute\AsTwigFunction;
 
 class DebugBarExtension

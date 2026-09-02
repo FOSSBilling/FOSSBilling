@@ -13,10 +13,10 @@ namespace Box\Mod\Support\Api;
 
 use Box\Mod\Support\Entity\KbArticle;
 use Box\Mod\Support\Entity\KbArticleCategory;
-use FOSSBilling\Pagination\Options;
-use FOSSBilling\Validation\Api\RequiredParams;
+use FOSSBilling\Core\Pagination\Options;
+use FOSSBilling\Core\Validation\Api\RequiredParams;
 
-class Guest extends \FOSSBilling\Api\AbstractApi
+class Guest extends \FOSSBilling\Core\Api\AbstractApi
 {
     /**
      * Submit new ticket.
@@ -33,10 +33,10 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         // Deprecated 0.9.0 The 'message' parameter will be dropped. Update your themes to use 'content' instead.
         $content = $data['content'] ?? $data['message'] ?? null;
         if (!is_string($content) || strlen($content) < 4) {
-            throw new \FOSSBilling\Exception\InformationException('Please enter your message');
+            throw new \FOSSBilling\Core\Exception\InformationException('Please enter your message');
         }
 
-        $data['email'] = \FOSSBilling\Validation\EmailValidator::validateAndSanitizeEmail($data['email']);
+        $data['email'] = \FOSSBilling\Core\Validation\EmailValidator::validateAndSanitizeEmail($data['email']);
         $this->getDi()['rate_limiter']->consumeOrThrow('guest_ticket_create', $this->getIp());
 
         $data['content'] = trim(str_replace("\0", '', $content));
@@ -79,12 +79,12 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         $message = $data['content'] ?? $data['message'] ?? null;
 
         if (!is_string($message)) {
-            throw new \FOSSBilling\Exception\InformationException('Message cannot be empty');
+            throw new \FOSSBilling\Core\Exception\InformationException('Message cannot be empty');
         }
 
         $message = trim(str_replace("\0", '', $message));
 
-        return $this->getService()->ticketReply($guestTicket, new \FOSSBilling\Identity\Guest(), $message);
+        return $this->getService()->ticketReply($guestTicket, new \FOSSBilling\Core\Identity\Guest(), $message);
     }
 
     /**
@@ -169,7 +169,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         $this->assertKbEnabled();
 
         if (!isset($data['id']) && !isset($data['slug'])) {
-            throw new \FOSSBilling\Exception\InformationException('ID or slug is missing');
+            throw new \FOSSBilling\Core\Exception\InformationException('ID or slug is missing');
         }
 
         $id = $data['id'] ?? null;
@@ -183,7 +183,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             : $repo->findOneActiveBySlug($slug);
 
         if (!$article instanceof KbArticle) {
-            throw new \FOSSBilling\Exception\InformationException('Article item not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Article item not found');
         }
 
         $repo->incrementViews($article);
@@ -217,7 +217,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         $this->assertKbEnabled();
 
         if (!isset($data['id']) && !isset($data['slug'])) {
-            throw new \FOSSBilling\Exception\InformationException('Category ID or slug is missing');
+            throw new \FOSSBilling\Core\Exception\InformationException('Category ID or slug is missing');
         }
 
         $id = $data['id'] ?? null;
@@ -231,7 +231,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             : $repo->findOneBySlug($slug);
 
         if (!$cat instanceof KbArticleCategory) {
-            throw new \FOSSBilling\Exception\InformationException('Knowledge Base category not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Knowledge Base category not found');
         }
 
         return $cat->toApiArray($this->getIdentity(), includeArticleViews: $this->getService()->kbArticleViewsEnabled());
@@ -240,7 +240,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
     private function assertKbEnabled(): void
     {
         if (!$this->getService()->kbEnabled()) {
-            throw new \FOSSBilling\Exception\InformationException('Knowledge Base is disabled');
+            throw new \FOSSBilling\Core\Exception\InformationException('Knowledge Base is disabled');
         }
     }
 }

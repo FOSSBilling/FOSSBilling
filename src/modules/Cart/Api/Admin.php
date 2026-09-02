@@ -12,13 +12,13 @@ declare(strict_types=1);
 namespace Box\Mod\Cart\Api;
 
 use Box\Mod\Cart\Entity\Cart;
-use FOSSBilling\Pagination\Options;
-use FOSSBilling\Validation\Api\RequiredParams;
+use FOSSBilling\Core\Pagination\Options;
+use FOSSBilling\Core\Validation\Api\RequiredParams;
 
 /**
  * Shopping cart management.
  */
-class Admin extends \FOSSBilling\Api\AbstractApi
+class Admin extends \FOSSBilling\Core\Api\AbstractApi
 {
     /**
      * @param array $data
@@ -33,7 +33,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         foreach ($pager['list'] as $key => $cartArr) {
             $cart = $this->getDi()['em']->getRepository(Cart::class)->find((int) $cartArr['id']);
             if (!$cart instanceof Cart) {
-                throw new \FOSSBilling\Exception\BaseException('Cart not found');
+                throw new \FOSSBilling\Core\Exception\BaseException('Cart not found');
             }
             $pager['list'][$key] = $this->getService()->toApiArray($cart);
         }
@@ -53,7 +53,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $cart = $this->getDi()['em']->getRepository(Cart::class)->find((int) $data['id']);
         if (!$cart instanceof Cart) {
-            throw new \FOSSBilling\Exception\BaseException('Shopping cart not found');
+            throw new \FOSSBilling\Core\Exception\BaseException('Shopping cart not found');
         }
 
         return $this->getService()->toApiArray($cart);
@@ -79,7 +79,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
                 $conn->executeStatement('DELETE FROM cart_product WHERE cart_id = :id', ['id' => $id]);
                 $conn->executeStatement('DELETE FROM cart WHERE id = :id', ['id' => $id]);
             }
-            $this->getDi()['logger']->info('Removed {expired_count} expired shopping carts', ['expired_count' => \FOSSBilling\Utils\Arr::safeCount($expiredCarts)]);
+            $this->getDi()['logger']->info('Removed {expired_count} expired shopping carts', ['expired_count' => \FOSSBilling\Core\Utils\Arr::safeCount($expiredCarts)]);
         }
 
         return true;

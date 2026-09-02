@@ -9,14 +9,14 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling\Api;
+namespace FOSSBilling\Core\Api;
 
 use Box\Mod\Client\Entity\Client;
 use Box\Mod\Staff\Entity\Admin;
-use FOSSBilling\Container\InjectionAwareInterface;
-use FOSSBilling\Exception\BaseException;
-use FOSSBilling\Identity\Guest;
-use FOSSBilling\Module;
+use FOSSBilling\Core\Container\InjectionAwareInterface;
+use FOSSBilling\Core\Exception\BaseException;
+use FOSSBilling\Core\Identity\Guest;
+use FOSSBilling\Core\Module;
 use Pimple\Container;
 
 abstract class AbstractApi implements InjectionAwareInterface

@@ -10,7 +10,7 @@
 
 declare(strict_types=1);
 
-use FOSSBilling\System\Config;
+use FOSSBilling\Core\System\Config;
 
 use function Tests\Helpers\container;
 
@@ -86,7 +86,7 @@ test('update cache settings rejects a remote driver when no installation identif
         Config::setConfig($config, false);
 
         expect(fn () => $api->update_cache_settings(['driver' => 'redis']))
-            ->toThrow(FOSSBilling\Exception\BaseException::class, 'installation identifier');
+            ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'installation identifier');
     } finally {
         Config::setConfig($originalConfig, false);
     }
@@ -169,7 +169,7 @@ test('update cache settings rejects a redis password on a non-loopback host with
             'driver' => 'redis',
             'redis_host' => 'redis.example.com',
             'redis_password' => 'secret',
-        ]))->toThrow(FOSSBilling\Exception\BaseException::class, 'without TLS enabled');
+        ]))->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'without TLS enabled');
     } finally {
         Config::setConfig($originalConfig, false);
     }
@@ -245,7 +245,7 @@ test('is allowed', function (): void {
     ->atLeast()->once()
     ->andReturn(true);
 
-    $validatorStub = $this->createStub(FOSSBilling\Validation\Validator::class);
+    $validatorStub = $this->createStub(FOSSBilling\Core\Validation\Validator::class);
 
     $di = container();
     $di['mod_service'] = $di->protect(function ($serviceName) use ($staffServiceMock) {
@@ -333,7 +333,7 @@ test('update finalization status rejects legacy non-admin while pending', functi
     $api->setDi($di);
 
     expect(fn (): array => $api->update_finalization_status())
-        ->toThrow(FOSSBilling\Exception\InformationException::class, 'You need to be a Super Administrator to finalize this update.');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'You need to be a Super Administrator to finalize this update.');
 });
 
 test('update finalization status does not mask unrelated errors from isSuperAdministrator while pending', function (): void {

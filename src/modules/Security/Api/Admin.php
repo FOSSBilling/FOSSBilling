@@ -11,9 +11,9 @@ declare(strict_types=1);
 
 namespace Box\Mod\Security\Api;
 
-use FOSSBilling\Validation\Api\RequiredParams;
+use FOSSBilling\Core\Validation\Api\RequiredParams;
 
-class Admin extends \FOSSBilling\Api\AbstractApi
+class Admin extends \FOSSBilling\Core\Api\AbstractApi
 {
     #[RequiredParams(['ip' => 'You must specify an IP address to lookup.'])]
     public function ip_lookup(array $data): array

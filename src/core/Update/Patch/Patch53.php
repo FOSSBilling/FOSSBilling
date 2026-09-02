@@ -9,9 +9,9 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling\Update\Patch;
+namespace FOSSBilling\Core\Update\Patch;
 
-use FOSSBilling\Update\Patcher;
+use FOSSBilling\Core\Update\Patcher;
 
 class Patch53 implements PatchInterface
 {
@@ -34,7 +34,7 @@ class Patch53 implements PatchInterface
                 ]);
 
                 foreach ($adminIds as $adminId) {
-                    $adminUpdateStmt->bindValue('api_token', \FOSSBilling\Security\Credential::generatePassword(32));
+                    $adminUpdateStmt->bindValue('api_token', \FOSSBilling\Core\Security\Credential::generatePassword(32));
                     $adminUpdateStmt->bindValue('updated_at', $now);
                     $adminUpdateStmt->bindValue('id', (int) $adminId, \PDO::PARAM_INT);
                     $adminUpdateStmt->execute();
@@ -52,7 +52,7 @@ class Patch53 implements PatchInterface
                 ]);
 
                 foreach ($clientIds as $clientId) {
-                    $clientUpdateStmt->bindValue('api_token', \FOSSBilling\Security\Credential::generatePassword(32));
+                    $clientUpdateStmt->bindValue('api_token', \FOSSBilling\Core\Security\Credential::generatePassword(32));
                     $clientUpdateStmt->bindValue('updated_at', $now);
                     $clientUpdateStmt->bindValue('id', (int) $clientId, \PDO::PARAM_INT);
                     $clientUpdateStmt->execute();

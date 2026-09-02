@@ -9,10 +9,10 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling\Update\Patch;
+namespace FOSSBilling\Core\Update\Patch;
 
-use FOSSBilling\Exception\BaseException;
-use FOSSBilling\Update\Patcher;
+use FOSSBilling\Core\Exception\BaseException;
+use FOSSBilling\Core\Update\Patcher;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;

@@ -9,10 +9,10 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling\Security;
+namespace FOSSBilling\Core\Security;
 
-use FOSSBilling\Exception\InformationException;
-use FOSSBilling\System\Config;
+use FOSSBilling\Core\Exception\InformationException;
+use FOSSBilling\Core\System\Config;
 
 final class Credential
 {

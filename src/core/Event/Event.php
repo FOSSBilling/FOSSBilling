@@ -9,9 +9,9 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling\Event;
+namespace FOSSBilling\Core\Event;
 
-use FOSSBilling\Container\InjectionAwareInterface;
+use FOSSBilling\Core\Container\InjectionAwareInterface;
 
 class Event implements \ArrayAccess, InjectionAwareInterface
 {

@@ -119,7 +119,7 @@ test('throws exception when installing unavailable gateway', function (): void {
     $serviceMock->setDi($service->getDi());
 
     expect(fn () => $serviceMock->install($code))
-        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Payment gateway is not available for installation.');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Payment gateway is not available for installation.');
 });
 
 test('converts to api array', function (): void {
@@ -361,7 +361,7 @@ test('refuses to delete a gateway with existing invoices', function (): void {
     $service->setDi($di);
 
     expect(fn () => $service->delete($payGateway))
-        ->toThrow(FOSSBilling\Exception\InformationException::class, 'Cannot remove payment gateway with existing invoices');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Cannot remove payment gateway with existing invoices');
 });
 
 test('refuses to delete a gateway with existing subscriptions', function (): void {
@@ -386,7 +386,7 @@ test('refuses to delete a gateway with existing subscriptions', function (): voi
     $service->setDi($di);
 
     expect(fn () => $service->delete($payGateway))
-        ->toThrow(FOSSBilling\Exception\InformationException::class, 'Cannot remove payment gateway with existing subscriptions');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Cannot remove payment gateway with existing subscriptions');
 });
 
 test('refuses to delete a gateway with existing transactions', function (): void {
@@ -415,7 +415,7 @@ test('refuses to delete a gateway with existing transactions', function (): void
     $service->setDi($di);
 
     expect(fn () => $service->delete($payGateway))
-        ->toThrow(FOSSBilling\Exception\InformationException::class, 'Cannot remove payment gateway with existing transactions');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Cannot remove payment gateway with existing transactions');
 });
 
 test('gets active gateways as pairs', function (): void {
@@ -462,7 +462,7 @@ test('gets payment adapter', function (): void {
         ->atLeast()->once()
         ->andReturn($expected);
 
-    $urlMock = Mockery::mock(FOSSBilling\Url::class);
+    $urlMock = Mockery::mock(FOSSBilling\Core\Url::class);
     $urlMock->shouldReceive('link')
         ->atLeast()->once();
 
@@ -492,7 +492,7 @@ test('throws exception when payment gateway adapter class is missing', function 
         ->atLeast()->once()
         ->andReturn('');
 
-    $urlMock = Mockery::mock(FOSSBilling\Url::class);
+    $urlMock = Mockery::mock(FOSSBilling\Core\Url::class);
     $urlMock->shouldReceive('link')
         ->atLeast()->once();
 
@@ -502,7 +502,7 @@ test('throws exception when payment gateway adapter class is missing', function 
     $serviceMock->setDi($service->getDi());
 
     expect(fn () => $serviceMock->getPaymentAdapter($payGateway, $invoiceModel))
-        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Payment gateway  was not found.');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Payment gateway  was not found.');
 });
 
 test('gets adapter config', function (): void {
@@ -564,7 +564,7 @@ test('throws exception when adapter class does not exist', function (): void {
     $serviceMock->setDi($service->getDi());
 
     expect(fn () => $serviceMock->getAdapterConfig($payGateway))
-        ->toThrow(FOSSBilling\Exception\BaseException::class, sprintf('Payment gateway %s was not found', $payGateway->getGateway()));
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, sprintf('Payment gateway %s was not found', $payGateway->getGateway()));
 });
 
 test('throws exception when adapter does not exist', function (): void {
@@ -584,7 +584,7 @@ test('throws exception when adapter does not exist', function (): void {
     $serviceMock->setDi($service->getDi());
 
     expect(fn () => $serviceMock->getAdapterConfig($payGateway))
-        ->toThrow(FOSSBilling\Exception\BaseException::class, sprintf('Payment gateway %s was not found', $payGateway->getGateway()));
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, sprintf('Payment gateway %s was not found', $payGateway->getGateway()));
 });
 
 test('gets adapter class name', function (): void {

@@ -11,10 +11,10 @@ declare(strict_types=1);
 
 namespace Box\Mod\Extension\Controller;
 
-use FOSSBilling\Exception\InformationException;
+use FOSSBilling\Core\Exception\InformationException;
 use Symfony\Component\HttpFoundation\Response;
 
-class Admin implements \FOSSBilling\Container\InjectionAwareInterface
+class Admin implements \FOSSBilling\Core\Container\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 
@@ -56,28 +56,28 @@ class Admin implements \FOSSBilling\Container\InjectionAwareInterface
         ];
     }
 
-    public function register(\FOSSBilling\Http\App &$app): void
+    public function register(\FOSSBilling\Core\Http\App &$app): void
     {
         $app->get('/extension', 'get_index', [], static::class);
         $app->get('/extension/settings/:mod', 'get_settings', ['mod' => '[a-z0-9-]+'], static::class);
         $app->get('/extension/languages', 'get_langs', [], static::class);
     }
 
-    public function get_index(\FOSSBilling\Http\App $app): string
+    public function get_index(\FOSSBilling\Core\Http\App $app): string
     {
         $this->di['is_admin_logged'];
 
         return $app->render('mod_extension_index');
     }
 
-    public function get_langs(\FOSSBilling\Http\App $app): string
+    public function get_langs(\FOSSBilling\Core\Http\App $app): string
     {
         $this->di['is_admin_logged'];
 
         return $app->render('mod_extension_languages');
     }
 
-    public function get_settings(\FOSSBilling\Http\App $app, $mod): string|Response
+    public function get_settings(\FOSSBilling\Core\Http\App $app, $mod): string|Response
     {
         $this->di['is_admin_logged'];
         $extensionService = $this->di['mod_service']('Extension');

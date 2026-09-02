@@ -9,9 +9,9 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling;
+namespace FOSSBilling\Core;
 
-use FOSSBilling\Exception\BaseException as Exception;
+use FOSSBilling\Core\Exception\BaseException as Exception;
 
 class Period
 {

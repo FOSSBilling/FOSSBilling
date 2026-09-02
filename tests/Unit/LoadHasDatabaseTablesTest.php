@@ -14,7 +14,7 @@ function withHasDatabaseTablesConfig(array $dbConfig, Closure $callback): mixed
 {
     $filesystem = new Filesystem();
     $original = $filesystem->readFile(PATH_CONFIG);
-    $config = FOSSBilling\System\Config::getConfig();
+    $config = FOSSBilling\Core\System\Config::getConfig();
     $config['db'] = $dbConfig;
     $filesystem->dumpFile(PATH_CONFIG, '<?php return ' . var_export($config, true) . ';');
     clearstatcache(true, PATH_CONFIG);

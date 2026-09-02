@@ -14,13 +14,13 @@ namespace Box\Mod\Servicedownloadable\Api;
 use Box\Mod\Order\Entity\Order;
 use Box\Mod\Servicedownloadable\Entity\ServiceDownloadable;
 use Box\Mod\Servicedownloadable\Entity\ServiceDownloadableFile;
-use FOSSBilling\Validation\Api\RequiredParams;
+use FOSSBilling\Core\Validation\Api\RequiredParams;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Downloadable service management.
  */
-class Client extends \FOSSBilling\Api\AbstractApi
+class Client extends \FOSSBilling\Core\Api\AbstractApi
 {
     /**
      * Use GET to call this method. Sends file attached to order.
@@ -30,25 +30,25 @@ class Client extends \FOSSBilling\Api\AbstractApi
     public function send_file($data): Response
     {
         if (empty($data['order_id'])) {
-            throw new \FOSSBilling\Exception\BaseException('Order ID is required');
+            throw new \FOSSBilling\Core\Exception\BaseException('Order ID is required');
         }
 
         $identity = $this->getIdentity();
         $order = $this->getDi()['em']->getRepository(Order::class)->findOneBy(['id' => $data['order_id'], 'clientId' => $identity->getId()]);
         if (!$order instanceof Order) {
-            throw new \FOSSBilling\Exception\InformationException('Order not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Order not found');
         }
 
         $orderService = $this->getDi()['mod_service']('order');
         $orderService->assertOrderUsable($order);
         $s = $orderService->getOrderService($order);
         if (!$s instanceof ServiceDownloadable || $order->getStatus() !== 'active') {
-            throw new \FOSSBilling\Exception\BaseException('Order is not activated');
+            throw new \FOSSBilling\Core\Exception\BaseException('Order is not activated');
         }
 
         $file = $s->findFileById((int) $data['file_id']);
         if (!$file instanceof ServiceDownloadableFile) {
-            throw new \FOSSBilling\Exception\InformationException('File not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('File not found');
         }
 
         $service = $this->getService();

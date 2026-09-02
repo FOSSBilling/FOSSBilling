@@ -13,9 +13,9 @@ namespace Box\Mod\Email\Entity;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use FOSSBilling\Api\ArrayInterface;
-use FOSSBilling\Doctrine\TimestampInterface;
-use FOSSBilling\Doctrine\TimestampTrait;
+use FOSSBilling\Core\Api\ArrayInterface;
+use FOSSBilling\Core\Doctrine\TimestampInterface;
+use FOSSBilling\Core\Doctrine\TimestampTrait;
 
 /**
  * One row per email that FOSSBilling sent to a client.
@@ -68,7 +68,7 @@ class ActivityClientEmail implements ArrayInterface, TimestampInterface
 
     public function toApiArray(): array
     {
-        $sanitizedHtml = \FOSSBilling\HtmlSanitizerFactory::sanitize($this->contentHtml ?? '', 'content');
+        $sanitizedHtml = \FOSSBilling\Core\HtmlSanitizerFactory::sanitize($this->contentHtml ?? '', 'content');
 
         return [
             'id' => $this->id,

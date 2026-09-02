@@ -12,8 +12,8 @@ declare(strict_types=1);
 namespace Box\Mod\Product\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
-use FOSSBilling\Doctrine\TimestampInterface;
-use FOSSBilling\Doctrine\TimestampTrait;
+use FOSSBilling\Core\Doctrine\TimestampInterface;
+use FOSSBilling\Core\Doctrine\TimestampTrait;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Product\Repository\ProductRepository::class)]
 #[ORM\Table(name: 'product')]

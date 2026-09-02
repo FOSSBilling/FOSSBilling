@@ -12,8 +12,8 @@ declare(strict_types=1);
 namespace Box\Mod\Staff\Controller;
 
 use Box\Mod\Staff\Entity\AdminPasswordReset;
-use FOSSBilling\Container\InjectionAwareInterface;
-use FOSSBilling\Security\RandomizedTimeFloor;
+use FOSSBilling\Core\Container\InjectionAwareInterface;
+use FOSSBilling\Core\Security\RandomizedTimeFloor;
 use Symfony\Component\HttpFoundation\Response;
 
 class Admin implements InjectionAwareInterface
@@ -45,7 +45,7 @@ class Admin implements InjectionAwareInterface
         ];
     }
 
-    public function register(\FOSSBilling\Http\App &$app): void
+    public function register(\FOSSBilling\Core\Http\App &$app): void
     {
         $app->get('/staff/login', 'get_login', [], static::class);
         $app->get('/staff/manage/:id', 'get_manage', ['id' => '[0-9]+'], static::class);
@@ -57,7 +57,7 @@ class Admin implements InjectionAwareInterface
         $app->get('/staff/email/:hash', 'get_updatepassword', ['hash' => '[a-zA-Z0-9]+'], static::class);
     }
 
-    public function get_login(\FOSSBilling\Http\App $app): string|Response
+    public function get_login(\FOSSBilling\Core\Http\App $app): string|Response
     {
         if ($this->di['auth']->isAdminLoggedIn()) {
             return $app->redirect('');
@@ -66,14 +66,14 @@ class Admin implements InjectionAwareInterface
         return $app->render('mod_staff_login');
     }
 
-    public function get_profile(\FOSSBilling\Http\App $app): string
+    public function get_profile(\FOSSBilling\Core\Http\App $app): string
     {
         $this->di['is_admin_logged'];
 
         return $app->render('mod_staff_profile');
     }
 
-    public function get_manage(\FOSSBilling\Http\App $app, $id): string
+    public function get_manage(\FOSSBilling\Core\Http\App $app, $id): string
     {
         $api = $this->di['api_admin'];
         $staff = $api->staff_get(['id' => $id]);
@@ -81,7 +81,7 @@ class Admin implements InjectionAwareInterface
         return $app->render('mod_staff_manage', ['staff' => $staff]);
     }
 
-    public function get_group(\FOSSBilling\Http\App $app, $id): string
+    public function get_group(\FOSSBilling\Core\Http\App $app, $id): string
     {
         $api = $this->di['api_admin'];
         $group = $api->staff_group_get(['id' => $id]);
@@ -101,19 +101,19 @@ class Admin implements InjectionAwareInterface
         ]);
     }
 
-    public function get_history(\FOSSBilling\Http\App $app): string
+    public function get_history(\FOSSBilling\Core\Http\App $app): string
     {
         $this->di['is_admin_logged'];
 
         return $app->render('mod_staff_login_history');
     }
 
-    public function get_passwordreset(\FOSSBilling\Http\App $app): string
+    public function get_passwordreset(\FOSSBilling\Core\Http\App $app): string
     {
         return $app->render('mod_staff_password_reset');
     }
 
-    public function get_updatepassword(\FOSSBilling\Http\App $app, $hash): string|Response
+    public function get_updatepassword(\FOSSBilling\Core\Http\App $app, $hash): string|Response
     {
         if ($error = $this->checkPageRateLimit($app, 'staff_password_reset_confirm_ip')) {
             return $error;
@@ -155,7 +155,7 @@ class Admin implements InjectionAwareInterface
         return $app->render('mod_staff_password_update', ['data' => $data]);
     }
 
-    private function checkPageRateLimit(\FOSSBilling\Http\App $app, string $policy): ?Response
+    private function checkPageRateLimit(\FOSSBilling\Core\Http\App $app, string $policy): ?Response
     {
         $result = $this->di['rate_limiter']->consume($policy, (string) $this->di['request']->getClientIp());
         if (!$result->isLimited()) {
@@ -167,6 +167,6 @@ class Admin implements InjectionAwareInterface
             $headers['Retry-After'] = (string) $result->getRetryAfterSeconds();
         }
 
-        return $app->errorResponse(new \FOSSBilling\Security\RateLimitException($result), 429, $headers);
+        return $app->errorResponse(new \FOSSBilling\Core\Security\RateLimitException($result), 429, $headers);
     }
 }

@@ -16,10 +16,10 @@ declare(strict_types=1);
 namespace Box\Mod\Profile\Api;
 
 use Box\Mod\Client\Entity\Client as ClientEntity;
-use FOSSBilling\Exception\InformationException;
-use FOSSBilling\Validation\Api\RequiredParams;
+use FOSSBilling\Core\Exception\InformationException;
+use FOSSBilling\Core\Validation\Api\RequiredParams;
 
-class Client extends \FOSSBilling\Api\AbstractApi
+class Client extends \FOSSBilling\Core\Api\AbstractApi
 {
     /**
      * Get currently logged in client details.
@@ -79,18 +79,18 @@ class Client extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      *
-     * @throws \FOSSBilling\Exception\BaseException
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     public function update($data)
     {
         if (!is_null($data['email'] ?? null)) {
-            $data['email'] = \FOSSBilling\Validation\EmailValidator::validateAndSanitizeEmail($data['email']);
+            $data['email'] = \FOSSBilling\Core\Validation\EmailValidator::validateAndSanitizeEmail($data['email']);
         }
 
         if (array_key_exists('billing_email', $data)) {
             $data['billing_email'] = empty($data['billing_email'])
                 ? null
-                : \FOSSBilling\Validation\EmailValidator::validateAndSanitizeEmail($data['billing_email']);
+                : \FOSSBilling\Core\Validation\EmailValidator::validateAndSanitizeEmail($data['billing_email']);
         }
 
         return $this->getService()->updateClient($this->getClientEntity(), $data);
@@ -119,7 +119,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      *
-     * @throws \FOSSBilling\Exception\BaseException
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams([
         'current_password' => 'Current password required',

@@ -147,7 +147,7 @@ abstract class Payment_AdapterAbstract
     {
         $log = $this->_log;
         if (!$log instanceof Psr\Log\LoggerInterface) {
-            $log = new FOSSBilling\Logging\Logger();
+            $log = new FOSSBilling\Core\Logging\Logger();
         }
 
         return $log;

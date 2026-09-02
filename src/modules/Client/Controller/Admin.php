@@ -13,7 +13,7 @@ namespace Box\Mod\Client\Controller;
 
 use Symfony\Component\HttpFoundation\Response;
 
-class Admin implements \FOSSBilling\Container\InjectionAwareInterface
+class Admin implements \FOSSBilling\Core\Container\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 
@@ -56,7 +56,7 @@ class Admin implements \FOSSBilling\Container\InjectionAwareInterface
         ];
     }
 
-    public function register(\FOSSBilling\Http\App &$app): void
+    public function register(\FOSSBilling\Core\Http\App &$app): void
     {
         $app->get('/client', 'get_index', [], static::class);
         $app->get('/client/', 'get_index', [], static::class);
@@ -68,14 +68,14 @@ class Admin implements \FOSSBilling\Container\InjectionAwareInterface
         $app->get('/client/logins', 'get_history', [], static::class);
     }
 
-    public function get_index(\FOSSBilling\Http\App $app): string
+    public function get_index(\FOSSBilling\Core\Http\App $app): string
     {
         $this->di['is_admin_logged'];
 
         return $app->render('mod_client_index');
     }
 
-    public function get_manage(\FOSSBilling\Http\App $app, $id): string
+    public function get_manage(\FOSSBilling\Core\Http\App $app, $id): string
     {
         $api = $this->di['api_admin'];
         $client = $api->client_get(['id' => $id]);
@@ -83,7 +83,7 @@ class Admin implements \FOSSBilling\Container\InjectionAwareInterface
         return $app->render('mod_client_manage', ['client' => $client]);
     }
 
-    public function get_group(\FOSSBilling\Http\App $app, $id): string
+    public function get_group(\FOSSBilling\Core\Http\App $app, $id): string
     {
         $api = $this->di['api_admin'];
         $model = $api->client_group_get(['id' => $id]);
@@ -91,14 +91,14 @@ class Admin implements \FOSSBilling\Container\InjectionAwareInterface
         return $app->render('mod_client_group', ['group' => $model]);
     }
 
-    public function get_history(\FOSSBilling\Http\App $app): string
+    public function get_history(\FOSSBilling\Core\Http\App $app): string
     {
         $api = $this->di['api_admin'];
 
         return $app->render('mod_client_login_history');
     }
 
-    public function get_login(\FOSSBilling\Http\App $app, $id): Response
+    public function get_login(\FOSSBilling\Core\Http\App $app, $id): Response
     {
         $api = $this->di['api_admin'];
         $api->client_login(['id' => $id]);

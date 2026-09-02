@@ -9,9 +9,9 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling\Api;
+namespace FOSSBilling\Core\Api;
 
-use FOSSBilling\Container\InjectionAwareInterface;
+use FOSSBilling\Core\Container\InjectionAwareInterface;
 use Pimple\Container;
 
 final class Proxy implements InjectionAwareInterface
@@ -65,7 +65,7 @@ final class Proxy implements InjectionAwareInterface
 
         $dispatcher = $this->di['api_dispatcher'];
         if (!$dispatcher instanceof Dispatcher) {
-            throw new \LogicException('API dispatcher service must resolve to a FOSSBilling\Api\Dispatcher instance');
+            throw new \LogicException('API dispatcher service must resolve to a FOSSBilling\Core\Api\Dispatcher instance');
         }
 
         return $this->dispatcher = $dispatcher;

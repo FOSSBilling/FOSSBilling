@@ -21,7 +21,7 @@ test('not existing theme', function (): void {
     $themeName = 'not existing theme';
     expect(function () use ($themeName): void {
         new Box\Mod\Theme\Model\Theme($themeName);
-    })->toThrow(FOSSBilling\Exception\BaseException::class, "Theme '{$themeName}' does not exist.");
+    })->toThrow(FOSSBilling\Core\Exception\BaseException::class, "Theme '{$themeName}' does not exist.");
 });
 
 test('is admin area theme', function () use ($existingTheme): void {

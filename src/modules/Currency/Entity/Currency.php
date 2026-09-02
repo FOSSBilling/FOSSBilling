@@ -12,9 +12,9 @@ declare(strict_types=1);
 namespace Box\Mod\Currency\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
-use FOSSBilling\Api\ArrayInterface;
-use FOSSBilling\Doctrine\TimestampInterface;
-use FOSSBilling\Doctrine\TimestampTrait;
+use FOSSBilling\Core\Api\ArrayInterface;
+use FOSSBilling\Core\Doctrine\TimestampInterface;
+use FOSSBilling\Core\Doctrine\TimestampTrait;
 use Symfony\Component\Intl\Currencies;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Currency\Repository\CurrencyRepository::class)]

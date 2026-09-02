@@ -9,10 +9,10 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling\Http;
+namespace FOSSBilling\Core\Http;
 
 use Doctrine\DBAL\Connection;
-use FOSSBilling\Exception\InformationException;
+use FOSSBilling\Core\Exception\InformationException;
 use League\Csv\EscapeFormula;
 use League\Csv\Writer;
 use Symfony\Component\HttpFoundation\HeaderUtils;

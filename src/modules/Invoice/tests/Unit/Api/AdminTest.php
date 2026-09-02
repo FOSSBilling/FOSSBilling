@@ -60,7 +60,7 @@ test('gets invoice list', function (): void {
         ->with([])
         ->andReturn(Mockery::mock(Doctrine\ORM\QueryBuilder::class));
 
-    $paginatorMock = Mockery::mock(FOSSBilling\Pagination\Service::class);
+    $paginatorMock = Mockery::mock(FOSSBilling\Core\Pagination\Service::class);
     $paginatorMock->shouldReceive('paginateMappedQuery')
         ->once()
         ->andReturnUsing(fn ($qb, $pagination, $mapper): array => ['list' => [$mapper(createEntity(Invoice::class))]]);
@@ -98,7 +98,7 @@ test('gets invoice summaries without loading invoice models', function (): void 
         ->with([1])
         ->andReturn([1 => ['subtotal' => 25.0, 'taxable_subtotal' => 0.0]]);
 
-    $paginatorMock = Mockery::mock(FOSSBilling\Pagination\Service::class);
+    $paginatorMock = Mockery::mock(FOSSBilling\Core\Pagination\Service::class);
     $paginatorMock->shouldReceive('paginateMappedQuery')
         ->once()
         ->andReturnUsing(fn ($qb, $pagination, $mapper): array => ['list' => [$mapper($invoice)]]);
@@ -582,7 +582,7 @@ test('processes a transaction', function (): void {
     $em = Mockery::mock(EntityManagerInterface::class);
     $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($transactionRepo);
 
-    $eventsMock = Mockery::mock(FOSSBilling\Event\Manager::class);
+    $eventsMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class);
     $eventsMock->shouldReceive('fire')
         ->atLeast()->once();
 
@@ -709,7 +709,7 @@ test('gets transaction list', function (): void {
         ->with([])
         ->andReturn(Mockery::mock(Doctrine\ORM\QueryBuilder::class));
 
-    $paginatorMock = Mockery::mock(FOSSBilling\Pagination\Service::class);
+    $paginatorMock = Mockery::mock(FOSSBilling\Core\Pagination\Service::class);
     $paginatorMock->shouldReceive('paginateMappedQuery')
         ->once()
         ->andReturnUsing(fn ($qb, $pagination, $mapper): array => ['list' => [$mapper([0 => createEntity(Transaction::class, ['id' => 1]), 'gateway' => 'Stripe'])]]);
@@ -821,7 +821,7 @@ test('gets gateway list', function (): void {
     $gatewayService->shouldReceive('toApiArray')
         ->andReturn(['id' => 1, 'code' => 'Custom']);
 
-    $paginatorMock = Mockery::mock(FOSSBilling\Pagination\Service::class);
+    $paginatorMock = Mockery::mock(FOSSBilling\Core\Pagination\Service::class);
     $paginatorMock->shouldReceive('paginateMappedQuery')
         ->once()
         ->with($qb, Mockery::any(), Mockery::any())
@@ -998,7 +998,7 @@ test('gets subscription list', function (): void {
     $subscriptionService->shouldReceive('getSubscriptionRepository')->andReturn($subscriptionRepository);
     $subscriptionService->shouldReceive('toApiArray')->andReturn([]);
 
-    $paginatorMock = Mockery::mock(FOSSBilling\Pagination\Service::class);
+    $paginatorMock = Mockery::mock(FOSSBilling\Core\Pagination\Service::class);
     $paginatorMock->shouldReceive('paginateMappedQuery')
         ->atLeast()->once()
         ->andReturn(['list' => [], 'total' => 0, 'pages' => 0, 'page' => 1, 'per_page' => 20]);
@@ -1066,7 +1066,7 @@ test('throws exception when creating subscription with currency mismatch', funct
     $api->setDi($di);
 
     expect(fn () => $api->subscription_create($data))
-        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Client currency must match subscription currency. Check if clients currency is defined.');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Client currency must match subscription currency. Check if clients currency is defined.');
 });
 
 test('creates a subscription with case-insensitive currency match', function (): void {
@@ -1240,7 +1240,7 @@ test('gets tax list', function (): void {
     $taxService = Mockery::mock(ServiceTax::class);
     $taxService->shouldReceive('getTaxRepository')->andReturn($taxRepo);
 
-    $paginatorMock = Mockery::mock(FOSSBilling\Pagination\Service::class);
+    $paginatorMock = Mockery::mock(FOSSBilling\Core\Pagination\Service::class);
     $paginatorMock->shouldReceive('paginateDoctrineQuery')
         ->atLeast()->once()
         ->andReturn([]);
@@ -1367,13 +1367,13 @@ test('export_csv requires both view and export permissions', function (): void {
     $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
         ->once()
         ->with('invoice', 'view', null, Mockery::any())
-        ->andThrow(new FOSSBilling\Exception\InformationException('You need the "invoice.view" permission to perform this action', [], 403));
+        ->andThrow(new FOSSBilling\Core\Exception\InformationException('You need the "invoice.view" permission to perform this action', [], 403));
 
     $api->setDi($di);
     $api->setService($serviceMock);
 
     expect(fn () => $api->export_csv(['headers' => ['id']]))
-        ->toThrow(FOSSBilling\Exception\InformationException::class);
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class);
 });
 
 test('export_csv delegates to service when permissions granted', function (): void {

@@ -89,7 +89,7 @@ test('getSessionCart returns existing cart', function (): void {
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')->with(Cart::class)->andReturn($cartRepo);
 
-    $sessionMock = Mockery::mock(FOSSBilling\Security\Session::class)->shouldIgnoreMissing();
+    $sessionMock = Mockery::mock(FOSSBilling\Core\Security\Session::class)->shouldIgnoreMissing();
     $sessionMock->shouldReceive('getId')->atLeast()->once()->andReturn($session_id);
 
     $di = container();
@@ -120,7 +120,7 @@ test('getSessionCart creates a new cart when one does not exist', function (?int
     $emMock->shouldReceive('persist')->atLeast()->once();
     $emMock->shouldReceive('flush')->atLeast()->once();
 
-    $sessionMock = Mockery::mock(FOSSBilling\Security\Session::class)->shouldIgnoreMissing();
+    $sessionMock = Mockery::mock(FOSSBilling\Core\Security\Session::class)->shouldIgnoreMissing();
     $sessionMock->shouldReceive('getId')->atLeast()->once()->andReturn($session_id);
     $sessionMock->shouldReceive('get')->atLeast()->once()->andReturn($sessionGetWillReturn);
 
@@ -190,7 +190,7 @@ test('getSessionCart reloads the existing cart after a concurrent insert wins', 
     $currencyService = Mockery::mock(CurrencyService::class);
     $currencyService->shouldReceive('getCurrencyRepository')->once()->andReturn($currencyRepository);
 
-    $session = Mockery::mock(FOSSBilling\Security\Session::class);
+    $session = Mockery::mock(FOSSBilling\Core\Security\Session::class);
     $session->shouldReceive('getId')->once()->andReturn($sessionId);
     $session->shouldReceive('get')->once()->with('client_id')->andReturn(null);
 
@@ -332,7 +332,7 @@ test('removeProduct throws exception when cart product not found', function (): 
     $service = new Service();
     $service->setDi($di);
 
-    expect(fn (): bool => $service->removeProduct($cart, 1))->toThrow(FOSSBilling\Exception\BaseException::class);
+    expect(fn (): bool => $service->removeProduct($cart, 1))->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 test('removeProduct removes matching addons', function (): void {
@@ -503,7 +503,7 @@ test('applyPromo throws exception when cart is empty', function (): void {
     $service = new Service();
     $service->setDi($di);
 
-    expect(fn (): bool => $service->applyPromo($cart, $promo))->toThrow(FOSSBilling\Exception\BaseException::class);
+    expect(fn (): bool => $service->applyPromo($cart, $promo))->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 test('rm returns true', function (): void {
@@ -663,7 +663,7 @@ test('checkoutCart returns array with expected keys', function (): void {
     $serviceMock->shouldReceive('rm')->atLeast()->once()->andReturn(true);
     $serviceMock->shouldReceive('isPromoAvailableForClientGroup')->atLeast()->once()->andReturn(true);
 
-    $eventMock = Mockery::mock(FOSSBilling\Event\Manager::class)->shouldIgnoreMissing();
+    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class)->shouldIgnoreMissing();
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
     $invoice = createEntity(Invoice::class);
@@ -712,7 +712,7 @@ test('checkoutCart throws exception when client is not able to use promo', funct
     $di['mod_service'] = $di->protect(fn () => $productService);
     $serviceMock->setDi($di);
 
-    expect(fn () => $serviceMock->checkoutCart($cart, $client))->toThrow(FOSSBilling\Exception\BaseException::class);
+    expect(fn () => $serviceMock->checkoutCart($cart, $client))->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 test('usePromo returns null', function (): void {
@@ -1082,7 +1082,7 @@ test('createFromCart compensates promo usage on transaction failure', function (
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new FOSSBilling\Logging\Logger();
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
     $di['mod_service'] = $di->protect(fn ($serviceName, $sub = '') => match ($serviceName) {
         'currency' => $currencyService,
         'client' => $clientService,
@@ -1183,7 +1183,7 @@ test('createFromCart releases reserved stock on transaction failure', function (
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new FOSSBilling\Logging\Logger();
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
     $di['mod_service'] = $di->protect(fn ($serviceName, $sub = '') => match ($serviceName) {
         'currency' => $currencyService,
         'client' => $clientService,
@@ -1281,7 +1281,7 @@ test('createFromCart does not roll back order creation when synchronous activati
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new FOSSBilling\Logging\Logger();
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
     $di['mod_service'] = $di->protect(fn ($serviceName, $sub = '') => match ($serviceName) {
         'currency' => $currencyService,
         'client' => $clientService,
@@ -1302,14 +1302,14 @@ test('usePromo throws exception when limit reached', function (): void {
     $promo = createPromoEntity(1);
 
     $productService = Mockery::mock(ProductService::class);
-    $productService->shouldReceive('usePromo')->once()->with($promo)->andThrow(new FOSSBilling\Exception\InformationException('This promo code has reached its maximum number of uses.'));
+    $productService->shouldReceive('usePromo')->once()->with($promo)->andThrow(new FOSSBilling\Core\Exception\InformationException('This promo code has reached its maximum number of uses.'));
 
     $di = container();
     $di['mod_service'] = $di->protect(fn () => $productService);
     $service = new Service();
     $service->setDi($di);
 
-    expect(fn () => $service->usePromo($promo))->toThrow(FOSSBilling\Exception\InformationException::class);
+    expect(fn () => $service->usePromo($promo))->toThrow(FOSSBilling\Core\Exception\InformationException::class);
 });
 
 test('findActivePromoByCode returns promo', function (): void {
@@ -1335,7 +1335,7 @@ test('addItem throws exception when recurring payment period param missing', fun
 
     $data = [];
 
-    $eventMock = Mockery::mock(FOSSBilling\Event\Manager::class)->shouldIgnoreMissing();
+    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class)->shouldIgnoreMissing();
     $eventMock->shouldReceive('fire')->atLeast()->once();
     $serviceHostingServiceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class)->shouldIgnoreMissing();
 
@@ -1352,14 +1352,14 @@ test('addItem throws exception when recurring payment period param missing', fun
 
         return $serviceHostingServiceMock;
     });
-    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class)->shouldIgnoreMissing();
-    $validatorMock->shouldReceive('checkRequiredParamsForArray')->andThrow(new FOSSBilling\Exception\BaseException('Period parameter not passed'));
+    $validatorMock = Mockery::mock(FOSSBilling\Core\Validation\Validator::class)->shouldIgnoreMissing();
+    $validatorMock->shouldReceive('checkRequiredParamsForArray')->andThrow(new FOSSBilling\Core\Exception\BaseException('Period parameter not passed'));
     $di['validator'] = $validatorMock;
     $productService->setDi($di);
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->addItem($cartModel, $productModel, $data))
-        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Period parameter not passed');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Period parameter not passed');
 });
 
 test('addItem throws exception when recurring payment period is not enabled', function (): void {
@@ -1369,7 +1369,7 @@ test('addItem throws exception when recurring payment period is not enabled', fu
 
     $data = ['period' => '1W'];
 
-    $eventMock = Mockery::mock(FOSSBilling\Event\Manager::class)->shouldIgnoreMissing();
+    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class)->shouldIgnoreMissing();
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
     $serviceHostingServiceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class)->shouldIgnoreMissing();
@@ -1388,13 +1388,13 @@ test('addItem throws exception when recurring payment period is not enabled', fu
 
         return $serviceHostingServiceMock;
     });
-    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class)->shouldIgnoreMissing();
+    $validatorMock = Mockery::mock(FOSSBilling\Core\Validation\Validator::class)->shouldIgnoreMissing();
     $di['validator'] = $validatorMock;
     $productService->setDi($di);
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->addItem($cartModel, $productModel, $data))
-        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Selected billing period is invalid');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Selected billing period is invalid');
 });
 
 test('addItem throws exception when out of stock', function (): void {
@@ -1406,7 +1406,7 @@ test('addItem throws exception when out of stock', function (): void {
 
     $data = [];
 
-    $eventMock = Mockery::mock(FOSSBilling\Event\Manager::class)->shouldIgnoreMissing();
+    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class)->shouldIgnoreMissing();
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
     $serviceHostingServiceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class)->shouldIgnoreMissing();
@@ -1437,7 +1437,7 @@ test('addItem throws exception when out of stock', function (): void {
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->addItem($cartModel, $productModel, $data))
-        ->toThrow(FOSSBilling\Exception\BaseException::class, 'This item is currently out of stock');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'This item is currently out of stock');
 });
 
 test('addItem rejects cumulative stock overflow', function (): void {
@@ -1453,7 +1453,7 @@ test('addItem rejects cumulative stock overflow', function (): void {
     $existingCartProduct->product_id = 7;
     $existingCartProduct->config = json_encode(['quantity' => 1]);
 
-    $eventMock = Mockery::mock(FOSSBilling\Event\Manager::class)->shouldIgnoreMissing();
+    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class)->shouldIgnoreMissing();
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
     $serviceHostingServiceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class)->shouldIgnoreMissing();
@@ -1483,7 +1483,7 @@ test('addItem rejects cumulative stock overflow', function (): void {
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->addItem($cartModel, $productModel, ['quantity' => 1]))
-        ->toThrow(FOSSBilling\Exception\BaseException::class, 'This item is currently out of stock');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'This item is currently out of stock');
 });
 
 test('addItem rejects duplicate domain register', function (): void {
@@ -1503,7 +1503,7 @@ test('addItem rejects duplicate domain register', function (): void {
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')->with(CartProduct::class)->andReturn($cartProductRepo);
 
-    $eventMock = Mockery::mock(FOSSBilling\Event\Manager::class)->shouldIgnoreMissing();
+    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class)->shouldIgnoreMissing();
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
@@ -1526,7 +1526,7 @@ test('addItem rejects duplicate domain register', function (): void {
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->addItem($cartModel, $productModel, ['register_sld' => 'example', 'register_tld' => '.com']))
-        ->toThrow(FOSSBilling\Exception\InformationException::class, 'This domain is already in the cart.');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'This domain is already in the cart.');
 });
 
 test('addItem rejects duplicate domain transfer', function (): void {
@@ -1546,7 +1546,7 @@ test('addItem rejects duplicate domain transfer', function (): void {
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')->with(CartProduct::class)->andReturn($cartProductRepo);
 
-    $eventMock = Mockery::mock(FOSSBilling\Event\Manager::class)->shouldIgnoreMissing();
+    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class)->shouldIgnoreMissing();
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
@@ -1569,7 +1569,7 @@ test('addItem rejects duplicate domain transfer', function (): void {
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->addItem($cartModel, $productModel, ['transfer_sld' => 'example', 'transfer_tld' => '.net']))
-        ->toThrow(FOSSBilling\Exception\InformationException::class, 'This domain is already in the cart.');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'This domain is already in the cart.');
 });
 
 test('addItem rejects duplicate domain nested', function (): void {
@@ -1591,7 +1591,7 @@ test('addItem rejects duplicate domain nested', function (): void {
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')->with(CartProduct::class)->andReturn($cartProductRepo);
 
-    $eventMock = Mockery::mock(FOSSBilling\Event\Manager::class)->shouldIgnoreMissing();
+    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class)->shouldIgnoreMissing();
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
@@ -1615,7 +1615,7 @@ test('addItem rejects duplicate domain nested', function (): void {
 
     expect(fn () => $serviceMock->addItem($cartModel, $productModel, [
         'domain' => ['register_sld' => 'mysite', 'register_tld' => '.org'],
-    ]))->toThrow(FOSSBilling\Exception\InformationException::class, 'This domain is already in the cart.');
+    ]))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'This domain is already in the cart.');
 });
 
 test('addItem for hosting type returns true', function (): void {
@@ -1627,7 +1627,7 @@ test('addItem for hosting type returns true', function (): void {
 
     $data = [];
 
-    $eventMock = Mockery::mock(FOSSBilling\Event\Manager::class)->shouldIgnoreMissing();
+    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class)->shouldIgnoreMissing();
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
     $productDomainModel = createProductEntity(type: 'domain');
@@ -1659,7 +1659,7 @@ test('addItem for hosting type returns true', function (): void {
 
         return $serviceHostingServiceMock;
     });
-    $di['logger'] = new FOSSBilling\Logging\Logger();
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
 
     $productService->setDi($di);
     $serviceMock->setDi($di);
@@ -1676,7 +1676,7 @@ test('addItem for license type returns true', function (): void {
 
     $data = [];
 
-    $eventMock = Mockery::mock(FOSSBilling\Event\Manager::class)->shouldIgnoreMissing();
+    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class)->shouldIgnoreMissing();
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
     $serviceLicenseServiceMock = Mockery::mock(Box\Mod\Servicelicense\Service::class)->shouldIgnoreMissing();
@@ -1705,7 +1705,7 @@ test('addItem for license type returns true', function (): void {
 
         return $serviceLicenseServiceMock;
     });
-    $di['logger'] = new FOSSBilling\Logging\Logger();
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
 
     $productService->setDi($di);
     $serviceMock->setDi($di);
@@ -1722,7 +1722,7 @@ test('addItem for custom type returns true', function (): void {
 
     $data = [];
 
-    $eventMock = Mockery::mock(FOSSBilling\Event\Manager::class)->shouldIgnoreMissing();
+    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class)->shouldIgnoreMissing();
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
     $serviceCustomServiceMock = Mockery::mock(Box\Mod\Servicecustom\Service::class);
@@ -1751,7 +1751,7 @@ test('addItem for custom type returns true', function (): void {
 
         return $serviceCustomServiceMock;
     });
-    $di['logger'] = new FOSSBilling\Logging\Logger();
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
 
     $productService->setDi($di);
     $serviceMock->setDi($di);
@@ -2020,7 +2020,7 @@ test('addItem strips client-injected hosting_plan_id', function (): void {
         'multiple' => 1,
     ];
 
-    $eventMock = Mockery::mock(FOSSBilling\Event\Manager::class)->shouldIgnoreMissing();
+    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class)->shouldIgnoreMissing();
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
     $productDomainModel = createProductEntity(type: 'domain');
@@ -2065,7 +2065,7 @@ test('addItem strips client-injected hosting_plan_id', function (): void {
 
         return $serviceHostingServiceMock;
     });
-    $di['logger'] = new FOSSBilling\Logging\Logger();
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
 
     $productService->setDi($di);
     $serviceHostingServiceMock->setDi($di);

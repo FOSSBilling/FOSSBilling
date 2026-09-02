@@ -9,13 +9,13 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling\Update;
+namespace FOSSBilling\Core\Update;
 
-use FOSSBilling\Container\InjectionAwareInterface;
-use FOSSBilling\Exception\BaseException;
-use FOSSBilling\Exception\InformationException;
-use FOSSBilling\System\Config;
-use FOSSBilling\System\Version;
+use FOSSBilling\Core\Container\InjectionAwareInterface;
+use FOSSBilling\Core\Exception\BaseException;
+use FOSSBilling\Core\Exception\InformationException;
+use FOSSBilling\Core\System\Config;
+use FOSSBilling\Core\System\Version;
 use PhpZip\Exception\ZipException;
 use PhpZip\ZipFile;
 use Symfony\Component\Filesystem\Exception\IOException;

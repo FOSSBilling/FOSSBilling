@@ -13,7 +13,7 @@ namespace Box\Mod\Servicedomain;
 
 use Box\Mod\Servicedomain\Entity\Tld;
 
-class ServiceTld implements \FOSSBilling\Container\InjectionAwareInterface
+class ServiceTld implements \FOSSBilling\Core\Container\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 

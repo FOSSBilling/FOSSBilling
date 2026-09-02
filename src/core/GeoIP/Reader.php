@@ -9,9 +9,9 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling\GeoIP;
+namespace FOSSBilling\Core\GeoIP;
 
-use FOSSBilling\System\Config;
+use FOSSBilling\Core\System\Config;
 use MaxMind\Db\Reader as MaxMindReader;
 use MaxMind\Db\Reader\InvalidDatabaseException;
 use Pimple\Container;

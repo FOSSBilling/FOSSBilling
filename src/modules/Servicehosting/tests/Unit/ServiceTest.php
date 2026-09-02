@@ -120,8 +120,8 @@ test('validate order data', function (string $field, string $exceptionMessage, i
 
     try {
         $service->validateOrderData($data);
-        expect(true)->toBeFalse('Expected FOSSBilling\Exception\BaseException was not thrown.');
-    } catch (FOSSBilling\Exception\BaseException $e) {
+        expect(true)->toBeFalse('Expected FOSSBilling\Core\Exception\BaseException was not thrown.');
+    } catch (FOSSBilling\Core\Exception\BaseException $e) {
         expect($e->getMessage())->toBe($exceptionMessage);
         expect($e->getCode())->toBe($excCode);
     }
@@ -291,7 +291,7 @@ test('action renew order without active service', function (): void {
 
     $service->setDi($di);
     expect(fn (): bool => $service->action_renew($orderModel))
-        ->toThrow(FOSSBilling\Exception\BaseException::class, sprintf('Order %d has no active service', $orderModel->id));
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, sprintf('Order %d has no active service', $orderModel->id));
 });
 
 test('action suspend', function (): void {
@@ -336,7 +336,7 @@ test('action suspend order without active service', function (): void {
 
     $service->setDi($di);
     expect(fn (): bool => $service->action_suspend($orderModel))
-        ->toThrow(FOSSBilling\Exception\BaseException::class, sprintf('Order %d has no active service', $orderModel->id));
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, sprintf('Order %d has no active service', $orderModel->id));
 });
 
 test('action unsuspend', function (): void {
@@ -379,7 +379,7 @@ test('action unsuspend order without active service', function (): void {
 
     $service->setDi($di);
     expect(fn (): bool => $service->action_unsuspend($orderModel))
-        ->toThrow(FOSSBilling\Exception\BaseException::class, sprintf('Order %d has no active service', $orderModel->id));
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, sprintf('Order %d has no active service', $orderModel->id));
 });
 
 test('action cancel', function (): void {
@@ -422,7 +422,7 @@ test('action cancel order without active service', function (): void {
 
     $service->setDi($di);
     expect(fn (): bool => $service->action_cancel($orderModel))
-        ->toThrow(FOSSBilling\Exception\BaseException::class, sprintf('Order %d has no active service', $orderModel->id));
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, sprintf('Order %d has no active service', $orderModel->id));
 });
 
 test('action delete', function (): void {
@@ -464,7 +464,7 @@ test('change account plan', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new FOSSBilling\Logging\Logger();
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serverManagerMock = Mockery::mock('\Server_Manager_Custom');
@@ -502,7 +502,7 @@ test('change account username', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new FOSSBilling\Logging\Logger();
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
 
     $serviceMock->setDi($di);
 
@@ -518,7 +518,7 @@ test('change account username missing username', function (): void {
     $data = [];
 
     expect(fn (): bool => $service->changeAccountUsername($orderModel, $model, $data))
-        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Account username is missing or is invalid');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Account username is missing or is invalid');
 });
 
 test('change account ip', function (): void {
@@ -545,7 +545,7 @@ test('change account ip', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new FOSSBilling\Logging\Logger();
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
 
     $serviceMock->setDi($di);
 
@@ -561,7 +561,7 @@ test('change account ip missing ip', function (): void {
     $model = new ServiceHosting();
 
     expect(fn (): bool => $service->changeAccountIp($orderModel, $model, $data))
-        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Account IP address is missing or is invalid');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Account IP address is missing or is invalid');
 });
 
 test('change account domain', function (): void {
@@ -589,7 +589,7 @@ test('change account domain', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new FOSSBilling\Logging\Logger();
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
 
     $serviceMock->setDi($di);
 
@@ -605,7 +605,7 @@ test('change account domain missing params', function (): void {
     $model = new ServiceHosting();
 
     expect(fn (): bool => $service->changeAccountDomain($orderModel, $model, $data))
-        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Domain SLD or TLD is missing');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Domain SLD or TLD is missing');
 });
 
 test('change account password', function (): void {
@@ -633,7 +633,7 @@ test('change account password', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new FOSSBilling\Logging\Logger();
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
 
     $serviceMock->setDi($di);
 
@@ -649,7 +649,7 @@ test('change account password missing params', function (): void {
     $model = new ServiceHosting();
 
     expect(fn (): bool => $service->changeAccountPassword($orderModel, $model, $data))
-        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Account password is missing or is invalid');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Account password is missing or is invalid');
 });
 
 test('sync', function (): void {
@@ -680,7 +680,7 @@ test('sync', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new FOSSBilling\Logging\Logger();
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
 
     $serviceMock->setDi($di);
 
@@ -745,7 +745,7 @@ test('update', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new FOSSBilling\Logging\Logger();
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
     $service->setDi($di);
 
     $result = $service->update($model, $data);
@@ -822,7 +822,7 @@ test('create server', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new FOSSBilling\Logging\Logger();
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
 
     $service->setDi($di);
 
@@ -854,7 +854,7 @@ test('delete server', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new FOSSBilling\Logging\Logger();
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
     $service->setDi($di);
 
     $result = $service->deleteServer($hostingServerModel);
@@ -890,7 +890,7 @@ test('update server', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new FOSSBilling\Logging\Logger();
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
     $di['loggedin_admin'] = \Tests\Helpers\admin(['id' => 7]);
 
     $service->setDi($di);
@@ -922,7 +922,7 @@ test('get server manager manager not defined', function (): void {
     $hostingServerModel = new ServiceHostingServer();
 
     expect(fn () => $service->getServerManager($hostingServerModel))
-        ->toThrow(FOSSBilling\Exception\BaseException::class);
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 test('get server manager server manager invalid', function (): void {
@@ -935,7 +935,7 @@ test('get server manager server manager invalid', function (): void {
     $service->setDi($di);
 
     expect(fn () => $service->getServerManager($hostingServerModel))
-        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Server manager Custom is invalid.');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Server manager Custom is invalid.');
 });
 
 test('test connection', function (): void {
@@ -1005,7 +1005,7 @@ test('delete hp', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new FOSSBilling\Logging\Logger();
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
     $service->setDi($di);
 
     $result = $service->deleteHp($model);
@@ -1044,7 +1044,7 @@ test('update hp', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new FOSSBilling\Logging\Logger();
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
 
     $service->setDi($di);
 
@@ -1067,7 +1067,7 @@ test('create hp', function (array $data, string $expectedBandwidth, string $expe
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new FOSSBilling\Logging\Logger();
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
 
     $service->setDi($di);
 
@@ -1122,7 +1122,7 @@ test('get server manager with log', function (): void {
     $serviceMock->shouldReceive('getServerManager')->atLeast()->once()->andReturn($serverManagerMock);
 
     $orderServiceMock = Mockery::mock(OrderService::class);
-    $orderServiceMock->shouldReceive('getLogger')->atLeast()->once()->andReturn(new FOSSBilling\Logging\Logger());
+    $orderServiceMock->shouldReceive('getLogger')->atLeast()->once()->andReturn(new FOSSBilling\Core\Logging\Logger());
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
@@ -1316,7 +1316,7 @@ test('updateServer keeps the existing secret when the incoming value is blank', 
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new FOSSBilling\Logging\Logger();
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
     $di['loggedin_admin'] = \Tests\Helpers\admin(['id' => 7]);
     $service->setDi($di);
 
@@ -1351,7 +1351,7 @@ test('updateServer replaces the stored secret when a new value is submitted', fu
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new FOSSBilling\Logging\Logger();
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
     $di['loggedin_admin'] = \Tests\Helpers\admin(['id' => 7]);
     $service->setDi($di);
 
@@ -1448,8 +1448,8 @@ test('validateOrderData rejects admin-controlled values differing from product c
 
     try {
         $service->validateOrderData($data, $product);
-        expect(true)->toBeFalse('Expected FOSSBilling\Exception\InformationException was not thrown.');
-    } catch (FOSSBilling\Exception\InformationException $e) {
+        expect(true)->toBeFalse('Expected FOSSBilling\Core\Exception\InformationException was not thrown.');
+    } catch (FOSSBilling\Core\Exception\InformationException $e) {
         expect($e->getMessage())->toBe('The requested configuration does not match the selected product.');
         expect($e->getCode())->toBe(705);
     }

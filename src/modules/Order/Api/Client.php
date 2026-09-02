@@ -17,9 +17,9 @@ namespace Box\Mod\Order\Api;
 
 use Box\Mod\Client\Entity\Client as ClientEntity;
 use Box\Mod\Order\Entity\Order;
-use FOSSBilling\Pagination\Options;
+use FOSSBilling\Core\Pagination\Options;
 
-class Client extends \FOSSBilling\Api\AbstractApi
+class Client extends \FOSSBilling\Core\Api\AbstractApi
 {
     /**
      * Get list of orders.
@@ -86,7 +86,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
         $status = $order->getStatus();
 
         if ($status !== Order::STATUS_ACTIVE) {
-            throw new \FOSSBilling\Exception\InformationException('Order is not active');
+            throw new \FOSSBilling\Core\Exception\InformationException('Order is not active');
         }
 
         return $this->getService()->getOrderServiceData($order, $this->getIdentity());
@@ -114,7 +114,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
         $model = $this->_getOrder($data);
         $status = $model->getStatus();
         if (!in_array($status, [Order::STATUS_PENDING_SETUP, Order::STATUS_FAILED_SETUP])) {
-            throw new \FOSSBilling\Exception\InformationException('Only pending and failed setup orders can be deleted.');
+            throw new \FOSSBilling\Core\Exception\InformationException('Only pending and failed setup orders can be deleted.');
         }
 
         return $this->getService()->deleteFromOrder($model);
@@ -129,7 +129,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
 
         $order = $this->findOrderForIdentity($this->getIdentity(), (int) $data['id']);
         if (!$order instanceof Order) {
-            throw new \FOSSBilling\Exception\InformationException('Order not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Order not found');
         }
 
         return $order;
@@ -138,7 +138,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
     private function getClientId(object $identity): int
     {
         if (!$identity instanceof ClientEntity) {
-            throw new \FOSSBilling\Exception\InformationException('Client identity not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Client identity not found');
         }
 
         return (int) $identity->getId();
@@ -147,7 +147,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
     private function findOrderForIdentity(object $identity, int $id): ?Order
     {
         if (!$identity instanceof ClientEntity) {
-            throw new \FOSSBilling\Exception\InformationException('Client identity not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Client identity not found');
         }
 
         return $this->getService()->findForClientById($identity, $id);

@@ -13,9 +13,9 @@ namespace Box\Mod\Redirect;
 
 use Box\Mod\Extension\Entity\ExtensionMeta;
 use Box\Mod\Extension\Repository\ExtensionMetaRepository;
-use FOSSBilling\Exception\BaseException;
+use FOSSBilling\Core\Exception\BaseException;
 
-class Service implements \FOSSBilling\Container\InjectionAwareInterface
+class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
     private ?ExtensionMetaRepository $extensionMetaRepository = null;

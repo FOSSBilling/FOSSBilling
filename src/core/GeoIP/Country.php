@@ -9,7 +9,7 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling\GeoIP;
+namespace FOSSBilling\Core\GeoIP;
 
 use PrinsFrank\Standards\Country\CountryAlpha2;
 use PrinsFrank\Standards\Language\LanguageAlpha2;

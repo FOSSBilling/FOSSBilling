@@ -42,10 +42,10 @@ test('gets list of orders', function (): void {
     $serviceMock->shouldReceive('getSearchQuery')->atLeast()->once()->andReturn(['query', []]);
     $serviceMock->shouldReceive('getBatchForApi')->atLeast()->once()->andReturn([]);
 
-    $paginatorMock = Mockery::mock(FOSSBilling\Pagination\Service::class);
+    $paginatorMock = Mockery::mock(FOSSBilling\Core\Pagination\Service::class);
     $paginatorMock->shouldReceive('getPaginatedResultSet')->atLeast()->once()->andReturn(['list' => []]);
 
-    $modMock = Mockery::mock(FOSSBilling\Module::class);
+    $modMock = Mockery::mock(FOSSBilling\Core\Module::class);
     $modMock->shouldReceive('getConfig')->atLeast()->once()->andReturn(['show_addons' => 0]);
 
     $di = container();
@@ -112,7 +112,7 @@ test('rejects order create with mark invoice paid when invoice permission is mis
     $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
         ->once()
         ->with('invoice', null, null, Mockery::any())
-        ->andThrow(new FOSSBilling\Exception\InformationException('Denied', [], 403));
+        ->andThrow(new FOSSBilling\Core\Exception\InformationException('Denied', [], 403));
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (string $name): Mockery\MockInterface => match (strtolower($name)) {
@@ -129,7 +129,7 @@ test('rejects order create with mark invoice paid when invoice permission is mis
         'invoice_option' => 'issue-invoice',
         'mark_invoice_paid' => 1,
         'gateway_id' => 5,
-    ]))->toThrow(FOSSBilling\Exception\InformationException::class);
+    ]))->toThrow(FOSSBilling\Core\Exception\InformationException::class);
 });
 
 test('uses invoice service to validate mark paid request when permission granted', function (): void {
@@ -223,7 +223,7 @@ test('rejects invalid invoice payment payload before order creation', function (
     $invoiceServiceMock = Mockery::mock(Box\Mod\Invoice\Service::class);
     $invoiceServiceMock->shouldReceive('validateAdminMarkAsPaidRequest')
         ->once()
-        ->andThrow(new FOSSBilling\Exception\InformationException('Transaction ID is required when using the Custom payment gateway.'));
+        ->andThrow(new FOSSBilling\Core\Exception\InformationException('Transaction ID is required when using the Custom payment gateway.'));
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (string $name): Mockery\MockInterface => match (strtolower($name)) {
@@ -241,7 +241,7 @@ test('rejects invalid invoice payment payload before order creation', function (
         'invoice_option' => 'issue-invoice',
         'mark_invoice_paid' => 1,
         'gateway_id' => 5,
-    ]))->toThrow(FOSSBilling\Exception\InformationException::class, 'Transaction ID is required when using the Custom payment gateway.');
+    ]))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Transaction ID is required when using the Custom payment gateway.');
 });
 
 test('updates an order', function (): void {
@@ -364,7 +364,7 @@ test('throws exception when unsuspending non-suspended order', function (): void
 
     $data = [];
 
-    expect(fn () => $apiMock->unsuspend($data))->toThrow(FOSSBilling\Exception\BaseException::class);
+    expect(fn () => $apiMock->unsuspend($data))->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 test('cancels an order', function (): void {
@@ -461,7 +461,7 @@ test('throws exception when uncanceling non-canceled order', function (): void {
 
     $data = [];
 
-    expect(fn () => $apiMock->uncancel($data))->toThrow(FOSSBilling\Exception\BaseException::class);
+    expect(fn () => $apiMock->uncancel($data))->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 test('deletes an order', function (): void {
@@ -585,7 +585,7 @@ test('throws exception when config is not set', function (): void {
 
     $data = [];
 
-    expect(fn () => $apiMock->update_config($data))->toThrow(FOSSBilling\Exception\BaseException::class);
+    expect(fn () => $apiMock->update_config($data))->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 test('gets order service', function (): void {
@@ -619,7 +619,7 @@ test('gets order status history', function (): void {
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getOrderStatusSearchQuery')->atLeast()->once()->andReturn(['query', []]);
 
-    $paginatorMock = Mockery::mock(FOSSBilling\Pagination\Service::class);
+    $paginatorMock = Mockery::mock(FOSSBilling\Core\Pagination\Service::class);
     $paginatorMock->shouldReceive('getPaginatedResultSet')->atLeast()->once()->andReturn([]);
 
     $di = container();
@@ -761,13 +761,13 @@ test('export_csv requires both view and export permissions', function (): void {
     $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
         ->once()
         ->with('order', 'view', null, Mockery::any())
-        ->andThrow(new FOSSBilling\Exception\InformationException('You need the "order.view" permission to perform this action', [], 403));
+        ->andThrow(new FOSSBilling\Core\Exception\InformationException('You need the "order.view" permission to perform this action', [], 403));
 
     $api->setDi($di);
     $api->setService($serviceMock);
 
     expect(fn () => $api->export_csv(['headers' => ['id']]))
-        ->toThrow(FOSSBilling\Exception\InformationException::class);
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class);
 });
 
 test('export_csv delegates to service when permissions granted', function (): void {

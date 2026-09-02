@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Widgets\Controller;
 
-class Admin implements \FOSSBilling\Container\InjectionAwareInterface
+class Admin implements \FOSSBilling\Core\Container\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 
@@ -40,12 +40,12 @@ class Admin implements \FOSSBilling\Container\InjectionAwareInterface
         ];
     }
 
-    public function register(\FOSSBilling\Http\App &$app): void
+    public function register(\FOSSBilling\Core\Http\App &$app): void
     {
         $app->get('/widgets', 'get_index', [], static::class);
     }
 
-    public function get_index(\FOSSBilling\Http\App $app): string
+    public function get_index(\FOSSBilling\Core\Http\App $app): string
     {
         $this->di['is_admin_logged'];
 

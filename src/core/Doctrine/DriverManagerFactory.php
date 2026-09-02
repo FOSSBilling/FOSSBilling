@@ -9,12 +9,12 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling\Doctrine;
+namespace FOSSBilling\Core\Doctrine;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\DriverManager;
-use FOSSBilling\Exception\BaseException as Exception;
-use FOSSBilling\System\Config;
+use FOSSBilling\Core\Exception\BaseException as Exception;
+use FOSSBilling\Core\System\Config;
 
 class DriverManagerFactory
 {
@@ -88,7 +88,7 @@ class DriverManagerFactory
         $driver = Driver::tryFrom($dbConfig['driver']);
         if ($driver === null || !$driver->isSqlite()) {
             $defaultPort = $driver?->defaultPort() ?? self::DEFAULT_PORTS[$dbConfig['driver']] ?? self::DEFAULT_PORTS['pdo_mysql'];
-            $dbConfig['port'] = \FOSSBilling\Utils\Normalizer::normalizePort($dbConfig['port'] ?? null, $defaultPort);
+            $dbConfig['port'] = \FOSSBilling\Core\Utils\Normalizer::normalizePort($dbConfig['port'] ?? null, $defaultPort);
         }
 
         return $dbConfig;

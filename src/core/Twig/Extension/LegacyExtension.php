@@ -9,7 +9,7 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling\Twig\Extension;
+namespace FOSSBilling\Core\Twig\Extension;
 
 use Twig\Attribute\AsTwigFilter;
 

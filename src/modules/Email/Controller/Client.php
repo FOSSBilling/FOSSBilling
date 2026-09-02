@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Email\Controller;
 
-class Client implements \FOSSBilling\Container\InjectionAwareInterface
+class Client implements \FOSSBilling\Core\Container\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 
@@ -25,20 +25,20 @@ class Client implements \FOSSBilling\Container\InjectionAwareInterface
         return $this->di;
     }
 
-    public function register(\FOSSBilling\Http\App &$app): void
+    public function register(\FOSSBilling\Core\Http\App &$app): void
     {
         $app->get('/email', 'get_emails', [], static::class);
         $app->get('/email/:id', 'get_email', ['id' => '[0-9]+'], static::class);
     }
 
-    public function get_emails(\FOSSBilling\Http\App $app): string
+    public function get_emails(\FOSSBilling\Core\Http\App $app): string
     {
         $this->di['is_client_logged'];
 
         return $app->render('mod_email_index');
     }
 
-    public function get_email(\FOSSBilling\Http\App $app, $id): string
+    public function get_email(\FOSSBilling\Core\Http\App $app, $id): string
     {
         $api = $this->di['api_client'];
         $data = ['id' => $id];

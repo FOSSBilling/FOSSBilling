@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use FOSSBilling\Update\Updater;
+use FOSSBilling\Core\Update\Updater;
 use Symfony\Component\Filesystem\Filesystem;
 
 /**

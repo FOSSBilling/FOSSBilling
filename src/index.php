@@ -13,9 +13,9 @@ require __DIR__ . DIRECTORY_SEPARATOR . 'load.php';
 global $di;
 
 use DebugBar\DataCollector\TimeDataCollector;
-use FOSSBilling\Http\RequestFactory;
+use FOSSBilling\Core\Http\RequestFactory;
 
-$config = FOSSBilling\System\Config::getConfig();
+$config = FOSSBilling\Core\System\Config::getConfig();
 $debugBar = null;
 $timeCollector = null;
 /* @var Symfony\Component\HttpFoundation\Request $request */
@@ -67,11 +67,11 @@ if (strncasecmp($url, ADMIN_PREFIX, strlen(ADMIN_PREFIX)) === 0) {
     $urlWithoutQueryString = parse_url($url, PHP_URL_PATH) ?? $url;
     $adminRelativeUrl = str_replace(ADMIN_PREFIX, '', (string) $urlWithoutQueryString);
     $appUrl = $adminRelativeUrl;
-    $app = new FOSSBilling\Http\AppAdmin([], $debugBar);
+    $app = new FOSSBilling\Core\Http\AppAdmin([], $debugBar);
 } else {
     define('ADMIN_AREA', false);
     $appUrl = $url;
-    $app = new FOSSBilling\Http\AppClient([], $debugBar);
+    $app = new FOSSBilling\Core\Http\AppClient([], $debugBar);
 }
 
 $app->setUrl($appUrl);
@@ -86,12 +86,12 @@ if (!is_null($http_err_code)) {
     $http_err_code = intval($http_err_code);
     switch ($http_err_code) {
         case 404:
-            $e = new FOSSBilling\Exception\BaseException('Page :url not found', [':url' => $url], 404);
+            $e = new FOSSBilling\Core\Exception\BaseException('Page :url not found', [':url' => $url], 404);
             $response = $app->show404($e);
 
             break;
         default:
-            $e = new FOSSBilling\Exception\BaseException('HTTP Error :err_code occurred while attempting to load :url', [':err_code' => $http_err_code, ':url' => $url], $http_err_code);
+            $e = new FOSSBilling\Core\Exception\BaseException('HTTP Error :err_code occurred while attempting to load :url', [':err_code' => $http_err_code, ':url' => $url], $http_err_code);
             $response = $app->errorResponse($e);
     }
 } else {

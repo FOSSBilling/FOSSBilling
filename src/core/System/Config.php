@@ -9,11 +9,11 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling\System;
+namespace FOSSBilling\Core\System;
 
-use FOSSBilling\Cache\CacheFactory;
-use FOSSBilling\Doctrine\EntityManagerFactory;
-use FOSSBilling\Exception\BaseException as Exception;
+use FOSSBilling\Core\Cache\CacheFactory;
+use FOSSBilling\Core\Doctrine\EntityManagerFactory;
+use FOSSBilling\Core\Exception\BaseException as Exception;
 use Symfony\Component\Filesystem\Exception\FileNotFoundException;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;

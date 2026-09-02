@@ -15,9 +15,9 @@ declare(strict_types=1);
 
 namespace Box\Mod\Activity\Api;
 
-use FOSSBilling\Pagination\Options;
+use FOSSBilling\Core\Pagination\Options;
 
-class Admin extends \FOSSBilling\Api\AbstractApi
+class Admin extends \FOSSBilling\Core\Api\AbstractApi
 {
     /**
      * Get a list of activity messages.

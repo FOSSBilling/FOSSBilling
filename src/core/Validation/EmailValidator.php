@@ -9,14 +9,14 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling\Validation;
+namespace FOSSBilling\Core\Validation;
 
 use Egulias\EmailValidator\EmailValidator as EguliasValidator;
 use Egulias\EmailValidator\Validation\DNSCheckValidation;
 use Egulias\EmailValidator\Validation\MultipleValidationWithAnd;
 use Egulias\EmailValidator\Validation\RFCValidation;
-use FOSSBilling\Exception\InformationException;
-use FOSSBilling\System\Environment;
+use FOSSBilling\Core\Exception\InformationException;
+use FOSSBilling\Core\System\Environment;
 
 final class EmailValidator
 {

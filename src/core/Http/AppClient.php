@@ -9,7 +9,7 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling\Http;
+namespace FOSSBilling\Core\Http;
 
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpFoundation\Response;
@@ -79,7 +79,7 @@ class AppClient extends App
             }
 
             return $this->responseFactory()->html($content);
-        } catch (\FOSSBilling\Exception\InformationException $e) {
+        } catch (\FOSSBilling\Core\Exception\InformationException $e) {
             // @phpstan-ignore if.alwaysFalse (DEBUG is a runtime constant that may be true during debugging)
             if (DEBUG) {
                 $this->di['logger']->withChannel('routing')->debug($e->getMessage());
@@ -97,11 +97,11 @@ class AppClient extends App
                 ]
             );
 
-            $internal = new \FOSSBilling\Exception\InformationException('The requested page could not be rendered.', [], 500);
+            $internal = new \FOSSBilling\Core\Exception\InformationException('The requested page could not be rendered.', [], 500);
 
             return $this->errorResponse($internal);
         }
-        $e = new \FOSSBilling\Exception\InformationException('Page :url not found', [':url' => $this->url], 404);
+        $e = new \FOSSBilling\Core\Exception\InformationException('Page :url not found', [':url' => $this->url], 404);
 
         $this->di['logger']->withChannel('routing')->info($e->getMessage());
 
@@ -119,7 +119,7 @@ class AppClient extends App
         } catch (LoaderError $e) {
             $this->di['logger']->withChannel('routing')->info($e->getMessage());
 
-            throw new \FOSSBilling\Exception\InformationException('Page not found', null, 404);
+            throw new \FOSSBilling\Core\Exception\InformationException('Page not found', null, 404);
         }
 
         return $template->render($variableArray);

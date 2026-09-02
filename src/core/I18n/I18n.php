@@ -9,12 +9,12 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling\I18n;
+namespace FOSSBilling\Core\I18n;
 
-use FOSSBilling\Exception\InformationException;
-use FOSSBilling\Http\CookieNames;
-use FOSSBilling\Http\CookieQueue;
-use FOSSBilling\System\Config;
+use FOSSBilling\Core\Exception\InformationException;
+use FOSSBilling\Core\Http\CookieNames;
+use FOSSBilling\Core\Http\CookieQueue;
+use FOSSBilling\Core\System\Config;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
@@ -75,7 +75,7 @@ class I18n
 
     private static function isBrowserLocaleDetectionEnabled(): bool
     {
-        return \FOSSBilling\Utils\Normalizer::normalizeBoolean(Config::getProperty('i18n.auto_detect_locale', true), true);
+        return \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean(Config::getProperty('i18n.auto_detect_locale', true), true);
     }
 
     /**

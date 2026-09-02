@@ -54,7 +54,7 @@ class Payment_Adapter_Custom
      *
      * @return string - html form with auto submit javascript
      */
-    public function getHtml(FOSSBilling\Api\Proxy $api_admin, int $invoice_id, bool $subscription): string
+    public function getHtml(FOSSBilling\Core\Api\Proxy $api_admin, int $invoice_id, bool $subscription): string
     {
         $invoiceModel = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\Invoice::class)->find($invoice_id);
         if (!$invoiceModel instanceof Box\Mod\Invoice\Entity\Invoice) {
@@ -75,14 +75,14 @@ class Payment_Adapter_Custom
     /**
      * Processes a transaction using a custom payment adapter.
      *
-     * @param FOSSBilling\Api\Proxy $api_admin  the API admin object
-     * @param int                   $id         the ID of the transaction to process
-     * @param array                 $data       the data associated with the transaction
-     * @param int                   $gateway_id the ID of the payment gateway to use
+     * @param FOSSBilling\Core\Api\Proxy $api_admin  the API admin object
+     * @param int                        $id         the ID of the transaction to process
+     * @param array                      $data       the data associated with the transaction
+     * @param int                        $gateway_id the ID of the payment gateway to use
      *
      * @return bool returns true if the transaction was processed successfully, false otherwise
      */
-    public function processTransaction(FOSSBilling\Api\Proxy $api_admin, int $id, array $data, int $gateway_id): bool
+    public function processTransaction(FOSSBilling\Core\Api\Proxy $api_admin, int $id, array $data, int $gateway_id): bool
     {
         if (!$this->isIpnValid($data)) {
             throw new Payment_Exception('Custom payment gateway callbacks must be confirmed by an administrator.');
@@ -95,7 +95,7 @@ class Payment_Adapter_Custom
                 throw new Exception('Transaction not found');
             }
             $invoice = $tx->getInvoice()
-                ?? throw new FOSSBilling\Exception\InformationException('Invoice not found');
+                ?? throw new FOSSBilling\Core\Exception\InformationException('Invoice not found');
 
             // Load the payment gateway and client associated with the transaction
             $gateway = $tx->getGateway();

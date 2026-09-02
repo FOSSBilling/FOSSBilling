@@ -9,14 +9,14 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling\Twig\Extension;
+namespace FOSSBilling\Core\Twig\Extension;
 
 use Composer\InstalledVersions;
 use DiceBear\Avatar;
 use DiceBear\Style;
-use FOSSBilling\HtmlSanitizerFactory;
-use FOSSBilling\System\Environment as AppEnvironment;
-use FOSSBilling\Twig\AppArea;
+use FOSSBilling\Core\HtmlSanitizerFactory;
+use FOSSBilling\Core\System\Environment as AppEnvironment;
+use FOSSBilling\Core\Twig\AppArea;
 use Symfony\Component\Filesystem\Path;
 use Twig\Attribute\AsTwigFilter;
 use Twig\Attribute\AsTwigFunction;
@@ -213,7 +213,7 @@ class FOSSBillingExtension
             return '';
         }
 
-        return \FOSSBilling\Utils\Format::humanReadableBytes($size);
+        return \FOSSBilling\Core\Utils\Format::humanReadableBytes($size);
     }
 
     /**

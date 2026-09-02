@@ -15,16 +15,16 @@ declare(strict_types=1);
 
 namespace Box\Mod\Formbuilder\Api;
 
-use FOSSBilling\Validation\Api\RequiredParams;
+use FOSSBilling\Core\Validation\Api\RequiredParams;
 
-class Guest extends \FOSSBilling\Api\AbstractApi
+class Guest extends \FOSSBilling\Core\Api\AbstractApi
 {
     /**
      * Get custom order form details for product.
      *
      * @return array
      *
-     * @throws \FOSSBilling\Exception\BaseException
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Form ID was not passed'])]
     public function get($data)

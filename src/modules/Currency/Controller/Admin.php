@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Currency\Controller;
 
-class Admin implements \FOSSBilling\Container\InjectionAwareInterface
+class Admin implements \FOSSBilling\Core\Container\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 
@@ -25,12 +25,12 @@ class Admin implements \FOSSBilling\Container\InjectionAwareInterface
         return $this->di;
     }
 
-    public function register(\FOSSBilling\Http\App &$app): void
+    public function register(\FOSSBilling\Core\Http\App &$app): void
     {
         $app->get('/currency/manage/:code', 'get_manage', ['code' => '[a-zA-Z]+'], static::class);
     }
 
-    public function get_manage(\FOSSBilling\Http\App $app, $code): string
+    public function get_manage(\FOSSBilling\Core\Http\App $app, $code): string
     {
         $this->di['is_admin_logged'];
         $guest_api = $this->di['api_guest'];

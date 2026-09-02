@@ -13,7 +13,7 @@ namespace Box\Mod\Email\Entity;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use FOSSBilling\Api\ArrayInterface;
+use FOSSBilling\Core\Api\ArrayInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Email\Repository\EmailTemplateRepository::class)]
 #[ORM\Table(name: 'email_template')]

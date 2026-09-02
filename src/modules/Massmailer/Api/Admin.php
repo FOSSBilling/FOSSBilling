@@ -12,10 +12,10 @@ declare(strict_types=1);
 namespace Box\Mod\Massmailer\Api;
 
 use Box\Mod\Massmailer\Entity\MassmailerMessage;
-use FOSSBilling\Pagination\Options;
-use FOSSBilling\Validation\Api\RequiredParams;
+use FOSSBilling\Core\Pagination\Options;
+use FOSSBilling\Core\Validation\Api\RequiredParams;
 
-class Admin extends \FOSSBilling\Api\AbstractApi
+class Admin extends \FOSSBilling\Core\Api\AbstractApi
 {
     /**
      * Get paginated list of active mail messages.
@@ -75,13 +75,13 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         if (isset($data['from_name'])) {
             if (empty($data['from_name'])) {
-                throw new \FOSSBilling\Exception\InformationException('Message from name cannot be empty');
+                throw new \FOSSBilling\Core\Exception\InformationException('Message from name cannot be empty');
             }
             $model->setFromName($data['from_name']);
         }
 
         if (isset($data['from_email'])) {
-            \FOSSBilling\Validation\EmailValidator::validateAndSanitizeEmail($data['from_email']);
+            \FOSSBilling\Core\Validation\EmailValidator::validateAndSanitizeEmail($data['from_email']);
             $model->setFromEmail($data['from_email']);
         }
 
@@ -137,7 +137,7 @@ Order our services at {{ "order"|url }}
 
         $id = $model->getId();
         if ($id === null) {
-            throw new \FOSSBilling\Exception\BaseException('Failed to retrieve ID of created mail message.');
+            throw new \FOSSBilling\Core\Exception\BaseException('Failed to retrieve ID of created mail message.');
         }
 
         $this->getDi()['logger']->info('Created mail message #{id}', ['id' => $id]);
@@ -156,7 +156,7 @@ Order our services at {{ "order"|url }}
         $client_id = $this->_getTestClientId();
 
         if (empty($model->getContent())) {
-            throw new \FOSSBilling\Exception\InformationException('Add some content before sending message');
+            throw new \FOSSBilling\Core\Exception\InformationException('Add some content before sending message');
         }
 
         $this->getService()->sendMessage($model, $client_id, true);
@@ -176,7 +176,7 @@ Order our services at {{ "order"|url }}
         $model = $this->_getMessage($data);
 
         if (empty($model->getContent())) {
-            throw new \FOSSBilling\Exception\InformationException('Add some content before sending message');
+            throw new \FOSSBilling\Core\Exception\InformationException('Add some content before sending message');
         }
 
         $clients = $this->getService()->getMessageReceivers($model);
@@ -215,7 +215,7 @@ Order our services at {{ "order"|url }}
 
         $id = $copy->getId();
         if ($id === null) {
-            throw new \FOSSBilling\Exception\BaseException('Failed to retrieve ID of copied mail message.');
+            throw new \FOSSBilling\Core\Exception\BaseException('Failed to retrieve ID of copied mail message.');
         }
 
         $this->getDi()['logger']->info('Copied mail message #{model_id} to #{id}', ['model_id' => $model->getId(), 'id' => $id]);
@@ -322,7 +322,7 @@ Order our services at {{ "order"|url }}
     {
         $model = $this->getService()->getMessageRepository()->find((int) $data['id']);
         if (!$model instanceof MassmailerMessage) {
-            throw new \FOSSBilling\Exception\InformationException('Message not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Message not found');
         }
 
         return $model;

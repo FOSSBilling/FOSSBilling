@@ -33,7 +33,7 @@ test('throws exception when sending file with missing order id', function (): vo
     $data = [];
 
     expect(fn (): bool => $api->send_file($data))
-        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Order ID is required');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Order ID is required');
 });
 
 test('throws exception when sending file with order not found', function (): void {
@@ -55,7 +55,7 @@ test('throws exception when sending file with order not found', function (): voi
     $api->setDi($di);
 
     expect(fn (): bool => $api->send_file($data))
-        ->toThrow(FOSSBilling\Exception\InformationException::class, 'Order not found');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Order not found');
 });
 
 test('throws exception when sending file with order not activated', function (): void {
@@ -84,7 +84,7 @@ test('throws exception when sending file with order not activated', function ():
     $api->setIdentity($modelClient);
 
     expect(fn (): bool => $api->send_file($data))
-        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Order is not activated');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Order is not activated');
 });
 
 test('does not send a file from outside the order service', function (): void {
@@ -106,7 +106,7 @@ test('does not send a file from outside the order service', function (): void {
     $api->setIdentity($client);
 
     expect(fn () => $api->send_file(['order_id' => 1, 'file_id' => 99]))
-        ->toThrow(FOSSBilling\Exception\InformationException::class, 'File not found');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'File not found');
 });
 
 test('sends file', function (): void {
@@ -180,7 +180,7 @@ test('throws exception when sending file for expired order', function (): void {
     $orderServiceMock->shouldReceive('assertOrderUsable')
         ->once()
         ->with($expiredOrder)
-        ->andThrow(new FOSSBilling\Exception\InformationException('Subscription expired'));
+        ->andThrow(new FOSSBilling\Core\Exception\InformationException('Subscription expired'));
     $orderServiceMock->shouldReceive('getOrderService')->never();
 
     $di = container();
@@ -191,5 +191,5 @@ test('throws exception when sending file for expired order', function (): void {
     $api->setIdentity($modelClient);
 
     expect(fn (): Response => $api->send_file($data))
-        ->toThrow(FOSSBilling\Exception\InformationException::class, 'Subscription expired');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Subscription expired');
 });

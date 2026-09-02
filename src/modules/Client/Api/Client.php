@@ -17,10 +17,10 @@ namespace Box\Mod\Client\Api;
 
 use Box\Mod\Client\Entity\Client as ClientEntity;
 use Box\Mod\Client\Entity\ClientBalance;
-use FOSSBilling\Exception\InformationException;
-use FOSSBilling\Pagination\Options;
+use FOSSBilling\Core\Exception\InformationException;
+use FOSSBilling\Core\Pagination\Options;
 
-class Client extends \FOSSBilling\Api\AbstractApi
+class Client extends \FOSSBilling\Core\Api\AbstractApi
 {
     /**
      * Get payments information.

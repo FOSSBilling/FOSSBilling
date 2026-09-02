@@ -10,8 +10,8 @@
 
 declare(strict_types=1);
 
-use FOSSBilling\Twig\AppArea;
-use FOSSBilling\Twig\TwigLoader;
+use FOSSBilling\Core\Twig\AppArea;
+use FOSSBilling\Core\Twig\TwigLoader;
 use Twig\Error\LoaderError;
 
 test('templates', function (): void {

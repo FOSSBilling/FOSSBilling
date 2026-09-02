@@ -17,7 +17,7 @@ use Box\Mod\Servicehosting\Entity\ServiceHosting;
 /**
  * Hosting service management.
  */
-class Client extends \FOSSBilling\Api\AbstractApi
+class Client extends \FOSSBilling\Core\Api\AbstractApi
 {
     /**
      * Change hosting account username.
@@ -86,19 +86,19 @@ class Client extends \FOSSBilling\Api\AbstractApi
     public function _getService($data): array
     {
         if (!isset($data['order_id'])) {
-            throw new \FOSSBilling\Exception\BaseException('Order ID is required');
+            throw new \FOSSBilling\Core\Exception\BaseException('Order ID is required');
         }
         $identity = $this->getIdentity();
         $order = $this->getDi()['em']->getRepository(Order::class)->findOneBy(['id' => $data['order_id'], 'clientId' => $identity->getId()]);
         if (!$order instanceof Order) {
-            throw new \FOSSBilling\Exception\InformationException('Order not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Order not found');
         }
 
         $orderService = $this->getDi()['mod_service']('order');
         $orderService->assertOrderUsable($order);
         $s = $orderService->getOrderService($order);
         if (!$s instanceof ServiceHosting || $order->getStatus() !== Order::STATUS_ACTIVE) {
-            throw new \FOSSBilling\Exception\InformationException('Order is not activated');
+            throw new \FOSSBilling\Core\Exception\InformationException('Order is not activated');
         }
 
         return [$order, $s];

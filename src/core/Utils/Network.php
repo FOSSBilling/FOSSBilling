@@ -9,10 +9,10 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling\Utils;
+namespace FOSSBilling\Core\Utils;
 
-use FOSSBilling\Container\InjectionAwareInterface;
-use FOSSBilling\System\Config;
+use FOSSBilling\Core\Container\InjectionAwareInterface;
+use FOSSBilling\Core\System\Config;
 
 final class Network implements InjectionAwareInterface
 {

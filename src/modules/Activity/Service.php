@@ -19,7 +19,7 @@ use Box\Mod\Activity\Repository\ActivitySystemRepository;
 use Box\Mod\Client\Entity\Client;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Types\Types;
-use FOSSBilling\Container\InjectionAwareInterface;
+use FOSSBilling\Core\Container\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
@@ -80,7 +80,7 @@ class Service implements InjectionAwareInterface
         $this->di['em']->flush();
     }
 
-    public static function onAfterClientLogin(\FOSSBilling\Event\Event $event): void
+    public static function onAfterClientLogin(\FOSSBilling\Core\Event\Event $event): void
     {
         $params = $event->getParameters();
         $di = $event->getDi();
@@ -96,7 +96,7 @@ class Service implements InjectionAwareInterface
         $di['em']->flush();
     }
 
-    public static function onAfterAdminLogin(\FOSSBilling\Event\Event $event): void
+    public static function onAfterAdminLogin(\FOSSBilling\Core\Event\Event $event): void
     {
         $params = $event->getParameters();
         $di = $event->getDi();
@@ -112,7 +112,7 @@ class Service implements InjectionAwareInterface
         $di['em']->flush();
     }
 
-    public static function onBeforeAdminCronRun(\FOSSBilling\Event\Event $event): void
+    public static function onBeforeAdminCronRun(\FOSSBilling\Core\Event\Event $event): void
     {
         $di = $event->getDi();
         $config = $di['mod_service']('extension')->getConfig('mod_activity');
@@ -246,7 +246,7 @@ class Service implements InjectionAwareInterface
         )->fetchAssociative();
 
         if ($client === false) {
-            throw new \FOSSBilling\Exception\BaseException('Client not found');
+            throw new \FOSSBilling\Core\Exception\BaseException('Client not found');
         }
 
         return [

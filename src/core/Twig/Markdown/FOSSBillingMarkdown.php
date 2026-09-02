@@ -9,9 +9,9 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling\Twig\Markdown;
+namespace FOSSBilling\Core\Twig\Markdown;
 
-use FOSSBilling\HtmlSanitizerFactory;
+use FOSSBilling\Core\HtmlSanitizerFactory;
 use League\CommonMark\Environment\Environment;
 use League\CommonMark\Extension\CommonMark\CommonMarkCoreExtension;
 use League\CommonMark\Extension\DefaultAttributes\DefaultAttributesExtension;

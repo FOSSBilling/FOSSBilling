@@ -9,9 +9,9 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling\Http;
+namespace FOSSBilling\Core\Http;
 
-use FOSSBilling\Security\RateLimitException;
+use FOSSBilling\Core\Security\RateLimitException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 

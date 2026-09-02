@@ -13,8 +13,8 @@ namespace Box\Mod\Staff\Entity;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use FOSSBilling\Doctrine\TimestampInterface;
-use FOSSBilling\Doctrine\TimestampTrait;
+use FOSSBilling\Core\Doctrine\TimestampInterface;
+use FOSSBilling\Core\Doctrine\TimestampTrait;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Staff\Repository\AdminPasswordResetRepository::class)]
 #[ORM\Table(name: 'admin_password_reset')]

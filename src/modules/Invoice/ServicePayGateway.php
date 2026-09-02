@@ -16,7 +16,7 @@ use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Subscription;
 use Box\Mod\Invoice\Entity\Transaction;
 use Box\Mod\Invoice\Repository\PayGatewayRepository;
-use FOSSBilling\Container\InjectionAwareInterface;
+use FOSSBilling\Core\Container\InjectionAwareInterface;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Exception\DirectoryNotFoundException;
@@ -126,7 +126,7 @@ class ServicePayGateway implements InjectionAwareInterface
     {
         $available = $this->getAvailable();
         if (!in_array($code, $available)) {
-            throw new \FOSSBilling\Exception\BaseException('Payment gateway is not available for installation.');
+            throw new \FOSSBilling\Core\Exception\BaseException('Payment gateway is not available for installation.');
         }
 
         $new = new PayGateway();
@@ -288,9 +288,9 @@ class ServicePayGateway implements InjectionAwareInterface
             }
             new $class($adapterConfig);
         } catch (\Payment_Exception $e) {
-            throw new \FOSSBilling\Exception\BaseException($e->getMessage(), null, 819);
+            throw new \FOSSBilling\Core\Exception\BaseException($e->getMessage(), null, 819);
         } catch (\Throwable $e) {
-            throw new \FOSSBilling\Exception\BaseException('Payment gateway configuration error: ' . $e->getMessage(), null, 819);
+            throw new \FOSSBilling\Core\Exception\BaseException('Payment gateway configuration error: ' . $e->getMessage(), null, 819);
         }
     }
 
@@ -325,15 +325,15 @@ class ServicePayGateway implements InjectionAwareInterface
         $id = (int) $model->getId();
 
         if ($this->di['em']->getRepository(Invoice::class)->existsByGatewayId($id)) {
-            throw new \FOSSBilling\Exception\InformationException('Cannot remove payment gateway with existing invoices');
+            throw new \FOSSBilling\Core\Exception\InformationException('Cannot remove payment gateway with existing invoices');
         }
 
         if ($this->di['em']->getRepository(Subscription::class)->existsByGatewayId($id)) {
-            throw new \FOSSBilling\Exception\InformationException('Cannot remove payment gateway with existing subscriptions');
+            throw new \FOSSBilling\Core\Exception\InformationException('Cannot remove payment gateway with existing subscriptions');
         }
 
         if ($this->di['em']->getRepository(Transaction::class)->existsByGatewayId($id)) {
-            throw new \FOSSBilling\Exception\InformationException('Cannot remove payment gateway with existing transactions');
+            throw new \FOSSBilling\Core\Exception\InformationException('Cannot remove payment gateway with existing transactions');
         }
 
         $this->di['em']->remove($model);
@@ -414,7 +414,7 @@ class ServicePayGateway implements InjectionAwareInterface
         $defaults['continue_shopping_url'] = $this->di['url']->link('/order');
         $defaults['single_page'] = true;
         if ($model instanceof Invoice) {
-            $defaults['thankyou_url'] = $this->di['url']->link("/invoice/thank-you/{$model->getHash()}", ['restore_token' => \FOSSBilling\Security\Credential::createSessionRestoreToken($this->di['session']->getId())]);
+            $defaults['thankyou_url'] = $this->di['url']->link("/invoice/thank-you/{$model->getHash()}", ['restore_token' => \FOSSBilling\Core\Security\Credential::createSessionRestoreToken($this->di['session']->getId())]);
             $defaults['invoice_url'] = $this->di['url']->link("/invoice/{$model->getHash()}");
         }
 
@@ -428,7 +428,7 @@ class ServicePayGateway implements InjectionAwareInterface
         $class = $this->getAdapterClassName($pg);
 
         if (!class_exists($class)) {
-            throw new \FOSSBilling\Exception\BaseException('Payment gateway :adapter was not found.', [':adapter' => $class]);
+            throw new \FOSSBilling\Core\Exception\BaseException('Payment gateway :adapter was not found.', [':adapter' => $class]);
         }
 
         $adapter = new $class($config);
@@ -457,7 +457,7 @@ class ServicePayGateway implements InjectionAwareInterface
         $class = $this->getAdapterClassName($pg);
 
         if (!class_exists($class)) {
-            throw new \FOSSBilling\Exception\BaseException('Payment gateway :adapter was not found', [':adapter' => $pg->getGateway()]);
+            throw new \FOSSBilling\Core\Exception\BaseException('Payment gateway :adapter was not found', [':adapter' => $pg->getGateway()]);
         }
 
         if (!method_exists($class, 'getConfig')) {
@@ -474,7 +474,7 @@ class ServicePayGateway implements InjectionAwareInterface
     {
         $gateway = $pg->getGateway();
         if ($gateway === null || $gateway === '') {
-            throw new \FOSSBilling\Exception\BaseException('Payment gateway :adapter was not found', [':adapter' => '']);
+            throw new \FOSSBilling\Core\Exception\BaseException('Payment gateway :adapter was not found', [':adapter' => '']);
         }
         $class = "Payment_Adapter_{$gateway}";
 
@@ -540,19 +540,19 @@ class ServicePayGateway implements InjectionAwareInterface
     private function getReturnUrl(PayGateway $pg, ?Invoice $model = null): string
     {
         if ($model instanceof Invoice) {
-            return $this->di['url']->link("/invoice/{$model->getHash()}", ['status' => 'ok', 'restore_token' => \FOSSBilling\Security\Credential::createSessionRestoreToken($this->di['session']->getId())]);
+            return $this->di['url']->link("/invoice/{$model->getHash()}", ['status' => 'ok', 'restore_token' => \FOSSBilling\Core\Security\Credential::createSessionRestoreToken($this->di['session']->getId())]);
         }
 
-        return $this->di['url']->link('/invoice', ['status' => 'ok', 'restore_token' => \FOSSBilling\Security\Credential::createSessionRestoreToken($this->di['session']->getId())]);
+        return $this->di['url']->link('/invoice', ['status' => 'ok', 'restore_token' => \FOSSBilling\Core\Security\Credential::createSessionRestoreToken($this->di['session']->getId())]);
     }
 
     private function getCancelUrl(PayGateway $pg, ?Invoice $model = null): string
     {
         if ($model instanceof Invoice) {
-            return $this->di['url']->link("/invoice/{$model->getHash()}", ['status' => 'cancel', 'restore_token' => \FOSSBilling\Security\Credential::createSessionRestoreToken($this->di['session']->getId())]);
+            return $this->di['url']->link("/invoice/{$model->getHash()}", ['status' => 'cancel', 'restore_token' => \FOSSBilling\Core\Security\Credential::createSessionRestoreToken($this->di['session']->getId())]);
         }
 
-        return $this->di['url']->link('/invoice', ['status' => 'cancel', 'restore_token' => \FOSSBilling\Security\Credential::createSessionRestoreToken($this->di['session']->getId())]);
+        return $this->di['url']->link('/invoice', ['status' => 'cancel', 'restore_token' => \FOSSBilling\Core\Security\Credential::createSessionRestoreToken($this->di['session']->getId())]);
     }
 
     private function getCallbackRedirect(PayGateway $pg, ?Invoice $model = null): string

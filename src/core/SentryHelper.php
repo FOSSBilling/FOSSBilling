@@ -9,13 +9,13 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling;
+namespace FOSSBilling\Core;
 
-use FOSSBilling\Exception\InformationException;
-use FOSSBilling\Http\ErrorPage;
-use FOSSBilling\System\Config;
-use FOSSBilling\System\Environment;
-use FOSSBilling\System\Version;
+use FOSSBilling\Core\Exception\InformationException;
+use FOSSBilling\Core\Http\ErrorPage;
+use FOSSBilling\Core\System\Config;
+use FOSSBilling\Core\System\Environment;
+use FOSSBilling\Core\System\Version;
 use Sentry\Event;
 use Sentry\EventHint;
 use Sentry\HttpClient\HttpClientInterface;
@@ -183,7 +183,12 @@ class SentryHelper
                         $event->setTag('theme.name', $theme);
                     }
 
-                    // Tag the library class.
+                    // Tag the core class.
+                    if (str_starts_with($exceptionPath, PATH_CORE)) {
+                        $event->setTag('core.class', self::getLibrary($exceptionPath));
+                    }
+
+                    // Tag the library (PSR-0 adapter) class.
                     if (str_starts_with($exceptionPath, PATH_LIBRARY)) {
                         $event->setTag('library.class', self::getLibrary($exceptionPath));
                     }

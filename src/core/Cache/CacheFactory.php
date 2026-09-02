@@ -9,10 +9,10 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling\Cache;
+namespace FOSSBilling\Core\Cache;
 
-use FOSSBilling\Exception\BaseException;
-use FOSSBilling\System\Config;
+use FOSSBilling\Core\Exception\BaseException;
+use FOSSBilling\Core\System\Config;
 use Psr\Cache\CacheItemPoolInterface;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 use Symfony\Component\Cache\Adapter\MemcachedAdapter;
@@ -248,7 +248,7 @@ class CacheFactory
             return;
         }
 
-        if (\FOSSBilling\Utils\Normalizer::normalizeBoolean($redisConfig['tls']['enabled'] ?? false, false)) {
+        if (\FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($redisConfig['tls']['enabled'] ?? false, false)) {
             return;
         }
 
@@ -293,9 +293,9 @@ class CacheFactory
     private static function buildRedisDsn(array $redisConfig): string
     {
         $host = $redisConfig['host'] ?? '127.0.0.1';
-        $port = \FOSSBilling\Utils\Normalizer::normalizePort($redisConfig['port'] ?? null, 6379);
+        $port = \FOSSBilling\Core\Utils\Normalizer::normalizePort($redisConfig['port'] ?? null, 6379);
         $database = (int) ($redisConfig['database'] ?? 0);
-        $scheme = \FOSSBilling\Utils\Normalizer::normalizeBoolean($redisConfig['tls']['enabled'] ?? false, false) ? 'rediss' : 'redis';
+        $scheme = \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($redisConfig['tls']['enabled'] ?? false, false) ? 'rediss' : 'redis';
 
         $auth = '';
         if (!empty($redisConfig['password'])) {
@@ -316,14 +316,14 @@ class CacheFactory
     {
         $tlsConfig = $redisConfig['tls'] ?? [];
 
-        if (!\FOSSBilling\Utils\Normalizer::normalizeBoolean($tlsConfig['enabled'] ?? false, false)) {
+        if (!\FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($tlsConfig['enabled'] ?? false, false)) {
             return [];
         }
 
         $ssl = [
-            'verify_peer' => \FOSSBilling\Utils\Normalizer::normalizeBoolean($tlsConfig['verify_peer'] ?? true, true),
-            'verify_peer_name' => \FOSSBilling\Utils\Normalizer::normalizeBoolean($tlsConfig['verify_peer_name'] ?? true, true),
-            'allow_self_signed' => \FOSSBilling\Utils\Normalizer::normalizeBoolean($tlsConfig['allow_self_signed'] ?? false, false),
+            'verify_peer' => \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($tlsConfig['verify_peer'] ?? true, true),
+            'verify_peer_name' => \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($tlsConfig['verify_peer_name'] ?? true, true),
+            'allow_self_signed' => \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($tlsConfig['allow_self_signed'] ?? false, false),
         ];
 
         if (!empty($tlsConfig['cafile'])) {
@@ -336,7 +336,7 @@ class CacheFactory
     private static function buildMemcachedDsn(array $memcachedConfig): string
     {
         $host = $memcachedConfig['host'] ?? '127.0.0.1';
-        $port = \FOSSBilling\Utils\Normalizer::normalizePort($memcachedConfig['port'] ?? null, 11211);
+        $port = \FOSSBilling\Core\Utils\Normalizer::normalizePort($memcachedConfig['port'] ?? null, 11211);
 
         return sprintf('memcached://%s:%d', $host, $port);
     }

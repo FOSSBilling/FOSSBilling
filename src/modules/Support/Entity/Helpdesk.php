@@ -15,9 +15,9 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use FOSSBilling\Api\ArrayInterface;
-use FOSSBilling\Doctrine\TimestampInterface;
-use FOSSBilling\Doctrine\TimestampTrait;
+use FOSSBilling\Core\Api\ArrayInterface;
+use FOSSBilling\Core\Doctrine\TimestampInterface;
+use FOSSBilling\Core\Doctrine\TimestampTrait;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Support\Repository\HelpdeskRepository::class)]
 #[ORM\Table(name: 'support_helpdesk')]
@@ -66,7 +66,7 @@ class Helpdesk implements ArrayInterface, TimestampInterface
         $this->tickets = new ArrayCollection();
     }
 
-    public function toApiArray(\Box\Mod\Client\Entity\Client|\Box\Mod\Staff\Entity\Admin|\FOSSBilling\Identity\Guest|null $identity = null): array
+    public function toApiArray(\Box\Mod\Client\Entity\Client|\Box\Mod\Staff\Entity\Admin|\FOSSBilling\Core\Identity\Guest|null $identity = null): array
     {
         if ($identity instanceof \Box\Mod\Staff\Entity\Admin) {
             return [
@@ -124,7 +124,7 @@ class Helpdesk implements ArrayInterface, TimestampInterface
 
     public function setCanReopen(mixed $canReopen): self
     {
-        $this->canReopen = $canReopen === null ? null : \FOSSBilling\Utils\Normalizer::normalizeBoolean($canReopen);
+        $this->canReopen = $canReopen === null ? null : \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($canReopen);
 
         return $this;
     }

@@ -9,13 +9,13 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling\Pagination;
+namespace FOSSBilling\Core\Pagination;
 
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\Pagination\Paginator as DoctrinePaginator;
-use FOSSBilling\Api\ArrayInterface;
-use FOSSBilling\Container\InjectionAwareInterface;
-use FOSSBilling\Exception\InformationException;
+use FOSSBilling\Core\Api\ArrayInterface;
+use FOSSBilling\Core\Container\InjectionAwareInterface;
+use FOSSBilling\Core\Exception\InformationException;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
 

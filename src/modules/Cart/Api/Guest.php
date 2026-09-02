@@ -13,12 +13,12 @@ namespace Box\Mod\Cart\Api;
 
 use Box\Mod\Currency\Entity\Currency;
 use Box\Mod\Product\Entity\Promo;
-use FOSSBilling\Validation\Api\RequiredParams;
+use FOSSBilling\Core\Validation\Api\RequiredParams;
 
 /**
  * Shopping cart management.
  */
-class Guest extends \FOSSBilling\Api\AbstractApi
+class Guest extends \FOSSBilling\Core\Api\AbstractApi
 {
     /**
      * Get the contents of the current shopping cart.
@@ -57,7 +57,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         $currencyRepository = $currencyService->getCurrencyRepository();
         $currency = $currencyRepository->findOneByCode($data['currency']);
         if (!$currency instanceof Currency) {
-            throw new \FOSSBilling\Exception\InformationException('Currency not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Currency not found');
         }
         $cart = $this->getService()->getSessionCart();
 
@@ -80,7 +80,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         if (!$currency instanceof Currency) {
             $currency = $currencyRepository->findDefault();
             if (!$currency instanceof Currency) {
-                throw new \FOSSBilling\Exception\BaseException('No currency available');
+                throw new \FOSSBilling\Core\Exception\BaseException('No currency available');
             }
         }
 
@@ -99,15 +99,15 @@ class Guest extends \FOSSBilling\Api\AbstractApi
 
         $promo = $this->getService()->findActivePromoByCode($data['promocode']);
         if (!$promo instanceof Promo) {
-            throw new \FOSSBilling\Exception\InformationException('The promo code has expired or does not exist');
+            throw new \FOSSBilling\Core\Exception\InformationException('The promo code has expired or does not exist');
         }
 
         if (!$this->getService()->isPromoAvailableForClientGroup($promo)) {
-            throw new \FOSSBilling\Exception\InformationException('Promo code cannot be applied to your account');
+            throw new \FOSSBilling\Core\Exception\InformationException('Promo code cannot be applied to your account');
         }
 
         if (!$this->getService()->promoCanBeApplied($promo)) {
-            throw new \FOSSBilling\Exception\InformationException('The promo code has expired or does not exist');
+            throw new \FOSSBilling\Core\Exception\InformationException('The promo code has expired or does not exist');
         }
 
         $cart = $this->getService()->getSessionCart();
@@ -155,11 +155,11 @@ class Guest extends \FOSSBilling\Api\AbstractApi
 
         $product = $productService->findOneActiveById((int) $data['id']);
         if (!$product instanceof \Box\Mod\Product\Entity\Product) {
-            throw new \FOSSBilling\Exception\InformationException('Product not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Product not found');
         }
 
         if ($product->isAddon()) {
-            throw new \FOSSBilling\Exception\InformationException('Addon products cannot be added separately.');
+            throw new \FOSSBilling\Core\Exception\InformationException('Addon products cannot be added separately.');
         }
 
         if (is_array($data['addons'] ?? '')) {

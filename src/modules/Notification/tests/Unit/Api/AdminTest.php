@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use Box\Mod\Extension\Entity\ExtensionMeta;
-use FOSSBilling\Pagination\Options;
+use FOSSBilling\Core\Pagination\Options;
 
 use function Tests\Helpers\moduleService;
 
@@ -13,7 +13,7 @@ test('get list uses doctrine pagination', function (): void {
     $service = Mockery::mock(Box\Mod\Notification\Service::class);
     $service->shouldReceive('getSearchQueryBuilder')->with(['per_page' => 10])->once()->andReturn($queryBuilder);
 
-    $pager = Mockery::mock(FOSSBilling\Pagination\Service::class);
+    $pager = Mockery::mock(FOSSBilling\Core\Pagination\Service::class);
     $pager->shouldReceive('paginateDoctrineQuery')->once()->andReturnUsing(
         function ($qb, Options $pagination) use ($queryBuilder) {
             expect($qb)->toBe($queryBuilder);

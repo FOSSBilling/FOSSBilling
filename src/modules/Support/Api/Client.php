@@ -17,10 +17,10 @@ namespace Box\Mod\Support\Api;
 
 use Box\Mod\Support\Entity\Helpdesk;
 use Box\Mod\Support\Entity\SupportTicket;
-use FOSSBilling\Pagination\Options;
-use FOSSBilling\Validation\Api\RequiredParams;
+use FOSSBilling\Core\Pagination\Options;
+use FOSSBilling\Core\Validation\Api\RequiredParams;
 
-class Client extends \FOSSBilling\Api\AbstractApi
+class Client extends \FOSSBilling\Core\Api\AbstractApi
 {
     /**
      * Get the list of tickets for the logged in client.
@@ -88,7 +88,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
 
         $helpdesk = $repo->find((int) $data['support_helpdesk_id']);
         if (!$helpdesk instanceof Helpdesk) {
-            throw new \FOSSBilling\Exception\InformationException('Helpdesk invalid');
+            throw new \FOSSBilling\Core\Exception\InformationException('Helpdesk invalid');
         }
 
         $client = $this->getIdentity();
@@ -108,11 +108,11 @@ class Client extends \FOSSBilling\Api\AbstractApi
         $ticket = $this->getService()->getSupportTicketRepository()->findOneByClient((int) $client->getId(), (int) $data['id']);
 
         if (!$ticket instanceof SupportTicket) {
-            throw new \FOSSBilling\Exception\InformationException('Ticket not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Ticket not found');
         }
 
         if (!$this->getService()->canBeReopened($ticket)) {
-            throw new \FOSSBilling\Exception\InformationException('Ticket cannot be reopened.');
+            throw new \FOSSBilling\Core\Exception\InformationException('Ticket cannot be reopened.');
         }
 
         $result = $this->getService()->ticketReply($ticket, $client, $data['content']);

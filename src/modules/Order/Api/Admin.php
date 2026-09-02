@@ -18,12 +18,12 @@ namespace Box\Mod\Order\Api;
 use Box\Mod\Client\Entity\Client as ClientEntity;
 use Box\Mod\Order\Entity\Order;
 use Box\Mod\Order\Repository\OrderRepository;
-use FOSSBilling\Exception\InformationException;
-use FOSSBilling\Pagination\Options;
-use FOSSBilling\Validation\Api\RequiredParams;
+use FOSSBilling\Core\Exception\InformationException;
+use FOSSBilling\Core\Pagination\Options;
+use FOSSBilling\Core\Validation\Api\RequiredParams;
 use Symfony\Component\HttpFoundation\Response;
 
-class Admin extends \FOSSBilling\Api\AbstractApi
+class Admin extends \FOSSBilling\Core\Api\AbstractApi
 {
     private ?OrderRepository $orderRepository = null;
 
@@ -102,7 +102,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('order', 'manage');
 
-        $markInvoicePaid = \FOSSBilling\Utils\Normalizer::normalizeBoolean($data['mark_invoice_paid'] ?? false);
+        $markInvoicePaid = \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['mark_invoice_paid'] ?? false);
         $data['mark_invoice_paid'] = $markInvoicePaid;
 
         if ($markInvoicePaid) {
@@ -194,7 +194,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('order', 'manage');
 
         $order = $this->_getOrder($data);
-        $skip_event = \FOSSBilling\Utils\Normalizer::normalizeBoolean($data['skip_event'] ?? false);
+        $skip_event = \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['skip_event'] ?? false);
 
         $reason = $data['reason'] ?? null;
 
@@ -231,8 +231,8 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('order', 'manage');
 
         $order = $this->_getOrder($data);
-        $skip_event = \FOSSBilling\Utils\Normalizer::normalizeBoolean($data['skip_event'] ?? false);
-        $cancelAtPeriodEnd = \FOSSBilling\Utils\Normalizer::normalizeBoolean($data['cancel_at_period_end'] ?? false);
+        $skip_event = \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['skip_event'] ?? false);
+        $cancelAtPeriodEnd = \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['cancel_at_period_end'] ?? false);
 
         $reason = $data['reason'] ?? null;
 
@@ -285,8 +285,8 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('order', 'manage');
 
         $order = $this->_getOrder($data);
-        $delete_addons = \FOSSBilling\Utils\Normalizer::normalizeBoolean($data['delete_addons'] ?? false);
-        $forceDelete = \FOSSBilling\Utils\Normalizer::normalizeBoolean($data['force_delete'] ?? false);
+        $delete_addons = \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['delete_addons'] ?? false);
+        $forceDelete = \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['force_delete'] ?? false);
 
         if ($delete_addons) {
             $list = $this->getService()->getOrderAddonsList($order);
@@ -362,7 +362,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $config = $data['config'] ?? null;
         if (!is_array($config)) {
-            throw new \FOSSBilling\Exception\BaseException('Order config not passed');
+            throw new \FOSSBilling\Core\Exception\BaseException('Order config not passed');
         }
 
         return $this->getService()->updateOrderConfig($order, $config);
@@ -513,7 +513,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('order', 'manage');
 
-        $delete_addons = \FOSSBilling\Utils\Normalizer::normalizeBoolean($data['delete_addons'] ?? false);
+        $delete_addons = \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['delete_addons'] ?? false);
 
         foreach ($data['ids'] as $id) {
             $this->delete(['id' => $id, 'delete_addons' => $delete_addons]);

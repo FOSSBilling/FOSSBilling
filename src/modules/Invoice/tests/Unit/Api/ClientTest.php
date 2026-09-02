@@ -51,7 +51,7 @@ test('gets invoice list', function (): void {
         ->with(['client_id' => 7, 'approved' => true])
         ->andReturn(Mockery::mock(Doctrine\ORM\QueryBuilder::class));
 
-    $paginatorMock = Mockery::mock(FOSSBilling\Pagination\Service::class);
+    $paginatorMock = Mockery::mock(FOSSBilling\Core\Pagination\Service::class);
     $paginatorMock->shouldReceive('paginateMappedQuery')
         ->once()
         ->andReturnUsing(fn ($qb, $pagination, $mapper): array => ['list' => [$mapper(createEntity(Invoice::class))]]);
@@ -109,7 +109,7 @@ test('throws exception when invoice is not found', function (): void {
 
     $data['hash'] = md5('1');
     expect(fn () => $api->get($data))
-        ->toThrow(FOSSBilling\Exception\InformationException::class, 'Invoice was not found');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Invoice was not found');
 });
 
 test('creates renewal invoice', function (): void {
@@ -231,7 +231,7 @@ test('throws exception when creating renewal invoice for order not found', funct
     $data['order_id'] = 1;
 
     expect(fn () => $api->renewal_invoice($data))
-        ->toThrow(FOSSBilling\Exception\InformationException::class, 'Order not found');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Order not found');
 });
 
 test('creates funds invoice', function (): void {
@@ -303,7 +303,7 @@ test('gets transaction list', function (): void {
         ->with(['client_id' => 7, 'status' => 'processed'])
         ->andReturn(Mockery::mock(Doctrine\ORM\QueryBuilder::class));
 
-    $paginatorMock = Mockery::mock(FOSSBilling\Pagination\Service::class);
+    $paginatorMock = Mockery::mock(FOSSBilling\Core\Pagination\Service::class);
     $paginatorMock->shouldReceive('paginateMappedQuery')
         ->once()
         ->andReturnUsing(fn ($qb, $pagination, $mapper): array => ['list' => [$mapper([0 => createEntity(Transaction::class, ['id' => 1]), 'gateway' => 'Stripe'])]]);

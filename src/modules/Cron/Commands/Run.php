@@ -22,7 +22,7 @@ use Symfony\Component\Console\Output\OutputInterface;
     description: 'Executes the cron jobs',
     hidden: false
 )]
-class Run extends Command implements \FOSSBilling\Container\InjectionAwareInterface
+class Run extends Command implements \FOSSBilling\Core\Container\InjectionAwareInterface
 {
     protected $di;
 

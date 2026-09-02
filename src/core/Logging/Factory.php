@@ -9,7 +9,7 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling\Logging;
+namespace FOSSBilling\Core\Logging;
 
 use Monolog\Formatter\LineFormatter;
 use Monolog\Handler\RotatingFileHandler;
@@ -69,14 +69,14 @@ class Factory
     {
         // Map numeric priority to Monolog Level
         return match ($priority) {
-            \FOSSBilling\Logging\Logger::EMERG => Level::Emergency,
-            \FOSSBilling\Logging\Logger::ALERT => Level::Alert,
-            \FOSSBilling\Logging\Logger::CRIT => Level::Critical,
-            \FOSSBilling\Logging\Logger::ERR => Level::Error,
-            \FOSSBilling\Logging\Logger::WARN => Level::Warning,
-            \FOSSBilling\Logging\Logger::NOTICE => Level::Notice,
-            \FOSSBilling\Logging\Logger::INFO => Level::Info,
-            \FOSSBilling\Logging\Logger::DEBUG => Level::Debug,
+            \FOSSBilling\Core\Logging\Logger::EMERG => Level::Emergency,
+            \FOSSBilling\Core\Logging\Logger::ALERT => Level::Alert,
+            \FOSSBilling\Core\Logging\Logger::CRIT => Level::Critical,
+            \FOSSBilling\Core\Logging\Logger::ERR => Level::Error,
+            \FOSSBilling\Core\Logging\Logger::WARN => Level::Warning,
+            \FOSSBilling\Core\Logging\Logger::NOTICE => Level::Notice,
+            \FOSSBilling\Core\Logging\Logger::INFO => Level::Info,
+            \FOSSBilling\Core\Logging\Logger::DEBUG => Level::Debug,
             default => Level::Debug,
         };
     }
@@ -92,7 +92,7 @@ class Factory
         } catch (\Throwable $e) {
             // This is the final fallback when a Monolog handler itself fails;
             // routing it through the application logger would recurse.
-            error_log(sprintf('[FOSSBilling\\Monolog] writer failure: %s at %s:%d', $e->getMessage(), $e->getFile(), $e->getLine()));
+            error_log(sprintf('[FOSSBilling\\Core\\Monolog] writer failure: %s at %s:%d', $e->getMessage(), $e->getFile(), $e->getLine()));
         }
     }
 }

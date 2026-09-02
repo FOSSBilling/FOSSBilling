@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 use Box\Mod\Extension\Controller\Admin;
 use Box\Mod\Extension\Service;
-use FOSSBilling\Exception\InformationException;
+use FOSSBilling\Core\Exception\InformationException;
 use Symfony\Component\HttpFoundation\Response;
 
 use function Tests\Helpers\container;
@@ -34,7 +34,7 @@ test('get_settings returns a 403 response when the module settings cannot be man
 
     $expectedResponse = new Response('denied', 403);
 
-    $app = Mockery::mock(FOSSBilling\Http\App::class);
+    $app = Mockery::mock(FOSSBilling\Core\Http\App::class);
     $app->shouldReceive('errorResponse')
         ->once()
         ->with(Mockery::type(InformationException::class), 403)
@@ -60,7 +60,7 @@ test('get_settings renders the settings page for modules the staff member may ma
 
     $controller->setDi($di);
 
-    $app = Mockery::mock(FOSSBilling\Http\App::class);
+    $app = Mockery::mock(FOSSBilling\Core\Http\App::class);
     $app->shouldReceive('render')
         ->once()
         ->with('mod_sample_settings')

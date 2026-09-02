@@ -16,9 +16,9 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use FOSSBilling\Api\ArrayInterface;
-use FOSSBilling\Doctrine\TimestampInterface;
-use FOSSBilling\Doctrine\TimestampTrait;
+use FOSSBilling\Core\Api\ArrayInterface;
+use FOSSBilling\Core\Doctrine\TimestampInterface;
+use FOSSBilling\Core\Doctrine\TimestampTrait;
 
 /**
  * A support ticket. Cross-module fields (Client, Helpdesk FK) are stored as
@@ -112,7 +112,7 @@ class SupportTicket implements ArrayInterface, TimestampInterface
         $this->notes = new ArrayCollection();
     }
 
-    public function toApiArray(\Box\Mod\Client\Entity\Client|\Box\Mod\Staff\Entity\Admin|\FOSSBilling\Identity\Guest|null $identity = null): array
+    public function toApiArray(\Box\Mod\Client\Entity\Client|\Box\Mod\Staff\Entity\Admin|\FOSSBilling\Core\Identity\Guest|null $identity = null): array
     {
         $data = [
             'id' => $this->id,
@@ -180,7 +180,7 @@ class SupportTicket implements ArrayInterface, TimestampInterface
 
         $helpdesk = $this->helpdesk;
         if (!$helpdesk instanceof Helpdesk) {
-            throw new \FOSSBilling\Exception\BaseException('Helpdesk invalid');
+            throw new \FOSSBilling\Core\Exception\BaseException('Helpdesk invalid');
         }
 
         return $helpdesk->canReopen();

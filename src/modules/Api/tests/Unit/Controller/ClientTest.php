@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use Box\Mod\Api\Controller\Client;
-use FOSSBilling\Exception\InformationException;
+use FOSSBilling\Core\Exception\InformationException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -14,14 +14,14 @@ class ClientTestRateLimiterDouble
     {
     }
 
-    public function consume(string $policy, string $subject, int $tokens = 1): FOSSBilling\Security\RateLimitResult
+    public function consume(string $policy, string $subject, int $tokens = 1): FOSSBilling\Core\Security\RateLimitResult
     {
         $this->calls[] = [$policy, $subject, $tokens];
 
-        return new FOSSBilling\Security\RateLimitResult($policy, false, 100, 99);
+        return new FOSSBilling\Core\Security\RateLimitResult($policy, false, 100, 99);
     }
 
-    public function consumeOrThrow(string $policy, string $subject, int $tokens = 1): FOSSBilling\Security\RateLimitResult
+    public function consumeOrThrow(string $policy, string $subject, int $tokens = 1): FOSSBilling\Core\Security\RateLimitResult
     {
         return $this->consume($policy, $subject, $tokens);
     }
@@ -296,9 +296,9 @@ test('raw response bypasses JSON rendering', function (): void {
         {
         }
 
-        public function getIdentity(): FOSSBilling\Identity\Guest
+        public function getIdentity(): FOSSBilling\Core\Identity\Guest
         {
-            return new FOSSBilling\Identity\Guest();
+            return new FOSSBilling\Core\Identity\Guest();
         }
     };
 

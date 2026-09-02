@@ -10,7 +10,7 @@ declare(strict_types=1);
  */
 require_once __DIR__ . DIRECTORY_SEPARATOR . 'load.php';
 
-use FOSSBilling\System\Environment;
+use FOSSBilling\Core\System\Environment;
 use Symfony\Component\Filesystem\Path;
 
 $di = include Path::join(PATH_ROOT, 'di.php');

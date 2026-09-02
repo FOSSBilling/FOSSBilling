@@ -9,7 +9,7 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling\Pagination;
+namespace FOSSBilling\Core\Pagination;
 
 /**
  * Calculates pagination metadata for rendering page navigation controls.

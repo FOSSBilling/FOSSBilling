@@ -18,17 +18,17 @@ use Doctrine\DBAL\Exception\DeadlockException;
 use Doctrine\DBAL\Exception\LockWaitTimeoutException;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\DBAL\Platforms\SQLitePlatform;
-use FOSSBilling\Cache\CacheFactory;
-use FOSSBilling\Doctrine\EntityManagerFactory;
-use FOSSBilling\Doctrine\RowLock;
-use FOSSBilling\GeoIP\Reader;
-use FOSSBilling\HtmlSanitizerFactory;
-use FOSSBilling\Period;
-use FOSSBilling\SentryHelper;
-use FOSSBilling\System\Config;
-use FOSSBilling\System\Environment;
-use FOSSBilling\System\Version;
-use FOSSBilling\Twig\SandboxedStringRenderer;
+use FOSSBilling\Core\Cache\CacheFactory;
+use FOSSBilling\Core\Doctrine\EntityManagerFactory;
+use FOSSBilling\Core\Doctrine\RowLock;
+use FOSSBilling\Core\GeoIP\Reader;
+use FOSSBilling\Core\HtmlSanitizerFactory;
+use FOSSBilling\Core\Period;
+use FOSSBilling\Core\SentryHelper;
+use FOSSBilling\Core\System\Config;
+use FOSSBilling\Core\System\Environment;
+use FOSSBilling\Core\System\Version;
+use FOSSBilling\Core\Twig\SandboxedStringRenderer;
 use Pimple\Container;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -115,7 +115,7 @@ class Service
     public function getParamValue(string $param, $default = null)
     {
         if (empty($param)) {
-            throw new \FOSSBilling\Exception\BaseException('Parameter key is missing.');
+            throw new \FOSSBilling\Core\Exception\BaseException('Parameter key is missing.');
         }
 
         $setting = $this->settingRepository->findOneByParam($param);
@@ -180,7 +180,7 @@ class Service
     {
         foreach ($params as $param) {
             if (!preg_match('/^[a-z0-9_]+$/', (string) $param)) {
-                throw new \FOSSBilling\Exception\InformationException('Invalid parameter name, received: param_.', ['param_' => $param]);
+                throw new \FOSSBilling\Core\Exception\InformationException('Invalid parameter name, received: param_.', ['param_' => $param]);
             }
         }
         $result = [];
@@ -277,7 +277,7 @@ class Service
 
         foreach ($data as $key => $val) {
             if (!$this->canUpdateParam($key)) {
-                throw new \FOSSBilling\Exception\InformationException('You do not have permission to update the parameter :param', [':param' => $key]);
+                throw new \FOSSBilling\Core\Exception\InformationException('You do not have permission to update the parameter :param', [':param' => $key]);
             }
         }
 
@@ -493,7 +493,7 @@ class Service
     {
         try {
             return $this->di['central_alerts']->filterAlerts();
-        } catch (\FOSSBilling\Exception\BaseException $e) {
+        } catch (\FOSSBilling\Core\Exception\BaseException $e) {
             return [
                 $this->createAdminAlert('warning', $e->getMessage()),
             ];
@@ -565,7 +565,7 @@ class Service
      *
      * @return string The rendered template
      *
-     * @throws \FOSSBilling\Exception\InformationException If template violates sandbox policy or has syntax errors
+     * @throws \FOSSBilling\Core\Exception\InformationException If template violates sandbox policy or has syntax errors
      */
     public function renderEmailTplString(string $tpl, array $vars, ?string $timezone = null): string
     {
@@ -594,9 +594,9 @@ class Service
             $stream = $twig->tokenize(new \Twig\Source($tpl, '__validation__'));
             $twig->parse($stream);
         } catch (\Twig\Error\SyntaxError $e) {
-            throw new \FOSSBilling\Exception\InformationException('Email template syntax error: ' . $e->getMessage());
+            throw new \FOSSBilling\Core\Exception\InformationException('Email template syntax error: ' . $e->getMessage());
         } catch (\Twig\Sandbox\SecurityError $e) {
-            throw new \FOSSBilling\Exception\InformationException('Email template contains disallowed Twig syntax: ' . $e->getMessage());
+            throw new \FOSSBilling\Core\Exception\InformationException('Email template contains disallowed Twig syntax: ' . $e->getMessage());
         }
     }
 
@@ -634,7 +634,7 @@ class Service
             }
         }
 
-        $r = new \FOSSBilling\System\Requirements();
+        $r = new \FOSSBilling\Core\System\Requirements();
         $data = $r->checkCompat();
         $data['last_patch'] = $this->getParamValue('last_patch');
 
@@ -673,7 +673,7 @@ class Service
     {
         $setting = $this->settingRepository->findOnePublicByParam((string) $param);
         if ($setting === null) {
-            throw new \FOSSBilling\Exception\BaseException('Parameter :param does not exist', [':param' => $param]);
+            throw new \FOSSBilling\Core\Exception\BaseException('Parameter :param does not exist', [':param' => $param]);
         }
 
         return $setting->getValue();
@@ -720,7 +720,7 @@ class Service
         return true;
     }
 
-    public static function onBeforeAdminCronRun(\FOSSBilling\Event\Event $event): void
+    public static function onBeforeAdminCronRun(\FOSSBilling\Core\Event\Event $event): void
     {
         $di = $event->getDi();
         /** @var Reader $geoipReader */
@@ -765,7 +765,7 @@ class Service
     public function reserveNextNumericParamValue(string $param, ?int $seed = null): ?int
     {
         if (empty($param)) {
-            throw new \FOSSBilling\Exception\BaseException('Parameter key is missing.');
+            throw new \FOSSBilling\Core\Exception\BaseException('Parameter key is missing.');
         }
 
         // On MySQL/PostgreSQL this only ever needs the single, unconditional retry below: two

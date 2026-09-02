@@ -9,10 +9,10 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling;
+namespace FOSSBilling\Core;
 
-use FOSSBilling\Exception\BaseException as Exception;
-use FOSSBilling\Exception\InformationException;
+use FOSSBilling\Core\Exception\BaseException as Exception;
+use FOSSBilling\Core\Exception\InformationException;
 use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\Mailer\Mailer;
 use Symfony\Component\Mailer\Transport;

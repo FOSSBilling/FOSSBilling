@@ -79,7 +79,7 @@ test('gets cart product title', function (array $data, string $expected): void {
 
 test('throws exception for invalid order data action', function (): void {
     $service = new Service();
-    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Core\Validation\Validator::class);
     $validatorMock->shouldReceive('checkRequiredParamsForArray')
         ->atLeast()->once();
 
@@ -92,12 +92,12 @@ test('throws exception for invalid order data action', function (): void {
     ];
 
     expect(fn () => $service->validateOrderData($data))
-        ->toThrow(FOSSBilling\Exception\BaseException::class);
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 test('throws exception for transfer order data with invalid tld', function (array $data, array $isSldValidArr, array $tldFindOneByTldArr, array $canBeTransferred): void {
     $service = new Service();
-    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Core\Validation\Validator::class);
     $validatorMock->shouldReceive('isSldValid')
         ->{$isSldValidArr['called']}()
         ->andReturn($isSldValidArr['returns']);
@@ -117,7 +117,7 @@ test('throws exception for transfer order data with invalid tld', function (arra
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->validateOrderData($data))
-        ->toThrow(FOSSBilling\Exception\BaseException::class);
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 })->with(function () {
     $tldModel = new Tld();
     $tldModel->setTld('.com');
@@ -162,7 +162,7 @@ test('throws exception when a tld requires a transfer code and none is provided'
         $data['transfer_code'] = $transferCode;
     }
 
-    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Core\Validation\Validator::class);
     $validatorMock->shouldReceive('isSldValid')->atLeast()->once()->andReturn(true);
     $validatorMock->shouldReceive('checkRequiredParamsForArray')->zeroOrMoreTimes();
 
@@ -175,7 +175,7 @@ test('throws exception when a tld requires a transfer code and none is provided'
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->validateOrderData($data))
-        ->toThrow(FOSSBilling\Exception\InformationException::class, 'A transfer code (EPP/auth code) is required to transfer example.com');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'A transfer code (EPP/auth code) is required to transfer example.com');
 })->with([
     'missing entirely' => [null],
     'blank string' => [''],
@@ -197,7 +197,7 @@ test('accepts a transfer order data when the transfer code requirement is satisf
         $data['transfer_code'] = $transferCode;
     }
 
-    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Core\Validation\Validator::class);
     $validatorMock->shouldReceive('isSldValid')->atLeast()->once()->andReturn(true);
     $validatorMock->shouldReceive('checkRequiredParamsForArray')->zeroOrMoreTimes();
 
@@ -219,7 +219,7 @@ test('accepts a transfer order data when the transfer code requirement is satisf
 
 test('throws exception for register order data with invalid tld', function (array $data, array $isSldValidArr, array $tldFindOneByTldArr, array $isDomainAvailable): void {
     $service = new Service();
-    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Core\Validation\Validator::class);
     $validatorMock->shouldReceive('isSldValid')
         ->{$isSldValidArr['called']}()
         ->andReturn($isSldValidArr['returns']);
@@ -239,7 +239,7 @@ test('throws exception for register order data with invalid tld', function (arra
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->validateOrderData($data))
-        ->toThrow(FOSSBilling\Exception\BaseException::class);
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 })->with(function () {
     $tldModel = new Tld();
     $tldModel->setTld('.com');
@@ -297,7 +297,7 @@ test('rejects a registration period outside the tld allowed periods list', funct
         'register_tld' => '.com',
     ];
 
-    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Core\Validation\Validator::class);
     $validatorMock->shouldReceive('isSldValid')->atLeast()->once()->andReturn(true);
     $validatorMock->shouldReceive('checkRequiredParamsForArray')->zeroOrMoreTimes();
 
@@ -309,7 +309,7 @@ test('rejects a registration period outside the tld allowed periods list', funct
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->validateOrderData($data))
-        ->toThrow(FOSSBilling\Exception\BaseException::class);
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 test('accepts a registration period within the tld allowed periods list', function (): void {
@@ -326,7 +326,7 @@ test('accepts a registration period within the tld allowed periods list', functi
         'register_tld' => '.com',
     ];
 
-    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Core\Validation\Validator::class);
     $validatorMock->shouldReceive('isSldValid')->atLeast()->once()->andReturn(true);
     $validatorMock->shouldReceive('checkRequiredParamsForArray')->zeroOrMoreTimes();
 
@@ -344,7 +344,7 @@ test('accepts a registration period within the tld allowed periods list', functi
 });
 
 test('rejects a crafted order for an inactive tld before contacting the registrar', function (string $action): void {
-    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Core\Validation\Validator::class);
     $validatorMock->shouldReceive('checkRequiredParamsForArray')->atLeast()->once();
     $validatorMock->shouldReceive('isSldValid')->once()->andReturnTrue();
 
@@ -367,7 +367,7 @@ test('rejects a crafted order for an inactive tld before contacting the registra
         : ['action' => 'transfer', 'transfer_sld' => 'example', 'transfer_tld' => '.com'];
 
     expect(fn () => $service->validateOrderData($data))
-        ->toThrow(FOSSBilling\Exception\InformationException::class, 'TLD is not active');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'TLD is not active');
 })->with(['register', 'transfer']);
 
 test('creates action', function (int|string $registerYears): void {
@@ -487,7 +487,7 @@ test('throws exception when creating action with missing nameservers', function 
     $order = createEntity(Order::class, ['client_id' => 1]);
 
     expect(fn () => $serviceMock->action_create($order))
-        ->toThrow(FOSSBilling\Exception\BaseException::class);
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 test('activates action', function (string $action, string $registerDomainCalled, string $transferDomainCalled): void {
@@ -542,7 +542,7 @@ test('throws exception when activating without order service', function (): void
     $order = createEntity(Order::class, ['client_id' => 1]);
 
     expect(fn (): ServiceDomain => $service->action_activate($order))
-        ->toThrow(FOSSBilling\Exception\BaseException::class);
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 test('renews action', function (): void {
@@ -591,7 +591,7 @@ test('throws exception when renewing without order service', function (): void {
     $order = createEntity(Order::class, ['id' => 1, 'client_id' => 1]);
 
     expect(fn (): bool => $service->action_renew($order))
-        ->toThrow(FOSSBilling\Exception\BaseException::class);
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 test('suspends action', function (): void {
@@ -653,7 +653,7 @@ test('throws exception when canceling without order service', function (): void 
     $order = createEntity(Order::class, ['id' => 1, 'client_id' => 1]);
 
     expect(fn (): bool => $service->action_cancel($order))
-        ->toThrow(FOSSBilling\Exception\BaseException::class);
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 test('uncancels action', function (): void {
@@ -733,7 +733,7 @@ test('throws exception when updating nameservers with missing ns1 or ns2', funct
     $serviceDomainModel = new ServiceDomain();
 
     expect(fn (): bool => $service->updateNameservers($serviceDomainModel, $data))
-        ->toThrow(FOSSBilling\Exception\BaseException::class);
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 })->with([
     [['ns2' => 'ns2.example.com']],
     [['ns1' => 'ns1.example.com']],
@@ -750,7 +750,7 @@ test('updates contacts', function (): void {
         ->atLeast()->once()
         ->andReturn([new Registrar_Domain(), $registrarAdapterMock]);
 
-    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Core\Validation\Validator::class);
     $validatorMock->shouldReceive('checkRequiredParamsForArray')
         ->zeroOrMoreTimes();
 
@@ -918,7 +918,7 @@ test('checks if domain can be transferred', function (): void {
 test('throws exception when checking transfer with empty sld', function (): void {
     $service = new Service();
     expect(fn () => $service->canBeTransferred(new Tld(), ''))
-        ->toThrow(FOSSBilling\Exception\BaseException::class);
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 test('throws exception when checking transfer not allowed', function (): void {
@@ -927,7 +927,7 @@ test('throws exception when checking transfer not allowed', function (): void {
     $tldModel->setAllowTransfer(false);
 
     expect(fn () => $service->canBeTransferred($tldModel, 'example'))
-        ->toThrow(FOSSBilling\Exception\BaseException::class);
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 test('throws registrar not found when checking transfer without registrar', function (): void {
@@ -937,7 +937,7 @@ test('throws registrar not found when checking transfer without registrar', func
     $tldModel->setTld('.com');
 
     expect(fn () => $service->canBeTransferred($tldModel, 'example'))
-        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Registrar not found');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Registrar not found');
 });
 
 test('checks if domain is available', function (): void {
@@ -956,7 +956,7 @@ test('checks if domain is available', function (): void {
     $tldRegistrar = new TldRegistrar();
     setEntityId($tldRegistrar, 1);
 
-    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Core\Validation\Validator::class);
     $validatorMock->shouldReceive('isSldValid')
         ->atLeast()->once()
         ->andReturn(true);
@@ -980,12 +980,12 @@ test('throws exception when checking availability with empty sld', function (): 
     $tldModel = new Tld();
 
     expect(fn () => $service->isDomainAvailable($tldModel, ''))
-        ->toThrow(FOSSBilling\Exception\BaseException::class);
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 test('throws exception when checking availability with invalid sld', function (): void {
     $service = new Service();
-    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Core\Validation\Validator::class);
     $validatorMock->shouldReceive('isSldValid')
         ->atLeast()->once()
         ->andReturn(false);
@@ -997,12 +997,12 @@ test('throws exception when checking availability with invalid sld', function ()
     $tldModel = new Tld();
 
     expect(fn () => $service->isDomainAvailable($tldModel, 'example'))
-        ->toThrow(FOSSBilling\Exception\BaseException::class);
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 test('throws exception when checking availability not allowed to register', function (): void {
     $service = new Service();
-    $validatorMock = Mockery::mock(FOSSBilling\Validation\Validator::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Core\Validation\Validator::class);
     $validatorMock->shouldReceive('isSldValid')
         ->atLeast()->once()
         ->andReturn(true);
@@ -1015,7 +1015,7 @@ test('throws exception when checking availability not allowed to register', func
     $model->setAllowRegister(false);
 
     expect(fn () => $service->isDomainAvailable($model, 'example'))
-        ->toThrow(FOSSBilling\Exception\BaseException::class);
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 test('syncs expiration date from the registrar', function (): void {
@@ -1143,7 +1143,7 @@ test('throws when synchronizing a domain without an order', function (): void {
     $service->setDi($di);
 
     expect(fn () => $service->synchronizeDomain($model))
-        ->toThrow(FOSSBilling\Exception\BaseException::class);
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 test('converts to api array', function (?Box\Mod\Staff\Entity\Admin $identity, string $dbLoadCalled): void {
@@ -1276,7 +1276,7 @@ test('handles on before admin cron run event', function (): void {
         ->andReturn(true);
     $di['mod_service'] = $di->protect(fn ($serviceName): Mockery\MockInterface => $serviceMock);
 
-    $boxEventMock = Mockery::mock(FOSSBilling\Event\Event::class);
+    $boxEventMock = Mockery::mock(FOSSBilling\Core\Event\Event::class);
     $boxEventMock->shouldReceive('getDi')
         ->atLeast()->once()
         ->andReturn($di);
@@ -1673,7 +1673,7 @@ test('rejects invalid tlds', function (string $input): void {
     $service = new Service();
 
     expect(fn (): string => $service->normalizeTld($input))
-        ->toThrow(FOSSBilling\Exception\InformationException::class, 'TLD is invalid');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'TLD is invalid');
 })->with([
     'empty' => '',
     'only dots' => '..',
@@ -1803,7 +1803,7 @@ test('throws exception when getting registrar adapter config for non-existing re
     $model->setRegistrar('NonExisting');
 
     expect(fn () => $service->registrarGetRegistrarAdapterConfig($model))
-        ->toThrow(FOSSBilling\Exception\BaseException::class);
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 test('gets registrar adapter', function (): void {
@@ -1833,7 +1833,7 @@ test('validates required registrar fields even when the adapter constructor does
     $model->setTestMode(false);
 
     expect(fn () => $service->registrarValidateConfiguration($model))
-        ->toThrow(FOSSBilling\Exception\InformationException::class, 'missing required configuration');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'missing required configuration');
 });
 
 test('validates conditional registrar fields using boolean snake case accessors', function (): void {
@@ -1852,7 +1852,7 @@ test('validates conditional registrar fields using boolean snake case accessors'
     $model->setTestMode(true);
 
     expect(fn () => $service->registrarValidateConfiguration($model))
-        ->toThrow(FOSSBilling\Exception\InformationException::class, 'missing required configuration');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'missing required configuration');
 });
 
 test('throws exception when getting registrar adapter for non-existing registrar', function (): void {
@@ -1917,7 +1917,7 @@ test('throws exception when removing registrar with domains', function (): void 
     $service->setDi($di);
 
     expect(fn (): bool => $service->registrarRm($model))
-        ->toThrow(FOSSBilling\Exception\InformationException::class, 'Registrar is used by 1 domains');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Registrar is used by 1 domains');
 });
 
 test('converts registrar to api array', function (): void {
@@ -2211,7 +2211,7 @@ test('rejects invalid tld pricing and minimum periods', function (array $data): 
         'price_renew' => 1,
         'price_transfer' => 1,
         'min_years' => 1,
-    ], $data)))->toThrow(FOSSBilling\Exception\InformationException::class);
+    ], $data)))->toThrow(FOSSBilling\Core\Exception\InformationException::class);
 })->with([
     'negative registration price' => [['price_registration' => -1]],
     'non-numeric renewal price' => [['price_renew' => 'free']],

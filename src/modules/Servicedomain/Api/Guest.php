@@ -12,12 +12,12 @@ declare(strict_types=1);
 namespace Box\Mod\Servicedomain\Api;
 
 use Box\Mod\Servicedomain\Entity\Tld;
-use FOSSBilling\Validation\Api\RequiredParams;
+use FOSSBilling\Core\Validation\Api\RequiredParams;
 
 /**
  * Domain service management.
  */
-class Guest extends \FOSSBilling\Api\AbstractApi
+class Guest extends \FOSSBilling\Core\Api\AbstractApi
 {
     /**
      * Get configured TLDs which can be ordered. Shows only enabled TLDs.
@@ -61,7 +61,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
     {
         $model = $this->getService()->tldFindOneByTld($data['tld']);
         if (!$model instanceof Tld) {
-            throw new \FOSSBilling\Exception\InformationException('TLD not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('TLD not found');
         }
 
         return $this->getService()->tldToApiArray($model);
@@ -84,19 +84,19 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         $sld = htmlspecialchars((string) $data['sld'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
         $validator = $this->getDi()['validator'];
         if (!$validator->isSldValid($sld)) {
-            throw new \FOSSBilling\Exception\InformationException('Domain :domain is invalid', [':domain' => $sld]);
+            throw new \FOSSBilling\Core\Exception\InformationException('Domain :domain is invalid', [':domain' => $sld]);
         }
 
         $tld = $this->getService()->tldFindOneByTld($data['tld']);
         if (!$tld instanceof Tld) {
-            throw new \FOSSBilling\Exception\InformationException('Domain availability could not be determined. TLD is not configured.');
+            throw new \FOSSBilling\Core\Exception\InformationException('Domain availability could not be determined. TLD is not configured.');
         }
         if (!$tld->isActive()) {
-            throw new \FOSSBilling\Exception\InformationException('Domain availability could not be determined. TLD is not active.');
+            throw new \FOSSBilling\Core\Exception\InformationException('Domain availability could not be determined. TLD is not active.');
         }
 
         if (!$this->getService()->isDomainAvailable($tld, $sld)) {
-            throw new \FOSSBilling\Exception\InformationException('Domain is not available.');
+            throw new \FOSSBilling\Core\Exception\InformationException('Domain is not available.');
         }
 
         return true;
@@ -118,13 +118,13 @@ class Guest extends \FOSSBilling\Api\AbstractApi
 
         $tld = $this->getService()->tldFindOneByTld($data['tld']);
         if (!$tld instanceof Tld) {
-            throw new \FOSSBilling\Exception\InformationException('TLD is not configured.');
+            throw new \FOSSBilling\Core\Exception\InformationException('TLD is not configured.');
         }
         if (!$tld->isActive()) {
-            throw new \FOSSBilling\Exception\InformationException('TLD is not active.');
+            throw new \FOSSBilling\Core\Exception\InformationException('TLD is not active.');
         }
         if (!$this->getService()->canBeTransferred($tld, $data['sld'])) {
-            throw new \FOSSBilling\Exception\InformationException('Domain cannot be transferred.');
+            throw new \FOSSBilling\Core\Exception\InformationException('Domain cannot be transferred.');
         }
 
         return true;

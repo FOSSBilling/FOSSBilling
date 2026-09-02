@@ -51,7 +51,7 @@ test('gets dependency injection container', function (): void {
 });
 
 test('updates a transaction', function (): void {
-    $eventsMock = Mockery::mock(FOSSBilling\Event\Manager::class);
+    $eventsMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class);
     $eventsMock->shouldReceive('fire')
         ->atLeast()->once();
 
@@ -91,7 +91,7 @@ test('updates a transaction', function (): void {
 });
 
 test('throws exception when creating transaction with missing invoice id', function (): void {
-    $eventsMock = Mockery::mock(FOSSBilling\Event\Manager::class);
+    $eventsMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class);
     $eventsMock->shouldReceive('fire')
         ->atLeast()->once();
 
@@ -103,11 +103,11 @@ test('throws exception when creating transaction with missing invoice id', funct
     ];
 
     expect(fn (): ?int => $service->create($data))
-        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Transaction invoice ID is missing');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Transaction invoice ID is missing');
 });
 
 test('throws exception when creating transaction with missing gateway id', function (): void {
-    $eventsMock = Mockery::mock(FOSSBilling\Event\Manager::class);
+    $eventsMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class);
     $eventsMock->shouldReceive('fire')
         ->atLeast()->once();
 
@@ -120,7 +120,7 @@ test('throws exception when creating transaction with missing gateway id', funct
     ];
 
     expect(fn (): ?int => $service->create($data))
-        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Payment gateway ID is missing');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Payment gateway ID is missing');
 });
 
 test('deletes a transaction', function (): void {
@@ -279,7 +279,7 @@ test('preProcessTransaction marks error on a generic exception', function (): vo
     $em->shouldReceive('flush')->once();
     $em->shouldReceive('refresh')->with($transactionModel)->once();
 
-    $eventsMock = Mockery::mock(FOSSBilling\Event\Manager::class);
+    $eventsMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class);
     $eventsMock->shouldNotReceive('fire');
 
     $di = container();
@@ -415,7 +415,7 @@ test('_subscribe creates and persists a subscription from an approved transactio
     });
     $em->shouldReceive('flush')->atLeast()->once();
 
-    $eventsMock = Mockery::mock(FOSSBilling\Event\Manager::class);
+    $eventsMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class);
     $eventsMock->shouldReceive('fire');
 
     $di = container();
@@ -471,7 +471,7 @@ test('_unsubscribe looks up the subscription by sid and delegates to the subscri
     $em->shouldReceive('getRepository')->with(Subscription::class)->andReturn($subscriptionRepo);
     $em->shouldReceive('flush')->atLeast()->once();
 
-    $eventsMock = Mockery::mock(FOSSBilling\Event\Manager::class);
+    $eventsMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class);
     $eventsMock->shouldReceive('fire');
 
     $di = container();
@@ -538,5 +538,5 @@ test('debitTransaction rejects a transaction without a client', function (): voi
     $service = transactionService(em: $em);
 
     expect(fn () => $service->debitTransaction($tx))
-        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Client #20 not found');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Client #20 not found');
 });

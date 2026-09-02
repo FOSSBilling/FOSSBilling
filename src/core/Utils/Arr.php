@@ -9,9 +9,9 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling\Utils;
+namespace FOSSBilling\Core\Utils;
 
-use FOSSBilling\Container\InjectionAwareInterface;
+use FOSSBilling\Core\Container\InjectionAwareInterface;
 
 final class Arr implements InjectionAwareInterface
 {
@@ -66,7 +66,7 @@ final class Arr implements InjectionAwareInterface
         }
 
         if (!preg_match('/^[a-zA-Z0-9_]+$/', $table)) {
-            throw new \FOSSBilling\Exception\InformationException('Invalid table name');
+            throw new \FOSSBilling\Core\Exception\InformationException('Invalid table name');
         }
 
         $count = self::safeCount($ids);

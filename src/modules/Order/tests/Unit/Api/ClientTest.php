@@ -25,7 +25,7 @@ test('gets list of orders', function (): void {
     $serviceMock->shouldReceive('getSearchQuery')->atLeast()->once()->andReturn(['query', []]);
     $serviceMock->shouldReceive('getBatchForApi')->atLeast()->once()->andReturn([$orderArr]);
 
-    $pagerMock = Mockery::mock(FOSSBilling\Pagination\Service::class);
+    $pagerMock = Mockery::mock(FOSSBilling\Core\Pagination\Service::class);
     $pagerMock->shouldReceive('getPaginatedResultSet')->atLeast()->once()->andReturn(['list' => [$orderArr]]);
 
     $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1]);
@@ -49,7 +49,7 @@ test('gets list of expiring orders', function (): void {
     $serviceMock->shouldReceive('getSoonExpiringActiveOrdersQuery')->atLeast()->once()->andReturn(['query', []]);
     $serviceMock->shouldReceive('getBatchForApi')->atLeast()->once()->andReturn([]);
 
-    $pagerMock = Mockery::mock(FOSSBilling\Pagination\Service::class);
+    $pagerMock = Mockery::mock(FOSSBilling\Core\Pagination\Service::class);
     $pagerMock->shouldReceive('getPaginatedResultSet')->atLeast()->once()->andReturn(['list' => []]);
 
     $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1]);
@@ -183,7 +183,7 @@ test('throws exception when deleting non-pending order', function (): void {
 
     $data = ['id' => 1];
 
-    expect(fn () => $apiMock->delete($data))->toThrow(FOSSBilling\Exception\BaseException::class);
+    expect(fn () => $apiMock->delete($data))->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 test('gets order via getOrder', function (): void {
@@ -222,5 +222,5 @@ test('throws exception when order not found', function (): void {
 
     $data = ['id' => 1];
 
-    expect(fn () => $api->get($data))->toThrow(FOSSBilling\Exception\BaseException::class);
+    expect(fn () => $api->get($data))->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });

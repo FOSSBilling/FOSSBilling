@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use FOSSBilling\Exception\BaseException;
+use FOSSBilling\Core\Exception\BaseException;
 
 dataset('validTargets', fn (): array => [
     ['/new-page', '/new-page'],

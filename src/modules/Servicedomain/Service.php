@@ -25,7 +25,7 @@ use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
 
-class Service implements \FOSSBilling\Container\InjectionAwareInterface
+class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
 {
     /**
      * Sent by the admin UI in place of a secret registrar config field's value
@@ -106,7 +106,7 @@ class Service implements \FOSSBilling\Container\InjectionAwareInterface
 
         $action = $data['action'];
         if (!in_array($action, ['register', 'transfer', 'owndomain'])) {
-            throw new \FOSSBilling\Exception\BaseException('Invalid domain action.');
+            throw new \FOSSBilling\Core\Exception\BaseException('Invalid domain action.');
         }
 
         if ($action == 'owndomain') {
@@ -119,11 +119,11 @@ class Service implements \FOSSBilling\Container\InjectionAwareInterface
             if (!$validator->isSldValid($data['owndomain_sld'])) {
                 $safe_dom = htmlspecialchars((string) $data['owndomain_sld'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
-                throw new \FOSSBilling\Exception\InformationException('Domain name :domain is invalid', [':domain' => $safe_dom]);
+                throw new \FOSSBilling\Core\Exception\InformationException('Domain name :domain is invalid', [':domain' => $safe_dom]);
             }
 
             if (!$validator->isTldValid($data['owndomain_tld'])) {
-                throw new \FOSSBilling\Exception\InformationException('TLD is invalid');
+                throw new \FOSSBilling\Core\Exception\InformationException('TLD is invalid');
             }
 
             $data['owndomain_tld'] = $this->normalizeTld($data['owndomain_tld']);
@@ -139,25 +139,25 @@ class Service implements \FOSSBilling\Container\InjectionAwareInterface
             if (!$validator->isSldValid($data['transfer_sld'])) {
                 $safe_dom = htmlspecialchars((string) $data['transfer_sld'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
-                throw new \FOSSBilling\Exception\InformationException('Domain name :domain is invalid', [':domain' => $safe_dom]);
+                throw new \FOSSBilling\Core\Exception\InformationException('Domain name :domain is invalid', [':domain' => $safe_dom]);
             }
 
             $tld = $this->tldFindOneByTld($data['transfer_tld']);
             if (!$tld instanceof Tld) {
-                throw new \FOSSBilling\Exception\InformationException('TLD not found');
+                throw new \FOSSBilling\Core\Exception\InformationException('TLD not found');
             }
             if (!$tld->isActive()) {
-                throw new \FOSSBilling\Exception\InformationException('TLD is not active');
+                throw new \FOSSBilling\Core\Exception\InformationException('TLD is not active');
             }
             $data['transfer_tld'] = $tld->getTld();
 
             $domain = $data['transfer_sld'] . $tld->getTld();
             if (!$this->canBeTransferred($tld, $data['transfer_sld'])) {
-                throw new \FOSSBilling\Exception\InformationException(':domain cannot be transferred!', [':domain' => $domain]);
+                throw new \FOSSBilling\Core\Exception\InformationException(':domain cannot be transferred!', [':domain' => $domain]);
             }
 
             if ($tld->isRequireTransferCode() && trim((string) ($data['transfer_code'] ?? '')) === '') {
-                throw new \FOSSBilling\Exception\InformationException('A transfer code (EPP/auth code) is required to transfer :domain', [':domain' => $domain]);
+                throw new \FOSSBilling\Core\Exception\InformationException('A transfer code (EPP/auth code) is required to transfer :domain', [':domain' => $domain]);
             }
 
             $data['period'] = '1Y';
@@ -175,35 +175,35 @@ class Service implements \FOSSBilling\Container\InjectionAwareInterface
             if (!$validator->isSldValid($data['register_sld'])) {
                 $safe_dom = htmlspecialchars((string) $data['register_sld'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
-                throw new \FOSSBilling\Exception\InformationException('Domain name :domain is invalid', [':domain' => $safe_dom]);
+                throw new \FOSSBilling\Core\Exception\InformationException('Domain name :domain is invalid', [':domain' => $safe_dom]);
             }
 
             $tld = $this->tldFindOneByTld($data['register_tld']);
             if (!$tld instanceof Tld) {
-                throw new \FOSSBilling\Exception\InformationException('TLD not found');
+                throw new \FOSSBilling\Core\Exception\InformationException('TLD not found');
             }
             if (!$tld->isActive()) {
-                throw new \FOSSBilling\Exception\InformationException('TLD is not active');
+                throw new \FOSSBilling\Core\Exception\InformationException('TLD is not active');
             }
             $data['register_tld'] = $tld->getTld();
 
             $years = filter_var($data['register_years'], FILTER_VALIDATE_INT);
             if ($years === false || $years < 1) {
-                throw new \FOSSBilling\Exception\InformationException('Domain registration period must be a positive integer');
+                throw new \FOSSBilling\Core\Exception\InformationException('Domain registration period must be a positive integer');
             }
 
             $allowedPeriods = $tld->getPeriodsArray();
             if ($allowedPeriods !== null) {
                 if (!in_array($years, $allowedPeriods, true)) {
-                    throw new \FOSSBilling\Exception\BaseException(':tld can only be registered for :periods years', [':tld' => $tld->getTld(), ':periods' => implode(', ', $allowedPeriods)]);
+                    throw new \FOSSBilling\Core\Exception\BaseException(':tld can only be registered for :periods years', [':tld' => $tld->getTld(), ':periods' => implode(', ', $allowedPeriods)]);
                 }
             } elseif ($years < ($tld->getMinYears() ?? 1)) {
-                throw new \FOSSBilling\Exception\BaseException(':tld can be registered for at least :years years', [':tld' => $tld->getTld(), ':years' => $tld->getMinYears()]);
+                throw new \FOSSBilling\Core\Exception\BaseException(':tld can be registered for at least :years years', [':tld' => $tld->getTld(), ':years' => $tld->getMinYears()]);
             }
 
             $domain = $data['register_sld'] . $tld->getTld();
             if (!$this->isDomainAvailable($tld, $data['register_sld'])) {
-                throw new \FOSSBilling\Exception\InformationException(':domain is already registered!', [':domain' => $domain]);
+                throw new \FOSSBilling\Core\Exception\InformationException(':domain is already registered!', [':domain' => $domain]);
             }
 
             $data['period'] = $years . 'Y';
@@ -233,7 +233,7 @@ class Service implements \FOSSBilling\Container\InjectionAwareInterface
         $systemService = $this->di['mod_service']('system');
         $ns = $systemService->getNameservers();
         if (empty($ns)) {
-            throw new \FOSSBilling\Exception\InformationException('Default domain nameservers are not configured');
+            throw new \FOSSBilling\Core\Exception\InformationException('Default domain nameservers are not configured');
         }
 
         $tldModel = $this->tldFindOneByTld($tld);
@@ -253,7 +253,7 @@ class Service implements \FOSSBilling\Container\InjectionAwareInterface
         $model->setNs4(!empty($c['ns4']) ? $c['ns4'] : $ns['nameserver_4']);
 
         $client = $this->di['em']->getRepository(Client::class)->find($model->getClientId())
-            ?? throw new \FOSSBilling\Exception\BaseException('Client not found');
+            ?? throw new \FOSSBilling\Core\Exception\BaseException('Client not found');
 
         $model->setContactFirstName($client->getFirstName());
         $model->setContactLastName($client->getLastName());
@@ -406,7 +406,7 @@ class Service implements \FOSSBilling\Container\InjectionAwareInterface
     {
         $order = $this->di['mod_service']('order')->getServiceOrder($model);
         if (!$order instanceof Order) {
-            throw new \FOSSBilling\Exception\BaseException('Domain order not found');
+            throw new \FOSSBilling\Core\Exception\BaseException('Domain order not found');
         }
 
         $this->syncWhois($model, $order);
@@ -415,10 +415,10 @@ class Service implements \FOSSBilling\Container\InjectionAwareInterface
     public function updateNameservers(ServiceDomain $model, $data): bool
     {
         if (!isset($data['ns1'])) {
-            throw new \FOSSBilling\Exception\InformationException('Nameserver 1 is required');
+            throw new \FOSSBilling\Core\Exception\InformationException('Nameserver 1 is required');
         }
         if (!isset($data['ns2'])) {
-            throw new \FOSSBilling\Exception\InformationException('Nameserver 2 is required');
+            throw new \FOSSBilling\Core\Exception\InformationException('Nameserver 2 is required');
         }
 
         $ns1 = $data['ns1'];
@@ -564,11 +564,11 @@ class Service implements \FOSSBilling\Container\InjectionAwareInterface
     public function canBeTransferred(Tld $model, $sld)
     {
         if (empty($sld)) {
-            throw new \FOSSBilling\Exception\InformationException('Domain name is invalid');
+            throw new \FOSSBilling\Core\Exception\InformationException('Domain name is invalid');
         }
 
         if (!$model->isAllowTransfer()) {
-            throw new \FOSSBilling\Exception\InformationException('Domain cannot be transferred', null, 403);
+            throw new \FOSSBilling\Core\Exception\InformationException('Domain cannot be transferred', null, 403);
         }
 
         // @adapterAction
@@ -586,18 +586,18 @@ class Service implements \FOSSBilling\Container\InjectionAwareInterface
     public function isDomainAvailable(Tld $model, $sld)
     {
         if (empty($sld)) {
-            throw new \FOSSBilling\Exception\InformationException('Domain name is invalid');
+            throw new \FOSSBilling\Core\Exception\InformationException('Domain name is invalid');
         }
 
         $validator = $this->di['validator'];
         if (!$validator->isSldValid($sld)) {
             $safe_dom = htmlspecialchars((string) $sld, ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
-            throw new \FOSSBilling\Exception\InformationException('Domain name :domain is invalid', [':domain' => $safe_dom]);
+            throw new \FOSSBilling\Core\Exception\InformationException('Domain name :domain is invalid', [':domain' => $safe_dom]);
         }
 
         if (!$model->isAllowRegister()) {
-            throw new \FOSSBilling\Exception\InformationException('Domain cannot be registered', null, 403);
+            throw new \FOSSBilling\Core\Exception\InformationException('Domain cannot be registered', null, 403);
         }
 
         // @adapterAction
@@ -714,7 +714,7 @@ class Service implements \FOSSBilling\Container\InjectionAwareInterface
 
         // merge info with current profile
         $client = $this->di['em']->getRepository(Client::class)->find($model->getClientId())
-            ?? throw new \FOSSBilling\Exception\BaseException('Client not found');
+            ?? throw new \FOSSBilling\Core\Exception\BaseException('Client not found');
 
         $email = empty($model->getContactEmail()) ? $client->getEmail() : $model->getContactEmail();
         $first_name = empty($model->getContactFirstName()) ? $client->getFirstName() : $model->getContactFirstName();
@@ -736,7 +736,7 @@ class Service implements \FOSSBilling\Container\InjectionAwareInterface
         $contact
             ->setEmail($email)
             ->setUsername($email)
-            ->setPassword(\FOSSBilling\Security\Credential::generatePassword(10))
+            ->setPassword(\FOSSBilling\Core\Security\Credential::generatePassword(10))
             ->setFirstname($first_name)
             ->setLastname($last_name)
             ->setCity($city)
@@ -772,7 +772,7 @@ class Service implements \FOSSBilling\Container\InjectionAwareInterface
         return [$d, $adapter];
     }
 
-    public static function onBeforeAdminCronRun(\FOSSBilling\Event\Event $event): bool
+    public static function onBeforeAdminCronRun(\FOSSBilling\Core\Event\Event $event): bool
     {
         try {
             $di = $event->getDi();
@@ -880,12 +880,12 @@ class Service implements \FOSSBilling\Container\InjectionAwareInterface
             }
 
             if (!is_numeric($data[$field])) {
-                throw new \FOSSBilling\Exception\InformationException('Domain price must be a non-negative number');
+                throw new \FOSSBilling\Core\Exception\InformationException('Domain price must be a non-negative number');
             }
 
             $price = (float) $data[$field];
             if (!is_finite($price) || $price < 0) {
-                throw new \FOSSBilling\Exception\InformationException('Domain price must be a non-negative number');
+                throw new \FOSSBilling\Core\Exception\InformationException('Domain price must be a non-negative number');
             }
             $data[$field] = $price;
         }
@@ -893,7 +893,7 @@ class Service implements \FOSSBilling\Container\InjectionAwareInterface
         if (array_key_exists('min_years', $data)) {
             $minimumYears = filter_var($data['min_years'], FILTER_VALIDATE_INT);
             if ($minimumYears === false || $minimumYears < 1) {
-                throw new \FOSSBilling\Exception\InformationException('Minimum registration period must be a positive integer');
+                throw new \FOSSBilling\Core\Exception\InformationException('Minimum registration period must be a positive integer');
             }
             $data['min_years'] = $minimumYears;
         }
@@ -921,7 +921,7 @@ class Service implements \FOSSBilling\Container\InjectionAwareInterface
         foreach ($years as $year) {
             $value = filter_var($year, FILTER_VALIDATE_INT);
             if ($value === false || $value < 1) {
-                throw new \FOSSBilling\Exception\InformationException('Registration periods must be a comma-separated list of positive integers');
+                throw new \FOSSBilling\Core\Exception\InformationException('Registration periods must be a comma-separated list of positive integers');
             }
             $normalized[] = $value;
         }
@@ -1046,17 +1046,17 @@ class Service implements \FOSSBilling\Container\InjectionAwareInterface
         $tld = trim($tld);
         $tld = trim($tld, '.');
         if ($tld === '') {
-            throw new \FOSSBilling\Exception\InformationException('TLD is invalid.');
+            throw new \FOSSBilling\Core\Exception\InformationException('TLD is invalid.');
         }
 
         $asciiTld = idn_to_ascii($tld, IDNA_DEFAULT, INTL_IDNA_VARIANT_UTS46);
         if ($asciiTld === false || strlen($asciiTld) > 253) {
-            throw new \FOSSBilling\Exception\InformationException('TLD is invalid.');
+            throw new \FOSSBilling\Core\Exception\InformationException('TLD is invalid.');
         }
 
         foreach (explode('.', strtolower($asciiTld)) as $label) {
             if (!preg_match('/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/', $label)) {
-                throw new \FOSSBilling\Exception\InformationException('TLD is invalid.');
+                throw new \FOSSBilling\Core\Exception\InformationException('TLD is invalid.');
             }
         }
 
@@ -1127,7 +1127,7 @@ class Service implements \FOSSBilling\Container\InjectionAwareInterface
     {
         $file = Path::join(PATH_LIBRARY, 'Registrar', 'Adapter', "{$model->getRegistrar()}.php");
         if (!$this->filesystem->exists($file)) {
-            throw new \FOSSBilling\Exception\InformationException('Domain registrar :adapter was not found', [':adapter' => $model->getRegistrar()]);
+            throw new \FOSSBilling\Core\Exception\InformationException('Domain registrar :adapter was not found', [':adapter' => $model->getRegistrar()]);
         }
 
         $class = sprintf('Registrar_Adapter_%s', $model->getRegistrar());
@@ -1136,7 +1136,7 @@ class Service implements \FOSSBilling\Container\InjectionAwareInterface
         }
 
         if (!class_exists($class)) {
-            throw new \FOSSBilling\Exception\InformationException('Registrar :adapter was not found', [':adapter' => $class]);
+            throw new \FOSSBilling\Core\Exception\InformationException('Registrar :adapter was not found', [':adapter' => $class]);
         }
 
         return $class;
@@ -1148,7 +1148,7 @@ class Service implements \FOSSBilling\Container\InjectionAwareInterface
         $class = $this->registrarGetRegistrarAdapterClassName($r);
         $registrar = new $class($config);
         if (!$registrar instanceof \Registrar_AdapterAbstract) {
-            throw new \FOSSBilling\Exception\BaseException('Registrar adapter :adapter should extend Registrar_AdapterAbstract', [':adapter' => $class]);
+            throw new \FOSSBilling\Core\Exception\BaseException('Registrar adapter :adapter should extend Registrar_AdapterAbstract', [':adapter' => $class]);
         }
 
         $registrar->setLog($this->di['logger']);
@@ -1197,7 +1197,7 @@ class Service implements \FOSSBilling\Container\InjectionAwareInterface
             if ($required && ($value === null || $value === '' || $value === [])) {
                 $name = $model->getName() ?: $model->getRegistrar();
 
-                throw new \FOSSBilling\Exception\InformationException('Registrar :registrar is missing required configuration: :field', [':registrar' => $name, ':field' => $options['label'] ?? $field]);
+                throw new \FOSSBilling\Core\Exception\InformationException('Registrar :registrar is missing required configuration: :field', [':registrar' => $name, ':field' => $options['label'] ?? $field]);
             }
         }
     }
@@ -1294,17 +1294,17 @@ class Service implements \FOSSBilling\Container\InjectionAwareInterface
     public function registrarRm(TldRegistrar $model): bool
     {
         $domains = $this->getDomainRepository()->findBy(['registrar' => $model]);
-        $count = \FOSSBilling\Utils\Arr::safeCount($domains);
+        $count = \FOSSBilling\Core\Utils\Arr::safeCount($domains);
 
         if ($count > 0) {
-            throw new \FOSSBilling\Exception\InformationException('Registrar is used by :count: domains', [':count:' => $count], 707);
+            throw new \FOSSBilling\Core\Exception\InformationException('Registrar is used by :count: domains', [':count:' => $count], 707);
         }
 
         $tlds = $this->getTldRepository()->findBy(['registrar' => $model]);
-        $count = \FOSSBilling\Utils\Arr::safeCount($tlds);
+        $count = \FOSSBilling\Core\Utils\Arr::safeCount($tlds);
 
         if ($count > 0) {
-            throw new \FOSSBilling\Exception\InformationException('Registrar is used by :count: TLDs', [':count:' => $count], 707);
+            throw new \FOSSBilling\Core\Exception\InformationException('Registrar is used by :count: TLDs', [':count:' => $count], 707);
         }
 
         $name = $model->getName();
@@ -1412,7 +1412,7 @@ class Service implements \FOSSBilling\Container\InjectionAwareInterface
     private function getExistingRegistrar(?TldRegistrar $registrar): TldRegistrar
     {
         if (!$registrar instanceof TldRegistrar) {
-            throw new \FOSSBilling\Exception\BaseException('Registrar not found');
+            throw new \FOSSBilling\Core\Exception\BaseException('Registrar not found');
         }
 
         return $registrar;
@@ -1431,7 +1431,7 @@ class Service implements \FOSSBilling\Container\InjectionAwareInterface
         $model = $orderService->getOrderService($order);
         if (!$model instanceof ServiceDomain) {
             if ($required) {
-                throw new \FOSSBilling\Exception\BaseException('Could not find associated service domain');
+                throw new \FOSSBilling\Core\Exception\BaseException('Could not find associated service domain');
             }
 
             return null;

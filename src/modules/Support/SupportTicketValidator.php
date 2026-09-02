@@ -26,21 +26,21 @@ class SupportTicketValidator
     protected static function validateRelStatus(?string $rel_status): void
     {
         if ($rel_status !== null && !in_array($rel_status, [SupportTicket::REL_STATUS_PENDING, SupportTicket::REL_STATUS_COMPLETE], true)) {
-            throw new \FOSSBilling\Exception\BaseException('Invalid related status.');
+            throw new \FOSSBilling\Core\Exception\BaseException('Invalid related status.');
         }
     }
 
     protected static function validateRelType(?string $rel_type): void
     {
         if ($rel_type !== null && !in_array($rel_type, [SupportTicket::REL_TYPE_ORDER], true)) {
-            throw new \FOSSBilling\Exception\BaseException('Invalid related type.');
+            throw new \FOSSBilling\Core\Exception\BaseException('Invalid related type.');
         }
     }
 
     protected static function validateRelTask(?string $rel_task): void
     {
         if ($rel_task !== null && !in_array($rel_task, [SupportTicket::REL_TASK_CANCEL, SupportTicket::REL_TASK_UPGRADE], true)) {
-            throw new \FOSSBilling\Exception\BaseException('Invalid related task.');
+            throw new \FOSSBilling\Core\Exception\BaseException('Invalid related task.');
         }
     }
 
@@ -49,7 +49,7 @@ class SupportTicketValidator
         $rel_id = $data['rel_id'] ?? null;
         $rel_new_value = $data['rel_new_value'] ?? null;
         if ($rel_type !== SupportTicket::REL_TYPE_ORDER || $rel_id === null || empty($rel_new_value)) {
-            throw new \FOSSBilling\Exception\BaseException('You must provide both an order ID and a new product ID in order to request an upgrade.');
+            throw new \FOSSBilling\Core\Exception\BaseException('You must provide both an order ID and a new product ID in order to request an upgrade.');
         }
     }
 }

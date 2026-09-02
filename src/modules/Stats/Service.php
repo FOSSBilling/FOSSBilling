@@ -12,8 +12,8 @@ declare(strict_types=1);
 namespace Box\Mod\Stats;
 
 use Box\Mod\Invoice\Entity\Invoice;
-use FOSSBilling\Container\InjectionAwareInterface;
-use FOSSBilling\Doctrine\SqlExpr;
+use FOSSBilling\Core\Container\InjectionAwareInterface;
+use FOSSBilling\Core\Doctrine\SqlExpr;
 
 class Service implements InjectionAwareInterface
 {
@@ -374,7 +374,7 @@ class Service implements InjectionAwareInterface
     {
         $allowedTables = ['client_order', 'client', 'invoice', 'support_ticket'];
         if (!in_array($table, $allowedTables, true)) {
-            throw new \FOSSBilling\Exception\BaseException('Invalid table name: :table', [':table' => $table]);
+            throw new \FOSSBilling\Core\Exception\BaseException('Invalid table name: :table', [':table' => $table]);
         }
         $time_from = strtotime('-1 month');
         $time_to = strtotime('+1 day');

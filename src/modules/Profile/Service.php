@@ -13,9 +13,9 @@ namespace Box\Mod\Profile;
 
 use Box\Mod\Client\Entity\Client;
 use Box\Mod\Staff\Entity\Admin;
-use FOSSBilling\Container\InjectionAwareInterface;
-use FOSSBilling\Exception\InformationException;
-use FOSSBilling\I18n\I18n;
+use FOSSBilling\Core\Container\InjectionAwareInterface;
+use FOSSBilling\Core\Exception\InformationException;
+use FOSSBilling\Core\I18n\I18n;
 use Symfony\Component\Intl\Countries;
 use Symfony\Component\Intl\Locales;
 
@@ -67,7 +67,7 @@ class Service implements InjectionAwareInterface
         $event_params['id'] = $admin->getId();
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffApiKeyChange', 'params' => $event_params]);
 
-        $admin->setApiToken(\FOSSBilling\Security\Credential::generatePassword(32));
+        $admin->setApiToken(\FOSSBilling\Core\Security\Credential::generatePassword(32));
         $this->di['em']->persist($admin);
         $this->di['em']->flush();
 
@@ -135,7 +135,7 @@ class Service implements InjectionAwareInterface
         }
 
         if (!empty($email)) {
-            \FOSSBilling\Validation\EmailValidator::validateAndSanitizeEmail($data['email']);
+            \FOSSBilling\Core\Validation\EmailValidator::validateAndSanitizeEmail($data['email']);
 
             $clientService = $this->di['mod_service']('client');
             if ($clientService->emailAlreadyRegistered($email, $client)) {
@@ -155,11 +155,11 @@ class Service implements InjectionAwareInterface
         }
 
         if (isset($data['phone_cc']) && $data['phone_cc'] !== '') {
-            $client->setPhoneCc((string) \FOSSBilling\Validation\PhoneValidator::validatePhoneCC($data['phone_cc']));
+            $client->setPhoneCc((string) \FOSSBilling\Core\Validation\PhoneValidator::validatePhoneCC($data['phone_cc']));
         }
 
         if (isset($data['phone']) && is_string($data['phone']) && $data['phone'] !== '') {
-            $client->setPhone(\FOSSBilling\Validation\PhoneValidator::validatePhoneNumber($data['phone']));
+            $client->setPhone(\FOSSBilling\Core\Validation\PhoneValidator::validatePhoneNumber($data['phone']));
         }
 
         $client->setFirstName($data['first_name'] ?? $client->getFirstName());
@@ -226,7 +226,7 @@ class Service implements InjectionAwareInterface
 
     public function resetApiKey(Client $client): ?string
     {
-        $client->setApiToken(\FOSSBilling\Security\Credential::generatePassword(32));
+        $client->setApiToken(\FOSSBilling\Core\Security\Credential::generatePassword(32));
 
         $this->di['em']->persist($client);
         $this->di['em']->flush();
@@ -263,13 +263,13 @@ class Service implements InjectionAwareInterface
     public function invalidateSessions(?string $type = null, ?int $id = null): bool
     {
         if (empty($type)) {
-            $auth = new \FOSSBilling\Security\Authorization($this->di);
+            $auth = new \FOSSBilling\Core\Security\Authorization($this->di);
             if ($auth->isAdminLoggedIn()) {
                 $type = 'admin';
             } elseif ($auth->isClientLoggedIn()) {
                 $type = 'client';
             } else {
-                throw new \FOSSBilling\Exception\BaseException('Unable to invalidate sessions, nobody is logged in');
+                throw new \FOSSBilling\Core\Exception\BaseException('Unable to invalidate sessions, nobody is logged in');
             }
         }
 
@@ -288,7 +288,7 @@ class Service implements InjectionAwareInterface
         }
 
         if ($type !== 'admin' && $type !== 'client') {
-            throw new \FOSSBilling\Exception\BaseException('Unable to invalidate sessions, an invalid type was used');
+            throw new \FOSSBilling\Core\Exception\BaseException('Unable to invalidate sessions, an invalid type was used');
         }
 
         $sessions = $this->getSessions();

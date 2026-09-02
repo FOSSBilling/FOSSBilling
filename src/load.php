@@ -9,11 +9,11 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-use FOSSBilling\Http\ExceptionResponseFactory;
-use FOSSBilling\Http\RequestFactory;
-use FOSSBilling\SentryHelper;
-use FOSSBilling\System\Config;
-use FOSSBilling\System\Environment;
+use FOSSBilling\Core\Http\ExceptionResponseFactory;
+use FOSSBilling\Core\Http\RequestFactory;
+use FOSSBilling\Core\SentryHelper;
+use FOSSBilling\Core\System\Config;
+use FOSSBilling\Core\System\Environment;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -115,12 +115,12 @@ function buildDatabaseProbeDsn(string $driver, array $dbConfig): ?array
 
     return match ($driver) {
         'pdo_mysql' => [
-            sprintf('mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4', $host, FOSSBilling\Utils\Normalizer::normalizePort($dbConfig['port'] ?? null, 3306), $database),
+            sprintf('mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4', $host, FOSSBilling\Core\Utils\Normalizer::normalizePort($dbConfig['port'] ?? null, 3306), $database),
             $dbConfig['user'] ?? '',
             $dbConfig['password'] ?? '',
         ],
         'pdo_pgsql' => [
-            sprintf('pgsql:host=%s;port=%s;dbname=%s', $host, FOSSBilling\Utils\Normalizer::normalizePort($dbConfig['port'] ?? null, 5432), $database),
+            sprintf('pgsql:host=%s;port=%s;dbname=%s', $host, FOSSBilling\Core\Utils\Normalizer::normalizePort($dbConfig['port'] ?? null, 5432), $database),
             $dbConfig['user'] ?? '',
             $dbConfig['password'] ?? '',
         ],
@@ -217,7 +217,7 @@ function exceptionHandler(Exception|Error $e): void
 }
 
 /*
- * Refuse to serve this request while FOSSBilling\Update\Updater::performUpdate() is
+ * Refuse to serve this request while FOSSBilling\Core\Update\Updater::performUpdate() is
  * actively writing files to PATH_ROOT.
  *
  * This intentionally runs before the Composer autoloader is loaded, and
@@ -374,7 +374,7 @@ function init(): void
     define('SYSTEM_URL', $scheme . $url);
 
     // Set the default interface.
-    define('BIND_TO', FOSSBilling\Utils\Network::getDefaultInterface());
+    define('BIND_TO', FOSSBilling\Core\Utils\Network::getDefaultInterface());
 
     // Load the DI container.
     global $di;

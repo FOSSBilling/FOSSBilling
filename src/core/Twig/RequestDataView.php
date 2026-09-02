@@ -9,7 +9,7 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling\Twig;
+namespace FOSSBilling\Core\Twig;
 
 /**
  * A permissive view over the HTTP request data exposed to Twig as the `request` global.

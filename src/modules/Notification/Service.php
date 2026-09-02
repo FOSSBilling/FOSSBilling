@@ -13,7 +13,7 @@ namespace Box\Mod\Notification;
 
 use Box\Mod\Extension\Entity\ExtensionMeta;
 use Box\Mod\Extension\Repository\ExtensionMetaRepository;
-use FOSSBilling\Container\InjectionAwareInterface;
+use FOSSBilling\Core\Container\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
@@ -53,7 +53,7 @@ class Service implements InjectionAwareInterface
     {
         if ($this->extensionMetaRepository === null) {
             if ($this->di === null) {
-                throw new \FOSSBilling\Exception\BaseException('The dependency injection container has not been set.');
+                throw new \FOSSBilling\Core\Exception\BaseException('The dependency injection container has not been set.');
             }
 
             $this->extensionMetaRepository = $this->di['em']->getRepository(ExtensionMeta::class);
@@ -102,7 +102,7 @@ class Service implements InjectionAwareInterface
     {
         $meta = $this->getExtensionMetaRepository()->findOneByExtensionAndId('mod_notification', $id);
         if (!$meta instanceof ExtensionMeta || $meta->getMetaKey() !== 'message') {
-            throw new \FOSSBilling\Exception\InformationException('Notification message was not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Notification message was not found');
         }
 
         return $meta;
@@ -122,7 +122,7 @@ class Service implements InjectionAwareInterface
 
         $id = $meta->getId();
         if ($id === null) {
-            throw new \FOSSBilling\Exception\BaseException('Failed to create notification message: missing ID after persistence.');
+            throw new \FOSSBilling\Core\Exception\BaseException('Failed to create notification message: missing ID after persistence.');
         }
         $this->di['events_manager']->fire(['event' => 'onAfterAdminNotificationAdd', 'params' => ['id' => $id]]);
 

@@ -10,10 +10,10 @@ declare(strict_types=1);
  */
 
 use Box\Mod\Invoice\Entity\Invoice;
-use FOSSBilling\System\Environment;
+use FOSSBilling\Core\System\Environment;
 use Pimple\Container;
 
-class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOSSBilling\Container\InjectionAwareInterface
+class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOSSBilling\Core\Container\InjectionAwareInterface
 {
     protected ?Container $di = null;
 
@@ -403,7 +403,7 @@ document.addEventListener('DOMContentLoaded', function() {
         ];
 
         $rows = $this->di['em']->getConnection()->fetchAllAssociative($sql, $bindings);
-        if (FOSSBilling\Utils\Arr::safeCount($rows) > 1) {
+        if (FOSSBilling\Core\Utils\Arr::safeCount($rows) > 1) {
             return true;
         }
 

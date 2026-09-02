@@ -9,9 +9,9 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling\Security;
+namespace FOSSBilling\Core\Security;
 
-use FOSSBilling\System\Environment;
+use FOSSBilling\Core\System\Environment;
 
 class RandomizedTimeFloor
 {

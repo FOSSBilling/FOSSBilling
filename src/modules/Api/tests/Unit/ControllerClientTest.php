@@ -6,7 +6,7 @@ use Box\Mod\Api\Controller\Client;
 use Box\Mod\Staff\Entity\Admin;
 use Box\Mod\Staff\Repository\AdminRepository;
 use Doctrine\ORM\EntityManagerInterface;
-use FOSSBilling\Exception\InformationException;
+use FOSSBilling\Core\Exception\InformationException;
 use Symfony\Component\HttpFoundation\Request;
 
 function invokeControllerPrivate(object $instance, string $method, array $args = []): mixed
@@ -67,7 +67,7 @@ test('is role allowed rejects system role', function (): void {
     $controller = new Client();
 
     expect(fn (): mixed => invokeControllerPrivate($controller, 'isRoleAllowed', ['system']))
-        ->toThrow(FOSSBilling\Exception\BaseException::class);
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 test('should use token login ignores non-API basic auth usernames', function (): void {

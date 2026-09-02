@@ -10,9 +10,9 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling\Logging;
+namespace FOSSBilling\Core\Logging;
 
-use FOSSBilling\Container\InjectionAwareInterface;
+use FOSSBilling\Core\Container\InjectionAwareInterface;
 use Pimple\Container;
 use Psr\Log\AbstractLogger;
 use Psr\Log\InvalidArgumentException;
@@ -202,7 +202,7 @@ class Logger extends AbstractLogger implements InjectionAwareInterface
                 $writer->write($event, $this->channel);
             } catch (\Throwable $e) {
                 // A writer failure cannot be routed through this logger without recursion.
-                error_log(sprintf('[FOSSBilling\\Logger] writer failure: %s at %s:%d', $e->getMessage(), $e->getFile(), $e->getLine()));
+                error_log(sprintf('[FOSSBilling\\Core\\Logger] writer failure: %s at %s:%d', $e->getMessage(), $e->getFile(), $e->getLine()));
             }
         }
     }

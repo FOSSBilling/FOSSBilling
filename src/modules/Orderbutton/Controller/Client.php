@@ -13,7 +13,7 @@ namespace Box\Mod\Orderbutton\Controller;
 
 use Symfony\Component\HttpFoundation\Response;
 
-class Client implements \FOSSBilling\Container\InjectionAwareInterface
+class Client implements \FOSSBilling\Core\Container\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 
@@ -27,18 +27,18 @@ class Client implements \FOSSBilling\Container\InjectionAwareInterface
         return $this->di;
     }
 
-    public function register(\FOSSBilling\Http\App &$app): void
+    public function register(\FOSSBilling\Core\Http\App &$app): void
     {
         $app->get('/orderbutton', 'get_index', [], static::class);
         $app->get('/orderbutton/js', 'get_js', [], static::class);
     }
 
-    public function get_index(\FOSSBilling\Http\App $app): string
+    public function get_index(\FOSSBilling\Core\Http\App $app): string
     {
         return $app->render('mod_orderbutton_index');
     }
 
-    public function get_js(\FOSSBilling\Http\App $app): Response
+    public function get_js(\FOSSBilling\Core\Http\App $app): Response
     {
         return $app->renderResponse('mod_orderbutton_embed_js', [], 200, ['Content-Type' => 'application/javascript']);
     }

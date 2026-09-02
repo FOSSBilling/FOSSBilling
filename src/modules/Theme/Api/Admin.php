@@ -11,9 +11,9 @@ declare(strict_types=1);
 
 namespace Box\Mod\Theme\Api;
 
-use FOSSBilling\Validation\Api\RequiredParams;
+use FOSSBilling\Core\Validation\Api\RequiredParams;
 
-class Admin extends \FOSSBilling\Api\AbstractApi
+class Admin extends \FOSSBilling\Core\Api\AbstractApi
 {
     /**
      * Get list of available client area themes.
@@ -47,10 +47,10 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('theme', 'view');
 
         if ($this->isInvalidClientParameter($data['client'] ?? null)) {
-            throw new \FOSSBilling\Exception\InformationException('Invalid "client" parameter.');
+            throw new \FOSSBilling\Core\Exception\InformationException('Invalid "client" parameter.');
         }
 
-        $client = \FOSSBilling\Utils\Normalizer::normalizeBoolean($data['client'] ?? true, true);
+        $client = \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['client'] ?? true, true);
 
         return $this->getService()->getThemeConfig($client, null);
     }

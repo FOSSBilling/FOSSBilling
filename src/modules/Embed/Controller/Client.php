@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Embed\Controller;
 
-class Client implements \FOSSBilling\Container\InjectionAwareInterface
+class Client implements \FOSSBilling\Core\Container\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 
@@ -30,14 +30,14 @@ class Client implements \FOSSBilling\Container\InjectionAwareInterface
      * Always use your module prefix to avoid conflicts with other modules
      * in future.
      *
-     * @param \FOSSBilling\Http\App $app - returned by reference
+     * @param \FOSSBilling\Core\Http\App $app - returned by reference
      */
-    public function register(\FOSSBilling\Http\App &$app): void
+    public function register(\FOSSBilling\Core\Http\App &$app): void
     {
         $app->get('/embed/:what', 'get_object', ['what' => '[a-z0-9-]+'], static::class);
     }
 
-    public function get_object(\FOSSBilling\Http\App $app, $what): string
+    public function get_object(\FOSSBilling\Core\Http\App $app, $what): string
     {
         $tpl = 'mod_embed_' . $what;
 

@@ -9,15 +9,15 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling\Doctrine;
+namespace FOSSBilling\Core\Doctrine;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Mapping\UnderscoreNamingStrategy;
 use Doctrine\ORM\ORMSetup;
 use Doctrine\ORM\Proxy\ProxyFactory;
-use FOSSBilling\Cache\CacheFactory;
-use FOSSBilling\System\Environment;
+use FOSSBilling\Core\Cache\CacheFactory;
+use FOSSBilling\Core\System\Environment;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
 
@@ -59,7 +59,7 @@ class EntityManagerFactory
             $config->enableNativeLazyObjects(true);
         } else {
             $config->setProxyDir(Path::join(PATH_CACHE, 'doctrine', 'proxies'));
-            $config->setProxyNamespace('FOSSBilling\Doctrine\Proxies');
+            $config->setProxyNamespace('FOSSBilling\Core\Doctrine\Proxies');
 
             if (Environment::isDevelopment()) {
                 $config->setAutoGenerateProxyClasses(true);
@@ -75,7 +75,7 @@ class EntityManagerFactory
 
     /**
      * The CacheFactory namespace create() above stores the Doctrine metadata/query/result cache
-     * under. Exposed so {@see \FOSSBilling\Config::setConfig()} and
+     * under. Exposed so {@see \FOSSBilling\Core\Config::setConfig()} and
      * {@see \Box\Mod\System\Service::clearCache()} can clear this specific pool directly -
      * CacheFactory::clearAll()'s own fixed namespace list can't reach it, since (see below) this
      * one changes identity whenever entity files do.

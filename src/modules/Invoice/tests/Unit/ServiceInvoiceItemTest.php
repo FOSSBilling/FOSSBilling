@@ -672,7 +672,7 @@ test('requeue throws when item is not found', function (): void {
 
     $service = invoiceItemService($repo);
 
-    expect(fn (): InvoiceItem => $service->requeueItem(99))->toThrow(FOSSBilling\Exception\InformationException::class);
+    expect(fn (): InvoiceItem => $service->requeueItem(99))->toThrow(FOSSBilling\Core\Exception\InformationException::class);
 });
 
 test('requeue throws when item is not in a failed state', function (): void {
@@ -687,5 +687,5 @@ test('requeue throws when item is not in a failed state', function (): void {
 
     $service = invoiceItemService($repo);
 
-    expect(fn (): InvoiceItem => $service->requeueItem(7))->toThrow(FOSSBilling\Exception\InformationException::class);
+    expect(fn (): InvoiceItem => $service->requeueItem(7))->toThrow(FOSSBilling\Core\Exception\InformationException::class);
 });

@@ -17,10 +17,10 @@ use Box\Mod\Massmailer\Repository\MassmailerMessageRepository;
 use Box\Mod\Order\Enum\Status as OrderStatus;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\ParameterType;
-use FOSSBilling\Exception\InformationException;
-use FOSSBilling\System\Environment;
+use FOSSBilling\Core\Exception\InformationException;
+use FOSSBilling\Core\System\Environment;
 
-class Service implements \FOSSBilling\Container\InjectionAwareInterface
+class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
 {
     private const string FILTER_CLIENT_STATUS = 'client_status';
     private const string FILTER_CLIENT_GROUPS = 'client_groups';
@@ -64,7 +64,7 @@ class Service implements \FOSSBilling\Container\InjectionAwareInterface
     {
         if ($this->messageRepository === null) {
             if ($this->di === null) {
-                throw new \FOSSBilling\Exception\BaseException('The dependency injection container has not been set.');
+                throw new \FOSSBilling\Core\Exception\BaseException('The dependency injection container has not been set.');
             }
 
             $this->messageRepository = $this->di['em']->getRepository(MassmailerMessage::class);
@@ -111,7 +111,7 @@ class Service implements \FOSSBilling\Container\InjectionAwareInterface
         // catches up) just this module's own table from current metadata, additively and
         // safely, scoped so installing this one extension never reports every *other* table in
         // the app as missing.
-        \FOSSBilling\Doctrine\SchemaSynchronizer::syncEntities($this->di['em'], [MassmailerMessage::class]);
+        \FOSSBilling\Core\Doctrine\SchemaSynchronizer::syncEntities($this->di['em'], [MassmailerMessage::class]);
 
         // default config values
         $extensionService->setConfig(['ext' => 'mod_massmailer', 'limit' => '2', 'interval' => '10', 'test_client_id' => 1]);

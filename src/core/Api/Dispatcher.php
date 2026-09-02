@@ -9,12 +9,12 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling\Api;
+namespace FOSSBilling\Core\Api;
 
-use FOSSBilling\Container\InjectionAwareInterface;
-use FOSSBilling\Exception\BaseException;
-use FOSSBilling\Exception\InformationException;
-use FOSSBilling\Validation\Api\RequiredParams;
+use FOSSBilling\Core\Container\InjectionAwareInterface;
+use FOSSBilling\Core\Exception\BaseException;
+use FOSSBilling\Core\Exception\InformationException;
+use FOSSBilling\Core\Validation\Api\RequiredParams;
 use Pimple\Container;
 
 final class Dispatcher implements InjectionAwareInterface
@@ -80,7 +80,7 @@ final class Dispatcher implements InjectionAwareInterface
 
         $api = new $apiClass();
         if (!$api instanceof AbstractApi) {
-            throw new BaseException('Api class must be an instance of FOSSBilling\Api\AbstractApi', null, 730);
+            throw new BaseException('Api class must be an instance of FOSSBilling\Core\Api\AbstractApi', null, 730);
         }
 
         $module = $this->getDi()['mod']($mod);

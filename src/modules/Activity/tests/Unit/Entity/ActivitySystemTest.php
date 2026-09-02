@@ -11,7 +11,7 @@ use Symfony\Component\Filesystem\Path;
 test('maps the existing system activity table', function (): void {
     $config = ORMSetup::createAttributeMetadataConfig([Path::join(__DIR__, '..', '..', '..', 'Entity')], true);
     $config->setProxyDir(sys_get_temp_dir());
-    $config->setProxyNamespace('FOSSBilling\\Tests\\DoctrineProxies');
+    $config->setProxyNamespace('FOSSBilling\\Core\\Tests\\DoctrineProxies');
     $entityManager = new EntityManager(DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]), $config);
     $metadata = $entityManager->getClassMetadata(ActivitySystem::class);
 

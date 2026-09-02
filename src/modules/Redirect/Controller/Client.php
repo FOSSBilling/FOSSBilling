@@ -11,10 +11,10 @@ declare(strict_types=1);
 
 namespace Box\Mod\Redirect\Controller;
 
-use FOSSBilling\Http\ResponseFactory;
+use FOSSBilling\Core\Http\ResponseFactory;
 use Symfony\Component\HttpFoundation\Response;
 
-class Client implements \FOSSBilling\Container\InjectionAwareInterface
+class Client implements \FOSSBilling\Core\Container\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 
@@ -28,7 +28,7 @@ class Client implements \FOSSBilling\Container\InjectionAwareInterface
         return $this->di;
     }
 
-    public function register(\FOSSBilling\Http\App &$app): void
+    public function register(\FOSSBilling\Core\Http\App &$app): void
     {
         $app->get('/me', 'get_profile', [], '\\' . \Box\Mod\Client\Controller\Client::class);
         $app->get('/balance', 'get_balance', [], '\\' . \Box\Mod\Client\Controller\Client::class);
@@ -49,7 +49,7 @@ class Client implements \FOSSBilling\Container\InjectionAwareInterface
         }
     }
 
-    public function do_redirect(\FOSSBilling\Http\App $app): Response
+    public function do_redirect(\FOSSBilling\Core\Http\App $app): Response
     {
         $service = $this->di['mod_service']('redirect');
         $target = $service->getRedirectByPath($app->uri);

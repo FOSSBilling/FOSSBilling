@@ -9,10 +9,10 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling\Update\Patch;
+namespace FOSSBilling\Core\Update\Patch;
 
-use FOSSBilling\System\Config;
-use FOSSBilling\Update\Patcher;
+use FOSSBilling\Core\System\Config;
+use FOSSBilling\Core\Update\Patcher;
 
 class Patch68 implements PatchInterface
 {

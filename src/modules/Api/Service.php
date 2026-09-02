@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Api;
 
-class Service implements \FOSSBilling\Container\InjectionAwareInterface
+class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 

@@ -9,7 +9,7 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling\Doctrine;
+namespace FOSSBilling\Core\Doctrine;
 
 use Doctrine\DBAL\Schema\AbstractSchemaManager;
 use Doctrine\DBAL\Schema\ComparatorConfig;
@@ -24,9 +24,9 @@ use Doctrine\ORM\Tools\SchemaTool;
  * for installs that were created after {@see SchemaInstaller} started generating their schema from
  * that same metadata.
  *
- * This exists because {@see \FOSSBilling\Update\Patcher}'s ~80 historical patches are raw MySQL/
+ * This exists because {@see \FOSSBilling\Core\Update\Patcher}'s ~80 historical patches are raw MySQL/
  * MariaDB DDL (and, in several cases, one-time data transformations tied to a specific historical
- * release) with no portable equivalent - see {@see \FOSSBilling\Update\Patcher::isLegacyPatchDriver()}. Porting each of them
+ * release) with no portable equivalent - see {@see \FOSSBilling\Core\Update\Patcher::isLegacyPatchDriver()}. Porting each of them
  * is out of scope here. What this class covers instead: every *future* structural change lands on
  * entity metadata first, the same source fresh installs already build from, so diffing live schema
  * against current metadata keeps an existing PostgreSQL/SQLite install from drifting out of date as
@@ -65,7 +65,7 @@ final class SchemaSynchronizer
      *
      * No current call site in this codebase actually wants that: a module materializing just its
      * own table(s) from its own `install()` hook, or the ambient per-module gating
-     * {@see \FOSSBilling\UpdatePatcher::applyCorePatches()} needs (see {@see ModuleEntityScope}),
+     * {@see \FOSSBilling\Core\UpdatePatcher::applyCorePatches()} needs (see {@see ModuleEntityScope}),
      * both use {@see self::syncEntities()} instead, which doesn't produce noise for every
      * unrelated table in the database - so this method is untouched production code today,
      * exercised only by its own tests. Kept anyway, deliberately, as the one API on this class

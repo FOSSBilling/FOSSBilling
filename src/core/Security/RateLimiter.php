@@ -9,10 +9,10 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling\Security;
+namespace FOSSBilling\Core\Security;
 
-use FOSSBilling\Container\InjectionAwareInterface;
-use FOSSBilling\System\Config;
+use FOSSBilling\Core\Container\InjectionAwareInterface;
+use FOSSBilling\Core\System\Config;
 use Pimple\Container;
 use Psr\Cache\CacheItemPoolInterface;
 use Symfony\Component\Filesystem\Path;
@@ -90,7 +90,7 @@ class RateLimiter implements InjectionAwareInterface
         }
 
         if (!is_array($policy)) {
-            throw new \FOSSBilling\Exception\BaseException('Rate limiter policy :policy is not defined or invalid', [':policy' => $policyName]);
+            throw new \FOSSBilling\Core\Exception\BaseException('Rate limiter policy :policy is not defined or invalid', [':policy' => $policyName]);
         }
 
         $clientIp = (string) $this->di['request']->getClientIp();
@@ -280,7 +280,7 @@ class RateLimiter implements InjectionAwareInterface
     {
         $policy = $this->getConfig()['policies'][$policyName] ?? null;
         if (!is_array($policy)) {
-            throw new \FOSSBilling\Exception\BaseException('Rate limiter policy :policy is not defined or invalid', [':policy' => $policyName]);
+            throw new \FOSSBilling\Core\Exception\BaseException('Rate limiter policy :policy is not defined or invalid', [':policy' => $policyName]);
         }
 
         $limit = $this->getFactory($policyName, $policy)->create($this->hashSubject($subject))->consume(0);

@@ -20,7 +20,7 @@ function clientBalanceEntityManager(): EntityManager
 {
     $config = ORMSetup::createAttributeMetadataConfig([Path::join(__DIR__, '..', '..', '..', 'Entity')], true);
     $config->setProxyDir(sys_get_temp_dir());
-    $config->setProxyNamespace('FOSSBilling\\Tests\\DoctrineProxies');
+    $config->setProxyNamespace('FOSSBilling\\Core\\Tests\\DoctrineProxies');
     $entityManager = new EntityManager(DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]), $config);
 
     $metadata = array_map($entityManager->getClassMetadata(...), [Client::class, ClientBalance::class]);
@@ -83,5 +83,5 @@ test('getClientBalanceSumForUpdate rejects being called outside of a transaction
     $entityManager = clientBalanceEntityManager();
 
     expect(fn () => $entityManager->getRepository(ClientBalance::class)->getClientBalanceSumForUpdate(1))
-        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Client balance cannot be locked outside of a transaction.');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Client balance cannot be locked outside of a transaction.');
 });

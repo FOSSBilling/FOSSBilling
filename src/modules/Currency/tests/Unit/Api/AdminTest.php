@@ -189,7 +189,7 @@ test('get list', function (): void {
     ->atLeast()->once()
     ->andReturn($repositoryMock);
 
-    $pager = Mockery::mock('\\' . FOSSBilling\Pagination\Service::class)->makePartial();
+    $pager = Mockery::mock('\\' . FOSSBilling\Core\Pagination\Service::class)->makePartial();
     $pager
     ->shouldReceive('paginateDoctrineQuery')
     ->atLeast()->once()
@@ -347,7 +347,7 @@ test('create exception', function ($data, $findOneByCodeCalled, $findOneByCodeRe
     $di = container();
     $adminApi->setService($service);
     $adminApi->setDi($di);
-    $this->expectException(FOSSBilling\Exception\BaseException::class);
+    $this->expectException(FOSSBilling\Core\Exception\BaseException::class);
     $adminApi->create($data);
 })->with('createException');
 
@@ -442,12 +442,12 @@ test('delete exception', function (): void {
     $service = Mockery::mock(Box\Mod\Currency\Service::class);
     $service->shouldReceive('removeCurrency')->never();
 
-    $dispatcher = new FOSSBilling\Api\Dispatcher();
-    $this->expectException(FOSSBilling\Exception\InformationException::class);
+    $dispatcher = new FOSSBilling\Core\Api\Dispatcher();
+    $this->expectException(FOSSBilling\Core\Exception\InformationException::class);
     $dispatcher->validateRequiredParams($adminApi, 'delete', []);
 
     $di = container();
-    $di['validator'] = new FOSSBilling\Validation\Validator();
+    $di['validator'] = new FOSSBilling\Core\Validation\Validator();
     $adminApi->setDi($di);
     $adminApi->setService($service);
     $adminApi->delete([]);
@@ -468,7 +468,7 @@ test('delete', function (): void {
     ->andReturn(true);
 
     $di = container();
-    $di['validator'] = new FOSSBilling\Validation\Validator();
+    $di['validator'] = new FOSSBilling\Core\Validation\Validator();
     $adminApi->setDi($di);
     $adminApi->setService($service);
 
@@ -507,7 +507,7 @@ test('set default exception', function ($data, $findOneByCodeCalled, $findOneByC
     $adminApi->setDi($di);
 
     $adminApi->setService($service);
-    $this->expectException(FOSSBilling\Exception\BaseException::class);
+    $this->expectException(FOSSBilling\Core\Exception\BaseException::class);
     $adminApi->set_default($data);
 })->with('setDefaultException');
 

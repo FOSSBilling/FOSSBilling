@@ -8,8 +8,8 @@ use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
-use FOSSBilling\Pagination\Options as PaginationOptions;
-use FOSSBilling\Pagination\Service as PaginationService;
+use FOSSBilling\Core\Pagination\Options as PaginationOptions;
+use FOSSBilling\Core\Pagination\Service as PaginationService;
 
 function buildCustompagesService(object $repo, ?EntityManagerInterface $em = null, ?Pimple\Container $extra = null): Service
 {
@@ -109,7 +109,7 @@ test('get page rejects unknown column type', function (): void {
 
     $service = buildCustompagesService($repo);
 
-    expect(fn (): ?array => $service->getPage(1, 'title'))->toThrow(FOSSBilling\Exception\BaseException::class);
+    expect(fn (): ?array => $service->getPage(1, 'title'))->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 test('create page generates unique slug and inserts via dbal', function (): void {
@@ -189,7 +189,7 @@ test('update page throws when page not found', function (): void {
 
     $service = buildCustompagesService($repo);
 
-    expect(fn (): int => $service->updatePage(5, 't', '', '', 'c', 'slug'))->toThrow(FOSSBilling\Exception\BaseException::class, 'Custom page not found');
+    expect(fn (): int => $service->updatePage(5, 't', '', '', 'c', 'slug'))->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Custom page not found');
 });
 
 test('update page throws on duplicate slug with legacy code', function (): void {
@@ -203,7 +203,7 @@ test('update page throws on duplicate slug with legacy code', function (): void 
     $service = buildCustompagesService($repo);
 
     expect(fn (): int => $service->updatePage(5, 'T', '', '', 'C', 'taken'))
-        ->toThrow(fn (FOSSBilling\Exception\BaseException $e): bool => $e->getCode() === 9999);
+        ->toThrow(fn (FOSSBilling\Core\Exception\BaseException $e): bool => $e->getCode() === 9999);
 });
 
 test('update page applies setters and returns id', function (): void {
@@ -346,7 +346,7 @@ test('create page gives up after repeated slug conflicts', function (): void {
     $service->setDi($di);
 
     expect(fn (): int => $service->createPage('Title', '', '', 'content'))
-        ->toThrow(FOSSBilling\Exception\BaseException::class, 'Unable to generate a unique slug');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Unable to generate a unique slug');
 });
 
 test('update page surfaces a concurrent constraint violation as the uniqueness error', function (): void {
@@ -369,7 +369,7 @@ test('update page surfaces a concurrent constraint violation as the uniqueness e
     $service->setDi($di);
 
     expect(fn (): int => $service->updatePage(5, 'New', '', '', 'content', 'New Slug'))
-        ->toThrow(fn (FOSSBilling\Exception\BaseException $e): bool => $e->getCode() === 9999);
+        ->toThrow(fn (FOSSBilling\Core\Exception\BaseException $e): bool => $e->getCode() === 9999);
 });
 
 test('create page truncates a long title slug to fit varchar 255', function (): void {
@@ -444,7 +444,7 @@ test('install creates the custom_pages table portably instead of via raw MySQL D
     // at all, so this hook is the only thing that ever creates the table - unlike most modules,
     // it genuinely runs on every platform, confirmed here against a real SQLite connection.
     $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
-    $em = FOSSBilling\Doctrine\EntityManagerFactory::create($connection);
+    $em = FOSSBilling\Core\Doctrine\EntityManagerFactory::create($connection);
 
     expect($connection->createSchemaManager()->tablesExist(['custom_pages']))->toBeFalse();
 

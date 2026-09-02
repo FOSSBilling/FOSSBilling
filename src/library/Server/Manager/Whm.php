@@ -74,7 +74,7 @@ class Server_Manager_Whm extends Server_Manager
         }
 
         // If port not set, use WHM default.
-        $this->_config['port'] = FOSSBilling\Utils\Normalizer::normalizePort($this->_config['port'] ?? null, 2087);
+        $this->_config['port'] = FOSSBilling\Core\Utils\Normalizer::normalizePort($this->_config['port'] ?? null, 2087);
     }
 
     /**
@@ -583,7 +583,7 @@ class Server_Manager_Whm extends Server_Manager
      */
     private function request(string $action, array $params = []): mixed
     {
-        $verifyTls = FOSSBilling\Utils\Normalizer::normalizeBoolean($this->_config['config']['tls_verify'] ?? true, true);
+        $verifyTls = FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($this->_config['config']['tls_verify'] ?? true, true);
 
         // Create the HTTP client with the necessary options
         $client = $this->getHttpClient()->withOptions([

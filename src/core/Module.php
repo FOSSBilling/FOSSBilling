@@ -9,13 +9,13 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling;
+namespace FOSSBilling\Core;
 
 use Box\Mod\Extension\Entity\ExtensionMeta;
-use FOSSBilling\Container\InjectionAwareInterface;
-use FOSSBilling\Exception\BaseException as Exception;
-use FOSSBilling\Exception\InformationException;
-use FOSSBilling\System\Config;
+use FOSSBilling\Core\Container\InjectionAwareInterface;
+use FOSSBilling\Core\Exception\BaseException as Exception;
+use FOSSBilling\Core\Exception\InformationException;
+use FOSSBilling\Core\System\Config;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 

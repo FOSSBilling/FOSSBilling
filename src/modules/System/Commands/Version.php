@@ -21,7 +21,7 @@ use Symfony\Component\Console\Output\OutputInterface;
     description: 'Returns the current version of FOSSBilling',
     hidden: false
 )]
-class Version extends Command implements \FOSSBilling\Container\InjectionAwareInterface
+class Version extends Command implements \FOSSBilling\Core\Container\InjectionAwareInterface
 {
     protected $di;
 
@@ -37,7 +37,7 @@ class Version extends Command implements \FOSSBilling\Container\InjectionAwareIn
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $output->writeln(\FOSSBilling\System\Version::VERSION);
+        $output->writeln(\FOSSBilling\Core\System\Version::VERSION);
 
         return Command::SUCCESS;
     }

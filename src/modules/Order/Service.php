@@ -22,12 +22,12 @@ use Box\Mod\Order\Repository\OrderRepository;
 use Box\Mod\Order\Repository\OrderStatusRepository;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Staff\Entity\Admin;
-use FOSSBilling\Container\InjectionAwareInterface;
-use FOSSBilling\Doctrine\RowLock;
-use FOSSBilling\Exception\InformationException;
-use FOSSBilling\Logging\Logger;
-use FOSSBilling\Validation\NonNegativeIntegerValidator;
-use FOSSBilling\Validation\PriceValidator;
+use FOSSBilling\Core\Container\InjectionAwareInterface;
+use FOSSBilling\Core\Doctrine\RowLock;
+use FOSSBilling\Core\Exception\InformationException;
+use FOSSBilling\Core\Logging\Logger;
+use FOSSBilling\Core\Validation\NonNegativeIntegerValidator;
+use FOSSBilling\Core\Validation\PriceValidator;
 use Symfony\Component\HttpFoundation\Response;
 
 class Service implements InjectionAwareInterface
@@ -157,7 +157,7 @@ class Service implements InjectionAwareInterface
         ];
     }
 
-    public static function onAfterAdminOrderActivate(\FOSSBilling\Event\Event $event): void
+    public static function onAfterAdminOrderActivate(\FOSSBilling\Core\Event\Event $event): void
     {
         $params = $event->getParameters();
         $order_id = $params['id'];
@@ -167,7 +167,7 @@ class Service implements InjectionAwareInterface
         try {
             $order = $di['em']->getRepository(Order::class)->find($order_id);
             if (!$order instanceof Order) {
-                throw new \FOSSBilling\Exception\BaseException('Order not found');
+                throw new \FOSSBilling\Core\Exception\BaseException('Order not found');
             }
             $s = $service->getOrderServiceData($order);
             $orderArr = $service->toApiArray($order, true);
@@ -185,7 +185,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    private static function sendOrderLifecycleEmail(\FOSSBilling\Event\Event $event, string $templateSuffix, string $logAction, bool $includeService = true): void
+    private static function sendOrderLifecycleEmail(\FOSSBilling\Core\Event\Event $event, string $templateSuffix, string $logAction, bool $includeService = true): void
     {
         $params = $event->getParameters();
         $orderId = $params['id'];
@@ -195,7 +195,7 @@ class Service implements InjectionAwareInterface
         try {
             $order = $di['em']->getRepository(Order::class)->find($orderId);
             if (!$order instanceof Order) {
-                throw new \FOSSBilling\Exception\BaseException('Order not found');
+                throw new \FOSSBilling\Core\Exception\BaseException('Order not found');
             }
 
             $service = $includeService ? $orderService->getOrderServiceData($order) : null;
@@ -217,27 +217,27 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public static function onAfterAdminOrderRenew(\FOSSBilling\Event\Event $event): void
+    public static function onAfterAdminOrderRenew(\FOSSBilling\Core\Event\Event $event): void
     {
         self::sendOrderLifecycleEmail($event, 'renewed', 'renewal');
     }
 
-    public static function onAfterAdminOrderSuspend(\FOSSBilling\Event\Event $event): void
+    public static function onAfterAdminOrderSuspend(\FOSSBilling\Core\Event\Event $event): void
     {
         self::sendOrderLifecycleEmail($event, 'suspended', 'suspension');
     }
 
-    public static function onAfterAdminOrderUnsuspend(\FOSSBilling\Event\Event $event): void
+    public static function onAfterAdminOrderUnsuspend(\FOSSBilling\Core\Event\Event $event): void
     {
         self::sendOrderLifecycleEmail($event, 'unsuspended', 'unsuspension');
     }
 
-    public static function onAfterAdminOrderCancel(\FOSSBilling\Event\Event $event): void
+    public static function onAfterAdminOrderCancel(\FOSSBilling\Core\Event\Event $event): void
     {
         self::sendOrderLifecycleEmail($event, 'canceled', 'cancellation', false);
     }
 
-    public static function onAfterAdminOrderUncancel(\FOSSBilling\Event\Event $event): void
+    public static function onAfterAdminOrderUncancel(\FOSSBilling\Core\Event\Event $event): void
     {
         self::sendOrderLifecycleEmail($event, 'renewed', 'uncancel');
     }
@@ -296,7 +296,7 @@ class Service implements InjectionAwareInterface
     protected function _getServiceClassName(Order $order): string
     {
         $serviceType = $order->getServiceType();
-        $s = \FOSSBilling\Utils\Str::toCamelCase($serviceType, true);
+        $s = \FOSSBilling\Core\Utils\Str::toCamelCase($serviceType, true);
 
         return 'Service' . ucfirst((string) $s);
     }
@@ -340,7 +340,7 @@ class Service implements InjectionAwareInterface
         $serviceTypeName = str_starts_with($className, 'Model_Service')
             ? substr($className, strlen('Model_Service'))
             : (new \ReflectionClass($service))->getShortName();
-        $type = \FOSSBilling\Utils\Str::fromCamelCase($serviceTypeName);
+        $type = \FOSSBilling\Core\Utils\Str::fromCamelCase($serviceTypeName);
         $serviceId = method_exists($service, 'getId') ? $service->getId() : $service->id;
 
         return $this->getOrderRepository()->findOneByServiceTypeAndServiceId($type, (int) $serviceId);
@@ -786,7 +786,7 @@ class Service implements InjectionAwareInterface
             $currency = $currencyRepository->findDefault();
         }
         if (!$currency instanceof Currency) {
-            throw new \FOSSBilling\Exception\BaseException('Currency could not be determined for order');
+            throw new \FOSSBilling\Core\Exception\BaseException('Currency could not be determined for order');
         }
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderCreate', 'params' => $data, 'subject' => $this->getProductType($product)]);
@@ -807,13 +807,13 @@ class Service implements InjectionAwareInterface
         // Addons must have defined master order
         $parent_order = false;
         if ($this->isAddonProduct($product) && empty($group_id)) {
-            throw new \FOSSBilling\Exception\BaseException('Group ID parameter is missing for addon product order', null, 832);
+            throw new \FOSSBilling\Core\Exception\BaseException('Group ID parameter is missing for addon product order', null, 832);
         }
 
         if (!empty($group_id)) {
             $parent_order = $this->getMasterOrderForClient($client, $group_id);
             if (!$parent_order instanceof Order) {
-                throw new \FOSSBilling\Exception\BaseException('Parent order :group_id was not found', [':group_id' => $group_id]);
+                throw new \FOSSBilling\Core\Exception\BaseException('Parent order :group_id was not found', [':group_id' => $group_id]);
             }
         }
 
@@ -839,7 +839,7 @@ class Service implements InjectionAwareInterface
         }
 
         $invoice = null;
-        $markInvoicePaid = \FOSSBilling\Utils\Normalizer::normalizeBoolean($data['mark_invoice_paid'] ?? false);
+        $markInvoicePaid = \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['mark_invoice_paid'] ?? false);
 
         $id = $this->di['em']->wrapInTransaction(function () use (
             $client,
@@ -890,7 +890,7 @@ class Service implements InjectionAwareInterface
             } else {
                 $rate = $currencyRepository->getRateByCode($currency->getCode());
                 if ($rate === null) {
-                    throw new \FOSSBilling\Exception\BaseException("Currency rate for '{$currency->getCode()}' is not configured");
+                    throw new \FOSSBilling\Core\Exception\BaseException("Currency rate for '{$currency->getCode()}' is not configured");
                 }
                 $order->setPrice($line['price'] * $rate);
             }
@@ -968,7 +968,7 @@ class Service implements InjectionAwareInterface
 
         $order = $this->getOrderRepository()->find($id);
         if (!$order instanceof Order) {
-            throw new \FOSSBilling\Exception\BaseException('Order not found');
+            throw new \FOSSBilling\Core\Exception\BaseException('Order not found');
         }
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderCreate', 'params' => ['id' => $order->getId()], 'subject' => $this->getProductType($product)]);
@@ -1025,7 +1025,7 @@ class Service implements InjectionAwareInterface
         $orderId = $this->orderId($order);
         $order = $this->getOrderRepository()->find($orderId);
         if (!$order instanceof Order) {
-            throw new \FOSSBilling\Exception\BaseException('Order :id not found', [':id' => $orderId]);
+            throw new \FOSSBilling\Core\Exception\BaseException('Order :id not found', [':id' => $orderId]);
         }
         $force = !empty($data['force']);
 
@@ -1039,7 +1039,7 @@ class Service implements InjectionAwareInterface
             Order::STATUS_FAILED_SETUP,
         ];
         if (!in_array($orderStatus, $statues) && !$force) {
-            throw new \FOSSBilling\Exception\BaseException('Only pending setup or failed orders can be activated');
+            throw new \FOSSBilling\Core\Exception\BaseException('Only pending setup or failed orders can be activated');
         }
 
         $event_params = ['id' => $orderId];
@@ -1069,7 +1069,7 @@ class Service implements InjectionAwareInterface
             if (method_exists($s, 'create') || method_exists($s, 'action_create')) {
                 $service = $this->_callOnService($order, Order::ACTION_CREATE);
                 if (!is_object($service)) {
-                    throw new \FOSSBilling\Exception\BaseException('Error creating ' . $serviceType . ' service for order ' . $orderId);
+                    throw new \FOSSBilling\Core\Exception\BaseException('Error creating ' . $serviceType . ' service for order ' . $orderId);
                 }
 
                 $serviceId = method_exists($service, 'getId') ? $service->getId() : $service->id;
@@ -1158,7 +1158,7 @@ class Service implements InjectionAwareInterface
         if (in_array($serviceType, self::BUILT_IN_SERVICE_TYPES, true)) {
             $m = 'action_' . $action;
             if (!method_exists($repo, $m) || !is_callable([$repo, $m])) {
-                throw new \FOSSBilling\Exception\BaseException('Service ' . $serviceType . ' do not support ' . $m);
+                throw new \FOSSBilling\Core\Exception\BaseException('Service ' . $serviceType . ' do not support ' . $m);
             }
 
             return $repo->$m($order, ...$arguments);
@@ -1503,7 +1503,7 @@ class Service implements InjectionAwareInterface
             return;
         }
 
-        throw new \FOSSBilling\Exception\BaseException('Cannot cancel ' . $status . ' order');
+        throw new \FOSSBilling\Core\Exception\BaseException('Cannot cancel ' . $status . ' order');
     }
 
     private function beginCancellation(Order $order, bool $skipEvent): void
@@ -1775,7 +1775,7 @@ class Service implements InjectionAwareInterface
             try {
                 $order = $this->getOrderRepository()->find((int) $orderArr['id']);
                 if (!$order instanceof Order) {
-                    throw new \FOSSBilling\Exception\BaseException('Order not found');
+                    throw new \FOSSBilling\Core\Exception\BaseException('Order not found');
                 }
                 $this->cancelFromOrder($order, $reason);
             } catch (\Exception $e) {
@@ -1925,7 +1925,7 @@ class Service implements InjectionAwareInterface
             $value = $config[$name] ?? null;
 
             if (!empty($field['required']) && ($value === null || $value === '' || (is_array($value) && count($value) === 0))) {
-                throw new \FOSSBilling\Exception\BaseException('Field ":field" is required', [':field' => $field['label']], 4892);
+                throw new \FOSSBilling\Core\Exception\BaseException('Field ":field" is required', [':field' => $field['label']], 4892);
             }
 
             $options = $field['options'] ?? [];
@@ -1936,17 +1936,17 @@ class Service implements InjectionAwareInterface
                     }
 
                     if (!is_scalar($value)) {
-                        throw new \FOSSBilling\Exception\BaseException('Invalid value for field ":field"', [':field' => $field['label']], 4893);
+                        throw new \FOSSBilling\Core\Exception\BaseException('Invalid value for field ":field"', [':field' => $field['label']], 4893);
                     }
 
                     if (!array_key_exists($value, $options) && !in_array($value, $options, true)) {
-                        throw new \FOSSBilling\Exception\BaseException('Invalid value for field ":field"', [':field' => $field['label']], 4893);
+                        throw new \FOSSBilling\Core\Exception\BaseException('Invalid value for field ":field"', [':field' => $field['label']], 4893);
                     }
                 } elseif ($field['type'] === 'checkbox') {
                     if (is_array($value)) {
                         foreach ($value as $v) {
                             if (!in_array($v, $options, true)) {
-                                throw new \FOSSBilling\Exception\BaseException('Invalid value for field ":field"', [':field' => $field['label']], 4894);
+                                throw new \FOSSBilling\Core\Exception\BaseException('Invalid value for field ":field"', [':field' => $field['label']], 4894);
                             }
                         }
                     }
@@ -2004,7 +2004,7 @@ class Service implements InjectionAwareInterface
     {
         $orderStatus = $this->getOrderStatusRepository()->find($id);
         if (!$orderStatus instanceof OrderStatus) {
-            throw new \FOSSBilling\Exception\BaseException('Order history line not found');
+            throw new \FOSSBilling\Core\Exception\BaseException('Order history line not found');
         }
 
         $this->di['em']->remove($orderStatus);

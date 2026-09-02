@@ -9,18 +9,18 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling\Update;
+namespace FOSSBilling\Core\Update;
 
-use FOSSBilling\Container\InjectionAwareInterface;
-use FOSSBilling\Doctrine\Driver;
-use FOSSBilling\Doctrine\DriverManagerFactory;
-use FOSSBilling\Doctrine\ModuleEntityScope;
-use FOSSBilling\Doctrine\SchemaSynchronizer;
-use FOSSBilling\Exception\BaseException;
-use FOSSBilling\Security\Crypt;
-use FOSSBilling\System\Config;
-use FOSSBilling\System\Environment;
-use FOSSBilling\System\Version;
+use FOSSBilling\Core\Container\InjectionAwareInterface;
+use FOSSBilling\Core\Doctrine\Driver;
+use FOSSBilling\Core\Doctrine\DriverManagerFactory;
+use FOSSBilling\Core\Doctrine\ModuleEntityScope;
+use FOSSBilling\Core\Doctrine\SchemaSynchronizer;
+use FOSSBilling\Core\Exception\BaseException;
+use FOSSBilling\Core\Security\Crypt;
+use FOSSBilling\Core\System\Config;
+use FOSSBilling\Core\System\Environment;
+use FOSSBilling\Core\System\Version;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -123,7 +123,7 @@ class Patcher implements InjectionAwareInterface
             unset($newConfig['db']['port']);
         } else {
             $defaultPort = $driver instanceof Driver && $driver->defaultPort() !== null ? $driver->defaultPort() : 3306;
-            $newConfig['db']['port'] = \FOSSBilling\Utils\Normalizer::normalizePort($newConfig['db']['port'] ?? null, $defaultPort);
+            $newConfig['db']['port'] = \FOSSBilling\Core\Utils\Normalizer::normalizePort($newConfig['db']['port'] ?? null, $defaultPort);
         }
         unset(
             $newConfig['api']['rate_span'],
@@ -234,7 +234,7 @@ class Patcher implements InjectionAwareInterface
      * changes only, never a substitute for the legacy patches' data transformations).
      *
      * Scoped to core-module entities plus whichever extensions are currently marked installed
-     * ({@see ModuleEntityScope::isEagerNow()}) - the same gating {@see \FOSSBilling\Doctrine\
+     * ({@see ModuleEntityScope::isEagerNow()}) - the same gating {@see \FOSSBilling\Core\Doctrine\
      * SchemaInstaller} applies at fresh-install time. Running the unscoped {@see SchemaSynchronizer::
      * sync()} here instead would undo that gating: it compares every entity's table
      * unconditionally, so an inactive extension's table (custom_pages, mod_massmailer,

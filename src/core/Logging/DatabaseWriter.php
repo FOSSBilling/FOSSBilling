@@ -10,7 +10,7 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling\Logging;
+namespace FOSSBilling\Core\Logging;
 
 class DatabaseWriter
 {
@@ -43,7 +43,7 @@ class DatabaseWriter
         } catch (\Throwable $e) {
             // The database writer cannot use the application logger while it is
             // writing that logger, so retain PHP's last-resort error log here.
-            error_log(sprintf('[FOSSBilling\\Logging\\DatabaseWriter] writer failure: %s at %s:%d', $e->getMessage(), $e->getFile(), $e->getLine()));
+            error_log(sprintf('[FOSSBilling\\Core\\Logging\\DatabaseWriter] writer failure: %s at %s:%d', $e->getMessage(), $e->getFile(), $e->getLine()));
         }
     }
 }

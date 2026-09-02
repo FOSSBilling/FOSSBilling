@@ -15,9 +15,9 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use FOSSBilling\Api\ArrayInterface;
-use FOSSBilling\Doctrine\TimestampInterface;
-use FOSSBilling\Doctrine\TimestampTrait;
+use FOSSBilling\Core\Api\ArrayInterface;
+use FOSSBilling\Core\Doctrine\TimestampInterface;
+use FOSSBilling\Core\Doctrine\TimestampTrait;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Support\Repository\KbArticleCategoryRepository::class)]
 #[ORM\Table(name: 'support_kb_article_category')]
@@ -53,7 +53,7 @@ class KbArticleCategory implements ArrayInterface, TimestampInterface
         $this->articles = new ArrayCollection();
     }
 
-    public function toApiArray(\Box\Mod\Client\Entity\Client|\Box\Mod\Staff\Entity\Admin|\FOSSBilling\Identity\Guest|null $identity = null, ?string $query = null, bool $includeArticleViews = true): array
+    public function toApiArray(\Box\Mod\Client\Entity\Client|\Box\Mod\Staff\Entity\Admin|\FOSSBilling\Core\Identity\Guest|null $identity = null, ?string $query = null, bool $includeArticleViews = true): array
     {
         $data = [
             'id' => $this->id,

@@ -11,11 +11,11 @@ declare(strict_types=1);
 
 namespace Box\Mod\Security\Checks;
 
-use FOSSBilling\Security\CheckResult;
-use FOSSBilling\Security\CheckResultStatus;
+use FOSSBilling\Core\Security\CheckResult;
+use FOSSBilling\Core\Security\CheckResultStatus;
 use Pimple\Container;
 
-class webserver implements \FOSSBilling\Security\CheckInterface
+class webserver implements \FOSSBilling\Core\Security\CheckInterface
 {
     protected ?Container $di = null;
 

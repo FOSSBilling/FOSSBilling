@@ -13,9 +13,9 @@ namespace Box\Mod\Invoice\Entity;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use FOSSBilling\Api\ArrayInterface;
-use FOSSBilling\Doctrine\TimestampInterface;
-use FOSSBilling\Doctrine\TimestampTrait;
+use FOSSBilling\Core\Api\ArrayInterface;
+use FOSSBilling\Core\Doctrine\TimestampInterface;
+use FOSSBilling\Core\Doctrine\TimestampTrait;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Invoice\Repository\InvoiceItemRepository::class)]
 #[ORM\Table(name: 'invoice_item')]
@@ -29,7 +29,7 @@ use FOSSBilling\Doctrine\TimestampTrait;
 // supportsColumnLengthIndexes() is false there), so the index they create is the full,
 // unprefixed 5-column index - strictly more capable than MySQL's, not narrower. The one cost:
 // that option can't round-trip through SQLite/PostgreSQL schema introspection, so
-// FOSSBilling\Doctrine\SchemaSynchronizer::sync() permanently reports this one index as an
+// FOSSBilling\Core\Doctrine\SchemaSynchronizer::sync() permanently reports this one index as an
 // "existing structural difference" on every sync against an otherwise fully-current PG/SQLite
 // database - harmless (skipped items are never applied, see SchemaSynchronizer's docblock), but
 // worth knowing before treating a nonzero skip count as evidence of drift on those platforms.

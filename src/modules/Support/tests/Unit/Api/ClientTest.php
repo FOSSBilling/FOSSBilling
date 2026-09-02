@@ -23,7 +23,7 @@ test('ticket get list', function (): void {
             ['id' => 1],
         ],
     ];
-    $paginatorMock = Mockery::mock(FOSSBilling\Pagination\Service::class)->makePartial();
+    $paginatorMock = Mockery::mock(FOSSBilling\Core\Pagination\Service::class)->makePartial();
     $paginatorMock
     ->shouldReceive('paginateMappedQuery')
     ->atLeast()->once()
@@ -190,7 +190,7 @@ test('ticket reply can not be reopened exception', function (): void {
         'content' => 'Content',
         'id' => 1,
     ];
-    expect(fn (): bool => $clientApi->ticket_reply($data))->toThrow(FOSSBilling\Exception\BaseException::class);
+    expect(fn (): bool => $clientApi->ticket_reply($data))->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 test('ticket close', function (): void {

@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Formbuilder\Controller;
 
-class Client implements \FOSSBilling\Container\InjectionAwareInterface
+class Client implements \FOSSBilling\Core\Container\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 
@@ -25,12 +25,12 @@ class Client implements \FOSSBilling\Container\InjectionAwareInterface
         return $this->di;
     }
 
-    public function register(\FOSSBilling\Http\App &$app): void
+    public function register(\FOSSBilling\Core\Http\App &$app): void
     {
         $app->get('/formbuilder/:id', 'get_form', ['id' => '[0-9]+'], static::class);
     }
 
-    public function get_form(\FOSSBilling\Http\App $app, $id): string
+    public function get_form(\FOSSBilling\Core\Http\App $app, $id): string
     {
         return $app->render('mod_formbuilder_build', ['id' => $id]);
     }

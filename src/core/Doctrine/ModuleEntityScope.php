@@ -9,15 +9,15 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-namespace FOSSBilling\Doctrine;
+namespace FOSSBilling\Core\Doctrine;
 
 use Box\Mod\Extension\Entity\Extension;
 use Doctrine\DBAL\Connection;
-use FOSSBilling\Module;
+use FOSSBilling\Core\Module;
 
 /**
  * Decides which entities' tables {@see SchemaInstaller} and the ambient
- * {@see SchemaSynchronizer::syncEntities()} call in {@see \FOSSBilling\UpdatePatcher::
+ * {@see SchemaSynchronizer::syncEntities()} call in {@see \FOSSBilling\Core\UpdatePatcher::
  * applyCorePatches()} are allowed to eagerly create/maintain, versus which are left entirely to
  * their own module's `install()` hook (also via {@see SchemaSynchronizer::syncEntities()}) - the
  * same distinction {@see \Box\Mod\Extension\Service::isCoreModule()}/`isExtensionActive()` already
@@ -68,7 +68,7 @@ final class ModuleEntityScope
     /**
      * Fetches every extension module name currently marked installed, for use with
      * {@see self::isEagerNow()} - one query total, meant to be called once per gating pass (e.g.
-     * once per {@see \FOSSBilling\UpdatePatcher::applyCorePatches()} run) and reused for every
+     * once per {@see \FOSSBilling\Core\UpdatePatcher::applyCorePatches()} run) and reused for every
      * entity being checked, rather than one query per entity. Queried directly against the
      * connection rather than through `Box\Mod\Extension\Service` to avoid that service's DI/
      * permission-check machinery for what is otherwise a plain column read - this mirrors
@@ -90,7 +90,7 @@ final class ModuleEntityScope
 
     /**
      * Whether entities owned by the given module should be eagerly maintained by the *ambient*
-     * sync ({@see \FOSSBilling\UpdatePatcher::applyCorePatches()}, run while a database update is
+     * sync ({@see \FOSSBilling\Core\UpdatePatcher::applyCorePatches()}, run while a database update is
      * pending finalization) right now - true for core modules, and for any module present in
      * $installedExtensionModules (see {@see self::installedExtensionModules()}).
      *

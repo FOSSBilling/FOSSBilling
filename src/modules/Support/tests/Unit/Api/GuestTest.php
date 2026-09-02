@@ -84,7 +84,7 @@ test('ticket create message too short exception', function (): void {
         'content' => '',
     ];
 
-    expect(fn (): string => $guestApi->ticket_create($data))->toThrow(FOSSBilling\Exception\BaseException::class);
+    expect(fn (): string => $guestApi->ticket_create($data))->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 test('ticket get', function (): void {
@@ -120,7 +120,7 @@ test('ticket close', function (): void {
     $guestApi->setDi($di);
 
     $guestApi->setService($serviceMock);
-    $guestApi->setIdentity(new FOSSBilling\Identity\Guest());
+    $guestApi->setIdentity(new FOSSBilling\Core\Identity\Guest());
 
     $data = [
         'hash' => sha1(uniqid()),
@@ -180,10 +180,10 @@ test('kb article get list', function (): void {
         ->andReturn($repo);
     $guestApi->setService($supportService);
 
-    $pager = Mockery::mock(FOSSBilling\Pagination\Service::class);
+    $pager = Mockery::mock(FOSSBilling\Core\Pagination\Service::class);
     $pager->shouldReceive('paginateDoctrineQuery')
         ->once()
-        ->with($qb, Mockery::type(FOSSBilling\Pagination\Options::class), Mockery::any(), false, true)
+        ->with($qb, Mockery::type(FOSSBilling\Core\Pagination\Options::class), Mockery::any(), false, true)
         ->andReturn($willReturn);
 
     $di = container();
@@ -296,7 +296,7 @@ test('kb article get id and slug not set exception', function (): void {
 
     $guestApi->setService(guestSupportServiceMock());
 
-    expect(fn (): array => $guestApi->kb_article_get([]))->toThrow(FOSSBilling\Exception\BaseException::class);
+    expect(fn (): array => $guestApi->kb_article_get([]))->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 test('kb article get list disabled exception', function (): void {
@@ -306,7 +306,7 @@ test('kb article get list disabled exception', function (): void {
     $service->shouldReceive('kbEnabled')->andReturn(false);
     $guestApi->setService($service);
 
-    expect(fn (): array => $guestApi->kb_article_get_list([]))->toThrow(FOSSBilling\Exception\BaseException::class);
+    expect(fn (): array => $guestApi->kb_article_get_list([]))->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 test('kb article get not found by id', function (): void {
@@ -331,7 +331,7 @@ test('kb article get not found by id', function (): void {
     $di = container();
 
     $guestApi->setDi($di);
-    expect(fn (): array => $guestApi->kb_article_get($data))->toThrow(FOSSBilling\Exception\BaseException::class);
+    expect(fn (): array => $guestApi->kb_article_get($data))->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 test('kb article get not found by slug', function (): void {
@@ -357,7 +357,7 @@ test('kb article get not found by slug', function (): void {
 
     $guestApi->setDi($di);
 
-    expect(fn (): array => $guestApi->kb_article_get($data))->toThrow(FOSSBilling\Exception\BaseException::class);
+    expect(fn (): array => $guestApi->kb_article_get($data))->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 test('kb category get list', function (): void {
@@ -381,7 +381,7 @@ test('kb category get list', function (): void {
         ->once()
         ->andReturn($repo);
 
-    $pager = Mockery::mock(FOSSBilling\Pagination\Service::class)->makePartial();
+    $pager = Mockery::mock(FOSSBilling\Core\Pagination\Service::class)->makePartial();
 
     $pager
     ->shouldReceive('paginateDoctrineQuery')
@@ -456,7 +456,7 @@ test('kb category get id and slug not set exception', function (): void {
 
     $guestApi->setService(guestSupportServiceMock());
 
-    expect(fn (): array => $guestApi->kb_category_get([]))->toThrow(FOSSBilling\Exception\BaseException::class);
+    expect(fn (): array => $guestApi->kb_category_get([]))->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 test('kb category get not found by id', function (): void {
@@ -482,7 +482,7 @@ test('kb category get not found by id', function (): void {
 
     $guestApi->setDi($di);
 
-    expect(fn (): array => $guestApi->kb_category_get($data))->toThrow(FOSSBilling\Exception\BaseException::class);
+    expect(fn (): array => $guestApi->kb_category_get($data))->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 test('kb category get not found by slug', function (): void {
@@ -508,5 +508,5 @@ test('kb category get not found by slug', function (): void {
 
     $guestApi->setDi($di);
 
-    expect(fn (): array => $guestApi->kb_category_get($data))->toThrow(FOSSBilling\Exception\BaseException::class);
+    expect(fn (): array => $guestApi->kb_category_get($data))->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });

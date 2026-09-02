@@ -24,7 +24,7 @@ test('company returns company data when public display is enabled', function ():
     $api = apiEndpoint(new Box\Mod\System\Api\Guest());
     $companyData = ['companyName' => 'TestCo'];
 
-    $authMock = Mockery::mock(FOSSBilling\Security\Authorization::class);
+    $authMock = Mockery::mock(FOSSBilling\Core\Security\Authorization::class);
     $authMock->shouldReceive('isAdminLoggedIn')
         ->atLeast()->once()
         ->andReturn(false);
@@ -66,7 +66,7 @@ test('company filters sensitive data when public display is disabled', function 
         'address_3' => 'Test Address 3',
     ];
 
-    $authMock = Mockery::mock(FOSSBilling\Security\Authorization::class);
+    $authMock = Mockery::mock(FOSSBilling\Core\Security\Authorization::class);
     $authMock->shouldReceive('isAdminLoggedIn')
         ->atLeast()->once()
         ->andReturn(false);
@@ -183,7 +183,7 @@ test('locale returns the active locale string', function (): void {
 test('countries returns full list when none are configured', function (): void {
     $api = apiEndpoint(new Box\Mod\System\Api\Guest());
 
-    $modMock = Mockery::mock(FOSSBilling\Module::class);
+    $modMock = Mockery::mock(FOSSBilling\Core\Module::class);
     $modMock->shouldReceive('getConfig')->atLeast()->once()->andReturn([]);
 
     $di = container();
@@ -206,7 +206,7 @@ test('countries correctly splits multi-byte UTF-8 country names', function (): v
 
     $configuredCountries = "AX=Åland Islands\nUS=United States";
 
-    $modMock = Mockery::mock(FOSSBilling\Module::class);
+    $modMock = Mockery::mock(FOSSBilling\Core\Module::class);
     $modMock->shouldReceive('getConfig')->atLeast()->once()->andReturn(['countries' => $configuredCountries]);
 
     $di = container();
