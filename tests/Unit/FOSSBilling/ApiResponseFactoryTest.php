@@ -95,3 +95,23 @@ test('API response factory substitutes invalid UTF-8 instead of failing to encod
     expect($decoded['error'])->toBeNull()
         ->and($decoded['result']['name'])->toContain('Caf');
 });
+
+test('API response factory maps standard HTTP status codes and custom application codes', function (int $code, int $expectedStatus): void {
+    $response = (new ApiResponseFactory())->create(null, new FOSSBilling\Exception('Error occurred', null, $code));
+
+    expect($response->getStatusCode())->toBe($expectedStatus);
+})->with([
+    [400, Response::HTTP_BAD_REQUEST],
+    [401, Response::HTTP_UNAUTHORIZED],
+    [403, Response::HTTP_FORBIDDEN],
+    [404, Response::HTTP_NOT_FOUND],
+    [405, Response::HTTP_METHOD_NOT_ALLOWED],
+    [422, Response::HTTP_UNPROCESSABLE_ENTITY],
+    [429, Response::HTTP_TOO_MANY_REQUESTS],
+    [500, Response::HTTP_INTERNAL_SERVER_ERROR],
+    [503, Response::HTTP_SERVICE_UNAVAILABLE],
+    [701, Response::HTTP_BAD_REQUEST],
+    [740, Response::HTTP_NOT_FOUND],
+    [879, Response::HTTP_BAD_REQUEST],
+]);
+
