@@ -97,7 +97,7 @@ test('is spam does not re-verify the captcha during signup', function (): void {
     $di = container();
     $di['mod_config'] = $di->protect(fn (): array => ['sfs' => false]);
 
-    $boxEventMock = Mockery::mock('\Box_Event');
+    $boxEventMock = Mockery::mock(FOSSBilling\Event\Event::class);
     $boxEventMock->shouldReceive('getDi')
         ->atLeast()->once()
         ->andReturn($di);
