@@ -2881,12 +2881,16 @@ class UpdatePatcher implements InjectionAwareInterface
 
             // A code-only deploy (e.g. `git pull`) already moves every tracked file via the
             // checkout itself, before this ever runs - the rename above then finds $newPath
-            // already there and skips. What's left behind at $oldPath at that point is only
-            // ever gitignored leftovers (a rebuilt assets/build/, huraga's config/settings_data.json
+            // already there and skips. What's left behind at $oldPath at that point is mostly
+            // gitignored leftovers (a rebuilt assets/build/, huraga's config/settings_data.json
             // cache, which regenerates on its own - the setting it holds is now in the database,
-            // migrated below), never the theme's real tracked content, so it's safe to discard
-            // outright once $newPath confirms the theme is available at its new home.
+            // migrated below), but TwigLoader's `html_custom` override directory and extra files
+            // dropped into `custom-icons` are genuinely untracked local customizations a checkout
+            // never touches - discarding $oldPath outright would destroy them. Mirror anything not
+            // already present at $newPath over first (never overwriting what the checkout already
+            // placed there) so those customizations survive the rename, then discard what's left.
             if ($filesystem->exists($oldPath) && $filesystem->exists($newPath)) {
+                $filesystem->mirror($oldPath, $newPath, null, ['override' => false]);
                 $filesystem->remove($oldPath);
             }
 

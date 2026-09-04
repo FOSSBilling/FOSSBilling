@@ -1306,15 +1306,19 @@ test('migrateThemePackageLayout renames admin_default/huraga when only the old d
     (new ReflectionMethod($patcher, 'migrateThemePackageLayout'))->invoke($patcher);
 });
 
-test('migrateThemePackageLayout discards leftover old directories once a code-only deploy already created the new one', function (): void {
+test('migrateThemePackageLayout mirrors leftover old directories into the new one before discarding them', function (): void {
     $adminDefault = Path::join(PATH_THEMES, 'admin_default');
     $huraga = Path::join(PATH_THEMES, 'huraga');
     $defaultAdmin = Path::join(PATH_THEMES, 'default', 'admin');
     $defaultClient = Path::join(PATH_THEMES, 'default', 'client');
 
     // Simulates a `git pull`/checkout deploy: the tracked files already moved via the checkout
-    // itself, so both old and new paths exist - only gitignored leftovers (rebuilt assets/build/,
-    // huraga's settings_data.json cache, which regenerates on its own) remain at the old path.
+    // itself, so both old and new paths exist. What's left at the old path is mostly gitignored
+    // leftovers (rebuilt assets/build/, huraga's settings_data.json cache, which regenerates on
+    // its own), but can also be genuinely untracked local customizations - an `html_custom`
+    // override directory, extra files dropped into `custom-icons` - that a checkout never
+    // touches. mirror() must copy anything still at the old path over (without clobbering what
+    // the checkout already placed at the new path) before the old directory is discarded.
     $filesystem = Mockery::mock(Filesystem::class);
     $filesystem->shouldReceive('exists')->with($adminDefault)->andReturnTrue();
     $filesystem->shouldReceive('exists')->with($huraga)->andReturnTrue();
@@ -1322,8 +1326,10 @@ test('migrateThemePackageLayout discards leftover old directories once a code-on
     $filesystem->shouldReceive('exists')->with($defaultClient)->andReturnTrue();
     $filesystem->shouldNotReceive('mkdir');
     $filesystem->shouldNotReceive('rename');
-    $filesystem->expects('remove')->with($adminDefault)->once();
-    $filesystem->expects('remove')->with($huraga)->once();
+    $filesystem->expects('mirror')->with($adminDefault, $defaultAdmin, null, ['override' => false])->once()->ordered();
+    $filesystem->expects('remove')->with($adminDefault)->once()->ordered();
+    $filesystem->expects('mirror')->with($huraga, $defaultClient, null, ['override' => false])->once()->ordered();
+    $filesystem->expects('remove')->with($huraga)->once()->ordered();
 
     $di = new Pimple\Container();
     $di['pdo'] = mockPdoAllowingThemeMigrationCalls();
