@@ -8,3 +8,18 @@
     flex: 0 0 5.5rem;
     max-width: 5.5rem;
 }
+
+// Every property here was identical between the two themes except
+// background-color, which is genuinely framework-specific (Tabler's
+// --tblr-bg-surface vs Bootstrap's --bs-secondary-bg) - each theme's own
+// stylesheet still sets that one property itself, after @use-ing this file.
+.db-avatar {
+    display: inline-block;
+    flex-shrink: 0;
+    vertical-align: middle;
+    background-size: 100% 100%;
+    background-position: center;
+    background-repeat: no-repeat;
+    border-radius: 50%;
+    overflow: hidden;
+}

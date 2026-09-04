@@ -407,13 +407,5 @@ body {
 }
 
 .db-avatar {
-    display: inline-block;
-    flex-shrink: 0;
-    vertical-align: middle;
     background-color: var(--bs-secondary-bg);
-    background-size: 100% 100%;
-    background-position: center;
-    background-repeat: no-repeat;
-    border-radius: 50%;
-    overflow: hidden;
 }
