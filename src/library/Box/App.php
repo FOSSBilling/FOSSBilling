@@ -234,13 +234,24 @@ class Box_App
      */
     protected function convertCacheWriteFailure(RuntimeException $e): never
     {
-        if (!str_starts_with($e->getMessage(), 'Unable to create the cache directory')) {
-            throw $e;
+        // Twig\Cache\FilesystemCache::write() throws one of these three messages for what is
+        // always the same underlying problem: it couldn't create, or write into, the cache
+        // directory.
+        $cacheWriteFailurePrefixes = [
+            'Unable to create the cache directory',
+            'Unable to write in the cache directory',
+            'Failed to write cache file',
+        ];
+
+        foreach ($cacheWriteFailurePrefixes as $prefix) {
+            if (str_starts_with($e->getMessage(), $prefix)) {
+                $this->di['logger']->withChannel('routing')->error($e->getMessage());
+
+                throw new FOSSBilling\Exception('The template cache directory could not be written to. Please check the file permissions on the "data/cache" directory.', null, 5002);
+            }
         }
 
-        $this->di['logger']->withChannel('routing')->error($e->getMessage());
-
-        throw new FOSSBilling\Exception('The template cache directory could not be written to. Please check the file permissions on the "data/cache" directory.', null, 5002);
+        throw $e;
     }
 
     private function invokeSharedController(string $classname, string $methodName, array $params): mixed
