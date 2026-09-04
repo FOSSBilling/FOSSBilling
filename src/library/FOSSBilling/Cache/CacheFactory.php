@@ -136,7 +136,13 @@ class CacheFactory
             self::assertUsable($pool);
 
             return $pool;
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
+            // Deliberately narrower than \Throwable: the redis/memcached extensions and Symfony's
+            // cache adapters only ever raise \Exception (or a subclass) for an expected connection/
+            // configuration failure - a bad host, missing extension, wrong credentials, and so on.
+            // A \Error here (TypeError, ArgumentCountError, ...) means a genuine bug in our own
+            // adapter-construction code, not an admin misconfiguration, so it's left to propagate
+            // and be reported as usual instead of being swallowed under the ":driver" code below.
             if (!$fallbackOnFailure) {
                 throw new Exception('Could not connect to the configured ":driver" cache backend: :message', [':driver' => $driver, ':message' => $e->getMessage()], 5001);
             }
