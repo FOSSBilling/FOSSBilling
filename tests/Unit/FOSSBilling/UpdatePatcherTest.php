@@ -1258,16 +1258,10 @@ function mockPdoAllowingThemeMigrationCalls(): Mockery\MockInterface
 
 test('applyCorePatches never runs a legacy MySQL patch on a non-MySQL driver, even if the patch level looks stale', function (): void {
     withNonMysqlDbDriver(function (): void {
-        // migrateThemePackageLayout() is portable (plain UPDATE ... WHERE, no backticks/DDL) and
-        // runs unconditionally regardless of driver - see the test below. Accept only that shape
-        // here; anything else (backtick-quoted identifiers, ALTER TABLE, SHOW COLUMNS, ...) would
-        // mean a legacy MySQL-only patch ran, which this test exists to catch.
-        $statement = Mockery::mock(PDOStatement::class);
-        $statement->shouldReceive('execute')->andReturn(true);
-        $pdo = Mockery::mock(PDO::class);
-        $pdo->shouldReceive('prepare')
-            ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'UPDATE setting') || str_starts_with($sql, 'UPDATE extension_meta')))
-            ->andReturn($statement);
+        // mockPdoAllowingThemeMigrationCalls() only accepts 'UPDATE setting'/'UPDATE extension_meta'
+        // prepare() calls; anything else (backtick-quoted identifiers, ALTER TABLE, SHOW COLUMNS,
+        // ...) would mean a legacy MySQL-only patch ran, which this test exists to catch.
+        $pdo = mockPdoAllowingThemeMigrationCalls();
         $pdo->shouldNotReceive('query');
 
         $di = new Pimple\Container();
