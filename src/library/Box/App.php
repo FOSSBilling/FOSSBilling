@@ -247,7 +247,7 @@ class Box_App
             if (str_starts_with($e->getMessage(), $prefix)) {
                 $this->di['logger']->withChannel('routing')->error($e->getMessage());
 
-                throw new FOSSBilling\Exception('The template cache directory could not be written to. Please check the file permissions on the "data/cache" directory.', null, 5002);
+                throw new FOSSBilling\Exception('The template cache directory could not be written to. Please check the file permissions and available disk space for the "data/cache" directory.', null, 5002);
             }
         }
 
