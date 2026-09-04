@@ -58,6 +58,12 @@ class ErrorPage
             4001 => [
                 'report' => false,
             ],
+            // Unavailable/misconfigured cache backend (e.g. a missing PHP extension, or an
+            // unreachable Redis/Memcached server). Surfaced to the admin directly when testing a
+            // cache driver before saving it, so it's listed here to keep it out of Sentry.io.
+            5001 => [
+                'report' => false,
+            ],
         ];
     }
 
@@ -84,6 +90,10 @@ class ErrorPage
         'Payment Gateway' => [
             'start' => 4000,
             'end' => 4999,
+        ],
+        'Cache' => [
+            'start' => 5000,
+            'end' => 5999,
         ],
     ];
 
