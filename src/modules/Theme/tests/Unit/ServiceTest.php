@@ -477,7 +477,7 @@ test('getPackageSharedHtmlPath returns null for a flat, non-package code', funct
 function makeFixtureThemesRoot(array $layout): string
 {
     $filesystem = new Symfony\Component\Filesystem\Filesystem();
-    $root = Path::join(sys_get_temp_dir(), 'fossbilling-getthemes-test-' . bin2hex(random_bytes(8)));
+    $root = Path::join(sys_get_temp_dir(), 'fossbilling-get-themes-test-' . bin2hex(random_bytes(8)));
 
     foreach ($layout as $name => $subpaths) {
         foreach ($subpaths as $subpath) {

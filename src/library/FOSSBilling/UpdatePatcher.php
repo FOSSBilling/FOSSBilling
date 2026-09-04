@@ -193,7 +193,8 @@ class UpdatePatcher implements InjectionAwareInterface
         // Portable (plain UPDATE ... WHERE, no MySQL-specific syntax) and idempotent, so it
         // runs on every platform rather than being folded into the MySQL-only patch loop above -
         // a PostgreSQL/SQLite install predating this change never runs patch115() at all, and
-        // would otherwise be left with an unrenamed theme and orphaned saved settings forever.
+        // would otherwise be left with a theme that never got renamed and orphaned saved settings
+        // forever.
         $this->migrateThemePackageLayout();
 
         // Additive structural sync runs on every platform, MySQL/MariaDB included: it picks up any

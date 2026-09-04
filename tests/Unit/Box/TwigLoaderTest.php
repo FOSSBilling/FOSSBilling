@@ -34,7 +34,7 @@ test('exception', function (): void {
 
 function makeFixturePackage(string $areaName, bool $withShared): array
 {
-    $root = Path::join(sys_get_temp_dir(), 'fossbilling-twigloader-test-' . bin2hex(random_bytes(8)));
+    $root = Path::join(sys_get_temp_dir(), 'fossbilling-twig-loader-test-' . bin2hex(random_bytes(8)));
     $themePath = Path::join($root, $areaName);
     $sharedHtmlPath = Path::join($root, 'shared', 'html');
 
