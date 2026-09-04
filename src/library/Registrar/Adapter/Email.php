@@ -49,7 +49,7 @@ class Registrar_Adapter_Email extends Registrar_AdapterAbstract
         $this->getLog()->debug('Checking domain availability: ' . $domain->getName());
 
         if (!$this->config['use_rdap']) {
-            throw new Registrar_Exception(':type: registrar is unable to :action:', [':type:' => 'Email', ':action:' => 'determine domain availability']);
+            throw new Registrar_Exception(':type: registrar is unable to :action:', [':type:' => 'Email', ':action:' => 'determine domain availability'], 3001);
         }
 
         $result = $this->getRdap()->isDomainAvailable($domain->getName());
