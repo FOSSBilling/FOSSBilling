@@ -2881,8 +2881,8 @@ class UpdatePatcher implements InjectionAwareInterface
             // A code-only deploy (e.g. `git pull`) already moves every tracked file via the
             // checkout itself, before this ever runs - the rename above then finds $newPath
             // already there and skips. What's left behind at $oldPath at that point is only
-            // ever gitignored leftovers (a rebuilt assets/build/, huraga's regenerable
-            // config/settings_data.json cache - the setting it holds is now in the database,
+            // ever gitignored leftovers (a rebuilt assets/build/, huraga's config/settings_data.json
+            // cache, which regenerates on its own - the setting it holds is now in the database,
             // migrated below), never the theme's real tracked content, so it's safe to discard
             // outright once $newPath confirms the theme is available at its new home.
             if ($filesystem->exists($oldPath) && $filesystem->exists($newPath)) {

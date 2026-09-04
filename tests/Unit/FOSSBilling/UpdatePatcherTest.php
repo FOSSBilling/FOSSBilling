@@ -1314,7 +1314,7 @@ test('migrateThemePackageLayout discards leftover old directories once a code-on
 
     // Simulates a `git pull`/checkout deploy: the tracked files already moved via the checkout
     // itself, so both old and new paths exist - only gitignored leftovers (rebuilt assets/build/,
-    // huraga's regenerable settings_data.json cache) remain at the old path.
+    // huraga's settings_data.json cache, which regenerates on its own) remain at the old path.
     $filesystem = Mockery::mock(Filesystem::class);
     $filesystem->shouldReceive('exists')->with($adminDefault)->andReturnTrue();
     $filesystem->shouldReceive('exists')->with($huraga)->andReturnTrue();
