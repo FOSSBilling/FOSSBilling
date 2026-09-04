@@ -28,7 +28,7 @@ test('getList returns array', function (): void {
     $expectation1->atLeast()->once();
     $expectation1->andReturn(['SqlString', []]);
 
-    $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
+    $paginatorMock = Mockery::mock(FOSSBilling\Core\Pagination\Service::class)->makePartial();
     $paginatorMock->shouldAllowMockingProtectedMethods();
     /** @var Mockery\Expectation $expectation2 */
     $expectation2 = $paginatorMock->shouldReceive('getPaginatedResultSet');
@@ -48,7 +48,7 @@ test('call fires event', function (): void {
     $api = apiEndpoint(new Box\Mod\Hook\Api\Admin());
     $data['event'] = 'testEvent';
 
-    $eventManager = Mockery::mock('\Box_EventManager');
+    $eventManager = Mockery::mock(FOSSBilling\Core\Event\Manager::class);
     /** @var Mockery\Expectation $expectation */
     $expectation = $eventManager->shouldReceive('fire');
     $expectation->atLeast()->once();

@@ -21,10 +21,10 @@ use Box\Mod\Support\Entity\Helpdesk;
 use Box\Mod\Support\Entity\KbArticle;
 use Box\Mod\Support\Entity\KbArticleCategory;
 use Box\Mod\Support\Entity\SupportTicket;
-use FOSSBilling\PaginationOptions;
-use FOSSBilling\Validation\Api\RequiredParams;
+use FOSSBilling\Core\Pagination\Options;
+use FOSSBilling\Core\Validation\Api\RequiredParams;
 
-class Admin extends \FOSSBilling\Api\AbstractApi
+class Admin extends \FOSSBilling\Core\Api\AbstractApi
 {
     /**
      * Get tickets list.
@@ -41,7 +41,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         return $this->getDi()['pager']->paginateMappedQuery(
             $repo->getSearchQueryBuilder($data),
-            PaginationOptions::fromArray($data),
+            Options::fromArray($data),
             fn (SupportTicket $ticket): array => $this->getService()->toApiArray($ticket, false, $this->getIdentity()),
         );
     }
@@ -74,9 +74,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $this->getService()->getTicketById((int) $data['id']);
 
-        // Sanitize subject if provided
+        // Sanitize subject if provided — plain text, no HTML
         if (isset($data['subject'])) {
-            $data['subject'] = \FOSSBilling\Tools::sanitizeContent($data['subject'], false);
+            $data['subject'] = htmlspecialchars(trim(strip_tags(str_replace("\0", '', $data['subject']))), ENT_QUOTES | ENT_HTML5, 'UTF-8', false);
         }
 
         return $this->getService()->ticketUpdate($model, $data);
@@ -90,7 +90,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('support', 'manage_tickets');
 
-        $data['content'] = \FOSSBilling\Tools::sanitizeMarkdownContent($data['content']);
+        $data['content'] = trim(str_replace("\0", '', $data['content']));
 
         $model = $this->getService()->getTicketMessageById((int) $data['id']);
 
@@ -133,7 +133,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('support', 'manage_tickets');
 
-        $data['content'] = \FOSSBilling\Tools::sanitizeMarkdownContent($data['content']);
+        $data['content'] = trim(str_replace("\0", '', $data['content']));
 
         $ticket = $this->getService()->getTicketById((int) $data['id']);
 
@@ -170,14 +170,14 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('support', 'manage_tickets');
 
-        $data['content'] = \FOSSBilling\Tools::sanitizeMarkdownContent($data['content']);
+        $data['content'] = trim(str_replace("\0", '', $data['content']));
 
         /** @var \Box\Mod\Support\Repository\HelpdeskRepository $repo */
         $repo = $this->getService()->getHelpdeskRepository();
 
         $helpdesk = $repo->find((int) $data['support_helpdesk_id']);
         if (!$helpdesk instanceof Helpdesk) {
-            throw new \FOSSBilling\InformationException('Helpdesk invalid');
+            throw new \FOSSBilling\Core\Exception\InformationException('Helpdesk invalid');
         }
 
         return $this->getService()->ticketCreateForAdmin((int) $data['client_id'], $helpdesk, $data, $this->getIdentity());
@@ -232,7 +232,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $qb = $repo->getSearchQueryBuilder($data);
 
-        return $this->getDi()['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data), $this->getIdentity());
+        return $this->getDi()['pager']->paginateDoctrineQuery($qb, Options::fromArray($data), $this->getIdentity());
     }
 
     /**
@@ -248,7 +248,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Get helpdesk details.
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Help desk ID is missing'])]
     public function helpdesk_get(array $data): array
@@ -260,7 +260,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $repo->find((int) $data['id']);
         if (!$model instanceof Helpdesk) {
-            throw new \FOSSBilling\InformationException('Help desk not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Help desk not found');
         }
 
         return $model->toApiArray($this->getIdentity());
@@ -275,7 +275,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional int $close_after - time to wait for reply before auto closing ticket
      * @optional string $signature - helpdesk signature
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Help desk ID is missing'])]
     public function helpdesk_update(array $data): bool
@@ -287,7 +287,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $repo->find((int) $data['id']);
         if (!$model instanceof Helpdesk) {
-            throw new \FOSSBilling\InformationException('Help desk not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Help desk not found');
         }
 
         return $this->getService()->helpdeskUpdate($model, $data);
@@ -303,7 +303,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return int - id
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['name' => 'Help desk title is missing'])]
     public function helpdesk_create(array $data): int
@@ -316,7 +316,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Delete helpdesk.
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Help desk ID is missing'])]
     public function helpdesk_delete(array $data): bool
@@ -328,7 +328,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $repo->find((int) $data['id']);
         if (!$model instanceof Helpdesk) {
-            throw new \FOSSBilling\InformationException('Help desk not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Help desk not found');
         }
 
         return $this->getService()->helpdeskRm($model);
@@ -346,7 +346,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $qb = $repo->getSearchQueryBuilder($data);
 
-        return $this->getDi()['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data));
+        return $this->getDi()['pager']->paginateDoctrineQuery($qb, Options::fromArray($data));
     }
 
     /**
@@ -365,7 +365,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Get canned response details.
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Canned reply ID is missing'])]
     public function canned_get(array $data): array
@@ -377,7 +377,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $repo->find((int) $data['id']);
         if (!$model instanceof CannedResponse) {
-            throw new \FOSSBilling\InformationException('Canned reply not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Canned reply not found');
         }
 
         return $model->toApiArray();
@@ -386,7 +386,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Delete canned response.
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Canned reply ID is missing'])]
     public function canned_delete(array $data): bool
@@ -398,7 +398,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $repo->find((int) $data['id']);
         if (!$model instanceof CannedResponse) {
-            throw new \FOSSBilling\InformationException('Canned reply not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Canned reply not found');
         }
 
         return $this->getService()->cannedRm($model);
@@ -409,7 +409,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @optional string $content - canned response content
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['title' => 'Canned reply title is missing', 'category_id' => 'Canned reply category ID is missing'])]
     public function canned_create(array $data): int
@@ -428,7 +428,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional int $category_id - canned response category id
      * @optional string $content - canned response content
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Canned reply ID is missing'])]
     public function canned_update(array $data): bool
@@ -440,7 +440,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $repo->find((int) $data['id']);
         if (!$model instanceof CannedResponse) {
-            throw new \FOSSBilling\InformationException('Canned reply not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Canned reply not found');
         }
 
         return $this->getService()->cannedUpdate($model, $data);
@@ -462,7 +462,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Get canned response category.
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Canned category ID is missing'])]
     public function canned_category_get(array $data): array
@@ -474,7 +474,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $repo->find((int) $data['id']);
         if (!$model instanceof CannedResponseCategory) {
-            throw new \FOSSBilling\InformationException('Canned category not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Canned category not found');
         }
 
         return $model->toApiArray();
@@ -485,7 +485,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @optional string $title - new category title
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Canned category ID is missing'])]
     public function canned_category_update(array $data): bool
@@ -497,7 +497,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $repo->find((int) $data['id']);
         if (!$model instanceof CannedResponseCategory) {
-            throw new \FOSSBilling\InformationException('Canned category not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Canned category not found');
         }
 
         $title = $data['title'] ?? $model->getTitle();
@@ -508,7 +508,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Delete canned response category.
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Canned category ID is missing'])]
     public function canned_category_delete(array $data): bool
@@ -520,7 +520,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $repo->find((int) $data['id']);
         if (!$model instanceof CannedResponseCategory) {
-            throw new \FOSSBilling\InformationException('Canned category not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Canned category not found');
         }
 
         return $this->getService()->cannedCategoryRm($model);
@@ -531,7 +531,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return int - new category id
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['title' => 'Canned category title is missing'])]
     public function canned_category_create(array $data): int
@@ -546,7 +546,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return int - new note id
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['ticket_id' => 'ticket_ID is missing', 'note' => 'Note is missing'])]
     public function note_create(array $data): int
@@ -561,7 +561,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Delete note from support ticket.
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Note ID is missing'])]
     public function note_delete(array $data): bool
@@ -576,7 +576,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Set support ticket related task to completed.
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Ticket ID is missing'])]
     public function task_complete(array $data): bool
@@ -626,7 +626,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             'kb_article_category_id' => $cat,
         ]);
 
-        return $this->getDi()['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data), $this->getIdentity());
+        return $this->getDi()['pager']->paginateDoctrineQuery($qb, Options::fromArray($data), $this->getIdentity());
     }
 
     /**
@@ -643,7 +643,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $article = $repo->find((int) $data['id']);
 
         if (!$article instanceof KbArticle) {
-            throw new \FOSSBilling\InformationException('Article not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Article not found');
         }
 
         return $article->toApiArray($this->getIdentity(), includeContent: true);
@@ -663,8 +663,8 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $articleCategoryId = (int) $data['kb_article_category_id'];
         $status = $data['status'] ?? KbArticle::DRAFT;
 
-        $title = \FOSSBilling\Tools::sanitizePlainText($data['title']);
-        $content = isset($data['content']) ? \FOSSBilling\Tools::sanitizeMarkdownContent($data['content']) : null;
+        $title = trim(strip_tags(str_replace("\0", '', $data['title'])));
+        $content = isset($data['content']) ? trim(str_replace("\0", '', $data['content'])) : null;
 
         return $this->getService()->kbCreateArticle($articleCategoryId, $title, $status, $content);
     }
@@ -685,10 +685,10 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('support', 'manage_kb');
 
         $articleCategoryId = isset($data['kb_article_category_id']) ? (int) $data['kb_article_category_id'] : null;
-        $title = isset($data['title']) ? \FOSSBilling\Tools::sanitizePlainText($data['title']) : null;
+        $title = isset($data['title']) ? trim(strip_tags(str_replace("\0", '', $data['title']))) : null;
         $slug = $data['slug'] ?? null;
         $status = $data['status'] ?? null;
-        $content = isset($data['content']) ? \FOSSBilling\Tools::sanitizeMarkdownContent($data['content']) : null;
+        $content = isset($data['content']) ? trim(str_replace("\0", '', $data['content'])) : null;
         $views = isset($data['views']) ? (int) $data['views'] : null;
 
         return $this->getService()->kbUpdateArticle((int) $data['id'], $articleCategoryId, $title, $slug, $status, $content, $views);
@@ -708,7 +708,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $article = $repo->find((int) $data['id']);
 
         if (!$article instanceof KbArticle) {
-            throw new \FOSSBilling\InformationException('Article not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Article not found');
         }
 
         $this->getService()->kbRm($article);
@@ -728,7 +728,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $qb = $repo->getSearchQueryBuilder($data);
 
-        return $this->getDi()['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data), $this->getIdentity(), $data['q'] ?? null);
+        return $this->getDi()['pager']->paginateDoctrineQuery($qb, Options::fromArray($data), $this->getIdentity(), $data['q'] ?? null);
     }
 
     /**
@@ -745,7 +745,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $cat = $repo->find((int) $data['id']);
 
         if (!$cat instanceof KbArticleCategory) {
-            throw new \FOSSBilling\InformationException('Article Category not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Article Category not found');
         }
 
         return $cat->toApiArray($this->getIdentity());
@@ -785,7 +785,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $cat = $repo->find((int) $data['id']);
 
         if (!$cat instanceof KbArticleCategory) {
-            throw new \FOSSBilling\InformationException('Article Category not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Article Category not found');
         }
 
         $title = $data['title'] ?? null;
@@ -809,7 +809,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $cat = $repo->find((int) $data['id']);
 
         if (!$cat instanceof KbArticleCategory) {
-            throw new \FOSSBilling\InformationException('Category not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Category not found');
         }
 
         return $this->getService()->kbCategoryRm($cat);

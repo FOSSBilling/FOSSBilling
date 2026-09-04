@@ -36,7 +36,7 @@ test('on before client sign up', function (): void {
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $spamCheckerService);
-    $boxEventMock = Mockery::mock('\Box_Event');
+    $boxEventMock = Mockery::mock(FOSSBilling\Core\Event\Event::class);
     $boxEventMock->shouldReceive('getDi')
         ->atLeast()->once()
         ->andReturn($di);
@@ -58,7 +58,7 @@ test('on before client open ticket checks guest submissions', function (): void 
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $spamCheckerService);
-    $boxEventMock = Mockery::mock('\Box_Event');
+    $boxEventMock = Mockery::mock(FOSSBilling\Core\Event\Event::class);
     $boxEventMock->shouldReceive('getDi')
         ->atLeast()->once()
         ->andReturn($di);
@@ -79,7 +79,7 @@ test('on before client open ticket skips client submissions', function (): void 
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $spamCheckerService);
-    $boxEventMock = Mockery::mock('\Box_Event');
+    $boxEventMock = Mockery::mock(FOSSBilling\Core\Event\Event::class);
     $boxEventMock->shouldReceive('getParameters')
         ->atLeast()->once()
         ->andReturn(['author_role' => 'client', 'client_id' => 1]);
@@ -97,7 +97,7 @@ test('is spam does not re-verify the captcha during signup', function (): void {
     $di = container();
     $di['mod_config'] = $di->protect(fn (): array => ['sfs' => false]);
 
-    $boxEventMock = Mockery::mock('\Box_Event');
+    $boxEventMock = Mockery::mock(FOSSBilling\Core\Event\Event::class);
     $boxEventMock->shouldReceive('getDi')
         ->atLeast()->once()
         ->andReturn($di);
@@ -124,7 +124,7 @@ test('is blocked ip ip not blocked', function (): void {
         }
     });
 
-    $boxEventMock = Mockery::mock('\Box_Event');
+    $boxEventMock = Mockery::mock(FOSSBilling\Core\Event\Event::class);
     $boxEventMock->shouldReceive('getDi')
         ->atLeast()->once()
         ->andReturn($di);
@@ -145,7 +145,7 @@ test('is blocked ip block ips not enabled', function (): void {
         }
     });
 
-    $boxEventMock = Mockery::mock('\Box_Event');
+    $boxEventMock = Mockery::mock(FOSSBilling\Core\Event\Event::class);
     $boxEventMock->shouldReceive('getDi')
         ->atLeast()->once()
         ->andReturn($di);

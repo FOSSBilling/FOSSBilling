@@ -16,30 +16,30 @@ declare(strict_types=1);
 namespace Box\Mod\Invoice\Api;
 
 use Box\Mod\Invoice\InvoiceOperation;
-use FOSSBilling\Validation\Api\RequiredParams;
+use FOSSBilling\Core\Validation\Api\RequiredParams;
 
-class Guest extends \FOSSBilling\Api\AbstractApi
+class Guest extends \FOSSBilling\Core\Api\AbstractApi
 {
     /**
      * Get invoice details.
      *
      * @return array
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['hash' => 'Invoice hash was not passed'])]
     public function get($data)
     {
         if (!preg_match('/^[a-f0-9]{30,60}$/', (string) $data['hash'])) {
-            throw new \FOSSBilling\InformationException('Invalid invoice hash', null, 4001);
+            throw new \FOSSBilling\Core\Exception\InformationException('Invalid invoice hash', null, 4001);
         }
 
-        $this->getDi()['rate_limiter']->consumeOrThrow('invoice_get_ip', (string) $this->getIp());
+        $this->getDi()['rate_limiter']->consumeOrThrow('invoice_get_ip', $this->getIp());
         $this->getDi()['rate_limiter']->consumeOrThrow('invoice_get_hash', (string) $data['hash']);
 
         $model = $this->getService()->getInvoiceRepository()->findByHash((string) $data['hash']);
         if (!$model) {
-            throw new \FOSSBilling\InformationException('Invoice was not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Invoice was not found');
         }
         $service = $this->getService();
         $service->checkInvoiceAuth($model, InvoiceOperation::READ);
@@ -73,23 +73,23 @@ class Guest extends \FOSSBilling\Api\AbstractApi
      *
      * @return array
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     public function payment($data)
     {
         if (empty($data['hash'])) {
-            throw new \FOSSBilling\Exception('Invoice hash not passed. Missing param hash', null, 810);
+            throw new \FOSSBilling\Core\Exception\BaseException('Invoice hash not passed. Missing param hash', null, 810);
         }
 
         if (!preg_match('/^[a-f0-9]{30,60}$/', (string) $data['hash'])) {
-            throw new \FOSSBilling\Exception('Invalid invoice hash', null, 4001);
+            throw new \FOSSBilling\Core\Exception\BaseException('Invalid invoice hash', null, 4001);
         }
 
         if (empty($data['gateway_id'])) {
-            throw new \FOSSBilling\InformationException('Payment method not found. Missing param gateway_id', null, 811);
+            throw new \FOSSBilling\Core\Exception\InformationException('Payment method not found. Missing param gateway_id', null, 811);
         }
 
-        $this->getDi()['rate_limiter']->consumeOrThrow('invoice_payment_ip', (string) $this->getIp());
+        $this->getDi()['rate_limiter']->consumeOrThrow('invoice_payment_ip', $this->getIp());
         $this->getDi()['rate_limiter']->consumeOrThrow('invoice_payment_hash', (string) $data['hash']);
 
         return $this->getService()->processInvoice($data);
@@ -106,16 +106,16 @@ class Guest extends \FOSSBilling\Api\AbstractApi
     /**
      * Generates PDF for given invoice.
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['hash' => 'Invoice hash was not passed'])]
     public function pdf($data)
     {
         if (!preg_match('/^[a-f0-9]{30,60}$/', (string) $data['hash'])) {
-            throw new \FOSSBilling\Exception('Invalid invoice hash', null, 4001);
+            throw new \FOSSBilling\Core\Exception\BaseException('Invalid invoice hash', null, 4001);
         }
 
-        $this->getDi()['rate_limiter']->consumeOrThrow('invoice_pdf_ip', (string) $this->getIp());
+        $this->getDi()['rate_limiter']->consumeOrThrow('invoice_pdf_ip', $this->getIp());
         $this->getDi()['rate_limiter']->consumeOrThrow('invoice_pdf_hash', (string) $data['hash']);
 
         return $this->getService()->generatePDF($data['hash'], $this->getIdentity());

@@ -363,7 +363,7 @@ test('get selected addons for cart returns prepared addon items', function (): v
     $parentProduct = productTestCreateProductEntity(10);
     $addon = productTestCreateProductEntity(20)->setStatus('enabled')->setType(Service::CUSTOM)->setIsAddon(true);
 
-    $validator = Mockery::mock(FOSSBilling\Validate::class);
+    $validator = Mockery::mock(FOSSBilling\Core\Validation\Validator::class);
     $validator->shouldNotReceive('checkRequiredParamsForArray');
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
@@ -447,7 +447,7 @@ test('reduce stock throws when the atomic decrement finds insufficient stock', f
     $service->setDi($di);
 
     expect(fn (): bool => $service->reduceStock($product, 2))
-        ->toThrow(FOSSBilling\InformationException::class);
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class);
 });
 
 test('is stock available uses doctrine product state', function (): void {
@@ -572,7 +572,7 @@ test('releaseReservedStockForOrder restores stock and clears the reservation', f
         'Order' => $orderServiceMock,
         default => throw new RuntimeException("Unexpected module service {$module}"),
     });
-    $di['logger'] = new FOSSBilling\Logger();
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
     $service->setDi($di);
 
     $service->releaseReservedStockForOrder($order, 'order_canceled');
@@ -750,7 +750,7 @@ test('get related product discount uses domain pricing implementation', function
     $tldService = productTestCreateDomainTldServiceMock($tld);
 
     $di = container();
-    $di['period'] = $di->protect(fn (string $period): FOSSBilling\Period => new FOSSBilling\Period($period));
+    $di['period'] = $di->protect(fn (string $period): FOSSBilling\Core\Period => new FOSSBilling\Core\Period($period));
     $di['mod_service'] = $di->protect(function (string $serviceName, ?string $sub = null) use ($tldService) {
         if ($serviceName === 'servicedomain' && $sub === 'Tld') {
             return $tldService;
@@ -837,7 +837,7 @@ test('get product order line config uses domain pricing implementation', functio
     $tldService = productTestCreateDomainTldServiceMock($tld);
 
     $di = container();
-    $di['period'] = $di->protect(fn (string $period): FOSSBilling\Period => new FOSSBilling\Period($period));
+    $di['period'] = $di->protect(fn (string $period): FOSSBilling\Core\Period => new FOSSBilling\Core\Period($period));
     $di['mod_service'] = $di->protect(function (string $serviceName, ?string $sub = null) use ($tldService) {
         if ($serviceName === 'servicedomain' && $sub === 'Tld') {
             return $tldService;
@@ -871,7 +871,7 @@ test('get product renewal line config uses domain pricing implementation', funct
     $tldService = productTestCreateDomainTldServiceMock($tld);
 
     $di = container();
-    $di['period'] = $di->protect(fn (string $period): FOSSBilling\Period => new FOSSBilling\Period($period));
+    $di['period'] = $di->protect(fn (string $period): FOSSBilling\Core\Period => new FOSSBilling\Core\Period($period));
     $di['mod_service'] = $di->protect(function (string $serviceName, ?string $sub = null) use ($tldService) {
         if ($serviceName === 'servicedomain' && $sub === 'Tld') {
             return $tldService;
@@ -927,17 +927,13 @@ test('create product', function (): void {
 
     $newProductId = 1;
 
-    $toolMock = Mockery::mock(FOSSBilling\Tools::class);
-    $toolMock->shouldReceive('slug')->atLeast()->once()->andReturn('title');
-
     $productRepo = Mockery::mock(ProductRepository::class);
     $productRepo->shouldReceive('getMaxPriority')->once()->andReturn(0);
     $productRepo->shouldReceive('findOneBy')->once()->with(['slug' => 'title'])->andReturn(null);
 
     $di = container();
     $di['em'] = productTestCreateEntityManagerWithRepositories($productRepo, null, productTestCreateProductEntity($newProductId), productTestCreateProductPaymentEntity(1));
-    $di['tools'] = $toolMock;
-    $di['logger'] = new FOSSBilling\Logger();
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
 
     $service->setDi($di);
     $result = $service->createProduct('title', 'domain');
@@ -962,7 +958,7 @@ test('update product missing pricing type', function (): void {
     $modelProduct = productTestCreateProductEntity(1);
 
     expect(fn () => $serviceMock->updateProduct($modelProduct, $data))
-        ->toThrow(FOSSBilling\Exception::class, 'Pricing type is required');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Pricing type is required');
 });
 
 test('update product', function (): void {
@@ -1014,7 +1010,7 @@ test('update product', function (): void {
 
     $di = container();
     $di['em'] = productTestCreateEntityManagerWithRepositories(null, null, null, null, $categoryRepo);
-    $di['logger'] = new FOSSBilling\Logger();
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
 
     $serviceMock->setDi($di);
 
@@ -1028,7 +1024,7 @@ test('update product rejects invalid suspension grace days', function (mixed $in
     $product = productTestCreateProductEntity(1);
 
     expect(fn (): bool => $service->updateProduct($product, ['suspension_grace_days' => $invalidGraceDays]))
-        ->toThrow(FOSSBilling\InformationException::class, 'Suspension grace days must be a non-negative integer.');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Suspension grace days must be a non-negative integer.');
 })->with([-1, '-1', '1.5', '01', PHP_INT_MAX . '0']);
 
 test('update priority', function (): void {
@@ -1051,7 +1047,7 @@ test('update priority', function (): void {
 
     $di = container();
     $di['em'] = productTestCreateEntityManagerWithRepositories($productRepo);
-    $di['logger'] = new FOSSBilling\Logger();
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
 
     $service->setDi($di);
 
@@ -1074,7 +1070,7 @@ test('update config', function (): void {
 
     $di = container();
     $di['em'] = productTestCreateEntityManagerWithRepositories();
-    $di['logger'] = new FOSSBilling\Logger();
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
 
     $service->setDi($di);
 
@@ -1093,7 +1089,7 @@ test('get addons', function (): void {
 
     $di = container();
     $di['em'] = productTestCreateEntityManagerWithRepositories($productRepo);
-    $di['logger'] = new FOSSBilling\Logger();
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
 
     $service->setDi($di);
 
@@ -1106,16 +1102,12 @@ test('create addon', function (): void {
     $service = new Service();
     $newProductId = 1;
 
-    $toolMock = Mockery::mock(FOSSBilling\Tools::class);
-    $toolMock->shouldReceive('slug')->atLeast()->once()->andReturn('title');
-
     $productRepo = Mockery::mock(ProductRepository::class);
     $productRepo->shouldReceive('findOneBy')->once()->with(['slug' => 'title'])->andReturn(null);
 
     $di = container();
     $di['em'] = productTestCreateEntityManagerWithRepositories($productRepo, null, productTestCreateProductEntity($newProductId), productTestCreateProductPaymentEntity(1));
-    $di['logger'] = new FOSSBilling\Logger();
-    $di['tools'] = $toolMock;
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
 
     $service->setDi($di);
 
@@ -1137,7 +1129,7 @@ test('delete product active order exception', function (): void {
     $service->setDi($di);
 
     expect(fn (): bool => $service->deleteProduct($model))
-        ->toThrow(FOSSBilling\Exception::class, 'Cannot remove product which has active orders.');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Cannot remove product which has active orders.');
 });
 
 test('get product category pairs', function (): void {
@@ -1164,7 +1156,7 @@ test('update category', function (): void {
 
     $di = container();
     $di['em'] = productTestCreateEntityManagerWithRepositories();
-    $di['logger'] = new FOSSBilling\Logger();
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
 
     $service->setDi($di);
 
@@ -1179,7 +1171,7 @@ test('create category', function (): void {
 
     $di = container();
     $di['em'] = productTestCreateEntityManagerWithRepositories(null, null, null, null, null, productTestCreateProductCategoryEntity($newCategoryId));
-    $di['logger'] = new FOSSBilling\Logger();
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
 
     $service->setDi($di);
 
@@ -1201,7 +1193,7 @@ test('remove product category category has products exception', function (): voi
     $service->setDi($di);
 
     expect(fn (): bool => $service->removeProductCategory($modelProductCategory))
-        ->toThrow(FOSSBilling\Exception::class, 'Cannot remove product category with products');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Cannot remove product category with products');
 });
 
 test('remove product category', function (): void {
@@ -1212,7 +1204,7 @@ test('remove product category', function (): void {
 
     $di = container();
     $di['em'] = productTestCreateEntityManagerWithRepositories($productRepository);
-    $di['logger'] = new FOSSBilling\Logger();
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
 
     $service->setDi($di);
 
@@ -1249,7 +1241,7 @@ test('create promo', function (): void {
     };
 
     $di = container();
-    $di['logger'] = new FOSSBilling\Logger();
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
     $di['em'] = $emMock;
 
     $service->setDi($di);
@@ -1306,7 +1298,7 @@ test('duplicate promo', function (): void {
     };
 
     $di = container();
-    $di['logger'] = new FOSSBilling\Logger();
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
     $di['em'] = $emMock;
 
     $service->setDi($di);
@@ -1363,7 +1355,7 @@ test('duplicate promo generates alternate code when copy code already exists', f
     };
 
     $di = container();
-    $di['logger'] = new FOSSBilling\Logger();
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
     $di['em'] = $emMock;
 
     $service->setDi($di);
@@ -1397,7 +1389,6 @@ test('to promo api array', function (): void {
     };
 
     $di = container();
-    $di['tools'] = Mockery::mock(FOSSBilling\Tools::class)->shouldIgnoreMissing();
     $di['em'] = $emMock;
 
     $service->setDi($di);
@@ -1442,7 +1433,6 @@ test('to promo api array includes usage stats for deep requests', function (): v
     };
 
     $di = container();
-    $di['tools'] = Mockery::mock(FOSSBilling\Tools::class)->shouldIgnoreMissing();
     $di['em'] = $emMock;
 
     $service->setDi($di);
@@ -1588,7 +1578,7 @@ test('use promo limit reached', function (): void {
     $service->setDi($di);
 
     expect(fn () => $service->usePromo($promo))
-        ->toThrow(FOSSBilling\InformationException::class, 'This promo code has reached its maximum number of uses.');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'This promo code has reached its maximum number of uses.');
 });
 
 test('reserve promo for order', function (): void {
@@ -1811,7 +1801,7 @@ test('get renewal promo adjustment ignores missing promo for non-domain order', 
     $serviceMock->shouldReceive('findPromoById')
         ->once()
         ->with(15)
-        ->andThrow(new FOSSBilling\InformationException('Promo not found'));
+        ->andThrow(new FOSSBilling\Core\Exception\InformationException('Promo not found'));
 
     expect($serviceMock->getRenewalPromoAdjustment($order, 20.0, 1.0))->toBeNull();
 });
@@ -2082,7 +2072,7 @@ test('update promo', function (): void {
     };
 
     $di = container();
-    $di['logger'] = new FOSSBilling\Logger();
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
     $di['em'] = $emMock;
 
     $service->setDi($di);
@@ -2123,7 +2113,7 @@ test('delete promo', function (): void {
     };
 
     $di = container();
-    $di['logger'] = new FOSSBilling\Logger();
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
     $di['em'] = $emMock;
 
     $service->setDi($di);
@@ -2159,7 +2149,7 @@ test('delete promo blocks deletion when redemption history exists', function ():
     $service->setDi($di);
 
     expect(fn (): bool => $service->deletePromo($promoEntity))
-        ->toThrow(FOSSBilling\InformationException::class, 'Promotions with redemption history cannot be deleted. Disable the promotion instead.');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Promotions with redemption history cannot be deleted. Disable the promotion instead.');
 });
 
 test('delete promo blocks deletion when linked orders exist without ledger history', function (): void {
@@ -2189,7 +2179,7 @@ test('delete promo blocks deletion when linked orders exist without ledger histo
     $service->setDi($di);
 
     expect(fn (): bool => $service->deletePromo($promoEntity))
-        ->toThrow(FOSSBilling\InformationException::class, 'Promotions with redemption history cannot be deleted. Disable the promotion instead.');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Promotions with redemption history cannot be deleted. Disable the promotion instead.');
 });
 
 test('is promo linked to tld returns true when promo has no product restrictions', function (): void {
@@ -2551,7 +2541,7 @@ test('get product price rejects a period that is not configured for the product'
     $service->setDi(container());
 
     expect(fn (): float|int|string => $service->getProductPrice($product, ['period' => '3Y']))
-        ->toThrow(FOSSBilling\InformationException::class, 'Selected billing period is not available for this product');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Selected billing period is not available for this product');
 });
 
 test('update product accepts a custom recurring period and drops periods no longer submitted', function (): void {
@@ -2570,7 +2560,7 @@ test('update product accepts a custom recurring period and drops periods no long
     ]);
 
     $di = container();
-    $di['logger'] = new FOSSBilling\Logger();
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
     $serviceMock->setDi($di);
 
     $data = [
@@ -2604,7 +2594,7 @@ test('update product rejects an invalid custom period code', function (): void {
     ]);
 
     $di = container();
-    $di['logger'] = new FOSSBilling\Logger();
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
     $serviceMock->setDi($di);
 
     $data = [
@@ -2617,7 +2607,7 @@ test('update product rejects an invalid custom period code', function (): void {
     ];
 
     expect(fn () => $serviceMock->updateProduct($modelProduct, $data))
-        ->toThrow(FOSSBilling\InformationException::class, 'Invalid billing period 10Y');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Invalid billing period 10Y');
 });
 
 test('can upgrade to returns true', function (): void {
@@ -2668,7 +2658,7 @@ test('assert upgrade allowed by ids throws helpful exception', function (): void
     });
 
     expect(fn () => $serviceMock->assertUpgradeAllowedByIds(1, 2))
-        ->toThrow(FOSSBilling\InformationException::class, 'Sorry, but "Starter" is not allowed to be upgraded to "Pro"');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Sorry, but "Starter" is not allowed to be upgraded to "Pro"');
 });
 
 test('prepareCartProductConfig strips client-supplied admin-controlled keys', function (): void {

@@ -19,7 +19,7 @@ use function Tests\Helpers\container;
 test('getParamValue throws exception when key parameter is missing', function (): void {
     $service = new Service();
     $param = '';
-    $this->expectException(FOSSBilling\Exception::class);
+    $this->expectException(FOSSBilling\Core\Exception\BaseException::class);
     $this->expectExceptionMessage('Parameter key is missing');
 
     $service->getParamValue($param);
@@ -264,7 +264,7 @@ test('getPublicParamValue throws when the parameter is missing or not public', f
     $di['em']->shouldReceive('getRepository')->with(Box\Mod\System\Entity\Setting::class)->andReturn($settingRepository);
     $service->setDi($di);
 
-    $this->expectException(FOSSBilling\Exception::class);
+    $this->expectException(FOSSBilling\Core\Exception\BaseException::class);
     $this->expectExceptionMessage('Parameter company_name does not exist');
     $service->getPublicParamValue('company_name');
 });
@@ -276,10 +276,10 @@ test('updateParams updates system parameters in a single flush', function (): vo
         'company_email' => 'work@example.eu',
     ];
 
-    $eventMock = Mockery::mock('\Box_EventManager');
+    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class);
     $eventMock->shouldReceive('fire')->atLeast()->once();
 
-    $logStub = $this->createStub(FOSSBilling\Logger::class);
+    $logStub = $this->createStub(FOSSBilling\Core\Logging\Logger::class);
 
     $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class);
     $staffServiceMock->shouldReceive('hasPermission')->andReturn(true);
@@ -314,12 +314,12 @@ test('getMessages returns system messages', function (): void {
     $systemServiceMock = Mockery::mock(new Service($filesystemMock))->makePartial();
     $systemServiceMock->allows()->getParamValue(Mockery::any())->andReturn(false);
 
-    $updaterMock = Mockery::mock(FOSSBilling\Update::class);
+    $updaterMock = Mockery::mock(FOSSBilling\Core\Update\Updater::class);
     $updaterMock->allows()->isUpdateAvailable()->andReturn(true);
     $updaterMock->allows()->getLatestVersion()->andReturn($latestVersion);
     $updaterMock->allows()->isBehindOnDBPatches()->andReturn(false);
 
-    $urlMock = Mockery::mock(FOSSBilling\Url::class);
+    $urlMock = Mockery::mock(FOSSBilling\Core\Url::class);
     $urlMock->allows()->adminLink(Mockery::any())->andReturn('http://example.com');
 
     $di = container();
@@ -434,7 +434,7 @@ test('getPendingMessages returns pending messages from session', function (): vo
     $service = new Service();
     $di = container();
 
-    $sessionMock = Mockery::mock(FOSSBilling\Session::class);
+    $sessionMock = Mockery::mock(FOSSBilling\Core\Security\Session::class);
     $sessionMock->shouldReceive('get')->atLeast()->once()
         ->with('pending_messages')
         ->andReturn([]);
@@ -450,7 +450,7 @@ test('getPendingMessages returns empty array when session returns non-array', fu
     $service = new Service();
     $di = container();
 
-    $sessionMock = Mockery::mock(FOSSBilling\Session::class);
+    $sessionMock = Mockery::mock(FOSSBilling\Core\Security\Session::class);
     $sessionMock->shouldReceive('get')->atLeast()->once()
         ->with('pending_messages')
         ->andReturn(null);
@@ -470,7 +470,7 @@ test('setPendingMessage adds message to pending messages', function (): void {
 
     $di = container();
 
-    $sessionMock = Mockery::mock(FOSSBilling\Session::class);
+    $sessionMock = Mockery::mock(FOSSBilling\Core\Security\Session::class);
     $sessionMock->shouldReceive('set')->atLeast()->once()
         ->with('pending_messages', Mockery::any());
 
@@ -487,7 +487,7 @@ test('clearPendingMessages clears pending messages', function (): void {
     $service = new Service();
     $di = container();
 
-    $sessionMock = Mockery::mock(FOSSBilling\Session::class);
+    $sessionMock = Mockery::mock(FOSSBilling\Core\Security\Session::class);
     $sessionMock->shouldReceive('delete')->atLeast()->once()
         ->with('pending_messages');
     $di['session'] = $sessionMock;

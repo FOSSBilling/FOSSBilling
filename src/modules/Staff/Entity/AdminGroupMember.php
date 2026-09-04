@@ -13,8 +13,8 @@ namespace Box\Mod\Staff\Entity;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use FOSSBilling\Doctrine\CreatedAtTrait;
-use FOSSBilling\Interfaces\ApiArrayInterface;
+use FOSSBilling\Core\Api\ArrayInterface;
+use FOSSBilling\Core\Doctrine\CreatedAtTrait;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Staff\Repository\AdminGroupMemberRepository::class)]
 #[ORM\Table(name: 'admin_group_member')]
@@ -22,7 +22,7 @@ use FOSSBilling\Interfaces\ApiArrayInterface;
 // (see the Deprecation::trigger() in its constructor) - it must be a standalone attribute.
 #[ORM\UniqueConstraint(name: 'admin_group_member_unique', columns: ['admin_id', 'admin_group_id'])]
 #[ORM\HasLifecycleCallbacks]
-class AdminGroupMember implements ApiArrayInterface
+class AdminGroupMember implements ArrayInterface
 {
     use CreatedAtTrait;
 

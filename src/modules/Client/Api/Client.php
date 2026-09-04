@@ -17,10 +17,10 @@ namespace Box\Mod\Client\Api;
 
 use Box\Mod\Client\Entity\Client as ClientEntity;
 use Box\Mod\Client\Entity\ClientBalance;
-use FOSSBilling\InformationException;
-use FOSSBilling\PaginationOptions;
+use FOSSBilling\Core\Exception\InformationException;
+use FOSSBilling\Core\Pagination\Options;
 
-class Client extends \FOSSBilling\Api\AbstractApi
+class Client extends \FOSSBilling\Core\Api\AbstractApi
 {
     /**
      * Get payments information.
@@ -35,7 +35,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
 
         return $this->getDi()['pager']->paginateMappedQuery(
             $service->getSearchQueryBuilder($data),
-            PaginationOptions::fromArray($data),
+            Options::fromArray($data),
             fn (ClientBalance $balance): array => $service->toApiArray($balance, $client),
         );
     }
@@ -67,7 +67,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
             return true;
         }
 
-        $this->getDi()['rate_limiter']->consumeOrThrow('client_email_verification_resend_ip', (string) $this->getIp());
+        $this->getDi()['rate_limiter']->consumeOrThrow('client_email_verification_resend_ip', $this->getIp());
         $clientId = $client->getId();
         $this->getDi()['rate_limiter']->consumeOrThrow('client_email_verification_resend_account', 'client:' . $clientId);
 

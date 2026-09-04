@@ -17,7 +17,7 @@ namespace Box\Mod\Product\Api;
 
 use Box\Mod\Product\Entity\Product;
 
-class Guest extends \FOSSBilling\Api\AbstractApi
+class Guest extends \FOSSBilling\Core\Api\AbstractApi
 {
     /**
      * Get paginated list of products.
@@ -51,12 +51,12 @@ class Guest extends \FOSSBilling\Api\AbstractApi
      *
      * @return array
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     public function get($data)
     {
         if (!isset($data['id']) && !isset($data['slug'])) {
-            throw new \FOSSBilling\Exception('Product ID or slug is missing');
+            throw new \FOSSBilling\Core\Exception\BaseException('Product ID or slug is missing');
         }
 
         $id = $data['id'] ?? null;
@@ -70,7 +70,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         }
 
         if (!$model instanceof Product) {
-            throw new \FOSSBilling\InformationException('Product not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Product not found');
         }
 
         return $service->toApiArray($model);

@@ -24,7 +24,7 @@ test('dependency injection container is properly set and retrieved', function ()
 });
 
 test('register method registers routes correctly', function (): void {
-    $boxAppMock = Mockery::mock('\Box_App');
+    $boxAppMock = Mockery::mock(FOSSBilling\Core\Http\App::class);
     $boxAppMock->shouldReceive('get')
         ->once()
         ->with('/currency/manage/:code', 'get_manage', ['code' => '[a-zA-Z]+'], Admin::class);

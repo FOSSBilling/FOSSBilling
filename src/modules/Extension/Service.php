@@ -15,8 +15,8 @@ use Box\Mod\Extension\Entity\Extension;
 use Box\Mod\Extension\Entity\ExtensionMeta;
 use Box\Mod\Extension\Repository\ExtensionMetaRepository;
 use Box\Mod\Extension\Repository\ExtensionRepository;
-use FOSSBilling\Config;
-use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Core\Container\InjectionAwareInterface;
+use FOSSBilling\Core\System\Config;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -95,7 +95,7 @@ class Service implements InjectionAwareInterface
         return $this->getExtensionRepository()->existsActiveByTypeAndName($type, $id);
     }
 
-    public static function onBeforeAdminCronRun(\Box_Event $event): bool
+    public static function onBeforeAdminCronRun(\FOSSBilling\Core\Event\Event $event): bool
     {
         $di = $event->getDi();
         $extensionService = $di['mod_service']('extension');
@@ -272,7 +272,10 @@ class Service implements InjectionAwareInterface
         return $mods;
     }
 
-    public function getAdminNavigation($admin, $url = null)
+    /**
+     * @return mixed[]
+     */
+    public function getAdminNavigation($admin, $url = null): array
     {
         $staff_service = $this->di['mod_service']('staff');
         $nav = [];
@@ -310,7 +313,7 @@ class Service implements InjectionAwareInterface
             }
         }
         // groups sorting
-        $nav = $this->di['tools']->sortByOneKey($nav, 'index');
+        $nav = \FOSSBilling\Core\Utils\Arr::sortByOneKey($nav, 'index');
         foreach ($subpages as $page) {
             if (!isset($page['location'])) {
                 $this->di['logger']->error('Invalid module menu item: ' . print_r($page, true));
@@ -332,7 +335,7 @@ class Service implements InjectionAwareInterface
 
         // submenu sorting
         foreach ($nav as &$group) {
-            $group['subpages'] = $this->di['tools']->sortByOneKey($group['subpages'], 'index');
+            $group['subpages'] = \FOSSBilling\Core\Utils\Arr::sortByOneKey($group['subpages'], 'index');
             $group['uri'] = $this->resolveNavigationGroupUri($group);
         }
 
@@ -378,7 +381,7 @@ class Service implements InjectionAwareInterface
     {
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'manage_extensions');
 
-        throw new \FOSSBilling\InformationException('Visit the extension directory for more information on updating this extension.', null, 252);
+        throw new \FOSSBilling\Core\Exception\InformationException('Visit the extension directory for more information on updating this extension.', null, 252);
     }
 
     /**
@@ -398,7 +401,7 @@ class Service implements InjectionAwareInterface
         ];
 
         switch ($ext->getType()) {
-            case \FOSSBilling\ExtensionManager::TYPE_MOD:
+            case \FOSSBilling\Core\Remote\ExtensionManager::TYPE_MOD:
                 $mod = $this->di['mod']($ext->getName());
                 $manifest = $mod->getManifest();
                 $this->installModule($ext);
@@ -421,14 +424,14 @@ class Service implements InjectionAwareInterface
     /**
      * Deactivate an extension.
      *
-     * @throws \FOSSBilling\InformationException
+     * @throws \FOSSBilling\Core\Exception\InformationException
      */
     public function deactivate(Extension $ext): bool
     {
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'manage_extensions');
 
         switch ($ext->getType()) {
-            case \FOSSBilling\ExtensionManager::TYPE_HOOK:
+            case \FOSSBilling\Core\Remote\ExtensionManager::TYPE_HOOK:
                 $file = Path::changeExtension(ucfirst((string) $ext->getName()), '.php');
                 $destination = Path::join(PATH_LIBRARY, 'Hook', $file);
                 if ($this->filesystem->exists($destination)) {
@@ -437,10 +440,10 @@ class Service implements InjectionAwareInterface
 
                 break;
 
-            case \FOSSBilling\ExtensionManager::TYPE_MOD:
+            case \FOSSBilling\Core\Remote\ExtensionManager::TYPE_MOD:
                 $mod = $ext->getName();
                 if ($this->isCoreModule($mod)) {
-                    throw new \FOSSBilling\InformationException('Core modules are an integral part of the FOSSBilling system and cannot be deactivated.');
+                    throw new \FOSSBilling\Core\Exception\InformationException('Core modules are an integral part of the FOSSBilling system and cannot be deactivated.');
                 }
 
                 break;
@@ -461,31 +464,31 @@ class Service implements InjectionAwareInterface
      * @param string $type Type of the extension (mod, theme, ...)
      * @param string $id   ID of the extension
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     public function uninstall(string $type, string $id): bool
     {
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'uninstall_extensions');
 
         if ($this->isCoreModule($id)) {
-            throw new \FOSSBilling\InformationException('Core modules are an integral part of the FOSSBilling system and cannot be uninstalled.');
+            throw new \FOSSBilling\Core\Exception\InformationException('Core modules are an integral part of the FOSSBilling system and cannot be uninstalled.');
         }
 
         if ($this->isExtensionActive($type, $id)) {
-            throw new \FOSSBilling\InformationException('Cannot uninstall an active module. Please deactivate it first.');
+            throw new \FOSSBilling\Core\Exception\InformationException('Cannot uninstall an active module. Please deactivate it first.');
         }
 
         // Determine the path based on extension type
         $path = $this->getExtensionPath($type, $id);
 
         // Try calling $module->uninstall() for modules to trigger database cleanup
-        if ($type === \FOSSBilling\ExtensionManager::TYPE_MOD) {
+        if ($type === \FOSSBilling\Core\Remote\ExtensionManager::TYPE_MOD) {
             $mod = $this->di['mod']($id);
 
             try {
                 $mod->uninstall();
             } catch (\Exception $e) {
-                throw new \FOSSBilling\Exception('An exception was thrown by the :name module: :err', [':name' => $id, ':err' => $e->getMessage()]);
+                throw new \FOSSBilling\Core\Exception\BaseException('An exception was thrown by the :name module: :err', [':name' => $id, ':err' => $e->getMessage()]);
             }
         }
 
@@ -497,10 +500,10 @@ class Service implements InjectionAwareInterface
             } catch (IOException $e) {
                 $this->di['logger']->warning('Failed to remove extension files for "{id}": {exception}', ['id' => $id, 'exception' => $e]);
 
-                throw new \FOSSBilling\Exception('Failed to remove extension files. Please check file permissions and try again or manually remove the files from :path', [':path' => $path]);
+                throw new \FOSSBilling\Core\Exception\BaseException('Failed to remove extension files. Please check file permissions and try again or manually remove the files from :path', [':path' => $path]);
             }
         } else {
-            throw new \FOSSBilling\Exception('Could not find the extension files in the supposed path. Please remove them from the disk manually.');
+            throw new \FOSSBilling\Core\Exception\BaseException('Could not find the extension files in the supposed path. Please remove them from the disk manually.');
         }
 
         return true;
@@ -513,11 +516,11 @@ class Service implements InjectionAwareInterface
         $latest = $this->di['extension_manager']->getLatestExtensionRelease($id);
 
         if (!isset($latest['download_url'])) {
-            throw new \FOSSBilling\Exception('Couldn\'t find a valid download URL for the extension.');
+            throw new \FOSSBilling\Core\Exception\BaseException('Couldn\'t find a valid download URL for the extension.');
         }
 
         if (!$this->di['extension_manager']->isExtensionCompatible($id)) {
-            throw new \FOSSBilling\InformationException('This extension is not compatible with your version of FOSSBilling. Please update FOSSBilling to the latest version and try again.');
+            throw new \FOSSBilling\Core\Exception\InformationException('This extension is not compatible with your version of FOSSBilling. Please update FOSSBilling to the latest version and try again.');
         }
 
         $extractedPath = Path::join(PATH_CACHE, md5(uniqid()));
@@ -532,7 +535,7 @@ class Service implements InjectionAwareInterface
 
         $code = $response->getStatusCode();
         if ($code !== 200) {
-            throw new \FOSSBilling\Exception('Failed to download the extension with error :code', [':code' => $code]);
+            throw new \FOSSBilling\Core\Exception\BaseException('Failed to download the extension with error :code', [':code' => $code]);
         }
 
         $fileHandler = fopen($zipPath, 'w');
@@ -551,20 +554,20 @@ class Service implements InjectionAwareInterface
         } catch (\PhpZip\Exception\ZipException $e) {
             $this->di['logger']->error($e->getMessage());
 
-            throw new \FOSSBilling\Exception('Failed to extract file, please check file and folder permissions. Further details are available in the error log.');
+            throw new \FOSSBilling\Core\Exception\BaseException('Failed to extract file, please check file and folder permissions. Further details are available in the error log.');
         }
 
         // Get the destination path for the extension (includes LC_MESSAGES for translations)
         $destination = $this->getExtensionPath($type, $id, true);
 
         if ($this->filesystem->exists($destination)) {
-            throw new \FOSSBilling\InformationException('Extension :id seems to be already installed.', [':id' => $id], 436);
+            throw new \FOSSBilling\Core\Exception\InformationException('Extension :id seems to be already installed.', [':id' => $id], 436);
         }
 
         try {
             $this->filesystem->rename($extractedPath, $destination);
         } catch (IOException) {
-            throw new \FOSSBilling\Exception("Failed to move extension to it's final destination. Please check permissions for the destination folder. (:destination)", [':destination' => $destination], 437);
+            throw new \FOSSBilling\Core\Exception\BaseException("Failed to move extension to it's final destination. Please check permissions for the destination folder. (:destination)", [':destination' => $destination], 437);
         }
 
         if ($this->filesystem->exists($zipPath)) {
@@ -588,12 +591,12 @@ class Service implements InjectionAwareInterface
         $mod = $this->di['mod']($ext->getName());
 
         if ($mod->isCore()) {
-            throw new \FOSSBilling\InformationException('FOSSBilling core modules cannot be installed or removed');
+            throw new \FOSSBilling\Core\Exception\InformationException('FOSSBilling core modules cannot be installed or removed');
         }
 
         $info = $mod->getManifest();
-        if (isset($info['minimum_fossbilling_version']) && \FOSSBilling\Version::compareVersion($info['minimum_fossbilling_version']) > 0) {
-            throw new \FOSSBilling\InformationException('Module cannot be installed. It requires at least :min version of FOSSBilling. You are using :v', [':min' => $info['minimum_fossbilling_version'], ':v' => \FOSSBilling\Version::VERSION]);
+        if (isset($info['minimum_fossbilling_version']) && \FOSSBilling\Core\System\Version::compareVersion($info['minimum_fossbilling_version']) > 0) {
+            throw new \FOSSBilling\Core\Exception\InformationException('Module cannot be installed. It requires at least :min version of FOSSBilling. You are using :v', [':min' => $info['minimum_fossbilling_version'], ':v' => \FOSSBilling\Core\System\Version::VERSION]);
         }
 
         // Allow install module even if no installer exists
@@ -601,7 +604,7 @@ class Service implements InjectionAwareInterface
         // perform install script if available
         try {
             $mod->install();
-        } catch (\FOSSBilling\Exception $e) {
+        } catch (\FOSSBilling\Core\Exception\BaseException $e) {
             if ($e->getCode() != 408) {
                 throw $e;
             }
@@ -712,7 +715,7 @@ class Service implements InjectionAwareInterface
      *
      * @return string The filesystem path for the extension
      *
-     * @throws \FOSSBilling\InformationException If the extension type is not supported
+     * @throws \FOSSBilling\Core\Exception\InformationException If the extension type is not supported
      */
     public function getExtensionPath(string $type, string $id, bool $includeMessagesSubdir = false): string
     {
@@ -720,13 +723,13 @@ class Service implements InjectionAwareInterface
 
         $basePath = $this->getExtensionBasePath($type);
         $path = match ($type) {
-            \FOSSBilling\ExtensionManager::TYPE_MOD,
-            \FOSSBilling\ExtensionManager::TYPE_PG => Path::join($basePath, ucfirst($id)),
-            \FOSSBilling\ExtensionManager::TYPE_THEME => Path::join($basePath, $id),
-            \FOSSBilling\ExtensionManager::TYPE_TRANSLATION => $includeMessagesSubdir
+            \FOSSBilling\Core\Remote\ExtensionManager::TYPE_MOD,
+            \FOSSBilling\Core\Remote\ExtensionManager::TYPE_PG => Path::join($basePath, ucfirst($id)),
+            \FOSSBilling\Core\Remote\ExtensionManager::TYPE_THEME => Path::join($basePath, $id),
+            \FOSSBilling\Core\Remote\ExtensionManager::TYPE_TRANSLATION => $includeMessagesSubdir
                 ? Path::join($basePath, $id, 'LC_MESSAGES')
                 : Path::join($basePath, $id),
-            default => throw new \FOSSBilling\InformationException('Extension type (:type) is not supported for automatic path determination.', [':type' => $type]),
+            default => throw new \FOSSBilling\Core\Exception\InformationException('Extension type (:type) is not supported for automatic path determination.', [':type' => $type]),
         };
 
         $this->assertPathWithinBasePath($path, $basePath);
@@ -737,18 +740,18 @@ class Service implements InjectionAwareInterface
     private function getExtensionBasePath(string $type): string
     {
         return match ($type) {
-            \FOSSBilling\ExtensionManager::TYPE_MOD => PATH_MODS,
-            \FOSSBilling\ExtensionManager::TYPE_THEME => PATH_THEMES,
-            \FOSSBilling\ExtensionManager::TYPE_TRANSLATION => PATH_LANGS,
-            \FOSSBilling\ExtensionManager::TYPE_PG => Path::join(PATH_LIBRARY, 'Payment', 'Adapter'),
-            default => throw new \FOSSBilling\InformationException('Extension type (:type) is not supported for automatic path determination.', [':type' => $type]),
+            \FOSSBilling\Core\Remote\ExtensionManager::TYPE_MOD => PATH_MODS,
+            \FOSSBilling\Core\Remote\ExtensionManager::TYPE_THEME => PATH_THEMES,
+            \FOSSBilling\Core\Remote\ExtensionManager::TYPE_TRANSLATION => PATH_LANGS,
+            \FOSSBilling\Core\Remote\ExtensionManager::TYPE_PG => Path::join(PATH_LIBRARY, 'Payment', 'Adapter'),
+            default => throw new \FOSSBilling\Core\Exception\InformationException('Extension type (:type) is not supported for automatic path determination.', [':type' => $type]),
         };
     }
 
     private function assertValidExtensionIdentifier(string $id): void
     {
         if (preg_match('/\A[A-Za-z0-9_-]+\z/', $id) !== 1) {
-            throw new \FOSSBilling\InformationException('Extension ID contains invalid characters.');
+            throw new \FOSSBilling\Core\Exception\InformationException('Extension ID contains invalid characters.');
         }
     }
 
@@ -758,7 +761,7 @@ class Service implements InjectionAwareInterface
         $canonicalPath = Path::canonicalize($path);
 
         if (!Path::isBasePath($canonicalBasePath, $canonicalPath)) {
-            throw new \FOSSBilling\InformationException('Extension path resolved outside the expected extension directory.');
+            throw new \FOSSBilling\Core\Exception\InformationException('Extension path resolved outside the expected extension directory.');
         }
     }
 
@@ -845,14 +848,14 @@ class Service implements InjectionAwareInterface
 
         // First check if any access is allowed to the module for this person
         if (!$staff_service->hasPermission(null, $permission_module)) {
-            throw new \FOSSBilling\InformationException('You do not have permission to access the :mod: module', [':mod:' => $permission_module], 403);
+            throw new \FOSSBilling\Core\Exception\InformationException('You do not have permission to access the :mod: module', [':mod:' => $permission_module], 403);
         }
 
         $module_permissions = $this->getSpecificModulePermissions($permission_module);
 
         // If they have access, let's see if that module has a permission specifically for managing settings and check if they have that permission.
         if (!array_key_exists('manage_settings', $module_permissions) || !$staff_service->hasPermission(null, $permission_module, 'manage_settings')) {
-            throw new \FOSSBilling\InformationException('You do not have permission to perform this action', [], 403);
+            throw new \FOSSBilling\Core\Exception\InformationException('You do not have permission to perform this action', [], 403);
         }
     }
 }

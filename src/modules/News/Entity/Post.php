@@ -12,9 +12,9 @@ declare(strict_types=1);
 namespace Box\Mod\News\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
-use FOSSBilling\Doctrine\TimestampTrait;
-use FOSSBilling\Interfaces\ApiArrayInterface;
-use FOSSBilling\Interfaces\TimestampInterface;
+use FOSSBilling\Core\Api\ArrayInterface;
+use FOSSBilling\Core\Doctrine\TimestampInterface;
+use FOSSBilling\Core\Doctrine\TimestampTrait;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\News\Repository\PostRepository::class)]
 #[ORM\Table(name: 'post')]
@@ -22,7 +22,7 @@ use FOSSBilling\Interfaces\TimestampInterface;
 // unique database-wide on SQLite/PostgreSQL, not just per-table like MySQL.
 #[ORM\Index(name: 'post_admin_id_idx', columns: ['admin_id'])]
 #[ORM\HasLifecycleCallbacks]
-class Post implements ApiArrayInterface, TimestampInterface
+class Post implements ArrayInterface, TimestampInterface
 {
     use TimestampTrait;
 

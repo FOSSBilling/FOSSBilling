@@ -13,9 +13,9 @@ namespace Box\Mod\Redirect;
 
 use Box\Mod\Extension\Entity\ExtensionMeta;
 use Box\Mod\Extension\Repository\ExtensionMetaRepository;
-use FOSSBilling\Exception;
+use FOSSBilling\Core\Exception\BaseException;
 
-class Service implements \FOSSBilling\InjectionAwareInterface
+class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
     private ?ExtensionMetaRepository $extensionMetaRepository = null;
@@ -59,7 +59,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         if ($this->extensionMetaRepository === null) {
             if ($this->di === null) {
-                throw new Exception('The dependency injection container has not been set.');
+                throw new BaseException('The dependency injection container has not been set.');
             }
 
             $this->extensionMetaRepository = $this->di['em']->getRepository(ExtensionMeta::class);
@@ -86,7 +86,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         $redirect = $this->getExtensionMetaRepository()->findOneByExtensionAndId('mod_redirect', $id);
         if (!$redirect instanceof ExtensionMeta) {
-            throw new Exception('Redirect not found');
+            throw new BaseException('Redirect not found');
         }
 
         return $redirect;
@@ -107,7 +107,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $id = $redirect->getId();
         if ($id === null) {
-            throw new Exception('Failed to create redirect.');
+            throw new BaseException('Failed to create redirect.');
         }
 
         return $id;
@@ -150,12 +150,12 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $target = trim($target);
 
         if ($target === '' || strpbrk($target, "\r\n") !== false) {
-            throw new Exception('Invalid redirect target.');
+            throw new BaseException('Invalid redirect target.');
         }
 
         $scheme = parse_url($target, PHP_URL_SCHEME);
         if (is_string($scheme) && !in_array(strtolower($scheme), ['http', 'https'], true)) {
-            throw new Exception('Only HTTP and HTTPS redirect targets are allowed.');
+            throw new BaseException('Only HTTP and HTTPS redirect targets are allowed.');
         }
 
         return $target;
@@ -166,11 +166,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $path = trim($path, '/');
 
         if ($path === '' || strpbrk($path, "\r\n") !== false) {
-            throw new Exception('Invalid redirect path.');
+            throw new BaseException('Invalid redirect path.');
         }
 
         if (str_contains($path, '..')) {
-            throw new Exception('Redirect path must not contain path traversal sequences.');
+            throw new BaseException('Redirect path must not contain path traversal sequences.');
         }
 
         return $path;

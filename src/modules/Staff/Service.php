@@ -23,10 +23,9 @@ use Box\Mod\Staff\Repository\AdminRepository;
 use Box\Mod\Support\Entity\Helpdesk;
 use Box\Mod\Support\Entity\SupportTicket;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
-use FOSSBilling\i18n;
-use FOSSBilling\InjectionAwareInterface;
-use FOSSBilling\PaginationOptions;
-use FOSSBilling\Tools;
+use FOSSBilling\Core\Container\InjectionAwareInterface;
+use FOSSBilling\Core\I18n\I18n;
+use FOSSBilling\Core\Pagination\Options;
 
 class Service implements InjectionAwareInterface
 {
@@ -120,7 +119,7 @@ class Service implements InjectionAwareInterface
         if (!$model instanceof Admin) {
             $this->di['events_manager']->fire(['event' => 'onEventAdminLoginFailed', 'params' => $event_params]);
 
-            throw new \FOSSBilling\InformationException('Check your login details', null, 403);
+            throw new \FOSSBilling\Core\Exception\InformationException('Check your login details', null, 403);
         }
 
         // Event listeners (e.g. this login being recorded in the login history) are normally
@@ -260,11 +259,11 @@ class Service implements InjectionAwareInterface
         if (!$this->hasPermission($member, $module, $key, $constraint)) {
             $requiredPermission = is_null($key) ? $module : "{$module}.{$key}";
 
-            throw new \FOSSBilling\InformationException("You need the \"{$requiredPermission}\" permission to perform this action", [], 403);
+            throw new \FOSSBilling\Core\Exception\InformationException("You need the \"{$requiredPermission}\" permission to perform this action", [], 403);
         }
     }
 
-    public static function onAfterClientOrderCreate(\Box_Event $event): void
+    public static function onAfterClientOrderCreate(\FOSSBilling\Core\Event\Event $event): void
     {
         $di = $event->getDi();
         $params = $event->getParameters();
@@ -288,7 +287,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public static function onAfterAdminOrderSuspend(\Box_Event $event): void
+    public static function onAfterAdminOrderSuspend(\FOSSBilling\Core\Event\Event $event): void
     {
         $di = $event->getDi();
         $params = $event->getParameters();
@@ -296,7 +295,7 @@ class Service implements InjectionAwareInterface
         try {
             $order = $di['em']->getRepository(\Box\Mod\Order\Entity\Order::class)->find((int) $params['id']);
             if (!$order instanceof \Box\Mod\Order\Entity\Order) {
-                throw new \FOSSBilling\Exception('Order not found');
+                throw new \FOSSBilling\Core\Exception\BaseException('Order not found');
             }
 
             $orderService = $di['mod_service']('order');
@@ -313,7 +312,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public static function onAfterClientOpenTicket(\Box_Event $event): void
+    public static function onAfterClientOpenTicket(\FOSSBilling\Core\Event\Event $event): void
     {
         $di = $event->getDi();
         $params = $event->getParameters();
@@ -346,7 +345,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public static function onAfterClientReplyTicket(\Box_Event $event): void
+    public static function onAfterClientReplyTicket(\FOSSBilling\Core\Event\Event $event): void
     {
         $params = $event->getParameters();
         $di = $event->getDi();
@@ -368,7 +367,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public static function onAfterClientCloseTicket(\Box_Event $event): void
+    public static function onAfterClientCloseTicket(\FOSSBilling\Core\Event\Event $event): void
     {
         $params = $event->getParameters();
         $di = $event->getDi();
@@ -400,7 +399,7 @@ class Service implements InjectionAwareInterface
 
             try {
                 $client = $clientService->get(['id' => $clientId]);
-            } catch (\FOSSBilling\InformationException) {
+            } catch (\FOSSBilling\Core\Exception\InformationException) {
                 return $ticket;
             }
             $ticket['client'] = $clientService->toApiArray($client);
@@ -409,7 +408,7 @@ class Service implements InjectionAwareInterface
         return $ticket;
     }
 
-    public static function onAfterClientSignUp(\Box_Event $event): bool
+    public static function onAfterClientSignUp(\FOSSBilling\Core\Event\Event $event): bool
     {
         $params = $event->getParameters();
         $di = $event->getDi();
@@ -435,7 +434,7 @@ class Service implements InjectionAwareInterface
     {
         [$query, $params] = $this->getSearchQuery($data);
 
-        return $this->di['pager']->getPaginatedResultSet($query, $params, PaginationOptions::fromArray($data));
+        return $this->di['pager']->getPaginatedResultSet($query, $params, Options::fromArray($data));
     }
 
     public function getSearchQuery($data): array
@@ -447,7 +446,7 @@ class Service implements InjectionAwareInterface
         $id = $data['id'] ?? null;
         $search = $data['search'] ?? null;
         $status = $data['status'] ?? null;
-        $no_cron = Tools::normalizeBoolean($data['no_cron'] ?? null, true);
+        $no_cron = \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['no_cron'] ?? null, true);
 
         $where = [];
         $bindings = [];
@@ -489,10 +488,10 @@ class Service implements InjectionAwareInterface
             return $cron;
         }
 
-        $cronEmail = $this->di['tools']->generatePassword() . '@' . $this->di['tools']->generatePassword() . '.com';
+        $cronEmail = \FOSSBilling\Core\Security\Credential::generatePassword() . '@' . \FOSSBilling\Core\Security\Credential::generatePassword() . '.com';
         $cronEmail = filter_var($cronEmail, FILTER_SANITIZE_EMAIL);
 
-        $cronPass = $this->di['password']->hashIt($this->di['tools']->generatePassword(256, 4));
+        $cronPass = $this->di['password']->hashIt(\FOSSBilling\Core\Security\Credential::generatePassword(256, true));
 
         // Two cron runs can race to create the cron admin. Insert via the DBAL
         // connection (not an ORM flush) so a constraint violation doesn't close the
@@ -521,7 +520,7 @@ class Service implements InjectionAwareInterface
             return $cron;
         }
 
-        throw new \FOSSBilling\Exception('The cron administrator account could not be created');
+        throw new \FOSSBilling\Core\Exception\BaseException('The cron administrator account could not be created');
     }
 
     public function toApiArray(Admin $model, $deep = false): array
@@ -559,7 +558,7 @@ class Service implements InjectionAwareInterface
         }
 
         if ((int) $this->di['loggedin_admin']->getId() === (int) $model->getId() && $previousStatus === Admin::STATUS_ACTIVE && $newStatus !== Admin::STATUS_ACTIVE) {
-            throw new \FOSSBilling\InformationException('You cannot deactivate your own staff account');
+            throw new \FOSSBilling\Core\Exception\InformationException('You cannot deactivate your own staff account');
         }
 
         $this->assertCanManageAdmin($model);
@@ -576,14 +575,14 @@ class Service implements InjectionAwareInterface
         }
         $model->setSignature($data['signature'] ?? $model->getSignature());
         if (array_key_exists('timezone', $data)) {
-            $model->setTimezone(i18n::validateTimezone($data['timezone']));
+            $model->setTimezone(I18n::validateTimezone($data['timezone']));
         }
 
         try {
             $this->di['em']->persist($model);
             $this->di['em']->flush();
         } catch (UniqueConstraintViolationException) {
-            throw new \FOSSBilling\InformationException('Staff member with email :email is already registered.', [':email' => $model->getEmail()], 788954);
+            throw new \FOSSBilling\Core\Exception\InformationException('Staff member with email :email is already registered.', [':email' => $model->getEmail()], 788954);
         }
 
         if ($model->getStatus() !== Admin::STATUS_ACTIVE && $previousStatus === Admin::STATUS_ACTIVE) {
@@ -601,7 +600,7 @@ class Service implements InjectionAwareInterface
     public function delete(Admin $model): bool
     {
         if ($model->isCron()) {
-            throw new \FOSSBilling\InformationException('The cron administrator account cannot be removed');
+            throw new \FOSSBilling\Core\Exception\InformationException('The cron administrator account cannot be removed');
         }
 
         $this->checkPermissionsAndThrowException('staff', 'delete_staff');
@@ -655,12 +654,12 @@ class Service implements InjectionAwareInterface
         $signature = $data['signature'] ?? null;
         $groupId = (int) ($data['group_id'] ?? 0);
         if ($groupId <= 0) {
-            throw new \FOSSBilling\InformationException('Group ID was not passed');
+            throw new \FOSSBilling\Core\Exception\InformationException('Group ID was not passed');
         }
 
         $group = $this->adminGroupRepository->findById($groupId);
         if (!$group instanceof AdminGroup) {
-            throw new \FOSSBilling\InformationException('Group not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Group not found');
         }
 
         $this->assertCanManageGroup($group);
@@ -673,7 +672,7 @@ class Service implements InjectionAwareInterface
         $model->setName($data['name']);
         $model->setStatus(strtolower((string) ($data['status'] ?? Admin::STATUS_INACTIVE)));
         $model->setSignature($signature);
-        $model->setTimezone(i18n::validateTimezone($data['timezone'] ?? null));
+        $model->setTimezone(I18n::validateTimezone($data['timezone'] ?? null));
 
         try {
             $this->di['em']->wrapInTransaction(function () use ($model, $group): void {
@@ -683,7 +682,7 @@ class Service implements InjectionAwareInterface
                 $this->di['em']->flush();
             });
         } catch (UniqueConstraintViolationException) {
-            throw new \FOSSBilling\InformationException('Staff member with email :email is already registered.', [':email' => $data['email']], 788954);
+            throw new \FOSSBilling\Core\Exception\InformationException('Staff member with email :email is already registered.', [':email' => $data['email']], 788954);
         }
 
         $newId = (int) $model->getId();
@@ -698,7 +697,7 @@ class Service implements InjectionAwareInterface
     public function createGroup(string $name, ?AdminGroup $parent = null): int
     {
         if (!$this->isSuperAdministrator()) {
-            throw new \FOSSBilling\InformationException('Only super administrators can manage staff groups', [], 403);
+            throw new \FOSSBilling\Core\Exception\InformationException('Only super administrators can manage staff groups', [], 403);
         }
 
         $parent ??= $this->adminGroupRepository->findSuperAdministratorGroup();
@@ -718,25 +717,25 @@ class Service implements InjectionAwareInterface
     public function deleteGroup(AdminGroup $model): bool
     {
         if (!$this->isSuperAdministrator()) {
-            throw new \FOSSBilling\InformationException('Only super administrators can manage staff groups', [], 403);
+            throw new \FOSSBilling\Core\Exception\InformationException('Only super administrators can manage staff groups', [], 403);
         }
 
         $id = $model->getId();
         $name = $model->getName();
         if ($model->isProtected()) {
-            throw new \FOSSBilling\InformationException('Protected staff groups cannot be removed');
+            throw new \FOSSBilling\Core\Exception\InformationException('Protected staff groups cannot be removed');
         }
 
         if ($this->adminGroupMemberRepository->countMembersInGroup((int) $id) > 0) {
-            throw new \FOSSBilling\InformationException('Cannot remove group which has staff members');
+            throw new \FOSSBilling\Core\Exception\InformationException('Cannot remove group which has staff members');
         }
 
         if ($this->di['mod_service']('email')->getTemplateGroupRepository()->countTemplatesUsingGroup((int) $id) > 0) {
-            throw new \FOSSBilling\InformationException('Cannot remove group which is used to restrict email templates');
+            throw new \FOSSBilling\Core\Exception\InformationException('Cannot remove group which is used to restrict email templates');
         }
 
         if ($this->adminGroupRepository->getDescendantIdsForGroups([(int) $id]) !== []) {
-            throw new \FOSSBilling\InformationException('Cannot remove group which has child groups');
+            throw new \FOSSBilling\Core\Exception\InformationException('Cannot remove group which has child groups');
         }
 
         $this->di['em']->remove($model);
@@ -751,11 +750,11 @@ class Service implements InjectionAwareInterface
     public function updateGroup(AdminGroup $model, array $data): bool
     {
         if (!$this->isSuperAdministrator()) {
-            throw new \FOSSBilling\InformationException('Only super administrators can manage staff groups', [], 403);
+            throw new \FOSSBilling\Core\Exception\InformationException('Only super administrators can manage staff groups', [], 403);
         }
 
         if ($model->isProtected()) {
-            throw new \FOSSBilling\InformationException('Protected staff groups cannot be modified');
+            throw new \FOSSBilling\Core\Exception\InformationException('Protected staff groups cannot be modified');
         }
 
         $parentChanged = array_key_exists('parent_id', $data);
@@ -767,20 +766,20 @@ class Service implements InjectionAwareInterface
 
         if (array_key_exists('parent_id', $data)) {
             if (empty($data['parent_id'])) {
-                throw new \FOSSBilling\InformationException('Staff groups must have a parent group');
+                throw new \FOSSBilling\Core\Exception\InformationException('Staff groups must have a parent group');
             }
 
             $parent = $this->adminGroupRepository->findById((int) $data['parent_id']);
             if (!$parent instanceof AdminGroup) {
-                throw new \FOSSBilling\InformationException('Parent group not found');
+                throw new \FOSSBilling\Core\Exception\InformationException('Parent group not found');
             }
 
             if ((int) $parent->getId() === (int) $model->getId()) {
-                throw new \FOSSBilling\InformationException('A group cannot be its own parent');
+                throw new \FOSSBilling\Core\Exception\InformationException('A group cannot be its own parent');
             }
 
             if ($this->adminGroupRepository->isDescendantOf((int) $parent->getId(), (int) $model->getId())) {
-                throw new \FOSSBilling\InformationException('A group cannot use one of its subgroups as parent');
+                throw new \FOSSBilling\Core\Exception\InformationException('A group cannot use one of its subgroups as parent');
             }
 
             $model->setParent($parent);
@@ -788,7 +787,7 @@ class Service implements InjectionAwareInterface
 
         if (array_key_exists('permissions', $data)) {
             if (!is_array($data['permissions'])) {
-                throw new \FOSSBilling\InformationException('Parameter "permissions" must be an array');
+                throw new \FOSSBilling\Core\Exception\InformationException('Parameter "permissions" must be an array');
             }
 
             unset($data['permissions']['_submitted']);
@@ -871,20 +870,20 @@ class Service implements InjectionAwareInterface
         }
 
         if ((int) $actor->getId() === (int) $target->getId()) {
-            throw new \FOSSBilling\InformationException('You cannot manage your own staff account here');
+            throw new \FOSSBilling\Core\Exception\InformationException('You cannot manage your own staff account here');
         }
 
         if ($target->isCron()) {
-            throw new \FOSSBilling\InformationException('You can only manage staff accounts in lower groups');
+            throw new \FOSSBilling\Core\Exception\InformationException('You can only manage staff accounts in lower groups');
         }
 
         $targetGroupIds = $this->adminGroupMemberRepository->getGroupIdsForAdmin((int) $target->getId());
         if ($targetGroupIds === []) {
-            throw new \FOSSBilling\InformationException('You can only manage staff accounts in lower groups');
+            throw new \FOSSBilling\Core\Exception\InformationException('You can only manage staff accounts in lower groups');
         }
 
         if (array_diff($targetGroupIds, $this->adminGroupRepository->getDescendantIdsForGroups($this->adminGroupMemberRepository->getGroupIdsForAdmin((int) $actor->getId()))) !== []) {
-            throw new \FOSSBilling\InformationException('You can only manage staff accounts in lower groups');
+            throw new \FOSSBilling\Core\Exception\InformationException('You can only manage staff accounts in lower groups');
         }
     }
 
@@ -896,7 +895,7 @@ class Service implements InjectionAwareInterface
         }
 
         if (!in_array((int) $group->getId(), $this->adminGroupRepository->getDescendantIdsForGroups($this->adminGroupMemberRepository->getGroupIdsForAdmin((int) $actor->getId())), true)) {
-            throw new \FOSSBilling\InformationException('You can only manage lower staff groups');
+            throw new \FOSSBilling\Core\Exception\InformationException('You can only manage lower staff groups');
         }
     }
 
@@ -911,7 +910,7 @@ class Service implements InjectionAwareInterface
         }
 
         if ($this->adminGroupMemberRepository->countActiveMembersInSystemGroup(AdminGroup::SYSTEM_SUPER_ADMIN) <= 1) {
-            throw new \FOSSBilling\InformationException('Cannot remove the last active super administrator');
+            throw new \FOSSBilling\Core\Exception\InformationException('Cannot remove the last active super administrator');
         }
     }
 

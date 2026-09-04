@@ -2,19 +2,18 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2025 FOSSBilling
+ * Copyright 2022-2026 FOSSBilling
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
-use FOSSBilling\Config;
-use FOSSBilling\Environment;
-use FOSSBilling\Http\ExceptionResponseFactory;
-use FOSSBilling\Http\RequestFactory;
-use FOSSBilling\SentryHelper;
-use FOSSBilling\Tools;
+use FOSSBilling\Core\Http\ExceptionResponseFactory;
+use FOSSBilling\Core\Http\RequestFactory;
+use FOSSBilling\Core\SentryHelper;
+use FOSSBilling\Core\System\Config;
+use FOSSBilling\Core\System\Environment;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -116,12 +115,12 @@ function buildDatabaseProbeDsn(string $driver, array $dbConfig): ?array
 
     return match ($driver) {
         'pdo_mysql' => [
-            sprintf('mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4', $host, Tools::normalizePort($dbConfig['port'] ?? null, 3306), $database),
+            sprintf('mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4', $host, FOSSBilling\Core\Utils\Normalizer::normalizePort($dbConfig['port'] ?? null, 3306), $database),
             $dbConfig['user'] ?? '',
             $dbConfig['password'] ?? '',
         ],
         'pdo_pgsql' => [
-            sprintf('pgsql:host=%s;port=%s;dbname=%s', $host, Tools::normalizePort($dbConfig['port'] ?? null, 5432), $database),
+            sprintf('pgsql:host=%s;port=%s;dbname=%s', $host, FOSSBilling\Core\Utils\Normalizer::normalizePort($dbConfig['port'] ?? null, 5432), $database),
             $dbConfig['user'] ?? '',
             $dbConfig['password'] ?? '',
         ],
@@ -218,7 +217,7 @@ function exceptionHandler(Exception|Error $e): void
 }
 
 /*
- * Refuse to serve this request while FOSSBilling\Update::performUpdate() is
+ * Refuse to serve this request while FOSSBilling\Core\Update\Updater::performUpdate() is
  * actively writing files to PATH_ROOT.
  *
  * This intentionally runs before the Composer autoloader is loaded, and
@@ -291,6 +290,7 @@ function preInit(): void
     // Define global paths.
     define('PATH_LIBRARY', Path::join(PATH_ROOT, 'library'));
     require Path::join(PATH_LIBRARY, 'TranslationFunctions.php');
+    define('PATH_CORE', Path::join(PATH_ROOT, 'core'));
     define('PATH_THEMES', Path::join(PATH_ROOT, 'themes'));
     define('PATH_MODS', Path::join(PATH_ROOT, 'modules'));
     define('PATH_LANGS', Path::join(PATH_ROOT, 'locale'));
@@ -303,18 +303,17 @@ function preInit(): void
     define('PATH_CONFIG', Path::join(PATH_ROOT, 'config.php'));
 
     // Load required FOSSBilling libraries.
-    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'ErrorPage.php');
-    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'SentryHelper.php');
-    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Environment.php');
-    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'ApiResponseFactory.php');
-    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'ExceptionResponseFactory.php');
-    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'RequestFactory.php');
-    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'ResponseFactory.php');
-    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'RouteDefinition.php');
-    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'RouteMatch.php');
-    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Http', 'RouteMatcher.php');
-    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Config.php');
-    require Path::join(PATH_LIBRARY, 'FOSSBilling', 'Tools.php');
+    require Path::join(PATH_CORE, 'Http', 'ErrorPage.php');
+    require Path::join(PATH_CORE, 'SentryHelper.php');
+    require Path::join(PATH_CORE, 'System', 'Environment.php');
+    require Path::join(PATH_CORE, 'Http', 'ApiResponseFactory.php');
+    require Path::join(PATH_CORE, 'Http', 'ExceptionResponseFactory.php');
+    require Path::join(PATH_CORE, 'Http', 'RequestFactory.php');
+    require Path::join(PATH_CORE, 'Http', 'ResponseFactory.php');
+    require Path::join(PATH_CORE, 'Http', 'RouteDefinition.php');
+    require Path::join(PATH_CORE, 'Http', 'RouteMatch.php');
+    require Path::join(PATH_CORE, 'Http', 'RouteMatcher.php');
+    require Path::join(PATH_CORE, 'System', 'Config.php');
 }
 
 /*
@@ -375,7 +374,7 @@ function init(): void
     define('SYSTEM_URL', $scheme . $url);
 
     // Set the default interface.
-    define('BIND_TO', Tools::getDefaultInterface());
+    define('BIND_TO', FOSSBilling\Core\Utils\Network::getDefaultInterface());
 
     // Load the DI container.
     global $di;

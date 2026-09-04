@@ -20,10 +20,10 @@ declare(strict_types=1);
 
 namespace Box\Mod\Notification\Api;
 
-use FOSSBilling\PaginationOptions;
-use FOSSBilling\Validation\Api\RequiredParams;
+use FOSSBilling\Core\Pagination\Options;
+use FOSSBilling\Core\Validation\Api\RequiredParams;
 
-class Admin extends \FOSSBilling\Api\AbstractApi
+class Admin extends \FOSSBilling\Core\Api\AbstractApi
 {
     /**
      * Get paginated list of notifications.
@@ -36,7 +36,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $queryBuilder = $this->getService()->getSearchQueryBuilder($data);
 
-        return $this->getDi()['pager']->paginateDoctrineQuery($queryBuilder, PaginationOptions::fromArray($data));
+        return $this->getDi()['pager']->paginateDoctrineQuery($queryBuilder, Options::fromArray($data));
     }
 
     /**
@@ -44,7 +44,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return array
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Notification ID was not passed'])]
     public function get($data)
@@ -75,7 +75,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Remove notification message.
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Notification ID was not passed'])]
     public function delete($data): bool
@@ -88,7 +88,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Remove all notification messages.
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     public function delete_all(): bool
     {

@@ -24,7 +24,7 @@ test('email get list', function (): void {
         ],
     ];
 
-    $pager = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
+    $pager = Mockery::mock(FOSSBilling\Core\Pagination\Service::class)->makePartial();
     $pager
         ->shouldReceive('paginateDoctrineQuery')
         ->atLeast()->once()
@@ -169,7 +169,7 @@ test('resend exception email not found', function (): void {
 
     $repo = Mockery::mock(Box\Mod\Email\Repository\ActivityClientEmailRepository::class);
     $repo->shouldReceive('findOneByIdOrFail')
-        ->andThrow(new FOSSBilling\InformationException('Email not found'));
+        ->andThrow(new FOSSBilling\Core\Exception\InformationException('Email not found'));
 
     $di = container();
     $adminApi->setDi($di);
@@ -178,7 +178,7 @@ test('resend exception email not found', function (): void {
     $emailService->shouldReceive('getActivityClientEmailRepository')->andReturn($repo);
     $adminApi->setService($emailService);
 
-    $this->expectException(FOSSBilling\InformationException::class);
+    $this->expectException(FOSSBilling\Core\Exception\InformationException::class);
     $this->expectExceptionMessage('Email not found');
     $adminApi->email_resend($data);
 });
@@ -192,7 +192,7 @@ test('delete exception email not found', function (): void {
 
     $repo = Mockery::mock(Box\Mod\Email\Repository\ActivityClientEmailRepository::class);
     $repo->shouldReceive('findOneByIdOrFail')
-        ->andThrow(new FOSSBilling\InformationException('Email not found'));
+        ->andThrow(new FOSSBilling\Core\Exception\InformationException('Email not found'));
 
     $di = container();
     $adminApi->setDi($di);
@@ -201,7 +201,7 @@ test('delete exception email not found', function (): void {
     $emailService->shouldReceive('getActivityClientEmailRepository')->andReturn($repo);
     $adminApi->setService($emailService);
 
-    $this->expectException(FOSSBilling\InformationException::class);
+    $this->expectException(FOSSBilling\Core\Exception\InformationException::class);
     $this->expectExceptionMessage('Email not found');
     $adminApi->email_delete($data);
 });
@@ -220,7 +220,7 @@ test('email delete', function (): void {
     $em->shouldReceive('remove')->atLeast()->once();
     $em->shouldReceive('flush')->atLeast()->once();
 
-    $loggerStub = $this->createStub(FOSSBilling\Logger::class);
+    $loggerStub = $this->createStub(FOSSBilling\Core\Logging\Logger::class);
 
     $di = container();
     $di['em'] = $em;
@@ -309,7 +309,7 @@ test('template delete', function (): void {
     $templateGroupRepo->shouldReceive('deleteAssociationsForTemplate')->atLeast()->once()->with(1);
     $emailService->shouldReceive('getTemplateGroupRepository')->andReturn($templateGroupRepo);
 
-    $loggerStub = $this->createStub(FOSSBilling\Logger::class);
+    $loggerStub = $this->createStub(FOSSBilling\Core\Logging\Logger::class);
     $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $em->shouldReceive('remove')->atLeast()->once()->with($model);
     $em->shouldReceive('flush')->atLeast()->once();
@@ -332,13 +332,13 @@ test('template delete template not found', function (): void {
     ];
 
     $emailService = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
-    $emailService->shouldReceive('getTemplate')->atLeast()->once()->andThrow(new FOSSBilling\Exception('Email template not found'));
+    $emailService->shouldReceive('getTemplate')->atLeast()->once()->andThrow(new FOSSBilling\Core\Exception\BaseException('Email template not found'));
 
     $di = container();
     $adminApi->setDi($di);
     $adminApi->setService($emailService);
 
-    $this->expectException(FOSSBilling\Exception::class);
+    $this->expectException(FOSSBilling\Core\Exception\BaseException::class);
     $this->expectExceptionMessage('Email template not found');
     $adminApi->template_delete($data);
 });
@@ -375,7 +375,7 @@ test('template send to not set exception', function (): void {
 
     $di = container();
     $adminApi->setDi($di);
-    $this->expectException(FOSSBilling\Exception::class);
+    $this->expectException(FOSSBilling\Core\Exception\BaseException::class);
     $adminApi->template_send(['code' => 'code']);
 });
 

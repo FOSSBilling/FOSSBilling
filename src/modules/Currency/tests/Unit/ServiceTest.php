@@ -71,7 +71,7 @@ test('getBaseCurrencyRate throws exception when rate is zero', function (): void
     $code = 'EUR';
 
     expect(fn (): float => $service->getBaseCurrencyRate($code))
-        ->toThrow(FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 test('getBaseCurrencyRate throws exception when currency not found', function (): void {
@@ -93,7 +93,7 @@ test('getBaseCurrencyRate throws exception when currency not found', function ()
     $code = 'XYZ';
 
     expect(fn (): float => $service->getBaseCurrencyRate($code))
-        ->toThrow(FOSSBilling\Exception::class, 'Currency not found');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Currency not found');
 });
 
 dataset('toBaseCurrencyProvider', fn (): array => [
@@ -313,7 +313,7 @@ test('setAsDefault throws exception when currency code is empty', function (): v
     $service->setDi($di);
 
     expect(fn (): bool => $service->setAsDefault($model))
-        ->toThrow(FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 test('getPairs returns currency pairs', function (): void {
@@ -369,7 +369,7 @@ test('removeCurrency throws exception when deleting default currency', function 
     $service->setDi($di);
 
     expect(fn (): bool => $service->removeCurrency('EUR'))
-        ->toThrow(FOSSBilling\InformationException::class);
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class);
 });
 
 test('removeCurrency removes currency', function (): void {
@@ -397,7 +397,7 @@ test('removeCurrency removes currency', function (): void {
     $emMock->shouldReceive('flush')
         ->atLeast()->once();
 
-    $eventsManager = Mockery::mock(Box_EventManager::class);
+    $eventsManager = Mockery::mock(FOSSBilling\Core\Event\Manager::class);
     $eventsManager->shouldReceive('fire')
         ->twice();
 
@@ -432,7 +432,7 @@ test('removeCurrency throws exception when currency is not found', function (): 
     $service->setDi($di);
 
     expect(fn (): bool => $service->removeCurrency(''))
-        ->toThrow(FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 test('toApiArray returns API array for currency', function (): void {
@@ -507,7 +507,7 @@ test('createCurrency requires an explicit rate for a manual override', function 
     $service->setDi($di);
 
     expect(fn (): string => $service->createCurrency('LAK', null, true))
-        ->toThrow(FOSSBilling\InformationException::class, 'A conversion rate is required when manual override is enabled.');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'A conversion rate is required when manual override is enabled.');
 });
 
 test('updateCurrency updates currency', function (): void {
@@ -576,7 +576,7 @@ test('updateCurrency rejects manual overrides for the default currency', functio
     $service->setDi($di);
 
     expect(fn (): bool => $service->updateCurrency('USD', 2.0, [], true))
-        ->toThrow(FOSSBilling\InformationException::class, 'The default currency cannot use a manual rate override.');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'The default currency cannot use a manual rate override.');
 });
 
 test('updateCurrency throws exception when currency not found', function (): void {
@@ -600,7 +600,7 @@ test('updateCurrency throws exception when currency not found', function (): voi
     $service->setDi($di);
 
     expect(fn (): bool => $service->updateCurrency($code, $conversion_rate))
-        ->toThrow(FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 test('updateCurrency throws exception when conversion rate is zero', function (): void {
@@ -628,7 +628,7 @@ test('updateCurrency throws exception when conversion rate is zero', function ()
     $service->setDi($di);
 
     expect(fn (): bool => $service->updateCurrency($code, $conversion_rate))
-        ->toThrow(FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 test('updateCurrencyRates updates rates for all currencies', function (): void {
@@ -795,7 +795,7 @@ test('removeCurrency deletes currency by code', function (): void {
     $emMock->shouldReceive('flush')
         ->atLeast()->once();
 
-    $manager = Mockery::mock('Box_EventManager');
+    $manager = Mockery::mock(FOSSBilling\Core\Event\Manager::class);
     $manager->shouldReceive('fire')
         ->atLeast()->once()
         ->andReturn(true);
@@ -834,5 +834,5 @@ test('removeCurrency throws exception when currency not found by code', function
     $service->setDi($di);
 
     expect(fn (): bool => $service->removeCurrency($code))
-        ->toThrow(FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });

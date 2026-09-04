@@ -258,7 +258,7 @@ return [
 
         /*
          * Override individual rate limiter policies here.
-         * Defaults are defined in FOSSBilling\Security\RateLimiter::getDefaultConfig().
+         * Defaults are defined in \FOSSBilling\Core\Security\RateLimiter::getDefaultConfig().
          */
         'policies' => [
             // 'client_signup' => ['policy' => 'fixed_window', 'limit' => 5, 'interval' => '1 hour'],

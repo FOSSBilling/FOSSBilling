@@ -13,7 +13,7 @@ namespace Box\Mod\Antispam;
 
 use EmailChecker\Adapter;
 use EmailChecker\Utilities;
-use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Core\Container\InjectionAwareInterface;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Contracts\Cache\ItemInterface;
@@ -58,7 +58,7 @@ class Service implements InjectionAwareInterface
         ];
     }
 
-    public static function onBeforeClientSignUp(\Box_Event $event): void
+    public static function onBeforeClientSignUp(\FOSSBilling\Core\Event\Event $event): void
     {
         // Client\Api\Guest::create() already verifies the CAPTCHA before firing
         // this event, so isSpam() below must not check it again: CAPTCHA
@@ -72,7 +72,7 @@ class Service implements InjectionAwareInterface
         $antispamService->checkHoneypot($event);
     }
 
-    public static function onBeforeClientOpenTicket(\Box_Event $event): void
+    public static function onBeforeClientOpenTicket(\FOSSBilling\Core\Event\Event $event): void
     {
         if ($event->getParameters()['author_role'] !== 'guest') {
             return;
@@ -86,42 +86,42 @@ class Service implements InjectionAwareInterface
         $antispamService->isTemp($event);
     }
 
-    public static function onBeforeClientProfileUpdate(\Box_Event $event): void
+    public static function onBeforeClientProfileUpdate(\FOSSBilling\Core\Event\Event $event): void
     {
         $di = $event->getDi();
         $antispamService = $di['mod_service']('Antispam');
         $antispamService->isBlockedIp($event);
     }
 
-    public static function onBeforeAdminClientUpdate(\Box_Event $event): void
+    public static function onBeforeAdminClientUpdate(\FOSSBilling\Core\Event\Event $event): void
     {
         $di = $event->getDi();
         $antispamService = $di['mod_service']('Antispam');
         $antispamService->isBlockedIp($event);
     }
 
-    public static function onBeforeClientUpdate(\Box_Event $event): void
+    public static function onBeforeClientUpdate(\FOSSBilling\Core\Event\Event $event): void
     {
         $di = $event->getDi();
         $antispamService = $di['mod_service']('Antispam');
         $antispamService->isBlockedIp($event);
     }
 
-    public static function onBeforeClientLogin(\Box_Event $event): void
+    public static function onBeforeClientLogin(\FOSSBilling\Core\Event\Event $event): void
     {
         $di = $event->getDi();
         $antispamService = $di['mod_service']('Antispam');
         $antispamService->isBlockedIp($event);
     }
 
-    public static function onBeforeAdminLogin(\Box_Event $event): void
+    public static function onBeforeAdminLogin(\FOSSBilling\Core\Event\Event $event): void
     {
         $di = $event->getDi();
         $antispamService = $di['mod_service']('Antispam');
         $antispamService->isBlockedIp($event);
     }
 
-    public function isBlockedIp(\Box_Event $event): void
+    public function isBlockedIp(\FOSSBilling\Core\Event\Event $event): void
     {
         $di = $event->getDi();
         $config = $di['mod_config']('Antispam');
@@ -129,12 +129,12 @@ class Service implements InjectionAwareInterface
             $blocked_ips = explode(PHP_EOL, $config['blocked_ips']);
             $blocked_ips = array_map(trim(...), $blocked_ips);
             if (in_array($di['request']->getClientIp(), $blocked_ips)) {
-                throw new \FOSSBilling\InformationException('Your IP address (:ip) is blocked. Please contact our support to lift your block.', [':ip' => $di['request']->getClientIp()], 403);
+                throw new \FOSSBilling\Core\Exception\InformationException('Your IP address (:ip) is blocked. Please contact our support to lift your block.', [':ip' => $di['request']->getClientIp()], 403);
             }
         }
     }
 
-    public function isSpam(\Box_Event $event): void
+    public function isSpam(\FOSSBilling\Core\Event\Event $event): void
     {
         $di = $event->getDi();
         $params = $event->getParameters();
@@ -162,11 +162,11 @@ class Service implements InjectionAwareInterface
 
             if ($provider === 'recaptcha_v2' || $provider === 'recaptcha_v3') {
                 if (!isset($config['captcha_recaptcha_privatekey']) || $config['captcha_recaptcha_privatekey'] == '') {
-                    throw new \FOSSBilling\InformationException("To use reCAPTCHA you must get an API key from <a href='https://www.google.com/recaptcha/admin/create'>here</a>");
+                    throw new \FOSSBilling\Core\Exception\InformationException("To use reCAPTCHA you must get an API key from <a href='https://www.google.com/recaptcha/admin/create'>here</a>");
                 }
 
                 if (!isset($params['g-recaptcha-response']) || $params['g-recaptcha-response'] == '') {
-                    throw new \FOSSBilling\InformationException('You have to complete the CAPTCHA to continue');
+                    throw new \FOSSBilling\Core\Exception\InformationException('You have to complete the CAPTCHA to continue');
                 }
 
                 $httpClient = $di['http_client'];
@@ -180,7 +180,7 @@ class Service implements InjectionAwareInterface
                 $content = $response->toArray();
 
                 if (!isset($content['success']) || $content['success'] !== true) {
-                    throw new \FOSSBilling\InformationException('reCAPTCHA verification failed.');
+                    throw new \FOSSBilling\Core\Exception\InformationException('reCAPTCHA verification failed.');
                 }
 
                 if ($provider === 'recaptcha_v3') {
@@ -192,24 +192,24 @@ class Service implements InjectionAwareInterface
                     $score = isset($content['score']) ? (float) $content['score'] : 0.0;
 
                     if ($score < $threshold) {
-                        throw new \FOSSBilling\InformationException('reCAPTCHA verification failed.');
+                        throw new \FOSSBilling\Core\Exception\InformationException('reCAPTCHA verification failed.');
                     }
 
                     $expectedAction = 'fossbilling_submit';
                     $action = $params['g-recaptcha-action'] ?? $expectedAction;
 
                     if ($action !== $expectedAction || ($content['action'] ?? null) !== $expectedAction) {
-                        throw new \FOSSBilling\InformationException('reCAPTCHA verification failed.');
+                        throw new \FOSSBilling\Core\Exception\InformationException('reCAPTCHA verification failed.');
                     }
                 }
             } elseif ($provider === 'turnstile') {
                 if (empty($config['turnstile_secret_key'])) {
-                    throw new \FOSSBilling\InformationException('Cloudflare Turnstile secret key is not configured.');
+                    throw new \FOSSBilling\Core\Exception\InformationException('Cloudflare Turnstile secret key is not configured.');
                 }
 
                 $turnstile_response = $params['cf-turnstile-response'] ?? null;
                 if (empty($turnstile_response)) {
-                    throw new \FOSSBilling\InformationException('Please complete the CAPTCHA verification.');
+                    throw new \FOSSBilling\Core\Exception\InformationException('Please complete the CAPTCHA verification.');
                 }
 
                 $httpClient = $di['http_client'];
@@ -223,16 +223,16 @@ class Service implements InjectionAwareInterface
                 $content = $response->toArray();
 
                 if (!isset($content['success']) || $content['success'] !== true) {
-                    throw new \FOSSBilling\InformationException('CAPTCHA verification failed. Please try again.');
+                    throw new \FOSSBilling\Core\Exception\InformationException('CAPTCHA verification failed. Please try again.');
                 }
             } elseif ($provider === 'hcaptcha') {
                 if (empty($config['hcaptcha_secret_key'])) {
-                    throw new \FOSSBilling\InformationException('hCaptcha secret key is not configured.');
+                    throw new \FOSSBilling\Core\Exception\InformationException('hCaptcha secret key is not configured.');
                 }
 
                 $hcaptcha_response = $params['h-captcha-response'] ?? null;
                 if (empty($hcaptcha_response)) {
-                    throw new \FOSSBilling\InformationException('Please complete the CAPTCHA verification.');
+                    throw new \FOSSBilling\Core\Exception\InformationException('Please complete the CAPTCHA verification.');
                 }
 
                 $httpClient = $di['http_client'];
@@ -246,13 +246,13 @@ class Service implements InjectionAwareInterface
                 $content = $response->toArray();
 
                 if (!isset($content['success']) || $content['success'] !== true) {
-                    throw new \FOSSBilling\InformationException('CAPTCHA verification failed. Please try again.');
+                    throw new \FOSSBilling\Core\Exception\InformationException('CAPTCHA verification failed. Please try again.');
                 }
             }
         }
     }
 
-    public function isTemp(\Box_Event $event): void
+    public function isTemp(\FOSSBilling\Core\Event\Event $event): void
     {
         $di = $event->getDi();
         $config = $di['mod_config']('Antispam');
@@ -267,7 +267,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public function checkHoneypot(\Box_Event $event): void
+    public function checkHoneypot(\FOSSBilling\Core\Event\Event $event): void
     {
         $di = $event->getDi();
         $config = $di['mod_config']('Antispam');
@@ -280,7 +280,7 @@ class Service implements InjectionAwareInterface
             if (!empty($params[$honeypotField])) {
                 $this->di['logger']->info('Potential spam registration blocked. Reason: honeypot field was not empty.');
 
-                throw new \FOSSBilling\InformationException('Registration failed.');
+                throw new \FOSSBilling\Core\Exception\InformationException('Registration failed.');
             }
         }
     }
@@ -309,13 +309,13 @@ class Service implements InjectionAwareInterface
         }
 
         if (isset($json->username->appears) && $json->username->appears) {
-            throw new \FOSSBilling\InformationException('Your username is blacklisted in the Stop Forum Spam database');
+            throw new \FOSSBilling\Core\Exception\InformationException('Your username is blacklisted in the Stop Forum Spam database');
         }
         if (isset($json->email->appears) && $json->email->appears) {
-            throw new \FOSSBilling\InformationException('Your e-mail is blacklisted in the Stop Forum Spam database');
+            throw new \FOSSBilling\Core\Exception\InformationException('Your e-mail is blacklisted in the Stop Forum Spam database');
         }
         if (isset($json->ip->appears) && $json->ip->appears) {
-            throw new \FOSSBilling\InformationException('Your IP address is blacklisted in the Stop Forum Spam database');
+            throw new \FOSSBilling\Core\Exception\InformationException('Your IP address is blacklisted in the Stop Forum Spam database');
         }
 
         return true;
@@ -348,7 +348,7 @@ class Service implements InjectionAwareInterface
         }
         $invalid = $adapter->isThrowawayDomain($domain);
         if ($invalid && $throw) {
-            throw new \FOSSBilling\InformationException('Disposable email addresses are not allowed');
+            throw new \FOSSBilling\Core\Exception\InformationException('Disposable email addresses are not allowed');
         }
 
         return $invalid;

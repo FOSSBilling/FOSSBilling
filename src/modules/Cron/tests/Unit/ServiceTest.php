@@ -97,7 +97,7 @@ test('runCrons isolates failures in core batch tasks', function (string $failedT
     $updateFinalization = Mockery::mock();
     $updateFinalization->shouldReceive('isRequired')->once()->andReturnFalse();
 
-    $eventsManager = Mockery::mock('\\Box_EventManager');
+    $eventsManager = Mockery::mock(FOSSBilling\Core\Event\Manager::class);
     $eventsManager->shouldReceive('fire')->twice();
 
     $systemService = Mockery::mock(Box\Mod\System\Service::class);
@@ -158,7 +158,7 @@ test('runCrons restores the previous cron context when update finalization inter
 
     try {
         $service->runCrons();
-    } catch (FOSSBilling\InformationException) {
+    } catch (FOSSBilling\Core\Exception\InformationException) {
         // Expected: update finalization is pending, cron tasks are skipped.
     }
 

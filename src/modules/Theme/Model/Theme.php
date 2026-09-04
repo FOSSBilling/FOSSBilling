@@ -26,7 +26,7 @@ class Theme
     public function __construct(private $name)
     {
         if (!self::getFilesystem()->exists($this->getPath())) {
-            throw new \FOSSBilling\Exception("Theme ':name' does not exist.", [':name' => $name]);
+            throw new \FOSSBilling\Core\Exception\BaseException("Theme ':name' does not exist.", [':name' => $name]);
         }
     }
 

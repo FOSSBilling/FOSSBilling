@@ -14,7 +14,7 @@ namespace Box\Mod\Custompages;
 use Box\Mod\Custompages\Entity\CustomPage;
 use Box\Mod\Custompages\Repository\CustomPageRepository;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
-use FOSSBilling\PaginationOptions;
+use FOSSBilling\Core\Pagination\Options;
 
 class Service
 {
@@ -57,7 +57,7 @@ class Service
         // module's own table from current metadata, additively and safely - scoped so
         // installing this one extension never reports every *other* table in the app as missing,
         // unlike the whole-app SchemaSynchronizer::sync().
-        \FOSSBilling\Doctrine\SchemaSynchronizer::syncEntities($this->di['em'], [CustomPage::class]);
+        \FOSSBilling\Core\Doctrine\SchemaSynchronizer::syncEntities($this->di['em'], [CustomPage::class]);
 
         return true;
     }
@@ -66,7 +66,7 @@ class Service
     {
         $qb = $this->pageRepository->getSearchQueryBuilder($data);
 
-        return $this->di['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data));
+        return $this->di['pager']->paginateDoctrineQuery($qb, Options::fromArray($data));
     }
 
     public function deletePage($id): void
@@ -89,7 +89,7 @@ class Service
     {
         $allowedColumns = ['id', 'slug'];
         if (!in_array($type, $allowedColumns, true)) {
-            throw new \FOSSBilling\Exception('Invalid column type: :type', [':type' => $type]);
+            throw new \FOSSBilling\Core\Exception\BaseException('Invalid column type: :type', [':type' => $type]);
         }
 
         $page = $type === 'slug'
@@ -127,20 +127,20 @@ class Service
             }
         }
 
-        throw new \FOSSBilling\Exception('Unable to generate a unique slug for the custom page.');
+        throw new \FOSSBilling\Core\Exception\BaseException('Unable to generate a unique slug for the custom page.');
     }
 
     public function updatePage($id, $title, $description, $keywords, $content, $slug): int
     {
         $page = $this->pageRepository->find((int) $id);
         if (!$page instanceof CustomPage) {
-            throw new \FOSSBilling\Exception('Custom page not found');
+            throw new \FOSSBilling\Core\Exception\BaseException('Custom page not found');
         }
 
-        $slug = $this->di['tools']->slug($slug);
+        $slug = \FOSSBilling\Core\Utils\Str::slug($slug);
         $existing = $this->pageRepository->findOneBySlugExcludingId($slug, (int) $id);
         if ($existing instanceof CustomPage) {
-            throw new \FOSSBilling\Exception('You need to set unique slug.', null, 9999);
+            throw new \FOSSBilling\Core\Exception\BaseException('You need to set unique slug.', null, 9999);
         }
 
         $page->setTitle($title)
@@ -154,7 +154,7 @@ class Service
         } catch (UniqueConstraintViolationException) {
             // A concurrent request claimed this slug between the app-level check
             // and the flush. Surface it as the same uniqueness error as above.
-            throw new \FOSSBilling\Exception('You need to set unique slug.', null, 9999);
+            throw new \FOSSBilling\Core\Exception\BaseException('You need to set unique slug.', null, 9999);
         }
         $this->di['logger']->info('Updated custom page #{id}', ['id' => $id]);
 
@@ -172,10 +172,10 @@ class Service
      */
     private function generateUniqueSlug(string $title): string
     {
-        $slug = $this->fitSlug($this->di['tools']->slug($title), null);
+        $slug = $this->fitSlug(\FOSSBilling\Core\Utils\Str::slug($title), null);
         $i = 0;
         while ($this->pageRepository->findOneBySlug($slug) instanceof CustomPage) {
-            $slug = $this->fitSlug($this->di['tools']->slug($title), ++$i);
+            $slug = $this->fitSlug(\FOSSBilling\Core\Utils\Str::slug($title), ++$i);
         }
 
         return $slug;

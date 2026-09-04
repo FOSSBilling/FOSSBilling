@@ -14,9 +14,9 @@ namespace Box\Mod\Support\Entity;
 use Box\Mod\Support\Repository\SupportTicketNoteRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use FOSSBilling\Doctrine\TimestampTrait;
-use FOSSBilling\Interfaces\ApiArrayInterface;
-use FOSSBilling\Interfaces\TimestampInterface;
+use FOSSBilling\Core\Api\ArrayInterface;
+use FOSSBilling\Core\Doctrine\TimestampInterface;
+use FOSSBilling\Core\Doctrine\TimestampTrait;
 
 /**
  * An internal note on a support ticket — visible to staff but not to the
@@ -29,7 +29,7 @@ use FOSSBilling\Interfaces\TimestampInterface;
 // unique database-wide on SQLite/PostgreSQL, not just per-table like MySQL.
 #[ORM\Index(name: 'support_ticket_note_admin_id_idx', columns: ['admin_id'])]
 #[ORM\HasLifecycleCallbacks]
-class SupportTicketNote implements ApiArrayInterface, TimestampInterface
+class SupportTicketNote implements ArrayInterface, TimestampInterface
 {
     use TimestampTrait;
 
@@ -49,7 +49,7 @@ class SupportTicketNote implements ApiArrayInterface, TimestampInterface
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $note = null;
 
-    public function toApiArray(\Box\Mod\Client\Entity\Client|\Box\Mod\Staff\Entity\Admin|\FOSSBilling\Identity\Guest|null $identity = null): array
+    public function toApiArray(\Box\Mod\Client\Entity\Client|\Box\Mod\Staff\Entity\Admin|\FOSSBilling\Core\Identity\Guest|null $identity = null): array
     {
         return [
             'id' => $this->id,

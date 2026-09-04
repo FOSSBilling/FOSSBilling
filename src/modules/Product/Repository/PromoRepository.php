@@ -14,7 +14,7 @@ namespace Box\Mod\Product\Repository;
 use Box\Mod\Product\Entity\Promo;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
-use FOSSBilling\Doctrine\SqlExpr;
+use FOSSBilling\Core\Doctrine\SqlExpr;
 
 class PromoRepository extends EntityRepository
 {

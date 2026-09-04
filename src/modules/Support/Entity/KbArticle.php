@@ -13,9 +13,9 @@ namespace Box\Mod\Support\Entity;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use FOSSBilling\Doctrine\TimestampTrait;
-use FOSSBilling\Interfaces\ApiArrayInterface;
-use FOSSBilling\Interfaces\TimestampInterface;
+use FOSSBilling\Core\Api\ArrayInterface;
+use FOSSBilling\Core\Doctrine\TimestampInterface;
+use FOSSBilling\Core\Doctrine\TimestampTrait;
 
 // This entity intentionally does not use a PreUpdate callback.
 // View counter updates should not affect updatedAt (it is used as the "last updated" timestamp).
@@ -23,7 +23,7 @@ use FOSSBilling\Interfaces\TimestampInterface;
 #[ORM\Entity(repositoryClass: \Box\Mod\Support\Repository\KbArticleRepository::class)]
 #[ORM\Table(name: 'support_kb_article')]
 #[ORM\HasLifecycleCallbacks]
-class KbArticle implements ApiArrayInterface, TimestampInterface
+class KbArticle implements ArrayInterface, TimestampInterface
 {
     use TimestampTrait;
 
@@ -55,11 +55,11 @@ class KbArticle implements ApiArrayInterface, TimestampInterface
     #[ORM\Column(type: Types::STRING, length: 30, options: ['default' => self::ACTIVE])]
     private string $status = self::ACTIVE;
 
-    public function toApiArray(\Box\Mod\Client\Entity\Client|\Box\Mod\Staff\Entity\Admin|\FOSSBilling\Identity\Guest|null $identity = null, bool $includeContent = false, bool $includeViews = true): array
+    public function toApiArray(\Box\Mod\Client\Entity\Client|\Box\Mod\Staff\Entity\Admin|\FOSSBilling\Core\Identity\Guest|null $identity = null, bool $includeContent = false, bool $includeViews = true): array
     {
         $category = $this->category;
         if (!$category instanceof KbArticleCategory) {
-            throw new \FOSSBilling\Exception('Knowledge Base category not found');
+            throw new \FOSSBilling\Core\Exception\BaseException('Knowledge Base category not found');
         }
 
         $data = [

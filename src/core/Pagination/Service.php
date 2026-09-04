@@ -1,0 +1,171 @@
+<?php
+
+declare(strict_types=1);
+/**
+ * Copyright 2022-2026 FOSSBilling
+ * SPDX-License-Identifier: Apache-2.0.
+ *
+ * @copyright FOSSBilling (https://www.fossbilling.org)
+ * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
+ */
+
+namespace FOSSBilling\Core\Pagination;
+
+use Doctrine\ORM\QueryBuilder;
+use Doctrine\ORM\Tools\Pagination\Paginator as DoctrinePaginator;
+use FOSSBilling\Core\Api\ArrayInterface;
+use FOSSBilling\Core\Container\InjectionAwareInterface;
+use FOSSBilling\Core\Exception\InformationException;
+use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
+use Symfony\Component\Serializer\Serializer;
+
+class Service implements InjectionAwareInterface
+{
+    private ?\Pimple\Container $di = null;
+
+    public function setDi(\Pimple\Container $di): void
+    {
+        $this->di = $di;
+    }
+
+    public function getDi(): ?\Pimple\Container
+    {
+        return $this->di;
+    }
+
+    /**
+     * Build the standard paginated response array.
+     */
+    private function buildPaginatedResponse(int $page, int $perPage, int $total, array $list): array
+    {
+        return [
+            'pages' => $total > 0 ? (int) ceil($total / $perPage) : 0,
+            'page' => $page,
+            'per_page' => $perPage,
+            'total' => $total,
+            'list' => $list,
+        ];
+    }
+
+    /**
+     * Paginate results from a Doctrine QueryBuilder.
+     *
+     * Applies pagination to a Doctrine QueryBuilder and returns metadata and normalized entities.
+     * Entities implementing `ArrayInterface` will use `toApiArray()`, others will be normalized
+     * using Symfony's ObjectNormalizer.
+     *
+     * @param QueryBuilder $qb              the Doctrine QueryBuilder instance to paginate
+     * @param Options      $pagination      pagination options
+     * @param mixed        ...$apiArrayArgs optional arguments passed to entity toApiArray() methods
+     *
+     * @return array{
+     *     pages: int,      // Total number of pages
+     *     page: int,       // Current page number
+     *     per_page: int,   // Items per page
+     *     total: int,      // Total number of items
+     *     list: array      // List of paginated items as arrays
+     * }
+     */
+    public function paginateDoctrineQuery(QueryBuilder $qb, Options $pagination, mixed ...$apiArrayArgs): array
+    {
+        $serializer = new Serializer([new ObjectNormalizer()]);
+
+        return $this->paginateMappedQuery($qb, $pagination, static function (object $entity) use ($serializer, $apiArrayArgs): array {
+            if ($entity instanceof ArrayInterface) {
+                return $entity->toApiArray(...$apiArrayArgs);
+            }
+
+            return $serializer->normalize($entity);
+        });
+    }
+
+    /**
+     * Paginate a SQL query using a simple LIMIT clause and a secondary count query.
+     *
+     * @param string  $query      the base SQL query without LIMIT
+     * @param array   $params     the values to bind to the query
+     * @param Options $pagination pagination options
+     *
+     * @return array{
+     *     pages: int,      // Total number of pages
+     *     page: int,       // Current page number
+     *     per_page: int,   // Items per page
+     *     total: int,      // Total number of items
+     *     list: array      // List of paginated items as arrays
+     * }
+     *
+     * @throws InformationException if the SQL query is invalid
+     */
+    public function getPaginatedResultSet(string $query, array $params, Options $pagination): array
+    {
+        $offset = ($pagination->page - 1) * $pagination->perPage;
+
+        if (stripos($query, 'FROM') === false) {
+            throw new InformationException('Invalid SQL query. Missing FROM clause.');
+        }
+
+        $paginatedQuery = $query . sprintf(' LIMIT %u, %u', $offset, $pagination->perPage);
+        $result = $this->di['em']->getConnection()->fetchAllAssociative($paginatedQuery, $params);
+
+        $query = rtrim($query, " ;\n\r\t");
+        $countQuery = 'SELECT COUNT(1) FROM (' . $query . ') AS sub';
+        $total = (int) $this->di['em']->getConnection()->fetchOne($countQuery, $params);
+
+        return $this->buildPaginatedResponse($pagination->page, $pagination->perPage, $total, $result);
+    }
+
+    /**
+     * Paginate an in-memory array.
+     *
+     * @return array{
+     *     pages: int,      // Total number of pages
+     *     page: int,       // Current page number
+     *     per_page: int,   // Items per page
+     *     total: int,      // Total number of items
+     *     list: array      // List of paginated items as arrays
+     * }
+     */
+    public function paginateArray(array $items, Options $pagination): array
+    {
+        $total = count($items);
+        $pages = $total > 0 ? (int) ceil($total / $pagination->perPage) : 0;
+        $page = min($pagination->page, max(1, $pages));
+        $list = array_slice($items, ($page - 1) * $pagination->perPage, $pagination->perPage);
+
+        return $this->buildPaginatedResponse($page, $pagination->perPage, $total, $list);
+    }
+
+    /**
+     * Paginate results from a Doctrine QueryBuilder and apply a custom mapper to each entity.
+     *
+     * Use this when the entity's `toApiArray()` requires context (identity, deep flag,
+     * cross-module lookups) that the default `paginateDoctrineQuery()` cannot provide.
+     * The caller supplies a closure that performs the mapping.
+     *
+     * @param QueryBuilder $qb         the Doctrine QueryBuilder instance to paginate
+     * @param Options      $pagination pagination options
+     * @param callable     $mapper     fn(object $entity): array applied to each row
+     *
+     * @return array{
+     *     pages: int,      // Total number of pages
+     *     page: int,       // Current page number
+     *     per_page: int,   // Items per page
+     *     total: int,      // Total number of items
+     *     list: array      // List of paginated items as arrays
+     * }
+     */
+    public function paginateMappedQuery(QueryBuilder $qb, Options $pagination, callable $mapper): array
+    {
+        $qb->setFirstResult(($pagination->page - 1) * $pagination->perPage)
+            ->setMaxResults($pagination->perPage);
+        $paginator = new DoctrinePaginator($qb, true);
+        $total = count($paginator);
+
+        $list = [];
+        foreach ($paginator as $entity) {
+            $list[] = $mapper($entity);
+        }
+
+        return $this->buildPaginatedResponse($pagination->page, $pagination->perPage, $total, $list);
+    }
+}

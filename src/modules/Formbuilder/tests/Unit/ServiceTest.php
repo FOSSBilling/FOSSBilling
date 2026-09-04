@@ -140,7 +140,7 @@ test('updates a field', function (string $fieldType, int|string $fieldId): void 
     $di['dbal'] = $dbal;
     $di['logger'] = new Tests\Helpers\TestLogger();
 
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Core\Validation\Validator::class);
     $validatorMock->shouldReceive('checkRequiredParamsForArray');
     $di['validator'] = $validatorMock;
 
@@ -170,7 +170,7 @@ test('throws exception when updating field with existing name', function (): voi
     $serviceMock->shouldReceive('getField');
 
     expect(fn () => $serviceMock->updateField($data))
-        ->toThrow(FOSSBilling\Exception::class, 'Unfortunately field with this name exists in this form already. Form must have different field names.');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Unfortunately field with this name exists in this form already. Form must have different field names.');
 });
 
 test('throws exception when field values are not unique', function (): void {
@@ -192,7 +192,7 @@ test('throws exception when field values are not unique', function (): void {
     $serviceMock->shouldReceive('getField');
 
     expect(fn () => $serviceMock->updateField($data))
-        ->toThrow(FOSSBilling\Exception::class, ucfirst($data['type']) . ' values must be unique');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, ucfirst($data['type']) . ' values must be unique');
 });
 
 test('throws exception when field labels are not unique', function (): void {
@@ -214,7 +214,7 @@ test('throws exception when field labels are not unique', function (): void {
     $serviceMock->shouldReceive('getField');
 
     expect(fn () => $serviceMock->updateField($data))
-        ->toThrow(FOSSBilling\Exception::class, ucfirst($data['type']) . ' labels must be unique');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, ucfirst($data['type']) . ' labels must be unique');
 });
 
 test('throws exception when textarea size is invalid', function (): void {
@@ -238,7 +238,7 @@ test('throws exception when textarea size is invalid', function (): void {
     $serviceMock->shouldReceive('getField');
 
     expect(fn () => $serviceMock->updateField($data))
-        ->toThrow(FOSSBilling\Exception::class, 'Textarea size options must be integer values');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Textarea size options must be integer values');
 });
 
 test('gets a form', function (): void {
@@ -342,7 +342,7 @@ test('gets a field', function (): void {
     $dbal->shouldReceive('executeQuery')->once()->andReturn($dbalResult);
 
     $di = container();
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Core\Validation\Validator::class);
     $validatorMock->shouldReceive('checkRequiredParamsForArray');
     $di['validator'] = $validatorMock;
     $di['dbal'] = $dbal;

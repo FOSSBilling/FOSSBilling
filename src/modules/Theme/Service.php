@@ -13,9 +13,9 @@ namespace Box\Mod\Theme;
 
 use Box\Mod\Extension\Entity\ExtensionMeta;
 use Box\Mod\Extension\Repository\ExtensionMetaRepository;
-use FOSSBilling\InjectionAwareInterface;
-use FOSSBilling\Sanitizer\BrowserHtmlSanitizer;
-use FOSSBilling\Twig\SandboxedStringRenderer;
+use FOSSBilling\Core\Container\InjectionAwareInterface;
+use FOSSBilling\Core\HtmlSanitizerFactory;
+use FOSSBilling\Core\Twig\SandboxedStringRenderer;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
@@ -90,7 +90,7 @@ class Service implements InjectionAwareInterface
     {
         if ($this->extensionMetaRepository === null) {
             if ($this->di === null) {
-                throw new \FOSSBilling\Exception('The dependency injection container has not been set.');
+                throw new \FOSSBilling\Core\Exception\BaseException('The dependency injection container has not been set.');
             }
 
             $this->extensionMetaRepository = $this->di['em']->getRepository(ExtensionMeta::class);
@@ -274,7 +274,7 @@ class Service implements InjectionAwareInterface
             }
         );
 
-        return BrowserHtmlSanitizer::sanitizeThemeSettingsHtml($rendered);
+        return HtmlSanitizerFactory::sanitize($rendered, 'theme_settings');
     }
 
     public function getCurrentAdminAreaTheme(): array
@@ -392,7 +392,7 @@ class Service implements InjectionAwareInterface
         $theme_path = Path::join($this->getThemesPath(), $theme);
 
         if (!$this->filesystem->exists($theme_path)) {
-            throw new \FOSSBilling\Exception('Theme was not found in path :path', [':path' => $theme_path]);
+            throw new \FOSSBilling\Core\Exception\BaseException('Theme was not found in path :path', [':path' => $theme_path]);
         }
         $manifest = Path::join($theme_path, 'manifest.json');
 
@@ -409,7 +409,7 @@ class Service implements InjectionAwareInterface
         }
 
         if (!is_array($config)) {
-            throw new \FOSSBilling\Exception('Unable to decode theme manifest file :file', [':file' => $manifest]);
+            throw new \FOSSBilling\Core\Exception\BaseException('Unable to decode theme manifest file :file', [':file' => $manifest]);
         }
 
         $paths = [Path::join($theme_path, 'html')];

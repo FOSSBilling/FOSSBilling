@@ -12,10 +12,9 @@ declare(strict_types=1);
 namespace Box\Mod\Extension\Api;
 
 use Box\Mod\Extension\Entity\Extension;
-use FOSSBilling\Tools;
-use FOSSBilling\Validation\Api\RequiredParams;
+use FOSSBilling\Core\Validation\Api\RequiredParams;
 
-class Admin extends \FOSSBilling\Api\AbstractApi
+class Admin extends \FOSSBilling\Core\Api\AbstractApi
 {
     /**
      * Get list of active and inactive extensions on system.
@@ -72,7 +71,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('extension', 'view');
 
         $extensionInfo = $this->getDi()['extension_manager']->getExtension($data['extension_id']);
-        $markdown = new \FOSSBilling\Twig\Markdown\FOSSBillingMarkdown($this->di);
+        $markdown = new \FOSSBilling\Core\Twig\Markdown\FOSSBillingMarkdown($this->di);
 
         return $markdown->convert($extensionInfo['readme']);
     }
@@ -100,10 +99,10 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('extension', 'view');
 
-        $data['disabled'] = Tools::normalizeBoolean($data['disabled'] ?? false);
-        $data['details'] = Tools::normalizeBoolean($data['details'] ?? true, true);
+        $data['disabled'] = \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['disabled'] ?? false);
+        $data['details'] = \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['details'] ?? true, true);
 
-        return \FOSSBilling\i18n::getLocales($data['details'], $data['disabled']);
+        return \FOSSBilling\Core\I18n\I18n::getLocales($data['details'], $data['disabled']);
     }
 
     /**
@@ -111,14 +110,14 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @param array $data The post data sent to the API. Should contain a key named `locale_id` which is set to the locale ID to change. (`en_US` for example)
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['locale_id' => 'Locale ID was not passed'])]
     public function toggle_language(array $data): bool
     {
         $this->checkPermissions('extension', 'manage_extensions');
 
-        return \FOSSBilling\i18n::toggleLocale($data['locale_id']);
+        return \FOSSBilling\Core\I18n\I18n::toggleLocale($data['locale_id']);
     }
 
     /**
@@ -131,7 +130,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('extension', 'view');
 
-        return \FOSSBilling\i18n::getLocaleCompletionPercent($data['locale_id']);
+        return \FOSSBilling\Core\I18n\I18n::getLocaleCompletionPercent($data['locale_id']);
     }
 
     /**
@@ -139,7 +138,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return array
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     public function update($data)
     {
@@ -160,7 +159,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return array
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Extension ID was not passed', 'type' => 'Extension type was not passed'])]
     public function activate($data)
@@ -177,7 +176,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool - true
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     public function deactivate($data): bool
     {
@@ -217,7 +216,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Install new extension from extensions site.
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Extension ID was not passed', 'type' => 'Extension type was not passed'])]
     public function install($data): array
@@ -247,7 +246,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return array - configuration parameters
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['ext' => 'Parameter "ext" was not passed'])]
     public function config_get($data)
@@ -271,7 +270,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['ext' => 'Parameter "ext" was not passed'])]
     public function config_save($data)
@@ -288,7 +287,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $service = $this->getService();
         $ext = $service->getExtensionRepository()->findOneByTypeAndName($data['type'], $data['id']);
         if (!$ext instanceof Extension) {
-            throw new \FOSSBilling\InformationException('Extension not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Extension not found');
         }
 
         return $ext;

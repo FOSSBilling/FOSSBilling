@@ -214,7 +214,7 @@ test('handles after client open ticket event', function (): void {
     $di['loggedin_client'] = createEntity(Client::class);
     $serviceMock->setDi($di);
 
-    $eventMock = Mockery::mock('\Box_Event');
+    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Event::class);
     $eventMock->shouldReceive('getDi')
         ->atLeast()->once()
         ->andReturn($di);
@@ -261,7 +261,7 @@ test('handles after admin open ticket event', function (): void {
     $di['loggedin_admin'] = \Tests\Helpers\admin();
     $serviceMock->setDi($di);
 
-    $eventMock = Mockery::mock('\Box_Event');
+    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Event::class);
     $eventMock->shouldReceive('getDi')
         ->atLeast()->once()
         ->andReturn($di);
@@ -308,7 +308,7 @@ test('handles after admin close ticket event', function (): void {
     $di['loggedin_admin'] = \Tests\Helpers\admin();
     $serviceMock->setDi($di);
 
-    $eventMock = Mockery::mock('\Box_Event');
+    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Event::class);
     $eventMock->shouldReceive('getDi')
         ->atLeast()->once()
         ->andReturn($di);
@@ -355,7 +355,7 @@ test('handles after admin reply ticket event', function (): void {
     $di['loggedin_admin'] = \Tests\Helpers\admin();
     $serviceMock->setDi($di);
 
-    $eventMock = Mockery::mock('\Box_Event');
+    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Event::class);
     $eventMock->shouldReceive('getDi')
         ->atLeast()->once()
         ->andReturn($di);
@@ -407,7 +407,7 @@ test('handles guest ticket with regular client open event', function (): void {
     };
     $serviceMock->setDi($di);
 
-    $eventMock = Mockery::mock('\Box_Event');
+    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Event::class);
     $eventMock->shouldReceive('getDi')
         ->atLeast()->once()
         ->andReturn($di);
@@ -472,7 +472,7 @@ test('throws exception when ticket not found by client', function (): void {
     $service = Mockery::mock(Service::class)->makePartial();
     $repo = Mockery::mock(SupportTicketRepository::class);
     $repo->shouldReceive('findOneByClientOrFail')->atLeast()->once()
-        ->andThrow(new FOSSBilling\InformationException('Ticket not found'));
+        ->andThrow(new FOSSBilling\Core\Exception\InformationException('Ticket not found'));
     $service->shouldReceive('getSupportTicketRepository')->atLeast()->once()
         ->andReturn($repo);
 
@@ -482,7 +482,7 @@ test('throws exception when ticket not found by client', function (): void {
     $client = createEntity(Client::class, ['id' => 1]);
 
     $service->findOneByClient($client, 1);
-})->throws(FOSSBilling\InformationException::class);
+})->throws(FOSSBilling\Core\Exception\InformationException::class);
 
 test('counts tickets', function (): void {
     $service = new Service();
@@ -645,7 +645,7 @@ test('closes a ticket', function ($identity): void {
     supportWireKbRepositories($emMock);
     $emMock->shouldReceive('flush')->atLeast()->once();
 
-    $eventMock = Mockery::mock('\Box_EventManager');
+    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class);
     $eventMock->shouldReceive('fire');
 
     $di = container();
@@ -1129,7 +1129,7 @@ test('helpdesk rm has tickets exception', function (): void {
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
-    $this->expectException(FOSSBilling\Exception::class);
+    $this->expectException(FOSSBilling\Core\Exception\BaseException::class);
     $service->helpdeskRm(helpdeskFixture());
 });
 
@@ -1408,14 +1408,8 @@ test('kb create article', function (): void {
         });
     $emMock->shouldReceive('flush')->once();
 
-    $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
-    $toolsMock->shouldReceive('slug')
-        ->atLeast()->once()
-        ->andReturn('article-slug');
-
     $di = container();
     $di['em'] = $emMock;
-    $di['tools'] = $toolsMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
@@ -1446,7 +1440,7 @@ test('kb create article category not found exception', function (): void {
     $di['em'] = $emMock;
     $service->setDi($di);
 
-    $this->expectException(FOSSBilling\Exception::class);
+    $this->expectException(FOSSBilling\Core\Exception\BaseException::class);
     $service->kbCreateArticle(1, 'Title', 'Active', 'Content');
 });
 
@@ -1462,7 +1456,7 @@ test('kb create article invalid status exception', function (): void {
     $di['em'] = $emMock;
     $service->setDi($di);
 
-    $this->expectException(FOSSBilling\Exception::class);
+    $this->expectException(FOSSBilling\Core\Exception\BaseException::class);
     $service->kbCreateArticle(1, 'Title', 'invalid', 'Content');
 });
 
@@ -1540,7 +1534,7 @@ test('kb update article category not found exception', function (): void {
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
-    $this->expectException(FOSSBilling\Exception::class);
+    $this->expectException(FOSSBilling\Core\Exception\BaseException::class);
     $service->kbUpdateArticle($randId, 1, 'Title', 'article-slug', 'active', 'content', 1);
 });
 
@@ -1556,7 +1550,7 @@ test('kb update article invalid status exception', function (): void {
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
-    $this->expectException(FOSSBilling\Exception::class);
+    $this->expectException(FOSSBilling\Core\Exception\BaseException::class);
     $service->kbUpdateArticle(1, null, null, null, 'invalid');
 });
 
@@ -1583,7 +1577,7 @@ test('kb update article not found exception', function (): void {
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
-    $this->expectException(FOSSBilling\Exception::class);
+    $this->expectException(FOSSBilling\Core\Exception\BaseException::class);
     $service->kbUpdateArticle($randId, 1, 'Title', 'article-slug', 'active', 'content', 1);
 });
 
@@ -1638,7 +1632,7 @@ test('kb category rm has articles exception', function (): void {
 
     $model = supportKbCategoryFixture();
 
-    $this->expectException(FOSSBilling\Exception::class);
+    $this->expectException(FOSSBilling\Core\Exception\BaseException::class);
     $service->kbCategoryRm($model);
 });
 
@@ -1656,14 +1650,8 @@ test('kb create category', function (): void {
         });
     $emMock->shouldReceive('flush')->once();
 
-    $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
-    $toolsMock->shouldReceive('slug')
-        ->atLeast()->once()
-        ->andReturn('article-slug');
-
     $di = container();
     $di['em'] = $emMock;
-    $di['tools'] = $toolsMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
 
@@ -1722,22 +1710,22 @@ test('public find one by hash not found exception', function (): void {
     $di = container();
     $service->setDi($di);
 
-    $this->expectException(FOSSBilling\Exception::class);
+    $this->expectException(FOSSBilling\Core\Exception\BaseException::class);
     $service->findOneByHash(sha1(uniqid()));
 });
 
 dataset('closeTicketProvider', fn (): array => [
     'with admin' => [\Tests\Helpers\admin()],
-    'with guest' => [new FOSSBilling\Identity\Guest()],
+    'with guest' => [new FOSSBilling\Core\Identity\Guest()],
 ]);
 
-test('public close ticket', function (Box\Mod\Staff\Entity\Admin|FOSSBilling\Identity\Guest $identity): void {
+test('public close ticket', function (Box\Mod\Staff\Entity\Admin|FOSSBilling\Core\Identity\Guest $identity): void {
     $service = new Service();
     $emMock = Mockery::mock(EntityManagerInterface::class);
     supportWireKbRepositories($emMock);
     $emMock->shouldReceive('flush')->atLeast()->once();
 
-    $eventMock = Mockery::mock('\Box_EventManager');
+    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class);
     $eventMock->shouldReceive('fire')
         ->atLeast()->once();
 
@@ -1783,12 +1771,12 @@ test('guest ticket reply', function (): void {
         });
     $emMock->shouldReceive('flush')->atLeast()->once();
 
-    $requestMock = Mockery::mock(FOSSBilling\Request::class);
+    $requestMock = Mockery::mock(FOSSBilling\Core\Request::class);
     $requestMock->shouldReceive('getClientIp')
         ->atLeast()->once()
         ->andReturn('127.0.0.1');
 
-    $eventMock = Mockery::mock('\Box_EventManager');
+    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class);
     $eventMock->shouldReceive('fire')
         ->atLeast()->once();
 
@@ -1803,7 +1791,7 @@ test('guest ticket reply', function (): void {
     setEntityId($ticket, 1);
     $ticket->setAccessHash('test-hash-123');
 
-    $result = $service->ticketReply($ticket, new FOSSBilling\Identity\Guest(), 'Content');
+    $result = $service->ticketReply($ticket, new FOSSBilling\Core\Identity\Guest(), 'Content');
     expect($result)->toBeInt();
 });
 
@@ -1887,7 +1875,7 @@ test('ticket message update rejects editing a client-authored message', function
     $admin = \Tests\Helpers\admin(['id' => 7]);
 
     $service->ticketMessageUpdate($message, 'Tampered content', $admin);
-})->throws(FOSSBilling\InformationException::class);
+})->throws(FOSSBilling\Core\Exception\InformationException::class);
 
 test('ticket message update skips creating history when content is unchanged', function (): void {
     $service = new Service();
@@ -1936,7 +1924,7 @@ test('gets message history', function (): void {
     $service->setDi($di);
 
     $result = $service->getMessageHistory($message);
-    expect($result)->toBe([[...$history->toApiArray(), 'content_html' => "<p><strong>Original</strong> content</p>\n"]]);
+    expect($result)->toBe([[...$history->toApiArray(), 'content_html' => '<p><strong>Original</strong> content</p>']]);
 });
 
 dataset('ticketReplyProvider', function () {
@@ -1966,11 +1954,11 @@ test('ticket reply', function (Box\Mod\Staff\Entity\Admin|Client $identity): voi
         });
     $emMock->shouldReceive('flush')->atLeast()->once();
 
-    $eventMock = Mockery::mock('\Box_EventManager');
+    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class);
     $eventMock->shouldReceive('fire')
         ->atLeast()->once();
 
-    $requestMock = Mockery::mock(FOSSBilling\Request::class);
+    $requestMock = Mockery::mock(FOSSBilling\Core\Request::class);
     $requestMock->shouldReceive('getClientIp')
         ->atLeast()->once()
         ->andReturn('127.0.0.1');
@@ -2006,11 +1994,11 @@ test('ticket create for admin', function (): void {
         });
     $emMock->shouldReceive('flush')->atLeast()->once();
 
-    $eventMock = Mockery::mock('\Box_EventManager');
+    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class);
     $eventMock->shouldReceive('fire')
         ->atLeast()->once();
 
-    $requestMock = Mockery::mock(FOSSBilling\Request::class);
+    $requestMock = Mockery::mock(FOSSBilling\Core\Request::class);
     $requestMock->shouldReceive('getClientIp')
         ->atLeast()->once()
         ->andReturn('127.0.0.1');
@@ -2057,7 +2045,7 @@ test('ticket create for client', function (): void {
         ->andReturn(supportCannedResponseFixture());
     supportWireKbRepositories($emMock, cannedRepo: $cannedRepoMock);
 
-    $eventMock = Mockery::mock('\Box_EventManager');
+    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class);
     $eventMock->shouldReceive('fire')
         ->atLeast()->once();
 
@@ -2065,7 +2053,7 @@ test('ticket create for client', function (): void {
         'autorespond_enable' => 1,
         'autorespond_message_id' => 1,
     ];
-    $supportModMock = Mockery::mock(FOSSBilling\Module::class);
+    $supportModMock = Mockery::mock(FOSSBilling\Core\Module::class);
     $supportModMock->shouldReceive('getConfig')
         ->atLeast()->once()
         ->andReturn($config);
@@ -2128,7 +2116,7 @@ test('ticket create for client task already exists exception', function (): void
     $di = container();
     $serviceMock->setDi($di);
 
-    $this->expectException(FOSSBilling\Exception::class);
+    $this->expectException(FOSSBilling\Core\Exception\BaseException::class);
     $serviceMock->ticketCreateForClient($client, $helpdesk, $data);
 });
 
@@ -2279,7 +2267,7 @@ test('message create for ticket', function (Box\Mod\Staff\Entity\Admin|Client $i
         });
     $emMock->shouldReceive('flush')->atLeast()->once();
 
-    $requestMock = Mockery::mock(FOSSBilling\Request::class);
+    $requestMock = Mockery::mock(FOSSBilling\Core\Request::class);
     $requestMock->shouldReceive('getClientIp')
         ->atLeast()->once()
         ->andReturn('127.0.0.1');
@@ -2416,7 +2404,7 @@ dataset('canClientSubmitNewTicketProvider', function () {
 test('can client submit new ticket', function (?SupportTicket $ticket, int $hours, bool $expected): void {
     $service = new Service();
     if (!$expected) {
-        $this->expectException(FOSSBilling\Exception::class);
+        $this->expectException(FOSSBilling\Core\Exception\BaseException::class);
     }
 
     $repoMock = Mockery::mock(SupportTicketRepository::class);
