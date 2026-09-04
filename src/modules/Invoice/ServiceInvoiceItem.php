@@ -206,7 +206,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
             return 0;
         }
 
-        return round($item->price * $rate / 100, 2);
+        return round((float) $item->price * $rate / 100, 2);
     }
 
     public function update(\Model_InvoiceItem $item, array $data): void
