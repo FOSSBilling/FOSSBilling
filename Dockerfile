@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:1.26@sha256:ecfaec9ed6d810b56388c508f4121597bfbba70d41a6dfeee4d8cad5f295fc32
+# syntax=docker/dockerfile:1.27@sha256:bde3983e9c939224420ddaf6b784cc30e09b035a4dea01f581230c50809f372e
 
 ARG PHP_VERSION=8.5
 ARG NODE_VERSION=24
@@ -47,7 +47,7 @@ FROM php-base AS composer-base
 
 WORKDIR /app
 
-COPY --from=composer:2@sha256:8fa35f42911ff8bbee92aa37d781de6799168d4a0535ac6991f1b250bc2e0245 /usr/bin/composer /usr/bin/composer
+COPY --from=composer:2@sha256:d8f6343d3fae98107426bc49163ccad46ef85aabd4a27d80a74401fab4aba332 /usr/bin/composer /usr/bin/composer
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends git \
@@ -104,7 +104,7 @@ ARG INSTALL_TRANSLATIONS=true
 ARG TRANSLATIONS_URL=https://github.com/FOSSBilling/locale/releases/latest/download/translations.zip
 ARG TRANSLATIONS_SHA256=
 
-COPY --from=composer:2@sha256:8fa35f42911ff8bbee92aa37d781de6799168d4a0535ac6991f1b250bc2e0245 /usr/bin/composer /usr/bin/composer
+COPY --from=composer:2@sha256:d8f6343d3fae98107426bc49163ccad46ef85aabd4a27d80a74401fab4aba332 /usr/bin/composer /usr/bin/composer
 COPY composer.json ./composer.json
 COPY src ./src
 COPY README.md LICENSE ./src/
