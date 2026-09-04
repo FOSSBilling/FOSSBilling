@@ -110,7 +110,7 @@ class CacheFactory
         $driver = $cacheConfig['driver'] ?? 'filesystem';
 
         if (!in_array($driver, self::SUPPORTED_DRIVERS, true)) {
-            throw new Exception('Unsupported cache driver :driver. Supported drivers are: :supported.', [':driver' => $driver, ':supported' => implode(', ', self::SUPPORTED_DRIVERS)]);
+            throw new Exception('Unsupported cache driver :driver. Supported drivers are: :supported.', [':driver' => $driver, ':supported' => implode(', ', self::SUPPORTED_DRIVERS)], 5001);
         }
 
         if ($driver === 'filesystem') {
@@ -124,7 +124,7 @@ class CacheFactory
         // misconfiguration; from createFromConfig() directly (fallbackOnFailure: false), it reaches
         // the caller as this specific message instead of the generic "could not connect" one below.
         if ($instanceId === '') {
-            throw new Exception('The ":driver" cache driver requires an installation identifier ("info.instance_id" in the configuration file) so that installations sharing the same server don\'t collide. Reinstall or update FOSSBilling to have one generated automatically, or set it manually.', [':driver' => $driver]);
+            throw new Exception('The ":driver" cache driver requires an installation identifier ("info.instance_id" in the configuration file) so that installations sharing the same server don\'t collide. Reinstall or update FOSSBilling to have one generated automatically, or set it manually.', [':driver' => $driver], 5001);
         }
 
         try {
@@ -138,7 +138,7 @@ class CacheFactory
             return $pool;
         } catch (\Throwable $e) {
             if (!$fallbackOnFailure) {
-                throw new Exception('Could not connect to the configured ":driver" cache backend: :message', [':driver' => $driver, ':message' => $e->getMessage()]);
+                throw new Exception('Could not connect to the configured ":driver" cache backend: :message', [':driver' => $driver, ':message' => $e->getMessage()], 5001);
             }
 
             error_log(sprintf('FOSSBilling: failed to initialize the "%s" cache driver (%s); falling back to the filesystem cache.', $driver, $e->getMessage()));
