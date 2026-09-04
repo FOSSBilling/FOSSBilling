@@ -25,6 +25,8 @@
         return;
     }
 
+    let pending = false;
+
     form.addEventListener('submit', function (event) {
         if (form.dataset.recaptchaV3Verified === 'true') {
             form.dataset.recaptchaV3Verified = '';
@@ -34,24 +36,59 @@
         event.preventDefault();
         event.stopImmediatePropagation();
 
-        if (!window.grecaptcha) {
-            form.dataset.recaptchaV3Verified = 'true';
-            form.requestSubmit();
+        if (pending) {
             return;
         }
+        pending = true;
 
         const tokenField = form.querySelector('input[name="g-recaptcha-response"]');
         const actionField = form.querySelector('input[name="g-recaptcha-action"]');
-        window.grecaptcha.ready(function () {
-            window.grecaptcha.execute('{{ rc.publickey|default('')|e('js') }}', { action: actionField.value }).then(function (token) {
-                tokenField.value = token;
-                form.dataset.recaptchaV3Verified = 'true';
-                form.requestSubmit();
-            }).catch(function () {
-                form.dataset.recaptchaV3Verified = 'true';
-                form.requestSubmit();
+        // Resets recaptchaV3Verified right after requestSubmit() rather than relying on
+        // the submit handler above to do it: requestSubmit() runs constraint validation
+        // first and never dispatches submit at all if that fails, which would otherwise
+        // leave the marker stuck true for the next, unrelated submission attempt.
+        const resubmit = function () {
+            form.dataset.recaptchaV3Verified = 'true';
+            form.requestSubmit();
+            form.dataset.recaptchaV3Verified = '';
+            pending = false;
+        };
+        const generateToken = function () {
+            window.grecaptcha.ready(function () {
+                window.grecaptcha.execute('{{ rc.publickey|default('')|e('js') }}', { action: actionField.value }).then(function (token) {
+                    tokenField.value = token;
+                    resubmit();
+                }).catch(function () {
+                    // grecaptcha is loaded but token generation itself failed; this isn't
+                    // the "blocked" case the timeout fallback below exists for, so don't
+                    // submit without a token here. Let the user retry the submission.
+                    pending = false;
+                });
             });
-        });
+        };
+
+        if (window.grecaptcha) {
+            generateToken();
+            return;
+        }
+
+        // api.js loads with async/defer, so on a fast submit window.grecaptcha may not
+        // exist yet even though the script tag is present. Poll briefly for it before
+        // falling back to a submit without a token (e.g. if it's actually blocked).
+        let waited = 0;
+        const poll = setInterval(function () {
+            if (window.grecaptcha) {
+                clearInterval(poll);
+                generateToken();
+                return;
+            }
+
+            waited += 100;
+            if (waited >= 5000) {
+                clearInterval(poll);
+                resubmit();
+            }
+        }, 100);
     }, true);
 }());
 </script>
