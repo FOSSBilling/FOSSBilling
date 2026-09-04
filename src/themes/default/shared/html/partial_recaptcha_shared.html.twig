@@ -42,6 +42,24 @@
                             return;
                         }
 
+                        function submitWithoutToken() {
+                            form.dataset.recaptchaV3Verified = 'true';
+                            form.requestSubmit();
+                        }
+
+                        function submitWithToken() {
+                            const tokenField = form.querySelector('input[name="g-recaptcha-response"]');
+                            const actionField = form.querySelector('input[name="g-recaptcha-action"]');
+                            window.grecaptcha.ready(function () {
+                                window.grecaptcha.execute('{{ config.publickey|e('js') }}', { action: actionField.value }).then(function (token) {
+                                    tokenField.value = token;
+                                    submitWithoutToken();
+                                }).catch(function () {
+                                    submitWithoutToken();
+                                });
+                            });
+                        }
+
                         form.addEventListener('submit', function (event) {
                             if (form.dataset.recaptchaV3Verified === 'true') {
                                 form.dataset.recaptchaV3Verified = '';
@@ -51,24 +69,28 @@
                             event.preventDefault();
                             event.stopImmediatePropagation();
 
-                            if (!window.grecaptcha) {
-                                form.dataset.recaptchaV3Verified = 'true';
-                                form.requestSubmit();
+                            if (window.grecaptcha) {
+                                submitWithToken();
                                 return;
                             }
 
-                            const tokenField = form.querySelector('input[name="g-recaptcha-response"]');
-                            const actionField = form.querySelector('input[name="g-recaptcha-action"]');
-                            window.grecaptcha.ready(function () {
-                                window.grecaptcha.execute('{{ config.publickey|e('js') }}', { action: actionField.value }).then(function (token) {
-                                    tokenField.value = token;
-                                    form.dataset.recaptchaV3Verified = 'true';
-                                    form.requestSubmit();
-                                }).catch(function () {
-                                    form.dataset.recaptchaV3Verified = 'true';
-                                    form.requestSubmit();
-                                });
-                            });
+                            // api.js loads async/defer, so window.grecaptcha may not exist
+                            // yet even though the script tag is present. Poll briefly for
+                            // it instead of submitting without a token immediately - only
+                            // give up (and submit anyway) if it never shows up, e.g. the
+                            // script is blocked by the browser or an extension.
+                            let attempts = 0;
+                            const maxAttempts = 50; // ~5s at 100ms intervals
+                            const waitForGrecaptcha = setInterval(function () {
+                                attempts++;
+                                if (window.grecaptcha) {
+                                    clearInterval(waitForGrecaptcha);
+                                    submitWithToken();
+                                } else if (attempts >= maxAttempts) {
+                                    clearInterval(waitForGrecaptcha);
+                                    submitWithoutToken();
+                                }
+                            }, 100);
                         }, true);
                     }());
                     </script>

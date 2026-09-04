@@ -63,13 +63,12 @@ test('testSelectClientTheme', function (): void {
         'client' => true,
     ];
 
-    $themeMock = Mockery::mock(Box\Mod\Theme\Model\Theme::class);
-
     $serviceMock = Mockery::mock(Box\Mod\Theme\Service::class);
-    $serviceMock->shouldReceive('getTheme')
+    $serviceMock->shouldReceive('getThemes')
         ->atLeast()
         ->once()
-        ->andReturn($themeMock);
+        ->with(true)
+        ->andReturn([['code' => 'default/client']]);
 
     $systemServiceMock = Mockery::mock(Box\Mod\System\Service::class);
     $systemServiceMock->shouldReceive('setParamValue')
@@ -97,13 +96,12 @@ test('testSelectAdminTheme', function (): void {
         'client' => false,
     ];
 
-    $themeMock = Mockery::mock(Box\Mod\Theme\Model\Theme::class);
-
     $serviceMock = Mockery::mock(Box\Mod\Theme\Service::class);
-    $serviceMock->shouldReceive('getTheme')
+    $serviceMock->shouldReceive('getThemes')
         ->atLeast()
         ->once()
-        ->andReturn($themeMock);
+        ->with(false)
+        ->andReturn([['code' => 'default/admin']]);
 
     $systemServiceMock = Mockery::mock(Box\Mod\System\Service::class);
     $systemServiceMock->shouldReceive('setParamValue')
@@ -154,6 +152,52 @@ test('testSelectRejectsInvalidClientParameter', function (): void {
 
     expect(fn (): bool => $api->select($data))
         ->toThrow(FOSSBilling\InformationException::class, 'Invalid "client" parameter.');
+});
+
+test('testSelectRejectsThemeFromOppositeArea', function (): void {
+    $api = apiEndpoint(new Admin());
+    $data = ['code' => 'default/admin', 'client' => true];
+
+    $serviceMock = Mockery::mock(Box\Mod\Theme\Service::class);
+    $serviceMock->shouldReceive('getThemes')
+        ->atLeast()
+        ->once()
+        ->with(true)
+        ->andReturn([['code' => 'default/client']]);
+
+    $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class)->shouldIgnoreMissing();
+    $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')->atLeast()->once();
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn (string $name = ''): Mockery\MockInterface => $staffServiceMock);
+    $api->setDi($di);
+    $api->setService($serviceMock);
+
+    expect(fn (): bool => $api->select($data))
+        ->toThrow(FOSSBilling\InformationException::class, 'Theme "default/admin" is not available for the selected area.');
+});
+
+test('testSelectRejectsPackageSharedTierCode', function (): void {
+    $api = apiEndpoint(new Admin());
+    $data = ['code' => 'default/shared', 'client' => true];
+
+    $serviceMock = Mockery::mock(Box\Mod\Theme\Service::class);
+    $serviceMock->shouldReceive('getThemes')
+        ->atLeast()
+        ->once()
+        ->with(true)
+        ->andReturn([['code' => 'default/client']]);
+
+    $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class)->shouldIgnoreMissing();
+    $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')->atLeast()->once();
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn (string $name = ''): Mockery\MockInterface => $staffServiceMock);
+    $api->setDi($di);
+    $api->setService($serviceMock);
+
+    expect(fn (): bool => $api->select($data))
+        ->toThrow(FOSSBilling\InformationException::class, 'Theme "default/shared" is not available for the selected area.');
 });
 
 test('testPresetDelete', function (): void {

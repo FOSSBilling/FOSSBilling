@@ -104,8 +104,22 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         }
         $client = Tools::normalizeBoolean($data['client'], true);
 
-        // Confirm the theme actually exists before persisting the selection.
-        $this->getService()->getTheme($data['code']);
+        // Confirm the code is actually available for the target area before
+        // persisting it. Merely existing on disk isn't enough - a package's
+        // `shared` tier or the opposite area's code would otherwise pass,
+        // leaving the area's Twig environment pointed at a directory with no
+        // layouts of its own.
+        $isAvailableForArea = false;
+        foreach ($this->getService()->getThemes($client) as $theme) {
+            if ($theme['code'] === $data['code']) {
+                $isAvailableForArea = true;
+
+                break;
+            }
+        }
+        if (!$isAvailableForArea) {
+            throw new \FOSSBilling\InformationException('Theme ":code" is not available for the selected area.', [':code' => $data['code']]);
+        }
 
         $systemService = $this->getDi()['mod_service']('system');
         $systemService->setParamValue($client ? 'theme' : 'admin_theme', $data['code']);
