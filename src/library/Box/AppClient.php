@@ -110,13 +110,15 @@ class Box_AppClient extends Box_App
     {
         try {
             $template = $this->getTwig()->load(Path::changeExtension($fileName, $ext));
+
+            return $template->render($variableArray);
         } catch (Twig\Error\LoaderError $e) {
             $this->di['logger']->withChannel('routing')->info($e->getMessage());
 
             throw new FOSSBilling\InformationException('Page not found', null, 404);
+        } catch (RuntimeException $e) {
+            $this->convertCacheWriteFailure($e);
         }
-
-        return $template->render($variableArray);
     }
 
     /**

@@ -121,7 +121,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $driver = $data['driver'] ?? 'filesystem';
         if (!in_array($driver, CacheFactory::SUPPORTED_DRIVERS, true)) {
-            throw new \FOSSBilling\Exception('Unsupported cache driver: :driver', [':driver' => $driver]);
+            throw new \FOSSBilling\Exception('Unsupported cache driver: :driver', [':driver' => $driver], 5001);
         }
 
         // Keep the existing password when the admin leaves the field blank, so re-saving the

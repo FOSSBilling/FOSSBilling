@@ -224,6 +224,36 @@ class Box_App
         return 'Rendering ' . $fileName;
     }
 
+    /**
+     * Twig's FilesystemCache throws a raw \RuntimeException when it can't create or
+     * write to the configured template cache directory - typically a host file
+     * permission issue outside our control. Convert it into a FOSSBilling\Exception
+     * with error code 5002 (Cache category, report:false) so the visitor gets a
+     * friendly error page instead of a fatal, and it isn't reported to Sentry as a
+     * code bug. Any other \RuntimeException is rethrown unchanged.
+     */
+    protected function convertCacheWriteFailure(RuntimeException $e): never
+    {
+        // Twig\Cache\FilesystemCache::write() throws one of these three messages for what is
+        // always the same underlying problem: it couldn't create, or write into, the cache
+        // directory.
+        $cacheWriteFailurePrefixes = [
+            'Unable to create the cache directory',
+            'Unable to write in the cache directory',
+            'Failed to write cache file',
+        ];
+
+        foreach ($cacheWriteFailurePrefixes as $prefix) {
+            if (str_starts_with($e->getMessage(), $prefix)) {
+                $this->di['logger']->withChannel('routing')->error($e->getMessage());
+
+                throw new FOSSBilling\Exception('The template cache directory could not be written to. Please check the file permissions and available disk space for the "data/cache" directory.', null, 5002);
+            }
+        }
+
+        throw $e;
+    }
+
     private function invokeSharedController(string $classname, string $methodName, array $params): mixed
     {
         /** @var TimeDataCollector $timeCollector */
