@@ -155,6 +155,15 @@
                                     <label class="form-label">{{ 'Quantity in Stock'|trans }}</label>
                                     <input class="form-control" type="text" name="quantity_in_stock" value="{{ product.quantity_in_stock }}">
                                 </div>
+                                <div class="col-lg-6">
+                                    <input type="hidden" name="allow_quantity_select" value="0">
+                                    <label class="form-label d-block">{{ 'Quantity Selection'|trans }}</label>
+                                    <label class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="allow-quantity-select-toggle" name="allow_quantity_select" value="1"{% if product.allow_quantity_select %} checked{% endif %}>
+                                        <span class="form-check-label">{{ 'Allow customers to choose a quantity'|trans }}</span>
+                                    </label>
+                                    <div class="form-text">{{ 'When enabled, a quantity field is shown on the order form.'|trans }}</div>
+                                </div>
                             </div>
 
                             <div class="mt-4">
