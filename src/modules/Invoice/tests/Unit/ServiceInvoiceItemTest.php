@@ -239,6 +239,31 @@ test('gets tax', function (): void {
     expect($result)->toBe($expected);
 });
 
+test('gets tax when price is an empty string', function (): void {
+    // RedBean hands back an empty string, not null, for an unset float column.
+    // getTax() must not choke on that with a "non-numeric value" warning.
+    $service = new ServiceInvoiceItem();
+    $rate = 0.21;
+    $invoiceItemModel = new Model_InvoiceItem();
+    $invoiceItemModel->loadBean(new Tests\Helpers\DummyBean());
+    $invoiceItemModel->invoice_id = 2;
+    $invoiceItemModel->taxed = true;
+    $invoiceItemModel->price = '';
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('getCell')
+        ->atLeast()->once()
+        ->andReturn($rate);
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $service->setDi($di);
+
+    $result = $service->getTax($invoiceItemModel);
+    expect($result)->toBeFloat();
+    expect($result)->toBe(0.0);
+});
+
 test('updates an item', function (): void {
     $service = new ServiceInvoiceItem();
     $invoiceItemModel = new Model_InvoiceItem();
