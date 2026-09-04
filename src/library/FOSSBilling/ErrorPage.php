@@ -64,6 +64,12 @@ class ErrorPage
             5001 => [
                 'report' => false,
             ],
+            // The Twig template cache directory (data/cache) couldn't be created or written
+            // to. This is a host file permission issue we can't fix from within the app, so
+            // it's listed here to keep it out of Sentry.io.
+            5002 => [
+                'report' => false,
+            ],
         ];
     }
 
