@@ -1609,9 +1609,18 @@ class Service implements InjectionAwareInterface
         if (!empty($result['invoice_id'])) {
             $invoice = $this->getPromoRedemptionRepository()->findInvoiceSummary((int) $result['invoice_id']);
 
+            // serie_nr is not a stored column; it is the invoice serie followed
+            // by the zero-padded number, matching how the Invoice module builds it.
+            $serieNr = null;
+            if ($invoice !== null && isset($invoice['serie'], $invoice['nr'])) {
+                $padding = $this->di['mod_service']('system')->getParamValue('invoice_number_padding');
+                $padding = ($padding !== null && $padding !== '') ? (int) $padding : 5;
+                $serieNr = $invoice['serie'] . sprintf('%0' . $padding . 's', $invoice['nr']);
+            }
+
             $result['invoice'] = [
                 'id' => (int) $result['invoice_id'],
-                'serie_nr' => $invoice['serie_nr'] ?? null,
+                'serie_nr' => $serieNr,
                 'status' => $invoice['status'] ?? null,
                 'created_at' => $invoice['created_at'] ?? null,
             ];
