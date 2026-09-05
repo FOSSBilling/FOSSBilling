@@ -1,5 +1,6 @@
 @use "flags";
 @use "theme_settings";
+@use "../../../../../../frontend/styles/shared-theme";
 
 .sticky-nav .nav-link {
   color: var(--tblr-body-color) !important;
@@ -283,12 +284,6 @@ body {
     padding: 0 0 0.85rem;
 }
 
-.fb-phone-country-code {
-    width: 5.5rem;
-    flex: 0 0 5.5rem;
-    max-width: 5.5rem;
-}
-
 @media (min-width: 992px) {
     .new-client-modal-dialog {
         max-width: min(820px, calc(100vw - 2rem));
@@ -334,15 +329,7 @@ body {
 }
 
 .db-avatar {
-    display: inline-block;
-    flex-shrink: 0;
-    vertical-align: middle;
     background-color: var(--tblr-bg-surface);
-    background-size: 100% 100%;
-    background-position: center;
-    background-repeat: no-repeat;
-    border-radius: 50%;
-    overflow: hidden;
 }
 
 @media (min-width: 992px) {

@@ -35,11 +35,6 @@ class Theme
         return $this->name;
     }
 
-    public function isAdminAreaTheme(): bool
-    {
-        return str_contains((string) $this->name, 'admin_');
-    }
-
     public function isAssetsPathWritable(): bool
     {
         return is_writable($this->getPathAssets());

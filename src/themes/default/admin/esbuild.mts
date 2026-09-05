@@ -7,12 +7,12 @@ import {
   prepareThemeBuildDirs,
   sharedLoaders,
   writeAssetManifest,
-} from '../../../frontend/tools/esbuild-helpers.mts';
-import { buildIconSprite } from '../../../frontend/tools/icon-sprite.mts';
+} from '../../../../frontend/tools/esbuild-helpers.mts';
+import { buildIconSprite } from '../../../../frontend/tools/icon-sprite.mts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const isProduction = process.env.NODE_ENV === 'production';
-const rootDir = resolve(__dirname, '../../..');
+const rootDir = resolve(__dirname, '../../../..');
 const nodeModulesDir = resolve(rootDir, 'node_modules');
 const adminLoaders = { ...sharedLoaders, '.svg': 'dataurl' } as const;
 
@@ -72,10 +72,10 @@ async function build() {
     });
 
     await writeAssetManifest(paths.buildDir, {
-      'build/fossbilling.js': '/themes/admin_default/assets/build/js/fossbilling.js',
-      'build/vendor.css': '/themes/admin_default/assets/build/css/vendor.css',
-      'build/fossbilling.css': '/themes/admin_default/assets/build/css/fossbilling.css',
-      'build/symbol/icons-sprite.svg': '/themes/admin_default/assets/build/symbol/icons-sprite.svg',
+      'build/fossbilling.js': '/themes/default/admin/assets/build/js/fossbilling.js',
+      'build/vendor.css': '/themes/default/admin/assets/build/css/vendor.css',
+      'build/fossbilling.css': '/themes/default/admin/assets/build/css/fossbilling.css',
+      'build/symbol/icons-sprite.svg': '/themes/default/admin/assets/build/symbol/icons-sprite.svg',
     });
 
     const duration = ((Date.now() - startTime) / 1000).toFixed(2);
