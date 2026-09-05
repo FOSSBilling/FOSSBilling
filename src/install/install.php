@@ -54,8 +54,8 @@ define('PATH_MODS', Path::join(PATH_ROOT, 'modules'));
 define('PATH_DATA', Path::join(PATH_ROOT, 'data'));
 define('PATH_CACHE', Path::join(PATH_DATA, 'cache'));
 define('PATH_LOG', Path::join(PATH_DATA, 'log'));
-define('HURAGA_CONFIG', Path::join(PATH_THEMES, 'huraga', 'config', 'settings_data.json'));
-define('HURAGA_CONFIG_TEMPLATE', Path::join(PATH_THEMES, 'huraga', 'config', 'settings_data.json.example'));
+define('CLIENT_THEME_CONFIG', Path::join(PATH_THEMES, 'default', 'client', 'config', 'settings_data.json'));
+define('CLIENT_THEME_CONFIG_TEMPLATE', Path::join(PATH_THEMES, 'default', 'client', 'config', 'settings_data.json.example'));
 define('PATH_HTACCESS', Path::join(PATH_ROOT, '.htaccess'));
 define('PAGE_INSTALL', Path::join('./assets', 'install.html.twig'));
 define('PAGE_RESULT', Path::join('./assets', 'result.html.twig'));
@@ -543,8 +543,8 @@ final class FOSSBilling_Installer
         $this->installPortable();
 
         // Copy config templates when applicable
-        if (!$this->filesystem->exists(HURAGA_CONFIG) && $this->filesystem->exists(HURAGA_CONFIG_TEMPLATE)) {
-            $this->filesystem->copy(HURAGA_CONFIG_TEMPLATE, HURAGA_CONFIG); // Copy the file instead of renaming it. This allows local dev instances to not need to restore the original file manually.
+        if (!$this->filesystem->exists(CLIENT_THEME_CONFIG) && $this->filesystem->exists(CLIENT_THEME_CONFIG_TEMPLATE)) {
+            $this->filesystem->copy(CLIENT_THEME_CONFIG_TEMPLATE, CLIENT_THEME_CONFIG); // Copy the file instead of renaming it. This allows local dev instances to not need to restore the original file manually.
         }
 
         // If .htaccess doesn't exist, fetch the latest from GitHub.

@@ -1,4 +1,5 @@
 @use "flags";
+@use "../../../../../../frontend/styles/shared-theme";
 
 html {
     font-size: 1rem;
@@ -145,12 +146,6 @@ body {
     .btn-check:checked + .btn {
         border-color: transparent;
     }
-}
-
-.fb-phone-country-code {
-    width: 5.5rem;
-    flex: 0 0 5.5rem;
-    max-width: 5.5rem;
 }
 
 .iti {
@@ -412,13 +407,5 @@ body {
 }
 
 .db-avatar {
-    display: inline-block;
-    flex-shrink: 0;
-    vertical-align: middle;
     background-color: var(--bs-secondary-bg);
-    background-size: 100% 100%;
-    background-position: center;
-    background-repeat: no-repeat;
-    border-radius: 50%;
-    overflow: hidden;
 }

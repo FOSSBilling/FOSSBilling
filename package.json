@@ -26,8 +26,8 @@
     "url": "https://github.com/FOSSBilling/FOSSBilling/issues"
   },
   "workspaces": [
-    "src/themes/huraga",
-    "src/themes/admin_default"
+    "src/themes/default/client",
+    "src/themes/default/admin"
   ],
   "devDependencies": {
     "@playwright/test": "1.62.1",

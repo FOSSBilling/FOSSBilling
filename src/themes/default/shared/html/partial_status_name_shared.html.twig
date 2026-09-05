@@ -1,0 +1,68 @@
+{#
+    Body of the `status_name(status)` macro. Admin's version was a strict
+    superset of client's - every status client handled plus more, and a
+    null/empty guard client lacked - and client's own copy turned out to
+    have zero callers anywhere (not even client's own status_badge() macro,
+    which duplicates similar logic inline instead of calling this), so
+    standardizing on admin's fuller version carries no real behavior change
+    for any existing caller. See partial_recaptcha_shared.html.twig for why
+    this is an include rather than a shared macro namespace.
+#}
+{% if status is same as(null) or (status is empty and status != '0') %}
+    -
+{% else %}
+{% set status = status|replace({'_': " "})|title|trim %}
+{% if status == 'Active' %}
+    {{ 'Active'|trans }}
+{% elseif status == 'Pending Setup' %}
+    {{ 'Pending Setup'|trans }}
+{% elseif status == 'Failed Setup' %}
+    {{ 'Failed Setup'|trans }}
+{% elseif status == 'Failed Renew' %}
+    {{ 'Failed Renewal'|trans }}
+{% elseif status == 'Suspended' %}
+    {{ 'Suspended'|trans }}
+{% elseif status == 'Canceled' %}
+    {{ 'Canceled'|trans }}
+{% elseif status == 'Inactive' %}
+    {{ 'Inactive'|trans }}
+{% elseif status == 'Enabled' %}
+    {{ 'Enabled'|trans }}
+{% elseif status == 'Disabled' %}
+    {{ 'Disabled'|trans }}
+{% elseif status == 'Draft' %}
+    {{ 'Draft'|trans }}
+{% elseif status == 'Sent' %}
+    {{ 'Sent'|trans }}
+{% elseif status == 'Sending' %}
+    {{ 'Sending'|trans }}
+{% elseif status == 'Unsent' %}
+    {{ 'Unsent'|trans }}
+{% elseif status == 'Paid' %}
+    {{ 'Paid'|trans }}
+{% elseif status == 'Unpaid' %}
+    {{ 'Unpaid'|trans }}
+{% elseif status == 'Refunded' %}
+    {{ 'Refunded'|trans }}
+{% elseif status == 'Approved' %}
+    {{ 'Approved'|trans }}
+{% elseif status == 'Processed' %}
+    {{ 'Processed'|trans }}
+{% elseif status == 'Received' %}
+    {{ 'Received'|trans }}
+{% elseif status == 'Error' %}
+    {{ 'Error'|trans }}
+{% elseif status == 'Unknown' %}
+    {{ 'Unknown'|trans }}
+{% elseif status == 'Complete' %}
+    {{ 'Complete'|trans }}
+{% elseif status == 'Completed' %}
+    {{ 'Completed'|trans }}
+{% elseif status == 'Success' %}
+    {{ 'Success'|trans }}
+{% elseif status == 'Failed' %}
+    {{ 'Failed'|trans }}
+{% else %}
+    {{ status|trans }}
+{% endif %}
+{% endif %}

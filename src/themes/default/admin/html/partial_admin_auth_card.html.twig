@@ -8,6 +8,8 @@
         <div class="text-center mb-4">
             {{ include('partial_company_logo.html.twig', {
                 company: company,
+                logo_url: company.logo_url,
+                dark_logo_url: company.logo_url_dark,
                 link_url: '/'|url(area: 'client'),
                 image_style: 'height: 60px; width: auto;',
                 fallback_class: 'h1'
