@@ -391,8 +391,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
         $result = $this->_makeRequest($params);
 
         $NsArr = [];
-        $xmlNsList = $result->CommandResponse->DomainDNSGetListResult;
-        foreach ($xmlNsList->Nameserver as $Nameserver) {
+        foreach ($result->CommandResponse->DomainDNSGetListResult->Nameserver ?? [] as $Nameserver) {
             $NsArr[] = $Nameserver;
         }
 
