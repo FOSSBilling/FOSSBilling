@@ -32,6 +32,7 @@ use Box\Mod\Servicedomain\Repository\TldRepository;
 
 use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
+use function Tests\Helpers\moduleService;
 
 function productTestCreateProductEntity(int $id): Product
 {
@@ -2789,4 +2790,114 @@ test('prepareCartProductConfig does not filter when service has no clientSettabl
     expect($result)->toHaveKey('arbitrary_field', 'attacker_value');
     expect($result)->toHaveKey('another_field', 12345);
     expect($result)->toHaveKey('period', '1M');
+});
+
+test('enrich promo redemption builds invoice serie_nr from serie and nr', function (): void {
+    $service = new Service();
+
+    $repoMock = Mockery::mock(PromoRedemptionRepository::class);
+    $repoMock->shouldReceive('findInvoiceSummary')->once()->with(10)->andReturn([
+        'id' => 10,
+        'serie' => 'INV-',
+        'nr' => '42',
+        'status' => 'paid',
+        'created_at' => '2026-09-01 00:00:00',
+    ]);
+
+    $emMock = new class($repoMock) {
+        public function __construct(private $repo)
+        {
+        }
+
+        public function getRepository(string $class): object
+        {
+            return $this->repo;
+        }
+    };
+
+    $systemService = Mockery::mock(Box\Mod\System\Service::class);
+    $systemService->shouldReceive('getParamValue')->once()->with('invoice_number_padding')->andReturn('5');
+
+    $di = container();
+    $di['em'] = $emMock;
+    $di['mod_service'] = $di->protect(moduleService(['system' => $systemService]));
+    $service->setDi($di);
+
+    $result = $service->enrichPromoRedemptionApiArray(['id' => 1, 'invoice_id' => 10]);
+
+    expect($result['invoice'])->toMatchArray([
+        'id' => 10,
+        'serie_nr' => 'INV-00042',
+        'status' => 'paid',
+    ]);
+});
+
+test('enrich promo redemption falls back to invoice id for non-numeric nr', function (): void {
+    $service = new Service();
+
+    $repoMock = Mockery::mock(PromoRedemptionRepository::class);
+    $repoMock->shouldReceive('findInvoiceSummary')->once()->with(10)->andReturn([
+        'id' => 10,
+        'serie' => 'INV-',
+        'nr' => '0042-A',
+        'status' => 'unpaid',
+        'created_at' => '2026-09-01 00:00:00',
+    ]);
+
+    $emMock = new class($repoMock) {
+        public function __construct(private $repo)
+        {
+        }
+
+        public function getRepository(string $class): object
+        {
+            return $this->repo;
+        }
+    };
+
+    $systemService = Mockery::mock(Box\Mod\System\Service::class);
+    $systemService->shouldReceive('getParamValue')->once()->with('invoice_number_padding')->andReturn('5');
+
+    $di = container();
+    $di['em'] = $emMock;
+    $di['mod_service'] = $di->protect(moduleService(['system' => $systemService]));
+    $service->setDi($di);
+
+    $result = $service->enrichPromoRedemptionApiArray(['id' => 1, 'invoice_id' => 10]);
+
+    expect($result['invoice']['serie_nr'])->toBe('INV-00010');
+});
+
+test('enrich promo redemption leaves invoice serie_nr null when invoice is missing', function (): void {
+    $service = new Service();
+
+    $repoMock = Mockery::mock(PromoRedemptionRepository::class);
+    $repoMock->shouldReceive('findInvoiceSummary')->once()->with(10)->andReturn(null);
+
+    $emMock = new class($repoMock) {
+        public function __construct(private $repo)
+        {
+        }
+
+        public function getRepository(string $class): object
+        {
+            return $this->repo;
+        }
+    };
+
+    $systemService = Mockery::mock(Box\Mod\System\Service::class);
+    $systemService->shouldNotReceive('getParamValue');
+
+    $di = container();
+    $di['em'] = $emMock;
+    $di['mod_service'] = $di->protect(moduleService(['system' => $systemService]));
+    $service->setDi($di);
+
+    $result = $service->enrichPromoRedemptionApiArray(['id' => 1, 'invoice_id' => 10]);
+
+    expect($result['invoice'])->toMatchArray([
+        'id' => 10,
+        'serie_nr' => null,
+        'status' => null,
+    ]);
 });
