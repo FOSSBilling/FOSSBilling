@@ -72,6 +72,8 @@ class Service implements InjectionAwareInterface
         $this->di['em']->persist($admin);
         $this->di['em']->flush();
 
+        $this->invalidateSessions('admin', (int) $admin->getId());
+
         $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffApiKeyChange', 'params' => $event_params]);
 
         $this->di['logger']->info('Generated new API key');
@@ -231,6 +233,8 @@ class Service implements InjectionAwareInterface
 
         $this->di['em']->persist($client);
         $this->di['em']->flush();
+
+        $this->invalidateSessions('client', (int) $client->getId());
 
         $this->di['logger']->info('Generated new API key');
 
