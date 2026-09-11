@@ -3,6 +3,8 @@ import './js/ui/modals.ts';
 import * as tabler from '@tabler/core';
 import './js/fossbilling.ts';
 
+globalThis.tabler = tabler;
+// Deprecated alias for third-party extensions; first-party code uses `tabler.*`.
 globalThis.bootstrap = tabler.bootstrap;
 
 /**
@@ -66,10 +68,10 @@ async function copyTextToClipboard(text) {
  */
 function handleClipboardResult(button, success) {
   if (success) {
-    let tooltip = bootstrap.Tooltip.getInstance(button);
+    let tooltip = tabler.Tooltip.getInstance(button);
     let createdForThisAction = false;
     if (!tooltip) {
-      tooltip = new bootstrap.Tooltip(button, { trigger: 'manual' });
+      tooltip = new tabler.Tooltip(button, { trigger: 'manual' });
       createdForThisAction = true;
     }
 
@@ -160,7 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
    */
   const tooltipTriggerList = Array.from(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
   tooltipTriggerList.forEach(function (tooltipTriggerEl) {
-    new bootstrap.Tooltip(tooltipTriggerEl, {
+    new tabler.Tooltip(tooltipTriggerEl, {
       'trigger': 'hover'
     });
   });

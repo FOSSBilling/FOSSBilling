@@ -67,7 +67,7 @@ globalThis.FOSSBilling = Object.assign(globalThis.FOSSBilling || {}, {
       container.removeChild(element);
     });
 
-    const toast = new bootstrap.Toast(element);
+    const toast = new tabler.Toast(element);
     toast.show();
   },
 
@@ -167,7 +167,7 @@ globalThis.FOSSBilling = Object.assign(globalThis.FOSSBilling || {}, {
        return false;
      }
 
-     const tab = bootstrap.Tab.getOrCreateInstance(tabTrigger);
+     const tab = tabler.Tab.getOrCreateInstance(tabTrigger);
      tab.show();
 
      return true;
@@ -234,7 +234,7 @@ globalThis.FOSSBilling = Object.assign(globalThis.FOSSBilling || {}, {
    };
 
    if (discordBtn && !localStorage.getItem('fb-discord-popover-seen') && isDiscordBtnVisible()) {
-     const popover = bootstrap.Popover.getOrCreateInstance(discordBtn);
+     const popover = tabler.Popover.getOrCreateInstance(discordBtn);
      localStorage.setItem('fb-discord-popover-seen', '1');
      popover.show();
      document.addEventListener('click', (e) => {
