@@ -8,7 +8,7 @@ use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\InvoiceItem;
 use Box\Mod\Order\Entity\Order;
 use Doctrine\ORM\EntityRepository;
-use FOSSBilling\Doctrine\SqlExpr;
+use FOSSBilling\Core\Doctrine\SqlExpr;
 
 class OrderRepository extends EntityRepository
 {

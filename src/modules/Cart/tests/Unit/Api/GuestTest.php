@@ -25,9 +25,9 @@ use function Tests\Helpers\createEntity;
 function getAllowedRateLimiter(): object
 {
     return new class {
-        public function consumeOrThrow(string $policy, string $subject, int $tokens = 1): FOSSBilling\Security\RateLimitResult
+        public function consumeOrThrow(string $policy, string $subject, int $tokens = 1): FOSSBilling\Core\Security\RateLimitResult
         {
-            return new FOSSBilling\Security\RateLimitResult($policy, false, 10, 9);
+            return new FOSSBilling\Core\Security\RateLimitResult($policy, false, 10, 9);
         }
     };
 }
@@ -64,7 +64,7 @@ test('setCurrency returns true', function (): void {
     $serviceMock->shouldReceive('getSessionCart')->atLeast()->once()->andReturn(createEntity(Box\Mod\Cart\Entity\Cart::class));
     $serviceMock->shouldReceive('changeCartCurrency')->atLeast()->once()->andReturn(true);
 
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class)->shouldIgnoreMissing();
+    $validatorMock = Mockery::mock(FOSSBilling\Core\Validation\Validator::class)->shouldIgnoreMissing();
 
     $currencyMock = Mockery::mock(Currency::class)->shouldIgnoreMissing();
 
@@ -95,7 +95,7 @@ test('setCurrency throws exception when currency is not found', function (): voi
     $serviceMock->shouldNotReceive('getSessionCart');
     $serviceMock->shouldNotReceive('changeCartCurrency');
 
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class)->shouldIgnoreMissing();
+    $validatorMock = Mockery::mock(FOSSBilling\Core\Validation\Validator::class)->shouldIgnoreMissing();
 
     $currencyRepositoryMock = Mockery::mock(CurrencyRepository::class)->makePartial();
     $currencyRepositoryMock->shouldReceive('findOneByCode')->atLeast()->once()->andReturn(null);
@@ -114,7 +114,7 @@ test('setCurrency throws exception when currency is not found', function (): voi
         'currency' => 'EUR',
     ];
 
-    expect(fn () => $guestApi->set_currency($data))->toThrow(FOSSBilling\InformationException::class, 'Currency not found');
+    expect(fn () => $guestApi->set_currency($data))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Currency not found');
 });
 
 test('getCurrency returns array when currency found', function (): void {
@@ -225,7 +225,7 @@ test('applyPromo throws exception when promo not found', function (): void {
     ];
 
     expect(fn () => $guestApi->apply_promo($data))
-        ->toThrow(FOSSBilling\InformationException::class, 'The promo code has expired or does not exist');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'The promo code has expired or does not exist');
 });
 
 test('applyPromo throws exception when promo cannot be applied', function (): void {
@@ -252,7 +252,7 @@ test('applyPromo throws exception when promo cannot be applied', function (): vo
     ];
 
     expect(fn () => $guestApi->apply_promo($data))
-        ->toThrow(FOSSBilling\InformationException::class, 'The promo code has expired or does not exist');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'The promo code has expired or does not exist');
 });
 
 test('applyPromo throws exception when promo cannot be applied for user', function (): void {
@@ -278,7 +278,7 @@ test('applyPromo throws exception when promo cannot be applied for user', functi
     ];
 
     expect(fn () => $guestApi->apply_promo($data))
-        ->toThrow(FOSSBilling\InformationException::class, 'Promo code cannot be applied to your account');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Promo code cannot be applied to your account');
 });
 
 test('removePromo returns true', function (): void {

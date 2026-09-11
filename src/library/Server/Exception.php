@@ -8,10 +8,10 @@ declare(strict_types=1);
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
-class Server_Exception extends FOSSBilling\Exception
+class Server_Exception extends FOSSBilling\Core\Exception\BaseException
 {
     /**
-     * Creates a new translated exception, using the FOSSBilling\Exception class.
+     * Creates a new translated exception, using the FOSSBilling\Core\Exception\BaseException class.
      *
      * @param string     $message   error message
      * @param array|null $variables translation variables

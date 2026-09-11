@@ -19,11 +19,11 @@ test('invoice browser controller redirects denied invoice access to invoice list
     $api = new class {
         public function invoice_get(array $data): array
         {
-            throw new FOSSBilling\InformationException('You do not have permission to perform this action', [], 403);
+            throw new FOSSBilling\Core\Exception\InformationException('You do not have permission to perform this action', [], 403);
         }
     };
 
-    $app = Mockery::mock(Box_App::class);
+    $app = Mockery::mock(FOSSBilling\Core\Http\App::class);
     $app->shouldReceive('redirect')
         ->once()
         ->with('invoice')

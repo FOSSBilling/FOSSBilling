@@ -11,9 +11,9 @@ declare(strict_types=1);
 
 namespace Box\Mod\Security\Controller;
 
-use FOSSBilling\PaginationOptions;
+use FOSSBilling\Core\Pagination\Options;
 
-class Admin implements \FOSSBilling\InjectionAwareInterface
+class Admin implements \FOSSBilling\Core\Container\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 
@@ -62,7 +62,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         ];
     }
 
-    public function register(\Box_App &$app): void
+    public function register(\FOSSBilling\Core\Http\App &$app): void
     {
         $app->get('/security', 'get_index', [], static::class);
         $app->get('/security/', 'get_index', [], static::class);
@@ -70,14 +70,14 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         $app->get('/security/rate-limits', 'rate_limits', [], static::class);
     }
 
-    public function get_index(\Box_App $app): string
+    public function get_index(\FOSSBilling\Core\Http\App $app): string
     {
         $this->di['is_admin_logged'];
 
         return $app->render('mod_security_index');
     }
 
-    public function ip_lookup(\Box_App $app): string
+    public function ip_lookup(\FOSSBilling\Core\Http\App $app): string
     {
         $this->di['is_admin_logged'];
         $record = [];
@@ -93,7 +93,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         return $app->render('mod_security_iplookup', ['record' => $record]);
     }
 
-    public function rate_limits(\Box_App $app): string
+    public function rate_limits(\FOSSBilling\Core\Http\App $app): string
     {
         $this->di['is_admin_logged'];
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('security', 'view');
@@ -114,7 +114,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
 
         $page = filter_var($request->query->get('page', 1), FILTER_VALIDATE_INT, ['options' => ['default' => 1, 'min_range' => 1]]);
         $perPage = filter_var($request->query->get('per_page', 25), FILTER_VALIDATE_INT, ['options' => ['default' => 25, 'min_range' => 1, 'max_range' => 100]]);
-        $counters = $this->di['pager']->paginateArray($counters, new PaginationOptions($page, $perPage));
+        $counters = $this->di['pager']->paginateArray($counters, new Options($page, $perPage));
 
         return $app->render('mod_security_rate_limits', [
             'rate_limit_status' => $this->di['mod_service']('Security')->getRateLimitStatus(),

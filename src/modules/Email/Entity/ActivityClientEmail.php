@@ -13,10 +13,9 @@ namespace Box\Mod\Email\Entity;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use FOSSBilling\Doctrine\TimestampTrait;
-use FOSSBilling\Interfaces\ApiArrayInterface;
-use FOSSBilling\Interfaces\TimestampInterface;
-use FOSSBilling\Tools;
+use FOSSBilling\Core\Api\ArrayInterface;
+use FOSSBilling\Core\Doctrine\TimestampInterface;
+use FOSSBilling\Core\Doctrine\TimestampTrait;
 
 /**
  * One row per email that FOSSBilling sent to a client.
@@ -30,7 +29,7 @@ use FOSSBilling\Tools;
 // unique database-wide on SQLite/PostgreSQL, not just per-table like MySQL.
 #[ORM\Index(name: 'activity_client_email_client_id_idx', columns: ['client_id'])]
 #[ORM\HasLifecycleCallbacks]
-class ActivityClientEmail implements ApiArrayInterface, TimestampInterface
+class ActivityClientEmail implements ArrayInterface, TimestampInterface
 {
     use TimestampTrait;
 
@@ -69,13 +68,15 @@ class ActivityClientEmail implements ApiArrayInterface, TimestampInterface
 
     public function toApiArray(): array
     {
+        $sanitizedHtml = \FOSSBilling\Core\HtmlSanitizerFactory::sanitize($this->contentHtml ?? '', 'content');
+
         return [
             'id' => $this->id,
             'client_id' => $this->clientId,
             'sender' => $this->sender,
             'recipients' => $this->recipients,
             'subject' => $this->subject,
-            'content_html' => Tools::sanitizeContent($this->contentHtml ?? ''),
+            'content_html' => $sanitizedHtml,
             'content_text' => $this->contentText,
             'has_attachment' => $this->attachmentName !== null,
             'created_at' => $this->getCreatedAt()?->format('Y-m-d H:i:s'),

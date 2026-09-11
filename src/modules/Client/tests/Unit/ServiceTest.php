@@ -46,23 +46,20 @@ test('approveClientEmailByHash throws exception for invalid hash', function (): 
     $service->setDi($di);
 
     $service->approveClientEmailByHash('');
-})->throws(FOSSBilling\Exception::class, 'Invalid email confirmation link');
+})->throws(FOSSBilling\Core\Exception\BaseException::class, 'Invalid email confirmation link');
 
 test('generateEmailConfirmationLink returns string', function (): void {
     $service = new Box\Mod\Client\Service();
 
     $model = createEntity(Box\Mod\Extension\Entity\ExtensionMeta::class);
 
-    $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
-    $toolsMock->shouldReceive('url')
+    $urlMock = Mockery::mock(FOSSBilling\Core\Url::class);
+    $urlMock->shouldReceive('link')
         ->atLeast()->once()
-        ->andReturn('fossbilling.org/index.php/client/confirm-email/');
-    $toolsMock->shouldReceive('generatePassword')
-        ->atLeast()->once()
-        ->andReturn('randomhash123456789012345678901234567890');
+        ->andReturnUsing(fn (string $path): string => 'https://fossbilling.org' . $path);
 
     $di = container();
-    $di['tools'] = $toolsMock;
+    $di['url'] = $urlMock;
 
     $service->setDi($di);
 
@@ -80,7 +77,7 @@ test('onAfterClientSignUp returns true', function (): void {
         'id' => 1,
     ];
 
-    $eventMock = Mockery::mock('\Box_Event');
+    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Event::class);
     $eventMock->shouldReceive('getParameters')
         ->atLeast()->once()
         ->andReturn($eventParams);
@@ -106,7 +103,7 @@ test('onAfterClientSignUp returns true', function (): void {
 
 test('onAfterClientSignUp with email confirmation required returns true', function (): void {
     $service = new Box\Mod\Client\Service();
-    $eventMock = Mockery::mock('\Box_Event');
+    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Event::class);
     $eventParams = [
         'password' => 'testPassword',
         'id' => 1,
@@ -153,7 +150,7 @@ test('onAfterClientSignUp handles exception gracefully', function (): void {
         'id' => 1,
     ];
 
-    $eventMock = Mockery::mock('\Box_Event');
+    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Event::class);
     $eventMock->shouldReceive('getParameters')
         ->atLeast()->once()
         ->andReturn($eventParams);
@@ -267,9 +264,9 @@ test('getSearchQuery never selects sensitive client columns', function (): void 
     $service = new Box\Mod\Client\Service();
     [$query] = $service->getSearchQuery([]);
 
-    expect(str_contains($query, '*'))->toBeFalse($query);
+    expect(str_contains((string) $query, '*'))->toBeFalse($query);
     foreach (['pass', 'salt', 'api_token', 'hash', 'config'] as $sensitiveColumn) {
-        expect(preg_match('/\b' . preg_quote($sensitiveColumn, '/') . '\b/', $query))->toBe(0, "Query unexpectedly selects '$sensitiveColumn': $query");
+        expect(preg_match('/\b' . preg_quote($sensitiveColumn, '/') . '\b/', (string) $query))->toBe(0, "Query unexpectedly selects '$sensitiveColumn': $query");
     }
 });
 
@@ -390,7 +387,7 @@ test('canChangeCurrency throws exception when client has invoices', function ():
     $service->setDi($di);
 
     $service->canChangeCurrency($model, $currency);
-})->throws(FOSSBilling\InformationException::class, 'Currency cannot be changed. Client already has invoices issued.');
+})->throws(FOSSBilling\Core\Exception\InformationException::class, 'Currency cannot be changed. Client already has invoices issued.');
 
 dataset('searchBalanceQueryData', [
     [[], 'FROM client_balance as m', []],
@@ -456,7 +453,7 @@ test('addFunds throws exception when currency is not defined', function (): void
     $description = 'test description';
 
     $service->addFunds($modelClient, $amount, $description);
-})->throws(FOSSBilling\Exception::class, "You must define the client's currency before adding funds.");
+})->throws(FOSSBilling\Core\Exception\BaseException::class, "You must define the client's currency before adding funds.");
 
 test('addFunds throws exception when amount is missing', function (): void {
     $service = new Box\Mod\Client\Service();
@@ -466,7 +463,7 @@ test('addFunds throws exception when amount is missing', function (): void {
     $description = '';
 
     $service->addFunds($modelClient, $amount, $description);
-})->throws(FOSSBilling\Exception::class, 'Funds amount is invalid');
+})->throws(FOSSBilling\Core\Exception\BaseException::class, 'Funds amount is invalid');
 
 test('addFunds throws exception when description is invalid', function (): void {
     $service = new Box\Mod\Client\Service();
@@ -476,7 +473,7 @@ test('addFunds throws exception when description is invalid', function (): void 
     $description = null;
 
     $service->addFunds($modelClient, $amount, $description);
-})->throws(FOSSBilling\Exception::class, 'Funds description is invalid');
+})->throws(FOSSBilling\Core\Exception\BaseException::class, 'Funds description is invalid');
 
 test('getExpiredPasswordReminders returns array', function (): void {
     $service = new Box\Mod\Client\Service();
@@ -620,7 +617,7 @@ test('get throws exception when client not found', function (): void {
 
     $data = ['id' => 0];
     $service->get($data);
-})->throws(FOSSBilling\InformationException::class, 'Client not found');
+})->throws(FOSSBilling\Core\Exception\InformationException::class, 'Client not found');
 
 test('getClientBalance returns numeric', function (): void {
     $service = new Box\Mod\Client\Service();
@@ -788,16 +785,16 @@ test('adminCreateClient returns int', function (): void {
         'aid' => 'LEGACY-1001',
     ];
 
-    $eventManagerMock = Mockery::mock('\Box_EventManager');
+    $eventManagerMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class);
     $eventManagerMock->shouldReceive('fire')
         ->twice();
 
-    $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
+    $passwordMock = Mockery::mock(FOSSBilling\Core\PasswordManager::class);
     $passwordMock->shouldReceive('hashIt')
         ->atLeast()->once()
         ->with($data['password']);
 
-    $modMock = Mockery::mock(FOSSBilling\Module::class)->makePartial();
+    $modMock = Mockery::mock(FOSSBilling\Core\Module::class)->makePartial();
     $modMock->shouldReceive('getConfig')
         ->atLeast()->once()
         ->andReturn([]);
@@ -846,14 +843,14 @@ test('deleteGroup throws exception when group has clients', function (): void {
     $service->setDi($di);
 
     $service->deleteGroup($model);
-})->throws(FOSSBilling\Exception::class, 'Cannot remove groups with clients');
+})->throws(FOSSBilling\Core\Exception\BaseException::class, 'Cannot remove groups with clients');
 
 test('authorizeClient returns null when email not found', function (): void {
     $service = new Box\Mod\Client\Service();
     $email = 'example@fossbilling.vm';
     $password = '123456';
 
-    $authMock = Mockery::mock('\Box_Authorization');
+    $authMock = Mockery::mock(FOSSBilling\Core\Security\Authorization::class);
     $authMock->shouldReceive('authorizeUser')
         ->atLeast()->once()
         ->with(null, $password)
@@ -881,7 +878,7 @@ test('authorizeClient returns Client', function (): void {
         ->with(['email' => $email, 'status' => 'active'])
         ->andReturn($clientModel);
 
-    $authMock = Mockery::mock('\Box_Authorization');
+    $authMock = Mockery::mock(FOSSBilling\Core\Security\Authorization::class);
     $authMock->shouldReceive('authorizeUser')
         ->atLeast()->once()
         ->with($clientModel, $password)
@@ -913,7 +910,7 @@ test('authorizeClient with confirmed email returns Client', function (): void {
         ->with(['email' => $email, 'status' => 'active'])
         ->andReturn($clientModel);
 
-    $authMock = Mockery::mock('\Box_Authorization');
+    $authMock = Mockery::mock(FOSSBilling\Core\Security\Authorization::class);
     $authMock->shouldReceive('authorizeUser')
         ->atLeast()->once()
         ->with($clientModel, $password)
@@ -995,7 +992,7 @@ test('canChangeEmail throws exception when email change is disabled', function (
     $service->setDi($di);
 
     $service->canChangeEmail($clientModel, $email);
-})->throws(FOSSBilling\Exception::class, 'Email address cannot be changed');
+})->throws(FOSSBilling\Core\Exception\BaseException::class, 'Email address cannot be changed');
 
 test('checkExtraRequiredFields throws exception for missing field', function (): void {
     $service = new Box\Mod\Client\Service();
@@ -1008,7 +1005,7 @@ test('checkExtraRequiredFields throws exception for missing field', function ():
 
     $service->setDi($di);
     $service->checkExtraRequiredFields($data);
-})->throws(FOSSBilling\Exception::class, 'Field Id cannot be empty');
+})->throws(FOSSBilling\Core\Exception\BaseException::class, 'Field Id cannot be empty');
 
 test('checkCustomFields throws exception for required field', function (): void {
     $service = new Box\Mod\Client\Service();
@@ -1026,7 +1023,7 @@ test('checkCustomFields throws exception for required field', function (): void 
     $data = [];
     $service->setDi($di);
     $service->checkCustomFields($data);
-})->throws(FOSSBilling\Exception::class, 'Field custom_field_title cannot be empty');
+})->throws(FOSSBilling\Core\Exception\BaseException::class, 'Field custom_field_title cannot be empty');
 
 test('checkCustomFields returns null when field is not required', function (): void {
     $service = new Box\Mod\Client\Service();
@@ -1126,18 +1123,18 @@ test('resolveDocumentNumber returns null when no custom_fields config exists', f
 });
 
 test('i18n::validateTimezone returns null for null and empty input', function (): void {
-    expect(FOSSBilling\i18n::validateTimezone(null))->toBeNull();
-    expect(FOSSBilling\i18n::validateTimezone(''))->toBeNull();
+    expect(FOSSBilling\Core\I18n\I18n::validateTimezone(null))->toBeNull();
+    expect(FOSSBilling\Core\I18n\I18n::validateTimezone(''))->toBeNull();
 });
 
 test('i18n::validateTimezone returns the value when it is a known IANA identifier', function (): void {
-    expect(FOSSBilling\i18n::validateTimezone('America/New_York'))->toBe('America/New_York');
-    expect(FOSSBilling\i18n::validateTimezone('Europe/Berlin'))->toBe('Europe/Berlin');
-    expect(FOSSBilling\i18n::validateTimezone('UTC'))->toBe('UTC');
+    expect(FOSSBilling\Core\I18n\I18n::validateTimezone('America/New_York'))->toBe('America/New_York');
+    expect(FOSSBilling\Core\I18n\I18n::validateTimezone('Europe/Berlin'))->toBe('Europe/Berlin');
+    expect(FOSSBilling\Core\I18n\I18n::validateTimezone('UTC'))->toBe('UTC');
 });
 
 test('i18n::validateTimezone throws InformationException for an unknown identifier', function (): void {
-    expect(fn (): ?string => FOSSBilling\i18n::validateTimezone('Mars/Olympus_Mons'))->toThrow(FOSSBilling\InformationException::class);
+    expect(fn (): ?string => FOSSBilling\Core\I18n\I18n::validateTimezone('Mars/Olympus_Mons'))->toThrow(FOSSBilling\Core\Exception\InformationException::class);
 });
 
 test('exportCSV uses default columns when no headers are provided', function (): void {

@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Seo;
 
-use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Core\Container\InjectionAwareInterface;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
 
@@ -140,7 +140,7 @@ class Service implements InjectionAwareInterface
         return $details;
     }
 
-    public static function onBeforeAdminCronRun(\Box_Event $event): bool
+    public static function onBeforeAdminCronRun(\FOSSBilling\Core\Event\Event $event): bool
     {
         $di = $event->getDi();
         $extensionService = $di['mod_service']('extension');

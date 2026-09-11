@@ -101,7 +101,7 @@ test('ticket get list', function (): void {
             ['id' => 1],
         ],
     ];
-    $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
+    $paginatorMock = Mockery::mock(FOSSBilling\Core\Pagination\Service::class)->makePartial();
     $paginatorMock
     ->shouldReceive('paginateMappedQuery')
     ->atLeast()->once()
@@ -368,7 +368,7 @@ test('batch ticket auto close', function (): void {
 
     $api->setService($serviceMock);
     $di = container();
-    $di['logger'] = $this->createStub(FOSSBilling\Logger::class);
+    $di['logger'] = $this->createStub(FOSSBilling\Core\Logging\Logger::class);
     $api->setDi($di);
 
     $result = $api->batch_ticket_auto_close([]);
@@ -390,7 +390,7 @@ test('batch ticket auto close not closed', function (): void {
 
     $api->setService($serviceMock);
     $di = container();
-    $di['logger'] = $this->createStub(FOSSBilling\Logger::class);
+    $di['logger'] = $this->createStub(FOSSBilling\Core\Logging\Logger::class);
     $api->setDi($di);
 
     $result = $api->batch_ticket_auto_close([]);
@@ -444,7 +444,7 @@ test('ticket get statuses titles set', function (): void {
 test('helpdesk get list', function (): void {
     $api = apiEndpoint(new Box\Mod\Support\Api\Admin());
     $qbMock = Mockery::mock(QueryBuilder::class);
-    $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
+    $paginatorMock = Mockery::mock(FOSSBilling\Core\Pagination\Service::class)->makePartial();
     $paginatorMock
     ->shouldReceive('paginateDoctrineQuery')
     ->atLeast()->once()
@@ -596,7 +596,7 @@ test('canned get list', function (): void {
         ],
     ];
     $qbMock = Mockery::mock(QueryBuilder::class);
-    $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
+    $paginatorMock = Mockery::mock(FOSSBilling\Core\Pagination\Service::class)->makePartial();
     $paginatorMock
     ->shouldReceive('paginateDoctrineQuery')
     ->atLeast()->once()
@@ -975,10 +975,10 @@ test('kb article get list', function (): void {
         ->with(['status' => 'status', 'search' => 'search', 'kb_article_category_id' => 'category'])
         ->andReturn($qb);
 
-    $pager = Mockery::mock(FOSSBilling\Pagination::class);
+    $pager = Mockery::mock(FOSSBilling\Core\Pagination\Service::class);
     $pager->shouldReceive('paginateDoctrineQuery')
         ->once()
-        ->with($qb, Mockery::type(FOSSBilling\PaginationOptions::class), null)
+        ->with($qb, Mockery::type(FOSSBilling\Core\Pagination\Options::class), Mockery::type('object'))
         ->andReturn(['list' => []]);
     $di['pager'] = $pager;
     $adminApi->setDi($di);
@@ -1048,7 +1048,7 @@ test('kb article get not found exception', function (): void {
 
     $adminApi->setDi($di);
     $adminApi->setService($kbService);
-    expect(fn (): array => $adminApi->kb_article_get($data))->toThrow(FOSSBilling\Exception::class);
+    expect(fn (): array => $adminApi->kb_article_get($data))->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 test('kb article create preserves quotes in the title', function (): void {
@@ -1159,7 +1159,7 @@ test('kb article delete not found exception', function (): void {
     ;
     $adminApi->setService($kbService);
 
-    expect(fn (): bool => $adminApi->kb_article_delete(['id' => 1]))->toThrow(FOSSBilling\Exception::class);
+    expect(fn (): bool => $adminApi->kb_article_delete(['id' => 1]))->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 test('kb category get list', function (): void {
@@ -1184,7 +1184,7 @@ test('kb category get list', function (): void {
         ->once()
         ->andReturn($repo);
 
-    $pager = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
+    $pager = Mockery::mock(FOSSBilling\Core\Pagination\Service::class)->makePartial();
 
     $pager
     ->shouldReceive('paginateDoctrineQuery')
@@ -1213,7 +1213,7 @@ test('kb category get', function (): void {
         ->andReturn(adminSupportKbCategoryFixture());
 
     $di = container();
-    $di['validator'] = new FOSSBilling\Validate();
+    $di['validator'] = new FOSSBilling\Core\Validation\Validator();
 
     $adminApi->setDi($di);
 
@@ -1234,10 +1234,10 @@ test('kb category get id not set exception', function (): void {
     $api = apiEndpoint(new Box\Mod\Support\Api\Admin());
     $adminApi = apiEndpoint(new Box\Mod\Support\Api\Admin());
 
-    $dispatcher = new FOSSBilling\Api\Dispatcher();
+    $dispatcher = new FOSSBilling\Core\Api\Dispatcher();
 
     expect(fn () => $dispatcher->validateRequiredParams($adminApi, 'kb_category_get', []))
-        ->toThrow(FOSSBilling\InformationException::class);
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class);
 });
 
 test('kb category get not found exception', function (): void {
@@ -1252,7 +1252,7 @@ test('kb category get not found exception', function (): void {
 
     $di = container();
 
-    $di['validator'] = new FOSSBilling\Validate();
+    $di['validator'] = new FOSSBilling\Core\Validation\Validator();
     $adminApi->setDi($di);
 
     $kbService = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
@@ -1265,7 +1265,7 @@ test('kb category get not found exception', function (): void {
         'id' => 1,
     ];
 
-    expect(fn (): array => $adminApi->kb_category_get($data))->toThrow(FOSSBilling\Exception::class);
+    expect(fn (): array => $adminApi->kb_category_get($data))->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 test('kb category create', function (): void {
@@ -1313,7 +1313,7 @@ test('kb category update', function (): void {
         ->andReturn($repo);
 
     $di = container();
-    $di['validator'] = new FOSSBilling\Validate();
+    $di['validator'] = new FOSSBilling\Core\Validation\Validator();
 
     $adminApi->setDi($di);
 
@@ -1332,10 +1332,10 @@ test('kb category update id not set', function (): void {
     $api = apiEndpoint(new Box\Mod\Support\Api\Admin());
     $adminApi = apiEndpoint(new Box\Mod\Support\Api\Admin());
 
-    $dispatcher = new FOSSBilling\Api\Dispatcher();
+    $dispatcher = new FOSSBilling\Core\Api\Dispatcher();
 
     expect(fn () => $dispatcher->validateRequiredParams($adminApi, 'kb_category_update', []))
-        ->toThrow(FOSSBilling\InformationException::class);
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class);
 });
 
 test('kb category update not found', function (): void {
@@ -1357,7 +1357,7 @@ test('kb category update not found', function (): void {
         ->andReturn($repo);
 
     $di = container();
-    $di['validator'] = new FOSSBilling\Validate();
+    $di['validator'] = new FOSSBilling\Core\Validation\Validator();
 
     $adminApi->setDi($di);
 
@@ -1368,7 +1368,7 @@ test('kb category update not found', function (): void {
         'description' => 'Description',
     ];
 
-    expect(fn (): bool => $adminApi->kb_category_update($data))->toThrow(FOSSBilling\Exception::class);
+    expect(fn (): bool => $adminApi->kb_category_update($data))->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 test('kb category delete', function (): void {
@@ -1393,7 +1393,7 @@ test('kb category delete', function (): void {
         ->andReturn($repo);
 
     $di = container();
-    $di['validator'] = new FOSSBilling\Validate();
+    $di['validator'] = new FOSSBilling\Core\Validation\Validator();
 
     $adminApi->setDi($di);
 
@@ -1408,10 +1408,10 @@ test('kb category delete id not set', function (): void {
     $api = apiEndpoint(new Box\Mod\Support\Api\Admin());
     $adminApi = apiEndpoint(new Box\Mod\Support\Api\Admin());
 
-    $dispatcher = new FOSSBilling\Api\Dispatcher();
+    $dispatcher = new FOSSBilling\Core\Api\Dispatcher();
 
     expect(fn () => $dispatcher->validateRequiredParams($adminApi, 'kb_category_delete', []))
-        ->toThrow(FOSSBilling\InformationException::class);
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class);
 });
 
 test('kb category delete not found', function (): void {
@@ -1433,7 +1433,7 @@ test('kb category delete not found', function (): void {
         ->andReturn($repo);
 
     $di = container();
-    $di['validator'] = new FOSSBilling\Validate();
+    $di['validator'] = new FOSSBilling\Core\Validation\Validator();
 
     $adminApi->setDi($di);
 
@@ -1441,7 +1441,7 @@ test('kb category delete not found', function (): void {
         'id' => 1,
     ];
 
-    expect(fn (): bool => $adminApi->kb_category_delete($data))->toThrow(FOSSBilling\Exception::class);
+    expect(fn (): bool => $adminApi->kb_category_delete($data))->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 test('kb category get pairs', function (): void {

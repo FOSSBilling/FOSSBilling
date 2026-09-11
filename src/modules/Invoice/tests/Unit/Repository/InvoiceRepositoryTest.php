@@ -21,7 +21,7 @@ function invoiceEntityManager(): EntityManager
 {
     $config = ORMSetup::createAttributeMetadataConfig([Path::join(__DIR__, '..', '..', '..', 'Entity')], true);
     $config->setProxyDir(sys_get_temp_dir());
-    $config->setProxyNamespace('FOSSBilling\\Tests\\DoctrineProxies');
+    $config->setProxyNamespace('FOSSBilling\\Core\\Tests\\DoctrineProxies');
 
     return new EntityManager(DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]), $config);
 }
@@ -62,7 +62,7 @@ test('getSearchQueryBuilder filters by client_id, status, currency and approved'
         ->and($query->getParameter('approved')->getValue())->toBeTrue();
 });
 
-test('getSearchQueryBuilder normalizes the approved filter via Tools::normalizeBoolean', function (): void {
+test('getSearchQueryBuilder normalizes the approved filter via \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean', function (): void {
     $repository = invoiceEntityManager()->getRepository(Invoice::class);
 
     foreach ([1, '1', true, 'on', 'true'] as $truthy) {
@@ -186,7 +186,7 @@ test('getInvoiceTotals returns empty array for no ids', function (): void {
 test('getInvoiceTotals aggregates subtotal and taxable subtotal per invoice', function (): void {
     $config = ORMSetup::createAttributeMetadataConfig([Path::join(__DIR__, '..', '..', '..', 'Entity')], true);
     $config->setProxyDir(sys_get_temp_dir());
-    $config->setProxyNamespace('FOSSBilling\\Tests\\DoctrineProxies');
+    $config->setProxyNamespace('FOSSBilling\\Core\\Tests\\DoctrineProxies');
     $entityManager = new EntityManager(DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]), $config);
 
     $metadata = array_map(
@@ -224,7 +224,7 @@ test('getInvoiceTotals aggregates subtotal and taxable subtotal per invoice', fu
 test('getInvoiceTotals omits invoices without items', function (): void {
     $config = ORMSetup::createAttributeMetadataConfig([Path::join(__DIR__, '..', '..', '..', 'Entity')], true);
     $config->setProxyDir(sys_get_temp_dir());
-    $config->setProxyNamespace('FOSSBilling\\Tests\\DoctrineProxies');
+    $config->setProxyNamespace('FOSSBilling\\Core\\Tests\\DoctrineProxies');
     $entityManager = new EntityManager(DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]), $config);
 
     $metadata = array_map(
@@ -246,7 +246,7 @@ test('getInvoiceTotals omits invoices without items', function (): void {
 test('findUnpaidOlderThan returns only unpaid invoices whose due date is far enough in the past', function (): void {
     $config = ORMSetup::createAttributeMetadataConfig([Path::join(__DIR__, '..', '..', '..', 'Entity')], true);
     $config->setProxyDir(sys_get_temp_dir());
-    $config->setProxyNamespace('FOSSBilling\\Tests\\DoctrineProxies');
+    $config->setProxyNamespace('FOSSBilling\\Core\\Tests\\DoctrineProxies');
     $entityManager = new EntityManager(DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]), $config);
 
     $metadata = array_map(
@@ -313,5 +313,5 @@ test('lockAndGetStatus rejects being called outside of a transaction', function 
     (new Doctrine\ORM\Tools\SchemaTool($entityManager))->createSchema($metadata);
 
     expect(fn () => $entityManager->getRepository(Invoice::class)->lockAndGetStatus(1))
-        ->toThrow(FOSSBilling\Exception::class, 'Invoice status cannot be locked outside of a transaction.');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Invoice status cannot be locked outside of a transaction.');
 });

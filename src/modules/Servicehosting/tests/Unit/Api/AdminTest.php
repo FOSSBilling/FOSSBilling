@@ -94,10 +94,10 @@ test('testChangePlan', function (): void {
 test('testChangePlanMissingPlanId', function (): void {
     $adminApi = apiEndpoint(new Admin());
 
-    $dispatcher = new FOSSBilling\Api\Dispatcher();
+    $dispatcher = new FOSSBilling\Core\Api\Dispatcher();
 
     expect(fn () => $dispatcher->validateRequiredParams($adminApi, 'change_plan', []))
-        ->toThrow(FOSSBilling\InformationException::class, 'plan_id is missing');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'plan_id is missing');
 });
 
 test('testChangeUsername', function (): void {
@@ -276,10 +276,10 @@ test('testAccountGetList', function (): void {
     $serviceMock
     ->shouldReceive('getAccountsBatchForApi')
     ->once()
-    ->with([['id' => 1]], null)
+    ->with([['id' => 1]], Mockery::type('object'))
     ->andReturn([['id' => 1, 'order' => null]]);
 
-    $pagerMock = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
+    $pagerMock = Mockery::mock(FOSSBilling\Core\Pagination\Service::class)->makePartial();
     $pagerMock
     ->shouldReceive('getPaginatedResultSet')
     ->atLeast()->once()
@@ -308,10 +308,10 @@ test('testServerGetList', function (): void {
     $serviceMock
     ->shouldReceive('toHostingServerApiArray')
     ->once()
-    ->with($server, false, null)
+    ->with($server, false, Mockery::type('object'))
     ->andReturn(['id' => 1]);
 
-    $pagerMock = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
+    $pagerMock = Mockery::mock(FOSSBilling\Core\Pagination\Service::class)->makePartial();
     $pagerMock
     ->shouldReceive('getPaginatedResultSet')
     ->atLeast()->once()
@@ -432,7 +432,7 @@ test('testServerDelete', function (): void {
     $api->setDi($di);
 
     // Now, we expect an exception to be thrown because the server is used by service_hostings
-    $this->expectException(FOSSBilling\Exception::class);
+    $this->expectException(FOSSBilling\Core\Exception\BaseException::class);
     $this->expectExceptionCode(704);
 
     $api->server_delete($data);
@@ -493,7 +493,7 @@ test('testServerUpdateSurfacesServerManagerErrorsAsInformationException', functi
     $api->setDi($di);
     $api->setService($serviceMock);
 
-    expect(fn (): bool => $api->server_update($data))->toThrow(FOSSBilling\InformationException::class);
+    expect(fn (): bool => $api->server_update($data))->toThrow(FOSSBilling\Core\Exception\InformationException::class);
 });
 
 test('testServerTestConnection', function (): void {
@@ -545,10 +545,10 @@ test('testHpGetList', function (): void {
     $serviceMock
     ->shouldReceive('toHostingHpApiArray')
     ->once()
-    ->with($hp, false, null)
+    ->with($hp, false, Mockery::type('object'))
     ->andReturn(['id' => 1]);
 
-    $pagerMock = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
+    $pagerMock = Mockery::mock(FOSSBilling\Core\Pagination\Service::class)->makePartial();
     $pagerMock
     ->shouldReceive('getPaginatedResultSet')
     ->atLeast()->once()
@@ -604,7 +604,7 @@ test('testHpDelete', function (): void {
         // If the function doesn't throw an exception, then the test should assert the result
         expect($result)->toBeBool();
         expect($result)->toBeTrue();
-    } catch (FOSSBilling\Exception $e) {
+    } catch (FOSSBilling\Core\Exception\BaseException $e) {
         // If the function throws an exception, the test should fail
         $this->fail('Exception thrown: ' . $e->getMessage());
     }
@@ -742,7 +742,7 @@ test('testGetServiceOrderNotActivated', function (): void {
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
     $api->setDi($di);
 
-    $this->expectException(FOSSBilling\Exception::class);
+    $this->expectException(FOSSBilling\Core\Exception\BaseException::class);
     $this->expectExceptionMessage('Order is not activated');
     $api->_getService($data);
 });

@@ -12,8 +12,7 @@ declare(strict_types=1);
 namespace Box\Mod\Widgets;
 
 use Box\Mod\Extension\Entity\Extension;
-use FOSSBilling\InjectionAwareInterface;
-use FOSSBilling\Interfaces\WidgetProviderInterface;
+use FOSSBilling\Core\Container\InjectionAwareInterface;
 use Symfony\Contracts\Cache\ItemInterface;
 
 class Service implements InjectionAwareInterface
@@ -169,11 +168,11 @@ class Service implements InjectionAwareInterface
      *
      * @param object $service the service class instance
      *
-     * @return bool true if the service implements WidgetProviderInterface
+     * @return bool true if the service implements ProviderInterface
      */
     private function serviceProvidesWidgets(object $service): bool
     {
-        return $service instanceof WidgetProviderInterface;
+        return $service instanceof ProviderInterface;
     }
 
     /**
@@ -203,7 +202,7 @@ class Service implements InjectionAwareInterface
     /**
      * Event handler: Invalidate cache when a module is activated.
      */
-    public static function onAfterAdminActivateExtension(\Box_Event $event): void
+    public static function onAfterAdminActivateExtension(\FOSSBilling\Core\Event\Event $event): void
     {
         $params = $event->getParameters();
 
@@ -222,7 +221,7 @@ class Service implements InjectionAwareInterface
     /**
      * Event handler: Invalidate cache when a module is deactivated.
      */
-    public static function onAfterAdminDeactivateExtension(\Box_Event $event): void
+    public static function onAfterAdminDeactivateExtension(\FOSSBilling\Core\Event\Event $event): void
     {
         $params = $event->getParameters();
 

@@ -13,19 +13,19 @@ declare(strict_types=1);
 use function Tests\Helpers\container;
 
 test('empty fire', function (): void {
-    $manager = new Box_EventManager();
+    $manager = new FOSSBilling\Core\Event\Manager();
     expect($manager->fire([]))->toBeFalse();
 });
 
 test('fire', function (): void {
     $di = container();
-    $di['logger'] = new FOSSBilling\Logger();
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
 
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
     $connection->shouldReceive('fetchAllAssociative')->atLeast()->once()->andReturn([]);
     $di['em']->shouldReceive('getConnection')->andReturn($connection);
 
-    $manager = new Box_EventManager();
+    $manager = new FOSSBilling\Core\Event\Manager();
     $manager->setDi($di);
 
     $manager->fire(['event' => 'onBeforeClientSignup']);

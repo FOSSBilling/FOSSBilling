@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 /**
- * Copyright 2022-2025 FOSSBilling
+ * Copyright 2022-2026 FOSSBilling
  * SPDX-License-Identifier: Apache-2.0.
  *
  * @copyright FOSSBilling (https://www.fossbilling.org)
@@ -14,8 +14,8 @@ namespace Box\Mod\Hook;
 use Box\Mod\Extension\Entity\Extension;
 use Box\Mod\Extension\Entity\ExtensionMeta;
 use Box\Mod\Extension\Repository\ExtensionRepository;
-use FOSSBilling\Doctrine\NamedLock;
-use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Core\Container\InjectionAwareInterface;
+use FOSSBilling\Core\Doctrine\NamedLock;
 
 class Service implements InjectionAwareInterface
 {
@@ -91,7 +91,7 @@ class Service implements InjectionAwareInterface
         return $row;
     }
 
-    public static function onAfterAdminActivateExtension(\Box_Event $event): void
+    public static function onAfterAdminActivateExtension(\FOSSBilling\Core\Event\Event $event): void
     {
         $params = $event->getParameters();
         if (!isset($params['id'])) {
@@ -107,7 +107,7 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public static function onAfterAdminDeactivateExtension(\Box_Event $event): void
+    public static function onAfterAdminDeactivateExtension(\FOSSBilling\Core\Event\Event $event): void
     {
         $di = $event->getDi();
         $params = $event->getParameters();
@@ -190,7 +190,7 @@ class Service implements InjectionAwareInterface
         }
 
         $type = $parameters[0]->getType() instanceof \ReflectionNamedType ? $parameters[0]->getType()->getName() : null;
-        if ($type == 'Box_Event' || $type == "\Box_Event") {
+        if ($type == \FOSSBilling\Core\Event\Event::class || $type == \FOSSBilling\Core\Event\Event::class) {
             return true;
         }
 
@@ -200,7 +200,7 @@ class Service implements InjectionAwareInterface
     /**
      * Connect event for module.
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     private function connect($data): bool
     {

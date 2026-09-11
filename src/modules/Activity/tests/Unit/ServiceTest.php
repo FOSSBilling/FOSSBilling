@@ -103,7 +103,7 @@ test('login events persist history entities', function (string $method, string $
     $di['em'] = $entityManager;
     $di['mod_service'] = $di->protect(fn (): object => $extensionService);
 
-    $event = new Box_Event(null, $method, ['id' => 7, 'ip' => '192.0.2.1']);
+    $event = new FOSSBilling\Core\Event\Event(null, $method, ['id' => 7, 'ip' => '192.0.2.1']);
     $event->setDi($di);
 
     Box\Mod\Activity\Service::{$method}($event);
@@ -134,7 +134,7 @@ test('logs retention failures through the application logger', function (): void
     $di['logger'] = $logger;
     $di['mod_service'] = $di->protect(fn (string $name): object => $extensionService);
 
-    $event = new Box_Event(null, 'onBeforeAdminCronRun');
+    $event = new FOSSBilling\Core\Event\Event(null, 'onBeforeAdminCronRun');
     $event->setDi($di);
 
     Box\Mod\Activity\Service::onBeforeAdminCronRun($event);

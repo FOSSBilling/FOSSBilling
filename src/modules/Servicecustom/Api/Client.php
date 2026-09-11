@@ -11,28 +11,28 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicecustom\Api;
 
-use FOSSBilling\Validation\Api\RequiredParams;
+use FOSSBilling\Core\Validation\Api\RequiredParams;
 
 /**
  * Custom product management.
  */
-class Client extends \FOSSBilling\Api\AbstractApi
+class Client extends \FOSSBilling\Core\Api\AbstractApi
 {
     /**
      * Call a method from the service's plugin.
      * Pass any additional params and they will be passed to the plugin method.
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['order_id' => 'Order ID is required', 'method' => 'Method is required'])]
     public function call($data)
     {
         if (!isset($data['order_id'])) {
-            throw new \FOSSBilling\Exception('Order ID is required');
+            throw new \FOSSBilling\Core\Exception\BaseException('Order ID is required');
         }
 
         if (!isset($data['method'])) {
-            throw new \FOSSBilling\Exception('Method is required');
+            throw new \FOSSBilling\Core\Exception\BaseException('Method is required');
         }
 
         $identity = $this->getIdentity();

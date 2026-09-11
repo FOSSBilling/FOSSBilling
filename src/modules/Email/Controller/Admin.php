@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Email\Controller;
 
-class Admin implements \FOSSBilling\InjectionAwareInterface
+class Admin implements \FOSSBilling\Core\Container\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 
@@ -40,7 +40,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         ];
     }
 
-    public function register(\Box_App &$app): void
+    public function register(\FOSSBilling\Core\Http\App &$app): void
     {
         $app->get('/email/history/', 'get_history', [], static::class);
         $app->get('/email/history', 'get_history', [], static::class);
@@ -49,21 +49,21 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         $app->get('/email/:id', 'get_email', ['id' => '[0-9]+'], static::class);
     }
 
-    public function get_history(\Box_App $app): string
+    public function get_history(\FOSSBilling\Core\Http\App $app): string
     {
         $this->di['is_admin_logged'];
 
         return $app->render('mod_email_history');
     }
 
-    public function get_index(\Box_App $app): string
+    public function get_index(\FOSSBilling\Core\Http\App $app): string
     {
         $this->di['is_admin_logged'];
 
         return $app->render('mod_email_settings');
     }
 
-    public function get_template(\Box_App $app, $id): string
+    public function get_template(\FOSSBilling\Core\Http\App $app, $id): string
     {
         $api = $this->di['api_admin'];
         $template = $api->email_template_get(['id' => $id]);
@@ -71,7 +71,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         return $app->render('mod_email_template', ['template' => $template]);
     }
 
-    public function get_email(\Box_App $app, $id): string
+    public function get_email(\FOSSBilling\Core\Http\App $app, $id): string
     {
         $api = $this->di['api_admin'];
         $template = $api->email_email_get(['id' => $id]);

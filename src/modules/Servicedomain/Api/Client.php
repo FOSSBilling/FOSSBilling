@@ -17,7 +17,7 @@ use Box\Mod\Servicedomain\Entity\ServiceDomain;
 /**
  * Domain service management.
  */
-class Client extends \FOSSBilling\Api\AbstractApi
+class Client extends \FOSSBilling\Core\Api\AbstractApi
 {
     /**
      * Change domain nameservers. Method sends action to registrar.
@@ -128,20 +128,20 @@ class Client extends \FOSSBilling\Api\AbstractApi
     protected function _getService($data)
     {
         if (!isset($data['order_id'])) {
-            throw new \FOSSBilling\Exception('Order ID is required');
+            throw new \FOSSBilling\Core\Exception\BaseException('Order ID is required');
         }
         $orderService = $this->getDi()['mod_service']('order');
 
         $order = $orderService->findForClientById($this->getIdentity(), $data['order_id']);
         if (!$order instanceof Order) {
-            throw new \FOSSBilling\InformationException('Order not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Order not found');
         }
 
         $orderService->assertOrderUsable($order);
 
         $s = $orderService->getOrderService($order);
         if (!$s instanceof ServiceDomain || $order->getStatus() !== Order::STATUS_ACTIVE) {
-            throw new \FOSSBilling\Exception('Order is not activated');
+            throw new \FOSSBilling\Core\Exception\BaseException('Order is not activated');
         }
 
         return $s;

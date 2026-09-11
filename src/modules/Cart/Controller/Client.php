@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Cart\Controller;
 
-class Client implements \FOSSBilling\InjectionAwareInterface
+class Client implements \FOSSBilling\Core\Container\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 
@@ -25,12 +25,12 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
-    public function register(\Box_App &$app): void
+    public function register(\FOSSBilling\Core\Http\App &$app): void
     {
         $app->get('/cart', 'get_cart', [], static::class);
     }
 
-    public function get_cart(\Box_App $app): string
+    public function get_cart(\FOSSBilling\Core\Http\App $app): string
     {
         return $app->render('mod_cart_index');
     }

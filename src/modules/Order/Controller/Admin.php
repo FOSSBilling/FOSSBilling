@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Order\Controller;
 
-class Admin implements \FOSSBilling\InjectionAwareInterface
+class Admin implements \FOSSBilling\Core\Container\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 
@@ -47,7 +47,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         ];
     }
 
-    public function register(\Box_App &$app): void
+    public function register(\FOSSBilling\Core\Http\App &$app): void
     {
         $app->get('/order', 'get_index', [], static::class);
         $app->get('/order/', 'get_index', [], static::class);
@@ -56,14 +56,14 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         $app->post('/order/new', 'get_new', [], static::class);
     }
 
-    public function get_index(\Box_App $app): string
+    public function get_index(\FOSSBilling\Core\Http\App $app): string
     {
         $this->di['is_admin_logged'];
 
         return $app->render('mod_order_index');
     }
 
-    public function get_new(\Box_App $app): string
+    public function get_new(\FOSSBilling\Core\Http\App $app): string
     {
         $api = $this->di['api_admin'];
 
@@ -74,7 +74,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         return $app->render('mod_order_new', ['product' => $product, 'client' => $client]);
     }
 
-    public function get_order(\Box_App $app, $id): string
+    public function get_order(\FOSSBilling\Core\Http\App $app, $id): string
     {
         $api = $this->di['api_admin'];
         $data = [

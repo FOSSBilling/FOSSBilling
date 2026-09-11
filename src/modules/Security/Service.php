@@ -11,10 +11,10 @@ declare(strict_types=1);
 
 namespace Box\Mod\Security;
 
-use FOSSBilling\GeoIP\IncompleteRecord;
-use FOSSBilling\GeoIP\Reader;
-use FOSSBilling\InformationException;
-use FOSSBilling\Interfaces\SecurityCheckInterface;
+use FOSSBilling\Core\Exception\InformationException;
+use FOSSBilling\Core\GeoIP\IncompleteRecord;
+use FOSSBilling\Core\GeoIP\Reader;
+use FOSSBilling\Core\Security\CheckInterface;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
 
@@ -56,7 +56,7 @@ class Service
     /**
      * Returns a list of all security checks.
      *
-     * @return SecurityCheckInterface[]
+     * @return CheckInterface[]
      */
     public function getAllChecks(): array
     {
@@ -75,10 +75,10 @@ class Service
             if (method_exists($newCheck, 'setDi')) {
                 $newCheck->setDi($this->di);
             }
-            if ($newCheck instanceof SecurityCheckInterface) {
+            if ($newCheck instanceof CheckInterface) {
                 $checks[$checkID] = $newCheck;
             } else {
-                $this->di['logger']->withChannel('security')->error("{$className} does not implement the SecurityCheckInterface interface.");
+                $this->di['logger']->withChannel('security')->error("{$className} does not implement the CheckInterface interface.");
             }
         }
 
@@ -125,7 +125,7 @@ class Service
         if (method_exists($check, 'setDi')) {
             $check->setDi($this->di);
         }
-        if (!$check instanceof SecurityCheckInterface) {
+        if (!$check instanceof CheckInterface) {
             throw new InformationException('The check :checkName: does not seem to be a valid check.', [':checkName:' => $checkID]);
         }
 

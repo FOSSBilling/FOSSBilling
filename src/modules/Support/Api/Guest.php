@@ -13,10 +13,10 @@ namespace Box\Mod\Support\Api;
 
 use Box\Mod\Support\Entity\KbArticle;
 use Box\Mod\Support\Entity\KbArticleCategory;
-use FOSSBilling\PaginationOptions;
-use FOSSBilling\Validation\Api\RequiredParams;
+use FOSSBilling\Core\Pagination\Options;
+use FOSSBilling\Core\Validation\Api\RequiredParams;
 
-class Guest extends \FOSSBilling\Api\AbstractApi
+class Guest extends \FOSSBilling\Core\Api\AbstractApi
 {
     /**
      * Submit new ticket.
@@ -33,13 +33,13 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         // Deprecated 0.9.0 The 'message' parameter will be dropped. Update your themes to use 'content' instead.
         $content = $data['content'] ?? $data['message'] ?? null;
         if (!is_string($content) || strlen($content) < 4) {
-            throw new \FOSSBilling\InformationException('Please enter your message');
+            throw new \FOSSBilling\Core\Exception\InformationException('Please enter your message');
         }
 
-        $data['email'] = $this->getDi()['tools']->validateAndSanitizeEmail($data['email']);
-        $this->getDi()['rate_limiter']->consumeOrThrow('guest_ticket_create', (string) $this->getIp());
+        $data['email'] = \FOSSBilling\Core\Validation\EmailValidator::validateAndSanitizeEmail($data['email']);
+        $this->getDi()['rate_limiter']->consumeOrThrow('guest_ticket_create', $this->getIp());
 
-        $data['content'] = \FOSSBilling\Tools::sanitizeMarkdownContent($content);
+        $data['content'] = trim(str_replace("\0", '', $content));
 
         return $this->getService()->ticketCreateForGuest($data);
     }
@@ -79,12 +79,12 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         $message = $data['content'] ?? $data['message'] ?? null;
 
         if (!is_string($message)) {
-            throw new \FOSSBilling\InformationException('Message cannot be empty');
+            throw new \FOSSBilling\Core\Exception\InformationException('Message cannot be empty');
         }
 
-        $message = \FOSSBilling\Tools::sanitizeMarkdownContent($message);
+        $message = trim(str_replace("\0", '', $message));
 
-        return $this->getService()->ticketReply($guestTicket, new \FOSSBilling\Identity\Guest(), $message);
+        return $this->getService()->ticketReply($guestTicket, new \FOSSBilling\Core\Identity\Guest(), $message);
     }
 
     /**
@@ -158,7 +158,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             'kb_article_category_id' => $cat,
         ]);
 
-        return $this->getDi()['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data), $this->getIdentity(), false, $this->getService()->kbArticleViewsEnabled());
+        return $this->getDi()['pager']->paginateDoctrineQuery($qb, Options::fromArray($data), $this->getIdentity(), false, $this->getService()->kbArticleViewsEnabled());
     }
 
     /**
@@ -169,7 +169,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         $this->assertKbEnabled();
 
         if (!isset($data['id']) && !isset($data['slug'])) {
-            throw new \FOSSBilling\InformationException('ID or slug is missing');
+            throw new \FOSSBilling\Core\Exception\InformationException('ID or slug is missing');
         }
 
         $id = $data['id'] ?? null;
@@ -183,7 +183,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             : $repo->findOneActiveBySlug($slug);
 
         if (!$article instanceof KbArticle) {
-            throw new \FOSSBilling\InformationException('Article item not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Article item not found');
         }
 
         $repo->incrementViews($article);
@@ -206,7 +206,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
 
         $qb = $repo->getSearchQueryBuilder($data);
 
-        return $this->getDi()['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data), $this->getIdentity(), $q, $this->getService()->kbArticleViewsEnabled());
+        return $this->getDi()['pager']->paginateDoctrineQuery($qb, Options::fromArray($data), $this->getIdentity(), $q, $this->getService()->kbArticleViewsEnabled());
     }
 
     /**
@@ -217,7 +217,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         $this->assertKbEnabled();
 
         if (!isset($data['id']) && !isset($data['slug'])) {
-            throw new \FOSSBilling\InformationException('Category ID or slug is missing');
+            throw new \FOSSBilling\Core\Exception\InformationException('Category ID or slug is missing');
         }
 
         $id = $data['id'] ?? null;
@@ -231,7 +231,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             : $repo->findOneBySlug($slug);
 
         if (!$cat instanceof KbArticleCategory) {
-            throw new \FOSSBilling\InformationException('Knowledge Base category not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Knowledge Base category not found');
         }
 
         return $cat->toApiArray($this->getIdentity(), includeArticleViews: $this->getService()->kbArticleViewsEnabled());
@@ -240,7 +240,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
     private function assertKbEnabled(): void
     {
         if (!$this->getService()->kbEnabled()) {
-            throw new \FOSSBilling\InformationException('Knowledge Base is disabled');
+            throw new \FOSSBilling\Core\Exception\InformationException('Knowledge Base is disabled');
         }
     }
 }

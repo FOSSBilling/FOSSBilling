@@ -15,10 +15,10 @@ declare(strict_types=1);
 
 namespace Box\Mod\Email\Api;
 
-use FOSSBilling\PaginationOptions;
-use FOSSBilling\Validation\Api\RequiredParams;
+use FOSSBilling\Core\Pagination\Options;
+use FOSSBilling\Core\Validation\Api\RequiredParams;
 
-class Client extends \FOSSBilling\Api\AbstractApi
+class Client extends \FOSSBilling\Core\Api\AbstractApi
 {
     /**
      * Get list of emails system had sent to client.
@@ -34,7 +34,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
 
         return $this->getDi()['pager']->paginateDoctrineQuery(
             $repo->getSearchQueryBuilder($data),
-            PaginationOptions::fromArray($data),
+            Options::fromArray($data),
         );
     }
 
@@ -43,7 +43,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
      *
      * @return array
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function get($data)
@@ -61,14 +61,14 @@ class Client extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function resend($data)
     {
         $client = $this->getIdentity();
 
-        $this->getDi()['rate_limiter']->consumeOrThrow('client_email_resend_ip', (string) $this->getIp());
+        $this->getDi()['rate_limiter']->consumeOrThrow('client_email_resend_ip', $this->getIp());
         $this->getDi()['rate_limiter']->consumeOrThrow('client_email_resend_account', 'client:' . $client->getId());
 
         $model = $this->getService()->getActivityClientEmailRepository()->findOneForClientByIdOrFail(
@@ -82,7 +82,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
     /**
      * Remove email from system.
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Email ID was not passed'])]
     public function delete($data): bool

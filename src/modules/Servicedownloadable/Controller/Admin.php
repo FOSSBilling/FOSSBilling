@@ -13,7 +13,7 @@ namespace Box\Mod\Servicedownloadable\Controller;
 
 use Symfony\Component\HttpFoundation\Response;
 
-class Admin implements \FOSSBilling\InjectionAwareInterface
+class Admin implements \FOSSBilling\Core\Container\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 
@@ -27,13 +27,13 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
-    public function register(\Box_App &$app): void
+    public function register(\FOSSBilling\Core\Http\App &$app): void
     {
         $app->get('/servicedownloadable/get-file/:id/:fileId', 'get_download', ['id' => '[0-9]+', 'fileId' => '[a-f0-9]{32}'], static::class);
         $app->get('/servicedownloadable/order-file/:orderId/:fileId', 'get_order_download', ['orderId' => '[0-9]+', 'fileId' => '[0-9]+'], static::class);
     }
 
-    public function get_download(\Box_App $app, $id, $fileId): Response
+    public function get_download(\FOSSBilling\Core\Http\App $app, $id, $fileId): Response
     {
         $this->di['is_admin_logged'];
 
@@ -46,7 +46,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         return $api->servicedownloadable_send_file($data);
     }
 
-    public function get_order_download(\Box_App $app, $orderId, $fileId): Response
+    public function get_order_download(\FOSSBilling\Core\Http\App $app, $orderId, $fileId): Response
     {
         $this->di['is_admin_logged'];
 

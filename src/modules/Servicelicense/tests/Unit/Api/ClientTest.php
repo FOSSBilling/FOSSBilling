@@ -131,7 +131,7 @@ test('getService throws exception when order not activated', function (): void {
     $api->setIdentity($clientModel);
 
     $api->_getService($data);
-})->throws(FOSSBilling\Exception::class, 'Order is not activated');
+})->throws(FOSSBilling\Core\Exception\BaseException::class, 'Order is not activated');
 
 test('getService throws exception for expired order', function (): void {
     $api = apiEndpoint(new Box\Mod\Servicelicense\Api\Client());
@@ -157,7 +157,7 @@ test('getService throws exception for expired order', function (): void {
     $orderServiceMock->shouldReceive('assertOrderUsable')
         ->once()
         ->with($expiredOrder)
-        ->andThrow(new FOSSBilling\InformationException('Subscription expired'));
+        ->andThrow(new FOSSBilling\Core\Exception\InformationException('Subscription expired'));
     $orderServiceMock->shouldReceive('getOrderService')->never();
 
     $di = container();
@@ -170,5 +170,5 @@ test('getService throws exception for expired order', function (): void {
     $api->setIdentity($clientModel);
 
     expect(fn () => $api->_getService($data))
-        ->toThrow(FOSSBilling\InformationException::class, 'Subscription expired');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Subscription expired');
 });

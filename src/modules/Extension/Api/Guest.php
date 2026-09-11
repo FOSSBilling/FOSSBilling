@@ -11,12 +11,12 @@ declare(strict_types=1);
 
 namespace Box\Mod\Extension\Api;
 
-use FOSSBilling\Validation\Api\RequiredParams;
+use FOSSBilling\Core\Validation\Api\RequiredParams;
 
 /**
  * Extensions.
  */
-class Guest extends \FOSSBilling\Api\AbstractApi
+class Guest extends \FOSSBilling\Core\Api\AbstractApi
 {
     /**
      * Checks if extensions is available.
@@ -40,7 +40,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
     /**
      * Retrieve extension public settings.
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['ext' => 'Parameter ext is missing'])]
     public function settings($data): array
@@ -58,6 +58,6 @@ class Guest extends \FOSSBilling\Api\AbstractApi
      */
     public function languages($deep = false)
     {
-        return \FOSSBilling\i18n::getLocales($deep);
+        return \FOSSBilling\Core\I18n\I18n::getLocales($deep);
     }
 }

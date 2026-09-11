@@ -14,9 +14,9 @@ namespace Box\Mod\Support\Entity;
 use Box\Mod\Support\Repository\SupportTicketMessageRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use FOSSBilling\Doctrine\TimestampTrait;
-use FOSSBilling\Interfaces\ApiArrayInterface;
-use FOSSBilling\Interfaces\TimestampInterface;
+use FOSSBilling\Core\Api\ArrayInterface;
+use FOSSBilling\Core\Doctrine\TimestampInterface;
+use FOSSBilling\Core\Doctrine\TimestampTrait;
 
 /**
  * A message in a support ticket thread. One ticket has many messages, ordered
@@ -31,7 +31,7 @@ use FOSSBilling\Interfaces\TimestampInterface;
 #[ORM\Index(name: 'support_ticket_message_client_id_idx', columns: ['client_id'])]
 #[ORM\Index(name: 'support_ticket_message_admin_id_idx', columns: ['admin_id'])]
 #[ORM\HasLifecycleCallbacks]
-class SupportTicketMessage implements ApiArrayInterface, TimestampInterface
+class SupportTicketMessage implements ArrayInterface, TimestampInterface
 {
     use TimestampTrait;
 
@@ -60,7 +60,7 @@ class SupportTicketMessage implements ApiArrayInterface, TimestampInterface
     #[ORM\Column(type: Types::STRING, length: 45, nullable: true)]
     private ?string $ip = null;
 
-    public function toApiArray(\Box\Mod\Client\Entity\Client|\Box\Mod\Staff\Entity\Admin|\FOSSBilling\Identity\Guest|null $identity = null): array
+    public function toApiArray(\Box\Mod\Client\Entity\Client|\Box\Mod\Staff\Entity\Admin|\FOSSBilling\Core\Identity\Guest|null $identity = null): array
     {
         if ($identity instanceof \Box\Mod\Staff\Entity\Admin) {
             return [

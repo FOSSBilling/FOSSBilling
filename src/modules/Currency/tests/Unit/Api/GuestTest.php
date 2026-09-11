@@ -126,7 +126,7 @@ test('get exception', function (): void {
     ->andReturn($repositoryMock);
 
     $guestApi->setService($service);
-    $this->expectException(FOSSBilling\Exception::class);
+    $this->expectException(FOSSBilling\Core\Exception\BaseException::class);
     $result = $guestApi->get([]);
 });
 

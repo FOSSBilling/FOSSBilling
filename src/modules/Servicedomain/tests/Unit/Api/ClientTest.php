@@ -36,7 +36,7 @@ test('updates nameservers', function (): void {
 
     $clientApiMock->setService($serviceMock);
 
-    $eventMock = Mockery::mock('\Box_EventManager');
+    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class);
     $eventMock->shouldReceive('fire')
         ->atLeast()->once();
 
@@ -270,7 +270,7 @@ test('throws exception when getting service without order_id', function (): void
     $data = [];
 
     expect(fn () => $clientApi->lock($data))
-        ->toThrow(FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 test('throws exception when getting service order not found', function (): void {
@@ -300,7 +300,7 @@ test('throws exception when getting service order not found', function (): void 
     ];
 
     expect(fn () => $clientApi->lock($data))
-        ->toThrow(FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 test('throws exception when getting service order not activated', function (): void {
@@ -333,7 +333,7 @@ test('throws exception when getting service order not activated', function (): v
     ];
 
     expect(fn () => $clientApi->lock($data))
-        ->toThrow(FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 test('throws exception when getting service for expired order', function (): void {
@@ -354,7 +354,7 @@ test('throws exception when getting service for expired order', function (): voi
     $orderServiceMock->shouldReceive('assertOrderUsable')
         ->once()
         ->with($expiredOrder)
-        ->andThrow(new FOSSBilling\InformationException('Subscription expired'));
+        ->andThrow(new FOSSBilling\Core\Exception\InformationException('Subscription expired'));
     $orderServiceMock->shouldReceive('getOrderService')->never();
 
     $di = container();
@@ -368,5 +368,5 @@ test('throws exception when getting service for expired order', function (): voi
     ];
 
     expect(fn () => $clientApi->lock($data))
-        ->toThrow(FOSSBilling\InformationException::class, 'Subscription expired');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Subscription expired');
 });

@@ -12,7 +12,7 @@ declare(strict_types=1);
 namespace Box\Mod\Formbuilder;
 
 use Doctrine\DBAL\Connection;
-use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\Core\Container\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
@@ -87,7 +87,7 @@ class Service implements InjectionAwareInterface
     {
         $unique = array_unique($array);
 
-        return \FOSSBilling\Tools::safeCount($array) === count($unique);
+        return \FOSSBilling\Core\Utils\Arr::safeCount($array) === count($unique);
     }
 
     public function addNewForm($data): int
@@ -173,11 +173,11 @@ class Service implements InjectionAwareInterface
         $text = preg_replace('~[^\-\w]+~', '', $text);
 
         if (is_numeric(substr((string) $text, 0, 1))) {
-            throw new \FOSSBilling\InformationException('Field name cannot start with number.', null, 1649);
+            throw new \FOSSBilling\Core\Exception\InformationException('Field name cannot start with number.', null, 1649);
         }
 
         if (empty($text)) {
-            throw new \FOSSBilling\InformationException('Field name cannot be empty. Please make sure it is not empty and does not contain special characters.', null, 3502);
+            throw new \FOSSBilling\Core\Exception\InformationException('Field name cannot be empty. Please make sure it is not empty and does not contain special characters.', null, 3502);
         }
 
         return $text;
@@ -197,7 +197,7 @@ class Service implements InjectionAwareInterface
             'field_name' => $field['name'],
             'field_id' => $fieldId,
         ])) {
-            throw new \FOSSBilling\InformationException('Unfortunately field with this name exists in this form already. Form must have different field names.', null, 7628);
+            throw new \FOSSBilling\Core\Exception\InformationException('Unfortunately field with this name exists in this form already. Form must have different field names.', null, 7628);
         }
 
         $field['options'] = isset($field['options']) ? json_encode($field['options']) : '';
@@ -208,11 +208,11 @@ class Service implements InjectionAwareInterface
         if (isset($field['type'])) {
             if ($field['type'] == 'checkbox' || $field['type'] == 'radio' || $field['type'] == 'select') {
                 if (!$this->isArrayUnique(array_filter($field['values'], fn ($v): bool => strlen((string) $v) > 0))) {
-                    throw new \FOSSBilling\InformationException(ucfirst($field['type']) . ' values must be unique', null, 1597);
+                    throw new \FOSSBilling\Core\Exception\InformationException(ucfirst($field['type']) . ' values must be unique', null, 1597);
                 }
 
                 if (!$this->isArrayUnique(array_filter($field['labels'], fn ($v): bool => strlen((string) $v) > 0))) {
-                    throw new \FOSSBilling\InformationException(ucfirst($field['type']) . ' labels must be unique', null, 1598);
+                    throw new \FOSSBilling\Core\Exception\InformationException(ucfirst($field['type']) . ' labels must be unique', null, 1598);
                 }
 
                 $field['options'] = array_combine($field['labels'], $field['values']);
@@ -221,8 +221,8 @@ class Service implements InjectionAwareInterface
             }
 
             if ($field['type'] == 'textarea') {
-                if (\FOSSBilling\Tools::safeCount($field['textarea_size']) != count(array_filter($field['textarea_size'], is_numeric(...)))) {
-                    throw new \FOSSBilling\InformationException('Textarea size options must be integer values', null, 3510);
+                if (\FOSSBilling\Core\Utils\Arr::safeCount($field['textarea_size']) != count(array_filter($field['textarea_size'], is_numeric(...)))) {
+                    throw new \FOSSBilling\Core\Exception\InformationException('Textarea size options must be integer values', null, 3510);
                 }
 
                 $field['options'] = array_combine($field['textarea_option'], $field['textarea_size']);
@@ -263,7 +263,7 @@ class Service implements InjectionAwareInterface
         )->fetchAssociative();
 
         if ($result === false) {
-            throw new \FOSSBilling\InformationException('Form was not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Form was not found');
         }
 
         $result['style'] = json_decode($result['style'] ?? '', true);
@@ -325,7 +325,7 @@ class Service implements InjectionAwareInterface
         )->fetchAssociative();
 
         if ($result === false) {
-            throw new \FOSSBilling\InformationException('Field was not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Field was not found');
         }
 
         $required = [
@@ -356,7 +356,7 @@ class Service implements InjectionAwareInterface
     {
         $deleted = $this->getDbal()->executeStatement('DELETE FROM form_field WHERE id = ?', [$data['id']]);
         if ($deleted === 0) {
-            throw new \FOSSBilling\InformationException('Field was not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Field was not found');
         }
 
         $this->di['logger']->info('Deleted custom field {data_id}', ['data_id' => $data['id']]);

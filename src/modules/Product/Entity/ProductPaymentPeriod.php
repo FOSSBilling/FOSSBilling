@@ -12,7 +12,7 @@ declare(strict_types=1);
 namespace Box\Mod\Product\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
-use FOSSBilling\Period;
+use FOSSBilling\Core\Period;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'product_payment_period')]

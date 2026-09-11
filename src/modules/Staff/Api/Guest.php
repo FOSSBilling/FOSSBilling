@@ -17,17 +17,17 @@ namespace Box\Mod\Staff\Api;
 
 use Box\Mod\Staff\Entity\Admin;
 use Box\Mod\Staff\Entity\AdminPasswordReset;
-use FOSSBilling\Security\RandomizedTimeFloor;
-use FOSSBilling\Validation\Api\RequiredParams;
+use FOSSBilling\Core\Security\RandomizedTimeFloor;
+use FOSSBilling\Core\Validation\Api\RequiredParams;
 
-class Guest extends \FOSSBilling\Api\AbstractApi
+class Guest extends \FOSSBilling\Core\Api\AbstractApi
 {
     /**
      * Login to admin area and save information to session.
      *
      * @return array
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['email' => 'Email required', 'password' => 'Password required'])]
     public function login($data)
@@ -35,16 +35,16 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         $startedAt = microtime(true);
 
         try {
-            $data['email'] = $this->getDi()['tools']->validateAndSanitizeEmail($data['email'], true, false);
+            $data['email'] = \FOSSBilling\Core\Validation\EmailValidator::validateAndSanitizeEmail($data['email'], true, false);
 
-            $config = $this->getMod()->getConfig();
+            $config = $this->getModule()->getConfig();
 
             // check ip
             if (!empty($config['allowed_ips']) && isset($config['check_ip']) && $config['check_ip']) {
                 $allowed_ips = explode(PHP_EOL, (string) $config['allowed_ips']);
                 $allowed_ips = array_map(trim(...), $allowed_ips);
                 if (!in_array($this->getIp(), $allowed_ips)) {
-                    throw new \FOSSBilling\InformationException('You are not allowed to login to admin area from this IP address.', null, 403);
+                    throw new \FOSSBilling\Core\Exception\InformationException('You are not allowed to login to admin area from this IP address.', null, 403);
                 }
             }
 
@@ -62,11 +62,11 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         $startedAt = microtime(true);
 
         try {
-            $this->getDi()['rate_limiter']->consumeOrThrow('staff_password_reset_confirm_post_ip', (string) $this->getIp());
+            $this->getDi()['rate_limiter']->consumeOrThrow('staff_password_reset_confirm_post_ip', $this->getIp());
 
-            $config = $this->getMod()->getConfig();
+            $config = $this->getModule()->getConfig();
             if (isset($config['public']['reset_pw']) && $config['public']['reset_pw'] == '0') {
-                throw new \FOSSBilling\InformationException('Password reset has been disabled');
+                throw new \FOSSBilling\Core\Exception\InformationException('Password reset has been disabled');
             }
             $this->getDi()['events_manager']->fire(['event' => 'onBeforePasswordResetStaff']);
             $required = [
@@ -86,24 +86,24 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             if (!$reset instanceof AdminPasswordReset) {
                 $this->getDi()['logger']->withChannel('security')->info('Staff password reset confirmation failed from IP {ip}: reset token not found', ['ip' => $this->getIp()]);
 
-                throw new \FOSSBilling\InformationException('The link has expired or you have already confirmed the password reset.');
+                throw new \FOSSBilling\Core\Exception\InformationException('The link has expired or you have already confirmed the password reset.');
             }
 
             if (strtotime((string) $reset->getCreatedAt()?->format('Y-m-d H:i:s')) - time() + 900 < 0) {
                 $this->getDi()['logger']->withChannel('security')->info('Staff password reset confirmation failed for admin #{admin_id} from IP {ip}: reset token expired', ['admin_id' => $reset->getAdmin()?->getId(), 'ip' => $this->getIp()]);
 
-                throw new \FOSSBilling\InformationException('The link has expired or you have already confirmed the password reset.');
+                throw new \FOSSBilling\Core\Exception\InformationException('The link has expired or you have already confirmed the password reset.');
             }
 
             $admin = $reset->getAdmin();
             if (!$admin instanceof Admin) {
-                throw new \FOSSBilling\InformationException('Admin not found');
+                throw new \FOSSBilling\Core\Exception\InformationException('Admin not found');
             }
 
             if ($admin->getStatus() !== Admin::STATUS_ACTIVE || $admin->isCron()) {
                 $this->getDi()['logger']->withChannel('security')->info('Staff password reset confirmation failed for admin #{admin_id} from IP {ip}: account status {status}, system name {system_name}', ['admin_id' => $admin->getId(), 'ip' => $this->getIp(), 'status' => $admin->getStatus(), 'system_name' => $admin->getSystemName()]);
 
-                throw new \FOSSBilling\InformationException('The link has expired or you have already confirmed the password reset.');
+                throw new \FOSSBilling\Core\Exception\InformationException('The link has expired or you have already confirmed the password reset.');
             }
 
             $admin->setPass($this->getDi()['password']->hashIt($data['password']));
@@ -134,18 +134,18 @@ class Guest extends \FOSSBilling\Api\AbstractApi
     #[RequiredParams(['email' => 'Email required'])]
     public function passwordreset(array $data): bool
     {
-        $config = $this->getMod()->getConfig();
+        $config = $this->getModule()->getConfig();
         if (isset($config['public']['reset_pw']) && $config['public']['reset_pw'] == '0') {
-            throw new \FOSSBilling\InformationException('Password reset has been disabled');
+            throw new \FOSSBilling\Core\Exception\InformationException('Password reset has been disabled');
         }
 
         $startedAt = microtime(true);
 
         try {
             $this->getDi()['events_manager']->fire(['event' => 'onBeforePasswordResetStaff']);
-            $data['email'] = $this->getDi()['tools']->validateAndSanitizeEmail($data['email']);
+            $data['email'] = \FOSSBilling\Core\Validation\EmailValidator::validateAndSanitizeEmail($data['email']);
 
-            $ipLimit = $this->getDi()['rate_limiter']->consume('staff_password_reset_ip', (string) $this->getIp());
+            $ipLimit = $this->getDi()['rate_limiter']->consume('staff_password_reset_ip', $this->getIp());
             if ($ipLimit->isLimited()) {
                 $this->getDi()['logger']->withChannel('security')->info('Staff password reset rate limited from IP {ip}: email {email}', ['ip' => $this->getIp(), 'email' => $data['email']]);
 

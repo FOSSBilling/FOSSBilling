@@ -1,0 +1,97 @@
+<?php
+
+declare(strict_types=1);
+/**
+ * Copyright 2022-2026 FOSSBilling
+ * SPDX-License-Identifier: Apache-2.0.
+ *
+ * @copyright FOSSBilling (https://www.fossbilling.org)
+ * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
+ */
+
+namespace FOSSBilling\Core\Security;
+
+class PasswordManager
+{
+    private string $algo;
+    private array $options;
+
+    public function __construct(string $algo = PASSWORD_DEFAULT, array $options = [])
+    {
+        $this->setAlgo($algo);
+        $this->setOptions($options);
+    }
+
+    /**
+     * Sets the password hashing algorithm.
+     *
+     * @return object an instance of the current class, for use with chaining
+     *
+     * @throws \Exception if the provided algorithm is not listed as a valid option in PHP
+     */
+    public function setAlgo(string $algo): object
+    {
+        if (!in_array($algo, password_algos())) {
+            throw new \Exception('Invalid password hash provided');
+        }
+
+        $this->algo = $algo;
+
+        return $this;
+    }
+
+    public function getAlgo(): string
+    {
+        return $this->algo;
+    }
+
+    /**
+     * @return object an instance of the current class, for use with chaining
+     */
+    public function setOptions($options = []): object
+    {
+        $this->options = array_merge(['cost' => 12], $options);
+
+        return $this;
+    }
+
+    public function getOptions(): array
+    {
+        return $this->options;
+    }
+
+    /**
+     * Creates a hash of the provided password.
+     *
+     * @throws \Exception if there was an error when hashing the password
+     */
+    public function hashIt(string $password): string
+    {
+        $hash = password_hash($password, $this->algo, $this->options);
+        // @phpstan-ignore identical.alwaysFalse (password_hash can return false on failure)
+        if ($hash === false) {
+            throw new \Exception("Password hashing failed with {$this->algo} and the following options: " . print_r($this->options, true));
+        }
+
+        return $hash;
+    }
+
+    public function verify(string $password, string $hash): bool
+    {
+        return password_verify($password, $hash);
+    }
+
+    public function needsRehash(string $hash): bool
+    {
+        return password_needs_rehash($hash, $this->algo, $this->options);
+    }
+
+    /**
+     * Performs a random `password_verify` check.
+     * Does not serve a purpose other than to spend some CPU & eliminate timing differences between login attempts on accounts that do and do not exist.
+     */
+    public function dummyVerify(string $password): void
+    {
+        password_verify($password, '$2y$12$PQthNKx3xYyijvBtW0W6kOpwM0T4VkfCabQ5kWCPxht6L71W6tw.K');
+    }
+}
