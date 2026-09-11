@@ -1612,10 +1612,11 @@ class Service implements InjectionAwareInterface
             // serie_nr is not a stored column; it is the invoice serie followed
             // by the zero-padded number, matching how the Invoice module builds it.
             $serieNr = null;
-            if ($invoice !== null && isset($invoice['serie'], $invoice['nr'])) {
+            if ($invoice !== null && isset($invoice['serie'])) {
                 $padding = $this->di['mod_service']('system')->getParamValue('invoice_number_padding');
                 $padding = ($padding !== null && $padding !== '') ? (int) $padding : 5;
-                $serieNr = $invoice['serie'] . sprintf('%0' . $padding . 's', $invoice['nr']);
+                $nr = is_numeric($invoice['nr'] ?? null) ? (int) $invoice['nr'] : (int) ($invoice['id'] ?? $result['invoice_id']);
+                $serieNr = $invoice['serie'] . sprintf('%0' . $padding . 's', $nr);
             }
 
             $result['invoice'] = [
