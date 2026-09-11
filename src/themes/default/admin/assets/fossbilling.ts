@@ -1,6 +1,6 @@
 // @ts-nocheck -- Runtime DOM/widget integration; converted to TS without changing behavior.
 import './js/ui/modals.ts';
-import * as tabler from '@tabler/core/js/tabler.js';
+import * as tabler from '@tabler/core';
 import './js/fossbilling.ts';
 
 globalThis.bootstrap = tabler.bootstrap;
