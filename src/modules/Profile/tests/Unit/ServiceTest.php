@@ -67,7 +67,11 @@ test('generates new api key', function (): void {
 
     $model = createEntity(Box\Mod\Staff\Entity\Admin::class);
 
-    $service = new Service();
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('invalidateSessions')
+        ->once()
+        ->with('admin', (int) $model->getId())
+        ->andReturn(true);
     $service->setDi($di);
 
     $result = $service->generateNewApiKey($model);
@@ -259,7 +263,11 @@ test('resets api key', function (): void {
 
     $model = createEntity(Box\Mod\Client\Entity\Client::class);
 
-    $service = new Service();
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('invalidateSessions')
+        ->once()
+        ->with('client', (int) $model->getId())
+        ->andReturn(true);
     $service->setDi($di);
     $result = $service->resetApiKey($model);
     expect($result)->toBeString();
