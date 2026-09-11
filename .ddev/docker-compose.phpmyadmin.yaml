@@ -2,7 +2,7 @@
 services:
   phpmyadmin:
     container_name: ddev-${DDEV_SITENAME}-phpmyadmin
-    image: ${PHPMYADMIN_DOCKER_IMAGE:-phpmyadmin:5@sha256:3a8a8d6b5289091f959ba0293f21163b3a2fc5741991a53de70b3497fe8d31db}
+    image: ${PHPMYADMIN_DOCKER_IMAGE:-phpmyadmin:5}
     working_dir: "/root"
     restart: "no"
     labels:
@@ -22,9 +22,6 @@ services:
       - UPLOAD_LIMIT=4000M
       - HTTP_EXPOSE=8036:80
       - HTTPS_EXPOSE=8037:80
-    healthcheck:
-      interval: 120s
-      timeout: 2s
-      retries: 1
     depends_on:
-      - db
+      db:
+        condition: service_healthy
