@@ -85,12 +85,21 @@ Technical root-cause walkthrough:
   later hardening pass should have covered this path but missed it. This
   turns "here's a bug" into "here's why it slipped through," which reads as
   far more credible and helps prevent recurrence.
+- Keep it tight: one code quote is usually enough, and skip the response-code
+  path unless it is load-bearing for the verdict. Compress history to a
+  single closing paragraph and don't re-explain what Summary or Impact
+  already stated. A first draft through this process was cut roughly in half
+  on review for exactly these reasons.
 
 ### Workarounds
 Practical steps an operator can take before a patch ships. If there is no
 real workaround, say so plainly ("There is no complete workaround without
 patching") and then list partial mitigations (WAF/reverse-proxy rate
 limiting, disabling the affected feature, config hardening).
+Keep it to two or three sentences: the plain statement, the incident
+response steps, then partial mitigations. Fold side effects (such as logging
+out the legitimate user too) into a single clause rather than a separate
+explanation.
 
 ### Acknowledgements
 `Thanks to @<reporter> for responsibly reporting this vulnerability.`
@@ -272,3 +281,7 @@ if you need the specifics):
 - v1.10: Acknowledgements now require the `@` mention prefix
   (`Thanks to @<reporter> ...`) per user correction and GitHub
   user-linking conventions.
+- v1.11: Details and Workarounds now carry brevity rules after review
+  feedback cut a first draft roughly in half (one code quote, no
+  non-load-bearing response path, history in one closing paragraph;
+  Workarounds in two or three sentences with side effects in a clause).
