@@ -1,10 +1,12 @@
 // @ts-nocheck -- Runtime DOM/widget integration; converted to TS without changing behavior.
-import { Tooltip, Toast, Modal, Collapse, Tab } from 'bootstrap/dist/js/bootstrap.esm.js';
+import * as tabler from '@tabler/core';
 import './js/utils.ts';
 import initTheme from './js/ui/theme.ts';
 import initPhoneInput from './js/phone-input.ts';
 
-globalThis.bootstrap = { Tooltip, Toast, Modal, Collapse, Tab };
+globalThis.tabler = tabler;
+// Deprecated alias for third-party extensions; first-party code uses `tabler.*`.
+globalThis.bootstrap = tabler.bootstrap;
 
 document.addEventListener('DOMContentLoaded', () => {
   /**

@@ -15,6 +15,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 const purgeSafelist = [/^hide-/, /^iti/];
 const rootDir = resolve(__dirname, '../../../..');
 const nodeModulesDir = resolve(rootDir, 'node_modules');
+const clientLoaders = { ...sharedLoaders, '.svg': 'dataurl' } as const;
 
 async function build() {
   console.log(`Building huraga theme (${isProduction ? 'production' : 'development'}) with esbuild ...`);
@@ -41,7 +42,7 @@ async function build() {
       entryNames: '[name]',
       chunkNames: 'chunks/[name]-[hash]',
       isProduction,
-      loader: sharedLoaders,
+      loader: clientLoaders,
       splitting: true,
       drop: isProduction ? ['console', 'debugger'] : []
     });
@@ -51,7 +52,7 @@ async function build() {
       outfile: join(paths.cssDir, 'huraga.css'),
       nodeModulesDir,
       isProduction,
-      loader: sharedLoaders,
+      loader: clientLoaders,
       themePath: __dirname,
       purge: {
         area: 'client',
@@ -64,7 +65,7 @@ async function build() {
       outfile: join(paths.cssDir, 'vendor.css'),
       nodeModulesDir,
       isProduction,
-      loader: sharedLoaders,
+      loader: clientLoaders,
       themePath: __dirname,
       purge: {
         area: 'client',

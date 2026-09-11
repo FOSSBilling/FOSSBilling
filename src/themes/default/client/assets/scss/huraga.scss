@@ -12,7 +12,7 @@ body {
 }
 
 body {
-    font-family: var(--bs-body-font-family, system-ui, -apple-system, sans-serif);
+    font-family: var(--tblr-body-font-family, system-ui, -apple-system, sans-serif);
     font-size: 1rem;
     line-height: 1.42857143;
 }
@@ -27,18 +27,18 @@ body {
 }
 
 .offcanvas-item {
-    border-bottom: 1px solid var(--bs-border-color);
+    border-bottom: 1px solid var(--tblr-border-color);
 
     &:first-child {
-        border-top: 1px solid var(--bs-border-color);
+        border-top: 1px solid var(--tblr-border-color);
     }
 
     &:hover {
-        background: var(--bs-tertiary-bg);
+        background: var(--tblr-bg-surface);
     }
 
     >a {
-        color: var(--bs-secondary);
+        color: var(--tblr-secondary);
     }
 }
 
@@ -52,7 +52,7 @@ body {
             >tr {
                 >th {
                     font-size: 0.765625rem;
-                    color: var(--bs-secondary);
+                    color: var(--tblr-secondary);
                     font-weight: 600;
                     text-transform: uppercase;
                 }
@@ -77,12 +77,6 @@ body {
     stroke-width: 2;
     stroke-linecap: round;
     stroke-linejoin: round;
-}
-
-// Order management accordion
-#orderManager {
-    --bs-accordion-btn-icon: none;
-    --bs-accordion-btn-active-icon: none;
 }
 
 // TomSelect dropdown
@@ -114,12 +108,12 @@ body {
         font-size: 14px;
 
         .active {
-            background-color: rgba(var(--bs-secondary-rgb), 0.06);
+            background-color: rgba(var(--tblr-muted-rgb), 0.06);
             color: inherit;
         }
 
         .selected {
-            background-color: rgba(var(--bs-secondary-rgb), 0.1);
+            background-color: rgba(var(--tblr-muted-rgb), 0.1);
         }
     }
 }
@@ -131,15 +125,15 @@ body {
 }
 
 .invoice-gateway {
-    border: 1px solid var(--bs-border-color);
+    border: 1px solid var(--tblr-border-color);
 
     &:hover,
     &:has(.btn-check:checked) {
-        border: 1px solid var(--bs-primary);
+        border: 1px solid var(--tblr-primary);
     }
 
-    // Bootstrap's .btn-check:checked + .btn draws its own border using
-    // --bs-btn-active-border-color, which is never set on a bare .btn (no
+    // Tabler's .btn-check:checked + .btn draws its own border using
+    // --tblr-btn-active-border-color, which is never set on a bare .btn (no
     // color variant). That leaves the browser to fall back to the inherited
     // text color, drawing a stray dark border tight around the logo. The
     // highlight above on the container is enough, so suppress it here.
@@ -149,21 +143,21 @@ body {
 }
 
 .iti {
-    --iti-border-color: var(--bs-border-color);
-    --iti-country-selector-bg: var(--bs-body-bg);
-    --iti-hover-color: rgba(var(--bs-primary-rgb), 0.08);
-    --iti-icon-color: var(--bs-secondary-color);
+    --iti-border-color: var(--tblr-border-color);
+    --iti-country-selector-bg: var(--tblr-body-bg);
+    --iti-hover-color: rgba(var(--tblr-primary-rgb), 0.08);
+    --iti-icon-color: var(--tblr-secondary-color);
 
     width: 100%;
 }
 
 .iti__country-selector,
 .iti__search-input {
-    color: var(--bs-body-color);
+    color: var(--tblr-body-color);
 }
 
 .iti__search-input {
-    background-color: var(--bs-body-bg);
+    background-color: var(--tblr-body-bg);
 }
 
 .email-list {
@@ -171,13 +165,13 @@ body {
 
     .list-group-item {
         border: 0;
-        border-bottom: 1px solid var(--bs-border-color);
+        border-bottom: 1px solid var(--tblr-border-color);
         border-left: 2px solid transparent;
 
         &.active {
-            border-left: 2px solid var(--bs-primary);
-            background: rgba(var(--bs-primary-rgb), 0.1);
-            color: var(--bs-dark);
+            border-left: 2px solid var(--tblr-primary);
+            background: rgba(var(--tblr-primary-rgb), 0.1);
+            color: var(--tblr-dark);
         }
     }
 }
@@ -196,12 +190,12 @@ body {
 
 .card-header {
     padding: 0.75rem 1.25rem;
-    background-color: var(--bs-tertiary-bg);
+    background-color: var(--tblr-bg-surface);
 }
 
 // Navbar and logo styling
 .navbar {
-    background-color: var(--bs-body-bg);
+    background-color: var(--tblr-body-bg);
     box-shadow: none;
 }
 
@@ -219,10 +213,10 @@ body {
 }
 
 .locale-selector-dropdown {
-    background-color: var(--bs-body-bg);
-    border: 1px solid var(--bs-border-color);
-    border-radius: var(--bs-border-radius);
-    box-shadow: var(--bs-box-shadow);
+    background-color: var(--tblr-body-bg);
+    border: 1px solid var(--tblr-border-color);
+    border-radius: var(--tblr-border-radius);
+    box-shadow: var(--tblr-box-shadow);
 
     .dropdown-item {
         display: flex;
@@ -254,31 +248,31 @@ body {
 }
 
 .nav-link {
-    color: var(--bs-body-color);
+    color: var(--tblr-body-color);
 }
 
 .nav-link:hover {
-    color: var(--bs-primary) !important;
+    color: var(--tblr-primary) !important;
 }
 
 .nav-link.active,
 .offcanvas-item.active > .nav-link {
-    color: var(--bs-primary) !important;
+    color: var(--tblr-primary) !important;
     font-weight: 600;
 }
 
 .nav-pills .nav-link.active {
-    color: var(--bs-nav-pills-link-active-color) !important;
+    color: var(--tblr-nav-pills-link-active-color) !important;
 }
 
 .offcanvas-item.active {
-    background: rgba(var(--bs-primary-rgb), 0.08);
+    background: rgba(var(--tblr-primary-rgb), 0.08);
 }
 
 // Client profile dropdown - inline with nav items, transparent background
 .client-dropdown {
     .nav-link.dropdown-toggle {
-        color: var(--bs-body-color);
+        color: var(--tblr-body-color);
         background-color: transparent;
         border: none;
         display: inline-flex;
@@ -287,7 +281,7 @@ body {
         padding: 0.5rem 0.75rem;
 
         &:hover {
-            color: var(--bs-primary);
+            color: var(--tblr-primary);
         }
 
         &::after {
@@ -296,9 +290,9 @@ body {
     }
 
     .dropdown-menu {
-        background-color: var(--bs-body-bg);
-        border: 1px solid var(--bs-border-color);
-        box-shadow: var(--bs-box-shadow);
+        background-color: var(--tblr-body-bg);
+        border: 1px solid var(--tblr-border-color);
+        box-shadow: var(--tblr-box-shadow);
     }
 
     .dropdown-item {
@@ -306,23 +300,23 @@ body {
     }
 }
 
-// Alert styling - use Bootstrap's native alert colors
+// Alert styling - use Tabler's native alert colors
 .alert-danger {
-    --bs-alert-bg: rgba(var(--bs-danger-rgb), 0.15);
-    --bs-alert-border-color: rgba(var(--bs-danger-rgb), 0.3);
-    --bs-alert-color: var(--bs-danger);
+    --tblr-alert-bg: rgba(var(--tblr-danger-rgb), 0.15);
+    --tblr-alert-border-color: rgba(var(--tblr-danger-rgb), 0.3);
+    --tblr-alert-color: var(--tblr-danger);
 }
 
 .alert-warning {
-    --bs-alert-bg: rgba(var(--bs-warning-rgb), 0.15);
-    --bs-alert-border-color: rgba(var(--bs-warning-rgb), 0.3);
-    --bs-alert-color: var(--bs-warning);
+    --tblr-alert-bg: rgba(var(--tblr-warning-rgb), 0.15);
+    --tblr-alert-border-color: rgba(var(--tblr-warning-rgb), 0.3);
+    --tblr-alert-color: var(--tblr-warning);
 }
 
 .alert-info {
-    --bs-alert-bg: rgba(var(--bs-primary-rgb), 0.1);
-    --bs-alert-border-color: rgba(var(--bs-primary-rgb), 0.2);
-    --bs-alert-color: var(--bs-primary);
+    --tblr-alert-bg: rgba(var(--tblr-primary-rgb), 0.1);
+    --tblr-alert-border-color: rgba(var(--tblr-primary-rgb), 0.2);
+    --tblr-alert-color: var(--tblr-primary);
 }
 
 // Order page text sizing
@@ -343,7 +337,7 @@ body {
             font-size: 1rem;
             font-weight: 600;
             margin: 0;
-            color: var(--bs-body-color);
+            color: var(--tblr-body-color);
         }
     }
 }
@@ -354,7 +348,7 @@ body {
     align-items: center;
 
     .form-select.js-locale-selector {
-        color: var(--bs-body-color);
+        color: var(--tblr-body-color);
         padding: 0.5rem 2rem 0.5rem 0.75rem;
         font-size: 0.875rem;
         line-height: 1.5;
@@ -407,5 +401,5 @@ body {
 }
 
 .db-avatar {
-    background-color: var(--bs-secondary-bg);
+    background-color: var(--tblr-secondary-bg);
 }

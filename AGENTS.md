@@ -29,8 +29,7 @@ FOSSBilling is a free and open-source billing and client management solution des
   * [dompdf](https://github.com/dompdf/dompdf): PDF generation for invoices and documents
   * [Pimple](https://github.com/silexphp/Pimple): Dependency injection container, see `src/di.php`.
 * **Frontend:** Modern JavaScript and CSS with npm package management. Key dependencies include:
-  * [Tabler.io](https://tabler.io): CSS framework for the admin theme, based on [Bootstrap 5](https://getbootstrap.com/)
-  * [Bootstrap 5](https://getbootstrap.com/): CSS framework used directly by the Huraga client theme
+  * [Tabler.io](https://tabler.io): CSS framework for the admin and Huraga client themes, based on [Bootstrap 5](https://getbootstrap.com/)
   * [CKEditor 5](https://ckeditor.com/ckeditor-5/): Shared rich text editor built into the core public assets
   * [Tom Select](https://tom-select.js.org/): Enhanced select boxes with search and tagging
   * [Autosize](http://www.jacklmoore.com/autosize/): Automatic textarea resizing

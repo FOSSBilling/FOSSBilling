@@ -8,7 +8,7 @@
     "node": ">=24"
   },
   "dependencies": {
-    "bootstrap": "^5.3.3",
+    "@tabler/core": "^1.5.1",
     "flag-icons": "^7.2.3",
     "intl-tel-input": "^29.1.0",
     "tom-select": "^2.3.1"
