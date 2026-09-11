@@ -3,6 +3,9 @@ import * as tabler from '@tabler/core';
 import './js/utils.ts';
 import initTheme from './js/ui/theme.ts';
 import initPhoneInput from './js/phone-input.ts';
+import { errorMessage } from '../../../../../frontend/core/error-message.mts';
+import { initTabDeepLinking } from '../../../../../frontend/core/tabs.mts';
+import { initTooltips } from '../../../../../frontend/core/tooltips.mts';
 
 globalThis.tabler = tabler;
 // Deprecated alias for third-party extensions; first-party code uses `tabler.*`.
@@ -13,25 +16,14 @@ document.addEventListener('DOMContentLoaded', () => {
    * Global error handler for unhandled Promise rejections
    */
   window.addEventListener('unhandledrejection', function(event) {
-    const error = event.reason;
-    let message = 'An unexpected error occurred';
-    if (error && typeof error === 'object') {
-      message = error.message || error.code || message;
-    } else if (typeof error === 'string') {
-      message = error;
-    }
-    FOSSBilling.message(message, 'error');
+    FOSSBilling.message(errorMessage(event.reason), 'error');
   });
 
   /**
    * Global error handler for synchronous errors
    */
   window.onerror = function(message, source, lineno, colno, error) {
-    let displayMessage = message;
-    if (error && error.message) {
-      displayMessage = error.message;
-    }
-    FOSSBilling.message(displayMessage, 'error');
+    FOSSBilling.message((error && error.message) || message, 'error');
   };
 
   /**
@@ -45,27 +37,10 @@ document.addEventListener('DOMContentLoaded', () => {
   /**
    * Enable Bootstrap Tooltip
    */
-  const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-  [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+  initTooltips(bootstrap.Tooltip);
 
-  const showLinkedTab = () => {
-    const id = window.location.hash.slice(1);
-    const trigger = [...document.querySelectorAll('[data-bs-toggle="tab"], [data-bs-toggle="pill"], [data-bs-toggle="list"]')]
-      .find((tab) => (tab.getAttribute('data-bs-target') || tab.getAttribute('href')) === `#${id}`);
-    if (trigger) {
-      bootstrap.Tab.getOrCreateInstance(trigger).show();
-    }
-  };
-
-  showLinkedTab();
-  window.addEventListener('hashchange', showLinkedTab);
-  document.querySelectorAll('[data-bs-toggle="tab"], [data-bs-toggle="pill"], [data-bs-toggle="list"]').forEach((trigger) => {
-    trigger.addEventListener('shown.bs.tab', function() {
-      const target = this.getAttribute('data-bs-target') || this.getAttribute('href');
-      if (target?.startsWith('#')) {
-        history.replaceState({}, '', `${window.location.pathname}${window.location.search}${target}`);
-      }
-    });
+  initTabDeepLinking(bootstrap.Tab, {
+    selectors: '[data-bs-toggle="tab"], [data-bs-toggle="pill"], [data-bs-toggle="list"]',
   });
 
   /**
@@ -111,13 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
       FOSSBilling.api.guest.post('cart/set_currency', {currency: select.value}, function(response) {
         location.reload();
       }, function(error) {
-        let message = 'An unexpected error occurred';
-        if (error && typeof error === 'object') {
-          message = error.message || error.code || message;
-        } else if (typeof error === 'string') {
-          message = error;
-        }
-        FOSSBilling.message(message, 'error');
+        FOSSBilling.message(errorMessage(error), 'error');
       });
     });
   });

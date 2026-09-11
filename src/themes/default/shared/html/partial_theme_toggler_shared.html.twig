@@ -1,0 +1,23 @@
+{# Shared light/dark theme toggler pair for the admin and client layouts.
+   Layouts keep their own wrappers (div vs li). Wired by the shared
+   initThemeToggle controller (frontend/core/theme-toggle.mts), which reads
+   the ?theme=light|dark hrefs.
+
+   The FOUC scripts intentionally stay per-layout (admin defaults to dark
+   markup with removeAttribute-for-light, client keeps its settings.theme
+   server default) - unifying those changes first paint and needs a product
+   decision. #}
+<a class="nav-link px-0 hide-theme-dark js-theme-toggler"
+   href="?theme=dark"
+   data-bs-toggle="tooltip"
+   data-bs-placement="bottom"
+   data-bs-original-title="{{ 'Enable dark mode'|trans }}">
+    <svg class="icon text-dark"><use href="#moon" /></svg>
+</a>
+<a class="nav-link px-0 hide-theme-light js-theme-toggler"
+   href="?theme=light"
+   data-bs-toggle="tooltip"
+   data-bs-placement="bottom"
+   data-bs-original-title="{{ 'Enable light mode'|trans }}">
+    <svg class="icon text-white"><use href="#sun" /></svg>
+</a>

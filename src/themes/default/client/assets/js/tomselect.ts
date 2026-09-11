@@ -4,6 +4,7 @@
  */
 
 import TomSelect from 'tom-select';
+import { initLocaleSelector } from "../../../../../../frontend/core/locale-select.mts";
 
 globalThis.TomSelect = TomSelect;
 
@@ -31,28 +32,8 @@ function localeSelectorTemplate(data, escape) {
 }
 
 export default function initLanguageSelector() {
-  const localeSelectorEl = document.querySelector('.js-locale-selector');
-  if (localeSelectorEl === null) {
-    return;
-  }
-
-  const localeCookie = FOSSBilling.cookieNames?.locale || 'fossbilling_locale';
-  const selectedLang = FOSSBilling.cookieRead(localeCookie) || localeSelectorEl.value;
-
-  new TomSelect('.js-locale-selector', {
-    copyClassesToDropdown: false,
-    controlClass: 'ts-control locale',
-    dropdownClass: 'dropdown-menu ts-dropdown locale-selector-dropdown',
-    optionClass: 'dropdown-item',
-    controlInput: false,
-    items: selectedLang ? [selectedLang] : [],
-    render: {
-      item: (data, escape) => localeSelectorTemplate(data, escape),
-      option: (data, escape) => localeSelectorTemplate(data, escape),
-    },
-    onItemAdd: (value) => {
-      FOSSBilling.cookieCreate(localeCookie, value, 365);
-      window.location.reload();
-    },
+  initLocaleSelector(TomSelect, {
+    item: (data, escape) => localeSelectorTemplate(data, escape),
+    option: (data, escape) => localeSelectorTemplate(data, escape),
   });
 }

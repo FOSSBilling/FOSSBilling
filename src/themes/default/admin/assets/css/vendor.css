@@ -1,7 +1,5 @@
-/* Shared vendor dependencies (also used by huraga theme) */
-@import "@tabler/core/dist/css/tabler.css";
-@import "@tabler/core/dist/css/tabler-vendors.css";
-@import "tom-select/dist/css/tom-select.bootstrap5.css";
+/* Admin theme vendor dependencies: shared base plus admin-specific lines. */
+@import "../../../../../../frontend/styles/vendor-base.css";
 
 /* Admin theme-specific vendor dependencies */
 @import "sortable-tablesort/dist/sortable-base.css";

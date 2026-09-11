@@ -1,5 +1,3 @@
-/* Huraga theme vendor dependencies */
-@import "@tabler/core/dist/css/tabler.css";
-@import "@tabler/core/dist/css/tabler-vendors.css";
+/* Huraga theme vendor dependencies: shared base plus client-specific lines. */
+@import "../../../../../../frontend/styles/vendor-base.css";
 @import "intl-tel-input/styles";
-@import "tom-select/dist/css/tom-select.bootstrap5.css";

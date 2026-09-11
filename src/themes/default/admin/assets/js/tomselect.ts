@@ -1,6 +1,6 @@
 // @ts-nocheck -- Runtime DOM/widget integration; converted to TS without changing behavior.
 import TomSelect from 'tom-select';
-import { getCSRFToken, getBaseURL } from './utils.ts';
+import { initLocaleSelector } from "../../../../../../frontend/core/locale-select.mts";
 globalThis.TomSelect = TomSelect;
 
 const createTomSelectTemplate = (data, escape, options = {}) => {
@@ -16,28 +16,10 @@ const createTomSelectTemplate = (data, escape, options = {}) => {
 };
 
 export default function initTomSelectControls() {
-  const localeSelectorEl = document.querySelector('.js-locale-selector');
-  if (localeSelectorEl !== null) {
-    const localeCookie = FOSSBilling.cookieNames?.locale || "fossbilling_locale";
-    const selectedLang = FOSSBilling.cookieRead(localeCookie) || localeSelectorEl.value;
-    const localeSelector = new TomSelect(".js-locale-selector", {
-      copyClassesToDropdown: false,
-      controlClass: "ts-control locale",
-      dropdownClass: "dropdown-menu ts-dropdown locale-selector-dropdown",
-      optionClass: "dropdown-item",
-      controlInput: false,
-      items: selectedLang ? [selectedLang] : [],
-      render: {
-        item: (data, escape) => createTomSelectTemplate(data, escape, { showIndicator: true }),
-        option: (data, escape) => createTomSelectTemplate(data, escape, { showIndicator: true }),
-      },
-    });
-
-    localeSelector.on("change", (value) => {
-      FOSSBilling.cookieCreate(localeCookie, value, 365);
-      window.location.reload();
-    });
-  }
+  initLocaleSelector(TomSelect, {
+    item: (data, escape) => createTomSelectTemplate(data, escape, { showIndicator: true }),
+    option: (data, escape) => createTomSelectTemplate(data, escape, { showIndicator: true }),
+  });
 
 
   const autocompleteTemplate = (item, escape) => {
@@ -65,13 +47,13 @@ export default function initTomSelectControls() {
         searchField: ["label", "value"],
         load: (query, callback) => {
           try {
-            const restUrl = new URL(getBaseURL(autocompleteSelectorEl.dataset.resturl));
+            const restUrl = new URL(FOSSBilling.tools.getBaseURL(autocompleteSelectorEl.dataset.resturl));
             restUrl.searchParams.append("search", query);
             restUrl.searchParams.append("per_page", 5);
 
             fetch(restUrl, {
               headers: {
-                'X-CSRF-Token': getCSRFToken() || '',
+                'X-CSRF-Token': FOSSBilling.tools.getCSRFToken() || '',
               }
             })
               .then((response) => {

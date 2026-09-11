@@ -1,92 +1,13 @@
 import { fileURLToPath } from 'url';
-import { dirname, join, resolve } from 'path';
-import {
-  buildCssFile,
-  buildJsFile,
-  getThemeBuildPaths,
-  prepareThemeBuildDirs,
-  sharedLoaders,
-  writeAssetManifest,
-} from '../../../../frontend/tools/esbuild-helpers.mts';
-import { buildIconSprite } from '../../../../frontend/tools/icon-sprite.mts';
+import { dirname } from 'path';
+import { buildTheme } from '../../../../frontend/tools/theme-build.mts';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const isProduction = process.env.NODE_ENV === 'production';
-const purgeSafelist = [/^hide-/, /^iti/];
-const rootDir = resolve(__dirname, '../../../..');
-const nodeModulesDir = resolve(rootDir, 'node_modules');
-const clientLoaders = { ...sharedLoaders, '.svg': 'dataurl' } as const;
 
-async function build() {
-  console.log(`Building huraga theme (${isProduction ? 'production' : 'development'}) with esbuild ...`);
-
-  const startTime = Date.now();
-
-  try {
-    const paths = getThemeBuildPaths(__dirname);
-    await prepareThemeBuildDirs(paths);
-
-    console.log('Generating icon sprite...');
-    await buildIconSprite({
-      manifestPath: resolve(__dirname, 'icon-manifest.json'),
-      outputDir: paths.symbolDir,
-      sources: [
-        { name: 'custom', dir: resolve(__dirname, 'custom-icons'), variant: 'custom' },
-        { name: '@tabler/icons', dir: resolve(nodeModulesDir, '@tabler/icons/icons') },
-      ],
-    });
-
-    await buildJsFile({
-      entryPoint: resolve(__dirname, 'assets/huraga.ts'),
-      outdir: paths.jsDir,
-      entryNames: '[name]',
-      chunkNames: 'chunks/[name]-[hash]',
-      isProduction,
-      loader: clientLoaders,
-      splitting: true,
-      drop: isProduction ? ['console', 'debugger'] : []
-    });
-
-    await buildCssFile({
-      entryPoint: resolve(__dirname, 'assets/scss/huraga.scss'),
-      outfile: join(paths.cssDir, 'huraga.css'),
-      nodeModulesDir,
-      isProduction,
-      loader: clientLoaders,
-      themePath: __dirname,
-      purge: {
-        area: 'client',
-        additionalStandardSafelist: purgeSafelist,
-      },
-    });
-
-    await buildCssFile({
-      entryPoint: resolve(__dirname, 'assets/css/vendor.css'),
-      outfile: join(paths.cssDir, 'vendor.css'),
-      nodeModulesDir,
-      isProduction,
-      loader: clientLoaders,
-      themePath: __dirname,
-      purge: {
-        area: 'client',
-        additionalStandardSafelist: purgeSafelist,
-      },
-    });
-
-    await writeAssetManifest(paths.buildDir, {
-      'build/huraga.js': '/themes/default/client/assets/build/js/huraga.js',
-      'build/vendor.css': '/themes/default/client/assets/build/css/vendor.css',
-      'build/huraga.css': '/themes/default/client/assets/build/css/huraga.css',
-      'build/symbol/icons-sprite.svg': '/themes/default/client/assets/build/symbol/icons-sprite.svg',
-    });
-
-    const duration = ((Date.now() - startTime) / 1000).toFixed(2);
-    console.log(`✓ Build complete in ${duration}s\n`);
-
-  } catch (error) {
-    console.error('✗ Build failed:', error);
-    process.exit(1);
-  }
-}
-
-build();
+buildTheme({
+  themeDir: __dirname,
+  label: 'huraga',
+  area: 'client',
+  jsEntry: 'assets/huraga.ts',
+  cssEntry: 'assets/scss/huraga.scss',
+});

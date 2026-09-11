@@ -1,75 +1,15 @@
 // @ts-nocheck -- Runtime DOM/widget integration; converted to TS without changing behavior.
 import backToTop from "./ui/backToTop.ts";
+import { showToastMessage } from "../../../../../../frontend/core/toast.mts";
+import { errorMessage } from "../../../../../../frontend/core/error-message.mts";
+import { initTabDeepLinking } from "../../../../../../frontend/core/tabs.mts";
 
 function renderTimeSeriesSparkline(...args) {
   return import("./ui/charts.ts").then(({ renderTimeSeriesSparkline: renderChart }) => renderChart(...args));
 }
 
 globalThis.FOSSBilling = Object.assign(globalThis.FOSSBilling || {}, {
-  message: (message, type = "info") => {
-    const titles = {
-      error: "Error",
-      warning: "Warning",
-      success: "Success",
-    };
-    const title = titles[type] || "Info";
-    let color;
-    switch (type) {
-      case "error":
-        color = "danger";
-        break;
-      case "warning":
-        color = "warning";
-        break;
-      case "success":
-        color = "success";
-        break;
-      default:
-        color = "primary";
-    }
-
-    const container = document.querySelector(".toast-container");
-
-    const element = document.createElement("div");
-    container.appendChild(element);
-    element.classList.add("toast", "show");
-    element.setAttribute("role", "alert");
-    element.setAttribute("aria-live", "assertive");
-    element.setAttribute("aria-atomic", "true");
-
-    const headerDiv = document.createElement("div");
-    headerDiv.className = "toast-header";
-
-    const spanEl = document.createElement("span");
-    spanEl.className = `p-2 border border-light bg-${color} rounded-circle me-2`;
-    headerDiv.appendChild(spanEl);
-
-    const strongEl = document.createElement("strong");
-    strongEl.className = "me-auto";
-    strongEl.textContent = title;
-    headerDiv.appendChild(strongEl);
-
-    const closeButton = document.createElement("button");
-    closeButton.type = "button";
-    closeButton.className = "btn-close";
-    closeButton.setAttribute("data-bs-dismiss", "toast");
-    closeButton.setAttribute("aria-label", "Close");
-    headerDiv.appendChild(closeButton);
-
-    element.appendChild(headerDiv);
-
-    const bodyDiv = document.createElement("div");
-    bodyDiv.className = "toast-body";
-    bodyDiv.textContent = message;
-    element.appendChild(bodyDiv);
-
-    element.addEventListener("hidden.bs.toast", () => {
-      container.removeChild(element);
-    });
-
-    const toast = new tabler.Toast(element);
-    toast.show();
-  },
+  message: (message, type = "info") => showToastMessage(message, type, tabler.Toast),
 
   charts: {
     renderTimeSeriesSparkline,
@@ -82,8 +22,7 @@ globalThis.FOSSBilling = Object.assign(globalThis.FOSSBilling || {}, {
       const error = event.reason;
       if (error && typeof error === 'object' && error.code) {
         event.preventDefault();
-        const message = error.message || error.code || 'An unexpected error occurred';
-        FOSSBilling.message(message, 'error');
+        FOSSBilling.message(errorMessage(error), 'error');
       }
     });
 
@@ -132,94 +71,7 @@ globalThis.FOSSBilling = Object.assign(globalThis.FOSSBilling || {}, {
    });
 
    //===== Tab deep-linking and persistence =====//
-   const tabTriggers = document.querySelectorAll('[data-bs-toggle="tab"], [data-bs-toggle="pill"]');
-
-   const getTabTargetSelector = (tabTrigger) => {
-     const dataTarget = tabTrigger.getAttribute('data-bs-target');
-     if (dataTarget && dataTarget.startsWith('#')) {
-       return dataTarget;
-     }
-
-     const hrefTarget = tabTrigger.getAttribute('href');
-     if (hrefTarget && hrefTarget.startsWith('#')) {
-       return hrefTarget;
-     }
-
-     return null;
-   };
-
-   const findTabTrigger = (tabId) => {
-     if (!tabId) {
-       return null;
-     }
-
-     return document.querySelector(
-       `[data-bs-toggle="tab"][data-bs-target="#${tabId}"], ` +
-       `[data-bs-toggle="pill"][data-bs-target="#${tabId}"], ` +
-       `[data-bs-toggle="tab"][href="#${tabId}"], ` +
-       `[data-bs-toggle="pill"][href="#${tabId}"]`
-     );
-   };
-
-   const showTabById = (tabId) => {
-     const tabTrigger = findTabTrigger(tabId);
-     if (!tabTrigger) {
-       return false;
-     }
-
-     const tab = tabler.Tab.getOrCreateInstance(tabTrigger);
-     tab.show();
-
-     return true;
-   };
-
-   const syncTabUrl = (tabId) => {
-     if (!tabId) {
-       return;
-     }
-
-     const url = new URL(window.location.href);
-     url.hash = tabId;
-     url.searchParams.delete('tab');
-     window.history.replaceState({}, '', url);
-   };
-
-   const hashTabId = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : '';
-   showTabById(hashTabId);
-
-   tabTriggers.forEach((tabTrigger) => {
-     tabTrigger.addEventListener('shown.bs.tab', function() {
-       const targetSelector = getTabTargetSelector(this);
-       if (targetSelector) {
-         syncTabUrl(targetSelector.slice(1));
-       }
-     });
-   });
-
-   window.addEventListener('hashchange', () => {
-     const nextTabId = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : '';
-     showTabById(nextTabId);
-   });
-
-   //===== Jump-to-tab links outside the tab nav (e.g. a note referencing another tab) =====//
-   document.addEventListener('click', (event) => {
-     if (!(event.target instanceof Element)) {
-       return;
-     }
-
-     const trigger = event.target.closest('[data-tab-jump]');
-     if (!trigger) {
-       return;
-     }
-
-     const targetSelector = trigger.getAttribute('href');
-     if (!targetSelector || !targetSelector.startsWith('#')) {
-       return;
-     }
-
-     event.preventDefault();
-     showTabById(targetSelector.slice(1));
-   });
+    initTabDeepLinking(tabler.Tab, { enableJumpLinks: true, clearTabParam: true });
 
    //===== Discord community popover (shown once) =====//
    const discordBtn = document.getElementById('discord-community-btn');

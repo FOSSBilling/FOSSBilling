@@ -55,6 +55,36 @@ export const sharedLoaders: LoaderMap = {
   '.webp': 'file',
 };
 
+// Tabler's CSS embeds small SVGs as data URLs; every theme and the
+// CKEditor bundle need this variant instead of the default file loader.
+export const svgDataUrlLoaders: LoaderMap = {
+  ...sharedLoaders,
+  '.svg': 'dataurl',
+};
+
+// Both default themes build their icon sprite from the same two sources:
+// per-theme custom icons plus the Tabler icon set.
+export function defaultIconSources(themeDir: string, nodeModulesDir: string) {
+  return [
+    { name: 'custom', dir: resolve(themeDir, 'custom-icons'), variant: 'custom' },
+    { name: '@tabler/icons', dir: resolve(nodeModulesDir, '@tabler/icons/icons') },
+  ];
+}
+
+// Derives the standard theme build manifest (JS bundle, vendor CSS, theme
+// CSS, icon sprite) from the theme directory name and bundle names, so the
+// entries can't drift out of sync by hand-editing.
+export function themeAssetManifest(themeName: string, jsBundle: string, cssBundle: string): Record<string, string> {
+  const prefix = `/themes/default/${themeName}/assets/build`;
+
+  return {
+    [`build/${jsBundle}.js`]: `${prefix}/js/${jsBundle}.js`,
+    'build/vendor.css': `${prefix}/css/vendor.css`,
+    [`build/${cssBundle}.css`]: `${prefix}/css/${cssBundle}.css`,
+    'build/symbol/icons-sprite.svg': `${prefix}/symbol/icons-sprite.svg`,
+  };
+}
+
 export function sassPlugin(nodeModulesDir: string, isProduction: boolean): Plugin {
   return {
     name: 'sass',
@@ -178,6 +208,22 @@ export async function purgeCssFile(cssFilePath: string, options: PurgeOptions) {
           /^spinner/,
           /^tooltip/,
           /^popover/,
+          // Tabler's theme-visibility utilities, used by the shared header
+          // controls snippet (src/themes/default/shared/html), which PurgeCSS
+          // doesn't scan directly.
+          /^hide-theme-/,
+          // The shared theme-toggle controller (frontend/core) references this
+          // hook class; its markup lives in the shared snippet above.
+          /^js-theme-toggler$/,
+          // Exact utility/component classes injected at runtime by the shared
+          // frontend/core modules (toast.mts, locale-select.mts), which
+          // PurgeCSS doesn't scan. Prefixed siblings (border-*, bg-*, text-*,
+          // btn-*, toast*) are covered by the prefix entries above.
+          /^border$/,
+          /^me-auto$/,
+          /^rounded-circle$/,
+          /^locale$/,
+          /^locale-selector-dropdown$/,
           /^active$/,
           /^show$/,
           /^fade$/,

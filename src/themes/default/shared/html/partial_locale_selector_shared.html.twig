@@ -1,0 +1,17 @@
+{# Shared locale selector for the admin and client layouts. Layouts keep
+   their own wrappers (div vs li) and the languages|length > 1 gate, passing
+   the pre-fetched `languages` list so the language API is only called once.
+
+   Flag classes differ per theme, so callers pass flag_base/flag_prefix:
+   admin uses flag_base 'flag' with flag_prefix 'flag-country-', client uses
+   flag_base 'fi' with flag_prefix 'fi-'. Both compile from the same
+   flag-icons SVGs; unifying the contracts would mean migrating one theme's
+   rendered HTML, TomSelect templates, and _flags.scss for cosmetic gain. #}
+{% set languages = languages|default(guest.extension_languages(true)) %}
+{% if languages|length > 1 %}
+    <select name="lang" class="form-select js-locale-selector">
+        {% for lang in languages %}
+            <option value="{{ lang.locale }}" data-custom-properties="&lt;span class=&quot;{{ flag_base }} {{ flag_prefix }}{{ lang.locale|split('_')[1]|lower }}&quot;&gt;&lt;/span&gt;"{% if lang.locale == guest.system_locale %} selected{% endif %}>{{ lang.title }}</option>
+        {% endfor %}
+    </select>
+{% endif %}

@@ -31,15 +31,19 @@
   ],
   "devDependencies": {
     "@playwright/test": "1.63.0",
+    "@tabler/core": "^1.5.1",
+    "@tabler/icons": "3.46.0",
     "@types/node": "24.13.3",
     "autoprefixer": "10.5.5",
     "ckeditor5": "48.5.0",
     "esbuild": "0.28.2",
+    "flag-icons": "^7.2.3",
     "github-markdown-css": "5.9.0",
     "postcss": "8.5.28",
     "purgecss": "8.0.0",
     "sass": "1.104.0",
     "svg-sprite": "2.0.4",
+    "tom-select": "^2.3.1",
     "typescript": "7.0.2"
   },
   "config": {

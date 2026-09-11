@@ -1,0 +1,11 @@
+{# Shared selectbox body for the admin and client macro_functions.html.twig files.
+   Canonical behavior is the admin variant: Tabler's form-select, a real HTML
+   required attribute (not a styling hook), escaped labels, and id defaulting
+   to the field name. Callers rendering the same field name twice on one page
+   must pass distinct `id` values to avoid duplicate IDs. #}
+<select class="form-select" name="{{ name }}" id="{{ id|default(name) }}"{% if required %} required{% endif %}>
+    {% if nullOption %}<option value="">{{ nullOption }}</option>{% endif %}
+    {% for val, label in options %}
+        <option value="{{ val }}" label="{{ label|e }}"{% if selected == val %} selected="selected"{% endif %}>{{ label|e }}</option>
+    {% endfor %}
+</select>

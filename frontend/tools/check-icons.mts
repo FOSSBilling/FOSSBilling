@@ -15,6 +15,7 @@ const themes = [
     scanPaths: [
       resolve(rootDir, 'src/themes/default/client/html'),
       resolve(rootDir, 'src/themes/default/client/assets'),
+      resolve(rootDir, 'src/themes/default/shared/html'),
       resolve(rootDir, 'src/modules'),
     ],
     disallowFilled: true,
@@ -26,6 +27,7 @@ const themes = [
     scanPaths: [
       resolve(rootDir, 'src/themes/default/admin/html'),
       resolve(rootDir, 'src/themes/default/admin/assets'),
+      resolve(rootDir, 'src/themes/default/shared/html'),
       resolve(rootDir, 'src/modules'),
     ],
     dynamicNavigation: true,

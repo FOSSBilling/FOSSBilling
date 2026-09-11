@@ -4,7 +4,7 @@ import {
   buildCssFile,
   buildJsFile,
   ensureDir,
-  sharedLoaders,
+  svgDataUrlLoaders,
   writeAssetManifest,
 } from './tools/esbuild-helpers.mts';
 
@@ -38,10 +38,7 @@ async function build() {
     outfile: resolve(outputDir, 'editor/ckeditor.js'),
     isProduction,
     drop: [],
-    loader: {
-      ...sharedLoaders,
-      '.svg': 'dataurl',
-    },
+    loader: svgDataUrlLoaders,
   });
 
   await buildCssFile({

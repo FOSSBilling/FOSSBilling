@@ -17,8 +17,9 @@ Themes own the UI packages they consume. Shared tooling in `frontend/tools` can 
 
 Examples (the shipped `default` theme package bundles both — `src/themes/default/admin` and `src/themes/default/client`; their npm workspace package names, `admin_default` and `huraga`, are unrelated to their directory paths):
 
-- `admin_default` (`src/themes/default/admin`) owns Tabler, Coloris, Chart.js, Litepicker, Tom Select, Flag Icons, and its Tabler icon package.
-- `huraga` (`src/themes/default/client`) owns Bootstrap, Tom Select, Flag Icons, and its Tabler icon package.
+- Tabler, Tom Select, Flag Icons, and the Tabler icon package are used by both themes and owned at the workspace root.
+- `admin_default` (`src/themes/default/admin`) additionally owns Coloris, Chart.js, Litepicker, and sortable-tablesort.
+- `huraga` (`src/themes/default/client`) additionally owns intl-tel-input.
 - `svg-sprite` is a root development dependency because the shared sprite helper imports it.
 
 ## Icons

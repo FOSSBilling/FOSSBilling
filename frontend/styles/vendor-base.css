@@ -1,0 +1,7 @@
+/* Vendor CSS shared by the default admin and client themes.
+   Imported first by each theme's assets/css/vendor.css, which appends its
+   own theme-specific line after this base. Keep this order: Tabler first,
+   then skins that layer on top of it. */
+@import "@tabler/core/dist/css/tabler.css";
+@import "@tabler/core/dist/css/tabler-vendors.css";
+@import "tom-select/dist/css/tom-select.bootstrap5.css";

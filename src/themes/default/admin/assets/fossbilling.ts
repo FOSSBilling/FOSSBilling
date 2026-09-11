@@ -2,6 +2,8 @@
 import './js/ui/modals.ts';
 import * as tabler from '@tabler/core';
 import './js/fossbilling.ts';
+import { initThemeToggle } from '../../../../../frontend/core/theme-toggle.mts';
+import { initTooltips } from '../../../../../frontend/core/tooltips.mts';
 
 globalThis.tabler = tabler;
 // Deprecated alias for third-party extensions; first-party code uses `tabler.*`.
@@ -131,41 +133,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 'theme settings');
   }
 
-  document.querySelectorAll('.js-theme-toggler').forEach(element => {
-    element.addEventListener('click', event => {
-      event.preventDefault();
-      // Intentionally use getAttribute('href') to read the raw attribute value
-      // instead of element.href, since we only parse a simple theme token here.
-      const href = element.getAttribute('href') || '';
-      let theme = null;
-
-      // Try to extract theme value safely from href
-      if (href.includes('=')) {
-        const parts = href.split('=');
-        if (parts.length > 1 && parts[1]) {
-          theme = parts[1];
-        }
-      }
-
-      if (!theme) {
-        return;
-      }
-
-      localStorage.setItem('theme', theme);
-      document.documentElement.setAttribute('data-bs-theme', theme);
-    });
-  });
-
+  initThemeToggle();
 
   /**
    * Enable Bootstrap Tooltip
    */
-  const tooltipTriggerList = Array.from(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-  tooltipTriggerList.forEach(function (tooltipTriggerEl) {
-    new tabler.Tooltip(tooltipTriggerEl, {
-      'trigger': 'hover'
-    });
-  });
+  initTooltips(tabler.Tooltip, { 'trigger': 'hover' });
 
 
   /**

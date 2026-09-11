@@ -1,7 +1,8 @@
 // Rules genuinely identical between the default admin and client themes.
-// Deliberately small and conservative: most component styling is
-// framework-specific (Tabler vs Bootstrap custom properties) and stays
-// duplicated on purpose rather than forcing a shared abstraction here.
+// Both themes run on Tabler and @use this file first, so anything here must
+// be order-independent: no per-theme selectors, no competing declarations.
+// Anything theme-specific stays in the theme's own stylesheet on purpose
+// rather than forcing a shared abstraction here.
 
 .fb-phone-country-code {
     width: 5.5rem;
@@ -10,9 +11,9 @@
 }
 
 // Every property here was identical between the two themes except
-// background-color, which is genuinely framework-specific (Tabler's
-// --tblr-bg-surface vs Bootstrap's --bs-secondary-bg) - each theme's own
-// stylesheet still sets that one property itself, after @use-ing this file.
+// background-color - each theme's own stylesheet still sets that one
+// property itself (currently --tblr-bg-surface in admin,
+// --tblr-secondary-bg in client), after @use-ing this file.
 .db-avatar {
     display: inline-block;
     flex-shrink: 0;
@@ -22,4 +23,60 @@
     background-repeat: no-repeat;
     border-radius: 50%;
     overflow: hidden;
+}
+
+// Center dialogs instead of Tabler's default offset.
+.modal-dialog {
+    margin-right: auto;
+    margin-left: auto;
+}
+
+// TomSelect base: identical config and markup in both themes, so the core
+// shell lives here. Each theme keeps only its own sizing additions.
+.ts-input {
+    color: inherit;
+}
+
+.ts-wrapper {
+    .ts-control {
+        width: 100%;
+        color: inherit;
+
+        &.locale {
+            width: 205px;
+        }
+
+        .dropdown-menu {
+            width: 100%;
+            height: auto;
+        }
+    }
+
+    .ts-dropdown {
+        .active {
+            background-color: rgba(var(--tblr-muted-rgb), .06);
+            color: inherit;
+        }
+
+        .selected {
+            background-color: rgba(var(--tblr-muted-rgb), .1);
+        }
+    }
+}
+
+// Toast treatment for FOSSBilling.message() toasts, which both themes render
+// into an identical .toast-container.
+[data-bs-theme=dark] {
+    .toast {
+        background: var(--tblr-bg-surface);
+        border: var(--tblr-border-width) var(--tblr-border-style) var(--tblr-secondary);
+    }
+
+    .toast-header {
+        color: var(--tblr-secondary);
+    }
+}
+
+.toast {
+    position: relative;
 }

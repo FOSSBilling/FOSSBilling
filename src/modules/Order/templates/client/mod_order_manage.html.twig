@@ -200,8 +200,8 @@
                                 <input type="hidden" name="rel_id" value="{{ order.id }}">
                                 <input type="hidden" name="rel_task" value="cancel">
                                 <div class="mb-3">
-                                    <label for="support-helpdesk-id" class="form-label">{{ 'Help Desk'|trans }}</label>
-                                    {{ mf.selectbox('support_helpdesk_id', client.support_helpdesk_get_pairs, request.support_helpdesk_id, 1) }}
+                                    <label for="support_helpdesk_id_cancel" class="form-label">{{ 'Help Desk'|trans }}</label>
+                                    {{ mf.selectbox('support_helpdesk_id', client.support_helpdesk_get_pairs, request.support_helpdesk_id, 1, null, 'support_helpdesk_id_cancel') }}
                                 </div>
                                 <div class="mb-3">
                                     <label for="subject" class="form-label">{{ 'Subject'|trans }}</label>
@@ -232,8 +232,8 @@
                                 <input type="hidden" name="rel_type" value="order">
                                 <input type="hidden" name="rel_id" value="{{ order.id }}">
                                 <div class="mb-3">
-                                    <label for="support-helpdesk-id" class="form-label">{{ 'Help Desk'|trans }}</label>
-                                    {{ mf.selectbox('support_helpdesk_id', client.support_helpdesk_get_pairs, request.support_helpdesk_id, 1) }}
+                                    <label for="support_helpdesk_id_ticket" class="form-label">{{ 'Help Desk'|trans }}</label>
+                                    {{ mf.selectbox('support_helpdesk_id', client.support_helpdesk_get_pairs, request.support_helpdesk_id, 1, null, 'support_helpdesk_id_ticket') }}
                                 </div>
                                 <div class="mb-3">
                                     <label for="subject" class="form-label">{{ 'Subject'|trans }}</label>
@@ -265,8 +265,8 @@
                                 <input type="hidden" name="rel_id" value="{{ order.id }}">
                                 <input type="hidden" name="rel_task" value="upgrade">
                                 <div class="mb-3">
-                                    <label for="support-helpdesk-id" class="form-label">{{ 'Help Desk'|trans }}</label>
-                                    {{ mf.selectbox('support_helpdesk_id', client.support_helpdesk_get_pairs, request.support_helpdesk_id, 1) }}
+                                    <label for="support_helpdesk_id_upgrade" class="form-label">{{ 'Help Desk'|trans }}</label>
+                                    {{ mf.selectbox('support_helpdesk_id', client.support_helpdesk_get_pairs, request.support_helpdesk_id, 1, null, 'support_helpdesk_id_upgrade') }}
                                 </div>
                                 <div class="mb-3">
                                     <label for="subject" class="form-label">{{ 'Subject'|trans }}</label>

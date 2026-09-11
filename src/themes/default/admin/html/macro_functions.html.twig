@@ -95,13 +95,8 @@
     {% endif %}
 {% endmacro q %}
 
-{% macro selectbox(name, options, selected, required, nullOption) %}
-    <select class="form-select" name="{{ name }}" id="{{ name }}"{% if required %}required{% endif%}>
-        {% if nullOption %}<option value="">{{ nullOption }}</option>{% endif %}
-        {% for val, label in options %}
-            <option value="{{ val }}" label="{{ label|e }}" {% if selected == val %}selected="selected"{% endif %}>{{ label|e }}</option>
-        {% endfor %}
-    </select>
+{% macro selectbox(name, options, selected, required, nullOption, id) %}
+{% include 'partial_selectbox_shared.html.twig' with {name: name, options: options, selected: selected, required: required, nullOption: nullOption, id: id} %}
 {% endmacro selectbox %}
 
 {% macro selectboxtld(name, options, selected, required) %}
@@ -139,117 +134,7 @@
 {% endmacro %}
 
 {% macro status_badge(status, type) %}
-    {% set status_key = status|default('')|lower %}
-    {% set status_classes = {
-        'order': {
-            'active': 'text-bg-success',
-            'pending_setup': 'text-bg-warning',
-            'failed_setup': 'text-bg-danger',
-            'suspended': 'text-bg-danger',
-            'failed_renew': 'text-bg-danger',
-            'canceled': 'text-bg-secondary',
-        },
-        'ticket': {
-            'open': 'text-bg-success',
-            'on_hold': 'text-bg-warning',
-            'closed': 'text-bg-secondary',
-        },
-        'invoice': {
-            'paid': 'text-bg-success',
-            'unpaid': 'text-bg-warning',
-            'refunded': 'text-bg-info',
-            'canceled': 'text-bg-secondary',
-        },
-        'client': {
-            'active': 'bg-green text-green-fg',
-            'suspended': 'bg-red text-red-fg',
-            'canceled': 'bg-secondary text-secondary-fg',
-        },
-        'admin': {
-            'active': 'bg-green text-green-fg',
-            'inactive': 'bg-secondary text-secondary-fg',
-        },
-        'subscription': {
-            'active': 'text-bg-success',
-            'pending_cancellation': 'text-bg-warning',
-            'canceled': 'text-bg-secondary',
-            'past_due': 'text-bg-danger',
-        },
-        'post': {
-            'published': 'text-bg-success',
-            'active': 'text-bg-success',
-            'draft': 'text-bg-secondary',
-        },
-        'product': {
-            'enabled': 'text-bg-success',
-            'disabled': 'text-bg-secondary',
-        },
-        'massmailer': {
-            'sent': 'text-bg-success',
-            'draft': 'text-bg-secondary',
-        },
-        'transaction': {
-            'approved': 'text-bg-success',
-            'processed': 'text-bg-success',
-            'received': 'text-bg-warning',
-            'processing': 'text-bg-warning',
-            'error': 'text-bg-danger',
-        },
-        'gateway_tx': {
-            'approved': 'text-bg-success',
-            'complete': 'text-bg-success',
-            'completed': 'text-bg-success',
-            'processed': 'text-bg-success',
-            'success': 'text-bg-success',
-            'succeeded': 'text-bg-success',
-            'pending': 'text-bg-warning',
-            'processing': 'text-bg-warning',
-            'received': 'text-bg-warning',
-            'requires_action': 'text-bg-warning',
-            'requires_capture': 'text-bg-warning',
-            'requires_confirmation': 'text-bg-warning',
-            'canceled': 'text-bg-danger',
-            'cancelled': 'text-bg-danger',
-            'error': 'text-bg-danger',
-            'failed': 'text-bg-danger',
-            'requires_payment_method': 'text-bg-danger',
-            'unknown': 'text-bg-danger',
-        },
-        'mail_queue': {
-            'sent': 'text-bg-success',
-            'sending': 'text-bg-warning',
-            'unsent': 'text-bg-danger',
-        },
-        'tx': {
-            'success': 'text-bg-success',
-            'failed': 'text-bg-danger',
-            'pending': 'text-bg-warning',
-            'refunded': 'text-bg-info',
-        },
-    } %}
-    {% set fallback_classes = {
-        'active': 'text-bg-success',
-        'open': 'text-bg-success',
-        'paid': 'text-bg-success',
-        'published': 'text-bg-success',
-        'pending_setup': 'text-bg-warning',
-        'on_hold': 'text-bg-warning',
-        'unpaid': 'text-bg-warning',
-        'pending': 'text-bg-warning',
-        'failed_setup': 'text-bg-danger',
-        'suspended': 'text-bg-danger',
-        'failed_renew': 'text-bg-danger',
-        'canceled': 'text-bg-danger',
-        'closed': 'text-bg-danger',
-        'failed': 'text-bg-danger',
-    } %}
-    {% set type_classes = status_classes[type]|default(null) %}
-    {% if type_classes is not null %}
-        {% set badge_class = type_classes[status_key]|default('text-bg-primary') %}
-    {% else %}
-        {% set badge_class = fallback_classes[status_key]|default('text-bg-primary') %}
-    {% endif %}
-    {{ _self.text_badge(_self.status_name(status), badge_class) }}
+{% include 'partial_status_badge_shared.html.twig' with {status: status, type: type} %}
 {% endmacro %}
 
 {% macro empty_list(colspan, message) %}

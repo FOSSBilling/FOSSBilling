@@ -17,11 +17,6 @@ body {
     line-height: 1.42857143;
 }
 
-.modal-dialog {
-    margin-right: auto;
-    margin-left: auto;
-}
-
 .fs-7 {
     font-size: .875rem;
 }
@@ -79,11 +74,7 @@ body {
     stroke-linejoin: round;
 }
 
-// TomSelect dropdown
-.ts-input {
-    color: inherit;
-}
-
+// TomSelect dropdown sizing (base shell is shared via shared-theme).
 .ts-wrapper {
     &.form-select {
         background-color: inherit;
@@ -91,30 +82,10 @@ body {
 
     .ts-control {
         font-size: 14px;
-        width: 100%;
-        color: inherit;
-
-        &.locale {
-            width: 205px;
-        }
-
-        .dropdown-menu {
-            width: 100%;
-            height: auto;
-        }
     }
 
     .ts-dropdown {
         font-size: 14px;
-
-        .active {
-            background-color: rgba(var(--tblr-muted-rgb), 0.06);
-            color: inherit;
-        }
-
-        .selected {
-            background-color: rgba(var(--tblr-muted-rgb), 0.1);
-        }
     }
 }
 

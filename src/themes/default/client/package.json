@@ -8,12 +8,6 @@
     "node": ">=24"
   },
   "dependencies": {
-    "@tabler/core": "^1.5.1",
-    "flag-icons": "^7.2.3",
-    "intl-tel-input": "^29.1.0",
-    "tom-select": "^2.3.1"
-  },
-  "devDependencies": {
-    "@tabler/icons": "3.46.0"
+    "intl-tel-input": "^29.1.0"
   }
 }
