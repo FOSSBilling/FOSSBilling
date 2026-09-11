@@ -182,7 +182,7 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         var modalElement = document.getElementById('newCustomPageModal');
-        var modal = modalElement ? bootstrap.Modal.getOrCreateInstance(modalElement) : null;
+        var modal = modalElement ? tabler.Modal.getOrCreateInstance(modalElement) : null;
 
         if (window.location.hash === '#tab-new' && modal) {
             modal.show();

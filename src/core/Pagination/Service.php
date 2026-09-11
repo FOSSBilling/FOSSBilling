@@ -12,7 +12,8 @@ declare(strict_types=1);
 namespace FOSSBilling\Core\Pagination;
 
 use Doctrine\ORM\QueryBuilder;
-use Doctrine\ORM\Tools\Pagination\Paginator as DoctrinePaginator;
+use Doctrine\ORM\Tools\Pagination\OffsetPaginator;
+use Doctrine\ORM\Tools\Pagination\Window;
 use FOSSBilling\Core\Api\ArrayInterface;
 use FOSSBilling\Core\Container\InjectionAwareInterface;
 use FOSSBilling\Core\Exception\InformationException;
@@ -156,16 +157,14 @@ class Service implements InjectionAwareInterface
      */
     public function paginateMappedQuery(QueryBuilder $qb, Options $pagination, callable $mapper): array
     {
-        $qb->setFirstResult(($pagination->page - 1) * $pagination->perPage)
-            ->setMaxResults($pagination->perPage);
-        $paginator = new DoctrinePaginator($qb, true);
-        $total = count($paginator);
+        $page = (new OffsetPaginator(true))
+            ->paginate($qb, Window::fromPageNumberAndSize($pagination->page, $pagination->perPage));
 
         $list = [];
-        foreach ($paginator as $entity) {
+        foreach ($page->getItems() as $entity) {
             $list[] = $mapper($entity);
         }
 
-        return $this->buildPaginatedResponse($pagination->page, $pagination->perPage, $total, $list);
+        return $this->buildPaginatedResponse($pagination->page, $pagination->perPage, $page->getTotalCount(), $list);
     }
 }

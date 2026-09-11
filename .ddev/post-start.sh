@@ -23,8 +23,8 @@ if [ ! -d "$nodeModulesPath" ] || [ ! -f "$nodeBuildTimestamp" ] || [ "$packageL
     npm ci --include=dev
     npmBuildNeeded=1
 elif [ ! -f "src/public/assets/manifest.json" ] \
-    || [ ! -f "src/themes/admin_default/assets/build/manifest.json" ] \
-    || [ ! -f "src/themes/huraga/assets/build/manifest.json" ]; then
+    || [ ! -f "src/themes/default/admin/assets/build/manifest.json" ] \
+    || [ ! -f "src/themes/default/client/assets/build/manifest.json" ]; then
     npmBuildNeeded=1
 fi
 

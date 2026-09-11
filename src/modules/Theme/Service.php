@@ -279,7 +279,7 @@ class Service implements InjectionAwareInterface
 
     public function getCurrentAdminAreaTheme(): array
     {
-        $default = 'admin_default';
+        $default = 'default/admin';
 
         if (self::$adminThemeCache !== null) {
             // Apply default logic when returning from cache
@@ -320,7 +320,7 @@ class Service implements InjectionAwareInterface
     {
         if (self::$clientThemeCache !== null) {
             // Apply default logic when returning from cache
-            return !empty(self::$clientThemeCache) ? self::$clientThemeCache : 'huraga';
+            return !empty(self::$clientThemeCache) ? self::$clientThemeCache : 'default/client';
         }
 
         $theme = $this->di['dbal']->fetchOne("SELECT value FROM setting WHERE param = 'theme' ");
@@ -328,10 +328,15 @@ class Service implements InjectionAwareInterface
         // Cache the raw database value (use empty string instead of null to mark as cached)
         self::$clientThemeCache = $theme ?? '';
 
-        return !empty($theme) ? $theme : 'huraga';
+        return !empty($theme) ? $theme : 'default/client';
     }
 
     /**
+     * A theme directory is either flat (`{name}/html`, classified by the
+     * legacy `str_contains($name, 'admin')` naming) or a package
+     * (`{name}/admin/html` and/or `{name}/client/html`, each area listed
+     * under its own bucket via the resolved code `{name}/{area}`).
+     *
      * @return mixed[]
      */
     public function getThemes($client = true): array
@@ -341,14 +346,22 @@ class Service implements InjectionAwareInterface
 
         $finder = new Finder();
         $finder->directories()->in($path)->depth('== 0')->ignoreDotFiles(true);
-        foreach ($finder as $file) {
+        foreach ($finder as $dir) {
+            $name = $dir->getFilename();
+
             try {
-                if (!$client && str_contains($file->getFilename(), 'admin')) {
-                    $list[] = $this->buildThemeConfig($file->getFilename());
+                if ($this->filesystem->exists(Path::join($dir->getPathname(), 'html'))) {
+                    // Flat theme: unchanged legacy behavior.
+                    if ($client === !str_contains($name, 'admin')) {
+                        $list[] = $this->buildThemeConfig($name);
+                    }
+
+                    continue;
                 }
 
-                if ($client && !str_contains($file->getFilename(), 'admin')) {
-                    $list[] = $this->buildThemeConfig($file->getFilename());
+                $area = $client ? 'client' : 'admin';
+                if ($this->filesystem->exists(Path::join($dir->getPathname(), $area, 'html'))) {
+                    $list[] = $this->buildThemeConfig("$name/$area");
                 }
             } catch (\Exception $e) {
                 $this->di['logger']->error($e->getMessage());
@@ -358,13 +371,29 @@ class Service implements InjectionAwareInterface
         return $list;
     }
 
+    /**
+     * Resolve a theme package's `shared/html` fallback directory from one
+     * area's already-resolved code (e.g. `'default/admin'`). A code with no
+     * `/` is a flat theme and has no package to share with.
+     */
+    public function getPackageSharedHtmlPath(string $code): ?string
+    {
+        if (!str_contains($code, '/')) {
+            return null;
+        }
+
+        $packagePath = Path::getDirectory(Path::join($this->getThemesPath(), $code));
+
+        return Path::join($packagePath, 'shared', 'html');
+    }
+
     public function getThemeConfig($client = true, $mod = null)
     {
         if ($client) {
-            $default = 'huraga';
+            $default = 'default/client';
             $theme = $this->getCurrentClientAreaThemeCode();
         } else {
-            $default = 'admin_default';
+            $default = 'default/admin';
             $systemService = $this->di['mod_service']('system');
             $theme = $systemService->getParamValue('admin_theme', $default);
         }

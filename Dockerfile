@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:1.26@sha256:ecfaec9ed6d810b56388c508f4121597bfbba70d41a6dfeee4d8cad5f295fc32
+# syntax=docker/dockerfile:1.27@sha256:bde3983e9c939224420ddaf6b784cc30e09b035a4dea01f581230c50809f372e
 
 ARG PHP_VERSION=8.5
 ARG NODE_VERSION=24
@@ -47,7 +47,7 @@ FROM php-base AS composer-base
 
 WORKDIR /app
 
-COPY --from=composer:2@sha256:8fa35f42911ff8bbee92aa37d781de6799168d4a0535ac6991f1b250bc2e0245 /usr/bin/composer /usr/bin/composer
+COPY --from=composer:2@sha256:d8f6343d3fae98107426bc49163ccad46ef85aabd4a27d80a74401fab4aba332 /usr/bin/composer /usr/bin/composer
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends git \
@@ -82,14 +82,14 @@ FROM node:${NODE_VERSION}-bookworm-slim AS frontend-assets
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-COPY src/themes/admin_default/package.json src/themes/admin_default/package.json
-COPY src/themes/huraga/package.json src/themes/huraga/package.json
+COPY src/themes/default/admin/package.json src/themes/default/admin/package.json
+COPY src/themes/default/client/package.json src/themes/default/client/package.json
 
 RUN --mount=type=cache,target=/root/.npm npm ci
 
 COPY tsconfig.json ./
-COPY src/themes/admin_default ./src/themes/admin_default
-COPY src/themes/huraga ./src/themes/huraga
+COPY src/themes/default/admin ./src/themes/default/admin
+COPY src/themes/default/client ./src/themes/default/client
 COPY src/modules ./src/modules
 COPY frontend ./frontend
 
@@ -106,14 +106,14 @@ ARG INSTALL_TRANSLATIONS=true
 ARG TRANSLATIONS_URL=https://github.com/FOSSBilling/locale/releases/latest/download/translations.zip
 ARG TRANSLATIONS_SHA256=
 
-COPY --from=composer:2@sha256:8fa35f42911ff8bbee92aa37d781de6799168d4a0535ac6991f1b250bc2e0245 /usr/bin/composer /usr/bin/composer
+COPY --from=composer:2@sha256:d8f6343d3fae98107426bc49163ccad46ef85aabd4a27d80a74401fab4aba332 /usr/bin/composer /usr/bin/composer
 COPY composer.json ./composer.json
 COPY src ./src
 COPY README.md LICENSE ./src/
 COPY --from=php-vendor /app/src/vendor ./src/vendor
 COPY --from=frontend-assets /app/src/public/assets ./src/public/assets
-COPY --from=frontend-assets /app/src/themes/admin_default/assets/build ./src/themes/admin_default/assets/build
-COPY --from=frontend-assets /app/src/themes/huraga/assets/build ./src/themes/huraga/assets/build
+COPY --from=frontend-assets /app/src/themes/default/admin/assets/build ./src/themes/default/admin/assets/build
+COPY --from=frontend-assets /app/src/themes/default/client/assets/build ./src/themes/default/client/assets/build
 
 RUN set -eux; \
   find ./src/modules -type d -name tests -prune -exec rm -rf {} +; \
@@ -132,6 +132,7 @@ RUN set -eux; \
   php -r '$version = getenv("FOSSBILLING_VERSION") ?: "0.0.1"; $truncate = (int) (getenv("FOSSBILLING_VERSION_TRUNCATE") ?: 0); if ($truncate > 0) { $version = substr($version, 0, $truncate); } $versionFile = "./src/core/System/Version.php"; $contents = file_get_contents($versionFile); $quote = chr(39); $pattern = "/public const string VERSION = " . $quote . "[^" . $quote . "]+" . $quote . ";/"; $replacement = "public const string VERSION = " . var_export($version, true) . ";"; $contents = preg_replace($pattern, $replacement, $contents, 1, $count); if ($contents === null || $count !== 1) { fwrite(STDERR, "Failed to replace FOSSBilling version.\n"); exit(1); } file_put_contents($versionFile, $contents); $dsn = getenv("SENTRY_DSN"); if ($dsn !== false && $dsn !== "") { $sentryFile = "./src/core/SentryHelper.php"; file_put_contents($sentryFile, str_replace("--replace--this--during--release--process--", $dsn, file_get_contents($sentryFile))); }'; \
   php -r '$composer = json_decode(file_get_contents("./composer.json"), true, 512, JSON_THROW_ON_ERROR); $composer["autoload"]["psr-4"]["FOSSBilling\\Core\\"] = "core/"; $composer["autoload"]["psr-4"]["Box\\Mod\\"] = "modules/"; $composer["autoload"]["classmap"] = ["library/"]; $composer["config"]["vendor-dir"] = "vendor"; file_put_contents("./src/composer.json", json_encode($composer, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . PHP_EOL);'; \
   composer --no-plugins dump-autoload --working-dir=./src --no-dev --optimize --no-interaction; \
+  php -r '$class = "FOSSBilling\\Cache\\CacheFactory"; require "./src/vendor/autoload.php"; if (!class_exists($class)) { fwrite(STDERR, "Release Composer autoloader is missing {$class}.\n"); exit(1); }'; \
   rm ./composer.json ./src/composer.json; \
   chmod -R u=rwX,go=rX ./src
 

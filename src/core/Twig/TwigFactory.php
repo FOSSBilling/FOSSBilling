@@ -143,8 +143,9 @@ class TwigFactory
 
         $service = $this->di['mod_service']('theme');
         $theme = $service->getCurrentAdminAreaTheme();
+        $sharedPath = $service->getPackageSharedHtmlPath($theme['code']);
 
-        $loader = new TwigLoader(AppArea::ADMIN, Path::join(PATH_THEMES, $theme['code']));
+        $loader = new TwigLoader(AppArea::ADMIN, Path::join(PATH_THEMES, $theme['code']), $sharedPath);
         $twig->setLoader($loader);
 
         $twig->addGlobal('theme', $theme);
@@ -174,8 +175,9 @@ class TwigFactory
         $code = $service->getCurrentClientAreaThemeCode();
         $theme = $service->getTheme($code);
         $settings = $service->getThemeSettings($theme);
+        $sharedPath = $service->getPackageSharedHtmlPath($code);
 
-        $loader = new TwigLoader(AppArea::CLIENT, Path::join(PATH_THEMES, $code));
+        $loader = new TwigLoader(AppArea::CLIENT, Path::join(PATH_THEMES, $code), $sharedPath);
         $twig->setLoader($loader);
 
         $twig->addGlobal('current_theme', $code);

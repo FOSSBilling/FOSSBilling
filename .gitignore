@@ -26,7 +26,7 @@ node_modules
 ### friendsofphp/php-cs-fixer ###
 .php-cs-fixer.cache
 src/install/php_error.log
-src/themes/huraga/config/settings_data.json
+src/themes/default/client/config/settings_data.json
 output.log
 
 ### Playwright ###

@@ -437,13 +437,13 @@
         });
 
         if (modalMap[window.location.hash]) {
-            bootstrap.Modal.getOrCreateInstance(modalMap[window.location.hash]).show();
+            tabler.Modal.getOrCreateInstance(modalMap[window.location.hash]).show();
             return;
         }
 
         var tabTrigger = document.querySelector('[data-bs-toggle="tab"][href="' + window.location.hash + '"]');
         if (tabTrigger) {
-            bootstrap.Tab.getOrCreateInstance(tabTrigger).show();
+            tabler.Tab.getOrCreateInstance(tabTrigger).show();
         }
     });
 </script>

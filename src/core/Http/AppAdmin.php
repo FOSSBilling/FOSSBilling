@@ -57,9 +57,13 @@ class AppAdmin extends App
     #[\Override]
     public function render($fileName, $variableArray = []): string
     {
-        $template = $this->getTwig()->load(Path::changeExtension($fileName, '.html.twig'));
+        try {
+            $template = $this->getTwig()->load(Path::changeExtension($fileName, '.html.twig'));
 
-        return $template->render($variableArray);
+            return $template->render($variableArray);
+        } catch (\RuntimeException $e) {
+            $this->convertCacheWriteFailure($e);
+        }
     }
 
     #[\Override]

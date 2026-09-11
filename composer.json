@@ -47,7 +47,7 @@
         "ext-zlib": "*",
         "dicebear/core": "^10.0",
         "dicebear/styles": "^10.0",
-        "doctrine/orm": "^3.6",
+        "doctrine/orm": "^3.7",
         "dompdf/dompdf": "^3.1.4",
         "egulias/email-validator": "^4.0.4",
         "filp/whoops": "^2.18.4",

@@ -50,3 +50,20 @@ test('error page can render without sending output', function (): void {
         ->and($page)->toContain('Error Code: #404')
         ->and($page)->toContain('Missing route');
 });
+
+test('exception response factory renders string SQLSTATE errors outside testing', function (): void {
+    $previousEnv = getenv('APP_ENV');
+    putenv('APP_ENV=prod');
+    $exception = new PDOException('Unknown column');
+    (new ReflectionProperty($exception, 'code'))->setValue($exception, '42S22');
+
+    try {
+        $response = (new ExceptionResponseFactory())->create($exception);
+    } finally {
+        putenv($previousEnv === false ? 'APP_ENV' : 'APP_ENV=' . $previousEnv);
+    }
+
+    expect($response->getStatusCode())->toBe(Response::HTTP_INTERNAL_SERVER_ERROR)
+        ->and($response->getContent())->toContain('FOSSBilling Error')
+        ->and($response->getContent())->toContain('Unknown column');
+});

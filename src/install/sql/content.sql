@@ -321,7 +321,7 @@ VALUES
 	(15,'invoice_due_days','5',0,NULL,NULL,NOW(),NOW()),
 	(16,'invoice_auto_approval','1',0,NULL,NULL,NOW(),NOW()),
 	(17,'invoice_issue_days_before_expire','14',0,NULL,NULL,NOW(),NOW()),
-	(18,'theme','huraga',0,NULL,NULL,NOW(),NOW()),
+	(18,'theme','default/client',0,NULL,NULL,NOW(),NOW()),
 	(19,'issue_invoice_days_before_expire','7',0,NULL,NULL,NOW(),NOW()),
 	(20,'invoice_refund_logic','credit_note',0,NULL,NULL,NOW(),NOW()),
 	(21,'invoice_cn_series','CN-',0,NULL,NULL,NOW(),NOW()),

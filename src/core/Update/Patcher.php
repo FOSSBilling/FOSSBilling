@@ -202,6 +202,13 @@ class Patcher implements InjectionAwareInterface
             }
         }
 
+        // Portable (plain UPDATE ... WHERE, no MySQL-specific syntax) and idempotent, so it
+        // runs on every platform rather than being folded into the MySQL-only patch loop above -
+        // a PostgreSQL/SQLite install predating this change never runs Patch115 at all, and
+        // would otherwise be left with a theme that never got renamed and orphaned saved settings
+        // forever.
+        $this->migrateThemePackageLayout();
+
         // Additive structural sync runs on every platform, MySQL/MariaDB included: it picks up any
         // column/table/index that's on entity metadata but not yet applied, without needing a
         // hand-written patch for it - the only mechanism at all on PostgreSQL/SQLite, and on
@@ -869,6 +876,76 @@ class Patcher implements InjectionAwareInterface
             if (!@rmdir($directory)) {
                 $this->logUpdate('warning', sprintf('Unable to remove empty obsolete directory "%s".', $directory));
             }
+        }
+    }
+
+    /**
+     * Bundles the shipped themes into one package: admin_default -> default/admin,
+     * huraga -> default/client. Third-party themes are untouched.
+     *
+     * Unlike the raw-DDL patches, this is plain, portable SQL (no backticks,
+     * ENGINE=, or ON DUPLICATE KEY UPDATE) and a filesystem rename - neither is
+     * MySQL-specific, so this is called both from Patch115 (for MySQL/MariaDB's
+     * sequential patch-level bookkeeping) and unconditionally from
+     * applyCorePatches() above, so PostgreSQL/SQLite installs - which never run the
+     * patch loop at all - still get migrated. Every step is idempotent, so
+     * running it twice on a MySQL/MariaDB install (once via Patch115, once via
+     * the unconditional call) is a harmless no-op the second time.
+     */
+    public function migrateThemePackageLayout(): void
+    {
+        $filesystem = $this->filesystem;
+
+        // Each shipped theme's old code, new code, and the setting param that selects it.
+        $renames = [
+            'admin_default' => ['newCode' => 'default/admin', 'settingParam' => 'admin_theme'],
+            'huraga' => ['newCode' => 'default/client', 'settingParam' => 'theme'],
+        ];
+
+        foreach ($renames as $oldCode => $rename) {
+            $oldPath = Path::join(PATH_THEMES, $oldCode);
+            $newPath = Path::join(PATH_THEMES, $rename['newCode']);
+
+            if ($filesystem->exists($oldPath) && !$filesystem->exists($newPath)) {
+                $filesystem->mkdir(Path::getDirectory($newPath));
+                $filesystem->rename($oldPath, $newPath);
+            }
+
+            // A code-only deploy (e.g. `git pull`) already moves every tracked file via the
+            // checkout itself, before this ever runs - the rename above then finds $newPath
+            // already there and skips. What's left behind at $oldPath at that point is mostly
+            // gitignored leftovers (a rebuilt assets/build/, huraga's config/settings_data.json
+            // cache, which regenerates on its own - the setting it holds is now in the database,
+            // migrated below), but TwigLoader's `html_custom` override directory and extra files
+            // dropped into `custom-icons` are genuinely untracked local customizations a checkout
+            // never touches - discarding $oldPath outright would destroy them. Mirror anything not
+            // already present at $newPath over first (never overwriting what the checkout already
+            // placed there) so those customizations survive the rename, then discard what's left.
+            if ($filesystem->exists($oldPath) && $filesystem->exists($newPath)) {
+                $filesystem->mirror($oldPath, $newPath, null, ['override' => false]);
+                $filesystem->remove($oldPath);
+            }
+
+            // Safe/no-op if the row doesn't currently hold the old value.
+            $this->executeSql('UPDATE setting SET value = :new_value WHERE param = :param AND value = :old_value', [
+                'new_value' => $rename['newCode'],
+                'param' => $rename['settingParam'],
+                'old_value' => $oldCode,
+            ]);
+
+            // Saved theme settings/presets live in extension_meta, keyed by the theme's
+            // name string (Theme\Service::updateSettings()/setCurrentThemePreset()) -
+            // 'settings' rows in rel_id, the 'preset'/'current' row in meta_key. Without
+            // this, a staff member's customized theme settings would silently fall back
+            // to the shipped defaults once the theme is renamed.
+            $this->executeSql("UPDATE extension_meta SET rel_id = :new_code WHERE extension = 'mod_theme' AND rel_type = 'settings' AND rel_id = :old_code", [
+                'new_code' => $rename['newCode'],
+                'old_code' => $oldCode,
+            ]);
+            $this->executeSql("UPDATE extension_meta SET meta_key = :new_code WHERE extension = 'mod_theme' AND rel_type = 'preset' AND rel_id = 'current' AND meta_key = :old_code", [
+                'new_code' => $rename['newCode'],
+                'old_code' => $oldCode,
+            ]);
         }
     }
 }

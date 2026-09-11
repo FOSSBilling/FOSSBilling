@@ -29,8 +29,9 @@ class Admin implements \FOSSBilling\Core\Container\InjectionAwareInterface
 
     public function register(\FOSSBilling\Core\Http\App &$app): void
     {
-        $app->get('/theme/:theme', 'get_theme', ['theme' => '[a-z0-9-_]+'], static::class);
-        $app->post('/theme/:theme', 'save_theme_settings', ['theme' => '[a-z0-9-_]+'], static::class);
+        // Allows '/' so package-shaped theme codes (e.g. 'default/admin') match.
+        $app->get('/theme/:theme', 'get_theme', ['theme' => '[a-zA-Z0-9_\-/]+'], static::class);
+        $app->post('/theme/:theme', 'save_theme_settings', ['theme' => '[a-zA-Z0-9_\-/]+'], static::class);
     }
 
     /**

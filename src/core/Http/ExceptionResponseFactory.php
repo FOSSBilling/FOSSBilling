@@ -40,7 +40,10 @@ final readonly class ExceptionResponseFactory
             return new Response($this->renderWhoops($exception), $this->getStatusCode($exception));
         }
 
-        return new Response((new ErrorPage())->renderPage($exception->getCode(), $rawMessage), $this->getStatusCode($exception));
+        // PDO exceptions can carry a string SQLSTATE instead of an application error code.
+        $code = $exception->getCode();
+
+        return new Response((new ErrorPage())->renderPage(is_int($code) ? $code : 0, $rawMessage), $this->getStatusCode($exception));
     }
 
     public function formatTestingMessage(\Throwable $exception): string

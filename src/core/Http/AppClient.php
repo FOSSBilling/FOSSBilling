@@ -116,13 +116,15 @@ class AppClient extends App
     {
         try {
             $template = $this->getTwig()->load(Path::changeExtension($fileName, $ext));
+
+            return $template->render($variableArray);
         } catch (LoaderError $e) {
             $this->di['logger']->withChannel('routing')->info($e->getMessage());
 
             throw new \FOSSBilling\Core\Exception\InformationException('Page not found', null, 404);
+        } catch (\RuntimeException $e) {
+            $this->convertCacheWriteFailure($e);
         }
-
-        return $template->render($variableArray);
     }
 
     /**
