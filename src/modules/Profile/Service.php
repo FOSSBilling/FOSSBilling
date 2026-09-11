@@ -307,39 +307,197 @@ class Service implements InjectionAwareInterface
 
     private function deleteSessionIfMatching(array $session, string $type, int $id): void
     {
-        $data = base64_decode((string) $session['content']);
-        $stringStart = ($type === 'admin') ? 'admin|' : 'client_id|';
-        if (!str_starts_with($data, $stringStart)) {
+        $data = base64_decode((string) $session['content'], true);
+        if ($data === false) {
             return;
         }
 
-        $data = str_replace($stringStart, '', $data);
+        $sessionData = $this->decodeSessionData($data);
+        if (!is_array($sessionData)) {
+            return;
+        }
 
         if ($type === 'admin') {
-            $dataArray = $this->phpSessionDecode($data);
-            if (is_array($dataArray) && isset($dataArray['id']) && (int) $dataArray['id'] === $id) {
+            $admin = $sessionData['admin'] ?? null;
+            if (is_array($admin) && isset($admin['id']) && (int) $admin['id'] === $id) {
                 $this->trashSessionByArray($session);
             }
         } else {
-            $clientId = $this->phpSessionDecode($data);
+            $clientId = $sessionData['client_id'] ?? null;
             if (is_int($clientId) && $clientId === $id) {
                 $this->trashSessionByArray($session);
             }
         }
     }
 
-    private function phpSessionDecode(string $data): array|int|false
+    /**
+     * Decodes raw PHP session serialization (the `php` serialize handler format)
+     * into an array.
+     *
+     * Unlike matching against the serialized string, this does not depend on the
+     * order the values were written in, so the identity keys are found wherever
+     * they appear in the session data. It deliberately avoids session_decode(),
+     * which requires an active session, so invalidation also works from contexts
+     * without one (CLI, cron). Returns null when the data is malformed; callers
+     * treat that as "no match" and leave the row alone.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function decodeSessionData(string $data): ?array
     {
-        if ($data === '' || !in_array($data[0], ['a', 'i'], true)) {
-            return false;
+        $result = [];
+        $references = [];
+        $offset = 0;
+        $length = strlen($data);
+
+        while ($offset < $length) {
+            $separator = strpos($data, '|', $offset);
+            if ($separator === false) {
+                return null;
+            }
+
+            $key = substr($data, $offset, $separator - $offset);
+            if ($key === '') {
+                return null;
+            }
+
+            $parsed = $this->parseSessionValue($data, $separator + 1, $references);
+            if ($parsed === null) {
+                return null;
+            }
+
+            [$value, $offset] = $parsed;
+            $result[$key] = $value;
         }
 
-        $result = unserialize($data, ['allowed_classes' => false]);
-        if (is_array($result) || is_int($result)) {
-            return $result;
-        }
+        return $result;
+    }
 
-        return false;
+    /**
+     * Parses a single PHP-serialized value starting at the given offset.
+     *
+     * @param array<int, mixed> $references values seen so far, for r/R references
+     *
+     * @return array{0: mixed, 1: int}|null the value and the offset of the first unconsumed byte
+     */
+    private function parseSessionValue(string $data, int $offset, array &$references): ?array
+    {
+        $type = $data[$offset] ?? null;
+
+        switch ($type) {
+            case 'N':
+                if (($data[$offset + 1] ?? '') !== ';') {
+                    return null;
+                }
+
+                return [null, $offset + 2];
+
+            case 'b':
+            case 'i':
+            case 'd':
+                $end = strpos($data, ';', $offset);
+                if ($end === false) {
+                    return null;
+                }
+                $raw = substr($data, $offset + 2, $end - $offset - 2);
+                if ($type === 'b' && $raw !== '0' && $raw !== '1') {
+                    return null;
+                }
+                if (($type === 'i' || $type === 'd') && !is_numeric($raw)) {
+                    return null;
+                }
+                $value = match ($type) {
+                    'b' => $raw === '1',
+                    'i' => (int) $raw,
+                    default => (float) $raw,
+                };
+
+                return [$value, $end + 1];
+
+            case 's':
+                if (($data[$offset + 1] ?? '') !== ':') {
+                    return null;
+                }
+                $quote = strpos($data, ':"', $offset);
+                if ($quote === false) {
+                    return null;
+                }
+                $stringLength = substr($data, $offset + 2, $quote - $offset - 2);
+                if (!ctype_digit($stringLength)) {
+                    return null;
+                }
+                $stringLength = (int) $stringLength;
+                $value = substr($data, $quote + 2, $stringLength);
+                if (strlen($value) !== $stringLength || substr($data, $quote + 2 + $stringLength, 2) !== '";') {
+                    return null;
+                }
+                $references[] = $value;
+
+                return [$value, $quote + 2 + $stringLength + 2];
+
+            case 'a':
+            case 'O':
+                $headerEnd = strpos($data, ':{', $offset);
+                if ($headerEnd === false) {
+                    return null;
+                }
+                $colon = strpos($data, ':', $offset);
+                if ($colon === false || $colon > $headerEnd) {
+                    return null;
+                }
+                if ($type === 'O') {
+                    $classStart = strpos($data, ':"', $offset);
+                    if ($classStart === false || $classStart > $headerEnd) {
+                        return null;
+                    }
+                }
+                $count = substr($data, $colon + 1, $headerEnd - $colon - 1);
+                if (!ctype_digit($count)) {
+                    return null;
+                }
+                $count = (int) $count;
+                $values = [];
+                $references[] = null;
+                $referenceIndex = count($references) - 1;
+                $position = $headerEnd + 2;
+                for ($i = 0; $i < $count; ++$i) {
+                    $parsedKey = $this->parseSessionValue($data, $position, $references);
+                    if ($parsedKey === null) {
+                        return null;
+                    }
+                    $parsedValue = $this->parseSessionValue($data, $parsedKey[1], $references);
+                    if ($parsedValue === null) {
+                        return null;
+                    }
+                    if (!is_int($parsedKey[0]) && !is_string($parsedKey[0])) {
+                        return null;
+                    }
+                    $values[$parsedKey[0]] = $parsedValue[0];
+                    $position = $parsedValue[1];
+                }
+                if (($data[$position] ?? '') !== '}') {
+                    return null;
+                }
+                $references[$referenceIndex] = $values;
+
+                return [$values, $position + 1];
+
+            case 'r':
+            case 'R':
+                $end = strpos($data, ';', $offset);
+                if ($end === false) {
+                    return null;
+                }
+                $index = substr($data, $offset + 2, $end - $offset - 2);
+                if (!ctype_digit($index) || !isset($references[(int) $index - 1])) {
+                    return null;
+                }
+
+                return [$references[(int) $index - 1], $end + 1];
+
+            default:
+                return null;
+        }
     }
 
     private function trashSessionByArray(array $session): void

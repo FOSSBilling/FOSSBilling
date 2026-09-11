@@ -334,3 +334,94 @@ test('i18n::validateTimezone accepts any IANA identifier', function (): void {
 test('i18n::validateTimezone throws InformationException for unknown identifier', function (): void {
     expect(fn (): ?string => FOSSBilling\i18n::validateTimezone('Mars/Olympus'))->toThrow(FOSSBilling\InformationException::class);
 });
+
+/**
+ * Builds a session table payload exactly as the session handler stores it:
+ * base64-encoded PHP session serialization, with keys in the given order.
+ * Uses a throwaway active session so the output comes from the real encoder.
+ */
+function encodeProfileTestSession(array $values): string
+{
+    $sessionWasActive = session_status() === PHP_SESSION_ACTIVE;
+    if (!$sessionWasActive) {
+        session_start();
+    }
+    $backup = $_SESSION;
+    $_SESSION = [];
+    foreach ($values as $key => $value) {
+        $_SESSION[$key] = $value;
+    }
+    $raw = session_encode();
+    $_SESSION = $backup;
+    if (!$sessionWasActive) {
+        session_abort();
+    }
+
+    return base64_encode((string) $raw);
+}
+
+function profileTestService(array $rows, array &$deletedIds): Service
+{
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('fetchAllAssociative')
+        ->once()
+        ->andReturn($rows);
+    $connection->shouldReceive('executeStatement')
+        ->andReturnUsing(function (string $sql, array $params) use (&$deletedIds): int {
+            $deletedIds[] = $params['id'];
+
+            return 1;
+        });
+
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')
+        ->andReturn($connection);
+
+    $di = container();
+    $di['em'] = $em;
+
+    $service = new Service();
+    $service->setDi($di);
+
+    return $service;
+}
+
+test('invalidates admin sessions regardless of where the identity key sits', function (): void {
+    $csrfToken = bin2hex(random_bytes(32));
+    $rows = [
+        // The real-world shape: csrf_token is written first (login page render),
+        // admin data is appended after login. The old prefix match missed these.
+        ['id' => 'sess-a', 'content' => encodeProfileTestSession(['csrf_token' => $csrfToken, 'admin' => ['id' => 7, 'email' => 'admin@example.com', 'name' => 'Admin']])],
+        // Identity key first, as the old code assumed.
+        ['id' => 'sess-b', 'content' => encodeProfileTestSession(['admin' => ['id' => 7, 'email' => 'admin@example.com', 'name' => 'Admin']])],
+        // A different admin must be left alone.
+        ['id' => 'sess-c', 'content' => encodeProfileTestSession(['csrf_token' => $csrfToken, 'admin' => ['id' => 9, 'email' => 'other@example.com', 'name' => 'Other']])],
+        // A client session must be left alone by an admin invalidation.
+        ['id' => 'sess-d', 'content' => encodeProfileTestSession(['csrf_token' => $csrfToken, 'client_id' => 3])],
+        // Corrupt rows are skipped, not fatal.
+        ['id' => 'sess-e', 'content' => '!!!not-base64!!!'],
+        ['id' => 'sess-f', 'content' => base64_encode('plain string, not session data')],
+    ];
+
+    $deletedIds = [];
+    $service = profileTestService($rows, $deletedIds);
+
+    expect($service->invalidateSessions('admin', 7))->toBeTrue();
+    expect($deletedIds)->toBe(['sess-a', 'sess-b']);
+});
+
+test('invalidates client sessions regardless of where the identity key sits', function (): void {
+    $csrfToken = bin2hex(random_bytes(32));
+    $rows = [
+        ['id' => 'sess-a', 'content' => encodeProfileTestSession(['csrf_token' => $csrfToken, 'client_id' => 3])],
+        ['id' => 'sess-b', 'content' => encodeProfileTestSession(['client_id' => 3])],
+        ['id' => 'sess-c', 'content' => encodeProfileTestSession(['csrf_token' => $csrfToken, 'client_id' => 4])],
+        ['id' => 'sess-d', 'content' => encodeProfileTestSession(['csrf_token' => $csrfToken, 'admin' => ['id' => 7, 'email' => 'admin@example.com', 'name' => 'Admin']])],
+    ];
+
+    $deletedIds = [];
+    $service = profileTestService($rows, $deletedIds);
+
+    expect($service->invalidateSessions('client', 3))->toBeTrue();
+    expect($deletedIds)->toBe(['sess-a', 'sess-b']);
+});
