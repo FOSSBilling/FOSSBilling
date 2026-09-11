@@ -217,7 +217,7 @@ globalThis.Modals = {
     document.body.appendChild(modal);
 
     // Initialize the modal.
-    const modalInstance = new bootstrap.Modal(modal);
+    const modalInstance = new tabler.Modal(modal);
 
     // The event listeners.
     modal.addEventListener("hidden.bs.modal", function () {
@@ -281,7 +281,7 @@ globalThis.Modals = {
     const modals = document.querySelectorAll(".modal");
 
     modals.forEach(function (modal) {
-      const modalInstance = bootstrap.Modal.getInstance(modal);
+      const modalInstance = tabler.Modal.getInstance(modal);
       modalInstance.hide();
     });
   },
