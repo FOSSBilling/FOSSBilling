@@ -335,11 +335,7 @@ test('i18n::validateTimezone throws InformationException for unknown identifier'
     expect(fn (): ?string => FOSSBilling\i18n::validateTimezone('Mars/Olympus'))->toThrow(FOSSBilling\InformationException::class);
 });
 
-/**
- * Builds a session table payload exactly as the session handler stores it:
- * base64-encoded PHP session serialization, with keys in the given order.
- * Uses a throwaway active session so the output comes from the real encoder.
- */
+// Builds a session table payload with the real encoder, keys in given order.
 function encodeProfileTestSession(array $values): string
 {
     $sessionWasActive = session_status() === PHP_SESSION_ACTIVE;
@@ -389,18 +385,14 @@ function profileTestService(array $rows, array &$deletedIds): Service
 test('invalidates admin sessions regardless of where the identity key sits', function (): void {
     $csrfToken = bin2hex(random_bytes(32));
     $rows = [
-        // The real-world shape: csrf_token is written first (login page render),
-        // admin data is appended after login. The old prefix match missed these.
+        // csrf_token is written first in real sessions; the old prefix match missed these rows.
         ['id' => 'sess-a', 'content' => encodeProfileTestSession(['csrf_token' => $csrfToken, 'admin' => ['id' => 7, 'email' => 'admin@example.com', 'name' => 'Admin']])],
-        // Identity key first, as the old code assumed.
         ['id' => 'sess-b', 'content' => encodeProfileTestSession(['admin' => ['id' => 7, 'email' => 'admin@example.com', 'name' => 'Admin']])],
-        // A different admin must be left alone.
         ['id' => 'sess-c', 'content' => encodeProfileTestSession(['csrf_token' => $csrfToken, 'admin' => ['id' => 9, 'email' => 'other@example.com', 'name' => 'Other']])],
-        // A client session must be left alone by an admin invalidation.
         ['id' => 'sess-d', 'content' => encodeProfileTestSession(['csrf_token' => $csrfToken, 'client_id' => 3])],
-        // Corrupt rows are skipped, not fatal.
         ['id' => 'sess-e', 'content' => '!!!not-base64!!!'],
         ['id' => 'sess-f', 'content' => base64_encode('plain string, not session data')],
+        ['id' => 'sess-g', 'content' => base64_encode('a|a:1:{a:0:{}i:1;}')],
     ];
 
     $deletedIds = [];

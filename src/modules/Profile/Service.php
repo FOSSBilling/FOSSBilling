@@ -330,19 +330,10 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    /**
-     * Decodes raw PHP session serialization (the `php` serialize handler format)
-     * into an array.
-     *
-     * Unlike matching against the serialized string, this does not depend on the
-     * order the values were written in, so the identity keys are found wherever
-     * they appear in the session data. It deliberately avoids session_decode(),
-     * which requires an active session, so invalidation also works from contexts
-     * without one (CLI, cron). Returns null when the data is malformed; callers
-     * treat that as "no match" and leave the row alone.
-     *
-     * @return array<string, mixed>|null
-     */
+    // Decodes raw PHP session serialization. Order-independent, unlike matching
+    // the serialized string, and usable without an active session (unlike
+    // session_decode), so this also works from CLI/cron. Null means malformed:
+    // callers treat that as "no match" and leave the row alone.
     private function decodeSessionData(string $data): ?array
     {
         $result = [];
@@ -373,13 +364,8 @@ class Service implements InjectionAwareInterface
         return $result;
     }
 
-    /**
-     * Parses a single PHP-serialized value starting at the given offset.
-     *
-     * @param array<int, mixed> $references values seen so far, for r/R references
-     *
-     * @return array{0: mixed, 1: int}|null the value and the offset of the first unconsumed byte
-     */
+    // Parses one serialized value at the given offset. Returns the value and the
+    // offset of the first unconsumed byte, or null when malformed.
     private function parseSessionValue(string $data, int $offset, array &$references): ?array
     {
         $type = $data[$offset] ?? null;
@@ -441,17 +427,19 @@ class Service implements InjectionAwareInterface
                 if ($headerEnd === false) {
                     return null;
                 }
-                $colon = strpos($data, ':', $offset);
-                if ($colon === false || $colon > $headerEnd) {
-                    return null;
-                }
                 if ($type === 'O') {
                     $classStart = strpos($data, ':"', $offset);
                     if ($classStart === false || $classStart > $headerEnd) {
                         return null;
                     }
                 }
-                $count = substr($data, $colon + 1, $headerEnd - $colon - 1);
+                // The entry count sits between the last colon before the header
+                // end and the header end itself, for both a:N:{ and O:N:"C":M:{.
+                $colon = strrpos(substr($data, $offset, $headerEnd - $offset), ':');
+                if ($colon === false) {
+                    return null;
+                }
+                $count = substr($data, $offset + $colon + 1, $headerEnd - $offset - $colon - 1);
                 if (!ctype_digit($count)) {
                     return null;
                 }
@@ -469,7 +457,7 @@ class Service implements InjectionAwareInterface
                     if ($parsedValue === null) {
                         return null;
                     }
-                    if (!is_int($parsedKey[0]) && !is_string($parsedKey[0])) {
+                    if (is_array($parsedKey[0])) {
                         return null;
                     }
                     $values[$parsedKey[0]] = $parsedValue[0];
