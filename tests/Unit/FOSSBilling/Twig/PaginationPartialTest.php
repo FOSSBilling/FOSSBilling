@@ -39,7 +39,7 @@ function paginationPaginator(int $total, int $currentPage, int $perPage): array
 
 test('admin pagination partial silently skips rendering when url is null and the list has multiple pages', function (): void {
     $html = (new StrictTemplateRenderer())->renderTemplate(
-        PATH_THEMES . '/admin_default/html/partial_pagination.html.twig',
+        PATH_THEMES . '/default/admin/html/partial_pagination.html.twig',
         [
             'app_area' => 'admin',
             'request' => paginationRequest(),
@@ -58,7 +58,7 @@ test('admin pagination partial silently skips rendering when url is null and the
 
 test('admin pagination partial renders paginator when url is provided and the list has multiple pages', function (): void {
     $html = (new StrictTemplateRenderer())->renderTemplate(
-        PATH_THEMES . '/admin_default/html/partial_pagination.html.twig',
+        PATH_THEMES . '/default/admin/html/partial_pagination.html.twig',
         [
             'app_area' => 'admin',
             'request' => paginationRequest(),
@@ -78,7 +78,7 @@ test('admin pagination partial renders paginator when url is provided and the li
 
 test('admin pagination partial skips paginator when the list fits on a single page', function (): void {
     $html = (new StrictTemplateRenderer())->renderTemplate(
-        PATH_THEMES . '/admin_default/html/partial_pagination.html.twig',
+        PATH_THEMES . '/default/admin/html/partial_pagination.html.twig',
         [
             'app_area' => 'admin',
             'request' => paginationRequest(),
@@ -95,7 +95,7 @@ test('admin pagination partial skips paginator when the list fits on a single pa
 
 test('admin pagination partial appends the hash to every paginator link', function (): void {
     $html = (new StrictTemplateRenderer())->renderTemplate(
-        PATH_THEMES . '/admin_default/html/partial_pagination.html.twig',
+        PATH_THEMES . '/default/admin/html/partial_pagination.html.twig',
         [
             'app_area' => 'admin',
             'request' => paginationRequest(['page' => 2]),
@@ -114,7 +114,7 @@ test('admin pagination partial appends the hash to every paginator link', functi
 
 test('admin pagination partial emits no hash fragment when none is passed', function (): void {
     $html = (new StrictTemplateRenderer())->renderTemplate(
-        PATH_THEMES . '/admin_default/html/partial_pagination.html.twig',
+        PATH_THEMES . '/default/admin/html/partial_pagination.html.twig',
         [
             'app_area' => 'admin',
             'request' => paginationRequest(),
@@ -130,9 +130,9 @@ test('admin pagination partial emits no hash fragment when none is passed', func
         ->and($html)->not->toContain('href="#tab-emails"');
 });
 
-test('huraga pagination partial silently skips rendering when url is null and the list has multiple pages', function (): void {
+test('client theme pagination partial silently skips rendering when url is null and the list has multiple pages', function (): void {
     $html = (new StrictTemplateRenderer())->renderTemplate(
-        PATH_THEMES . '/huraga/html/partial_pagination.html.twig',
+        PATH_THEMES . '/default/client/html/partial_pagination.html.twig',
         [
             'app_area' => 'client',
             'request' => paginationRequest(),
@@ -148,9 +148,9 @@ test('huraga pagination partial silently skips rendering when url is null and th
         ->and($html)->not->toContain('class="pagination"');
 });
 
-test('huraga pagination partial renders paginator when url is provided and the list has multiple pages', function (): void {
+test('client theme pagination partial renders paginator when url is provided and the list has multiple pages', function (): void {
     $html = (new StrictTemplateRenderer())->renderTemplate(
-        PATH_THEMES . '/huraga/html/partial_pagination.html.twig',
+        PATH_THEMES . '/default/client/html/partial_pagination.html.twig',
         [
             'app_area' => 'client',
             'request' => paginationRequest(),
@@ -167,9 +167,9 @@ test('huraga pagination partial renders paginator when url is provided and the l
         ->toContain('class="page-item"');
 });
 
-test('huraga pagination partial skips paginator when the list fits on a single page', function (): void {
+test('client theme pagination partial skips paginator when the list fits on a single page', function (): void {
     $html = (new StrictTemplateRenderer())->renderTemplate(
-        PATH_THEMES . '/huraga/html/partial_pagination.html.twig',
+        PATH_THEMES . '/default/client/html/partial_pagination.html.twig',
         [
             'app_area' => 'client',
             'request' => paginationRequest(),

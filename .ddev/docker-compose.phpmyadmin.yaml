@@ -22,9 +22,6 @@ services:
       - UPLOAD_LIMIT=4000M
       - HTTP_EXPOSE=8036:80
       - HTTPS_EXPOSE=8037:80
-    healthcheck:
-      interval: 120s
-      timeout: 2s
-      retries: 1
     depends_on:
-      - db
+      db:
+        condition: service_healthy

@@ -52,7 +52,7 @@
                         <tr>
                             <td>
                                 <div class="d-flex align-items-center gap-2">
-                                    <span>{{ theme.code|capitalize }}</span>
+                                    <span>{{ theme.name|default(theme.code|capitalize) }}</span>
                                     {% if current_client_theme.code == theme.code %}
                                         <span class="badge text-bg-success">{{ 'Current'|trans }}</span>
                                     {% endif %}
@@ -73,7 +73,7 @@
                             </td>
                             <td>
                                 {% if current_client_theme.code != theme.code %}
-                                    <a class="btn btn-primary" href="{{ 'theme/select'|api_url(query: { 'code': theme.code }) }}" {{ fb_api_link({ redirect: 'extension/settings/theme'|url }) }}>
+                                    <a class="btn btn-primary" href="{{ 'theme/select'|api_url(query: { 'code': theme.code, 'client': true }) }}" {{ fb_api_link({ redirect: 'extension/settings/theme'|url }) }}>
                                         <svg class="icon">
                                             <use href="#check"/>
                                         </svg>
@@ -120,7 +120,7 @@
                         <tr>
                             <td>
                                 <div class="d-flex align-items-center gap-2">
-                                    <span>{{ theme.code|replace({ 'admin_': '' })|capitalize }}</span>
+                                    <span>{{ theme.name|default(theme.code|capitalize) }}</span>
                                     {% if current_admin_theme.code == theme.code %}
                                         <span class="badge text-bg-success">{{ 'Current'|trans }}</span>
                                     {% endif %}
@@ -141,7 +141,7 @@
                             </td>
                             <td>
                                 {% if current_admin_theme.code != theme.code %}
-                                    <a class="btn btn-primary" href="{{ 'theme/select'|api_url(query: {'code' : theme.code }) }}" {{ fb_api_link({ redirect: 'extension/settings/theme'|url }) }}>
+                                    <a class="btn btn-primary" href="{{ 'theme/select'|api_url(query: {'code' : theme.code, 'client': false }) }}" {{ fb_api_link({ redirect: 'extension/settings/theme'|url }) }}>
                                         <svg class="icon">
                                             <use href="#check"/>
                                         </svg>

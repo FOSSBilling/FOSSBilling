@@ -93,8 +93,9 @@ patching") and then list partial mitigations (WAF/reverse-proxy rate
 limiting, disabling the affected feature, config hardening).
 
 ### Acknowledgements
-`Thanks to <reporter> for responsibly reporting this vulnerability.`
+`Thanks to @<reporter> for responsibly reporting this vulnerability.`
 Exact phrasing used in every sample checked; keep it consistent.
+Always include the `@` so GitHub links the reporter's account.
 
 ## Voice
 
@@ -268,3 +269,6 @@ if you need the specifics):
   it as `[]`). Following the v1.8 guidance literally would have wiped
   `vulnerable_functions` on any advisory where it's populated. Added it to
   the field list.
+- v1.10: Acknowledgements now require the `@` mention prefix
+  (`Thanks to @<reporter> ...`) per user correction and GitHub
+  user-linking conventions.

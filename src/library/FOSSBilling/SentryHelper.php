@@ -79,10 +79,11 @@ class SentryHelper
         'theme',
     ];
 
-    // Themes we want to receive error reports for
+    // Themes we want to receive error reports for. extractName() (below) resolves
+    // to the top-level directory under PATH_THEMES, so 'default' alone covers
+    // default/admin, default/client, and default/shared.
     private const array ALLOWED_THEMES = [
-        'admin_default',
-        'huraga',
+        'default',
     ];
 
     // Array containing instance IDs that are blacklisted from error reporting and a timestamp of when their blacklist expires.

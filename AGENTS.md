@@ -105,8 +105,8 @@ npm run build
 This command builds assets for:
 
 * Core public browser assets in `src/public/assets`
-* `admin_default` theme
-* `huraga` theme
+* `admin_default` theme (`src/themes/default/admin`)
+* `huraga` theme (`src/themes/default/client`)
 
 The core build script is `frontend/esbuild.mjs`. Theme build scripts are defined in each theme's `package.json` and use local `esbuild.mjs` files for configuration:
 
@@ -130,10 +130,10 @@ npm run build-huraga
 
 ```bash
 # Theme development builds
-cd src/themes/admin_default && npm run dev
+cd src/themes/default/admin && npm run dev
 
 # Watch mode for active Huraga development
-cd src/themes/huraga && npm run dev
+cd src/themes/default/client && npm run dev
 ```
 
 ### Testing
@@ -189,7 +189,7 @@ src/
 ├── cron.php                   # Scheduled tasks entry point
 ├── library/                   # Core libraries and third-party integrations
 ├── modules/                   # Application modules (50+ modules)
-├── themes/                    # UI themes (admin_default, huraga)
+├── themes/                    # UI themes (shipped `default` package: default/admin, default/client, default/shared)
 ├── public/                    # Public core assets, branding, and gateway icons
 ├── data/                      # Runtime data (cache, logs, uploads)
 ├── install/                   # Installation scripts and assets
@@ -201,7 +201,7 @@ tests/                         # Pest, live API, and end-to-end test structure
 
 ### Front-end Guidelines
 
-* `admin_default` theme icons are compiled from the `src/themes/admin_default/assets/icons` directory and can be referenced from within the Twig template like so:
+* `admin_default` theme icons are compiled from the `src/themes/default/admin/custom-icons` directory and can be referenced from within the Twig template like so:
 
   ```html
   <svg class="icon">
