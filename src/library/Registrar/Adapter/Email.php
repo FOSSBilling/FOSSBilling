@@ -60,9 +60,19 @@ class Registrar_Adapter_Email extends Registrar_AdapterAbstract
         throw new Registrar_Exception('Unable to determine the availability of :domain via RDAP', [':domain' => $domain->getName()]);
     }
 
-    public function isDomaincanBeTransferred(Registrar_Domain $domain): never
+    public function isDomaincanBeTransferred(Registrar_Domain $domain): bool
     {
-        throw new Registrar_Exception(':type: registrar is unable to :action:', [':type:' => 'Email', ':action:' => 'determine domain transferability']);
+        $this->getLog()->debug('Checking if domain can be transferred: ' . $domain->getName());
+
+        if (!$this->config['use_rdap']) {
+            return true;
+        }
+
+        if ($this->getRdap()->isDomainAvailable($domain->getName()) ?? false) {
+            throw new Registrar_Exception('Domain :domain is not registered, so it cannot be transferred. You may be able to register it instead.', [':domain' => $domain->getName()]);
+        }
+
+        return true;
     }
 
     public function modifyNs(Registrar_Domain $domain)

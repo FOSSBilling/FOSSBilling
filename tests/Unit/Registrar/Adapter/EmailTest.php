@@ -62,6 +62,30 @@ test('the Email adapter throws when RDAP cannot determine availability', functio
     $adapter->isDomainAvailable(createEmailDomain());
 })->throws(Registrar_Exception::class);
 
+test('the Email adapter allows transfers when RDAP lookups are disabled', function (): void {
+    $adapter = createEmailAdapter([]);
+
+    expect($adapter->isDomaincanBeTransferred(createEmailDomain()))->toBeTrue();
+});
+
+test('the Email adapter allows transferring a registered domain via RDAP', function (): void {
+    $adapter = createEmailAdapter(['use_rdap' => '1'], createEmailRdapResponder(fn (): MockResponse => new MockResponse('{"objectClassName":"domain"}', ['http_code' => 200])));
+
+    expect($adapter->isDomaincanBeTransferred(createEmailDomain()))->toBeTrue();
+});
+
+test('the Email adapter refuses transferring an unregistered domain via RDAP', function (): void {
+    $adapter = createEmailAdapter(['use_rdap' => '1'], createEmailRdapResponder(fn (): MockResponse => new MockResponse('', ['http_code' => 404])));
+
+    $adapter->isDomaincanBeTransferred(createEmailDomain());
+})->throws(Registrar_Exception::class, 'not registered');
+
+test('the Email adapter falls back to allowing a transfer when RDAP cannot determine availability', function (): void {
+    $adapter = createEmailAdapter(['use_rdap' => '1'], createEmailRdapResponder(fn (): MockResponse => new MockResponse('', ['http_code' => 429])));
+
+    expect($adapter->isDomaincanBeTransferred(createEmailDomain()))->toBeTrue();
+});
+
 test('the Email adapter configuration form offers an RDAP toggle', function (): void {
     $form = Registrar_Adapter_Email::getConfig();
 
