@@ -54,7 +54,7 @@ function domainProvider(): array
         ['a1', true],
         ['123', true],
         ['xn--bcher-kva', true],  // Internationalized domain
-        ['xn--tdaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', true], // 63 chars, the longest valid label
+        ['xn--td' . str_repeat('a', 57), true], // 63 chars, the longest valid label
         ['subdomain', true],
         ['my-domain', true],
         // Invalid SLDs
