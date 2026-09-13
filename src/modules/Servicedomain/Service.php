@@ -248,8 +248,15 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $tld = $config['owndomain_tld'] ?? $config['domain']['owndomain_tld'] ?? null;
             if ($sld !== null && $tld !== null) {
                 $tld = str_contains((string) $tld, '.') ? (string) $tld : '.' . $tld;
+                $domain = $sld . $tld;
 
-                return $sld . $tld;
+                // Order and invoice item titles persist to 255-byte columns and the
+                // longest title format adds 22 bytes, so reject overlong domains here.
+                if (strlen($domain) > 233) {
+                    return null;
+                }
+
+                return $domain;
             }
         }
 

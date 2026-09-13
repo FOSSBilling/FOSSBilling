@@ -80,6 +80,14 @@ test('gets cart product title', function (array $data, string $expected): void {
         'Domain (example.com)',
     ],
     [
+        [
+            'action' => 'owndomain',
+            'owndomain_tld' => '.' . str_repeat('a', 230),
+            'owndomain_sld' => 'example',
+        ],
+        'Example.com Registration',
+    ],
+    [
         [],
         'Example.com Registration',
     ],
@@ -107,6 +115,10 @@ test('generates order title with domain name', function (array $config, ?string 
         'Domain (example.com)',
     ],
     [
+        ['action' => 'owndomain', 'owndomain_sld' => 'example', 'owndomain_tld' => '.' . str_repeat('a', 230)],
+        null,
+    ],
+    [
         ['action' => 'register'],
         null,
     ],
@@ -120,6 +132,8 @@ test('gets renewal title with domain name', function (): void {
     expect($service->getRenewalTitle(['action' => 'transfer', 'transfer_sld' => 'example', 'transfer_tld' => '.com']))
         ->toBe('Domain renewal (example.com)');
     expect($service->getRenewalTitle(['action' => 'register']))
+        ->toBeNull();
+    expect($service->getRenewalTitle(['action' => 'owndomain', 'owndomain_sld' => 'example', 'owndomain_tld' => '.' . str_repeat('a', 230)]))
         ->toBeNull();
 });
 
