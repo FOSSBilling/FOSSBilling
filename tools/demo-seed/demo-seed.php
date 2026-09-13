@@ -1,5 +1,6 @@
 #!/usr/bin/env php
 <?php
+
 /**
  * FOSSBilling demo/test-data seeder.
  *
@@ -165,8 +166,9 @@ function findBy(array $list, string $field, mixed $value): ?array
 }
 
 // ---------------------------------------------------------------- preflight
-note("== FOSSBilling demo seeder ==");
+note('== FOSSBilling demo seeder ==');
 note("Target: {$baseUrl}" . ($dryRun ? ' [DRY RUN]' : ''));
+
 try {
     $behind = api('admin/system/is_behind_on_patches');
     note('Preflight OK (is_behind_on_patches=' . var_export($behind, true) . ')');
@@ -187,10 +189,12 @@ foreach ([
     if (findBy($existingCurrencies, 'code', $c['code'])) {
         note("  currency {$c['code']} exists, skip");
         $manifest['currencies'][] = $c['code'] . ' (existing)';
+
         continue;
     }
     if ($dryRun) {
         note("  [dry] create currency {$c['code']}");
+
         continue;
     }
     $r = apiSafe('admin/currency/create', $c);
@@ -211,10 +215,12 @@ $taxDefs = [
 foreach ($taxDefs as $t) {
     if (findBy($existingTaxes, 'name', $t['name'])) {
         note("  tax '{$t['name']}' exists, skip");
+
         continue;
     }
     if ($dryRun) {
         note("  [dry] create tax {$t['name']}");
+
         continue;
     }
     $r = apiSafe('admin/invoice/tax_create', $t);
@@ -238,10 +244,12 @@ foreach ($groupTitles as $title) {
         note("  client group '{$title}' exists id={$foundId}");
         $groupIds[$title] = (int) $foundId;
         $manifest['client_groups'][] = ['title' => $title, 'id' => (int) $foundId, 'existing' => true];
+
         continue;
     }
     if ($dryRun) {
         note("  [dry] create client group {$title}");
+
         continue;
     }
     $r = apiSafe('admin/client/group_create', ['title' => $title]);
@@ -263,10 +271,12 @@ $staffDefs = [
 foreach ($staffDefs as $s) {
     if (findBy($existingStaff, 'email', $s['email'])) {
         note("  staff {$s['email']} exists, skip");
+
         continue;
     }
     if ($dryRun) {
         note("  [dry] create staff {$s['email']}");
+
         continue;
     }
     $r = apiSafe('admin/staff/create', $s + ['password' => 'DemoPass123!', 'status' => 'active']);
@@ -299,6 +309,7 @@ foreach ($gateways as $g) {
     if (in_array($g['code'] ?? '', ['Custom', 'ClientBalance'], true)) {
         if ($dryRun) {
             note("  [dry] enable gateway {$g['code']} id={$g['id']}");
+
             continue;
         }
         $u = apiSafe('admin/invoice/gateway_update', [
@@ -331,10 +342,12 @@ foreach (['Demo Hosting', 'Demo Software', 'Demo Services', 'Demo Domains'] as $
         $catIds[$title] = (int) $foundId;
         note("  category '{$title}' exists id={$foundId}");
         $manifest['product_categories'][] = ['title' => $title, 'id' => (int) $foundId, 'existing' => true];
+
         continue;
     }
     if ($dryRun) {
         note("  [dry] create category {$title}");
+
         continue;
     }
     $r = apiSafe('admin/product/category_create', ['title' => $title, 'description' => "Demo category {$title}"]);
@@ -358,10 +371,12 @@ foreach ([
     if (findBy($existingTlds, 'tld', $t['tld'])) {
         note("  TLD {$t['tld']} exists, skip");
         $manifest['tlds'][] = $t['tld'] . ' (existing)';
+
         continue;
     }
     if ($dryRun) {
         note("  [dry] create TLD {$t['tld']}");
+
         continue;
     }
     $r = apiSafe('admin/servicedomain/tld_create', $t + ['tld_registrar_id' => 1]);
@@ -404,10 +419,12 @@ foreach (['Demo Shared Plan', 'Demo VPS Plan'] as $pname) {
     if ($found) {
         $planIds[$pname] = (int) $found['id'];
         note("  hosting plan '{$pname}' exists");
+
         continue;
     }
     if ($dryRun) {
         note("  [dry] create hosting plan {$pname}");
+
         continue;
     }
     $r = apiSafe('admin/servicehosting/hp_create', ['name' => $pname]);
@@ -449,15 +466,18 @@ foreach ($productDefs as $def) {
     if (isset($productIds[$def['title']])) {
         note("  product '{$def['title']}' exists id={$productIds[$def['title']]}");
         $manifest['products'][] = ['title' => $def['title'], 'id' => $productIds[$def['title']], 'existing' => true];
+
         continue;
     }
     if ($dryRun) {
         note("  [dry] create product {$def['title']}");
+
         continue;
     }
     $pid = apiSafe('admin/product/prepare', ['title' => $def['title'], 'type' => $def['type'], 'product_category_id' => $catIds[$def['cat']] ?? null]);
     if (is_array($pid) && isset($pid['__error'])) {
         recordError('product/prepare ' . $def['title'], $pid['__error']);
+
         continue;
     }
     $pid = (int) $pid;
@@ -478,6 +498,7 @@ foreach ($productDefs as $def) {
     $u = apiSafe('admin/product/update', $upd);
     if (is_array($u) && isset($u['__error'])) {
         recordError('product/update ' . $def['title'], $u['__error']);
+
         continue;
     }
     note("  created product {$def['title']} id={$pid}");
@@ -508,15 +529,18 @@ foreach ([
     if ($foundId !== false) {
         note("  addon '{$a['title']}' exists");
         $manifest['addons'][] = ['title' => $a['title'], 'id' => (int) $foundId, 'existing' => true];
+
         continue;
     }
     if ($dryRun) {
         note("  [dry] create addon {$a['title']}");
+
         continue;
     }
     $r = apiSafe('admin/product/addon_create', ['title' => $a['title'], 'status' => 'enabled', 'description' => 'Demo addon for testing']);
     if (is_array($r) && isset($r['__error'])) {
         recordError('addon/create ' . $a['title'], $r['__error']);
+
         continue;
     }
     $u = apiSafe('admin/product/addon_update', ['id' => (int) $r, 'pricing' => $a['pricing'], 'status' => 'enabled']);
@@ -535,10 +559,12 @@ foreach ([
 ] as $promo) {
     if (findBy($existingPromos, 'code', $promo['code'])) {
         note("  promo {$promo['code']} exists, skip");
+
         continue;
     }
     if ($dryRun) {
         note("  [dry] create promo {$promo['code']}");
+
         continue;
     }
     $r = apiSafe('admin/product/promo_create', $promo);
@@ -566,16 +592,18 @@ foreach ($existingClients as $c) {
     $clientIds[$c['email']] = (int) $c['id'];
 }
 $clientCount = $limitClients > 0 ? min($limitClients, 24) : 24;
-for ($i = 0; $i < $clientCount; $i++) {
+for ($i = 0; $i < $clientCount; ++$i) {
     $n = $i + 1;
     $email = sprintf('demo.client%02d@example.com', $n);
     if (isset($clientIds[$email])) {
         note("  client {$email} exists id={$clientIds[$email]}");
         $manifest['clients'][] = ['email' => $email, 'id' => $clientIds[$email], 'existing' => true];
+
         continue;
     }
     if ($dryRun) {
         note("  [dry] create client {$email}");
+
         continue;
     }
     $status = 'active';
@@ -610,6 +638,7 @@ for ($i = 0; $i < $clientCount; $i++) {
     $r = apiSafe('admin/client/create', $payload);
     if (is_array($r) && isset($r['__error'])) {
         recordError('client/create ' . $email, $r['__error']);
+
         continue;
     }
     $clientIds[$email] = (int) $r;
@@ -626,7 +655,7 @@ foreach (array_slice($manifest['clients'], 0, 6) as $c) {
     if (is_array($r) && isset($r['__error'])) {
         recordError('balance_add_funds client ' . $c['id'], $r['__error']);
     } else {
-        $funded++;
+        ++$funded;
     }
 }
 note("  funded {$funded} client balances");
@@ -671,8 +700,8 @@ foreach ($clientIdList as $ci => $cid) {
         break;
     }
     $rounds = $ci < 12 ? 2 : 1; // first 12 clients get 2 orders => ~36 total
-    for ($k = 0; $k < $rounds && count($ordersCreated) < $orderTarget; $k++) {
-        $orderIndex++;
+    for ($k = 0; $k < $rounds && count($ordersCreated) < $orderTarget; ++$k) {
+        ++$orderIndex;
         $pid = $orderProductCycle[($orderIndex - 1) % max(1, count($orderProductCycle))];
         $period = $periodCycle[($orderIndex - 1) % count($periodCycle)];
         $title = "Demo order #{$orderIndex}";
@@ -683,8 +712,10 @@ foreach ($clientIdList as $ci => $cid) {
         }
         if ($dryRun) {
             note("  [dry] create order client={$cid} product={$pid}");
+
             continue;
         }
+
         // probe type + pricing first so period/config are always valid for this product
         try {
             $probe = api('admin/product/get', ['id' => $pid]);
@@ -702,7 +733,7 @@ foreach ($clientIdList as $ci => $cid) {
         // pick a billing period the product actually offers (once/free products take no period)
         $effPeriod = null;
         if (($ppricing['type'] ?? '') === 'recurrent' && is_array($ppricing['recurrent'] ?? null)) {
-            $enabledPeriods = array_keys(array_filter($ppricing['recurrent'], static fn ($r) => !empty($r['enabled'])));
+            $enabledPeriods = array_keys(array_filter($ppricing['recurrent'], static fn ($r): bool => !empty($r['enabled'])));
             if (in_array($period, $enabledPeriods, true)) {
                 $effPeriod = $period;
             } elseif ($enabledPeriods !== []) {
@@ -746,6 +777,7 @@ foreach ($clientIdList as $ci => $cid) {
         if ($ptype === 'hosting' && $serverId === null) {
             $payload['skip_validation'] = 1;
         }
+
         try {
             $oid = api('admin/order/create', $payload);
             $oid = (int) $oid;
@@ -764,6 +796,7 @@ foreach ($ordersCreated as $idx => $oid) {
         continue;
     }
     $mod = $idx % 10;
+
     try {
         $oinfo = api('admin/order/get', ['id' => $oid]);
         $ostatus = $oinfo['status'] ?? '';
@@ -772,6 +805,7 @@ foreach ($ordersCreated as $idx => $oid) {
     }
     $canActivate = in_array($ostatus, ['pending_setup', 'failed_setup'], true);
     $isActive = $ostatus === 'active';
+
     try {
         if ($mod <= 3 || $mod === 7 || $mod === 8) {
             if ($canActivate) {
@@ -800,6 +834,7 @@ foreach ($ordersCreated as $idx => $oid) {
                         // fall through to cancel attempt
                     }
                 }
+
                 try {
                     api('admin/order/cancel', ['id' => $oid, 'reason' => 'Demo seed: client request']);
                 } catch (Throwable $e) {
@@ -807,9 +842,8 @@ foreach ($ordersCreated as $idx => $oid) {
                     recordError("order/cancel id={$oid} (status={$ostatus})", $e->getMessage());
                 }
             }
-        } else {
-            // 4, 9: leave as-is (pending coverage)
         }
+        // 4, 9: leave as-is (pending coverage)
     } catch (Throwable $e) {
         recordError("order/state id={$oid} (status={$ostatus})", $e->getMessage());
     }
@@ -823,8 +857,10 @@ $manualClients = array_slice(array_values($clientIds), 0, 4);
 foreach ($manualClients as $mi => $cid) {
     if ($dryRun) {
         note("  [dry] manual invoice for client {$cid}");
+
         continue;
     }
+
     try {
         $iid = api('admin/invoice/prepare', [
             'client_id' => $cid,
@@ -870,6 +906,7 @@ foreach ($allInvoices as $ii => $iid) {
         continue;
     }
     $slot = $ii % 10;
+
     try {
         if ($slot <= 4) {
             $markPayload = ['id' => $iid, 'gateway_id' => $payGatewayId, 'execute' => 1];
@@ -877,7 +914,7 @@ foreach ($allInvoices as $ii => $iid) {
                 $markPayload['transactionId'] = 'DEMO-TXN-' . $iid;
             }
             api('admin/invoice/mark_as_paid', $markPayload);
-            $paid++;
+            ++$paid;
             // NOTE: pass unique get/post/server so the IPN-hash dedupe treats each as distinct.
             $txn = apiSafe('admin/invoice/transaction_create', [
                 'invoice_id' => $iid,
@@ -976,6 +1013,7 @@ foreach (['Demo Billing' => 'billing@example.com', 'Demo Technical' => 'tech@exa
     }
     if ($dryRun) {
         note("  [dry] create helpdesk {$hname}");
+
         continue;
     }
     $r = apiSafe('admin/support/helpdesk_create', ['name' => $hname, 'email' => $hemail, 'close_after' => 72, 'signature' => 'Demo support team']);
@@ -998,10 +1036,12 @@ foreach (['Demo General Replies', 'Demo Billing Replies'] as $ct) {
     $fid = array_search($ct, $cannedPairs, true);
     if ($fid !== false) {
         $cannedCatIds[$ct] = (int) $fid;
+
         continue;
     }
     if ($dryRun) {
         note("  [dry] canned category {$ct}");
+
         continue;
     }
     $r = apiSafe('admin/support/canned_category_create', ['title' => $ct]);
@@ -1022,10 +1062,12 @@ $cannedDefs = [
 foreach ($cannedDefs as $cd) {
     if (findBy($existingCanned, 'title', $cd['title'])) {
         note("  canned '{$cd['title']}' exists, skip");
+
         continue;
     }
     if ($dryRun) {
         note("  [dry] canned {$cd['title']}");
+
         continue;
     }
     $r = apiSafe('admin/support/canned_create', ['title' => $cd['title'], 'category_id' => $cannedCatIds[$cd['category']] ?? reset($cannedCatIds), 'content' => $cd['content']]);
@@ -1046,10 +1088,12 @@ foreach (['Demo Getting Started' => 'Demo onboarding guides.', 'Demo Billing FAQ
     $fid = array_search($kt, $kbCats, true);
     if ($fid !== false) {
         $kbCatIds[$kt] = (int) $fid;
+
         continue;
     }
     if ($dryRun) {
         note("  [dry] KB category {$kt}");
+
         continue;
     }
     $r = apiSafe('admin/support/kb_category_create', ['title' => $kt, 'description' => $kd]);
@@ -1072,10 +1116,12 @@ $kbArticles = [
 foreach ($kbArticles as $kb) {
     if (findBy($existingKb, 'title', $kb['title'])) {
         note("  KB '{$kb['title']}' exists, skip");
+
         continue;
     }
     if ($dryRun) {
         note("  [dry] KB article {$kb['title']}");
+
         continue;
     }
     $r = apiSafe('admin/support/kb_article_create', ['kb_article_category_id' => $kbCatIds[$kb['cat']] ?? reset($kbCatIds), 'title' => $kb['title'], 'content' => $kb['content'], 'status' => 'active']);
@@ -1105,13 +1151,15 @@ $hkeys = array_values($helpdeskIds);
 if ($hkeys === []) {
     $hkeys = [$defaultHelpdeskId];
 }
-for ($t = 0; $t < $ticketTarget; $t++) {
+for ($t = 0; $t < $ticketTarget; ++$t) {
     $subj = 'Demo ticket #' . ($t + 1) . ' - ' . $subjects[$t % count($subjects)];
     if ($dryRun) {
         note("  [dry] ticket {$subj}");
+
         continue;
     }
     $cid = $clientIdList[$t % max(1, count($clientIdList))];
+
     try {
         $tid = api('admin/support/ticket_create', [
             'client_id' => $cid,
@@ -1153,10 +1201,12 @@ foreach ([
 ] as $nw) {
     if (findBy($existingNews, 'title', $nw['title'])) {
         note("  news '{$nw['title']}' exists, skip");
+
         continue;
     }
     if ($dryRun) {
         note("  [dry] news {$nw['title']}");
+
         continue;
     }
     $r = apiSafe('admin/news/create', $nw + ['status' => 'active']);
