@@ -78,18 +78,17 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function getCartProductTitle(Product $product, array $data): ?string
     {
-        if (
-            isset($data['action']) && $data['action'] == 'register'
-            && isset($data['register_tld']) && isset($data['register_sld'])
-        ) {
-            return __trans('Domain :domain registration', [':domain' => $data['register_sld'] . $data['register_tld']]);
-        }
+        $domain = $this->getDomainFromConfig($data);
+        if ($domain !== null) {
+            if (isset($data['action']) && $data['action'] == 'transfer') {
+                return __trans('Domain transfer (:domain)', [':domain' => $domain]);
+            }
 
-        if (
-            isset($data['action']) && $data['action'] == 'transfer'
-            && isset($data['transfer_tld']) && isset($data['transfer_sld'])
-        ) {
-            return __trans('Domain :domain transfer', [':domain' => $data['transfer_sld'] . $data['transfer_tld']]);
+            if (isset($data['action']) && $data['action'] == 'owndomain') {
+                return __trans('Domain (:domain)', [':domain' => $domain]);
+            }
+
+            return __trans('Domain registration (:domain)', [':domain' => $domain]);
         }
 
         return $product->getTitle();
@@ -206,11 +205,55 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function generateOrderTitle(array $config): ?string
     {
-        return match ($config['action']) {
-            'transfer' => $config['transfer_sld'] . $config['transfer_tld'],
-            'register' => $config['register_sld'] . $config['register_tld'],
-            default => null,
-        };
+        $domain = $this->getDomainFromConfig($config);
+        if ($domain === null) {
+            return null;
+        }
+
+        if (($config['action'] ?? null) === 'transfer') {
+            return __trans('Domain transfer (:domain)', [':domain' => $domain]);
+        }
+
+        if (($config['action'] ?? null) === 'owndomain') {
+            return __trans('Domain (:domain)', [':domain' => $domain]);
+        }
+
+        return __trans('Domain registration (:domain)', [':domain' => $domain]);
+    }
+
+    public function getRenewalTitle(array $config): ?string
+    {
+        $domain = $this->getDomainFromConfig($config);
+        if ($domain === null) {
+            return null;
+        }
+
+        return __trans('Domain renewal (:domain)', [':domain' => $domain]);
+    }
+
+    private function getDomainFromConfig(array $config): ?string
+    {
+        $action = $config['action'] ?? null;
+
+        if ($action === 'register' && isset($config['register_sld'], $config['register_tld'])) {
+            return $config['register_sld'] . $config['register_tld'];
+        }
+
+        if ($action === 'transfer' && isset($config['transfer_sld'], $config['transfer_tld'])) {
+            return $config['transfer_sld'] . $config['transfer_tld'];
+        }
+
+        if ($action === 'owndomain') {
+            $sld = $config['owndomain_sld'] ?? $config['domain']['owndomain_sld'] ?? null;
+            $tld = $config['owndomain_tld'] ?? $config['domain']['owndomain_tld'] ?? null;
+            if ($sld !== null && $tld !== null) {
+                $tld = str_contains((string) $tld, '.') ? (string) $tld : '.' . $tld;
+
+                return $sld . $tld;
+            }
+        }
+
+        return null;
     }
 
     public function action_create(Order $order): ServiceDomain

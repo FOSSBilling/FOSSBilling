@@ -61,7 +61,7 @@ test('gets cart product title', function (array $data, string $expected): void {
             'register_tld' => '.com',
             'register_sld' => 'example',
         ],
-        'Domain example.com registration',
+        'Domain registration (example.com)',
     ],
     [
         [
@@ -69,13 +69,59 @@ test('gets cart product title', function (array $data, string $expected): void {
             'transfer_tld' => '.com',
             'transfer_sld' => 'example',
         ],
-        'Domain example.com transfer',
+        'Domain transfer (example.com)',
+    ],
+    [
+        [
+            'action' => 'owndomain',
+            'owndomain_tld' => '.com',
+            'owndomain_sld' => 'example',
+        ],
+        'Domain (example.com)',
     ],
     [
         [],
         'Example.com Registration',
     ],
 ]);
+
+test('generates order title with domain name', function (array $config, ?string $expected): void {
+    $service = new Service();
+
+    expect($service->generateOrderTitle($config))->toBe($expected);
+})->with([
+    [
+        ['action' => 'register', 'register_sld' => 'example', 'register_tld' => '.com'],
+        'Domain registration (example.com)',
+    ],
+    [
+        ['action' => 'transfer', 'transfer_sld' => 'example', 'transfer_tld' => '.com'],
+        'Domain transfer (example.com)',
+    ],
+    [
+        ['action' => 'owndomain', 'owndomain_sld' => 'example', 'owndomain_tld' => '.com'],
+        'Domain (example.com)',
+    ],
+    [
+        ['action' => 'owndomain', 'domain' => ['owndomain_sld' => 'example', 'owndomain_tld' => '.com']],
+        'Domain (example.com)',
+    ],
+    [
+        ['action' => 'register'],
+        null,
+    ],
+]);
+
+test('gets renewal title with domain name', function (): void {
+    $service = new Service();
+
+    expect($service->getRenewalTitle(['action' => 'register', 'register_sld' => 'example', 'register_tld' => '.com']))
+        ->toBe('Domain renewal (example.com)');
+    expect($service->getRenewalTitle(['action' => 'transfer', 'transfer_sld' => 'example', 'transfer_tld' => '.com']))
+        ->toBe('Domain renewal (example.com)');
+    expect($service->getRenewalTitle(['action' => 'register']))
+        ->toBeNull();
+});
 
 test('throws exception for invalid order data action', function (): void {
     $service = new Service();

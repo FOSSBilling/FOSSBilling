@@ -1573,6 +1573,14 @@ class Service implements InjectionAwareInterface
                     'price' => $price,
                     'quantity' => $renewalLine['quantity'],
                 ];
+
+                $domainService = $productService->getProductModuleService($product);
+                if (method_exists($domainService, 'getRenewalTitle')) {
+                    $renewalTitle = $domainService->getRenewalTitle($config);
+                    if ($renewalTitle !== null) {
+                        $line['title'] = $renewalTitle;
+                    }
+                }
             }
         }
 
