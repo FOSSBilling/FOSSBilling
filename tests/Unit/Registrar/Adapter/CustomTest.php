@@ -78,6 +78,40 @@ test('the Custom adapter falls back to a positive answer when RDAP cannot determ
         ->and(array_filter($logger->messages, fn (string $message): bool => str_contains($message, 'RDAP request against')))->not->toBeEmpty();
 });
 
+test('the Custom adapter allows transfers without registry lookups unless RDAP is enabled', function (): void {
+    $adapter = createCustomAdapter([]);
+
+    expect($adapter->isDomaincanBeTransferred((new Registrar_Domain())->setSld('example')->setTld('.com')))->toBeTrue()
+        ->and($adapter->requestCount())->toBe(0);
+});
+
+test('the Custom adapter allows transferring a registered domain', function (): void {
+    $bootstrap = json_encode(['version' => '1.0', 'services' => [[['com'], ['https://rdap.example.com/com/v1/']]]], JSON_THROW_ON_ERROR);
+    $adapter = createCustomAdapter(['use_rdap' => '1'], fn (string $method, string $url): MockResponse => str_contains($url, '/domain/')
+        ? new MockResponse('{"objectClassName":"domain"}', ['http_code' => 200])
+        : new MockResponse($bootstrap));
+
+    expect($adapter->isDomaincanBeTransferred((new Registrar_Domain())->setSld('example')->setTld('.com')))->toBeTrue();
+});
+
+test('the Custom adapter refuses transferring an unregistered domain', function (): void {
+    $bootstrap = json_encode(['version' => '1.0', 'services' => [[['com'], ['https://rdap.example.com/com/v1/']]]], JSON_THROW_ON_ERROR);
+    $adapter = createCustomAdapter(['use_rdap' => '1'], fn (string $method, string $url): MockResponse => str_contains($url, '/domain/')
+        ? new MockResponse('', ['http_code' => 404])
+        : new MockResponse($bootstrap));
+
+    $adapter->isDomaincanBeTransferred((new Registrar_Domain())->setSld('example')->setTld('.com'));
+})->throws(Registrar_Exception::class, 'not registered');
+
+test('the Custom adapter falls back to allowing a transfer when RDAP cannot determine availability', function (): void {
+    $bootstrap = json_encode(['version' => '1.0', 'services' => [[['com'], ['https://rdap.example.com/com/v1/']]]], JSON_THROW_ON_ERROR);
+    $adapter = createCustomAdapter(['use_rdap' => '1'], fn (string $method, string $url): MockResponse => str_contains($url, '/domain/')
+        ? new MockResponse('', ['http_code' => 500])
+        : new MockResponse($bootstrap));
+
+    expect($adapter->isDomaincanBeTransferred((new Registrar_Domain())->setSld('example')->setTld('.com')))->toBeTrue();
+});
+
 test('the Custom adapter configuration form offers an RDAP toggle', function (): void {
     $form = Registrar_Adapter_Custom::getConfig();
 

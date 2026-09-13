@@ -37,6 +37,14 @@ class Registrar_Adapter_Custom extends Registrar_AdapterAbstract
     {
         $this->getLog()->debug('Checking if domain can be transferred: ' . $domain->getName());
 
+        if (!$this->config['use_rdap']) {
+            return true;
+        }
+
+        if ($this->getRdap()->isDomainAvailable($domain->getName()) ?? false) {
+            throw new Registrar_Exception('Domain :domain is not registered, so it cannot be transferred. You may be able to register it instead.', [':domain' => $domain->getName()]);
+        }
+
         return true;
     }
 
