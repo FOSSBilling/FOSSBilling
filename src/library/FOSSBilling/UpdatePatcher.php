@@ -197,10 +197,6 @@ class UpdatePatcher implements InjectionAwareInterface
         // forever.
         $this->migrateThemePackageLayout();
 
-        // Same deal as migrateThemePackageLayout() above, but for the
-        // entity-decode repair below: portable and a no-op once clean.
-        $this->decodeLegacyServiceEscapedEntities();
-
         // Additive structural sync runs on every platform, MySQL/MariaDB included: it picks up any
         // column/table/index that's on entity metadata but not yet applied, without needing a
         // hand-written patch for it - the only mechanism at all on PostgreSQL/SQLite, and on
@@ -690,6 +686,7 @@ class UpdatePatcher implements InjectionAwareInterface
             113 => 'patch113',
             114 => 'patch114',
             115 => 'patch115',
+            116 => 'patch116',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -2851,15 +2848,24 @@ class UpdatePatcher implements InjectionAwareInterface
         $this->migrateThemePackageLayout();
     }
 
+    private function patch116(): void
+    {
+        $this->decodeLegacyServiceEscapedEntities();
+    }
+
     /**
      * Repairs rows written while service-layer code HTML-escaped values before
      * storing them (see issue #4305): invoice seller snapshots and staff
      * notification notes.
      *
-     * Only values still containing an htmlspecialchars(ENT_QUOTES) entity are
-     * touched, with exactly one decode pass mirroring the single erroneous
-     * encode - which also makes this a no-op once clean. Plain portable SQL
-     * throughout. Company settings need no repair: they were always stored raw.
+     * Runs exactly once as patch116, tracked by last_patch like every other
+     * data migration - deliberately not unconditionally, so rows written raw
+     * under the fixed code (which may legitimately contain entity-like text)
+     * are never scanned. At upgrade time every row still predates the fix, and
+     * the only systematic writer on these columns escaped, so matching the
+     * five htmlspecialchars(ENT_QUOTES) entities selects exactly the legacy
+     * rows; one decode pass mirrors the single erroneous encode. Company
+     * settings need no repair: they were always stored raw.
      */
     private function decodeLegacyServiceEscapedEntities(): void
     {

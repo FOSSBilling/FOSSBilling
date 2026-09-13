@@ -1242,19 +1242,15 @@ function withDbDriverConfig(array $dbConfig, Closure $callback): void
  * theme-migration calls' specific SQL/params - only that they don't blow up an otherwise
  * unrelated PDO mock, since migrateThemePackageLayout() now runs unconditionally regardless of
  * driver (see the dedicated tests above asserting its exact SQL/params).
- *
- * Also permits the unconditional legacy entity-decode repair's portable SELECTs (which find no
- * rows here and therefore write nothing) for the same reason.
  */
 function mockPdoAllowingThemeMigrationCalls(): Mockery\MockInterface
 {
     $statement = Mockery::mock(PDOStatement::class);
     $statement->shouldReceive('execute')->andReturnTrue();
-    $statement->shouldReceive('fetchAll')->andReturn([]);
 
     $pdo = Mockery::mock(PDO::class);
     $pdo->shouldReceive('prepare')
-        ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'UPDATE setting') || str_starts_with($sql, 'UPDATE extension_meta') || str_starts_with($sql, 'SELECT id, seller_company') || str_starts_with($sql, 'SELECT id, meta_value')))
+        ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'UPDATE setting') || str_starts_with($sql, 'UPDATE extension_meta')))
         ->andReturn($statement);
 
     return $pdo;
@@ -1262,11 +1258,9 @@ function mockPdoAllowingThemeMigrationCalls(): Mockery\MockInterface
 
 test('applyCorePatches never runs a legacy MySQL patch on a non-MySQL driver, even if the patch level looks stale', function (): void {
     withNonMysqlDbDriver(function (): void {
-        // mockPdoAllowingThemeMigrationCalls() only accepts the portable
-        // 'UPDATE setting'/'UPDATE extension_meta' writes and the entity-decode
-        // repair's portable SELECTs; anything else (backtick-quoted identifiers,
-        // ALTER TABLE, SHOW COLUMNS, ...) would mean a legacy MySQL-only patch
-        // ran, which this test exists to catch.
+        // mockPdoAllowingThemeMigrationCalls() only accepts 'UPDATE setting'/'UPDATE extension_meta'
+        // prepare() calls; anything else (backtick-quoted identifiers, ALTER TABLE, SHOW COLUMNS,
+        // ...) would mean a legacy MySQL-only patch ran, which this test exists to catch.
         $pdo = mockPdoAllowingThemeMigrationCalls();
         $pdo->shouldNotReceive('query');
 
@@ -1385,13 +1379,6 @@ test('applyCorePatches migrates the theme setting values on a non-MySQL driver, 
         $pdo->shouldReceive('prepare')
             ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'UPDATE extension_meta')))
             ->andReturn($extensionMetaStatement);
-        // The unconditional entity-decode repair finds no legacy rows here.
-        $emptyRepairSelect = Mockery::mock(PDOStatement::class);
-        $emptyRepairSelect->shouldReceive('execute')->andReturnTrue();
-        $emptyRepairSelect->shouldReceive('fetchAll')->andReturn([]);
-        $pdo->shouldReceive('prepare')
-            ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'SELECT id, seller_company') || str_starts_with($sql, 'SELECT id, meta_value')))
-            ->andReturn($emptyRepairSelect);
 
         $di = new Pimple\Container();
         $di['pdo'] = $pdo;
@@ -1431,13 +1418,6 @@ test('applyCorePatches migrates saved theme settings/presets in extension_meta o
         $pdo->shouldReceive('prepare')
             ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'UPDATE setting')))
             ->andReturn($otherStatement);
-        // The unconditional entity-decode repair finds no legacy rows here.
-        $emptyRepairSelect = Mockery::mock(PDOStatement::class);
-        $emptyRepairSelect->shouldReceive('execute')->andReturnTrue();
-        $emptyRepairSelect->shouldReceive('fetchAll')->andReturn([]);
-        $pdo->shouldReceive('prepare')
-            ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'SELECT id, seller_company') || str_starts_with($sql, 'SELECT id, meta_value')))
-            ->andReturn($emptyRepairSelect);
 
         $di = new Pimple\Container();
         $di['pdo'] = $pdo;
@@ -1627,9 +1607,17 @@ test('availablePatches reports 0 on a non-MySQL driver regardless of the last_pa
     });
 });
 
+test('legacy entity decode patch follows the theme package layout patch', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 115);
+
+    expect($patches)->toHaveKey(116)
+        ->and($patches[116][1])->toBe('patch116');
+});
+
 test('legacy entity decode repair restores raw invoice and notification values', function (): void {
     // Regression test for issue #4305. Uses real SQLite to prove the repair is
-    // portable SQL, and runs it twice to prove it is a no-op once clean.
+    // portable SQL. patch116 runs exactly once per install, so rows written
+    // raw afterwards are never scanned.
     $pdo = new PDO('sqlite::memory:');
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $pdo->exec('CREATE TABLE invoice (id INTEGER PRIMARY KEY, seller_company TEXT, seller_company_vat TEXT, seller_company_number TEXT, seller_address TEXT, seller_phone TEXT, seller_email TEXT)');
@@ -1644,7 +1632,7 @@ test('legacy entity decode repair restores raw invoice and notification values',
 
     $patcher = new UpdatePatcher();
     $patcher->setDi($di);
-    $repair = new ReflectionMethod($patcher, 'decodeLegacyServiceEscapedEntities');
+    $repair = new ReflectionMethod($patcher, 'patch116');
 
     $repair->invoke($patcher);
 
