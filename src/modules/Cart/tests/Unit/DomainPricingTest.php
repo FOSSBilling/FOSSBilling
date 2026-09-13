@@ -53,7 +53,7 @@ test('cartProductToApiArray uses resolved initial domain term pricing', function
         'unit' => 'year',
         'price' => 33.0,
         'setup_price' => 0.0,
-        'title' => 'Domain example.com registration',
+        'title' => 'Domain registration (example.com)',
         'config' => [
             'action' => 'register',
             'register_sld' => 'example',
@@ -89,6 +89,6 @@ test('cartProductToApiArray uses resolved initial domain term pricing', function
     expect($result['quantity'])->toBe(1);
     expect($result['price'])->toBe(33.0);
     expect($result['total'])->toBe(33.0);
-    expect($result['title'])->toBe('Domain example.com registration');
+    expect($result['title'])->toBe('Domain registration (example.com)');
     expect($result['unit'])->toBe('year');
 });

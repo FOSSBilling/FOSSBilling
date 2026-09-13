@@ -367,6 +367,60 @@ test('generates invoice items from order with a recurring promo and casts rel_id
     }
 });
 
+test('generates invoice item from order with an explicit line title override', function (): void {
+    $order = createEntity(Order::class, [
+        'clientId' => 3,
+        'title' => 'Domain registration (example.com)',
+        'quantity' => 1,
+        'unit' => null,
+        'period' => null,
+    ]);
+
+    $invoiceModel = createEntity(Invoice::class, ['id' => 42]);
+    $clientModel = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 3]);
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $persistedItems = [];
+    $em->shouldReceive('persist')
+        ->once()
+        ->withArgs(function (InvoiceItem $pi) use (&$persistedItems): bool {
+            $persistedItems[] = $pi;
+
+            return true;
+        });
+    $em->shouldReceive('flush')->once();
+    $repo = Mockery::mock(InvoiceItemRepository::class);
+    $em->shouldReceive('getRepository')->with(InvoiceItem::class)->andReturn($repo);
+    $clientRepo = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
+    $clientRepo->shouldReceive('find')->with(3)->andReturn($clientModel);
+    $em->shouldReceive('getRepository')->with(Box\Mod\Client\Entity\Client::class)->andReturn($clientRepo);
+
+    $orderServiceMock = Mockery::mock(OrderService::class);
+    $orderServiceMock->shouldReceive('setUnpaidInvoice')->with($order, $invoiceModel)->once();
+
+    $clientServiceMock = Mockery::mock(Box\Mod\Client\Service::class);
+    $clientServiceMock->shouldReceive('isClientTaxable')->with($clientModel)->andReturn(false);
+
+    $productServiceMock = Mockery::mock(Box\Mod\Product\Service::class);
+    $productServiceMock->shouldReceive('getRenewalPromoAdjustment')->andReturnNull();
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(fn (string $module): Mockery\MockInterface => match ($module) {
+        'Order' => $orderServiceMock,
+        'client' => $clientServiceMock,
+        'Product' => $productServiceMock,
+    });
+
+    $service = new ServiceInvoiceItem();
+    $service->setDi($di);
+
+    $service->generateFromOrder($invoiceModel, $order, InvoiceItem::TASK_RENEW, 10.0, ['title' => 'Domain renewal (example.com)']);
+
+    expect($persistedItems)->toHaveCount(1);
+    expect($persistedItems[0]->getTitle())->toBe('Domain renewal (example.com)');
+});
+
 test('gets total', function (): void {
     $service = invoiceItemService();
     $price = 5;
