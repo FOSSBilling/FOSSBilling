@@ -163,8 +163,8 @@ test('invalid sld error carries the raw domain value', function (): void {
     $di['validator'] = $validatorMock;
     $guestApi->setDi($di);
 
-    expect(fn (): bool => $guestApi->check(['tld' => '.com', 'sld' => 'exa&mple']))
-        ->toThrow(FOSSBilling\InformationException::class, 'Domain exa&mple is invalid');
+    expect(fn (): bool => $guestApi->check(['tld' => '.com', 'sld' => 'ex&ample']))
+        ->toThrow(FOSSBilling\InformationException::class, 'Domain ex&ample is invalid');
 });
 
 test('throws exception when checking tld not found', function (): void {
