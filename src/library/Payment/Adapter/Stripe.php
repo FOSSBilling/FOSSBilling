@@ -201,6 +201,18 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         return $this->_generateForm($invoiceModel);
     }
 
+    /**
+     * Encode a value as a JS string literal for the inline checkout forms.
+     * The HEX flags keep it safe inside a <script> block (including
+     * `</script>` breakouts) while preserving the exact value.
+     */
+    private static function encodeJsString(string $value): string
+    {
+        $encoded = json_encode($value, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE);
+
+        return is_string($encoded) ? $encoded : "''";
+    }
+
     public function cancelSubscription(string $subscriptionId): void
     {
         $subscription = $this->stripe->subscriptions->retrieve($subscriptionId, []);
@@ -1805,8 +1817,8 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
                             return_url: \':callbackUrl&redirect=true&invoice_hash=:invoice_hash\',
                             payment_method_data: {
                                 billing_details: {
-                                    name: \':buyer_name\',
-                                    email: \':buyer_email\',
+                                    name: :buyer_name,
+                                    email: :buyer_email,
                                 },
                             },
                         },
@@ -1824,8 +1836,8 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         $bindings = [
             ':pub_key' => $pubKey,
             ':intent_secret' => $intent->client_secret,
-            ':buyer_email' => htmlspecialchars((string) $invoice->getBuyerEmail(), ENT_QUOTES, 'UTF-8'),
-            ':buyer_name' => htmlspecialchars(trim($invoice->getBuyerFirstName() . ' ' . $invoice->getBuyerLastName()), ENT_QUOTES, 'UTF-8'),
+            ':buyer_email' => self::encodeJsString((string) $invoice->getBuyerEmail()),
+            ':buyer_name' => self::encodeJsString(trim($invoice->getBuyerFirstName() . ' ' . $invoice->getBuyerLastName())),
             ':callbackUrl' => $this->config['notify_url'],
             ':invoice_hash' => $invoice->getHash(),
         ];
@@ -1920,8 +1932,8 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
                                 return_url: \':callbackUrl&redirect=true&invoice_hash=:invoice_hash\',
                                 payment_method_data: {
                                     billing_details: {
-                                        name: \':buyer_name\',
-                                        email: \':buyer_email\',
+                                        name: :buyer_name,
+                                        email: :buyer_email,
                                     },
                                 },
                             },
@@ -1938,8 +1950,8 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         $bindings = [
             ':pub_key' => $pubKey,
             ':setup_intent_secret' => $setupIntent->client_secret,
-            ':buyer_email' => htmlspecialchars($invoice->getBuyerEmail() ?? '', ENT_QUOTES, 'UTF-8'),
-            ':buyer_name' => htmlspecialchars(trim($invoice->getBuyerFirstName() . ' ' . $invoice->getBuyerLastName()), ENT_QUOTES, 'UTF-8'),
+            ':buyer_email' => self::encodeJsString($invoice->getBuyerEmail() ?? ''),
+            ':buyer_name' => self::encodeJsString(trim($invoice->getBuyerFirstName() . ' ' . $invoice->getBuyerLastName())),
             ':callbackUrl' => $this->config['notify_url'],
             ':invoice_hash' => $invoice->getHash(),
         ];

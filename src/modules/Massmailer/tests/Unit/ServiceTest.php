@@ -57,7 +57,8 @@ function createSendMessageDi(Box\Mod\Client\Entity\Client $client): Pimple\Conta
     $clientService->shouldReceive('toApiArray')->andReturn([]);
 
     $systemService = Mockery::mock(Box\Mod\System\Service::class);
-    $systemService->shouldReceive('renderEmailTplString')->andReturn('Subject', 'Content');
+    $systemService->shouldReceive('renderEmailSubjectString')->andReturn('Subject');
+    $systemService->shouldReceive('renderEmailTplString')->andReturn('Content');
 
     $extensionService = Mockery::mock(Box\Mod\Extension\Service::class);
     $extensionService->shouldReceive('isExtensionActive')->with('mod', 'demo')->andReturn(false);

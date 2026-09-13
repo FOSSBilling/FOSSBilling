@@ -90,7 +90,7 @@
                     {% set events = admin.notification_get_list({ "per_page": 25, "page": request.page }|merge(request)) %}
                     {% for i, event in events.list %}
                         <tr>
-                            <td>{{ event.meta_value|raw }}</td>
+                            <td>{{ event.meta_value }}</td>
                             <td>{{ event.created_at|date('Y-m-d H:i') }}</td>
                             <td>
                                 <a class="btn btn-icon" href="{{ 'notification/delete'|api_url(query: { 'id': event.id }) }}"

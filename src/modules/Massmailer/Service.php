@@ -225,7 +225,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $clientArr = $clientService->toApiArray($client, true, null);
 
         $vars = ['c' => $clientArr];
-        $ps = $systemService->renderEmailTplString($model->getSubject(), $vars);
+        $ps = $systemService->renderEmailSubjectString($model->getSubject(), $vars);
         $pc = $systemService->renderEmailTplString($model->getContent(), $vars);
 
         return [$ps, $pc];

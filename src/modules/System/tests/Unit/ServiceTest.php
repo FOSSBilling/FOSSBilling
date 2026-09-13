@@ -196,6 +196,41 @@ test('getCompany returns company information', function (): void {
     expect($result)->toBe($expected);
 });
 
+test('getCompany returns raw values without HTML-encoding them', function (): void {
+    // Regression test for issue #4305: escaping here double-escapes in
+    // templates and bakes entities into stored snapshots.
+    $service = new Service();
+
+    $settings = [
+        Tests\Helpers\createEntity(Box\Mod\System\Entity\Setting::class, ['param' => 'company_name', 'value' => 'A & B <Ltd>']),
+        Tests\Helpers\createEntity(Box\Mod\System\Entity\Setting::class, ['param' => 'company_email', 'value' => 'a&b@example.com']),
+        Tests\Helpers\createEntity(Box\Mod\System\Entity\Setting::class, ['param' => 'company_address_1', 'value' => '5 "Main" St']),
+        Tests\Helpers\createEntity(Box\Mod\System\Entity\Setting::class, ['param' => 'company_vat_number', 'value' => "O'Brien"]),
+    ];
+    $settingRepository = Mockery::mock(Box\Mod\System\Repository\SettingRepository::class);
+    $settingRepository->shouldReceive('findByParams')->once()->andReturn($settings);
+
+    $di = container();
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\System\Entity\Setting::class)->andReturn($settingRepository);
+    $service->setDi($di);
+
+    $result = $service->getCompany();
+    expect($result['name'])->toBe('A & B <Ltd>')
+        ->and($result['email'])->toBe('a&b@example.com')
+        ->and($result['address_1'])->toBe('5 "Main" St')
+        ->and($result['vat_number'])->toBe("O'Brien");
+});
+
+test('renderEmailSubjectString decodes the HTML autoescape pass', function (): void {
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('renderEmailTplString')
+        ->once()
+        ->with('[A & B Ltd] Invoice', [], null)
+        ->andReturn('[A &amp; B Ltd] Invoice');
+
+    expect($service->renderEmailSubjectString('[A & B Ltd] Invoice', []))->toBe('[A & B Ltd] Invoice');
+});
+
 test('getParams returns system parameters', function (): void {
     $service = new Service();
     $expected = [
