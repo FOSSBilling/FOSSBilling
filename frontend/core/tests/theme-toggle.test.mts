@@ -20,7 +20,7 @@ describe('themeFromHref', () => {
     assert.equal(themeFromHref('', base), null);
   });
 
-  test('returns null for unparseable hrefs', () => {
+  test('returns null for invalid href values', () => {
     assert.equal(themeFromHref('https://', base), null);
   });
 });

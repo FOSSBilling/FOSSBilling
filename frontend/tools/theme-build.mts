@@ -24,9 +24,9 @@ export interface ThemeBuildConfig {
   cssEntry: string;
 }
 
-// Feature-tied PurgeCSS safelists per area. Kept centralized but NOT unified:
+// Per-area PurgeCSS safelist entries. Kept centralized but NOT unified:
 // each area's values guard classes only that area renders.
-const areaSafelists = {
+const areaSafelist = {
   admin: [/^flag-country-/, /^clr-/],
   client: [/^hide-/, /^iti/],
 };
@@ -72,7 +72,7 @@ export async function buildTheme(config: ThemeBuildConfig): Promise<void> {
       themePath: themeDir,
       purge: {
         area,
-        additionalStandardSafelist: areaSafelists[area],
+        additionalStandardSafelist: areaSafelist[area],
       },
     });
 
@@ -85,7 +85,7 @@ export async function buildTheme(config: ThemeBuildConfig): Promise<void> {
       themePath: themeDir,
       purge: {
         area,
-        additionalStandardSafelist: areaSafelists[area],
+        additionalStandardSafelist: areaSafelist[area],
       },
     });
 

@@ -1,7 +1,7 @@
 {# Shared light/dark theme toggler pair for the admin and client layouts.
    Layouts keep their own wrappers (div vs li). Wired by the shared
    initThemeToggle controller (frontend/core/theme-toggle.mts), which reads
-   the ?theme=light|dark hrefs.
+   the ?theme=light|dark href attributes.
 
    The FOUC scripts intentionally stay per-layout (admin defaults to dark
    markup with removeAttribute-for-light, client keeps its settings.theme

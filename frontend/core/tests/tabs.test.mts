@@ -8,7 +8,7 @@ describe('tabIdFromHash', () => {
     assert.equal(tabIdFromHash('#general'), 'general');
   });
 
-  test('returns an empty id for empty or hashless locations', () => {
+  test('returns an empty id for empty input or strings without a hash', () => {
     assert.equal(tabIdFromHash(''), '');
     assert.equal(tabIdFromHash('#'), '');
     assert.equal(tabIdFromHash('general'), '');

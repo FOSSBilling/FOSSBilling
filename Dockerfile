@@ -88,6 +88,7 @@ RUN --mount=type=cache,target=/root/.npm npm ci
 COPY tsconfig.json ./
 COPY src/themes/default/admin ./src/themes/default/admin
 COPY src/themes/default/client ./src/themes/default/client
+COPY src/themes/default/shared ./src/themes/default/shared
 COPY src/modules ./src/modules
 COPY frontend ./frontend
 
