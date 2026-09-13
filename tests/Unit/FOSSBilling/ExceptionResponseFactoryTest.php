@@ -69,8 +69,6 @@ test('exception response factory renders string SQLSTATE errors outside testing'
 });
 
 test('exception response factory escapes the message on the HTML error page', function (): void {
-    // The JSON API branch must keep the raw message (transported as JSON,
-    // displayed via textContent); only the HTML page escapes. See issue #4305.
     $previousEnv = getenv('APP_ENV');
     putenv('APP_ENV=prod');
 

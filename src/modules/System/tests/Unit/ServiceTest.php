@@ -197,10 +197,8 @@ test('getCompany returns company information', function (): void {
 });
 
 test('getCompany returns raw values without HTML-encoding them', function (): void {
-    // Regression test for https://github.com/FOSSBilling/FOSSBilling/issues/4305:
-    // every output context (Twig autoescape, JSON API) escapes on render, so
-    // encoding here double-escapes in templates and bakes entities into
-    // invoice snapshots and notification rows.
+    // Regression test for issue #4305: escaping here double-escapes in
+    // templates and bakes entities into stored snapshots.
     $service = new Service();
 
     $settings = [
@@ -224,8 +222,6 @@ test('getCompany returns raw values without HTML-encoding them', function (): vo
 });
 
 test('renderEmailSubjectString decodes the HTML autoescape pass', function (): void {
-    // Subjects are plaintext headers rendered through the HTML-escaping email
-    // environment; decoding once restores them as typed.
     $service = Mockery::mock(Service::class)->makePartial();
     $service->shouldReceive('renderEmailTplString')
         ->once()

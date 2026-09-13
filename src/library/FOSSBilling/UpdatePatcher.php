@@ -197,9 +197,8 @@ class UpdatePatcher implements InjectionAwareInterface
         // forever.
         $this->migrateThemePackageLayout();
 
-        // Same deal: decodes the HTML entities service-layer code used to bake
-        // into stored rows (see decodeLegacyServiceEscapedEntities()), on every
-        // platform. A no-op once no affected rows remain.
+        // Same deal as migrateThemePackageLayout() above, but for the
+        // entity-decode repair below: portable and a no-op once clean.
         $this->decodeLegacyServiceEscapedEntities();
 
         // Additive structural sync runs on every platform, MySQL/MariaDB included: it picks up any
@@ -2854,16 +2853,13 @@ class UpdatePatcher implements InjectionAwareInterface
 
     /**
      * Repairs rows written while service-layer code HTML-escaped values before
-     * storing them (see issue #4305): invoice seller snapshots (getCompany()
-     * escaped every field before setInvoiceDefaults() persisted it) and staff
-     * notification notes (Notification\Api\Admin::add() escaped before storing).
+     * storing them (see issue #4305): invoice seller snapshots and staff
+     * notification notes.
      *
-     * Only values still containing one of the five htmlspecialchars(ENT_QUOTES)
-     * entities are touched, with exactly one decode pass mirroring the single
-     * erroneous encode - which also makes this a no-op once clean, so it runs
-     * on every update, on every driver. Plain portable SQL throughout, matching
-     * migrateThemePackageLayout(). Company settings need no repair: they were
-     * always stored raw, the escaping happened on read.
+     * Only values still containing an htmlspecialchars(ENT_QUOTES) entity are
+     * touched, with exactly one decode pass mirroring the single erroneous
+     * encode - which also makes this a no-op once clean. Plain portable SQL
+     * throughout. Company settings need no repair: they were always stored raw.
      */
     private function decodeLegacyServiceEscapedEntities(): void
     {

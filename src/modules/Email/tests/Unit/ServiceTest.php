@@ -482,10 +482,8 @@ test('sendTemplate forwards the attachment to the queue and strips it from the s
 });
 
 test('sendTemplate renders the subject as plaintext, not HTML', function (): void {
-    // Regression test for https://github.com/FOSSBilling/FOSSBilling/issues/4305:
-    // _parse must route the subject through renderEmailSubjectString (which
-    // decodes the email environment's HTML autoescape pass) while the body
-    // keeps the raw HTML rendering.
+    // Subjects go through renderEmailSubjectString while the body keeps the
+    // raw HTML rendering (issue #4305).
     $data = [
         'code' => 'mod_email_test',
         'to' => 'example@example.com',

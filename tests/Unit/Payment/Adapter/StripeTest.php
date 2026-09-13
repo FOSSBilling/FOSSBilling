@@ -2402,10 +2402,8 @@ describe('applyOneTimePayment already-paid guard', function (): void {
 });
 
 test('checkout buyer details are encoded as JS string literals', function (): void {
-    // The bindings land in JS string literals inside a <script> block, where
-    // HTML entities are never decoded - HTML-escaping corrupts the data sent
-    // to Stripe while the HEX flags keep </script> breakouts impossible.
-    // See https://github.com/FOSSBilling/FOSSBilling/issues/4305.
+    // HTML entities are never decoded inside <script>, so HTML-escaping would
+    // corrupt the data sent to Stripe (issue #4305).
     $encoded = invokePrivateMethod($this->adapter, 'encodeJsString', ["O'Brien & <Sons>"]);
 
     expect($encoded)->toBe('"O\u0027Brien \u0026 \u003CSons\u003E"')

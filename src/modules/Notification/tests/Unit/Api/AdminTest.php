@@ -61,8 +61,6 @@ test('delete delegates to service', function (): void {
 });
 
 test('add stores the raw message without HTML-encoding it', function (): void {
-    // The admin list escapes on render, so encoding here would persist
-    // entities and display them literally. See issue #4305.
     $service = Mockery::mock(Box\Mod\Notification\Service::class);
     $service->shouldReceive('create')->with('A & B <note>')->once()->andReturn(7);
 

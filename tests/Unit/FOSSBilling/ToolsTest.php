@@ -161,9 +161,6 @@ test('sanitize markdown content preserves markdown inline code', function (): vo
 });
 
 test('validate and sanitize email returns the address unescaped', function (): void {
-    // `&` is legal in an address and every output context escapes on render,
-    // so encoding here would corrupt stored addresses and even reject valid
-    // ones (`;` fails RFC validation). See issue #4305.
     $tools = new FOSSBilling\Tools();
 
     expect($tools->validateAndSanitizeEmail('foo&bar@example.com', true, false))->toBe('foo&bar@example.com');

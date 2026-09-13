@@ -672,8 +672,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         try {
             $pc = $systemService->renderEmailTplString($contentTemplate, $vars, $timezone);
-            // Subjects are plaintext headers, not HTML: render through the
-            // subject renderer so autoescaped entities are decoded again.
             $ps = $systemService->renderEmailSubjectString($subjectTemplate, $vars, $timezone);
 
             if ($template->hasError()) {

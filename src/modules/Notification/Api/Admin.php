@@ -67,8 +67,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             return false;
         }
 
-        // Stored raw: the admin list template escapes on render, so escaping
-        // here would persist HTML entities and display them literally.
+        // Stored raw; the admin list template escapes on render.
         return $this->getService()->create($data['message']);
     }
 

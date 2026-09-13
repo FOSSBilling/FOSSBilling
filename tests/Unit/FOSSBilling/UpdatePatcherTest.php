@@ -1628,10 +1628,8 @@ test('availablePatches reports 0 on a non-MySQL driver regardless of the last_pa
 });
 
 test('legacy entity decode repair restores raw invoice and notification values', function (): void {
-    // Regression test for https://github.com/FOSSBilling/FOSSBilling/issues/4305:
-    // rows written while service-layer code HTML-escaped values before storing
-    // them get exactly one decode pass. Runs against real SQLite to prove the
-    // repair is portable SQL, and runs twice to prove it is a no-op once clean.
+    // Regression test for issue #4305. Uses real SQLite to prove the repair is
+    // portable SQL, and runs it twice to prove it is a no-op once clean.
     $pdo = new PDO('sqlite::memory:');
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $pdo->exec('CREATE TABLE invoice (id INTEGER PRIMARY KEY, seller_company TEXT, seller_company_vat TEXT, seller_company_number TEXT, seller_address TEXT, seller_phone TEXT, seller_email TEXT)');

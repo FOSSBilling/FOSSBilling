@@ -233,9 +233,8 @@ class Service
             $faviconUrl = SYSTEM_URL . $faviconUrl;
         }
 
-        // Returned raw: output contexts escape on render (Twig autoescape, JSON),
-        // so escaping here double-escapes in templates and bakes entities into
-        // stored invoice snapshots. See issue #4305.
+        // Returned raw: output contexts escape on render, so escaping here
+        // double-escapes in templates and corrupts stored snapshots (#4305).
         return [
             'www' => SYSTEM_URL,
             'name' => isset($results['company_name']) ? (string) $results['company_name'] : null,
@@ -589,11 +588,9 @@ class Service
     }
 
     /**
-     * Render an email subject line.
-     *
-     * Subjects are plaintext headers rendered through the HTML-autoescaping
-     * email environment, so decoding once restores them as typed. Never use
-     * this for the HTML body.
+     * Render an email subject line (plaintext header) through the
+     * HTML-autoescaping email environment, decoding once to restore it as
+     * typed. Never use this for the HTML body.
      */
     public function renderEmailSubjectString(string $tpl, array $vars, ?string $timezone = null): string
     {

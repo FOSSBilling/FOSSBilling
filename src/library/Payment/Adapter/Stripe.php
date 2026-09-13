@@ -203,10 +203,8 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
     /**
      * Encode a value as a JS string literal for the inline checkout forms.
-     *
-     * The HEX flags neutralize `<`, `>`, `&`, `'` and `"` so the literal is
-     * safe inside a <script> block (including `</script>` breakouts) while
-     * preserving the exact value, unlike HTML escaping.
+     * The HEX flags keep it safe inside a <script> block (including
+     * `</script>` breakouts) while preserving the exact value.
      */
     private static function encodeJsString(string $value): string
     {

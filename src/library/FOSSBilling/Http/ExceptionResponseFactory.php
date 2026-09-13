@@ -23,9 +23,8 @@ final readonly class ExceptionResponseFactory
 {
     public function create(\Throwable $exception): Response
     {
-        // Kept raw here: the JSON error payload is escaped by json_encode and
-        // displayed via textContent, so pre-escaping would surface literal
-        // entities. Only the HTML error page below needs HTML escaping.
+        // Kept raw: the JSON branch is escaped by json_encode and shown via
+        // textContent. Only the HTML error page below needs HTML escaping.
         $message = $exception->getMessage();
 
         if (Environment::isTesting()) {
