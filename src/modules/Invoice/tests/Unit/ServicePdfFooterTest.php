@@ -38,7 +38,6 @@ test('invoice PDF footer keeps address keys when company address lines are missi
     ];
 
     $method = new ReflectionMethod(Service::class, 'getFooterInfo');
-    $method->setAccessible(true);
     $footer = $method->invoke($service, $company);
 
     expect($footer)->toHaveKeys(['address_1', 'address_2', 'address_3', 'company_name', 'email', 'www', 'signature']);
