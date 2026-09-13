@@ -31,3 +31,7 @@ output.log
 
 ### Playwright ###
 tests/E2E/Playwright/artifacts
+
+### Demo seed (generated per-run artifacts) ###
+tools/demo-seed/manifest*.json
+.ddev/*.sql.gz

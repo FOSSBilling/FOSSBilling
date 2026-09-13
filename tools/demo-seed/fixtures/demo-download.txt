@@ -1,0 +1,3 @@
+FOSSBilling demo download — replace with real files in production.
+This fixture exists so the "Demo Downloadable" product has something to attach
+during test-data seeding. Do not use for real deliveries.
