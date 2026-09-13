@@ -1242,15 +1242,19 @@ function withDbDriverConfig(array $dbConfig, Closure $callback): void
  * theme-migration calls' specific SQL/params - only that they don't blow up an otherwise
  * unrelated PDO mock, since migrateThemePackageLayout() now runs unconditionally regardless of
  * driver (see the dedicated tests above asserting its exact SQL/params).
+ *
+ * Also permits the unconditional legacy entity-decode repair's portable SELECTs (which find no
+ * rows here and therefore write nothing) for the same reason.
  */
 function mockPdoAllowingThemeMigrationCalls(): Mockery\MockInterface
 {
     $statement = Mockery::mock(PDOStatement::class);
     $statement->shouldReceive('execute')->andReturnTrue();
+    $statement->shouldReceive('fetchAll')->andReturn([]);
 
     $pdo = Mockery::mock(PDO::class);
     $pdo->shouldReceive('prepare')
-        ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'UPDATE setting') || str_starts_with($sql, 'UPDATE extension_meta')))
+        ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'UPDATE setting') || str_starts_with($sql, 'UPDATE extension_meta') || str_starts_with($sql, 'SELECT id, seller_company') || str_starts_with($sql, 'SELECT id, meta_value')))
         ->andReturn($statement);
 
     return $pdo;
@@ -1258,9 +1262,11 @@ function mockPdoAllowingThemeMigrationCalls(): Mockery\MockInterface
 
 test('applyCorePatches never runs a legacy MySQL patch on a non-MySQL driver, even if the patch level looks stale', function (): void {
     withNonMysqlDbDriver(function (): void {
-        // mockPdoAllowingThemeMigrationCalls() only accepts 'UPDATE setting'/'UPDATE extension_meta'
-        // prepare() calls; anything else (backtick-quoted identifiers, ALTER TABLE, SHOW COLUMNS,
-        // ...) would mean a legacy MySQL-only patch ran, which this test exists to catch.
+        // mockPdoAllowingThemeMigrationCalls() only accepts the portable
+        // 'UPDATE setting'/'UPDATE extension_meta' writes and the entity-decode
+        // repair's portable SELECTs; anything else (backtick-quoted identifiers,
+        // ALTER TABLE, SHOW COLUMNS, ...) would mean a legacy MySQL-only patch
+        // ran, which this test exists to catch.
         $pdo = mockPdoAllowingThemeMigrationCalls();
         $pdo->shouldNotReceive('query');
 
@@ -1379,6 +1385,13 @@ test('applyCorePatches migrates the theme setting values on a non-MySQL driver, 
         $pdo->shouldReceive('prepare')
             ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'UPDATE extension_meta')))
             ->andReturn($extensionMetaStatement);
+        // The unconditional entity-decode repair finds no legacy rows here.
+        $emptyRepairSelect = Mockery::mock(PDOStatement::class);
+        $emptyRepairSelect->shouldReceive('execute')->andReturnTrue();
+        $emptyRepairSelect->shouldReceive('fetchAll')->andReturn([]);
+        $pdo->shouldReceive('prepare')
+            ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'SELECT id, seller_company') || str_starts_with($sql, 'SELECT id, meta_value')))
+            ->andReturn($emptyRepairSelect);
 
         $di = new Pimple\Container();
         $di['pdo'] = $pdo;
@@ -1418,6 +1431,13 @@ test('applyCorePatches migrates saved theme settings/presets in extension_meta o
         $pdo->shouldReceive('prepare')
             ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'UPDATE setting')))
             ->andReturn($otherStatement);
+        // The unconditional entity-decode repair finds no legacy rows here.
+        $emptyRepairSelect = Mockery::mock(PDOStatement::class);
+        $emptyRepairSelect->shouldReceive('execute')->andReturnTrue();
+        $emptyRepairSelect->shouldReceive('fetchAll')->andReturn([]);
+        $pdo->shouldReceive('prepare')
+            ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'SELECT id, seller_company') || str_starts_with($sql, 'SELECT id, meta_value')))
+            ->andReturn($emptyRepairSelect);
 
         $di = new Pimple\Container();
         $di['pdo'] = $pdo;
@@ -1605,4 +1625,51 @@ test('availablePatches reports 0 on a non-MySQL driver regardless of the last_pa
 
         expect($patcher->availablePatches())->toBe(0);
     });
+});
+
+test('legacy entity decode repair restores raw invoice and notification values', function (): void {
+    // Regression test for https://github.com/FOSSBilling/FOSSBilling/issues/4305:
+    // rows written while service-layer code HTML-escaped values before storing
+    // them get exactly one decode pass. Runs against real SQLite to prove the
+    // repair is portable SQL, and runs twice to prove it is a no-op once clean.
+    $pdo = new PDO('sqlite::memory:');
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $pdo->exec('CREATE TABLE invoice (id INTEGER PRIMARY KEY, seller_company TEXT, seller_company_vat TEXT, seller_company_number TEXT, seller_address TEXT, seller_phone TEXT, seller_email TEXT)');
+    $pdo->exec("INSERT INTO invoice (seller_company, seller_company_vat, seller_company_number, seller_address, seller_phone, seller_email) VALUES ('A &amp; B Ltd', 'GB&amp;123', NULL, '5 &lt;Main&gt; St', 'O&#039;Brien', 'a&amp;b@example.com')");
+    $pdo->exec("INSERT INTO invoice (seller_company) VALUES ('Plain Company')");
+    $pdo->exec('CREATE TABLE extension_meta (id INTEGER PRIMARY KEY, extension TEXT, rel_type TEXT, rel_id TEXT, meta_key TEXT, meta_value TEXT)');
+    $pdo->exec("INSERT INTO extension_meta (extension, rel_type, rel_id, meta_key, meta_value) VALUES ('mod_notification', 'staff', '1', 'message', 'Call A &amp; B about the invoice')");
+    $pdo->exec("INSERT INTO extension_meta (extension, rel_type, rel_id, meta_key, meta_value) VALUES ('mod_notification', 'staff', '1', 'message', 'Plain note')");
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    $repair = new ReflectionMethod($patcher, 'decodeLegacyServiceEscapedEntities');
+
+    $repair->invoke($patcher);
+
+    $invoice = $pdo->query('SELECT * FROM invoice WHERE id = 1')->fetch(PDO::FETCH_ASSOC);
+    expect($invoice['seller_company'])->toBe('A & B Ltd')
+        ->and($invoice['seller_company_vat'])->toBe('GB&123')
+        ->and($invoice['seller_company_number'])->toBeNull()
+        ->and($invoice['seller_address'])->toBe('5 <Main> St')
+        ->and($invoice['seller_phone'])->toBe("O'Brien")
+        ->and($invoice['seller_email'])->toBe('a&b@example.com');
+
+    $plain = $pdo->query('SELECT seller_company FROM invoice WHERE id = 2')->fetchColumn();
+    expect($plain)->toBe('Plain Company');
+
+    $note = $pdo->query("SELECT meta_value FROM extension_meta WHERE meta_key = 'message' AND id = 1")->fetchColumn();
+    expect($note)->toBe('Call A & B about the invoice');
+
+    $plainNote = $pdo->query("SELECT meta_value FROM extension_meta WHERE meta_key = 'message' AND id = 2")->fetchColumn();
+    expect($plainNote)->toBe('Plain note');
+
+    // Second run must change nothing.
+    $repair->invoke($patcher);
+
+    expect($pdo->query('SELECT * FROM invoice WHERE id = 1')->fetch(PDO::FETCH_ASSOC))->toBe($invoice)
+        ->and($pdo->query("SELECT meta_value FROM extension_meta WHERE meta_key = 'message' AND id = 1")->fetchColumn())->toBe('Call A & B about the invoice');
 });

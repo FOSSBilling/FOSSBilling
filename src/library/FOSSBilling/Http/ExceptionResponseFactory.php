@@ -23,7 +23,10 @@ final readonly class ExceptionResponseFactory
 {
     public function create(\Throwable $exception): Response
     {
-        $message = htmlspecialchars($exception->getMessage());
+        // Kept raw here: the JSON error payload is escaped by json_encode and
+        // displayed via textContent, so pre-escaping would surface literal
+        // entities. Only the HTML error page below needs HTML escaping.
+        $message = $exception->getMessage();
 
         if (Environment::isTesting()) {
             return new Response($this->formatTestingMessage($exception), $this->getStatusCode($exception), [
@@ -44,7 +47,7 @@ final readonly class ExceptionResponseFactory
         // PDO exceptions can carry a string SQLSTATE instead of an application error code.
         $code = $exception->getCode();
 
-        return new Response((new ErrorPage())->renderPage(is_int($code) ? $code : 0, $message), $this->getStatusCode($exception));
+        return new Response((new ErrorPage())->renderPage(is_int($code) ? $code : 0, htmlspecialchars($message)), $this->getStatusCode($exception));
     }
 
     public function formatTestingMessage(\Throwable $exception): string

@@ -87,8 +87,7 @@ class Box_App
                 [$mod] = explode('/', $requestUri);
             }
         }
-        $mod = htmlspecialchars($mod);
-
+        // Kept raw: only used for routing and exception placeholders, never HTML.
         $this->mod = $mod;
         $this->uri = $requestUri;
     }

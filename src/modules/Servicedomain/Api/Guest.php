@@ -81,7 +81,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
     {
         $this->getDi()['rate_limiter']->consumeOrThrow('domain_lookup_ip', (string) $this->getIp());
 
-        $sld = htmlspecialchars((string) $data['sld'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $sld = (string) $data['sld'];
         $validator = $this->getDi()['validator'];
         if (!$validator->isSldValid($sld)) {
             throw new \FOSSBilling\InformationException('Domain :domain is invalid', [':domain' => $sld]);

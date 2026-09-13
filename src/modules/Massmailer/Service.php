@@ -225,7 +225,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $clientArr = $clientService->toApiArray($client, true, null);
 
         $vars = ['c' => $clientArr];
-        $ps = $systemService->renderEmailTplString($model->getSubject(), $vars);
+        // Subjects are plaintext headers, not HTML: render through the
+        // subject renderer so autoescaped entities are decoded again.
+        $ps = $systemService->renderEmailSubjectString($model->getSubject(), $vars);
         $pc = $systemService->renderEmailTplString($model->getContent(), $vars);
 
         return [$ps, $pc];

@@ -67,9 +67,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             return false;
         }
 
-        $message = htmlspecialchars($data['message'], ENT_QUOTES, 'UTF-8');
-
-        return $this->getService()->create($message);
+        // Stored raw: the admin list template escapes on render, so escaping
+        // here would persist HTML entities and display them literally.
+        return $this->getService()->create($data['message']);
     }
 
     /**

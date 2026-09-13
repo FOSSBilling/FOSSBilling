@@ -197,6 +197,11 @@ class UpdatePatcher implements InjectionAwareInterface
         // forever.
         $this->migrateThemePackageLayout();
 
+        // Same deal: decodes the HTML entities service-layer code used to bake
+        // into stored rows (see decodeLegacyServiceEscapedEntities()), on every
+        // platform. A no-op once no affected rows remain.
+        $this->decodeLegacyServiceEscapedEntities();
+
         // Additive structural sync runs on every platform, MySQL/MariaDB included: it picks up any
         // column/table/index that's on entity metadata but not yet applied, without needing a
         // hand-written patch for it - the only mechanism at all on PostgreSQL/SQLite, and on
@@ -2845,6 +2850,92 @@ class UpdatePatcher implements InjectionAwareInterface
     private function patch115(): void
     {
         $this->migrateThemePackageLayout();
+    }
+
+    /**
+     * Repairs rows written while service-layer code HTML-escaped values before
+     * storing them (see issue #4305): invoice seller snapshots (getCompany()
+     * escaped every field before setInvoiceDefaults() persisted it) and staff
+     * notification notes (Notification\Api\Admin::add() escaped before storing).
+     *
+     * Only values still containing one of the five htmlspecialchars(ENT_QUOTES)
+     * entities are touched, with exactly one decode pass mirroring the single
+     * erroneous encode - which also makes this a no-op once clean, so it runs
+     * on every update, on every driver. Plain portable SQL throughout, matching
+     * migrateThemePackageLayout(). Company settings need no repair: they were
+     * always stored raw, the escaping happened on read.
+     */
+    private function decodeLegacyServiceEscapedEntities(): void
+    {
+        $invoiceColumns = [
+            'seller_company',
+            'seller_company_vat',
+            'seller_company_number',
+            'seller_address',
+            'seller_phone',
+            'seller_email',
+        ];
+        // Matches any of the five htmlspecialchars(ENT_QUOTES) entities. None
+        // of these characters is a LIKE wildcard, so no ESCAPE clause needed.
+        $entityPatterns = ['%&amp;%', '%&lt;%', '%&gt;%', '%&quot;%', '%&#039;%'];
+        $matchesColumn = static fn (string $column): string => implode(' OR ', array_map(static fn (string $pattern): string => "{$column} LIKE '{$pattern}'", $entityPatterns));
+
+        $conditions = array_map($matchesColumn, $invoiceColumns);
+        $rows = $this->fetchAll(
+            'SELECT id, ' . implode(', ', $invoiceColumns) . ' FROM invoice WHERE ' . implode(' OR ', $conditions)
+        );
+        $repairedInvoices = 0;
+        foreach ($rows as $row) {
+            $decoded = [];
+            foreach ($invoiceColumns as $column) {
+                $value = $row[$column] ?? null;
+                if (!is_string($value)) {
+                    continue;
+                }
+                $fixed = html_entity_decode($value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                if ($fixed !== $value) {
+                    $decoded[$column] = $fixed;
+                }
+            }
+            if ($decoded === []) {
+                continue;
+            }
+            $params = ['id' => $row['id']];
+            $sets = [];
+            foreach ($decoded as $column => $value) {
+                $sets[] = "{$column} = :{$column}";
+                $params[$column] = $value;
+            }
+            $this->executeSql('UPDATE invoice SET ' . implode(', ', $sets) . ' WHERE id = :id', $params);
+            ++$repairedInvoices;
+        }
+
+        $notes = $this->fetchAll(
+            "SELECT id, meta_value FROM extension_meta WHERE extension = 'mod_notification' AND meta_key = 'message' AND (" . $matchesColumn('meta_value') . ')'
+        );
+        $repairedNotes = 0;
+        foreach ($notes as $note) {
+            $value = $note['meta_value'] ?? null;
+            if (!is_string($value)) {
+                continue;
+            }
+            $fixed = html_entity_decode($value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            if ($fixed === $value) {
+                continue;
+            }
+            $this->executeSql('UPDATE extension_meta SET meta_value = :meta_value WHERE id = :id', [
+                'meta_value' => $fixed,
+                'id' => $note['id'],
+            ]);
+            ++$repairedNotes;
+        }
+
+        if ($repairedInvoices > 0 || $repairedNotes > 0) {
+            $this->logUpdate('info', 'Decoded legacy HTML entities in stored data', [
+                'invoices' => $repairedInvoices,
+                'notifications' => $repairedNotes,
+            ]);
+        }
     }
 
     /**
