@@ -183,6 +183,7 @@ export async function purgeCssFile(cssFilePath: string, options: PurgeOptions) {
           /^fade$/,
           /^nav-/,
           /^data-bs-/,
+          /^data-tblr-/,
           /^btn-/,
           /^card-/,
           /^badge-/,
