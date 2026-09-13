@@ -21,7 +21,7 @@
 %}
 
 {% set address_lines = [] %}
-	{% for line in [footer.address_1, footer.address_2, footer.address_3] %}
+	{% for line in [footer.address_1|default(''), footer.address_2|default(''), footer.address_3|default('')] %}
 		{% if line|length > 0 %}
 			{% set address_lines = address_lines|merge([line]) %}
 		{% endif %}
@@ -134,15 +134,15 @@
 				<b>{{ 'Account Owner'|trans }}:</b> {{ footer.company_name|default('') }} | <b>{{ 'Bank'|trans }}:</b> {{ footer.bank_name|default('') }} | <b>{{ 'BIC / SWIFT Code'|trans }}:</b> {{ footer.bic|default('') }} | <b>{{ 'Account Number'|trans }}:</b> {{ footer.account_number|default('') }}<br><br>
 			{% endif %}
 
-			<b>{{ footer.company_name }}</b>
+			<b>{{ footer.company_name|default('') }}</b>
 			{% if address %} {{ address }} <br> {% endif %}
-			<b>{{ 'Email'|trans }}:</b> {{ footer.email }} | <b>
+			<b>{{ 'Email'|trans }}:</b> {{ footer.email|default('') }} | <b>
 			{% if footer.phone|default('') %} {{ 'Phone'|trans }}:</b> {{ footer.phone }}<br> {% endif %}
 			{% if footer.company_vat|default('') %} <b>{{ 'VAT ID'|trans }}:</b> {{ footer.company_vat }} | {% endif %}
 			{% if footer.company_number|default('') %} <b>{{ 'Company Registration #:'|trans }}</b> {{ footer.company_number }} | {% endif %}
-			<b>{{ 'Website'|trans }}: </b>{{ footer.www }}
+			<b>{{ 'Website'|trans }}: </b>{{ footer.www|default('') }}
             <br>
-            <span class="muted-text">{{ footer.signature }}</span>
+            <span class="muted-text">{{ footer.signature|default('') }}</span>
 		</div>
 	</body>
 </html>
