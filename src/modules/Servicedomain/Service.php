@@ -716,8 +716,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         [$sld, $tld] = [null, null];
 
         if ($action == 'owndomain') {
-            $sld = $data['owndomain_sld'];
-            $tld = str_contains((string) $data['domain']['owndomain_tld'], '.') ? $data['domain']['owndomain_tld'] : '.' . $data['domain']['owndomain_tld'];
+            $sld = $data['owndomain_sld'] ?? $data['domain']['owndomain_sld'] ?? null;
+            $owndomain_tld = $data['owndomain_tld'] ?? $data['domain']['owndomain_tld'] ?? null;
+            $tld = str_contains((string) $owndomain_tld, '.') ? (string) $owndomain_tld : '.' . $owndomain_tld;
         }
 
         if ($action == 'transfer') {
