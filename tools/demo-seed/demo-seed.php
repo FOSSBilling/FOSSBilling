@@ -137,21 +137,33 @@ function recordError(string $where, string $msg): void
 /** @return array<int, array> */
 function fetchAll(string $endpoint, string $listKey = 'list'): array
 {
-    try {
-        $res = api($endpoint, ['per_page' => 100, 'page' => 1]);
-    } catch (Throwable $e) {
-        recordError($endpoint, $e->getMessage());
+    // Walk every page: existence checks must see records beyond page 1,
+    // otherwise a rerun recreates records it failed to find.
+    $records = [];
+    $page = 1;
+    $pages = 1;
+    while ($page <= $pages) {
+        try {
+            $res = api($endpoint, ['per_page' => 100, 'page' => $page]);
+        } catch (Throwable $e) {
+            recordError($endpoint . ' page ' . $page, $e->getMessage());
 
-        return [];
-    }
-    if (is_array($res) && isset($res[$listKey]) && is_array($res[$listKey])) {
-        return array_values($res[$listKey]);
-    }
-    if (is_array($res) && array_is_list($res)) {
-        return $res;
+            return $records;
+        }
+        if (is_array($res) && isset($res[$listKey]) && is_array($res[$listKey])) {
+            array_push($records, ...array_values($res[$listKey]));
+            $pages = max(1, (int) ($res['pages'] ?? 1));
+        } elseif (is_array($res) && array_is_list($res)) {
+            array_push($records, ...$res);
+
+            break;
+        } else {
+            break;
+        }
+        ++$page;
     }
 
-    return [];
+    return $records;
 }
 
 function findBy(array $list, string $field, mixed $value): ?array
@@ -465,7 +477,7 @@ $productDefs = [
 foreach ($productDefs as $def) {
     if (isset($productIds[$def['title']])) {
         note("  product '{$def['title']}' exists id={$productIds[$def['title']]}");
-        $manifest['products'][] = ['title' => $def['title'], 'id' => $productIds[$def['title']], 'existing' => true];
+        $manifest['products'][] = ['title' => $def['title'], 'type' => $def['type'], 'id' => $productIds[$def['title']], 'existing' => true];
 
         continue;
     }
@@ -586,12 +598,20 @@ $groupCycle = array_values($groupIds);
 if ($groupCycle === []) {
     $groupCycle = [null];
 }
+$clientCount = $limitClients > 0 ? min($limitClients, 24) : 24;
+$demoEmails = [];
+for ($i = 1; $i <= $clientCount; ++$i) {
+    $demoEmails[sprintf('demo.client%02d@example.com', $i)] = true;
+}
 $existingClients = fetchAll('admin/client/get_list');
 $clientIds = [];
 foreach ($existingClients as $c) {
-    $clientIds[$c['email']] = (int) $c['id'];
+    // Only demo identities: never attach orders, invoices or tickets to real clients.
+    $email = (string) ($c['email'] ?? '');
+    if (isset($demoEmails[$email])) {
+        $clientIds[$email] = (int) $c['id'];
+    }
 }
-$clientCount = $limitClients > 0 ? min($limitClients, 24) : 24;
 for ($i = 0; $i < $clientCount; ++$i) {
     $n = $i + 1;
     $email = sprintf('demo.client%02d@example.com', $n);
