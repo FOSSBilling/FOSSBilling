@@ -105,9 +105,9 @@ function api(string $endpoint, array $params = []): mixed
     }
     if (!empty($decoded['error'])) {
         $msg = $decoded['error']['message'] ?? 'Unknown API error';
-        $ecode = $decoded['error']['code'] ?? 0;
+        $errorCode = $decoded['error']['code'] ?? 0;
 
-        throw new RuntimeException("API {$endpoint} failed: {$msg} (code {$ecode})");
+        throw new RuntimeException("API {$endpoint} failed: {$msg} (code {$errorCode})");
     }
 
     return $decoded['result'];
@@ -719,21 +719,21 @@ foreach ($clientIdList as $ci => $cid) {
         // probe type + pricing first so period/config are always valid for this product
         try {
             $probe = api('admin/product/get', ['id' => $pid]);
-            $ptype = $probe['type'] ?? '';
-            $ppricing = $probe['pricing'] ?? [];
+            $productType = $probe['type'] ?? '';
+            $productPricing = $probe['pricing'] ?? [];
         } catch (Throwable) {
-            $ptype = '';
-            $ppricing = [];
+            $productType = '';
+            $productPricing = [];
         }
-        if ($ptype === 'domain') {
+        if ($productType === 'domain') {
             // generic cycle should never contain domains, but coerce just in case
             $isDomain = true;
             $pid = $domainPid ?? $pid;
         }
         // pick a billing period the product actually offers (once/free products take no period)
         $effPeriod = null;
-        if (($ppricing['type'] ?? '') === 'recurrent' && is_array($ppricing['recurrent'] ?? null)) {
-            $enabledPeriods = array_keys(array_filter($ppricing['recurrent'], static fn ($r): bool => !empty($r['enabled'])));
+        if (($productPricing['type'] ?? '') === 'recurrent' && is_array($productPricing['recurrent'] ?? null)) {
+            $enabledPeriods = array_keys(array_filter($productPricing['recurrent'], static fn ($r): bool => !empty($r['enabled'])));
             if (in_array($period, $enabledPeriods, true)) {
                 $effPeriod = $period;
             } elseif ($enabledPeriods !== []) {
@@ -755,7 +755,7 @@ foreach ($clientIdList as $ci => $cid) {
         if ($orderIndex % 7 === 0) {
             $payload['promo'] = 'DEMO10';
         }
-        if ($isDomain || $ptype === 'domain') {
+        if ($isDomain || $productType === 'domain') {
             $payload['config'] = [
                 'action' => 'register',
                 'register_sld' => 'demoseed' . $orderIndex . $ci,
@@ -763,7 +763,7 @@ foreach ($clientIdList as $ci => $cid) {
                 'register_years' => 1,
             ];
             $payload['period'] = '1Y';
-        } elseif ($ptype === 'hosting') {
+        } elseif ($productType === 'hosting') {
             // hosting products need domain.action owndomain
             $payload['config'] = [
                 'domain' => [
@@ -774,7 +774,7 @@ foreach ($clientIdList as $ci => $cid) {
             ];
         }
         // hosting config without server would fail; skip_validation keeps seeding moving
-        if ($ptype === 'hosting' && $serverId === null) {
+        if ($productType === 'hosting' && $serverId === null) {
             $payload['skip_validation'] = 1;
         }
 
@@ -798,13 +798,13 @@ foreach ($ordersCreated as $idx => $oid) {
     $mod = $idx % 10;
 
     try {
-        $oinfo = api('admin/order/get', ['id' => $oid]);
-        $ostatus = $oinfo['status'] ?? '';
+        $orderInfo = api('admin/order/get', ['id' => $oid]);
+        $orderStatus = $orderInfo['status'] ?? '';
     } catch (Throwable) {
-        $ostatus = '';
+        $orderStatus = '';
     }
-    $canActivate = in_array($ostatus, ['pending_setup', 'failed_setup'], true);
-    $isActive = $ostatus === 'active';
+    $canActivate = in_array($orderStatus, ['pending_setup', 'failed_setup'], true);
+    $isActive = $orderStatus === 'active';
 
     try {
         if ($mod <= 3 || $mod === 7 || $mod === 8) {
@@ -826,7 +826,7 @@ foreach ($ordersCreated as $idx => $oid) {
                 api('admin/order/suspend', ['id' => $oid, 'reason' => 'Demo seed: overdue suspension']);
             }
         } elseif ($mod === 6) {
-            if ($ostatus !== 'canceled') {
+            if ($orderStatus !== 'canceled') {
                 if ($canActivate) {
                     try {
                         api('admin/order/activate', ['id' => $oid]);
@@ -839,13 +839,13 @@ foreach ($ordersCreated as $idx => $oid) {
                     api('admin/order/cancel', ['id' => $oid, 'reason' => 'Demo seed: client request']);
                 } catch (Throwable $e) {
                     // pending_setup orders cannot be canceled; leave as-is for pending coverage
-                    recordError("order/cancel id={$oid} (status={$ostatus})", $e->getMessage());
+                    recordError("order/cancel id={$oid} (status={$orderStatus})", $e->getMessage());
                 }
             }
         }
         // 4, 9: leave as-is (pending coverage)
     } catch (Throwable $e) {
-        recordError("order/state id={$oid} (status={$ostatus})", $e->getMessage());
+        recordError("order/state id={$oid} (status={$orderStatus})", $e->getMessage());
     }
 }
 note('  order states distributed (active/pending/suspended/canceled)');
@@ -977,8 +977,8 @@ if ($subClient !== null && !$dryRun) {
         note('  subscription DEMO-SUB-001 exists, skip');
     } else {
         try {
-            $cinfo = api('admin/client/get', ['id' => $subClient]);
-            $cur = $cinfo['currency'] ?? 'GBP';
+            $clientInfo = api('admin/client/get', ['id' => $subClient]);
+            $cur = $clientInfo['currency'] ?? 'GBP';
         } catch (Throwable) {
             $cur = 'GBP';
         }
@@ -1007,7 +1007,7 @@ $helpdeskIds = [];
 foreach ($helpdesks as $h) {
     $helpdeskIds[$h['name']] = (int) $h['id'];
 }
-foreach (['Demo Billing' => 'billing@example.com', 'Demo Technical' => 'tech@example.com'] as $hname => $hemail) {
+foreach (['Demo Billing' => 'billing@example.com', 'Demo Technical' => 'tech@example.com'] as $hname => $helpdeskEmail) {
     if (isset($helpdeskIds[$hname])) {
         continue;
     }
@@ -1016,7 +1016,7 @@ foreach (['Demo Billing' => 'billing@example.com', 'Demo Technical' => 'tech@exa
 
         continue;
     }
-    $r = apiSafe('admin/support/helpdesk_create', ['name' => $hname, 'email' => $hemail, 'close_after' => 72, 'signature' => 'Demo support team']);
+    $r = apiSafe('admin/support/helpdesk_create', ['name' => $hname, 'email' => $helpdeskEmail, 'close_after' => 72, 'signature' => 'Demo support team']);
     if (is_array($r) && isset($r['__error'])) {
         recordError('helpdesk/create ' . $hname, $r['__error']);
     } else {
@@ -1147,9 +1147,9 @@ $bodies = [
     'Hello, please help migrate demo data. Nothing urgent, testing only.',
 ];
 $ticketTarget = $limitTickets > 0 ? $limitTickets : 20;
-$hkeys = array_values($helpdeskIds);
-if ($hkeys === []) {
-    $hkeys = [$defaultHelpdeskId];
+$helpdeskKeys = array_values($helpdeskIds);
+if ($helpdeskKeys === []) {
+    $helpdeskKeys = [$defaultHelpdeskId];
 }
 for ($t = 0; $t < $ticketTarget; ++$t) {
     $subj = 'Demo ticket #' . ($t + 1) . ' - ' . $subjects[$t % count($subjects)];
@@ -1163,7 +1163,7 @@ for ($t = 0; $t < $ticketTarget; ++$t) {
     try {
         $tid = api('admin/support/ticket_create', [
             'client_id' => $cid,
-            'support_helpdesk_id' => $hkeys[$t % max(1, count($hkeys))],
+            'support_helpdesk_id' => $helpdeskKeys[$t % max(1, count($helpdeskKeys))],
             'subject' => $subj,
             'content' => $bodies[$t % count($bodies)],
         ]);
