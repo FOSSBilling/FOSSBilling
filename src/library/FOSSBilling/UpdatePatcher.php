@@ -2850,7 +2850,28 @@ class UpdatePatcher implements InjectionAwareInterface
 
     private function patch116(): void
     {
-        $this->decodeLegacyServiceEscapedEntities();
+        // One transaction covers both the row repairs and the patch-level
+        // bookkeeping below: without it, rows committed before a failed
+        // setPatchLevel() would be decoded a second time on retry, corrupting
+        // values whose true content is a literal entity (`&amp;amp;` would end
+        // up as `&`). The loop's own setPatchLevel(116) afterwards is a
+        // harmless idempotent rewrite of the same value.
+        $pdo = $this->getPdo();
+        $pdo->beginTransaction();
+
+        try {
+            $repaired = $this->decodeLegacyServiceEscapedEntities();
+            $this->setPatchLevel(116);
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            $pdo->rollBack();
+
+            throw $e;
+        }
+
+        if ($repaired['invoices'] > 0 || $repaired['notifications'] > 0) {
+            $this->logUpdate('info', 'Decoded legacy HTML entities in stored data', $repaired);
+        }
     }
 
     /**
@@ -2866,8 +2887,10 @@ class UpdatePatcher implements InjectionAwareInterface
      * five htmlspecialchars(ENT_QUOTES) entities selects exactly the legacy
      * rows; one decode pass mirrors the single erroneous encode. Company
      * settings need no repair: they were always stored raw.
+     *
+     * @return array{invoices: int, notifications: int} rows rewritten per table
      */
-    private function decodeLegacyServiceEscapedEntities(): void
+    private function decodeLegacyServiceEscapedEntities(): array
     {
         $invoiceColumns = [
             'seller_company',
@@ -2932,12 +2955,7 @@ class UpdatePatcher implements InjectionAwareInterface
             ++$repairedNotes;
         }
 
-        if ($repairedInvoices > 0 || $repairedNotes > 0) {
-            $this->logUpdate('info', 'Decoded legacy HTML entities in stored data', [
-                'invoices' => $repairedInvoices,
-                'notifications' => $repairedNotes,
-            ]);
-        }
+        return ['invoices' => $repairedInvoices, 'notifications' => $repairedNotes];
     }
 
     /**

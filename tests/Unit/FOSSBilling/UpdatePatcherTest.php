@@ -1632,7 +1632,10 @@ test('legacy entity decode repair restores raw invoice and notification values',
 
     $patcher = new UpdatePatcher();
     $patcher->setDi($di);
-    $repair = new ReflectionMethod($patcher, 'patch116');
+    // Invoke the repair directly: patch116's setPatchLevel() bookkeeping is
+    // MySQL-only SQL (`ON DUPLICATE KEY UPDATE`), so the data assertions run
+    // here while the mocked rollback test below covers the patch wiring.
+    $repair = new ReflectionMethod($patcher, 'decodeLegacyServiceEscapedEntities');
 
     $repair->invoke($patcher);
 
@@ -1658,4 +1661,49 @@ test('legacy entity decode repair restores raw invoice and notification values',
 
     expect($pdo->query('SELECT * FROM invoice WHERE id = 1')->fetch(PDO::FETCH_ASSOC))->toBe($invoice)
         ->and($pdo->query("SELECT meta_value FROM extension_meta WHERE meta_key = 'message' AND id = 1")->fetchColumn())->toBe('Call A & B about the invoice');
+});
+
+test('legacy entity decode patch rolls back row repairs when the patch level cannot be recorded', function (): void {
+    // Without atomicity, rows committed before a failed setPatchLevel() would
+    // be decoded a second time on retry. Mirrors the stock backfill rollback
+    // test above.
+    $selectInvoices = Mockery::mock(PDOStatement::class);
+    $selectInvoices->expects('execute')->with([])->andReturnTrue();
+    $selectInvoices->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['id' => 1, 'seller_company' => 'A &amp; B Ltd', 'seller_company_vat' => null, 'seller_company_number' => null, 'seller_address' => null, 'seller_phone' => null, 'seller_email' => null],
+    ]);
+
+    $updateInvoice = Mockery::mock(PDOStatement::class);
+    $updateInvoice->expects('execute')->with(['seller_company' => 'A & B Ltd', 'id' => 1])->andReturnTrue();
+
+    $selectNotes = Mockery::mock(PDOStatement::class);
+    $selectNotes->expects('execute')->with([])->andReturnTrue();
+    $selectNotes->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([]);
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('beginTransaction')->once()->andReturnTrue();
+    $pdo->expects('rollBack')->once()->andReturnTrue();
+    $pdo->shouldNotReceive('commit');
+    $pdo->expects('prepare')
+        ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'SELECT id, seller_company')))
+        ->andReturn($selectInvoices);
+    $pdo->expects('prepare')
+        ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'UPDATE invoice SET')))
+        ->andReturn($updateInvoice);
+    $pdo->expects('prepare')
+        ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'SELECT id, meta_value')))
+        ->andReturn($selectNotes);
+    $pdo->expects('prepare')
+        ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'INSERT INTO setting')))
+        ->andThrow(new RuntimeException('level write failed'));
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+
+    expect(fn (): mixed => (new ReflectionMethod($patcher, 'patch116'))->invoke($patcher))
+        ->toThrow(FOSSBilling\Exception::class, 'There was an error while applying database patches');
 });
