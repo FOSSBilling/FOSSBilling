@@ -60,12 +60,12 @@
 
                         <tr>
                             <td>{{ 'Bandwidth'|trans }}:</td>
-                            <td>{{ hp.bandwidth }} MB / {{ 'per month'|trans }}</td>
+                            <td>{% if hp.bandwidth == 'unlimited' %}{{ 'Unlimited'|trans }}{% else %}{{ hp.bandwidth }} MB{% endif %} / {{ 'per month'|trans }}</td>
                         </tr>
 
                         <tr>
                             <td>{{ 'Disk Quota'|trans }}:</td>
-                            <td>{{ hp.quota }} MB</td>
+                            <td>{% if hp.quota == 'unlimited' %}{{ 'Unlimited'|trans }}{% else %}{{ hp.quota }} MB{% endif %}</td>
                         </tr>
                     </tbody>
                 </table>
