@@ -411,7 +411,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $pi->setRelId((string) $order->getId());
         $pi->setTask($task);
         $pi->setStatus(InvoiceItem::STATUS_PENDING_PAYMENT);
-        $pi->setTitle($order->getTitle());
+        $pi->setTitle($line['title'] ?? $order->getTitle());
         $pi->setPeriod($period);
         $pi->setQuantity(PriceValidator::validateQuantity($quantity));
         $pi->setUnit($unit);

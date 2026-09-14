@@ -54,9 +54,9 @@ class Validate
         }
         $sld = strtolower($sld);
 
-        // allow punnycode
+        // allow punnycode, subject to the same single-label and length limits
         if (str_starts_with($sld, 'xn--')) {
-            return true;
+            return !str_contains($sld, '.') && strlen($sld) < 64;
         }
 
         if (preg_match('/^[a-z0-9]+[a-z0-9\-]*[a-z0-9]+$/i', $sld) && strlen($sld) < 64 && substr($sld, 2, 2) != '--') {
