@@ -134,9 +134,9 @@
 				<b>{{ 'Account Owner'|trans }}:</b> {{ footer.company_name|default('') }} | <b>{{ 'Bank'|trans }}:</b> {{ footer.bank_name|default('') }} | <b>{{ 'BIC / SWIFT Code'|trans }}:</b> {{ footer.bic|default('') }} | <b>{{ 'Account Number'|trans }}:</b> {{ footer.account_number|default('') }}<br><br>
 			{% endif %}
 
-		<b>{{ footer.company_name|default('') }}</b>
-		{% if address %} {{ address }} <br> {% endif %}
-		<b>{{ 'Email'|trans }}:</b> {{ footer.email|default('') }} | <b>
+			<b>{{ footer.company_name|default('') }}</b>
+			{% if address %} {{ address }} <br> {% endif %}
+			<b>{{ 'Email'|trans }}:</b> {{ footer.email|default('') }} | <b>
 			{% if footer.phone|default('') %} {{ 'Phone'|trans }}:</b> {{ footer.phone }}<br> {% endif %}
 			{% if footer.company_vat|default('') %} <b>{{ 'VAT ID'|trans }}:</b> {{ footer.company_vat }} | {% endif %}
 			{% if footer.company_number|default('') %} <b>{{ 'Company Registration #:'|trans }}</b> {{ footer.company_number }} | {% endif %}
