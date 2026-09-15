@@ -574,6 +574,11 @@ class Server_Manager_Plesk extends Server_Manager
         ];
 
         if ($action === 'set') {
+            $values['hosting']['vrt_hst']['property'] = array_values(array_filter(
+                $values['hosting']['vrt_hst']['property'],
+                fn (array $property): bool => $property['name'] !== 'ftp_password',
+            ));
+
             // Filtering by 'owner-login' would match every webspace this customer owns, applying
             // $values to all of them; 'name' (like deleteSubscription() already uses) scopes the
             // update to this one subscription.
