@@ -1105,8 +1105,9 @@ class Service implements InjectionAwareInterface
                 $this->di['logger']->withChannel('billing')->info("Setting invoice {$invoice->getId()} as paid with credits for the amount of {$required}.");
             }
 
-            if ($required > 0) {
-                // Do not record a $0 credit transaction for a zero-total invoice.
+            if ($required > 0.0) {
+                // Nothing is charged against the client's balance for a zero or negative invoice,
+                // so don't record a $0 credit transaction.
                 $balanceTransaction = new ClientBalance();
                 $balanceTransaction->setClient($this->di['em']->getReference(Client::class, $clientId));
                 $balanceTransaction->setType('invoice');
