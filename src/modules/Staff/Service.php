@@ -367,7 +367,13 @@ class Service implements InjectionAwareInterface
             } catch (\FOSSBilling\InformationException) {
                 return $ticket;
             }
-            $ticket['client'] = $clientService->toApiArray($client);
+            $clientDetails = $clientService->toApiArray($client);
+            $ticket['client'] = array_intersect_key($clientDetails, array_flip([
+                'id',
+                'email',
+                'first_name',
+                'last_name',
+            ]));
         }
 
         return $ticket;
