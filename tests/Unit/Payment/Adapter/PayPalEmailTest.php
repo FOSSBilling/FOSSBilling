@@ -861,6 +861,7 @@ describe('PayPal subscription IPN handling', function (): void {
     });
 
     test('recurring_payment_failed cancels the stored subscription', function (): void {
+        $updates = [];
         $apiAdmin = Mockery::mock();
         $apiAdmin->shouldReceive('invoice_transaction_get')->once()->with(['id' => 42])->andReturn([
             'invoice_id' => 16, 'type' => null, 'txn_id' => null,
@@ -870,7 +871,11 @@ describe('PayPal subscription IPN handling', function (): void {
             'id' => 16, 'currency' => 'USD', 'client' => ['id' => 9],
         ]);
         $apiAdmin->shouldReceive('invoice_subscription_update')->once()->with(['id' => 7, 'status' => 'canceled'])->andReturn(true);
-        $apiAdmin->shouldReceive('invoice_transaction_update')->byDefault();
+        $apiAdmin->shouldReceive('invoice_transaction_update')->byDefault()->withArgs(function (array $data) use (&$updates): bool {
+            $updates[] = $data;
+
+            return true;
+        });
 
         $stored = Mockery::mock(Box\Mod\Invoice\Entity\Subscription::class);
         $stored->shouldReceive('getId')->byDefault()->andReturn(7);
@@ -883,6 +888,9 @@ describe('PayPal subscription IPN handling', function (): void {
             'post' => ['txn_type' => 'recurring_payment_failed', 'recurring_payment_id' => 'I-PROFILE1'],
             'get' => ['invoice_id' => 16],
         ], 2);
+
+        $processed = array_values(array_filter($updates, fn (array $u): bool => ($u['status'] ?? null) === 'processed'));
+        expect($processed)->toHaveCount(1);
     });
 
     test('recurring_payment_skipped is acknowledged without touching the subscription', function (): void {
