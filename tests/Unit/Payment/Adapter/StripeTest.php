@@ -1232,7 +1232,7 @@ describe('processPaymentIntent', function (): void {
 
     test('rejects redirect PaymentIntents that are not bound to the invoice', function (array $paymentIntent): void {
         $tx = buildTransaction();
-        $tx->gateway_id = 4;
+        $tx->setGateway(createEntity(PayGateway::class, ['id' => 4]));
 
         $invoice = createEntity(Invoice::class, [
             'id' => 15,

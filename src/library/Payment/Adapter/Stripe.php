@@ -375,7 +375,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
     private function validateRedirectPaymentIntent(Transaction $tx, ?Invoice $invoice, object $paymentIntent): void
     {
         $gatewayId = $paymentIntent->metadata->gateway_id ?? null;
-        if (!is_numeric($gatewayId) || (int) $gatewayId !== (int) $tx->getGatewayId()) {
+        if (!is_numeric($gatewayId) || (int) $gatewayId !== (int) $tx->getGateway()?->getId()) {
             throw new FOSSBilling\Exception('PaymentIntent does not belong to this payment gateway');
         }
 
