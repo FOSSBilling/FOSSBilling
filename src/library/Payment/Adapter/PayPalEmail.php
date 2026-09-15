@@ -174,7 +174,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                         'error' => sprintf('PayPal payment not completed: %s', (string) ($ipn['payment_status'] ?? 'unknown')),
                         'updated_at' => date('Y-m-d H:i:s'),
                     ]);
-                    $this->di['logger']->info('PayPal payment for transaction ' . $id . ' not completed: ' . (string) ($ipn['payment_status'] ?? 'unknown'));
+                    $this->di['logger']->info('PayPal payment for transaction ' . $id . ' not completed: ' . ($ipn['payment_status'] ?? 'unknown'));
                     $awaitingCompletion = true;
 
                     break;
