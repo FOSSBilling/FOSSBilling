@@ -174,8 +174,8 @@ class Tools
      */
     public function validateAndSanitizeEmail(string $email, bool $throw = true, bool $checkDNS = true)
     {
-        $email = htmlspecialchars($email);
-
+        // Validated and returned raw: `&` is legal in an address, so encoding
+        // here would corrupt stored addresses and wrongly reject valid ones.
         $validator = new EmailValidator();
         if (Environment::isProduction() && $checkDNS) {
             $validations = new MultipleValidationWithAnd([
@@ -355,12 +355,15 @@ class Tools
                     return $ip;
                 }
             } catch (\Exception $e) {
-                error_log(sprintf(
-                    'Error fetching external IP from "%s" (%s): %s',
-                    $service,
-                    $e::class,
-                    $e->getMessage()
-                ));
+                $this->di['logger']->error(
+                    'Error fetching external IP from "{service}" ({exception_class}): {exception_message}',
+                    [
+                        'service' => $service,
+                        'exception_class' => $e::class,
+                        'exception_message' => $e->getMessage(),
+                        'exception' => $e,
+                    ]
+                );
             }
         }
 

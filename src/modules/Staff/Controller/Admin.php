@@ -136,7 +136,7 @@ class Admin implements InjectionAwareInterface
                 $expiresAt = strtotime((string) $reset->getCreatedAt()?->format('Y-m-d H:i:s')) + 900;
 
                 if ($expiresAt >= time()) {
-                    $admin = $this->di['em']->getRepository(\Box\Mod\Staff\Entity\Admin::class)->find($reset->getAdminId());
+                    $admin = $reset->getAdmin();
                     if ($admin instanceof \Box\Mod\Staff\Entity\Admin) {
                         $data['hash'] = $reset->getHash();
                         $data['email'] = $admin->getEmail();

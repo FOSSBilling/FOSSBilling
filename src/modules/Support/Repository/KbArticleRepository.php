@@ -17,11 +17,15 @@ use Doctrine\ORM\QueryBuilder;
 
 class KbArticleRepository extends EntityRepository
 {
-    public function getSearchQueryBuilder(?string $status = null, ?string $search = null, int|string|null $categoryId = null): QueryBuilder
+    public function getSearchQueryBuilder(array $data = []): QueryBuilder
     {
         $qb = $this->createQueryBuilder('a')
             ->leftJoin('a.category', 'c')
             ->addSelect('c');
+
+        $categoryId = $data['kb_article_category_id'] ?? null;
+        $status = $data['status'] ?? null;
+        $search = $data['search'] ?? null;
 
         if ($categoryId !== null && $categoryId !== '') {
             $qb->andWhere('IDENTITY(a.category) = :categoryId')

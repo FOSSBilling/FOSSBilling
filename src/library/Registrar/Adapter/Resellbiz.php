@@ -35,6 +35,7 @@ class Registrar_Adapter_Resellbiz extends Registrar_Adapter_Resellerclub
                     'label' => 'Resell.biz API Key',
                     'description' => 'You can get this at Resell.biz control panel, go to Settings -> API',
                     'required' => false,
+                    'secret' => true,
                 ],
                 ],
             ],

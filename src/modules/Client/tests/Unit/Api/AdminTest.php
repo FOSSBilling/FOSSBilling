@@ -268,7 +268,7 @@ test('update returns true', function (): void {
 
 test('update validates and assigns client_group_id through the group repository', function (): void {
     $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
-    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1, 'client_group_id' => 3]);
+    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1]);
     $group = createEntity(Box\Mod\Client\Entity\ClientGroup::class, ['id' => 7]);
 
     $clientRepository = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
@@ -288,12 +288,12 @@ test('update validates and assigns client_group_id through the group repository'
     $adminClient->setDi($di);
 
     expect($adminClient->update(['id' => 1, 'client_group_id' => '7']))->toBeTrue()
-        ->and($client->getClientGroupId())->toBe(7);
+        ->and($client->getClientGroup())->toBe($group);
 });
 
 test('update clears client_group_id when the alias is empty', function (): void {
     $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
-    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1, 'client_group_id' => 3]);
+    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1]);
 
     $clientRepository = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
     $clientRepository->shouldReceive('find')->once()->with(1)->andReturn($client);
@@ -309,7 +309,7 @@ test('update clears client_group_id when the alias is empty', function (): void 
     $adminClient->setDi($di);
 
     expect($adminClient->update(['id' => 1, 'client_group_id' => '']))->toBeTrue()
-        ->and($client->getClientGroupId())->toBeNull();
+        ->and($client->getClientGroup())->toBeNull();
 });
 
 test('update rejects a non-integer client_group_id alias', function (): void {
@@ -702,4 +702,56 @@ test('batchDelete returns true', function (): void {
 
     $result = $activityMock->batch_delete(['ids' => [1, 2, 3]]);
     expect($result)->toBeTrue();
+});
+
+test('export_csv requires both view and export permissions', function (): void {
+    $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
+
+    $serviceMock = Mockery::mock(Box\Mod\Client\Service::class);
+    $serviceMock->shouldReceive('exportCSV')->never();
+
+    $di = container();
+    $staffServiceMock = $di['mod_service']('staff');
+    $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')->byDefault()->andReturn(true);
+    $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
+        ->once()
+        ->with('client', 'view', null, Mockery::any())
+        ->andThrow(new FOSSBilling\InformationException('You need the "client.view" permission to perform this action', [], 403));
+
+    $adminClient->setDi($di);
+    $adminClient->setService($serviceMock);
+
+    expect(fn () => $adminClient->export_csv(['headers' => ['id']]))
+        ->toThrow(FOSSBilling\InformationException::class);
+});
+
+test('export_csv delegates to service when permissions granted', function (): void {
+    $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
+
+    $response = new Symfony\Component\HttpFoundation\Response('id,email', 200, ['Content-Type' => 'text/csv']);
+    $serviceMock = Mockery::mock(Box\Mod\Client\Service::class);
+    $serviceMock->shouldReceive('exportCSV')
+        ->once()
+        ->with(['email'])
+        ->andReturn($response);
+
+    $di = container();
+    $staffServiceMock = $di['mod_service']('staff');
+    $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
+        ->once()
+        ->with('client', 'view', null, Mockery::any())
+        ->andReturn(true)
+        ->ordered();
+    $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
+        ->once()
+        ->with('client', 'export', null, Mockery::any())
+        ->andReturn(true)
+        ->ordered();
+
+    $adminClient->setDi($di);
+    $adminClient->setService($serviceMock);
+
+    $result = $adminClient->export_csv(['headers' => ['email']]);
+
+    expect($result)->toBeInstanceOf(Symfony\Component\HttpFoundation\Response::class);
 });

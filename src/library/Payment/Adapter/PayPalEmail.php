@@ -85,13 +85,28 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
             throw new Payment_Exception('IPN is invalid');
         }
 
-        $ipn = $data['post'];
+        $ipn = $data['post'] ?? [];
+
+        // PayPal's newer subscription flow uses recurring_payment* names for the
+        // same concepts: normalize them once so every path below just works.
+        if (!isset($ipn['subscr_id']) && isset($ipn['recurring_payment_id'])) {
+            $ipn['subscr_id'] = $ipn['recurring_payment_id'];
+        }
+        if (!isset($ipn['mc_gross']) && isset($ipn['amount'])) {
+            $ipn['mc_gross'] = $ipn['amount'];
+        }
+        if (!isset($ipn['amount3']) && isset($ipn['amount'])) {
+            $ipn['amount3'] = $ipn['amount'];
+        }
 
         $tx = $api_admin->invoice_transaction_get(['id' => $id]);
 
         // Set the invoice ID if it's not set
         if (!$tx['invoice_id']) {
-            $invoiceID = $data['get']['invoice_id'];
+            $invoiceID = $data['get']['invoice_id'] ?? null;
+            if (empty($invoiceID)) {
+                throw new Payment_Exception('PayPal transaction is not associated with an invoice');
+            }
             $tx['invoice_id'] = $invoiceID;
             $api_admin->invoice_transaction_update(['id' => $id, 'invoice_id' => $invoiceID]);
         }
@@ -120,10 +135,14 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
         $client_id = $invoice['client']['id'];
 
         $txnType = $ipn['txn_type'] ?? '';
+        // Incomplete payments must stay received with their error instead of
+        // being overwritten as cleanly processed by the tail update below.
+        $awaitingCompletion = false;
         switch ($txnType) {
             case 'web_accept':
             case 'subscr_payment':
-                if ($ipn['payment_status'] == 'Completed') {
+            case 'recurring_payment':
+                if (($ipn['payment_status'] ?? '') === 'Completed') {
                     // Skip only if we've already processed a Completed payment for this transaction
                     if (isset($tx['status'], $tx['txn_status']) && $tx['status'] === Box\Mod\Invoice\Entity\Transaction::STATUS_PROCESSED && $tx['txn_status'] === 'Completed') {
                         $d = [
@@ -138,11 +157,32 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                         return;
                     }
 
+                    if (!isset($ipn['mc_gross'], $ipn['txn_id'])) {
+                        throw new Payment_Exception('PayPal payment is missing transaction details');
+                    }
+                    $isSubscriptionPayment = in_array($txnType, ['subscr_payment', 'recurring_payment'], true);
+                    if ($isSubscriptionPayment && !isset($ipn['subscr_id'])) {
+                        throw new Payment_Exception('PayPal subscription payment is missing the subscription ID');
+                    }
+                    if ($isSubscriptionPayment) {
+                        $paymentSubscription = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\Subscription::class)->findOneBy(['sid' => (string) $ipn['subscr_id']]);
+                        if ($paymentSubscription instanceof Box\Mod\Invoice\Entity\Subscription
+                            && $paymentSubscription->getRelType() === 'invoice'
+                            && $paymentSubscription->getRelId() !== null
+                            && $paymentSubscription->getRelId() !== (int) $tx['invoice_id']) {
+                            throw new Payment_Exception('PayPal subscription ' . $ipn['subscr_id'] . ' is not linked to invoice ' . $tx['invoice_id']);
+                        }
+                    }
+
                     // Claim transaction for processing
                     // Prevents race conditions when multiple Completed IPNs arrive simultaneously
                     if (!$api_admin->invoice_transaction_claim_for_processing(['id' => $id])) {
+                        $this->di['logger']->warning('Skipping PayPal transaction ' . $id . ': already being processed');
+
                         return;
                     }
+                } elseif (($ipn['payment_status'] ?? '') === 'Refunded') {
+                    break;
                 } else {
                     $api_admin->invoice_transaction_update([
                         'id' => $id,
@@ -151,6 +191,8 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                         'error' => sprintf('PayPal payment not completed: %s', (string) ($ipn['payment_status'] ?? 'unknown')),
                         'updated_at' => date('Y-m-d H:i:s'),
                     ]);
+                    $this->di['logger']->info('PayPal payment for transaction ' . $id . ' not completed: ' . ($ipn['payment_status'] ?? 'unknown'));
+                    $awaitingCompletion = true;
 
                     break;
                 }
@@ -178,7 +220,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                 // we validate against the correct amount. Skip this for the
                 // initial payment (original invoice still unpaid) — that
                 // payment should go to the original invoice.
-                if ($ipn['txn_type'] === 'subscr_payment' && isset($ipn['subscr_id'])) {
+                if ($isSubscriptionPayment && isset($ipn['subscr_id'])) {
                     $originalAlreadyPaid = $invoiceDbModel instanceof Invoice
                         && $invoiceDbModel->getStatus() === Invoice::STATUS_PAID;
 
@@ -219,47 +261,141 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                 } elseif (empty($tx['invoice_id'])) {
                     $api_admin->invoice_batch_pay_with_credits(['client_id' => $client_id]);
                 }
+                $this->di['logger']->info('Applied PayPal transaction ' . $ipn['txn_id'] . ' to invoice ' . $tx['invoice_id']);
 
                 break;
 
             case 'subscr_signup':
-                $existingSubscription = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\Subscription::class)->findOneBy(['sid' => $ipn['subscr_id']]);
+            case 'recurring_payment_profile_created':
+                $subscrId = (string) ($ipn['subscr_id'] ?? '');
+                if ($subscrId === '') {
+                    throw new Payment_Exception('PayPal subscription signup is missing the subscription ID');
+                }
+                $subscrPeriod = str_replace(' ', '', (string) ($ipn['period3'] ?? ''));
+                if ($subscrPeriod === '') {
+                    // Newer-flow IPNs carry no period: derive it from the linked
+                    // invoice, preserving null when the invoice has no recurring period.
+                    $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
+                    $periodInvoice = $this->di['em']->getRepository(Invoice::class)->find($tx['invoice_id']);
+                    if ($periodInvoice instanceof Invoice) {
+                        $subscrPeriod = $subscriptionService->getSubscriptionPeriod($periodInvoice);
+                    }
+                }
+
+                $existingSubscription = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\Subscription::class)->findOneBy(['sid' => $subscrId]);
 
                 if (!$existingSubscription instanceof Box\Mod\Invoice\Entity\Subscription) {
                     $sd = [
                         'client_id' => $client_id,
                         'gateway_id' => $gateway_id,
-                        'currency' => $ipn['mc_currency'],
-                        'sid' => $ipn['subscr_id'],
+                        // Signup IPNs don't always include a currency, so fall back to
+                        // the invoice currency rather than failing the client-currency check.
+                        'currency' => (string) ($ipn['mc_currency'] ?? $invoice['currency'] ?? ''),
+                        'sid' => $subscrId,
                         'status' => 'active',
-                        'period' => str_replace(' ', '', $ipn['period3']),
-                        'amount' => $ipn['amount3'],
+                        'period' => $subscrPeriod,
+                        'amount' => (string) ($ipn['amount3'] ?? ''),
                         'rel_type' => 'invoice',
                         'rel_id' => $invoice['id'],
                     ];
                     $api_admin->invoice_subscription_create($sd);
+                    $this->di['logger']->info('Stored PayPal subscription ' . $subscrId . ' from ' . $txnType . ' IPN for transaction ' . $id);
                 }
 
                 $t = [
                     'id' => $id,
-                    's_id' => $ipn['subscr_id'],
-                    's_period' => str_replace(' ', '', $ipn['period3']),
+                    's_id' => $subscrId,
+                    's_period' => $subscrPeriod,
                 ];
                 $api_admin->invoice_transaction_update($t);
 
                 break;
 
+            case 'subscr_modify':
+                $modifySid = (string) ($ipn['subscr_id'] ?? '');
+                if ($modifySid === '') {
+                    throw new Payment_Exception('PayPal subscription update is missing the subscription ID');
+                }
+                $modifiedSubscription = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\Subscription::class)->findOneBy(['sid' => $modifySid]);
+                if (!$modifiedSubscription instanceof Box\Mod\Invoice\Entity\Subscription) {
+                    $this->di['logger']->warning('Ignoring PayPal subscr_modify IPN for unknown subscription ' . $modifySid . ' on transaction ' . $id);
+
+                    break;
+                }
+                $modifyData = ['id' => $modifiedSubscription->getId()];
+                if (isset($ipn['amount3'])) {
+                    $modifyData['amount'] = (string) $ipn['amount3'];
+                }
+                if (isset($ipn['period3'])) {
+                    $modifyData['period'] = str_replace(' ', '', (string) $ipn['period3']);
+                }
+                $api_admin->invoice_subscription_update($modifyData);
+                $api_admin->invoice_transaction_update([
+                    'id' => $id,
+                    's_id' => $modifySid,
+                    's_period' => $modifyData['period'] ?? $modifiedSubscription->getPeriod(),
+                ]);
+                $this->di['logger']->info('Updated subscription ' . $modifySid . ' from PayPal subscr_modify IPN for transaction ' . $id);
+
+                break;
+
             case 'recurring_payment_suspended_due_to_max_failed_payment':
-            case 'subscr_failed':
+            case 'recurring_payment_profile_cancel':
+            case 'recurring_payment_suspended':
+            case 'recurring_payment_expired':
             case 'subscr_eot':
             case 'subscr_cancel':
-                $s = $api_admin->invoice_subscription_get(['sid' => $ipn['subscr_id']]);
-                $api_admin->invoice_subscription_update(['id' => $s['id'], 'status' => 'canceled']);
+                $cancelSid = (string) ($ipn['subscr_id'] ?? '');
+                if ($cancelSid === '') {
+                    throw new Payment_Exception('PayPal subscription update is missing the subscription ID');
+                }
+
+                $storedCancellation = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\Subscription::class)->findOneBy(['sid' => $cancelSid]);
+                if (!$storedCancellation instanceof Box\Mod\Invoice\Entity\Subscription) {
+                    // Nothing to cancel for an unknown subscription, so acknowledge
+                    // the notification instead of failing the IPN.
+                    $this->di['logger']->warning('Ignoring PayPal ' . $txnType . ' IPN for unknown subscription ' . $cancelSid . ' on transaction ' . $id);
+
+                    break;
+                }
+                $api_admin->invoice_subscription_update(['id' => $storedCancellation->getId(), 'status' => 'canceled']);
+                $this->di['logger']->info('Canceled subscription ' . $cancelSid . ' from PayPal ' . $txnType . ' IPN for transaction ' . $id);
+
+                break;
+
+            case 'recurring_payment_failed':
+            case 'subscr_failed':
+                $failedSid = (string) ($ipn['subscr_id'] ?? '');
+                if ($failedSid === '') {
+                    throw new Payment_Exception('PayPal subscription update is missing the subscription ID');
+                }
+                $failedSubscription = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\Subscription::class)->findOneBy(['sid' => $failedSid]);
+                if (!$failedSubscription instanceof Box\Mod\Invoice\Entity\Subscription) {
+                    $this->di['logger']->warning('Ignoring PayPal ' . $txnType . ' IPN for unknown subscription ' . $failedSid . ' on transaction ' . $id);
+
+                    break;
+                }
+                // A failed charge does not end the subscription: PayPal reattempts
+                // it and later payments still apply, so link the transaction and
+                // leave the subscription status untouched.
+                $api_admin->invoice_transaction_update(['id' => $id, 's_id' => $failedSid]);
+                $this->di['logger']->warning('Recorded failed PayPal payment for subscription ' . $failedSid . ' on transaction ' . $id);
+
+                break;
+
+            case 'recurring_payment_skipped':
+                $skippedSid = (string) ($ipn['subscr_id'] ?? '');
+                if ($skippedSid === '') {
+                    throw new Payment_Exception('PayPal subscription update is missing the subscription ID');
+                }
+                // A skipped cycle leaves the subscription itself in place, so
+                // there is nothing to update — just leave a trace of the missed payment.
+                $this->di['logger']->warning('Acknowledged skipped PayPal payment for subscription ' . $skippedSid . ' on transaction ' . $id);
 
                 break;
 
             default:
-                error_log('Unknown paypal transaction ' . $id);
+                $this->di['logger']->error('Unknown PayPal transaction ' . $id);
 
                 break;
         }
@@ -267,13 +403,17 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
         if (
             isset($ipn['payment_status'], $ipn['txn_type'])
             && $ipn['payment_status'] == 'Refunded'
-            && in_array($ipn['txn_type'], ['web_accept', 'subscr_payment'], true)
+            && in_array($ipn['txn_type'], ['web_accept', 'subscr_payment', 'recurring_payment'], true)
         ) {
             $refd = [
                 'id' => $invoice['id'],
                 'note' => 'PayPal refund ' . ($ipn['parent_txn_id'] ?? ''),
             ];
             $api_admin->invoice_refund($refd);
+        }
+
+        if ($awaitingCompletion) {
+            return;
         }
 
         $d = [

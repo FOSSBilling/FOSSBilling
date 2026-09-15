@@ -67,7 +67,11 @@ test('generates new api key', function (): void {
 
     $model = createEntity(Box\Mod\Staff\Entity\Admin::class);
 
-    $service = new Service();
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('invalidateSessions')
+        ->once()
+        ->with('admin', (int) $model->getId())
+        ->andReturn(true);
     $service->setDi($di);
 
     $result = $service->generateNewApiKey($model);
@@ -259,7 +263,11 @@ test('resets api key', function (): void {
 
     $model = createEntity(Box\Mod\Client\Entity\Client::class);
 
-    $service = new Service();
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('invalidateSessions')
+        ->once()
+        ->with('client', (int) $model->getId())
+        ->andReturn(true);
     $service->setDi($di);
     $result = $service->resetApiKey($model);
     expect($result)->toBeString();
@@ -306,6 +314,33 @@ test('logs out client', function (): void {
     $service->setDi($di);
     $result = $service->logoutClient();
     expect($result)->toBeTrue();
+});
+
+test('invalidates client sessions stored in Symfony attribute format', function (): void {
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('fetchAllAssociative')
+        ->once()
+        ->with('SELECT id, content FROM session WHERE content IS NOT NULL AND OCTET_LENGTH(content) > 0')
+        ->andReturn([
+            ['id' => 'matching-session', 'content' => '_sf2_attributes|a:1:{s:9:"client_id";i:42;}_symfony_flashes|a:0:{}_sf2_meta|a:0:{}'],
+            ['id' => 'other-session', 'content' => '_sf2_attributes|a:1:{s:9:"client_id";i:7;}_symfony_flashes|a:0:{}_sf2_meta|a:0:{}'],
+            ['id' => 'malformed-session', 'content' => '_sf2_attributes|not-a-serialized-array'],
+        ]);
+    $connection->shouldReceive('executeStatement')
+        ->once()
+        ->with('DELETE FROM session WHERE id = :id', ['id' => 'matching-session'])
+        ->andReturn(1);
+
+    $entityManager = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $entityManager->shouldReceive('getConnection')->twice()->andReturn($connection);
+
+    $di = container();
+    $di['em'] = $entityManager;
+
+    $service = new Service();
+    $service->setDi($di);
+
+    expect($service->invalidateSessions('client', 42))->toBeTrue();
 });
 
 test('i18n::validateTimezone returns null for null and empty input', function (): void {

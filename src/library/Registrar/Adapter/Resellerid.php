@@ -35,6 +35,7 @@ class Registrar_Adapter_Resellerid extends Registrar_Adapter_Resellerclub
                     'label' => 'ResellerID API Key',
                     'description' => 'You can get this at ResellerID control panel, go to Settings -> API',
                     'required' => false,
+                    'secret' => true,
                 ],
                 ],
             ],

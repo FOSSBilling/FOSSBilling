@@ -29,8 +29,9 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
 
     public function register(\Box_App &$app): void
     {
-        $app->get('/theme/:theme', 'get_theme', ['theme' => '[a-z0-9-_]+'], static::class);
-        $app->post('/theme/:theme', 'save_theme_settings', ['theme' => '[a-z0-9-_]+'], static::class);
+        // Allows '/' so package-shaped theme codes (e.g. 'default/admin') match.
+        $app->get('/theme/:theme', 'get_theme', ['theme' => '[a-zA-Z0-9_\-/]+'], static::class);
+        $app->post('/theme/:theme', 'save_theme_settings', ['theme' => '[a-zA-Z0-9_\-/]+'], static::class);
     }
 
     /**
@@ -67,14 +68,14 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
             $service->regenerateThemeCssAndJsFiles($t, $preset, $api);
         } catch (\Exception $e) {
             $error = $e->getMessage();
-            error_log($e->getMessage());
+            $this->di['logger']->error($e->getMessage());
         }
 
         // optional data file
         try {
             $service->regenerateThemeSettingsDataFile($t);
         } catch (\Exception $e) {
-            error_log($e->getMessage());
+            $this->di['logger']->error($e->getMessage());
         }
 
         $red_url = '/theme/' . $theme;

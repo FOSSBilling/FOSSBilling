@@ -49,7 +49,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
     public function markAsPaid(InvoiceItem $item, $charge = true): void
     {
         if ($charge && !$item->getCharged()) {
-            $invoice = $this->di['em']->getRepository(Invoice::class)->find($item->getInvoiceId());
+            $invoice = $item->getInvoice();
             if ($invoice === null) {
                 throw new \FOSSBilling\Exception('Invoice not found');
             }
@@ -66,9 +66,10 @@ class ServiceInvoiceItem implements InjectionAwareInterface
             } catch (UniqueConstraintViolationException) {
                 // Idempotency: the unique constraint on invoice_item_id means a prior
                 // attempt already credited this item. Mark it as charged without re-crediting.
-                $this->di['logger']->setChannel('billing')->info(sprintf('Invoice item #%d was already credited; skipping duplicate credit.', (int) $item->getId()));
+                $this->di['logger']->withChannel('billing')->info('Invoice item #{item_id} was already credited; skipping duplicate credit.', ['item_id' => $item->getId()]);
                 $this->resetEntityManager();
                 $item = $this->di['em']->find(InvoiceItem::class, $item->getId());
+                $invoice = $this->di['em']->find(Invoice::class, $invoice->getId());
                 $item->setCharged(true);
                 $item->setStatus(InvoiceItem::STATUS_PENDING_SETUP);
                 $this->di['em']->persist($item);
@@ -113,7 +114,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
                             try {
                                 $orderService->activateOrder($order);
                             } catch (\Exception $e) {
-                                error_log($e->getMessage());
+                                $this->di['logger']->error($e->getMessage());
                                 $orderService->saveStatusChange($order, "Order could not be activated due to error: {$e->getMessage()}.");
                                 $taskFailed = true;
                             }
@@ -131,7 +132,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
                             $order = $this->di['em']->getRepository(Order::class)->find($order_id);
                             $orderService->renewOrder($order);
                         } catch (\Exception $e) {
-                            error_log($e->getMessage());
+                            $this->di['logger']->error($e->getMessage());
                             $orderService->saveStatusChange($order, "Order could not renew due to error: {$e->getMessage()}.");
                             $taskFailed = true;
                         }
@@ -143,27 +144,10 @@ class ServiceInvoiceItem implements InjectionAwareInterface
                         break;
                 }
             } catch (\Exception $e) {
-                error_log($e->getMessage());
+                $this->di['logger']->error($e->getMessage());
                 $taskFailed = true;
             }
 
-            if (!$taskFailed) {
-                $this->markAsExecuted($item);
-            } else {
-                $this->recordTaskFailure($item);
-            }
-        }
-
-        if ($item->getType() == InvoiceItem::TYPE_HOOK_CALL) {
-            $taskFailed = false;
-
-            try {
-                $params = json_decode($item->getRelId() ?? '');
-                $this->di['events_manager']->fire(['event' => $item->getTask(), 'params' => $params]);
-            } catch (\Exception $e) {
-                error_log($e->getMessage());
-                $taskFailed = true;
-            }
             if (!$taskFailed) {
                 $this->markAsExecuted($item);
             } else {
@@ -196,7 +180,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         }
 
         $pi = new InvoiceItem();
-        $pi->setInvoiceId((int) $proforma->getId());
+        $pi->setInvoice($proforma);
         $pi->setType($data['type'] ?? InvoiceItem::TYPE_CUSTOM);
         $pi->setRelId(isset($data['rel_id']) ? (string) $data['rel_id'] : null);
         $pi->setTask($data['task'] ?? InvoiceItem::TASK_VOID);
@@ -234,7 +218,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
             return 0;
         }
 
-        $rate = $this->di['em']->getConnection()->fetchOne('SELECT taxrate FROM invoice WHERE id = :id', ['id' => $item->getInvoiceId()]);
+        $rate = $this->di['em']->getConnection()->fetchOne('SELECT taxrate FROM invoice WHERE id = :id', ['id' => $item->getInvoice()?->getId()]);
         if ($rate <= 0) {
             return 0;
         }
@@ -268,7 +252,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $id = $model->getId();
         $this->di['em']->remove($model);
         $this->di['em']->flush();
-        $this->di['logger']->info('Removed invoice item "%s"', $id);
+        $this->di['logger']->info('Removed invoice item "{id}"', ['id' => $id]);
 
         return true;
     }
@@ -276,7 +260,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
     public function generateForAddFunds(Invoice $proforma, $amount): void
     {
         $pi = new InvoiceItem();
-        $pi->setInvoiceId((int) $proforma->getId());
+        $pi->setInvoice($proforma);
         $pi->setType(InvoiceItem::TYPE_DEPOSIT);
         $pi->setRelId(null);
         $pi->setTask(InvoiceItem::TASK_VOID);
@@ -294,7 +278,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
 
     public function creditInvoiceItem(InvoiceItem $item): void
     {
-        $invoice = $this->di['em']->getRepository(Invoice::class)->find($item->getInvoiceId());
+        $invoice = $item->getInvoice();
         if ($invoice === null) {
             throw new \FOSSBilling\Exception('Invoice not found');
         }
@@ -306,7 +290,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         try {
             $this->di['em']->flush();
         } catch (UniqueConstraintViolationException) {
-            $this->di['logger']->setChannel('billing')->info(sprintf('Invoice item #%d was already credited; skipping duplicate credit.', (int) $item->getId()));
+            $this->di['logger']->withChannel('billing')->info('Invoice item #{item_id} was already credited; skipping duplicate credit.', ['item_id' => $item->getId()]);
             $this->resetEntityManager();
 
             return;
@@ -319,6 +303,9 @@ class ServiceInvoiceItem implements InjectionAwareInterface
     {
         unset($this->di['em']);
         $this->di['em'] = EntityManagerFactory::create();
+        /** @var InvoiceItemRepository $repository */
+        $repository = $this->di['em']->getRepository(InvoiceItem::class);
+        $this->invoiceItemRepository = $repository;
     }
 
     private function persistCredit(InvoiceItem $item, Invoice $invoice, float $total): ClientBalance
@@ -327,7 +314,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
             ?? throw new \FOSSBilling\Exception('Client not found');
 
         $credit = new ClientBalance();
-        $credit->setClientId((int) $client->getId());
+        $credit->setClient($client);
         $credit->setType('invoice');
         $credit->setRelId((string) $invoice->getId());
         $credit->setInvoiceItemId($item->getId());
@@ -372,7 +359,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
 
         if ($attempts >= self::MAX_TASK_ATTEMPTS) {
             $item->setStatus(InvoiceItem::STATUS_FAILED);
-            $this->di['logger']->setChannel('billing')->error(sprintf('Invoice item #%d marked as failed after %d task execution attempts.', (int) $item->getId(), $attempts));
+            $this->di['logger']->withChannel('billing')->error('Invoice item #{item_id} marked as failed after {attempts} task execution attempts.', ['item_id' => $item->getId(), 'attempts' => $attempts]);
         }
 
         $this->di['em']->persist($item);
@@ -399,7 +386,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $item->setAttempts(0);
         $this->di['em']->persist($item);
         $this->di['em']->flush();
-        $this->di['logger']->setChannel('billing')->info(sprintf('Invoice item #%d re-queued for execution by an admin.', (int) $item->getId()));
+        $this->di['logger']->withChannel('billing')->info('Invoice item #{item_id} re-queued for execution by an admin.', ['item_id' => $item->getId()]);
 
         return $item;
     }
@@ -419,12 +406,12 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         }
 
         $pi = new InvoiceItem();
-        $pi->setInvoiceId((int) $proforma->getId());
+        $pi->setInvoice($proforma);
         $pi->setType(InvoiceItem::TYPE_ORDER);
         $pi->setRelId((string) $order->getId());
         $pi->setTask($task);
         $pi->setStatus(InvoiceItem::STATUS_PENDING_PAYMENT);
-        $pi->setTitle($order->getTitle());
+        $pi->setTitle($line['title'] ?? $order->getTitle());
         $pi->setPeriod($period);
         $pi->setQuantity(PriceValidator::validateQuantity($quantity));
         $pi->setUnit($unit);

@@ -179,7 +179,7 @@ test('onAfterClientSignUp handles exception gracefully', function (): void {
 });
 
 dataset('searchQueryData', [
-    [[], 'SELECT c.*', []],
+    [[], 'SELECT c.id, c.aid', []],
     [
         ['id' => 1],
         '(c.id = :client_id OR c.aid = :alt_client_id)',
@@ -212,18 +212,18 @@ dataset('searchQueryData', [
     ],
     [
         ['created_at' => '2012-12-12'],
-        "DATE_FORMAT(c.created_at, '%Y-%m-%d') = :created_at",
-        ['created_at' => '2012-12-12'],
+        'c.created_at >= :created_at_start AND c.created_at < :created_at_end',
+        ['created_at_start' => '2012-12-12 00:00:00', 'created_at_end' => '2012-12-13 00:00:00'],
     ],
     [
         ['date_from' => '2012-12-10'],
-        'UNIX_TIMESTAMP(c.created_at) >= :date_from',
-        ['date_from' => 1355097600],
+        'c.created_at >= :date_from',
+        ['date_from' => date('Y-m-d H:i:s', 1355097600)],
     ],
     [
         ['date_to' => '2012-12-11'],
-        'UNIX_TIMESTAMP(c.created_at) <= :date_to',
-        ['date_to' => 1355184000],
+        'c.created_at <= :date_to',
+        ['date_to' => date('Y-m-d H:i:s', 1355184000)],
     ],
     [
         ['search' => '2'],
@@ -249,7 +249,7 @@ test('getSearchQuery returns correct query and params', function ($data, $expect
     expect($result[1])->toBeArray();
 
     expect(str_contains((string) $result[0], (string) $expectedStr))->toBeTrue($result[0]);
-    expect(array_diff_key($result[1], $expectedParams))->toEqual([]);
+    expect($result[1])->toEqual($expectedParams);
 })->with('searchQueryData');
 
 test('getSearchQuery with custom select statement', function (): void {
@@ -261,6 +261,16 @@ test('getSearchQuery with custom select statement', function (): void {
     expect($result[1])->toBeArray();
 
     expect(str_contains((string) $result[0], $selectStmt))->toBeTrue($result[0]);
+});
+
+test('getSearchQuery never selects sensitive client columns', function (): void {
+    $service = new Box\Mod\Client\Service();
+    [$query] = $service->getSearchQuery([]);
+
+    expect(str_contains($query, '*'))->toBeFalse($query);
+    foreach (['pass', 'salt', 'api_token', 'hash', 'config'] as $sensitiveColumn) {
+        expect(preg_match('/\b' . preg_quote($sensitiveColumn, '/') . '\b/', $query))->toBe(0, "Query unexpectedly selects '$sensitiveColumn': $query");
+    }
 });
 
 test('getPairs returns array', function (): void {
@@ -627,7 +637,7 @@ test('getClientBalance returns numeric', function (): void {
 test('remove wraps client cleanup and flush in one transaction', function (): void {
     $service = new Box\Mod\Client\Service();
     $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1]);
-    $reset = createEntity(Box\Mod\Client\Entity\ClientPasswordReset::class, ['client_id' => 1]);
+    $reset = createEntity(Box\Mod\Client\Entity\ClientPasswordReset::class, ['client' => $client]);
 
     $services = [];
     foreach (['order', 'invoice', 'support', 'email', 'activity'] as $module) {
@@ -655,7 +665,7 @@ test('remove wraps client cleanup and flush in one transaction', function (): vo
     $connection->shouldReceive('createQueryBuilder')->once()->andReturn($query);
 
     $passwordRepository = Mockery::mock(Box\Mod\Client\Repository\ClientPasswordResetRepository::class);
-    $passwordRepository->shouldReceive('findBy')->once()->with(['clientId' => 1])->andReturn([$reset]);
+    $passwordRepository->shouldReceive('findBy')->once()->with(['client' => $client])->andReturn([$reset]);
 
     $em = $di['em'];
     $em->shouldReceive('getRepository')->with(Box\Mod\Client\Entity\ClientPasswordReset::class)->andReturn($passwordRepository);
@@ -697,21 +707,14 @@ test('remove rolls back and rethrows cleanup failures', function (): void {
 
 test('toApiArray returns array', function (): void {
     $service = new Box\Mod\Client\Service();
+    $clientGroup = createEntity(Box\Mod\Client\Entity\ClientGroup::class, ['id' => 1, 'title' => 'Group Title']);
     $model = createEntity(Box\Mod\Client\Entity\Client::class, [
-        'client_group_id' => 1,
+        'clientGroup' => $clientGroup,
         'custom_1' => 'custom field',
         'billing_email' => 'billing@example.com',
     ]);
 
-    $clientGroup = createEntity(Box\Mod\Client\Entity\ClientGroup::class, ['id' => 1, 'title' => 'Group Title']);
-
     $di = container();
-    $clientGroupRepository = Mockery::mock(Box\Mod\Client\Repository\ClientGroupRepository::class);
-    $clientGroupRepository->shouldReceive('find')->with(1)->andReturn($clientGroup);
-    $di['em']->shouldReceive('getRepository')
-        ->with(Box\Mod\Client\Entity\ClientGroup::class)
-        ->andReturn($clientGroupRepository);
-
     $service->setDi($di);
 
     $result = $service->toApiArray($model, true, createEntity(Box\Mod\Staff\Entity\Admin::class));
@@ -827,10 +830,11 @@ test('deleteGroup returns true', function (): void {
 test('deleteGroup throws exception when group has clients', function (): void {
     $service = new Box\Mod\Client\Service();
     $clientEntity = new Box\Mod\Client\Entity\Client();
+    $model = createEntity(Box\Mod\Client\Entity\ClientGroup::class, ['id' => 1]);
 
     $clientRepoMock = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
     $clientRepoMock->shouldReceive('findOneBy')
-        ->with(['clientGroupId' => 1])
+        ->with(['clientGroup' => $model])
         ->andReturn($clientEntity);
 
     $di = container();
@@ -840,8 +844,6 @@ test('deleteGroup throws exception when group has clients', function (): void {
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $service->setDi($di);
-
-    $model = createEntity(Box\Mod\Client\Entity\ClientGroup::class, ['id' => 1]);
 
     $service->deleteGroup($model);
 })->throws(FOSSBilling\Exception::class, 'Cannot remove groups with clients');

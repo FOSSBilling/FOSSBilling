@@ -176,7 +176,7 @@ test('action activate plugin not found', function (): void {
     $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($serviceLicenseModel);
 
     $di = container();
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
 
     $service->setDi($di);
@@ -235,7 +235,7 @@ test('reset', function (): void {
 
     $di = container();
     $di['em'] = $em;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
     $di['events_manager'] = $eventMock;
 
     $service->setDi($di);
@@ -593,20 +593,6 @@ test('update', function (): void {
 
 test('check license details format eq 2', function (): void {
     $service = new Service();
-    $setChannelCalled = 0;
-    $loggerMock = new class($setChannelCalled) extends Box_Log {
-        public function __construct(public int &$setChannelCalled)
-        {
-        }
-
-        public function setChannel(string $channel): static
-        {
-            ++$this->setChannelCalled;
-
-            return $this;
-        }
-    };
-
     $data = [
         'format' => 2,
     ];
@@ -615,7 +601,6 @@ test('check license details format eq 2', function (): void {
     $licenseServerMock->shouldReceive('process')->atLeast()->once()->andReturn([]);
 
     $di = container();
-    $di['logger'] = $loggerMock;
     $di['license_server'] = $licenseServerMock;
     $service->setDi($di);
 
@@ -624,24 +609,10 @@ test('check license details format eq 2', function (): void {
     expect($result)->toBeArray();
     expect($result)->toHaveKey('error');
     expect($result)->toHaveKey('error_code');
-    expect($setChannelCalled)->toBeGreaterThanOrEqual(1);
 });
 
 test('check license details', function (): void {
     $service = new Service();
-    $setChannelCalled = 0;
-    $loggerMock = new class($setChannelCalled) extends Box_Log {
-        public function __construct(public int &$setChannelCalled)
-        {
-        }
-
-        public function setChannel(string $channel): static
-        {
-            ++$this->setChannelCalled;
-
-            return $this;
-        }
-    };
 
     $data = [];
 
@@ -649,14 +620,12 @@ test('check license details', function (): void {
     $licenseServerMock->shouldReceive('process')->atLeast()->once()->andReturn([]);
 
     $di = container();
-    $di['logger'] = $loggerMock;
     $di['license_server'] = $licenseServerMock;
     $service->setDi($di);
 
     $result = $service->checkLicenseDetails($data);
 
     expect($result)->toBeArray();
-    expect($setChannelCalled)->toBeGreaterThanOrEqual(1);
 });
 
 test('server process rejects expired license', function (): void {

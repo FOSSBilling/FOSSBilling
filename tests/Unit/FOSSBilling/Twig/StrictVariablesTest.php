@@ -53,11 +53,42 @@ test('cron settings renders when module config has not been saved', function ():
         ->and($html)->not->toContain('Guest Cron URL');
 });
 
+test('maintenance page renders when hide_company_public strips company contact fields', function (): void {
+    $renderer = new StrictTemplateRenderer();
+
+    // Regression test for #4211: Guest::company() removes vat_number/email/tel/account_number/
+    // number/address_1/address_2/address_3/bank_name/bic from the company array for anonymous
+    // visitors when hide_company_public is enabled. The public layout reads `guest.system_company`
+    // into `company`, so the fixture needs to go through `guest`, not a top-level `company` override.
+    // Under strict_variables this used to throw "Key ... does not exist" instead of rendering the
+    // maintenance notice.
+    $html = $renderer->renderTemplate(PATH_MODS . '/System/templates/client/mod_system_maintenance.html.twig', [
+        'guest' => new PermissiveStub([
+            'system_company' => [
+                'www' => 'https://example.test',
+                'name' => 'Test Co',
+                'signature' => null,
+                'logo_url' => null,
+                'logo_url_dark' => null,
+                'favicon_url' => null,
+                'display_bank_info' => null,
+                'bank_info_pagebottom' => null,
+                'note' => null,
+                'privacy_policy' => null,
+                'tos' => null,
+            ],
+        ]),
+        'settings' => new PermissiveStub(['login_page_show_logo' => false]),
+    ]);
+
+    expect($html)->toContain('System Undergoing Maintenance');
+});
+
 test('order new only lists periods the product is actually priced for', function (): void {
     $renderer = new StrictTemplateRenderer();
 
     // Products can be priced with any custom billing period, not just the ones in
-    // Box_Period::getPredefined(). Regression test for #4063: indexing pricing.recurrent
+    // Period::getPredefined(). Regression test for #4063: indexing pricing.recurrent
     // by every system period used to throw under strict_variables; the fix is for the
     // template to read the period's own precomputed 'title' instead of doing a second
     // lookup into a fixed system period list that a custom period wouldn't be in.
@@ -76,7 +107,7 @@ test('order new only lists periods the product is actually priced for', function
             ],
         ],
         'guest' => [
-            'system_periods' => Box_Period::getPredefined(),
+            'system_periods' => FOSSBilling\Period::getPredefined(),
         ],
     ]);
 

@@ -2,11 +2,14 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Formbuilder\Entity\Form;
 use Box\Mod\Formbuilder\Entity\FormField;
 
 test('stores all form field values', function (): void {
+    $form = new Form();
+
     $field = (new FormField())
-        ->setFormId(7)
+        ->setForm($form)
         ->setName('domain_name')
         ->setLabel('Domain name')
         ->setHideLabel(false)
@@ -26,7 +29,7 @@ test('stores all form field values', function (): void {
         ->setShowSuffix('1')
         ->setTextSize(40);
 
-    expect($field->getFormId())->toBe(7)
+    expect($field->getForm())->toBe($form)
         ->and($field->getName())->toBe('domain_name')
         ->and($field->getLabel())->toBe('Domain name')
         ->and($field->isHideLabel())->toBeFalse()

@@ -10,7 +10,7 @@ declare(strict_types=1);
  */
 abstract class Registrar_AdapterAbstract
 {
-    protected $_log;
+    protected ?Psr\Log\LoggerInterface $_log = null;
 
     /**
      * Are we in test mode ?
@@ -25,6 +25,11 @@ abstract class Registrar_AdapterAbstract
     protected ?Box\Mod\Order\Entity\Order $_order = null;
 
     /**
+     * Lazily created RDAP client, shared by all availability checks of the adapter.
+     */
+    protected ?Registrar_Rdap $_rdap = null;
+
+    /**
      * Return array with configuration.
      *
      * Must be overridden in adapter class
@@ -32,6 +37,19 @@ abstract class Registrar_AdapterAbstract
      * @return array
      */
     abstract public static function getConfig();
+
+    /**
+     * Config field names whose stored values must be hidden in the API and admin UI.
+     * Adapters should mark the relevant fields in their {@see self::getConfig()} form
+     * with `'secret' => true` instead of overriding this; it exists as an escape hatch
+     * for fields that need masking but are not declared through the form schema.
+     *
+     * @return string[]
+     */
+    public static function getSecretFields(): array
+    {
+        return [];
+    }
 
     /**
      * Checks if a domain is available for registration.
@@ -190,11 +208,11 @@ abstract class Registrar_AdapterAbstract
     /**
      * Sets the logger object to use for logging messages.
      *
-     * @param Box_Log $log the logger object to use
+     * @param Psr\Log\LoggerInterface $log the logger object to use
      *
-     * @return Registrar_AdapterAbstract the current adapter object, for method chaining
+     * @return static the current adapter object, for method chaining
      */
-    public function setLog(Box_Log $log)
+    public function setLog(Psr\Log\LoggerInterface $log): static
     {
         $this->_log = $log;
 
@@ -204,13 +222,13 @@ abstract class Registrar_AdapterAbstract
     /**
      * Gets the logger object currently in use for logging messages.
      *
-     * @return Box_Log the logger object
+     * @return Psr\Log\LoggerInterface the logger object
      */
-    public function getLog()
+    public function getLog(): Psr\Log\LoggerInterface
     {
         $log = $this->_log;
-        if (!$log instanceof Box_Log) {
-            $log = new Box_Log();
+        if (!$log instanceof Psr\Log\LoggerInterface) {
+            $log = new FOSSBilling\Logger();
         }
 
         return $log;
@@ -222,6 +240,14 @@ abstract class Registrar_AdapterAbstract
     public function getHttpClient(): Symfony\Contracts\HttpClient\HttpClientInterface
     {
         return Symfony\Component\HttpClient\HttpClient::create(['bindto' => BIND_TO]);
+    }
+
+    /**
+     * Creates an RDAP client for registry-based domain availability lookups.
+     */
+    protected function getRdap(): Registrar_Rdap
+    {
+        return $this->_rdap ??= new Registrar_Rdap($this->getHttpClient(), $this->getLog());
     }
 
     /**

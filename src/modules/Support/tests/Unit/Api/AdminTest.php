@@ -368,7 +368,7 @@ test('batch ticket auto close', function (): void {
 
     $api->setService($serviceMock);
     $di = container();
-    $di['logger'] = $this->createStub('\Box_Log');
+    $di['logger'] = $this->createStub(FOSSBilling\Logger::class);
     $api->setDi($di);
 
     $result = $api->batch_ticket_auto_close([]);
@@ -390,7 +390,7 @@ test('batch ticket auto close not closed', function (): void {
 
     $api->setService($serviceMock);
     $di = container();
-    $di['logger'] = $this->createStub('\Box_Log');
+    $di['logger'] = $this->createStub(FOSSBilling\Logger::class);
     $api->setDi($di);
 
     $result = $api->batch_ticket_auto_close([]);
@@ -972,7 +972,7 @@ test('kb article get list', function (): void {
     $repo = Mockery::mock(KbArticleRepository::class);
     $repo->shouldReceive('getSearchQueryBuilder')
         ->once()
-        ->with('status', 'search', 'category')
+        ->with(['status' => 'status', 'search' => 'search', 'kb_article_category_id' => 'category'])
         ->andReturn($qb);
 
     $pager = Mockery::mock(FOSSBilling\Pagination::class);

@@ -25,7 +25,7 @@ test('builds a Doctrine query for balance searches', function (): void {
     $queryBuilder = Mockery::mock(Doctrine\ORM\QueryBuilder::class);
     $queryBuilder->shouldReceive('andWhere')->once()->with('m.id = :id')->andReturnSelf();
     $queryBuilder->shouldReceive('setParameter')->once()->with('id', 7)->andReturnSelf();
-    $queryBuilder->shouldReceive('andWhere')->once()->with('m.clientId = :client_id')->andReturnSelf();
+    $queryBuilder->shouldReceive('andWhere')->once()->with('IDENTITY(m.client) = :client_id')->andReturnSelf();
     $queryBuilder->shouldReceive('setParameter')->once()->with('client_id', 3)->andReturnSelf();
     $queryBuilder->shouldReceive('andWhere')->once()->with('m.createdAt >= :date_from')->andReturnSelf();
     $queryBuilder->shouldReceive('setParameter')->once()->with('date_from', Mockery::on(
@@ -59,7 +59,7 @@ test('toApiArray uses a supplied client without reloading it', function (): void
     $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 3, 'currency' => 'USD']);
     $balance = createEntity(Box\Mod\Client\Entity\ClientBalance::class, [
         'id' => 7,
-        'client_id' => 3,
+        'client' => $client,
         'amount' => '12.50',
     ]);
 
@@ -83,55 +83,3 @@ test('toApiArray uses a supplied client without reloading it', function (): void
         'currency' => 'USD',
     ]);
 });
-
-test('deductFunds creates balance record', function (): void {
-    $service = new Box\Mod\Client\ServiceBalance();
-    $di = container();
-
-    $service->setDi($di);
-
-    $clientModel = createEntity(Box\Mod\Client\Entity\Client::class);
-
-    $description = 'Charged for product';
-    $amount = 5.55;
-
-    $extra = [
-        'rel_id' => 1,
-    ];
-
-    $result = $service->deductFunds($clientModel, $amount, $description, $extra);
-
-    expect($result)->toBeInstanceOf(Box\Mod\Client\Entity\ClientBalance::class);
-    expect($result->getAmount())->toEqual((string) (-$amount));
-    expect($result->getDescription())->toEqual($description);
-    expect($result->getRelId())->toEqual($extra['rel_id']);
-    expect($result->getType())->toEqual('default');
-});
-
-test('deductFunds throws exception for invalid description', function (): void {
-    $service = new Box\Mod\Client\ServiceBalance();
-    $clientModel = createEntity(Box\Mod\Client\Entity\Client::class);
-
-    $description = '    ';
-    $amount = 5.55;
-
-    $extra = [
-        'rel_id' => 1,
-    ];
-
-    $service->deductFunds($clientModel, $amount, $description, $extra);
-})->throws(FOSSBilling\Exception::class, 'Funds description is invalid');
-
-test('deductFunds throws exception for invalid amount', function (): void {
-    $service = new Box\Mod\Client\ServiceBalance();
-    $clientModel = createEntity(Box\Mod\Client\Entity\Client::class);
-
-    $description = 'Charged';
-    $amount = '5.5adadzxc';
-
-    $extra = [
-        'rel_id' => 1,
-    ];
-
-    $service->deductFunds($clientModel, $amount, $description, $extra);
-})->throws(FOSSBilling\Exception::class, 'Funds amount is invalid');

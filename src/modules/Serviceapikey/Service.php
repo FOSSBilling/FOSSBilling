@@ -238,17 +238,14 @@ class Service implements InjectionAwareInterface
      */
     public function install(): bool
     {
-        $sql = '
-        CREATE TABLE IF NOT EXISTS `service_apikey` (
-            `id` bigint(20) NOT NULL AUTO_INCREMENT UNIQUE,
-            `client_id` bigint(20) NOT NULL,
-            `api_key` varchar(255),
-            `config` text NOT NULL,
-            `created_at` datetime,
-            `updated_at` datetime,
-            PRIMARY KEY (`id`)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;';
-        $this->di['em']->getConnection()->executeStatement($sql);
+        // Raw MySQL-only DDL here (backticks, ENGINE=InnoDB) would fail outright on
+        // PostgreSQL/SQLite. On MySQL, structure.sql doesn't create service_apikey either -
+        // UpdatePatcher::patch111() does, as a startup-safety-net fix - so this hook is already
+        // redundant there and only load-bearing on PG/SQLite fresh installs where nothing else
+        // creates the table. SchemaSynchronizer::syncEntities() creates (or catches up) just
+        // this module's own table from current metadata, additively and safely, scoped so
+        // installing this one extension never reports every *other* table in the app as missing.
+        \FOSSBilling\Doctrine\SchemaSynchronizer::syncEntities($this->di['em'], [ServiceApiKey::class]);
 
         return true;
     }
@@ -258,7 +255,9 @@ class Service implements InjectionAwareInterface
      */
     public function uninstall(): bool
     {
-        $this->di['em']->getConnection()->executeStatement('DROP TABLE IF EXISTS `service_apikey`');
+        // No backticks: PostgreSQL doesn't recognize them as identifier quoting (a parse error,
+        // not a no-op), unlike the install() hook above's now-portable path.
+        $this->di['em']->getConnection()->executeStatement('DROP TABLE IF EXISTS service_apikey');
 
         return true;
     }

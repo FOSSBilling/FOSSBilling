@@ -142,7 +142,7 @@ class Service implements InjectionAwareInterface
                 ]);
             }
         } catch (\Exception $e) {
-            error_log($e->getMessage());
+            $di['logger']->error($e->getMessage());
         }
     }
 

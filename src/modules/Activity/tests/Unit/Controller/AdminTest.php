@@ -25,7 +25,7 @@ test('fetchNavigation returns array', function (): void {
     $di = container();
     $link = 'activity';
 
-    $urlMock = Mockery::mock('Box_Url');
+    $urlMock = Mockery::mock(FOSSBilling\Url::class);
     /** @var Mockery\Expectation $expectation */
     $expectation = $urlMock->shouldReceive('adminLink');
     $expectation->atLeast()->once();

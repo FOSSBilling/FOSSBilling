@@ -325,8 +325,8 @@ final class StrictTemplateRenderer
                 'FOSSBillingVersion' => '0.0.0',
                 'default_currency' => 'USD',
                 'app_area' => 'email',
-                'current_theme' => 'admin_default',
-                'theme' => ['code' => 'admin_default', 'name' => 'admin_default', 'url' => '/themes/admin_default/'],
+                'current_theme' => 'default/admin',
+                'theme' => ['code' => 'default/admin', 'name' => 'default/admin', 'url' => '/themes/default/admin/'],
                 'settings' => $stub,
                 'guest' => [
                     'system_company' => [
@@ -350,8 +350,8 @@ final class StrictTemplateRenderer
             'FOSSBillingVersion' => '0.0.0',
             'default_currency' => 'USD',
             'app_area' => 'admin',
-            'current_theme' => 'admin_default',
-            'theme' => ['code' => 'admin_default', 'name' => 'admin_default', 'url' => '/themes/admin_default/'],
+            'current_theme' => 'default/admin',
+            'theme' => ['code' => 'default/admin', 'name' => 'default/admin', 'url' => '/themes/default/admin/'],
             'settings' => $stub,
             'admin' => $stub,
             'client' => $stub,

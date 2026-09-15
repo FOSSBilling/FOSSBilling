@@ -27,6 +27,7 @@ class Monolog
         'activity',
         'application',
         'cron',
+        'update',
         'database',
         'license',
         'mail',
@@ -49,7 +50,7 @@ class Monolog
             $this->logger[$channel]->pushHandler($rotatingHandler);
 
             $formatter = new LineFormatter($this->outputFormat, $this->dateFormat, true, true, true);
-            $this->logger[$channel]->getHandlers()[0]->setFormatter($formatter);
+            $rotatingHandler->setFormatter($formatter);
         }
     }
 
@@ -68,14 +69,14 @@ class Monolog
     {
         // Map numeric priority to Monolog Level
         return match ($priority) {
-            \Box_Log::EMERG => Level::Emergency,
-            \Box_Log::ALERT => Level::Alert,
-            \Box_Log::CRIT => Level::Critical,
-            \Box_Log::ERR => Level::Error,
-            \Box_Log::WARN => Level::Warning,
-            \Box_Log::NOTICE => Level::Notice,
-            \Box_Log::INFO => Level::Info,
-            \Box_Log::DEBUG => Level::Debug,
+            \FOSSBilling\Logger::EMERG => Level::Emergency,
+            \FOSSBilling\Logger::ALERT => Level::Alert,
+            \FOSSBilling\Logger::CRIT => Level::Critical,
+            \FOSSBilling\Logger::ERR => Level::Error,
+            \FOSSBilling\Logger::WARN => Level::Warning,
+            \FOSSBilling\Logger::NOTICE => Level::Notice,
+            \FOSSBilling\Logger::INFO => Level::Info,
+            \FOSSBilling\Logger::DEBUG => Level::Debug,
             default => Level::Debug,
         };
     }
@@ -88,8 +89,10 @@ class Monolog
 
         try {
             $this->getChannel($channel)->log($priority, $message, $context);
-        } catch (\Exception $e) {
-            error_log($e->getMessage());
+        } catch (\Throwable $e) {
+            // This is the final fallback when a Monolog handler itself fails;
+            // routing it through the application logger would recurse.
+            error_log(sprintf('[FOSSBilling\\Monolog] writer failure: %s at %s:%d', $e->getMessage(), $e->getFile(), $e->getLine()));
         }
     }
 }

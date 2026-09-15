@@ -510,84 +510,16 @@ class Server_Manager_Directadmin extends Server_Manager
      */
     public function modifyAccount(Server_Account $account): bool
     {
-        // Get the package associated with the account
         $package = $account->getPackage();
 
-        // Prepare the fields for the request
-        $fields = [
-            'aftp' => $package->getHasAnonymousFtp() ? 'ON' : 'OFF', // ON or OFF. If ON, the User will be able to have anonymous ftp accounts.
-            'action' => 'customize',
-            'bandwidth' => $package->getBandwidth(), // Bandwidth quota in MB
-            'catchall' => $package->getHasCatchAll() ? 'ON' : 'OFF', // ON or OFF. If ON, the User will have the ability to enable and customize a catch-all email (*@domain.com).
-            'cgi' => $package->getHasCgi() ? 'ON' : 'OFF', // ON or OFF. If ON, the User will have the ability to run cgi scripts in their cgi-bin.
-            'cron' => $package->getHasCron() ? 'ON' : 'OFF', // ON or OFF. If ON, the User will have the ability to create cronjobs.
-            'dnscontrol' => 'ON', // ON or OFF. If ON, the User will be able to modify his/her dns records.
-            'domainptr' => $package->getMaxParkedDomains(), // Domain pointer quota
-            'ftp' => $package->getMaxFtp(), // FTP account quota
-            'mysql' => $package->getMaxSql(), // MySQL database quota
-            'nemailf' => $package->getMaxEmailForwarders(), // Email forwarder quota
-            'nemailml' => $package->getMaxEmailLists(), // Mailing list quota
-            'nemailr' => $package->getMaxEmailAutoresponders(), // Autoresponder quota
-            'nemails' => $package->getMaxPop(), // Email account quota
-            'nsubdomains' => $package->getMaxSubdomains(), // Subdomain quota
-            'ns1' => $account->getNs1(),
-            'ns2' => $account->getNs2(),
-            'php' => $package->getHasPhp() ? 'ON' : 'OFF', // ON or OFF. If ON, the User will have the ability to run php scripts.
-            'quota' => $package->getQuota(), // Disk space quota in MB
-            'spam' => $package->getHasSpamFilter() ? 'ON' : 'OFF', // ON or OFF. If ON, the User will have the ability to run scan email with SpamAssassin.
-            'ssh' => $package->getHasShell() ? 'ON' : 'OFF', // ON or OFF. If ON, the User will have an ssh account.
-            'ssl' => $package->getHasSsl() ? 'ON' : 'OFF', // ON or OFF. If ON, the User will have the ability to access their websites through secure https://.
-            'sysinfo' => 'ON', // ON or OFF. If ON, the User will have access to a page that shows the system information.
-            'user' => $account->getUsername(),
-            'vdomains' => $package->getMaxDomains(), // Domain quota
-        ];
+        $fields = $this->getCustomPackageFields($package);
+        $fields['dnscontrol'] = $this->getCustomPackageFlag($package, 'dnscontrol', 'ON');
+        $fields['sysinfo'] = $this->getCustomPackageFlag($package, 'sysinfo', 'ON');
+        $fields['action'] = 'customize';
+        $fields['ns1'] = $account->getNs1();
+        $fields['ns2'] = $account->getNs2();
+        $fields['user'] = $account->getUsername();
 
-        // Check if certain parameters are set to 'unlimited' and set the corresponding fields to 'ON'
-        if ($package->getBandwidth() == 'unlimited') {
-            $fields['ubandwidth'] = 'ON'; // ON or OFF. If ON, bandwidth is ignored and no limit is set
-        }
-
-        if ($package->getQuota() == 'unlimited') {
-            $fields['uquota'] = 'ON'; // ON or OFF. If ON, quota is ignored and no limit is set
-        }
-
-        if ($package->getMaxDomains() == 'unlimited') {
-            $fields['uvdomains'] = 'ON'; // ON or OFF. If ON, vdomains is ignored and no limit is set
-        }
-
-        if ($package->getMaxSubdomains() == 'unlimited') {
-            $fields['unsubdomains'] = 'ON'; // ON or OFF. If ON, nsubdomains is ignored and no limit is set
-        }
-
-        if ($package->getMaxPop() == 'unlimited') {
-            $fields['unemails'] = 'ON'; // ON or OFF Unlimited option for nemails
-        }
-
-        if ($package->getMaxEmailForwarders() == 'unlimited') {
-            $fields['unemailf'] = 'ON'; // ON or OFF Unlimited option for nemailf
-        }
-
-        if ($package->getMaxEmailLists() == 'unlimited') {
-            $fields['unemailml'] = 'ON'; // ON or OFF Unlimited option for nemailml
-        }
-
-        if ($package->getMaxEmailAutoresponders() == 'unlimited') {
-            $fields['unemailr'] = 'ON'; // ON or OFF Unlimited option for nemailr
-        }
-
-        if ($package->getMaxSql() == 'unlimited') {
-            $fields['umysql'] = 'ON'; // ON or OFF Unlimited option for mysql
-        }
-
-        if ($package->getMaxParkedDomains() == 'unlimited') {
-            $fields['udomainptr'] = 'ON'; // ON or OFF Unlimited option for domainptr
-        }
-
-        if ($package->getMaxFtp() == 'unlimited') {
-            $fields['uftp'] = 'ON'; // ON or OFF Unlimited option for ftp
-        }
-
-        // Send the request to the server
         $this->request('API_MODIFY_USER', $fields);
 
         return true;
@@ -739,28 +671,28 @@ class Server_Manager_Directadmin extends Server_Manager
     private function getCustomPackageFields(Server_Package $package): array
     {
         $fields = [
-            'aftp' => $package->getCustomValue('aftp') ? 'ON' : 'OFF',
+            'aftp' => $this->getCustomPackageFlag($package, 'aftp'),
             'bandwidth' => $package->getBandwidth(),
-            'catchall' => $package->getCustomValue('catchall') ? 'ON' : 'OFF',
-            'cgi' => $package->getCustomValue('cgi') ? 'ON' : 'OFF',
-            'cron' => $package->getCustomValue('cron') ? 'ON' : 'OFF',
-            'dnscontrol' => $package->getCustomValue('dnscontrol') ? 'ON' : 'OFF',
+            'catchall' => $this->getCustomPackageFlag($package, 'catchall'),
+            'cgi' => $this->getCustomPackageFlag($package, 'cgi'),
+            'cron' => $this->getCustomPackageFlag($package, 'cron'),
+            'dnscontrol' => $this->getCustomPackageFlag($package, 'dnscontrol', 'ON'),
             'domainptr' => $package->getMaxParkedDomains(),
             'ftp' => $package->getMaxFtp(),
-            'login_keys' => $package->getCustomValue('login_keys') ? 'ON' : 'OFF',
+            'login_keys' => $this->getCustomPackageFlag($package, 'login_keys'),
             'mysql' => $package->getMaxSql(),
-            'nemailf' => $package->getMaxEmailForwarders(),
-            'nemailml' => $package->getMaxEmailLists(),
-            'nemailr' => $package->getMaxEmailAutoresponders(),
+            'nemailf' => $package->getCustomValue('nemailf'),
+            'nemailml' => $package->getCustomValue('nemailml'),
+            'nemailr' => $package->getCustomValue('nemailr'),
             'nemails' => $package->getMaxPop(),
             'nsubdomains' => $package->getMaxSubdomains(),
-            'php' => $package->getCustomValue('php') ? 'ON' : 'OFF',
+            'php' => $this->getCustomPackageFlag($package, 'php'),
             'quota' => $package->getQuota(),
-            'spam' => $package->getCustomValue('spam') ? 'ON' : 'OFF',
-            'ssh' => $package->getCustomValue('ssh') ? 'ON' : 'OFF',
-            'ssl' => $package->getCustomValue('ssl') ? 'ON' : 'OFF',
-            'suspend_at_limit' => $package->getCustomValue('suspend_at_limit') ? 'ON' : 'OFF',
-            'sysinfo' => $package->getCustomValue('sysinfo') ? 'ON' : 'OFF',
+            'spam' => $this->getCustomPackageFlag($package, 'spam'),
+            'ssh' => $this->getCustomPackageFlag($package, 'ssh'),
+            'ssl' => $this->getCustomPackageFlag($package, 'ssl'),
+            'suspend_at_limit' => $this->getCustomPackageFlag($package, 'suspend_at_limit'),
+            'sysinfo' => $this->getCustomPackageFlag($package, 'sysinfo', 'ON'),
             'vdomains' => $package->getMaxDomains(),
         ];
 
@@ -809,6 +741,16 @@ class Server_Manager_Directadmin extends Server_Manager
         }
 
         return $fields;
+    }
+
+    private function getCustomPackageFlag(Server_Package $package, string $key, string $default = 'OFF'): string
+    {
+        $value = $package->getCustomValue($key);
+        if ($value === null) {
+            return $default;
+        }
+
+        return FOSSBilling\Tools::normalizeBoolean($value) ? 'ON' : 'OFF';
     }
 
     /**

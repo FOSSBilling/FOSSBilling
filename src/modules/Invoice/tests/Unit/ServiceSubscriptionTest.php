@@ -110,7 +110,7 @@ test('updates a subscription', function (): void {
 test('cancels a subscription at the gateway when canceled status is saved', function (): void {
     $gatewayModel = createEntity(PayGateway::class, ['id' => 2]);
 
-    $subscriptionModel = createEntity(Subscription::class, ['id' => 5, 'payGatewayId' => 2]);
+    $subscriptionModel = createEntity(Subscription::class, ['id' => 5, 'payGateway' => $gatewayModel]);
     $subscriptionModel->setSid('sub_old');
 
     $adapter = new class {
@@ -128,8 +128,7 @@ test('cancels a subscription at the gateway when canceled status is saved', func
         ->with($gatewayModel)
         ->andReturn($adapter);
 
-    $pgRepo = Mockery::mock(PayGatewayRepository::class);
-    $pgRepo->shouldReceive('find')->once()->with(2)->andReturn($gatewayModel);
+    $pgRepo = Mockery::mock(PayGatewayRepository::class)->shouldIgnoreMissing();
 
     $em = Mockery::mock(EntityManagerInterface::class);
     $em->shouldReceive('flush')->once();
@@ -163,7 +162,7 @@ test('does not call the gateway when canceling a subscription without a sid', fu
 test('schedules a subscription cancellation at the gateway', function (): void {
     $gateway = createEntity(PayGateway::class, ['id' => 2]);
 
-    $subscription = createEntity(Subscription::class, ['id' => 3, 'payGatewayId' => 2]);
+    $subscription = createEntity(Subscription::class, ['id' => 3, 'payGateway' => $gateway]);
     $subscription->setSid('sub_123');
 
     $adapter = new class {
@@ -178,8 +177,7 @@ test('schedules a subscription cancellation at the gateway', function (): void {
     $payGatewayService = Mockery::mock(ServicePayGateway::class);
     $payGatewayService->shouldReceive('getPaymentAdapter')->once()->with($gateway)->andReturn($adapter);
 
-    $pgRepo = Mockery::mock(PayGatewayRepository::class);
-    $pgRepo->shouldReceive('find')->once()->with(2)->andReturn($gateway);
+    $pgRepo = Mockery::mock(PayGatewayRepository::class)->shouldIgnoreMissing();
 
     $em = Mockery::mock(EntityManagerInterface::class);
     $em->shouldReceive('flush')->once();
@@ -284,10 +282,11 @@ test('finalizes a scheduled cancellation by canceling its order and service', fu
 test('reports end-of-period cancellation support for active gateway subscriptions', function (): void {
     $order = createEntity(Order::class, ['id' => 10]);
 
-    $subscription = createEntity(Subscription::class, ['id' => 7, 'payGatewayId' => 2]);
+    $gateway = createEntity(PayGateway::class, ['id' => 2]);
+
+    $subscription = createEntity(Subscription::class, ['id' => 7, 'payGateway' => $gateway]);
     $subscription->setSid('sub_123');
 
-    $gateway = createEntity(PayGateway::class, ['id' => 2]);
     $adapter = new class {
         public function cancelSubscriptionAtPeriodEnd(string $subscriptionId): void
         {
@@ -297,8 +296,7 @@ test('reports end-of-period cancellation support for active gateway subscription
     $subRepo = Mockery::mock(SubscriptionRepository::class);
     $subRepo->shouldReceive('find')->once()->with(7)->andReturn($subscription);
 
-    $pgRepo = Mockery::mock(PayGatewayRepository::class);
-    $pgRepo->shouldReceive('find')->once()->with(2)->andReturn($gateway);
+    $pgRepo = Mockery::mock(PayGatewayRepository::class)->shouldIgnoreMissing();
 
     $gatewayService = Mockery::mock(ServicePayGateway::class);
     $gatewayService->shouldReceive('getPaymentAdapter')->once()->with($gateway)->andReturn($adapter);
@@ -329,19 +327,18 @@ test('finds a subscription ID by gateway SID without throwing for missing record
 });
 
 test('converts to api array', function (): void {
-    $subscriptionModel = createEntity(Subscription::class, ['id' => 1, 'clientId' => 5, 'payGatewayId' => 1]);
+    $gatewayModel = createEntity(PayGateway::class, ['id' => 1]);
+
+    $subscriptionModel = createEntity(Subscription::class, ['id' => 1, 'clientId' => 5, 'payGateway' => $gatewayModel]);
 
     $clientModel = createEntity(Box\Mod\Client\Entity\Client::class);
-
-    $gatewayModel = createEntity(PayGateway::class, ['id' => 1]);
 
     $clientRepo = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
     $clientRepo->shouldReceive('find')
         ->atLeast()->once()
         ->andReturn($clientModel);
 
-    $pgRepo = Mockery::mock(PayGatewayRepository::class);
-    $pgRepo->shouldReceive('find')->atLeast()->once()->andReturn($gatewayModel);
+    $pgRepo = Mockery::mock(PayGatewayRepository::class)->shouldIgnoreMissing();
 
     $clientServiceMock = Mockery::mock(ClientService::class);
     $clientServiceMock->shouldReceive('toApiArray')

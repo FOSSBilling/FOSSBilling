@@ -57,8 +57,10 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         if (DEBUG) {
             try {
                 $this->getDi()['logger']->info($event . ': ' . var_export($params, true));
-            } catch (\Exception $e) {
-                error_log($e->getMessage());
+            } catch (\Throwable $e) {
+                // The application logger failed; retain a PHP fallback rather than
+                // masking hook dispatch with a logging failure.
+                error_log('[Hook] logger failure: ' . $e->getMessage());
             }
         }
 

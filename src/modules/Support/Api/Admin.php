@@ -199,7 +199,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         foreach ($expiredArr as $ticketArr) {
             $ticketModel = $this->getService()->getTicketById((int) $ticketArr['id']);
             if (!$this->getService()->autoClose($ticketModel)) {
-                $this->getDi()['logger']->info('Ticket %s was not closed', $ticketModel->getId());
+                $this->getDi()['logger']->info('Ticket {ticket_id} was not closed', ['ticket_id' => $ticketModel->getId()]);
             }
         }
 
@@ -620,7 +620,11 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         /** @var \Box\Mod\Support\Repository\KbArticleRepository $repo */
         $repo = $this->getService()->getKbArticleRepository();
 
-        $qb = $repo->getSearchQueryBuilder($status, $search, $cat);
+        $qb = $repo->getSearchQueryBuilder([
+            'status' => $status,
+            'search' => $search,
+            'kb_article_category_id' => $cat,
+        ]);
 
         return $this->getDi()['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data), $this->getIdentity());
     }

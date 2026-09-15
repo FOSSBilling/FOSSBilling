@@ -21,6 +21,7 @@ use Box\Mod\Email\Repository\ActivityClientEmailRepository;
 use Box\Mod\Email\Repository\EmailTemplateGroupRepository;
 use Box\Mod\Email\Repository\EmailTemplateRepository;
 use Box\Mod\Email\Repository\QueuedEmailRepository;
+use Box\Mod\Staff\Entity\Admin;
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
 use FOSSBilling\PaginationOptions;
@@ -294,9 +295,19 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         // send email to admins
         if (isset($data['to_admin']) && $data['to_admin'] > 0) {
-            /** @todo Doctrine: use Admin entity once Staff is migrated */
-            $oneStaff = $this->di['dbal']->fetchAssociative('SELECT id, email, name, signature, timezone FROM admin WHERE id = :id', ['id' => $data['to_admin']]);
-            $vars['c'] = $this->safeStaffTemplateVars($oneStaff);
+            $admin = $this->di['em']->getRepository(Admin::class)->find((int) $data['to_admin']);
+            if ($admin instanceof Admin && $admin->getId() !== null) {
+                $oneStaff = [
+                    'id' => $admin->getId(),
+                    'email' => $admin->getEmail(),
+                    'name' => $admin->getName(),
+                    'signature' => $admin->getSignature(),
+                    'timezone' => $admin->getTimezone(),
+                ];
+                $vars['c'] = $this->safeStaffTemplateVars($oneStaff);
+            } else {
+                throw new \FOSSBilling\InformationException('Admin not found');
+            }
         }
 
         $this->setVars($template, $vars);
@@ -353,7 +364,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         } elseif (isset($oneStaff)) {
             $to = $oneStaff['email'];
             $to_name = $oneStaff['name'];
-            $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, $oneStaff['id'], null, $send_now, $throw_exceptions, $attachment);
+            $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, null, $oneStaff['id'], $send_now, $throw_exceptions, $attachment);
         } elseif (isset($customer)) {
             // Supplying both keeps the email associated with the client while allowing a
             // purpose-specific recipient, such as the client's billing address.
@@ -661,7 +672,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         try {
             $pc = $systemService->renderEmailTplString($contentTemplate, $vars, $timezone);
-            $ps = $systemService->renderEmailTplString($subjectTemplate, $vars, $timezone);
+            $ps = $systemService->renderEmailSubjectString($subjectTemplate, $vars, $timezone);
 
             if ($template->hasError()) {
                 $template->clearError();
@@ -688,7 +699,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         if (Environment::isTesting()) {
             // @phpstan-ignore if.alwaysFalse
             if (DEBUG) {
-                $this->di['logger']->setChannel('email')->info('Skipping email sending in test environment');
+                $this->di['logger']->withChannel('email')->info('Skipping email sending in test environment');
             }
 
             return true;
@@ -703,7 +714,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $this->sendMail($email->getRecipients(), $email->getSender(), $email->getSubject(), $email->getContentHtml(), $customer['first_name'] . ' ' . $customer['last_name'], $from_name, $email->getClientId(), null, false, false, $this->loggedAttachmentToArray($email));
 
-        $this->di['logger']->info('Resent email #%s', $email->getId());
+        $this->di['logger']->info('Resent email #{email_id}', ['email_id' => $email->getId()]);
 
         return true;
     }
@@ -723,77 +734,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             'name' => $email->getAttachmentName() ?? 'attachment',
             'mime' => $email->getAttachmentMime() ?? 'application/octet-stream',
         ];
-    }
-
-    public function queueGetSearchQuery($data): array
-    {
-        $query = 'SELECT * FROM email_queue';
-
-        $id = $data['id'] ?? null;
-        $search = $data['search'] ?? null;
-        $recipient = $data['recipient'] ?? null;
-        $subject = $data['subject'] ?? null;
-        $status = $data['status'] ?? null;
-        $tries = $data['tries'] ?? null;
-        $date_from = $data['date_from'] ?? null;
-        $date_to = $data['date_to'] ?? null;
-
-        $where = [];
-        $bindings = [];
-
-        if ($id !== null && $id !== '') {
-            $where[] = 'id = :id';
-            $bindings['id'] = (int) $id;
-        }
-
-        if ($search) {
-            $search = "%$search%";
-
-            $where[] = '(recipient LIKE :recipient OR subject LIKE :subject OR content LIKE :content OR to_name LIKE :to_name)';
-
-            $bindings['recipient'] = $search;
-            $bindings['subject'] = $search;
-            $bindings['content'] = $search;
-            $bindings['to_name'] = $search;
-        }
-
-        if ($recipient !== null && $recipient !== '') {
-            $where[] = 'recipient LIKE :filter_recipient';
-            $bindings['filter_recipient'] = '%' . $recipient . '%';
-        }
-
-        if ($subject !== null && $subject !== '') {
-            $where[] = 'subject LIKE :filter_subject';
-            $bindings['filter_subject'] = '%' . $subject . '%';
-        }
-
-        if ($status !== null && $status !== '') {
-            $where[] = 'status = :status';
-            $bindings['status'] = $status;
-        }
-
-        if ($tries !== null && $tries !== '') {
-            $where[] = 'tries = :tries';
-            $bindings['tries'] = (int) $tries;
-        }
-
-        if ($date_from !== null && $date_from !== '') {
-            $where[] = 'created_at >= :date_from';
-            $bindings['date_from'] = date('Y-m-d 00:00:00', strtotime((string) $date_from));
-        }
-
-        if ($date_to !== null && $date_to !== '') {
-            $where[] = 'created_at <= :date_to';
-            $bindings['date_to'] = date('Y-m-d 23:59:59', strtotime((string) $date_to));
-        }
-
-        if (!empty($where)) {
-            $query = $query . ' WHERE ' . implode(' AND ', $where);
-        }
-
-        $query .= ' ORDER BY updated_at DESC';
-
-        return [$query, $bindings];
     }
 
     public function templateToApiArray(EmailTemplate $template, bool $deep = false): array
@@ -901,7 +841,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         $this->di['em']->flush();
-        $this->di['logger']->info('Updated email template #%s', $template->getId());
+        $this->di['logger']->info('Updated email template #{template_id}', ['template_id' => $template->getId()]);
 
         return true;
     }
@@ -928,7 +868,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->di['em']->persist(new EmailTemplateGroup($template, $groupId));
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Assigned email template #%s to staff group #%s', $template->getId(), $groupId);
+        $this->di['logger']->info('Assigned email template #{template_id} to staff group #{group_id}', ['template_id' => $template->getId(), 'group_id' => $groupId]);
 
         return true;
     }
@@ -943,7 +883,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->di['em']->remove($association);
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Removed email template #%s from staff group #%s', $template->getId(), $groupId);
+        $this->di['logger']->info('Removed email template #{template_id} from staff group #{group_id}', ['template_id' => $template->getId(), 'group_id' => $groupId]);
 
         return true;
     }
@@ -962,7 +902,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $this->resetBuiltinTemplate($template, $default);
         $this->di['em']->flush();
-        $this->di['logger']->info('Reset email template: %s', $template->getActionCode());
+        $this->di['logger']->info('Reset email template: {action_code}', ['action_code' => $template->getActionCode()]);
 
         return true;
     }
@@ -990,7 +930,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $em->persist($template);
         $em->flush();
 
-        $this->di['logger']->info('Added new email template #%s', $template->getId());
+        $this->di['logger']->info('Added new email template #{template_id}', ['template_id' => $template->getId()]);
 
         return $template;
     }
@@ -1019,7 +959,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         $this->di['em']->flush();
-        $this->di['logger']->info(sprintf('Regenerated %d existing file-backed email templates.', $regenerated));
+        $this->di['logger']->info('Regenerated {count} existing file-backed email templates.', ['count' => $regenerated]);
 
         return true;
     }
@@ -1150,7 +1090,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             if ($error !== null) {
                 $template->setLastError($error);
                 $template->setErrorCheckedAt(new \DateTimeImmutable());
-                $this->di['logger']->warning(sprintf('Email template validation failed for "%s": %s', $template->getActionCode(), $error));
+                $this->di['logger']->warning(
+                    'Email template validation failed for "{action_code}": {error}',
+                    ['action_code' => $template->getActionCode(), 'error' => $error]
+                );
                 ++$results['invalid'];
                 $results['errors'][] = [
                     'id' => $template->getId(),
@@ -1226,7 +1169,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             if (filter_var($address, FILTER_VALIDATE_EMAIL)) {
                 $addresses[] = $address;
             } else {
-                $this->di['logger']->setChannel('email')->warning('Skipping invalid Bcc address: ' . $address);
+                $this->di['logger']->withChannel('email')->warning('Skipping invalid Bcc address: ' . $address);
             }
         }
 
@@ -1271,7 +1214,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 if (filter_var($settings['reply_to'], FILTER_VALIDATE_EMAIL)) {
                     $mail->addReplyTo($settings['reply_to']);
                 } else {
-                    $this->di['logger']->setChannel('email')->warning('Skipping invalid Reply-To address: ' . $settings['reply_to']);
+                    $this->di['logger']->withChannel('email')->warning('Skipping invalid Reply-To address: ' . $settings['reply_to']);
                 }
             }
 
@@ -1284,7 +1227,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             }
 
             if (!Environment::isProduction()) {
-                $this->di['logger']->setChannel('email')->info('Skip email sending. Application ENV: ' . Environment::getCurrentEnvironment());
+                $this->di['logger']->withChannel('email')->info('Skip email sending. Application ENV: ' . Environment::getCurrentEnvironment());
 
                 return true;
             }
@@ -1301,11 +1244,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 $this->di['em']->remove($queue);
                 $this->di['em']->flush();
             } catch (\Exception $e) {
-                $this->di['logger']->setChannel('email')->error($e->getMessage());
+                $this->di['logger']->withChannel('email')->error($e->getMessage());
             }
         } catch (\Exception $e) {
             $message = $e->getMessage();
-            $this->di['logger']->setChannel('email')->error($e->getMessage());
+            $this->di['logger']->withChannel('email')->error($e->getMessage());
 
             if ($queue->getPriority()) {
                 $queue->setPriority($queue->getPriority() - 1);

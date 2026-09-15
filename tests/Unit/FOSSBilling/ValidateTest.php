@@ -10,6 +10,10 @@
 
 declare(strict_types=1);
 
+use Symfony\Component\Cache\Adapter\ArrayAdapter;
+use Symfony\Component\HttpClient\MockHttpClient;
+use Symfony\Component\HttpClient\Response\MockResponse;
+
 use function Tests\Datasets\domainProvider;
 use function Tests\Datasets\emailProvider;
 
@@ -17,6 +21,29 @@ test('is sld valid', function (string $domain, bool $expected): void {
     $validate = new FOSSBilling\Validate();
     expect($validate->isSldValid($domain))->toEqual($expected);
 })->with('domainProvider');
+
+test('is tld valid falls back gracefully when the PSL download fails at the transport level', function (): void {
+    $validate = new FOSSBilling\Validate();
+
+    // Simulates e.g. "Bind failed with errno 97: Address family not supported by protocol",
+    // which surfaces as a TransportException when the response is accessed, not when the
+    // request is made.
+    $httpClient = new MockHttpClient(fn (): MockResponse => new MockResponse('', [
+        'error' => 'Address family not supported by protocol',
+    ]));
+
+    $di = new Pimple\Container();
+    $di['cache'] = fn () => new ArrayAdapter();
+    $di['http_client'] = fn () => $httpClient;
+    $validate->setDi($di);
+
+    // Must not let the transport exception bubble up and break the caller (e.g. checkout).
+    expect(fn () => $validate->isTldValid('com'))->not->toThrow(Throwable::class);
+
+    // Falls back to the simple regex-based check since the PSL couldn't be fetched.
+    expect($validate->isTldValid('com'))->toBeTrue();
+    expect($validate->isTldValid('123'))->toBeFalse();
+});
 
 dataset('domainProvider', fn (): array => domainProvider());
 

@@ -24,12 +24,12 @@ use function Tests\Helpers\container;
  *
  * @return list<DOMElement>
  */
-function renderHuragaFooterLinkCheckboxes(array $settings): array
+function renderClientThemeFooterLinkCheckboxes(array $settings): array
 {
     $twig = new Environment(new ArrayLoader(), ['strict_variables' => true]);
     $twig->addFilter(new TwigFilter('trans', static fn (mixed $value): string => (string) $value));
 
-    $theme = new Theme('huraga');
+    $theme = new Theme('default/client');
     $html = SandboxedStringRenderer::render(
         $twig,
         $theme->getSettingsPageHtml(),
@@ -140,8 +140,8 @@ test('getTheme renders theme preset', function (): void {
     $di['mod'] = $di->protect(fn () => $modMock);
     $controller->setDi($di);
 
-    $boxAppMock->shouldReceive('getRequest')->andReturn(Symfony\Component\HttpFoundation\Request::create('/theme/huraga'));
-    $controller->get_theme($boxAppMock, 'huraga');
+    $boxAppMock->shouldReceive('getRequest')->andReturn(Symfony\Component\HttpFoundation\Request::create('/theme/default/client'));
+    $controller->get_theme($boxAppMock, 'default/client');
 });
 
 test('save theme settings reads body from request and strips preset control keys', function (): void {
@@ -149,7 +149,7 @@ test('save theme settings reads body from request and strips preset control keys
     $di = container();
 
     $themeMock = Mockery::mock(Theme::class);
-    $themeMock->shouldReceive('getName')->andReturn('huraga');
+    $themeMock->shouldReceive('getName')->andReturn('default/client');
     $themeMock->shouldReceive('isAssetsPathWritable')->andReturn(true);
 
     $themeServiceMock = Mockery::mock(Box\Mod\Theme\Service::class);
@@ -182,7 +182,7 @@ test('save theme settings reads body from request and strips preset control keys
     $di['events_manager'] = $eventsManager;
     $controller->setDi($di);
 
-    $request = Symfony\Component\HttpFoundation\Request::create('/theme/huraga', 'POST', [
+    $request = Symfony\Component\HttpFoundation\Request::create('/theme/default/client', 'POST', [
         'color' => 'blue',
         'save-current-setting' => '1',
         'save-current-setting-preset' => 'My Preset',
@@ -192,15 +192,15 @@ test('save theme settings reads body from request and strips preset control keys
     $boxAppMock->shouldReceive('getRequest')->once()->andReturn($request);
     $boxAppMock->shouldReceive('redirect')
         ->once()
-        ->with('/theme/huraga')
-        ->andReturn(new Symfony\Component\HttpFoundation\RedirectResponse('/theme/huraga'));
+        ->with('/theme/default/client')
+        ->andReturn(new Symfony\Component\HttpFoundation\RedirectResponse('/theme/default/client'));
 
-    $response = $controller->save_theme_settings($boxAppMock, 'huraga');
+    $response = $controller->save_theme_settings($boxAppMock, 'default/client');
     expect($response)->toBeInstanceOf(Symfony\Component\HttpFoundation\RedirectResponse::class);
 });
 
-test('huraga footer link checkboxes submit canonical enabled values', function (): void {
-    $checkboxes = renderHuragaFooterLinkCheckboxes([]);
+test('default/client footer link checkboxes submit canonical enabled values', function (): void {
+    $checkboxes = renderClientThemeFooterLinkCheckboxes([]);
 
     expect($checkboxes)->toHaveCount(5);
     foreach ($checkboxes as $index => $checkbox) {
@@ -216,7 +216,7 @@ test('theme settings restore checkbox values saved with the browser default', fu
         $settings['footer_link_' . $index . '_enabled'] = 'on';
     }
 
-    $checkboxes = renderHuragaFooterLinkCheckboxes($settings);
+    $checkboxes = renderClientThemeFooterLinkCheckboxes($settings);
 
     expect($checkboxes)->toHaveCount(5);
     foreach ($checkboxes as $checkbox) {

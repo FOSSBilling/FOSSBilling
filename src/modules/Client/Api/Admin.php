@@ -96,6 +96,16 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Login to clients area with client id.
      *
+     * @optional bool $strip_admin_identity - Also remove the admin identity from the current
+     *                                        session, in the same request that sets the client
+     *                                        identity. Without this, impersonating a client and
+     *                                        then dropping admin access requires a second,
+     *                                        separate API call — which is unsafe with session ID
+     *                                        rotation enabled, since the session ID returned by
+     *                                        this call may already be stale by the time the
+     *                                        second call uses it, leaving the session in an
+     *                                        inconsistent state.
+     *
      * @return array - client details
      */
     #[RequiredParams(['id' => 'ID required'])]
@@ -110,7 +120,12 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $session = $this->getDi()['session'];
         $session->set('client_id', $client->getId());
-        $this->getDi()['logger']->info('Logged in as client #%s', $client->getId());
+        $this->getDi()['logger']->info('Logged in as client #{client_id}', ['client_id' => $client->getId()]);
+
+        if (Tools::normalizeBoolean($data['strip_admin_identity'] ?? false)) {
+            $session->destroy('admin');
+            $this->getDi()['logger']->info('Stripped admin identity from session after logging in as client #{client_id}', ['client_id' => $client->getId()]);
+        }
 
         return $result;
     }
@@ -223,7 +238,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->getService()->remove($model);
         $this->getDi()['events_manager']->fire(['event' => 'onAfterAdminClientDelete', 'params' => ['id' => $clientId]]);
 
-        $this->getDi()['logger']->info('Removed client #%s', $clientId);
+        $this->getDi()['logger']->info('Removed client #{client_id}', ['client_id' => $clientId]);
 
         return true;
     }
@@ -393,16 +408,16 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         if ($groupField !== null) {
             $groupValue = $data[$groupField];
             if (empty($groupValue)) {
-                $client->setClientGroupId(null);
+                $client->setClientGroup(null);
             } else {
                 $groupId = filter_var($groupValue, FILTER_VALIDATE_INT);
                 if ($groupId === false || $groupId <= 0) {
                     throw new InformationException('Invalid client group ID: :id', [':id' => $groupValue]);
                 }
 
-                $this->getDi()['em']->getRepository(ClientGroup::class)->find($groupId)
+                $group = $this->getDi()['em']->getRepository(ClientGroup::class)->find($groupId)
                     ?? throw new InformationException('Client group not found');
-                $client->setClientGroupId($groupId);
+                $client->setClientGroup($group);
             }
         }
 
@@ -444,7 +459,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $this->getDi()['events_manager']->fire(['event' => 'onAfterAdminClientUpdate', 'params' => ['id' => $client->getId()]]);
 
-        $this->getDi()['logger']->info('Updated client #%s profile', $client->getId());
+        $this->getDi()['logger']->info('Updated client #{client_id} profile', ['client_id' => $client->getId()]);
 
         return true;
     }
@@ -474,7 +489,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $this->getDi()['events_manager']->fire(['event' => 'onAfterAdminClientPasswordChange', 'params' => ['id' => $client->getId()]]);
 
-        $this->getDi()['logger']->info('Changed client #%s password', $client->getId());
+        $this->getDi()['logger']->info('Changed client #{client_id} password', ['client_id' => $client->getId()]);
 
         return true;
     }
@@ -516,13 +531,13 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $model = $this->getDi()['em']->getRepository(ClientBalance::class)->find($data['id']) ?? throw new InformationException('Balance line not found');
 
         $id = $model->getId();
-        $client_id = $model->getClientId();
+        $client_id = $model->getClient()?->getId();
         $amount = $model->getAmount();
 
         $this->getDi()['em']->remove($model);
         $this->getDi()['em']->flush();
 
-        $this->getDi()['logger']->info('Removed line %s from client #%s balance for %s', $id, $client_id, $amount);
+        $this->getDi()['logger']->info('Removed line {id} from client #{client_id} balance for {amount}', ['id' => $id, 'client_id' => $client_id, 'amount' => $amount]);
 
         return true;
     }
@@ -668,7 +683,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $this->getDi()['em']->getRepository(ClientGroup::class)->find($data['id']) ?? throw new InformationException('Group not found');
 
-        $clients = $this->getDi()['em']->getRepository(Client::class)->findBy(['clientGroupId' => $data['id']]);
+        $clients = $this->getDi()['em']->getRepository(Client::class)->findBy(['clientGroup' => $model]);
 
         if (Tools::safeCount($clients) > 0) {
             throw new InformationException('Group has clients assigned. Please reassign them first.');
@@ -712,6 +727,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
     public function export_csv($data): Response
     {
+        $this->checkPermissions('client', 'view');
         $this->checkPermissions('client', 'export');
 
         $data['headers'] ??= [];

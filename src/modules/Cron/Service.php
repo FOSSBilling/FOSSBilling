@@ -64,13 +64,13 @@ class Service
 
         try {
             if ($this->di['update_finalization']->isRequired()) {
-                $this->di['logger']->setChannel('cron')->warning('Skipped cron execution because update finalization is pending.');
+                $this->di['logger']->withChannel('cron')->warning('Skipped cron execution because update finalization is pending.');
 
                 throw new \FOSSBilling\InformationException('Update finalization is pending. Cron jobs are paused until finalization is completed.', [], 503);
             }
 
             $api = $this->di['api_system'];
-            $this->di['logger']->setChannel('cron')->info('Started executing cron jobs.');
+            $this->di['logger']->withChannel('cron')->info('Started executing cron jobs.');
 
             // @core tasks
             $this->_exec($api, 'hook_batch_connect');
@@ -85,6 +85,7 @@ class Service
                 'order_batch_send_suspension_warnings',
                 'order_batch_suspend_expired',
                 'order_batch_cancel_suspended',
+                'order_batch_cancel_unpaid',
                 'support_batch_ticket_auto_close',
                 'client_batch_expire_password_reminders',
                 'cart_batch_expire',
@@ -96,14 +97,17 @@ class Service
                     $this->_exec($api, $method);
                 } catch (\Throwable $exception) {
                     $failedTasks[] = $method;
-                    $this->di['logger']->setChannel('cron')->error(sprintf(
-                        'Failed to run cron task %s: %s: %s in %s:%d',
-                        $method,
-                        $exception::class,
-                        $exception->getMessage(),
-                        $exception->getFile(),
-                        $exception->getLine()
-                    ));
+                    $this->di['logger']->withChannel('cron')->error(
+                        'Failed to run cron task {task}: {exception_class}: {exception_message} in {file}:{line}',
+                        [
+                            'task' => $method,
+                            'exception_class' => $exception::class,
+                            'exception_message' => $exception->getMessage(),
+                            'file' => $exception->getFile(),
+                            'line' => $exception->getLine(),
+                            'exception' => $exception,
+                        ]
+                    );
                 }
             }
 
@@ -112,17 +116,17 @@ class Service
 
             // Purge old sessions from the DB
             $count = $this->clearOldSessions() ?? 0;
-            $this->di['logger']->setChannel('cron')->info("Cleared {$count} outdated sessions from the database.");
+            $this->di['logger']->withChannel('cron')->info("Cleared {$count} outdated sessions from the database.");
 
             $this->di['events_manager']->fire(['event' => 'onAfterAdminCronRun']);
 
             if ($failedTasks !== []) {
-                $this->di['logger']->setChannel('cron')->warning('Finished executing cron jobs, but the following tasks failed: ' . implode(', ', $failedTasks) . '.');
+                $this->di['logger']->withChannel('cron')->warning('Finished executing cron jobs, but the following tasks failed: ' . implode(', ', $failedTasks) . '.');
 
                 return false;
             }
 
-            $this->di['logger']->setChannel('cron')->info('Finished executing cron jobs.');
+            $this->di['logger']->withChannel('cron')->info('Finished executing cron jobs.');
 
             return true;
         } finally {
@@ -166,9 +170,13 @@ class Service
 
     private function clearOldSessions(): ?int
     {
-        $maxAge = time() - Config::getProperty('security.session_lifespan', 7200);
-        $sql = 'DELETE FROM session WHERE created_at <= :age';
+        $now = time();
+        $maxAge = $now - Config::getProperty('security.session_lifespan', 7200);
+        $sql = 'DELETE FROM session WHERE lifetime < :now OR created_at <= :age';
 
-        return $this->di['em']->getConnection()->executeStatement($sql, ['age' => $maxAge]);
+        return $this->di['em']->getConnection()->executeStatement($sql, [
+            'now' => $now,
+            'age' => $maxAge,
+        ]);
     }
 }

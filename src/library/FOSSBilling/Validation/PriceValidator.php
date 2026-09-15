@@ -37,8 +37,19 @@ final class PriceValidator
             throw new InformationException('Quantity must be a valid number.');
         }
 
+        if (is_int($value)) {
+            return max(1, $value);
+        }
+
+        if (is_string($value)) {
+            $integer = filter_var($value, FILTER_VALIDATE_INT);
+            if ($integer !== false) {
+                return max(1, $integer);
+            }
+        }
+
         $quantity = (float) $value;
-        if (!is_finite($quantity) || $quantity > PHP_INT_MAX || $quantity < PHP_INT_MIN) {
+        if (!is_finite($quantity) || $quantity >= PHP_INT_MAX || $quantity <= PHP_INT_MIN) {
             throw new InformationException('Quantity must be a valid number.');
         }
 

@@ -35,6 +35,7 @@ class Registrar_Adapter_Netearthone extends Registrar_Adapter_Resellerclub
                     'label' => 'NetEarthOne API Key',
                     'description' => 'You can get this at NetEarthOne control panel, go to Settings -> API',
                     'required' => false,
+                    'secret' => true,
                 ],
                 ],
             ],

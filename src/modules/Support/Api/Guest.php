@@ -152,7 +152,11 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         /** @var \Box\Mod\Support\Repository\KbArticleRepository $repo */
         $repo = $this->getService()->getKbArticleRepository();
 
-        $qb = $repo->getSearchQueryBuilder(KbArticle::ACTIVE, $search, $cat);
+        $qb = $repo->getSearchQueryBuilder([
+            'status' => KbArticle::ACTIVE,
+            'search' => $search,
+            'kb_article_category_id' => $cat,
+        ]);
 
         return $this->getDi()['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data), $this->getIdentity(), false, $this->getService()->kbArticleViewsEnabled());
     }

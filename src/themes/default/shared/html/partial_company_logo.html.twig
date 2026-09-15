@@ -1,0 +1,57 @@
+{#
+    Unified version of what used to be two near-identical
+    partial_company_logo.html.twig files (one per theme) - same dual
+    light/dark-logo-with-fallback structure, differing only in which
+    optional params each theme's call sites happened to use. Lives only
+    here (not duplicated per-area) since every caller already includes it
+    by plain filename, so removing both theme-owned copies lets it resolve
+    through TwigLoader's shared-html fallback tier automatically.
+
+    Params:
+    - company (required): must expose `name`.
+    - logo_url, dark_logo_url: no default (every real call site passes both
+      explicitly, from company.logo_url/logo_url_dark or null) - this used
+      to default to company.logo_url/logo_url_dark, matching admin's own
+      original version, until a real bug surfaced while writing tests for
+      this file: Twig's `default` filter treats an explicitly-passed null
+      exactly like an omitted argument, so client's layout_default.html.twig
+      (`logo_url: settings.show_company_logo ? company.logo_url : null`)
+      would have had that null silently overridden back to company.logo_url,
+      permanently defeating the show_company_logo toggle. No default at all
+      is the only option that can't reintroduce that.
+    - link_url: default '/'|url.
+    - link_class, link_target, link_rel: all optional, omitted unless passed.
+    - image_class: optional extra class(es) on both <img> tags.
+    - image_height: optional `height` attribute - no default, since call
+      sites already disagreed (most client callers pass '50px', one relied
+      on an implicit '45px' default, admin never set one at all) - every
+      call site now states its own value explicitly rather than this
+      partial guessing for any of them.
+    - image_style: optional inline `style` attribute (admin's call sites use
+      this for one-off sizing instead of image_height).
+    - fallback_class: optional class on the no-logo fallback <span>.
+    - show_mobile_name: when true, also renders the company name in a
+      `d-sm-none` span after the logo images (client's mobile-nav case).
+#}
+{% set logo_url = logo_url|default(null) %}
+{% set dark_logo_url = dark_logo_url|default(null) %}
+{% set link_url = link_url|default('/'|url) %}
+{% set link_class = link_class|default('') %}
+{% set link_rel = link_rel|default(null) %}
+{% set image_class = image_class|default('') %}
+{% set image_height = image_height|default(null) %}
+{% set image_style = image_style|default(null) %}
+{% set fallback_class = fallback_class|default('') %}
+{% set show_mobile_name = show_mobile_name|default(false) %}
+
+<a{% if link_class %} class="{{ link_class }}"{% endif %} href="{{ link_url }}"{% if link_target is defined %} target="{{ link_target }}"{% endif %}{% if link_rel %} rel="{{ link_rel }}"{% endif %}>
+    {% if logo_url or dark_logo_url %}
+        <img class="hide-theme-light{% if image_class %} {{ image_class }}{% endif %}" src="{{ dark_logo_url|default(logo_url) }}" alt="{{ company.name }}" title="{{ company.name }}"{% if image_height %} height="{{ image_height }}"{% endif %}{% if image_style %} style="{{ image_style }}"{% endif %}>
+        <img class="hide-theme-dark{% if image_class %} {{ image_class }}{% endif %}" src="{{ logo_url|default(dark_logo_url) }}" alt="{{ company.name }}" title="{{ company.name }}"{% if image_height %} height="{{ image_height }}"{% endif %}{% if image_style %} style="{{ image_style }}"{% endif %}>
+        {% if show_mobile_name %}
+            <span class="d-sm-none">{{ company.name }}</span>
+        {% endif %}
+    {% else %}
+        <span{% if fallback_class %} class="{{ fallback_class }}"{% endif %}>{{ company.name }}</span>
+    {% endif %}
+</a>

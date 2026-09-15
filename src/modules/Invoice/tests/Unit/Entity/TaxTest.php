@@ -15,6 +15,8 @@ use Doctrine\DBAL\DriverManager;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\ORMSetup;
 
+use function Tests\Helpers\setEntityId;
+
 test('maps tax table without changing columns', function (): void {
     $config = ORMSetup::createAttributeMetadataConfig([dirname(__DIR__, 3) . '/Entity'], true);
     $config->setProxyDir(sys_get_temp_dir());
@@ -55,7 +57,7 @@ test('tax getters and setters round-trip values', function (): void {
 
 test('tax toApiArray matches the legacy RedBeanPHP toArray keys', function (): void {
     $entity = new Tax();
-    $entity->setId(5);
+    setEntityId($entity, 5);
     $entity->setLevel(1);
     $entity->setName('VAT');
     $entity->setCountry('US');

@@ -116,6 +116,35 @@ test('login events persist history entities', function (string $method, string $
     ['onAfterAdminLogin', ActivityAdminHistory::class, 'getAdminId'],
 ]);
 
+test('logs retention failures through the application logger', function (): void {
+    $dbal = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbal->shouldReceive('executeStatement')
+        ->once()
+        ->andThrow(new RuntimeException('activity cleanup failed'));
+
+    $extensionService = Mockery::mock(Box\Mod\Extension\Service::class);
+    $extensionService->shouldReceive('getConfig')
+        ->once()
+        ->with('mod_activity')
+        ->andReturn(['max_age' => 30, 'email_max_age' => 0]);
+
+    $logger = new Tests\Helpers\TestLogger();
+    $di = container();
+    $di['dbal'] = $dbal;
+    $di['logger'] = $logger;
+    $di['mod_service'] = $di->protect(fn (string $name): object => $extensionService);
+
+    $event = new Box_Event(null, 'onBeforeAdminCronRun');
+    $event->setDi($di);
+
+    Box\Mod\Activity\Service::onBeforeAdminCronRun($event);
+
+    expect($logger->calls)->toContain([
+        'method' => 'error',
+        'params' => ['activity cleanup failed'],
+    ]);
+});
+
 test('log email', function (): void {
     $service = new Box\Mod\Activity\Service();
     $data = [

@@ -38,7 +38,11 @@ class Box_EventManager implements FOSSBilling\InjectionAwareInterface
         $subject = $data['subject'] ?? null;
         $params = $data['params'] ?? null;
 
-        $this->di['logger']->setChannel('event')->debug('Fired event: ' . $event, $params);
+        $eventContext = ['event' => $event];
+        if (is_array($params)) {
+            $eventContext['parameters'] = $params;
+        }
+        $this->di['logger']->withChannel('event')->debug('Fired event: {event}', $eventContext);
 
         $e = new Box_Event($subject, $event, $params);
         $e->setDi($this->di);
@@ -86,7 +90,7 @@ class Box_EventManager implements FOSSBilling\InjectionAwareInterface
                     $disp->connect($dispatchEvent, [$s::class, $event]);
                 }
             } catch (Exception $e) {
-                error_log($e->getMessage());
+                $this->di['logger']->withChannel('event')->error($e->getMessage());
             }
         }
     }

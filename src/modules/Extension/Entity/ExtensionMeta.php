@@ -13,23 +13,29 @@ namespace Box\Mod\Extension\Entity;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use FOSSBilling\Doctrine\TimestampTrait;
 use FOSSBilling\Interfaces\ApiArrayInterface;
 use FOSSBilling\Interfaces\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Extension\Repository\ExtensionMetaRepository::class)]
 #[ORM\Table(name: 'extension_meta')]
+// Named per-table (unlike structure.sql's bare `client_id_idx`) because index names must be
+// unique database-wide on SQLite/PostgreSQL, not just per-table like MySQL.
+#[ORM\Index(name: 'extension_meta_client_id_idx', columns: ['client_id'])]
 #[ORM\HasLifecycleCallbacks]
 class ExtensionMeta implements ApiArrayInterface, TimestampInterface
 {
+    use TimestampTrait;
+
     public function __construct(
         #[ORM\Id]
         #[ORM\GeneratedValue]
-        #[ORM\Column(type: Types::INTEGER)]
+        #[ORM\Column(type: Types::BIGINT)]
         private ?int $id = null,
     ) {
     }
 
-    #[ORM\Column(name: 'client_id', type: Types::INTEGER, nullable: true)]
+    #[ORM\Column(name: 'client_id', type: Types::BIGINT, nullable: true)]
     private ?int $clientId = null;
 
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
@@ -47,12 +53,6 @@ class ExtensionMeta implements ApiArrayInterface, TimestampInterface
     #[ORM\Column(name: 'meta_value', type: Types::TEXT, nullable: true)]
     private ?string $metaValue = null;
 
-    #[ORM\Column(name: 'created_at', type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $createdAt = null;
-
-    #[ORM\Column(name: 'updated_at', type: Types::DATETIME_MUTABLE, nullable: true)]
-    private ?\DateTime $updatedAt = null;
-
     public function toApiArray(): array
     {
         return [
@@ -66,20 +66,6 @@ class ExtensionMeta implements ApiArrayInterface, TimestampInterface
             'created_at' => $this->getCreatedAt()?->format('Y-m-d H:i:s'),
             'updated_at' => $this->getUpdatedAt()?->format('Y-m-d H:i:s'),
         ];
-    }
-
-    #[ORM\PrePersist]
-    public function onPrePersist(): void
-    {
-        $now = new \DateTime();
-        $this->createdAt ??= $now;
-        $this->updatedAt = $now;
-    }
-
-    #[ORM\PreUpdate]
-    public function onPreUpdate(): void
-    {
-        $this->updatedAt = new \DateTime();
     }
 
     public function getId(): ?int
@@ -157,25 +143,5 @@ class ExtensionMeta implements ApiArrayInterface, TimestampInterface
         $this->metaValue = $metaValue;
 
         return $this;
-    }
-
-    public function getCreatedAt(): ?\DateTime
-    {
-        return $this->createdAt;
-    }
-
-    public function setCreatedAt(\DateTime $createdAt): void
-    {
-        $this->createdAt = $createdAt;
-    }
-
-    public function getUpdatedAt(): ?\DateTime
-    {
-        return $this->updatedAt;
-    }
-
-    public function setUpdatedAt(\DateTime $updatedAt): void
-    {
-        $this->updatedAt = $updatedAt;
     }
 }

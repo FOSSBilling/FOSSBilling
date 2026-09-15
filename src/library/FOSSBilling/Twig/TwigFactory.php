@@ -25,6 +25,7 @@ use FOSSBilling\Twig\Extension\DebugBarExtension;
 use FOSSBilling\Twig\Extension\FOSSBillingExtension;
 use FOSSBilling\Twig\Extension\LegacyExtension;
 use FOSSBilling\Twig\Markdown\FOSSBillingMarkdown;
+use FOSSBilling\Url;
 use FOSSBilling\Version;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Intl\Currencies;
@@ -144,8 +145,9 @@ class TwigFactory
 
         $service = $this->di['mod_service']('theme');
         $theme = $service->getCurrentAdminAreaTheme();
+        $sharedPath = $service->getPackageSharedHtmlPath($theme['code']);
 
-        $loader = new TwigLoader(AppArea::ADMIN, Path::join(PATH_THEMES, $theme['code']));
+        $loader = new TwigLoader(AppArea::ADMIN, Path::join(PATH_THEMES, $theme['code']), $sharedPath);
         $twig->setLoader($loader);
 
         $twig->addGlobal('theme', $theme);
@@ -175,8 +177,9 @@ class TwigFactory
         $code = $service->getCurrentClientAreaThemeCode();
         $theme = $service->getTheme($code);
         $settings = $service->getThemeSettings($theme);
+        $sharedPath = $service->getPackageSharedHtmlPath($code);
 
-        $loader = new TwigLoader(AppArea::CLIENT, Path::join(PATH_THEMES, $code));
+        $loader = new TwigLoader(AppArea::CLIENT, Path::join(PATH_THEMES, $code), $sharedPath);
         $twig->setLoader($loader);
 
         $twig->addGlobal('current_theme', $code);
@@ -412,7 +415,7 @@ class TwigFactory
         unset($requestData['_url']);
 
         $requestQuery = $requestData;
-        $requestPath = \Box_Url::normalizeLinkPath(RequestFactory::getRoutePath($request));
+        $requestPath = Url::normalizeLinkPath(RequestFactory::getRoutePath($request));
         $requestHasFilters = count(array_diff_key($requestData, [
             'page' => true,
             'search' => true,

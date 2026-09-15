@@ -160,7 +160,7 @@ class Service implements InjectionAwareInterface
         if (!$result) {
             throw new InformationException('Invalid email confirmation link');
         }
-        $dbal->executeStatement('UPDATE client SET email_approved = 1 WHERE id = :id', ['id' => $result['client_id']]);
+        $dbal->executeStatement('UPDATE client SET email_approved = true WHERE id = :id', ['id' => $result['client_id']]);
         $dbal->executeStatement('DELETE FROM extension_meta WHERE id = :id', ['id' => $result['id']]);
 
         return true;
@@ -202,15 +202,17 @@ class Service implements InjectionAwareInterface
 
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->setChannel('email')->error('Failed to send client signup email', ['exception' => $exc->getMessage()]);
+            $di['logger']->withChannel('email')->error('Failed to send client signup email', ['exception' => $exc]);
         }
 
         return true;
     }
 
-    public function getSearchQuery($data, $selectStmt = 'SELECT c.*'): array
+    public function getSearchQuery($data, $selectStmt = null): array
     {
-        $sql = $selectStmt;
+        // `client` also holds `pass`, `salt`, and `api_token` - reuse EXPORTABLE_COLUMNS
+        // instead of `c.*` so listing never exposes them.
+        $sql = $selectStmt ?? 'SELECT c.' . implode(', c.', self::EXPORTABLE_COLUMNS);
         $sql .= ' FROM client as c left join client_group as cg on c.client_group_id = cg.id';
 
         $search = (isset($data['search']) && !empty($data['search'])) ? $data['search'] : null;
@@ -261,18 +263,24 @@ class Service implements InjectionAwareInterface
         }
 
         if ($created_at) {
-            $where[] = "DATE_FORMAT(c.created_at, '%Y-%m-%d') = :created_at";
-            $params['created_at'] = date('Y-m-d', strtotime((string) $created_at));
+            // A day range rather than DATE_FORMAT(...) = :created_at, which MySQL supports but
+            // PostgreSQL and SQLite don't.
+            $where[] = 'c.created_at >= :created_at_start AND c.created_at < :created_at_end';
+            $dayStart = strtotime(date('Y-m-d', strtotime((string) $created_at)));
+            $params['created_at_start'] = date('Y-m-d H:i:s', $dayStart);
+            $params['created_at_end'] = date('Y-m-d H:i:s', strtotime('+1 day', $dayStart));
         }
 
         if ($date_from) {
-            $where[] = 'UNIX_TIMESTAMP(c.created_at) >= :date_from';
-            $params['date_from'] = strtotime((string) $date_from);
+            // Compares directly against the datetime column rather than UNIX_TIMESTAMP(c.created_at),
+            // which MySQL supports but PostgreSQL and SQLite don't.
+            $where[] = 'c.created_at >= :date_from';
+            $params['date_from'] = date('Y-m-d H:i:s', strtotime((string) $date_from));
         }
 
         if ($date_to) {
-            $where[] = 'UNIX_TIMESTAMP(c.created_at) <= :date_to';
-            $params['date_to'] = strtotime((string) $date_to);
+            $where[] = 'c.created_at <= :date_to';
+            $params['date_to'] = date('Y-m-d H:i:s', strtotime((string) $date_to));
         }
 
         // smartSearch
@@ -368,7 +376,7 @@ class Service implements InjectionAwareInterface
         }
 
         $credit = new ClientBalance();
-        $credit->setClientId((int) $client->getId());
+        $credit->setClient($client);
         $credit->setType($data['type'] ?? 'gift');
         $credit->setRelId(isset($data['rel_id']) ? (string) $data['rel_id'] : null);
         $credit->setDescription($description);
@@ -495,15 +503,13 @@ class Service implements InjectionAwareInterface
         if ($isAdmin) {
             $details['group'] = null;
 
-            if ($client->getClientGroupId()) {
-                $group = $this->clientGroupRepository->find($client->getClientGroupId());
-                if ($group instanceof ClientGroup) {
-                    $details['group'] = $group->getTitle();
-                    $details['client_group'] = [
-                        'id' => $group->getId(),
-                        'title' => $group->getTitle(),
-                    ];
-                }
+            $group = $client->getClientGroup();
+            if ($group instanceof ClientGroup) {
+                $details['group'] = $group->getTitle();
+                $details['client_group'] = [
+                    'id' => $group->getId(),
+                    'title' => $group->getTitle(),
+                ];
             }
 
             if ($includeSensitive) {
@@ -573,14 +579,14 @@ class Service implements InjectionAwareInterface
         $this->di['em']->persist($group);
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Created new client group #%s', $group->getId());
+        $this->di['logger']->info('Created new client group #{group_id}', ['group_id' => $group->getId()]);
 
         return (int) $group->getId();
     }
 
     public function deleteGroup(ClientGroup $model): bool
     {
-        $client = $this->clientRepository->findOneBy(['clientGroupId' => $model->getId()]);
+        $client = $this->clientRepository->findOneBy(['clientGroup' => $model]);
         if ($client) {
             throw new \FOSSBilling\Exception('Cannot remove groups with clients');
         }
@@ -590,7 +596,7 @@ class Service implements InjectionAwareInterface
             $this->di['em']->remove($group);
             $this->di['em']->flush();
         }
-        $this->di['logger']->info('Removed client group #%s', $model->getId());
+        $this->di['logger']->info('Removed client group #{model_id}', ['model_id' => $model->getId()]);
 
         return true;
     }
@@ -622,7 +628,15 @@ class Service implements InjectionAwareInterface
 
         $client->setAid($data['aid'] ?? null);
         $client->setLastName($data['last_name'] ?? null);
-        $client->setClientGroupId(!empty($data['group_id']) ? (int) $data['group_id'] : null);
+        if (!empty($data['group_id'])) {
+            $group = $this->clientGroupRepository->find((int) $data['group_id']);
+            if (!$group instanceof ClientGroup) {
+                throw new InformationException('Client group not found');
+            }
+            $client->setClientGroup($group);
+        } else {
+            $client->setClientGroup(null);
+        }
         $client->setStatus($data['status'] ?? Client::ACTIVE);
         $client->setGender($data['gender'] ?? null);
         $birthday = $data['birthday'] ?? null;
@@ -695,7 +709,7 @@ class Service implements InjectionAwareInterface
             $this->sendAdminCreatedWelcomeEmailForClient($client);
         }
         $this->di['events_manager']->fire(['event' => 'onAfterAdminCreateClient', 'params' => ['id' => $client->getId()]]);
-        $this->di['logger']->info('Created new client #%s', $client->getId());
+        $this->di['logger']->info('Created new client #{client_id}', ['client_id' => $client->getId()]);
 
         return (int) $client->getId();
     }
@@ -739,17 +753,16 @@ class Service implements InjectionAwareInterface
             'ip' => $safeData['ip'],
         ];
         $this->di['events_manager']->fire(['event' => 'onAfterClientSignUp', 'params' => $event_params]);
-        $this->di['logger']->info('Client #%s signed up', $client->getId());
+        $this->di['logger']->info('Client #{client_id} signed up', ['client_id' => $client->getId()]);
 
         return $client;
     }
 
     public function createPasswordResetRequestForClient(Client $client): string
     {
-        $clientId = (int) $client->getId();
         $clientIp = $client->getIp();
 
-        $existingReset = $this->clientPasswordResetRepository->findOneBy(['clientId' => $clientId]);
+        $existingReset = $this->clientPasswordResetRepository->findOneBy(['client' => $client]);
         if ($existingReset instanceof ClientPasswordReset) {
             $this->di['em']->remove($existingReset);
             $this->di['em']->flush();
@@ -762,7 +775,7 @@ class Service implements InjectionAwareInterface
 
         $hash = hash('sha256', random_bytes(32));
         $reset = new ClientPasswordReset();
-        $reset->setClientId($clientId);
+        $reset->setClient($client);
         $reset->setIp($requestIp ?? $clientIp);
         $reset->setHash($hash);
 
@@ -808,7 +821,7 @@ class Service implements InjectionAwareInterface
             $emailService = $this->di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $this->di['logger']->setChannel('email')->error('Failed to send client welcome email', ['exception' => $exc->getMessage()]);
+            $this->di['logger']->withChannel('email')->error('Failed to send client welcome email', ['exception' => $exc]);
         }
     }
 
@@ -836,7 +849,7 @@ class Service implements InjectionAwareInterface
             $service = $this->di['mod_service']('Activity');
             $service->rmByClient($model);
 
-            $resetRecords = $this->clientPasswordResetRepository->findBy(['clientId' => (int) $model->getId()]);
+            $resetRecords = $this->clientPasswordResetRepository->findBy(['client' => $model]);
             foreach ($resetRecords as $resetRecord) {
                 $entityManager->remove($resetRecord);
             }
@@ -884,7 +897,7 @@ class Service implements InjectionAwareInterface
             $emailService = $this->di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $this->di['logger']->setChannel('email')->error('Failed to send email confirmation email', ['exception' => $exc->getMessage()]);
+            $this->di['logger']->withChannel('email')->error('Failed to send email confirmation email', ['exception' => $exc]);
         }
     }
 
@@ -996,7 +1009,7 @@ class Service implements InjectionAwareInterface
             throw new InformationException('The link has expired or you have already reset your password.');
         }
 
-        $client = $reset->getClientId() !== null ? $this->clientRepository->find($reset->getClientId()) : null;
+        $client = $reset->getClient();
         if (!$client instanceof Client) {
             throw new InformationException('The link has expired or you have already reset your password.');
         }
@@ -1028,7 +1041,7 @@ class Service implements InjectionAwareInterface
                 ->execute();
         } catch (\Exception $e) {
             if (!\FOSSBilling\Environment::isTesting()) {
-                error_log($e->getMessage());
+                $di['logger']->error($e->getMessage());
             }
         }
     }

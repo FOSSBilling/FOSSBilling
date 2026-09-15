@@ -33,7 +33,7 @@ if (!defined('DEBUG')) {
     define('DEBUG', false);
 }
 
-// Pre-declare translation functions to prevent Box_Translate from trying to redefine them
+// Pre-declare translation functions before the application bootstrap loads them.
 // These stubs will be used if the full translation system isn't initialized
 if (!function_exists('__trans')) {
     function __trans(string $msgid, ?array $values = null): string
@@ -56,7 +56,6 @@ require_once __DIR__ . '/../src/vendor/autoload.php';
 require_once __DIR__ . '/Helpers/Container.php';
 require_once __DIR__ . '/Helpers/Factories.php';
 require_once __DIR__ . '/Helpers/Api.php';
-require_once __DIR__ . '/Helpers/DummyBean.php';
 require_once __DIR__ . '/Support/CombinedTwigLoader.php';
 require_once __DIR__ . '/Support/PermissiveStub.php';
 require_once __DIR__ . '/Support/PermissiveContainer.php';
@@ -69,6 +68,16 @@ require_once __DIR__ . '/Support/ToApiArrayAuditor.php';
 require_once __DIR__ . '/Datasets/PeriodCodes.php';
 require_once __DIR__ . '/Datasets/ValidationData.php';
 require_once __DIR__ . '/Datasets/GeographicData.php';
+
+/**
+ * Whether a Redis client extension is available. Cache-backend tests that need an
+ * environment without it (to exercise the connection-failure/fallback paths) skip
+ * themselves when this is true.
+ */
+function hasRedisExtension(): bool
+{
+    return class_exists(Redis::class) || class_exists(Relay\Relay::class) || class_exists(RedisCluster::class);
+}
 
 /**
  * Construct an API endpoint with the default test container.
@@ -107,27 +116,57 @@ function withAppEnv(?string $value, callable $callback): mixed
     }
 }
 
-// Define TestLogger class after autoloader is registered
-// This must be done here because it extends Box_Log which is loaded via the autoloader
-// Using eval() to defer class definition until runtime when Box_Log is available
+// Define TestLogger class after autoloader is registered.
+// This is deferred because FOSSBilling\Logger is loaded via the autoloader.
 // @phpstan-ignore-next-line
 if (!class_exists(Tests\Helpers\TestLogger::class)) {
     // @phpstan-ignore-next-line
     eval('
         namespace Tests\Helpers;
 
-        class TestLogger extends \Box_Log
+        class TestLogger extends \Psr\Log\AbstractLogger
         {
             public array $calls = [];
+            private string $channel = "application";
+            private array $context = [];
 
             public function __construct()
             {
                 $this->calls = [];
             }
 
-            public function __call($method, $params): void
+            public function log($level, string|\\Stringable $message, array $context = []): void
             {
-                $this->calls[] = ["method" => $method, "params" => $params];
+                $effectiveContext = [...$this->context, ...$context];
+                $params = [$message];
+                if ($effectiveContext !== []) {
+                    $params[] = $effectiveContext;
+                }
+
+                $call = ["method" => $level, "params" => $params];
+                if ($this->channel !== "application") {
+                    $call["channel"] = $this->channel;
+                }
+
+                $this->calls[] = $call;
+            }
+
+            public function withChannel(string $channel): static
+            {
+                $logger = clone $this;
+                $logger->calls =& $this->calls;
+                $logger->channel = $channel;
+
+                return $logger;
+            }
+
+            public function withContext(array $context): static
+            {
+                $logger = clone $this;
+                $logger->calls =& $this->calls;
+                $logger->context = [...$this->context, ...$context];
+
+                return $logger;
             }
         }
     ');

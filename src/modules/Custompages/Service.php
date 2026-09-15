@@ -50,19 +50,14 @@ class Service
 
     public function install(): bool
     {
-        $sql = '
-            CREATE TABLE IF NOT EXISTS `custom_pages` (
-                `id` int(11) NOT NULL AUTO_INCREMENT,
-                `title` varchar(255) NOT NULL,
-                `description` varchar(555) NOT NULL,
-                `keywords` varchar(555) NOT NULL,
-                `content` text NOT NULL,
-                `slug` varchar(255) NOT NULL,
-                `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-                PRIMARY KEY (`id`),
-                UNIQUE KEY `uniq_custom_pages_slug` (`slug`)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8';
-        $this->di['em']->getConnection()->executeStatement($sql);
+        // Raw MySQL-only DDL here (backticks, ENGINE=InnoDB) would fail outright on
+        // PostgreSQL/SQLite. custom_pages isn't in structure.sql at all - this module creates
+        // its own table on activation - so unlike the core install path, this genuinely runs on
+        // every platform. SchemaSynchronizer::syncEntities() creates (or catches up) just this
+        // module's own table from current metadata, additively and safely - scoped so
+        // installing this one extension never reports every *other* table in the app as missing,
+        // unlike the whole-app SchemaSynchronizer::sync().
+        \FOSSBilling\Doctrine\SchemaSynchronizer::syncEntities($this->di['em'], [CustomPage::class]);
 
         return true;
     }
@@ -107,30 +102,28 @@ class Service
     public function createPage($title, $description, $keywords, $content): int
     {
         // generateUniqueSlug() picks a free candidate, but a concurrent request can
-        // claim the same slug between the check and the flush. The unique index on
-        // custom_pages.slug turns that race into a catchable constraint violation,
-        // which we resolve by clearing the EM and retrying with a fresh candidate.
-        $page = null;
+        // claim the same slug before the insert. Insert via the DBAL connection (not
+        // an ORM flush) so a constraint violation doesn't close the EntityManager and
+        // break the retry loop on the next iteration.
+        $connection = $this->di['em']->getConnection();
         for ($attempt = 0; $attempt < 5; ++$attempt) {
             $slug = $this->generateUniqueSlug($title);
 
-            $page = new CustomPage();
-            $page->setTitle($title)
-                ->setDescription($description ?? '')
-                ->setKeywords($keywords ?? '')
-                ->setContent($content)
-                ->setSlug($slug);
-
             try {
-                $this->di['em']->persist($page);
-                $this->di['em']->flush();
+                $connection->insert('custom_pages', [
+                    'title' => $title,
+                    'description' => $description ?? '',
+                    'keywords' => $keywords ?? '',
+                    'content' => $content,
+                    'slug' => $slug,
+                ]);
 
-                $id = $page->getId() ?? 0;
-                $this->di['logger']->info('Created new custom page #%s', $id);
+                $id = (int) $connection->lastInsertId();
+                $this->di['logger']->info('Created new custom page #{id}', ['id' => $id]);
 
                 return $id;
             } catch (UniqueConstraintViolationException) {
-                $this->di['em']->clear();
+                // Slug lost the race; loop and try the next candidate.
             }
         }
 
@@ -163,7 +156,7 @@ class Service
             // and the flush. Surface it as the same uniqueness error as above.
             throw new \FOSSBilling\Exception('You need to set unique slug.', null, 9999);
         }
-        $this->di['logger']->info('Updated custom page #%s', $id);
+        $this->di['logger']->info('Updated custom page #{id}', ['id' => $id]);
 
         return (int) $id;
     }

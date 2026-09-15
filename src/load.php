@@ -56,9 +56,10 @@ function checkInstaller(): void
     }
 
     // If the config file exists and not install.php, but the install folder does, perform some cleanup.
-    // This delete is irreversible, so it requires an explicit APP_ENV=prod rather than the ambiguous default above.
+    // The guard above already excludes dev/test, so this only skips DEBUG instances.
     // @phpstan-ignore booleanNot.alwaysTrue (DEBUG is a runtime constant)
-    if (Environment::isExplicitlyProduction() && $filesystem->exists(PATH_CONFIG) && $filesystem->exists(Path::normalize('install')) && !DEBUG) {
+    if ($filesystem->exists(PATH_CONFIG) && $filesystem->exists(Path::normalize('install')) && !DEBUG) {
+        // Bootstrap runs before the DI logger and PHP error log are configured.
         error_log('Removing the install directory now that installation is complete.');
         $filesystem->remove('install');
     }
@@ -95,34 +96,83 @@ function checkWebServer(): void
 }
 
 /*
+ * Builds a raw PDO DSN (and credentials) to probe the configured database, before Doctrine/the
+ * DI container is available. Returns null when the driver isn't one we can probe, or required
+ * config is missing, so the caller can fall back to "assume tables exist".
+ */
+function buildDatabaseProbeDsn(string $driver, array $dbConfig): ?array
+{
+    if ($driver === 'pdo_sqlite') {
+        $path = $dbConfig['path'] ?? $dbConfig['name'] ?? '';
+
+        return $path === '' ? null : ['sqlite:' . $path, null, null];
+    }
+
+    $host = $dbConfig['host'] ?? '';
+    $database = $dbConfig['name'] ?? '';
+    if ($host === '' || $database === '') {
+        return null;
+    }
+
+    return match ($driver) {
+        'pdo_mysql' => [
+            sprintf('mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4', $host, Tools::normalizePort($dbConfig['port'] ?? null, 3306), $database),
+            $dbConfig['user'] ?? '',
+            $dbConfig['password'] ?? '',
+        ],
+        'pdo_pgsql' => [
+            sprintf('pgsql:host=%s;port=%s;dbname=%s', $host, Tools::normalizePort($dbConfig['port'] ?? null, 5432), $database),
+            $dbConfig['user'] ?? '',
+            $dbConfig['password'] ?? '',
+        ],
+        default => null,
+    };
+}
+
+/*
  * Check whether the configured database has existing tables.
  */
 function hasDatabaseTables(): bool
 {
     $dbConfig = Config::getProperty('db', []);
-    if (!is_array($dbConfig) || ($dbConfig['driver'] ?? '') !== 'pdo_mysql') {
+    $driver = is_array($dbConfig) ? ($dbConfig['driver'] ?? '') : '';
+    if (!is_array($dbConfig) || !in_array($driver, ['pdo_mysql', 'pdo_pgsql', 'pdo_sqlite'], true)) {
         return true;
     }
 
-    $host = $dbConfig['host'] ?? '';
-    $database = $dbConfig['name'] ?? '';
-    $port = Tools::normalizePort($dbConfig['port'] ?? null, 3306);
-    if ($host === '' || $database === '') {
+    // A SQLite database that doesn't exist on disk yet unambiguously has no tables. An in-memory
+    // SQLite database (never written by the installer's own SQLite config output, but a real,
+    // documented config.php option - see config-sample.php) is the same case: it's always empty
+    // on every process start, so it can never be "already installed" either. Handled explicitly
+    // here rather than falling through to buildDatabaseProbeDsn(), which returns null for both
+    // (no path to probe) - null is elsewhere treated as "assume already installed", the opposite
+    // of what's actually true for either of these.
+    if ($driver === 'pdo_sqlite' && !empty($dbConfig['memory'])) {
+        return false;
+    }
+    if ($driver === 'pdo_sqlite' && !empty($dbConfig['path']) && !is_file($dbConfig['path'])) {
+        return false;
+    }
+
+    $probe = buildDatabaseProbeDsn($driver, $dbConfig);
+    if ($probe === null) {
         return true;
     }
+    [$dsn, $user, $password] = $probe;
 
     try {
-        $pdo = new PDO(
-            sprintf('mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4', $host, $port, $database),
-            $dbConfig['user'] ?? '',
-            $dbConfig['password'] ?? '',
-            [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION],
-        );
-        $statement = $pdo->query('SHOW TABLES');
+        $pdo = new PDO($dsn, $user, $password, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+        $tableListQuery = match ($driver) {
+            'pdo_mysql' => 'SHOW TABLES',
+            'pdo_pgsql' => "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'",
+            'pdo_sqlite' => "SELECT name FROM sqlite_master WHERE type = 'table'",
+        };
+        $statement = $pdo->query($tableListQuery);
 
         return $statement !== false && $statement->fetchColumn() !== false;
     } catch (Throwable $e) {
         if ((bool) Config::getProperty('debug', false)) {
+            // Database inspection happens before the DI container is available.
             error_log(sprintf(
                 'hasDatabaseTables() failed to inspect configured database tables: %s in %s on line %d',
                 $e->getMessage(),
@@ -160,10 +210,65 @@ function exceptionHandler(Exception|Error $e): void
         @file_put_contents(Path::join(PATH_LOG, 'exception_handler.log'), date('c') . ' ' . $msg, FILE_APPEND);
         @file_put_contents(Path::join(PATH_ROOT, 'data', 'log', 'exception_handler.log'), date('c') . ' ' . $msg, FILE_APPEND);
     } else {
+        // The exception handler must also work when initialization itself fails.
         error_log("{$e->getMessage()} at {$e->getFile()} : {$e->getLine()}");
     }
 
     emitResponse($exceptionResponseFactory->create($e));
+}
+
+/*
+ * Refuse to serve this request while FOSSBilling\Update::performUpdate() is
+ * actively writing files to PATH_ROOT.
+ *
+ * This intentionally runs before the Composer autoloader is loaded, and
+ * before any FOSSBilling class is referenced: while a core update is
+ * extracting a release archive on top of the live codebase, a concurrent
+ * request that starts autoloading classes mid-swap can see a torn mix of old
+ * and new files and fatal out with an "incompatible declaration" error.
+ * See https://github.com/FOSSBilling/FOSSBilling/issues/4159.
+ *
+ * The lock filename below is duplicated as a literal (see
+ * Update::LOCK_FILENAME) because this check has to run before that class -
+ * or anything else - can be autoloaded. Keep both copies in sync if it
+ * changes. The 600-second staleness window only exists here; performUpdate()
+ * always removes the lock itself via a `finally` block, so this is purely a
+ * failsafe for the rare case that PHP is killed outright (host timeout, OOM)
+ * before that block can run.
+ */
+function isCoreUpdateLockActive(?int $now = null): bool
+{
+    $mtime = @filemtime(PATH_ROOT . DIRECTORY_SEPARATOR . '.update-lock');
+    $now ??= time();
+
+    // No lock file, or it's old enough that the process which created it must
+    // have died without cleaning up (e.g. a host-side request timeout killed
+    // it before the update's `finally` block could run). Treat an old lock as
+    // abandoned rather than blocking the site forever.
+    return $mtime !== false && ($now - $mtime) <= 600;
+}
+
+function blockWhileCoreUpdateIsRunning(): void
+{
+    if (!isCoreUpdateLockActive()) {
+        return;
+    }
+
+    if (PHP_SAPI === 'cli') {
+        fwrite(STDERR, "FOSSBilling is currently applying a core update. Please try again in a few moments.\n");
+        exit(1);
+    }
+
+    http_response_code(503);
+    header('Retry-After: 5');
+    header('Content-Type: text/html; charset=utf-8');
+    echo '<!doctype html><html><head><meta charset="utf-8"><title>Updating&hellip;</title></head>'
+        . '<body style="font-family:sans-serif;text-align:center;padding:4rem 1rem;">'
+        . '<h1>FOSSBilling is updating</h1>'
+        . '<p>This installation is being updated and will be back in a moment. This page will retry automatically.</p>'
+        . '<script>setTimeout(function () { location.reload(); }, 5000);</script>'
+        . '</body></html>';
+    exit;
 }
 
 /*
@@ -174,6 +279,8 @@ function preInit(): void
     // Define root path.
     define('PATH_ROOT', __DIR__);
 
+    blockWhileCoreUpdateIsRunning();
+
     // Check vendor folder exists and load Composer autoloader.
     define('PATH_VENDOR', PATH_ROOT . DIRECTORY_SEPARATOR . 'vendor');
     if (!file_exists(PATH_VENDOR)) {
@@ -183,15 +290,14 @@ function preInit(): void
 
     // Define global paths.
     define('PATH_LIBRARY', Path::join(PATH_ROOT, 'library'));
+    require Path::join(PATH_LIBRARY, 'TranslationFunctions.php');
     define('PATH_THEMES', Path::join(PATH_ROOT, 'themes'));
     define('PATH_MODS', Path::join(PATH_ROOT, 'modules'));
     define('PATH_LANGS', Path::join(PATH_ROOT, 'locale'));
     $pathUploads = Path::join(PATH_ROOT, 'data', 'uploads');
     if (getenv('APP_ENV') === 'test') {
         $pathUploads = Path::join(sys_get_temp_dir(), 'fossbilling_test_data', 'uploads');
-        if (!is_dir($pathUploads) && !mkdir($pathUploads, 0o755, true) && !is_dir($pathUploads)) {
-            throw new Exception(sprintf('Unable to create uploads directory for tests: "%s".', $pathUploads));
-        }
+        (new Filesystem())->mkdir($pathUploads, 0o755);
     }
     define('PATH_UPLOADS', $pathUploads);
     define('PATH_CONFIG', Path::join(PATH_ROOT, 'config.php'));
@@ -276,7 +382,7 @@ function init(): void
     $di = require Path::join(PATH_ROOT, 'di.php');
 
     if (!Environment::isCLI() && !Environment::isTesting()) {
-        $di['update_finalization']->ensureCurrentVersionFinalization();
+        $di['update_finalization']->finalizePendingUpdate();
     }
 
     // Now that the config file is loaded, we can enable Sentry.

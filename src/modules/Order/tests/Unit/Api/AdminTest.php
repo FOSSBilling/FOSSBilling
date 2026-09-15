@@ -539,6 +539,20 @@ test('batch cancels suspended orders', function (): void {
     expect($result)->toBeTrue();
 });
 
+test('batch cancels unpaid orders', function (): void {
+    $api = apiEndpoint(new Admin());
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('batchCancelUnpaid')->atLeast()->once()->andReturn(true);
+
+    $api->setService($serviceMock);
+
+    $data = [];
+    $result = $api->batch_cancel_unpaid($data);
+
+    expect($result)->toBeTrue();
+});
+
 test('updates order config', function (): void {
     $order = createEntity(Box\Mod\Order\Entity\Order::class);
 
@@ -733,4 +747,56 @@ test('batch deletes orders', function (): void {
     $result = $apiMock->batch_delete(['ids' => [1, 2, 3]]);
 
     expect($result)->toBeTrue();
+});
+
+test('export_csv requires both view and export permissions', function (): void {
+    $api = apiEndpoint(new Admin());
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('exportCSV')->never();
+
+    $di = container();
+    $staffServiceMock = $di['mod_service']('staff');
+    $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')->byDefault()->andReturn(true);
+    $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
+        ->once()
+        ->with('order', 'view', null, Mockery::any())
+        ->andThrow(new FOSSBilling\InformationException('You need the "order.view" permission to perform this action', [], 403));
+
+    $api->setDi($di);
+    $api->setService($serviceMock);
+
+    expect(fn () => $api->export_csv(['headers' => ['id']]))
+        ->toThrow(FOSSBilling\InformationException::class);
+});
+
+test('export_csv delegates to service when permissions granted', function (): void {
+    $api = apiEndpoint(new Admin());
+
+    $response = new Symfony\Component\HttpFoundation\Response('id,status', 200, ['Content-Type' => 'text/csv']);
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('exportCSV')
+        ->once()
+        ->with(['id'])
+        ->andReturn($response);
+
+    $di = container();
+    $staffServiceMock = $di['mod_service']('staff');
+    $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
+        ->once()
+        ->with('order', 'view', null, Mockery::any())
+        ->andReturn(true)
+        ->ordered();
+    $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
+        ->once()
+        ->with('order', 'export', null, Mockery::any())
+        ->andReturn(true)
+        ->ordered();
+
+    $api->setDi($di);
+    $api->setService($serviceMock);
+
+    $result = $api->export_csv(['headers' => ['id']]);
+
+    expect($result)->toBeInstanceOf(Symfony\Component\HttpFoundation\Response::class);
 });

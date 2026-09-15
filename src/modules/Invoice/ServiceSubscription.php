@@ -46,7 +46,7 @@ class ServiceSubscription implements InjectionAwareInterface
     {
         $model = new Subscription();
         $model->setClientId($client->getId() ? (int) $client->getId() : null);
-        $model->setPayGatewayId($pg->getId());
+        $model->setPayGateway($pg);
 
         $model->setSid($data['sid'] ?? null);
         $model->setStatus($data['status'] ?? null);
@@ -61,7 +61,7 @@ class ServiceSubscription implements InjectionAwareInterface
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminSubscriptionCreate', 'params' => ['id' => $newId]]);
 
-        $this->di['logger']->info('Created subscription %s', $newId);
+        $this->di['logger']->info('Created subscription {subscription_id}', ['subscription_id' => $newId]);
 
         return $newId;
     }
@@ -96,7 +96,7 @@ class ServiceSubscription implements InjectionAwareInterface
         $this->di['em']->flush();
         $newId = (int) $model->getId();
 
-        $this->di['logger']->info('Updated subscription %s', $newId);
+        $this->di['logger']->info('Updated subscription {subscription_id}', ['subscription_id' => $newId]);
 
         return true;
     }
@@ -121,7 +121,7 @@ class ServiceSubscription implements InjectionAwareInterface
             $result['client'] = [];
         }
 
-        $gtw = $this->di['em']->getRepository(PayGateway::class)->find((int) $model->getPayGatewayId());
+        $gtw = $model->getPayGateway();
         if ($gtw instanceof PayGateway) {
             $payGatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
             $result['gateway'] = $payGatewayService->toApiArray($gtw, false, $identity);
@@ -140,7 +140,7 @@ class ServiceSubscription implements InjectionAwareInterface
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminSubscriptionDelete', 'params' => ['id' => $id]]);
 
-        $this->di['logger']->info('Removed subscription %s', $id);
+        $this->di['logger']->info('Removed subscription {id}', ['id' => $id]);
 
         return true;
     }
@@ -200,7 +200,7 @@ class ServiceSubscription implements InjectionAwareInterface
 
     private function getGatewayAdapter(Subscription $model): object
     {
-        $gateway = $this->di['em']->getRepository(PayGateway::class)->find((int) $model->getPayGatewayId());
+        $gateway = $model->getPayGateway();
         if (!$gateway instanceof PayGateway) {
             throw new \FOSSBilling\Exception('Payment gateway not found');
         }

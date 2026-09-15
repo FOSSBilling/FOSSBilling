@@ -15,26 +15,6 @@ namespace Tests\Helpers;
 use Box\Mod\Staff\Entity\Admin;
 
 /**
- * Create a mock model with the given properties.
- * This replaces the old DummyBean pattern.
- */
-function model(string $class, array $attributes = []): object
-{
-    $instance = new $class();
-
-    // Handle RedBeanPHP models
-    if (method_exists($instance, 'loadBean')) {
-        $instance->loadBean(new DummyBean());
-    }
-
-    foreach ($attributes as $key => $value) {
-        $instance->$key = $value;
-    }
-
-    return $instance;
-}
-
-/**
  * Create a client order model.
  */
 function order(array $attributes = []): object
@@ -49,23 +29,6 @@ function order(array $attributes = []): object
     ];
 
     return createEntity(\Box\Mod\Order\Entity\Order::class, array_merge($defaults, $attributes));
-}
-
-/**
- * Create a product model.
- */
-function product(array $attributes = []): object
-{
-    $defaults = [
-        'id' => random_int(1, 10000),
-        'title' => 'Test Product',
-        'type' => \Model_ProductTable::CUSTOM,
-        'status' => \Model_Product::STATUS_ENABLED,
-        'created_at' => date('Y-m-d H:i:s'),
-        'updated_at' => date('Y-m-d H:i:s'),
-    ];
-
-    return model(\Model_Product::class, array_merge($defaults, $attributes));
 }
 
 /**

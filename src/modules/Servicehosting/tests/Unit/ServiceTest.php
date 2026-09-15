@@ -24,6 +24,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
 use function Tests\Helpers\moduleService;
+use function Tests\Helpers\setEntityId;
 
 afterEach(function (): void {
     Mockery::close();
@@ -144,10 +145,10 @@ test('action create', function (): void {
     $orderServiceMock->shouldReceive('getConfig')->atLeast()->once()->andReturn($confArr);
 
     $hostingServerModel = new ServiceHostingServer();
-    $hostingServerModel->setId($confArr['server_id']);
+    setEntityId($hostingServerModel, $confArr['server_id']);
     $hostingServerModel->setIp('1.1.1.1');
     $hostingPlansModel = new ServiceHostingHp();
-    $hostingPlansModel->setId($confArr['hosting_plan_id']);
+    setEntityId($hostingPlansModel, $confArr['hosting_plan_id']);
 
     $serverRepo = Mockery::mock(ServiceHostingServerRepository::class);
     $serverRepo->shouldReceive('find')->atLeast()->once()->andReturn($hostingServerModel);
@@ -172,8 +173,8 @@ test('action create', function (): void {
     $result = $service->action_create($orderModel);
 
     expect($result)->toBeInstanceOf(ServiceHosting::class);
-    expect($result->getServiceHostingServerId())->toBe($confArr['server_id']);
-    expect($result->getServiceHostingHpId())->toBe($confArr['hosting_plan_id']);
+    expect($result->getServiceHostingServer()?->getId())->toBe($confArr['server_id']);
+    expect($result->getServiceHostingHp()?->getId())->toBe($confArr['hosting_plan_id']);
     expect($result->getSld())->toBe($confArr['sld']);
     expect($result->getTld())->toBe($confArr['tld']);
 });
@@ -182,7 +183,7 @@ test('action activate creates the account when it has not been provisioned yet',
     $orderModel = createEntity(Order::class);
 
     $model = new ServiceHosting();
-    $model->setServiceHostingServerId(1);
+    $model->setServiceHostingServer(new ServiceHostingServer());
     $model->setSld('example');
     $model->setTld('.com');
 
@@ -227,7 +228,7 @@ test('action activate does not recreate an account that was already provisioned'
     $orderModel = createEntity(Order::class);
 
     $model = new ServiceHosting();
-    $model->setServiceHostingServerId(1);
+    $model->setServiceHostingServer(new ServiceHostingServer());
     $model->setSld('example');
     $model->setTld('.com');
     $model->setUsername('example');
@@ -455,7 +456,7 @@ test('change account plan', function (): void {
 
     $model = new ServiceHosting();
     $modelHp = new ServiceHostingHp();
-    $modelHp->setId(2);
+    setEntityId($modelHp, 2);
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
     $emMock->shouldReceive('flush')->atLeast()->once();
@@ -463,7 +464,7 @@ test('change account plan', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serverManagerMock = Mockery::mock('\Server_Manager_Custom');
@@ -501,7 +502,7 @@ test('change account username', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $serviceMock->setDi($di);
 
@@ -544,7 +545,7 @@ test('change account ip', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $serviceMock->setDi($di);
 
@@ -588,7 +589,7 @@ test('change account domain', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $serviceMock->setDi($di);
 
@@ -632,7 +633,7 @@ test('change account password', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $serviceMock->setDi($di);
 
@@ -679,7 +680,7 @@ test('sync', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $serviceMock->setDi($di);
 
@@ -689,15 +690,16 @@ test('sync', function (): void {
 
 test('to api array', function (): void {
     $service = new Service();
-    $model = new ServiceHosting();
-    $model->setServiceHostingServerId(1);
-    $model->setServiceHostingHpId(2);
 
     $hostingServer = new ServiceHostingServer();
-    $hostingServer->setId(1);
+    setEntityId($hostingServer, 1);
     $hostingServer->setManager('Custom');
     $hostingHp = new ServiceHostingHp();
-    $hostingHp->setId(2);
+    setEntityId($hostingHp, 2);
+
+    $model = new ServiceHosting();
+    $model->setServiceHostingServer($hostingServer);
+    $model->setServiceHostingHp($hostingHp);
 
     $serverRepo = Mockery::mock(ServiceHostingServerRepository::class);
     $serverRepo->shouldReceive('find')->atLeast()->once()->andReturn($hostingServer);
@@ -735,7 +737,7 @@ test('update', function (): void {
         'ip' => '1.1.1.1',
     ];
     $model = new ServiceHosting();
-    $model->setId(1);
+    setEntityId($model, 1);
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
     $emMock->shouldReceive('flush')->atLeast()->once();
@@ -743,7 +745,7 @@ test('update', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
     $service->setDi($di);
 
     $result = $service->update($model, $data);
@@ -812,7 +814,7 @@ test('create server', function (): void {
     $persistedServer = null;
     $emMock = Mockery::mock(EntityManagerInterface::class);
     $emMock->shouldReceive('persist')->atLeast()->once()->andReturnUsing(function (ServiceHostingServer $server) use ($newId, &$persistedServer): void {
-        $server->setId($newId);
+        setEntityId($server, $newId);
         $persistedServer = $server;
     });
     $emMock->shouldReceive('flush')->atLeast()->once();
@@ -820,7 +822,7 @@ test('create server', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $service->setDi($di);
 
@@ -843,7 +845,7 @@ test('create server', function (): void {
 test('delete server', function (): void {
     $service = new Service();
     $hostingServerModel = new ServiceHostingServer();
-    $hostingServerModel->setId(1);
+    setEntityId($hostingServerModel, 1);
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
     $emMock->shouldReceive('remove')->atLeast()->once();
@@ -852,7 +854,7 @@ test('delete server', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
     $service->setDi($di);
 
     $result = $service->deleteServer($hostingServerModel);
@@ -880,7 +882,7 @@ test('update server', function (): void {
     ];
 
     $hostingServerModel = new ServiceHostingServer();
-    $hostingServerModel->setId(1);
+    setEntityId($hostingServerModel, 1);
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
     $emMock->shouldReceive('flush')->atLeast()->once();
@@ -888,7 +890,7 @@ test('update server', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
     $di['loggedin_admin'] = \Tests\Helpers\admin(['id' => 7]);
 
     $service->setDi($di);
@@ -989,7 +991,7 @@ test('get hp search query', function (): void {
 test('delete hp', function (): void {
     $service = new Service();
     $model = new ServiceHostingHp();
-    $model->setId(1);
+    setEntityId($model, 1);
 
     $repo = Mockery::mock(ServiceHostingRepository::class);
     $repo->shouldReceive('findOneBy')->atLeast()->once()->andReturn(null);
@@ -1003,7 +1005,7 @@ test('delete hp', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
     $service->setDi($di);
 
     $result = $service->deleteHp($model);
@@ -1034,7 +1036,7 @@ test('update hp', function (): void {
     ];
 
     $model = new ServiceHostingHp();
-    $model->setId(1);
+    setEntityId($model, 1);
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
     $emMock->shouldReceive('flush')->atLeast()->once();
@@ -1042,7 +1044,7 @@ test('update hp', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $service->setDi($di);
 
@@ -1057,7 +1059,7 @@ test('create hp', function (array $data, string $expectedBandwidth, string $expe
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
     $emMock->shouldReceive('persist')->atLeast()->once()->andReturnUsing(function (ServiceHostingHp $hp) use ($newId, &$persistedHp): void {
-        $hp->setId($newId);
+        setEntityId($hp, $newId);
         $persistedHp = $hp;
     });
     $emMock->shouldReceive('flush')->atLeast()->once();
@@ -1065,7 +1067,7 @@ test('create hp', function (array $data, string $expectedBandwidth, string $expe
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $service->setDi($di);
 
@@ -1120,7 +1122,7 @@ test('get server manager with log', function (): void {
     $serviceMock->shouldReceive('getServerManager')->atLeast()->once()->andReturn($serverManagerMock);
 
     $orderServiceMock = Mockery::mock(OrderService::class);
-    $orderServiceMock->shouldReceive('getLogger')->atLeast()->once()->andReturn(new Box_Log());
+    $orderServiceMock->shouldReceive('getLogger')->atLeast()->once()->andReturn(new FOSSBilling\Logger());
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
@@ -1243,7 +1245,7 @@ test('to hosting server api array masks secrets for an admin', function (): void
     $identity = \Tests\Helpers\admin();
 
     $hostingServerModel = new ServiceHostingServer();
-    $hostingServerModel->setId(1);
+    setEntityId($hostingServerModel, 1);
     $hostingServerModel->setName('Test');
     $hostingServerModel->setHostname('host.example.com');
     $hostingServerModel->setIp('127.0.0.1');
@@ -1272,7 +1274,7 @@ test('to hosting server api array does not leak secrets to non-admin callers', f
     $identity = createEntity(Box\Mod\Client\Entity\Client::class);
 
     $hostingServerModel = new ServiceHostingServer();
-    $hostingServerModel->setId(1);
+    setEntityId($hostingServerModel, 1);
     $hostingServerModel->setName('Test');
     $hostingServerModel->setIp('127.0.0.1');
     $hostingServerModel->setManager('Whm');
@@ -1301,7 +1303,7 @@ test('updateServer keeps the existing secret when the incoming value is blank', 
     ];
 
     $hostingServerModel = new ServiceHostingServer();
-    $hostingServerModel->setId(1);
+    setEntityId($hostingServerModel, 1);
     $hostingServerModel->setName('Test');
     $hostingServerModel->setIp('127.0.0.1');
     $hostingServerModel->setManager('Whm');
@@ -1314,7 +1316,7 @@ test('updateServer keeps the existing secret when the incoming value is blank', 
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
     $di['loggedin_admin'] = \Tests\Helpers\admin(['id' => 7]);
     $service->setDi($di);
 
@@ -1336,7 +1338,7 @@ test('updateServer replaces the stored secret when a new value is submitted', fu
     ];
 
     $hostingServerModel = new ServiceHostingServer();
-    $hostingServerModel->setId(1);
+    setEntityId($hostingServerModel, 1);
     $hostingServerModel->setName('Test');
     $hostingServerModel->setIp('127.0.0.1');
     $hostingServerModel->setManager('Whm');
@@ -1349,7 +1351,7 @@ test('updateServer replaces the stored secret when a new value is submitted', fu
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
     $di['loggedin_admin'] = \Tests\Helpers\admin(['id' => 7]);
     $service->setDi($di);
 
@@ -1427,4 +1429,113 @@ test('clientSettableConfigKeys returns the hosting allowlist', function (): void
     expect($allowed)->not->toContain('hosting_plan_id');
     expect($allowed)->not->toContain('server_id');
     expect($allowed)->not->toContain('reseller');
+});
+
+test('validateOrderData rejects admin-controlled values differing from product config', function (string $field, mixed $injectedValue): void {
+    $service = new Service();
+    $product = createEntity(Box\Mod\Product\Entity\Product::class, [
+        'config' => json_encode(['server_id' => 1, 'hosting_plan_id' => 2, 'reseller' => false]),
+    ]);
+    $data = [
+        'server_id' => 1,
+        'hosting_plan_id' => 2,
+        'reseller' => false,
+        'sld' => 'great',
+        'tld' => 'com',
+    ];
+
+    $data[$field] = $injectedValue;
+
+    try {
+        $service->validateOrderData($data, $product);
+        expect(true)->toBeFalse('Expected FOSSBilling\InformationException was not thrown.');
+    } catch (FOSSBilling\InformationException $e) {
+        expect($e->getMessage())->toBe('The requested configuration does not match the selected product.');
+        expect($e->getCode())->toBe(705);
+    }
+})->with([
+    ['hosting_plan_id', 999],
+    ['server_id', 42],
+    ['reseller', true],
+]);
+
+test('validateOrderData accepts values matching product config', function (): void {
+    $service = new Service();
+    $product = createEntity(Box\Mod\Product\Entity\Product::class, [
+        'config' => json_encode(['server_id' => 1, 'hosting_plan_id' => 2, 'reseller' => false]),
+    ]);
+    $data = [
+        'server_id' => 1,
+        'hosting_plan_id' => 2,
+        'reseller' => false,
+        'sld' => 'great',
+        'tld' => 'com',
+    ];
+
+    $service->validateOrderData($data, $product);
+    expect(true)->toBeTrue();
+});
+
+test('getOrderableHpPairs returns only plans referenced by enabled products', function (): void {
+    $service = new Service();
+
+    $hostingProduct = createEntity(Box\Mod\Product\Entity\Product::class, [
+        'config' => json_encode(['server_id' => 1, 'hosting_plan_id' => 3]),
+    ]);
+    $unrelatedProduct = createEntity(Box\Mod\Product\Entity\Product::class, [
+        'config' => '{}',
+    ]);
+
+    $plan = new ServiceHostingHp();
+    setEntityId($plan, 3);
+    $plan->setName('Gold');
+
+    $productRepo = Mockery::mock(Box\Mod\Product\Repository\ProductRepository::class);
+    $productRepo->shouldReceive('findBy')
+        ->once()
+        ->with([
+            'type' => Box\Mod\Product\Service::HOSTING,
+            'active' => true,
+            'status' => 'enabled',
+            'isAddon' => false,
+        ])
+        ->andReturn([$hostingProduct, $unrelatedProduct]);
+
+    $hpRepo = Mockery::mock(ServiceHostingHpRepository::class);
+    $hpRepo->shouldReceive('findBy')
+        ->once()
+        ->with(['id' => [3]])
+        ->andReturn([$plan]);
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')
+        ->with(Box\Mod\Product\Entity\Product::class)
+        ->andReturn($productRepo);
+    $emMock->shouldReceive('getRepository')
+        ->with(ServiceHostingHp::class)
+        ->andReturn($hpRepo);
+
+    $di = container();
+    $di['em'] = $emMock;
+    $service->setDi($di);
+
+    expect($service->getOrderableHpPairs())->toBe([3 => 'Gold']);
+});
+
+test('getOrderableHpPairs returns empty array when no products reference plans', function (): void {
+    $service = new Service();
+
+    $productRepo = Mockery::mock(Box\Mod\Product\Repository\ProductRepository::class);
+    $productRepo->shouldReceive('findBy')->once()->andReturn([]);
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')
+        ->with(Box\Mod\Product\Entity\Product::class)
+        ->andReturn($productRepo);
+
+    $di = container();
+    $di['em'] = $emMock;
+    $service->setDi($di);
+
+    expect($service->getOrderableHpPairs())->toBe([]);
 });

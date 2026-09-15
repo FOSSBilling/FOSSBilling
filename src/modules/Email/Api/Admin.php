@@ -118,7 +118,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $em->remove($model);
         $em->flush();
 
-        $this->getDi()['logger']->info('Deleted email #%s', $id);
+        $this->getDi()['logger']->info('Deleted email #{id}', ['id' => $id]);
 
         return true;
     }
@@ -191,7 +191,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->getDi()['em']->remove($template);
         $this->getDi()['em']->flush();
 
-        $this->getDi()['logger']->info('Deleted email template #%s', $id);
+        $this->getDi()['logger']->info('Deleted email template #{id}', ['id' => $id]);
 
         return true;
     }
@@ -331,7 +331,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $vars['_tpl'] = $data['_tpl'] ?? $t['content'];
         $systemService = $this->getDi()['mod_service']('System');
 
-        return $systemService->renderEmailTplString($vars['_tpl'], $vars);
+        // Preview-only output, which the modal re-escapes for display: decoded
+        // form keeps subject previews accurate, content previews unchanged.
+        return $systemService->renderEmailSubjectString($vars['_tpl'], $vars);
     }
 
     /**
@@ -392,11 +394,11 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $email = [
             'code' => 'mod_email_test',
-            'to' => $currentUser->email ?? '',
-            'to_name' => $currentUser->name ?? '',
+            'to' => $currentUser?->getEmail() ?? '',
+            'to_name' => $currentUser?->getName() ?? '',
             'send_now' => true,
             'throw_exceptions' => true,
-            'staff_member_name' => $currentUser->name ?? '',
+            'staff_member_name' => $currentUser?->getName() ?? '',
         ];
 
         return $this->getService()->sendTemplate($email);

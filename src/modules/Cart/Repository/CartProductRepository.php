@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Cart\Repository;
 
+use Box\Mod\Cart\Entity\Cart;
 use Box\Mod\Cart\Entity\CartProduct;
 use Doctrine\ORM\EntityRepository;
 
@@ -14,12 +15,12 @@ class CartProductRepository extends EntityRepository
      */
     public function findByCartId(int $cartId): array
     {
-        return $this->findBy(['cartId' => $cartId], ['id' => 'ASC']);
+        return $this->findBy(['cart' => $this->getEntityManager()->getReference(Cart::class, $cartId)], ['id' => 'ASC']);
     }
 
     public function findOneByCartAndId(int $cartId, int $id): ?CartProduct
     {
-        $cartProduct = $this->findOneBy(['cartId' => $cartId, 'id' => $id]);
+        $cartProduct = $this->findOneBy(['cart' => $this->getEntityManager()->getReference(Cart::class, $cartId), 'id' => $id]);
 
         return $cartProduct instanceof CartProduct ? $cartProduct : null;
     }

@@ -212,7 +212,7 @@ test('updates an addon', function (): void {
     $serviceMock->shouldReceive('findProductById')->once()->with(1)->andReturn($model);
 
     $di = container();
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $apiMock->setService($serviceMock);
     $apiMock->setDi($di);

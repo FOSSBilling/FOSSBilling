@@ -10,7 +10,7 @@
 
 declare(strict_types=1);
 
-$existingTheme = 'huraga';
+$existingTheme = 'default/client';
 
 test('get name', function () use ($existingTheme): void {
     $themeModel = new Box\Mod\Theme\Model\Theme($existingTheme);
@@ -22,12 +22,6 @@ test('not existing theme', function (): void {
     expect(function () use ($themeName): void {
         new Box\Mod\Theme\Model\Theme($themeName);
     })->toThrow(FOSSBilling\Exception::class, "Theme '{$themeName}' does not exist.");
-});
-
-test('is admin area theme', function () use ($existingTheme): void {
-    $theme = new Box\Mod\Theme\Model\Theme($existingTheme);
-    $result = $theme->isAdminAreaTheme();
-    expect($result)->toBeBool();
 });
 
 test('is assets path writable', function () use ($existingTheme): void {
@@ -66,6 +60,34 @@ test('get preset from settings data file', function () use ($existingTheme): voi
     expect($result)->toBeArray();
 });
 
+test('preset settings fall back to the shipped .example template when settings_data.json is missing', function () use ($existingTheme): void {
+    // A dev checkout can have a real settings_data.json (e.g. from previously saving theme
+    // settings locally), so move it out of the way for the duration of this test rather than
+    // assuming it's absent.
+    $theme = new Box\Mod\Theme\Model\Theme($existingTheme);
+    $filesystem = new Symfony\Component\Filesystem\Filesystem();
+    $realFile = Symfony\Component\Filesystem\Path::join($theme->getPathConfig(), 'settings_data.json');
+    $backupFile = $realFile . '.bak-' . bin2hex(random_bytes(4));
+    $hadRealFile = $filesystem->exists($realFile);
+
+    if ($hadRealFile) {
+        $filesystem->rename($realFile, $backupFile);
+    }
+
+    try {
+        $presets = $theme->getPresetsFromSettingsDataFile();
+        expect($presets)->not->toBeEmpty()
+            ->and($presets)->toHaveKey('Default');
+
+        $default = $theme->getPresetFromSettingsDataFile('Default');
+        expect($default)->toHaveKey('side_menu_dashboard');
+    } finally {
+        if ($hadRealFile) {
+            $filesystem->rename($backupFile, $realFile);
+        }
+    }
+});
+
 test('get url', function () use ($existingTheme): void {
     $theme = new Box\Mod\Theme\Model\Theme($existingTheme);
     $result = $theme->getUrl();
@@ -98,4 +120,14 @@ test('get path settings data file', function () use ($existingTheme): void {
     $result = $theme->getPathSettingsDataFile();
     expect($result)->toBeString();
     expect(str_contains($result, 'settings_data.json'))->toBeTrue();
+});
+
+test('a package-shaped name (containing a slash) resolves paths correctly', function (): void {
+    $theme = new Box\Mod\Theme\Model\Theme('default/admin');
+
+    expect($theme->getName())->toBe('default/admin')
+        ->and($theme->getPath())->toBe(Symfony\Component\Filesystem\Path::join(PATH_THEMES, 'default', 'admin'))
+        ->and($theme->getPathHtml())->toBe(Symfony\Component\Filesystem\Path::join(PATH_THEMES, 'default', 'admin', 'html'))
+        ->and($theme->getPathConfig())->toBe(Symfony\Component\Filesystem\Path::join(PATH_THEMES, 'default', 'admin', 'config'))
+        ->and($theme->getUrl())->toContain('default/admin');
 });

@@ -104,7 +104,7 @@ test('getSearchQueryBuilder uses InvoiceItem subquery for order_id filter', func
         ->getQuery();
 
     $dql = $query->getDQL();
-    expect($dql)->toContain('SELECT ii.invoiceId FROM ' . InvoiceItem::class . ' ii WHERE ii.relId = :order_id AND ii.type = :item_type');
+    expect($dql)->toContain('SELECT IDENTITY(ii.invoice) FROM ' . InvoiceItem::class . ' ii WHERE ii.relId = :order_id AND ii.type = :item_type');
 
     expect($query->getParameter('order_id')->getValue())->toBe(42)
         ->and($query->getParameter('item_type')->getValue())->toBe(InvoiceItem::TYPE_ORDER);
@@ -170,7 +170,7 @@ test('getSearchQueryBuilder applies search filter with id, nr, title subquery an
     expect($dql)->toContain('i.id = :search_numeric_id')
         ->and($dql)->toContain('i.nr LIKE :search_like')
         ->and($dql)->toContain('i.id LIKE :search')
-        ->and($dql)->toContain('SELECT ii.invoiceId FROM ' . InvoiceItem::class . ' ii WHERE ii.title LIKE :search_like');
+        ->and($dql)->toContain('SELECT IDENTITY(ii.invoice) FROM ' . InvoiceItem::class . ' ii WHERE ii.title LIKE :search_like');
 
     expect($query->getParameter('search_numeric_id')->getValue())->toBe(42)
         ->and($query->getParameter('search_like')->getValue())->toBe('%Hosting 42%')
@@ -190,7 +190,7 @@ test('getInvoiceTotals aggregates subtotal and taxable subtotal per invoice', fu
     $entityManager = new EntityManager(DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]), $config);
 
     $metadata = array_map(
-        static fn (string $class): object => $entityManager->getClassMetadata($class),
+        $entityManager->getClassMetadata(...),
         [Invoice::class, InvoiceItem::class],
     );
     (new Doctrine\ORM\Tools\SchemaTool($entityManager))->createSchema($metadata);
@@ -205,7 +205,7 @@ test('getInvoiceTotals aggregates subtotal and taxable subtotal per invoice', fu
         ['price' => 3.0, 'quantity' => 4, 'taxed' => true],
     ] as $item) {
         $invoiceItem = new InvoiceItem();
-        $invoiceItem->setInvoiceId(1);
+        $invoiceItem->setInvoice($invoice);
         $invoiceItem->setPrice($item['price']);
         $invoiceItem->setQuantity($item['quantity']);
         $invoiceItem->setTaxed($item['taxed']);
@@ -228,7 +228,7 @@ test('getInvoiceTotals omits invoices without items', function (): void {
     $entityManager = new EntityManager(DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]), $config);
 
     $metadata = array_map(
-        static fn (string $class): object => $entityManager->getClassMetadata($class),
+        $entityManager->getClassMetadata(...),
         [Invoice::class, InvoiceItem::class],
     );
     (new Doctrine\ORM\Tools\SchemaTool($entityManager))->createSchema($metadata);
@@ -241,4 +241,77 @@ test('getInvoiceTotals omits invoices without items', function (): void {
     $totals = $entityManager->getRepository(Invoice::class)->getInvoiceTotals([1]);
 
     expect($totals)->toBe([]);
+});
+
+test('findUnpaidOlderThan returns only unpaid invoices whose due date is far enough in the past', function (): void {
+    $config = ORMSetup::createAttributeMetadataConfig([Path::join(__DIR__, '..', '..', '..', 'Entity')], true);
+    $config->setProxyDir(sys_get_temp_dir());
+    $config->setProxyNamespace('FOSSBilling\\Tests\\DoctrineProxies');
+    $entityManager = new EntityManager(DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]), $config);
+
+    $metadata = array_map(
+        $entityManager->getClassMetadata(...),
+        [Invoice::class, InvoiceItem::class],
+    );
+    (new Doctrine\ORM\Tools\SchemaTool($entityManager))->createSchema($metadata);
+
+    $farOverdue = new Invoice();
+    $farOverdue->setStatus(Invoice::STATUS_UNPAID);
+    $farOverdue->setDueAt(new DateTime('-10 days'));
+    $entityManager->persist($farOverdue);
+
+    $recentlyOverdue = new Invoice();
+    $recentlyOverdue->setStatus(Invoice::STATUS_UNPAID);
+    $recentlyOverdue->setDueAt(new DateTime('-2 days'));
+    $entityManager->persist($recentlyOverdue);
+
+    $noDueDate = new Invoice();
+    $noDueDate->setStatus(Invoice::STATUS_UNPAID);
+    $entityManager->persist($noDueDate);
+
+    $paidButOverdue = new Invoice();
+    $paidButOverdue->setStatus(Invoice::STATUS_PAID);
+    $paidButOverdue->setDueAt(new DateTime('-10 days'));
+    $entityManager->persist($paidButOverdue);
+
+    $entityManager->flush();
+
+    $result = $entityManager->getRepository(Invoice::class)->findUnpaidOlderThan(5);
+
+    expect($result)->toHaveCount(1)
+        ->and($result[0]->getId())->toBe($farOverdue->getId());
+});
+
+test('lockAndGetStatus reads the status inside a transaction on every supported platform', function (): void {
+    // A real connection, not a mock: this is the regression test for FOR UPDATE portability -
+    // SQLite has no such clause, and would raise a syntax error here if RowLock ever regressed
+    // to appending it unconditionally.
+    $entityManager = invoiceEntityManager();
+    $metadata = [$entityManager->getClassMetadata(Invoice::class)];
+    (new Doctrine\ORM\Tools\SchemaTool($entityManager))->createSchema($metadata);
+
+    $invoice = new Invoice();
+    $invoice->setStatus(Invoice::STATUS_UNPAID);
+    $entityManager->persist($invoice);
+    $entityManager->flush();
+
+    $connection = $entityManager->getConnection();
+    $connection->beginTransaction();
+
+    try {
+        $status = $entityManager->getRepository(Invoice::class)->lockAndGetStatus($invoice->getId());
+    } finally {
+        $connection->rollBack();
+    }
+
+    expect($status)->toBe(Invoice::STATUS_UNPAID);
+});
+
+test('lockAndGetStatus rejects being called outside of a transaction', function (): void {
+    $entityManager = invoiceEntityManager();
+    $metadata = [$entityManager->getClassMetadata(Invoice::class)];
+    (new Doctrine\ORM\Tools\SchemaTool($entityManager))->createSchema($metadata);
+
+    expect(fn () => $entityManager->getRepository(Invoice::class)->lockAndGetStatus(1))
+        ->toThrow(FOSSBilling\Exception::class, 'Invoice status cannot be locked outside of a transaction.');
 });

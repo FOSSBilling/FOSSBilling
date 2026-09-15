@@ -1,7 +1,6 @@
 <?php
 
 declare(strict_types=1);
-use GeoIp2\Model\Domain;
 use Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface;
 
 class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
@@ -67,6 +66,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
                         'label' => 'API Key',
                         'description' => 'You can get this at Namecheap control panel.',
                         'required' => true,
+                        'secret' => true,
                     ],
                 ],
                 'username' => [
@@ -151,14 +151,14 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
         $result = simplexml_load_string($data);
 
         if (isset($result['status']) && strtolower((string) $result['status']) == 'error') {
-            error_log('Namecheap error: ' . PHP_EOL . $result['error']);
+            $this->getLog()->error('Namecheap error: ' . PHP_EOL . $result['error']);
             $placeholders = [':action:' => $params['Command'], ':type:' => 'Namecheap'];
 
             throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
         }
 
         if (isset($result['status']) && strtolower((string) $result['status']) == 'failed') {
-            error_log('Namecheap error: ' . PHP_EOL . $result['actionstatusdesc']);
+            $this->getLog()->error('Namecheap error: ' . PHP_EOL . $result['actionstatusdesc']);
             $placeholders = [':action:' => $params['Command'], ':type:' => 'Namecheap'];
 
             throw new Registrar_Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
@@ -245,15 +245,15 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
         foreach (['Registrant', 'Admin', 'Tech', 'AuxBilling'] as $contactType) {
             $c = $domain->getContactRegistrar();
 
-            if ($contactType == 'Admin' && $domain->getContactAdmin()) {
+            if ($contactType == 'Admin' && $domain->getContactAdmin() instanceof Registrar_Domain_Contact) {
                 $c = $domain->getContactAdmin();
             }
 
-            if ($contactType == 'Tech' && $domain->getContactTech()) {
+            if ($contactType == 'Tech' && $domain->getContactTech() instanceof Registrar_Domain_Contact) {
                 $c = $domain->getContactTech();
             }
 
-            if ($contactType == 'AuxBilling' && $domain->getContactBilling()) {
+            if ($contactType == 'AuxBilling' && $domain->getContactBilling() instanceof Registrar_Domain_Contact) {
                 $c = $domain->getContactBilling();
             }
 
@@ -391,8 +391,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
         $result = $this->_makeRequest($params);
 
         $NsArr = [];
-        $xmlNsList = $result->CommandResponse->DomainDNSGetListResult;
-        foreach ($xmlNsList->Nameserver as $Nameserver) {
+        foreach ($result->CommandResponse->DomainDNSGetListResult->Nameserver ?? [] as $Nameserver) {
             $NsArr[] = $Nameserver;
         }
 
@@ -444,15 +443,15 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
         foreach (['Registrant', 'Admin', 'Tech', 'AuxBilling'] as $contactType) {
             $c = $domain->getContactRegistrar();
 
-            if ($contactType == 'Admin' && $domain->getContactAdmin()) {
+            if ($contactType == 'Admin' && $domain->getContactAdmin() instanceof Registrar_Domain_Contact) {
                 $c = $domain->getContactAdmin();
             }
 
-            if ($contactType == 'Tech' && $domain->getContactTech()) {
+            if ($contactType == 'Tech' && $domain->getContactTech() instanceof Registrar_Domain_Contact) {
                 $c = $domain->getContactTech();
             }
 
-            if ($contactType == 'AuxBilling' && $domain->getContactBilling()) {
+            if ($contactType == 'AuxBilling' && $domain->getContactBilling() instanceof Registrar_Domain_Contact) {
                 $c = $domain->getContactBilling();
             }
 
@@ -523,7 +522,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
     }
 
     /**
-     * TODO: Implement this correctly.
+     * Namecheap does not expose a domain deletion command through its API.
      *
      * @throws Registrar_Exception
      */
@@ -533,11 +532,11 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
     }
 
     /**
-     * @return string[]
+     * @return array{enabled: bool, id: string}
      *
      * @throws Registrar_Exception
      */
-    private function getPrivacyInfo(Registrar_Domain $domain)
+    private function getPrivacyInfo(Registrar_Domain $domain): array
     {
         $params = [
             'DomainName' => $domain->getName(),

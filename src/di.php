@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManager;
+use FOSSBilling\Cache\CacheFactory;
 use FOSSBilling\Config;
 use FOSSBilling\Doctrine\DriverManagerFactory;
 use FOSSBilling\Doctrine\EntityManagerFactory;
@@ -19,11 +20,14 @@ use FOSSBilling\Http\RequestFactory;
 use FOSSBilling\Security\AuthenticationRequiredException;
 use FOSSBilling\Security\EmailValidationRequiredException;
 use FOSSBilling\Version;
-use Symfony\Component\Cache\Adapter\FilesystemAdapter;
+use Psr\Cache\CacheItemPoolInterface;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Session\Session as SymfonySession;
+use Symfony\Component\HttpFoundation\Session\Storage\Handler\PdoSessionHandler;
+use Symfony\Component\HttpFoundation\Session\Storage\NativeSessionStorage;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 $di = new Pimple\Container();
@@ -39,26 +43,31 @@ if (!$request instanceof Request) {
  *
  * @param void
  *
- * @return Box_Log A new logger instance
+ * @return FOSSBilling\Logger A new logger instance
  */
 $di['logger'] = function () use ($di) {
-    $log = new Box_Log();
+    $log = new FOSSBilling\Logger();
     $log->setDi($di);
 
     $activity_service = $di['mod_service']('activity');
-    $dbWriter = new Box_LogDb($activity_service);
+    $dbWriter = new FOSSBilling\Logging\DatabaseWriter($activity_service);
     $log->addWriter($dbWriter);
 
+    $context = [];
     if ($di['auth']->isAdminLoggedIn()) {
         $admin = $di['loggedin_admin'];
-        $log->setEventItem('admin_id', $admin->getId());
+        $context['admin_id'] = $admin->getId();
     } elseif ($di['auth']->isClientLoggedIn()) {
         $client = $di['loggedin_client'];
-        $log->setEventItem('client_id', $client->getId());
+        $context['client_id'] = $client->getId();
     }
 
     $monolog = new FOSSBilling\Monolog();
     $log->addWriter($monolog);
+
+    if ($context !== []) {
+        $log = $log->withContext($context);
+    }
 
     return $log;
 };
@@ -67,14 +76,35 @@ $di['logger'] = function () use ($di) {
  *
  * @param void
  *
- * @return \Box_Crypt
+ * @return FOSSBilling\Crypt
  */
 $di['crypt'] = function () use ($di) {
-    $crypt = new Box_Crypt();
+    $crypt = new FOSSBilling\Crypt();
     $crypt->setDi($di);
 
     return $crypt;
 };
+
+/*
+ * Creates and returns a Doctrine ORM EntityManager instance.
+ *
+ * This is the anchor for the shared database connection: the PDO and DBAL
+ * services below reuse its connection so that all three participate in the
+ * same transaction scope.
+ *
+ * @param void
+ *
+ * @return EntityManager The Doctrine ORM EntityManager instance.
+ */
+$di['em'] = (fn (): EntityManager => EntityManagerFactory::create());
+
+/*
+ *
+ * @param void
+ *
+ * @return Connection The shared Doctrine DBAL connection instance.
+ */
+$di['dbal'] = (fn (): Connection => DriverManagerFactory::getSharedConnection());
 
 /*
  * Creates a new PDO object for database connections
@@ -84,38 +114,17 @@ $di['crypt'] = function () use ($di) {
  * @return PDO The PDO object used for database connections
  */
 $di['pdo'] = function () {
-    $debugConfig = Config::getProperty('debug_and_monitoring', []);
-    $driverOptions = [
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-    ];
+    $debug = (bool) Config::getProperty('debug_and_monitoring.debug', false);
 
-    $connection = DriverManagerFactory::getConnection($driverOptions);
-    /** @var PDO $pdo */
-    $pdo = $connection->getNativeConnection();
-
-    if (isset($debugConfig['debug']) && $debugConfig['debug']) {
-        $pdo->setAttribute(PDO::ATTR_STATEMENT_CLASS, ['Box_DbLoggedPDOStatement']);
+    $pdo = DriverManagerFactory::getSharedConnection()->getNativeConnection();
+    if (!$pdo instanceof PDO) {
+        throw new RuntimeException('PDO service must resolve to a PDO instance');
     }
 
-    return new DebugBar\DataCollector\PDO\TraceablePDO($pdo);
+    $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+
+    return $debug ? new DebugBar\DataCollector\PDO\TraceablePDO($pdo) : $pdo;
 };
-
-/*
- *
- * @param void
- *
- * @return Connection The Doctrine DBAL connection instance.
- */
-$di['dbal'] = (fn (): Connection => DriverManagerFactory::getConnection());
-
-/*
- * Creates and returns a Doctrine ORM EntityManager instance.
- *
- * @param void
- *
- * @return EntityManager The Doctrine ORM EntityManager instance.
- */
-$di['em'] = (fn (): EntityManager => EntityManagerFactory::create());
 
 /*
  *
@@ -134,10 +143,10 @@ $di['pager'] = function () use ($di) {
  *
  * @param void
  *
- * @return Box_Url
+ * @return FOSSBilling\Url
  */
 $di['url'] = function () use ($di) {
-    $url = new Box_Url();
+    $url = new FOSSBilling\Url();
     $url->setDi($di);
     $url->setBaseUri(SYSTEM_URL);
 
@@ -204,8 +213,39 @@ $di['session'] = function () use ($di) {
         throw new RuntimeException('PDO service must resolve to a PDO instance');
     }
 
-    $handler = new PdoSessionHandler($pdo);
-    $session = new FOSSBilling\Session($handler);
+    $sessionLifetime = max(1, (int) Config::getProperty('security.session_lifespan', 7200));
+    $handler = new PdoSessionHandler($pdo, [
+        'db_table' => 'session',
+        'db_id_col' => 'id',
+        'db_data_col' => 'content',
+        'db_lifetime_col' => 'lifetime',
+        'db_time_col' => 'modified_at',
+        // The application uses the same connection for its business queries;
+        // advisory locking avoids holding a transaction open for the request.
+        'lock_mode' => PdoSessionHandler::LOCK_ADVISORY,
+    ]);
+    $currentCookieParams = session_get_cookie_params();
+    $cookieParams = [
+        'path' => $currentCookieParams['path'],
+        'domain' => $currentCookieParams['domain'],
+        'secure' => Config::getProperty('security.force_https', true) || $di['request']->isSecure(),
+        'httponly' => true,
+        'samesite' => Config::getProperty('security.mode', 'strict') === 'strict'
+            ? 'Strict'
+            : $currentCookieParams['samesite'],
+    ];
+    $storage = new NativeSessionStorage([
+        'cache_limiter' => '',
+        'cookie_lifetime' => 0,
+        'gc_maxlifetime' => $sessionLifetime,
+        'cookie_path' => $cookieParams['path'],
+        'cookie_domain' => $cookieParams['domain'],
+        'cookie_secure' => $cookieParams['secure'],
+        'cookie_httponly' => $cookieParams['httponly'],
+        'cookie_samesite' => $cookieParams['samesite'],
+        'serialize_handler' => 'php',
+    ], $handler);
+    $session = new FOSSBilling\Session(new SymfonySession($storage), $cookieParams);
     $session->setDi($di);
     $session->setupSession();
 
@@ -224,15 +264,18 @@ $di['session'] = function () use ($di) {
 $di['request'] = $request;
 
 /*
+ * The general-purpose application cache. Backed by the filesystem by default; can be configured
+ * to use Redis or Memcached instead via the `cache` block in the FOSSBilling configuration file.
+ *
  * @param void
  *
- * @link https://symfony.com/doc/current/components/cache/adapters/filesystem_adapter.html
+ * @link https://symfony.com/doc/current/components/cache.html
  *
- * @return FilesystemAdapter
+ * @return CacheItemPoolInterface
  */
-$di['cache'] = fn (): FilesystemAdapter => new FilesystemAdapter('sf_cache', 24 * 60 * 60, PATH_CACHE);
+$di['cache'] = fn (): CacheItemPoolInterface => CacheFactory::create(CacheFactory::NAMESPACE_APP, 24 * 60 * 60);
 
-$di['rate_limit_cache'] = fn (): FilesystemAdapter => new FilesystemAdapter('rate_limit', 24 * 60 * 60, PATH_CACHE);
+$di['rate_limit_cache'] = fn (): CacheItemPoolInterface => CacheFactory::create(CacheFactory::NAMESPACE_RATE_LIMIT, 24 * 60 * 60);
 
 $di['http_client'] = fn (): HttpClientInterface => HttpClient::create([
     'bindto' => BIND_TO,
@@ -587,13 +630,13 @@ $di['server_manager'] = $di->protect(function ($manager, $config) use ($di) {
 });
 
 /*
- * Creates a new Box_Period object using the provided period code and returns it.
+ * Creates a new FOSSBilling\Period object using the provided period code and returns it.
  *
  * @param string $code The two character period code to create the period object with.
  *
- * @return \Box_Period The new period object that was just created.
+ * @return FOSSBilling\Period The new period object that was just created.
  */
-$di['period'] = $di->protect(fn ($code): Box_Period => new Box_Period($code));
+$di['period'] = $di->protect(fn (string $code): FOSSBilling\Period => new FOSSBilling\Period($code));
 
 /*
  * Gets the current client area theme.
@@ -653,14 +696,14 @@ $di['geoip'] = function () use ($di) {
 $di['password'] = fn (): FOSSBilling\PasswordManager => new FOSSBilling\PasswordManager();
 
 /*
- * Creates a new Box_Translate object and sets the specified text domain, locale, and other options.
+ * Creates a new FOSSBilling\Translate object and sets the specified text domain, locale, and other options.
  *
  * @param string $textDomain The text domain to create the translation object with.
  *
- * @return \Box_Translate The new translation object that was just created.
+ * @return FOSSBilling\Translate The new translation object that was just created.
  */
 $di['translate'] = $di->protect(function ($textDomain = '') use ($di) {
-    $tr = new Box_Translate();
+    $tr = new FOSSBilling\Translate();
 
     if (!empty($textDomain)) {
         $tr->setDomain($textDomain);

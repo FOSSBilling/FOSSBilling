@@ -16,6 +16,7 @@ use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\InvoiceItem;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
+use FOSSBilling\Doctrine\RowLock;
 use FOSSBilling\Tools;
 
 class InvoiceRepository extends EntityRepository
@@ -29,6 +30,17 @@ class InvoiceRepository extends EntityRepository
         $invoice = $this->findOneBy(['hash' => $hash]);
 
         return $invoice instanceof Invoice ? $invoice : null;
+    }
+
+    public function existsByGatewayId(int $gatewayId): bool
+    {
+        return (bool) $this->createQueryBuilder('i')
+            ->select('1')
+            ->andWhere('IDENTITY(i.gateway) = :gateway_id')
+            ->setParameter('gateway_id', $gatewayId)
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
     }
 
     /**
@@ -49,7 +61,7 @@ class InvoiceRepository extends EntityRepository
 
         $orderId = $data['order_id'] ?? null;
         if ($orderId) {
-            $qb->andWhere('i.id IN (SELECT ii.invoiceId FROM ' . InvoiceItem::class . ' ii WHERE ii.relId = :order_id AND ii.type = :item_type)')
+            $qb->andWhere('i.id IN (SELECT IDENTITY(ii.invoice) FROM ' . InvoiceItem::class . ' ii WHERE ii.relId = :order_id AND ii.type = :item_type)')
                 ->setParameter('order_id', (int) $orderId)
                 ->setParameter('item_type', InvoiceItem::TYPE_ORDER);
         }
@@ -94,7 +106,7 @@ class InvoiceRepository extends EntityRepository
         $createdAt = $data['created_at'] ?? null;
         if ($createdAt) {
             $day = date('Y-m-d', (int) strtotime((string) $createdAt));
-            $nextDay = date('Y-m-d', (int) strtotime((string) $createdAt . ' +1 day'));
+            $nextDay = date('Y-m-d', (int) strtotime($createdAt . ' +1 day'));
             $qb->andWhere('i.createdAt >= :created_at_start AND i.createdAt < :created_at_end')
                 ->setParameter('created_at_start', $day . ' 00:00:00')
                 ->setParameter('created_at_end', $nextDay . ' 00:00:00');
@@ -109,13 +121,13 @@ class InvoiceRepository extends EntityRepository
         $dateTo = $data['date_to'] ?? null;
         if ($dateTo) {
             $qb->andWhere('i.createdAt <= :date_to')
-                ->setParameter('date_to', date('Y-m-d H:i:s', (int) strtotime((string) $dateTo . ' 23:59:59')));
+                ->setParameter('date_to', date('Y-m-d H:i:s', (int) strtotime($dateTo . ' 23:59:59')));
         }
 
         $paidAt = $data['paid_at'] ?? null;
         if ($paidAt) {
             $day = date('Y-m-d', (int) strtotime((string) $paidAt));
-            $nextDay = date('Y-m-d', (int) strtotime((string) $paidAt . ' +1 day'));
+            $nextDay = date('Y-m-d', (int) strtotime($paidAt . ' +1 day'));
             $qb->andWhere('i.paidAt >= :paid_at_start AND i.paidAt < :paid_at_end')
                 ->setParameter('paid_at_start', $day . ' 00:00:00')
                 ->setParameter('paid_at_end', $nextDay . ' 00:00:00');
@@ -124,7 +136,7 @@ class InvoiceRepository extends EntityRepository
         $search = $data['search'] ?? null;
         if ($search) {
             $searchNumeric = (int) preg_replace('/[^0-9]/', '', (string) $search);
-            $qb->andWhere('i.id = :search_numeric_id OR i.nr LIKE :search_like OR i.id LIKE :search OR i.id IN (SELECT ii.invoiceId FROM ' . InvoiceItem::class . ' ii WHERE ii.title LIKE :search_like)')
+            $qb->andWhere('i.id = :search_numeric_id OR i.nr LIKE :search_like OR i.id LIKE :search OR i.id IN (SELECT IDENTITY(ii.invoice) FROM ' . InvoiceItem::class . ' ii WHERE ii.title LIKE :search_like)')
                 ->setParameter('search_numeric_id', $searchNumeric)
                 ->setParameter('search_like', '%' . $search . '%')
                 ->setParameter('search', $search);
@@ -154,11 +166,11 @@ class InvoiceRepository extends EntityRepository
         }
 
         $qb = $this->getEntityManager()->createQueryBuilder()
-            ->select('ii.invoiceId AS invoice_id, SUM(COALESCE(ii.price, 0) * COALESCE(ii.quantity, 1)) AS subtotal, SUM(CASE WHEN ii.taxed = true THEN (COALESCE(ii.price, 0) * COALESCE(ii.quantity, 1)) ELSE 0 END) AS taxable_subtotal')
+            ->select('IDENTITY(ii.invoice) AS invoice_id, SUM(COALESCE(ii.price, 0) * COALESCE(ii.quantity, 1)) AS subtotal, SUM(CASE WHEN ii.taxed = true THEN (COALESCE(ii.price, 0) * COALESCE(ii.quantity, 1)) ELSE 0 END) AS taxable_subtotal')
             ->from(InvoiceItem::class, 'ii')
-            ->where('ii.invoiceId IN (:invoice_ids)')
+            ->where('IDENTITY(ii.invoice) IN (:invoice_ids)')
             ->setParameter('invoice_ids', $invoiceIds)
-            ->groupBy('ii.invoiceId');
+            ->groupBy('ii.invoice');
 
         $totals = [];
         foreach ($qb->getQuery()->getScalarResult() as $row) {
@@ -183,7 +195,7 @@ class InvoiceRepository extends EntityRepository
         }
 
         $status = $connection->fetchOne(
-            'SELECT status FROM invoice WHERE id = :id FOR UPDATE',
+            'SELECT status FROM invoice WHERE id = :id' . RowLock::suffix($connection),
             ['id' => $invoiceId],
         );
 
@@ -238,10 +250,29 @@ class InvoiceRepository extends EntityRepository
     {
         return $this->createQueryBuilder('i')
             ->andWhere('i.status = :status')
-            ->andWhere('i.id IN (SELECT ii.invoiceId FROM ' . InvoiceItem::class . ' ii WHERE ii.relId = :relId AND ii.type = :type)')
+            ->andWhere('i.id IN (SELECT IDENTITY(ii.invoice) FROM ' . InvoiceItem::class . ' ii WHERE ii.relId = :relId AND ii.type = :type)')
             ->setParameter('status', Invoice::STATUS_PAID)
             ->setParameter('relId', (string) $relId)
             ->setParameter('type', InvoiceItem::TYPE_ORDER)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * Unpaid invoices whose due date is more than the given number of days
+     * in the past. Used by the cron cleanup that expires stale unpaid
+     * invoices.
+     *
+     * @return Invoice[]
+     */
+    public function findUnpaidOlderThan(int $days): array
+    {
+        return $this->createQueryBuilder('i')
+            ->andWhere('i.status = :status')
+            ->andWhere('i.dueAt IS NOT NULL')
+            ->andWhere('DATE_DIFF(CURRENT_TIMESTAMP(), i.dueAt) > :days')
+            ->setParameter('status', Invoice::STATUS_UNPAID)
+            ->setParameter('days', $days)
             ->getQuery()
             ->getResult();
     }

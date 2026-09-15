@@ -69,13 +69,17 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->getDi()['logger']->info('Executed action to clear expired shopping carts from database');
 
         $conn = $this->getDi()['em']->getConnection();
-        $expiredCarts = $conn->fetchAllKeyValue('SELECT id, created_at FROM cart WHERE DATEDIFF(CURDATE(), created_at) > 7');
+        // created_at < :cutoff is a portable stand-in for MySQL's DATEDIFF(CURDATE(), created_at) > 7 -
+        // DATEDIFF compares calendar dates only (ignoring time-of-day), so "more than 7 days ago"
+        // means created_at's date is strictly before 7 days before today.
+        $cutoff = (new \DateTimeImmutable('today'))->modify('-7 days')->format('Y-m-d H:i:s');
+        $expiredCarts = $conn->fetchAllKeyValue('SELECT id, created_at FROM cart WHERE created_at < :cutoff', ['cutoff' => $cutoff]);
         if ($expiredCarts) {
             foreach ($expiredCarts as $id => $created_at) {
                 $conn->executeStatement('DELETE FROM cart_product WHERE cart_id = :id', ['id' => $id]);
                 $conn->executeStatement('DELETE FROM cart WHERE id = :id', ['id' => $id]);
             }
-            $this->getDi()['logger']->info('Removed %s expired shopping carts', \FOSSBilling\Tools::safeCount($expiredCarts));
+            $this->getDi()['logger']->info('Removed {expired_count} expired shopping carts', ['expired_count' => \FOSSBilling\Tools::safeCount($expiredCarts)]);
         }
 
         return true;

@@ -31,17 +31,38 @@ function container(): Container
     $di['filesystem'] = fn (): \Symfony\Component\Filesystem\Filesystem => new \Symfony\Component\Filesystem\Filesystem();
     $di['logger'] = fn (): \Psr\Log\LoggerInterface => new class extends AbstractLogger {
         public array $calls = [];
+        private string $channel = 'application';
+        private array $context = [];
 
         public function log($level, string|\Stringable $message, array $context = []): void
         {
-            $this->calls[] = ['method' => $level, 'params' => [$message, $context]];
+            $effectiveContext = [...$this->context, ...$context];
+            $call = ['method' => $level, 'params' => [$message, $effectiveContext]];
+            if ($this->channel !== 'application') {
+                $call['channel'] = $this->channel;
+            }
+
+            $this->calls[] = $call;
         }
 
-        public function setChannel(string $channel): self
+        public function withChannel(string $channel): static
         {
-            $this->calls[] = ['method' => 'setChannel', 'params' => [$channel]];
+            $this->calls[] = ['method' => 'withChannel', 'params' => [$channel]];
+            $logger = clone $this;
+            $logger->calls = &$this->calls;
+            $logger->channel = $channel;
 
-            return $this;
+            return $logger;
+        }
+
+        public function withContext(array $context): static
+        {
+            $this->calls[] = ['method' => 'withContext', 'params' => [$context]];
+            $logger = clone $this;
+            $logger->calls = &$this->calls;
+            $logger->context = [...$this->context, ...$context];
+
+            return $logger;
         }
     };
     $di['request'] = fn (): Request => Request::create('http://localhost/');
@@ -155,6 +176,7 @@ function container(): Container
     $di['em'] = static function () use ($di): object {
         $adminGroupRepository = \Mockery::mock(\Box\Mod\Staff\Repository\AdminGroupRepository::class)->shouldIgnoreMissing();
         $adminGroupMemberRepository = \Mockery::mock(\Box\Mod\Staff\Repository\AdminGroupMemberRepository::class)->shouldIgnoreMissing();
+        $adminPasswordResetRepository = \Mockery::mock(\Box\Mod\Staff\Repository\AdminPasswordResetRepository::class)->shouldIgnoreMissing();
 
         $clientQueryBuilder = \Mockery::mock(\Doctrine\ORM\QueryBuilder::class)->shouldIgnoreMissing();
         foreach (['andWhere', 'orWhere', 'setParameter', 'orderBy', 'setFirstResult', 'setMaxResults', 'delete', 'where'] as $method) {
@@ -252,6 +274,7 @@ function container(): Container
         $invoiceRepository->shouldReceive('findPaid')->byDefault()->andReturn([]);
         $invoiceRepository->shouldReceive('findByClientId')->byDefault()->andReturn([]);
         $invoiceRepository->shouldReceive('findUnpaidApprovedNotRemindedBefore')->byDefault()->andReturn([]);
+        $invoiceRepository->shouldReceive('findUnpaidOlderThan')->byDefault()->andReturn([]);
         $invoiceRepository->shouldReceive('findPaidByRelId')->byDefault()->andReturn([]);
 
         $invoiceItemRepository = \Mockery::mock(\Box\Mod\Invoice\Repository\InvoiceItemRepository::class)->shouldIgnoreMissing();
@@ -285,6 +308,7 @@ function container(): Container
             \Box\Mod\Client\Entity\ClientPasswordReset::class => $clientPasswordResetRepository,
             \Box\Mod\Staff\Entity\AdminGroup::class => $adminGroupRepository,
             \Box\Mod\Staff\Entity\AdminGroupMember::class => $adminGroupMemberRepository,
+            \Box\Mod\Staff\Entity\AdminPasswordReset::class => $adminPasswordResetRepository,
             \Box\Mod\Email\Entity\EmailTemplate::class => $emailTemplateRepository,
             \Box\Mod\Email\Entity\EmailTemplateGroup::class => $emailTemplateGroupRepository,
             \Box\Mod\Email\Entity\ActivityClientEmail::class => $activityClientEmailRepository,

@@ -325,7 +325,7 @@
         const invoiceForm = modalElement?.querySelector('form');
         const productSelect = document.getElementById('product_id');
         let tomSelectInstance = null;
-        const modal = modalElement ? bootstrap.Modal.getOrCreateInstance(modalElement) : null;
+        const modal = modalElement ? tabler.Modal.getOrCreateInstance(modalElement) : null;
 
         if (window.location.hash === '#tab-new' && modal) {
             modal.show();

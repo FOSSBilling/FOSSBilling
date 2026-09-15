@@ -77,11 +77,13 @@ function emailBuildEm(
     ?Box\Mod\Email\Repository\QueuedEmailRepository $queueRepo = null,
     bool $ignoreMissing = true,
     ?Box\Mod\Email\Repository\EmailTemplateGroupRepository $templateGroupRepo = null,
+    ?Box\Mod\Staff\Repository\AdminRepository $adminRepo = null,
 ) {
     $activityRepo ??= Mockery::mock(Box\Mod\Email\Repository\ActivityClientEmailRepository::class)->shouldIgnoreMissing();
     $templateRepo ??= Mockery::mock(Box\Mod\Email\Repository\EmailTemplateRepository::class)->shouldIgnoreMissing();
     $queueRepo ??= Mockery::mock(Box\Mod\Email\Repository\QueuedEmailRepository::class)->shouldIgnoreMissing();
     $templateGroupRepo ??= Mockery::mock(Box\Mod\Email\Repository\EmailTemplateGroupRepository::class)->shouldIgnoreMissing();
+    $adminRepo ??= Mockery::mock(Box\Mod\Staff\Repository\AdminRepository::class)->shouldIgnoreMissing();
 
     $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     if ($ignoreMissing) {
@@ -92,6 +94,7 @@ function emailBuildEm(
         EmailTemplate::class => $templateRepo,
         Box\Mod\Email\Entity\QueuedEmail::class => $queueRepo,
         Box\Mod\Email\Entity\EmailTemplateGroup::class => $templateGroupRepo,
+        Box\Mod\Staff\Entity\Admin::class => $adminRepo,
         default => $activityRepo,
     });
 
@@ -172,7 +175,7 @@ test('setVars encrypts and sets variables', function (): void {
     $service = new Box\Mod\Email\Service();
 
     $di = container();
-    $cryptMock = Mockery::mock('\Box_Crypt');
+    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
     $cryptMock->shouldReceive('encrypt')
         ->atLeast()->once()
         ->andReturn('encrypted-vars');
@@ -197,7 +200,7 @@ test('getVars decrypts and returns variables', function (): void {
     $service = new Box\Mod\Email\Service();
 
     $di = container();
-    $cryptMock = Mockery::mock('\Box_Crypt');
+    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
     $cryptMock->shouldReceive('decrypt')
         ->atLeast()->once()
         ->andReturn('{"param1":"value1"}');
@@ -262,7 +265,7 @@ test('getVars supplies preview variables for support and staff templates before 
 test('getVars merges stored examples over preview defaults', function (): void {
     $service = new Box\Mod\Email\Service();
 
-    $cryptMock = Mockery::mock('\Box_Crypt');
+    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
     $cryptMock->shouldReceive('decrypt')->once()->andReturn('{"ticket":{"subject":"Stored subject"}}');
 
     $di = container();
@@ -296,7 +299,7 @@ test('sendTemplate returns false when template does not exist', function (): voi
     $em->shouldReceive('persist')->atLeast()->once();
     $em->shouldReceive('flush')->atLeast()->once();
 
-    $cryptMock = Mockery::mock('\Box_Crypt');
+    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
     $cryptMock->shouldReceive('encrypt')
         ->atLeast()->once();
 
@@ -344,7 +347,7 @@ test('sendTemplate sends email when template exists', function (): void {
     $systemService->shouldReceive('getParamValue')
         ->atLeast()->once()
         ->andReturn('value');
-    $systemService->shouldReceive('renderEmailTplString')
+    $systemService->shouldReceive('renderEmailTplString', 'renderEmailSubjectString')
         ->atLeast()->once()
         ->andReturn('rendered content');
 
@@ -360,7 +363,7 @@ test('sendTemplate sends email when template exists', function (): void {
     $validatorMock->shouldReceive('checkRequiredParamsForArray')->byDefault();
     $di['validator'] = $validatorMock;
 
-    $cryptMock = Mockery::mock('\Box_Crypt');
+    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
     $cryptMock->shouldReceive('encrypt')
         ->atLeast()->once();
 
@@ -426,7 +429,7 @@ test('sendTemplate forwards the attachment to the queue and strips it from the s
     $systemService->shouldReceive('getParamValue')
         ->atLeast()->once()
         ->andReturn('value');
-    $systemService->shouldReceive('renderEmailTplString')
+    $systemService->shouldReceive('renderEmailTplString', 'renderEmailSubjectString')
         ->atLeast()->once()
         ->andReturn('rendered content');
 
@@ -441,7 +444,7 @@ test('sendTemplate forwards the attachment to the queue and strips it from the s
     $di['validator'] = $validatorMock;
 
     $encryptedVars = null;
-    $cryptMock = Mockery::mock('\Box_Crypt');
+    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
     $cryptMock->shouldReceive('encrypt')
         ->atLeast()->once()
         ->with(Mockery::on(function ($json) use (&$encryptedVars): bool {
@@ -476,6 +479,89 @@ test('sendTemplate forwards the attachment to the queue and strips it from the s
     expect($persistedQueue->getAttachmentContent())->toBe('%PDF-1.4 fake invoice contents');
     expect($persistedQueue->getAttachmentMime())->toBe('application/pdf');
     expect($encryptedVars)->not->toContain('fake invoice contents');
+});
+
+test('sendTemplate renders the subject as plaintext, not HTML', function (): void {
+    // Subjects go through renderEmailSubjectString while the body keeps the
+    // raw HTML rendering (issue #4305).
+    $data = [
+        'code' => 'mod_email_test',
+        'to' => 'example@example.com',
+        'default_subject' => 'SUBJECT',
+        'default_template' => 'TEMPLATE',
+        'default_description' => 'DESCRIPTION',
+    ];
+    $service = new Box\Mod\Email\Service();
+
+    $di = container();
+
+    $emailTemplate = emailTemplate(data: ['enabled' => true]);
+
+    $templateRepo = Mockery::mock(Box\Mod\Email\Repository\EmailTemplateRepository::class);
+    $templateRepo->shouldReceive('findOneByActionCode')->andReturn($emailTemplate);
+
+    /** @var Box\Mod\Email\Entity\QueuedEmail|null $persistedQueue */
+    $persistedQueue = null;
+    $em = emailBuildEm(null, $templateRepo);
+    $em->shouldReceive('persist')
+        ->atLeast()->once()
+        ->with(Mockery::on(function ($entity) use (&$persistedQueue): bool {
+            if ($entity instanceof Box\Mod\Email\Entity\QueuedEmail) {
+                $persistedQueue = $entity;
+            }
+
+            return true;
+        }));
+    $em->shouldReceive('flush')->atLeast()->once();
+
+    $systemService = Mockery::mock(Box\Mod\System\Service::class);
+    $systemService->shouldReceive('getParamValue')
+        ->atLeast()->once()
+        ->andReturn('value');
+    $systemService->shouldReceive('renderEmailTplString')
+        ->atLeast()->once()
+        ->andReturn('rendered content');
+    $systemService->shouldReceive('renderEmailSubjectString')
+        ->once()
+        ->andReturn('[A & B Ltd] Invoice created');
+
+    $di['api_admin'] = function () use ($di) {
+        $api = new FOSSBilling\Api\Proxy(\Tests\Helpers\admin());
+        $api->setDi($di);
+
+        return $api;
+    };
+    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock->shouldReceive('checkRequiredParamsForArray')->byDefault();
+    $di['validator'] = $validatorMock;
+
+    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
+    $cryptMock->shouldReceive('encrypt')
+        ->atLeast()->once();
+
+    $modMock = Mockery::mock(FOSSBilling\Module::class)->makePartial();
+    $modMock->shouldReceive('getConfig')
+        ->atLeast()->once()
+        ->andReturn([
+            'from_name' => 'Test',
+            'from_email' => 'test@test.com',
+        ]);
+
+    $di['em'] = $em;
+    $di['crypt'] = $cryptMock;
+    $di['twig'] = Mockery::mock(Twig\Environment::class);
+    $di['mod'] = $di->protect(fn () => $modMock);
+    $di['mod_service'] = $di->protect(moduleService(['system' => $systemService]));
+    $di['tools'] = new FOSSBilling\Tools();
+
+    $service->setDi($di);
+
+    $result = $service->sendTemplate($data);
+
+    expect($result)->toBeTrue();
+    expect($persistedQueue)->not->toBeNull();
+    expect($persistedQueue->getSubject())->toBe('[A & B Ltd] Invoice created');
+    expect($persistedQueue->getContent())->toBe('rendered content');
 });
 
 dataset('sendTemplateExistsStaffProvider', fn (): array => [
@@ -538,7 +624,7 @@ test('sendTemplate handles to_staff and to_client options', function (array $dat
         ->atLeast()->once()
         ->andReturn('value');
 
-    $system->shouldReceive('renderEmailTplString')
+    $system->shouldReceive('renderEmailTplString', 'renderEmailSubjectString')
         ->atLeast()->once()
         ->andReturn('value');
 
@@ -586,7 +672,7 @@ test('sendTemplate handles to_staff and to_client options', function (array $dat
 
     $twigStub = Mockery::mock(Twig\Environment::class);
 
-    $cryptMock = Mockery::mock('\Box_Crypt');
+    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
     $cryptMock->shouldReceive('encrypt')
         ->atLeast()->once();
 
@@ -629,6 +715,128 @@ test('sendTemplate handles to_staff and to_client options', function (array $dat
     expect($persistedQueue->getRecipient())->toBe($expectedRecipient);
 })->with('sendTemplateExistsStaffProvider');
 
+test('sendTemplate sends to a specific admin via to_admin using the Admin entity', function (): void {
+    $service = new Box\Mod\Email\Service();
+
+    $di = container();
+
+    $emailTemplate = emailTemplate(data: ['enabled' => true]);
+
+    $templateRepo = Mockery::mock(Box\Mod\Email\Repository\EmailTemplateRepository::class);
+    $templateRepo->shouldReceive('findOneByActionCode')->andReturn($emailTemplate);
+
+    $templateGroupRepo = Mockery::mock(Box\Mod\Email\Repository\EmailTemplateGroupRepository::class);
+    $templateGroupRepo->shouldReceive('getGroupIdsForTemplate')->andReturn([]);
+
+    $admin = createEntity(Box\Mod\Staff\Entity\Admin::class, [
+        'id' => 7,
+        'email' => 'admin@fossbilling.org',
+        'name' => 'Root Admin',
+        'signature' => '— Root',
+        'timezone' => 'UTC',
+    ]);
+
+    $adminRepo = Mockery::mock(Box\Mod\Staff\Repository\AdminRepository::class);
+    $adminRepo->shouldReceive('find')
+        ->once()
+        ->with(7)
+        ->andReturn($admin);
+
+    /** @var Box\Mod\Email\Entity\QueuedEmail|null $persistedQueue */
+    $persistedQueue = null;
+    $em = emailBuildEm(null, $templateRepo, null, true, $templateGroupRepo, $adminRepo);
+    $em->shouldReceive('persist')
+        ->atLeast()->once()
+        ->with(Mockery::on(function ($entity) use (&$persistedQueue): bool {
+            if ($entity instanceof Box\Mod\Email\Entity\QueuedEmail) {
+                $persistedQueue = $entity;
+            }
+
+            return true;
+        }));
+
+    $system = Mockery::mock(Box\Mod\System\Service::class);
+    $system->shouldReceive('getParamValue')->atLeast()->once()->andReturn('value');
+    $system->shouldReceive('renderEmailTplString', 'renderEmailSubjectString')->atLeast()->once()->andReturn('value');
+
+    $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffServiceMock->shouldReceive('getAdminGroupMemberRepository')->never();
+
+    $clientServiceMock = Mockery::mock(Box\Mod\Client\Service::class);
+    $clientServiceMock->shouldReceive('get')->never();
+    $clientServiceMock->shouldReceive('toApiArray')->never();
+
+    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
+    $cryptMock->shouldReceive('encrypt')->atLeast()->once();
+
+    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock->shouldReceive('checkRequiredParamsForArray')->byDefault();
+    $di['validator'] = $validatorMock;
+
+    $modMock = Mockery::mock(FOSSBilling\Module::class)->makePartial();
+    $modMock->shouldReceive('getConfig')
+        ->atLeast()->once()
+        ->andReturn([
+            'from_name' => 'Test',
+            'from_email' => 'test@test.com',
+        ]);
+
+    $di['em'] = $em;
+    $di['mod'] = $di->protect(fn () => $modMock);
+    $di['crypt'] = $cryptMock;
+    $di['mod_service'] = $di->protect(moduleService([
+        'staff' => $staffServiceMock,
+        'system' => $system,
+        'client' => $clientServiceMock,
+    ]));
+
+    $service->setDi($di);
+
+    $result = $service->sendTemplate([
+        'code' => 'mod_email_test',
+        'to_admin' => 7,
+        'default_subject' => 'SUBJECT',
+        'default_template' => 'TEMPLATE',
+        'default_description' => 'DESCRIPTION',
+    ]);
+
+    expect($result)->toBeTrue();
+    expect($persistedQueue)->not->toBeNull();
+    expect($persistedQueue->getRecipient())->toBe('admin@fossbilling.org');
+    expect($persistedQueue->getClientId())->toBeNull();
+    expect($persistedQueue->getAdminId())->toBe(7);
+});
+
+test('sendTemplate throws when to_admin does not resolve to an admin', function (): void {
+    $service = new Box\Mod\Email\Service();
+
+    $di = container();
+
+    $templateRepo = Mockery::mock(Box\Mod\Email\Repository\EmailTemplateRepository::class);
+    $templateRepo->shouldReceive('findOneByActionCode')->andReturn(emailTemplate(data: ['enabled' => true]));
+
+    $templateGroupRepo = Mockery::mock(Box\Mod\Email\Repository\EmailTemplateGroupRepository::class);
+
+    $adminRepo = Mockery::mock(Box\Mod\Staff\Repository\AdminRepository::class);
+    $adminRepo->shouldReceive('find')->once()->with(999)->andReturn(null);
+
+    $di['em'] = emailBuildEm(null, $templateRepo, null, true, $templateGroupRepo, $adminRepo);
+
+    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock->shouldReceive('checkRequiredParamsForArray')->byDefault();
+    $di['validator'] = $validatorMock;
+
+    $service->setDi($di);
+
+    $service->sendTemplate([
+        'code' => 'mod_email_test',
+        'to_admin' => 999,
+        'default_subject' => 'SUBJECT',
+        'default_template' => 'TEMPLATE',
+        'default_description' => 'DESCRIPTION',
+    ]);
+})->throws(FOSSBilling\InformationException::class, 'Admin not found');
+
 test('sendTemplate does not send to staff when template has no assigned groups', function (): void {
     $service = new Box\Mod\Email\Service();
 
@@ -649,7 +857,7 @@ test('sendTemplate does not send to staff when template has no assigned groups',
 
     $systemService = Mockery::mock(Box\Mod\System\Service::class);
     $systemService->shouldReceive('getParamValue')->atLeast()->once()->andReturn('value');
-    $systemService->shouldReceive('renderEmailTplString')->atLeast()->once()->andReturn('rendered');
+    $systemService->shouldReceive('renderEmailTplString', 'renderEmailSubjectString')->atLeast()->once()->andReturn('rendered');
 
     $modMock = Mockery::mock(FOSSBilling\Module::class)->makePartial();
     $modMock->shouldReceive('getConfig')->atLeast()->once()->andReturn([
@@ -657,7 +865,7 @@ test('sendTemplate does not send to staff when template has no assigned groups',
         'from_email' => 'test@test.com',
     ]);
 
-    $cryptMock = Mockery::mock('\Box_Crypt');
+    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
     $cryptMock->shouldReceive('encrypt')->atLeast()->once();
 
     $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
@@ -1011,7 +1219,7 @@ test('updateTemplate updates template', function (array $data, string $templateR
 
     $loggerStub = new Tests\Helpers\TestLogger();
 
-    $cryptMock = Mockery::mock('\Box_Crypt');
+    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
     $cryptMock->shouldReceive('decrypt')
         ->never();
     $configMock = ['salt' => md5(random_bytes(13))];
@@ -1100,10 +1308,14 @@ test('templateBatchRegenerate resets existing built-in templates without module 
         ->and($template->hasError())->toBeFalse()
         ->and($customTemplate->getContent())->toBe('Custom template content');
 
-    $logMessages = array_map(static fn (array $call): string => $call['params'][0], $di['logger']->calls);
-    expect($logMessages)
-        ->not->toContain('Synced file-backed email templates for installed modules.')
-        ->toContain('Regenerated 1 existing file-backed email templates.');
+    expect($di['logger']->calls)->not->toContainEqual([
+        'method' => 'info',
+        'params' => ['Synced file-backed email templates for installed modules.', []],
+    ]);
+    expect($di['logger']->calls)->toContainEqual([
+        'method' => 'info',
+        'params' => ['Regenerated {count} existing file-backed email templates.', ['count' => 1]],
+    ]);
 });
 
 test('templateBatchDisable disables all templates', function (): void {
@@ -1327,7 +1539,13 @@ test('validateAllTemplates reports invalid templates', function (): void {
     expect($result['errors'][0]['action_code'])->toBe('mod_email_broken');
     expect($di['logger']->calls)->toContainEqual([
         'method' => 'warning',
-        'params' => ['Email template validation failed for "mod_email_broken": Email template syntax error: Unknown "filter" filter', []],
+        'params' => [
+            'Email template validation failed for "{action_code}": {error}',
+            [
+                'action_code' => 'mod_email_broken',
+                'error' => 'Email template syntax error: Unknown "filter" filter',
+            ],
+        ],
     ]);
 });
 
@@ -1426,7 +1644,7 @@ test('validateAllTemplates renders templates with stored vars to enforce sandbox
         ->once()
         ->andReturn([$template]);
 
-    $cryptMock = Mockery::mock('\Box_Crypt');
+    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
     $cryptMock->shouldReceive('decrypt')
         ->once()
         ->with('encrypted-vars', Mockery::type('string'))

@@ -27,7 +27,14 @@ class SentryHelper
      * If you modify what's reported, update this to the version number to the release that includes your changes.
      * This is important as we rely on it to inform the user that they may want to review what's been changed.
      */
-    final public const string last_change = '0.6.0';
+    final public const string last_change = '0.8.7';
+
+    /**
+     * `package@version` is required for Sentry to parse a release as semver - not composer.json's
+     * "fossbilling/fossbilling" package name, since Sentry release identifiers can't contain "/".
+     * Keep release-sentry.yml's `release:` input in sync with this.
+     */
+    private const string SENTRY_RELEASE_PACKAGE = 'fossbilling';
 
     // A full list of our own modules which we want to receive error reports for
     private const array ALLOWED_MODULES = [
@@ -72,10 +79,11 @@ class SentryHelper
         'theme',
     ];
 
-    // Themes we want to receive error reports for
+    // Themes we want to receive error reports for. extractName() (below) resolves
+    // to the top-level directory under PATH_THEMES, so 'default' alone covers
+    // default/admin, default/client, and default/shared.
     private const array ALLOWED_THEMES = [
-        'admin_default',
-        'huraga',
+        'default',
     ];
 
     // Array containing instance IDs that are blacklisted from error reporting and a timestamp of when their blacklist expires.
@@ -127,6 +135,22 @@ class SentryHelper
             // We explicitly set the HTTP client to use the Symfony HTTP client to provide wider support VS their default cURL client.
             'http_client' => $httpClient,
 
+            /*
+             * Every PHP version bump deprecates a fresh batch of constants/casts/signatures, and we don't
+             * control when self-hosted instances upgrade PHP - so on an instance running ahead of our tested
+             * baseline, these fire on effectively every request, forever. `error_reporting(E_ALL)` (see
+             * load.php) means the SDK's ErrorListenerIntegration would otherwise capture E_DEPRECATED same as
+             * any other error. We deliberately keep E_USER_DEPRECATED enabled: that's our own trigger_error()
+             * calls flagging things we should investigate (see Currency\Service::getExchangeRateAPIRates()),
+             * not interpreter noise.
+             *
+             * Deliberately not also excluding E_STRICT: referencing that constant at all triggers its own
+             * "Constant E_STRICT is deprecated" notice as of PHP 8.4, and E_STRICT hasn't been a real error
+             * level PHP ever raises since 8.0 anyway (its cases were folded into E_DEPRECATED/E_WARNING), so
+             * excluding it buys nothing.
+             */
+            'error_types' => E_ALL & ~E_DEPRECATED,
+
             'before_send' => function (Event $event, ?EventHint $hint) use ($serverSoftware): ?Event {
                 $module = null;
                 $theme = null;
@@ -173,13 +197,19 @@ class SentryHelper
             'ignore_exceptions' => [InformationException::class],
 
             'environment' => Environment::getCurrentEnvironment(),
-            'release' => Version::VERSION,
+
+            // Only affects releases from here on - see SENTRY_RELEASE_PACKAGE.
+            'release' => self::SENTRY_RELEASE_PACKAGE . '@' . Version::VERSION,
 
             // This option is disabled by default, but we set it to false here to be explicit & ensure it can never change unexpectedly.
             'send_default_pii' => false,
 
             // Stack traces aren't that much data to send and are valuable for us, so let's always send them.
             'attach_stacktrace' => true,
+
+            // Strips the install's own filesystem path from stack trace filenames - otherwise leaks per-install hosting details (usernames, domains) to Sentry.
+            // PATH_ROOT goes first so it always wins; the include_path entries are the SDK's own default and are kept as a fallback for paths reached via a symlinked docroot.
+            'prefixes' => [PATH_ROOT, ...array_filter(explode(PATH_SEPARATOR, get_include_path() ?: ''))],
         ];
 
         /*

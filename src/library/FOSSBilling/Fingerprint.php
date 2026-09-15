@@ -114,7 +114,7 @@ class Fingerprint
      *
      * @return bool `true` if the fingerprint passes, `false` if it's considered invalid
      */
-    public function checkFingerprint(array $fingerprint): bool
+    public function checkFingerprint(array $fingerprint, ?string $sessionId = null): bool
     {
         $itemCount = 0;
         $scoreSubtract = 0;
@@ -170,7 +170,7 @@ class Fingerprint
 
         // If fingerprint debugging is enabled and it failed, print some debug info to the log
         if (!$valid && Config::getProperty('security.debug_fingerprint', false)) {
-            $ID = session_id() ?: $this->request->cookies->get(CookieNames::SESSION);
+            $ID = $sessionId ?: $this->request->cookies->get(CookieNames::SESSION);
             if (!$ID) {
                 return $valid;
             }
@@ -178,12 +178,16 @@ class Fingerprint
             $percentageWrong = round($percentageWrong * 100, 3);
             $failureThreshold = round($failureThreshold * 100, 3);
 
-            error_log("The session with the ID '$ID' failed its fingerprint check with a (weighted) difference of $percentageWrong% compared to the allowed $failureThreshold%. $itemCount properties were used in the check.");
-            $output = PHP_EOL;
-            foreach ($differing as $name) {
-                $output .= '    ' . $name . PHP_EOL;
-            }
-            error_log('The following properties differed:' . $output);
+            // Fingerprint is intentionally dependency-free, so retain PHP's
+            // fallback logger. Never write the session token itself to logs.
+            error_log(sprintf(
+                'Fingerprint check failed for session %s: weighted difference %.3f%% (allowed %.3f%%), %d properties compared; differing properties: %s',
+                hash('sha256', $ID),
+                $percentageWrong,
+                $failureThreshold,
+                $itemCount,
+                implode(', ', $differing),
+            ));
         }
 
         return $valid;

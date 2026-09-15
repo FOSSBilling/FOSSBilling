@@ -68,46 +68,80 @@ class Guest extends \FOSSBilling\Api\AbstractApi
      * @optional string $custom_20 - Custom field 20
      */
     #[RequiredParams(['email' => 'Email required', 'first_name' => 'First name required', 'password' => 'Password required', 'password_confirm' => 'Password confirmation required'])]
-    public function create($data = []): int
+    public function create($data = []): bool
     {
-        $this->getDi()['rate_limiter']->consumeOrThrow('client_signup', (string) $this->getIp());
+        $startedAt = microtime(true);
 
-        $config = $this->getDi()['mod_config']('client');
+        try {
+            $this->getDi()['rate_limiter']->consumeOrThrow('client_signup', (string) $this->getIp());
 
-        if (isset($config['disable_signup']) && $config['disable_signup']) {
-            throw new \FOSSBilling\InformationException('New registrations are temporarily disabled');
-        }
+            $config = $this->getDi()['mod_config']('client');
 
-        $this->getDi()['validator']->passwordsMatch($data);
-
-        $this->getService()->checkExtraRequiredFields($data);
-        $this->getService()->checkCustomFields($data);
-
-        $this->getDi()['validator']->isPasswordStrong($data['password']);
-        $service = $this->getService();
-
-        $email = $data['email'] ?? null;
-        $email = $this->getDi()['tools']->validateAndSanitizeEmail($email);
-        $email = strtolower(trim((string) $email));
-        if ($service->clientAlreadyExists($email)) {
-            throw new \FOSSBilling\InformationException('This email address is already registered.');
-        }
-
-        $client = $service->guestCreateClient($data);
-
-        if (isset($config['require_email_confirmation']) && (bool) $config['require_email_confirmation']) {
-            $service->sendEmailConfirmationForClient($client);
-        }
-
-        if (Tools::normalizeBoolean($config['auto_login_after_signup'] ?? true, true)) {
-            try {
-                $this->login(['email' => $client->getEmail(), 'password' => $data['password']]);
-            } catch (\Throwable $e) {
-                error_log($e->getMessage());
+            if (isset($config['disable_signup']) && $config['disable_signup']) {
+                throw new \FOSSBilling\InformationException('New registrations are temporarily disabled');
             }
-        }
 
-        return (int) $client->getId();
+            $this->getDi()['validator']->passwordsMatch($data);
+
+            $this->getService()->checkExtraRequiredFields($data);
+            $this->getService()->checkCustomFields($data);
+
+            $this->getDi()['validator']->isPasswordStrong($data['password']);
+            $service = $this->getService();
+
+            $email = $data['email'] ?? null;
+            $email = $this->getDi()['tools']->validateAndSanitizeEmail($email);
+            $email = strtolower(trim((string) $email));
+
+            $this->checkCaptchaIfEnabled($data);
+
+            // Keyed independently of the IP limiter above so that spreading
+            // probes across IPs doesn't help an attacker hammer one address.
+            // Consumed only after the CAPTCHA check so a stream of invalid
+            // CAPTCHA submissions can't burn through one address's quota.
+            $emailLimit = $this->getDi()['rate_limiter']->consume('client_signup_email', $email);
+
+            $autoLogin = Tools::normalizeBoolean($config['auto_login_after_signup'] ?? true, true);
+
+            if ($emailLimit->isLimited() || $service->clientAlreadyExists($email)) {
+                // Never disclose whether this address is already registered:
+                // no distinct error, no duplicate row, and the same return
+                // value as a genuine signup below. Falling through to an
+                // ordinary login attempt keeps the response and any session
+                // side effects identical to the success path, reusing
+                // login()'s own timing- and message-safe handling instead of
+                // reimplementing it here.
+                $this->getDi()['logger']->withChannel('security')->info('Client signup declined for an existing or rate-limited email from IP {ip}.', ['ip' => $this->getIp()]);
+
+                if ($autoLogin) {
+                    try {
+                        $this->login(['email' => $email, 'password' => $data['password']]);
+                    } catch (\Throwable $e) {
+                        $this->getDi()['logger']->error($e->getMessage());
+                    }
+                }
+
+                return true;
+            }
+
+            $client = $service->guestCreateClient($data);
+
+            if (isset($config['require_email_confirmation']) && (bool) $config['require_email_confirmation']) {
+                $service->sendEmailConfirmationForClient($client);
+            }
+
+            if ($autoLogin) {
+                try {
+                    $this->login(['email' => $client->getEmail(), 'password' => $data['password']]);
+                } catch (\Throwable $e) {
+                    $this->getDi()['logger']->error($e->getMessage());
+                }
+            }
+
+            return true;
+        } finally {
+            RandomizedTimeFloor::apply($startedAt, 300, 450);
+        }
     }
 
     /**
@@ -145,7 +179,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             $result = $service->toSessionArray($client);
             $this->getDi()['session']->set('client_id', $client->getId());
 
-            $this->getDi()['logger']->info('Client #%s logged in', $client->getId());
+            $this->getDi()['logger']->info('Client #{client_id} logged in', ['client_id' => $client->getId()]);
             $this->getDi()['session']->delete('redirect_uri');
 
             if (!empty($client->getLang())) {
@@ -179,32 +213,32 @@ class Guest extends \FOSSBilling\Api\AbstractApi
 
             $ipLimit = $this->getDi()['rate_limiter']->consume('client_password_reset_ip', (string) $this->getIp());
             if ($ipLimit->isLimited()) {
-                $this->getDi()['logger']->setChannel('security')->info('Client password reset rate limited from IP %s: email %s', $this->getIp(), $data['email']);
+                $this->getDi()['logger']->withChannel('security')->info('Client password reset rate limited from IP {ip}.', ['ip' => $this->getIp()]);
 
                 return true;
             }
 
             $emailLimit = $this->getDi()['rate_limiter']->consume('client_password_reset_email', (string) $data['email']);
             if ($emailLimit->isLimited()) {
-                $this->getDi()['logger']->setChannel('security')->info('Client password reset rate limited for email %s from IP %s', $data['email'], $this->getIp());
+                $this->getDi()['logger']->withChannel('security')->info('Client password reset rate limited for an account from IP {ip}.', ['ip' => $this->getIp()]);
 
                 return true;
             }
 
-            $this->checkPasswordResetCaptcha($data);
+            $this->checkCaptchaIfEnabled($data);
 
             $this->getDi()['events_manager']->fire(['event' => 'onBeforeGuestPasswordResetRequest', 'params' => $data]);
 
             $em = $this->getDi()['em'];
             $client = $em->getRepository(Client::class)->findOneByEmailAndActive($data['email']);
             if (!$client instanceof Client) {
-                $this->getDi()['logger']->setChannel('security')->info('Client password reset requested for unknown email %s from IP %s', $data['email'], $this->getIp());
+                $this->getDi()['logger']->withChannel('security')->info('Client password reset requested for an unknown account from IP {ip}.', ['ip' => $this->getIp()]);
 
                 return true;
             }
 
             if ($client->getStatus() !== Client::ACTIVE) {
-                $this->getDi()['logger']->setChannel('security')->info('Client password reset requested for ineligible client #%s from IP %s: email %s, account status %s', $client->getId(), $this->getIp(), $data['email'], $client->getStatus());
+                $this->getDi()['logger']->withChannel('security')->info('Client password reset requested for ineligible client #{client_id} from IP {ip}: account status {status}.', ['client_id' => $client->getId(), 'ip' => $this->getIp(), 'status' => $client->getStatus()]);
 
                 return true;
             }
@@ -212,22 +246,12 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             $hash = $service->createPasswordResetRequestForClient($client);
             $service->sendPasswordResetRequestEmailForClient($client, $hash);
 
-            $this->getDi()['logger']->setChannel('security')->info('Client password reset email queued for client #%s from IP %s: email %s', $client->getId(), $this->getIp(), $data['email']);
+            $this->getDi()['logger']->withChannel('security')->info('Client password reset email queued for client #{client_id} from IP {ip}.', ['client_id' => $client->getId(), 'ip' => $this->getIp()]);
 
             return true;
         } finally {
             RandomizedTimeFloor::apply($startedAt, 300, 450);
         }
-    }
-
-    private function checkPasswordResetCaptcha(array $data): void
-    {
-        $extensionService = $this->getDi()['mod_service']('extension');
-        if (!$extensionService->isExtensionActive('mod', 'antispam')) {
-            return;
-        }
-
-        $this->getDi()['mod_service']('Antispam')->checkCaptcha($data);
     }
 
     #[RequiredParams(['hash' => 'No Hash provided', 'password' => 'Password required', 'password_confirm' => 'Password confirmation required'])]
@@ -246,24 +270,24 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             $em = $this->getDi()['em'];
             $reset = $em->getRepository(ClientPasswordReset::class)->findOneByHash($data['hash']);
             if (!$reset instanceof ClientPasswordReset) {
-                $this->getDi()['logger']->setChannel('security')->info('Client password reset confirmation failed from IP %s: reset token not found', $this->getIp());
+                $this->getDi()['logger']->withChannel('security')->info('Client password reset confirmation failed from IP {ip}: reset token not found', ['ip' => $this->getIp()]);
 
                 throw new \FOSSBilling\InformationException('The link has expired or you have already reset your password.');
             }
 
             if (strtotime((string) $reset->getCreatedAt()?->format('Y-m-d H:i:s')) - time() + 900 < 0) {
-                $this->getDi()['logger']->setChannel('security')->info('Client password reset confirmation failed for client #%s from IP %s: reset token expired', $reset->getClientId(), $this->getIp());
+                $this->getDi()['logger']->withChannel('security')->info('Client password reset confirmation failed for client #{client_id} from IP {ip}: reset token expired', ['client_id' => $reset->getClient()?->getId(), 'ip' => $this->getIp()]);
 
                 throw new \FOSSBilling\InformationException('The link has expired or you have already reset your password.');
             }
 
-            $client = $reset->getClientId() !== null ? $em->getRepository(Client::class)->find($reset->getClientId()) : null;
+            $client = $reset->getClient();
             if (!$client instanceof Client) {
                 throw new \FOSSBilling\InformationException('The link has expired or you have already reset your password.');
             }
 
             if ($client->getStatus() !== Client::ACTIVE) {
-                $this->getDi()['logger']->setChannel('security')->info('Client password reset confirmation failed for client #%s from IP %s: account status %s', $client->getId(), $this->getIp(), $client->getStatus());
+                $this->getDi()['logger']->withChannel('security')->info('Client password reset confirmation failed for client #{client_id} from IP {ip}: account status {status}', ['client_id' => $client->getId(), 'ip' => $this->getIp(), 'status' => $client->getStatus()]);
 
                 throw new \FOSSBilling\InformationException('The link has expired or you have already reset your password.');
             }
@@ -276,7 +300,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             $profileService = $this->getDi()['mod_service']('profile');
             $profileService->invalidateSessions('client', (int) $client->getId());
 
-            $this->getDi()['logger']->setChannel('security')->info('Client password reset completed for client #%s from IP %s', $client->getId(), $this->getIp());
+            $this->getDi()['logger']->withChannel('security')->info('Client password reset completed for client #{client_id} from IP {ip}', ['client_id' => $client->getId(), 'ip' => $this->getIp()]);
 
             // send email
             $email = [];

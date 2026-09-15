@@ -29,20 +29,23 @@ function runCheckInstallerWithStubbedFilesystem(bool $expectRemoval): void
 
     $previousFilesystem = $GLOBALS['filesystem'] ?? null;
     $GLOBALS['filesystem'] = $mock;
+    ini_set('error_log', '/dev/null');
 
     try {
         checkInstaller();
     } finally {
         $GLOBALS['filesystem'] = $previousFilesystem;
+        // Keep the suite-wide test logging policy after exercising the production cleanup path.
+        ini_set('error_log', '/dev/null');
     }
 }
 
-test('checkInstaller does not delete the install directory when APP_ENV is unset', function (): void {
-    withAppEnv(null, fn () => runCheckInstallerWithStubbedFilesystem(expectRemoval: false));
+test('checkInstaller deletes the install directory when APP_ENV is unset', function (): void {
+    withAppEnv(null, fn () => runCheckInstallerWithStubbedFilesystem(expectRemoval: true));
 });
 
-test('checkInstaller does not delete the install directory when APP_ENV holds an unrecognized value', function (): void {
-    withAppEnv('staging', fn () => runCheckInstallerWithStubbedFilesystem(expectRemoval: false));
+test('checkInstaller deletes the install directory when APP_ENV holds an unrecognized value', function (): void {
+    withAppEnv('staging', fn () => runCheckInstallerWithStubbedFilesystem(expectRemoval: true));
 });
 
 test('checkInstaller does not delete the install directory when APP_ENV is dev or test', function (): void {

@@ -102,9 +102,7 @@ class Client implements InjectionAwareInterface
 
     private function _loadConfig(): void
     {
-        if (is_null($this->apiConfig)) {
-            $this->apiConfig = Config::getProperty('api', []);
-        }
+        $this->apiConfig ??= Config::getProperty('api', []);
     }
 
     private function checkUpdateFinalization(string $role, string $class, string $method): void
@@ -118,7 +116,7 @@ class Client implements InjectionAwareInterface
     {
         $subject = (string) $this->_getIp();
 
-        if ($method === 'staff_login' || $method === 'client_login') {
+        if (($method === 'staff_login' || $method === 'client_login') && $role !== 'admin') {
             $policy = 'api_login';
         } elseif ($role === 'guest') {
             $policy = 'api_guest';
@@ -432,7 +430,7 @@ class Client implements InjectionAwareInterface
         $this->_loadConfig();
 
         if ($e instanceof \Exception) {
-            error_log("{$e->getMessage()} {$e->getCode()}.");
+            $this->getDi()['logger']->error("{$e->getMessage()} {$e->getCode()}.");
         }
 
         return (new ApiResponseFactory())->create($data, $e);

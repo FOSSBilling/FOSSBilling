@@ -15,8 +15,10 @@ use Box\Mod\Activity\Entity\ActivityAdminHistory;
 use Box\Mod\Staff\Entity\Admin;
 use Box\Mod\Staff\Entity\AdminGroup;
 use Box\Mod\Staff\Entity\AdminGroupMember;
+use Box\Mod\Staff\Entity\AdminPasswordReset;
 use Box\Mod\Staff\Repository\AdminGroupMemberRepository;
 use Box\Mod\Staff\Repository\AdminGroupRepository;
+use Box\Mod\Staff\Repository\AdminPasswordResetRepository;
 use Box\Mod\Staff\Repository\AdminRepository;
 use Box\Mod\Support\Entity\Helpdesk;
 use Box\Mod\Support\Entity\SupportTicket;
@@ -32,6 +34,7 @@ class Service implements InjectionAwareInterface
 
     private AdminGroupRepository $adminGroupRepository;
     private AdminGroupMemberRepository $adminGroupMemberRepository;
+    private AdminPasswordResetRepository $adminPasswordResetRepository;
 
     protected ?\Pimple\Container $di = null;
 
@@ -40,6 +43,7 @@ class Service implements InjectionAwareInterface
         $this->di = $di;
         $this->adminGroupRepository = $di['em']->getRepository(AdminGroup::class);
         $this->adminGroupMemberRepository = $di['em']->getRepository(AdminGroupMember::class);
+        $this->adminPasswordResetRepository = $di['em']->getRepository(AdminPasswordReset::class);
     }
 
     public function getDi(): ?\Pimple\Container
@@ -119,6 +123,26 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\InformationException('Check your login details', null, 403);
         }
 
+        // Event listeners (e.g. this login being recorded in the login history) are normally
+        // connected by the cron job's hook_batch_connect task. Before cron has run for the
+        // first time, no listeners are connected and the event fired below would silently do
+        // nothing, so an admin's very first logins would go unrecorded. Connect them now so
+        // that gap does not exist. batchConnect() returns false if another process was still
+        // rebuilding the set when it gave up waiting; retry once rather than firing the event
+        // below against a set we know is incomplete. If both attempts fail, log it and let the
+        // login proceed anyway - failing the login itself over this housekeeping step would
+        // turn a rare missed audit entry into every admin being locked out while it's stuck.
+        $hookService = $this->di['mod_service']('hook');
+        if (!$hookService->hasConnectedListeners()) {
+            $connected = $hookService->batchConnect();
+            if (!$connected) {
+                $connected = $hookService->batchConnect();
+            }
+            if (!$connected) {
+                $this->di['logger']->warning('Could not connect event listeners after two attempts; this login (and other events) may not be recorded.');
+            }
+        }
+
         $this->di['events_manager']->fire(['event' => 'onAfterAdminLogin', 'params' => ['id' => $model->getId(), 'ip' => $ip]]);
 
         $result = [
@@ -130,7 +154,7 @@ class Service implements InjectionAwareInterface
         $this->di['session']->regenerateId();
         $this->di['session']->set('admin', $result);
 
-        $this->di['logger']->info(sprintf('Staff member %s logged in', $model->getId()));
+        $this->di['logger']->info('Staff member {admin_id} logged in', ['admin_id' => $model->getId()]);
 
         return $result;
     }
@@ -179,9 +203,7 @@ class Service implements InjectionAwareInterface
     {
         $alwaysAllowed = ['index', 'dashboard', 'profile'];
 
-        if (is_null($member)) {
-            $member = $this->getLoggedInAdminOrCronAdmin();
-        }
+        $member ??= $this->getLoggedInAdminOrCronAdmin();
 
         if ($member->isCron() || in_array($module, $alwaysAllowed)) {
             return true;
@@ -262,7 +284,7 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->setChannel('email')->error('Failed to send staff order notification email', ['exception' => $exc->getMessage()]);
+            $di['logger']->withChannel('email')->error('Failed to send staff order notification email', ['exception' => $exc]);
         }
     }
 
@@ -285,8 +307,8 @@ class Service implements InjectionAwareInterface
                 'order' => $orderService->toApiArray($order, false),
             ]);
         } catch (\Throwable $exception) {
-            $di['logger']->setChannel('email')->error('Failed to send staff order suspension notification email', [
-                'exception' => $exception->getMessage(),
+            $di['logger']->withChannel('email')->error('Failed to send staff order suspension notification email', [
+                'exception' => $exception,
             ]);
         }
     }
@@ -320,7 +342,7 @@ class Service implements InjectionAwareInterface
             $email['ticket'] = $ticket;
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->setChannel('email')->error('Failed to send staff ticket notification email', ['exception' => $exc->getMessage()]);
+            $di['logger']->withChannel('email')->error('Failed to send staff ticket notification email', ['exception' => $exc]);
         }
     }
 
@@ -342,7 +364,7 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->setChannel('email')->error('Failed to send staff ticket reply notification email', ['exception' => $exc->getMessage()]);
+            $di['logger']->withChannel('email')->error('Failed to send staff ticket reply notification email', ['exception' => $exc]);
         }
     }
 
@@ -363,7 +385,7 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->setChannel('email')->error('Failed to send staff ticket close notification email', ['exception' => $exc->getMessage()]);
+            $di['logger']->withChannel('email')->error('Failed to send staff ticket close notification email', ['exception' => $exc]);
         }
     }
 
@@ -403,7 +425,7 @@ class Service implements InjectionAwareInterface
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->setChannel('email')->error('Failed to send staff client signup notification email', ['exception' => $exc->getMessage()]);
+            $di['logger']->withChannel('email')->error('Failed to send staff client signup notification email', ['exception' => $exc]);
         }
 
         return true;
@@ -418,7 +440,9 @@ class Service implements InjectionAwareInterface
 
     public function getSearchQuery($data): array
     {
-        $query = 'SELECT * FROM admin';
+        // `admin` also holds `pass` and `api_token` - list columns explicitly instead of
+        // `SELECT *` so listing never exposes them.
+        $query = 'SELECT id, system_name, email, name, signature, status, timezone, created_at, updated_at FROM admin';
 
         $id = $data['id'] ?? null;
         $search = $data['search'] ?? null;
@@ -468,30 +492,36 @@ class Service implements InjectionAwareInterface
         $cronEmail = $this->di['tools']->generatePassword() . '@' . $this->di['tools']->generatePassword() . '.com';
         $cronEmail = filter_var($cronEmail, FILTER_SANITIZE_EMAIL);
 
-        $cronPass = $this->di['tools']->generatePassword(256, 4);
+        $cronPass = $this->di['password']->hashIt($this->di['tools']->generatePassword(256, 4));
 
-        $cron = new Admin();
-        $cron->setSystemName(Admin::SYSTEM_CRON);
-        $cron->setEmail($cronEmail);
-        $cron->setPass($this->di['password']->hashIt($cronPass));
-        $cron->setName('System Cron Job');
-        $cron->setSignature('');
-        $cron->setStatus(Admin::STATUS_ACTIVE);
+        // Two cron runs can race to create the cron admin. Insert via the DBAL
+        // connection (not an ORM flush) so a constraint violation doesn't close the
+        // EntityManager for the rest of this cron run; on conflict, re-read the
+        // winner's row below.
+        $now = date('Y-m-d H:i:s');
+        $connection = $this->di['em']->getConnection();
 
         try {
-            $this->di['em']->persist($cron);
-            $this->di['em']->flush();
+            $connection->insert('admin', [
+                'system_name' => Admin::SYSTEM_CRON,
+                'email' => $cronEmail,
+                'pass' => $cronPass,
+                'name' => 'System Cron Job',
+                'signature' => '',
+                'status' => Admin::STATUS_ACTIVE,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
         } catch (UniqueConstraintViolationException) {
-            $this->di['em']->clear();
-            $cron = $this->getAdminRepository()->findOneBy(['systemName' => Admin::SYSTEM_CRON]);
-            if ($cron instanceof Admin) {
-                return $cron;
-            }
-
-            throw new \FOSSBilling\Exception('The cron administrator account could not be created');
+            // A concurrent request created the cron admin; fall through to re-read it.
         }
 
-        return $cron;
+        $cron = $this->getAdminRepository()->findOneBy(['systemName' => Admin::SYSTEM_CRON]);
+        if ($cron instanceof Admin) {
+            return $cron;
+        }
+
+        throw new \FOSSBilling\Exception('The cron administrator account could not be created');
     }
 
     public function toApiArray(Admin $model, $deep = false): array
@@ -563,7 +593,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffUpdate', 'params' => ['id' => $model->getId()]]);
 
-        $this->di['logger']->info('Updated staff member #%s "%s" details; status is "%s"', $model->getId(), $model->getName(), $model->getStatus());
+        $this->di['logger']->info('Updated staff member #{model_id} "{model_name}" details; status is "{model_status}"', ['model_id' => $model->getId(), 'model_name' => $model->getName(), 'model_status' => $model->getStatus()]);
 
         return true;
     }
@@ -585,13 +615,14 @@ class Service implements InjectionAwareInterface
         $name = $model->getName();
         $this->di['em']->wrapInTransaction(function () use ($model, $id): void {
             $this->adminGroupMemberRepository->deleteMembershipsForAdmin((int) $id);
+            $this->adminPasswordResetRepository->deleteResetsForAdmin((int) $id);
             $this->di['em']->remove($model);
             $this->di['em']->flush();
         });
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffDelete', 'params' => ['id' => $id]]);
 
-        $this->di['logger']->info('Deleted staff member #%s "%s"', $id, $name);
+        $this->di['logger']->info('Deleted staff member #{id} "{name}"', ['id' => $id, 'name' => $name]);
 
         return true;
     }
@@ -612,7 +643,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffPasswordChange', 'params' => ['id' => $model->getId()]]);
 
-        $this->di['logger']->info('Changed password for staff member #%s "%s"', $model->getId(), $model->getName());
+        $this->di['logger']->info('Changed password for staff member #{model_id} "{model_name}"', ['model_id' => $model->getId(), 'model_name' => $model->getName()]);
 
         return true;
     }
@@ -648,7 +679,7 @@ class Service implements InjectionAwareInterface
             $this->di['em']->wrapInTransaction(function () use ($model, $group): void {
                 $this->di['em']->persist($model);
                 $this->di['em']->flush();
-                $this->di['em']->persist(new AdminGroupMember((int) $model->getId(), $group));
+                $this->di['em']->persist(new AdminGroupMember($model, $group));
                 $this->di['em']->flush();
             });
         } catch (UniqueConstraintViolationException) {
@@ -659,7 +690,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffCreate', 'params' => ['id' => $newId]]);
 
-        $this->di['logger']->info('Created staff member #%s "%s" in group #%s "%s"', $newId, $model->getName(), $groupId, $group->getName());
+        $this->di['logger']->info('Created staff member #{admin_id} "{model_name}" in group #{group_id} "{group_name}"', ['admin_id' => $newId, 'model_name' => $model->getName(), 'group_id' => $groupId, 'group_name' => $group->getName()]);
 
         return $newId;
     }
@@ -679,7 +710,7 @@ class Service implements InjectionAwareInterface
         $this->di['em']->persist($group);
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Created staff group #%s "%s" under parent group #%s "%s"', $group->getId(), $group->getName(), $parent->getId(), $parent->getName());
+        $this->di['logger']->info('Created staff group #{group_id} "{group_name}" under parent group #{parent_id} "{parent_name}"', ['group_id' => $group->getId(), 'group_name' => $group->getName(), 'parent_id' => $parent->getId(), 'parent_name' => $parent->getName()]);
 
         return (int) $group->getId();
     }
@@ -712,7 +743,7 @@ class Service implements InjectionAwareInterface
         $this->di['em']->flush();
         $this->permissionCache = [];
 
-        $this->di['logger']->info('Deleted staff group #%s "%s"', $id, $name);
+        $this->di['logger']->info('Deleted staff group #{id} "{name}"', ['id' => $id, 'name' => $name]);
 
         return true;
     }
@@ -768,13 +799,7 @@ class Service implements InjectionAwareInterface
         $this->di['em']->flush();
         $this->permissionCache = [];
 
-        $this->di['logger']->info(
-            'Updated staff group #%s "%s"; parent changed: %s; permissions changed: %s',
-            $model->getId(),
-            $model->getName(),
-            $parentChanged ? 'yes' : 'no',
-            $permissionsChanged ? 'yes' : 'no',
-        );
+        $this->di['logger']->info('Updated staff group #{model_id} "{model_name}"; parent changed: {parent_changed}; permissions changed: {permissions_changed}', ['model_id' => $model->getId(), 'model_name' => $model->getName(), 'parent_changed' => $parentChanged ? 'yes' : 'no', 'permissions_changed' => $permissionsChanged ? 'yes' : 'no']);
 
         return true;
     }
@@ -791,11 +816,11 @@ class Service implements InjectionAwareInterface
             return true;
         }
 
-        $this->di['em']->persist(new AdminGroupMember($adminId, $group));
+        $this->di['em']->persist(new AdminGroupMember($admin, $group));
         $this->di['em']->flush();
         $this->permissionCache = [];
 
-        $this->di['logger']->info('Added staff member #%s "%s" to group #%s "%s"', $adminId, $admin->getName(), $groupId, $group->getName());
+        $this->di['logger']->info('Added staff member #{admin_id} "{admin_name}" to group #{group_id} "{group_name}"', ['admin_id' => $adminId, 'admin_name' => $admin->getName(), 'group_id' => $groupId, 'group_name' => $group->getName()]);
 
         return true;
     }
@@ -821,7 +846,7 @@ class Service implements InjectionAwareInterface
         $this->di['em']->flush();
         $this->permissionCache = [];
 
-        $this->di['logger']->info('Removed staff member #%s "%s" from group #%s "%s"', $adminId, $admin->getName(), $groupId, $group->getName());
+        $this->di['logger']->info('Removed staff member #{admin_id} "{admin_name}" from group #{group_id} "{group_name}"', ['admin_id' => $adminId, 'admin_name' => $admin->getName(), 'group_id' => $groupId, 'group_name' => $group->getName()]);
 
         return true;
     }
@@ -870,7 +895,7 @@ class Service implements InjectionAwareInterface
             return;
         }
 
-        if (!in_array((int) $group->getId(), $this->adminGroupRepository->getDescendantIdsForGroups($this->adminGroupMemberRepository->getGroupIdsForAdmin((int) $actor->id)), true)) {
+        if (!in_array((int) $group->getId(), $this->adminGroupRepository->getDescendantIdsForGroups($this->adminGroupMemberRepository->getGroupIdsForAdmin((int) $actor->getId())), true)) {
             throw new \FOSSBilling\InformationException('You can only manage lower staff groups');
         }
     }

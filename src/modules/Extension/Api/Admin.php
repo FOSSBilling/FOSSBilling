@@ -52,7 +52,10 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         try {
             $list = $this->getDi()['extension_manager']->getExtensionList($type);
         } catch (\Exception $e) {
-            $this->getDi()['logger']->warning(sprintf('Failed to fetch extension list for type "%s": %s', $type ?? 'all', $e->getMessage()));
+            $this->getDi()['logger']->warning(
+                'Failed to fetch extension list for type "{type}": {exception_message}',
+                ['type' => $type ?? 'all', 'exception_message' => $e->getMessage(), 'exception' => $e]
+            );
 
             $list = [];
         }
@@ -189,7 +192,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $this->getDi()['events_manager']->fire(['event' => 'onAfterAdminDeactivateExtension', 'params' => ['id' => $data['id'], 'type' => $data['type']]]);
 
-        $this->getDi()['logger']->info('Deactivated extension "%s"', $data['type'] . ' ' . $data['id']);
+        $this->getDi()['logger']->info('Deactivated extension "{extension}"', ['extension' => $data['type'] . ' ' . $data['id']]);
 
         return true;
     }

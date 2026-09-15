@@ -159,3 +159,9 @@ test('sanitize markdown content preserves markdown inline code', function (): vo
     $result = FOSSBilling\Tools::sanitizeMarkdownContent($input);
     expect($result)->toBe($input);
 });
+
+test('validate and sanitize email returns the address unescaped', function (): void {
+    $tools = new FOSSBilling\Tools();
+
+    expect($tools->validateAndSanitizeEmail('foo&bar@example.com', true, false))->toBe('foo&bar@example.com');
+});

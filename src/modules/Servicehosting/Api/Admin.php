@@ -265,7 +265,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $model = $this->_getServer((int) $data['id']);
 
         $count = $this->getDi()['em']->getRepository(ServiceHosting::class)
-            ->count(['serviceHostingServerId' => (int) $data['id']]);
+            ->count(['serviceHostingServer' => $model]);
 
         if ($count > 0) {
             throw new \FOSSBilling\InformationException('Hosting server is used by :count: service hostings', [':count:' => $count], 704);
@@ -396,7 +396,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $model = $this->_getHp((int) $data['id']);
 
         $count = $this->getDi()['em']->getRepository(ServiceHosting::class)
-            ->count(['serviceHostingHpId' => (int) $data['id']]);
+            ->count(['serviceHostingHp' => $model]);
         if ($count > 0) {
             throw new \FOSSBilling\InformationException('Hosting plan is used by :count: service hostings', [':count:' => $count], 704);
         }
