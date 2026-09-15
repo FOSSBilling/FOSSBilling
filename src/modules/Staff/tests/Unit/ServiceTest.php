@@ -466,7 +466,7 @@ test('onAfterAdminOrderSuspend sends a staff notification', function (): void {
     Service::onAfterAdminOrderSuspend($event);
 });
 
-test('onAfterClientReplyTicket sends email notification', function (): void {
+test('onAfterClientReplyTicket limits client details in the email notification', function (): void {
     $eventMock = Mockery::mock('\Box_Event');
     $ticketId = 42;
     $clientId = 7;
@@ -475,6 +475,17 @@ test('onAfterClientReplyTicket sends email notification', function (): void {
         ->setPriority(25);
     $clientModel = createEntity(Box\Mod\Client\Entity\Client::class);
     $clientDetails = [
+        'id' => $clientId,
+        'email' => 'client@example.com',
+        'first_name' => 'Example',
+        'last_name' => 'Client',
+        'company_vat' => 'VAT-SECRET',
+        'birthday' => '1990-01-02',
+        'phone' => '555-0100',
+        'address_1' => '123 Privacy St',
+        'timezone' => 'UTC',
+    ];
+    $ticketClientDetails = [
         'id' => $clientId,
         'email' => 'client@example.com',
         'first_name' => 'Example',
@@ -505,7 +516,7 @@ test('onAfterClientReplyTicket sends email notification', function (): void {
             'ticket' => [
                 'subject' => 'Example ticket',
                 'priority' => 25,
-                'client' => $clientDetails,
+                'client' => $ticketClientDetails,
             ],
         ]);
 
