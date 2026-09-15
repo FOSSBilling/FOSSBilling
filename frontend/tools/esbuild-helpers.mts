@@ -3,6 +3,7 @@ import postcss from 'postcss';
 import * as sass from 'sass';
 import { PurgeCSS } from 'purgecss';
 import { dirname, join, resolve } from 'path';
+import { fileURLToPath } from 'url';
 import { mkdir, readFile, readdir, rm, stat, writeFile } from 'fs/promises';
 import * as esbuild from 'esbuild';
 import type { BuildOptions, Drop, Loader, Plugin } from 'esbuild';
@@ -157,7 +158,7 @@ export async function purgeCssFile(cssFilePath: string, options: PurgeOptions) {
 
   try {
     const css = await readFile(cssFilePath, 'utf8');
-    const modulesPath = resolve(themePath, '../../modules');
+    const modulesPath = resolve(dirname(fileURLToPath(import.meta.url)), '../../src/modules');
     const moduleArea = area === 'client' ? 'client' : 'admin';
 
     const purgeCSSResult = await new PurgeCSS().purge({

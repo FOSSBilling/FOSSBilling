@@ -5,20 +5,13 @@ declare(strict_types=1);
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 
-/**
- * Stubs the global $filesystem used by checkInstaller() so the test never touches real
- * disk. The installer entry point is reported as missing so the exception-throwing branch,
- * which reads the real config via Config::getProperty(), is skipped.
- */
 function runCheckInstallerWithStubbedFilesystem(bool $expectRemoval): void
 {
     $configPath = PATH_CONFIG;
-    $installerEntryPoint = Path::join('install', 'install.php');
     $installDir = Path::normalize('install');
 
     $mock = Mockery::mock(Filesystem::class);
     $mock->shouldReceive('exists')->with($configPath)->andReturn(true);
-    $mock->shouldReceive('exists')->with($installerEntryPoint)->andReturn(false);
     $mock->shouldReceive('exists')->with($installDir)->andReturn(true);
 
     if ($expectRemoval) {
