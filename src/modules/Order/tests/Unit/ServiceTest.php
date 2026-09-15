@@ -1256,7 +1256,7 @@ test('getSoonExpiringActiveOrders executes query', function (): void {
     $serviceMock->getSoonExpiringActiveOrders();
 });
 
-test('getSoonExpiringActiveOrdersQuery builds expected SQL and bindings', function (): void {
+test('getSoonExpiringActiveOrdersQuery excludes orders with scheduled cancellations', function (): void {
     $randId = 1;
 
     $orderStatus = createEntity(Box\Mod\Order\Entity\OrderStatus::class);
@@ -1286,6 +1286,13 @@ test('getSoonExpiringActiveOrdersQuery builds expected SQL and bindings', functi
                 AND co.period IS NOT NULL
                 AND co.expires_at IS NOT NULL
                 AND i.id IS NULL
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM client_order_meta cancellation_meta
+                    WHERE cancellation_meta.client_order_id = co.id
+                    AND cancellation_meta.name = :cancellation_meta_name
+                    AND cancellation_meta.value = :cancellation_meta_value
+                )
                 /* Pair non-executed renewal items with paid invoices to skip renewals already queued for activation. */
                 AND NOT EXISTS (
                     SELECT 1
@@ -1301,6 +1308,8 @@ test('getSoonExpiringActiveOrdersQuery builds expected SQL and bindings', functi
     $expectedBindings = [
         'client_id' => $randId,
         'unpaid_invoice_status' => Invoice::STATUS_UNPAID,
+        'cancellation_meta_name' => Service::META_CANCEL_AT_PERIOD_END,
+        'cancellation_meta_value' => '1',
         'pending_item_type' => Box\Mod\Invoice\Entity\InvoiceItem::TYPE_ORDER,
         'pending_item_task' => Box\Mod\Invoice\Entity\InvoiceItem::TASK_RENEW,
         'pending_item_status' => Box\Mod\Invoice\Entity\InvoiceItem::STATUS_EXECUTED,
