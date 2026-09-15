@@ -272,6 +272,15 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                     throw new Payment_Exception('PayPal subscription signup is missing the subscription ID');
                 }
                 $subscrPeriod = str_replace(' ', '', (string) ($ipn['period3'] ?? ''));
+                if ($subscrPeriod === '') {
+                    // Newer-flow IPNs carry no period: derive it from the linked
+                    // invoice instead of storing an empty period.
+                    $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
+                    $periodInvoice = $this->di['em']->getRepository(Invoice::class)->find($tx['invoice_id']);
+                    if ($periodInvoice instanceof Invoice) {
+                        $subscrPeriod = (string) ($subscriptionService->getSubscriptionPeriod($periodInvoice) ?? '');
+                    }
+                }
 
                 $existingSubscription = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\Subscription::class)->findOneBy(['sid' => $subscrId]);
 

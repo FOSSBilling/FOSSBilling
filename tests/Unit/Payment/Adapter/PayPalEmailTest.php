@@ -249,6 +249,9 @@ describe('PayPal subscription IPN handling', function (): void {
         $di = container();
         $di['em'] = $em;
         $di['logger'] = $logger;
+        $subscriptionService = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+        $subscriptionService->shouldNotReceive('getSubscriptionPeriod');
+        $di['mod_service'] = $di->protect(static fn (): object => $subscriptionService);
 
         paypalProcessAdapter($di)->processTransaction($apiAdmin, 42, [
             'post' => [
@@ -706,6 +709,7 @@ describe('PayPal subscription IPN handling', function (): void {
 
     test('recurring_payment_profile_created stores the subscription', function (): void {
         $created = [];
+        $updates = [];
         $apiAdmin = Mockery::mock();
         $apiAdmin->shouldReceive('invoice_transaction_get')->once()->with(['id' => 42])->andReturn([
             'invoice_id' => 16, 'type' => null, 'txn_id' => null,
@@ -719,12 +723,21 @@ describe('PayPal subscription IPN handling', function (): void {
 
             return true;
         })->andReturn(8);
-        $apiAdmin->shouldReceive('invoice_transaction_update')->byDefault();
+        $apiAdmin->shouldReceive('invoice_transaction_update')->byDefault()->withArgs(function (array $data) use (&$updates): bool {
+            $updates[] = $data;
 
-        $em = paypalEmMocks();
+            return true;
+        });
+
+        $invoiceModel = Mockery::mock(Box\Mod\Invoice\Entity\Invoice::class);
+        $subscriptionService = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+        $subscriptionService->shouldReceive('getSubscriptionPeriod')->once()->with($invoiceModel)->andReturn('1M');
+
+        $em = paypalEmMocks($invoiceModel);
         $di = container();
         $di['em'] = $em;
         $di['logger'] = new Tests\Helpers\TestLogger();
+        $di['mod_service'] = $di->protect(static fn (): object => $subscriptionService);
 
         paypalProcessAdapter($di)->processTransaction($apiAdmin, 42, [
             'post' => [
@@ -738,7 +751,12 @@ describe('PayPal subscription IPN handling', function (): void {
         expect($created)->toHaveCount(1)
             ->and($created[0]['sid'])->toBe('I-PROFILE2')
             ->and($created[0]['currency'])->toBe('USD')
-            ->and($created[0]['amount'])->toBe('120.00');
+            ->and($created[0]['amount'])->toBe('120.00')
+            ->and($created[0]['period'])->toBe('1M');
+
+        $linked = array_values(array_filter($updates, fn (array $u): bool => ($u['s_id'] ?? null) === 'I-PROFILE2'));
+        expect($linked)->toHaveCount(1)
+            ->and($linked[0]['s_period'])->toBe('1M');
     });
 
     test('subscr_modify updates the stored subscription terms', function (): void {
