@@ -58,6 +58,12 @@ class ErrorPage
             4001 => [
                 'report' => false,
             ],
+            // Unavailable/misconfigured cache backend (e.g. a missing PHP extension, or an
+            // unreachable Redis/Memcached server). Surfaced to the admin directly when testing a
+            // cache driver before saving it, so it's listed here to keep it out of Sentry.io.
+            5001 => [
+                'report' => false,
+            ],
             // The Twig template cache directory (data/cache) couldn't be created or written
             // to. This is a host file permission issue we can't fix from within the app, so
             // it's listed here to keep it out of Sentry.io.
