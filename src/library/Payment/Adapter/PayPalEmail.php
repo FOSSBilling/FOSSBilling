@@ -160,8 +160,18 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                     if (!isset($ipn['mc_gross'], $ipn['txn_id'])) {
                         throw new Payment_Exception('PayPal payment is missing transaction details');
                     }
-                    if (in_array($txnType, ['subscr_payment', 'recurring_payment'], true) && !isset($ipn['subscr_id'])) {
+                    $isSubscriptionPayment = in_array($txnType, ['subscr_payment', 'recurring_payment'], true);
+                    if ($isSubscriptionPayment && !isset($ipn['subscr_id'])) {
                         throw new Payment_Exception('PayPal subscription payment is missing the subscription ID');
+                    }
+                    if ($isSubscriptionPayment) {
+                        $paymentSubscription = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\Subscription::class)->findOneBy(['sid' => (string) $ipn['subscr_id']]);
+                        if ($paymentSubscription instanceof Box\Mod\Invoice\Entity\Subscription
+                            && $paymentSubscription->getRelType() === 'invoice'
+                            && $paymentSubscription->getRelId() !== null
+                            && $paymentSubscription->getRelId() !== (int) $tx['invoice_id']) {
+                            throw new Payment_Exception('PayPal subscription ' . $ipn['subscr_id'] . ' is not linked to invoice ' . $tx['invoice_id']);
+                        }
                     }
 
                     // Claim transaction for processing
@@ -210,7 +220,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                 // we validate against the correct amount. Skip this for the
                 // initial payment (original invoice still unpaid) — that
                 // payment should go to the original invoice.
-                if (in_array($ipn['txn_type'], ['subscr_payment', 'recurring_payment'], true) && isset($ipn['subscr_id'])) {
+                if ($isSubscriptionPayment && isset($ipn['subscr_id'])) {
                     $originalAlreadyPaid = $invoiceDbModel instanceof Invoice
                         && $invoiceDbModel->getStatus() === Invoice::STATUS_PAID;
 
@@ -321,6 +331,10 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                 break;
 
             case 'recurring_payment_suspended_due_to_max_failed_payment':
+            case 'recurring_payment_profile_cancel':
+            case 'recurring_payment_failed':
+            case 'recurring_payment_suspended':
+            case 'recurring_payment_expired':
             case 'subscr_failed':
             case 'subscr_eot':
             case 'subscr_cancel':
@@ -339,6 +353,17 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                 }
                 $api_admin->invoice_subscription_update(['id' => $storedCancellation->getId(), 'status' => 'canceled']);
                 $this->di['logger']->info('Canceled subscription ' . $cancelSid . ' from PayPal ' . $txnType . ' IPN for transaction ' . $id);
+
+                break;
+
+            case 'recurring_payment_skipped':
+                $skippedSid = (string) ($ipn['subscr_id'] ?? '');
+                if ($skippedSid === '') {
+                    throw new Payment_Exception('PayPal subscription update is missing the subscription ID');
+                }
+                // A skipped cycle leaves the subscription itself in place, so
+                // there is nothing to update — just leave a trace of the missed payment.
+                $this->di['logger']->warning('Acknowledged skipped PayPal payment for subscription ' . $skippedSid . ' on transaction ' . $id);
 
                 break;
 
