@@ -1089,8 +1089,6 @@ test('saveStatusChange records history', function (): void {
 });
 
 test('getSoonExpiringActiveOrders executes query', function (): void {
-    $order = createEntity(Order::class);
-
     $connectionMock = Mockery::mock(Doctrine\DBAL\Connection::class);
     $connectionMock->shouldReceive('fetchAllAssociative')->atLeast()->once()->andReturn([[], []]);
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
@@ -1107,10 +1105,8 @@ test('getSoonExpiringActiveOrders executes query', function (): void {
     $serviceMock->getSoonExpiringActiveOrders();
 });
 
-test('getSoonExpiringActiveOrdersQuery builds expected SQL and bindings', function (): void {
+test('getSoonExpiringActiveOrdersQuery excludes orders with scheduled cancellations', function (): void {
     $randId = 1;
-
-    $orderStatus = createEntity(Box\Mod\Order\Entity\OrderStatus::class);
 
     $systemService = Mockery::mock(Box\Mod\System\Service::class);
     $systemService->shouldReceive('getParamValue')->atLeast()->once()->andReturn($randId);
@@ -1124,8 +1120,6 @@ test('getSoonExpiringActiveOrdersQuery builds expected SQL and bindings', functi
     $svc = new Service();
     $svc->setDi($di);
 
-    $order = createEntity(Order::class);
-
     $data = ['client_id' => $randId];
     $result = $svc->getSoonExpiringActiveOrdersQuery($data);
 
@@ -1137,6 +1131,13 @@ test('getSoonExpiringActiveOrdersQuery builds expected SQL and bindings', functi
                 AND co.period IS NOT NULL
                 AND co.expires_at IS NOT NULL
                 AND i.id IS NULL
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM client_order_meta cancellation_meta
+                    WHERE cancellation_meta.client_order_id = co.id
+                    AND cancellation_meta.name = :cancellation_meta_name
+                    AND cancellation_meta.value = :cancellation_meta_value
+                )
                 /* Pair non-executed renewal items with paid invoices to skip renewals already queued for activation. */
                 AND NOT EXISTS (
                     SELECT 1
@@ -1152,6 +1153,8 @@ test('getSoonExpiringActiveOrdersQuery builds expected SQL and bindings', functi
     $expectedBindings = [
         'client_id' => $randId,
         'unpaid_invoice_status' => Model_Invoice::STATUS_UNPAID,
+        'cancellation_meta_name' => Service::META_CANCEL_AT_PERIOD_END,
+        'cancellation_meta_value' => '1',
         'pending_item_type' => Model_InvoiceItem::TYPE_ORDER,
         'pending_item_task' => Model_InvoiceItem::TASK_RENEW,
         'pending_item_status' => Model_InvoiceItem::STATUS_EXECUTED,
