@@ -70,6 +70,60 @@ test('counter returns status counts', function (): void {
     expect($result)->toHaveKey(Order::STATUS_CANCELED);
 });
 
+test('batch order serialization does not expose admin-only client details', function (): void {
+    $client = createEntity(Box\Mod\Client\Entity\Client::class);
+    setEntityId($client, 7);
+    $admin = createEntity(Box\Mod\Staff\Entity\Admin::class);
+
+    $clientRepository = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
+    $clientRepository->shouldReceive('findBy')->once()->with(['id' => [7]])->andReturn([$client]);
+
+    $clientService = Mockery::mock(Box\Mod\Client\Service::class);
+    $clientService->shouldReceive('toApiArray')
+        ->once()
+        ->with($client, false)
+        ->andReturn(['id' => 7]);
+
+    $productService = Mockery::mock(Box\Mod\Product\Service::class);
+    $productService->shouldReceive('getProductPluginMap')->once()->with([3])->andReturn([]);
+
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('fetchAllAssociative')
+        ->once()
+        ->with('SELECT * FROM client_order WHERE id IN (?)', [11])
+        ->andReturn([[
+            'id' => 11,
+            'client_id' => 7,
+            'product_id' => 3,
+            'config' => '{}',
+            'price' => 10,
+            'quantity' => 1,
+            'title' => 'Example order',
+        ]]);
+    $connection->shouldReceive('fetchAllAssociative')->twice()->andReturn([]);
+
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->andReturn($connection);
+    $em->shouldReceive('getRepository')
+        ->once()
+        ->with(Box\Mod\Client\Entity\Client::class)
+        ->andReturn($clientRepository);
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(fn (string $name) => match ($name) {
+        'client' => $clientService,
+        'product' => $productService,
+    });
+
+    $service = new Service();
+    $service->setDi($di);
+
+    $result = $service->getBatchForApi([11], $admin);
+
+    expect($result[0]['client'])->toBe(['id' => 7]);
+});
+
 test('onAfterAdminOrderActivate fires template', function (): void {
     $params = ['id' => 1];
 
