@@ -90,6 +90,23 @@ test('updates a transaction', function (): void {
     expect($result)->toBeTrue();
 });
 
+test('updates a transaction subscription link', function (): void {
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('flush')->atLeast()->once();
+
+    $service = transactionService(em: $em);
+    $service->getDi()['logger'] = new Tests\Helpers\TestLogger();
+
+    $transactionModel = createEntity(Transaction::class, ['id' => 1]);
+
+    expect($service->update($transactionModel, ['s_id' => 'I-ABC123', 's_period' => '1M']))->toBeTrue()
+        ->and($transactionModel->getSId())->toBe('I-ABC123')
+        ->and($transactionModel->getSPeriod())->toBe('1M')
+        ->and($service->update($transactionModel, ['s_id' => 'I-NEW']))->toBeTrue()
+        ->and($transactionModel->getSId())->toBe('I-NEW')
+        ->and($transactionModel->getSPeriod())->toBe('1M');
+});
+
 test('throws exception when creating transaction with missing invoice id', function (): void {
     $eventsMock = Mockery::mock('\Box_EventManager');
     $eventsMock->shouldReceive('fire')

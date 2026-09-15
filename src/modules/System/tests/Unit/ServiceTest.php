@@ -196,6 +196,41 @@ test('getCompany returns company information', function (): void {
     expect($result)->toBe($expected);
 });
 
+test('getCompany returns raw values without HTML-encoding them', function (): void {
+    // Regression test for issue #4305: escaping here double-escapes in
+    // templates and bakes entities into stored snapshots.
+    $service = new Service();
+
+    $settings = [
+        Tests\Helpers\createEntity(Box\Mod\System\Entity\Setting::class, ['param' => 'company_name', 'value' => 'A & B <Ltd>']),
+        Tests\Helpers\createEntity(Box\Mod\System\Entity\Setting::class, ['param' => 'company_email', 'value' => 'a&b@example.com']),
+        Tests\Helpers\createEntity(Box\Mod\System\Entity\Setting::class, ['param' => 'company_address_1', 'value' => '5 "Main" St']),
+        Tests\Helpers\createEntity(Box\Mod\System\Entity\Setting::class, ['param' => 'company_vat_number', 'value' => "O'Brien"]),
+    ];
+    $settingRepository = Mockery::mock(Box\Mod\System\Repository\SettingRepository::class);
+    $settingRepository->shouldReceive('findByParams')->once()->andReturn($settings);
+
+    $di = container();
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\System\Entity\Setting::class)->andReturn($settingRepository);
+    $service->setDi($di);
+
+    $result = $service->getCompany();
+    expect($result['name'])->toBe('A & B <Ltd>')
+        ->and($result['email'])->toBe('a&b@example.com')
+        ->and($result['address_1'])->toBe('5 "Main" St')
+        ->and($result['vat_number'])->toBe("O'Brien");
+});
+
+test('renderEmailSubjectString decodes the HTML autoescape pass', function (): void {
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('renderEmailTplString')
+        ->once()
+        ->with('[A & B Ltd] Invoice', [], null)
+        ->andReturn('[A &amp; B Ltd] Invoice');
+
+    expect($service->renderEmailSubjectString('[A & B Ltd] Invoice', []))->toBe('[A & B Ltd] Invoice');
+});
+
 test('getParams returns system parameters', function (): void {
     $service = new Service();
     $expected = [
@@ -302,6 +337,111 @@ test('updateParams updates system parameters in a single flush', function (): vo
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
     expect($companyName->getValue())->toBe('Inc. Test');
+});
+
+test('updateParams denies a mixed-case guarded key without the company permission', function (): void {
+    $service = new Service();
+
+    $eventMock = Mockery::mock('\Box_EventManager');
+    $eventMock->shouldReceive('fire')->once();
+
+    $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffServiceMock->shouldReceive('hasPermission')->once()->with(null, 'system', 'manage_company_details')->andReturn(false);
+
+    $settingRepository = Mockery::mock(Box\Mod\System\Repository\SettingRepository::class);
+    $settingRepository->shouldReceive('findOneByParam')->never();
+
+    $di = container();
+    $di['events_manager'] = $eventMock;
+    $di['mod_service'] = $di->protect(fn (): object => $staffServiceMock);
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\System\Entity\Setting::class)->andReturn($settingRepository);
+    $service->setDi($di);
+
+    expect(fn (): bool => $service->updateParams(['Company_Account_Number' => 'attacker']))->toThrow(
+        FOSSBilling\InformationException::class,
+        'You do not have permission to update the parameter'
+    );
+});
+
+test('updateParams denies a mixed-case legal key without the legal permission', function (): void {
+    $service = new Service();
+
+    $eventMock = Mockery::mock('\Box_EventManager');
+    $eventMock->shouldReceive('fire')->once();
+
+    $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffServiceMock->shouldReceive('hasPermission')->once()->with(null, 'system', 'manage_company_legal')->andReturn(false);
+
+    $settingRepository = Mockery::mock(Box\Mod\System\Repository\SettingRepository::class);
+    $settingRepository->shouldReceive('findOneByParam')->never();
+
+    $di = container();
+    $di['events_manager'] = $eventMock;
+    $di['mod_service'] = $di->protect(fn (): object => $staffServiceMock);
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\System\Entity\Setting::class)->andReturn($settingRepository);
+    $service->setDi($di);
+
+    expect(fn (): bool => $service->updateParams(['Company_Note' => 'attacker']))->toThrow(FOSSBilling\InformationException::class);
+});
+
+test('setParamValue skips a mixed-case guarded key without the company permission', function (): void {
+    $service = new Service();
+
+    $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffServiceMock->shouldReceive('hasPermission')->once()->with(null, 'system', 'manage_company_details')->andReturn(false);
+
+    $settingRepository = Mockery::mock(Box\Mod\System\Repository\SettingRepository::class);
+    $settingRepository->shouldReceive('findOneByParam')->never();
+
+    $di = container();
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\System\Entity\Setting::class)->andReturn($settingRepository);
+    $di['mod_service'] = $di->protect(fn (): object => $staffServiceMock);
+    $service->setDi($di);
+
+    expect($service->setParamValue('Company_Bic', 'attacker'))->toBeTrue();
+});
+
+test('updateParams rejects a key with a trailing space', function (): void {
+    $service = new Service();
+
+    $eventMock = Mockery::mock('\Box_EventManager');
+    $eventMock->shouldReceive('fire')->once();
+
+    $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffServiceMock->shouldReceive('hasPermission')->andReturn(true);
+
+    $settingRepository = Mockery::mock(Box\Mod\System\Repository\SettingRepository::class);
+    $settingRepository->shouldReceive('findOneByParam')->never();
+
+    $di = container();
+    $di['events_manager'] = $eventMock;
+    $di['mod_service'] = $di->protect(fn (): object => $staffServiceMock);
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\System\Entity\Setting::class)->andReturn($settingRepository);
+    $service->setDi($di);
+
+    expect(fn (): bool => $service->updateParams(['company_name ' => 'attacker']))->toThrow(
+        FOSSBilling\InformationException::class,
+        'Invalid parameter name'
+    );
+});
+
+test('setParamValue canonicalizes a mixed-case unguarded key', function (): void {
+    $service = new Service();
+    $setting = Tests\Helpers\createEntity(Box\Mod\System\Entity\Setting::class, ['param' => 'last_cron_exec', 'value' => 'old']);
+
+    $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class);
+
+    $settingRepository = Mockery::mock(Box\Mod\System\Repository\SettingRepository::class);
+    $settingRepository->shouldReceive('findOneByParam')->once()->with('last_cron_exec')->andReturn($setting);
+
+    $di = container();
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\System\Entity\Setting::class)->andReturn($settingRepository);
+    $di['em']->shouldReceive('flush')->once();
+    $di['mod_service'] = $di->protect(fn (): object => $staffServiceMock);
+    $service->setDi($di);
+
+    expect($service->setParamValue('Last_Cron_Exec', 'new'))->toBeTrue();
+    expect($setting->getValue())->toBe('new');
 });
 
 test('getMessages returns system messages', function (): void {

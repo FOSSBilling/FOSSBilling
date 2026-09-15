@@ -142,6 +142,13 @@ class Service
     {
         $value = $value === null ? null : (string) $value;
 
+        // Normalize the key so the permission check and the lookup below
+        // agree on it, then reject anything outside the canonical charset.
+        $param = strtolower($param);
+        if (!preg_match('/^[a-z0-9_]+$/', $param)) {
+            throw new \FOSSBilling\InformationException('Invalid parameter name, received: param_.', ['param_' => $param]);
+        }
+
         // Skip this param if the user isn't permitted to update it.
         if (!$this->canUpdateParam($param)) {
             return;
@@ -233,28 +240,30 @@ class Service
             $faviconUrl = SYSTEM_URL . $faviconUrl;
         }
 
+        // Returned raw: output contexts escape on render, so escaping here
+        // double-escapes in templates and corrupts stored snapshots (#4305).
         return [
             'www' => SYSTEM_URL,
-            'name' => isset($results['company_name']) ? htmlspecialchars((string) $results['company_name'], ENT_QUOTES, 'UTF-8') : null,
-            'email' => isset($results['company_email']) ? htmlspecialchars((string) $results['company_email'], ENT_QUOTES, 'UTF-8') : null,
-            'tel' => isset($results['company_tel']) ? htmlspecialchars((string) $results['company_tel'], ENT_QUOTES, 'UTF-8') : null,
+            'name' => isset($results['company_name']) ? (string) $results['company_name'] : null,
+            'email' => isset($results['company_email']) ? (string) $results['company_email'] : null,
+            'tel' => isset($results['company_tel']) ? (string) $results['company_tel'] : null,
             'signature' => $results['company_signature'] ?? null,
             'logo_url' => $logoUrl,
             'logo_url_dark' => $logoUrlDark,
             'favicon_url' => $faviconUrl,
-            'address_1' => isset($results['company_address_1']) ? htmlspecialchars((string) $results['company_address_1'], ENT_QUOTES, 'UTF-8') : null,
-            'address_2' => isset($results['company_address_2']) ? htmlspecialchars((string) $results['company_address_2'], ENT_QUOTES, 'UTF-8') : null,
-            'address_3' => isset($results['company_address_3']) ? htmlspecialchars((string) $results['company_address_3'], ENT_QUOTES, 'UTF-8') : null,
+            'address_1' => isset($results['company_address_1']) ? (string) $results['company_address_1'] : null,
+            'address_2' => isset($results['company_address_2']) ? (string) $results['company_address_2'] : null,
+            'address_3' => isset($results['company_address_3']) ? (string) $results['company_address_3'] : null,
             'account_number' => $results['company_account_number'] ?? null,
-            'bank_name' => isset($results['company_bank_name']) ? htmlspecialchars((string) $results['company_bank_name'], ENT_QUOTES, 'UTF-8') : null,
-            'bic' => isset($results['company_bic']) ? htmlspecialchars((string) $results['company_bic'], ENT_QUOTES, 'UTF-8') : null,
+            'bank_name' => isset($results['company_bank_name']) ? (string) $results['company_bank_name'] : null,
+            'bic' => isset($results['company_bic']) ? (string) $results['company_bic'] : null,
             'display_bank_info' => $results['company_display_bank_info'] ?? null,
             'bank_info_pagebottom' => $results['company_bank_info_pagebottom'] ?? null,
-            'number' => isset($results['company_number']) ? htmlspecialchars((string) $results['company_number'], ENT_QUOTES, 'UTF-8') : null,
+            'number' => isset($results['company_number']) ? (string) $results['company_number'] : null,
             'note' => $results['company_note'] ?? null,
             'privacy_policy' => $results['company_privacy_policy'] ?? null,
             'tos' => $results['company_tos'] ?? null,
-            'vat_number' => isset($results['company_vat_number']) ? htmlspecialchars((string) $results['company_vat_number'], ENT_QUOTES, 'UTF-8') : null,
+            'vat_number' => isset($results['company_vat_number']) ? (string) $results['company_vat_number'] : null,
         ];
     }
 
@@ -585,6 +594,18 @@ class Service
         );
     }
 
+    /**
+     * Render an email subject line (plaintext header) through the
+     * HTML-autoescaping email environment, decoding once to restore it as
+     * typed. Never use this for the HTML body.
+     */
+    public function renderEmailSubjectString(string $tpl, array $vars, ?string $timezone = null): string
+    {
+        $rendered = $this->renderEmailTplString($tpl, $vars, $timezone);
+
+        return html_entity_decode($rendered, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    }
+
     public function checkEmailTplSyntax(string $tpl): void
     {
         $twigFactory = $this->di['twig_factory'];
@@ -870,6 +891,10 @@ class Service
 
     private function canUpdateParam(string $param): bool
     {
+        // Compare case-insensitively so the check agrees with the lookup,
+        // which resolves case-insensitively on some database drivers.
+        $param = strtolower($param);
+
         $company = [
             'company_name',
             'company_email',

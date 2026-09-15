@@ -1923,6 +1923,76 @@ test('generates invoice for active order using the order price, not the product 
     expect($result)->toBeInstanceOf(Invoice::class);
 });
 
+test('generates domain renewal invoice with renewal title containing the domain', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('setInvoiceDefaults')
+        ->once();
+
+    $orderConfig = ['action' => 'register', 'register_sld' => 'example', 'register_tld' => '.com'];
+    $orderModel = createEntity(Order::class, [
+        'client_id' => 1,
+        'status' => Order::STATUS_ACTIVE,
+        'productId' => 5,
+        'currency' => 'USD',
+        'price' => 25,
+        'quantity' => 1,
+        'title' => 'Domain registration (example.com)',
+        'config' => json_encode($orderConfig),
+    ]);
+
+    $product = Mockery::mock(Product::class)->makePartial();
+    $product->shouldReceive('getType')->andReturn(ProductService::DOMAIN);
+
+    $domainService = Mockery::mock(Box\Mod\Servicedomain\Service::class);
+    $domainService->shouldReceive('getRenewalTitle')
+        ->with($orderConfig)
+        ->once()
+        ->andReturn('Domain renewal (example.com)');
+
+    $productService = Mockery::mock(ProductService::class);
+    $productService->shouldReceive('findProductById')
+        ->with(5)
+        ->once()
+        ->andReturn($product);
+    $productService->shouldReceive('getProductRenewalLineConfig')
+        ->with($product, $orderConfig)
+        ->once()
+        ->andReturn(['price' => 12.0, 'quantity' => 1]);
+    $productService->shouldReceive('getProductModuleService')
+        ->with($product)
+        ->once()
+        ->andReturn($domainService);
+
+    $currencyServiceMock = Mockery::mock(CurrencyService::class);
+    $currencyRepository = Mockery::mock(CurrencyRepository::class);
+    $currencyRepository->shouldReceive('getRateByCode')->with('USD')->andReturn(1.0);
+    $currencyServiceMock->shouldReceive('getCurrencyRepository')->andReturn($currencyRepository);
+
+    $invoiceItemServiceMock = Mockery::mock(ServiceInvoiceItem::class);
+    $invoiceItemServiceMock->shouldReceive('generateFromOrder')
+        ->with(Mockery::type(Invoice::class), $orderModel, InvoiceItem::TASK_RENEW, 12.0, Mockery::on(fn ($line): bool => ($line['title'] ?? null) === 'Domain renewal (example.com)'))
+        ->once();
+
+    $di = container();
+    $di['em']->shouldReceive('persist')->atLeast()->once();
+    $di['em']->shouldReceive('flush')->atLeast()->once();
+    $di['mod_service'] = $di->protect(function (string $module, ?string $sub = null) use ($productService, $currencyServiceMock, $invoiceItemServiceMock): Mockery\MockInterface {
+        if ($module === 'Product') {
+            return $productService;
+        }
+
+        if ($module === 'Currency') {
+            return $currencyServiceMock;
+        }
+
+        return $invoiceItemServiceMock;
+    });
+
+    $serviceMock->setDi($di);
+    $result = $serviceMock->generateForOrder($orderModel);
+    expect($result)->toBeInstanceOf(Invoice::class);
+});
+
 test('generates invoice for zero amount order', function (): void {
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('setInvoiceDefaults')
