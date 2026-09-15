@@ -274,11 +274,11 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                 $subscrPeriod = str_replace(' ', '', (string) ($ipn['period3'] ?? ''));
                 if ($subscrPeriod === '') {
                     // Newer-flow IPNs carry no period: derive it from the linked
-                    // invoice instead of storing an empty period.
+                    // invoice, preserving null when the invoice has no recurring period.
                     $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
                     $periodInvoice = $this->di['em']->getRepository(Invoice::class)->find($tx['invoice_id']);
                     if ($periodInvoice instanceof Invoice) {
-                        $subscrPeriod = (string) ($subscriptionService->getSubscriptionPeriod($periodInvoice) ?? '');
+                        $subscrPeriod = $subscriptionService->getSubscriptionPeriod($periodInvoice);
                     }
                 }
 
@@ -341,10 +341,8 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
 
             case 'recurring_payment_suspended_due_to_max_failed_payment':
             case 'recurring_payment_profile_cancel':
-            case 'recurring_payment_failed':
             case 'recurring_payment_suspended':
             case 'recurring_payment_expired':
-            case 'subscr_failed':
             case 'subscr_eot':
             case 'subscr_cancel':
                 $cancelSid = (string) ($ipn['subscr_id'] ?? '');
@@ -362,6 +360,26 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                 }
                 $api_admin->invoice_subscription_update(['id' => $storedCancellation->getId(), 'status' => 'canceled']);
                 $this->di['logger']->info('Canceled subscription ' . $cancelSid . ' from PayPal ' . $txnType . ' IPN for transaction ' . $id);
+
+                break;
+
+            case 'recurring_payment_failed':
+            case 'subscr_failed':
+                $failedSid = (string) ($ipn['subscr_id'] ?? '');
+                if ($failedSid === '') {
+                    throw new Payment_Exception('PayPal subscription update is missing the subscription ID');
+                }
+                $failedSubscription = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\Subscription::class)->findOneBy(['sid' => $failedSid]);
+                if (!$failedSubscription instanceof Box\Mod\Invoice\Entity\Subscription) {
+                    $this->di['logger']->warning('Ignoring PayPal ' . $txnType . ' IPN for unknown subscription ' . $failedSid . ' on transaction ' . $id);
+
+                    break;
+                }
+                // A failed charge does not end the subscription: PayPal reattempts
+                // it and later payments still apply, so link the transaction and
+                // leave the subscription status untouched.
+                $api_admin->invoice_transaction_update(['id' => $id, 's_id' => $failedSid]);
+                $this->di['logger']->warning('Recorded failed PayPal payment for subscription ' . $failedSid . ' on transaction ' . $id);
 
                 break;
 

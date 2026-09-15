@@ -759,6 +759,58 @@ describe('PayPal subscription IPN handling', function (): void {
             ->and($linked[0]['s_period'])->toBe('1M');
     });
 
+    test('signup without a period stores null when the invoice is not subscribable', function (): void {
+        $created = [];
+        $updates = [];
+        $apiAdmin = Mockery::mock();
+        $apiAdmin->shouldReceive('invoice_transaction_get')->once()->with(['id' => 42])->andReturn([
+            'invoice_id' => 16, 'type' => null, 'txn_id' => null,
+            'txn_status' => null, 'amount' => null, 'currency' => null,
+        ]);
+        $apiAdmin->shouldReceive('invoice_get')->once()->with(['id' => 16])->andReturn([
+            'id' => 16, 'currency' => 'USD', 'client' => ['id' => 9],
+        ]);
+        $apiAdmin->shouldReceive('invoice_subscription_create')->once()->withArgs(function (array $data) use (&$created): bool {
+            $created[] = $data;
+
+            return true;
+        })->andReturn(8);
+        $apiAdmin->shouldReceive('invoice_transaction_update')->byDefault()->withArgs(function (array $data) use (&$updates): bool {
+            $updates[] = $data;
+
+            return true;
+        });
+
+        $invoiceModel = Mockery::mock(Box\Mod\Invoice\Entity\Invoice::class);
+        $subscriptionService = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+        $subscriptionService->shouldReceive('getSubscriptionPeriod')->once()->with($invoiceModel)->andReturnNull();
+
+        $em = paypalEmMocks($invoiceModel);
+        $di = container();
+        $di['em'] = $em;
+        $di['logger'] = new Tests\Helpers\TestLogger();
+        $di['mod_service'] = $di->protect(static fn (): object => $subscriptionService);
+
+        paypalProcessAdapter($di)->processTransaction($apiAdmin, 42, [
+            'post' => [
+                'txn_type' => 'subscr_signup',
+                'subscr_id' => 'I-NOPERIOD',
+                'mc_currency' => 'USD',
+                'amount3' => '120.00',
+            ],
+            'get' => ['invoice_id' => 16],
+        ], 2);
+
+        expect($created)->toHaveCount(1)
+            ->and(array_key_exists('period', $created[0]))->toBeTrue()
+            ->and($created[0]['period'])->toBeNull();
+
+        $linked = array_values(array_filter($updates, fn (array $u): bool => ($u['s_id'] ?? null) === 'I-NOPERIOD'));
+        expect($linked)->toHaveCount(1)
+            ->and(array_key_exists('s_period', $linked[0]))->toBeTrue()
+            ->and($linked[0]['s_period'])->toBeNull();
+    });
+
     test('subscr_modify updates the stored subscription terms', function (): void {
         $updates = [];
         $subscriptionUpdates = [];
@@ -878,7 +930,7 @@ describe('PayPal subscription IPN handling', function (): void {
         expect($processed)->toHaveCount(1);
     });
 
-    test('recurring_payment_failed cancels the stored subscription', function (): void {
+    test('recurring_payment_failed leaves the subscription active', function (): void {
         $updates = [];
         $apiAdmin = Mockery::mock();
         $apiAdmin->shouldReceive('invoice_transaction_get')->once()->with(['id' => 42])->andReturn([
@@ -888,7 +940,7 @@ describe('PayPal subscription IPN handling', function (): void {
         $apiAdmin->shouldReceive('invoice_get')->once()->with(['id' => 16])->andReturn([
             'id' => 16, 'currency' => 'USD', 'client' => ['id' => 9],
         ]);
-        $apiAdmin->shouldReceive('invoice_subscription_update')->once()->with(['id' => 7, 'status' => 'canceled'])->andReturn(true);
+        $apiAdmin->shouldNotReceive('invoice_subscription_update');
         $apiAdmin->shouldReceive('invoice_transaction_update')->byDefault()->withArgs(function (array $data) use (&$updates): bool {
             $updates[] = $data;
 
@@ -896,17 +948,55 @@ describe('PayPal subscription IPN handling', function (): void {
         });
 
         $stored = Mockery::mock(Box\Mod\Invoice\Entity\Subscription::class);
-        $stored->shouldReceive('getId')->byDefault()->andReturn(7);
         $em = paypalEmMocks(null, $stored);
+        $logger = new Tests\Helpers\TestLogger();
         $di = container();
         $di['em'] = $em;
-        $di['logger'] = new Tests\Helpers\TestLogger();
+        $di['logger'] = $logger;
 
         paypalProcessAdapter($di)->processTransaction($apiAdmin, 42, [
             'post' => ['txn_type' => 'recurring_payment_failed', 'recurring_payment_id' => 'I-PROFILE1'],
             'get' => ['invoice_id' => 16],
         ], 2);
 
+        $linked = array_values(array_filter($updates, fn (array $u): bool => ($u['s_id'] ?? null) === 'I-PROFILE1'));
+        expect($linked)->toHaveCount(1);
+        $warnings = array_filter($logger->calls, fn (array $c): bool => $c['method'] === 'warning');
+        expect($warnings)->not->toBeEmpty();
+        $processed = array_values(array_filter($updates, fn (array $u): bool => ($u['status'] ?? null) === 'processed'));
+        expect($processed)->toHaveCount(1);
+    });
+
+    test('subscr_failed for an unknown subscription logs a warning instead of throwing', function (): void {
+        $updates = [];
+        $apiAdmin = Mockery::mock();
+        $apiAdmin->shouldReceive('invoice_transaction_get')->once()->with(['id' => 42])->andReturn([
+            'invoice_id' => 16, 'type' => null, 'txn_id' => null,
+            'txn_status' => null, 'amount' => null, 'currency' => null,
+        ]);
+        $apiAdmin->shouldReceive('invoice_get')->once()->with(['id' => 16])->andReturn([
+            'id' => 16, 'currency' => 'USD', 'client' => ['id' => 9],
+        ]);
+        $apiAdmin->shouldNotReceive('invoice_subscription_update');
+        $apiAdmin->shouldReceive('invoice_transaction_update')->byDefault()->withArgs(function (array $data) use (&$updates): bool {
+            $updates[] = $data;
+
+            return true;
+        });
+
+        $em = paypalEmMocks();
+        $logger = new Tests\Helpers\TestLogger();
+        $di = container();
+        $di['em'] = $em;
+        $di['logger'] = $logger;
+
+        paypalProcessAdapter($di)->processTransaction($apiAdmin, 42, [
+            'post' => ['txn_type' => 'subscr_failed', 'subscr_id' => 'I-UNKNOWN'],
+            'get' => ['invoice_id' => 16],
+        ], 2);
+
+        $warnings = array_filter($logger->calls, fn (array $c): bool => $c['method'] === 'warning');
+        expect($warnings)->not->toBeEmpty();
         $processed = array_values(array_filter($updates, fn (array $u): bool => ($u['status'] ?? null) === 'processed'));
         expect($processed)->toHaveCount(1);
     });
