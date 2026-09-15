@@ -794,7 +794,7 @@ describe('PayPal subscription IPN handling', function (): void {
         paypalProcessAdapter($di)->processTransaction($apiAdmin, 42, [
             'post' => [
                 'txn_type' => 'subscr_signup',
-                'subscr_id' => 'I-NOPERIOD',
+                'subscr_id' => 'I-ABC999',
                 'mc_currency' => 'USD',
                 'amount3' => '120.00',
             ],
@@ -805,7 +805,7 @@ describe('PayPal subscription IPN handling', function (): void {
             ->and(array_key_exists('period', $created[0]))->toBeTrue()
             ->and($created[0]['period'])->toBeNull();
 
-        $linked = array_values(array_filter($updates, fn (array $u): bool => ($u['s_id'] ?? null) === 'I-NOPERIOD'));
+        $linked = array_values(array_filter($updates, fn (array $u): bool => ($u['s_id'] ?? null) === 'I-ABC999'));
         expect($linked)->toHaveCount(1)
             ->and(array_key_exists('s_period', $linked[0]))->toBeTrue()
             ->and($linked[0]['s_period'])->toBeNull();
