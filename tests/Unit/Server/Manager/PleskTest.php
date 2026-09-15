@@ -64,6 +64,16 @@ test('createSubscriptionProps omits htype from gen_setup for the set action', fu
     expect($props['set']['values']['gen_setup'])->not->toHaveKey('htype');
 });
 
+test('createSubscriptionProps only sends the FTP password when creating a subscription', function (): void {
+    $addProps = invokePleskCreateSubscriptionProps($this->manager, $this->account, 'add');
+    $setProps = invokePleskCreateSubscriptionProps($this->manager, $this->account, 'set');
+    $addHostingProperties = array_column($addProps['add']['hosting']['vrt_hst']['property'], 'value', 'name');
+    $setHostingProperties = array_column($setProps['set']['values']['hosting']['vrt_hst']['property'], 'value', 'name');
+
+    expect($addHostingProperties['ftp_password'])->toBe('secret')
+        ->and($setHostingProperties)->not->toHaveKey('ftp_password');
+});
+
 test('createSubscriptionProps uses custom package limits and permissions', function (): void {
     $this->account->getPackage()->setCustomValues([
         'aftp' => 'true',
