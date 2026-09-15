@@ -98,6 +98,9 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
         if (!isset($ipn['amount3']) && isset($ipn['amount'])) {
             $ipn['amount3'] = $ipn['amount'];
         }
+        if (!isset($ipn['mc_currency']) && isset($ipn['amount_currency'])) {
+            $ipn['mc_currency'] = $ipn['amount_currency'];
+        }
 
         $tx = $api_admin->invoice_transaction_get(['id' => $id]);
 
@@ -160,6 +163,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                     if (!isset($ipn['mc_gross'], $ipn['txn_id'])) {
                         throw new Payment_Exception('PayPal payment is missing transaction details');
                     }
+                    $this->validateCurrency($ipn['mc_currency'] ?? null, $invoice['currency'] ?? null);
                     $isSubscriptionPayment = in_array($txnType, ['subscr_payment', 'recurring_payment'], true);
                     if ($isSubscriptionPayment && !isset($ipn['subscr_id'])) {
                         throw new Payment_Exception('PayPal subscription payment is missing the subscription ID');
@@ -271,6 +275,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                 if ($subscrId === '') {
                     throw new Payment_Exception('PayPal subscription signup is missing the subscription ID');
                 }
+                $this->validateCurrency($ipn['mc_currency'] ?? null, $invoice['currency'] ?? null);
                 $subscrPeriod = str_replace(' ', '', (string) ($ipn['period3'] ?? ''));
                 if ($subscrPeriod === '') {
                     // Newer-flow IPNs carry no period: derive it from the linked
@@ -288,9 +293,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                     $sd = [
                         'client_id' => $client_id,
                         'gateway_id' => $gateway_id,
-                        // Signup IPNs don't always include a currency, so fall back to
-                        // the invoice currency rather than failing the client-currency check.
-                        'currency' => (string) ($ipn['mc_currency'] ?? $invoice['currency'] ?? ''),
+                        'currency' => (string) $ipn['mc_currency'],
                         'sid' => $subscrId,
                         'status' => 'active',
                         'period' => $subscrPeriod,
@@ -424,6 +427,18 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
             'updated_at' => date('Y-m-d H:i:s'),
         ];
         $api_admin->invoice_transaction_update($d);
+    }
+
+    private function validateCurrency(mixed $received, mixed $expected): void
+    {
+        $received = trim((string) $received);
+        $expected = trim((string) $expected);
+        if ($received === '' || $expected === '') {
+            throw new Payment_Exception('PayPal payment is missing currency details');
+        }
+        if (strcasecmp($received, $expected) !== 0) {
+            throw new Payment_Exception(sprintf('PayPal payment currency %s does not match invoice currency %s', $received, $expected));
+        }
     }
 
     private function serviceUrl(): string
