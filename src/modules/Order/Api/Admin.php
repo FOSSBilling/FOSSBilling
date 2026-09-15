@@ -30,9 +30,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
     protected function getOrderRepository(): OrderRepository
     {
-        if ($this->orderRepository === null) {
-            $this->orderRepository = $this->getDi()['em']->getRepository(Order::class);
-        }
+        $this->orderRepository ??= $this->getDi()['em']->getRepository(Order::class);
 
         return $this->orderRepository;
     }
@@ -339,6 +337,19 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
+     * Remove pending-setup orders whose linked invoice has been unpaid past its due date for too long.
+     * Configure how many days an unpaid order should be kept before it is removed.
+     *
+     * @return bool
+     */
+    public function batch_cancel_unpaid($data)
+    {
+        $this->checkPermissions('order', 'manage');
+
+        return $this->getService()->batchCancelUnpaid();
+    }
+
+    /**
      * Update order config.
      *
      * @return bool
@@ -514,6 +525,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
     public function export_csv($data): Response
     {
+        $this->checkPermissions('order', 'view');
         $this->checkPermissions('order', 'export');
 
         $data['headers'] ??= [];

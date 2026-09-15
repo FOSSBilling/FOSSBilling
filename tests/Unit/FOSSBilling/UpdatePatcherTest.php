@@ -6,15 +6,14 @@ use FOSSBilling\UpdatePatcher;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 
-test('downloadable file migration follows the client balance gateway repair', function (): void {
+test('currency formatting patch follows the client balance gateway repair', function (): void {
     $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 89);
 
     expect($patches)->toHaveKey(90)
         ->and($patches[90][1])->toBe('patch90')
         ->and($patches)->toHaveKey(91)
         ->and($patches[91][1])->toBe('patch91')
-        ->and($patches)->toHaveKey(92)
-        ->and($patches[92][1])->toBe('patch92')
+        ->and($patches)->not->toHaveKey(92)
         ->and($patches)->toHaveKey(93)
         ->and($patches[93][1])->toBe('patch93');
 });
@@ -40,14 +39,15 @@ test('manual currency rate patch follows the currency formatting patch', functio
         ->and($patches[94][1])->toBe('patch94');
 });
 
-test('suspension grace patch follows the manual currency rate patch', function (): void {
+test('client balance unique credit patch follows the manual currency rate patch, skipping the removed number 95', function (): void {
     $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 94);
 
-    expect($patches)->toHaveKey(95)
-        ->and($patches[95][1])->toBe('patch95');
+    expect($patches)->not->toHaveKey(95)
+        ->and($patches)->toHaveKey(96)
+        ->and($patches[96][1])->toBe('patch96');
 });
 
-test('client balance unique credit patch follows the suspension grace patch', function (): void {
+test('client balance unique credit patch is still offered to installs already at patch level 95', function (): void {
     $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 95);
 
     expect($patches)->toHaveKey(96)
@@ -241,7 +241,7 @@ test('suspension grace patch indexes existing order tables', function (): void {
 
     $patcher = new UpdatePatcher();
     $patcher->setDi($di);
-    (new ReflectionMethod($patcher, 'patch95'))->invoke($patcher);
+    (new ReflectionMethod($patcher, 'patch109'))->invoke($patcher);
 });
 
 test('client balance gateway patch restores one-time payments', function (): void {
@@ -803,4 +803,907 @@ test('client group patch normalizes legacy zero group ids to null', function ():
     $patcher = new UpdatePatcher();
     $patcher->setDi($di);
     (new ReflectionMethod($patcher, 'patch104'))->invoke($patcher);
+});
+
+test('custom recurring billing periods patch is numbered 107, out of sequence', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 106);
+
+    expect($patches)->toHaveKey(107)
+        ->and($patches[107][1])->toBe('patch107');
+});
+
+test('custom recurring billing periods patch is not skipped by 0.8-next installs already at patch level 98', function (): void {
+    // 0.8-next independently used patch number 98 for an unrelated migration (tld.periods),
+    // which never touched product_payment. An install coming from that lineage already has
+    // last_patch = 98, so the migration must live at a number above 98 (not 98 itself) or it
+    // would silently never run here. See https://github.com/FOSSBilling/FOSSBilling/issues/4188.
+    $allPatches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 0);
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 98);
+
+    expect($allPatches)->not->toHaveKey(98)
+        ->and($patches)->toHaveKey(107)
+        ->and($patches[107][1])->toBe('patch107');
+});
+
+test('downloadable file and suspension grace patches are numbered 108 and 109, out of sequence', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 107);
+
+    expect($patches)->toHaveKey(108)
+        ->and($patches[108][1])->toBe('patch108')
+        ->and($patches)->toHaveKey(109)
+        ->and($patches[109][1])->toBe('patch109');
+});
+
+test('downloadable file and suspension grace patches are not skipped by 0.8-next installs already at patch level 98', function (): void {
+    // Same collision as patch107 (see above), found auditing the rest of the sequence: 0.8-next
+    // reused numbers 92 and 95 for unrelated migrations, but never ported the downloadable-file
+    // table or suspension-grace-days columns at all. An install coming from that lineage already
+    // has last_patch = 98, so both migrations must live above 98 or they'd never run here.
+    $allPatches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 0);
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 98);
+
+    expect($allPatches)->not->toHaveKey(92)
+        ->and($allPatches)->not->toHaveKey(95)
+        ->and($patches)->toHaveKey(108)
+        ->and($patches[108][1])->toBe('patch108')
+        ->and($patches)->toHaveKey(109)
+        ->and($patches[109][1])->toBe('patch109');
+});
+
+test('foreign key width patch is numbered 110', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 109);
+
+    expect($patches)->toHaveKey(110)
+        ->and($patches[110][1])->toBe('patch110');
+});
+
+test('foreign key width patch widens narrow gateway_id columns but leaves already-wide columns alone', function (): void {
+    // invoice.gateway_id and transaction.gateway_id were declared int(11) in structure.sql
+    // while pay_gateway.id (which they reference) is bigint(20). email_queue.client_id and
+    // email_queue.admin_id have the same mismatch against client.id/admin.id. This patch
+    // widens any column still typed int and is a no-op for columns already bigint.
+    $invoiceLength = Mockery::mock(PDOStatement::class);
+    $invoiceLength->expects('execute')->with(['column' => 'gateway_id'])->andReturnTrue();
+    $invoiceLength->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['Field' => 'gateway_id', 'Type' => 'int(11)'],
+    ]);
+
+    $invoiceAlter = Mockery::mock(PDOStatement::class);
+    $invoiceAlter->expects('execute')->with([])->andReturnTrue();
+
+    $transactionLength = Mockery::mock(PDOStatement::class);
+    $transactionLength->expects('execute')->with(['column' => 'gateway_id'])->andReturnTrue();
+    $transactionLength->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['Field' => 'gateway_id', 'Type' => 'int(11)'],
+    ]);
+
+    $transactionAlter = Mockery::mock(PDOStatement::class);
+    $transactionAlter->expects('execute')->with([])->andReturnTrue();
+
+    $emailQueueClientLength = Mockery::mock(PDOStatement::class);
+    $emailQueueClientLength->expects('execute')->with(['column' => 'client_id'])->andReturnTrue();
+    $emailQueueClientLength->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['Field' => 'client_id', 'Type' => 'bigint(20)'],
+    ]);
+
+    $emailQueueAdminLength = Mockery::mock(PDOStatement::class);
+    $emailQueueAdminLength->expects('execute')->with(['column' => 'admin_id'])->andReturnTrue();
+    $emailQueueAdminLength->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['Field' => 'admin_id', 'Type' => 'bigint(20)'],
+    ]);
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `invoice` LIKE :column')->andReturn($invoiceLength);
+    $pdo->expects('prepare')
+        ->with('ALTER TABLE `invoice` MODIFY COLUMN `gateway_id` bigint(20) DEFAULT NULL')
+        ->andReturn($invoiceAlter);
+
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `transaction` LIKE :column')->andReturn($transactionLength);
+    $pdo->expects('prepare')
+        ->with('ALTER TABLE `transaction` MODIFY COLUMN `gateway_id` bigint(20) DEFAULT NULL')
+        ->andReturn($transactionAlter);
+
+    $pdo->expects('prepare')
+        ->with('SHOW COLUMNS FROM `email_queue` LIKE :column')
+        ->twice()
+        ->andReturn($emailQueueClientLength, $emailQueueAdminLength);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch110'))->invoke($patcher);
+});
+
+test('foreign key width patch widens a narrow column even when MySQL omits the display width', function (): void {
+    // MySQL 8.0.19+ deprecates (and 8.4+ drops) integer display widths, so SHOW COLUMNS can
+    // report a bare "int" with no "(11)" suffix. The patch must key off the base type name,
+    // not a parsed display-width digit, or it would silently skip widening on newer servers.
+    $invoiceLength = Mockery::mock(PDOStatement::class);
+    $invoiceLength->expects('execute')->with(['column' => 'gateway_id'])->andReturnTrue();
+    $invoiceLength->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['Field' => 'gateway_id', 'Type' => 'int'],
+    ]);
+
+    $invoiceAlter = Mockery::mock(PDOStatement::class);
+    $invoiceAlter->expects('execute')->with([])->andReturnTrue();
+
+    $transactionLength = Mockery::mock(PDOStatement::class);
+    $transactionLength->expects('execute')->with(['column' => 'gateway_id'])->andReturnTrue();
+    $transactionLength->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['Field' => 'gateway_id', 'Type' => 'bigint'],
+    ]);
+
+    $emailQueueClientLength = Mockery::mock(PDOStatement::class);
+    $emailQueueClientLength->expects('execute')->with(['column' => 'client_id'])->andReturnTrue();
+    $emailQueueClientLength->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['Field' => 'client_id', 'Type' => 'bigint'],
+    ]);
+
+    $emailQueueAdminLength = Mockery::mock(PDOStatement::class);
+    $emailQueueAdminLength->expects('execute')->with(['column' => 'admin_id'])->andReturnTrue();
+    $emailQueueAdminLength->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['Field' => 'admin_id', 'Type' => 'bigint'],
+    ]);
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `invoice` LIKE :column')->andReturn($invoiceLength);
+    $pdo->expects('prepare')
+        ->with('ALTER TABLE `invoice` MODIFY COLUMN `gateway_id` bigint(20) DEFAULT NULL')
+        ->andReturn($invoiceAlter);
+
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `transaction` LIKE :column')->andReturn($transactionLength);
+    $pdo->shouldNotReceive('prepare')->with('ALTER TABLE `transaction` MODIFY COLUMN `gateway_id` bigint(20) DEFAULT NULL');
+
+    $pdo->expects('prepare')
+        ->with('SHOW COLUMNS FROM `email_queue` LIKE :column')
+        ->twice()
+        ->andReturn($emailQueueClientLength, $emailQueueAdminLength);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch110'))->invoke($patcher);
+});
+
+test('service apikey table patch is numbered 111', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 110);
+
+    expect($patches)->toHaveKey(111)
+        ->and($patches[111][1])->toBe('patch111');
+});
+
+test('service apikey table patch is a no-op when the table already exists', function (): void {
+    // The Serviceapikey module (PR #4055) added the ServiceApiKey Doctrine entity but never
+    // gave it a structure.sql counterpart, so service_apikey was never created on any MySQL
+    // install. This patch backfills it for existing installs, guarded so it never overwrites
+    // a table that's somehow already there (e.g. an install that already ran this patch).
+    $tableExists = Mockery::mock(PDOStatement::class);
+    $tableExists->expects('execute')->with(['table' => 'service_apikey'])->andReturnTrue();
+    $tableExists->expects('fetchColumn')->andReturn('1');
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')
+        ->with('SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table LIMIT 1')
+        ->andReturn($tableExists);
+    $pdo->shouldNotReceive('prepare')->with(Mockery::on(fn (string $sql): bool => str_contains($sql, 'CREATE TABLE `service_apikey`')));
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch111'))->invoke($patcher);
+});
+
+test('service apikey table patch creates the table when it is missing', function (): void {
+    $tableExists = Mockery::mock(PDOStatement::class);
+    $tableExists->expects('execute')->with(['table' => 'service_apikey'])->andReturnTrue();
+    $tableExists->expects('fetchColumn')->andReturn(false);
+
+    $createTable = Mockery::mock(PDOStatement::class);
+    $createTable->expects('execute')->with([])->andReturnTrue();
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')
+        ->with('SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table LIMIT 1')
+        ->andReturn($tableExists);
+    $pdo->expects('prepare')
+        ->with(Mockery::on(fn (string $sql): bool => str_contains($sql, 'CREATE TABLE `service_apikey`')
+            && str_contains($sql, '`client_id` BIGINT DEFAULT NULL')
+            && str_contains($sql, 'KEY `client_id_idx` (`client_id`)')))
+        ->andReturn($createTable);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch111'))->invoke($patcher);
+});
+
+test('require transfer code patch is numbered 112', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 111);
+
+    expect($patches)->toHaveKey(112)
+        ->and($patches[112][1])->toBe('patch112');
+});
+
+test('require transfer code patch adds the column for existing installs', function (): void {
+    $columns = Mockery::mock(PDOStatement::class);
+    $columns->expects('execute')->with([])->andReturnTrue();
+    $columns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([]);
+
+    $addColumn = Mockery::mock(PDOStatement::class);
+    $addColumn->expects('execute')->with([])->andReturnTrue();
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `tld`')->andReturn($columns);
+    $pdo->expects('prepare')
+        ->with('ALTER TABLE `tld` ADD COLUMN `require_transfer_code` tinyint(1) DEFAULT NULL AFTER `allow_transfer`')
+        ->andReturn($addColumn);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch112'))->invoke($patcher);
+});
+
+test('require transfer code patch is a no-op when the column already exists', function (): void {
+    $columns = Mockery::mock(PDOStatement::class);
+    $columns->expects('execute')->with([])->andReturnTrue();
+    $columns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([['Field' => 'require_transfer_code']]);
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `tld`')->andReturn($columns);
+    $pdo->shouldNotReceive('prepare')->with('ALTER TABLE `tld` ADD COLUMN `require_transfer_code` tinyint(1) DEFAULT NULL AFTER `allow_transfer`');
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch112'))->invoke($patcher);
+});
+
+test('admin salt column drop patch is numbered 113', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 112);
+
+    expect($patches)->toHaveKey(113)
+        ->and($patches[113][1])->toBe('patch113');
+});
+
+test('admin salt column drop patch is a no-op when the column is already gone', function (): void {
+    $columns = Mockery::mock(PDOStatement::class);
+    $columns->expects('execute')->with([])->andReturnTrue();
+    $columns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([]);
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `admin`')->andReturn($columns);
+    $pdo->shouldNotReceive('prepare')->with('ALTER TABLE `admin` DROP COLUMN `salt`');
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch113'))->invoke($patcher);
+});
+
+test('admin salt column drop patch drops the column when it still exists', function (): void {
+    $columns = Mockery::mock(PDOStatement::class);
+    $columns->expects('execute')->with([])->andReturnTrue();
+    $columns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([['Field' => 'salt']]);
+
+    $dropColumn = Mockery::mock(PDOStatement::class);
+    $dropColumn->expects('execute')->with([])->andReturnTrue();
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `admin`')->andReturn($columns);
+    $pdo->expects('prepare')->with('ALTER TABLE `admin` DROP COLUMN `salt`')->andReturn($dropColumn);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch113'))->invoke($patcher);
+});
+
+test('cart unique session_id patch is numbered 114', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 113);
+
+    expect($patches)->toHaveKey(114)
+        ->and($patches[114][1])->toBe('patch114');
+});
+
+test('cart unique session_id patch is a no-op when the index is already unique and there are no duplicates', function (): void {
+    $duplicates = Mockery::mock(PDOStatement::class);
+    $duplicates->expects('execute')->with([])->andReturnTrue();
+    $duplicates->expects('fetchAll')->with(PDO::FETCH_COLUMN)->andReturn([]);
+
+    $indexes = Mockery::mock(PDOStatement::class);
+    $indexes->expects('execute')->with([])->andReturnTrue();
+    $indexes->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['Key_name' => 'session_id_idx', 'Non_unique' => '0'],
+    ]);
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')
+        ->with(Mockery::on(fn (string $sql): bool => str_contains($sql, 'SELECT c.id FROM cart c')))
+        ->andReturn($duplicates);
+    $pdo->expects('prepare')->with('SHOW INDEX FROM `cart`')->andReturn($indexes);
+    $pdo->shouldNotReceive('prepare')->with('ALTER TABLE `cart` DROP INDEX `session_id_idx`');
+    $pdo->shouldNotReceive('prepare')->with('ALTER TABLE `cart` ADD UNIQUE INDEX `session_id_idx` (`session_id`)');
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch114'))->invoke($patcher);
+});
+
+test('cart unique session_id patch reconciles duplicate sessions then converts the index to unique', function (): void {
+    // Two carts (ids 5 and 9) share a session_id; id 9 is the newer one and is kept.
+    $duplicates = Mockery::mock(PDOStatement::class);
+    $duplicates->expects('execute')->with([])->andReturnTrue();
+    $duplicates->expects('fetchAll')->with(PDO::FETCH_COLUMN)->andReturn([5]);
+
+    $deleteCartProduct = Mockery::mock(PDOStatement::class);
+    $deleteCartProduct->expects('execute')->with([5])->andReturnTrue();
+
+    $deleteCart = Mockery::mock(PDOStatement::class);
+    $deleteCart->expects('execute')->with([5])->andReturnTrue();
+
+    $indexes = Mockery::mock(PDOStatement::class);
+    $indexes->expects('execute')->with([])->andReturnTrue();
+    $indexes->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['Key_name' => 'session_id_idx', 'Non_unique' => '1'],
+    ]);
+
+    $dropIndex = Mockery::mock(PDOStatement::class);
+    $dropIndex->expects('execute')->with([])->andReturnTrue();
+
+    $addIndex = Mockery::mock(PDOStatement::class);
+    $addIndex->expects('execute')->with([])->andReturnTrue();
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')
+        ->with(Mockery::on(fn (string $sql): bool => str_contains($sql, 'SELECT c.id FROM cart c')))
+        ->andReturn($duplicates);
+    $pdo->expects('prepare')
+        ->with(Mockery::on(fn (string $sql): bool => str_contains($sql, 'DELETE FROM `cart_product` WHERE `cart_id` IN (?)')))
+        ->andReturn($deleteCartProduct);
+    $pdo->expects('prepare')
+        ->with(Mockery::on(fn (string $sql): bool => str_contains($sql, 'DELETE FROM `cart` WHERE `id` IN (?)')))
+        ->andReturn($deleteCart);
+    $pdo->expects('prepare')->with('SHOW INDEX FROM `cart`')->andReturn($indexes);
+    $pdo->expects('prepare')->with('ALTER TABLE `cart` DROP INDEX `session_id_idx`')->andReturn($dropIndex);
+    $pdo->expects('prepare')->with('ALTER TABLE `cart` ADD UNIQUE INDEX `session_id_idx` (`session_id`)')->andReturn($addIndex);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch114'))->invoke($patcher);
+});
+
+/**
+ * These patches are raw MySQL/MariaDB DDL with no PostgreSQL/SQLite equivalent - see
+ * UpdatePatcher::isMysqlDriver(). Swaps the real config.php's `db.driver`, mirroring
+ * DriverManagerFactoryTest's config-swap pattern, since getDatabaseConfig() reads it directly.
+ */
+function withNonMysqlDbDriver(Closure $callback): void
+{
+    withDbDriverConfig(['driver' => 'pdo_sqlite', 'path' => '/tmp/does-not-matter.sqlite'], $callback);
+}
+
+/**
+ * Same config-swap as {@see withNonMysqlDbDriver()}, but forcing `pdo_mysql` regardless of what
+ * the ambient test config already has - so a test doesn't silently depend on that.
+ */
+function withMysqlDbDriver(Closure $callback): void
+{
+    withDbDriverConfig(['driver' => 'pdo_mysql', 'host' => '127.0.0.1', 'port' => 3306, 'name' => 'does_not_matter', 'user' => 'root', 'password' => ''], $callback);
+}
+
+function withDbDriverConfig(array $dbConfig, Closure $callback): void
+{
+    $filesystem = new Filesystem();
+    $original = $filesystem->readFile(PATH_CONFIG);
+    $config = FOSSBilling\Config::getConfig();
+    $config['db'] = $dbConfig;
+    $filesystem->dumpFile(PATH_CONFIG, '<?php return ' . var_export($config, true) . ';');
+    clearstatcache(true, PATH_CONFIG);
+    if (function_exists('opcache_invalidate')) {
+        @opcache_invalidate(PATH_CONFIG, true);
+    }
+
+    try {
+        $callback();
+    } finally {
+        $filesystem->dumpFile(PATH_CONFIG, $original);
+        clearstatcache(true, PATH_CONFIG);
+        if (function_exists('opcache_invalidate')) {
+            @opcache_invalidate(PATH_CONFIG, true);
+        }
+    }
+}
+
+/**
+ * A PDOStatement stub whose execute() always succeeds, for tests that don't care about the
+ * theme-migration calls' specific SQL/params - only that they don't blow up an otherwise
+ * unrelated PDO mock, since migrateThemePackageLayout() now runs unconditionally regardless of
+ * driver (see the dedicated tests above asserting its exact SQL/params).
+ */
+function mockPdoAllowingThemeMigrationCalls(): Mockery\MockInterface
+{
+    $statement = Mockery::mock(PDOStatement::class);
+    $statement->shouldReceive('execute')->andReturnTrue();
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->shouldReceive('prepare')
+        ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'UPDATE setting') || str_starts_with($sql, 'UPDATE extension_meta')))
+        ->andReturn($statement);
+
+    return $pdo;
+}
+
+test('applyCorePatches never runs a legacy MySQL patch on a non-MySQL driver, even if the patch level looks stale', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        // mockPdoAllowingThemeMigrationCalls() only accepts 'UPDATE setting'/'UPDATE extension_meta'
+        // prepare() calls; anything else (backtick-quoted identifiers, ALTER TABLE, SHOW COLUMNS,
+        // ...) would mean a legacy MySQL-only patch ran, which this test exists to catch.
+        $pdo = mockPdoAllowingThemeMigrationCalls();
+        $pdo->shouldNotReceive('query');
+
+        $di = new Pimple\Container();
+        $di['pdo'] = $pdo;
+        $di['logger'] = new Tests\Helpers\TestLogger();
+
+        $patcher = new UpdatePatcher();
+        $patcher->setDi($di);
+
+        // force: true is exactly the path finalizeUpdateLocked() calls unconditionally on every
+        // request when finalization state is missing/stale - this must never touch the database
+        // via a legacy MySQL-only patch. With no entity manager in $di, there is also nothing for
+        // the portable schema sync to run against, so this is a full no-op end to end beyond the
+        // portable theme-migration calls asserted above.
+        $patcher->applyCorePatches(force: true);
+    });
+});
+
+test('migrateThemePackageLayout renames admin_default/huraga when only the old directory exists', function (): void {
+    $adminDefault = Path::join(PATH_THEMES, 'admin_default');
+    $huraga = Path::join(PATH_THEMES, 'huraga');
+    $defaultAdmin = Path::join(PATH_THEMES, 'default', 'admin');
+    $defaultClient = Path::join(PATH_THEMES, 'default', 'client');
+
+    $filesystem = Mockery::mock(Filesystem::class);
+    $filesystem->shouldReceive('exists')->with($adminDefault)->andReturnTrue();
+    $filesystem->shouldReceive('exists')->with($huraga)->andReturnTrue();
+    $filesystem->shouldReceive('exists')->with($defaultAdmin)->andReturnFalse();
+    $filesystem->shouldReceive('exists')->with($defaultClient)->andReturnFalse();
+    $filesystem->expects('mkdir')->with(Path::join(PATH_THEMES, 'default'))->twice();
+    $filesystem->expects('rename')->with($adminDefault, $defaultAdmin)->once();
+    $filesystem->expects('rename')->with($huraga, $defaultClient)->once();
+    $filesystem->shouldNotReceive('remove');
+
+    $di = new Pimple\Container();
+    $di['pdo'] = mockPdoAllowingThemeMigrationCalls();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['filesystem'] = $filesystem;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'migrateThemePackageLayout'))->invoke($patcher);
+});
+
+test('migrateThemePackageLayout mirrors leftover old directories into the new one before discarding them', function (): void {
+    $adminDefault = Path::join(PATH_THEMES, 'admin_default');
+    $huraga = Path::join(PATH_THEMES, 'huraga');
+    $defaultAdmin = Path::join(PATH_THEMES, 'default', 'admin');
+    $defaultClient = Path::join(PATH_THEMES, 'default', 'client');
+
+    // Simulates a `git pull`/checkout deploy: the tracked files already moved via the checkout
+    // itself, so both old and new paths exist. What's left at the old path is mostly gitignored
+    // leftovers (rebuilt assets/build/, huraga's settings_data.json cache, which regenerates on
+    // its own), but can also be genuinely untracked local customizations - an `html_custom`
+    // override directory, extra files dropped into `custom-icons` - that a checkout never
+    // touches. mirror() must copy anything still at the old path over (without clobbering what
+    // the checkout already placed at the new path) before the old directory is discarded.
+    $filesystem = Mockery::mock(Filesystem::class);
+    $filesystem->shouldReceive('exists')->with($adminDefault)->andReturnTrue();
+    $filesystem->shouldReceive('exists')->with($huraga)->andReturnTrue();
+    $filesystem->shouldReceive('exists')->with($defaultAdmin)->andReturnTrue();
+    $filesystem->shouldReceive('exists')->with($defaultClient)->andReturnTrue();
+    $filesystem->shouldNotReceive('mkdir');
+    $filesystem->shouldNotReceive('rename');
+    $filesystem->expects('mirror')->with($adminDefault, $defaultAdmin, null, ['override' => false])->once()->ordered();
+    $filesystem->expects('remove')->with($adminDefault)->once()->ordered();
+    $filesystem->expects('mirror')->with($huraga, $defaultClient, null, ['override' => false])->once()->ordered();
+    $filesystem->expects('remove')->with($huraga)->once()->ordered();
+
+    $di = new Pimple\Container();
+    $di['pdo'] = mockPdoAllowingThemeMigrationCalls();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['filesystem'] = $filesystem;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'migrateThemePackageLayout'))->invoke($patcher);
+});
+
+test('migrateThemePackageLayout does nothing on a fresh install where neither old directory ever existed', function (): void {
+    $filesystem = Mockery::mock(Filesystem::class);
+    $filesystem->shouldReceive('exists')->andReturnFalse();
+    $filesystem->shouldNotReceive('mkdir');
+    $filesystem->shouldNotReceive('rename');
+    $filesystem->shouldNotReceive('remove');
+
+    $di = new Pimple\Container();
+    $di['pdo'] = mockPdoAllowingThemeMigrationCalls();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['filesystem'] = $filesystem;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'migrateThemePackageLayout'))->invoke($patcher);
+});
+
+test('applyCorePatches migrates the theme setting values on a non-MySQL driver, since patch115 never runs there', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        $adminThemeStatement = Mockery::mock(PDOStatement::class);
+        $adminThemeStatement->expects('execute')
+            ->with(['new_value' => 'default/admin', 'param' => 'admin_theme', 'old_value' => 'admin_default'])
+            ->andReturnTrue();
+        $clientThemeStatement = Mockery::mock(PDOStatement::class);
+        $clientThemeStatement->expects('execute')
+            ->with(['new_value' => 'default/client', 'param' => 'theme', 'old_value' => 'huraga'])
+            ->andReturnTrue();
+        $extensionMetaStatement = Mockery::mock(PDOStatement::class);
+        $extensionMetaStatement->shouldReceive('execute')->andReturnTrue();
+
+        $pdo = Mockery::mock(PDO::class);
+        $pdo->expects('prepare')
+            ->with('UPDATE setting SET value = :new_value WHERE param = :param AND value = :old_value')
+            ->twice()
+            ->andReturn($adminThemeStatement, $clientThemeStatement);
+        $pdo->shouldReceive('prepare')
+            ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'UPDATE extension_meta')))
+            ->andReturn($extensionMetaStatement);
+
+        $di = new Pimple\Container();
+        $di['pdo'] = $pdo;
+        $di['logger'] = new Tests\Helpers\TestLogger();
+
+        $patcher = new UpdatePatcher();
+        $patcher->setDi($di);
+
+        $patcher->applyCorePatches(force: true);
+    });
+});
+
+test('applyCorePatches migrates saved theme settings/presets in extension_meta on a non-MySQL driver', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        // rel_id/meta_key rename runs once per theme (admin_default, then huraga), so each SQL
+        // text is prepared twice - once per code pair, each with its own params.
+        $settingsAdmin = Mockery::mock(PDOStatement::class);
+        $settingsAdmin->expects('execute')->with(['new_code' => 'default/admin', 'old_code' => 'admin_default'])->andReturnTrue();
+        $settingsClient = Mockery::mock(PDOStatement::class);
+        $settingsClient->expects('execute')->with(['new_code' => 'default/client', 'old_code' => 'huraga'])->andReturnTrue();
+        $presetAdmin = Mockery::mock(PDOStatement::class);
+        $presetAdmin->expects('execute')->with(['new_code' => 'default/admin', 'old_code' => 'admin_default'])->andReturnTrue();
+        $presetClient = Mockery::mock(PDOStatement::class);
+        $presetClient->expects('execute')->with(['new_code' => 'default/client', 'old_code' => 'huraga'])->andReturnTrue();
+        $otherStatement = Mockery::mock(PDOStatement::class);
+        $otherStatement->shouldReceive('execute')->andReturnTrue();
+
+        $pdo = Mockery::mock(PDO::class);
+        $pdo->expects('prepare')
+            ->with("UPDATE extension_meta SET rel_id = :new_code WHERE extension = 'mod_theme' AND rel_type = 'settings' AND rel_id = :old_code")
+            ->twice()
+            ->andReturn($settingsAdmin, $settingsClient);
+        $pdo->expects('prepare')
+            ->with("UPDATE extension_meta SET meta_key = :new_code WHERE extension = 'mod_theme' AND rel_type = 'preset' AND rel_id = 'current' AND meta_key = :old_code")
+            ->twice()
+            ->andReturn($presetAdmin, $presetClient);
+        $pdo->shouldReceive('prepare')
+            ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'UPDATE setting')))
+            ->andReturn($otherStatement);
+
+        $di = new Pimple\Container();
+        $di['pdo'] = $pdo;
+        $di['logger'] = new Tests\Helpers\TestLogger();
+
+        $patcher = new UpdatePatcher();
+        $patcher->setDi($di);
+
+        $patcher->applyCorePatches(force: true);
+    });
+});
+
+test('applyCorePatches runs a portable schema sync instead of legacy patches on a non-MySQL driver', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+        $entityManager = FOSSBilling\Doctrine\EntityManagerFactory::create($connection);
+        FOSSBilling\Doctrine\SchemaInstaller::createSchema($entityManager);
+
+        // Simulate a PostgreSQL/SQLite install that predates a table current entity metadata
+        // knows about - the same situation a real upgrade would hit. `currency` is a core-module
+        // table (see ModuleEntityScope), so it's always in scope for the ambient sync below,
+        // unlike an extension's own table - see the gating tests further down.
+        $connection->executeStatement('DROP TABLE currency');
+
+        $pdo = mockPdoAllowingThemeMigrationCalls();
+
+        $di = new Pimple\Container();
+        $di['pdo'] = $pdo;
+        $di['em'] = $entityManager;
+        $di['logger'] = new Tests\Helpers\TestLogger();
+
+        $patcher = new UpdatePatcher();
+        $patcher->setDi($di);
+
+        $patcher->applyCorePatches(force: true);
+
+        expect($connection->createSchemaManager()->tablesExist(['currency']))->toBeTrue();
+    });
+});
+
+test('applyCorePatches also runs a portable schema sync after legacy patches on a MySQL driver', function (): void {
+    withMysqlDbDriver(function (): void {
+        $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+        $entityManager = FOSSBilling\Doctrine\EntityManagerFactory::create($connection);
+        FOSSBilling\Doctrine\SchemaInstaller::createSchema($entityManager);
+        $connection->executeStatement('DROP TABLE currency');
+
+        // The legacy patch loop still needs a patch level to compare against - report the latest
+        // one so getPatches() finds nothing pending and the loop body never runs. That isolates
+        // this test to proving the sync step runs afterward, not re-testing the patches themselves.
+        $latestPatchLevel = (new UpdatePatcher())->latestPatchLevel();
+        $statement = Mockery::mock(PDOStatement::class);
+        $statement->shouldReceive('execute')->once()->andReturn(true);
+        $statement->shouldReceive('fetchColumn')->once()->andReturn((string) $latestPatchLevel);
+
+        $pdo = mockPdoAllowingThemeMigrationCalls();
+        $pdo->shouldReceive('prepare')->once()->andReturn($statement);
+
+        $di = new Pimple\Container();
+        $di['pdo'] = $pdo;
+        $di['em'] = $entityManager;
+        $di['logger'] = new Tests\Helpers\TestLogger();
+
+        $patcher = new UpdatePatcher();
+        $patcher->setDi($di);
+
+        $patcher->applyCorePatches(force: true);
+
+        expect($connection->createSchemaManager()->tablesExist(['currency']))->toBeTrue();
+    });
+});
+
+/*
+ * Regression coverage for the gating ModuleEntityScope adds: the ambient sync above must not undo
+ * SchemaInstaller's fresh-install gating by unconditionally recreating an inactive extension's
+ * table on every request, as if it had been activated.
+ */
+test('applyCorePatches never recreates an inactive extension\'s table via the ambient schema sync', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+        $entityManager = FOSSBilling\Doctrine\EntityManagerFactory::create($connection);
+        FOSSBilling\Doctrine\SchemaInstaller::createSchema($entityManager);
+
+        // custompages is neither a core module nor one of content.sql's default-active
+        // extensions, so a fresh install never creates its table - nothing here to "predate".
+        expect($connection->createSchemaManager()->tablesExist(['custom_pages']))->toBeFalse();
+
+        $pdo = mockPdoAllowingThemeMigrationCalls();
+        $pdo->shouldNotReceive('query');
+
+        $di = new Pimple\Container();
+        $di['pdo'] = $pdo;
+        $di['em'] = $entityManager;
+        $di['logger'] = new Tests\Helpers\TestLogger();
+
+        $patcher = new UpdatePatcher();
+        $patcher->setDi($di);
+
+        $patcher->applyCorePatches(force: true);
+
+        expect($connection->createSchemaManager()->tablesExist(['custom_pages']))->toBeFalse();
+    });
+});
+
+test('applyCorePatches does resync an extension\'s table once it is marked installed', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+        $entityManager = FOSSBilling\Doctrine\EntityManagerFactory::create($connection);
+        FOSSBilling\Doctrine\SchemaInstaller::createSchema($entityManager);
+
+        // Simulate the module having been activated (its own install() hook already ran once,
+        // creating its table) and then predating a later metadata change - the same situation
+        // a currently-installed extension's table missing a new column would hit.
+        FOSSBilling\Doctrine\SchemaSynchronizer::syncEntities($entityManager, [Box\Mod\Custompages\Entity\CustomPage::class]);
+        $connection->executeStatement("INSERT INTO extension (type, name, status, version) VALUES ('mod', 'custompages', 'installed', '1.0.0')");
+        $connection->executeStatement('DROP TABLE custom_pages');
+
+        $pdo = mockPdoAllowingThemeMigrationCalls();
+        $pdo->shouldNotReceive('query');
+
+        $di = new Pimple\Container();
+        $di['pdo'] = $pdo;
+        $di['em'] = $entityManager;
+        $di['logger'] = new Tests\Helpers\TestLogger();
+
+        $patcher = new UpdatePatcher();
+        $patcher->setDi($di);
+
+        $patcher->applyCorePatches(force: true);
+
+        expect($connection->createSchemaManager()->tablesExist(['custom_pages']))->toBeTrue();
+    });
+});
+
+/*
+ * Regression test: scope discovery (installedExtensionModules()'s schema introspection and
+ * query, plus metadata loading) has to fail inside the same try/catch as the sync call itself -
+ * it can throw for the same reasons the sync can (an unreachable database above all), and this
+ * method's whole contract is "errors are logged, not thrown". A connection that fails outright
+ * (rather than one that's merely missing a table) reproduces exactly that: the failure happens
+ * during installedExtensionModules()'s own tablesExist() call, before SchemaSynchronizer::
+ * syncEntities() is ever reached.
+ */
+test('applyCorePatches logs, rather than throws, when scope discovery itself fails to reach the database', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        $brokenConnection = Doctrine\DBAL\DriverManager::getConnection([
+            'driver' => 'pdo_sqlite',
+            'path' => '/definitely-not-a-real-directory-987654321/db.sqlite',
+        ]);
+        $entityManager = FOSSBilling\Doctrine\EntityManagerFactory::create($brokenConnection);
+
+        $pdo = mockPdoAllowingThemeMigrationCalls();
+        $pdo->shouldNotReceive('query');
+
+        $logger = new Tests\Helpers\TestLogger();
+        $di = new Pimple\Container();
+        $di['pdo'] = $pdo;
+        $di['em'] = $entityManager;
+        $di['logger'] = $logger;
+
+        $patcher = new UpdatePatcher();
+        $patcher->setDi($di);
+
+        // Must not throw - the whole point of the try/catch this scope discovery has to live
+        // inside.
+        $patcher->applyCorePatches(force: true);
+
+        $errorCalls = array_values(array_filter($logger->calls, static fn (array $call): bool => $call['method'] === 'error'));
+        expect($errorCalls)->not->toBe([])
+            ->and($errorCalls[0]['params'][0])->toContain('Schema sync against the configured database failed');
+    });
+});
+
+test('availablePatches reports 0 on a non-MySQL driver regardless of the last_patch value', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        $pdo = Mockery::mock(PDO::class);
+        $pdo->shouldNotReceive('prepare');
+        $pdo->shouldNotReceive('query');
+
+        $di = new Pimple\Container();
+        $di['pdo'] = $pdo;
+
+        $patcher = new UpdatePatcher();
+        $patcher->setDi($di);
+
+        expect($patcher->availablePatches())->toBe(0);
+    });
+});
+
+test('legacy entity decode patch follows the theme package layout patch', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 115);
+
+    expect($patches)->toHaveKey(116)
+        ->and($patches[116][1])->toBe('patch116');
+});
+
+test('legacy entity decode repair restores raw invoice and notification values', function (): void {
+    // Regression test for issue #4305. Uses real SQLite to prove the repair is
+    // portable SQL. patch116 runs exactly once per install, so rows written
+    // raw afterwards are never scanned.
+    $pdo = new PDO('sqlite::memory:');
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $pdo->exec('CREATE TABLE invoice (id INTEGER PRIMARY KEY, seller_company TEXT, seller_company_vat TEXT, seller_company_number TEXT, seller_address TEXT, seller_phone TEXT, seller_email TEXT)');
+    $pdo->exec("INSERT INTO invoice (seller_company, seller_company_vat, seller_company_number, seller_address, seller_phone, seller_email) VALUES ('A &amp; B Ltd', 'GB&amp;123', NULL, '5 &lt;Main&gt; St', 'O&#039;Brien', 'a&amp;b@example.com')");
+    $pdo->exec("INSERT INTO invoice (seller_company) VALUES ('Plain Company')");
+    $pdo->exec('CREATE TABLE extension_meta (id INTEGER PRIMARY KEY, extension TEXT, rel_type TEXT, rel_id TEXT, meta_key TEXT, meta_value TEXT)');
+    $pdo->exec("INSERT INTO extension_meta (extension, rel_type, rel_id, meta_key, meta_value) VALUES ('mod_notification', 'staff', '1', 'message', 'Call A &amp; B about the invoice')");
+    $pdo->exec("INSERT INTO extension_meta (extension, rel_type, rel_id, meta_key, meta_value) VALUES ('mod_notification', 'staff', '1', 'message', 'Plain note')");
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    // Invoke the repair directly: patch116's setPatchLevel() bookkeeping is
+    // MySQL-only SQL (`ON DUPLICATE KEY UPDATE`), so the data assertions run
+    // here while the mocked rollback test below covers the patch wiring.
+    $repair = new ReflectionMethod($patcher, 'decodeLegacyServiceEscapedEntities');
+
+    $repair->invoke($patcher);
+
+    $invoice = $pdo->query('SELECT * FROM invoice WHERE id = 1')->fetch(PDO::FETCH_ASSOC);
+    expect($invoice['seller_company'])->toBe('A & B Ltd')
+        ->and($invoice['seller_company_vat'])->toBe('GB&123')
+        ->and($invoice['seller_company_number'])->toBeNull()
+        ->and($invoice['seller_address'])->toBe('5 <Main> St')
+        ->and($invoice['seller_phone'])->toBe("O'Brien")
+        ->and($invoice['seller_email'])->toBe('a&b@example.com');
+
+    $plain = $pdo->query('SELECT seller_company FROM invoice WHERE id = 2')->fetchColumn();
+    expect($plain)->toBe('Plain Company');
+
+    $note = $pdo->query("SELECT meta_value FROM extension_meta WHERE meta_key = 'message' AND id = 1")->fetchColumn();
+    expect($note)->toBe('Call A & B about the invoice');
+
+    $plainNote = $pdo->query("SELECT meta_value FROM extension_meta WHERE meta_key = 'message' AND id = 2")->fetchColumn();
+    expect($plainNote)->toBe('Plain note');
+
+    // Second run must change nothing.
+    $repair->invoke($patcher);
+
+    expect($pdo->query('SELECT * FROM invoice WHERE id = 1')->fetch(PDO::FETCH_ASSOC))->toBe($invoice)
+        ->and($pdo->query("SELECT meta_value FROM extension_meta WHERE meta_key = 'message' AND id = 1")->fetchColumn())->toBe('Call A & B about the invoice');
+});
+
+test('legacy entity decode patch rolls back row repairs when the patch level cannot be recorded', function (): void {
+    // Without atomicity, rows committed before a failed setPatchLevel() would
+    // be decoded a second time on retry. Mirrors the stock backfill rollback
+    // test above.
+    $selectInvoices = Mockery::mock(PDOStatement::class);
+    $selectInvoices->expects('execute')->with([])->andReturnTrue();
+    $selectInvoices->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['id' => 1, 'seller_company' => 'A &amp; B Ltd', 'seller_company_vat' => null, 'seller_company_number' => null, 'seller_address' => null, 'seller_phone' => null, 'seller_email' => null],
+    ]);
+
+    $updateInvoice = Mockery::mock(PDOStatement::class);
+    $updateInvoice->expects('execute')->with(['seller_company' => 'A & B Ltd', 'id' => 1])->andReturnTrue();
+
+    $selectNotes = Mockery::mock(PDOStatement::class);
+    $selectNotes->expects('execute')->with([])->andReturnTrue();
+    $selectNotes->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([]);
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('beginTransaction')->once()->andReturnTrue();
+    $pdo->expects('rollBack')->once()->andReturnTrue();
+    $pdo->shouldNotReceive('commit');
+    $pdo->expects('prepare')
+        ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'SELECT id, seller_company')))
+        ->andReturn($selectInvoices);
+    $pdo->expects('prepare')
+        ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'UPDATE invoice SET')))
+        ->andReturn($updateInvoice);
+    $pdo->expects('prepare')
+        ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'SELECT id, meta_value')))
+        ->andReturn($selectNotes);
+    $pdo->expects('prepare')
+        ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'INSERT INTO setting')))
+        ->andThrow(new RuntimeException('level write failed'));
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+
+    expect(fn (): mixed => (new ReflectionMethod($patcher, 'patch116'))->invoke($patcher))
+        ->toThrow(FOSSBilling\Exception::class, 'There was an error while applying database patches');
 });

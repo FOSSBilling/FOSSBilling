@@ -56,27 +56,24 @@ test('testGet', function (): void {
     expect($result)->toBeArray();
 });
 
-test('testSelectNotAdminTheme', function (): void {
+test('testSelectClientTheme', function (): void {
     $api = apiEndpoint(new Admin());
     $data = [
-        'code' => 'pjw',
+        'code' => 'default/client',
+        'client' => true,
     ];
 
-    $themeMock = Mockery::mock(Box\Mod\Theme\Model\Theme::class);
-    $themeMock->shouldReceive('isAdminAreaTheme')
-        ->atLeast()
-        ->once()
-        ->andReturn(false);
-
     $serviceMock = Mockery::mock(Box\Mod\Theme\Service::class);
-    $serviceMock->shouldReceive('getTheme')
+    $serviceMock->shouldReceive('getThemes')
         ->atLeast()
         ->once()
-        ->andReturn($themeMock);
+        ->with(true)
+        ->andReturn([['code' => 'default/client']]);
 
     $systemServiceMock = Mockery::mock(Box\Mod\System\Service::class);
     $systemServiceMock->shouldReceive('setParamValue')
-        ->with('theme', Mockery::any());
+        ->once()
+        ->with('theme', 'default/client');
     $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class)->shouldIgnoreMissing();
     $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
         ->atLeast()
@@ -95,24 +92,21 @@ test('testSelectNotAdminTheme', function (): void {
 test('testSelectAdminTheme', function (): void {
     $api = apiEndpoint(new Admin());
     $data = [
-        'code' => 'pjw',
+        'code' => 'default/admin',
+        'client' => false,
     ];
 
-    $themeMock = Mockery::mock(Box\Mod\Theme\Model\Theme::class);
-    $themeMock->shouldReceive('isAdminAreaTheme')
-        ->atLeast()
-        ->once()
-        ->andReturn(true);
-
     $serviceMock = Mockery::mock(Box\Mod\Theme\Service::class);
-    $serviceMock->shouldReceive('getTheme')
+    $serviceMock->shouldReceive('getThemes')
         ->atLeast()
         ->once()
-        ->andReturn($themeMock);
+        ->with(false)
+        ->andReturn([['code' => 'default/admin']]);
 
     $systemServiceMock = Mockery::mock(Box\Mod\System\Service::class);
     $systemServiceMock->shouldReceive('setParamValue')
-        ->with('admin_theme', Mockery::any());
+        ->once()
+        ->with('admin_theme', 'default/admin');
     $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class)->shouldIgnoreMissing();
     $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
         ->atLeast()
@@ -126,6 +120,84 @@ test('testSelectAdminTheme', function (): void {
 
     $result = $api->select($data);
     expect($result)->toBeTrue();
+});
+
+test('testSelectRequiresClientParameter', function (): void {
+    $api = apiEndpoint(new Admin());
+    $data = ['code' => 'default/admin'];
+
+    $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class)->shouldIgnoreMissing();
+    $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')->atLeast()->once();
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn (string $name = ''): Mockery\MockInterface => $staffServiceMock);
+    $api->setDi($di);
+    $api->setService(Mockery::mock(Box\Mod\Theme\Service::class));
+
+    expect(fn (): bool => $api->select($data))
+        ->toThrow(FOSSBilling\InformationException::class, 'The "client" parameter is required.');
+});
+
+test('testSelectRejectsInvalidClientParameter', function (): void {
+    $api = apiEndpoint(new Admin());
+    $data = ['code' => 'default/admin', 'client' => 'not-a-boolean'];
+
+    $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class)->shouldIgnoreMissing();
+    $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')->atLeast()->once();
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn (string $name = ''): Mockery\MockInterface => $staffServiceMock);
+    $api->setDi($di);
+    $api->setService(Mockery::mock(Box\Mod\Theme\Service::class));
+
+    expect(fn (): bool => $api->select($data))
+        ->toThrow(FOSSBilling\InformationException::class, 'Invalid "client" parameter.');
+});
+
+test('testSelectRejectsThemeFromOppositeArea', function (): void {
+    $api = apiEndpoint(new Admin());
+    $data = ['code' => 'default/admin', 'client' => true];
+
+    $serviceMock = Mockery::mock(Box\Mod\Theme\Service::class);
+    $serviceMock->shouldReceive('getThemes')
+        ->atLeast()
+        ->once()
+        ->with(true)
+        ->andReturn([['code' => 'default/client']]);
+
+    $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class)->shouldIgnoreMissing();
+    $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')->atLeast()->once();
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn (string $name = ''): Mockery\MockInterface => $staffServiceMock);
+    $api->setDi($di);
+    $api->setService($serviceMock);
+
+    expect(fn (): bool => $api->select($data))
+        ->toThrow(FOSSBilling\InformationException::class, 'Theme "default/admin" is not available for the selected area.');
+});
+
+test('testSelectRejectsPackageSharedTierCode', function (): void {
+    $api = apiEndpoint(new Admin());
+    $data = ['code' => 'default/shared', 'client' => true];
+
+    $serviceMock = Mockery::mock(Box\Mod\Theme\Service::class);
+    $serviceMock->shouldReceive('getThemes')
+        ->atLeast()
+        ->once()
+        ->with(true)
+        ->andReturn([['code' => 'default/client']]);
+
+    $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class)->shouldIgnoreMissing();
+    $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')->atLeast()->once();
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn (string $name = ''): Mockery\MockInterface => $staffServiceMock);
+    $api->setDi($di);
+    $api->setService($serviceMock);
+
+    expect(fn (): bool => $api->select($data))
+        ->toThrow(FOSSBilling\InformationException::class, 'Theme "default/shared" is not available for the selected area.');
 });
 
 test('testPresetDelete', function (): void {

@@ -160,7 +160,7 @@ class Service implements InjectionAwareInterface
         if (!$result) {
             throw new InformationException('Invalid email confirmation link');
         }
-        $dbal->executeStatement('UPDATE client SET email_approved = 1 WHERE id = :id', ['id' => $result['client_id']]);
+        $dbal->executeStatement('UPDATE client SET email_approved = true WHERE id = :id', ['id' => $result['client_id']]);
         $dbal->executeStatement('DELETE FROM extension_meta WHERE id = :id', ['id' => $result['id']]);
 
         return true;
@@ -208,9 +208,11 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function getSearchQuery($data, $selectStmt = 'SELECT c.*'): array
+    public function getSearchQuery($data, $selectStmt = null): array
     {
-        $sql = $selectStmt;
+        // `client` also holds `pass`, `salt`, and `api_token` - reuse EXPORTABLE_COLUMNS
+        // instead of `c.*` so listing never exposes them.
+        $sql = $selectStmt ?? 'SELECT c.' . implode(', c.', self::EXPORTABLE_COLUMNS);
         $sql .= ' FROM client as c left join client_group as cg on c.client_group_id = cg.id';
 
         $search = (isset($data['search']) && !empty($data['search'])) ? $data['search'] : null;
@@ -261,18 +263,24 @@ class Service implements InjectionAwareInterface
         }
 
         if ($created_at) {
-            $where[] = "DATE_FORMAT(c.created_at, '%Y-%m-%d') = :created_at";
-            $params['created_at'] = date('Y-m-d', strtotime((string) $created_at));
+            // A day range rather than DATE_FORMAT(...) = :created_at, which MySQL supports but
+            // PostgreSQL and SQLite don't.
+            $where[] = 'c.created_at >= :created_at_start AND c.created_at < :created_at_end';
+            $dayStart = strtotime(date('Y-m-d', strtotime((string) $created_at)));
+            $params['created_at_start'] = date('Y-m-d H:i:s', $dayStart);
+            $params['created_at_end'] = date('Y-m-d H:i:s', strtotime('+1 day', $dayStart));
         }
 
         if ($date_from) {
-            $where[] = 'UNIX_TIMESTAMP(c.created_at) >= :date_from';
-            $params['date_from'] = strtotime((string) $date_from);
+            // Compares directly against the datetime column rather than UNIX_TIMESTAMP(c.created_at),
+            // which MySQL supports but PostgreSQL and SQLite don't.
+            $where[] = 'c.created_at >= :date_from';
+            $params['date_from'] = date('Y-m-d H:i:s', strtotime((string) $date_from));
         }
 
         if ($date_to) {
-            $where[] = 'UNIX_TIMESTAMP(c.created_at) <= :date_to';
-            $params['date_to'] = strtotime((string) $date_to);
+            $where[] = 'c.created_at <= :date_to';
+            $params['date_to'] = date('Y-m-d H:i:s', strtotime((string) $date_to));
         }
 
         // smartSearch

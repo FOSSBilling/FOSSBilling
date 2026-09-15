@@ -85,6 +85,7 @@ class Service
                 'order_batch_send_suspension_warnings',
                 'order_batch_suspend_expired',
                 'order_batch_cancel_suspended',
+                'order_batch_cancel_unpaid',
                 'support_batch_ticket_auto_close',
                 'client_batch_expire_password_reminders',
                 'cart_batch_expire',

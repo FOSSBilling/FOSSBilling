@@ -9,23 +9,23 @@ const rootDir = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
 const themes = [
   {
-    code: 'huraga',
+    code: 'default/client',
     area: 'client',
-    themePath: resolve(rootDir, 'src/themes/huraga'),
+    themePath: resolve(rootDir, 'src/themes/default/client'),
     scanPaths: [
-      resolve(rootDir, 'src/themes/huraga/html'),
-      resolve(rootDir, 'src/themes/huraga/assets'),
+      resolve(rootDir, 'src/themes/default/client/html'),
+      resolve(rootDir, 'src/themes/default/client/assets'),
       resolve(rootDir, 'src/modules'),
     ],
     disallowFilled: true,
   },
   {
-    code: 'admin_default',
+    code: 'default/admin',
     area: 'admin',
-    themePath: resolve(rootDir, 'src/themes/admin_default'),
+    themePath: resolve(rootDir, 'src/themes/default/admin'),
     scanPaths: [
-      resolve(rootDir, 'src/themes/admin_default/html'),
-      resolve(rootDir, 'src/themes/admin_default/assets'),
+      resolve(rootDir, 'src/themes/default/admin/html'),
+      resolve(rootDir, 'src/themes/default/admin/assets'),
       resolve(rootDir, 'src/modules'),
     ],
     dynamicNavigation: true,

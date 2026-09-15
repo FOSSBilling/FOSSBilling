@@ -66,6 +66,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
                         'label' => 'API Key',
                         'description' => 'You can get this at Namecheap control panel.',
                         'required' => true,
+                        'secret' => true,
                     ],
                 ],
                 'username' => [
@@ -244,15 +245,15 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
         foreach (['Registrant', 'Admin', 'Tech', 'AuxBilling'] as $contactType) {
             $c = $domain->getContactRegistrar();
 
-            if ($contactType == 'Admin' && $domain->getContactAdmin()) {
+            if ($contactType == 'Admin' && $domain->getContactAdmin() instanceof Registrar_Domain_Contact) {
                 $c = $domain->getContactAdmin();
             }
 
-            if ($contactType == 'Tech' && $domain->getContactTech()) {
+            if ($contactType == 'Tech' && $domain->getContactTech() instanceof Registrar_Domain_Contact) {
                 $c = $domain->getContactTech();
             }
 
-            if ($contactType == 'AuxBilling' && $domain->getContactBilling()) {
+            if ($contactType == 'AuxBilling' && $domain->getContactBilling() instanceof Registrar_Domain_Contact) {
                 $c = $domain->getContactBilling();
             }
 
@@ -390,8 +391,7 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
         $result = $this->_makeRequest($params);
 
         $NsArr = [];
-        $xmlNsList = $result->CommandResponse->DomainDNSGetListResult;
-        foreach ($xmlNsList->Nameserver as $Nameserver) {
+        foreach ($result->CommandResponse->DomainDNSGetListResult->Nameserver ?? [] as $Nameserver) {
             $NsArr[] = $Nameserver;
         }
 
@@ -443,15 +443,15 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
         foreach (['Registrant', 'Admin', 'Tech', 'AuxBilling'] as $contactType) {
             $c = $domain->getContactRegistrar();
 
-            if ($contactType == 'Admin' && $domain->getContactAdmin()) {
+            if ($contactType == 'Admin' && $domain->getContactAdmin() instanceof Registrar_Domain_Contact) {
                 $c = $domain->getContactAdmin();
             }
 
-            if ($contactType == 'Tech' && $domain->getContactTech()) {
+            if ($contactType == 'Tech' && $domain->getContactTech() instanceof Registrar_Domain_Contact) {
                 $c = $domain->getContactTech();
             }
 
-            if ($contactType == 'AuxBilling' && $domain->getContactBilling()) {
+            if ($contactType == 'AuxBilling' && $domain->getContactBilling() instanceof Registrar_Domain_Contact) {
                 $c = $domain->getContactBilling();
             }
 

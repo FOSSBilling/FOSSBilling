@@ -10,7 +10,7 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity(repositoryClass: \Box\Mod\Cart\Repository\CartProductRepository::class)]
 #[ORM\Table(name: 'cart_product')]
 #[ORM\Index(name: 'cart_id_idx', columns: ['cart_id'])]
-#[ORM\Index(name: 'product_id_idx', columns: ['product_id'])]
+#[ORM\Index(name: 'cart_product_product_id_idx', columns: ['product_id'])]
 class CartProduct
 {
     #[ORM\Id]

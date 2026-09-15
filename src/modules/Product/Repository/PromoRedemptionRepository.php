@@ -49,7 +49,7 @@ class PromoRedemptionRepository extends EntityRepository
     public function findInvoiceSummary(int $invoiceId): ?array
     {
         $row = $this->getEntityManager()->getConnection()->fetchAssociative(
-            'SELECT id, serie_nr, status, created_at FROM invoice WHERE id = :id',
+            'SELECT id, serie, nr, status, created_at FROM invoice WHERE id = :id',
             ['id' => $invoiceId],
         );
 

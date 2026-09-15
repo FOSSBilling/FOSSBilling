@@ -11,11 +11,12 @@ use FOSSBilling\Interfaces\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Order\Repository\OrderRepository::class)]
 #[ORM\Table(name: 'client_order')]
-#[ORM\Index(name: 'client_id_idx', columns: ['client_id'])]
-#[ORM\Index(name: 'product_id_idx', columns: ['product_id'])]
-#[ORM\Index(name: 'form_id_idx', columns: ['form_id'])]
-#[ORM\Index(name: 'promo_id_idx', columns: ['promo_id'])]
+#[ORM\Index(name: 'client_order_client_id_idx', columns: ['client_id'])]
+#[ORM\Index(name: 'client_order_product_id_idx', columns: ['product_id'])]
+#[ORM\Index(name: 'client_order_form_id_idx', columns: ['form_id'])]
+#[ORM\Index(name: 'client_order_promo_id_idx', columns: ['promo_id'])]
 #[ORM\Index(name: 'client_order_status_expires_at_idx', columns: ['status', 'expires_at'])]
+#[ORM\Index(name: 'client_order_unpaid_invoice_id_idx', columns: ['unpaid_invoice_id'])]
 #[ORM\HasLifecycleCallbacks]
 class Order implements TimestampInterface
 {

@@ -24,16 +24,21 @@ class TwigLoader extends FilesystemLoader
     /**
      * Create new TwigLoader with FOSSBilling-specific path configuration.
      *
-     * @param AppArea $appArea   either 'admin' or 'client'
-     * @param string  $themePath path to the theme directory
+     * @param AppArea     $appArea        either 'admin' or 'client'
+     * @param string      $themePath      path to the theme (or theme package area) directory
+     * @param string|null $sharedHtmlPath path to a theme package's `shared/html` directory, or
+     *                                    null when `$themePath` isn't part of a package. Resolved
+     *                                    via Theme\Service::getPackageSharedHtmlPath(). Lowest
+     *                                    priority tier; silently skipped if it doesn't exist.
      */
-    public function __construct(AppArea $appArea, string $themePath)
+    public function __construct(AppArea $appArea, string $themePath, ?string $sharedHtmlPath = null)
     {
         parent::__construct();
 
         $this->filesystem = new Filesystem();
 
-        // Load path in priority order: custom theme files, default theme, module templates.
+        // Load path in priority order: custom theme files, default theme,
+        // module templates, package-shared theme resources.
         $paths = [];
         $customPath = Path::join($themePath, 'html_custom');
         if ($this->filesystem->exists($customPath)) {
@@ -44,6 +49,10 @@ class TwigLoader extends FilesystemLoader
             $paths[] = $defaultPath;
         }
         $paths = array_merge($paths, $this->getModuleTemplatePaths($appArea));
+
+        if ($sharedHtmlPath !== null && $this->filesystem->exists($sharedHtmlPath)) {
+            $paths[] = $sharedHtmlPath;
+        }
 
         $this->setPaths($paths);
 

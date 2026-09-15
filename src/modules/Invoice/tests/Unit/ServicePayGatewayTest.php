@@ -12,7 +12,12 @@ declare(strict_types=1);
 
 use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\PayGateway;
+use Box\Mod\Invoice\Entity\Subscription;
+use Box\Mod\Invoice\Entity\Transaction;
+use Box\Mod\Invoice\Repository\InvoiceRepository;
 use Box\Mod\Invoice\Repository\PayGatewayRepository;
+use Box\Mod\Invoice\Repository\SubscriptionRepository;
+use Box\Mod\Invoice\Repository\TransactionRepository;
 use Box\Mod\Invoice\ServicePayGateway;
 use Doctrine\ORM\EntityManagerInterface;
 
@@ -213,6 +218,100 @@ test('updates a gateway', function (): void {
     expect($payGateway->isEnabled())->toBeTrue();
 });
 
+test('converts to api array masks secrets for an admin', function (): void {
+    $payGateway = createEntity(PayGateway::class, [
+        'id' => 1,
+        'name' => 'Stripe',
+        'gateway' => 'Stripe',
+        'acceptedCurrencies' => json_encode(['USD']),
+        'enabled' => true,
+        'allowSingle' => true,
+        'allowRecurrent' => true,
+        'testMode' => false,
+        'config' => json_encode([
+            'pub_key' => 'pk_live_visible',
+            'api_key' => 'sk_live_secret',
+            'webhook_secret' => 'whsec_secret',
+        ]),
+    ]);
+
+    $service = payGatewayService();
+
+    $result = $service->toApiArray($payGateway, false, \Tests\Helpers\admin());
+
+    expect($result['secret_fields'])->toContain('api_key');
+    expect($result['secret_fields'])->toContain('webhook_secret');
+    expect($result['secret_fields'])->toContain('test_api_key');
+    expect($result['secret_fields'])->toContain('test_webhook_secret');
+    expect($result['secret_fields'])->not->toContain('pub_key');
+    expect($result['config']['pub_key'])->toBe('pk_live_visible');
+    expect($result['config']['api_key'])->toBeNull();
+    expect($result['config']['api_key_set'])->toBeTrue();
+    expect($result['config']['webhook_secret'])->toBeNull();
+    expect($result['config']['webhook_secret_set'])->toBeTrue();
+    expect($result['config']['test_api_key_set'])->toBeFalse();
+});
+
+test('update keeps the existing secret gateway value when the incoming value is blank', function (): void {
+    $payGateway = createEntity(PayGateway::class, [
+        'id' => 1,
+        'name' => 'Stripe',
+        'gateway' => 'Stripe',
+        'enabled' => false,
+        'config' => json_encode(['api_key' => 'sk_live_existing', 'pub_key' => 'pk_live_existing']),
+    ]);
+
+    $em = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
+    $repo = Mockery::mock(PayGatewayRepository::class);
+    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($repo);
+
+    $service = new ServicePayGateway();
+    $di = container();
+    $di['em'] = $em;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['loggedin_admin'] = \Tests\Helpers\admin(['id' => 7]);
+    $service->setDi($di);
+
+    $result = $service->update($payGateway, [
+        'config' => [
+            'api_key' => ServicePayGateway::CREDENTIAL_KEEP_SENTINEL,
+            'pub_key' => 'pk_live_new',
+        ],
+    ]);
+
+    expect($result)->toBeTrue();
+    $config = json_decode((string) $payGateway->getConfig(), true);
+    expect($config['api_key'])->toBe('sk_live_existing');
+    expect($config['pub_key'])->toBe('pk_live_new');
+});
+
+test('update rotates a secret gateway value when a new value is submitted', function (): void {
+    $payGateway = createEntity(PayGateway::class, [
+        'id' => 1,
+        'name' => 'Stripe',
+        'gateway' => 'Stripe',
+        'enabled' => false,
+        'config' => json_encode(['api_key' => 'sk_live_old']),
+    ]);
+
+    $em = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
+    $repo = Mockery::mock(PayGatewayRepository::class);
+    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($repo);
+
+    $service = new ServicePayGateway();
+    $di = container();
+    $di['em'] = $em;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['loggedin_admin'] = \Tests\Helpers\admin(['id' => 7]);
+    $service->setDi($di);
+
+    $result = $service->update($payGateway, ['config' => ['api_key' => 'sk_live_new']]);
+
+    expect($result)->toBeTrue();
+    $config = json_decode((string) $payGateway->getConfig(), true);
+    expect($config['api_key'])->toBe('sk_live_new');
+});
+
 test('deletes a gateway', function (): void {
     $payGateway = createEntity(PayGateway::class, ['id' => 7]);
 
@@ -222,6 +321,18 @@ test('deletes a gateway', function (): void {
     $repo = Mockery::mock(PayGatewayRepository::class);
     $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($repo);
 
+    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('existsByGatewayId')->with(7)->andReturn(false);
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
+
+    $subscriptionRepo = Mockery::mock(SubscriptionRepository::class);
+    $subscriptionRepo->shouldReceive('existsByGatewayId')->with(7)->andReturn(false);
+    $em->shouldReceive('getRepository')->with(Subscription::class)->andReturn($subscriptionRepo);
+
+    $transactionRepo = Mockery::mock(TransactionRepository::class);
+    $transactionRepo->shouldReceive('existsByGatewayId')->with(7)->andReturn(false);
+    $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($transactionRepo);
+
     $service = new ServicePayGateway();
     $di = container();
     $di['em'] = $em;
@@ -230,6 +341,81 @@ test('deletes a gateway', function (): void {
 
     $result = $service->delete($payGateway);
     expect($result)->toBeTrue();
+});
+
+test('refuses to delete a gateway with existing invoices', function (): void {
+    $payGateway = createEntity(PayGateway::class, ['id' => 7]);
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('remove')->never();
+    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn(Mockery::mock(PayGatewayRepository::class));
+
+    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('existsByGatewayId')->with(7)->andReturn(true);
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
+
+    $service = new ServicePayGateway();
+    $di = container();
+    $di['em'] = $em;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $service->setDi($di);
+
+    expect(fn () => $service->delete($payGateway))
+        ->toThrow(FOSSBilling\InformationException::class, 'Cannot remove payment gateway with existing invoices');
+});
+
+test('refuses to delete a gateway with existing subscriptions', function (): void {
+    $payGateway = createEntity(PayGateway::class, ['id' => 7]);
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('remove')->never();
+    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn(Mockery::mock(PayGatewayRepository::class));
+
+    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('existsByGatewayId')->with(7)->andReturn(false);
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
+
+    $subscriptionRepo = Mockery::mock(SubscriptionRepository::class);
+    $subscriptionRepo->shouldReceive('existsByGatewayId')->with(7)->andReturn(true);
+    $em->shouldReceive('getRepository')->with(Subscription::class)->andReturn($subscriptionRepo);
+
+    $service = new ServicePayGateway();
+    $di = container();
+    $di['em'] = $em;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $service->setDi($di);
+
+    expect(fn () => $service->delete($payGateway))
+        ->toThrow(FOSSBilling\InformationException::class, 'Cannot remove payment gateway with existing subscriptions');
+});
+
+test('refuses to delete a gateway with existing transactions', function (): void {
+    $payGateway = createEntity(PayGateway::class, ['id' => 7]);
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('remove')->never();
+    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn(Mockery::mock(PayGatewayRepository::class));
+
+    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('existsByGatewayId')->with(7)->andReturn(false);
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
+
+    $subscriptionRepo = Mockery::mock(SubscriptionRepository::class);
+    $subscriptionRepo->shouldReceive('existsByGatewayId')->with(7)->andReturn(false);
+    $em->shouldReceive('getRepository')->with(Subscription::class)->andReturn($subscriptionRepo);
+
+    $transactionRepo = Mockery::mock(TransactionRepository::class);
+    $transactionRepo->shouldReceive('existsByGatewayId')->with(7)->andReturn(true);
+    $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($transactionRepo);
+
+    $service = new ServicePayGateway();
+    $di = container();
+    $di['em'] = $em;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $service->setDi($di);
+
+    expect(fn () => $service->delete($payGateway))
+        ->toThrow(FOSSBilling\InformationException::class, 'Cannot remove payment gateway with existing transactions');
 });
 
 test('gets active gateways as pairs', function (): void {

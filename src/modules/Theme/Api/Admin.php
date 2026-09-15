@@ -86,21 +86,43 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
-     * Set new theme as default.
+     * Set new theme as default for an area. The caller must state the area
+     * via `client` rather than having it inferred from the theme code, since
+     * a package-shaped code (e.g. `default/admin`) can't be reliably
+     * classified by name alone.
      */
     #[RequiredParams(['code' => 'Theme code was not passed'])]
     public function select($data): bool
     {
         $this->checkPermissions('theme', 'manage');
 
-        $theme = $this->getService()->getTheme($data['code']);
+        if (!array_key_exists('client', $data)) {
+            throw new \FOSSBilling\InformationException('The "client" parameter is required.');
+        }
+        if ($this->isInvalidClientParameter($data['client'])) {
+            throw new \FOSSBilling\InformationException('Invalid "client" parameter.');
+        }
+        $client = Tools::normalizeBoolean($data['client'], true);
+
+        // Confirm the code is actually available for the target area before
+        // persisting it. Merely existing on disk isn't enough - a package's
+        // `shared` tier or the opposite area's code would otherwise pass,
+        // leaving the area's Twig environment pointed at a directory with no
+        // layouts of its own.
+        $isAvailableForArea = false;
+        foreach ($this->getService()->getThemes($client) as $theme) {
+            if ($theme['code'] === $data['code']) {
+                $isAvailableForArea = true;
+
+                break;
+            }
+        }
+        if (!$isAvailableForArea) {
+            throw new \FOSSBilling\InformationException('Theme ":code" is not available for the selected area.', [':code' => $data['code']]);
+        }
 
         $systemService = $this->getDi()['mod_service']('system');
-        if ($theme->isAdminAreaTheme()) {
-            $systemService->setParamValue('admin_theme', $data['code']);
-        } else {
-            $systemService->setParamValue('theme', $data['code']);
-        }
+        $systemService->setParamValue($client ? 'theme' : 'admin_theme', $data['code']);
 
         // Clear theme cache so subsequent calls get the updated theme
         \Box\Mod\Theme\Service::clearThemeCache();

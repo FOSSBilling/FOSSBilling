@@ -12,11 +12,11 @@
     "build-admin_default": "npm run build -w admin_default",
     "check": "npm run check-types && npm run check-icons",
     "check-types": "tsc --noEmit",
+    "pw:tsc": "tsc --noEmit -p tests/E2E/Playwright",
     "check-icons": "node ./frontend/tools/check-icons.mts",
     "test:js": "node --test 'frontend/core/tests/**/*.test.mts' 'frontend/tools/tests/**/*.test.mts'",
-    "cy:open": "npm exec --yes cypress@15.15.0 -- open",
-    "cy:run": "npm exec --yes cypress@15.15.0 -- run",
-    "cy:run:record": "npm exec --yes cypress@15.15.0 -- run --record"
+    "pw:open": "playwright test --ui",
+    "pw:run": "playwright test"
   },
   "repository": {
     "type": "git",
@@ -26,18 +26,19 @@
     "url": "https://github.com/FOSSBilling/FOSSBilling/issues"
   },
   "workspaces": [
-    "src/themes/huraga",
-    "src/themes/admin_default"
+    "src/themes/default/client",
+    "src/themes/default/admin"
   ],
   "devDependencies": {
-    "@types/node": "24.13.3",
-    "autoprefixer": "10.5.4",
-    "ckeditor5": "48.4.0",
+    "@playwright/test": "1.63.0",
+    "@types/node": "24.13.4",
+    "autoprefixer": "10.6.0",
+    "ckeditor5": "48.5.0",
     "esbuild": "0.28.2",
     "github-markdown-css": "5.9.0",
-    "postcss": "8.5.26",
+    "postcss": "8.5.28",
     "purgecss": "8.0.0",
-    "sass": "1.102.0",
+    "sass": "1.104.1",
     "svg-sprite": "2.0.4",
     "typescript": "7.0.2"
   },

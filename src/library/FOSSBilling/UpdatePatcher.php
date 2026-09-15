@@ -12,6 +12,9 @@ declare(strict_types=1);
 namespace FOSSBilling;
 
 use Box\Mod\Extension\Entity\Extension;
+use FOSSBilling\Doctrine\DriverManagerFactory;
+use FOSSBilling\Doctrine\ModuleEntityScope;
+use FOSSBilling\Doctrine\SchemaSynchronizer;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -44,6 +47,12 @@ class UpdatePatcher implements InjectionAwareInterface
 
     public function availablePatches(): int
     {
+        // These are MySQL/MariaDB-only patches (see applyCorePatches()) - never "pending" on
+        // another platform, regardless of what the last_patch bookkeeping row says.
+        if (!$this->isMysqlDriver()) {
+            return 0;
+        }
+
         $patchLevel = $this->getPatchLevel();
         $patches = $this->getPatches($patchLevel);
 
@@ -157,11 +166,136 @@ class UpdatePatcher implements InjectionAwareInterface
             return;
         }
 
-        $patchLevel = $this->getPatchLevel();
-        $patches = $this->getPatches($patchLevel);
-        foreach ($patches as $patchLevel => $patch) {
-            call_user_func($patch);
-            $this->setPatchLevel($patchLevel);
+        // The patches below are raw MySQL/MariaDB DDL (backtick identifiers, ENGINE=, SHOW COLUMNS
+        // introspection, ON DUPLICATE KEY UPDATE, ...) with no PostgreSQL/SQLite equivalent, and
+        // several of them are one-time data transformations tied to a specific historical release
+        // (splitting/merging tables, rewriting existing rows) that can't be ported by rewriting SQL
+        // syntax alone. Porting all of that is out of scope; see SchemaSynchronizer's docblock. On
+        // PostgreSQL/SQLite there is nothing here to run at all.
+        //
+        // This guard matters beyond "there's nothing to run": getPatchLevel() returning null (e.g.
+        // a restored/cloned database missing its `setting` row for last_patch) makes getPatches()
+        // treat every patch as pending. Without this check, that combined with a missing/stale
+        // update-finalization state would make the very next page load - see
+        // UpdateFinalization::finalizePendingUpdate(), called unconditionally from every request -
+        // start executing MySQL-only DDL against a non-MySQL database. That fails partway through
+        // (setPatchLevel() itself uses ON DUPLICATE KEY UPDATE), leaving the schema in a state no
+        // later patch or install can cleanly recover from.
+        if ($this->isMysqlDriver()) {
+            $patchLevel = $this->getPatchLevel();
+            $patches = $this->getPatches($patchLevel);
+            foreach ($patches as $patchLevel => $patch) {
+                call_user_func($patch);
+                $this->setPatchLevel($patchLevel);
+            }
+        }
+
+        // Portable (plain UPDATE ... WHERE, no MySQL-specific syntax) and idempotent, so it
+        // runs on every platform rather than being folded into the MySQL-only patch loop above -
+        // a PostgreSQL/SQLite install predating this change never runs patch115() at all, and
+        // would otherwise be left with a theme that never got renamed and orphaned saved settings
+        // forever.
+        $this->migrateThemePackageLayout();
+
+        // Additive structural sync runs on every platform, MySQL/MariaDB included: it picks up any
+        // column/table/index that's on entity metadata but not yet applied, without needing a
+        // hand-written patch for it - the only mechanism at all on PostgreSQL/SQLite, and on
+        // MySQL/MariaDB a catch-all for anything the patches above didn't (or, going forward, for
+        // structural changes that land on metadata without a patch being written at all).
+        $this->syncPortableSchema();
+    }
+
+    /**
+     * Whether the configured database driver is MySQL/MariaDB - the only platform
+     * {@see self::applyCorePatches()}'s raw SQL patches are written for.
+     */
+    private function isMysqlDriver(): bool
+    {
+        try {
+            return DriverManagerFactory::getDatabaseConfig()['driver'] === 'pdo_mysql';
+        } catch (\Throwable) {
+            // Can't determine the driver - don't guess. Fail safe by not running MySQL-only DDL.
+            return false;
+        }
+    }
+
+    /**
+     * Brings the live schema up to date with current Doctrine entity metadata - see
+     * {@see SchemaSynchronizer} for exactly what this does and does not cover (additive structural
+     * changes only, never a substitute for the legacy patches' data transformations).
+     *
+     * Scoped to core-module entities plus whichever extensions are currently marked installed
+     * ({@see ModuleEntityScope::isEagerNow()}) - the same gating {@see \FOSSBilling\Doctrine\
+     * SchemaInstaller} applies at fresh-install time. Running the unscoped {@see SchemaSynchronizer::
+     * sync()} here instead would undo that gating: it compares every entity's table
+     * unconditionally, so an inactive extension's table (custom_pages, mod_massmailer,
+     * service_apikey, or any future one) would get silently recreated by this method - as if it
+     * were activated - regardless of whether anyone ever installs that extension.
+     *
+     * Errors are logged, not thrown: this runs on every request via UpdateFinalization, and a
+     * database this can't reach (or a metadata error) should degrade to "nothing changed", the same
+     * outcome as before this method existed, rather than breaking the request.
+     */
+    private function syncPortableSchema(): void
+    {
+        if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('em')) {
+            return;
+        }
+
+        $entityManager = $this->di['em'];
+
+        // Scope discovery (the connection, the installed-extensions query, metadata loading) can
+        // throw for the same reasons the sync itself can - an unreachable database above all -
+        // so it has to share this method's one error boundary, not run ahead of it. Only the sync
+        // itself used to be able to throw, back when this called SchemaSynchronizer::sync() with
+        // no scope discovery beforehand at all.
+        try {
+            $connection = $entityManager->getConnection();
+
+            // Fetched once and reused for every entity below, rather than one query per entity -
+            // an unbounded number of extra queries per non-core module isn't a cost worth paying
+            // just to derive a handful of booleans.
+            $installedExtensionModules = ModuleEntityScope::installedExtensionModules($connection);
+
+            $eagerEntityClasses = array_values(array_filter(
+                array_map(
+                    static fn ($classMetadata): string => $classMetadata->getName(),
+                    $entityManager->getMetadataFactory()->getAllMetadata(),
+                ),
+                static function (string $entityClass) use ($installedExtensionModules): bool {
+                    $module = ModuleEntityScope::moduleForEntityClass($entityClass);
+
+                    return $module === null || ModuleEntityScope::isEagerNow($module, $installedExtensionModules);
+                },
+            ));
+
+            if ($eagerEntityClasses === []) {
+                return;
+            }
+
+            $result = SchemaSynchronizer::syncEntities($entityManager, $eagerEntityClasses);
+        } catch (\Throwable $e) {
+            $this->logUpdate('error', 'Schema sync against the configured database failed: ' . $e->getMessage());
+
+            return;
+        }
+
+        if ($result['applied'] !== []) {
+            $this->logUpdate('info', 'Synced database schema with current entity metadata.', ['statements' => $result['applied']]);
+        }
+
+        // Never one log line per skipped item: on MySQL especially, entity metadata and the live
+        // schema can differ in ways that were never meant to be applied (see SchemaSynchronizer's
+        // "never touches" guarantees) and there can legitimately be hundreds of them - logging each
+        // on every request this runs would be pure noise. A single rolled-up count, with the detail
+        // attached as structured context rather than the message, keeps this useful without
+        // flooding the log.
+        if ($result['skipped'] !== []) {
+            $this->logUpdate(
+                'info',
+                sprintf('Schema sync left %d existing structural difference(s) from entity metadata untouched.', count($result['skipped'])),
+                ['skipped' => $result['skipped']],
+            );
         }
     }
 
@@ -326,6 +460,15 @@ class UpdatePatcher implements InjectionAwareInterface
         preg_match('/\((\d+)\)/', (string) $rows[0]['Type'], $matches);
 
         return isset($matches[1]) ? (int) $matches[1] : null;
+    }
+
+    private function getColumnType(string $table, string $column): ?string
+    {
+        $rows = $this->fetchAll(sprintf('SHOW COLUMNS FROM `%s` LIKE :column', $this->quoteIdentifier($table)), [
+            'column' => $column,
+        ]);
+
+        return $rows === [] ? null : (string) $rows[0]['Type'];
     }
 
     private function tableHasIndex(string $table, string $indexName): bool
@@ -512,13 +655,10 @@ class UpdatePatcher implements InjectionAwareInterface
             89 => 'patch89',
             90 => 'patch90',
             91 => 'patch91',
-            92 => 'patch92',
             93 => 'patch93',
             94 => 'patch94',
-            95 => 'patch95',
             96 => 'patch96',
             97 => 'patch97',
-            98 => 'patch98',
             99 => 'patch99',
             100 => 'patch100',
             101 => 'patch101',
@@ -527,6 +667,26 @@ class UpdatePatcher implements InjectionAwareInterface
             104 => 'patch104',
             105 => 'patch105',
             106 => 'patch106',
+            // Intentionally out of sequence: 0.8-next (which main descended from) independently
+            // used patch number 98 for an unrelated migration (tld.periods, main's patch99) that
+            // was never ported here. An install upgrading from a 0.8-next-based release already
+            // has last_patch >= 98 from that patch, which would silently skip this migration if it
+            // kept number 98 — see https://github.com/FOSSBilling/FOSSBilling/issues/4188.
+            107 => 'patch107',
+            // Same 0.8-next collision as patch107, found auditing the rest of the sequence: these
+            // two features (multi-file downloads, order suspension grace days) don't exist on
+            // 0.8-next at all, but their original numbers (92, 95) were reused there for unrelated
+            // migrations. An install descended from a fully-patched 0.8-next release (last_patch
+            // 98) would silently skip both forever if they kept their original numbers.
+            108 => 'patch108',
+            109 => 'patch109',
+            110 => 'patch110',
+            111 => 'patch111',
+            112 => 'patch112',
+            113 => 'patch113',
+            114 => 'patch114',
+            115 => 'patch115',
+            116 => 'patch116',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -2463,7 +2623,7 @@ class UpdatePatcher implements InjectionAwareInterface
         );
     }
 
-    private function patch92(): void
+    private function patch108(): void
     {
         if (!$this->tableExists('service_downloadable_file')) {
             $this->executeSql(
@@ -2603,7 +2763,7 @@ class UpdatePatcher implements InjectionAwareInterface
         }
     }
 
-    private function patch95(): void
+    private function patch109(): void
     {
         if (!$this->tableHasColumn('product', 'suspension_grace_days')) {
             $this->executeSql("ALTER TABLE `product` ADD COLUMN `suspension_grace_days` int(11) NOT NULL DEFAULT '0' AFTER `quantity_in_stock`");
@@ -2615,6 +2775,305 @@ class UpdatePatcher implements InjectionAwareInterface
 
         if (!$this->tableHasIndex('client_order', 'client_order_status_expires_at_idx')) {
             $this->executeSql('ALTER TABLE `client_order` ADD INDEX `client_order_status_expires_at_idx` (`status`, `expires_at`)');
+        }
+    }
+
+    private function patch110(): void
+    {
+        // These columns were declared int(11) in structure.sql while the primary key
+        // column they reference is bigint(20), a width mismatch that predates this
+        // patch. Widen them to match so large ids don't overflow the FK column.
+        $narrowForeignKeys = [
+            ['invoice', 'gateway_id'],
+            ['transaction', 'gateway_id'],
+            ['email_queue', 'client_id'],
+            ['email_queue', 'admin_id'],
+        ];
+
+        foreach ($narrowForeignKeys as [$table, $column]) {
+            // Match on the base type name, not the int(11) display width: MySQL 8.0.19+
+            // deprecates (and 8.4+ drops) integer display widths, so SHOW COLUMNS can
+            // report a bare "int" with no parenthesised length on newer servers.
+            $type = $this->getColumnType($table, $column);
+            if ($type !== null && str_starts_with($type, 'int')) {
+                $this->executeSql(sprintf('ALTER TABLE `%s` MODIFY COLUMN `%s` bigint(20) DEFAULT NULL', $table, $column));
+            }
+        }
+    }
+
+    private function patch111(): void
+    {
+        // The Serviceapikey module (PR #4055) added the ServiceApiKey Doctrine entity but
+        // never gave it a structure.sql counterpart, so the service_apikey table was never
+        // created on any MySQL install — fresh or upgraded.
+        if (!$this->tableExists('service_apikey')) {
+            $this->executeSql(
+                'CREATE TABLE `service_apikey` (
+                    `id` BIGINT NOT NULL AUTO_INCREMENT,
+                    `client_id` BIGINT DEFAULT NULL,
+                    `api_key` VARCHAR(255) DEFAULT NULL,
+                    `config` TEXT,
+                    `created_at` DATETIME DEFAULT NULL,
+                    `updated_at` DATETIME DEFAULT NULL,
+                    PRIMARY KEY (`id`),
+                    KEY `client_id_idx` (`client_id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8'
+            );
+        }
+    }
+
+    private function patch112(): void
+    {
+        // Adds an admin-configurable per-TLD flag to require the transfer code (EPP/auth
+        // code) during domain transfer checkout, instead of silently accepting a blank
+        // value that only fails later at the registrar. See issue #2335.
+        if (!$this->tableHasColumn('tld', 'require_transfer_code')) {
+            $this->executeSql('ALTER TABLE `tld` ADD COLUMN `require_transfer_code` tinyint(1) DEFAULT NULL AFTER `allow_transfer`');
+        }
+    }
+
+    private function patch113(): void
+    {
+        // admin.salt is dead weight from a pre-password_hash() auth scheme - nothing in the
+        // codebase reads or writes it (Config::getProperty('info.salt') is an unrelated
+        // app-wide config value, not this per-admin column). Confirmed no other code path
+        // depends on its presence before dropping it for real.
+        if ($this->tableHasColumn('admin', 'salt')) {
+            $this->executeSql('ALTER TABLE `admin` DROP COLUMN `salt`');
+        }
+    }
+
+    private function patch115(): void
+    {
+        $this->migrateThemePackageLayout();
+    }
+
+    private function patch116(): void
+    {
+        // One transaction covers both the row repairs and the patch-level
+        // bookkeeping below: without it, rows committed before a failed
+        // setPatchLevel() would be decoded a second time on retry, corrupting
+        // values whose true content is a literal entity (`&amp;amp;` would end
+        // up as `&`). The loop's own setPatchLevel(116) afterwards is a
+        // harmless idempotent rewrite of the same value.
+        $pdo = $this->getPdo();
+        $pdo->beginTransaction();
+
+        try {
+            $repaired = $this->decodeLegacyServiceEscapedEntities();
+            $this->setPatchLevel(116);
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            $pdo->rollBack();
+
+            throw $e;
+        }
+
+        if ($repaired['invoices'] > 0 || $repaired['notifications'] > 0) {
+            $this->logUpdate('info', 'Decoded legacy HTML entities in stored data', $repaired);
+        }
+    }
+
+    /**
+     * Repairs rows written while service-layer code HTML-escaped values before
+     * storing them (see issue #4305): invoice seller snapshots and staff
+     * notification notes.
+     *
+     * Runs exactly once as patch116, tracked by last_patch like every other
+     * data migration - deliberately not unconditionally, so rows written raw
+     * under the fixed code (which may legitimately contain entity-like text)
+     * are never scanned. At upgrade time every row still predates the fix, and
+     * the only systematic writer on these columns escaped, so matching the
+     * five htmlspecialchars(ENT_QUOTES) entities selects exactly the legacy
+     * rows; one decode pass mirrors the single erroneous encode. Company
+     * settings need no repair: they were always stored raw.
+     *
+     * @return array{invoices: int, notifications: int} rows rewritten per table
+     */
+    private function decodeLegacyServiceEscapedEntities(): array
+    {
+        $invoiceColumns = [
+            'seller_company',
+            'seller_company_vat',
+            'seller_company_number',
+            'seller_address',
+            'seller_phone',
+            'seller_email',
+        ];
+        // Matches any of the five htmlspecialchars(ENT_QUOTES) entities. None
+        // of these characters is a LIKE wildcard, so no ESCAPE clause needed.
+        $entityPatterns = ['%&amp;%', '%&lt;%', '%&gt;%', '%&quot;%', '%&#039;%'];
+        $matchesColumn = static fn (string $column): string => implode(' OR ', array_map(static fn (string $pattern): string => "{$column} LIKE '{$pattern}'", $entityPatterns));
+
+        $conditions = array_map($matchesColumn, $invoiceColumns);
+        $rows = $this->fetchAll(
+            'SELECT id, ' . implode(', ', $invoiceColumns) . ' FROM invoice WHERE ' . implode(' OR ', $conditions)
+        );
+        $repairedInvoices = 0;
+        foreach ($rows as $row) {
+            $decoded = [];
+            foreach ($invoiceColumns as $column) {
+                $value = $row[$column] ?? null;
+                if (!is_string($value)) {
+                    continue;
+                }
+                $fixed = html_entity_decode($value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                if ($fixed !== $value) {
+                    $decoded[$column] = $fixed;
+                }
+            }
+            if ($decoded === []) {
+                continue;
+            }
+            $params = ['id' => $row['id']];
+            $sets = [];
+            foreach ($decoded as $column => $value) {
+                $sets[] = "{$column} = :{$column}";
+                $params[$column] = $value;
+            }
+            $this->executeSql('UPDATE invoice SET ' . implode(', ', $sets) . ' WHERE id = :id', $params);
+            ++$repairedInvoices;
+        }
+
+        $notes = $this->fetchAll(
+            "SELECT id, meta_value FROM extension_meta WHERE extension = 'mod_notification' AND meta_key = 'message' AND (" . $matchesColumn('meta_value') . ')'
+        );
+        $repairedNotes = 0;
+        foreach ($notes as $note) {
+            $value = $note['meta_value'] ?? null;
+            if (!is_string($value)) {
+                continue;
+            }
+            $fixed = html_entity_decode($value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            if ($fixed === $value) {
+                continue;
+            }
+            $this->executeSql('UPDATE extension_meta SET meta_value = :meta_value WHERE id = :id', [
+                'meta_value' => $fixed,
+                'id' => $note['id'],
+            ]);
+            ++$repairedNotes;
+        }
+
+        return ['invoices' => $repairedInvoices, 'notifications' => $repairedNotes];
+    }
+
+    /**
+     * Bundles the shipped themes into one package: admin_default -> default/admin,
+     * huraga -> default/client. Third-party themes are untouched.
+     *
+     * Unlike the raw-DDL patches above, this is plain, portable SQL (no backticks,
+     * ENGINE=, or ON DUPLICATE KEY UPDATE) and a filesystem rename - neither is
+     * MySQL-specific, so this is called both from patch115() (for MySQL/MariaDB's
+     * sequential patch-level bookkeeping) and unconditionally from
+     * applyCorePatches() below, so PostgreSQL/SQLite installs - which never run the
+     * patchNNN() loop at all - still get migrated. Every step is idempotent, so
+     * running it twice on a MySQL/MariaDB install (once via patch115(), once via
+     * the unconditional call) is a harmless no-op the second time.
+     */
+    private function migrateThemePackageLayout(): void
+    {
+        $filesystem = $this->filesystem;
+
+        // Each shipped theme's old code, new code, and the setting param that selects it.
+        $renames = [
+            'admin_default' => ['newCode' => 'default/admin', 'settingParam' => 'admin_theme'],
+            'huraga' => ['newCode' => 'default/client', 'settingParam' => 'theme'],
+        ];
+
+        foreach ($renames as $oldCode => $rename) {
+            $oldPath = Path::join(PATH_THEMES, $oldCode);
+            $newPath = Path::join(PATH_THEMES, $rename['newCode']);
+
+            if ($filesystem->exists($oldPath) && !$filesystem->exists($newPath)) {
+                $filesystem->mkdir(Path::getDirectory($newPath));
+                $filesystem->rename($oldPath, $newPath);
+            }
+
+            // A code-only deploy (e.g. `git pull`) already moves every tracked file via the
+            // checkout itself, before this ever runs - the rename above then finds $newPath
+            // already there and skips. What's left behind at $oldPath at that point is mostly
+            // gitignored leftovers (a rebuilt assets/build/, huraga's config/settings_data.json
+            // cache, which regenerates on its own - the setting it holds is now in the database,
+            // migrated below), but TwigLoader's `html_custom` override directory and extra files
+            // dropped into `custom-icons` are genuinely untracked local customizations a checkout
+            // never touches - discarding $oldPath outright would destroy them. Mirror anything not
+            // already present at $newPath over first (never overwriting what the checkout already
+            // placed there) so those customizations survive the rename, then discard what's left.
+            if ($filesystem->exists($oldPath) && $filesystem->exists($newPath)) {
+                $filesystem->mirror($oldPath, $newPath, null, ['override' => false]);
+                $filesystem->remove($oldPath);
+            }
+
+            // Safe/no-op if the row doesn't currently hold the old value.
+            $this->executeSql('UPDATE setting SET value = :new_value WHERE param = :param AND value = :old_value', [
+                'new_value' => $rename['newCode'],
+                'param' => $rename['settingParam'],
+                'old_value' => $oldCode,
+            ]);
+
+            // Saved theme settings/presets live in extension_meta, keyed by the theme's
+            // name string (Theme\Service::updateSettings()/setCurrentThemePreset()) -
+            // 'settings' rows in rel_id, the 'preset'/'current' row in meta_key. Without
+            // this, a staff member's customized theme settings would silently fall back
+            // to the shipped defaults once the theme is renamed.
+            $this->executeSql("UPDATE extension_meta SET rel_id = :new_code WHERE extension = 'mod_theme' AND rel_type = 'settings' AND rel_id = :old_code", [
+                'new_code' => $rename['newCode'],
+                'old_code' => $oldCode,
+            ]);
+            $this->executeSql("UPDATE extension_meta SET meta_key = :new_code WHERE extension = 'mod_theme' AND rel_type = 'preset' AND rel_id = 'current' AND meta_key = :old_code", [
+                'new_code' => $rename['newCode'],
+                'old_code' => $oldCode,
+            ]);
+        }
+    }
+
+    private function patch114(): void
+    {
+        // Enforce unique session_id on cart at the DB level (matches the Cart entity
+        // UniqueConstraint and CartRepository::findBySessionId()'s existing assumption of at
+        // most one cart per session). structure.sql has only ever had a plain index here.
+        //
+        // Reconcile any duplicate session_ids before adding the unique index: keep the
+        // highest-id (most recently created) row per duplicated session_id - the one a
+        // continuing checkout would actually be using - and delete the rest along with their
+        // now-orphaned cart_product rows (cart_product.cart_id has no DB-level foreign key).
+        // NULL session_id rows are left untouched: MySQL treats multiple NULLs as distinct
+        // under a UNIQUE index, so they never violate it.
+        $duplicateCartIdsToRemove = $this->fetchFirstColumn(
+            'SELECT c.id FROM cart c
+             INNER JOIN (
+                 SELECT session_id, MAX(id) AS keep_id
+                 FROM cart
+                 WHERE session_id IS NOT NULL
+                 GROUP BY session_id
+                 HAVING COUNT(*) > 1
+             ) d ON d.session_id = c.session_id AND c.id <> d.keep_id'
+        );
+
+        if ($duplicateCartIdsToRemove !== []) {
+            $placeholders = implode(',', array_fill(0, count($duplicateCartIdsToRemove), '?'));
+            $this->executeSql("DELETE FROM `cart_product` WHERE `cart_id` IN ({$placeholders})", $duplicateCartIdsToRemove);
+            $this->executeSql("DELETE FROM `cart` WHERE `id` IN ({$placeholders})", $duplicateCartIdsToRemove);
+        }
+
+        $indexes = $this->fetchAll(sprintf('SHOW INDEX FROM `%s`', $this->quoteIdentifier('cart')));
+        $sessionIdIndex = null;
+        foreach ($indexes as $index) {
+            if (($index['Key_name'] ?? null) === 'session_id_idx') {
+                $sessionIdIndex = $index;
+
+                break;
+            }
+        }
+
+        if ($sessionIdIndex === null) {
+            return;
+        }
+
+        if (((int) $sessionIdIndex['Non_unique']) !== 0) {
+            $this->executeSql('ALTER TABLE `cart` DROP INDEX `session_id_idx`');
+            $this->executeSql('ALTER TABLE `cart` ADD UNIQUE INDEX `session_id_idx` (`session_id`)');
         }
     }
 
@@ -2641,7 +3100,7 @@ class UpdatePatcher implements InjectionAwareInterface
         }
     }
 
-    private function patch98(): void
+    private function patch107(): void
     {
         // Move product_payment's fixed w/m/q/b/a/bia/tria recurring pricing columns into a
         // proper one-row-per-period table, so admins can configure arbitrary billing periods

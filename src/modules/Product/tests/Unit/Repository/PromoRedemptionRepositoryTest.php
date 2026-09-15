@@ -72,3 +72,31 @@ test('promo filtered queries match only redemptions of the given promo', functio
     expect($repository->getSearchQueryBuilder(['promo_id' => $promoId])->getQuery()->getResult())->toHaveCount(1)
         ->and($repository->getSearchQueryBuilder(['promo_id' => $unusedId])->getQuery()->getResult())->toBe([]);
 });
+
+test('find invoice summary selects stored serie and nr columns', function (): void {
+    $entityManager = promoRedemptionEntityManager();
+    $connection = $entityManager->getConnection();
+
+    $connection->executeStatement('CREATE TABLE invoice (id INTEGER PRIMARY KEY, serie VARCHAR(50), nr VARCHAR(255), status VARCHAR(50), created_at VARCHAR(255))');
+    $connection->insert('invoice', [
+        'id' => 10,
+        'serie' => 'INV-',
+        'nr' => '42',
+        'status' => 'paid',
+        'created_at' => '2026-09-01 00:00:00',
+    ]);
+
+    $repository = $entityManager->getRepository(PromoRedemption::class);
+
+    // Would throw if the query still selected the computed serie_nr column.
+    $row = $repository->findInvoiceSummary(10);
+
+    expect($row)->toMatchArray([
+        'id' => 10,
+        'serie' => 'INV-',
+        'nr' => '42',
+        'status' => 'paid',
+    ])->and($row)->not->toHaveKey('serie_nr');
+
+    expect($repository->findInvoiceSummary(999))->toBeNull();
+});

@@ -36,7 +36,6 @@ test('exception response factory falls back to 500 for non-integer exception cod
     // PDOException's $code property is untyped, so PDO can set it to a string SQLSTATE.
     $exception = new PDOException('Unknown column');
     $codeProperty = new ReflectionProperty($exception, 'code');
-    $codeProperty->setAccessible(true);
     $codeProperty->setValue($exception, '42S22');
 
     $response = (new ExceptionResponseFactory())->create($exception);
@@ -50,4 +49,36 @@ test('error page can render without sending output', function (): void {
     expect($page)->toContain('FOSSBilling Error')
         ->and($page)->toContain('Error Code: #404')
         ->and($page)->toContain('Missing route');
+});
+
+test('exception response factory renders string SQLSTATE errors outside testing', function (): void {
+    $previousEnv = getenv('APP_ENV');
+    putenv('APP_ENV=prod');
+    $exception = new PDOException('Unknown column');
+    (new ReflectionProperty($exception, 'code'))->setValue($exception, '42S22');
+
+    try {
+        $response = (new ExceptionResponseFactory())->create($exception);
+    } finally {
+        putenv($previousEnv === false ? 'APP_ENV' : 'APP_ENV=' . $previousEnv);
+    }
+
+    expect($response->getStatusCode())->toBe(Response::HTTP_INTERNAL_SERVER_ERROR)
+        ->and($response->getContent())->toContain('FOSSBilling Error')
+        ->and($response->getContent())->toContain('Unknown column');
+});
+
+test('exception response factory escapes the message on the HTML error page', function (): void {
+    $previousEnv = getenv('APP_ENV');
+    putenv('APP_ENV=prod');
+
+    try {
+        $response = (new ExceptionResponseFactory())->create(new RuntimeException('A & B <Ltd> failed', 0));
+    } finally {
+        putenv($previousEnv === false ? 'APP_ENV' : 'APP_ENV=' . $previousEnv);
+    }
+
+    expect($response->getStatusCode())->toBe(Response::HTTP_INTERNAL_SERVER_ERROR)
+        ->and($response->getContent())->toContain('A &amp; B &lt;Ltd&gt; failed')
+        ->and($response->getContent())->not->toContain('A & B <Ltd> failed');
 });

@@ -72,6 +72,8 @@ class Service implements InjectionAwareInterface
         $this->di['em']->persist($admin);
         $this->di['em']->flush();
 
+        $this->invalidateSessions('admin', (int) $admin->getId());
+
         $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffApiKeyChange', 'params' => $event_params]);
 
         $this->di['logger']->info('Generated new API key');
@@ -232,6 +234,8 @@ class Service implements InjectionAwareInterface
         $this->di['em']->persist($client);
         $this->di['em']->flush();
 
+        $this->invalidateSessions('client', (int) $client->getId());
+
         $this->di['logger']->info('Generated new API key');
 
         return $client->getApiToken();
@@ -278,11 +282,11 @@ class Service implements InjectionAwareInterface
             switch ($type) {
                 case 'admin':
                     $admin = $this->di['session']->get('admin');
-                    $id = $admin['id'];
+                    $id = (int) $admin['id'];
 
                     break;
                 case 'client':
-                    $id = $this->di['session']->get('client_id');
+                    $id = (int) $this->di['session']->get('client_id');
 
                     break;
             }
@@ -340,9 +344,7 @@ class Service implements InjectionAwareInterface
         // the first value and emits an "extra data" warning for the following
         // bags. Suppress warnings emitted by this unserialize call only; a
         // malformed record is treated as a non-matching session.
-        set_error_handler(static function (int $severity, string $message): bool {
-            return $severity === E_WARNING && str_starts_with($message, 'unserialize():');
-        }, E_WARNING);
+        set_error_handler(static fn (int $severity, string $message): bool => $severity === E_WARNING && str_starts_with($message, 'unserialize():'), E_WARNING);
 
         try {
             $attributes = unserialize(substr($data, strlen(self::SESSION_ATTRIBUTES_PREFIX)), ['allowed_classes' => false]);

@@ -26,8 +26,12 @@ node_modules
 ### friendsofphp/php-cs-fixer ###
 .php-cs-fixer.cache
 src/install/php_error.log
-src/themes/huraga/config/settings_data.json
+src/themes/default/client/config/settings_data.json
 output.log
 
-### Cypress ###
-tests/E2E/Cypress/artifacts
+### Playwright ###
+tests/E2E/Playwright/artifacts
+
+### Demo seed (generated per-run artifacts) ###
+tools/demo-seed/manifest*.json
+.ddev/*.sql.gz

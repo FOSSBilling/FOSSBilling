@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Order\Entity\Order;
+use Box\Mod\Order\Repository\OrderMetaRepository;
 use Box\Mod\Order\Repository\OrderRepository;
 use Box\Mod\Order\Service;
 use Box\Mod\Product\Entity\Product;
@@ -867,7 +868,7 @@ test('_callOnService dispatches to a third-party module with the DBAL row array'
 
     $di = container();
     $di['em'] = $em;
-    $di['mod_service'] = $di->protect(fn (string $name) => match ($name) {
+    $di['mod_service'] = $di->protect(fn (string $name): object => match ($name) {
         'serviceexternal' => $module,
         default => throw new LogicException('Unexpected service: ' . $name),
     });
@@ -904,7 +905,7 @@ test('_callOnService dispatches to a third-party module with null when no servic
 
     $di = container();
     $di['em'] = $em;
-    $di['mod_service'] = $di->protect(fn (string $name) => match ($name) {
+    $di['mod_service'] = $di->protect(fn (string $name): object => match ($name) {
         'serviceexternal' => $module,
         default => throw new LogicException('Unexpected service: ' . $name),
     });
@@ -948,7 +949,7 @@ test('_callOnService dispatches to a third-party module with false when the serv
 
     $di = container();
     $di['em'] = $em;
-    $di['mod_service'] = $di->protect(fn (string $name) => match ($name) {
+    $di['mod_service'] = $di->protect(fn (string $name): object => match ($name) {
         'serviceexternal' => $module,
         default => throw new LogicException('Unexpected service: ' . $name),
     });
@@ -1020,7 +1021,7 @@ test('getOrderServiceData returns module data for a built-in service type', func
 
     $di = container();
     $di['em'] = $em;
-    $di['mod_service'] = $di->protect(fn (string $name) => match ($name) {
+    $di['mod_service'] = $di->protect(fn (string $name): object => match ($name) {
         'servicecustom' => $module,
         default => throw new LogicException('Unexpected service: ' . $name),
     });
@@ -1161,7 +1162,7 @@ test('saveStatusChange records history', function (): void {
     });
     $orderRepoMock->shouldReceive('findOneByOrderIdAndName')->byDefault()->andReturn(null);
     $emMock->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
-    $emMock->shouldReceive('getRepository')->with(Box\Mod\Order\Entity\OrderMeta::class)->andReturn(Mockery::mock(Box\Mod\Order\Repository\OrderMetaRepository::class)->shouldIgnoreMissing());
+    $emMock->shouldReceive('getRepository')->with(Box\Mod\Order\Entity\OrderMeta::class)->andReturn(Mockery::mock(OrderMetaRepository::class)->shouldIgnoreMissing());
     $emMock->shouldIgnoreMissing();
 
     $di = container();
@@ -1295,7 +1296,7 @@ test('getSoonExpiringActiveOrdersQuery builds expected SQL and bindings', functi
                     AND pending_item.task = :pending_item_task
                     AND pending_item.status != :pending_item_status
                     AND pending_invoice.status = :pending_invoice_status
-                ) AND co.client_id = :client_id HAVING DATEDIFF(co.expires_at, NOW()) <= :days_until_expiration ORDER BY co.client_id DESC';
+                ) AND co.client_id = :client_id AND co.expires_at < :expires_before ORDER BY co.client_id DESC';
 
     $expectedBindings = [
         'client_id' => $randId,
@@ -1306,7 +1307,7 @@ test('getSoonExpiringActiveOrdersQuery builds expected SQL and bindings', functi
         'pending_invoice_status' => Invoice::STATUS_PAID,
         'status' => Order::STATUS_ACTIVE,
         'invoice_option' => 'issue-invoice',
-        'days_until_expiration' => $randId,
+        'expires_before' => (new DateTimeImmutable('today'))->modify('+' . ($randId + 1) . ' days')->format('Y-m-d H:i:s'),
     ];
 
     expect($result[0])->toBeString();
@@ -1423,7 +1424,7 @@ test('toApiArray returns expected keys', function (): void {
     $clientRepoMock = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
     $clientRepoMock->shouldReceive('find')->with(1)->atLeast()->once()->andReturn($clientEntity);
 
-    $orderMetaRepoMock = Mockery::mock(Box\Mod\Order\Repository\OrderMetaRepository::class);
+    $orderMetaRepoMock = Mockery::mock(OrderMetaRepository::class);
     $orderMetaRepoMock->shouldReceive('getPairsForOrder')->atLeast()->once()->andReturn([]);
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')->with(Box\Mod\Order\Entity\OrderMeta::class)->atLeast()->once()->andReturn($orderMetaRepoMock);
@@ -1479,7 +1480,7 @@ test('toApiArray reads meta through the repository', function (): void {
     $clientRepoMock = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
     $clientRepoMock->shouldReceive('find')->with(1)->atLeast()->once()->andReturn($clientEntity);
 
-    $orderMetaRepoMock = Mockery::mock(Box\Mod\Order\Repository\OrderMetaRepository::class);
+    $orderMetaRepoMock = Mockery::mock(OrderMetaRepository::class);
     $orderMetaRepoMock->shouldReceive('getPairsForOrder')->with(7)->atLeast()->once()->andReturn(['key' => 'value']);
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')->with(Box\Mod\Order\Entity\OrderMeta::class)->atLeast()->once()->andReturn($orderMetaRepoMock);
@@ -1562,18 +1563,18 @@ dataset('searchQueryData', fn (): array => [
     ],
     'created_at' => [
         ['created_at' => '2012-12-11'],
-        "DATE_FORMAT(co.created_at, '%Y-%m-%d') = :created_at",
-        ['created_at' => '2012-12-11'],
+        'co.created_at >= :created_at_start AND co.created_at < :created_at_end',
+        ['created_at_start' => '2012-12-11 00:00:00', 'created_at_end' => '2012-12-12 00:00:00'],
     ],
     'date_from' => [
         ['date_from' => '2012-12-11'],
-        'UNIX_TIMESTAMP(co.created_at) >= :date_from',
-        ['date_from' => strtotime('2012-12-11')],
+        'co.created_at >= :date_from',
+        ['date_from' => date('Y-m-d H:i:s', strtotime('2012-12-11'))],
     ],
     'date_to' => [
         ['date_to' => '2012-12-11'],
-        'UNIX_TIMESTAMP(co.created_at) <= :date_to',
-        ['date_to' => strtotime('2012-12-11')],
+        'co.created_at <= :date_to',
+        ['date_to' => date('Y-m-d H:i:s', strtotime('2012-12-11'))],
     ],
     'search numeric' => [
         ['search' => 120],
@@ -1851,7 +1852,7 @@ test('createOrder creates order', function (): void {
     });
     $orderRepoMock->shouldReceive('findOneByOrderIdAndName')->byDefault()->andReturn(null);
     $emMock->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
-    $emMock->shouldReceive('getRepository')->with(Box\Mod\Order\Entity\OrderMeta::class)->andReturn(Mockery::mock(Box\Mod\Order\Repository\OrderMetaRepository::class)->shouldIgnoreMissing());
+    $emMock->shouldReceive('getRepository')->with(Box\Mod\Order\Entity\OrderMeta::class)->andReturn(Mockery::mock(OrderMetaRepository::class)->shouldIgnoreMissing());
     $emMock->shouldIgnoreMissing();
 
     $newId = 1;
@@ -1948,7 +1949,7 @@ test('createOrder sets form id from product', function (): void {
     });
     $orderRepoMock->shouldReceive('findOneByOrderIdAndName')->byDefault()->andReturn(null);
     $emMock->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
-    $emMock->shouldReceive('getRepository')->with(Box\Mod\Order\Entity\OrderMeta::class)->andReturn(Mockery::mock(Box\Mod\Order\Repository\OrderMetaRepository::class)->shouldIgnoreMissing());
+    $emMock->shouldReceive('getRepository')->with(Box\Mod\Order\Entity\OrderMeta::class)->andReturn(Mockery::mock(OrderMetaRepository::class)->shouldIgnoreMissing());
     $emMock->shouldIgnoreMissing();
 
     $newId = 1;
@@ -2069,7 +2070,7 @@ test('createOrder returns success when invoice follow up fails', function (): vo
     });
     $orderRepoMock->shouldReceive('findOneByOrderIdAndName')->byDefault()->andReturn(null);
     $emMock->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
-    $emMock->shouldReceive('getRepository')->with(Box\Mod\Order\Entity\OrderMeta::class)->andReturn(Mockery::mock(Box\Mod\Order\Repository\OrderMetaRepository::class)->shouldIgnoreMissing());
+    $emMock->shouldReceive('getRepository')->with(Box\Mod\Order\Entity\OrderMeta::class)->andReturn(Mockery::mock(OrderMetaRepository::class)->shouldIgnoreMissing());
     $emMock->shouldIgnoreMissing();
 
     $newId = 1;
@@ -2188,7 +2189,7 @@ test('createOrder uses product pricing service for domain orders', function (): 
     });
     $orderRepoMock->shouldReceive('findOneByOrderIdAndName')->byDefault()->andReturn(null);
     $emMock->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
-    $emMock->shouldReceive('getRepository')->with(Box\Mod\Order\Entity\OrderMeta::class)->andReturn(Mockery::mock(Box\Mod\Order\Repository\OrderMetaRepository::class)->shouldIgnoreMissing());
+    $emMock->shouldReceive('getRepository')->with(Box\Mod\Order\Entity\OrderMeta::class)->andReturn(Mockery::mock(OrderMetaRepository::class)->shouldIgnoreMissing());
     $emMock->shouldIgnoreMissing();
 
     $newId = 1;
@@ -3067,7 +3068,7 @@ test('rmByClient removes all client orders', function (): void {
     $orderRepoMock = Mockery::mock(OrderRepository::class)->shouldIgnoreMissing();
     $orderRepoMock->shouldReceive('findByClientId')->once()->with(100)->andReturn([$orderModel]);
 
-    $metaRepoMock = Mockery::mock(Box\Mod\Order\Repository\OrderMetaRepository::class)->shouldIgnoreMissing();
+    $metaRepoMock = Mockery::mock(OrderMetaRepository::class)->shouldIgnoreMissing();
     $metaRepoMock->shouldReceive('deleteByOrderId')->once()->with(1);
 
     $statusRepoMock = Mockery::mock(Box\Mod\Order\Repository\OrderStatusRepository::class)->shouldIgnoreMissing();
@@ -3173,7 +3174,7 @@ test('updateOrderMeta returns 0 when meta is not an array', function (): void {
 test('updateOrderMeta clears existing meta when empty', function (): void {
     $meta = [];
 
-    $metaRepoMock = Mockery::mock(Box\Mod\Order\Repository\OrderMetaRepository::class)->shouldIgnoreMissing();
+    $metaRepoMock = Mockery::mock(OrderMetaRepository::class)->shouldIgnoreMissing();
     $metaRepoMock->shouldReceive('deleteByOrderId')->once()->with(1)->andReturn(1);
 
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
@@ -3196,7 +3197,7 @@ test('updateOrderMeta clears existing meta when empty', function (): void {
 test('updateOrderMeta stores new meta entries', function (): void {
     $meta = ['key' => 'value'];
 
-    $metaRepoMock = Mockery::mock(Box\Mod\Order\Repository\OrderMetaRepository::class)->shouldIgnoreMissing();
+    $metaRepoMock = Mockery::mock(OrderMetaRepository::class)->shouldIgnoreMissing();
     $metaRepoMock->shouldReceive('findOneByOrderIdAndName')->with(1, 'key')->once()->andReturn(null);
 
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
@@ -3221,7 +3222,7 @@ test('updateOrderMeta stores new meta entries', function (): void {
 test('updateOrderMeta persists new meta entries with order details', function (): void {
     $meta = ['key' => 'value'];
 
-    $metaRepoMock = Mockery::mock(Box\Mod\Order\Repository\OrderMetaRepository::class)->shouldIgnoreMissing();
+    $metaRepoMock = Mockery::mock(OrderMetaRepository::class)->shouldIgnoreMissing();
     $metaRepoMock->shouldReceive('findOneByOrderIdAndName')->with(7, 'key')->once()->andReturn(null);
 
     $persisted = [];
@@ -3257,7 +3258,7 @@ test('updateOrderMeta updates existing meta', function (): void {
     $existing->setName('key');
     $existing->setValue('old value');
 
-    $metaRepoMock = Mockery::mock(Box\Mod\Order\Repository\OrderMetaRepository::class)->shouldIgnoreMissing();
+    $metaRepoMock = Mockery::mock(OrderMetaRepository::class)->shouldIgnoreMissing();
     $metaRepoMock->shouldReceive('findOneByOrderIdAndName')->with(7, 'key')->once()->andReturn($existing);
 
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
@@ -3283,7 +3284,7 @@ test('updateOrderMeta updates existing meta', function (): void {
 });
 
 test('updateOrderMeta clears existing meta', function (): void {
-    $metaRepoMock = Mockery::mock(Box\Mod\Order\Repository\OrderMetaRepository::class)->shouldIgnoreMissing();
+    $metaRepoMock = Mockery::mock(OrderMetaRepository::class)->shouldIgnoreMissing();
     $metaRepoMock->shouldReceive('deleteByOrderId')->once()->with(7)->andReturn(1);
 
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
@@ -3587,7 +3588,7 @@ test('createOrder generates an invoice for a zero-price order with issue-invoice
     });
     $orderRepoMock->shouldReceive('findOneByOrderIdAndName')->byDefault()->andReturn(null);
     $emMock->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
-    $emMock->shouldReceive('getRepository')->with(Box\Mod\Order\Entity\OrderMeta::class)->andReturn(Mockery::mock(Box\Mod\Order\Repository\OrderMetaRepository::class)->shouldIgnoreMissing());
+    $emMock->shouldReceive('getRepository')->with(Box\Mod\Order\Entity\OrderMeta::class)->andReturn(Mockery::mock(OrderMetaRepository::class)->shouldIgnoreMissing());
     $emMock->shouldIgnoreMissing();
 
     $newId = 1;
@@ -3700,7 +3701,7 @@ test('createOrder does not roll back when invoice generation fails for a negativ
     });
     $orderRepoMock->shouldReceive('findOneByOrderIdAndName')->byDefault()->andReturn(null);
     $emMock->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
-    $emMock->shouldReceive('getRepository')->with(Box\Mod\Order\Entity\OrderMeta::class)->andReturn(Mockery::mock(Box\Mod\Order\Repository\OrderMetaRepository::class)->shouldIgnoreMissing());
+    $emMock->shouldReceive('getRepository')->with(Box\Mod\Order\Entity\OrderMeta::class)->andReturn(Mockery::mock(OrderMetaRepository::class)->shouldIgnoreMissing());
     $emMock->shouldIgnoreMissing();
 
     $newId = 1;
@@ -3760,6 +3761,443 @@ test('getExpiredOrders delegates grace-aware selection to the repository', funct
     expect($service->getExpiredOrders())->toBe([]);
 });
 
+test('batchCancelUnpaid returns false and does not query orders when auto removal is disabled', function (): void {
+    $service = new Service();
+
+    $di = container();
+    $di['events_manager'] = Mockery::mock('\Box_EventManager')->shouldIgnoreMissing();
+    $di['mod'] = $di->protect(fn (string $name): object => new class {
+        public function getConfig(): array
+        {
+            return [];
+        }
+    });
+
+    $service->setDi($di);
+
+    expect($service->batchCancelUnpaid())->toBeFalse();
+});
+
+test('deleteFromOrder removes client_order_meta rows before removing the order', function (): void {
+    // Regression test: client_order_meta.client_order_id would be a real FK if MySQL ever
+    // adopted the entity-metadata-driven schema generator - this path used to leave those rows
+    // behind (only the client-deletion cascade, rmByClient(), cleaned them up), which would make
+    // a real FK constraint reject the delete outright. Confirmed against a live MariaDB
+    // container with FK enforcement during the unification scoping audit.
+    $order = createEntity(Order::class, ['id' => 42, 'status' => Order::STATUS_ACTIVE]);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('_callOnService')->once()->with($order, Order::ACTION_DELETE);
+
+    $orderMetaRepository = Mockery::mock(OrderMetaRepository::class);
+    $orderMetaRepository->shouldReceive('deleteByOrderId')->once()->with(42);
+    $serviceMock->shouldReceive('getOrderMetaRepository')->andReturn($orderMetaRepository);
+
+    $serviceMock->shouldReceive('rmClientOrderStatusByOrder')->once()->with($order);
+    $serviceMock->shouldReceive('rmOrder')->once()->with($order);
+
+    $productService = Mockery::mock(Box\Mod\Product\Service::class);
+    $productService->shouldReceive('releaseReservedPromoRedemptionsForOrder')->once()->with($order, 'order_deleted');
+    $productService->shouldReceive('releaseReservedStockForOrder')->once()->with($order, 'order_deleted');
+
+    $eventsManager = Mockery::mock('\Box_EventManager')->shouldIgnoreMissing();
+
+    $di = container();
+    $di['events_manager'] = $eventsManager;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod_service'] = $di->protect(fn (string $name): object => $productService);
+
+    $serviceMock->setDi($di);
+
+    expect($serviceMock->deleteFromOrder($order))->toBeTrue();
+});
+
+test('batchCancelUnpaid removes each stale unpaid order and fires events', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+
+    $orderA = createEntity(Order::class, ['id' => 1, 'status' => Order::STATUS_PENDING_SETUP]);
+    $orderB = createEntity(Order::class, ['id' => 2, 'status' => Order::STATUS_PENDING_SETUP]);
+
+    $orderRepository = Mockery::mock(OrderRepository::class)->shouldIgnoreMissing();
+    $orderRepository->shouldReceive('getStaleUnpaid')
+        ->once()
+        ->with(10)
+        ->andReturn([$orderA, $orderB]);
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepository);
+    $emMock->shouldReceive('refresh')->twice();
+
+    $eventsManager = Mockery::mock('\Box_EventManager');
+    $eventsManager->shouldReceive('fire')->once()->with(['event' => 'onBeforeAdminBatchCancelUnpaidOrders']);
+    $eventsManager->shouldReceive('fire')->once()->with(['event' => 'onAfterAdminBatchCancelUnpaidOrders']);
+
+    $di = container();
+    $di['em'] = $emMock;
+    $di['events_manager'] = $eventsManager;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod'] = $di->protect(fn (string $name): object => new class {
+        public function getConfig(): array
+        {
+            return ['batch_cancel_unpaid' => '1', 'batch_cancel_unpaid_after_days' => 10];
+        }
+    });
+
+    $serviceMock->shouldReceive('deleteFromOrder')->once()->with($orderA);
+    $serviceMock->shouldReceive('deleteFromOrder')->once()->with($orderB);
+
+    $serviceMock->setDi($di);
+
+    expect($serviceMock->batchCancelUnpaid())->toBeTrue();
+});
+
+test('batchCancelUnpaid falls back to the 7 day default when the configured value is blank', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+
+    $orderRepository = Mockery::mock(OrderRepository::class)->shouldIgnoreMissing();
+    $orderRepository->shouldReceive('getStaleUnpaid')
+        ->once()
+        ->with(7)
+        ->andReturn([]);
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepository);
+
+    $di = container();
+    $di['em'] = $emMock;
+    $di['events_manager'] = Mockery::mock('\Box_EventManager')->shouldIgnoreMissing();
+    $di['mod'] = $di->protect(fn (string $name): object => new class {
+        public function getConfig(): array
+        {
+            // An admin who enables the setting but leaves the days field
+            // untouched submits it as an empty string, not an absent key.
+            return ['batch_cancel_unpaid' => '1', 'batch_cancel_unpaid_after_days' => ''];
+        }
+    });
+
+    $serviceMock->setDi($di);
+
+    expect($serviceMock->batchCancelUnpaid())->toBeTrue();
+});
+
+test('batchCancelUnpaid removes the linked unpaid invoice before deleting the order', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+
+    $order = createEntity(Order::class, ['id' => 1, 'unpaid_invoice_id' => 55, 'status' => Order::STATUS_PENDING_SETUP]);
+    $invoiceModel = orderServiceCreateInvoiceModel(55);
+
+    $orderRepository = Mockery::mock(OrderRepository::class)->shouldIgnoreMissing();
+    $orderRepository->shouldReceive('getStaleUnpaid')
+        ->once()
+        ->andReturn([$order]);
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepository);
+    $emMock->shouldReceive('refresh')->once();
+
+    $invoiceRepositoryMock = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceRepository::class);
+    $invoiceRepositoryMock->shouldReceive('findBy')
+        ->once()
+        ->with(['id' => [55]])
+        ->andReturn([$invoiceModel]);
+
+    $invoiceServiceMock = Mockery::mock(Box\Mod\Invoice\Service::class);
+    $invoiceServiceMock->shouldReceive('getInvoiceRepository')
+        ->once()
+        ->andReturn($invoiceRepositoryMock);
+    $invoiceServiceMock->shouldReceive('deleteInvoiceByAdmin')
+        ->once()
+        ->with($invoiceModel)
+        ->andReturn(true);
+
+    $di = container();
+    $di['em'] = $emMock;
+    $di['events_manager'] = Mockery::mock('\Box_EventManager')->shouldIgnoreMissing();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod'] = $di->protect(fn (string $name): object => new class {
+        public function getConfig(): array
+        {
+            return ['batch_cancel_unpaid' => true, 'batch_cancel_unpaid_after_days' => 7];
+        }
+    });
+    $di['mod_service'] = $di->protect(fn (string $name = ''): object => strtolower($name) === 'invoice' ? $invoiceServiceMock : Mockery::mock()->shouldIgnoreMissing());
+
+    $serviceMock->shouldReceive('deleteFromOrder')->once()->with($order);
+
+    $serviceMock->setDi($di);
+
+    expect($serviceMock->batchCancelUnpaid())->toBeTrue();
+});
+
+test('batchCancelUnpaid resolves a shared invoice once and still removes every sibling order', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+
+    // Two orders from the same cart checkout, both referencing the same invoice.
+    $orderA = createEntity(Order::class, ['id' => 1, 'unpaid_invoice_id' => 55, 'status' => Order::STATUS_PENDING_SETUP]);
+    $orderB = createEntity(Order::class, ['id' => 2, 'unpaid_invoice_id' => 55, 'status' => Order::STATUS_PENDING_SETUP]);
+    $invoiceModel = orderServiceCreateInvoiceModel(55);
+
+    $orderRepository = Mockery::mock(OrderRepository::class)->shouldIgnoreMissing();
+    $orderRepository->shouldReceive('getStaleUnpaid')
+        ->once()
+        ->andReturn([$orderA, $orderB]);
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepository);
+    $emMock->shouldReceive('refresh')->twice();
+
+    $invoiceRepositoryMock = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceRepository::class);
+    $invoiceRepositoryMock->shouldReceive('findBy')
+        ->once() // resolved once, not once per sibling order
+        ->with(['id' => [55]])
+        ->andReturn([$invoiceModel]);
+
+    $invoiceServiceMock = Mockery::mock(Box\Mod\Invoice\Service::class);
+    $invoiceServiceMock->shouldReceive('getInvoiceRepository')->once()->andReturn($invoiceRepositoryMock);
+    $invoiceServiceMock->shouldReceive('deleteInvoiceByAdmin')->once()->with($invoiceModel)->andReturn(true);
+
+    $di = container();
+    $di['em'] = $emMock;
+    $di['events_manager'] = Mockery::mock('\Box_EventManager')->shouldIgnoreMissing();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod'] = $di->protect(fn (string $name): object => new class {
+        public function getConfig(): array
+        {
+            return ['batch_cancel_unpaid' => true, 'batch_cancel_unpaid_after_days' => 7];
+        }
+    });
+    $di['mod_service'] = $di->protect(fn (string $name = ''): object => strtolower($name) === 'invoice' ? $invoiceServiceMock : Mockery::mock()->shouldIgnoreMissing());
+
+    $serviceMock->shouldReceive('deleteFromOrder')->once()->with($orderA);
+    $serviceMock->shouldReceive('deleteFromOrder')->once()->with($orderB);
+
+    $serviceMock->setDi($di);
+
+    expect($serviceMock->batchCancelUnpaid())->toBeTrue();
+});
+
+test('batchCancelUnpaid does not delete a sibling order when removing the shared invoice fails', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+
+    // Two orders from the same cart checkout, both referencing the same invoice.
+    $orderA = createEntity(Order::class, ['id' => 1, 'unpaid_invoice_id' => 55, 'status' => Order::STATUS_PENDING_SETUP]);
+    $orderB = createEntity(Order::class, ['id' => 2, 'unpaid_invoice_id' => 55, 'status' => Order::STATUS_PENDING_SETUP]);
+    $invoiceModel = orderServiceCreateInvoiceModel(55);
+
+    $orderRepository = Mockery::mock(OrderRepository::class)->shouldIgnoreMissing();
+    $orderRepository->shouldReceive('getStaleUnpaid')
+        ->once()
+        ->andReturn([$orderA, $orderB]);
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepository);
+    $emMock->shouldReceive('refresh')->twice();
+
+    $invoiceRepositoryMock = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceRepository::class);
+    $invoiceRepositoryMock->shouldReceive('findBy')
+        ->once()
+        ->with(['id' => [55]])
+        ->andReturn([$invoiceModel]);
+
+    $invoiceServiceMock = Mockery::mock(Box\Mod\Invoice\Service::class);
+    $invoiceServiceMock->shouldReceive('getInvoiceRepository')->once()->andReturn($invoiceRepositoryMock);
+    // The first attempt (while processing orderA) fails; the retry while
+    // processing orderB is the second, successful attempt.
+    $invoiceServiceMock->shouldReceive('deleteInvoiceByAdmin')
+        ->once()
+        ->with($invoiceModel)
+        ->andThrow(new FOSSBilling\Exception('db went away'));
+    $invoiceServiceMock->shouldReceive('deleteInvoiceByAdmin')
+        ->once()
+        ->with($invoiceModel)
+        ->andReturn(true);
+
+    $di = container();
+    $di['em'] = $emMock;
+    $di['events_manager'] = Mockery::mock('\Box_EventManager')->shouldIgnoreMissing();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod'] = $di->protect(fn (string $name): object => new class {
+        public function getConfig(): array
+        {
+            return ['batch_cancel_unpaid' => true, 'batch_cancel_unpaid_after_days' => 7];
+        }
+    });
+    $di['mod_service'] = $di->protect(fn (string $name = ''): object => strtolower($name) === 'invoice' ? $invoiceServiceMock : Mockery::mock()->shouldIgnoreMissing());
+
+    // orderA is left alone this round since the invoice removal that would have
+    // covered it failed; orderB retries the same invoice and, once it succeeds,
+    // is removed.
+    $serviceMock->shouldNotReceive('deleteFromOrder')->with($orderA);
+    $serviceMock->shouldReceive('deleteFromOrder')->once()->with($orderB);
+
+    $serviceMock->setDi($di);
+
+    expect($serviceMock->batchCancelUnpaid())->toBeTrue();
+});
+
+test('batchCancelUnpaid leaves the order alone when its invoice was paid since selection', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+
+    $order = createEntity(Order::class, ['id' => 1, 'unpaid_invoice_id' => 55, 'status' => Order::STATUS_PENDING_SETUP]);
+    $invoiceModel = orderServiceCreateInvoiceModel(55);
+    $invoiceModel->setStatus(Invoice::STATUS_PAID);
+
+    $orderRepository = Mockery::mock(OrderRepository::class)->shouldIgnoreMissing();
+    $orderRepository->shouldReceive('getStaleUnpaid')
+        ->once()
+        ->andReturn([$order]);
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepository);
+    $emMock->shouldReceive('refresh')->once();
+
+    $invoiceRepositoryMock = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceRepository::class);
+    $invoiceRepositoryMock->shouldReceive('findBy')->once()->with(['id' => [55]])->andReturn([$invoiceModel]);
+
+    $invoiceServiceMock = Mockery::mock(Box\Mod\Invoice\Service::class);
+    $invoiceServiceMock->shouldReceive('getInvoiceRepository')->once()->andReturn($invoiceRepositoryMock);
+    $invoiceServiceMock->shouldNotReceive('deleteInvoiceByAdmin');
+
+    $di = container();
+    $di['em'] = $emMock;
+    $di['events_manager'] = Mockery::mock('\Box_EventManager')->shouldIgnoreMissing();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod'] = $di->protect(fn (string $name): object => new class {
+        public function getConfig(): array
+        {
+            return ['batch_cancel_unpaid' => true, 'batch_cancel_unpaid_after_days' => 7];
+        }
+    });
+    $di['mod_service'] = $di->protect(fn (string $name = ''): object => strtolower($name) === 'invoice' ? $invoiceServiceMock : Mockery::mock()->shouldIgnoreMissing());
+
+    $serviceMock->shouldNotReceive('deleteFromOrder');
+
+    $serviceMock->setDi($di);
+
+    expect($serviceMock->batchCancelUnpaid())->toBeTrue();
+});
+
+test('batchCancelUnpaid removes the order without touching the invoice when it was canceled rather than paid', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+
+    // getStaleUnpaid() already includes this order because its invoice is no
+    // longer a live unpaid one - it must actually be removed, not skipped
+    // forever the way a still-unpaid-but-just-paid invoice would be.
+    $order = createEntity(Order::class, ['id' => 1, 'unpaid_invoice_id' => 55, 'status' => Order::STATUS_PENDING_SETUP]);
+    $invoiceModel = orderServiceCreateInvoiceModel(55);
+    $invoiceModel->setStatus(Invoice::STATUS_CANCELED);
+
+    $orderRepository = Mockery::mock(OrderRepository::class)->shouldIgnoreMissing();
+    $orderRepository->shouldReceive('getStaleUnpaid')
+        ->once()
+        ->andReturn([$order]);
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepository);
+    $emMock->shouldReceive('refresh')->once();
+
+    $invoiceRepositoryMock = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceRepository::class);
+    $invoiceRepositoryMock->shouldReceive('findBy')->once()->with(['id' => [55]])->andReturn([$invoiceModel]);
+
+    $invoiceServiceMock = Mockery::mock(Box\Mod\Invoice\Service::class);
+    $invoiceServiceMock->shouldReceive('getInvoiceRepository')->once()->andReturn($invoiceRepositoryMock);
+    $invoiceServiceMock->shouldNotReceive('deleteInvoiceByAdmin');
+
+    $di = container();
+    $di['em'] = $emMock;
+    $di['events_manager'] = Mockery::mock('\Box_EventManager')->shouldIgnoreMissing();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod'] = $di->protect(fn (string $name): object => new class {
+        public function getConfig(): array
+        {
+            return ['batch_cancel_unpaid' => true, 'batch_cancel_unpaid_after_days' => 7];
+        }
+    });
+    $di['mod_service'] = $di->protect(fn (string $name = ''): object => strtolower($name) === 'invoice' ? $invoiceServiceMock : Mockery::mock()->shouldIgnoreMissing());
+
+    $serviceMock->shouldReceive('deleteFromOrder')->once()->with($order);
+
+    $serviceMock->setDi($di);
+
+    expect($serviceMock->batchCancelUnpaid())->toBeTrue();
+});
+
+test('batchCancelUnpaid logs and continues when removing one stale order fails', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+
+    $orderA = createEntity(Order::class, ['id' => 1, 'status' => Order::STATUS_PENDING_SETUP]);
+    $orderB = createEntity(Order::class, ['id' => 2, 'status' => Order::STATUS_PENDING_SETUP]);
+
+    $orderRepository = Mockery::mock(OrderRepository::class)->shouldIgnoreMissing();
+    $orderRepository->shouldReceive('getStaleUnpaid')
+        ->once()
+        ->andReturn([$orderA, $orderB]);
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepository);
+    $emMock->shouldReceive('refresh')->twice();
+
+    $di = container();
+    $di['em'] = $emMock;
+    $di['events_manager'] = Mockery::mock('\Box_EventManager')->shouldIgnoreMissing();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod'] = $di->protect(fn (string $name): object => new class {
+        public function getConfig(): array
+        {
+            return ['batch_cancel_unpaid' => true, 'batch_cancel_unpaid_after_days' => 7];
+        }
+    });
+
+    $serviceMock->shouldReceive('deleteFromOrder')
+        ->once()
+        ->with($orderA)
+        ->andThrow(new FOSSBilling\Exception('boom'));
+    $serviceMock->shouldReceive('deleteFromOrder')->once()->with($orderB);
+
+    $serviceMock->setDi($di);
+
+    expect($serviceMock->batchCancelUnpaid())->toBeTrue();
+});
+
+test('batchCancelUnpaid skips an order that changed status while the batch was running', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+
+    $order = createEntity(Order::class, ['id' => 1, 'status' => Order::STATUS_PENDING_SETUP]);
+
+    $orderRepository = Mockery::mock(OrderRepository::class)->shouldIgnoreMissing();
+    $orderRepository->shouldReceive('getStaleUnpaid')
+        ->once()
+        ->andReturn([$order]);
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepository);
+    // The refresh reveals the order was activated by something else (e.g. a
+    // concurrent payment webhook) since getStaleUnpaid() selected it.
+    $emMock->shouldReceive('refresh')
+        ->once()
+        ->with($order)
+        ->andReturnUsing(function (Order $order): void {
+            $order->setStatus(Order::STATUS_ACTIVE);
+        });
+
+    $di = container();
+    $di['em'] = $emMock;
+    $di['events_manager'] = Mockery::mock('\Box_EventManager')->shouldIgnoreMissing();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod'] = $di->protect(fn (string $name): object => new class {
+        public function getConfig(): array
+        {
+            return ['batch_cancel_unpaid' => true, 'batch_cancel_unpaid_after_days' => 7];
+        }
+    });
+
+    $serviceMock->shouldNotReceive('deleteFromOrder');
+
+    $serviceMock->setDi($di);
+
+    expect($serviceMock->batchCancelUnpaid())->toBeTrue();
+});
+
 test('batchSendSuspensionWarnings claims and queues each warning once', function (): void {
     $order = createEntity(Order::class, ['id' => 8, 'client_id' => 12]);
     $repository = Mockery::mock(OrderRepository::class);
@@ -3769,6 +4207,8 @@ test('batchSendSuspensionWarnings claims and queues each warning once', function
     $repository->shouldReceive('find')->twice()->with(8)->andReturn($order);
 
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('getDatabasePlatform')
+        ->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\MySQLPlatform::class));
     $connection->shouldReceive('transactional')->twice()->andReturnUsing(fn (callable $callback): mixed => $callback());
     $connection->shouldReceive('fetchOne')->twice()->with(
         'SELECT id FROM client_order WHERE id = :id FOR UPDATE',
@@ -3820,6 +4260,8 @@ test('batchSendSuspensionWarnings releases a failed claim so the warning can be 
     $repository->shouldReceive('find')->twice()->with(8)->andReturn($order);
 
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('getDatabasePlatform')
+        ->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\MySQLPlatform::class));
     $connection->shouldReceive('transactional')->twice()->andReturnUsing(fn (callable $callback): mixed => $callback());
     $connection->shouldReceive('fetchOne')->twice()->andReturn(8);
     $connection->shouldReceive('fetchAssociative')->twice()->andReturn(false);

@@ -188,7 +188,7 @@
 
                 document.getElementById('recipient-tab').textContent = '{{ 'Recipients'|trans }}'.concat(' (', result.recipients.length, ')');
 
-                const previewTab = new bootstrap.Tab(document.querySelector('#content-tabs a[data-bs-target="#tab-preview"]'));
+                const previewTab = new tabler.Tab(document.querySelector('#content-tabs a[data-bs-target="#tab-preview"]'));
                 previewTab.show();
             });
     }

@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Box\Mod\Order\Repository;
 
+use Box\Mod\Invoice\Entity\Invoice;
+use Box\Mod\Invoice\Entity\InvoiceItem;
 use Box\Mod\Order\Entity\Order;
 use Doctrine\ORM\EntityRepository;
+use FOSSBilling\Doctrine\SqlExpr;
 
 class OrderRepository extends EntityRepository
 {
@@ -90,20 +93,23 @@ class OrderRepository extends EntityRepository
      */
     public function getExpired(): array
     {
-        $ids = $this->getEntityManager()->getConnection()->fetchFirstColumn(
-            <<<'SQL'
+        $connection = $this->getEntityManager()->getConnection();
+        // The grace period is per-row (order override, falling back to the product's), so it
+        // can't be reduced to a single bound parameter the way :now below is - see SqlExpr.
+        $graceDays = SqlExpr::greatestOfTwo($connection, 'COALESCE(o.suspension_grace_days, p.suspension_grace_days, 0)', '0');
+        $expiresPlusGrace = SqlExpr::addDays($connection, 'o.expires_at', $graceDays);
+
+        $ids = $connection->fetchFirstColumn(
+            <<<SQL
                 SELECT o.id
                 FROM client_order o
                 LEFT JOIN product p ON p.id = o.product_id
                 WHERE o.status = :status
                   AND o.expires_at IS NOT NULL
-                  AND DATE_ADD(
-                      o.expires_at,
-                      INTERVAL GREATEST(COALESCE(o.suspension_grace_days, p.suspension_grace_days, 0), 0) DAY
-                  ) <= NOW()
+                  AND {$expiresPlusGrace} <= :now
                 ORDER BY o.id
                 SQL,
-            ['status' => Order::STATUS_ACTIVE]
+            ['status' => Order::STATUS_ACTIVE, 'now' => (new \DateTimeImmutable())->format('Y-m-d H:i:s')]
         );
 
         return $ids === [] ? [] : $this->findBy(['id' => array_map(intval(...), $ids)]);
@@ -114,28 +120,34 @@ class OrderRepository extends EntityRepository
      */
     public function getDueSuspensionWarnings(): array
     {
-        $rows = $this->getEntityManager()->getConnection()->fetchAllAssociative(
-            <<<'SQL'
+        $connection = $this->getEntityManager()->getConnection();
+        $graceDays = SqlExpr::greatestOfTwo($connection, 'COALESCE(o.suspension_grace_days, p.suspension_grace_days, 0)', '0');
+        $suspensionAt = SqlExpr::addDays($connection, 'o.expires_at', $graceDays);
+
+        $now = new \DateTimeImmutable();
+        $rows = $connection->fetchAllAssociative(
+            <<<SQL
                 SELECT due.id, due.suspension_at
                 FROM (
                     SELECT
                         o.id,
-                        GREATEST(COALESCE(o.suspension_grace_days, p.suspension_grace_days, 0), 0) AS grace_days,
-                        DATE_ADD(
-                            o.expires_at,
-                            INTERVAL GREATEST(COALESCE(o.suspension_grace_days, p.suspension_grace_days, 0), 0) DAY
-                        ) AS suspension_at
+                        {$graceDays} AS grace_days,
+                        {$suspensionAt} AS suspension_at
                     FROM client_order o
                     LEFT JOIN product p ON p.id = o.product_id
                     WHERE o.status = :status
                       AND o.expires_at IS NOT NULL
                 ) due
                 WHERE due.grace_days > 0
-                  AND due.suspension_at > NOW()
-                  AND due.suspension_at <= DATE_ADD(NOW(), INTERVAL 1 DAY)
+                  AND due.suspension_at > :now
+                  AND due.suspension_at <= :tomorrow
                 ORDER BY due.id
                 SQL,
-            ['status' => Order::STATUS_ACTIVE]
+            [
+                'status' => Order::STATUS_ACTIVE,
+                'now' => $now->format('Y-m-d H:i:s'),
+                'tomorrow' => $now->modify('+1 day')->format('Y-m-d H:i:s'),
+            ]
         );
 
         return array_map(static fn (array $row): array => [
@@ -150,5 +162,66 @@ class OrderRepository extends EntityRepository
     public function findAddons(int $masterOrderId): array
     {
         return $this->findBy(['groupId' => (string) $masterOrderId]);
+    }
+
+    /**
+     * Pending-setup orders that were never paid and have gone stale, either
+     * because their linked unpaid invoice has been overdue for more than the
+     * given number of days (falling back to the order's own creation date if
+     * that invoice has no due date set), or - if that invoice is no longer a
+     * live unpaid one (already removed by the invoice module's own "Remove
+     * Unpaid Invoices After" cleanup, canceled, refunded, or simply never
+     * linked) - because the order itself has sat untouched that long. Orders
+     * that any paid invoice ever referenced are excluded, since a paid order
+     * can legitimately stay pending_setup for a long time awaiting manual
+     * setup. Used by the cron cleanup that removes stale, never-paid orders.
+     *
+     * @return Order[]
+     */
+    public function getStaleUnpaid(int $days): array
+    {
+        // DATEDIFF(NOW(), X) > :days, compared only by calendar date, is equivalent to
+        // X < cutoff, where cutoff is midnight $days days ago - a portable stand-in that also
+        // lets $days collapse to a single bound parameter computed once in PHP.
+        $cutoff = (new \DateTimeImmutable('today'))->modify("-{$days} days")->format('Y-m-d H:i:s');
+
+        $ids = $this->getEntityManager()->getConnection()->fetchFirstColumn(
+            <<<'SQL'
+                SELECT o.id
+                FROM client_order o
+                WHERE o.status = :status
+                  AND NOT EXISTS (
+                      SELECT 1
+                      FROM invoice_item ii
+                      INNER JOIN invoice pi ON pi.id = ii.invoice_id
+                      WHERE ii.rel_id = o.id AND ii.type = :item_type AND pi.status = :paid_status
+                  )
+                  AND (
+                      EXISTS (
+                          SELECT 1 FROM invoice i
+                          WHERE i.id = o.unpaid_invoice_id
+                            AND i.status = :unpaid_status
+                            AND COALESCE(i.due_at, o.created_at) < :cutoff
+                      )
+                      OR (
+                          NOT EXISTS (
+                              SELECT 1 FROM invoice i
+                              WHERE i.id = o.unpaid_invoice_id AND i.status = :unpaid_status
+                          )
+                          AND o.created_at < :cutoff
+                      )
+                  )
+                ORDER BY o.id
+                SQL,
+            [
+                'status' => Order::STATUS_PENDING_SETUP,
+                'item_type' => InvoiceItem::TYPE_ORDER,
+                'paid_status' => Invoice::STATUS_PAID,
+                'unpaid_status' => Invoice::STATUS_UNPAID,
+                'cutoff' => $cutoff,
+            ]
+        );
+
+        return $ids === [] ? [] : $this->findBy(['id' => array_map(intval(...), $ids)]);
     }
 }

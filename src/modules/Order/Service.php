@@ -22,6 +22,7 @@ use Box\Mod\Order\Repository\OrderRepository;
 use Box\Mod\Order\Repository\OrderStatusRepository;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Staff\Entity\Admin;
+use FOSSBilling\Doctrine\RowLock;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Logger;
@@ -82,27 +83,21 @@ class Service implements InjectionAwareInterface
 
     public function getOrderRepository(): OrderRepository
     {
-        if ($this->orderRepository === null) {
-            $this->orderRepository = $this->di['em']->getRepository(Order::class);
-        }
+        $this->orderRepository ??= $this->di['em']->getRepository(Order::class);
 
         return $this->orderRepository;
     }
 
     public function getOrderMetaRepository(): OrderMetaRepository
     {
-        if ($this->orderMetaRepository === null) {
-            $this->orderMetaRepository = $this->di['em']->getRepository(OrderMeta::class);
-        }
+        $this->orderMetaRepository ??= $this->di['em']->getRepository(OrderMeta::class);
 
         return $this->orderMetaRepository;
     }
 
     public function getOrderStatusRepository(): OrderStatusRepository
     {
-        if ($this->orderStatusRepository === null) {
-            $this->orderStatusRepository = $this->di['em']->getRepository(OrderStatus::class);
-        }
+        $this->orderStatusRepository ??= $this->di['em']->getRepository(OrderStatus::class);
 
         return $this->orderStatusRepository;
     }
@@ -245,6 +240,23 @@ class Service implements InjectionAwareInterface
     public static function onAfterAdminOrderUncancel(\Box_Event $event): void
     {
         self::sendOrderLifecycleEmail($event, 'renewed', 'uncancel');
+    }
+
+    /**
+     * Guards against interacting with a service on an expired order.
+     *
+     * @throws InformationException if the order has an expiry date in the past
+     */
+    public function assertOrderUsable(Order $order): void
+    {
+        $expiresAt = $order->getExpiresAt();
+        if ($expiresAt === null) {
+            return;
+        }
+
+        if ($expiresAt->getTimestamp() <= time()) {
+            throw new InformationException('Subscription expired');
+        }
     }
 
     /**
@@ -415,7 +427,14 @@ class Service implements InjectionAwareInterface
             $query = $query . ' AND ' . implode(' AND ', $where);
         }
 
-        $query .= ' HAVING DATEDIFF(co.expires_at, NOW()) <= :days_until_expiration ORDER BY co.client_id DESC';
+        // co.expires_at < :expires_before is a portable stand-in for MySQL's
+        // DATEDIFF(co.expires_at, NOW()) <= :days_until_expiration - DATEDIFF compares calendar
+        // dates only (ignoring time-of-day), so "at most N days from today" means expires_at
+        // falls on or before N days from now, i.e. before the start of day N+1. This is a plain
+        // row filter, not an aggregate condition, so it belongs in WHERE (via AND) - PostgreSQL
+        // rejects a HAVING clause referencing an ungrouped, non-aggregate column outright, unlike
+        // MySQL/SQLite's more permissive handling of HAVING without GROUP BY.
+        $query .= ' AND co.expires_at < :expires_before ORDER BY co.client_id DESC';
         $bindings['status'] = Order::STATUS_ACTIVE;
         $bindings['invoice_option'] = 'issue-invoice';
         $bindings['unpaid_invoice_status'] = Invoice::STATUS_UNPAID;
@@ -423,7 +442,9 @@ class Service implements InjectionAwareInterface
         $bindings['pending_item_task'] = \Box\Mod\Invoice\Entity\InvoiceItem::TASK_RENEW;
         $bindings['pending_item_status'] = \Box\Mod\Invoice\Entity\InvoiceItem::STATUS_EXECUTED;
         $bindings['pending_invoice_status'] = Invoice::STATUS_PAID;
-        $bindings['days_until_expiration'] = $days_until_expiration;
+        $bindings['expires_before'] = (new \DateTimeImmutable('today'))
+            ->modify('+' . ((int) $days_until_expiration + 1) . ' days')
+            ->format('Y-m-d H:i:s');
 
         return [$query, $bindings];
     }
@@ -693,18 +714,24 @@ class Service implements InjectionAwareInterface
         }
 
         if ($created_at) {
-            $where[] = "DATE_FORMAT(co.created_at, '%Y-%m-%d') = :created_at";
-            $bindings['created_at'] = date('Y-m-d', strtotime((string) $created_at));
+            // A day range rather than DATE_FORMAT(...) = :created_at, which MySQL supports but
+            // PostgreSQL and SQLite don't.
+            $where[] = 'co.created_at >= :created_at_start AND co.created_at < :created_at_end';
+            $dayStart = strtotime(date('Y-m-d', strtotime((string) $created_at)));
+            $bindings['created_at_start'] = date('Y-m-d H:i:s', $dayStart);
+            $bindings['created_at_end'] = date('Y-m-d H:i:s', strtotime('+1 day', $dayStart));
         }
 
         if ($date_from) {
-            $where[] = 'UNIX_TIMESTAMP(co.created_at) >= :date_from';
-            $bindings['date_from'] = strtotime((string) $date_from);
+            // Compares directly against the datetime column rather than UNIX_TIMESTAMP(co.created_at),
+            // which MySQL supports but PostgreSQL and SQLite don't.
+            $where[] = 'co.created_at >= :date_from';
+            $bindings['date_from'] = date('Y-m-d H:i:s', strtotime((string) $date_from));
         }
 
         if ($date_to) {
-            $where[] = 'UNIX_TIMESTAMP(co.created_at) <= :date_to';
-            $bindings['date_to'] = strtotime((string) $date_to);
+            $where[] = 'co.created_at <= :date_to';
+            $bindings['date_to'] = date('Y-m-d H:i:s', strtotime((string) $date_to));
         }
 
         // smartSearch
@@ -1598,6 +1625,7 @@ class Service implements InjectionAwareInterface
         $productService->releaseReservedPromoRedemptionsForOrder($order, 'order_deleted');
         $productService->releaseReservedStockForOrder($order, 'order_deleted');
         $this->rmClientOrderStatusByOrder($order);
+        $this->getOrderMetaRepository()->deleteByOrderId($orderId);
         $this->rmOrder($order);
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderDelete', 'params' => ['id' => $orderId]]);
@@ -1650,7 +1678,7 @@ class Service implements InjectionAwareInterface
         $connection = $this->di['em']->getConnection();
 
         return $connection->transactional(function () use ($connection, $order, $suspensionAt): bool {
-            $connection->fetchOne('SELECT id FROM client_order WHERE id = :id FOR UPDATE', ['id' => $order->getId()]);
+            $connection->fetchOne('SELECT id FROM client_order WHERE id = :id' . RowLock::suffix($connection), ['id' => $order->getId()]);
             $existing = $connection->fetchAssociative(
                 'SELECT id, value FROM client_order_meta WHERE client_order_id = :order_id AND name = :name ORDER BY id LIMIT 1',
                 ['order_id' => $order->getId(), 'name' => self::META_SUSPENSION_WARNING_FOR]
@@ -1726,21 +1754,22 @@ class Service implements InjectionAwareInterface
         }
 
         $reason = $config['batch_cancel_suspended_reason'] ?? null;
-        $days = isset($config['batch_cancel_suspended_after_days']) ? (int) $config['batch_cancel_suspended_after_days'] : 7;
+        $days = $this->resolveBatchAfterDays($config['batch_cancel_suspended_after_days'] ?? null);
 
-        if ($days < 0) {
-            $days = 7;
-        }
-
+        // suspended_at < :suspended_before is a portable stand-in for MySQL's
+        // DATEDIFF(NOW(), suspended_at) > :days - DATEDIFF compares calendar dates only
+        // (ignoring time-of-day), so "more than N days ago" means suspended_at's date is
+        // strictly before N days before today.
         $sql = "
-            SELECT id, suspended_at, DATEDIFF(NOW(), suspended_at) as days_passed_since_suspension
+            SELECT id, suspended_at
             FROM client_order
             WHERE status = 'suspended'
-            AND DATEDIFF(NOW(), suspended_at) > :days
+            AND suspended_at < :suspended_before
             ORDER BY id DESC
         ";
+        $suspendedBefore = (new \DateTimeImmutable('today'))->modify("-{$days} days")->format('Y-m-d H:i:s');
 
-        $orders = $this->di['em']->getConnection()->fetchAllAssociative($sql, ['days' => $days]);
+        $orders = $this->di['em']->getConnection()->fetchAllAssociative($sql, ['suspended_before' => $suspendedBefore]);
 
         foreach ($orders as $orderArr) {
             try {
@@ -1759,6 +1788,108 @@ class Service implements InjectionAwareInterface
         $this->di['logger']->info('Executed action to cancel suspended orders');
 
         return true;
+    }
+
+    public function batchCancelUnpaid(): bool
+    {
+        $this->di['events_manager']->fire(['event' => 'onBeforeAdminBatchCancelUnpaidOrders']);
+
+        $mod = $this->di['mod']('order');
+        $config = $mod->getConfig();
+        if (!isset($config['batch_cancel_unpaid']) || !$config['batch_cancel_unpaid']) {
+            return false;
+        }
+
+        $days = $this->resolveBatchAfterDays($config['batch_cancel_unpaid_after_days'] ?? null);
+
+        $staleOrders = $this->getOrderRepository()->getStaleUnpaid($days);
+
+        $invoiceService = $this->di['mod_service']('Invoice');
+
+        // A single invoice can cover several orders from one cart checkout
+        // (Cart\Service sets the same unpaid_invoice_id on all of them), so
+        // they're batch-loaded once up front rather than once per order.
+        $invoiceIds = array_values(array_unique(array_filter(
+            array_map(static fn (Order $order): ?int => $order->getUnpaidInvoiceId(), $staleOrders),
+            static fn (?int $id): bool => $id !== null
+        )));
+        $invoicesById = [];
+        foreach ($invoiceIds === [] ? [] : $invoiceService->getInvoiceRepository()->findBy(['id' => $invoiceIds]) as $invoice) {
+            $invoicesById[$invoice->getId()] = $invoice;
+        }
+
+        // Whether each invoice's group may proceed to order deletion - set only
+        // once the invoice is confirmed gone or removed, so a failed removal
+        // leaves it unresolved for a sibling order to retry rather than
+        // wrongly treating the group as already handled.
+        $invoiceHandled = [];
+
+        // Pending-setup orders were never provisioned, so cancelFromOrder() (which
+        // tears down an active service) explicitly rejects them. deleteFromOrder()
+        // is the same path an admin uses to manually remove one. The linked unpaid
+        // invoice is removed first via deleteInvoiceByAdmin() so it doesn't linger
+        // empty and still eligible for reminder emails after the order it belongs
+        // to is gone.
+        foreach ($staleOrders as $order) {
+            try {
+                // Re-check the order's current status before touching anything for
+                // it: deleteFromOrder() has no status guard of its own, and this
+                // order may have been activated or otherwise moved on while earlier
+                // orders in this same run were being processed.
+                $this->di['em']->refresh($order);
+                if ($order->getStatus() !== Order::STATUS_PENDING_SETUP) {
+                    continue;
+                }
+
+                $invoiceId = $order->getUnpaidInvoiceId();
+                if ($invoiceId !== null) {
+                    if (!array_key_exists($invoiceId, $invoiceHandled)) {
+                        $invoice = $invoicesById[$invoiceId] ?? null;
+                        $status = $invoice instanceof Invoice ? $invoice->getStatus() : null;
+
+                        if ($status === Invoice::STATUS_PAID) {
+                            // Paid since getStaleUnpaid() ran - leave every order tied
+                            // to it alone instead of deleting one out from under that.
+                            $invoiceHandled[$invoiceId] = false;
+                        } else {
+                            if ($status === Invoice::STATUS_UNPAID) {
+                                $invoiceService->deleteInvoiceByAdmin($invoice);
+                            }
+                            // Already gone, or canceled/refunded/some other non-live
+                            // status - either way it's no longer a live unpaid invoice,
+                            // so the orders that reference it may proceed.
+                            $invoiceHandled[$invoiceId] = true;
+                        }
+                    }
+
+                    if (!$invoiceHandled[$invoiceId]) {
+                        continue;
+                    }
+                }
+
+                $this->deleteFromOrder($order);
+            } catch (\Exception $e) {
+                $this->di['logger']->info($e->getMessage());
+            }
+        }
+
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminBatchCancelUnpaidOrders']);
+
+        $this->di['logger']->info('Executed action to remove stale unpaid orders');
+
+        return true;
+    }
+
+    /**
+     * Parses a "cancel/remove after N days" batch-job setting. A blank form field is
+     * submitted as '', which isset() treats as present - so this is not just `(int) $value`,
+     * which would silently turn a blank field into 0 instead of the intended default.
+     */
+    private function resolveBatchAfterDays(mixed $configValue, int $default = 7): int
+    {
+        $days = ($configValue === null || $configValue === '') ? $default : (int) $configValue;
+
+        return $days < 0 ? $default : $days;
     }
 
     public function updateOrderConfig(Order $order, array $config): bool

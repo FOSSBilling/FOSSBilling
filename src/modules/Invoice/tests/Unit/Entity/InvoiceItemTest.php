@@ -44,7 +44,6 @@ test('invoice item exposes the legacy type, task and status constants', function
     expect(InvoiceItem::TYPE_DEPOSIT)->toBe('deposit')
         ->and(InvoiceItem::TYPE_CUSTOM)->toBe('custom')
         ->and(InvoiceItem::TYPE_ORDER)->toBe('order')
-        ->and(InvoiceItem::TYPE_HOOK_CALL)->toBe('hook_call')
         ->and(InvoiceItem::TASK_VOID)->toBe('void')
         ->and(InvoiceItem::TASK_ACTIVATE)->toBe('activate')
         ->and(InvoiceItem::TASK_RENEW)->toBe('renew')

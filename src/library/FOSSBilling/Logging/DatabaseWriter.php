@@ -21,7 +21,7 @@ class DatabaseWriter
      */
     private const array IGNORED_CHANNELS = ['billing', 'routing', 'security', 'email'];
 
-    public function __construct(private object $service)
+    public function __construct(private readonly object $service)
     {
     }
 

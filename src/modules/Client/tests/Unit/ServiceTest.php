@@ -179,7 +179,7 @@ test('onAfterClientSignUp handles exception gracefully', function (): void {
 });
 
 dataset('searchQueryData', [
-    [[], 'SELECT c.*', []],
+    [[], 'SELECT c.id, c.aid', []],
     [
         ['id' => 1],
         '(c.id = :client_id OR c.aid = :alt_client_id)',
@@ -212,18 +212,18 @@ dataset('searchQueryData', [
     ],
     [
         ['created_at' => '2012-12-12'],
-        "DATE_FORMAT(c.created_at, '%Y-%m-%d') = :created_at",
-        ['created_at' => '2012-12-12'],
+        'c.created_at >= :created_at_start AND c.created_at < :created_at_end',
+        ['created_at_start' => '2012-12-12 00:00:00', 'created_at_end' => '2012-12-13 00:00:00'],
     ],
     [
         ['date_from' => '2012-12-10'],
-        'UNIX_TIMESTAMP(c.created_at) >= :date_from',
-        ['date_from' => 1355097600],
+        'c.created_at >= :date_from',
+        ['date_from' => date('Y-m-d H:i:s', 1355097600)],
     ],
     [
         ['date_to' => '2012-12-11'],
-        'UNIX_TIMESTAMP(c.created_at) <= :date_to',
-        ['date_to' => 1355184000],
+        'c.created_at <= :date_to',
+        ['date_to' => date('Y-m-d H:i:s', 1355184000)],
     ],
     [
         ['search' => '2'],
@@ -249,7 +249,7 @@ test('getSearchQuery returns correct query and params', function ($data, $expect
     expect($result[1])->toBeArray();
 
     expect(str_contains((string) $result[0], (string) $expectedStr))->toBeTrue($result[0]);
-    expect(array_diff_key($result[1], $expectedParams))->toEqual([]);
+    expect($result[1])->toEqual($expectedParams);
 })->with('searchQueryData');
 
 test('getSearchQuery with custom select statement', function (): void {
@@ -261,6 +261,16 @@ test('getSearchQuery with custom select statement', function (): void {
     expect($result[1])->toBeArray();
 
     expect(str_contains((string) $result[0], $selectStmt))->toBeTrue($result[0]);
+});
+
+test('getSearchQuery never selects sensitive client columns', function (): void {
+    $service = new Box\Mod\Client\Service();
+    [$query] = $service->getSearchQuery([]);
+
+    expect(str_contains($query, '*'))->toBeFalse($query);
+    foreach (['pass', 'salt', 'api_token', 'hash', 'config'] as $sensitiveColumn) {
+        expect(preg_match('/\b' . preg_quote($sensitiveColumn, '/') . '\b/', $query))->toBe(0, "Query unexpectedly selects '$sensitiveColumn': $query");
+    }
 });
 
 test('getPairs returns array', function (): void {

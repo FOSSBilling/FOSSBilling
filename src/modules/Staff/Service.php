@@ -15,8 +15,10 @@ use Box\Mod\Activity\Entity\ActivityAdminHistory;
 use Box\Mod\Staff\Entity\Admin;
 use Box\Mod\Staff\Entity\AdminGroup;
 use Box\Mod\Staff\Entity\AdminGroupMember;
+use Box\Mod\Staff\Entity\AdminPasswordReset;
 use Box\Mod\Staff\Repository\AdminGroupMemberRepository;
 use Box\Mod\Staff\Repository\AdminGroupRepository;
+use Box\Mod\Staff\Repository\AdminPasswordResetRepository;
 use Box\Mod\Staff\Repository\AdminRepository;
 use Box\Mod\Support\Entity\Helpdesk;
 use Box\Mod\Support\Entity\SupportTicket;
@@ -32,6 +34,7 @@ class Service implements InjectionAwareInterface
 
     private AdminGroupRepository $adminGroupRepository;
     private AdminGroupMemberRepository $adminGroupMemberRepository;
+    private AdminPasswordResetRepository $adminPasswordResetRepository;
 
     protected ?\Pimple\Container $di = null;
 
@@ -40,6 +43,7 @@ class Service implements InjectionAwareInterface
         $this->di = $di;
         $this->adminGroupRepository = $di['em']->getRepository(AdminGroup::class);
         $this->adminGroupMemberRepository = $di['em']->getRepository(AdminGroupMember::class);
+        $this->adminPasswordResetRepository = $di['em']->getRepository(AdminPasswordReset::class);
     }
 
     public function getDi(): ?\Pimple\Container
@@ -119,6 +123,26 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\InformationException('Check your login details', null, 403);
         }
 
+        // Event listeners (e.g. this login being recorded in the login history) are normally
+        // connected by the cron job's hook_batch_connect task. Before cron has run for the
+        // first time, no listeners are connected and the event fired below would silently do
+        // nothing, so an admin's very first logins would go unrecorded. Connect them now so
+        // that gap does not exist. batchConnect() returns false if another process was still
+        // rebuilding the set when it gave up waiting; retry once rather than firing the event
+        // below against a set we know is incomplete. If both attempts fail, log it and let the
+        // login proceed anyway - failing the login itself over this housekeeping step would
+        // turn a rare missed audit entry into every admin being locked out while it's stuck.
+        $hookService = $this->di['mod_service']('hook');
+        if (!$hookService->hasConnectedListeners()) {
+            $connected = $hookService->batchConnect();
+            if (!$connected) {
+                $connected = $hookService->batchConnect();
+            }
+            if (!$connected) {
+                $this->di['logger']->warning('Could not connect event listeners after two attempts; this login (and other events) may not be recorded.');
+            }
+        }
+
         $this->di['events_manager']->fire(['event' => 'onAfterAdminLogin', 'params' => ['id' => $model->getId(), 'ip' => $ip]]);
 
         $result = [
@@ -179,9 +203,7 @@ class Service implements InjectionAwareInterface
     {
         $alwaysAllowed = ['index', 'dashboard', 'profile'];
 
-        if (is_null($member)) {
-            $member = $this->getLoggedInAdminOrCronAdmin();
-        }
+        $member ??= $this->getLoggedInAdminOrCronAdmin();
 
         if ($member->isCron() || in_array($module, $alwaysAllowed)) {
             return true;
@@ -418,7 +440,9 @@ class Service implements InjectionAwareInterface
 
     public function getSearchQuery($data): array
     {
-        $query = 'SELECT * FROM admin';
+        // `admin` also holds `pass` and `api_token` - list columns explicitly instead of
+        // `SELECT *` so listing never exposes them.
+        $query = 'SELECT id, system_name, email, name, signature, status, timezone, created_at, updated_at FROM admin';
 
         $id = $data['id'] ?? null;
         $search = $data['search'] ?? null;
@@ -591,6 +615,7 @@ class Service implements InjectionAwareInterface
         $name = $model->getName();
         $this->di['em']->wrapInTransaction(function () use ($model, $id): void {
             $this->adminGroupMemberRepository->deleteMembershipsForAdmin((int) $id);
+            $this->adminPasswordResetRepository->deleteResetsForAdmin((int) $id);
             $this->di['em']->remove($model);
             $this->di['em']->flush();
         });

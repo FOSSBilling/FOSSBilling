@@ -16,6 +16,7 @@ use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\InvoiceItem;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
+use FOSSBilling\Doctrine\RowLock;
 use FOSSBilling\Tools;
 
 class InvoiceRepository extends EntityRepository
@@ -29,6 +30,17 @@ class InvoiceRepository extends EntityRepository
         $invoice = $this->findOneBy(['hash' => $hash]);
 
         return $invoice instanceof Invoice ? $invoice : null;
+    }
+
+    public function existsByGatewayId(int $gatewayId): bool
+    {
+        return (bool) $this->createQueryBuilder('i')
+            ->select('1')
+            ->andWhere('IDENTITY(i.gateway) = :gateway_id')
+            ->setParameter('gateway_id', $gatewayId)
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
     }
 
     /**
@@ -183,7 +195,7 @@ class InvoiceRepository extends EntityRepository
         }
 
         $status = $connection->fetchOne(
-            'SELECT status FROM invoice WHERE id = :id FOR UPDATE',
+            'SELECT status FROM invoice WHERE id = :id' . RowLock::suffix($connection),
             ['id' => $invoiceId],
         );
 
@@ -242,6 +254,25 @@ class InvoiceRepository extends EntityRepository
             ->setParameter('status', Invoice::STATUS_PAID)
             ->setParameter('relId', (string) $relId)
             ->setParameter('type', InvoiceItem::TYPE_ORDER)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * Unpaid invoices whose due date is more than the given number of days
+     * in the past. Used by the cron cleanup that expires stale unpaid
+     * invoices.
+     *
+     * @return Invoice[]
+     */
+    public function findUnpaidOlderThan(int $days): array
+    {
+        return $this->createQueryBuilder('i')
+            ->andWhere('i.status = :status')
+            ->andWhere('i.dueAt IS NOT NULL')
+            ->andWhere('DATE_DIFF(CURRENT_TIMESTAMP(), i.dueAt) > :days')
+            ->setParameter('status', Invoice::STATUS_UNPAID)
+            ->setParameter('days', $days)
             ->getQuery()
             ->getResult();
     }

@@ -195,7 +195,7 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         var modalElement = document.getElementById('newTranslationsModal');
-        var modal = modalElement ? bootstrap.Modal.getOrCreateInstance(modalElement) : null;
+        var modal = modalElement ? tabler.Modal.getOrCreateInstance(modalElement) : null;
 
         if (window.location.hash === '#tab-new-translations' && modal) {
             modal.show();
@@ -204,7 +204,7 @@
 
         var tabTrigger = document.querySelector('[data-bs-toggle="tab"][href="' + window.location.hash + '"]');
         if (tabTrigger) {
-            bootstrap.Tab.getOrCreateInstance(tabTrigger).show();
+            tabler.Tab.getOrCreateInstance(tabTrigger).show();
         }
 
         modalElement?.addEventListener('hidden.bs.modal', function () {

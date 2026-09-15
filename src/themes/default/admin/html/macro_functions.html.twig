@@ -1,0 +1,257 @@
+{% macro compute_field_required(element, context) %}
+    {% set result = false %}
+    {% if element[1].required_when is defined and element[1].required_when is iterable %}
+        {% set result = true %}
+        {% for cond_key, cond_value in element[1].required_when %}
+            {% if attribute(context, cond_key) is null or attribute(context, cond_key) != cond_value %}
+                {% set result = false %}
+            {% endif %}
+        {% endfor %}
+    {% elseif element[1].required is defined %}
+        {% set result = element[1].required != 'false' %}
+    {% else %}
+        {% set result = false %}
+    {% endif %}
+    {{ result ? 'true' : 'false' }}
+{% endmacro %}
+
+{% macro build_form(elements, values, context, secretFields) %}
+    {% set ctx = context|default({}) %}
+    {% set secrets = secretFields|default([]) %}
+    <div class="row g-3">
+    {% for name, element in elements %}
+    {% set field_class = element[0] == 'textarea' ? 'col-12' : 'col-lg-6' %}
+    {% set field_required = _self.compute_field_required(element, ctx) == 'true' %}
+    {% set is_secret = name in secrets %}
+    {% set is_set = is_secret and values[name ~ '_set']|default(false) %}
+    <div class="{{ field_class }}">
+        {% if element[0] == 'select' %}
+            <label class="form-label">{{ element[1].label }}</label>
+            {% if element[1].description is defined and element[1].description %}<div class="form-text mt-0 mb-2">{{ element[1].description|markdown_to_html }}</div>{% endif %}
+            <select class="form-select" name="config[{{ name }}]">
+            {% for k, v in element[1].multiOptions %}
+                <option value="{{ k }}"{% if k == values[name]|default('') %} selected{% endif %}>{{ v }}</option>
+            {% endfor %}
+            </select>
+        {% elseif element[0] == 'multiselect' %}
+            <label class="form-label">{{ element[1].label }}</label>
+            {% if element[1].description is defined and element[1].description %}<div class="form-text mt-0 mb-2">{{ element[1].description|markdown_to_html }}</div>{% endif %}
+            <select class="form-select" name="config[{{ name }}]" multiple>
+            {% for k, v in element[1].multiOptions %}
+                <option value="{{ k }}"{% if k in values[name]|default([]) %} selected{% endif %}>{{ v }}</option>
+            {% endfor %}
+            </select>
+        {% elseif element[0] == 'radio' %}
+            <label class="form-label d-block">{{ element[1].label }}</label>
+            {% if element[1].description is defined and element[1].description %}<div class="form-text mt-0 mb-2">{{ element[1].description|markdown_to_html }}</div>{% endif %}
+            <div class="d-flex flex-wrap gap-3">
+            {% for k, v in element[1].multiOptions %}
+                <label class="form-check">
+                    <input class="form-check-input" id="el-{{ name ~ k }}" type="radio" name="config[{{ name }}]" value="{{ k }}"{% if k == values[name]|default('') %}checked{% endif %}>
+                    <span class="form-check-label">{{ v }}</span>
+                </label>
+            {% endfor %}
+            </div>
+        {% elseif element[0] == 'textarea' %}
+            <label class="form-label" for="el-{{ name }}">{{ element[1].label }}{% if is_set %} <span class="badge text-bg-success">{{ 'Configured'|trans }}</span>{% endif %}</label>
+            {% if element[1].description is defined and element[1].description %}<div class="form-text mt-0 mb-2">{{ element[1].description|markdown_to_html }}</div>{% endif %}
+            <textarea class="form-control" id="el-{{ name }}" name="config[{{ name }}]" rows="20"
+                {% if field_required and not is_set %} required{% endif %}
+                {% if is_set %} placeholder="{{ 'Leave blank to keep the saved credential.'|trans }}"{% endif %}
+                {% if not is_set and element[1].required_when is defined and element[1].required_when.test_mode is defined %} data-required-when-test-mode="{{ element[1].required_when.test_mode ? 'true' : 'false' }}"{% endif %}>{{ values[name]|default('') }}</textarea>
+            {% if is_set %}<div class="form-text">{{ 'Leave blank to keep the saved credential.'|trans }}</div>{% endif %}
+        {% else %}
+            <label class="form-label" for="el-{{ name }}">{{ element[1].label }}{% if is_set %} <span class="badge text-bg-success">{{ 'Configured'|trans }}</span>{% endif %}</label>
+            {% if element[1].description is defined and element[1].description %}<div class="form-text mt-0 mb-2">{{ element[1].description|markdown_to_html }}</div>{% endif %}
+            <input class="form-control" id="el-{{ name }}" type="{{ element[0] }}" name="config[{{ name }}]" value="{{ values[name]|default('') }}"
+                {% if is_secret %} autocomplete="new-password"{% endif %}
+                {% if field_required and not is_set %} required{% endif %}
+                {% if is_set %} placeholder="{{ 'Leave blank to keep the saved credential.'|trans }}"{% endif %}
+                {% if not is_set and element[1].required_when is defined and element[1].required_when.test_mode is defined %} data-required-when-test-mode="{{ element[1].required_when.test_mode ? 'true' : 'false' }}"{% endif %}>
+            {% if is_set %}<div class="form-text">{{ 'Leave blank to keep the saved credential.'|trans }}</div>{% endif %}
+        {% endif %}
+    </div>
+    {% endfor %}
+    </div>
+{% endmacro build_form %}
+
+{% macro status_name(status) %}
+{% include 'partial_status_name_shared.html.twig' with {status: status} %}
+{% endmacro status_name %}
+
+{% macro ip_lookup_link(ip) %}
+    {% if ip is not empty %}
+        <a href="{{ 'security/iplookup'|url(query: {'ip': ip }) }}" target="_blank" class='ip_lookup_link'>{{ ip }}</a>
+    {% else %}
+        {{ ip }}
+    {% endif %}
+{% endmacro ip_lookup_link %}
+
+{% macro q(bool) %}
+    {% if bool %}
+        {{ 'Yes'|trans }}
+    {% else %}
+        {{ 'No'|trans }}
+    {% endif %}
+{% endmacro q %}
+
+{% macro selectbox(name, options, selected, required, nullOption) %}
+    <select class="form-select" name="{{ name }}" id="{{ name }}"{% if required %}required{% endif%}>
+        {% if nullOption %}<option value="">{{ nullOption }}</option>{% endif %}
+        {% for val, label in options %}
+            <option value="{{ val }}" label="{{ label|e }}" {% if selected == val %}selected="selected"{% endif %}>{{ label|e }}</option>
+        {% endfor %}
+    </select>
+{% endmacro selectbox %}
+
+{% macro selectboxtld(name, options, selected, required) %}
+    <select class="form-select" name="{{ name }}"{% if required %}required{% endif %}>
+        {% for data in options %}
+            <option value="{{ data.tld }}" label="{{ data.tld }}"{% if selected == data.tld %}selected{% endif %}>{{ data.tld }}</option>
+        {% endfor %}
+    </select>
+{% endmacro selectboxtld %}
+
+{% macro recaptcha() %}
+{% include 'partial_recaptcha_shared.html.twig' %}
+{% endmacro recaptcha %}
+
+{% macro table_search() %}
+<div style="position: relative;">
+    <div class="dataTables_filter">
+        <form method="get" action="">
+            <label>{{ 'Search:'|trans }} <input type="text" name="search" placeholder="{{ 'Enter search text...'|trans }}" value="{{ request.search }}"><div class="srch"></div></label>
+        </form>
+    </div>
+</div>
+{% endmacro table_search %}
+
+{% macro text_badge(label, badge_class) %}
+    <span class="badge {{ badge_class }}">{{ label }}</span>
+{% endmacro %}
+
+{% macro boolean_badge(value, true_label, false_label, true_class, false_class) %}
+    {% if value %}
+        {{ _self.text_badge(true_label, true_class|default('text-bg-success')) }}
+    {% else %}
+        {{ _self.text_badge(false_label, false_class|default('text-bg-secondary')) }}
+    {% endif %}
+{% endmacro %}
+
+{% macro status_badge(status, type) %}
+    {% set status_key = status|default('')|lower %}
+    {% set status_classes = {
+        'order': {
+            'active': 'text-bg-success',
+            'pending_setup': 'text-bg-warning',
+            'failed_setup': 'text-bg-danger',
+            'suspended': 'text-bg-danger',
+            'failed_renew': 'text-bg-danger',
+            'canceled': 'text-bg-secondary',
+        },
+        'ticket': {
+            'open': 'text-bg-success',
+            'on_hold': 'text-bg-warning',
+            'closed': 'text-bg-secondary',
+        },
+        'invoice': {
+            'paid': 'text-bg-success',
+            'unpaid': 'text-bg-warning',
+            'refunded': 'text-bg-info',
+            'canceled': 'text-bg-secondary',
+        },
+        'client': {
+            'active': 'bg-green text-green-fg',
+            'suspended': 'bg-red text-red-fg',
+            'canceled': 'bg-secondary text-secondary-fg',
+        },
+        'admin': {
+            'active': 'bg-green text-green-fg',
+            'inactive': 'bg-secondary text-secondary-fg',
+        },
+        'subscription': {
+            'active': 'text-bg-success',
+            'pending_cancellation': 'text-bg-warning',
+            'canceled': 'text-bg-secondary',
+            'past_due': 'text-bg-danger',
+        },
+        'post': {
+            'published': 'text-bg-success',
+            'active': 'text-bg-success',
+            'draft': 'text-bg-secondary',
+        },
+        'product': {
+            'enabled': 'text-bg-success',
+            'disabled': 'text-bg-secondary',
+        },
+        'massmailer': {
+            'sent': 'text-bg-success',
+            'draft': 'text-bg-secondary',
+        },
+        'transaction': {
+            'approved': 'text-bg-success',
+            'processed': 'text-bg-success',
+            'received': 'text-bg-warning',
+            'processing': 'text-bg-warning',
+            'error': 'text-bg-danger',
+        },
+        'gateway_tx': {
+            'approved': 'text-bg-success',
+            'complete': 'text-bg-success',
+            'completed': 'text-bg-success',
+            'processed': 'text-bg-success',
+            'success': 'text-bg-success',
+            'succeeded': 'text-bg-success',
+            'pending': 'text-bg-warning',
+            'processing': 'text-bg-warning',
+            'received': 'text-bg-warning',
+            'requires_action': 'text-bg-warning',
+            'requires_capture': 'text-bg-warning',
+            'requires_confirmation': 'text-bg-warning',
+            'canceled': 'text-bg-danger',
+            'cancelled': 'text-bg-danger',
+            'error': 'text-bg-danger',
+            'failed': 'text-bg-danger',
+            'requires_payment_method': 'text-bg-danger',
+            'unknown': 'text-bg-danger',
+        },
+        'mail_queue': {
+            'sent': 'text-bg-success',
+            'sending': 'text-bg-warning',
+            'unsent': 'text-bg-danger',
+        },
+        'tx': {
+            'success': 'text-bg-success',
+            'failed': 'text-bg-danger',
+            'pending': 'text-bg-warning',
+            'refunded': 'text-bg-info',
+        },
+    } %}
+    {% set fallback_classes = {
+        'active': 'text-bg-success',
+        'open': 'text-bg-success',
+        'paid': 'text-bg-success',
+        'published': 'text-bg-success',
+        'pending_setup': 'text-bg-warning',
+        'on_hold': 'text-bg-warning',
+        'unpaid': 'text-bg-warning',
+        'pending': 'text-bg-warning',
+        'failed_setup': 'text-bg-danger',
+        'suspended': 'text-bg-danger',
+        'failed_renew': 'text-bg-danger',
+        'canceled': 'text-bg-danger',
+        'closed': 'text-bg-danger',
+        'failed': 'text-bg-danger',
+    } %}
+    {% set type_classes = status_classes[type]|default(null) %}
+    {% if type_classes is not null %}
+        {% set badge_class = type_classes[status_key]|default('text-bg-primary') %}
+    {% else %}
+        {% set badge_class = fallback_classes[status_key]|default('text-bg-primary') %}
+    {% endif %}
+    {{ _self.text_badge(_self.status_name(status), badge_class) }}
+{% endmacro %}
+
+{% macro empty_list(colspan, message) %}
+{% include 'partial_empty_list_shared.html.twig' with {colspan: colspan, message: message} %}
+{% endmacro empty_list %}

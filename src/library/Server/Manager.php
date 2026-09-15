@@ -138,11 +138,16 @@ abstract class Server_Manager
      * Get the password length from the configuration.
      * If the password length is not set in the configuration, it defaults to 10.
      *
+     * The value is cast to int because `_config['passwordLength']` is untyped and
+     * has been observed containing a numeric string (e.g. from a stored server
+     * configuration predating strict int typing), which would otherwise violate
+     * this method's return type.
+     *
      * @return int the password length
      */
     public function getPasswordLength(): int
     {
-        return $this->_config['passwordLength'] ?? 10;
+        return (int) ($this->_config['passwordLength'] ?? 10);
     }
 
     /**

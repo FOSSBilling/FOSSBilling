@@ -672,7 +672,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         try {
             $pc = $systemService->renderEmailTplString($contentTemplate, $vars, $timezone);
-            $ps = $systemService->renderEmailTplString($subjectTemplate, $vars, $timezone);
+            $ps = $systemService->renderEmailSubjectString($subjectTemplate, $vars, $timezone);
 
             if ($template->hasError()) {
                 $template->clearError();

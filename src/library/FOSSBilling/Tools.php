@@ -174,8 +174,8 @@ class Tools
      */
     public function validateAndSanitizeEmail(string $email, bool $throw = true, bool $checkDNS = true)
     {
-        $email = htmlspecialchars($email);
-
+        // Validated and returned raw: `&` is legal in an address, so encoding
+        // here would corrupt stored addresses and wrongly reject valid ones.
         $validator = new EmailValidator();
         if (Environment::isProduction() && $checkDNS) {
             $validations = new MultipleValidationWithAnd([

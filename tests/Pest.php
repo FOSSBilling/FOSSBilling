@@ -70,6 +70,16 @@ require_once __DIR__ . '/Datasets/ValidationData.php';
 require_once __DIR__ . '/Datasets/GeographicData.php';
 
 /**
+ * Whether a Redis client extension is available. Cache-backend tests that need an
+ * environment without it (to exercise the connection-failure/fallback paths) skip
+ * themselves when this is true.
+ */
+function hasRedisExtension(): bool
+{
+    return class_exists(Redis::class) || class_exists(Relay\Relay::class) || class_exists(RedisCluster::class);
+}
+
+/**
  * Construct an API endpoint with the default test container.
  *
  * @template T of FOSSBilling\Api\AbstractApi

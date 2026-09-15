@@ -153,32 +153,4 @@ class ServiceBalance implements InjectionAwareInterface
 
         return [$q, $params];
     }
-
-    /**
-     * @param float|string $amount
-     *
-     * @throws \FOSSBilling\InformationException
-     */
-    public function deductFunds(Client $client, $amount, $description, ?array $data = null): ClientBalance
-    {
-        if (!is_numeric($amount)) {
-            throw new \FOSSBilling\InformationException('Funds amount is invalid');
-        }
-
-        if (strlen(trim((string) $description)) == 0) {
-            throw new \FOSSBilling\InformationException('Funds description is invalid');
-        }
-
-        $credit = new ClientBalance();
-        $credit->setClient($client);
-        $credit->setType($data['type'] ?? 'default');
-        $credit->setRelId(isset($data['rel_id']) ? (string) $data['rel_id'] : null);
-        $credit->setDescription($description);
-        $credit->setAmount((string) (-(float) $amount));
-
-        $this->di['em']->persist($credit);
-        $this->di['em']->flush();
-
-        return $credit;
-    }
 }

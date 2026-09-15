@@ -88,6 +88,20 @@
                             </label>
                         </div>
                     </div>
+                    <div class="col-lg-3">
+                        <label class="form-label d-block">{{ 'Require Transfer Code'|trans }}</label>
+                        <div class="d-flex flex-wrap gap-3">
+                            <label class="form-check">
+                                <input class="form-check-input" id="inputRequireTransferCodeYes" type="radio" name="require_transfer_code" value="1"{% if tld.require_transfer_code %} checked{% endif %}>
+                                <span class="form-check-label">{{ 'Yes'|trans }}</span>
+                            </label>
+                            <label class="form-check">
+                                <input class="form-check-input" id="inputRequireTransferCodeNo" type="radio" name="require_transfer_code" value="0"{% if not tld.require_transfer_code %} checked{% endif %}>
+                                <span class="form-check-label">{{ 'No'|trans }}</span>
+                            </label>
+                        </div>
+                        <div class="form-hint">{{ 'Require clients to enter a transfer code (EPP/auth code) before this TLD can be ordered for transfer.'|trans }}</div>
+                    </div>
                     <div class="col-lg-2">
                         <label class="form-label d-block">{{ 'Active'|trans }}</label>
                         <div class="d-flex flex-wrap gap-3">

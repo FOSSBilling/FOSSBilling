@@ -19,6 +19,9 @@ use FOSSBilling\Interfaces\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Extension\Repository\ExtensionMetaRepository::class)]
 #[ORM\Table(name: 'extension_meta')]
+// Named per-table (unlike structure.sql's bare `client_id_idx`) because index names must be
+// unique database-wide on SQLite/PostgreSQL, not just per-table like MySQL.
+#[ORM\Index(name: 'extension_meta_client_id_idx', columns: ['client_id'])]
 #[ORM\HasLifecycleCallbacks]
 class ExtensionMeta implements ApiArrayInterface, TimestampInterface
 {
@@ -27,12 +30,12 @@ class ExtensionMeta implements ApiArrayInterface, TimestampInterface
     public function __construct(
         #[ORM\Id]
         #[ORM\GeneratedValue]
-        #[ORM\Column(type: Types::INTEGER)]
+        #[ORM\Column(type: Types::BIGINT)]
         private ?int $id = null,
     ) {
     }
 
-    #[ORM\Column(name: 'client_id', type: Types::INTEGER, nullable: true)]
+    #[ORM\Column(name: 'client_id', type: Types::BIGINT, nullable: true)]
     private ?int $clientId = null;
 
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]

@@ -451,7 +451,6 @@ test('handles after admin invoice reminder sent event', function (): void {
 });
 
 test('handles after admin cron run event', function (): void {
-    $service = new Service();
     $eventMock = Mockery::mock('\Box_Event');
 
     $remove_after_days = 64;
@@ -461,20 +460,31 @@ test('handles after admin cron run event', function (): void {
         ->atLeast()->once()
         ->andReturn($remove_after_days);
 
-    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
-    $connection->shouldReceive('executeStatement')
-        ->atLeast()->once();
+    $invoiceModel = createEntity(Invoice::class, ['id' => 1]);
+
+    $invoiceServiceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $invoiceServiceMock->shouldReceive('rmInvoice')
+        ->once()
+        ->with($invoiceModel)
+        ->andReturn(true);
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $systemServiceMock);
-    $di['em']->shouldReceive('getConnection')->andReturn($connection);
+    $di['em']->getRepository(Invoice::class)->shouldReceive('findUnpaidOlderThan')
+        ->with(64)
+        ->once()
+        ->andReturn([$invoiceModel]);
+    $di['mod_service'] = $di->protect(fn (string $name = ''): object => match (strtolower($name)) {
+        'system' => $systemServiceMock,
+        'invoice' => $invoiceServiceMock,
+        default => Mockery::mock()->shouldIgnoreMissing(),
+    });
 
-    $service->setDi($di);
+    $invoiceServiceMock->setDi($di);
     $eventMock->shouldReceive('getDi')
         ->atLeast()->once()
         ->andReturn($di);
 
-    $service->onAfterAdminCronRun($eventMock);
+    Service::onAfterAdminCronRun($eventMock);
 });
 
 test('uses the client billing email for invoice notifications', function (): void {
@@ -525,7 +535,7 @@ test('handles event after invoice is due', function (): void {
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
     $connection->shouldReceive('executeStatement')
         ->once()
-        ->with(Mockery::type('string'), ['id' => 1])
+        ->with(Mockery::type('string'), Mockery::on(fn (array $params): bool => $params['id'] === 1 && isset($params['now'])))
         ->andReturn(1);
 
     $di = container();
@@ -576,7 +586,7 @@ test('skips overdue invoice reminder when the invoice was already claimed', func
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
     $connection->shouldReceive('executeStatement')
         ->once()
-        ->with(Mockery::type('string'), ['id' => 1])
+        ->with(Mockery::type('string'), Mockery::on(fn (array $params): bool => $params['id'] === 1 && isset($params['now'])))
         ->andReturn(0);
 
     $di = container();
@@ -638,7 +648,7 @@ test('releases the claim when sending the overdue invoice email fails', function
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
     $connection->shouldReceive('executeStatement')
         ->once()
-        ->with(Mockery::type('string'), ['id' => 1])
+        ->with(Mockery::type('string'), Mockery::on(fn (array $params): bool => $params['id'] === 1 && isset($params['now'])))
         ->andReturn(1);
     $connection->shouldReceive('executeStatement')
         ->once()
@@ -700,7 +710,7 @@ test('releases the overdue reminder claim when invoice client data is unavailabl
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
     $connection->shouldReceive('executeStatement')
         ->once()
-        ->with(Mockery::type('string'), ['id' => 1])
+        ->with(Mockery::type('string'), Mockery::on(fn (array $params): bool => $params['id'] === 1 && isset($params['now'])))
         ->andReturn(1);
     $connection->shouldReceive('executeStatement')
         ->once()
@@ -757,7 +767,7 @@ test('handles event before invoice is due', function (): void {
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
     $connection->shouldReceive('executeStatement')
         ->once()
-        ->with(Mockery::type('string'), ['id' => 1])
+        ->with(Mockery::type('string'), Mockery::on(fn (array $params): bool => $params['id'] === 1 && isset($params['now'])))
         ->andReturn(1);
 
     $di = container();
@@ -805,7 +815,7 @@ test('releases the claim when sending the before-due invoice reminder fails', fu
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
     $connection->shouldReceive('executeStatement')
         ->once()
-        ->with(Mockery::type('string'), ['id' => 1])
+        ->with(Mockery::type('string'), Mockery::on(fn (array $params): bool => $params['id'] === 1 && isset($params['now'])))
         ->andReturn(1);
     $connection->shouldReceive('executeStatement')
         ->once()
@@ -857,7 +867,7 @@ test('skips before due invoice reminder when the invoice was already claimed', f
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
     $connection->shouldReceive('executeStatement')
         ->once()
-        ->with(Mockery::type('string'), ['id' => 1])
+        ->with(Mockery::type('string'), Mockery::on(fn (array $params): bool => $params['id'] === 1 && isset($params['now'])))
         ->andReturn(0);
 
     $di = container();
@@ -1661,6 +1671,14 @@ test('removes an invoice', function (): void {
     $em->shouldReceive('flush')
         ->atLeast()->once();
 
+    // Regression coverage: transaction.invoice_id would be a real FK if MySQL ever adopted the
+    // entity-metadata-driven schema generator - this cleanup used to be missing entirely, which
+    // would make a real FK constraint reject the delete outright. Confirmed against a live
+    // MariaDB container with FK enforcement during the unification scoping audit.
+    $transactionRepo = Mockery::mock(TransactionRepository::class);
+    $transactionRepo->shouldReceive('detachFromInvoice')->once()->with((int) $invoiceModel->getId());
+    $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($transactionRepo);
+
     $di = container();
     $di['em'] = $em;
     $em->shouldReceive('getConnection')->andReturn($connection);
@@ -1905,6 +1923,76 @@ test('generates invoice for active order using the order price, not the product 
     expect($result)->toBeInstanceOf(Invoice::class);
 });
 
+test('generates domain renewal invoice with renewal title containing the domain', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('setInvoiceDefaults')
+        ->once();
+
+    $orderConfig = ['action' => 'register', 'register_sld' => 'example', 'register_tld' => '.com'];
+    $orderModel = createEntity(Order::class, [
+        'client_id' => 1,
+        'status' => Order::STATUS_ACTIVE,
+        'productId' => 5,
+        'currency' => 'USD',
+        'price' => 25,
+        'quantity' => 1,
+        'title' => 'Domain registration (example.com)',
+        'config' => json_encode($orderConfig),
+    ]);
+
+    $product = Mockery::mock(Product::class)->makePartial();
+    $product->shouldReceive('getType')->andReturn(ProductService::DOMAIN);
+
+    $domainService = Mockery::mock(Box\Mod\Servicedomain\Service::class);
+    $domainService->shouldReceive('getRenewalTitle')
+        ->with($orderConfig)
+        ->once()
+        ->andReturn('Domain renewal (example.com)');
+
+    $productService = Mockery::mock(ProductService::class);
+    $productService->shouldReceive('findProductById')
+        ->with(5)
+        ->once()
+        ->andReturn($product);
+    $productService->shouldReceive('getProductRenewalLineConfig')
+        ->with($product, $orderConfig)
+        ->once()
+        ->andReturn(['price' => 12.0, 'quantity' => 1]);
+    $productService->shouldReceive('getProductModuleService')
+        ->with($product)
+        ->once()
+        ->andReturn($domainService);
+
+    $currencyServiceMock = Mockery::mock(CurrencyService::class);
+    $currencyRepository = Mockery::mock(CurrencyRepository::class);
+    $currencyRepository->shouldReceive('getRateByCode')->with('USD')->andReturn(1.0);
+    $currencyServiceMock->shouldReceive('getCurrencyRepository')->andReturn($currencyRepository);
+
+    $invoiceItemServiceMock = Mockery::mock(ServiceInvoiceItem::class);
+    $invoiceItemServiceMock->shouldReceive('generateFromOrder')
+        ->with(Mockery::type(Invoice::class), $orderModel, InvoiceItem::TASK_RENEW, 12.0, Mockery::on(fn ($line): bool => ($line['title'] ?? null) === 'Domain renewal (example.com)'))
+        ->once();
+
+    $di = container();
+    $di['em']->shouldReceive('persist')->atLeast()->once();
+    $di['em']->shouldReceive('flush')->atLeast()->once();
+    $di['mod_service'] = $di->protect(function (string $module, ?string $sub = null) use ($productService, $currencyServiceMock, $invoiceItemServiceMock): Mockery\MockInterface {
+        if ($module === 'Product') {
+            return $productService;
+        }
+
+        if ($module === 'Currency') {
+            return $currencyServiceMock;
+        }
+
+        return $invoiceItemServiceMock;
+    });
+
+    $serviceMock->setDi($di);
+    $result = $serviceMock->generateForOrder($orderModel);
+    expect($result)->toBeInstanceOf(Invoice::class);
+});
+
 test('generates invoice for zero amount order', function (): void {
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('setInvoiceDefaults')
@@ -2009,6 +2097,8 @@ test('activates paid invoices in batch', function (): void {
         ->andReturn($invoiceItemModel);
 
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('getDatabasePlatform')
+        ->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\MySQLPlatform::class));
     $connection->shouldReceive('transactional')
         ->once()
         ->andReturnUsing(fn (callable $func) => $func($connection));
@@ -2045,6 +2135,8 @@ test('handles exception during batch paid invoice activation', function (): void
         ->andReturn($invoiceItemModel);
 
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('getDatabasePlatform')
+        ->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\MySQLPlatform::class));
     $connection->shouldReceive('transactional')
         ->once()
         ->andReturnUsing(fn (callable $func) => $func($connection));
@@ -2089,6 +2181,8 @@ test('resets the EntityManager when it closes mid-batch so later consumers keep 
         ->andReturn($invoiceItemModel);
 
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('getDatabasePlatform')
+        ->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\MySQLPlatform::class));
     $connection->shouldReceive('transactional')
         ->once()
         ->andReturnUsing(fn (callable $func) => $func($connection));
@@ -2168,6 +2262,8 @@ test('skips invoice items already finalized by another process during batch acti
     $invoiceItemRepo->shouldNotReceive('find');
 
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('getDatabasePlatform')
+        ->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\MySQLPlatform::class));
     $connection->shouldReceive('transactional')
         ->once()
         ->andReturnUsing(fn (callable $func): mixed => $func($connection));
@@ -2254,6 +2350,8 @@ test('fires due events via the pending reminder fallback when the primary batch 
         ->andReturn('5');
 
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('getDatabasePlatform')
+        ->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\MySQLPlatform::class));
     $connection->shouldReceive('fetchAllAssociative')
         ->twice()
         ->andReturn([['id' => 2, 'days_left' => 7]], []);
@@ -2298,6 +2396,8 @@ test('guards the primary reminder batch throttle while the fallback still dispat
         ->with('invoice_overdue_invoked', Mockery::type('string'));
 
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('getDatabasePlatform')
+        ->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\MySQLPlatform::class));
     $connection->shouldReceive('fetchAllAssociative')
         ->times(4)
         ->andReturn([['id' => 1, 'days_left' => 7]], [], [], []);
@@ -2342,6 +2442,8 @@ test('invokes due event in batch', function (): void {
         ->atLeast()->once();
 
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('getDatabasePlatform')
+        ->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\MySQLPlatform::class));
     $connection->shouldReceive('fetchAllAssociative')
         ->atLeast()->once()
         ->andReturn([['id' => 1]]);
@@ -3056,6 +3158,59 @@ test('generateRenewalInvoiceForSubscriptionPayment uses the original order and n
     expect($result)->toBeInstanceOf(Invoice::class);
     expect($result->id)->toBe(99);
 });
+
+test('generateRenewalInvoiceForSubscriptionPayment still renews an order the batch-suspend cron already suspended', function (string $status): void {
+    // A gateway's subscription-payment IPN can legitimately arrive after the
+    // batch-suspend cron has already suspended the order for missing its
+    // expiry, or after a prior renewal attempt left it failed_renew.
+    $subscription = createEntity(Subscription::class, ['id' => 7, 'relType' => 'invoice', 'relId' => 82]);
+
+    $invoiceItem = createEntity(InvoiceItem::class, ['rel_id' => 82]);
+
+    $originalOrder = createEntity(Order::class, [
+        'status' => $status,
+        'productId' => 1,
+    ]);
+
+    $renewalInvoice = createEntity(Invoice::class);
+
+    $renewalInvoice->id = 99;
+
+    $orderRepoMock = Mockery::mock(OrderRepository::class);
+    $orderRepoMock->shouldReceive('find')
+        ->with(82)
+        ->andReturn($originalOrder);
+
+    [$em, $invoiceItemRepo] = invoiceItemEmAndRepo();
+    $invoiceItemRepo->shouldReceive('findOneByInvoiceIdAndType')
+        ->with(82, InvoiceItem::TYPE_ORDER)
+        ->andReturn($invoiceItem);
+    $subscriptionRepo = Mockery::mock(SubscriptionRepository::class);
+    $subscriptionRepo->shouldReceive('findOneBy')->once()->andReturn($subscription);
+    $em->shouldReceive('getRepository')->with(Subscription::class)->andReturn($subscriptionRepo);
+    $em->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('generateForOrder')
+        ->with(Mockery::on(fn ($order): bool => $order === $originalOrder))
+        ->once()
+        ->andReturn($renewalInvoice);
+    $serviceMock->shouldReceive('approveInvoice')
+        ->once();
+
+    $di = container();
+    $di['em'] = $em;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $serviceMock->setDi($di);
+
+    $result = $serviceMock->generateRenewalInvoiceForSubscriptionPayment('I-TEST123', 1);
+
+    expect($result)->toBeInstanceOf(Invoice::class);
+    expect($result->id)->toBe(99);
+})->with([
+    'suspended' => Order::STATUS_SUSPENDED,
+    'failed renew' => Order::STATUS_FAILED_RENEW,
+]);
 
 test('markAsPaid transitions a deposit invoice to paid status', function (): void {
     $service = new Service();

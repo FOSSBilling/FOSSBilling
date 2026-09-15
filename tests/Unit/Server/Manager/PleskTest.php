@@ -30,7 +30,7 @@ test('createSubscriptionProps sends the settings directly under <add>, in schema
     $props = invokePleskCreateSubscriptionProps($this->manager, $this->account, 'add');
 
     expect($props)->toHaveKey('add')
-        ->and(array_keys($props['add']))->toBe(['gen_setup', 'hosting', 'limits', 'permissions'])
+        ->and(array_keys($props['add']))->toBe(['gen_setup', 'hosting', 'limits', 'permissions', 'plan-name'])
         ->and($props['add'])->not->toHaveKey('filter')
         ->and($props['add'])->not->toHaveKey('values');
 });
@@ -94,4 +94,16 @@ test('createSubscriptionProps disables mailing lists when the custom limit is ze
 
     expect($limits['max_maillists'])->toBe(0)
         ->and($permissions['manage_maillists'])->toBe('false');
+});
+
+test('createSubscriptionProps assigns the hosting plan name to the Plesk subscription on creation', function (): void {
+    $props = invokePleskCreateSubscriptionProps($this->manager, $this->account, 'add');
+
+    expect($props['add']['plan-name'])->toBe('Business Hosting');
+});
+
+test('createSubscriptionProps does not send plan-name on updates, since webspace/set has no plan node', function (): void {
+    $props = invokePleskCreateSubscriptionProps($this->manager, $this->account, 'set');
+
+    expect($props['set']['values'])->not->toHaveKey('plan-name');
 });

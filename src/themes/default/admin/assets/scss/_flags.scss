@@ -1,0 +1,29 @@
+@use "flag-icons/sass/variables" as flagicons-variables;
+
+$flag-icons-path: "../../../../../../node_modules/flag-icons/flags";
+
+.flag {
+    position: relative;
+    display: inline-block;
+    height: 1em;
+    aspect-ratio: 1.33333;
+    background: no-repeat center/cover;
+    box-shadow: var(--tblr-shadow-border);
+    border-radius: var(--tblr-border-radius);
+    vertical-align: bottom;
+
+    &.flag-country-np {
+        box-shadow: none;
+        border-radius: 0;
+    }
+}
+
+@mixin flag-icon($country) {
+    .flag-country-#{$country} {
+        background-image: url(#{$flag-icons-path}#{flagicons-variables.$flag-icons-rect-path}/#{$country}.svg);
+    }
+}
+
+@each $country in flagicons-variables.$flag-icons-included-countries {
+    @include flag-icon($country);
+}

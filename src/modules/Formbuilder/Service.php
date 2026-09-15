@@ -78,9 +78,7 @@ class Service implements InjectionAwareInterface
         }
 
         $host = parse_url($value, PHP_URL_HOST);
-        if ($host === null) {
-            $host = $value;
-        }
+        $host ??= $value;
 
         return (bool) preg_match('/\.[a-zA-Z]{2,}$/', $host);
     }

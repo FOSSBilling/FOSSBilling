@@ -234,7 +234,8 @@ class Server_Manager_Whm extends Server_Manager
     /**
      * Creates a new account on the WHM server.
      * Sends a request to the WHM server to create a new account with the details provided in the Server_Account object.
-     * If the account is a reseller account, it also sets up the reseller and assigns the appropriate ACL list.
+     * If the account is a reseller account, it also sets up the reseller and, if the hosting plan defines an
+     * 'acl' custom value, assigns that ACL list to it.
      *
      * @param Server_Account $account The account to be created. This object should contain all the necessary details for the new account.
      *
@@ -274,7 +275,7 @@ class Server_Manager_Whm extends Server_Manager
         $json = $this->request($action, $varHash);
         $result = ($json->result[0]->status == 1);
 
-        // If the account is a reseller account and was successfully created, set up the reseller and assign the ACL list
+        // If the account is a reseller account and was successfully created, set up the reseller and, if the hosting plan defines a custom 'acl' value, assign that ACL list to it
         if ($result && $account->getReseller()) {
             $params = [
                 'user' => $account->getUsername(),
@@ -282,11 +283,14 @@ class Server_Manager_Whm extends Server_Manager
             ];
             $this->request('setupreseller', $params);
 
-            $params = [
-                'reseller' => $account->getUsername(),
-                'acllist' => $package->getAcllist(),
-            ];
-            $this->request('setacls', $params);
+            $acl = $package->getCustomValue('acl');
+            if (!empty($acl)) {
+                $params = [
+                    'reseller' => $account->getUsername(),
+                    'acllist' => $acl,
+                ];
+                $this->request('setacls', $params);
+            }
         }
 
         // Return the result of the account creation
