@@ -696,7 +696,7 @@ describe('PayPal subscription IPN handling', function (): void {
                 'txn_id' => 'TXN-R1',
                 'recurring_payment_id' => 'I-PROFILE1',
                 'amount' => '120.00',
-                'mc_currency' => 'USD',
+                'amount_currency' => 'usd',
             ],
             'get' => ['invoice_id' => 16],
         ], 2);
@@ -705,6 +705,36 @@ describe('PayPal subscription IPN handling', function (): void {
             ->and((float) $funds[0]['amount'])->toBe(120.00);
         $processed = array_values(array_filter($updates, fn (array $u): bool => ($u['status'] ?? null) === 'processed'));
         expect($processed)->toHaveCount(1);
+    });
+
+    test('recurring_payment rejects a currency that does not match the invoice', function (): void {
+        $apiAdmin = Mockery::mock();
+        $apiAdmin->shouldReceive('invoice_transaction_get')->once()->with(['id' => 42])->andReturn([
+            'invoice_id' => 16, 'type' => null, 'txn_id' => null,
+            'txn_status' => null, 'amount' => null, 'currency' => null, 'status' => 'received',
+        ]);
+        $apiAdmin->shouldReceive('invoice_get')->once()->with(['id' => 16])->andReturn([
+            'id' => 16, 'currency' => 'USD', 'client' => ['id' => 9],
+        ]);
+        $apiAdmin->shouldReceive('invoice_transaction_update')->byDefault();
+        $apiAdmin->shouldNotReceive('invoice_transaction_claim_for_processing');
+        $apiAdmin->shouldNotReceive('client_balance_add_funds');
+
+        $di = container();
+        $di['em'] = paypalEmMocks();
+        $di['logger'] = new Tests\Helpers\TestLogger();
+
+        expect(fn () => paypalProcessAdapter($di)->processTransaction($apiAdmin, 42, [
+            'post' => [
+                'txn_type' => 'recurring_payment',
+                'payment_status' => 'Completed',
+                'txn_id' => 'TXN-R1',
+                'recurring_payment_id' => 'I-PROFILE1',
+                'amount' => '120.00',
+                'amount_currency' => 'MXN',
+            ],
+            'get' => ['invoice_id' => 16],
+        ], 2))->toThrow(Payment_Exception::class, 'PayPal payment currency MXN does not match invoice currency USD');
     });
 
     test('recurring_payment_profile_created stores the subscription', function (): void {
@@ -744,6 +774,7 @@ describe('PayPal subscription IPN handling', function (): void {
                 'txn_type' => 'recurring_payment_profile_created',
                 'recurring_payment_id' => 'I-PROFILE2',
                 'amount' => '120.00',
+                'amount_currency' => 'USD',
             ],
             'get' => ['invoice_id' => 16],
         ], 2);
@@ -757,6 +788,33 @@ describe('PayPal subscription IPN handling', function (): void {
         $linked = array_values(array_filter($updates, fn (array $u): bool => ($u['s_id'] ?? null) === 'I-PROFILE2'));
         expect($linked)->toHaveCount(1)
             ->and($linked[0]['s_period'])->toBe('1M');
+    });
+
+    test('recurring_payment_profile_created rejects a currency that does not match the invoice', function (): void {
+        $apiAdmin = Mockery::mock();
+        $apiAdmin->shouldReceive('invoice_transaction_get')->once()->with(['id' => 42])->andReturn([
+            'invoice_id' => 16, 'type' => null, 'txn_id' => null,
+            'txn_status' => null, 'amount' => null, 'currency' => null,
+        ]);
+        $apiAdmin->shouldReceive('invoice_get')->once()->with(['id' => 16])->andReturn([
+            'id' => 16, 'currency' => 'USD', 'client' => ['id' => 9],
+        ]);
+        $apiAdmin->shouldReceive('invoice_transaction_update')->byDefault();
+        $apiAdmin->shouldNotReceive('invoice_subscription_create');
+
+        $di = container();
+        $di['em'] = paypalEmMocks();
+        $di['logger'] = new Tests\Helpers\TestLogger();
+
+        expect(fn () => paypalProcessAdapter($di)->processTransaction($apiAdmin, 42, [
+            'post' => [
+                'txn_type' => 'recurring_payment_profile_created',
+                'recurring_payment_id' => 'I-PROFILE2',
+                'amount' => '120.00',
+                'amount_currency' => 'MXN',
+            ],
+            'get' => ['invoice_id' => 16],
+        ], 2))->toThrow(Payment_Exception::class, 'PayPal payment currency MXN does not match invoice currency USD');
     });
 
     test('signup without a period stores null when the invoice is not subscribable', function (): void {
