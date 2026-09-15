@@ -1091,10 +1091,7 @@ class Service implements InjectionAwareInterface
             }
 
             $required = $this->getTotalWithTax($invoice);
-            $epsilon = 0.01;
-            $difference = $balance - $required;
-
-            if ($difference < -$epsilon) {
+            if ($balance < $required) {
                 // @phpstan-ignore if.alwaysFalse (DEBUG is a runtime constant that may be true during debugging)
                 if (DEBUG) {
                     $this->di['logger']->withChannel('billing')->info("Invoice {$invoice->getId()} could not be paid with credits. Money in balance {$balance} Required: {$required}.");
@@ -1108,9 +1105,8 @@ class Service implements InjectionAwareInterface
                 $this->di['logger']->withChannel('billing')->info("Setting invoice {$invoice->getId()} as paid with credits for the amount of {$required}.");
             }
 
-            if ($required > $epsilon) {
-                // Nothing at or below the epsilon is actually charged against the client's balance,
-                // so don't record a $0 credit transaction.
+            if ($required > 0) {
+                // Do not record a $0 credit transaction for a zero-total invoice.
                 $balanceTransaction = new ClientBalance();
                 $balanceTransaction->setClient($this->di['em']->getReference(Client::class, $clientId));
                 $balanceTransaction->setType('invoice');

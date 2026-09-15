@@ -1491,6 +1491,30 @@ test('does not deduct credits when the locked balance is insufficient', function
     expect($service->tryPayWithCredits($invoice))->toBeFalse();
 });
 
+test('does not pay a one-cent invoice with a zero credit balance', function (): void {
+    $invoice = createEntity(Invoice::class);
+    $invoice->id = 10;
+    $invoice->client_id = 20;
+    $invoice->approved = 1;
+    $invoice->status = Invoice::STATUS_UNPAID;
+
+    $balanceService = Mockery::mock(Box\Mod\Client\ServiceBalance::class);
+    $balanceService->shouldReceive('getClientBalanceForUpdate')->once()->with(20)->andReturn(0.0);
+
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('getTotalWithTax')->once()->with($invoice)->andReturn(0.01);
+    $service->shouldNotReceive('markAsPaid');
+
+    $di = container();
+    $di['em']->getRepository(Invoice::class)->shouldReceive('lockAndGetStatus')->with(10)
+        ->andReturn(Invoice::STATUS_UNPAID);
+    $di['em']->shouldNotReceive('persist');
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $balanceService);
+    $service->setDi($di);
+
+    expect($service->tryPayWithCredits($invoice))->toBeFalse();
+});
+
 test('gets total', function (): void {
     $service = new Service();
     $invoiceModel = createEntity(Invoice::class);
