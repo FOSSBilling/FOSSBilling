@@ -157,6 +157,13 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                         return;
                     }
 
+                    if (!isset($ipn['mc_gross'], $ipn['txn_id'])) {
+                        throw new Payment_Exception('PayPal payment is missing transaction details');
+                    }
+                    if (in_array($txnType, ['subscr_payment', 'recurring_payment'], true) && !isset($ipn['subscr_id'])) {
+                        throw new Payment_Exception('PayPal subscription payment is missing the subscription ID');
+                    }
+
                     // Claim transaction for processing
                     // Prevents race conditions when multiple Completed IPNs arrive simultaneously
                     if (!$api_admin->invoice_transaction_claim_for_processing(['id' => $id])) {
@@ -191,10 +198,6 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
 
                 if ($this->isIpnDuplicate($ipn)) {
                     throw new Payment_Exception('Cannot process duplicate IPN');
-                }
-
-                if (!isset($ipn['mc_gross'], $ipn['txn_id'])) {
-                    throw new Payment_Exception('PayPal payment is missing transaction details');
                 }
 
                 $invoiceService = $this->di['mod_service']('Invoice');
@@ -326,16 +329,15 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                     throw new Payment_Exception('PayPal subscription update is missing the subscription ID');
                 }
 
-                try {
-                    $s = $api_admin->invoice_subscription_get(['sid' => $cancelSid]);
-                } catch (FOSSBilling\Exception) {
+                $storedCancellation = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\Subscription::class)->findOneBy(['sid' => $cancelSid]);
+                if (!$storedCancellation instanceof Box\Mod\Invoice\Entity\Subscription) {
                     // Nothing to cancel for an unknown subscription, so acknowledge
                     // the notification instead of failing the IPN.
                     $this->di['logger']->warning('Ignoring PayPal ' . $txnType . ' IPN for unknown subscription ' . $cancelSid . ' on transaction ' . $id);
 
                     break;
                 }
-                $api_admin->invoice_subscription_update(['id' => $s['id'], 'status' => 'canceled']);
+                $api_admin->invoice_subscription_update(['id' => $storedCancellation->getId(), 'status' => 'canceled']);
                 $this->di['logger']->info('Canceled subscription ' . $cancelSid . ' from PayPal ' . $txnType . ' IPN for transaction ' . $id);
 
                 break;

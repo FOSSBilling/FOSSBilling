@@ -498,7 +498,7 @@ describe('PayPal subscription IPN handling', function (): void {
         $apiAdmin->shouldReceive('invoice_get')->once()->with(['id' => 16])->andReturn([
             'id' => 16, 'currency' => 'USD', 'client' => ['id' => 9],
         ]);
-        $apiAdmin->shouldReceive('invoice_subscription_get')->once()->with(['sid' => 'I-UNKNOWN'])->andThrow(new FOSSBilling\Exception('Subscription not found'));
+        $apiAdmin->shouldNotReceive('invoice_subscription_get');
         $apiAdmin->shouldNotReceive('invoice_subscription_update');
         $apiAdmin->shouldReceive('invoice_transaction_update')->byDefault()->withArgs(function (array $data) use (&$updates): bool {
             $updates[] = $data;
@@ -521,6 +521,94 @@ describe('PayPal subscription IPN handling', function (): void {
         expect($warnings)->not->toBeEmpty();
         $processed = array_values(array_filter($updates, fn (array $u): bool => ($u['status'] ?? null) === 'processed'));
         expect($processed)->toHaveCount(1);
+    });
+
+    test('cancellation updates the stored subscription', function (): void {
+        $updates = [];
+        $stored = Mockery::mock(Box\Mod\Invoice\Entity\Subscription::class);
+        $stored->shouldReceive('getId')->byDefault()->andReturn(7);
+        $apiAdmin = Mockery::mock();
+        $apiAdmin->shouldReceive('invoice_transaction_get')->once()->with(['id' => 42])->andReturn([
+            'invoice_id' => 16, 'type' => null, 'txn_id' => null,
+            'txn_status' => null, 'amount' => null, 'currency' => null,
+        ]);
+        $apiAdmin->shouldReceive('invoice_get')->once()->with(['id' => 16])->andReturn([
+            'id' => 16, 'currency' => 'USD', 'client' => ['id' => 9],
+        ]);
+        $apiAdmin->shouldNotReceive('invoice_subscription_get');
+        $apiAdmin->shouldReceive('invoice_subscription_update')->once()->with(['id' => 7, 'status' => 'canceled'])->andReturn(true);
+        $apiAdmin->shouldReceive('invoice_transaction_update')->byDefault()->withArgs(function (array $data) use (&$updates): bool {
+            $updates[] = $data;
+
+            return true;
+        });
+
+        $em = paypalEmMocks(null, $stored);
+        $di = container();
+        $di['em'] = $em;
+        $di['logger'] = new Tests\Helpers\TestLogger();
+
+        paypalProcessAdapter($di)->processTransaction($apiAdmin, 42, [
+            'post' => ['txn_type' => 'subscr_cancel', 'subscr_id' => 'I-ABC123'],
+            'get' => ['invoice_id' => 16],
+        ], 2);
+
+        $processed = array_values(array_filter($updates, fn (array $u): bool => ($u['status'] ?? null) === 'processed'));
+        expect($processed)->toHaveCount(1);
+    });
+
+    test('completed payment missing transaction details throws before claiming', function (): void {
+        $apiAdmin = Mockery::mock();
+        $apiAdmin->shouldReceive('invoice_transaction_get')->once()->with(['id' => 42])->andReturn([
+            'invoice_id' => 16, 'type' => null, 'txn_id' => null,
+            'txn_status' => null, 'amount' => null, 'currency' => null, 'status' => 'received',
+        ]);
+        $apiAdmin->shouldReceive('invoice_get')->once()->with(['id' => 16])->andReturn([
+            'id' => 16, 'currency' => 'USD', 'client' => ['id' => 9],
+        ]);
+        $apiAdmin->shouldReceive('invoice_transaction_update')->byDefault();
+        $apiAdmin->shouldNotReceive('invoice_transaction_claim_for_processing');
+        $apiAdmin->shouldNotReceive('client_balance_add_funds');
+
+        $em = paypalEmMocks();
+        $di = container();
+        $di['em'] = $em;
+        $di['logger'] = new Tests\Helpers\TestLogger();
+
+        expect(fn (): mixed => paypalProcessAdapter($di)->processTransaction($apiAdmin, 42, [
+            'post' => ['txn_type' => 'web_accept', 'payment_status' => 'Completed'],
+            'get' => ['invoice_id' => 16],
+        ], 2))->toThrow(Payment_Exception::class, 'PayPal payment is missing transaction details');
+    });
+
+    test('completed subscription payment missing the subscription id throws before claiming', function (): void {
+        $apiAdmin = Mockery::mock();
+        $apiAdmin->shouldReceive('invoice_transaction_get')->once()->with(['id' => 42])->andReturn([
+            'invoice_id' => 16, 'type' => null, 'txn_id' => null,
+            'txn_status' => null, 'amount' => null, 'currency' => null, 'status' => 'received',
+        ]);
+        $apiAdmin->shouldReceive('invoice_get')->once()->with(['id' => 16])->andReturn([
+            'id' => 16, 'currency' => 'USD', 'client' => ['id' => 9],
+        ]);
+        $apiAdmin->shouldReceive('invoice_transaction_update')->byDefault();
+        $apiAdmin->shouldNotReceive('invoice_transaction_claim_for_processing');
+        $apiAdmin->shouldNotReceive('client_balance_add_funds');
+
+        $em = paypalEmMocks();
+        $di = container();
+        $di['em'] = $em;
+        $di['logger'] = new Tests\Helpers\TestLogger();
+
+        expect(fn (): mixed => paypalProcessAdapter($di)->processTransaction($apiAdmin, 42, [
+            'post' => [
+                'txn_type' => 'subscr_payment',
+                'payment_status' => 'Completed',
+                'txn_id' => 'TXN-1',
+                'mc_gross' => '120.00',
+                'mc_currency' => 'USD',
+            ],
+            'get' => ['invoice_id' => 16],
+        ], 2))->toThrow(Payment_Exception::class, 'PayPal subscription payment is missing the subscription ID');
     });
 
     test('contended transaction claims are logged instead of silently skipped', function (): void {
