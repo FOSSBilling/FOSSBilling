@@ -1148,6 +1148,7 @@ describe('processPaymentIntent', function (): void {
             'status' => 'succeeded',
             'amount' => 2500,
             'currency' => 'usd',
+            'metadata' => ['gateway_id' => '4'],
         ]);
 
         $paymentIntentsMock = Mockery::mock();
@@ -1184,6 +1185,48 @@ describe('processPaymentIntent', function (): void {
 
         expect($tx->txn_id)->toBe('pi_webhook_first');
     });
+
+    test('rejects redirect PaymentIntents that are not bound to the invoice', function (array $paymentIntent): void {
+        $tx = buildTransaction();
+        $tx->gateway_id = 4;
+
+        $invoice = createEntity(Invoice::class, [
+            'id' => 15,
+            'currency' => 'USD',
+        ]);
+
+        $paymentIntentsMock = Mockery::mock();
+        $paymentIntentsMock->shouldReceive('retrieve')
+            ->once()
+            ->with('pi_unbound', [])
+            ->andReturn(Stripe\PaymentIntent::constructFrom($paymentIntent));
+
+        $stripeMock = Mockery::mock(StripeClient::class);
+        $stripeMock->paymentIntents = $paymentIntentsMock;
+        setPrivateProperty($this->adapter, 'stripe', $stripeMock);
+
+        expect(fn (): mixed => invokePrivateMethod($this->adapter, 'processPaymentIntent', [
+            $tx,
+            $invoice,
+            ['get' => ['payment_intent' => 'pi_unbound']],
+        ]))->toThrow(FOSSBilling\Exception::class);
+    })->with([
+        'wrong invoice' => [[
+            'id' => 'pi_unbound',
+            'currency' => 'usd',
+            'metadata' => ['invoice_id' => '99', 'gateway_id' => '4'],
+        ]],
+        'wrong gateway' => [[
+            'id' => 'pi_unbound',
+            'currency' => 'usd',
+            'metadata' => ['invoice_id' => '15', 'gateway_id' => '8'],
+        ]],
+        'wrong currency' => [[
+            'id' => 'pi_unbound',
+            'currency' => 'jpy',
+            'metadata' => ['invoice_id' => '15', 'gateway_id' => '4'],
+        ]],
+    ]);
 });
 
 test('releases the Stripe object lock when processing fails', function (): void {

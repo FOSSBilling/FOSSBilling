@@ -286,12 +286,34 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
     private function processPaymentIntent(Transaction $tx, ?Invoice $invoice, array $data): void
     {
         $charge = $this->stripe->paymentIntents->retrieve($data['get']['payment_intent'], []);
+        $this->validateRedirectPaymentIntent($tx, $invoice, $charge);
 
         $this->withStripeObjectLock(
             $charge->id,
             (int) $tx->getGatewayId(),
             fn () => $this->processPaymentIntentUnderLock($tx, $invoice, $charge)
         );
+    }
+
+    private function validateRedirectPaymentIntent(Transaction $tx, ?Invoice $invoice, object $paymentIntent): void
+    {
+        $gatewayId = $paymentIntent->metadata->gateway_id ?? null;
+        if (!is_numeric($gatewayId) || (int) $gatewayId !== (int) $tx->getGatewayId()) {
+            throw new FOSSBilling\Exception('PaymentIntent does not belong to this payment gateway');
+        }
+
+        if (!$invoice instanceof Invoice) {
+            return;
+        }
+
+        $invoiceId = $paymentIntent->metadata->invoice_id ?? null;
+        if (!is_numeric($invoiceId) || (int) $invoiceId !== (int) $invoice->getId()) {
+            throw new FOSSBilling\Exception('PaymentIntent does not belong to this invoice');
+        }
+
+        if (strcasecmp((string) ($paymentIntent->currency ?? ''), (string) $invoice->getCurrency()) !== 0) {
+            throw new FOSSBilling\Exception('PaymentIntent currency does not match invoice currency');
+        }
     }
 
     private function processPaymentIntentUnderLock(Transaction $tx, ?Invoice $invoice, object $charge): void
