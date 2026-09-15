@@ -128,6 +128,13 @@ class Service
 
     public function setParamValue($param, $value, $createIfNotExists = true): bool
     {
+        // Normalize the key so the permission check and the queries below
+        // agree on it, then reject anything outside the canonical charset.
+        $param = strtolower((string) $param);
+        if (!preg_match('/^[a-z0-9_]+$/', $param)) {
+            throw new \FOSSBilling\InformationException('Invalid parameter name, received: param_.', ['param_' => $param]);
+        }
+
         // Skip this param if the user isn't permitted to update it.
         if (!$this->canUpdateParam($param)) {
             return true;
@@ -821,6 +828,10 @@ class Service
 
     private function canUpdateParam(string $param): bool
     {
+        // Compare case-insensitively so the check agrees with the lookup,
+        // which resolves case-insensitively on some database drivers.
+        $param = strtolower($param);
+
         $company = [
             'company_name',
             'company_email',
