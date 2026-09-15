@@ -92,6 +92,8 @@ class ServiceTransaction implements InjectionAwareInterface
         $model->setAmount(isset($data['amount']) ? (string) $data['amount'] : $model->getAmount());
         $model->setCurrency($data['currency'] ?? $model->getCurrency());
         $model->setType($data['type'] ?? $model->getType());
+        $model->setSId($data['s_id'] ?? $model->getSId());
+        $model->setSPeriod($data['s_period'] ?? $model->getSPeriod());
         $model->setNote($data['note'] ?? $model->getNote());
         $model->setStatus($data['status'] ?? $model->getStatus());
         $model->setError($data['error'] ?? $model->getError());
