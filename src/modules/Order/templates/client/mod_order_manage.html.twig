@@ -53,6 +53,18 @@
                             <td>{{ order.total|format_currency(order.currency ?? default_currency) }}</td>
                         </tr>
 
+                        {% if order.discount and order.discount > 0 %}
+                            <tr>
+                                <td><label>{{ 'Order Discount'|trans }}</label></td>
+                                <td>-{{ order.discount|format_currency(order.currency ?? default_currency) }}</td>
+                            </tr>
+
+                            <tr>
+                                <td><label>{{ 'Payment Amount After Discount'|trans }}</label></td>
+                                <td>{{ (order.total - order.discount)|format_currency(order.currency ?? default_currency) }}</td>
+                            </tr>
+                        {% endif %}
+
                         {% if order.period %}
                             <tr>
                                 <td><label>{{ 'Billing Cycle'|trans }}</label></td>

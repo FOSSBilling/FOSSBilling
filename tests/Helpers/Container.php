@@ -31,21 +31,41 @@ function container(): Container
     $di['filesystem'] = fn (): \Symfony\Component\Filesystem\Filesystem => new \Symfony\Component\Filesystem\Filesystem();
     $di['logger'] = fn (): \Psr\Log\LoggerInterface => new class extends AbstractLogger {
         public array $calls = [];
+        private string $channel = 'application';
+        private array $context = [];
 
         public function log($level, string|\Stringable $message, array $context = []): void
         {
-            $this->calls[] = ['method' => $level, 'params' => [$message, $context]];
+            $effectiveContext = [...$this->context, ...$context];
+            $call = ['method' => $level, 'params' => [$message, $effectiveContext]];
+            if ($this->channel !== 'application') {
+                $call['channel'] = $this->channel;
+            }
+
+            $this->calls[] = $call;
         }
 
-        public function setChannel(string $channel): self
+        public function withChannel(string $channel): static
         {
-            $this->calls[] = ['method' => 'setChannel', 'params' => [$channel]];
+            $this->calls[] = ['method' => 'withChannel', 'params' => [$channel]];
+            $logger = clone $this;
+            $logger->calls = &$this->calls;
+            $logger->channel = $channel;
 
-            return $this;
+            return $logger;
+        }
+
+        public function withContext(array $context): static
+        {
+            $this->calls[] = ['method' => 'withContext', 'params' => [$context]];
+            $logger = clone $this;
+            $logger->calls = &$this->calls;
+            $logger->context = [...$this->context, ...$context];
+
+            return $logger;
         }
     };
     $di['request'] = fn (): Request => Request::create('http://localhost/');
-    $di['filesystem'] = fn (): \Symfony\Component\Filesystem\Filesystem => new \Symfony\Component\Filesystem\Filesystem();
     $di['session'] = static function (): object {
         $session = \Mockery::mock(\FOSSBilling\Session::class)->shouldIgnoreMissing();
         $session->shouldReceive('regenerateId')->byDefault()->andReturnNull();
@@ -54,17 +74,6 @@ function container(): Container
         $session->shouldReceive('delete')->byDefault()->andReturnNull();
 
         return $session;
-    };
-    $di['db'] = static function (): object {
-        $db = \Mockery::mock(\Box_Database::class)->shouldIgnoreMissing();
-        $db->shouldReceive('find')->byDefault()->andReturn([]);
-        $db->shouldReceive('getAll')->byDefault()->andReturn([]);
-        $db->shouldReceive('getAssoc')->byDefault()->andReturn([]);
-        $db->shouldReceive('toArray')->byDefault()->andReturn([]);
-        $db->shouldReceive('exec')->byDefault()->andReturn(1);
-        $db->shouldReceive('transaction')->byDefault()->andReturnUsing(static fn (callable $callback): mixed => $callback());
-
-        return $db;
     };
     $di['dbal'] = static function (): object {
         $dbal = \Mockery::mock(\Doctrine\DBAL\Connection::class)->shouldIgnoreMissing();
@@ -145,6 +154,11 @@ function container(): Container
         {
             return ['list' => [], 'total' => 0, 'pages' => 0, 'page' => 1, 'per_page' => 20];
         }
+
+        public function paginateDoctrineQuery(\Doctrine\ORM\QueryBuilder $qb, \FOSSBilling\PaginationOptions $pagination, mixed ...$apiArrayArgs): array
+        {
+            return ['list' => [], 'total' => 0, 'pages' => 0, 'page' => $pagination->page, 'per_page' => $pagination->perPage];
+        }
     };
     $di['rate_limiter'] = fn (): object => new class {
         public function consume(string $policyName, string $subject, int $tokens = 1): \FOSSBilling\Security\RateLimitResult
@@ -159,9 +173,46 @@ function container(): Container
     };
     $di['mod_config'] = $di->protect(fn (string $name): array => []);
     $di['cookie_queue'] = fn (): \FOSSBilling\Http\CookieQueue => new \FOSSBilling\Http\CookieQueue();
-    $di['em'] = static function (): object {
+    $di['em'] = static function () use ($di): object {
         $adminGroupRepository = \Mockery::mock(\Box\Mod\Staff\Repository\AdminGroupRepository::class)->shouldIgnoreMissing();
         $adminGroupMemberRepository = \Mockery::mock(\Box\Mod\Staff\Repository\AdminGroupMemberRepository::class)->shouldIgnoreMissing();
+        $adminPasswordResetRepository = \Mockery::mock(\Box\Mod\Staff\Repository\AdminPasswordResetRepository::class)->shouldIgnoreMissing();
+
+        $clientQueryBuilder = \Mockery::mock(\Doctrine\ORM\QueryBuilder::class)->shouldIgnoreMissing();
+        foreach (['andWhere', 'orWhere', 'setParameter', 'orderBy', 'setFirstResult', 'setMaxResults', 'delete', 'where'] as $method) {
+            $clientQueryBuilder->shouldReceive($method)->byDefault()->andReturn($clientQueryBuilder);
+        }
+        $clientQuery = \Mockery::mock(\Doctrine\ORM\AbstractQuery::class)->shouldIgnoreMissing();
+        $clientQuery->shouldReceive('getResult')->byDefault()->andReturn([]);
+        $clientQuery->shouldReceive('execute')->byDefault()->andReturn(0);
+        $clientQueryBuilder->shouldReceive('getQuery')->byDefault()->andReturn($clientQuery);
+
+        $clientRepository = \Mockery::mock(\Box\Mod\Client\Repository\ClientRepository::class)->shouldIgnoreMissing();
+        $clientRepository->shouldReceive('find')->byDefault()->andReturnUsing(static fn (int $id): ?object => createEntity(\Box\Mod\Client\Entity\Client::class, ['id' => $id]));
+        $clientRepository->shouldReceive('findOneBy')->byDefault()->andReturn(null);
+        $clientRepository->shouldReceive('findOneByEmail')->byDefault()->andReturnUsing(static fn (string $email): ?object => createEntity(\Box\Mod\Client\Entity\Client::class, ['id' => 1, 'email' => $email]));
+        $clientRepository->shouldReceive('findOneByEmailAndActive')->byDefault()->andReturnUsing(static fn (string $email): ?object => createEntity(\Box\Mod\Client\Entity\Client::class, ['id' => 1, 'email' => $email, 'status' => 'active']));
+        $clientRepository->shouldReceive('findOneByApiToken')->byDefault()->andReturn(null);
+        $clientRepository->shouldReceive('getIdNamePairs')->byDefault()->andReturn([]);
+        $clientRepository->shouldReceive('getStatusCounts')->byDefault()->andReturn(['active' => 1, 'suspended' => 0, 'canceled' => 0]);
+        $clientRepository->shouldReceive('createQueryBuilder')->byDefault()->andReturn($clientQueryBuilder);
+
+        $clientBalanceRepository = \Mockery::mock(\Box\Mod\Client\Repository\ClientBalanceRepository::class)->shouldIgnoreMissing();
+        $clientBalanceRepository->shouldReceive('find')->byDefault()->andReturnUsing(static fn (int $id): ?object => createEntity(\Box\Mod\Client\Entity\ClientBalance::class, ['id' => $id]));
+        $clientBalanceRepository->shouldReceive('findBy')->byDefault()->andReturn([]);
+        $clientBalanceRepository->shouldReceive('getClientBalanceSum')->byDefault()->andReturn(0.0);
+
+        $clientGroupRepository = \Mockery::mock(\Box\Mod\Client\Repository\ClientGroupRepository::class)->shouldIgnoreMissing();
+        $clientGroupRepository->shouldReceive('find')->byDefault()->andReturnUsing(static fn (int $id): ?object => createEntity(\Box\Mod\Client\Entity\ClientGroup::class, ['id' => $id]));
+        $clientGroupRepository->shouldReceive('getIdTitlePairs')->byDefault()->andReturn([]);
+
+        $clientPasswordResetRepository = \Mockery::mock(\Box\Mod\Client\Repository\ClientPasswordResetRepository::class)->shouldIgnoreMissing();
+        $clientPasswordResetRepository->shouldReceive('find')->byDefault()->andReturn(null);
+        $clientPasswordResetRepository->shouldReceive('findBy')->byDefault()->andReturn([]);
+        $clientPasswordResetRepository->shouldReceive('findOneBy')->byDefault()->andReturn(null);
+        $clientPasswordResetRepository->shouldReceive('findOneByHash')->byDefault()->andReturn(null);
+        $clientPasswordResetRepository->shouldReceive('findExpiredBefore')->byDefault()->andReturn([]);
+        $clientPasswordResetRepository->shouldReceive('createQueryBuilder')->byDefault()->andReturn($clientQueryBuilder);
 
         $extensionMetaRepository = \Mockery::mock(\Box\Mod\Extension\Repository\ExtensionMetaRepository::class)->shouldIgnoreMissing();
         $extensionMetaRepository->shouldReceive('findOneByExtensionAndScope')->byDefault()->andReturn(null);
@@ -191,10 +242,73 @@ function container(): Container
         $supportTicketNoteRepository = \Mockery::mock(\Box\Mod\Support\Repository\SupportTicketNoteRepository::class)->shouldIgnoreMissing();
         $supportTicketMessageHistoryRepository = \Mockery::mock(\Box\Mod\Support\Repository\SupportTicketMessageHistoryRepository::class)->shouldIgnoreMissing();
 
+        $payGatewayRepository = \Mockery::mock(\Box\Mod\Invoice\Repository\PayGatewayRepository::class)->shouldIgnoreMissing();
+        $payGatewayRepository->shouldReceive('find')->byDefault()->andReturn(null);
+        $payGatewayRepository->shouldReceive('findEnabledOrderedByIdDesc')->byDefault()->andReturn([]);
+        $payGatewayRepository->shouldReceive('findEnabledByGateway')->byDefault()->andReturn(null);
+        $payGatewayQueryBuilder = \Mockery::mock(\Doctrine\ORM\QueryBuilder::class)->shouldIgnoreMissing();
+        foreach (['andWhere', 'orWhere', 'setParameter', 'orderBy', 'setFirstResult', 'setMaxResults', 'where'] as $method) {
+            $payGatewayQueryBuilder->shouldReceive($method)->byDefault()->andReturn($payGatewayQueryBuilder);
+        }
+        $payGatewayRepository->shouldReceive('getSearchQueryBuilder')->byDefault()->andReturn($payGatewayQueryBuilder);
+
+        $transactionRepository = \Mockery::mock(\Box\Mod\Invoice\Repository\TransactionRepository::class)->shouldIgnoreMissing();
+        $transactionRepository->shouldReceive('find')->byDefault()->andReturn(null);
+        $transactionRepository->shouldReceive('findOneBy')->byDefault()->andReturn(null);
+        $transactionRepository->shouldReceive('findOneByTxnIdAndGatewayId')->byDefault()->andReturn(null);
+        $transactionRepository->shouldReceive('findOneByGatewayIdAndIpnHash')->byDefault()->andReturn(null);
+        $transactionRepository->shouldReceive('findOneProcessedByTxnId')->byDefault()->andReturn(null);
+        $transactionRepository->shouldReceive('findActiveByTxnIdAndGatewayId')->byDefault()->andReturn(null);
+        $transactionRepository->shouldReceive('findProcessingOrProcessedByTxnId')->byDefault()->andReturn(null);
+        $transactionRepository->shouldReceive('competingTransactionQuery')->byDefault()->andReturn($payGatewayQueryBuilder);
+
+        $subscriptionRepository = \Mockery::mock(\Box\Mod\Invoice\Repository\SubscriptionRepository::class)->shouldIgnoreMissing();
+        $subscriptionRepository->shouldReceive('find')->byDefault()->andReturn(null);
+        $subscriptionRepository->shouldReceive('findOneBy')->byDefault()->andReturn(null);
+        $subscriptionRepository->shouldReceive('findOneBySid')->byDefault()->andReturn(null);
+
+        $invoiceRepository = \Mockery::mock(\Box\Mod\Invoice\Repository\InvoiceRepository::class)->shouldIgnoreMissing();
+        $invoiceRepository->shouldReceive('find')->byDefault()->andReturn(null);
+        $invoiceRepository->shouldReceive('findByHash')->byDefault()->andReturn(null);
+        $invoiceRepository->shouldReceive('findLatestWithNr')->byDefault()->andReturn(null);
+        $invoiceRepository->shouldReceive('findPaid')->byDefault()->andReturn([]);
+        $invoiceRepository->shouldReceive('findByClientId')->byDefault()->andReturn([]);
+        $invoiceRepository->shouldReceive('findUnpaidApprovedNotRemindedBefore')->byDefault()->andReturn([]);
+        $invoiceRepository->shouldReceive('findUnpaidOlderThan')->byDefault()->andReturn([]);
+        $invoiceRepository->shouldReceive('findPaidByRelId')->byDefault()->andReturn([]);
+
+        $invoiceItemRepository = \Mockery::mock(\Box\Mod\Invoice\Repository\InvoiceItemRepository::class)->shouldIgnoreMissing();
+        $invoiceItemRepository->shouldReceive('find')->byDefault()->andReturn(null);
+        $invoiceItemRepository->shouldReceive('findByInvoiceId')->byDefault()->andReturn([]);
+
+        $customPageRepository = \Mockery::mock(\Box\Mod\Custompages\Repository\CustomPageRepository::class)->shouldIgnoreMissing();
+        $customPageRepository->shouldReceive('find')->byDefault()->andReturn(null);
+        $customPageRepository->shouldReceive('findOneBySlug')->byDefault()->andReturn(null);
+        $customPageRepository->shouldReceive('findOneBySlugExcludingId')->byDefault()->andReturn(null);
+        $customPageRepository->shouldReceive('deleteByIds')->byDefault()->andReturn(0);
+        $customPageQueryBuilder = \Mockery::mock(\Doctrine\ORM\QueryBuilder::class)->shouldIgnoreMissing();
+        foreach (['andWhere', 'orWhere', 'setParameter', 'orderBy', 'setFirstResult', 'setMaxResults', 'where'] as $method) {
+            $customPageQueryBuilder->shouldReceive($method)->byDefault()->andReturn($customPageQueryBuilder);
+        }
+        $customPageRepository->shouldReceive('getSearchQueryBuilder')->byDefault()->andReturn($customPageQueryBuilder);
+
+        $settingRepository = \Mockery::mock(\Box\Mod\System\Repository\SettingRepository::class)->shouldIgnoreMissing();
+        $settingRepository->shouldReceive('findOneByParam')->byDefault()->andReturn(null);
+        $settingRepository->shouldReceive('findOnePublicByParam')->byDefault()->andReturn(null);
+        $settingRepository->shouldReceive('findByParams')->byDefault()->andReturn([]);
+        $settingRepository->shouldReceive('findAll')->byDefault()->andReturn([]);
+
         $em = \Mockery::mock(\Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
+        $em->shouldReceive('wrapInTransaction')->byDefault()->andReturnUsing(static fn (callable $callback): mixed => $callback());
+        $em->shouldReceive('getConnection')->byDefault()->andReturn($di['dbal']);
         $em->shouldReceive('getRepository')->byDefault()->andReturnUsing(static fn (string $class): object => match ($class) {
+            \Box\Mod\Client\Entity\Client::class => $clientRepository,
+            \Box\Mod\Client\Entity\ClientBalance::class => $clientBalanceRepository,
+            \Box\Mod\Client\Entity\ClientGroup::class => $clientGroupRepository,
+            \Box\Mod\Client\Entity\ClientPasswordReset::class => $clientPasswordResetRepository,
             \Box\Mod\Staff\Entity\AdminGroup::class => $adminGroupRepository,
             \Box\Mod\Staff\Entity\AdminGroupMember::class => $adminGroupMemberRepository,
+            \Box\Mod\Staff\Entity\AdminPasswordReset::class => $adminPasswordResetRepository,
             \Box\Mod\Email\Entity\EmailTemplate::class => $emailTemplateRepository,
             \Box\Mod\Email\Entity\EmailTemplateGroup::class => $emailTemplateGroupRepository,
             \Box\Mod\Email\Entity\ActivityClientEmail::class => $activityClientEmailRepository,
@@ -208,6 +322,13 @@ function container(): Container
             \Box\Mod\Support\Entity\SupportTicketMessage::class => $supportTicketMessageRepository,
             \Box\Mod\Support\Entity\SupportTicketNote::class => $supportTicketNoteRepository,
             \Box\Mod\Support\Entity\SupportTicketMessageHistory::class => $supportTicketMessageHistoryRepository,
+            \Box\Mod\Invoice\Entity\PayGateway::class => $payGatewayRepository,
+            \Box\Mod\Invoice\Entity\Transaction::class => $transactionRepository,
+            \Box\Mod\Invoice\Entity\Subscription::class => $subscriptionRepository,
+            \Box\Mod\Invoice\Entity\Invoice::class => $invoiceRepository,
+            \Box\Mod\Invoice\Entity\InvoiceItem::class => $invoiceItemRepository,
+            \Box\Mod\Custompages\Entity\CustomPage::class => $customPageRepository,
+            \Box\Mod\System\Entity\Setting::class => $settingRepository,
             \Box\Mod\Extension\Entity\Extension::class => \Mockery::mock(\Box\Mod\Extension\Repository\ExtensionRepository::class)->shouldIgnoreMissing(),
             default => $extensionMetaRepository,
         });
@@ -301,6 +422,117 @@ function accessPrivate(object $instance, string $property, mixed $value = null):
 
     // Otherwise, get the property value
     return $prop->getValue($instance);
+}
+
+/**
+ * Create a Doctrine entity proxy that accepts snake_case and camelCase properties.
+ *
+ * The helper keeps focused unit tests concise while leaving production entities
+ * with explicit getters and setters.
+ *
+ * @param class-string $class
+ */
+function createEntity(string $class, array $properties = []): object
+{
+    static $proxied = [];
+
+    $key = md5($class);
+    if (!isset($proxied[$key])) {
+        $namespace = 'Tests\\Helpers';
+        $shortName = 'EntityProxy_' . $key;
+        $fqcn = $namespace . '\\' . $shortName;
+        $code = sprintf(
+            <<<'PHP'
+                namespace %s;
+
+                class %s extends \%s
+                {
+                    private array $_extra = [];
+
+                    public function __construct(array $properties = [])
+                    {
+                        foreach ($properties as $name => $value) {
+                            $this->$name = $value;
+                        }
+                    }
+
+                        public function __set(string $name, mixed $value): void
+                        {
+                            $method = 'set' . str_replace('_', '', ucwords($name, '_'));
+                            if (method_exists($this, $method)) {
+                                $parameter = (new \ReflectionMethod($this, $method))->getParameters()[0] ?? null;
+                                $type = $parameter?->getType();
+                                if ($type instanceof \ReflectionNamedType) {
+                                    if ($type->getName() === \DateTime::class && is_string($value)) {
+                                        $value = new \DateTime($value);
+                                    } elseif ($type->getName() === 'int' && is_string($value) && ctype_digit($value)) {
+                                        $value = (int) $value;
+                                    } elseif ($type->getName() === 'float' && is_numeric($value)) {
+                                        $value = (float) $value;
+                                    } elseif ($type->getName() === 'bool' && is_int($value)) {
+                                        $value = (bool) $value;
+                                    } elseif ($type->getName() === 'string' && is_scalar($value)) {
+                                        $value = (string) $value;
+                                    }
+                                }
+                                $this->$method($value);
+                                return;
+                            }
+
+                            $propertyName = lcfirst(str_replace('_', '', ucwords($name, '_')));
+                            $reflection = new \ReflectionClass($this);
+                            while (!$reflection->hasProperty($propertyName) && ($parent = $reflection->getParentClass())) {
+                                $reflection = $parent;
+                            }
+                            if ($reflection->hasProperty($propertyName)) {
+                                $property = $reflection->getProperty($propertyName);
+                                $type = $property->getType();
+                                if ($type instanceof \ReflectionNamedType) {
+                                    if ($type->getName() === \DateTime::class && is_string($value)) {
+                                        $value = new \DateTime($value);
+                                    } elseif ($type->getName() === 'int' && is_numeric($value)) {
+                                        $value = (int) $value;
+                                    } elseif ($type->getName() === 'bool' && is_int($value)) {
+                                        $value = (bool) $value;
+                                    } elseif ($type->getName() === 'string' && is_scalar($value)) {
+                                        $value = (string) $value;
+                                    }
+                                }
+                                $property->setValue($this, $value);
+                                return;
+                            }
+
+                            $this->_extra[$name] = $value;
+                        }
+
+                    public function __get(string $name): mixed
+                    {
+                        if (array_key_exists($name, $this->_extra)) {
+                            return $this->_extra[$name];
+                        }
+
+                        $method = 'get' . str_replace('_', '', ucwords($name, '_'));
+
+                        return method_exists($this, $method) ? $this->$method() : null;
+                    }
+
+                    public function __isset(string $name): bool
+                    {
+                        return $this->__get($name) !== null;
+                    }
+                }
+                PHP,
+            $namespace,
+            $shortName,
+            $class,
+        );
+        eval($code);
+        $proxied[$key] = $fqcn;
+    }
+
+    $proxy = $proxied[$key];
+
+    return new $proxy($properties);
 }
 
 /**

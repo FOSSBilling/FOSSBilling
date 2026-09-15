@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace FOSSBilling;
 
+use FOSSBilling\Cache\CacheFactory;
+use FOSSBilling\Doctrine\EntityManagerFactory;
 use Symfony\Component\Filesystem\Exception\FileNotFoundException;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
@@ -128,6 +130,22 @@ class Config
             } catch (\Exception) {
                 // We shouldn't need to halt execution if there was an error when clearing the cache
             }
+
+            // Also flush the configured application/rate-limiter/Doctrine cache pools. The filesystem
+            // wipe above only clears Twig's cache and Doctrine's proxy classes; it won't reach a
+            // Redis/Memcached-backed pool.
+            CacheFactory::clearAll();
+
+            // clearAll() above only reaches CacheFactory::NAMESPACE_DOCTRINE's own bare namespace -
+            // EntityManagerFactory actually stores the Doctrine metadata/query/result cache under a
+            // namespace hashed from the current entity files' mtimes/sizes (so it self-invalidates
+            // on an entity change without needing this call at all), which clearAll()'s fixed
+            // namespace list can never know to include. Harmless to skip on the filesystem driver
+            // (the PATH_CACHE wipe above already covers it), but a Redis/Memcached-backed pool has
+            // no other way to ever be reached. clearNamespace() is best-effort, same as clearAll()
+            // itself above - config.php is already written by this point, so a cache-backend
+            // hiccup here must not make setConfig() look like it failed.
+            CacheFactory::clearNamespace(EntityManagerFactory::metadataCacheNamespace());
         }
     }
 
@@ -157,7 +175,7 @@ class Config
      *
      * @throws Exception if the number of recursive iterations passes this class's MAX_RECURSION_LEVEL
      */
-    private static function recursivelyIdentAndFormat(array|string|bool|float|int $value, $level = 1): string
+    private static function recursivelyIdentAndFormat(array|string|bool|float|int|null $value, $level = 1): string
     {
         if ($level > self::MAX_RECURSION_LEVEL) {
             throw new Exception('Too many iterations were performed while formatting the config file');

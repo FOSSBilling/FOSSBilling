@@ -28,7 +28,7 @@ final class CombinedTwigLoader extends FilesystemLoader
     {
         parent::__construct();
 
-        foreach (['admin_default', 'huraga'] as $code) {
+        foreach (['default/admin', 'default/client'] as $code) {
             $custom = Path::join($themesPath, $code, 'html_custom');
             if (is_dir($custom)) {
                 $this->addPath($custom);
@@ -37,6 +37,14 @@ final class CombinedTwigLoader extends FilesystemLoader
             if (is_dir($default)) {
                 $this->addPath($default);
             }
+        }
+
+        // Package-shared fallback tier, lowest priority (matching production
+        // TwigLoader's ordering) - renders whatever `default/shared/html`
+        // provides for either area's templates that don't override it.
+        $shared = Path::join($themesPath, 'default', 'shared', 'html');
+        if (is_dir($shared)) {
+            $this->addPath($shared);
         }
 
         $finder = new Finder();

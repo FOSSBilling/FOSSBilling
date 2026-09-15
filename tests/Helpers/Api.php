@@ -108,7 +108,7 @@ class ApiClient
  */
 class ApiResponse
 {
-    private array $decodedResponse = [];
+    private array $decodedResponse;
 
     public function __construct(
         private readonly int $code,

@@ -67,7 +67,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         }
 
         /**@todo Doctrine: Replace with actual Admin entity once it's migrated to Doctrine. */
-        $admin = $repo->findAdminSummary((int) $post->getAdminId()) ?? [];
+        $admin = $post->getAdminId() !== null ? ($repo->findAdminSummary($post->getAdminId()) ?? []) : [];
 
         $post->setAdminData($admin);
 

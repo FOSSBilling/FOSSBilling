@@ -14,11 +14,21 @@ use Dompdf\Dompdf;
 use Dompdf\Options;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
+use Twig\Environment;
+use Twig\Loader\ArrayLoader;
 
 test('default PDF fonts cover Thai and Lao text', function (): void {
     $filesystem = new Filesystem();
     $templatePath = Path::join(PATH_ROOT, 'modules', 'Invoice', 'templates', 'pdf');
     $css = $filesystem->readFile(Path::join($templatePath, 'default-invoice.css'));
+    $template = $filesystem->readFile(Path::join($templatePath, 'default-invoice.twig'));
+
+    preg_match('/<style>.*?<\/style>/s', $template, $styleBlock);
+    expect($styleBlock)->toHaveCount(1);
+
+    $twig = new Environment(new ArrayLoader(['style' => $styleBlock[0]]), ['autoescape' => 'html']);
+    $renderedStyle = $twig->render('style', ['css' => $css]);
+    expect($renderedStyle)->not->toContain('&quot;');
 
     $fontCachePath = Path::join(sys_get_temp_dir(), 'fossbilling-pdf-font-test-' . bin2hex(random_bytes(6)));
     $filesystem->mkdir($fontCachePath);
@@ -31,7 +41,7 @@ test('default PDF fonts cover Thai and Lao text', function (): void {
 
         $pdf = new Dompdf($options);
         $pdf->setBasePath($templatePath);
-        $pdf->loadHtml("<style>{$css}</style><p>ภูเก็ต ພູເກັດ</p>");
+        $pdf->loadHtml("{$renderedStyle}<p>ภูเก็ต ພູເກັດ</p>");
         $pdf->render();
 
         $cases = [

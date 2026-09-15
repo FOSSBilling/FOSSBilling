@@ -37,7 +37,7 @@ function appClientWithRender(callable $render, bool $clientLoggedIn = false): Bo
 
     $di = new Pimple\Container();
     $di['logger'] = new class {
-        public function setChannel(string $channel): self
+        public function withChannel(string $channel): self
         {
             return $this;
         }
@@ -60,7 +60,7 @@ function appClientWithRender(callable $render, bool $clientLoggedIn = false): Bo
     $di['mod_service'] = $di->protect(static fn (): object => $extensionService);
     $di['auth'] = Mockery::mock(Box_Authorization::class)
         ->shouldReceive('isClientLoggedIn')->andReturn($clientLoggedIn)->getMock();
-    $di['url'] = Mockery::mock(Box_Url::class)
+    $di['url'] = Mockery::mock(FOSSBilling\Url::class)
         ->shouldReceive('link')->andReturnArg(0)->getMock();
     $app->setDi($di);
     $app->setUrl('/test');
@@ -153,6 +153,55 @@ test('get_custom_page still returns 404 when the top-level template is missing',
     $response = $app->get_custom_page('signup');
 
     expect($response->getStatusCode())->toBe(404);
+});
+
+test('render() converts a Twig cache write failure into a report:false exception (regression for FOSSBILLING-EBW)', function (string $message): void {
+    $app = new class extends Box_AppClient {
+        public function triggerCacheWriteFailure(RuntimeException $e): never
+        {
+            $this->convertCacheWriteFailure($e);
+        }
+    };
+    $di = new Pimple\Container();
+    $di['request'] = Request::create('http://localhost/test');
+    $di['logger'] = new class {
+        public function withChannel(string $channel): self
+        {
+            return $this;
+        }
+
+        public function error(string|Stringable $message, array $context = []): void
+        {
+        }
+    };
+    $app->setDi($di);
+
+    try {
+        $app->triggerCacheWriteFailure(new RuntimeException($message));
+        expect(false)->toBeTrue('Expected a FOSSBilling\Exception to be thrown.');
+    } catch (FOSSBilling\Exception $e) {
+        expect($e->getCode())->toBe(5002)
+            ->and(FOSSBilling\ErrorPage::getCodeInfo($e->getCode())['report'])->toBeFalse();
+    }
+})->with([
+    'directory does not exist and cannot be created' => ['Unable to create the cache directory (/var/www/data/cache/7d).'],
+    'directory exists but is not writable' => ['Unable to write in the cache directory (/var/www/data/cache/7d).'],
+    'cache file itself could not be written' => ['Failed to write cache file "/var/www/data/cache/7d/abc123.php".'],
+]);
+
+test('render() rethrows a RuntimeException unrelated to the Twig cache unchanged', function (): void {
+    $app = new class extends Box_AppClient {
+        public function triggerCacheWriteFailure(RuntimeException $e): never
+        {
+            $this->convertCacheWriteFailure($e);
+        }
+    };
+    $di = new Pimple\Container();
+    $di['request'] = Request::create('http://localhost/test');
+    $app->setDi($di);
+
+    expect(fn () => $app->triggerCacheWriteFailure(new RuntimeException('Something else entirely.')))
+        ->toThrow(RuntimeException::class, 'Something else entirely.');
 });
 
 test('numeric custom page paths return a themed 404', function (): void {

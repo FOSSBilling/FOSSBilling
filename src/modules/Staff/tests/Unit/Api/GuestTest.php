@@ -11,6 +11,7 @@
 declare(strict_types=1);
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 use function Tests\Helpers\moduleService;
 
 test('get di', function (): void {
@@ -40,6 +41,14 @@ test('login without password', function (): void {
 
     $guestApi->setDi($di);
     expect(fn () => $guestApi->login(['email' => 'email@domain.com']))->toThrow(FOSSBilling\Exception::class);
+});
+
+test('password reset requires an email', function (): void {
+    $dispatcher = new FOSSBilling\Api\Dispatcher();
+    $guestApi = new Box\Mod\Staff\Api\Guest();
+
+    expect(fn () => $dispatcher->validateRequiredParams($guestApi, 'passwordreset', []))
+        ->toThrow(FOSSBilling\InformationException::class, 'Email required');
 });
 
 test('successful login', function (): void {
@@ -114,20 +123,12 @@ test('updatePassword invalidates existing sessions', function (): void {
     $modMock = Mockery::mock('\\' . FOSSBilling\Module::class);
     $modMock->shouldReceive('getConfig')->atLeast()->once()->andReturn([]);
 
-    $modelPasswordReset = new Model_AdminPasswordReset();
-    $modelPasswordReset->loadBean(new Tests\Helpers\DummyBean());
-    $modelPasswordReset->created_at = date('Y-m-d H:i:s', time() - 300);
+    $admin = \Tests\Helpers\admin(['id' => 1, 'status' => Box\Mod\Staff\Entity\Admin::STATUS_ACTIVE]);
 
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
-    $admin->id = 1;
-    $admin->status = Model_Admin::STATUS_ACTIVE;
+    $passwordReset = createEntity(Box\Mod\Staff\Entity\AdminPasswordReset::class, ['id' => 1, 'admin' => $admin, 'created_at' => new DateTime('-300 seconds')]);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('findOne')->atLeast()->once()->andReturn($modelPasswordReset);
-    $dbMock->shouldReceive('getExistingModelById')->atLeast()->once()->andReturn($admin);
-    $dbMock->shouldReceive('store')->atLeast()->once();
-    $dbMock->shouldReceive('trash')->atLeast()->once();
+    $passwordResetRepository = Mockery::mock(Box\Mod\Staff\Repository\AdminPasswordResetRepository::class);
+    $passwordResetRepository->shouldReceive('findOneByHash')->once()->with('hashedString')->andReturn($passwordReset);
 
     $eventMock = Mockery::mock('\Box_EventManager');
     $eventMock->shouldReceive('fire')->times(2);
@@ -142,7 +143,10 @@ test('updatePassword invalidates existing sessions', function (): void {
     $profileServiceMock->shouldReceive('invalidateSessions')->atLeast()->once();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\Staff\Entity\AdminPasswordReset::class)->andReturn($passwordResetRepository);
+    $di['em']->shouldReceive('persist')->once()->with($admin);
+    $di['em']->shouldReceive('remove')->once()->with($passwordReset);
+    $di['em']->shouldReceive('flush')->atLeast()->once();
     $di['events_manager'] = $eventMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['password'] = $passwordMock;

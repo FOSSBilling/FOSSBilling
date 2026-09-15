@@ -1,0 +1,19 @@
+{
+  "name": "huraga",
+  "scripts": {
+    "dev": "node ./esbuild.mts",
+    "build": "node ./esbuild.mts"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "dependencies": {
+    "bootstrap": "^5.3.3",
+    "flag-icons": "^7.2.3",
+    "intl-tel-input": "^29.1.0",
+    "tom-select": "^2.3.1"
+  },
+  "devDependencies": {
+    "@tabler/icons": "3.46.0"
+  }
+}

@@ -32,15 +32,16 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
         return [
             'label' => 'Manages domains on Internetbs via API',
             'form' => [
-                'apikey' => ['text', [
+                'apikey' => ['password', [
                     'label' => 'Internetbs API Key',
                     'description' => 'Internetbs API Key',
+                    'secret' => true,
                 ],
                 ],
                 'password' => ['password', [
                     'label' => 'Internetbs API Password',
                     'description' => 'Internetbs API Password',
-                    'renderPassword' => true,
+                    'secret' => true,
                 ],
                 ],
             ],
@@ -369,7 +370,7 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
         }
 
         if ($this->isTestEnv()) {
-            error_log(print_r($result, true));
+            $this->getLog()->debug('Internet.bs response received.', ['status' => $result['status'] ?? null]);
         }
 
         return $result;

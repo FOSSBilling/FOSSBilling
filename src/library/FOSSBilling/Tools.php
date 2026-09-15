@@ -15,25 +15,14 @@ use Egulias\EmailValidator\EmailValidator;
 use Egulias\EmailValidator\Validation\DNSCheckValidation;
 use Egulias\EmailValidator\Validation\MultipleValidationWithAnd;
 use Egulias\EmailValidator\Validation\RFCValidation;
-use Symfony\Component\Filesystem\Filesystem;
-use Symfony\Component\Filesystem\Path;
 
 class Tools
 {
     protected ?\Pimple\Container $di = null;
-    private Filesystem $filesystem;
-
-    public function __construct()
-    {
-        $this->filesystem = new Filesystem();
-    }
 
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
-        if (isset($di['filesystem'])) {
-            $this->filesystem = $di['filesystem'];
-        }
     }
 
     public function getDi(): ?\Pimple\Container
@@ -153,18 +142,6 @@ class Tools
         return $result;
     }
 
-    public function getTable($type)
-    {
-        $class = 'Model_' . ucfirst((string) $type) . 'Table';
-        $file = Path::join(PATH_LIBRARY, 'Model', "{$type}Table.php");
-        if (!$this->filesystem->exists($file)) {
-            throw new Exception('Service class :class was not found in :path', [':class' => $class, ':path' => $file]);
-        }
-        require_once $file;
-
-        return new $class();
-    }
-
     /**
      * @return mixed[]
      */
@@ -175,9 +152,12 @@ class Tools
         }
 
         $count = self::safeCount($ids);
-        $slots = $count ? implode(',', array_fill(0, $count, '?')) : ''; // same as RedBean genSlots() method
+        $slots = $count ? implode(',', array_fill(0, $count, '?')) : '';
 
-        $rows = $this->di['db']->getAll('SELECT id, title FROM ' . $table . ' WHERE id in (' . $slots . ')', $ids);
+        $rows = $this->di['em']->getConnection()->fetchAllAssociative(
+            'SELECT id, title FROM ' . $table . ' WHERE id in (' . $slots . ')',
+            $ids
+        );
 
         $result = [];
         foreach ($rows as $record) {
@@ -194,8 +174,8 @@ class Tools
      */
     public function validateAndSanitizeEmail(string $email, bool $throw = true, bool $checkDNS = true)
     {
-        $email = htmlspecialchars($email);
-
+        // Validated and returned raw: `&` is legal in an address, so encoding
+        // here would corrupt stored addresses and wrongly reject valid ones.
         $validator = new EmailValidator();
         if (Environment::isProduction() && $checkDNS) {
             $validations = new MultipleValidationWithAnd([
@@ -375,12 +355,15 @@ class Tools
                     return $ip;
                 }
             } catch (\Exception $e) {
-                error_log(sprintf(
-                    'Error fetching external IP from "%s" (%s): %s',
-                    $service,
-                    $e::class,
-                    $e->getMessage()
-                ));
+                $this->di['logger']->error(
+                    'Error fetching external IP from "{service}" ({exception_class}): {exception_message}',
+                    [
+                        'service' => $service,
+                        'exception_class' => $e::class,
+                        'exception_message' => $e->getMessage(),
+                        'exception' => $e,
+                    ]
+                );
             }
         }
 

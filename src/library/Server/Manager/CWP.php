@@ -410,7 +410,7 @@ class Server_Manager_CWP extends Server_Manager
 
         // If the status is not 'OK', log an error message and return false
         if ($status !== 'OK') {
-            error_log('CWP Server manager error. Status: ' . $status . '. Message: ' . $msg);
+            $this->getLog()->error('CWP Server manager error. Status: ' . $status . '. Message: ' . $msg);
 
             return false;
         }

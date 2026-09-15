@@ -28,6 +28,7 @@ use Symfony\Component\Filesystem\Path;
 class UpdateFinalization implements InjectionAwareInterface
 {
     public const string STATE_FILENAME = 'update-finalization.json';
+    private const string FINALIZATION_LOCK_FILENAME = 'update-finalization.lock';
 
     private const string STATUS_PENDING = 'pending';
     private const string STATUS_FINALIZED = 'finalized';
@@ -118,6 +119,24 @@ class UpdateFinalization implements InjectionAwareInterface
         );
     }
 
+    /**
+     * Apply an outstanding update before the session service is constructed.
+     *
+     * The Symfony session handler reads the current table shape while it is
+     * being initialized. This must therefore happen before the first request
+     * resolves the session, including after a manually extracted update or an
+     * interrupted automatic update.
+     */
+    public function finalizePendingUpdate(): void
+    {
+        $this->withFinalizationLock(function (): void {
+            $state = $this->ensureCurrentVersionFinalization();
+            if (($state['status'] ?? null) === self::STATUS_PENDING) {
+                $this->finalizeUpdateLocked($state);
+            }
+        });
+    }
+
     public function createPendingState(?string $fromVersion, string $targetVersion, array $context = []): array
     {
         $existing = $this->readState();
@@ -154,8 +173,11 @@ class UpdateFinalization implements InjectionAwareInterface
      */
     public function finalizeUpdate(): array
     {
-        $state = $this->ensureCurrentVersionFinalization();
+        return $this->withFinalizationLock(fn (): array => $this->finalizeUpdateLocked($this->ensureCurrentVersionFinalization()));
+    }
 
+    private function finalizeUpdateLocked(?array $state): array
+    {
         try {
             $this->clearCache();
 
@@ -163,10 +185,12 @@ class UpdateFinalization implements InjectionAwareInterface
             $patcher->applyConfigPatches(force: true);
             $patcher->applyCorePatches(force: true);
 
-            $this->filesystem->remove(Path::join(PATH_ROOT, 'install'));
+            if ($this->shouldRemoveInstallDirectory()) {
+                $this->filesystem->remove(Path::join(PATH_ROOT, 'install'));
+            }
             $this->clearCache();
         } catch (IOException $e) {
-            error_log($e->getMessage());
+            $this->logUpdateError($e->getMessage());
 
             throw new Exception('Unable to clear cache and/or remove install folder while finalizing the update. Further details are available in the error log.');
         }
@@ -178,6 +202,28 @@ class UpdateFinalization implements InjectionAwareInterface
         }
 
         return $this->getStatus(false);
+    }
+
+    private function withFinalizationLock(\Closure $callback): mixed
+    {
+        $this->filesystem->mkdir(PATH_DATA, 0o755);
+        $handle = fopen(Path::join(PATH_DATA, self::FINALIZATION_LOCK_FILENAME), 'c');
+        if ($handle === false) {
+            throw new Exception('Unable to acquire the update finalization lock.');
+        }
+
+        if (!flock($handle, LOCK_EX)) {
+            fclose($handle);
+
+            throw new Exception('Unable to acquire the update finalization lock.');
+        }
+
+        try {
+            return $callback();
+        } finally {
+            flock($handle, LOCK_UN);
+            fclose($handle);
+        }
     }
 
     public function completeFinalization(): void
@@ -300,6 +346,16 @@ class UpdateFinalization implements InjectionAwareInterface
         );
     }
 
+    /**
+     * Mirrors checkInstaller()'s guard in load.php: skipped for explicit dev/test
+     * environments and while debugging, so those instances keep the installer.
+     */
+    private function shouldRemoveInstallDirectory(): bool
+    {
+        // @phpstan-ignore booleanNot.alwaysTrue (DEBUG is a runtime constant)
+        return Environment::isProduction() && !DEBUG;
+    }
+
     private function getAvailablePatchCount(): ?int
     {
         try {
@@ -325,6 +381,22 @@ class UpdateFinalization implements InjectionAwareInterface
     {
         $this->filesystem->remove(PATH_CACHE);
         $this->filesystem->mkdir(PATH_CACHE, 0o755);
+    }
+
+    private function logUpdateError(string $message): void
+    {
+        try {
+            if ($this->di instanceof \Pimple\Container && $this->di->offsetExists('logger')) {
+                $this->di['logger']->withChannel('update')->error($message);
+
+                return;
+            }
+        } catch (\Throwable) {
+            // Logging must not prevent recovery when the old session schema
+            // makes normal dependency initialization unavailable.
+        }
+
+        error_log('FOSSBilling update: ' . $message);
     }
 
     private function stateRequiresFinalization(?array $state): bool

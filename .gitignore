@@ -5,10 +5,12 @@
 /cache
 /src/config.php
 /src/config.old.php
-/src/data/log/*
-/src/data/cache/*
-/src/data/update-finalization.json
+/src/data/*
+!/src/data/.htaccess
+!/src/data/index.html
 !/src/data/cache/.gitkeep
+!/src/data/log/index.html
+!/src/data/uploads/index.html
 /src/public/assets
 /src/vendor/*
 build
@@ -24,8 +26,12 @@ node_modules
 ### friendsofphp/php-cs-fixer ###
 .php-cs-fixer.cache
 src/install/php_error.log
-src/themes/huraga/config/settings_data.json
+src/themes/default/client/config/settings_data.json
 output.log
 
-### Cypress ###
-tests/E2E/Cypress/artifacts
+### Playwright ###
+tests/E2E/Playwright/artifacts
+
+### Demo seed (generated per-run artifacts) ###
+tools/demo-seed/manifest*.json
+.ddev/*.sql.gz

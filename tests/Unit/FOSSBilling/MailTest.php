@@ -53,3 +53,131 @@ test('attach can be called multiple times to add several attachments', function 
 
     expect(mailGetUnderlyingEmail($mail)->getAttachments())->toHaveCount(2);
 });
+
+test('addBcc accepts a single address string', function (): void {
+    $mail = new Mail(
+        ['email' => 'sender@example.com'],
+        ['email' => 'receiver@example.com'],
+        'Subject',
+        '<p>Body</p>',
+        'sendmail'
+    );
+
+    $mail->addBcc('billing@example.com');
+
+    $bcc = mailGetUnderlyingEmail($mail)->getBcc();
+    expect(array_map(static fn (Symfony\Component\Mime\Address $address): string => $address->getAddress(), $bcc))
+        ->toBe(['billing@example.com']);
+});
+
+test('addBcc accepts an array of address strings', function (): void {
+    $mail = new Mail(
+        ['email' => 'sender@example.com'],
+        ['email' => 'receiver@example.com'],
+        'Subject',
+        '<p>Body</p>',
+        'sendmail'
+    );
+
+    $mail->addBcc(['billing@example.com', 'accounts@example.com']);
+
+    $bcc = mailGetUnderlyingEmail($mail)->getBcc();
+    expect(array_map(static fn (Symfony\Component\Mime\Address $address): string => $address->getAddress(), $bcc))
+        ->toBe(['billing@example.com', 'accounts@example.com']);
+});
+
+test('addTo accepts a single address string', function (): void {
+    $mail = new Mail(
+        ['email' => 'sender@example.com'],
+        ['email' => 'receiver@example.com'],
+        'Subject',
+        '<p>Body</p>',
+        'sendmail'
+    );
+
+    $mail->addTo('second@example.com');
+
+    $to = mailGetUnderlyingEmail($mail)->getTo();
+    expect(array_map(static fn (Symfony\Component\Mime\Address $address): string => $address->getAddress(), $to))
+        ->toBe(['receiver@example.com', 'second@example.com']);
+});
+
+test('addTo accepts an array of address strings', function (): void {
+    $mail = new Mail(
+        ['email' => 'sender@example.com'],
+        ['email' => 'receiver@example.com'],
+        'Subject',
+        '<p>Body</p>',
+        'sendmail'
+    );
+
+    $mail->addTo(['second@example.com', 'third@example.com']);
+
+    $to = mailGetUnderlyingEmail($mail)->getTo();
+    expect(array_map(static fn (Symfony\Component\Mime\Address $address): string => $address->getAddress(), $to))
+        ->toBe(['receiver@example.com', 'second@example.com', 'third@example.com']);
+});
+
+test('addCc accepts a single address string', function (): void {
+    $mail = new Mail(
+        ['email' => 'sender@example.com'],
+        ['email' => 'receiver@example.com'],
+        'Subject',
+        '<p>Body</p>',
+        'sendmail'
+    );
+
+    $mail->addCc('manager@example.com');
+
+    $cc = mailGetUnderlyingEmail($mail)->getCc();
+    expect(array_map(static fn (Symfony\Component\Mime\Address $address): string => $address->getAddress(), $cc))
+        ->toBe(['manager@example.com']);
+});
+
+test('addCc accepts an array of address strings', function (): void {
+    $mail = new Mail(
+        ['email' => 'sender@example.com'],
+        ['email' => 'receiver@example.com'],
+        'Subject',
+        '<p>Body</p>',
+        'sendmail'
+    );
+
+    $mail->addCc(['manager@example.com', 'accounts@example.com']);
+
+    $cc = mailGetUnderlyingEmail($mail)->getCc();
+    expect(array_map(static fn (Symfony\Component\Mime\Address $address): string => $address->getAddress(), $cc))
+        ->toBe(['manager@example.com', 'accounts@example.com']);
+});
+
+test('addReplyTo accepts a single address string', function (): void {
+    $mail = new Mail(
+        ['email' => 'sender@example.com'],
+        ['email' => 'receiver@example.com'],
+        'Subject',
+        '<p>Body</p>',
+        'sendmail'
+    );
+
+    $mail->addReplyTo('support@example.com');
+
+    $replyTo = mailGetUnderlyingEmail($mail)->getReplyTo();
+    expect(array_map(static fn (Symfony\Component\Mime\Address $address): string => $address->getAddress(), $replyTo))
+        ->toBe(['support@example.com']);
+});
+
+test('addReplyTo accepts an array of address strings', function (): void {
+    $mail = new Mail(
+        ['email' => 'sender@example.com'],
+        ['email' => 'receiver@example.com'],
+        'Subject',
+        '<p>Body</p>',
+        'sendmail'
+    );
+
+    $mail->addReplyTo(['support@example.com', 'billing@example.com']);
+
+    $replyTo = mailGetUnderlyingEmail($mail)->getReplyTo();
+    expect(array_map(static fn (Symfony\Component\Mime\Address $address): string => $address->getAddress(), $replyTo))
+        ->toBe(['support@example.com', 'billing@example.com']);
+});

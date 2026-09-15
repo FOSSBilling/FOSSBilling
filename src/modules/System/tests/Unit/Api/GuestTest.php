@@ -179,3 +179,45 @@ test('locale returns the active locale string', function (): void {
 
     expect($result)->toBeString()->not->toBeEmpty();
 });
+
+test('countries returns full list when none are configured', function (): void {
+    $api = apiEndpoint(new Box\Mod\System\Api\Guest());
+
+    $modMock = Mockery::mock(FOSSBilling\Module::class);
+    $modMock->shouldReceive('getConfig')->atLeast()->once()->andReturn([]);
+
+    $di = container();
+    $di['mod'] = $di->protect(fn (): Mockery\MockInterface => $modMock);
+    $api->setDi($di);
+
+    $result = $api->countries();
+
+    expect($result)->toBeArray()->not->toBeEmpty();
+    expect($result)->toHaveKey('US');
+});
+
+test('countries correctly splits multi-byte UTF-8 country names', function (): void {
+    // Regression test for a bug where preg_split('/\R/', ...) (without the
+    // 'u' modifier) matched \R against raw bytes, splitting mid-character on
+    // the 0x85 continuation byte present in multi-byte UTF-8 sequences (e.g.
+    // "Å" = 0xC3 0x85), corrupting the entry and breaking json_encode() for
+    // the entire returned array.
+    $api = apiEndpoint(new Box\Mod\System\Api\Guest());
+
+    $configuredCountries = "AX=Åland Islands\nUS=United States";
+
+    $modMock = Mockery::mock(FOSSBilling\Module::class);
+    $modMock->shouldReceive('getConfig')->atLeast()->once()->andReturn(['countries' => $configuredCountries]);
+
+    $di = container();
+    $di['mod'] = $di->protect(fn (): Mockery\MockInterface => $modMock);
+    $api->setDi($di);
+
+    $result = $api->countries();
+
+    expect($result)->toBe([
+        'AX' => 'Åland Islands',
+        'US' => 'United States',
+    ]);
+    expect(json_encode($result))->not->toBeFalse();
+});

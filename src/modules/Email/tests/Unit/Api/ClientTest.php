@@ -11,6 +11,7 @@
 declare(strict_types=1);
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 
 test('get list', function (): void {
     $clientApi = apiEndpoint(new Box\Mod\Email\Api\Client());
@@ -39,9 +40,7 @@ test('get list', function (): void {
     $clientApi->setDi($di);
     $clientApi->setService($service);
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
-    $client->id = 1;
+    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1]);
     $clientApi->setIdentity($client);
 
     $result = $clientApi->get_list([]);
@@ -70,9 +69,7 @@ test('get', function (): void {
     $di = container();
     $clientApi->setDi($di);
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
-    $client->id = 1;
+    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1]);
     $clientApi->setIdentity($client);
 
     $result = $clientApi->get(['id' => 1]);
@@ -89,9 +86,7 @@ test('get not found exception', function (): void {
     $service = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
     $service->shouldReceive('getActivityClientEmailRepository')->andReturn($repo);
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
-    $client->id = 5;
+    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 5]);
     $clientApi->setIdentity($client);
 
     $di = container();
@@ -121,9 +116,7 @@ test('resend', function (): void {
         ->atLeast()->once()
         ->andReturn(true);
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
-    $client->id = 5;
+    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 5]);
     $clientApi->setIdentity($client);
 
     $di = container();
@@ -145,10 +138,7 @@ test('resend not found exception', function (): void {
     $service = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
     $service->shouldReceive('getActivityClientEmailRepository')->andReturn($repo);
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
-    $client->id = 5;
-
+    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 5]);
     $clientApi->setIdentity($client);
 
     $di = container();
@@ -177,9 +167,7 @@ test('delete', function (): void {
     $service = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
     $service->shouldReceive('getActivityClientEmailRepository')->andReturn($repo);
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
-    $client->id = 5;
+    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 5]);
     $clientApi->setIdentity($client);
 
     $clientApi->setDi($di);
@@ -200,10 +188,7 @@ test('delete not found exception', function (): void {
     $service = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
     $service->shouldReceive('getActivityClientEmailRepository')->andReturn($repo);
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
-    $client->id = 5;
-
+    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 5]);
     $clientApi->setIdentity($client);
 
     $di = container();

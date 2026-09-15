@@ -10,7 +10,14 @@
 
 declare(strict_types=1);
 
+use Tests\Support\PermissiveStub;
 use Tests\Support\StrictTemplateRenderer;
+use Twig\Environment;
+use Twig\Loader\ArrayLoader;
+use Twig\Loader\ChainLoader;
+use Twig\Loader\FilesystemLoader;
+use Twig\TwigFilter;
+use Twig\TwigFunction;
 
 test('cron settings renders when module config has not been saved', function (): void {
     $renderer = new StrictTemplateRenderer();
@@ -44,6 +51,70 @@ test('cron settings renders when module config has not been saved', function ():
     expect($html)->toContain('Guest Cron Endpoint')
         ->and($html)->not->toContain('checked="checked"')
         ->and($html)->not->toContain('Guest Cron URL');
+});
+
+test('maintenance page renders when hide_company_public strips company contact fields', function (): void {
+    $renderer = new StrictTemplateRenderer();
+
+    // Regression test for #4211: Guest::company() removes vat_number/email/tel/account_number/
+    // number/address_1/address_2/address_3/bank_name/bic from the company array for anonymous
+    // visitors when hide_company_public is enabled. The public layout reads `guest.system_company`
+    // into `company`, so the fixture needs to go through `guest`, not a top-level `company` override.
+    // Under strict_variables this used to throw "Key ... does not exist" instead of rendering the
+    // maintenance notice.
+    $html = $renderer->renderTemplate(PATH_MODS . '/System/templates/client/mod_system_maintenance.html.twig', [
+        'guest' => new PermissiveStub([
+            'system_company' => [
+                'www' => 'https://example.test',
+                'name' => 'Test Co',
+                'signature' => null,
+                'logo_url' => null,
+                'logo_url_dark' => null,
+                'favicon_url' => null,
+                'display_bank_info' => null,
+                'bank_info_pagebottom' => null,
+                'note' => null,
+                'privacy_policy' => null,
+                'tos' => null,
+            ],
+        ]),
+        'settings' => new PermissiveStub(['login_page_show_logo' => false]),
+    ]);
+
+    expect($html)->toContain('System Undergoing Maintenance');
+});
+
+test('order new only lists periods the product is actually priced for', function (): void {
+    $renderer = new StrictTemplateRenderer();
+
+    // Products can be priced with any custom billing period, not just the ones in
+    // Period::getPredefined(). Regression test for #4063: indexing pricing.recurrent
+    // by every system period used to throw under strict_variables; the fix is for the
+    // template to read the period's own precomputed 'title' instead of doing a second
+    // lookup into a fixed system period list that a custom period wouldn't be in.
+    $html = $renderer->renderTemplate(PATH_MODS . '/Order/templates/admin/mod_order_new.html.twig', [
+        'admin' => new PermissiveStub(['system_template_exists' => false]),
+        'client' => ['id' => 1, 'first_name' => 'Jane', 'last_name' => 'Doe'],
+        'product' => [
+            'id' => 1,
+            'title' => 'Annual Hosting',
+            'type' => 'hosting',
+            'pricing' => [
+                'type' => 'recurrent',
+                'recurrent' => [
+                    '1Y' => ['price' => 10, 'setup' => 0, 'enabled' => true, 'title' => 'Every Year'],
+                ],
+            ],
+        ],
+        'guest' => [
+            'system_periods' => FOSSBilling\Period::getPredefined(),
+        ],
+    ]);
+
+    expect($html)
+        ->toContain('value="1Y"')
+        ->not->toContain('value="4Y"')
+        ->not->toContain('value="5Y"');
 });
 
 /*
@@ -95,7 +166,7 @@ test('all templates render under strict_variables', function (): void {
     }
 });
 
-test('orderbutton checkout renders for guests under strict_variables', function (): void {
+test('orderbutton checkout renders one-time items without a period under strict_variables', function (): void {
     $renderer = new StrictTemplateRenderer();
 
     $html = $renderer->renderTemplate(PATH_MODS . '/Orderbutton/templates/client/mod_orderbutton_checkout.html.twig', [
@@ -114,7 +185,6 @@ test('orderbutton checkout renders for guests under strict_variables', function 
                         'id' => 1,
                         'title' => 'Test product',
                         'quantity' => 1,
-                        'period' => null,
                         'discount_price' => 0,
                         'total' => 10,
                         'setup_price' => 0,
@@ -126,7 +196,7 @@ test('orderbutton checkout renders for guests under strict_variables', function 
                 'discount' => 0,
                 'subtotal' => 10,
                 'total' => 10,
-                'subscribable' => true,
+                'subscribable' => false,
                 'currency' => [
                     'code' => 'USD',
                 ],
@@ -165,9 +235,95 @@ test('orderbutton checkout renders for guests under strict_variables', function 
     ]);
 
     expect($html)->toContain('You must first login / create an account before you can checkout.')
-        ->and($html)->toContain('Subscription Gateway')
-        ->and($html)->toContain('id="order-gateway-2" value="2" autocomplete="off" checked')
-        ->and($html)->not->toContain('id="order-gateway-3" value="3" autocomplete="off" checked');
+        ->and($html)->toContain('Secondary Gateway')
+        ->and($html)->toContain('id="order-gateway-3" value="3" autocomplete="off" checked')
+        ->and($html)->not->toContain('Subscription Gateway');
+});
+
+test('orderbutton client form renders incomplete custom field configuration under strict_variables', function (): void {
+    $renderer = new StrictTemplateRenderer();
+
+    $html = $renderer->renderTemplate(PATH_MODS . '/Orderbutton/templates/client/mod_orderbutton_client.html.twig', [
+        'client' => null,
+        'request' => new PermissiveStub(['checkout' => true]),
+        'settings' => new PermissiveStub(['signup_tos' => 'disabled']),
+        'guest' => new PermissiveStub([
+            'client_custom_fields' => [
+                'custom_1' => ['title' => 'Inactive field'],
+                'custom_2' => ['title' => 'Active field', 'active' => true],
+            ],
+        ]),
+    ]);
+
+    expect($html)
+        ->not->toContain('id="custom_1"')
+        ->toContain('id="custom_2"');
+});
+
+test('signup renders country options with one default-country lookup', function (): void {
+    $guest = new class {
+        public int $defaultCountryLookups = 0;
+
+        public function __isset(string $name): bool
+        {
+            return true;
+        }
+
+        public function __get(string $name): mixed
+        {
+            return match ($name) {
+                'client_required' => ['country'],
+                'system_countries' => ['GB' => 'United Kingdom', 'US' => 'United States'],
+                'system_default_country' => $this->defaultCountry(),
+                'system_timezones', 'client_custom_fields' => [],
+                default => null,
+            };
+        }
+
+        private function defaultCountry(): string
+        {
+            ++$this->defaultCountryLookups;
+
+            return 'GB';
+        }
+    };
+    $request = new class {
+        public function __isset(string $name): bool
+        {
+            return true;
+        }
+
+        public function __get(string $name): mixed
+        {
+            return null;
+        }
+    };
+    $templateLoader = new FilesystemLoader();
+    $templateLoader->addPath(PATH_MODS . '/Page/templates/client', 'Page_client');
+    $twig = new Environment(new ChainLoader([
+        $templateLoader,
+        new ArrayLoader([
+            'layout_public.html.twig' => '{% block body %}{% endblock %}',
+            'macro_functions.html.twig' => '{% macro recaptcha() %}{% endmacro %}',
+        ]),
+    ]), ['strict_variables' => true]);
+    $twig->addFilter(new TwigFilter('trans', static fn (string $value): string => $value));
+    $twig->addFilter(new TwigFilter('url', static fn (string $value): string => $value));
+    $twig->addFilter(new TwigFilter('api_url', static fn (string $action, ?array $query = null, ?string $role = null): string => '/'));
+    $twig->addFunction(new TwigFunction('antispam_honeypot', static fn (): array => ['enabled' => false]));
+    $twig->addFunction(new TwigFunction('fb_api_form', static fn (array $config = []): string => ''));
+
+    $html = $twig->render('@Page_client/mod_page_signup.html.twig', [
+        'guest' => $guest,
+        'request' => $request,
+        'settings' => new PermissiveStub(['signup_tos' => 'disabled']),
+        'public_logo_url' => false,
+        'public_dark_logo_url' => false,
+    ]);
+
+    expect($html)
+        ->toContain('<option value="GB" label="United Kingdom" selected>United Kingdom</option>')
+        ->and($guest->defaultCountryLookups)->toBe(1);
 });
 
 /*

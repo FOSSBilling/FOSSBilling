@@ -32,7 +32,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
     public function ticket_get_list(array $data): array
     {
         $identity = $this->getIdentity();
-        $data['client_id'] = $identity->id;
+        $data['client_id'] = $identity->getId();
 
         $repo = $this->getService()->getSupportTicketRepository();
 
@@ -105,7 +105,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
         $data['content'] = \FOSSBilling\Tools::sanitizeMarkdownContent($data['content']);
 
         $client = $this->getIdentity();
-        $ticket = $this->getService()->getSupportTicketRepository()->findOneByClient((int) $client->id, (int) $data['id']);
+        $ticket = $this->getService()->getSupportTicketRepository()->findOneByClient((int) $client->getId(), (int) $data['id']);
 
         if (!$ticket instanceof SupportTicket) {
             throw new \FOSSBilling\InformationException('Ticket not found');

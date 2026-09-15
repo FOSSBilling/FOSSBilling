@@ -303,7 +303,7 @@ test('getAdminNavigation returns admin navigation', function (): void {
     $di['em'] = extensionBuildEm($extensionRepository);
 
     $service->setDi($di);
-    $result = $service->getAdminNavigation(new Model_Admin());
+    $result = $service->getAdminNavigation(\Tests\Helpers\admin());
     expect($result)->toBeArray();
 });
 
@@ -702,7 +702,7 @@ test('getConfig returns extension config', function (): void {
         ->once()
         ->andReturn($meta);
 
-    $cryptMock = Mockery::mock(Box_Crypt::class);
+    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
     $cryptMock->shouldReceive('decrypt')->atLeast()->once();
 
     $em = extensionBuildEm(null, $metaRepo);
@@ -764,7 +764,7 @@ test('setConfig sets extension config', function (): void {
 
     $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
 
-    $cryptMock = Mockery::mock(Box_Crypt::class);
+    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
     $cryptMock->shouldReceive('encrypt')
         ->atLeast()
         ->once()
@@ -885,4 +885,114 @@ test('hasManagePermission allows access when module declares manage_settings and
 
     expect(fn () => $serviceMock->hasManagePermission('mod_email'))
         ->not->toThrow(new FOSSBilling\InformationException('You do not have permission to perform this action', [], 403));
+});
+
+test('hasManagePermission denies configuration of inactive modules without the manage_extensions permission', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldAllowMockingProtectedMethods();
+
+    $staffMock = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffMock->shouldReceive('checkPermissionsAndThrowException')
+        ->with('extension', 'manage_extensions')
+        ->atLeast()
+        ->once()
+        ->andThrow(new FOSSBilling\InformationException('You need the "extension.manage_extensions" permission to perform this action', [], 403));
+
+    $modMock = Mockery::mock(FOSSBilling\Module::class);
+    $modMock->shouldReceive('getCoreModules')
+        ->atLeast()
+        ->once()
+        ->andReturn([]);
+
+    $extensionRepository = Mockery::mock(ExtensionRepository::class);
+    $extensionRepository->shouldReceive('existsActiveByTypeAndName')
+        ->atLeast()
+        ->once()
+        ->andReturn(false);
+
+    $em = extensionBuildEm($extensionRepository);
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod'] = $di->protect(fn (): Mockery\MockInterface => $modMock);
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $staffMock);
+
+    $serviceMock->setDi($di);
+
+    expect(fn () => $serviceMock->hasManagePermission('mod_support'))
+        ->toThrow(new FOSSBilling\InformationException('You need the "extension.manage_extensions" permission to perform this action', [], 403));
+});
+
+test('hasManagePermission allows configuration of inactive modules with the manage_extensions permission', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldAllowMockingProtectedMethods();
+
+    $staffMock = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffMock->shouldReceive('checkPermissionsAndThrowException')
+        ->with('extension', 'manage_extensions')
+        ->atLeast()
+        ->once();
+
+    $modMock = Mockery::mock(FOSSBilling\Module::class);
+    $modMock->shouldReceive('getCoreModules')
+        ->atLeast()
+        ->once()
+        ->andReturn([]);
+
+    $extensionRepository = Mockery::mock(ExtensionRepository::class);
+    $extensionRepository->shouldReceive('existsActiveByTypeAndName')
+        ->atLeast()
+        ->once()
+        ->andReturn(false);
+
+    $em = extensionBuildEm($extensionRepository);
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod'] = $di->protect(fn (): Mockery\MockInterface => $modMock);
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $staffMock);
+
+    $serviceMock->setDi($di);
+
+    expect(fn () => $serviceMock->hasManagePermission('mod_support'))
+        ->not->toThrow(new FOSSBilling\InformationException('You need the "extension.manage_extensions" permission to perform this action', [], 403));
+});
+
+test('setConfig denies inactive module configuration without touching storage when the manage_extensions permission is missing', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldAllowMockingProtectedMethods();
+
+    $staffMock = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffMock->shouldReceive('checkPermissionsAndThrowException')
+        ->with('extension', 'manage_extensions')
+        ->atLeast()
+        ->once()
+        ->andThrow(new FOSSBilling\InformationException('You need the "extension.manage_extensions" permission to perform this action', [], 403));
+
+    $metaRepository = Mockery::mock(ExtensionMetaRepository::class);
+    $metaRepository->shouldNotReceive('findOneByExtensionAndScope');
+
+    $modMock = Mockery::mock(FOSSBilling\Module::class);
+    $modMock->shouldReceive('getCoreModules')
+        ->atLeast()
+        ->once()
+        ->andReturn([]);
+
+    $extensionRepository = Mockery::mock(ExtensionRepository::class);
+    $extensionRepository->shouldReceive('existsActiveByTypeAndName')
+        ->atLeast()
+        ->once()
+        ->andReturn(false);
+
+    $em = extensionBuildEm($extensionRepository, $metaRepository, ignoreMissing: false);
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod'] = $di->protect(fn (): Mockery\MockInterface => $modMock);
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $staffMock);
+
+    $serviceMock->setDi($di);
+
+    expect(fn () => $serviceMock->setConfig(['ext' => 'mod_support']))
+        ->toThrow(new FOSSBilling\InformationException('You need the "extension.manage_extensions" permission to perform this action', [], 403));
 });

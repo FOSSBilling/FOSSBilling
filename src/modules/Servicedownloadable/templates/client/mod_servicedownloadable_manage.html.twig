@@ -1,10 +1,23 @@
 {% if order.status == 'active' %}
 <div class="card mb-4">
     <div class="card-header">
-        <h2>{{ 'Download'|trans }} {{ service.filename }}</h2>
+        <h2>{{ 'Downloads'|trans }}</h2>
     </div>
     <div class="card-body">
-        <a class="btn btn-primary btn-large" href='{{ "servicedownloadable/get-file/#{order.id}"|url }}'>{{ 'Download'|trans }}</a>
+        <div class="list-group list-group-flush">
+            {% for file in service.files %}
+                <div class="list-group-item px-0 d-flex justify-content-between align-items-center gap-3">
+                    <div>
+                        <div class="fw-bold">{{ file.label|default(file.filename) }}</div>
+                        {% if file.label %}<div class="text-secondary small">{{ file.filename }}</div>{% endif %}
+                        {% if file.description %}<div class="text-secondary mt-1">{{ file.description }}</div>{% endif %}
+                    </div>
+                    <a class="btn btn-primary" href='{{ "servicedownloadable/get-file/#{order.id}/#{file.id}"|url }}'>{{ 'Download'|trans }}</a>
+                </div>
+            {% else %}
+                <p class="text-secondary mb-0">{{ 'No files are currently available.'|trans }}</p>
+            {% endfor %}
+        </div>
     </div>
 </div>
 {% endif %}

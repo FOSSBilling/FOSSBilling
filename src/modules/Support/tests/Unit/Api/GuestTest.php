@@ -120,7 +120,7 @@ test('ticket close', function (): void {
     $guestApi->setDi($di);
 
     $guestApi->setService($serviceMock);
-    $guestApi->setIdentity(new Model_Guest());
+    $guestApi->setIdentity(new FOSSBilling\Identity\Guest());
 
     $data = [
         'hash' => sha1(uniqid()),
@@ -171,7 +171,7 @@ test('kb article get list', function (): void {
     $repo = Mockery::mock(KbArticleRepository::class);
     $repo->shouldReceive('getSearchQueryBuilder')
         ->once()
-        ->with(KbArticle::ACTIVE, null, null)
+        ->with(['status' => KbArticle::ACTIVE, 'search' => null, 'kb_article_category_id' => null])
         ->andReturn($qb);
 
     $supportService = guestSupportServiceMock();

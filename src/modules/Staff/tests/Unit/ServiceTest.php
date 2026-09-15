@@ -10,16 +10,22 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Activity\Entity\ActivityAdminHistory;
+use Box\Mod\Staff\Entity\Admin;
 use Box\Mod\Staff\Entity\AdminGroup;
 use Box\Mod\Staff\Entity\AdminGroupMember;
+use Box\Mod\Staff\Entity\AdminPasswordReset;
 use Box\Mod\Staff\Repository\AdminGroupMemberRepository;
 use Box\Mod\Staff\Repository\AdminGroupRepository;
+use Box\Mod\Staff\Repository\AdminPasswordResetRepository;
+use Box\Mod\Staff\Repository\AdminRepository;
 use Box\Mod\Staff\Service;
 use Box\Mod\Support\Entity\Helpdesk;
 use Box\Mod\Support\Repository\HelpdeskRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 
 class StaffPdoMock extends PDO
 {
@@ -74,34 +80,27 @@ function staffSetEntityId(object $entity, int $id): void
     $property->setValue($entity, $id);
 }
 
-function staffHierarchyBypassAdmin(): Model_Admin
+function staffHierarchyBypassAdmin(): Admin
 {
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
-    $admin->id = 99;
-    $admin->system_name = Model_Admin::SYSTEM_CRON;
-
-    return $admin;
+    return \Tests\Helpers\admin(['id' => 99, 'system_name' => Admin::SYSTEM_CRON]);
 }
 
-function staffRegularAdmin(): Model_Admin
+function staffRegularAdmin(): Admin
 {
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
-    $admin->id = 10;
-
-    return $admin;
+    return \Tests\Helpers\admin(['id' => 10]);
 }
 
-function staffEntityManager(object $groupRepository, ?object $groupMemberRepository = null): object
+function staffEntityManager(object $groupRepository, ?object $groupMemberRepository = null, ?object $adminRepository = null, ?object $passwordResetRepository = null): object
 {
     $groupMemberRepository ??= Mockery::mock(AdminGroupMemberRepository::class)->shouldIgnoreMissing();
+    $adminRepository ??= Mockery::mock(AdminRepository::class)->shouldIgnoreMissing();
+    $passwordResetRepository ??= Mockery::mock(AdminPasswordResetRepository::class)->shouldIgnoreMissing();
 
-    return new class($groupRepository, $groupMemberRepository) {
+    return new class($groupRepository, $groupMemberRepository, $adminRepository, $passwordResetRepository) {
         public array $persisted = [];
         public array $removed = [];
 
-        public function __construct(private readonly object $groupRepository, private readonly object $groupMemberRepository)
+        public function __construct(private readonly object $groupRepository, private readonly object $groupMemberRepository, private readonly object $adminRepository, private readonly object $passwordResetRepository)
         {
         }
 
@@ -109,6 +108,8 @@ function staffEntityManager(object $groupRepository, ?object $groupMemberReposit
         {
             return match ($class) {
                 AdminGroup::class => $this->groupRepository,
+                Admin::class => $this->adminRepository,
+                AdminPasswordReset::class => $this->passwordResetRepository,
                 default => $this->groupMemberRepository,
             };
         }
@@ -118,6 +119,9 @@ function staffEntityManager(object $groupRepository, ?object $groupMemberReposit
             if ($entity instanceof AdminGroup && $entity->getId() === null) {
                 staffSetEntityId($entity, 1);
             }
+            if ($entity instanceof Admin && $entity->getId() === null) {
+                staffSetEntityId($entity, 1);
+            }
 
             $this->persisted[] = $entity;
         }
@@ -125,6 +129,11 @@ function staffEntityManager(object $groupRepository, ?object $groupMemberReposit
         public function remove(object $entity): void
         {
             $this->removed[] = $entity;
+        }
+
+        public function wrapInTransaction(callable $callback): mixed
+        {
+            return $callback();
         }
 
         public function flush(): void
@@ -138,35 +147,34 @@ test('login returns admin details on successful login', function (): void {
     $password = 'pass';
     $ip = '127.0.0.1';
 
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
-    $admin->id = 1;
-    $admin->email = $email;
-    $admin->name = 'Admin';
+    $admin = \Tests\Helpers\admin(['id' => 1, 'email' => $email, 'name' => 'Admin', 'pass' => 'hashedPassword']);
 
     $emMock = Mockery::mock('\Box_EventManager');
     $emMock->shouldReceive('fire')->atLeast()->once()
         ->andReturn(true);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('findOne')->atLeast()->once()
+    $adminRepository = Mockery::mock(AdminRepository::class);
+    $adminRepository->shouldReceive('findOneByEmailAndActive')->atLeast()->once()
+        ->with($email)
         ->andReturn($admin);
 
     $sessionMock = Mockery::mock(FOSSBilling\Session::class);
     $sessionMock->shouldReceive('regenerateId')->atLeast()->once();
     $sessionMock->shouldReceive('set')->atLeast()->once();
 
-    $authMock = Mockery::mock('\Box_Authorization');
-    $authMock->shouldReceive('authorizeUser')->atLeast()->once()
-        ->with($admin, $password)
-        ->andReturn($admin);
+    $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
+    $passwordMock->shouldReceive('verify')->atLeast()->once()
+        ->with($password, $admin->getPass())
+        ->andReturn(true);
+    $passwordMock->shouldReceive('needsRehash')->atLeast()->once()
+        ->andReturn(false);
 
     $di = container();
     $di['events_manager'] = $emMock;
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getRepository')->with(Admin::class)->andReturn($adminRepository);
     $di['session'] = $sessionMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['auth'] = $authMock;
+    $di['password'] = $passwordMock;
 
     $service = new Service();
     $service->setDi($di);
@@ -182,6 +190,118 @@ test('login returns admin details on successful login', function (): void {
     expect($result)->toBe($expected);
 });
 
+test('login retries connecting event listeners once before firing the login event', function (): void {
+    $email = 'email@domain.com';
+    $password = 'pass';
+    $ip = '127.0.0.1';
+
+    $admin = \Tests\Helpers\admin(['id' => 1, 'email' => $email, 'name' => 'Admin', 'pass' => 'hashedPassword']);
+
+    $emMock = Mockery::mock('\Box_EventManager');
+    $emMock->shouldReceive('fire')->atLeast()->once()
+        ->andReturn(true);
+
+    $adminRepository = Mockery::mock(AdminRepository::class);
+    $adminRepository->shouldReceive('findOneByEmailAndActive')->atLeast()->once()
+        ->with($email)
+        ->andReturn($admin);
+
+    $sessionMock = Mockery::mock(FOSSBilling\Session::class);
+    $sessionMock->shouldReceive('regenerateId')->atLeast()->once();
+    $sessionMock->shouldReceive('set')->atLeast()->once();
+
+    $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
+    $passwordMock->shouldReceive('verify')->atLeast()->once()
+        ->with($password, $admin->getPass())
+        ->andReturn(true);
+    $passwordMock->shouldReceive('needsRehash')->atLeast()->once()
+        ->andReturn(false);
+
+    // First attempt fails, as if another process held the rebuild lock past its timeout.
+    $hookServiceMock = Mockery::mock(Box\Mod\Hook\Service::class);
+    $hookServiceMock->shouldReceive('hasConnectedListeners')->atLeast()->once()->andReturn(false);
+    $hookServiceMock->shouldReceive('batchConnect')->twice()->andReturn(false, true);
+
+    $di = container();
+    $di['events_manager'] = $emMock;
+    $di['em']->shouldReceive('getRepository')->with(Admin::class)->andReturn($adminRepository);
+    $di['session'] = $sessionMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['password'] = $passwordMock;
+    $di['mod_service'] = $di->protect(fn (string $name = ''): object => strtolower($name) === 'hook' ? $hookServiceMock : Mockery::mock()->shouldIgnoreMissing());
+
+    $service = new Service();
+    $service->setDi($di);
+
+    $result = $service->login($email, $password, $ip);
+
+    expect($result)->toBe([
+        'id' => 1,
+        'email' => $email,
+        'name' => 'Admin',
+    ]);
+});
+
+test('login still succeeds, and logs a warning, when both attempts to connect event listeners fail', function (): void {
+    $email = 'email@domain.com';
+    $password = 'pass';
+    $ip = '127.0.0.1';
+
+    $admin = \Tests\Helpers\admin(['id' => 1, 'email' => $email, 'name' => 'Admin', 'pass' => 'hashedPassword']);
+
+    $emMock = Mockery::mock('\Box_EventManager');
+    $emMock->shouldReceive('fire')->atLeast()->once()
+        ->andReturn(true);
+
+    $adminRepository = Mockery::mock(AdminRepository::class);
+    $adminRepository->shouldReceive('findOneByEmailAndActive')->atLeast()->once()
+        ->with($email)
+        ->andReturn($admin);
+
+    $sessionMock = Mockery::mock(FOSSBilling\Session::class);
+    $sessionMock->shouldReceive('regenerateId')->atLeast()->once();
+    $sessionMock->shouldReceive('set')->atLeast()->once();
+
+    $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
+    $passwordMock->shouldReceive('verify')->atLeast()->once()
+        ->with($password, $admin->getPass())
+        ->andReturn(true);
+    $passwordMock->shouldReceive('needsRehash')->atLeast()->once()
+        ->andReturn(false);
+
+    // Both attempts fail to connect listeners, e.g. another process holding the rebuild lock
+    // for longer than either attempt's timeout. Login must still succeed - it must not become
+    // unavailable because of this housekeeping step.
+    $hookServiceMock = Mockery::mock(Box\Mod\Hook\Service::class);
+    $hookServiceMock->shouldReceive('hasConnectedListeners')->atLeast()->once()->andReturn(false);
+    $hookServiceMock->shouldReceive('batchConnect')->twice()->andReturn(false, false);
+
+    $loggerMock = new Tests\Helpers\TestLogger();
+
+    $di = container();
+    $di['events_manager'] = $emMock;
+    $di['em']->shouldReceive('getRepository')->with(Admin::class)->andReturn($adminRepository);
+    $di['session'] = $sessionMock;
+    $di['logger'] = $loggerMock;
+    $di['password'] = $passwordMock;
+    $di['mod_service'] = $di->protect(fn (string $name = ''): object => strtolower($name) === 'hook' ? $hookServiceMock : Mockery::mock()->shouldIgnoreMissing());
+
+    $service = new Service();
+    $service->setDi($di);
+
+    $result = $service->login($email, $password, $ip);
+
+    expect($result)->toBe([
+        'id' => 1,
+        'email' => $email,
+        'name' => 'Admin',
+    ])
+        ->and($loggerMock->calls)->toContain([
+            'method' => 'warning',
+            'params' => ['Could not connect event listeners after two attempts; this login (and other events) may not be recorded.'],
+        ]);
+});
+
 test('login throws exception when credentials are invalid', function (): void {
     $email = 'email@domain.com';
     $password = 'pass';
@@ -191,19 +311,19 @@ test('login throws exception when credentials are invalid', function (): void {
     $emMock->shouldReceive('fire')->atLeast()->once()
         ->andReturn(true);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('findOne')->atLeast()->once()
+    $adminRepository = Mockery::mock(AdminRepository::class);
+    $adminRepository->shouldReceive('findOneByEmailAndActive')->atLeast()->once()
+        ->with($email)
         ->andReturn(null);
 
-    $authMock = Mockery::mock('\Box_Authorization');
-    $authMock->shouldReceive('authorizeUser')->atLeast()->once()
-        ->with(null, $password)
-        ->andReturn(null);
+    $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
+    $passwordMock->shouldReceive('dummyVerify')->atLeast()->once()
+        ->with($password);
 
     $di = container();
     $di['events_manager'] = $emMock;
-    $di['db'] = $dbMock;
-    $di['auth'] = $authMock;
+    $di['em']->shouldReceive('getRepository')->with(Admin::class)->andReturn($adminRepository);
+    $di['password'] = $passwordMock;
 
     $service = new Service();
     $service->setDi($di);
@@ -213,9 +333,7 @@ test('login throws exception when credentials are invalid', function (): void {
 });
 
 test('hasPermission returns true for super administrator group member', function (): void {
-    $member = new Model_Admin();
-    $member->loadBean(new Tests\Helpers\DummyBean());
-    $member->id = 1;
+    $member = \Tests\Helpers\admin(['id' => 1]);
 
     $service = staffServiceWithGroupPermissions(isSuperAdministrator: true);
 
@@ -224,9 +342,7 @@ test('hasPermission returns true for super administrator group member', function
 });
 
 test('hasPermission does not allow staff without group permissions', function (): void {
-    $member = new Model_Admin();
-    $member->loadBean(new Tests\Helpers\DummyBean());
-    $member->id = 1;
+    $member = \Tests\Helpers\admin(['id' => 1]);
 
     $service = staffServiceWithGroupPermissions();
 
@@ -235,9 +351,7 @@ test('hasPermission does not allow staff without group permissions', function ()
 });
 
 test('hasPermission falls back to cron admin only within cron context', function (): void {
-    $cronAdmin = new Model_Admin();
-    $cronAdmin->loadBean(new Tests\Helpers\DummyBean());
-    $cronAdmin->system_name = Model_Admin::SYSTEM_CRON;
+    $cronAdmin = \Tests\Helpers\admin(['system_name' => Admin::SYSTEM_CRON]);
 
     $service = Mockery::mock(Service::class)->makePartial();
     $service->shouldReceive('getCronAdmin')
@@ -277,9 +391,7 @@ test('hasPermission stays fail-closed outside cron context when no admin is logg
 });
 
 test('hasPermission returns false for staff without groups', function (): void {
-    $member = new Model_Admin();
-    $member->loadBean(new Tests\Helpers\DummyBean());
-    $member->id = 1;
+    $member = \Tests\Helpers\admin(['id' => 1]);
 
     $service = staffServiceWithGroupPermissions();
 
@@ -288,9 +400,7 @@ test('hasPermission returns false for staff without groups', function (): void {
 });
 
 test('hasPermission returns true for staff with group permission', function (): void {
-    $member = new Model_Admin();
-    $member->loadBean(new Tests\Helpers\DummyBean());
-    $member->id = 1;
+    $member = \Tests\Helpers\admin(['id' => 1]);
 
     $group = (new AdminGroup())->setPermissions([
         'example' => [
@@ -306,9 +416,7 @@ test('hasPermission returns true for staff with group permission', function (): 
 });
 
 test('hasPermission returns false for staff without method permission', function (): void {
-    $member = new Model_Admin();
-    $member->loadBean(new Tests\Helpers\DummyBean());
-    $member->id = 1;
+    $member = \Tests\Helpers\admin(['id' => 1]);
 
     $group = (new AdminGroup())->setPermissions([
         'example' => [
@@ -322,6 +430,42 @@ test('hasPermission returns false for staff without method permission', function
     expect($result)->toBeFalse();
 });
 
+test('onAfterAdminOrderSuspend sends a staff notification', function (): void {
+    $order = Tests\Helpers\createEntity(Box\Mod\Order\Entity\Order::class, ['id' => 42]);
+    $orderRepository = Mockery::mock(Box\Mod\Order\Repository\OrderRepository::class);
+    $orderRepository->shouldReceive('find')->once()->with(42)->andReturn($order);
+
+    $entityManager = Mockery::mock(EntityManagerInterface::class);
+    $entityManager->shouldReceive('getRepository')
+        ->once()
+        ->with(Box\Mod\Order\Entity\Order::class)
+        ->andReturn($orderRepository);
+
+    $orderData = ['id' => 42, 'title' => 'Hosting', 'reason' => 'Non-payment'];
+    $orderService = Mockery::mock(Box\Mod\Order\Service::class);
+    $orderService->shouldReceive('toApiArray')->once()->with($order, false)->andReturn($orderData);
+
+    $emailService = Mockery::mock(Box\Mod\Email\Service::class);
+    $emailService->shouldReceive('sendTemplate')->once()->with([
+        'to_staff' => true,
+        'code' => 'mod_staff_order_suspended',
+        'order' => $orderData,
+    ]);
+
+    $di = container();
+    $di['em'] = $entityManager;
+    $di['mod_service'] = $di->protect(fn (string $name): object => match ($name) {
+        'order' => $orderService,
+        'email' => $emailService,
+    });
+
+    $event = Mockery::mock(Box_Event::class);
+    $event->shouldReceive('getDi')->once()->andReturn($di);
+    $event->shouldReceive('getParameters')->once()->andReturn(['id' => 42]);
+
+    Service::onAfterAdminOrderSuspend($event);
+});
+
 test('onAfterClientReplyTicket sends email notification', function (): void {
     $eventMock = Mockery::mock('\Box_Event');
     $ticketId = 42;
@@ -329,7 +473,7 @@ test('onAfterClientReplyTicket sends email notification', function (): void {
     $ticketModel = (new Box\Mod\Support\Entity\SupportTicket())
         ->setClientId($clientId)
         ->setPriority(25);
-    $clientModel = Mockery::mock(Model_Client::class);
+    $clientModel = createEntity(Box\Mod\Client\Entity\Client::class);
     $clientDetails = [
         'id' => $clientId,
         'email' => 'client@example.com',
@@ -422,12 +566,10 @@ test('onAfterClientReplyTicket still sends when its client no longer exists', fu
         ]);
 
     $di = container();
-    $di['mod_service'] = $di->protect(function ($name) use ($supportServiceMock, $clientServiceMock, $emailServiceMock) {
-        return match ($name) {
-            'support' => $supportServiceMock,
-            'client' => $clientServiceMock,
-            'email' => $emailServiceMock,
-        };
+    $di['mod_service'] = $di->protect(fn ($name) => match ($name) {
+        'support' => $supportServiceMock,
+        'client' => $clientServiceMock,
+        'email' => $emailServiceMock,
     });
 
     $eventMock->shouldReceive('getParameters')->once()->andReturn(['id' => $ticketId]);
@@ -677,7 +819,7 @@ test('onAfterClientReplyTicket handles guest email exception', function (): void
 test('onAfterClientSignUp sends sanitized client details in the email variables', function (): void {
     $eventMock = Mockery::mock('\Box_Event');
     $clientId = 42;
-    $client = Mockery::mock(Model_Client::class);
+    $client = createEntity(Box\Mod\Client\Entity\Client::class);
     $clientDetails = [
         'id' => $clientId,
         'email' => 'new-client@example.com',
@@ -725,7 +867,7 @@ test('onAfterClientSignUp sends sanitized client details in the email variables'
 test('onAfterClientSignUp handles email exception', function (): void {
     $eventMock = Mockery::mock('\Box_Event');
     $clientId = 42;
-    $client = Mockery::mock(Model_Client::class);
+    $client = createEntity(Box\Mod\Client\Entity\Client::class);
 
     $clientMock = Mockery::mock(Box\Mod\Client\Service::class);
     $clientMock->shouldReceive('get')->once()
@@ -839,8 +981,7 @@ test('onAfterClientOpenTicket sends mod_staff_ticket_open email', function (): v
         ->atLeast()->once()
         ->andReturn($repoMock);
     $di['em'] = $emMock;
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
+    $admin = \Tests\Helpers\admin();
     $di['loggedin_admin'] = $admin;
 
     $eventMock = Mockery::mock('\Box_Event');
@@ -901,8 +1042,7 @@ test('onAfterClientOpenTicket sends mod_support_helpdesk_ticket_open email', fun
         ->atLeast()->once()
         ->andReturn($repoMock);
     $di['em'] = $emMock;
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
+    $admin = \Tests\Helpers\admin();
     $di['loggedin_admin'] = $admin;
 
     $eventMock = Mockery::mock('\Box_Event');
@@ -936,29 +1076,42 @@ dataset('searchFilters', fn (): array => [
     'empty filters exclude cron by default' => [
         [],
         'system_name != :system_name',
-        [':system_name' => Model_Admin::SYSTEM_CRON],
+        ['system_name' => Admin::SYSTEM_CRON],
     ],
     'search by keyword' => [
         ['search' => 'keyword'],
         '(name LIKE :name OR email LIKE :email )',
-        [':name' => '%keyword%', ':email' => '%keyword%', ':system_name' => Model_Admin::SYSTEM_CRON],
+        ['name' => '%keyword%', 'email' => '%keyword%', 'system_name' => Admin::SYSTEM_CRON],
     ],
     'filter by status' => [
         ['status' => 'active'],
         'status = :status',
-        [':status' => 'active', ':system_name' => Model_Admin::SYSTEM_CRON],
+        ['status' => 'active', 'system_name' => Admin::SYSTEM_CRON],
     ],
     'filter by no_cron' => [
         ['no_cron' => 'true'],
         'system_name != :system_name',
-        [':system_name' => Model_Admin::SYSTEM_CRON],
+        ['system_name' => Admin::SYSTEM_CRON],
     ],
     'do not filter by false no_cron' => [
         ['no_cron' => 'false'],
-        'SELECT * FROM admin',
+        'SELECT id, system_name, email, name, signature, status, timezone, created_at, updated_at FROM admin',
         [],
     ],
 ]);
+
+test('getSearchQuery never selects sensitive admin columns', function (): void {
+    $di = container();
+
+    $service = new Service();
+    $service->setDi($di);
+    [$query] = $service->getSearchQuery([]);
+
+    expect(str_contains($query, '*'))->toBeFalse($query);
+    foreach (['pass', 'salt', 'api_token', 'hash', 'config'] as $sensitiveColumn) {
+        expect(preg_match('/\b' . preg_quote($sensitiveColumn, '/') . '\b/', $query))->toBe(0, "Query unexpectedly selects '$sensitiveColumn': $query");
+    }
+});
 
 test('getSearchQuery returns correct query and params', function (array $data, string $expectedStr, array $expectedParams): void {
     $di = container();
@@ -974,56 +1127,94 @@ test('getSearchQuery returns correct query and params', function (array $data, s
 })->with('searchFilters');
 
 test('getCronAdmin returns existing cron admin', function (): void {
-    $adminModel = new Model_Admin();
-    $adminModel->loadBean(new Tests\Helpers\DummyBean());
+    $adminModel = \Tests\Helpers\admin();
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('findOne')->atLeast()->once()
+    $adminRepository = Mockery::mock(AdminRepository::class);
+    $adminRepository->shouldReceive('findOneBy')->atLeast()->once()
         ->andReturn($adminModel);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getRepository')->with(Admin::class)->andReturn($adminRepository);
 
     $service = new Service();
     $service->setDi($di);
 
     $result = $service->getCronAdmin();
     expect($result)->not->toBeEmpty();
-    expect($result)->toBeInstanceOf(Model_Admin::class);
+    expect($result)->toBeInstanceOf(Admin::class);
 });
 
 test('getCronAdmin creates and returns new cron admin', function (): void {
-    $adminModel = new Model_Admin();
-    $adminModel->loadBean(new Tests\Helpers\DummyBean());
+    $adminModel = createEntity(Admin::class, ['id' => 7, 'system_name' => Admin::SYSTEM_CRON]);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('findOne')->atLeast()->once()
-        ->andReturn(null);
-
-    $dbMock->shouldReceive('dispense')->atLeast()->once()
-        ->andReturn($adminModel);
-
-    $dbMock->shouldReceive('store')->atLeast()->once();
+    $adminRepository = Mockery::mock(AdminRepository::class);
+    // First lookup misses; after the DBAL insert the re-read returns the new row.
+    $adminRepository->expects('findOneBy')->with(['systemName' => Admin::SYSTEM_CRON])->twice()
+        ->andReturn(null, $adminModel);
 
     $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
-    $passwordMock->shouldReceive('hashIt')->atLeast()->once();
+    $passwordMock->expects('hashIt')->once()->andReturn('hashed-cron-password');
+
+    $captured = null;
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->expects('insert')->once()->andReturnUsing(function (string $table, array $data) use (&$captured): int {
+        expect($table)->toBe('admin');
+        $captured = $data;
+
+        return 1;
+    });
 
     $di = container();
-    $di['db'] = $dbMock;
-    $di['tools'] = new FOSSBilling\Tools();
+    $di['em']->shouldReceive('getRepository')->with(Admin::class)->andReturn($adminRepository);
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
+    $di['em']->shouldNotReceive('persist');
+    $di['em']->shouldNotReceive('flush');
     $di['password'] = $passwordMock;
 
     $service = new Service();
     $service->setDi($di);
 
     $result = $service->getCronAdmin();
-    expect($result)->not->toBeEmpty();
-    expect($result)->toBeInstanceOf(Model_Admin::class);
+    expect($result)->toBe($adminModel);
+    expect($captured['system_name'])->toBe(Admin::SYSTEM_CRON);
+    expect($captured['status'])->toBe(Admin::STATUS_ACTIVE);
+    expect($captured['pass'])->toBe('hashed-cron-password');
+    expect($captured['created_at'])->not->toBeEmpty();
+    expect($captured['updated_at'])->not->toBeEmpty();
 });
 
-test('toModel_AdminApiArray returns admin array data', function (): void {
-    $adminModel = new Model_Admin();
-    $adminModel->loadBean(new Tests\Helpers\DummyBean());
+test('getCronAdmin recovers from a concurrent-creation race', function (): void {
+    // A concurrent request won the race; the DBAL insert throws, the ORM EM stays
+    // open, and the re-read returns the winner's row.
+    $adminModel = createEntity(Admin::class, ['id' => 9, 'system_name' => Admin::SYSTEM_CRON]);
+
+    $adminRepository = Mockery::mock(AdminRepository::class);
+    $adminRepository->expects('findOneBy')->with(['systemName' => Admin::SYSTEM_CRON])->twice()
+        ->andReturn(null, $adminModel);
+
+    $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
+    $passwordMock->expects('hashIt')->once();
+
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->expects('insert')->once()
+        ->andThrow(Mockery::mock(Doctrine\DBAL\Exception\UniqueConstraintViolationException::class));
+
+    $di = container();
+    $di['em']->shouldReceive('getRepository')->with(Admin::class)->andReturn($adminRepository);
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
+    $di['em']->shouldNotReceive('persist');
+    $di['em']->shouldNotReceive('flush');
+    $di['em']->shouldNotReceive('clear');
+    $di['password'] = $passwordMock;
+
+    $service = new Service();
+    $service->setDi($di);
+
+    expect($service->getCronAdmin())->toBe($adminModel);
+});
+
+test('toApiArray returns admin array data', function (): void {
+    $adminModel = \Tests\Helpers\admin();
 
     $expected =
         [
@@ -1038,11 +1229,13 @@ test('toModel_AdminApiArray returns admin array data', function (): void {
             'groups' => [],
         ];
 
+    $groupMemberRepository = Mockery::mock(AdminGroupMemberRepository::class)->shouldReceive('findGroupsForAdmin')->atLeast()->once()->andReturn([])->getMock();
     $di = container();
+    $di['em'] = staffEntityManager(Mockery::mock(AdminGroupRepository::class), $groupMemberRepository);
 
     $service = new Service();
     $service->setDi($di);
-    $result = $service->toModel_AdminApiArray($adminModel);
+    $result = $service->toApiArray($adminModel);
 
     expect($result)->not->toBeEmpty();
     expect($result)->toBeArray();
@@ -1057,16 +1250,12 @@ test('update updates admin details', function (): void {
         'signature' => '1345',
     ];
 
-    $adminModel = new Model_Admin();
-    $adminModel->loadBean(new Tests\Helpers\DummyBean());
+    $adminModel = \Tests\Helpers\admin();
 
     $eventsMock = Mockery::mock('\Box_EventManager');
     $eventsMock->shouldReceive('fire')->atLeast()->once();
 
-    $logStub = $this->createStub('\Box_Log');
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')->atLeast()->once();
+    $logStub = $this->createStub(FOSSBilling\Logger::class);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
 
@@ -1075,7 +1264,8 @@ test('update updates admin details', function (): void {
     $di = container();
     $di['events_manager'] = $eventsMock;
     $di['logger'] = $logStub;
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('persist')->atLeast()->once();
+    $di['em']->shouldReceive('flush')->atLeast()->once();
     $di['loggedin_admin'] = staffHierarchyBypassAdmin();
 
     $serviceMock->setDi($di);
@@ -1085,10 +1275,7 @@ test('update updates admin details', function (): void {
 });
 
 test('update rejects deactivating last active super administrator', function (): void {
-    $adminModel = new Model_Admin();
-    $adminModel->loadBean(new Tests\Helpers\DummyBean());
-    $adminModel->id = 3;
-    $adminModel->status = Model_Admin::STATUS_ACTIVE;
+    $adminModel = \Tests\Helpers\admin(['id' => 3, 'status' => Admin::STATUS_ACTIVE]);
 
     $groupRepository = Mockery::mock(AdminGroupRepository::class);
     $groupMemberRepository = Mockery::mock(AdminGroupMemberRepository::class);
@@ -1107,21 +1294,15 @@ test('update rejects deactivating last active super administrator', function ():
     $di['loggedin_admin'] = staffHierarchyBypassAdmin();
     $serviceMock->setDi($di);
 
-    expect(fn () => $serviceMock->update($adminModel, ['status' => Model_Admin::STATUS_INACTIVE]))
+    expect(fn () => $serviceMock->update($adminModel, ['status' => Admin::STATUS_INACTIVE]))
         ->toThrow(FOSSBilling\InformationException::class, 'Cannot remove the last active super administrator');
 });
 
 test('update rejects deactivating own staff account', function (): void {
-    $adminModel = new Model_Admin();
-    $adminModel->loadBean(new Tests\Helpers\DummyBean());
-    $adminModel->id = 10;
-    $adminModel->status = Model_Admin::STATUS_ACTIVE;
+    $adminModel = \Tests\Helpers\admin(['id' => 10, 'status' => Admin::STATUS_ACTIVE]);
 
     $eventsMock = Mockery::mock('\Box_EventManager');
     $eventsMock->shouldReceive('fire')->atLeast()->once();
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')->never();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('hasPermission')->once()->andReturn(true);
@@ -1129,26 +1310,20 @@ test('update rejects deactivating own staff account', function (): void {
     $di = container();
     $di['em'] = staffEntityManager(Mockery::mock(AdminGroupRepository::class), Mockery::mock(AdminGroupMemberRepository::class));
     $di['events_manager'] = $eventsMock;
-    $di['db'] = $dbMock;
     $di['loggedin_admin'] = staffRegularAdmin();
     $serviceMock->setDi($di);
 
-    expect(fn () => $serviceMock->update($adminModel, ['status' => Model_Admin::STATUS_INACTIVE]))
+    expect(fn () => $serviceMock->update($adminModel, ['status' => Admin::STATUS_INACTIVE]))
         ->toThrow(FOSSBilling\InformationException::class, 'You cannot deactivate your own staff account');
 });
 
 test('delete removes admin account', function (): void {
-    $adminModel = new Model_Admin();
-    $adminModel->loadBean(new Tests\Helpers\DummyBean());
-    $adminModel->id = 5;
+    $adminModel = \Tests\Helpers\admin(['id' => 5]);
 
     $eventsMock = Mockery::mock('\Box_EventManager');
     $eventsMock->shouldReceive('fire')->atLeast()->once();
 
-    $logStub = $this->createStub('\Box_Log');
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('trash')->atLeast()->once();
+    $logStub = $this->createStub(FOSSBilling\Logger::class);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
 
@@ -1156,12 +1331,19 @@ test('delete removes admin account', function (): void {
 
     $groupMemberRepository = Mockery::mock(AdminGroupMemberRepository::class);
     $groupMemberRepository->shouldReceive('deleteMembershipsForAdmin')->once()->with(5)->andReturn(2);
+    $groupMemberRepository->shouldReceive('adminBelongsToSystemGroup')->with(5, AdminGroup::SYSTEM_SUPER_ADMIN)->andReturn(false);
+
+    // Regression coverage: admin_password_reset.admin_id would be a real FK if MySQL ever
+    // adopted the entity-metadata-driven schema generator - this cleanup used to be missing
+    // entirely, which would make a real FK constraint reject the delete outright. Confirmed
+    // against a live MariaDB container with FK enforcement during the unification scoping audit.
+    $passwordResetRepository = Mockery::mock(AdminPasswordResetRepository::class);
+    $passwordResetRepository->shouldReceive('deleteResetsForAdmin')->once()->with(5)->andReturn(1);
 
     $di = container();
-    $di['em'] = staffEntityManager(Mockery::mock(AdminGroupRepository::class), $groupMemberRepository);
+    $di['em'] = staffEntityManager(Mockery::mock(AdminGroupRepository::class), $groupMemberRepository, null, $passwordResetRepository);
     $di['events_manager'] = $eventsMock;
     $di['logger'] = $logStub;
-    $di['db'] = $dbMock;
     $di['loggedin_admin'] = staffHierarchyBypassAdmin();
 
     $serviceMock->setDi($di);
@@ -1171,10 +1353,7 @@ test('delete removes admin account', function (): void {
 });
 
 test('delete rejects removing last active super administrator', function (): void {
-    $adminModel = new Model_Admin();
-    $adminModel->loadBean(new Tests\Helpers\DummyBean());
-    $adminModel->id = 3;
-    $adminModel->status = Model_Admin::STATUS_ACTIVE;
+    $adminModel = \Tests\Helpers\admin(['id' => 3, 'status' => Admin::STATUS_ACTIVE]);
 
     $groupRepository = Mockery::mock(AdminGroupRepository::class);
     $groupMemberRepository = Mockery::mock(AdminGroupMemberRepository::class);
@@ -1194,9 +1373,7 @@ test('delete rejects removing last active super administrator', function (): voi
 });
 
 test('delete rejects cron account', function (): void {
-    $adminModel = new Model_Admin();
-    $adminModel->loadBean(new Tests\Helpers\DummyBean());
-    $adminModel->system_name = Model_Admin::SYSTEM_CRON;
+    $adminModel = \Tests\Helpers\admin(['system_name' => Admin::SYSTEM_CRON]);
 
     $service = new Service();
 
@@ -1206,16 +1383,12 @@ test('delete rejects cron account', function (): void {
 
 test('changePassword updates admin password', function (): void {
     $plainTextPassword = 'password';
-    $adminModel = new Model_Admin();
-    $adminModel->loadBean(new Tests\Helpers\DummyBean());
+    $adminModel = \Tests\Helpers\admin();
 
     $eventsMock = Mockery::mock('\Box_EventManager');
     $eventsMock->shouldReceive('fire')->atLeast()->once();
 
-    $logStub = $this->createStub('\Box_Log');
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')->atLeast()->once();
+    $logStub = $this->createStub(FOSSBilling\Logger::class);
 
     $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
     $passwordMock->shouldReceive('hashIt')->atLeast()->once()
@@ -1230,7 +1403,8 @@ test('changePassword updates admin password', function (): void {
     $di = container();
     $di['events_manager'] = $eventsMock;
     $di['logger'] = $logStub;
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('persist')->atLeast()->once();
+    $di['em']->shouldReceive('flush')->atLeast()->once();
     $di['password'] = $passwordMock;
     $di['mod_service'] = $di->protect(fn () => $profileServiceStub);
     $di['loggedin_admin'] = staffHierarchyBypassAdmin();
@@ -1254,19 +1428,10 @@ test('create creates new admin account', function (): void {
     $group = new AdminGroup();
     staffSetEntityId($group, 2);
 
-    $adminModel = new Model_Admin();
-    $adminModel->loadBean(new Tests\Helpers\DummyBean());
-
     $eventsMock = Mockery::mock('\Box_EventManager');
     $eventsMock->shouldReceive('fire')->atLeast()->once();
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('dispense')->atLeast()->once()
-        ->andReturn($adminModel);
-    $dbMock->shouldReceive('store')->atLeast()->once()
-        ->andReturn($newId);
-
-    $logStub = $this->createStub('\Box_Log');
+    $logStub = $this->createStub(FOSSBilling\Logger::class);
 
     $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
     $passwordMock->shouldReceive('hashIt')->atLeast()->once()
@@ -1279,7 +1444,6 @@ test('create creates new admin account', function (): void {
     $di = container();
     $di['events_manager'] = $eventsMock;
     $di['logger'] = $logStub;
-    $di['db'] = $dbMock;
     $di['em'] = staffEntityManager(Mockery::mock(AdminGroupRepository::class)->shouldReceive('findById')->once()->with(2)->andReturn($group)->getMock());
     $di['loggedin_admin'] = staffHierarchyBypassAdmin();
     $di['password'] = $passwordMock;
@@ -1289,7 +1453,7 @@ test('create creates new admin account', function (): void {
     $result = $serviceMock->create($data);
     expect($result)->toBeInt();
     expect($result)->toBe($newId);
-    expect($di['em']->persisted[0])->toBeInstanceOf(AdminGroupMember::class);
+    expect($di['em']->persisted[1])->toBeInstanceOf(AdminGroupMember::class);
 });
 
 test('create rejects missing initial group', function (): void {
@@ -1321,19 +1485,27 @@ test('create throws exception for duplicate email', function (): void {
     $group = new AdminGroup();
     staffSetEntityId($group, 2);
 
-    $adminModel = new Model_Admin();
-    $adminModel->loadBean(new Tests\Helpers\DummyBean());
-
     $eventsMock = Mockery::mock('\Box_EventManager');
     $eventsMock->shouldReceive('fire')->atLeast()->once();
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('dispense')->atLeast()->once()
-        ->andReturn($adminModel);
-    $dbMock->shouldReceive('store')->atLeast()->once()
-        ->andThrow(new RedBeanPHP\RedException());
+    $groupRepository = Mockery::mock(AdminGroupRepository::class)->shouldReceive('findById')->once()->with(2)->andReturn($group)->getMock();
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(AdminGroup::class)->andReturn($groupRepository);
+    $emMock->shouldReceive('getRepository')->with(AdminGroupMember::class)->andReturn(Mockery::mock(AdminGroupMemberRepository::class));
+    $emMock->shouldReceive('getRepository')->with(AdminPasswordReset::class)->andReturn(Mockery::mock(AdminPasswordResetRepository::class));
+    $emMock->shouldReceive('wrapInTransaction')->once()->andReturnUsing(static fn (callable $callback): mixed => $callback());
+    $emMock->shouldReceive('persist')->atLeast()->once()->andThrow(new Doctrine\DBAL\Exception\UniqueConstraintViolationException(
+        new class extends RuntimeException implements Doctrine\DBAL\Driver\Exception {
+            public function getSQLState(): ?string
+            {
+                return null;
+            }
+        },
+        null,
+    ));
+    $emMock->shouldReceive('flush')->never();
 
-    $logStub = $this->createStub('\Box_Log');
+    $logStub = $this->createStub(FOSSBilling\Logger::class);
 
     $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
     $passwordMock->shouldReceive('hashIt')->atLeast()->once()
@@ -1346,8 +1518,7 @@ test('create throws exception for duplicate email', function (): void {
     $di = container();
     $di['events_manager'] = $eventsMock;
     $di['logger'] = $logStub;
-    $di['db'] = $dbMock;
-    $di['em'] = staffEntityManager(Mockery::mock(AdminGroupRepository::class)->shouldReceive('findById')->once()->with(2)->andReturn($group)->getMock());
+    $di['em'] = $emMock;
     $di['loggedin_admin'] = staffHierarchyBypassAdmin();
     $di['password'] = $passwordMock;
 
@@ -1679,9 +1850,7 @@ test('updateGroup rejects clearing parent group', function (): void {
 });
 
 test('addAdminToGroup creates membership', function (): void {
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
-    $admin->id = 3;
+    $admin = \Tests\Helpers\admin(['id' => 3]);
 
     $group = new AdminGroup();
     staffSetEntityId($group, 2);
@@ -1705,16 +1874,14 @@ test('addAdminToGroup creates membership', function (): void {
 });
 
 test('addAdminToGroup is idempotent for existing membership', function (): void {
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
-    $admin->id = 3;
+    $admin = \Tests\Helpers\admin(['id' => 3]);
 
     $group = new AdminGroup();
     staffSetEntityId($group, 2);
 
     $groupRepository = Mockery::mock(AdminGroupRepository::class);
     $groupMemberRepository = Mockery::mock(AdminGroupMemberRepository::class);
-    $groupMemberRepository->shouldReceive('findMembership')->once()->with(3, 2)->andReturn(new AdminGroupMember(3, $group));
+    $groupMemberRepository->shouldReceive('findMembership')->once()->with(3, 2)->andReturn(new AdminGroupMember($admin, $group));
     $em = staffEntityManager($groupRepository, $groupMemberRepository);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
@@ -1730,14 +1897,11 @@ test('addAdminToGroup is idempotent for existing membership', function (): void 
 });
 
 test('removeAdminFromGroup removes membership', function (): void {
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
-    $admin->id = 3;
-    $admin->status = Model_Admin::STATUS_ACTIVE;
+    $admin = \Tests\Helpers\admin(['id' => 3, 'status' => Admin::STATUS_ACTIVE]);
 
     $group = new AdminGroup();
     staffSetEntityId($group, 2);
-    $membership = new AdminGroupMember(3, $group);
+    $membership = new AdminGroupMember($admin, $group);
 
     $groupRepository = Mockery::mock(AdminGroupRepository::class);
     $groupMemberRepository = Mockery::mock(AdminGroupMemberRepository::class);
@@ -1758,17 +1922,14 @@ test('removeAdminFromGroup removes membership', function (): void {
 });
 
 test('removeAdminFromGroup rejects removing last active super administrator', function (): void {
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
-    $admin->id = 3;
-    $admin->status = Model_Admin::STATUS_ACTIVE;
+    $admin = \Tests\Helpers\admin(['id' => 3, 'status' => Admin::STATUS_ACTIVE]);
 
     $group = (new AdminGroup())->setSystemName(AdminGroup::SYSTEM_SUPER_ADMIN);
     staffSetEntityId($group, 1);
 
     $groupRepository = Mockery::mock(AdminGroupRepository::class);
     $groupMemberRepository = Mockery::mock(AdminGroupMemberRepository::class);
-    $groupMemberRepository->shouldReceive('findMembership')->once()->with(3, 1)->andReturn(new AdminGroupMember(3, $group));
+    $groupMemberRepository->shouldReceive('findMembership')->once()->with(3, 1)->andReturn(new AdminGroupMember($admin, $group));
     $groupMemberRepository->shouldReceive('adminBelongsToSystemGroup')->once()->with(3, AdminGroup::SYSTEM_SUPER_ADMIN)->andReturn(true);
     $groupMemberRepository->shouldReceive('countActiveMembersInSystemGroup')->once()->with(AdminGroup::SYSTEM_SUPER_ADMIN)->andReturn(1);
 
@@ -1785,13 +1946,9 @@ test('removeAdminFromGroup rejects removing last active super administrator', fu
 });
 
 test('delete rejects staff outside actor group subtree', function (): void {
-    $actor = new Model_Admin();
-    $actor->loadBean(new Tests\Helpers\DummyBean());
-    $actor->id = 10;
+    $actor = \Tests\Helpers\admin(['id' => 10]);
 
-    $target = new Model_Admin();
-    $target->loadBean(new Tests\Helpers\DummyBean());
-    $target->id = 20;
+    $target = \Tests\Helpers\admin(['id' => 20]);
 
     $groupRepository = Mockery::mock(AdminGroupRepository::class);
     $groupRepository->shouldReceive('getDescendantIdsForGroups')->with([1])->andReturn([3]);
@@ -1814,13 +1971,9 @@ test('delete rejects staff outside actor group subtree', function (): void {
 });
 
 test('addAdminToGroup rejects target staff without a group', function (): void {
-    $actor = new Model_Admin();
-    $actor->loadBean(new Tests\Helpers\DummyBean());
-    $actor->id = 10;
+    $actor = \Tests\Helpers\admin(['id' => 10]);
 
-    $target = new Model_Admin();
-    $target->loadBean(new Tests\Helpers\DummyBean());
-    $target->id = 20;
+    $target = \Tests\Helpers\admin(['id' => 20]);
 
     $peerGroup = new AdminGroup();
     staffSetEntityId($peerGroup, 2);
@@ -1845,13 +1998,9 @@ test('addAdminToGroup rejects target staff without a group', function (): void {
 });
 
 test('addAdminToGroup rejects assigning groups outside actor subtree', function (): void {
-    $actor = new Model_Admin();
-    $actor->loadBean(new Tests\Helpers\DummyBean());
-    $actor->id = 10;
+    $actor = \Tests\Helpers\admin(['id' => 10]);
 
-    $target = new Model_Admin();
-    $target->loadBean(new Tests\Helpers\DummyBean());
-    $target->id = 20;
+    $target = \Tests\Helpers\admin(['id' => 20]);
 
     $peerGroup = new AdminGroup();
     staffSetEntityId($peerGroup, 2);
@@ -1903,7 +2052,7 @@ test('updateGroup rejects moving group below its own child', function (): void {
 dataset('ActivityAdminHistorySearchFilters', fn (): array => [
     'empty filters' => [
         [],
-        'SELECT m.*, a.email, a.name',
+        'SELECT m.*, a.id AS staff_id, a.email, a.name',
         [],
     ],
     'search by keyword' => [
@@ -1931,40 +2080,86 @@ test('getActivityAdminHistorySearchQuery returns correct query and params', func
     expect(array_diff_key($result[1], $expectedParams))->toBe([]);
 })->with('ActivityAdminHistorySearchFilters');
 
+test('toActivityAdminHistoryRowApiArray returns paginated history data without additional lookups', function (): void {
+    $service = new Service();
+
+    $withStaff = $service->toActivityAdminHistoryRowApiArray([
+        'id' => '1',
+        'admin_id' => '2',
+        'ip' => '192.0.2.1',
+        'created_at' => '2026-01-01 12:00:00',
+        'staff_id' => '2',
+        'name' => 'Administrator',
+        'email' => 'admin@example.test',
+    ]);
+    $withoutStaff = $service->toActivityAdminHistoryRowApiArray([
+        'id' => '2',
+        'admin_id' => '3',
+        'ip' => null,
+        'created_at' => '2026-01-02 12:00:00',
+        'staff_id' => null,
+        'name' => null,
+        'email' => null,
+    ]);
+
+    expect($withStaff)->toBe([
+        'id' => 1,
+        'ip' => '192.0.2.1',
+        'created_at' => '2026-01-01 12:00:00',
+        'staff' => [
+            'id' => 2,
+            'name' => 'Administrator',
+            'email' => 'admin@example.test',
+        ],
+    ])->and($withoutStaff)->toBe([
+        'id' => 2,
+        'ip' => null,
+        'created_at' => '2026-01-02 12:00:00',
+    ]);
+});
+
 test('toActivityAdminHistoryApiArray returns history array data', function (): void {
-    $adminHistoryModel = new Model_ActivityAdminHistory();
-    $adminHistoryModel->loadBean(new Tests\Helpers\DummyBean());
-    $adminHistoryModel->admin_id = 2;
+    $createdAt = new DateTime('2026-01-01 12:00:00');
+    $adminHistory = (new ActivityAdminHistory())
+        ->setAdminId(2)
+        ->setIp('192.0.2.1')
+        ->setCreatedAt($createdAt);
+    staffSetEntityId($adminHistory, 1);
 
     $expected = [
-        'id' => '',
-        'ip' => '',
-        'created_at' => '',
+        'id' => 1,
+        'ip' => '192.0.2.1',
+        'created_at' => '2026-01-01 12:00:00',
         'staff' => [
-            'id' => $adminHistoryModel->admin_id,
-            'name' => '',
-            'email' => '',
+            'id' => 2,
+            'name' => 'Administrator',
+            'email' => 'admin@example.test',
         ],
     ];
 
-    $adminModel = new Model_Admin();
-    $adminModel->loadBean(new Tests\Helpers\DummyBean());
-    $adminModel->id = 2;
+    $admin = (new Admin())
+        ->setName('Administrator')
+        ->setEmail('admin@example.test');
+    staffSetEntityId($admin, 2);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('load')->atLeast()->once()
-        ->andReturn($adminModel);
+    $adminRepository = Mockery::mock(AdminRepository::class);
+    $adminRepository->shouldReceive('find')->once()->with(2)->andReturn($admin);
+    $groupRepository = Mockery::mock(AdminGroupRepository::class)->shouldIgnoreMissing();
+    $groupMemberRepository = Mockery::mock(AdminGroupMemberRepository::class)->shouldIgnoreMissing();
+    $entityManager = Mockery::mock(EntityManagerInterface::class);
+    $entityManager->shouldReceive('getRepository')->with(AdminGroup::class)->andReturn($groupRepository);
+    $entityManager->shouldReceive('getRepository')->with(AdminGroupMember::class)->andReturn($groupMemberRepository);
+    $entityManager->shouldReceive('getRepository')->with(AdminPasswordReset::class)->andReturn(Mockery::mock(AdminPasswordResetRepository::class)->shouldIgnoreMissing());
+    $entityManager->shouldReceive('getRepository')->once()->with(Admin::class)->andReturn($adminRepository);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $entityManager;
 
     $service = new Service();
     $service->setDi($di);
-    $result = $service->toActivityAdminHistoryApiArray($adminHistoryModel);
+    $result = $service->toActivityAdminHistoryApiArray($adminHistory);
 
-    expect($result)->not->toBeEmpty();
-    expect($result)->toBeArray();
-    expect(count(array_diff(array_keys($expected), array_keys($result))))->toBe(0, 'Missing array key values.');
+    expect($result)->toBe($expected);
 });
 
 test('getPermissions returns empty array when staff has no groups', function (): void {
@@ -2012,18 +2207,18 @@ test('authorizeAdmin returns null when email not found', function (): void {
     $email = 'example@fossbilling.vm';
     $password = '123456';
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('findOne')->atLeast()->once()
+    $adminRepository = Mockery::mock(AdminRepository::class);
+    $adminRepository->shouldReceive('findOneByEmailAndActive')->atLeast()->once()
+        ->with($email)
         ->andReturn(null);
 
-    $authMock = Mockery::mock('\Box_Authorization');
-    $authMock->shouldReceive('authorizeUser')->atLeast()->once()
-        ->with(null, $password)
-        ->andReturn(null);
+    $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
+    $passwordMock->shouldReceive('dummyVerify')->atLeast()->once()
+        ->with($password);
 
     $di = container();
-    $di['db'] = $dbMock;
-    $di['auth'] = $authMock;
+    $di['em']->shouldReceive('getRepository')->with(Admin::class)->andReturn($adminRepository);
+    $di['password'] = $passwordMock;
 
     $service = new Service();
     $service->setDi($di);
@@ -2036,27 +2231,29 @@ test('authorizeAdmin returns admin model on success', function (): void {
     $email = 'example@fossbilling.vm';
     $password = '123456';
 
-    $model = new Model_Admin();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = \Tests\Helpers\admin(['pass' => 'hashedPassword']);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('findOne')->atLeast()->once()
+    $adminRepository = Mockery::mock(AdminRepository::class);
+    $adminRepository->shouldReceive('findOneByEmailAndActive')->atLeast()->once()
+        ->with($email)
         ->andReturn($model);
 
-    $authMock = Mockery::mock('\Box_Authorization');
-    $authMock->shouldReceive('authorizeUser')->atLeast()->once()
-        ->with($model, $password)
-        ->andReturn($model);
+    $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
+    $passwordMock->shouldReceive('verify')->atLeast()->once()
+        ->with($password, $model->getPass())
+        ->andReturn(true);
+    $passwordMock->shouldReceive('needsRehash')->atLeast()->once()
+        ->andReturn(false);
 
     $di = container();
-    $di['db'] = $dbMock;
-    $di['auth'] = $authMock;
+    $di['em']->shouldReceive('getRepository')->with(Admin::class)->andReturn($adminRepository);
+    $di['password'] = $passwordMock;
 
     $service = new Service();
     $service->setDi($di);
 
     $result = $service->authorizeAdmin($email, $password);
-    expect($result)->toBeInstanceOf(Model_Admin::class);
+    expect($result)->toBeInstanceOf(Admin::class);
 });
 
 test('i18n::validateTimezone returns null for null and empty input', function (): void {

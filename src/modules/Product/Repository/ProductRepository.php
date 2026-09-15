@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Box\Mod\Product\Repository;
 
 use Box\Mod\Product\Entity\Product;
+use Box\Mod\Product\Entity\ProductCategory;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
 
@@ -142,7 +143,7 @@ class ProductRepository extends EntityRepository
     {
         $count = $this->createQueryBuilder('p')
             ->select('COUNT(p.id)')
-            ->where('p.productCategoryId = :categoryId')
+            ->where('IDENTITY(p.productCategory) = :categoryId')
             ->setParameter('categoryId', $categoryId)
             ->getQuery()
             ->getSingleScalarResult();
@@ -159,7 +160,7 @@ class ProductRepository extends EntityRepository
             'isAddon' => false,
             'status' => 'enabled',
             'hidden' => false,
-            'productCategoryId' => $categoryId,
+            'productCategory' => $this->getEntityManager()->getReference(ProductCategory::class, $categoryId),
         ], [
             'priority' => 'ASC',
         ]);
@@ -214,6 +215,22 @@ class ProductRepository extends EntityRepository
         }
 
         return $qb->getQuery()->getResult();
+    }
+
+    public function decrementStockIfAvailable(int $productId, int $quantity, \DateTimeInterface $updatedAt): int
+    {
+        return $this->getEntityManager()->getConnection()->executeStatement(
+            'UPDATE product SET quantity_in_stock = quantity_in_stock - ?, updated_at = ? WHERE id = ? AND quantity_in_stock >= ?',
+            [$quantity, $updatedAt->format('Y-m-d H:i:s'), $productId, $quantity]
+        );
+    }
+
+    public function incrementStock(int $productId, int $quantity, \DateTimeInterface $updatedAt): int
+    {
+        return $this->getEntityManager()->getConnection()->executeStatement(
+            'UPDATE product SET quantity_in_stock = quantity_in_stock + ?, updated_at = ? WHERE id = ?',
+            [$quantity, $updatedAt->format('Y-m-d H:i:s'), $productId]
+        );
     }
 
     public function findEnabledAddonById(int $id): ?Product

@@ -76,7 +76,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         $currencyService = $this->getDi()['mod_service']('currency');
         /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
         $currencyRepository = $currencyService->getCurrencyRepository();
-        $currency = $currencyRepository->find($cart->currency_id);
+        $currency = $currencyRepository->find($cart->getCurrencyId());
         if (!$currency instanceof Currency) {
             $currency = $currencyRepository->findDefault();
             if (!$currency instanceof Currency) {

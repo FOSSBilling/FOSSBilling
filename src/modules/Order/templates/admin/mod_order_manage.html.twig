@@ -23,9 +23,7 @@
 {% set active_menu = 'order' %}
 
 {% set service_partial = 'mod_service' ~ order.service_type ~ '_manage.html.twig' %}
-{% if order.group_master == 1 %}
-    {% set addons = admin.order_addons({ 'id': order.id }) %}
-{% endif %}
+{% set addons = order.group_master == 1 ? admin.order_addons({ 'id': order.id }) : [] %}
 {% if order.status == 'active' or order.status == 'failed_renew' %}
     {% set can_cancel_at_period_end = admin.order_can_cancel_at_period_end({ 'id': order.id }) %}
 {% endif %}
@@ -116,7 +114,7 @@
                                         <td class="text-end">{{ 'Order Notes'|trans }}</td>
                                         <td>
                                             <svg class="icon">
-                                                <use href="#headset" />
+                                                <use href="#notes" />
                                             </svg>
                                             <a>{{ order.notes }}</a>
                                         </td>
@@ -374,7 +372,11 @@
                                 </div>
                                 <div class="col-lg-6">
                                     <label class="form-label">{{ 'Period'|trans }}</label>
-                                    {{ mf.selectbox('period', guest.system_periods, order.period, 0, 'Not recurrent'|trans) }}
+                                    {% set period_options = guest.system_periods %}
+                                    {% if order.period and order.period not in period_options|keys %}
+                                        {% set period_options = period_options|merge({ (order.period): guest.system_period_title({code: order.period}) }) %}
+                                    {% endif %}
+                                    {{ mf.selectbox('period', period_options, order.period, 0, 'Not recurrent'|trans) }}
                                 </div>
                                 <div class="col-lg-6">
                                     <label class="form-label" for="expires_at">{{ 'Date Expires'|trans }}</label>
@@ -390,6 +392,21 @@
                                             </svg>
                                         </span>
                                     </div>
+                                </div>
+                                <div class="col-lg-6">
+                                    <label class="form-label" for="order_suspension_grace_days">{{ 'Suspension Grace Period Override'|trans }}</label>
+                                    <div class="input-group">
+                                        <input class="form-control"
+                                               id="order_suspension_grace_days"
+                                               type="number"
+                                               min="0"
+                                               step="1"
+                                               name="suspension_grace_days"
+                                               value="{{ order.suspension_grace_days|default('') }}"
+                                               placeholder="{{ order.product_suspension_grace_days|default(0) }}">
+                                        <span class="input-group-text">{{ 'days'|trans }}</span>
+                                    </div>
+                                    <div class="form-text">{{ 'Leave empty to inherit the product setting (%days% days).'|trans({ '%days%': order.product_suspension_grace_days|default(0) }) }}</div>
                                 </div>
                                 <div class="col-lg-6">
                                     <label class="form-label" for="order_reason">{{ 'Reason'|trans }}</label>
@@ -530,7 +547,15 @@
         <div class="tab-pane fade" id="tab-service" role="tabpanel">
             {% if guest.system_template_exists({ 'file': service_partial }) %}
                 {% set service = admin.order_service({ 'id': order.id }) %}
-                {{ include(service_partial, { 'order': order, 'service': service }) }}
+                {% if service is not null %}
+                    {{ include(service_partial, { 'order': order, 'service': service }) }}
+                {% else %}
+                    <div class="p-3">
+                        <div class="alert alert-info mb-0" role="alert">
+                            {{ 'This order does not have a provisioned service yet.'|trans }}
+                        </div>
+                    </div>
+                {% endif %}
             {% elseif order.form_id and guest.extension_is_on({ 'mod': 'formbuilder' }) %}
                 {{ include('mod_formbuilder_manage.html.twig', order) }}
             {% else %}
@@ -559,7 +584,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% set invoices = admin.invoice_get_list({ 'per_page': 50, 'order_id': order.id }) %}
+                                {% set invoices = admin.invoice_get_list({ 'per_page': 50, 'order_id': order.id, 'summary': 1 }) %}
                                 {% for invoice in invoices.list %}
                                 <tr>
                                     <td><a href='{{ "invoice/manage/#{invoice.id}"|url }}'>#{{ invoice.id }}</a></td>
@@ -610,7 +635,7 @@
                                 {% for i, sh in statuses.list %}
                                 <tr>
                                     <td class="d-none d-lg-table-cell">{{ sh.created_at|format_datetime }}</td>
-                                    <td class="d-lg-none">{{ sh.created_at|format_datetime(pattern="MM/DD/YY MM:HH") }}</td>
+                                    <td class="d-lg-none">{{ sh.created_at|format_datetime(pattern="MM/dd/yy HH:mm") }}</td>
                                     <td>{{ mf.status_badge(sh.status, 'order') }}</td>
                                     <td class="text-wrap">{{ sh.notes }}</td>
                                     <td>

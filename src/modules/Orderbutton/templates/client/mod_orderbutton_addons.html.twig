@@ -19,12 +19,11 @@
         <label class="currency">
           {% set cart_currency = guest.cart_get_currency %}
           {% if addon.pricing.type is same as('recurrent') %}
-          {% set periods = guest.system_periods %}
           <select class="form-select" name="addons[{{ addon.id }}][period]" rel="addon-periods-{{ addon.id }}">
             {% for code, prices in addon.pricing.recurrent %}
             {% if prices.enabled %}
             <option value="{{ code }}">{{ (prices.price * cart_currency.conversion_rate)|format_currency(cart_currency.code) }} {% if prices.setup !=
-              '0.00' %}{{ 'Setup:'|trans }} {{ (prices.setup * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}{% endif %} ({{ periods[code] }})</option>
+              '0.00' %}{{ 'Setup:'|trans }} {{ (prices.setup * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}{% endif %} ({{ prices.title }})</option>
             {% endif %}
             {% endfor %}
           </select>

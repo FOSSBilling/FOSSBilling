@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicedomain;
 
+use Box\Mod\Servicedomain\Entity\Tld;
+
 class ServiceTld implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
@@ -25,8 +27,8 @@ class ServiceTld implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
-    public function findOneByTld($tld)
+    public function findOneByTld(string $tld): ?Tld
     {
-        return $this->di['db']->findOne('Tld', 'tld = ?', [$tld]);
+        return $this->di['em']->getRepository(Tld::class)->findOneBy(['tld' => $tld]);
     }
 }

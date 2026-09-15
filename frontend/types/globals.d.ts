@@ -55,8 +55,23 @@ interface FOSSBillingRuntime {
   charts?: {
     renderTimeSeriesSparkline: (target: HTMLElement | string, data: unknown, options?: Record<string, unknown>) => unknown;
   };
+  cookieNames?: {
+    locale: string;
+    timezone: string;
+  };
   cookieCreate?: (name: string, value: string, days?: number) => void;
   cookieRead?: (name: string) => string | null;
+  currency?: {
+    format: (
+      amount: number,
+      options: {
+        code: string;
+        format_pattern?: string | null;
+        fraction_digits?: number | null;
+      },
+      locale?: string | string[],
+    ) => string;
+  };
   detectTimezone?: () => string;
   editor?: FOSSBillingEditorRegistry;
   initTimezone?: () => void;
@@ -110,6 +125,7 @@ interface BootstrapRuntime {
 
 declare global {
   const bootstrap: BootstrapRuntime;
+  const tabler: BootstrapRuntime;
   const FOSSBilling: FOSSBillingRuntime;
   const Modals: ModalsRuntime | undefined;
 
@@ -124,6 +140,7 @@ declare global {
   }
 
   var bootstrap: BootstrapRuntime;
+  var tabler: BootstrapRuntime;
   var flashMessage: ((options: { message?: string; reload?: boolean | string; type?: string }) => void) | undefined;
   var FOSSBilling: FOSSBillingRuntime;
   var Modals: ModalsRuntime | undefined;

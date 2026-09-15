@@ -12,6 +12,7 @@ declare(strict_types=1);
 use Box\Mod\Profile\Service;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 
 test('gets dependency injection container', function (): void {
     $service = new Service();
@@ -22,8 +23,7 @@ test('gets dependency injection container', function (): void {
 });
 
 test('gets admin identity array', function (): void {
-    $model = new Model_Admin();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(Box\Mod\Staff\Entity\Admin::class);
 
     $service = new Service();
     $result = $service->getAdminIdentityArray($model);
@@ -36,18 +36,11 @@ test('updates admin', function (): void {
         ->atLeast()->once()
         ->andReturn(true);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once()
-        ->andReturn(true);
-
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['events_manager'] = $emMock;
-    $di['db'] = $dbMock;
 
-    $model = new Model_Admin();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(Box\Mod\Staff\Entity\Admin::class);
 
     $data = [
         'signature' => 'new signature',
@@ -67,21 +60,18 @@ test('generates new api key', function (): void {
         ->atLeast()->once()
         ->andReturn(true);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once()
-        ->andReturn(true);
-
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['events_manager'] = $emMock;
-    $di['db'] = $dbMock;
     $di['tools'] = new FOSSBilling\Tools();
 
-    $model = new Model_Admin();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(Box\Mod\Staff\Entity\Admin::class);
 
-    $service = new Service();
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('invalidateSessions')
+        ->once()
+        ->with('admin', (int) $model->getId())
+        ->andReturn(true);
     $service->setDi($di);
 
     $result = $service->generateNewApiKey($model);
@@ -95,11 +85,6 @@ test('changes admin password', function (): void {
         ->atLeast()->once()
         ->andReturn(true);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once()
-        ->andReturn(true);
-
     $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
     $passwordMock->shouldReceive('hashIt')
         ->with($password);
@@ -107,11 +92,9 @@ test('changes admin password', function (): void {
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['events_manager'] = $emMock;
-    $di['db'] = $dbMock;
     $di['password'] = $passwordMock;
 
-    $model = new Model_Admin();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(Box\Mod\Staff\Entity\Admin::class);
 
     $service = new Service();
     $service->setDi($di);
@@ -123,11 +106,6 @@ test('changes admin password', function (): void {
 test('updates client', function (): void {
     $emMock = Mockery::mock('\Box_EventManager');
     $emMock->shouldReceive('fire')
-        ->atLeast()->once()
-        ->andReturn(true);
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
         ->atLeast()->once()
         ->andReturn(true);
 
@@ -148,13 +126,11 @@ test('updates client', function (): void {
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['events_manager'] = $emMock;
-    $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn ($name): Mockery\MockInterface => $clientServiceMock);
     $di['mod'] = $di->protect(fn (): Mockery\MockInterface => $modMock);
     $di['tools'] = $toolsMock;
 
-    $model = new Model_Client();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(Box\Mod\Client\Entity\Client::class);
 
     $data = [
         'email' => 'email@example.com',
@@ -203,18 +179,13 @@ test('updates client', function (): void {
     $service->setDi($di);
     $result = $service->updateClient($model, $data);
     expect($result)->toBeTrue();
-    expect($model->billing_email)->toBe('billing@example.com');
+    expect($model->getBillingEmail())->toBe('billing@example.com');
 });
 
 test('throws exception when email change is not allowed', function (): void {
     $emMock = Mockery::mock('\Box_EventManager');
     $emMock->shouldReceive('fire')
         ->atLeast()->once()
-        ->andReturn(true);
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
-        ->never()
         ->andReturn(true);
 
     $modMock = Mockery::mock(FOSSBilling\Module::class);
@@ -232,12 +203,10 @@ test('throws exception when email change is not allowed', function (): void {
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['events_manager'] = $emMock;
-    $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn ($name): Mockery\MockInterface => $clientServiceMock);
     $di['mod'] = $di->protect(fn (): Mockery\MockInterface => $modMock);
 
-    $model = new Model_Client();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(Box\Mod\Client\Entity\Client::class);
 
     $data = ['email' => 'email@example.com'];
 
@@ -252,11 +221,6 @@ test('throws exception when email already registered', function (): void {
     $emMock = Mockery::mock('\Box_EventManager');
     $emMock->shouldReceive('fire')
         ->atLeast()->once()
-        ->andReturn(true);
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
-        ->never()
         ->andReturn(true);
 
     $modMock = Mockery::mock(FOSSBilling\Module::class);
@@ -277,13 +241,11 @@ test('throws exception when email already registered', function (): void {
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['events_manager'] = $emMock;
-    $di['db'] = $dbMock;
     $di['mod_service'] = $di->protect(fn ($name): Mockery\MockInterface => $clientServiceMock);
     $di['mod'] = $di->protect(fn (): Mockery\MockInterface => $modMock);
     $di['tools'] = $toolsMock;
 
-    $model = new Model_Client();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(Box\Mod\Client\Entity\Client::class);
 
     $data = ['email' => 'email@example.com'];
 
@@ -295,20 +257,17 @@ test('throws exception when email already registered', function (): void {
 });
 
 test('resets api key', function (): void {
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once()
-        ->andReturn(true);
-
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['db'] = $dbMock;
     $di['tools'] = new FOSSBilling\Tools();
 
-    $model = new Model_Client();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(Box\Mod\Client\Entity\Client::class);
 
-    $service = new Service();
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('invalidateSessions')
+        ->once()
+        ->with('client', (int) $model->getId())
+        ->andReturn(true);
     $service->setDi($di);
     $result = $service->resetApiKey($model);
     expect($result)->toBeString();
@@ -321,11 +280,6 @@ test('changes client password', function (): void {
         ->atLeast()->once()
         ->andReturn(true);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('store')
-        ->atLeast()->once()
-        ->andReturn(true);
-
     $password = 'new password';
 
     $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
@@ -335,11 +289,9 @@ test('changes client password', function (): void {
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['events_manager'] = $emMock;
-    $di['db'] = $dbMock;
     $di['password'] = $passwordMock;
 
-    $model = new Model_Client();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(Box\Mod\Client\Entity\Client::class);
 
     $service = new Service();
     $service->setDi($di);
@@ -356,13 +308,39 @@ test('logs out client', function (): void {
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['session'] = $sessionMock;
 
-    $model = new Model_Client();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(Box\Mod\Client\Entity\Client::class);
 
     $service = new Service();
     $service->setDi($di);
     $result = $service->logoutClient();
     expect($result)->toBeTrue();
+});
+
+test('invalidates client sessions stored in Symfony attribute format', function (): void {
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('fetchAllAssociative')
+        ->once()
+        ->with('SELECT id, content FROM session WHERE content IS NOT NULL AND OCTET_LENGTH(content) > 0')
+        ->andReturn([
+            ['id' => 'matching-session', 'content' => '_sf2_attributes|a:1:{s:9:"client_id";i:42;}_symfony_flashes|a:0:{}_sf2_meta|a:0:{}'],
+            ['id' => 'other-session', 'content' => '_sf2_attributes|a:1:{s:9:"client_id";i:7;}_symfony_flashes|a:0:{}_sf2_meta|a:0:{}'],
+            ['id' => 'malformed-session', 'content' => '_sf2_attributes|not-a-serialized-array'],
+        ]);
+    $connection->shouldReceive('executeStatement')
+        ->once()
+        ->with('DELETE FROM session WHERE id = :id', ['id' => 'matching-session'])
+        ->andReturn(1);
+
+    $entityManager = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $entityManager->shouldReceive('getConnection')->twice()->andReturn($connection);
+
+    $di = container();
+    $di['em'] = $entityManager;
+
+    $service = new Service();
+    $service->setDi($di);
+
+    expect($service->invalidateSessions('client', 42))->toBeTrue();
 });
 
 test('i18n::validateTimezone returns null for null and empty input', function (): void {

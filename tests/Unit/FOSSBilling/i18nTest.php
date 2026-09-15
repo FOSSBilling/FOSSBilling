@@ -11,8 +11,11 @@
 declare(strict_types=1);
 
 use FOSSBilling\Config;
+use FOSSBilling\Http\CookieNames;
+use FOSSBilling\Http\CookieQueue;
 use FOSSBilling\i18n;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 beforeEach(function (): void {
     Config::setProperty('i18n.timezone', 'UTC');
@@ -24,11 +27,11 @@ afterEach(function (): void {
     Config::setProperty('i18n.locale', 'en_US');
 });
 
-function requestWithTimezoneCookie(?string $timezone = null): Request
+function requestWithTimezoneCookie(?string $timezone = null, string $cookieName = CookieNames::TIMEZONE): Request
 {
     $request = Request::create('/');
     if ($timezone !== null) {
-        $request->cookies->set('fb_timezone', $timezone);
+        $request->cookies->set($cookieName, $timezone);
     }
 
     return $request;
@@ -94,13 +97,13 @@ test('getActiveTimezone prefers the client timezone over the admin timezone', fu
     expect(i18n::getActiveTimezone(Request::create('/'), 'America/New_York', 'Asia/Tokyo'))->toBe('America/New_York');
 });
 
-test('getActiveTimezone reads the fb_timezone cookie when set and valid', function (): void {
+test('getActiveTimezone reads the namespaced timezone cookie when set and valid', function (): void {
     $request = requestWithTimezoneCookie('Europe/Berlin');
 
     expect(i18n::getActiveTimezone($request))->toBe('Europe/Berlin');
 });
 
-test('getActiveTimezone prefers explicit client/admin arguments over a valid fb_timezone cookie', function (): void {
+test('getActiveTimezone prefers explicit client/admin arguments over a valid timezone cookie', function (): void {
     $request = requestWithTimezoneCookie('Europe/Berlin');
 
     expect(i18n::getActiveTimezone($request, 'America/New_York', 'Asia/Tokyo'))->toBe('America/New_York');
@@ -109,13 +112,13 @@ test('getActiveTimezone prefers explicit client/admin arguments over a valid fb_
     expect(i18n::getActiveTimezone($request, null, null))->toBe('Europe/Berlin');
 });
 
-test('getActiveTimezone ignores an invalid fb_timezone cookie', function (): void {
+test('getActiveTimezone ignores an invalid timezone cookie', function (): void {
     $request = requestWithTimezoneCookie('Definitely/Not_Real');
 
     expect(i18n::getActiveTimezone($request))->toBe('UTC');
 });
 
-test('getActiveTimezone ignores an invalid fb_timezone cookie when explicit arguments are valid', function (): void {
+test('getActiveTimezone ignores an invalid timezone cookie when explicit arguments are valid', function (): void {
     $request = requestWithTimezoneCookie('Definitely/Not_Real');
 
     expect(i18n::getActiveTimezone($request, 'America/New_York', 'Asia/Tokyo'))->toBe('America/New_York');
@@ -123,7 +126,7 @@ test('getActiveTimezone ignores an invalid fb_timezone cookie when explicit argu
     expect(i18n::getActiveTimezone($request, null, 'Asia/Tokyo'))->toBe('Asia/Tokyo');
 });
 
-test('getActiveTimezone falls back to valid fb_timezone cookie when client timezone is invalid', function (): void {
+test('getActiveTimezone falls back to a valid timezone cookie when client timezone is invalid', function (): void {
     $request = requestWithTimezoneCookie('Europe/Berlin');
 
     expect(i18n::getActiveTimezone($request, 'Mars/Olympus_Mons', null))->toBe('Europe/Berlin');
@@ -171,20 +174,20 @@ test('validateTimezone throws InformationException for invalid timezone identifi
     }
 });
 
-test('getActiveLocale returns the fb_locale cookie when it matches an enabled locale', function (): void {
+test('getActiveLocale returns the namespaced locale cookie when it matches an enabled locale', function (): void {
     // Only en_US is guaranteed to be installed (translations are not fetched in CI),
     // so use a different config default to prove the cookie takes precedence.
     Config::setProperty('i18n.locale', 'de_DE');
 
     $request = Request::create('/');
-    $request->cookies->set('fb_locale', 'en_US');
+    $request->cookies->set(CookieNames::LOCALE, 'en_US');
 
     expect(i18n::getActiveLocale($request, false))->toBe('en_US');
 });
 
-test('getActiveLocale ignores an invalid fb_locale cookie and falls back to config default', function (): void {
+test('getActiveLocale ignores an invalid locale cookie and falls back to config default', function (): void {
     $request = Request::create('/');
-    $request->cookies->set('fb_locale', 'xx_XX');
+    $request->cookies->set(CookieNames::LOCALE, 'xx_XX');
 
     expect(i18n::getActiveLocale($request, false))->toBe('en_US');
 });
@@ -205,4 +208,39 @@ test('getActiveLocale auto-detects locale from Accept-Language header when enabl
 
 test('getActiveLocale returns the configured default when no cookie and no Accept-Language header', function (): void {
     expect(i18n::getActiveLocale(Request::create('/'), false))->toBe('en_US');
+});
+
+test('getActiveTimezone migrates and expires the legacy timezone cookie', function (): void {
+    $request = requestWithTimezoneCookie('Europe/Berlin', CookieNames::LEGACY_TIMEZONE);
+    $cookies = new CookieQueue();
+
+    expect(i18n::getActiveTimezone($request, cookies: $cookies))->toBe('Europe/Berlin');
+
+    $response = new Response();
+    $cookies->applyToResponse($response);
+    $queued = [];
+    foreach ($response->headers->getCookies() as $cookie) {
+        $queued[$cookie->getName()] = $cookie;
+    }
+
+    expect($queued[CookieNames::TIMEZONE]->getValue())->toBe('Europe/Berlin')
+        ->and($queued[CookieNames::LEGACY_TIMEZONE]->getExpiresTime())->toBeLessThan(time());
+});
+
+test('getActiveLocale migrates and expires the legacy locale cookie', function (): void {
+    $request = Request::create('/');
+    $request->cookies->set(CookieNames::LEGACY_LOCALE, 'en_US');
+    $cookies = new CookieQueue();
+
+    expect(i18n::getActiveLocale($request, false, $cookies))->toBe('en_US');
+
+    $response = new Response();
+    $cookies->applyToResponse($response);
+    $queued = [];
+    foreach ($response->headers->getCookies() as $cookie) {
+        $queued[$cookie->getName()] = $cookie;
+    }
+
+    expect($queued[CookieNames::LOCALE]->getValue())->toBe('en_US')
+        ->and($queued[CookieNames::LEGACY_LOCALE]->getExpiresTime())->toBeLessThan(time());
 });

@@ -43,19 +43,24 @@
                     </div>
                     <div class="col-lg-3">
                         <label class="form-label">{{ 'Registration Price'|trans }}</label>
-                        <input class="form-control" type="text" name="price_registration" value="{{ tld.price_registration }}" required>
+                        <input class="form-control" type="number" min="0" step="any" name="price_registration" value="{{ tld.price_registration }}" required>
                     </div>
                     <div class="col-lg-3">
                         <label class="form-label">{{ 'Renewal Price'|trans }}</label>
-                        <input class="form-control" type="text" name="price_renew" value="{{ tld.price_renew }}" required>
+                        <input class="form-control" type="number" min="0" step="any" name="price_renew" value="{{ tld.price_renew }}" required>
                     </div>
                     <div class="col-lg-3">
                         <label class="form-label">{{ 'Transfer Price'|trans }}</label>
-                        <input class="form-control" type="text" name="price_transfer" value="{{ tld.price_transfer }}" required>
+                        <input class="form-control" type="number" min="0" step="any" name="price_transfer" value="{{ tld.price_transfer }}" required>
                     </div>
                     <div class="col-lg-3">
                         <label class="form-label">{{ 'Minimum Years of Registration'|trans }}</label>
-                        <input class="form-control" type="text" name="min_years" value="{{ tld.min_years }}" required>
+                        <input class="form-control" type="number" min="1" step="1" name="min_years" value="{{ tld.min_years }}" required>
+                    </div>
+                    <div class="col-lg-6">
+                        <label class="form-label">{{ 'Allowed Registration Periods (years)'|trans }}</label>
+                        <input class="form-control" type="text" name="periods" value="{{ tld.periods ? tld.periods|join(',') : '' }}" placeholder="{{ '1,2,3,5,10'|trans }}">
+                        <div class="form-hint">{{ 'Comma-separated list of exact registration periods, in years. Leave blank to allow any period from the minimum above upwards.'|trans }}</div>
                     </div>
                     <div class="col-lg-2">
                         <label class="form-label d-block">{{ 'Allow Registration'|trans }}</label>
@@ -82,6 +87,20 @@
                                 <span class="form-check-label">{{ 'No'|trans }}</span>
                             </label>
                         </div>
+                    </div>
+                    <div class="col-lg-3">
+                        <label class="form-label d-block">{{ 'Require Transfer Code'|trans }}</label>
+                        <div class="d-flex flex-wrap gap-3">
+                            <label class="form-check">
+                                <input class="form-check-input" id="inputRequireTransferCodeYes" type="radio" name="require_transfer_code" value="1"{% if tld.require_transfer_code %} checked{% endif %}>
+                                <span class="form-check-label">{{ 'Yes'|trans }}</span>
+                            </label>
+                            <label class="form-check">
+                                <input class="form-check-input" id="inputRequireTransferCodeNo" type="radio" name="require_transfer_code" value="0"{% if not tld.require_transfer_code %} checked{% endif %}>
+                                <span class="form-check-label">{{ 'No'|trans }}</span>
+                            </label>
+                        </div>
+                        <div class="form-hint">{{ 'Require clients to enter a transfer code (EPP/auth code) before this TLD can be ordered for transfer.'|trans }}</div>
                     </div>
                     <div class="col-lg-2">
                         <label class="form-label d-block">{{ 'Active'|trans }}</label>

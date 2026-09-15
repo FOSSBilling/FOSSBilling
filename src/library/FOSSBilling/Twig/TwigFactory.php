@@ -15,6 +15,7 @@ use Box\Mod\Currency\Entity\Currency;
 use DebugBar\Bridge\Twig\NamespacedTwigProfileCollector;
 use DebugBar\StandardDebugBar;
 use FOSSBilling\Config;
+use FOSSBilling\Http\CookieNames;
 use FOSSBilling\Http\RequestFactory;
 use FOSSBilling\i18n;
 use FOSSBilling\Tools;
@@ -24,6 +25,7 @@ use FOSSBilling\Twig\Extension\DebugBarExtension;
 use FOSSBilling\Twig\Extension\FOSSBillingExtension;
 use FOSSBilling\Twig\Extension\LegacyExtension;
 use FOSSBilling\Twig\Markdown\FOSSBillingMarkdown;
+use FOSSBilling\Url;
 use FOSSBilling\Version;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Intl\Currencies;
@@ -69,18 +71,18 @@ class TwigFactory
         $auth = $this->di['auth'] ?? null;
         if ($auth instanceof \Box_Authorization) {
             if ($auth->isClientLoggedIn()) {
-                $client = $this->di['db']->load('Client', $this->di['session']->get('client_id'));
-                $clientTimezone = $client->timezone ?? null;
+                $client = $this->di['em']->getRepository(\Box\Mod\Client\Entity\Client::class)->find($this->di['session']->get('client_id'));
+                $clientTimezone = $client?->getTimezone();
             } elseif ($auth->isAdminLoggedIn()) {
                 $admin = $this->di['session']->get('admin');
                 if (is_array($admin) && !empty($admin['id'])) {
-                    $adminModel = $this->di['db']->load('Admin', $admin['id']);
-                    $adminTimezone = $adminModel->timezone ?? null;
+                    $adminModel = $this->di['em']->getRepository(\Box\Mod\Staff\Entity\Admin::class)->find($admin['id']);
+                    $adminTimezone = $adminModel?->getTimezone();
                 }
             }
         }
 
-        return i18n::getActiveTimezone($this->di['request'], $clientTimezone, $adminTimezone);
+        return i18n::getActiveTimezone($this->di['request'], $clientTimezone, $adminTimezone, $this->di['cookie_queue']);
     }
 
     /**
@@ -143,8 +145,9 @@ class TwigFactory
 
         $service = $this->di['mod_service']('theme');
         $theme = $service->getCurrentAdminAreaTheme();
+        $sharedPath = $service->getPackageSharedHtmlPath($theme['code']);
 
-        $loader = new TwigLoader(AppArea::ADMIN, Path::join(PATH_THEMES, $theme['code']));
+        $loader = new TwigLoader(AppArea::ADMIN, Path::join(PATH_THEMES, $theme['code']), $sharedPath);
         $twig->setLoader($loader);
 
         $twig->addGlobal('theme', $theme);
@@ -174,8 +177,9 @@ class TwigFactory
         $code = $service->getCurrentClientAreaThemeCode();
         $theme = $service->getTheme($code);
         $settings = $service->getThemeSettings($theme);
+        $sharedPath = $service->getPackageSharedHtmlPath($code);
 
-        $loader = new TwigLoader(AppArea::CLIENT, Path::join(PATH_THEMES, $code));
+        $loader = new TwigLoader(AppArea::CLIENT, Path::join(PATH_THEMES, $code), $sharedPath);
         $twig->setLoader($loader);
 
         $twig->addGlobal('current_theme', $code);
@@ -411,7 +415,7 @@ class TwigFactory
         unset($requestData['_url']);
 
         $requestQuery = $requestData;
-        $requestPath = \Box_Url::normalizeLinkPath(RequestFactory::getRoutePath($request));
+        $requestPath = Url::normalizeLinkPath(RequestFactory::getRoutePath($request));
         $requestHasFilters = count(array_diff_key($requestData, [
             'page' => true,
             'search' => true,
@@ -445,8 +449,15 @@ class TwigFactory
             return null;
         }
 
-        $repository = $this->di['em']->getRepository(Currency::class);
-        $currency = $repository->findDefault();
+        try {
+            $repository = $this->di['em']->getRepository(Currency::class);
+            $currency = $repository->findDefault();
+        } catch (\Doctrine\DBAL\Exception) {
+            // The currency table may not have the latest columns yet if pending
+            // database patches have not been applied. Number formatting falls
+            // back to its default rather than breaking every page render.
+            return null;
+        }
 
         return $currency instanceof Currency ? $currency->getCode() : null;
     }
@@ -469,16 +480,31 @@ class TwigFactory
     public function configureCsrf(): void
     {
         $csrfToken = $this->getCsrfToken();
+        $request = $this->di['request'];
+        $secure = $request->isSecure();
         $this->di['cookie_queue']->queue(
-            'csrf_token',
+            CookieNames::CSRF,
             $csrfToken,
             0,
             '/',
             null,
-            $this->di['request']->isSecure(),
+            $secure,
             false,
             'Strict',
         );
+
+        if ($request->cookies->has(CookieNames::LEGACY_CSRF)) {
+            $this->di['cookie_queue']->queue(
+                CookieNames::LEGACY_CSRF,
+                '',
+                time() - 3600,
+                '/',
+                null,
+                $secure,
+                false,
+                'Strict',
+            );
+        }
     }
 
     private function getCsrfToken(): string

@@ -135,7 +135,11 @@
                                     </div>
                                     <div class="col-xl-6">
                                         <label class="form-label">{{ 'Period'|trans }}</label>
-                                        {{ mf.selectbox('period', guest.system_periods, subscription.period, 1, 'Select Period'|trans) }}
+                                        {% set period_options = guest.system_periods %}
+                                        {% if subscription.period and subscription.period not in period_options|keys %}
+                                            {% set period_options = period_options|merge({ (subscription.period): guest.system_period_title({code: subscription.period}) }) %}
+                                        {% endif %}
+                                        {{ mf.selectbox('period', period_options, subscription.period, 1, 'Select Period'|trans) }}
                                     </div>
                                     <div class="col-xl-6">
                                         <label class="form-label" for="subscription_amount">{{ 'Amount'|trans }}</label>

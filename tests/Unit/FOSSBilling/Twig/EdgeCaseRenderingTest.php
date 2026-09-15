@@ -212,8 +212,8 @@ test('orderbutton product configuration renders a hosting product', function ():
                 'pricing' => [
                     'type' => 'recurrent',
                     'recurrent' => [
-                        '1M' => ['price' => 9.99, 'enabled' => true, 'setup' => '0.00'],
-                        '1Y' => ['price' => 99.99, 'enabled' => true, 'setup' => '0.00'],
+                        '1M' => ['price' => 9.99, 'enabled' => true, 'setup' => '0.00', 'title' => 'Every Month'],
+                        '1Y' => ['price' => 99.99, 'enabled' => true, 'setup' => '0.00', 'title' => 'Every Year'],
                     ],
                 ],
                 'allow_quantity_select' => true,

@@ -10,6 +10,10 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Servicelicense\Entity\ServiceLicense;
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\EntityRepository;
+
 use function Tests\Helpers\container;
 
 test('gets dependency injection container', function (): void {
@@ -56,7 +60,7 @@ test('updates license', function (): void {
     $apiMock->shouldReceive('_getService')
         ->atLeast()
         ->once()
-        ->andReturn(new Model_ServiceLicense());
+        ->andReturn(new ServiceLicense());
 
     $serviceMock = Mockery::mock(Box\Mod\Servicelicense\Service::class);
     $serviceMock->shouldReceive('update')
@@ -82,7 +86,7 @@ test('resets license', function (): void {
     $apiMock->shouldReceive('_getService')
         ->atLeast()
         ->once()
-        ->andReturn(new Model_ServiceLicense());
+        ->andReturn(new ServiceLicense());
 
     $serviceMock = Mockery::mock(Box\Mod\Servicelicense\Service::class);
     $serviceMock->shouldReceive('reset')
@@ -101,31 +105,51 @@ test('gets service', function (): void {
     $api = apiEndpoint(new Box\Mod\Servicelicense\Api\Admin());
     $data['order_id'] = 1;
 
+    $orderRepo = Mockery::mock(EntityRepository::class);
+    $orderRepo->shouldReceive('find')
+        ->atLeast()
+        ->once()
+        ->with(1)
+        ->andReturn(new Box\Mod\Order\Entity\Order());
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')
+        ->atLeast()
+        ->once()
+        ->andReturn($orderRepo);
+
     $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
     $orderServiceMock->shouldReceive('getOrderService')
         ->atLeast()
         ->once()
-        ->andReturn(new Model_ServiceLicense());
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getExistingModelById')
-        ->atLeast()
-        ->once()
-        ->andReturn(new Model_ClientOrder());
+        ->andReturn(new ServiceLicense());
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $em;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
 
     $api->setDi($di);
 
     $result = $api->_getService($data);
-    expect($result)->toBeInstanceOf(Model_ServiceLicense::class);
+    expect($result)->toBeInstanceOf(ServiceLicense::class);
 });
 
 test('throws exception when order not activated', function (): void {
     $api = apiEndpoint(new Box\Mod\Servicelicense\Api\Admin());
     $data['order_id'] = 1;
+
+    $orderRepo = Mockery::mock(EntityRepository::class);
+    $orderRepo->shouldReceive('find')
+        ->atLeast()
+        ->once()
+        ->with(1)
+        ->andReturn(new Box\Mod\Order\Entity\Order());
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')
+        ->atLeast()
+        ->once()
+        ->andReturn($orderRepo);
 
     $orderServiceMock = Mockery::mock(Box\Mod\Order\Service::class);
     $orderServiceMock->shouldReceive('getOrderService')
@@ -133,14 +157,8 @@ test('throws exception when order not activated', function (): void {
         ->once()
         ->andReturn(null);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getExistingModelById')
-        ->atLeast()
-        ->once()
-        ->andReturn(new Model_ClientOrder());
-
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $em;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
 
     $api->setDi($di);

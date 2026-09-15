@@ -102,7 +102,6 @@ CREATE TABLE `admin` (
   `system_name` varchar(100) DEFAULT NULL,
   `email` varchar(255) DEFAULT NULL,
   `pass` varchar(255) DEFAULT NULL,
-  `salt` varchar(255) DEFAULT NULL,
   `name` varchar(255) DEFAULT NULL,
   `signature` varchar(255) DEFAULT NULL,
   `status` varchar(30) DEFAULT 'active' COMMENT 'active, inactive',
@@ -188,7 +187,7 @@ CREATE TABLE `cart` (
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `session_id_idx` (`session_id`),
+  UNIQUE KEY `session_id_idx` (`session_id`),
   KEY `currency_id_idx` (`currency_id`),
   KEY `promo_id_idx` (`promo_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -233,7 +232,7 @@ CREATE TABLE `client` (
   `type` varchar(100) DEFAULT NULL,
   `first_name` varchar(100) DEFAULT NULL,
   `last_name` varchar(100) DEFAULT NULL,
-  `gender` ENUM('male', 'female', 'nonbinary', 'other') DEFAULT NULL,
+  `gender` varchar(20) DEFAULT NULL,
   `birthday` date DEFAULT NULL,
   `phone_cc` varchar(10) DEFAULT NULL,
   `phone` varchar(100) DEFAULT NULL,
@@ -293,11 +292,13 @@ CREATE TABLE `client_balance` (
   `client_id` bigint(20) DEFAULT NULL,
   `type` varchar(100) DEFAULT NULL,
   `rel_id` varchar(20) DEFAULT NULL,
+  `invoice_item_id` bigint(20) DEFAULT NULL,
   `amount` decimal(18,2) DEFAULT '0.00',
   `description` text,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_invoice_item_credit` (`invoice_item_id`),
   KEY `client_id_idx` (`client_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -342,12 +343,13 @@ CREATE TABLE `client_order` (
   `period` varchar(20) DEFAULT NULL,
   `quantity` bigint(20) DEFAULT '1',
   `unit` varchar(100) DEFAULT NULL,
-  `price` double(18,2) DEFAULT NULL,
-  `discount` double(18,2) DEFAULT NULL COMMENT 'first invoice discount',
+  `price` decimal(18,2) DEFAULT NULL,
+  `discount` decimal(18,2) DEFAULT NULL COMMENT 'first invoice discount',
   `status` varchar(50) DEFAULT NULL,
   `reason` varchar(255) DEFAULT NULL COMMENT 'suspend/cancel reason',
   `notes` text,
   `config` text,
+  `suspension_grace_days` int(11) DEFAULT NULL,
   `referred_by` varchar(255) DEFAULT NULL,
   `expires_at` datetime DEFAULT NULL,
   `activated_at` datetime DEFAULT NULL,
@@ -360,7 +362,9 @@ CREATE TABLE `client_order` (
   KEY `client_id_idx` (`client_id`),
   KEY `product_id_idx` (`product_id`),
   KEY `form_id_idx` (`form_id`),
-  KEY `promo_id_idx` (`promo_id`)
+  KEY `promo_id_idx` (`promo_id`),
+  KEY `client_order_status_expires_at_idx` (`status`, `expires_at`),
+  KEY `client_order_unpaid_invoice_id_idx` (`unpaid_invoice_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -429,6 +433,9 @@ CREATE TABLE `currency` (
   `code` varchar(3) DEFAULT NULL,
   `is_default` tinyint(1) DEFAULT '0',
   `conversion_rate` decimal(13,6) DEFAULT '1.000000',
+  `is_rate_manual` tinyint(1) DEFAULT '0',
+  `format_pattern` varchar(100) DEFAULT NULL,
+  `fraction_digits` smallint DEFAULT NULL,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
@@ -580,10 +587,10 @@ CREATE TABLE `invoice` (
   `hash` varchar(255) DEFAULT NULL COMMENT 'To access via public link',
   `currency` varchar(25) DEFAULT NULL,
   `currency_rate` decimal(13,6) DEFAULT NULL,
-  `credit` double(18,2) DEFAULT NULL,
-  `base_income` double(18,2) DEFAULT NULL COMMENT 'Income in default currency',
-  `base_refund` double(18,2) DEFAULT NULL COMMENT 'Refund in default currency',
-  `refund` double(18,2) DEFAULT NULL,
+  `credit` decimal(18,2) DEFAULT NULL,
+  `base_income` decimal(18,2) DEFAULT NULL COMMENT 'Income in default currency',
+  `base_refund` decimal(18,2) DEFAULT NULL COMMENT 'Refund in default currency',
+  `refund` decimal(18,2) DEFAULT NULL,
   `notes` text,
   `text_1` text,
   `text_2` text,
@@ -607,7 +614,7 @@ CREATE TABLE `invoice` (
   `buyer_phone` varchar(255) DEFAULT NULL,
   `buyer_phone_cc` varchar(255) DEFAULT NULL,
   `buyer_email` varchar(255) DEFAULT NULL,
-  `gateway_id` int(11) DEFAULT NULL,
+  `gateway_id` bigint(20) DEFAULT NULL,
   `approved` tinyint(1) DEFAULT '0',
   `taxname` varchar(255) DEFAULT NULL,
   `taxrate` varchar(35) DEFAULT NULL,
@@ -641,9 +648,10 @@ CREATE TABLE `invoice_item` (
   `period` varchar(10) DEFAULT NULL,
   `quantity` bigint(20) DEFAULT NULL,
   `unit` varchar(100) DEFAULT NULL,
-  `price` double(18,2) DEFAULT NULL,
+  `price` decimal(18,2) DEFAULT NULL,
   `charged` tinyint(1) DEFAULT '0',
   `taxed` tinyint(1) DEFAULT '0',
+  `attempts` int(11) NOT NULL DEFAULT '0',
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
@@ -706,8 +714,8 @@ CREATE TABLE `email_queue` (
   `content` text NOT NULL,
   `to_name` varchar(255) DEFAULT NULL,
   `from_name` varchar(255) DEFAULT NULL,
-  `client_id` int(11) DEFAULT NULL,
-  `admin_id` int(11) DEFAULT NULL,
+  `client_id` bigint(20) DEFAULT NULL,
+  `admin_id` bigint(20) DEFAULT NULL,
   `priority` int(11) DEFAULT NULL,
   `tries` int(11) NOT NULL,
   `status` varchar(20) NOT NULL,
@@ -813,6 +821,7 @@ CREATE TABLE `product` (
   `allow_quantity_select` tinyint(1) DEFAULT '0',
   `stock_control` tinyint(1) DEFAULT '0',
   `quantity_in_stock` int(11) DEFAULT '0',
+  `suspension_grace_days` int(11) NOT NULL DEFAULT '0',
   `plugin` varchar(255) DEFAULT NULL,
   `plugin_config` text,
   `upgrades` text,
@@ -858,28 +867,26 @@ CREATE TABLE `product_payment` (
   `type` varchar(30) DEFAULT NULL COMMENT 'free, once, recurrent',
   `once_price` decimal(18,2) DEFAULT '0.00',
   `once_setup_price` decimal(18,2) DEFAULT '0.00',
-  `w_price` decimal(18,2) DEFAULT '0.00',
-  `m_price` decimal(18,2) DEFAULT '0.00',
-  `q_price` decimal(18,2) DEFAULT '0.00',
-  `b_price` decimal(18,2) DEFAULT '0.00',
-  `a_price` decimal(18,2) DEFAULT '0.00',
-  `bia_price` decimal(18,2) DEFAULT '0.00',
-  `tria_price` decimal(18,2) DEFAULT '0.00',
-  `w_setup_price` decimal(18,2) DEFAULT '0.00',
-  `m_setup_price` decimal(18,2) DEFAULT '0.00',
-  `q_setup_price` decimal(18,2) DEFAULT '0.00',
-  `b_setup_price` decimal(18,2) DEFAULT '0.00',
-  `a_setup_price` decimal(18,2) DEFAULT '0.00',
-  `bia_setup_price` decimal(18,2) DEFAULT '0.00',
-  `tria_setup_price` decimal(18,2) DEFAULT '0.00',
-  `w_enabled` tinyint(1) DEFAULT '1',
-  `m_enabled` tinyint(1) DEFAULT '1',
-  `q_enabled` tinyint(1) DEFAULT '1',
-  `b_enabled` tinyint(1) DEFAULT '1',
-  `a_enabled` tinyint(1) DEFAULT '1',
-  `bia_enabled` tinyint(1) DEFAULT '1',
-  `tria_enabled` tinyint(1) DEFAULT '1',
   PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `product_payment_period`
+--
+
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `product_payment_period` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `product_payment_id` bigint(20) NOT NULL,
+  `code` varchar(10) NOT NULL COMMENT 'Billing period code, e.g. 1M, 3Y, 45D',
+  `price` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `setup_price` decimal(18,2) NOT NULL DEFAULT '0.00',
+  `enabled` tinyint(1) NOT NULL DEFAULT '1',
+  `sort_order` int(11) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `product_payment_period_unique` (`product_payment_id`,`code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -944,6 +951,24 @@ CREATE TABLE `promo_redemption` (
   KEY `invoice_id_idx` (`invoice_id`),
   KEY `phase_idx` (`phase`),
   KEY `status_idx` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `service_apikey`
+--
+
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `service_apikey` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `client_id` bigint(20) DEFAULT NULL,
+  `api_key` varchar(255) DEFAULT NULL,
+  `config` text,
+  `created_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `client_id_idx` (`client_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -1030,13 +1055,34 @@ CREATE TABLE `service_domain` (
 CREATE TABLE `service_downloadable` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `client_id` bigint(20) DEFAULT NULL,
-  `filename` varchar(100) DEFAULT NULL,
-  `stored_filename` varchar(100) DEFAULT NULL,
-  `downloads` int(11) DEFAULT NULL,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `client_id_idx` (`client_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `service_downloadable_file`
+--
+
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `service_downloadable_file` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `service_downloadable_id` bigint(20) NOT NULL,
+  `file_key` varchar(32) NOT NULL,
+  `filename` varchar(255) NOT NULL,
+  `stored_filename` varchar(64) NOT NULL,
+  `label` varchar(255) DEFAULT NULL,
+  `description` text DEFAULT NULL,
+  `downloads` int(11) NOT NULL DEFAULT 0,
+  `sort_order` int(11) NOT NULL DEFAULT 0,
+  `created_at` datetime DEFAULT NULL,
+  `updated_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `service_downloadable_file_key_idx` (`service_downloadable_id`,`file_key`),
+  KEY `service_downloadable_file_stored_filename_idx` (`stored_filename`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -1160,12 +1206,14 @@ CREATE TABLE `service_license` (
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE `session` (
-  `id` varchar(32) NOT NULL DEFAULT '',
-  `modified_at` int(11) DEFAULT NULL,
+  `id` varbinary(128) NOT NULL,
+  `modified_at` int(11) unsigned NOT NULL,
   `created_at` int(11) DEFAULT NULL,
-  `content` text,
+  `content` blob NOT NULL,
+  `lifetime` int(11) unsigned NOT NULL,
   `fingerprint` text,
-  UNIQUE KEY `unique_id` (`id`)
+  PRIMARY KEY (`id`),
+  KEY `session_lifetime_idx` (`lifetime`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
@@ -1203,7 +1251,7 @@ CREATE TABLE `subscription` (
   `rel_type` varchar(100) DEFAULT NULL,
   `rel_id` bigint(20) DEFAULT NULL,
   `period` varchar(255) DEFAULT NULL,
-  `amount` double(18,2) DEFAULT NULL,
+  `amount` decimal(18,2) DEFAULT NULL,
   `currency` varchar(50) DEFAULT NULL,
   `status` varchar(255) DEFAULT NULL,
   `created_at` datetime DEFAULT NULL,
@@ -1391,8 +1439,10 @@ CREATE TABLE `tld` (
   `price_transfer` decimal(18,2) DEFAULT '0.00',
   `allow_register` tinyint(1) DEFAULT NULL,
   `allow_transfer` tinyint(1) DEFAULT NULL,
+  `require_transfer_code` tinyint(1) DEFAULT NULL,
   `active` tinyint(1) DEFAULT '1',
   `min_years` tinyint(4) DEFAULT NULL,
+  `periods` varchar(255) DEFAULT NULL,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
@@ -1426,12 +1476,12 @@ CREATE TABLE `tld_registrar` (
 CREATE TABLE `transaction` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `invoice_id` bigint(20) DEFAULT NULL,
-  `gateway_id` int(11) DEFAULT NULL,
+  `gateway_id` bigint(20) DEFAULT NULL,
   `txn_id` varchar(255) DEFAULT NULL,
   `txn_status` varchar(255) DEFAULT NULL,
   `s_id` varchar(255) DEFAULT NULL,
   `s_period` varchar(255) DEFAULT NULL,
-  `amount` varchar(255) DEFAULT NULL,
+  `amount` decimal(18,2) DEFAULT NULL,
   `currency` varchar(10) DEFAULT NULL,
   `type` varchar(255) DEFAULT NULL,
   `status` varchar(255) DEFAULT 'received',

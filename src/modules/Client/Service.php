@@ -11,6 +11,15 @@ declare(strict_types=1);
 
 namespace Box\Mod\Client;
 
+use Box\Mod\Client\Entity\Client;
+use Box\Mod\Client\Entity\ClientBalance;
+use Box\Mod\Client\Entity\ClientGroup;
+use Box\Mod\Client\Entity\ClientPasswordReset;
+use Box\Mod\Client\Repository\ClientBalanceRepository;
+use Box\Mod\Client\Repository\ClientGroupRepository;
+use Box\Mod\Client\Repository\ClientPasswordResetRepository;
+use Box\Mod\Client\Repository\ClientRepository;
+use Box\Mod\Staff\Entity\Admin;
 use FOSSBilling\i18n;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
@@ -21,7 +30,38 @@ use Symfony\Component\Intl\Locales;
 
 class Service implements InjectionAwareInterface
 {
+    /**
+     * Columns on the `client` table permitted in CSV exports.
+     * Sensitive columns (pass, salt, api_token) are excluded by omission;
+     * new entity columns must be added here to be exportable.
+     */
+    private const array EXPORTABLE_COLUMNS = [
+        'id', 'aid', 'client_group_id', 'role', 'auth_type', 'email', 'status',
+        'email_approved', 'tax_exempt', 'type', 'first_name', 'last_name',
+        'gender', 'birthday', 'phone_cc', 'phone', 'company', 'company_vat',
+        'company_number', 'address_1', 'address_2', 'city', 'state', 'postcode',
+        'country', 'notes', 'currency', 'lang', 'timezone', 'ip', 'referred_by',
+        'billing_email',
+        'custom_1', 'custom_2', 'custom_3', 'custom_4', 'custom_5', 'custom_6',
+        'custom_7', 'custom_8', 'custom_9', 'custom_10', 'custom_11', 'custom_12',
+        'custom_13', 'custom_14', 'custom_15', 'custom_16', 'custom_17', 'custom_18',
+        'custom_19', 'custom_20',
+        'created_at', 'updated_at',
+    ];
+
+    /** Subset of EXPORTABLE_COLUMNS used when the caller passes no headers. */
+    private const array DEFAULT_EXPORT_COLUMNS = [
+        'id', 'email', 'status', 'first_name', 'last_name', 'phone_cc', 'phone',
+        'company', 'company_vat', 'company_number', 'address_1', 'address_2',
+        'city', 'state', 'postcode', 'country', 'currency',
+    ];
+
     protected ?\Pimple\Container $di = null;
+
+    private ClientRepository $clientRepository;
+    private ClientGroupRepository $clientGroupRepository;
+    private ClientBalanceRepository $clientBalanceRepository;
+    private ClientPasswordResetRepository $clientPasswordResetRepository;
 
     public function getModulePermissions(): array
     {
@@ -97,6 +137,10 @@ class Service implements InjectionAwareInterface
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
+        $this->clientRepository = $di['em']->getRepository(Client::class);
+        $this->clientGroupRepository = $di['em']->getRepository(ClientGroup::class);
+        $this->clientBalanceRepository = $di['em']->getRepository(ClientBalance::class);
+        $this->clientPasswordResetRepository = $di['em']->getRepository(ClientPasswordReset::class);
     }
 
     public function getDi(): ?\Pimple\Container
@@ -104,15 +148,20 @@ class Service implements InjectionAwareInterface
         return $this->di;
     }
 
+    public function getClientRepository(): ClientRepository
+    {
+        return $this->clientRepository;
+    }
+
     public function approveClientEmailByHash($hash): bool
     {
-        $db = $this->di['db'];
-        $result = $db->getRow('SELECT id, client_id FROM extension_meta WHERE extension = "mod_client" AND meta_key = "confirm_email" AND meta_value = :hash', [':hash' => $hash]);
+        $dbal = $this->di['dbal'];
+        $result = $dbal->fetchAssociative('SELECT id, client_id FROM extension_meta WHERE extension = "mod_client" AND meta_key = "confirm_email" AND meta_value = :hash', ['hash' => $hash]);
         if (!$result) {
             throw new InformationException('Invalid email confirmation link');
         }
-        $db->exec('UPDATE client SET email_approved = 1 WHERE id = :id', ['id' => $result['client_id']]);
-        $db->exec('DELETE FROM extension_meta WHERE id = :id', ['id' => $result['id']]);
+        $dbal->executeStatement('UPDATE client SET email_approved = true WHERE id = :id', ['id' => $result['client_id']]);
+        $dbal->executeStatement('DELETE FROM extension_meta WHERE id = :id', ['id' => $result['id']]);
 
         return true;
     }
@@ -120,16 +169,15 @@ class Service implements InjectionAwareInterface
     public function generateEmailConfirmationLink($client_id)
     {
         $hash = strtolower((string) $this->di['tools']->generatePassword(50));
-        $db = $this->di['db'];
 
-        $meta = $db->dispense('ExtensionMeta');
-        $meta->extension = 'mod_client';
-        $meta->client_id = $client_id;
-        $meta->meta_key = 'confirm_email';
-        $meta->meta_value = $hash;
-        $meta->created_at = date('Y-m-d H:i:s');
-        $meta->updated_at = date('Y-m-d H:i:s');
-        $db->store($meta);
+        $this->di['dbal']->insert('extension_meta', [
+            'extension' => 'mod_client',
+            'client_id' => $client_id,
+            'meta_key' => 'confirm_email',
+            'meta_value' => $hash,
+            'created_at' => date('Y-m-d H:i:s'),
+            'updated_at' => date('Y-m-d H:i:s'),
+        ]);
 
         return $this->di['tools']->url('/client/confirm-email/' . $hash);
     }
@@ -154,15 +202,17 @@ class Service implements InjectionAwareInterface
 
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->setChannel('email')->error('Failed to send client signup email', ['exception' => $exc->getMessage()]);
+            $di['logger']->withChannel('email')->error('Failed to send client signup email', ['exception' => $exc]);
         }
 
         return true;
     }
 
-    public function getSearchQuery($data, $selectStmt = 'SELECT c.*'): array
+    public function getSearchQuery($data, $selectStmt = null): array
     {
-        $sql = $selectStmt;
+        // `client` also holds `pass`, `salt`, and `api_token` - reuse EXPORTABLE_COLUMNS
+        // instead of `c.*` so listing never exposes them.
+        $sql = $selectStmt ?? 'SELECT c.' . implode(', c.', self::EXPORTABLE_COLUMNS);
         $sql .= ' FROM client as c left join client_group as cg on c.client_group_id = cg.id';
 
         $search = (isset($data['search']) && !empty($data['search'])) ? $data['search'] : null;
@@ -181,66 +231,72 @@ class Service implements InjectionAwareInterface
         $params = [];
         if ($id) {
             $where[] = '(c.id = :client_id OR c.aid = :alt_client_id)';
-            $params[':client_id'] = $id;
-            $params[':alt_client_id'] = $id;
+            $params['client_id'] = $id;
+            $params['alt_client_id'] = $id;
         }
 
         if ($name) {
             $where[] = '(c.first_name LIKE :first_name or c.last_name LIKE :last_name )';
             $name = '%' . $name . '%';
-            $params[':first_name'] = $name;
-            $params[':last_name'] = $name;
+            $params['first_name'] = $name;
+            $params['last_name'] = $name;
         }
 
         if ($email) {
             $where[] = 'c.email LIKE :email';
-            $params[':email'] = '%' . $email . '%';
+            $params['email'] = '%' . $email . '%';
         }
 
         if ($company) {
             $where[] = 'c.company LIKE :company';
-            $params[':company'] = '%' . $company . '%';
+            $params['company'] = '%' . $company . '%';
         }
 
         if ($status) {
             $where[] = 'c.status = :status';
-            $params[':status'] = $status;
+            $params['status'] = $status;
         }
 
         if ($group_id) {
             $where[] = 'c.client_group_id = :group_id';
-            $params[':group_id'] = $group_id;
+            $params['group_id'] = $group_id;
         }
 
         if ($created_at) {
-            $where[] = "DATE_FORMAT(c.created_at, '%Y-%m-%d') = :created_at";
-            $params[':created_at'] = date('Y-m-d', strtotime((string) $created_at));
+            // A day range rather than DATE_FORMAT(...) = :created_at, which MySQL supports but
+            // PostgreSQL and SQLite don't.
+            $where[] = 'c.created_at >= :created_at_start AND c.created_at < :created_at_end';
+            $dayStart = strtotime(date('Y-m-d', strtotime((string) $created_at)));
+            $params['created_at_start'] = date('Y-m-d H:i:s', $dayStart);
+            $params['created_at_end'] = date('Y-m-d H:i:s', strtotime('+1 day', $dayStart));
         }
 
         if ($date_from) {
-            $where[] = 'UNIX_TIMESTAMP(c.created_at) >= :date_from';
-            $params[':date_from'] = strtotime((string) $date_from);
+            // Compares directly against the datetime column rather than UNIX_TIMESTAMP(c.created_at),
+            // which MySQL supports but PostgreSQL and SQLite don't.
+            $where[] = 'c.created_at >= :date_from';
+            $params['date_from'] = date('Y-m-d H:i:s', strtotime((string) $date_from));
         }
 
         if ($date_to) {
-            $where[] = 'UNIX_TIMESTAMP(c.created_at) <= :date_to';
-            $params[':date_to'] = strtotime((string) $date_to);
+            $where[] = 'c.created_at <= :date_to';
+            $params['date_to'] = date('Y-m-d H:i:s', strtotime((string) $date_to));
         }
 
         // smartSearch
         if ($search) {
             if (is_numeric($search)) {
                 $where[] = '(c.id = :cid OR c.aid = :caid)';
-                $params[':cid'] = $search;
-                $params[':caid'] = $search;
+                $params['cid'] = $search;
+                $params['caid'] = $search;
             } else {
                 $where[] = "(c.company LIKE :s_company OR c.first_name LIKE :s_first_name OR c.last_name LIKE :s_last_name OR c.email LIKE :s_email OR CONCAT(c.first_name,  ' ', c.last_name ) LIKE  :full_name)";
                 $search = '%' . $search . '%';
-                $params[':s_company'] = $search;
-                $params[':s_first_name'] = $search;
-                $params[':s_last_name'] = $search;
-                $params[':s_email'] = $search;
-                $params[':full_name'] = $search;
+                $params['s_company'] = $search;
+                $params['s_first_name'] = $search;
+                $params['s_last_name'] = $search;
+                $params['s_email'] = $search;
+                $params['full_name'] = $search;
             }
         }
 
@@ -259,59 +315,55 @@ class Service implements InjectionAwareInterface
             throw new InformationException('Invalid per page number');
         }
 
-        [$sql, $params] = $this->getSearchQuery($data, "SELECT c.id, IF(c.company <> '', CONCAT_WS(' ', c.first_name, c.last_name, ' (', c.company, ')'), CONCAT_WS(' ', c.first_name, c.last_name)) as client");
-        $sql .= sprintf(' LIMIT %u', $limit);
-
-        return $this->di['db']->getAssoc($sql, $params);
+        return $this->clientRepository->getIdNamePairs($data, (int) $limit);
     }
 
-    public function toSessionArray(\Model_Client $model): array
+    public function toSessionArray(Client $model): array
     {
         return [
-            'id' => $model->id,
-            'email' => $model->email,
+            'id' => $model->getId(),
+            'email' => $model->getEmail(),
             'name' => $model->getFullName(),
-            'role' => $model->role,
+            'role' => $model->getRole(),
         ];
     }
 
-    public function emailAlreadyRegistered($new_email, ?\Model_Client $model = null)
+    public function emailAlreadyRegistered($new_email, ?Client $model = null): bool
     {
-        if ($model instanceof \Model_Client && $model->email == $new_email) {
+        if ($model instanceof Client && $model->getEmail() == $new_email) {
             return false;
         }
 
-        $result = $this->di['db']->findOne('Client', 'email = ?', [$new_email]);
-
-        return ($result) ? true : false;
+        return $this->clientRepository->findOneByEmail($new_email) instanceof Client;
     }
 
-    public function canChangeCurrency(\Model_Client $model, $currency = null): bool
+    public function canChangeCurrency(Client $model, $currency = null): bool
     {
-        if (!$model->currency) {
+        $modelCurrency = $model->getCurrency();
+        if (!$modelCurrency) {
             return true;
         }
 
-        if ($model->currency == $currency) {
+        if ($modelCurrency == $currency) {
             return false;
         }
 
-        $invoice = $this->di['db']->findOne('Invoice', 'client_id = :client_id', [':client_id' => $model->id]);
-        if ($invoice instanceof \Model_Invoice) {
+        $clientId = (int) $model->getId();
+        if ($this->di['dbal']->fetchOne('SELECT 1 FROM invoice WHERE client_id = :client_id LIMIT 1', ['client_id' => $clientId])) {
             throw new InformationException('Currency cannot be changed. Client already has invoices issued.');
         }
 
-        $order = $this->di['db']->findOne('ClientOrder', 'client_id = :client_id', [':client_id' => $model->id]);
-        if ($order instanceof \Model_ClientOrder) {
+        if ($this->di['dbal']->fetchOne('SELECT 1 FROM client_order WHERE client_id = :client_id LIMIT 1', ['client_id' => $clientId])) {
             throw new InformationException('Currency cannot be changed. Client already has orders.');
         }
 
         return true;
     }
 
-    public function addFunds(\Model_Client $client, $amount, $description, array $data = []): bool
+    public function addFunds(Client $client, $amount, $description, array $data = []): bool
     {
-        if (!$client->currency) {
+        $currency = $client->getCurrency();
+        if (!$currency) {
             throw new InformationException('You must define the client\'s currency before adding funds.');
         }
 
@@ -323,26 +375,25 @@ class Service implements InjectionAwareInterface
             throw new InformationException('Funds description is invalid');
         }
 
-        $credit = $this->di['db']->dispense('ClientBalance');
+        $credit = new ClientBalance();
+        $credit->setClient($client);
+        $credit->setType($data['type'] ?? 'gift');
+        $credit->setRelId(isset($data['rel_id']) ? (string) $data['rel_id'] : null);
+        $credit->setDescription($description);
+        $credit->setAmount((string) $amount);
 
-        $credit->client_id = $client->id;
-        $credit->type = $data['type'] ?? 'gift';
-        $credit->rel_id = $data['rel_id'] ?? null;
-        $credit->description = $description;
-        $credit->amount = $amount;
-        $credit->created_at = date('Y-m-d H:i:s');
-        $credit->updated_at = date('Y-m-d H:i:s');
-
-        $this->di['db']->store($credit);
+        $this->di['em']->persist($credit);
+        $this->di['em']->flush();
 
         return true;
     }
 
     public function getExpiredPasswordReminders()
     {
-        $expire_after_hours = 2;
+        $expireAfterHours = 2;
+        $cutoff = new \DateTime("-{$expireAfterHours} hours");
 
-        return $this->di['db']->find('ClientPasswordReset', 'UNIX_TIMESTAMP() - ? > UNIX_TIMESTAMP(created_at)', [$expire_after_hours * 60 * 60]);
+        return $this->clientPasswordResetRepository->findExpiredBefore($cutoff);
     }
 
     public function getHistorySearchQuery($data): array
@@ -363,35 +414,35 @@ class Service implements InjectionAwareInterface
 
         if ($id !== null && $id !== '') {
             $where[] = 'ach.id = :event_id';
-            $params[':event_id'] = (int) $id;
+            $params['event_id'] = (int) $id;
         }
 
         if ($search) {
             $where[] = '(c.first_name LIKE :first_name OR c.last_name LIKE :last_name OR c.email LIKE :email OR c.id LIKE :id)';
-            $params[':first_name'] = '%' . $search . '%';
-            $params[':last_name'] = '%' . $search . '%';
-            $params[':email'] = '%' . $search . '%';
-            $params[':id'] = $search;
+            $params['first_name'] = '%' . $search . '%';
+            $params['last_name'] = '%' . $search . '%';
+            $params['email'] = '%' . $search . '%';
+            $params['id'] = $search;
         }
 
         if ($client_id) {
             $where[] = 'ach.client_id = :client_id';
-            $params[':client_id'] = $client_id;
+            $params['client_id'] = $client_id;
         }
 
         if ($ip !== null && $ip !== '') {
             $where[] = 'ach.ip LIKE :ip';
-            $params[':ip'] = '%' . $ip . '%';
+            $params['ip'] = '%' . $ip . '%';
         }
 
         if ($date_from !== null && $date_from !== '') {
             $where[] = 'ach.created_at >= :date_from';
-            $params[':date_from'] = date('Y-m-d 00:00:00', strtotime((string) $date_from));
+            $params['date_from'] = date('Y-m-d 00:00:00', strtotime((string) $date_from));
         }
 
         if ($date_to !== null && $date_to !== '') {
             $where[] = 'ach.created_at <= :date_to';
-            $params[':date_to'] = date('Y-m-d 23:59:59', strtotime((string) $date_to));
+            $params['date_to'] = date('Y-m-d 23:59:59', strtotime((string) $date_to));
         }
 
         if (!empty($where)) {
@@ -405,123 +456,82 @@ class Service implements InjectionAwareInterface
 
     public function counter(): array
     {
-        $sql = 'SELECT status, COUNT(id) as counter
-                FROM client
-                group by status';
-        $data = $this->di['db']->getAssoc($sql);
+        $counts = $this->clientRepository->getStatusCounts();
 
         return [
-            'total' => array_sum($data),
-            \Model_Client::ACTIVE => $data[\Model_Client::ACTIVE] ?? 0,
-            \Model_Client::SUSPENDED => $data[\Model_Client::SUSPENDED] ?? 0,
-            \Model_Client::CANCELED => $data[\Model_Client::CANCELED] ?? 0,
+            'total' => array_sum($counts),
+            Client::ACTIVE => $counts['active'],
+            Client::SUSPENDED => $counts['suspended'],
+            Client::CANCELED => $counts['canceled'],
         ];
     }
 
     public function getGroupPairs()
     {
-        $sql = 'SELECT id, title
-                FROM client_group';
-
-        return $this->di['db']->getAssoc($sql);
+        return $this->clientGroupRepository->getIdTitlePairs();
     }
 
     public function clientAlreadyExists($email): bool
     {
-        $client = $this->di['db']->findOne('Client', 'email = :email ', [':email' => $email]);
-
-        return $client instanceof \Model_Client;
+        return $this->clientRepository->findOneByEmail($email) instanceof Client;
     }
 
-    public function getByLoginDetails($email, $password)
+    public function getByLoginDetails($email, $password): ?object
     {
-        return $this->di['db']->findOne('Client', 'email = ? and pass = ? and status = ?', [$email, $password, \Model_Client::ACTIVE]);
+        return $this->clientRepository->findOneBy(['email' => $email, 'pass' => $password, 'status' => Client::ACTIVE]);
     }
 
-    public function toApiArray(\Model_Client $model, $deep = false, $identity = null, bool $includeSensitive = false): array
+    public function toApiArray(Client $model, $deep = false, $identity = null, bool $includeSensitive = false): array
     {
-        $isAdmin = $identity instanceof \Model_Admin;
-        $details = [
-            'id' => $model->id,
-            'email' => $model->email,
-            'email_approved' => $model->email_approved,
-            'type' => $model->type,
-            'company' => $model->company,
-            'company_vat' => $model->company_vat,
-            'company_number' => $model->company_number,
-            'first_name' => $model->first_name,
-            'last_name' => $model->last_name,
-            'gender' => $model->gender,
-            'birthday' => $model->birthday,
-            'phone_cc' => $model->phone_cc,
-            'phone' => $model->phone,
-            'address_1' => $model->address_1,
-            'address_2' => $model->address_2,
-            'city' => $model->city,
-            'state' => $model->state,
-            'postcode' => $model->postcode,
-            'country' => $model->country,
-            'currency' => $model->currency,
-            'lang' => $model->lang,
-            'timezone' => $model->timezone,
-        ];
+        return $this->toClientApiArray($model, $deep, $identity, $includeSensitive);
+    }
 
-        if ($isAdmin || ($identity instanceof \Model_Client && (int) $identity->id === (int) $model->id)) {
-            $details['billing_email'] = $model->billing_email;
+    public function toClientApiArray(Client $client, bool $deep = false, $identity = null, bool $includeSensitive = false): array
+    {
+        $isAdmin = $identity instanceof Admin;
+        $isSelf = $identity instanceof Client && (int) $identity->getId() === (int) $client->getId();
+        $details = $client->toApiArray($isAdmin ? $identity : null);
+
+        if ($isAdmin || $isSelf) {
+            $details['billing_email'] = $client->getBillingEmail();
         }
 
         if ($deep) {
-            $details['balance'] = $this->getClientBalance($model);
-        }
-
-        $m = $this->di['db']->toArray($model);
-        $clientVisibleCustomFields = [];
-        if (!$isAdmin) {
-            $config = $this->di['mod_config']('client');
-            $clientVisibleCustomFields = array_filter(
-                $config['custom_fields'] ?? [],
-                fn ($field): bool => isset($field['active']) && $field['active']
-            );
-        }
-
-        for ($i = 1; $i < 21; ++$i) {
-            $k = 'custom_' . $i;
-            if (isset($m[$k]) && !empty($m[$k]) && ($isAdmin || isset($clientVisibleCustomFields[$k]))) {
-                $details[$k] = $m[$k];
-            }
+            $details['balance'] = $this->getClientBalance($client);
         }
 
         if ($isAdmin) {
-            $clientGroup = $this->di['db']->load('ClientGroup', $model->client_group_id);
+            $details['group'] = null;
 
-            $details['aid'] = $model->aid;
-            $details['auth_type'] = $model->auth_type;
-            $details['created_at'] = $model->created_at;
-            $details['group_id'] = $model->client_group_id;
-            $details['ip'] = $model->ip;
-            $details['notes'] = $model->notes;
-            $details['status'] = $model->status;
-            $details['tax_exempt'] = $model->tax_exempt;
-            $details['group'] = ($clientGroup) ? $clientGroup->title : null;
-            $details['updated_at'] = $model->updated_at;
-            $details['email_approved'] = $model->email_approved;
+            $group = $client->getClientGroup();
+            if ($group instanceof ClientGroup) {
+                $details['group'] = $group->getTitle();
+                $details['client_group'] = [
+                    'id' => $group->getId(),
+                    'title' => $group->getTitle(),
+                ];
+            }
 
             if ($includeSensitive) {
-                $details['api_token'] = $model->api_token;
+                $details['api_token'] = $client->getApiToken();
+            }
+        } else {
+            $config = $this->di['mod_config']('client');
+            for ($i = 1; $i <= 20; ++$i) {
+                $field = 'custom_' . $i;
+                $value = $client->{'getCustom' . $i}();
+                if (($config['custom_fields'][$field]['active'] ?? false) && !empty($value)) {
+                    $details[$field] = $value;
+                }
             }
         }
 
         return $details;
     }
 
-    public function getClientBalance(\Model_Client $c): float
+    public function getClientBalance(Client $c): float
     {
-        $sql = 'SELECT SUM(amount) as client_total
-                FROM client_balance
-                WHERE client_id = ?
-                GROUP BY client_id';
-
-        return (float) $this->di['db']->getCell($sql, [$c->id]);
+        return $this->clientBalanceRepository->getClientBalanceSum((int) $c->getId());
     }
 
     public function get($data)
@@ -530,24 +540,23 @@ class Service implements InjectionAwareInterface
             throw new InformationException('Client ID or email is required');
         }
 
-        $db = $this->di['db'];
         $client = null;
         if (isset($data['id'])) {
-            $client = $db->findOne('Client', 'id = ?', [$data['id']]);
+            $client = $this->clientRepository->find((int) $data['id']);
         }
 
-        if (!$client && isset($data['email'])) {
-            $client = $db->findOne('Client', 'email = ?', [$data['email']]);
+        if (!$client instanceof Client && isset($data['email'])) {
+            $client = $this->clientRepository->findOneByEmail($data['email']);
         }
 
-        if (!$client instanceof \Model_Client) {
+        if (!$client instanceof Client) {
             throw new InformationException('Client not found');
         }
 
         return $client;
     }
 
-    public function isClientTaxable(\Model_Client $model): bool
+    public function isClientTaxable(?Client $model): bool
     {
         $systemService = $this->di['mod_service']('system');
 
@@ -555,128 +564,142 @@ class Service implements InjectionAwareInterface
             return false;
         }
 
-        if ($model->tax_exempt) {
+        if ($model instanceof Client && $model->isTaxExempt()) {
             return false;
         }
 
         return true;
     }
 
-    public function createGroup(array $data)
+    public function createGroup(array $data): int
     {
-        $model = $this->di['db']->dispense('ClientGroup');
+        $group = new ClientGroup();
+        $group->setTitle($data['title']);
 
-        $model->title = $data['title'];
-        $model->updated_at = date('Y-m-d H:i:s');
-        $model->created_at = date('Y-m-d H:i:s');
+        $this->di['em']->persist($group);
+        $this->di['em']->flush();
 
-        $group_id = $this->di['db']->store($model);
+        $this->di['logger']->info('Created new client group #{group_id}', ['group_id' => $group->getId()]);
 
-        $this->di['logger']->info('Created new client group #%s', $model->id);
-
-        return $group_id;
+        return (int) $group->getId();
     }
 
-    public function deleteGroup(\Model_ClientGroup $model): bool
+    public function deleteGroup(ClientGroup $model): bool
     {
-        $client = $this->di['db']->findOne('Client', 'client_group_id = ?', [$model->id]);
+        $client = $this->clientRepository->findOneBy(['clientGroup' => $model]);
         if ($client) {
             throw new \FOSSBilling\Exception('Cannot remove groups with clients');
         }
 
-        $this->di['db']->trash($model);
-        $this->di['logger']->info('Removed client group #%s', $model->id);
+        $group = $this->clientGroupRepository->find((int) $model->getId());
+        if ($group instanceof ClientGroup) {
+            $this->di['em']->remove($group);
+            $this->di['em']->flush();
+        }
+        $this->di['logger']->info('Removed client group #{model_id}', ['model_id' => $model->getId()]);
 
         return true;
     }
 
-    private function createClient(array $data)
+    private function createClient(array $data): Client
     {
         $password = $data['password'] ?? $this->di['tools']->generatePassword(32, true);
 
-        $client = $this->di['db']->dispense('Client');
-
-        $client->auth_type = $data['auth_type'] ?? null;
-        $client->email = strtolower(trim((string) ($data['email'] ?? null)));
+        $client = new Client();
+        $client->setAuthType($data['auth_type'] ?? null);
+        $client->setEmail(strtolower(trim((string) ($data['email'] ?? null))));
         $billingEmail = trim((string) ($data['billing_email'] ?? ''));
-        $client->billing_email = $billingEmail !== '' ? strtolower($billingEmail) : null;
-        $client->first_name = ucwords((string) ($data['first_name'] ?? null));
-        $client->pass = $this->di['password']->hashIt($password);
+        $client->setBillingEmail($billingEmail !== '' ? strtolower($billingEmail) : null);
+        $client->setFirstName(ucwords((string) ($data['first_name'] ?? null)));
+        $client->setPass($this->di['password']->hashIt($password));
 
         $system = $this->di['mod']('system');
         $systemCfg = $system->getConfig();
 
-        // Special handling for the phone country codes
         $phoneCC = $data['phone_cc'] ?? null;
         if (!empty($phoneCC)) {
-            $client->phone_cc = Tools::validatePhoneCC($phoneCC);
+            $client->setPhoneCc((string) Tools::validatePhoneCC($phoneCC));
         }
 
-        // Special handling for the phone number itself
         $phone = $data['phone'] ?? null;
         if (!empty($phone) && is_string($phone)) {
-            $client->phone = Tools::validatePhoneNumber($phone);
+            $client->setPhone(Tools::validatePhoneNumber($phone));
         }
 
-        $client->aid = $data['aid'] ?? null;
-        $client->last_name = $data['last_name'] ?? null;
-        $client->client_group_id = !empty($data['group_id']) ? $data['group_id'] : null;
-        $client->status = $data['status'] ?? null;
-        $client->gender = $data['gender'] ?? null;
-        $client->birthday = $data['birthday'] ?? null;
-        $client->company = $data['company'] ?? null;
-        $client->company_vat = $data['company_vat'] ?? null;
-        $client->company_number = $data['company_number'] ?? null;
-        $client->type = $data['type'] ?? null;
-        $client->address_1 = $data['address_1'] ?? null;
-        $client->address_2 = $data['address_2'] ?? null;
-        $client->city = $data['city'] ?? null;
-        $client->state = $data['state'] ?? null;
-        $client->postcode = $data['postcode'] ?? null;
-        $client->country = !empty($data['country']) ? $data['country'] : (!empty($systemCfg['default_country']) ? $systemCfg['default_country'] : null);
-        if ($client->country !== null && !Countries::exists($client->country)) {
-            throw new InformationException('Invalid country code: :code', [':code' => $client->country]);
+        $client->setAid($data['aid'] ?? null);
+        $client->setLastName($data['last_name'] ?? null);
+        if (!empty($data['group_id'])) {
+            $group = $this->clientGroupRepository->find((int) $data['group_id']);
+            if (!$group instanceof ClientGroup) {
+                throw new InformationException('Client group not found');
+            }
+            $client->setClientGroup($group);
+        } else {
+            $client->setClientGroup(null);
         }
-        $client->notes = $data['notes'] ?? null;
-        $client->lang = $data['lang'] ?? null;
-        if ($client->lang !== null && $client->lang !== '' && !Locales::exists($client->lang)) {
-            throw new InformationException('Invalid locale code: :code', [':code' => $client->lang]);
+        $client->setStatus($data['status'] ?? Client::ACTIVE);
+        $client->setGender($data['gender'] ?? null);
+        $birthday = $data['birthday'] ?? null;
+        if ($birthday) {
+            $client->setBirthday(new \DateTime($birthday));
         }
-        $client->timezone = i18n::validateTimezone($data['timezone'] ?? null);
-        $client->currency = $data['currency'] ?? null;
+        $client->setCompany($data['company'] ?? null);
+        $client->setCompanyVat($data['company_vat'] ?? null);
+        $client->setCompanyNumber($data['company_number'] ?? null);
+        $client->setType($data['type'] ?? null);
+        $client->setAddress1($data['address_1'] ?? null);
+        $client->setAddress2($data['address_2'] ?? null);
+        $client->setCity($data['city'] ?? null);
+        $client->setState($data['state'] ?? null);
+        $client->setPostcode($data['postcode'] ?? null);
+        $country = !empty($data['country']) ? $data['country'] : (!empty($systemCfg['default_country']) ? $systemCfg['default_country'] : null);
+        if ($country !== null && !Countries::exists($country)) {
+            throw new InformationException('Invalid country code: :code', [':code' => $country]);
+        }
+        $client->setCountry($country);
+        $client->setNotes($data['notes'] ?? null);
+        $client->setLang($data['lang'] ?? null);
+        if ($client->getLang() !== null && $client->getLang() !== '' && !Locales::exists($client->getLang())) {
+            throw new InformationException('Invalid locale code: :code', [':code' => $client->getLang()]);
+        }
+        $client->setTimezone(i18n::validateTimezone($data['timezone'] ?? null));
+        $client->setCurrency($data['currency'] ?? null);
 
-        $client->custom_1 = $data['custom_1'] ?? null;
-        $client->custom_2 = $data['custom_2'] ?? null;
-        $client->custom_3 = $data['custom_3'] ?? null;
-        $client->custom_4 = $data['custom_4'] ?? null;
-        $client->custom_5 = $data['custom_5'] ?? null;
-        $client->custom_6 = $data['custom_6'] ?? null;
-        $client->custom_7 = $data['custom_7'] ?? null;
-        $client->custom_8 = $data['custom_8'] ?? null;
-        $client->custom_9 = $data['custom_9'] ?? null;
-        $client->custom_10 = $data['custom_10'] ?? null;
-        $client->custom_11 = $data['custom_11'] ?? null;
-        $client->custom_12 = $data['custom_12'] ?? null;
-        $client->custom_13 = $data['custom_13'] ?? null;
-        $client->custom_14 = $data['custom_14'] ?? null;
-        $client->custom_15 = $data['custom_15'] ?? null;
-        $client->custom_16 = $data['custom_16'] ?? null;
-        $client->custom_17 = $data['custom_17'] ?? null;
-        $client->custom_18 = $data['custom_18'] ?? null;
-        $client->custom_19 = $data['custom_19'] ?? null;
-        $client->custom_20 = $data['custom_20'] ?? null;
+        $client->setCustom1($data['custom_1'] ?? null);
+        $client->setCustom2($data['custom_2'] ?? null);
+        $client->setCustom3($data['custom_3'] ?? null);
+        $client->setCustom4($data['custom_4'] ?? null);
+        $client->setCustom5($data['custom_5'] ?? null);
+        $client->setCustom6($data['custom_6'] ?? null);
+        $client->setCustom7($data['custom_7'] ?? null);
+        $client->setCustom8($data['custom_8'] ?? null);
+        $client->setCustom9($data['custom_9'] ?? null);
+        $client->setCustom10($data['custom_10'] ?? null);
+        $client->setCustom11($data['custom_11'] ?? null);
+        $client->setCustom12($data['custom_12'] ?? null);
+        $client->setCustom13($data['custom_13'] ?? null);
+        $client->setCustom14($data['custom_14'] ?? null);
+        $client->setCustom15($data['custom_15'] ?? null);
+        $client->setCustom16($data['custom_16'] ?? null);
+        $client->setCustom17($data['custom_17'] ?? null);
+        $client->setCustom18($data['custom_18'] ?? null);
+        $client->setCustom19($data['custom_19'] ?? null);
+        $client->setCustom20($data['custom_20'] ?? null);
 
-        $client->ip = $data['ip'] ?? null;
+        $client->setIp($data['ip'] ?? null);
 
-        $created_at = $data['created_at'] ?? null;
-        $client->created_at = !empty($created_at) ? date('Y-m-d H:i:s', strtotime((string) $created_at)) : date('Y-m-d H:i:s');
-        $client->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($client);
+        $createdAt = $data['created_at'] ?? null;
+        if (!empty($createdAt)) {
+            $client->setCreatedAt(new \DateTime((string) $createdAt));
+        }
+
+        $this->di['em']->persist($client);
+        $this->di['em']->flush();
 
         return $client;
     }
 
-    public function adminCreateClient(array $data)
+    public function adminCreateClient(array $data): int
     {
         $eventParams = $data;
         unset($eventParams['password'], $eventParams['password_confirm']);
@@ -685,10 +708,10 @@ class Service implements InjectionAwareInterface
         if (Tools::normalizeBoolean($data['send_welcome_email'] ?? true, true)) {
             $this->sendAdminCreatedWelcomeEmailForClient($client);
         }
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminCreateClient', 'params' => ['id' => $client->id]]);
-        $this->di['logger']->info('Created new client #%s', $client->id);
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminCreateClient', 'params' => ['id' => $client->getId()]]);
+        $this->di['logger']->info('Created new client #{client_id}', ['client_id' => $client->getId()]);
 
-        return $client->id;
+        return (int) $client->getId();
     }
 
     public function guestCreateClient(array $data)
@@ -712,7 +735,7 @@ class Service implements InjectionAwareInterface
 
         $safeData = [
             'ip' => $this->di['request']->getClientIp(),
-            'status' => \Model_Client::ACTIVE,
+            'status' => Client::ACTIVE,
         ];
         foreach ($allowedFields as $field) {
             if (array_key_exists($field, $data)) {
@@ -723,23 +746,26 @@ class Service implements InjectionAwareInterface
         $client = $this->createClient($safeData);
 
         $event_params = [
-            'id' => $client->id,
-            'email' => $client->email,
-            'first_name' => $client->first_name,
-            'last_name' => $client->last_name,
+            'id' => $client->getId(),
+            'email' => $client->getEmail(),
+            'first_name' => $client->getFirstName(),
+            'last_name' => $client->getLastName(),
             'ip' => $safeData['ip'],
         ];
         $this->di['events_manager']->fire(['event' => 'onAfterClientSignUp', 'params' => $event_params]);
-        $this->di['logger']->info('Client #%s signed up', $client->id);
+        $this->di['logger']->info('Client #{client_id} signed up', ['client_id' => $client->getId()]);
 
         return $client;
     }
 
-    public function createPasswordResetRequestForClient(\Model_Client $client): string
+    public function createPasswordResetRequestForClient(Client $client): string
     {
-        $existingReset = $this->di['db']->findOne('ClientPasswordReset', 'client_id = ?', [$client->id]);
-        if ($existingReset instanceof \Model_ClientPasswordReset) {
-            $this->di['db']->trash($existingReset);
+        $clientIp = $client->getIp();
+
+        $existingReset = $this->clientPasswordResetRepository->findOneBy(['client' => $client]);
+        if ($existingReset instanceof ClientPasswordReset) {
+            $this->di['em']->remove($existingReset);
+            $this->di['em']->flush();
         }
 
         $requestIp = null;
@@ -748,21 +774,23 @@ class Service implements InjectionAwareInterface
         }
 
         $hash = hash('sha256', random_bytes(32));
-        $reset = $this->di['db']->dispense('ClientPasswordReset');
-        $reset->client_id = $client->id;
-        $reset->ip = $requestIp ?? $client->ip;
-        $reset->hash = $hash;
-        $reset->created_at = date('Y-m-d H:i:s');
-        $reset->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($reset);
+        $reset = new ClientPasswordReset();
+        $reset->setClient($client);
+        $reset->setIp($requestIp ?? $clientIp);
+        $reset->setHash($hash);
+
+        $this->di['em']->persist($reset);
+        $this->di['em']->flush();
 
         return $hash;
     }
 
-    public function sendPasswordResetRequestEmailForClient(\Model_Client $client, string $hash, bool $sendNow = true): void
+    public function sendPasswordResetRequestEmailForClient(Client $client, string $hash, bool $sendNow = true): void
     {
+        $clientId = (int) $client->getId();
+
         $email = [
-            'to_client' => $client->id,
+            'to_client' => $clientId,
             'code' => 'mod_client_password_reset_request',
             'hash' => $hash,
             'send_now' => $sendNow,
@@ -772,11 +800,13 @@ class Service implements InjectionAwareInterface
         $emailService->sendTemplate($email);
     }
 
-    public function sendAdminCreatedWelcomeEmailForClient(\Model_Client $client): void
+    public function sendAdminCreatedWelcomeEmailForClient(Client $client): void
     {
         try {
+            $clientId = (int) $client->getId();
+
             $email = [];
-            $email['to_client'] = $client->id;
+            $email['to_client'] = $clientId;
             $email['code'] = 'mod_client_signup_admin';
             $email['hash'] = $this->createPasswordResetRequestForClient($client);
             $email['send_now'] = true;
@@ -785,80 +815,98 @@ class Service implements InjectionAwareInterface
             $config = $this->di['mod_config']('client');
             if (isset($config['require_email_confirmation']) && $config['require_email_confirmation']) {
                 $email['require_email_confirmation'] = true;
-                $email['email_confirmation_link'] = $this->generateEmailConfirmationLink($client->id);
+                $email['email_confirmation_link'] = $this->generateEmailConfirmationLink($clientId);
             }
 
             $emailService = $this->di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $this->di['logger']->setChannel('email')->error('Failed to send client welcome email', ['exception' => $exc->getMessage()]);
+            $this->di['logger']->withChannel('email')->error('Failed to send client welcome email', ['exception' => $exc]);
         }
     }
 
-    public function remove(\Model_Client $model): void
+    public function remove(Client $model): void
     {
-        $service = $this->di['mod_service']('Order');
-        $service->rmByClient($model);
-        $service = $this->di['mod_service']('Invoice');
-        $service->rmByClient($model);
-        $service = $this->di['mod_service']('Support');
-        $service->rmByClient($model);
-        $service = $this->di['mod_service']('Client', 'Balance');
-        $service->rmByClient($model);
+        $entityManager = $this->di['em'];
+        $connection = $entityManager->getConnection();
 
-        $table = $this->di['table']('ActivityClientHistory');
-        $table->rmByClient($model);
+        $entityManager->beginTransaction();
 
-        $service = $this->di['mod_service']('Email');
-        $service->rmByClient($model);
-        $service = $this->di['mod_service']('Activity');
-        $service->rmByClient($model);
+        try {
+            $service = $this->di['mod_service']('Order');
+            $service->rmByClient($model);
+            $service = $this->di['mod_service']('Invoice');
+            $service->rmByClient($model);
+            $service = $this->di['mod_service']('Support');
+            $service->rmByClient($model);
+            $service = $this->di['mod_service']('Client', 'Balance');
+            $service->rmByClient($model);
 
-        $resetRecords = $this->di['db']->find('ClientPasswordReset', 'client_id = ?', [$model->id]);
-        foreach ($resetRecords as $resetRecord) {
-            $this->di['db']->trash($resetRecord);
+            $connection->executeStatement('DELETE FROM activity_client_history WHERE client_id = :id', ['id' => $model->getId()]);
+
+            $service = $this->di['mod_service']('Email');
+            $service->rmByClient($model);
+            $service = $this->di['mod_service']('Activity');
+            $service->rmByClient($model);
+
+            $resetRecords = $this->clientPasswordResetRepository->findBy(['client' => $model]);
+            foreach ($resetRecords as $resetRecord) {
+                $entityManager->remove($resetRecord);
+            }
+
+            $query = $connection->createQueryBuilder();
+            $query
+                ->delete('extension_meta')
+                ->where('client_id = :id')
+                ->setParameter('id', $model->getId());
+            $query->executeStatement();
+
+            $entityManager->remove($model);
+            $entityManager->flush();
+            $entityManager->commit();
+        } catch (\Throwable $exception) {
+            if ($connection->isTransactionActive()) {
+                $entityManager->rollback();
+            }
+
+            throw $exception;
         }
-
-        $query = $this->di['dbal']->createQueryBuilder();
-        $query
-            ->delete('extension_meta')
-            ->where('client_id = :id')
-            ->setParameter('id', $model->id);
-        $query->executeStatement();
-
-        $this->di['db']->trash($model);
     }
 
-    public function authorizeClient($email, $plainTextPassword)
+    public function authorizeClient($email, $plainTextPassword): ?Client
     {
-        $model = $this->di['db']->findOne('Client', 'email = ? AND status = ?', [$email, \Model_Client::ACTIVE]);
+        $client = $this->clientRepository->findOneBy(['email' => $email, 'status' => Client::ACTIVE]);
 
-        return $this->di['auth']->authorizeUser($model, $plainTextPassword);
+        $authorized = $this->di['auth']->authorizeUser($client, $plainTextPassword);
+
+        return $authorized instanceof Client ? $authorized : null;
     }
 
-    public function sendEmailConfirmationForClient(\Model_Client $client): void
+    public function sendEmailConfirmationForClient(Client $client): void
     {
+        $clientId = (int) $client->getId();
+
         try {
             $email = [];
-            $email['to_client'] = $client->id;
+            $email['to_client'] = $clientId;
             $email['code'] = 'mod_client_confirm';
             $email['require_email_confirmation'] = true;
-            $email['email_confirmation_link'] = $this->generateEmailConfirmationLink($client->id);
+            $email['email_confirmation_link'] = $this->generateEmailConfirmationLink($clientId);
             $email['send_now'] = true;
 
             $emailService = $this->di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $this->di['logger']->setChannel('email')->error('Failed to send email confirmation email', ['exception' => $exc->getMessage()]);
+            $this->di['logger']->withChannel('email')->error('Failed to send email confirmation email', ['exception' => $exc]);
         }
     }
 
-    public function canChangeEmail(\Model_Client $client, $email): bool
+    public function canChangeEmail(Client $client, $email): bool
     {
         $config = $this->di['mod_config']('client');
 
         if (
-            $client->email != $email
+            $client->getEmail() != $email
             && isset($config['disable_change_email'])
             && $config['disable_change_email']
         ) {
@@ -898,8 +946,12 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public function resolveDocumentNumber(\Model_Client $client): ?string
+    public function resolveDocumentNumber(?Client $client): ?string
     {
+        if (!$client instanceof Client) {
+            return null;
+        }
+
         $config = $this->di['mod_config']('client');
         $customFields = $config['custom_fields'] ?? [];
 
@@ -915,7 +967,7 @@ class Service implements InjectionAwareInterface
             if ($title === '' || !array_filter($keywords, fn ($k): bool => str_contains($title, (string) $k))) {
                 continue;
             }
-            $value = $client->{$fieldName} ?? null;
+            $value = $client->{'getCustom' . $i}();
             if ($value !== null && $value !== '') {
                 return (string) $value;
             }
@@ -927,15 +979,11 @@ class Service implements InjectionAwareInterface
     public function exportCSV(array $headers): Response
     {
         if ($headers) {
-            // Prevent the password / salt columns from being exported
-            if (isset($headers['pass'])) {
-                unset($headers['pass']);
-            }
-            if (isset($headers['salt'])) {
-                unset($headers['salt']);
-            }
-        } else {
-            $headers = ['id', 'email', 'status', 'first_name', 'last_name', 'phone_cc', 'phone', 'company', 'company_vat', 'company_number', 'address_1', 'address_2', 'city', 'state', 'postcode', 'country', 'currency'];
+            $headers = array_values(array_intersect(self::EXPORTABLE_COLUMNS, $headers));
+        }
+
+        if (!$headers) {
+            $headers = self::DEFAULT_EXPORT_COLUMNS;
         }
 
         return $this->di['csv_response_factory']->create('client', 'clients.csv', $headers);
@@ -956,18 +1004,21 @@ class Service implements InjectionAwareInterface
         $this->di['events_manager']->fire(['event' => 'onBeforePasswordResetClient']);
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
-        $reset = $this->di['db']->findOne('ClientPasswordReset', 'hash = ?', [$data['hash']]);
-        if (!$reset instanceof \Model_ClientPasswordReset) {
+        $reset = $this->clientPasswordResetRepository->findOneByHash($data['hash']);
+        if (!$reset instanceof ClientPasswordReset) {
             throw new InformationException('The link has expired or you have already reset your password.');
         }
 
-        $c = $this->di['db']->findOne('Client', 'id = ?', [$reset->client_id]);
-        // Return the client ID if the reset request is valid (from within the last 15 minutes), otherwise return false
-        if (strtotime($reset->created_at) - time() + 900 < 0) {
+        $client = $reset->getClient();
+        if (!$client instanceof Client) {
+            throw new InformationException('The link has expired or you have already reset your password.');
+        }
+
+        if (strtotime((string) $reset->getCreatedAt()?->format('Y-m-d H:i:s')) - time() + 900 < 0) {
             return false;
         }
 
-        return $c->id;
+        return $client->getId();
     }
 
     /*
@@ -978,14 +1029,19 @@ class Service implements InjectionAwareInterface
     public static function onBeforeAdminCronRun(\Box_Event $event): void
     {
         $di = $event->getDi();
-        $sql = 'DELETE FROM client_password_reset WHERE UNIX_TIMESTAMP() - 900 > UNIX_TIMESTAMP(created_at);';
 
         try {
-            $db = $di['db'];
-            $db->exec($sql);
+            $cutoff = new \DateTime('-900 seconds');
+            $di['em']->getRepository(ClientPasswordReset::class)
+                ->createQueryBuilder('r')
+                ->delete()
+                ->where('r.createdAt < :cutoff')
+                ->setParameter('cutoff', $cutoff)
+                ->getQuery()
+                ->execute();
         } catch (\Exception $e) {
             if (!\FOSSBilling\Environment::isTesting()) {
-                error_log($e->getMessage());
+                $di['logger']->error($e->getMessage());
             }
         }
     }

@@ -23,7 +23,7 @@ abstract class Server_Manager
         'port' => null,
         'passwordLength' => null,
     ];
-    private ?Box_Log $_log = null;
+    private ?Psr\Log\LoggerInterface $_log = null;
 
     /**
      * Constructor for the class.
@@ -138,25 +138,27 @@ abstract class Server_Manager
      * Get the password length from the configuration.
      * If the password length is not set in the configuration, it defaults to 10.
      *
+     * The value is cast to int because `_config['passwordLength']` is untyped and
+     * has been observed containing a numeric string (e.g. from a stored server
+     * configuration predating strict int typing), which would otherwise violate
+     * this method's return type.
+     *
      * @return int the password length
      */
     public function getPasswordLength(): int
     {
-        return $this->_config['passwordLength'] ?? 10;
+        return (int) ($this->_config['passwordLength'] ?? 10);
     }
 
     /**
      * Returns the logger object.
      *
-     * @return Box_Log|null the logger object
+     * @return Psr\Log\LoggerInterface|null the logger object
      */
-    public function getLog(): ?Box_Log
+    public function getLog(): ?Psr\Log\LoggerInterface
     {
-        if (!$this->_log instanceof Box_Log) {
-            $log = new Box_Log();
-            $log->addWriter(new Box_LogDb('Model_ActivitySystem'));
-
-            return $log;
+        if (!$this->_log instanceof Psr\Log\LoggerInterface) {
+            return new FOSSBilling\Logger();
         }
 
         return $this->_log;
@@ -165,9 +167,9 @@ abstract class Server_Manager
     /**
      * Sets the logger object.
      *
-     * @param Box_Log $value the logger object
+     * @param Psr\Log\LoggerInterface $value the logger object
      */
-    public function setLog(Box_Log $value): static
+    public function setLog(Psr\Log\LoggerInterface $value): static
     {
         $this->_log = $value;
 

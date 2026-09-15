@@ -212,7 +212,7 @@ test('updates an addon', function (): void {
     $serviceMock->shouldReceive('findProductById')->once()->with(1)->andReturn($model);
 
     $di = container();
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $apiMock->setService($serviceMock);
     $apiMock->setDi($di);
@@ -377,6 +377,21 @@ test('gets a promo', function (): void {
     $api->setDi(container());
 
     expect($api->promo_get($data))->toBeArray();
+});
+
+test('duplicates a promo', function (): void {
+    $api = apiEndpoint(new Admin());
+    $data = ['id' => 1];
+    $model = new Promo();
+    $newPromoId = 2;
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('findPromoById')->atLeast()->once()->with(1)->andReturn($model);
+    $serviceMock->shouldReceive('duplicatePromo')->atLeast()->once()->with($model)->andReturn($newPromoId);
+
+    $api->setDi(container());
+    $api->setService($serviceMock);
+    expect($api->promo_duplicate($data))->toBe($newPromoId);
 });
 
 test('gets promo redemption list', function (): void {

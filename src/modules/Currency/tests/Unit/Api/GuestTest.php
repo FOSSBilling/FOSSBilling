@@ -61,10 +61,11 @@ test('get', function ($data, $modelFlag, $expectsGetByCode, $expectsGetDefault):
 
     $willReturn = [
         'code' => 'EUR',
-        'title' => 'Euro',
+        'name' => 'Euro',
+        'symbol' => '€',
         'conversion_rate' => 1,
-        'format' => '{{price}}',
-        'price_format' => 1,
+        'format_pattern' => null,
+        'fraction_digits' => null,
         'default' => 1,
     ];
 
@@ -129,51 +130,13 @@ test('get exception', function (): void {
     $result = $guestApi->get([]);
 });
 
-dataset('formatPriceFormatProvider', [
-    [1, '€60,000.00'],
-    [2, '€60,000.00'],
-    [3, '€60,000.00'],
-    [4, '€60,000.00'],
-    [5, '€60,000.00'],
-]);
-
-test('format price format', function ($price_format, $expectedResult): void {
-    $willReturn = [
-        'code' => 'EUR',
-        'title' => 'Euro',
-        'conversion_rate' => 0.6,
-        'format' => '€ {{price}}',
-        'price_format' => $price_format,
-        'default' => 1,
-    ];
-
-    $data = [
-        'code' => 'EUR',
-        'price' => 100000,
-        'without_currency' => false,
-    ];
-    $guestApi = Mockery::mock(Box\Mod\Currency\Api\Guest::class)->makePartial();
-    $guestApi
-    ->shouldReceive('get')
-    ->atLeast()->once()
-    ->andReturn($willReturn);
-
-    $service = $this->createStub(Box\Mod\Currency\Service::class);
-
-    $di = container();
-
-    $guestApi->setDi($di);
-    $guestApi->setService($service);
-
-    $result = $guestApi->format($data);
-    expect($expectedResult)->toEqual($result);
-})->with('formatPriceFormatProvider');
-
 dataset('formatProvider', [
     [
         [
             'code' => 'EUR',
         ],
+        'formatCurrency',
+        0.0,
         '€0.00',
     ],
     [
@@ -182,6 +145,8 @@ dataset('formatProvider', [
             'price' => 100000,
             'convert' => false,
         ],
+        'formatCurrency',
+        100000.0,
         '€100,000.00',
     ],
     [
@@ -190,17 +155,20 @@ dataset('formatProvider', [
             'price' => 100000,
             'without_currency' => true,
         ],
+        'formatNumber',
+        60000.0,
         '60,000.00',
     ],
 ]);
 
-test('format', function ($data, $expectedResult): void {
+test('format', function ($data, $formatMethod, $expectedAmount, $expectedResult): void {
     $willReturn = [
         'code' => 'EUR',
-        'title' => 'Euro',
+        'name' => 'Euro',
+        'symbol' => '€',
         'conversion_rate' => 0.6,
-        'format' => '€ {{price}}',
-        'price_format' => 1,
+        'format_pattern' => null,
+        'fraction_digits' => null,
         'default' => 1,
     ];
 
@@ -210,7 +178,11 @@ test('format', function ($data, $expectedResult): void {
     ->atLeast()->once()
     ->andReturn($willReturn);
 
-    $service = $this->createStub(Box\Mod\Currency\Service::class);
+    $service = Mockery::mock(Box\Mod\Currency\Service::class);
+    $service->shouldReceive($formatMethod)
+        ->once()
+        ->withArgs(fn ($amount, $code): bool => $amount === $expectedAmount && $code === 'EUR')
+        ->andReturn($expectedResult);
 
     $di = container();
 

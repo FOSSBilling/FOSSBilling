@@ -11,12 +11,20 @@
 declare(strict_types=1);
 
 use Box\Mod\Invoice\Api\Client;
+use Box\Mod\Invoice\Entity\Invoice;
+use Box\Mod\Invoice\Entity\Transaction;
+use Box\Mod\Invoice\Repository\InvoiceRepository;
+use Box\Mod\Invoice\Repository\TransactionRepository;
 use Box\Mod\Invoice\Service;
 use Box\Mod\Invoice\ServiceTax;
 use Box\Mod\Invoice\ServiceTransaction;
+use Box\Mod\Order\Entity\Order;
+use Box\Mod\Order\Repository\OrderRepository;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 use function Tests\Helpers\moduleService;
+use function Tests\Helpers\setEntityId;
 
 test('gets dependency injection container', function (): void {
     $api = apiEndpoint(new Client());
@@ -26,6 +34,40 @@ test('gets dependency injection container', function (): void {
     expect($getDi)->toBe($di);
 });
 
+test('gets invoice list', function (): void {
+    $api = apiEndpoint(new Client());
+
+    $identity = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 7]);
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('toApiArray')
+        ->once()
+        ->with(Mockery::on(fn ($inv): bool => $inv instanceof Invoice))
+        ->andReturn(['id' => 1]);
+
+    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('getSearchQueryBuilder')
+        ->once()
+        ->with(['client_id' => 7, 'approved' => true])
+        ->andReturn(Mockery::mock(Doctrine\ORM\QueryBuilder::class));
+
+    $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
+    $paginatorMock->shouldReceive('paginateMappedQuery')
+        ->once()
+        ->andReturnUsing(fn ($qb, $pagination, $mapper): array => ['list' => [$mapper(createEntity(Invoice::class))]]);
+
+    $di = container();
+    $di['pager'] = $paginatorMock;
+
+    $api->setDi($di);
+    $api->setService($serviceMock);
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($invoiceRepo);
+    $api->setIdentity($identity);
+
+    $result = $api->get_list([]);
+    expect($result['list'])->toBe([['id' => 1]]);
+});
+
 test('gets an invoice', function (): void {
     $api = apiEndpoint(new Client());
     $serviceMock = Mockery::mock(Service::class);
@@ -33,42 +75,36 @@ test('gets an invoice', function (): void {
         ->atLeast()->once()
         ->andReturn([]);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $model = new Model_Invoice();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $dbMock->shouldReceive('findOne')
-        ->atLeast()->once()
-        ->andReturn($model);
+    $model = createEntity(Invoice::class);
+    $identity = createEntity(Box\Mod\Client\Entity\Client::class);
+    $data['hash'] = md5('1');
 
     $di = container();
-    $di['db'] = $dbMock;
+    $invoiceRepo = $di['em']->getRepository(Invoice::class);
+    $invoiceRepo->shouldReceive('findOneBy')
+        ->atLeast()->once()
+        ->with(['hash' => $data['hash'], 'clientId' => $identity->getId()])
+        ->andReturn($model);
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($invoiceRepo);
 
     $api->setDi($di);
     $api->setService($serviceMock);
-    $identity = new Model_Client();
-    $identity->loadBean(new Tests\Helpers\DummyBean());
     $api->setIdentity($identity);
 
-    $data['hash'] = md5('1');
     $result = $api->get($data);
     expect($result)->toBeArray();
 });
 
 test('throws exception when invoice is not found', function (): void {
     $api = apiEndpoint(new Client());
-    $dbMock = Mockery::mock('\Box_Database');
-    $model = new Model_Invoice();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $dbMock->shouldReceive('findOne')
-        ->atLeast()->once()
-        ->andReturn(null);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($di['em']->getRepository(Invoice::class));
 
     $api->setDi($di);
-    $identity = new Model_Client();
-    $identity->loadBean(new Tests\Helpers\DummyBean());
+    $api->setService($serviceMock);
+    $identity = createEntity(Box\Mod\Client\Entity\Client::class);
     $api->setIdentity($identity);
 
     $data['hash'] = md5('1');
@@ -81,30 +117,64 @@ test('creates renewal invoice', function (): void {
     $generatedHash = 'generatedHashString';
 
     $serviceMock = Mockery::mock(Service::class);
-    $model = new Model_Invoice();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(Invoice::class);
+
     $model->hash = $generatedHash;
     $serviceMock->shouldReceive('generateForOrder')
         ->atLeast()->once()
         ->andReturn($model);
     $serviceMock->shouldReceive('approveInvoice');
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $clientOrder = new Model_ClientOrder();
-    $clientOrder->loadBean(new Tests\Helpers\DummyBean());
-    $clientOrder->price = 10;
-    $dbMock->shouldReceive('findOne')
+    $orderRepoMock = Mockery::mock(OrderRepository::class);
+    $orderRepoMock->shouldReceive('findOneBy')
         ->atLeast()->once()
-        ->andReturn($clientOrder);
+        ->andReturn(createEntity(Order::class, ['price' => 10]));
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $api->setDi($di);
     $api->setService($serviceMock);
-    $identity = new Model_Admin();
-    $identity->loadBean(new Tests\Helpers\DummyBean());
+    $identity = \Tests\Helpers\admin();
+    $api->setIdentity($identity);
+
+    $data['order_id'] = 1;
+    $result = $api->renewal_invoice($data);
+    expect($result)->toBeString()->toBe($generatedHash);
+});
+
+test('creates renewal invoice from a real invoice entity without accessing private properties', function (): void {
+    // Regression test: renewal_invoice() used to read $invoice->id and
+    // $invoice->hash directly, which are private on the Doctrine entity and
+    // fatal with "Cannot access private property". createEntity() below
+    // masks that with magic getters/setters, so this uses a real Invoice
+    // instance instead.
+    $api = apiEndpoint(new Client());
+    $generatedHash = 'generatedHashString';
+
+    $model = new Invoice();
+    setEntityId($model, 1);
+    $model->setHash($generatedHash);
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('generateForOrder')
+        ->atLeast()->once()
+        ->andReturn($model);
+    $serviceMock->shouldReceive('approveInvoice');
+
+    $orderRepoMock = Mockery::mock(OrderRepository::class);
+    $orderRepoMock->shouldReceive('findOneBy')
+        ->atLeast()->once()
+        ->andReturn(createEntity(Order::class, ['price' => 10]));
+
+    $di = container();
+    $di['em']->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $api->setDi($di);
+    $api->setService($serviceMock);
+    $identity = \Tests\Helpers\admin();
     $api->setIdentity($identity);
 
     $data['order_id'] = 1;
@@ -117,32 +187,26 @@ test('creates renewal invoice for free order', function (): void {
     $generatedHash = 'generatedHashString';
 
     $serviceMock = Mockery::mock(Service::class);
-    $model = new Model_Invoice();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(Invoice::class);
+
     $model->hash = $generatedHash;
     $serviceMock->shouldReceive('generateForOrder')
         ->atLeast()->once()
         ->andReturn($model);
     $serviceMock->shouldReceive('approveInvoice');
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $clientOrder = new Model_ClientOrder();
-    $clientOrder->loadBean(new Tests\Helpers\DummyBean());
-    $clientOrder->id = 1;
-    $clientOrder->price = 0;
-
-    $dbMock->shouldReceive('findOne')
+    $orderRepoMock = Mockery::mock(OrderRepository::class);
+    $orderRepoMock->shouldReceive('findOneBy')
         ->atLeast()->once()
-        ->andReturn($clientOrder);
+        ->andReturn(createEntity(Order::class, ['id' => 1, 'price' => 0]));
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $api->setDi($di);
     $api->setService($serviceMock);
-    $identity = new Model_Admin();
-    $identity->loadBean(new Tests\Helpers\DummyBean());
+    $identity = \Tests\Helpers\admin();
     $api->setIdentity($identity);
 
     $data['order_id'] = 1;
@@ -152,21 +216,16 @@ test('creates renewal invoice for free order', function (): void {
 
 test('throws exception when creating renewal invoice for order not found', function (): void {
     $api = apiEndpoint(new Client());
-    $dbMock = Mockery::mock('\Box_Database');
-    $clientOrder = new Model_ClientOrder();
-    $clientOrder->loadBean(new Tests\Helpers\DummyBean());
-    $clientOrder->price = 10;
-
-    $dbMock->shouldReceive('findOne')
+    $orderRepoMock = Mockery::mock(OrderRepository::class);
+    $orderRepoMock->shouldReceive('findOneBy')
         ->atLeast()->once()
         ->andReturn(null);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
 
     $api->setDi($di);
-    $identity = new Model_Admin();
-    $identity->loadBean(new Tests\Helpers\DummyBean());
+    $identity = \Tests\Helpers\admin();
     $api->setIdentity($identity);
 
     $data['order_id'] = 1;
@@ -180,8 +239,8 @@ test('creates funds invoice', function (): void {
     $generatedHash = 'generatedHashString';
 
     $serviceMock = Mockery::mock(Service::class);
-    $model = new Model_Invoice();
-    $model->loadBean(new Tests\Helpers\DummyBean());
+    $model = createEntity(Invoice::class);
+
     $model->hash = $generatedHash;
     $serviceMock->shouldReceive('generateFundsInvoice')
         ->atLeast()->once()
@@ -193,8 +252,36 @@ test('creates funds invoice', function (): void {
 
     $api->setDi($di);
     $api->setService($serviceMock);
-    $identity = new Model_Client();
-    $identity->loadBean(new Tests\Helpers\DummyBean());
+    $identity = createEntity(Box\Mod\Client\Entity\Client::class);
+    $api->setIdentity($identity);
+
+    $data['amount'] = 10;
+    $result = $api->funds_invoice($data);
+    expect($result)->toBeString()->toBe($generatedHash);
+});
+
+test('creates funds invoice from a real invoice entity without accessing private properties', function (): void {
+    // Regression test: same as the renewal_invoice() case above - funds_invoice()
+    // also read $invoice->id and $invoice->hash directly.
+    $api = apiEndpoint(new Client());
+    $generatedHash = 'generatedHashString';
+
+    $model = new Invoice();
+    setEntityId($model, 1);
+    $model->setHash($generatedHash);
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('generateFundsInvoice')
+        ->atLeast()->once()
+        ->andReturn($model);
+    $serviceMock->shouldReceive('approveInvoice');
+
+    $di = container();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $api->setDi($di);
+    $api->setService($serviceMock);
+    $identity = createEntity(Box\Mod\Client\Entity\Client::class);
     $api->setIdentity($identity);
 
     $data['amount'] = 10;
@@ -205,32 +292,38 @@ test('creates funds invoice', function (): void {
 test('gets transaction list', function (): void {
     $api = apiEndpoint(new Client());
     $transactionService = Mockery::mock(ServiceTransaction::class);
-    $transactionService->shouldReceive('getSearchQuery')
-        ->atLeast()->once()
-        ->andReturn(['SqlString', []]);
+    $transactionService->shouldReceive('transactionResultToApiArray')
+        ->once()
+        ->with(Mockery::on(fn ($t): bool => $t instanceof Transaction), 'Stripe')
+        ->andReturn(['id' => 1, 'gateway' => 'Stripe']);
+
+    $transactionRepo = Mockery::mock(TransactionRepository::class);
+    $transactionRepo->shouldReceive('getSearchQueryBuilder')
+        ->once()
+        ->with(['client_id' => 7, 'status' => 'processed'])
+        ->andReturn(Mockery::mock(Doctrine\ORM\QueryBuilder::class));
 
     $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
-    $paginatorMock->shouldReceive('getPaginatedResultSet')
-        ->atLeast()->once()
-        ->andReturn(['list' => []]);
+    $paginatorMock->shouldReceive('paginateMappedQuery')
+        ->once()
+        ->andReturnUsing(fn ($qb, $pagination, $mapper): array => ['list' => [$mapper([0 => createEntity(Transaction::class, ['id' => 1]), 'gateway' => 'Stripe'])]]);
 
     $di = container();
     $di['pager'] = $paginatorMock;
     $di['mod_service'] = $di->protect(moduleService(['invoice:transaction' => $transactionService]));
 
     $api->setDi($di);
+    $transactionService->shouldReceive('getTransactionRepository')->andReturn($transactionRepo);
 
-    $identity = new Model_Client();
-    $identity->loadBean(new Tests\Helpers\DummyBean());
+    $identity = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 7]);
     $api->setIdentity($identity);
     $result = $api->transaction_get_list([]);
-    expect($result)->toBeArray();
+    expect($result['list'])->toBe([['id' => 1, 'gateway' => 'Stripe']]);
 });
 
 test('gets tax rate for client', function (): void {
     $api = apiEndpoint(new Client());
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
+    $client = createEntity(Box\Mod\Client\Entity\Client::class);
 
     $taxRate = 20;
 

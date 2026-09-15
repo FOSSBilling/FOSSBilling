@@ -60,6 +60,13 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
                     'class' => '',
                 ],
                 [
+                    'location' => 'invoice',
+                    'label' => __trans('Failed Items'),
+                    'uri' => $this->di['url']->adminLink('invoice/failed-items'),
+                    'index' => 500,
+                    'class' => '',
+                ],
+                [
                     'location' => 'system',
                     'label' => __trans('Tax Rules'),
                     'uri' => $this->di['url']->adminLink('invoice/tax'),
@@ -82,6 +89,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         $app->get('/invoice', 'get_index', [], static::class);
         $app->get('/invoice/subscriptions', 'get_subscriptions', [], static::class);
         $app->get('/invoice/transactions', 'get_transactions', [], static::class);
+        $app->get('/invoice/failed-items', 'get_failed_items', [], static::class);
         $app->get('/invoice/gateways', 'get_gateways', [], static::class);
         $app->get('/invoice/gateway/:id', 'get_gateway', ['id' => '[0-9]+'], static::class);
         $app->get('/invoice/manage/:id', 'get_invoice', ['id' => '[0-9]+'], static::class);
@@ -135,6 +143,13 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         $this->di['is_admin_logged'];
 
         return $app->render('mod_invoice_transactions');
+    }
+
+    public function get_failed_items(\Box_App $app): string
+    {
+        $this->di['is_admin_logged'];
+
+        return $app->render('mod_invoice_failed_items');
     }
 
     public function get_subscriptions(\Box_App $app): string

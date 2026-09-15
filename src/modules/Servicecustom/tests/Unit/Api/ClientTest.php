@@ -11,18 +11,19 @@
 declare(strict_types=1);
 
 use Box\Mod\Servicecustom\Api\Client;
+use Box\Mod\Servicecustom\Entity\ServiceCustom;
 use Box\Mod\Servicecustom\Service;
 
 test('calls custom service method', function (): void {
     $api = apiEndpoint(new Client());
-    $identity = (object) ['id' => 1];
+    $identity = \Tests\Helpers\client(['id' => 1]);
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getServiceCustomByOrderId')
         ->with(1, 1)
         ->atLeast()->once()
-        ->andReturn(new Model_ServiceCustom());
+        ->andReturn(new ServiceCustom());
     $serviceMock->shouldReceive('customCall')
-        ->with(Mockery::type(Model_ServiceCustom::class), 'delete', Mockery::type('array'))
+        ->with(Mockery::type(ServiceCustom::class), 'delete', Mockery::type('array'))
         ->atLeast()->once()
         ->andReturn(null);
 
@@ -38,7 +39,7 @@ test('calls custom service method', function (): void {
 
 test('throws exception when calling custom method without order_id', function (): void {
     $api = apiEndpoint(new Client());
-    $identity = (object) ['id' => 1];
+    $identity = \Tests\Helpers\client(['id' => 1]);
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getServiceCustomByOrderId')
         ->never();
@@ -54,7 +55,7 @@ test('throws exception when calling custom method without order_id', function ()
 
 test('throws exception when calling custom method without method', function (): void {
     $api = apiEndpoint(new Client());
-    $identity = (object) ['id' => 1];
+    $identity = \Tests\Helpers\client(['id' => 1]);
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getServiceCustomByOrderId')
         ->never();

@@ -11,29 +11,39 @@
 declare(strict_types=1);
 
 use Box\Mod\Servicedomain\Api\Guest;
+use Box\Mod\Servicedomain\Entity\Tld;
+use Box\Mod\Servicedomain\Repository\TldRepository;
 use Box\Mod\Servicedomain\Service;
+use Doctrine\ORM\EntityManagerInterface;
 
 use function Tests\Helpers\container;
 
 test('gets tlds', function (): void {
     $guestApi = apiEndpoint(new Guest());
     $api = apiEndpoint(new Guest());
+
+    $tldRepo = Mockery::mock(TldRepository::class);
+    $tldRepo->shouldReceive('findBy')
+        ->atLeast()->once()
+        ->andReturn([new Tld()]);
+    $tldRepo->shouldIgnoreMissing();
+
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('tldToApiArray')
         ->atLeast()->once()
         ->andReturn([]);
 
-    $guestApi->setService($serviceMock);
-
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('find')
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')
         ->atLeast()->once()
-        ->andReturn([new Model_Tld()]);
+        ->with(Tld::class)
+        ->andReturn($tldRepo);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
 
     $guestApi->setDi($di);
+    $guestApi->setService($serviceMock);
 
     $result = $guestApi->tlds([]);
     expect($result)->toBeArray();
@@ -46,7 +56,7 @@ test('gets pricing', function (): void {
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('tldFindOneByTld')
         ->atLeast()->once()
-        ->andReturn(new Model_Tld());
+        ->andReturn(new Tld());
     $serviceMock->shouldReceive('tldToApiArray')
         ->atLeast()->once()
         ->andReturn([]);
@@ -91,10 +101,12 @@ test('throws exception when getting pricing for tld not found', function (): voi
 test('checks domain availability', function (): void {
     $guestApi = apiEndpoint(new Guest());
     $api = apiEndpoint(new Guest());
+    $tld = new Tld();
+    $tld->setActive(true);
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('tldFindOneByTld')
         ->atLeast()->once()
-        ->andReturn(new Model_Tld());
+        ->andReturn($tld);
     $serviceMock->shouldReceive('isDomainAvailable')
         ->atLeast()->once()
         ->andReturn(true);
@@ -140,6 +152,21 @@ test('throws exception when checking sld not valid', function (): void {
         ->toThrow(FOSSBilling\Exception::class);
 });
 
+test('invalid sld error carries the raw domain value', function (): void {
+    $guestApi = apiEndpoint(new Guest());
+    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock->shouldReceive('isSldValid')
+        ->atLeast()->once()
+        ->andReturn(false);
+
+    $di = container();
+    $di['validator'] = $validatorMock;
+    $guestApi->setDi($di);
+
+    expect(fn (): bool => $guestApi->check(['tld' => '.com', 'sld' => 'ex&ample']))
+        ->toThrow(FOSSBilling\InformationException::class, 'Domain ex&ample is invalid');
+});
+
 test('throws exception when checking tld not found', function (): void {
     $guestApi = apiEndpoint(new Guest());
     $api = apiEndpoint(new Guest());
@@ -173,10 +200,12 @@ test('throws exception when checking tld not found', function (): void {
 test('throws exception when checking domain not available', function (): void {
     $guestApi = apiEndpoint(new Guest());
     $api = apiEndpoint(new Guest());
+    $tld = new Tld();
+    $tld->setActive(true);
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('tldFindOneByTld')
         ->atLeast()->once()
-        ->andReturn(new Model_Tld());
+        ->andReturn($tld);
     $serviceMock->shouldReceive('isDomainAvailable')
         ->atLeast()->once()
         ->andReturn(false);
@@ -201,13 +230,41 @@ test('throws exception when checking domain not available', function (): void {
         ->toThrow(FOSSBilling\Exception::class);
 });
 
+test('throws exception when checking an inactive tld', function (): void {
+    $guestApi = apiEndpoint(new Guest());
+    $tld = new Tld();
+    $tld->setActive(false);
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('tldFindOneByTld')
+        ->once()
+        ->andReturn($tld);
+    $serviceMock->shouldReceive('isDomainAvailable')
+        ->never();
+
+    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock->shouldReceive('isSldValid')
+        ->once()
+        ->andReturn(true);
+
+    $di = container();
+    $di['validator'] = $validatorMock;
+    $guestApi->setDi($di);
+    $guestApi->setService($serviceMock);
+
+    expect(fn (): bool => $guestApi->check(['tld' => '.com', 'sld' => 'example']))
+        ->toThrow(FOSSBilling\InformationException::class, 'TLD is not active');
+});
+
 test('checks if domain can be transferred', function (): void {
     $guestApi = apiEndpoint(new Guest());
     $api = apiEndpoint(new Guest());
+    $tld = new Tld();
+    $tld->setActive(true);
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('tldFindOneByTld')
         ->atLeast()->once()
-        ->andReturn(new Model_Tld());
+        ->andReturn($tld);
     $serviceMock->shouldReceive('canBeTransferred')
         ->atLeast()->once()
         ->andReturn(true);
@@ -258,10 +315,12 @@ test('throws exception when checking transfer for tld not found', function (): v
 test('throws exception when checking domain cannot be transferred', function (): void {
     $guestApi = apiEndpoint(new Guest());
     $api = apiEndpoint(new Guest());
+    $tld = new Tld();
+    $tld->setActive(true);
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('tldFindOneByTld')
         ->atLeast()->once()
-        ->andReturn(new Model_Tld());
+        ->andReturn($tld);
     $serviceMock->shouldReceive('canBeTransferred')
         ->atLeast()->once()
         ->andReturn(false);

@@ -11,6 +11,13 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice;
 
+use Box\Mod\Client\Entity\Client;
+use Box\Mod\Client\Entity\ClientBalance;
+use Box\Mod\Invoice\Entity\Invoice;
+use Box\Mod\Invoice\Entity\PayGateway;
+use Box\Mod\Invoice\Entity\Subscription;
+use Box\Mod\Invoice\Entity\Transaction;
+use Box\Mod\Invoice\Repository\TransactionRepository;
 use FOSSBilling\Environment;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Tools;
@@ -21,10 +28,18 @@ class ServiceTransaction implements InjectionAwareInterface
 
     protected ?\Pimple\Container $di = null;
     private ?bool $transactionIpnHashColumnExists = null;
+    private ?TransactionRepository $transactionRepository = null;
 
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
+    }
+
+    public function getTransactionRepository(): TransactionRepository
+    {
+        $this->transactionRepository ??= $this->di['em']->getRepository(Transaction::class);
+
+        return $this->transactionRepository;
     }
 
     public function getDi(): ?\Pimple\Container
@@ -38,54 +53,74 @@ class ServiceTransaction implements InjectionAwareInterface
         $received = $this->getReceived();
         foreach ($received as $transaction) {
             $txId = $transaction['id'] ?? null;
-            $model = $this->di['db']->getExistingModelById('Transaction', $txId);
-            $this->preProcessTransaction($model);
+            $model = $this->getTransactionRepository()->find((int) $txId);
+            if ($model === null) {
+                continue;
+            }
+
+            try {
+                $this->preProcessTransaction($model);
+            } catch (\Throwable) {
+                // The individual transaction has already been marked as failed.
+                // Continue processing the rest of the batch.
+            }
         }
 
         return true;
     }
 
-    public function update(\Model_Transaction $model, array $data): bool
+    public function update(Transaction $model, array $data): bool
     {
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminTransactionUpdate', 'params' => ['id' => $model->id]]);
+        $this->di['events_manager']->fire(['event' => 'onBeforeAdminTransactionUpdate', 'params' => ['id' => $model->getId()]]);
 
-        $model->invoice_id = $data['invoice_id'] ?? $model->invoice_id;
-        $model->txn_id = $data['txn_id'] ?? $model->txn_id;
-        $model->txn_status = $data['txn_status'] ?? $model->txn_status;
-        $model->gateway_id = $data['gateway_id'] ?? $model->gateway_id;
-        $model->amount = $data['amount'] ?? $model->amount;
-        $model->currency = $data['currency'] ?? $model->currency;
-        $model->type = $data['type'] ?? $model->type;
-        $model->note = $data['note'] ?? $model->note;
-        $model->status = $data['status'] ?? $model->status;
-        $model->error = $data['error'] ?? $model->error;
-        $model->error_code = $data['error_code'] ?? $model->error_code;
-        $model->validate_ipn = $data['validate_ipn'] ?? $model->validate_ipn;
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminTransactionUpdate', 'params' => ['id' => $model->id]]);
+        if (!empty($data['invoice_id'])) {
+            $invoice = $this->di['em']->getRepository(Invoice::class)->find((int) $data['invoice_id']);
+            if (!$invoice instanceof Invoice) {
+                throw new \FOSSBilling\InformationException('Invoice not found');
+            }
+            $model->setInvoice($invoice);
+        }
+        $model->setTxnId(isset($data['txn_id']) ? (string) $data['txn_id'] : $model->getTxnId());
+        $model->setTxnStatus($data['txn_status'] ?? $model->getTxnStatus());
+        if (!empty($data['gateway_id'])) {
+            $gateway = $this->di['em']->getRepository(PayGateway::class)->find((int) $data['gateway_id']);
+            if (!$gateway instanceof PayGateway) {
+                throw new \FOSSBilling\InformationException('Payment gateway not found');
+            }
+            $model->setGateway($gateway);
+        }
+        $model->setAmount(isset($data['amount']) ? (string) $data['amount'] : $model->getAmount());
+        $model->setCurrency($data['currency'] ?? $model->getCurrency());
+        $model->setType($data['type'] ?? $model->getType());
+        $model->setSId($data['s_id'] ?? $model->getSId());
+        $model->setSPeriod($data['s_period'] ?? $model->getSPeriod());
+        $model->setNote($data['note'] ?? $model->getNote());
+        $model->setStatus($data['status'] ?? $model->getStatus());
+        $model->setError($data['error'] ?? $model->getError());
+        $model->setErrorCode(isset($data['error_code']) ? (int) $data['error_code'] : $model->getErrorCode());
+        $model->setValidateIpn(isset($data['validate_ipn']) ? (bool) $data['validate_ipn'] : $model->isValidateIpn());
+        $model->setUpdatedAt(new \DateTime());
+        $this->di['em']->flush();
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminTransactionUpdate', 'params' => ['id' => $model->getId()]]);
 
-        $this->di['logger']->info('Updated transaction #%s', $model->id);
+        $this->di['logger']->info('Updated transaction #{model_id}', ['model_id' => $model->getId()]);
 
         return true;
     }
 
-    public function createAndProcess($ipn)
+    public function createAndProcess($ipn): ?int
     {
         $id = $this->create($ipn);
 
-        $tx = $this->di['db']->getExistingModelById('Transaction', $id);
-        if ($tx->status === \Model_Transaction::STATUS_PROCESSED && empty($tx->error)) {
+        $tx = $this->getTransactionRepository()->find((int) $id);
+        if ($tx === null) {
+            return $id;
+        }
+        if ($tx->getStatus() === Transaction::STATUS_PROCESSED && empty($tx->getError())) {
             return $id;
         }
 
-        try {
-            $this->processTransaction($id);
-        } catch (\Throwable $e) {
-            $this->markTransactionError($id, $e);
-
-            throw $e;
-        }
+        $this->processTransactionWithErrorHandling((int) $id);
 
         return $id;
     }
@@ -99,8 +134,11 @@ class ServiceTransaction implements InjectionAwareInterface
      */
     public function processAndCatchErrors(int $id): void
     {
-        $tx = $this->di['db']->getExistingModelById('Transaction', $id);
-        if ($tx->status === \Model_Transaction::STATUS_PROCESSED && empty($tx->error)) {
+        $tx = $this->getTransactionRepository()->find($id);
+        if ($tx === null) {
+            return;
+        }
+        if ($tx->getStatus() === Transaction::STATUS_PROCESSED && empty($tx->getError())) {
             return;
         }
 
@@ -111,15 +149,29 @@ class ServiceTransaction implements InjectionAwareInterface
         }
     }
 
-    public function create(array $data)
+    private function processTransactionWithErrorHandling(int $id): mixed
+    {
+        try {
+            return $this->processTransaction($id);
+        } catch (\Throwable $e) {
+            $this->markTransactionError($id, $e);
+
+            throw $e;
+        }
+    }
+
+    public function create(array $data): ?int
     {
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminTransactionCreate', 'params' => $data]);
 
         $skip_validation = Tools::normalizeBoolean($data['skip_validation'] ?? false);
         if (!empty($data['gateway_id'])) {
             try {
-                $this->di['db']->getExistingModelById('PayGateway', $data['gateway_id'], 'Gateway was not found');
+                $gateway = $this->di['em']->getRepository(PayGateway::class)->find((int) $data['gateway_id']);
             } catch (\Exception) {
+                $gateway = null;
+            }
+            if ($gateway === null) {
                 if (isset($this->di['logger'])) {
                     $this->di['logger']->warning('IPN with invalid gateway_id rejected: ' . $data['gateway_id']);
                 }
@@ -135,8 +187,13 @@ class ServiceTransaction implements InjectionAwareInterface
             if (!isset($data['gateway_id'])) {
                 throw new \FOSSBilling\InformationException('Payment gateway ID is missing');
             }
-            $this->di['db']->getExistingModelById('Invoice', $data['invoice_id'], 'Invoice was not found');
-            $this->di['db']->getExistingModelById('PayGateway', $data['gateway_id'], 'Gateway was not found');
+            $invoice = $this->di['em']->getRepository(Invoice::class)->find($data['invoice_id']);
+            if ($invoice === null) {
+                throw new \FOSSBilling\InformationException('Invoice was not found');
+            }
+            if ($this->di['em']->getRepository(PayGateway::class)->find((int) $data['gateway_id']) === null) {
+                throw new \FOSSBilling\Exception('Gateway was not found');
+            }
         }
 
         // Early duplicate check: if gateway + external transaction identifier already exists
@@ -147,11 +204,11 @@ class ServiceTransaction implements InjectionAwareInterface
             ?? ($data['post']['payment_intent'] ?? null)
             ?? ($data['get']['payment_intent'] ?? null);
         if ($txnIdCandidate && !empty($data['gateway_id'])) {
-            $existing = $this->di['db']->findOne('Transaction', 'txn_id = ? AND gateway_id = ?', [$txnIdCandidate, $data['gateway_id']]);
-            if ($existing instanceof \Model_Transaction && $existing->status == \Model_Transaction::STATUS_PROCESSED) {
-                $this->di['logger']->info('Duplicate transaction ignored, returning existing processed transaction #%s', $existing->id);
+            $existing = $this->getTransactionRepository()->findOneByTxnIdAndGatewayId((string) $txnIdCandidate, (int) $data['gateway_id']);
+            if ($existing !== null && $existing->getStatus() === Transaction::STATUS_PROCESSED) {
+                $this->di['logger']->info('Duplicate transaction ignored, returning existing processed transaction #{existing_id}', ['existing_id' => $existing->getId()]);
 
-                return $existing->id;
+                return $existing->getId();
             }
         }
 
@@ -168,30 +225,34 @@ class ServiceTransaction implements InjectionAwareInterface
         $ipn_hash = $this->ipnHash($ipn);
         $supportsIpnHash = $this->supportsTransactionIpnHash();
         if ($supportsIpnHash && !empty($data['gateway_id']) && !empty($ipn_hash)) {
-            $existingByHash = $this->di['db']->findOne('Transaction', 'gateway_id = ? AND ipn_hash = ?', [$data['gateway_id'], $ipn_hash]);
-            if ($existingByHash instanceof \Model_Transaction) {
-                $this->di['logger']->info('Duplicate transaction detected by IPN hash, returning existing transaction #%s', $existingByHash->id);
+            $existingByHash = $this->getTransactionRepository()->findOneByGatewayIdAndIpnHash((int) $data['gateway_id'], $ipn_hash);
+            if ($existingByHash !== null) {
+                $this->di['logger']->info('Duplicate transaction detected by IPN hash, returning existing transaction #{transaction_id}', ['transaction_id' => $existingByHash->getId()]);
 
-                return $existingByHash->id;
+                return $existingByHash->getId();
             }
         }
 
-        $transaction = $this->di['db']->dispense('Transaction');
-        $transaction->gateway_id = $data['gateway_id'] ?? null;
-        $transaction->invoice_id = $data['invoice_id'] ?? null;
-        $transaction->txn_id = $data['txn_id'] ?? null;
-        if ($supportsIpnHash) {
-            $transaction->ipn_hash = $ipn_hash ?? null;
+        $transaction = new Transaction();
+        if (isset($data['gateway_id'])) {
+            $transaction->setGateway($this->di['em']->getRepository(PayGateway::class)->find((int) $data['gateway_id']));
         }
-        $transaction->status = 'received';
-        $transaction->ip = $this->di['request']->getClientIp();
-        $transaction->ipn = json_encode($ipn);
-        $transaction->note = $data['note'] ?? null;
-        $transaction->created_at = date('Y-m-d H:i:s');
-        $transaction->updated_at = date('Y-m-d H:i:s');
-        $newId = $this->di['db']->store($transaction);
+        if (isset($data['invoice_id'])) {
+            $transaction->setInvoice($this->di['em']->getRepository(Invoice::class)->find((int) $data['invoice_id']));
+        }
+        $transaction->setTxnId($data['txn_id'] ?? null);
+        if ($supportsIpnHash) {
+            $transaction->setIpnHash($ipn_hash ?? null);
+        }
+        $transaction->setStatus(Transaction::STATUS_RECEIVED);
+        $transaction->setIp($this->di['request']->getClientIp());
+        $transaction->setIpn(json_encode($ipn) ?: null);
+        $transaction->setNote($data['note'] ?? null);
+        $this->di['em']->persist($transaction);
+        $this->di['em']->flush();
+        $newId = (int) $transaction->getId();
 
-        $this->di['logger']->info('Received transaction %s from payment gateway %s', $newId, $transaction->gateway_id);
+        $this->di['logger']->info('Received transaction {transaction_id} from payment gateway {gateway_id}', ['transaction_id' => $newId, 'gateway_id' => $transaction->getGateway()?->getId()]);
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminTransactionCreate', 'params' => ['id' => $newId]]);
 
@@ -212,7 +273,7 @@ class ServiceTransaction implements InjectionAwareInterface
             $supported = in_array('ipn_hash', $columns, true) && in_array('transaction_ipn_hash_idx', $indexes, true);
         } catch (\Throwable $e) {
             if (isset($this->di['logger'])) {
-                $this->di['logger']->warning('Could not determine whether transaction.ipn_hash exists; disabling IPN hash dedupe: %s', $e->getMessage());
+                $this->di['logger']->warning('Could not determine whether transaction.ipn_hash exists; disabling IPN hash dedupe: {exception}', ['exception' => $e]);
             }
 
             return false;
@@ -223,139 +284,78 @@ class ServiceTransaction implements InjectionAwareInterface
         return $this->transactionIpnHashColumnExists;
     }
 
-    public function delete(\Model_Transaction $model): bool
+    public function delete(Transaction $model): bool
     {
-        $id = $model->id;
-        $this->di['db']->trash($model);
-        $this->di['logger']->info('Removed transaction #%s', $id);
+        $id = $model->getId();
+        $this->di['em']->remove($model);
+        $this->di['em']->flush();
+        $this->di['logger']->info('Removed transaction #{id}', ['id' => $id]);
 
         return true;
     }
 
-    public function toApiArray(\Model_Transaction $model, $deep = false, $identity = null): array
+    public function toApiArray(Transaction $model, $deep = false, $identity = null): array
     {
         $gateway = null;
-        if ($model->gateway_id) {
-            $gtw = $this->di['db']->load('PayGateway', $model->gateway_id);
-            if ($gtw instanceof \Model_PayGateway) {
-                $gateway = $gtw->name;
-            }
+        $gtw = $model->getGateway();
+        if ($gtw instanceof PayGateway) {
+            $gateway = $gtw->getName();
         }
 
         $result = [
-            'id' => $model->id,
-            'invoice_id' => $model->invoice_id,
-            'txn_id' => $model->txn_id,
-            'txn_status' => $model->txn_status,
-            'gateway_id' => $model->gateway_id,
+            'id' => $model->getId(),
+            'invoice_id' => $model->getInvoice()?->getId(),
+            'txn_id' => $model->getTxnId(),
+            'txn_status' => $model->getTxnStatus(),
+            'gateway_id' => $model->getGateway()?->getId(),
             'gateway' => $gateway,
-            'amount' => (float) ($model->amount ?? 0),
-            'currency' => $model->currency,
-            'type' => $model->type,
-            'status' => $model->status,
-            'ip' => $model->ip,
-            'validate_ipn' => $model->validate_ipn,
-            'error' => $model->error,
-            'error_code' => $model->error_code,
-            'note' => $model->note,
-            'created_at' => $model->created_at,
-            'updated_at' => $model->updated_at,
+            'amount' => (float) ($model->getAmount() ?? 0),
+            'currency' => $model->getCurrency(),
+            'type' => $model->getType(),
+            'status' => $model->getStatus(),
+            'ip' => $model->getIp(),
+            'validate_ipn' => $model->isValidateIpn(),
+            'error' => $model->getError(),
+            'error_code' => $model->getErrorCode(),
+            'note' => $model->getNote(),
+            'created_at' => $model->getCreatedAt()?->format('Y-m-d H:i:s'),
+            'updated_at' => $model->getUpdatedAt()?->format('Y-m-d H:i:s'),
         ];
         if ($deep) {
-            $result['ipn'] = json_decode($model->ipn ?? '', true);
+            $result['ipn'] = json_decode($model->getIpn() ?? '', true);
         }
 
         return $result;
     }
 
-    public function getSearchQuery(array $data): array
+    /**
+     * Convert a transaction list result into the API shape without loading the
+     * transaction's gateway again.
+     *
+     * The gateway name is provided by the list query itself (a LEFT JOIN to
+     * `pay_gateway`), avoiding the per-row lookup that `toApiArray()` performs.
+     */
+    public function transactionResultToApiArray(Transaction $transaction, ?string $gateway): array
     {
-        $sql = 'SELECT m.*
-                FROM transaction as m
-                LEFT JOIN invoice as i on m.invoice_id = i.id
-                WHERE 1 ';
-
-        $id = $data['id'] ?? null;
-        $search = $data['search'] ?? null;
-        $invoice_hash = $data['invoice_hash'] ?? null;
-        $invoice_id = $data['invoice_id'] ?? null;
-        $gateway_id = $data['gateway_id'] ?? null;
-        $client_id = $data['client_id'] ?? null;
-        $status = $data['status'] ?? null;
-        $currency = $data['currency'] ?? null;
-        $type = $data['type'] ?? null;
-        $txn_id = $data['txn_id'] ?? null;
-
-        $date_from = $data['date_from'] ?? null;
-        $date_to = $data['date_to'] ?? null;
-
-        $params = [];
-        if ($id) {
-            $sql .= ' AND m.id = :id';
-            $params['id'] = $id;
-        }
-
-        if ($status) {
-            $sql .= ' AND m.status = :status';
-            $params['status'] = $status;
-        }
-
-        if ($invoice_hash) {
-            $sql .= ' AND i.hash = :hash';
-            $params['hash'] = $invoice_hash;
-        }
-
-        if ($invoice_id) {
-            $sql .= ' AND m.invoice_id = :invoice_id';
-            $params['invoice_id'] = $invoice_id;
-        }
-
-        if ($gateway_id) {
-            $sql .= ' AND m.gateway_id = :gateway_id';
-            $params['gateway_id'] = $gateway_id;
-        }
-
-        if ($client_id) {
-            $sql .= ' AND i.client_id = :client_id';
-            $params['client_id'] = $client_id;
-        }
-
-        if ($currency) {
-            $sql .= ' AND m.currency = :currency';
-            $params['currency'] = $currency;
-        }
-
-        if ($type) {
-            $sql .= ' AND m.type = :type';
-            $params['type'] = $type;
-        }
-
-        if ($txn_id) {
-            $sql .= ' AND m.txn_id = :txn_id';
-            $params['txn_id'] = $txn_id;
-        }
-
-        if ($date_from) {
-            $sql .= ' AND UNIX_TIMESTAMP(m.created_at) >= :date_from';
-            $params['date_from'] = strtotime((string) $date_from);
-        }
-
-        if ($date_to) {
-            $sql .= ' AND UNIX_TIMESTAMP(m.created_at) <= :date_to';
-            $params['date_to'] = strtotime((string) $date_to);
-        }
-
-        if ($search) {
-            $sql .= ' AND (m.note LIKE :note OR m.invoice_id LIKE :search_invoice_id OR m.txn_id LIKE :search_txn_id OR m.ipn LIKE :ipn)';
-            $params['note'] = "%$search%";
-            $params['search_invoice_id'] = "%$search%";
-            $params['search_txn_id'] = "%$search%";
-            $params['ipn'] = "%$search%";
-        }
-
-        $sql .= ' ORDER BY m.id DESC';
-
-        return [$sql, $params];
+        return [
+            'id' => $transaction->getId(),
+            'invoice_id' => $transaction->getInvoice()?->getId(),
+            'txn_id' => $transaction->getTxnId(),
+            'txn_status' => $transaction->getTxnStatus(),
+            'gateway_id' => $transaction->getGateway()?->getId(),
+            'gateway' => $gateway,
+            'amount' => (float) ($transaction->getAmount() ?? 0),
+            'currency' => $transaction->getCurrency(),
+            'type' => $transaction->getType(),
+            'status' => $transaction->getStatus(),
+            'ip' => $transaction->getIp(),
+            'validate_ipn' => $transaction->isValidateIpn(),
+            'error' => $transaction->getError(),
+            'error_code' => $transaction->getErrorCode(),
+            'note' => $transaction->getNote(),
+            'created_at' => $transaction->getCreatedAt()?->format('Y-m-d H:i:s'),
+            'updated_at' => $transaction->getUpdatedAt()?->format('Y-m-d H:i:s'),
+        ];
     }
 
     public function counter(): array
@@ -363,7 +363,7 @@ class ServiceTransaction implements InjectionAwareInterface
         $sql = 'SELECT status, count(id) as counter
             FROM transaction
             GROUP BY status';
-        $rows = $this->di['db']->getAll($sql);
+        $rows = $this->di['em']->getConnection()->fetchAllAssociative($sql);
         $data = [];
         foreach ($rows as $row) {
             $data[$row['status']] = $row['counter'];
@@ -371,33 +371,33 @@ class ServiceTransaction implements InjectionAwareInterface
 
         return [
             'total' => array_sum($data),
-            \Model_Transaction::STATUS_RECEIVED => $data[\Model_Transaction::STATUS_RECEIVED] ?? 0,
-            \Model_Transaction::STATUS_APPROVED => $data[\Model_Transaction::STATUS_APPROVED] ?? 0,
-            \Model_Transaction::STATUS_PROCESSING => $data[\Model_Transaction::STATUS_PROCESSING] ?? 0,
-            \Model_Transaction::STATUS_PROCESSED => $data[\Model_Transaction::STATUS_PROCESSED] ?? 0,
-            \Model_Transaction::STATUS_ERROR => $data[\Model_Transaction::STATUS_ERROR] ?? 0,
+            Transaction::STATUS_RECEIVED => $data[Transaction::STATUS_RECEIVED] ?? 0,
+            Transaction::STATUS_APPROVED => $data[Transaction::STATUS_APPROVED] ?? 0,
+            Transaction::STATUS_PROCESSING => $data[Transaction::STATUS_PROCESSING] ?? 0,
+            Transaction::STATUS_PROCESSED => $data[Transaction::STATUS_PROCESSED] ?? 0,
+            Transaction::STATUS_ERROR => $data[Transaction::STATUS_ERROR] ?? 0,
         ];
     }
 
     public function getStatusPairs(): array
     {
         return [
-            \Model_Transaction::STATUS_RECEIVED => 'Received',
-            \Model_Transaction::STATUS_APPROVED => 'Approved',
-            \Model_Transaction::STATUS_PROCESSING => 'Processing',
-            \Model_Transaction::STATUS_PROCESSED => 'Processed',
-            \Model_Transaction::STATUS_ERROR => 'Error',
+            Transaction::STATUS_RECEIVED => 'Received',
+            Transaction::STATUS_APPROVED => 'Approved',
+            Transaction::STATUS_PROCESSING => 'Processing',
+            Transaction::STATUS_PROCESSED => 'Processed',
+            Transaction::STATUS_ERROR => 'Error',
         ];
     }
 
     public function getStatuses(): array
     {
         return [
-            \Model_Transaction::STATUS_RECEIVED => 'Received',
-            \Model_Transaction::STATUS_APPROVED => 'Approved/Verified',
-            \Model_Transaction::STATUS_PROCESSING => 'Processing',
-            \Model_Transaction::STATUS_PROCESSED => 'Processed',
-            \Model_Transaction::STATUS_ERROR => 'Error',
+            Transaction::STATUS_RECEIVED => 'Received',
+            Transaction::STATUS_APPROVED => 'Approved/Verified',
+            Transaction::STATUS_PROCESSING => 'Processing',
+            Transaction::STATUS_PROCESSED => 'Processed',
+            Transaction::STATUS_ERROR => 'Error',
         ];
     }
 
@@ -431,9 +431,9 @@ class ServiceTransaction implements InjectionAwareInterface
                     OR (m.status = :processing_status AND (m.updated_at IS NULL OR m.updated_at <= :processing_retry_after))
                 ORDER BY m.id DESC';
 
-        return $this->di['db']->getAll($sql, [
-            'received_status' => \Model_Transaction::STATUS_RECEIVED,
-            'processing_status' => \Model_Transaction::STATUS_PROCESSING,
+        return $this->di['em']->getConnection()->fetchAllAssociative($sql, [
+            'received_status' => Transaction::STATUS_RECEIVED,
+            'processing_status' => Transaction::STATUS_PROCESSING,
             'processing_retry_after' => $this->getProcessingRecoveryThreshold(),
         ]);
     }
@@ -459,15 +459,15 @@ class ServiceTransaction implements InjectionAwareInterface
      */
     public function claimForProcessing(int $id): bool
     {
-        $affectedRows = $this->di['db']->exec(
+        $affectedRows = $this->di['em']->getConnection()->executeStatement(
             'UPDATE transaction SET status = ?, updated_at = ? WHERE id = ? AND (status IN (?, ?) OR (status = ? AND (updated_at IS NULL OR updated_at <= ?)))',
             [
-                \Model_Transaction::STATUS_PROCESSING,
+                Transaction::STATUS_PROCESSING,
                 date('Y-m-d H:i:s'),
                 $id,
-                \Model_Transaction::STATUS_RECEIVED,
-                \Model_Transaction::STATUS_ERROR,
-                \Model_Transaction::STATUS_PROCESSING,
+                Transaction::STATUS_RECEIVED,
+                Transaction::STATUS_ERROR,
+                Transaction::STATUS_PROCESSING,
                 $this->getProcessingRecoveryThreshold(),
             ]
         );
@@ -475,18 +475,12 @@ class ServiceTransaction implements InjectionAwareInterface
         return $affectedRows > 0;
     }
 
-    public function preProcessTransaction(\Model_Transaction $model)
+    public function preProcessTransaction(Transaction $model)
     {
-        try {
-            $output = $this->processTransaction($model->id);
-        } catch (\Throwable $e) {
-            $this->markTransactionError((int) $model->id, $e);
+        $output = $this->processTransactionWithErrorHandling((int) $model->getId());
 
-            throw $e;
-        }
-
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminTransactionProcess', 'params' => ['id' => $model->id]]);
-        $this->di['logger']->info('Processed transaction #%s', $model->id);
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminTransactionProcess', 'params' => ['id' => $model->getId()]]);
+        $this->di['logger']->info('Processed transaction #{model_id}', ['model_id' => $model->getId()]);
 
         return !empty($output) ? $output : true;
     }
@@ -500,18 +494,23 @@ class ServiceTransaction implements InjectionAwareInterface
      */
     private function markTransactionError(int $id, \Throwable $e): void
     {
-        $tx = $this->di['db']->load('Transaction', $id);
-        if (!$tx instanceof \Model_Transaction || $tx->status === \Model_Transaction::STATUS_PROCESSED) {
+        $tx = $this->getTransactionRepository()->find($id);
+        if ($tx === null) {
             return;
         }
 
-        $tx->status = \Model_Transaction::STATUS_ERROR;
-        $tx->error = $e->getMessage();
-        $tx->error_code = $e->getCode();
-        $tx->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($tx);
+        $this->di['em']->refresh($tx);
+        if ($tx->getStatus() === Transaction::STATUS_PROCESSED) {
+            return;
+        }
 
-        $this->di['logger']->error('Failed to process transaction #%s: %s', $id, $e->getMessage());
+        $tx->setStatus(Transaction::STATUS_ERROR);
+        $tx->setError($e->getMessage());
+        $tx->setErrorCode((int) $e->getCode());
+        $tx->setUpdatedAt(new \DateTime());
+        $this->di['em']->flush();
+
+        $this->di['logger']->error('Failed to process transaction #{id}: {exception}', ['id' => $id, 'exception' => $e]);
     }
 
     /**
@@ -525,35 +524,33 @@ class ServiceTransaction implements InjectionAwareInterface
      */
     public function processTransaction($id)
     {
-        /** @var \Model_Transaction|null $tx */
-        $tx = $this->di['db']->load('Transaction', $id);
-        if (!$tx) {
+        $tx = $this->getTransactionRepository()->find((int) $id);
+        if ($tx === null) {
             throw new \FOSSBilling\Exception('Transaction :id not found.', ['id' => $id], 404);
         }
 
-        if (empty($tx->gateway_id)) {
-            throw new \FOSSBilling\Exception('Could not determine transaction origin. Transaction payment gateway is unknown.', null, 701);
-        }
-
-        $gtw = $this->di['db']->load('PayGateway', $tx->gateway_id);
-        if (!$gtw instanceof \Model_PayGateway) {
-            throw new \FOSSBilling\Exception('Cannot handle transaction received from unknown payment gateway: :id', [':id' => $tx->gateway_id], 704);
+        $gtw = $tx->getGateway();
+        if (!$gtw instanceof PayGateway) {
+            throw new \FOSSBilling\Exception('Cannot handle transaction received from unknown payment gateway: :id', [':id' => $tx->getGateway()?->getId()], 704);
         }
 
         $payGatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
         $adapter = $payGatewayService->getPaymentAdapter($gtw);
         if (!method_exists($adapter, 'processTransaction')) {
-            throw new \FOSSBilling\Exception('Payment adapter :adapter does not support action :action', [':adapter' => $gtw->name, ':action' => 'processTransaction'], 705);
+            throw new \FOSSBilling\Exception('Payment adapter :adapter does not support action :action', [':adapter' => $gtw->getName(), ':action' => 'processTransaction'], 705);
         }
 
-        $ipn = json_decode($tx->ipn ?? '', true);
+        $ipn = json_decode($tx->getIpn() ?? '', true);
 
-        return $adapter->processTransaction($this->di['api_system'], (int) $id, $ipn, (int) $tx->gateway_id);
+        return $adapter->processTransaction($this->di['api_system'], (int) $id, $ipn, (int) $gtw->getId());
     }
 
-    public function process(\Model_Transaction $tx): \Model_Transaction
+    public function process(Transaction $tx): Transaction
     {
-        $transaction = $this->di['db']->load('Transaction', $tx->id);
+        $transaction = $this->getTransactionRepository()->find((int) $tx->getId());
+        if ($transaction === null) {
+            return $tx;
+        }
 
         if ($this->_isProcessed($transaction)) {
             return $transaction;
@@ -562,22 +559,22 @@ class ServiceTransaction implements InjectionAwareInterface
         try {
             $this->_parseIpnAndApprove($transaction);
 
-            match ($transaction->type) {
+            match ($transaction->getType()) {
                 \Payment_Transaction::TXTYPE_PAYMENT => $this->_debit($transaction),
                 \Payment_Transaction::TXTYPE_REFUND => $this->_refund($transaction),
                 \Payment_Transaction::TXTYPE_SUBSCR_CREATE => $this->_subscribe($transaction),
                 \Payment_Transaction::TXTYPE_SUBSCR_CANCEL => $this->_unsubscribe($transaction),
-                default => throw new \FOSSBilling\Exception('Unknown transaction #:id type: :type', [':id' => $transaction->id, ':type' => $transaction->type], 632),
+                default => throw new \FOSSBilling\Exception('Unknown transaction #:id type: :type', [':id' => $transaction->getId(), ':type' => $transaction->getType()], 632),
             };
         } catch (\Exception $e) {
-            $transaction->status = \Model_Transaction::STATUS_ERROR;
-            $transaction->error = $e->getMessage();
-            $transaction->error_code = $e->getCode();
-            $transaction->updated_at = date('Y-m-d H:i:s');
-            $this->di['db']->store($transaction);
+            $transaction->setStatus(Transaction::STATUS_ERROR);
+            $transaction->setError($e->getMessage());
+            $transaction->setErrorCode((int) $e->getCode());
+            $transaction->setUpdatedAt(new \DateTime());
+            $this->di['em']->flush();
 
-            if (defined('DEBUG')) {
-                error_log($e->getMessage());
+            if (DEBUG) {
+                $this->di['logger']->debug($e->getMessage());
             }
             if (Environment::isTesting()) {
                 throw $e;
@@ -587,21 +584,21 @@ class ServiceTransaction implements InjectionAwareInterface
         return $transaction;
     }
 
-    private function _isProcessed(\Model_Transaction $tx): bool
+    private function _isProcessed(Transaction $tx): bool
     {
-        if ($tx->status == \Model_Transaction::STATUS_PROCESSED) {
-            $tx->error = null;
-            $tx->error_code = null;
-            $tx->updated_at = date('Y-m-d H:i:s');
-            $this->di['db']->store($tx);
+        if ($tx->getStatus() === Transaction::STATUS_PROCESSED) {
+            $tx->setError(null);
+            $tx->setErrorCode(null);
+            $tx->setUpdatedAt(new \DateTime());
+            $this->di['em']->flush();
 
             return true;
         }
 
         if ($this->hasProcessedTransaction($tx)) {
-            $tx->note .= 'Transaction was marked as processed. Transaction with same ID is already processed';
-            $tx->updated_at = date('Y-m-d H:i:s');
-            $this->di['db']->store($tx);
+            $tx->setNote(($tx->getNote() ?? '') . 'Transaction was marked as processed. Transaction with same ID is already processed');
+            $tx->setUpdatedAt(new \DateTime());
+            $this->di['em']->flush();
 
             $this->_markAsProcessed($tx);
 
@@ -658,115 +655,110 @@ class ServiceTransaction implements InjectionAwareInterface
         return hash('sha256', (string) $norm);
     }
 
-    private function hasProcessedTransaction(\Model_Transaction $tx)
+    private function hasProcessedTransaction(Transaction $tx)
     {
-        if (!$tx->txn_id) {
+        if (!$tx->getTxnId()) {
             return false;
         }
 
-        $res = $this->di['db']->findOne('Transaction', 'status = "processed" and txn_id = ?', [$tx->txn_id]);
+        $res = $this->getTransactionRepository()->findOneProcessedByTxnId($tx->getTxnId());
 
         // Return true when a processed transaction with the same txn_id exists.
-        return !empty($res);
+        return $res !== null;
     }
 
-    private function _markAsProcessed(\Model_Transaction $tx): void
+    private function _markAsProcessed(Transaction $tx): void
     {
-        $tx->error = null;
-        $tx->error_code = null;
-        $tx->status = \Model_Transaction::STATUS_PROCESSED;
-        $tx->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($tx);
+        $tx->setError(null);
+        $tx->setErrorCode(null);
+        $tx->setStatus(Transaction::STATUS_PROCESSED);
+        $tx->setUpdatedAt(new \DateTime());
+        $this->di['em']->flush();
     }
 
-    private function _parseIpnAndApprove(\Model_Transaction &$tx): \Model_Transaction
+    private function _parseIpnAndApprove(Transaction &$tx): Transaction
     {
-        if ($tx->status == \Model_Transaction::STATUS_APPROVED) {
+        if ($tx->getStatus() === Transaction::STATUS_APPROVED) {
             return $tx;
         }
 
         $invoiceService = $this->di['mod_service']('Invoice');
         $payGatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
 
-        $ipn = json_decode($tx->ipn ?? '', true) ?? [];
+        $ipn = json_decode($tx->getIpn() ?? '', true) ?? [];
 
-        if (empty($tx->gateway_id)) {
+        $gtw = $tx->getGateway();
+        if (!$gtw instanceof PayGateway) {
             throw new \FOSSBilling\Exception('Could not determine transaction origin. Transaction payment gateway is unknown.', null, 701);
         }
 
-        $gtw = $this->di['db']->load('PayGateway', $tx->gateway_id);
-        if (!$gtw instanceof \Model_PayGateway) {
-            throw new \FOSSBilling\Exception('Cannot handle transaction received from unknown payment gateway: :id', [':id' => $tx->gateway_id], 704);
-        }
-
         $adapter = $payGatewayService->getPaymentAdapter($gtw);
-        if (!$tx->invoice_id && method_exists($adapter, 'getInvoiceId')) {
-            $tx->invoice_id = $adapter->getInvoiceId($ipn);
+        if (!$tx->getInvoice() && method_exists($adapter, 'getInvoiceId')) {
+            $adapterInvoiceId = $adapter->getInvoiceId($ipn);
+            if ($adapterInvoiceId) {
+                $tx->setInvoice($this->di['em']->getRepository(Invoice::class)->find((int) $adapterInvoiceId));
+            }
         }
 
-        if (!$tx->invoice_id) {
-            throw new \FOSSBilling\Exception('Transaction :id is not associated with an invoice.', [':id' => $tx->id], 702);
-        }
-
-        $invoice = $this->di['db']->load('Invoice', $tx->invoice_id);
-        if (!$invoice instanceof \Model_Invoice) {
-            throw new \FOSSBilling\Exception('Invoice #:id not found', [':id' => $tx->invoice_id], 703);
+        $invoice = $tx->getInvoice();
+        if (!$invoice instanceof Invoice) {
+            throw new \FOSSBilling\Exception('Transaction :id is not associated with an invoice.', [':id' => $tx->getId()], 702);
         }
 
         $adapter = $payGatewayService->getPaymentAdapter($gtw, $invoice);
         $mpi = $invoiceService->getPaymentInvoice($invoice);
 
-        if (!Environment::isTesting() && $tx->validate_ipn) {
+        if (!Environment::isTesting() && $tx->isValidateIpn()) {
             if (!$adapter->isIpnValid($ipn, $mpi)) {
-                $tx->output = $adapter->getOutput();
+                $tx->setOutput($adapter->getOutput());
 
-                throw new \FOSSBilling\Exception('Instant payment notification (IPN) did not pass gateway :id validation', [':id' => $gtw->gateway], 706);
+                throw new \FOSSBilling\Exception('Instant payment notification (IPN) did not pass gateway :id validation', [':id' => $gtw->getGateway()], 706);
             }
-            $tx->output = $adapter->getOutput();
+            $tx->setOutput($adapter->getOutput());
         }
 
         if (!method_exists($adapter, 'getTransaction')) {
-            throw new \FOSSBilling\Exception('Payment adapter :adapter does not support action :action', [':adapter' => $gtw->name, ':action' => 'getTransaction'], 705);
+            throw new \FOSSBilling\Exception('Payment adapter :adapter does not support action :action', [':adapter' => $gtw->getName(), ':action' => 'getTransaction'], 705);
         }
 
         $response = $adapter->getTransaction($ipn, $mpi);
         if (!$response instanceof \Payment_Transaction) {
-            throw new \FOSSBilling\Exception('Payment gateway :id method getTransaction should return Payment_Transaction object', [':id' => $gtw->gateway], 705);
+            throw new \FOSSBilling\Exception('Payment gateway :id method getTransaction should return Payment_Transaction object', [':id' => $gtw->getGateway()], 705);
         }
 
         // if tx type is already defined, do not set them again
         if ($response->getType()) {
-            $tx->type = $response->getType();
+            $tx->setType($response->getType());
         }
 
         if ($response->getId()) {
-            $tx->txn_id = $response->getId();
+            $tx->setTxnId($response->getId());
         }
 
         if ($response->getStatus()) {
-            $tx->txn_status = $response->getStatus();
+            $tx->setTxnStatus($response->getStatus());
         }
 
         if ($response->getSubscriptionId()) {
-            $tx->s_id = $response->getSubscriptionId();
+            $tx->setSId($response->getSubscriptionId());
         }
 
         if ($response->getAmount()) {
-            $tx->amount = $response->getAmount();
+            $tx->setAmount((string) $response->getAmount());
         }
 
         if ($response->getCurrency()) {
-            $tx->currency = $response->getCurrency();
+            $tx->setCurrency($response->getCurrency());
         }
 
-        $tx->status = \Model_Transaction::STATUS_APPROVED;
-        $tx->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($tx);
+        $tx->setStatus(Transaction::STATUS_APPROVED);
+        $tx->setUpdatedAt(new \DateTime());
+        $this->di['em']->flush();
 
         return $tx;
     }
 
-    private function _debit(\Model_Transaction $tx)
+    private function _debit(Transaction $tx)
     {
         if ($this->_isProcessed($tx)) {
             return $tx;
@@ -778,19 +770,20 @@ class ServiceTransaction implements InjectionAwareInterface
 
         $this->_markAsProcessed($tx);
 
-        if ($tx->invoice_id) {
+        $invoice = $tx->getInvoice();
+        if ($invoice instanceof Invoice) {
             try {
                 $invoiceService = $this->di['mod_service']('Invoice');
-                $invoiceService->tryPayWithCredits($tx->Invoice);
+                $invoiceService->tryPayWithCredits($invoice);
             } catch (\Exception $e) {
-                if (defined('DEBUG')) {
-                    error_log($e->getMessage());
+                if (DEBUG) {
+                    $this->di['logger']->debug($e->getMessage());
                 }
             }
         }
     }
 
-    private function _refund(\Model_Transaction $tx): \Model_Transaction
+    private function _refund(Transaction $tx): Transaction
     {
         if ($this->_isProcessed($tx)) {
             return $tx;
@@ -798,8 +791,11 @@ class ServiceTransaction implements InjectionAwareInterface
 
         $this->_validateApprovedTransaction($tx);
 
-        $invoice = $this->di['db']->load('Invoice', $tx->invoice_id);
-        $note = sprintf('Transaction %s refund', $tx->id);
+        $invoice = $tx->getInvoice();
+        if (!$invoice instanceof Invoice) {
+            throw new \FOSSBilling\Exception('Invoice #:id not found', [':id' => $tx->getInvoice()?->getId()], 703);
+        }
+        $note = sprintf('Transaction %s refund', $tx->getId());
 
         $invoiceService = $this->di['mod_service']('Invoice');
         $invoiceService->refund($invoice, $note);
@@ -809,7 +805,7 @@ class ServiceTransaction implements InjectionAwareInterface
         return $tx;
     }
 
-    private function _subscribe(\Model_Transaction $tx): \Model_Transaction
+    private function _subscribe(Transaction $tx): Transaction
     {
         if ($this->_isProcessed($tx)) {
             return $tx;
@@ -817,43 +813,45 @@ class ServiceTransaction implements InjectionAwareInterface
 
         $this->_validateApprovedTransaction($tx);
 
-        if (empty($tx->s_id)) {
+        if (empty($tx->getSId())) {
             throw new \FOSSBilling\Exception('Cannot create subscription. Subscription ID from payment gateway was not received');
         }
 
-        $invoice = $this->di['db']->load('Invoice', $tx->invoice_id);
+        $invoice = $tx->getInvoice();
+        if (!$invoice instanceof Invoice) {
+            throw new \FOSSBilling\Exception('Invoice #:id not found', [':id' => $tx->getInvoice()?->getId()], 703);
+        }
         $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
         $period = $subscriptionService->getSubscriptionPeriod($invoice);
 
-        $s = $this->di['db']->dispense('Subscription');
-        $s->client_id = $invoice->client_id;
-        $s->pay_gateway_id = $tx->gateway_id;
-        $s->sid = $tx->s_id;
-        $s->period = $period;
-        $s->rel_type = 'invoice';
-        $s->rel_id = $invoice->id;
-        $s->amount = $tx->amount;
-        $s->currency = $invoice->currency;
-        $s->status = 'active';
-        $s->created_at = date('Y-m-d H:i:s');
-        $s->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($s);
+        $s = new Subscription();
+        $s->setClientId($invoice->getClientId() ?? null);
+        $s->setPayGateway($tx->getGateway());
+        $s->setSid($tx->getSId());
+        $s->setPeriod($period);
+        $s->setRelType('invoice');
+        $s->setRelId($invoice->getId() ?? null);
+        $s->setAmount($tx->getAmount());
+        $s->setCurrency($invoice->getCurrency());
+        $s->setStatus('active');
+        $this->di['em']->persist($s);
+        $this->di['em']->flush();
 
         $this->_markAsProcessed($tx);
 
         return $tx;
     }
 
-    private function _unsubscribe(\Model_Transaction $tx): \Model_Transaction
+    private function _unsubscribe(Transaction $tx): Transaction
     {
         if ($this->_isProcessed($tx)) {
             return $tx;
         }
 
-        $serviceSubscription = $this->di['mod_service']('Subscription');
-        $model = $this->di['db']->load('Subscription', $tx->s_id);
-        if (!$model instanceof \Model_Subscription) {
-            throw new \FOSSBilling\Exception('Subscription #:id was not found. Could not unsubscribe', [':id' => $tx->s_id]);
+        $serviceSubscription = $this->di['mod_service']('Invoice', 'Subscription');
+        $model = $this->di['em']->getRepository(Subscription::class)->findOneBySid((string) $tx->getSId());
+        if (!$model instanceof Subscription) {
+            throw new \FOSSBilling\Exception('Subscription #:id was not found. Could not unsubscribe', [':id' => $tx->getSId()]);
         }
 
         $serviceSubscription->unsubscribe($model);
@@ -863,51 +861,55 @@ class ServiceTransaction implements InjectionAwareInterface
         return $tx;
     }
 
-    private function _validateApprovedTransaction(\Model_Transaction $tx): void
+    private function _validateApprovedTransaction(Transaction $tx): void
     {
-        if ($tx->status != \Model_Transaction::STATUS_APPROVED) {
+        if ($tx->getStatus() !== Transaction::STATUS_APPROVED) {
             throw new \FOSSBilling\Exception('Only approved transaction can be processed');
         }
 
-        if (empty($tx->invoice_id)) {
-            throw new \FOSSBilling\Exception('Transaction :id is not associated with an invoice.', [':id' => $tx->id], 7022);
+        $invoice = $tx->getInvoice();
+        if (!$invoice instanceof Invoice) {
+            throw new \FOSSBilling\Exception('Transaction :id is not associated with an invoice.', [':id' => $tx->getId()], 7022);
         }
 
-        $invoice = $this->di['db']->load('Invoice', $tx->invoice_id);
-
         // check that payment currency is correct
-        if ($invoice->currency != $tx->currency) {
-            throw new \FOSSBilling\Exception('Transaction currency :code does not match required currency :required', [':code' => $tx->currency, ':required' => $invoice->currency], 709);
+        if ($invoice->getCurrency() != $tx->getCurrency()) {
+            throw new \FOSSBilling\Exception('Transaction currency :code does not match required currency :required', [':code' => $tx->getCurrency(), ':required' => $invoice->getCurrency()], 709);
         }
 
         // check that payment status is completed if
-        if ($tx->txn_status == \Payment_Transaction::STATUS_PENDING) {
+        if ($tx->getTxnStatus() == \Payment_Transaction::STATUS_PENDING) {
             throw new \FOSSBilling\Exception('Transaction status on payment gateway is Pending. Only Complete or Unknown transactions can be processed.', null, 712);
         }
     }
 
-    public function debitTransaction(\Model_Transaction $tx): void
+    public function debitTransaction(Transaction $tx): void
     {
-        $proforma = $this->di['db']->load('Invoice', $tx->invoice_id);
-        $client = $this->di['db']->load('Client', $proforma->client_id);
+        $proforma = $tx->getInvoice();
+        if (!$proforma instanceof Invoice) {
+            throw new \FOSSBilling\Exception('Invoice #:id not found', [':id' => $tx->getInvoice()?->getId()], 703);
+        }
+        $client = $this->di['em']->getRepository(Client::class)->find($proforma->getClientId());
+        if (!$client instanceof Client) {
+            throw new \FOSSBilling\Exception('Client #:id not found', [':id' => $proforma->getClientId()]);
+        }
 
-        if ($client->currency != $proforma->currency) {
+        if ($client->getCurrency() != $proforma->getCurrency()) {
             throw new \FOSSBilling\Exception('Client currency does not match invoice currency');
         }
 
         // do not debit negative or zero amount
-        if ($tx->amount < 0) {
+        if ((float) $tx->getAmount() < 0) {
             throw new \FOSSBilling\Exception('Cannot add negative amount to client balance for debit transaction');
         }
 
-        $credit = $this->di['db']->dispense('ClientBalance');
-        $credit->client_id = $client->id;
-        $credit->type = 'transaction';
-        $credit->rel_id = $tx->id;
-        $credit->description = 'Invoice #' . $proforma->id . ' payment received from transaction #' . $tx->id;
-        $credit->amount = $tx->amount;
-        $credit->created_at = date('Y-m-d H:i:s');
-        $credit->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($credit);
+        $credit = new ClientBalance();
+        $credit->setClient($client);
+        $credit->setType('transaction');
+        $credit->setRelId((string) $tx->getId());
+        $credit->setDescription('Invoice #' . $proforma->getId() . ' payment received from transaction #' . $tx->getId());
+        $credit->setAmount($tx->getAmount());
+        $this->di['em']->persist($credit);
+        $this->di['em']->flush();
     }
 }

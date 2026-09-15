@@ -43,7 +43,7 @@ jobs:
     runs-on: ubuntu-slim
     timeout-minutes: 5
     steps:
-      - uses: actions/labeler@b8dd2d9be0f68b860e7dae5dae7d772984eacd6d # v6
+      - uses: actions/labeler@bf12e9b00b37c5c0ca2b87b79b2daf7891dbda13 # v7
         with:
           repo-token: '${{ secrets.GITHUB_TOKEN }}'
           sync-labels: true
@@ -57,7 +57,7 @@ jobs:
     runs-on: ubuntu-slim
     timeout-minutes: 5
     steps:
-      - uses: release-drafter/release-drafter@4d75298e00d9e34c483e5ff8c68d0ea1c1940c1e # v7
+      - uses: release-drafter/release-drafter@34d80673e067bdc0c24568d3af899c216adcfaa9 # v7
         with:
           config-name: release-drafter.yml
         env:
@@ -70,12 +70,12 @@ jobs:
     if: ${{ (github.event_name == 'pull_request' && github.event.action != 'labeled' && github.event.action != 'unlabeled' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id) || github.event_name == 'push' }}
     steps:
       - name: 'Checkout Repository'
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
 
       - name: 'Perform Spellcheck'
-        uses: streetsidesoftware/cspell-action@de2a73e963e7443969755b648a1008f77033c5b2 # v8
+        uses: streetsidesoftware/cspell-action@6f3c77c1406bc930f944ba97e9801a22e42caf58 # v9
         with:
           incremental_files_only: true
 
@@ -116,35 +116,27 @@ jobs:
     if: ${{ github.event_name == 'push' }}
     uses: ./.github/workflows/live-tests.yml
 
-  cypress-tests-pr:
-    name: 'Cypress Tests'
+  playwright-tests-pr:
+    name: 'Playwright Tests'
     permissions:
       contents: read
     needs: [ php-build-test-pr ]
     if: ${{ github.event_name == 'pull_request' && github.event.action != 'labeled' && github.event.action != 'unlabeled' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id }}
-    uses: ./.github/workflows/cypress-tests.yml
-    with:
-      cypress-project-id: ${{ vars.CYPRESS_PROJECT_ID }}
-    secrets:
-      CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+    uses: ./.github/workflows/playwright-tests.yml
 
-  cypress-tests-push:
-    name: 'Cypress Tests'
+  playwright-tests-push:
+    name: 'Playwright Tests'
     permissions:
       contents: read
     needs: [ php-build-test-push ]
     if: ${{ github.event_name == 'push' }}
-    uses: ./.github/workflows/cypress-tests.yml
-    with:
-      cypress-project-id: ${{ vars.CYPRESS_PROJECT_ID }}
-    secrets:
-      CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+    uses: ./.github/workflows/playwright-tests.yml
 
   preview-build-pr:
     name: 'Create Preview Build'
     permissions:
       contents: read
-    needs: [ live-tests-pr, cypress-tests-pr ]
+    needs: [ live-tests-pr, playwright-tests-pr ]
     if: ${{ github.event_name == 'pull_request' && github.event.action != 'labeled' && github.event.action != 'unlabeled' && github.event.pull_request.base.repo.id != github.event.pull_request.head.repo.id }}
     uses: ./.github/workflows/preview-build.yml
     with:
@@ -155,7 +147,7 @@ jobs:
     permissions:
       contents: read
       packages: write
-    needs: [ live-tests-push, cypress-tests-push ]
+    needs: [ live-tests-push, playwright-tests-push ]
     if: ${{ github.event_name == 'push' && github.ref != 'refs/heads/main' }}
     uses: ./.github/workflows/preview-build.yml
     with:
@@ -167,11 +159,11 @@ jobs:
     permissions:
       contents: read
       packages: write
-    needs: [ live-tests-push, cypress-tests-push ]
+    needs: [ live-tests-push, playwright-tests-push ]
     if: ${{ github.ref == 'refs/heads/main' && github.event_name == 'push' }}
     uses: ./.github/workflows/docker-build.yml
     secrets:
-      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
     with:
       target: runtime
@@ -208,27 +200,31 @@ jobs:
           rm -f ./src/provenance.json
 
       - name: 'Create Downloadable Preview'
-        run: zip -qr ../FOSSBilling-preview.zip .
+        run: |
+          GITHUB_SHORT_SHA="$(echo "${GITHUB_SHA}" | cut -c1-7)"
+          echo "GITHUB_SHORT_SHA=${GITHUB_SHORT_SHA}" >> "$GITHUB_ENV"
+          zip -qr ../FOSSBilling-preview-${GITHUB_SHORT_SHA}.zip .
+          echo "FOSSBILLING_PREVIEW_DIGEST=sha256:$(sha256sum ../FOSSBilling-preview-${GITHUB_SHORT_SHA}.zip | awk '{print $1}')" >> "$GITHUB_ENV"
         working-directory: ./src/
 
       - name: 'Move Downloadable Preview for Upload'
         run: |
           mkdir ./dist
-          mv ./FOSSBilling-preview.zip ./dist
+          cp ./FOSSBilling-preview-${GITHUB_SHORT_SHA}.zip ./dist/FOSSBilling-preview.zip
 
       - name: 'Upload Downloadable Preview to S3'
         if: ${{ github.ref == 'refs/heads/main' }}
         run: |
           aws s3 sync "${SOURCE_DIR}" "s3://${AWS_S3_BUCKET}/" \
             --endpoint-url "${AWS_S3_ENDPOINT}" \
-            --acl public-read \
+            --metadata="digest=${{ env.FOSSBILLING_PREVIEW_DIGEST }},commit-sha=${{ github.sha }}" \
             --follow-symlinks \
             --no-progress
         env:
-          AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_S3_ENDPOINT: ${{ secrets.AWS_S3_ENDPOINT }}
+          AWS_S3_BUCKET: ${{ vars.CF_R2_DOWNLOAD_BUCKET }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.CF_R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.CF_R2_SECRET_ACCESS_KEY }}
+          AWS_S3_ENDPOINT: ${{ vars.CF_R2_ENDPOINT_URL }}
           AWS_REGION: 'auto'
           SOURCE_DIR: './dist'
 
@@ -236,6 +232,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           if-no-files-found: 'error'
-          name: 'FOSSBilling Preview'
-          path: './src/*'
+          name: 'FOSSBilling-preview-${{ env.GITHUB_SHORT_SHA }}.zip'
+          path: './FOSSBilling-preview-${{ env.GITHUB_SHORT_SHA }}.zip'
+          archive: false
           retention-days: 14

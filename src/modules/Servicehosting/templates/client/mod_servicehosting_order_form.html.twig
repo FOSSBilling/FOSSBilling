@@ -176,6 +176,8 @@
     }
 
     document.addEventListener('DOMContentLoaded', function() {
+        const currencyFormat = JSON.parse('{{ currency|json_encode|e('js') }}');
+
         // Update domain action when switching tabs
         document.querySelectorAll('.nav-pills .nav-link[data-action]').forEach(tab => {
             tab.addEventListener('click', function() {
@@ -192,11 +194,10 @@
             if (typeof multiply !== 'undefined') {
                 total *= multiply;
             }
-            return new Intl.NumberFormat(undefined, {
-                style: 'currency',
-                currency: code,
-                currencyDisplay: 'narrowSymbol',
-            }).format(total);
+            return FOSSBilling.currency.format(total, {
+                ...currencyFormat,
+                code: code,
+            });
         };
 
         // Domain registration check

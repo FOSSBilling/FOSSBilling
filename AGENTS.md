@@ -23,7 +23,8 @@ FOSSBilling is a free and open-source billing and client management solution des
     * The FOSSBilling project is in the process of gradually phasing out RedBeanPHP in favor of Doctrine ORM.
     * When writing new pieces of code, avoid RedBeanPHP.
     * If you are assisting with the migration from RedBeanPHP to Doctrine, do your best to keep compatibility with the existing table structure.
-    * When refactoring API endpoints, check how the `$di['pager']` works in `src/library/FOSSBilling/Pagination.php`. `paginateDoctrineQuery()` is the replacement for `getPaginatedResultSet()`.
+    * When refactoring API endpoints, check how the `$di['pager']` works in `src/library/FOSSBilling/Pagination.php`. `paginateDoctrineQuery()` replaces `getPaginatedResultSet()` for entities that implement `ApiArrayInterface`; use `paginateMappedQuery()` when the API shape needs service-context mapping (identity/deep flags, cross-module lookups, joined scalars).
+    * Id and foreign-key columns are `Types::BIGINT` almost everywhere (matching `bigint(20)` in `src/install/sql/structure.sql`), typed `?int` on the PHP side, not `int|string`. This is intentional, not an oversight: `Doctrine\DBAL\Types\BigIntType::convertToPHPValue()` only widens to `string` when a value doesn't fit PHP's native `int`, which cannot happen here — MySQL's signed `BIGINT` range matches PHP's native 64-bit `int` range exactly, none of these columns are `UNSIGNED`, and Composer enforces a 64-bit PHP 8.3+ runtime through the `php-64bit` platform requirement. Keep new id/FK columns `Types::BIGINT`/`?int` for consistency, and cross-reference `structure.sql` before ever declaring one `Types::INTEGER` — a narrower id/FK column than the primary key it references is a real bug (see issue #4187), not a cosmetic mismatch.
   * [Monolog](https://github.com/Seldaek/monolog): Logging framework. Used via `$di['logger']` (`/src/library/FOSSBilling/Monolog.php`).
   * [dompdf](https://github.com/dompdf/dompdf): PDF generation for invoices and documents
   * [Pimple](https://github.com/silexphp/Pimple): Dependency injection container, see `src/di.php`.
@@ -72,7 +73,9 @@ The application uses a modern PHP architecture with dependency injection, event-
 * **Composer** for PHP dependency management
 * **Node.js and npm** for frontend asset management
   * Docker and DDEV use Node.js 24, and `package.json` requires npm 11 or newer.
-* **MySQL/MariaDB** database server
+* A database server: **MySQL/MariaDB**, **PostgreSQL**, or **SQLite**
+  * Fresh installs support all three drivers (`pdo_mysql`, `pdo_pgsql`, `pdo_sqlite`) — see `DriverManagerFactory::SUPPORTED_DRIVERS`. Schema is generated from Doctrine entity metadata (`FOSSBilling\Doctrine\SchemaInstaller`) on every driver, MySQL/MariaDB included; `src/install/sql/structure.sql` is no longer used for a fresh install of any driver, and stays in the repo only as the frozen definition `UpdatePatcher`'s legacy MySQL-only patches still assume for pre-cutover installs upgrading.
+  * Upgrading an *existing* install keeps the database **structure** current automatically, on every driver: `UpdatePatcher::applyCorePatches()` always runs `FOSSBilling\Doctrine\SchemaSynchronizer` after its (MySQL/MariaDB-only) legacy patches, which diffs live schema against current Doctrine entity metadata and applies only additive changes (new tables/columns/indexes) — it never drops or alters existing structure, and never adds a foreign key constraint to a table that already exists (only to a table it's creating fresh), since FOSSBilling's schema has never had real FK constraints and existing rows aren't guaranteed to satisfy one. Anything it doesn't recognize or won't touch is logged, not silently ignored. What it does *not* do: replay the **data transformations** several historical patches perform (splitting/merging tables, rewriting existing rows) — those remain MySQL/MariaDB-only raw SQL forever, so an install can pick up new schema going forward but won't get an old data-migration's effect retroactively on any driver.
 
 **Important:** If PHP is not installed or configured on the system, try using `ddev` to manage the development environment and run PHP/Composer commands.
 DDEV is configured with `docroot: src`, Node.js 24, MariaDB 10.11, and `data/uploads` as its upload directory. Its post-start hook installs Composer/npm dependencies and rebuilds frontend assets when needed.
@@ -102,8 +105,8 @@ npm run build
 This command builds assets for:
 
 * Core public browser assets in `src/public/assets`
-* `admin_default` theme
-* `huraga` theme
+* `admin_default` theme (`src/themes/default/admin`)
+* `huraga` theme (`src/themes/default/client`)
 
 The core build script is `frontend/esbuild.mjs`. Theme build scripts are defined in each theme's `package.json` and use local `esbuild.mjs` files for configuration:
 
@@ -127,10 +130,10 @@ npm run build-huraga
 
 ```bash
 # Theme development builds
-cd src/themes/admin_default && npm run dev
+cd src/themes/default/admin && npm run dev
 
 # Watch mode for active Huraga development
-cd src/themes/huraga && npm run dev
+cd src/themes/default/client && npm run dev
 ```
 
 ### Testing
@@ -143,7 +146,7 @@ composer test
 
 The default suite covers unit tests in `tests/Unit` and module unit tests in `src/modules/*/tests/Unit`.
 Live API tests are in `src/modules/*/tests/E2E/` and run through Pest via the "E2E" test suite in `phpunit.xml.dist` when `APP_URL` and `TEST_API_KEY` are available.
-Cypress end-to-end tests live under `tests/E2E/Cypress`.
+Playwright end-to-end tests live under `tests/E2E/Playwright`. Run them locally with `npm run pw:open` (UI mode) or `npm run pw:run`; they target the app at `PLAYWRIGHT_BASE_URL` and require `ADMIN_EMAIL` and `ADMIN_PASSWORD` for admin flows.
 
 ### Code Quality Tools
 
@@ -186,7 +189,7 @@ src/
 ├── cron.php                   # Scheduled tasks entry point
 ├── library/                   # Core libraries and third-party integrations
 ├── modules/                   # Application modules (50+ modules)
-├── themes/                    # UI themes (admin_default, huraga)
+├── themes/                    # UI themes (shipped `default` package: default/admin, default/client, default/shared)
 ├── public/                    # Public core assets, branding, and gateway icons
 ├── data/                      # Runtime data (cache, logs, uploads)
 ├── install/                   # Installation scripts and assets
@@ -198,7 +201,7 @@ tests/                         # Pest, live API, and end-to-end test structure
 
 ### Front-end Guidelines
 
-* `admin_default` theme icons are compiled from the `src/themes/admin_default/assets/icons` directory and can be referenced from within the Twig template like so:
+* `admin_default` theme icons are compiled from the `src/themes/default/admin/custom-icons` directory and can be referenced from within the Twig template like so:
 
   ```html
   <svg class="icon">
@@ -260,5 +263,5 @@ tests/                         # Pest, live API, and end-to-end test structure
 ## Important Notes
 
 * **PHP Version:** Requires PHP 8.3 or higher
-* **Database:** Requires MySQL/MariaDB database server
+* **Database:** MySQL, MariaDB, PostgreSQL, or SQLite for fresh installs; upgrades on every driver stay in schema sync automatically, but MySQL/MariaDB-only historical data migrations never replay on any driver (see Prerequisites above)
 * **License:** Apache License 2.0

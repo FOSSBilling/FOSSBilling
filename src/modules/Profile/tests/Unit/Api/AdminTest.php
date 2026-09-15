@@ -13,35 +13,36 @@ use Box\Mod\Profile\Api\Admin;
 use Box\Mod\Profile\Service;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 
 test('gets admin profile', function (): void {
     $service = new Service();
 
-    $model = new Model_Admin();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $model->id = 1;
-    $model->email = 'admin@fossbilling.org';
-    $model->name = 'Admin';
-    $model->signature = 'Sincerely';
-    $model->status = 'active';
-    $model->created_at = '2014-01-01';
-    $model->updated_at = '2014-01-01';
-    $model->timezone = null;
+    $model = createEntity(Box\Mod\Staff\Entity\Admin::class, [
+        'id' => 1,
+        'email' => 'admin@fossbilling.org',
+        'name' => 'Admin',
+        'signature' => 'Sincerely',
+        'status' => 'active',
+        'created_at' => '2014-01-01',
+        'updated_at' => '2014-01-01',
+        'timezone' => null,
+    ]);
 
     $adminApi = apiEndpoint(new Admin());
     $adminApi->setIdentity($model);
     $adminApi->setService($service);
     $result = $adminApi->get();
     $expected = [
-        'id' => $model->id,
-        'email' => $model->email,
-        'name' => $model->name,
-        'signature' => $model->signature,
-        'status' => $model->status,
-        'api_token' => null,
-        'timezone' => null,
-        'created_at' => $model->created_at,
-        'updated_at' => $model->updated_at,
+        'id' => $model->getId(),
+        'email' => $model->getEmail(),
+        'name' => $model->getName(),
+        'signature' => $model->getSignature(),
+        'status' => $model->getStatus(),
+        'api_token' => $model->getApiToken(),
+        'timezone' => $model->getTimezone(),
+        'created_at' => $model->getCreatedAt()?->format('Y-m-d'),
+        'updated_at' => $model->getUpdatedAt()?->format('Y-m-d'),
     ];
     expect($result)->toBe($expected);
 });
@@ -62,7 +63,7 @@ test('logs out admin', function (): void {
 });
 
 test('updates admin profile', function (): void {
-    $model = new Model_Admin();
+    $model = createEntity(Box\Mod\Staff\Entity\Admin::class);
 
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('updateAdmin')
@@ -77,7 +78,7 @@ test('updates admin profile', function (): void {
 });
 
 test('generates api key', function (): void {
-    $model = new Model_Admin();
+    $model = createEntity(Box\Mod\Staff\Entity\Admin::class);
 
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('generateNewApiKey')
@@ -107,9 +108,7 @@ test('changes password', function (): void {
     $di['validator'] = new FOSSBilling\Validate();
     $di['password'] = new FOSSBilling\PasswordManager();
 
-    $model = new Model_Admin();
-    $model->loadBean(new Tests\Helpers\DummyBean());
-    $model->pass = $di['password']->hashIt('oldpw');
+    $model = createEntity(Box\Mod\Staff\Entity\Admin::class, ['pass' => $di['password']->hashIt('oldpw')]);
 
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('changeAdminPassword')

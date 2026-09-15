@@ -60,7 +60,7 @@
                         <h6 class="card-title mb-0">{{ 'Adapter Settings'|trans }}</h6>
                         <p class="text-secondary mb-0">{{ 'Provide the credentials and connection details required by this registrar adapter.'|trans }}</p>
                     </div>
-                    {{ mf.build_form(registrar.form, registrar.config, {'test_mode': registrar.test_mode}) }}
+                    {{ mf.build_form(registrar.form, registrar.config, {'test_mode': registrar.test_mode}, registrar.secret_fields) }}
                 </div>
 
                 <input type="hidden" name="id" value="{{ registrar.id }}">

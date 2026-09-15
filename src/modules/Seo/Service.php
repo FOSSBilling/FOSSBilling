@@ -71,7 +71,7 @@ class Service implements InjectionAwareInterface
                     $engine->setDi($this->di);
                     $engine->pingSitemap($url);
                 } catch (\Exception $e) {
-                    error_log($e->getMessage());
+                    $this->di['logger']->error($e->getMessage());
                 }
             }
         }
@@ -151,7 +151,7 @@ class Service implements InjectionAwareInterface
             $seoService->setDi($di);
             $seoService->pingSitemap($config);
         } catch (\Exception $e) {
-            error_log($e->getMessage());
+            $di['logger']->error($e->getMessage());
         }
 
         return true;

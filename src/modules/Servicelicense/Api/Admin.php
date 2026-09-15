@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicelicense\Api;
 
+use Box\Mod\Servicelicense\Entity\ServiceLicense;
+
 /**
  *Service license management.
  */
@@ -73,20 +75,21 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
-     * @return \Model_ServiceLicense
-     *
      * @throws \FOSSBilling\Exception
      */
-    public function _getService(array $data)
+    public function _getService(array $data): ServiceLicense
     {
         $required = ['order_id' => 'Order ID is required'];
         $this->getDi()['validator']->checkRequiredParamsForArray($required, $data);
 
-        $order = $this->getDi()['db']->getExistingModelById('clientOrder', $data['order_id'], 'Order not found');
+        $order = $this->getDi()['em']->getRepository(\Box\Mod\Order\Entity\Order::class)->find($data['order_id']);
+        if ($order === null) {
+            throw new \FOSSBilling\Exception('Order not found');
+        }
 
         $orderService = $this->getDi()['mod_service']('order');
         $s = $orderService->getOrderService($order);
-        if (!$s instanceof \Model_ServiceLicense) {
+        if (!$s instanceof ServiceLicense) {
             throw new \FOSSBilling\Exception('Order is not activated');
         }
 

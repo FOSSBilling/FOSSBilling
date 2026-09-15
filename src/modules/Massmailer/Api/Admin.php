@@ -85,10 +85,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             $model->setFromEmail($data['from_email']);
         }
 
-        $model->setUpdatedAt(date('Y-m-d H:i:s'));
         $this->getDi()['em']->flush();
 
-        $this->getDi()['logger']->info('Updated mail message #%s', $model->getId());
+        $this->getDi()['logger']->info('Updated mail message #{model_id}', ['model_id' => $model->getId()]);
 
         return true;
     }
@@ -131,9 +130,7 @@ Order our services at {{ "order"|url }}
             ->setSubject($data['subject'])
             ->setContent($data['content'] ?? $default_content)
             ->setFilter(json_encode([], JSON_THROW_ON_ERROR))
-            ->setStatus(MassmailerMessage::STATUS_DRAFT)
-            ->setCreatedAt(date('Y-m-d H:i:s'))
-            ->setUpdatedAt(date('Y-m-d H:i:s'));
+            ->setStatus(MassmailerMessage::STATUS_DRAFT);
 
         $this->getDi()['em']->persist($model);
         $this->getDi()['em']->flush();
@@ -143,7 +140,7 @@ Order our services at {{ "order"|url }}
             throw new \FOSSBilling\Exception('Failed to retrieve ID of created mail message.');
         }
 
-        $this->getDi()['logger']->info('Created mail message #%s', $id);
+        $this->getDi()['logger']->info('Created mail message #{id}', ['id' => $id]);
 
         return $id;
     }
@@ -164,7 +161,7 @@ Order our services at {{ "order"|url }}
 
         $this->getService()->sendMessage($model, $client_id, true);
 
-        $this->getDi()['logger']->info('Sent test mail message #%s to client ', $model->getId());
+        $this->getDi()['logger']->info('Sent test mail message #{model_id} to client ', ['model_id' => $model->getId()]);
 
         return true;
     }
@@ -188,10 +185,10 @@ Order our services at {{ "order"|url }}
         }
 
         $model->setStatus(MassmailerMessage::STATUS_SENT);
-        $model->setSentAt(date('Y-m-d H:i:s'));
+        $model->setSentAt(new \DateTime());
         $this->getDi()['em']->flush();
 
-        $this->getDi()['logger']->info('Added mass mail messages #%s to queue', $model->getId());
+        $this->getDi()['logger']->info('Added mass mail messages #{model_id} to queue', ['model_id' => $model->getId()]);
 
         return true;
     }
@@ -211,9 +208,7 @@ Order our services at {{ "order"|url }}
             ->setSubject(($model->getSubject() ?? '') . ' (Copy)')
             ->setContent($model->getContent())
             ->setFilter($model->getFilter())
-            ->setStatus(MassmailerMessage::STATUS_DRAFT)
-            ->setCreatedAt(date('Y-m-d H:i:s'))
-            ->setUpdatedAt(date('Y-m-d H:i:s'));
+            ->setStatus(MassmailerMessage::STATUS_DRAFT);
 
         $this->getDi()['em']->persist($copy);
         $this->getDi()['em']->flush();
@@ -223,7 +218,7 @@ Order our services at {{ "order"|url }}
             throw new \FOSSBilling\Exception('Failed to retrieve ID of copied mail message.');
         }
 
-        $this->getDi()['logger']->info('Copied mail message #%s to #%s', $model->getId(), $id);
+        $this->getDi()['logger']->info('Copied mail message #{model_id} to #{id}', ['model_id' => $model->getId(), 'id' => $id]);
 
         return $id;
     }
@@ -253,7 +248,7 @@ Order our services at {{ "order"|url }}
         $this->getDi()['em']->remove($model);
         $this->getDi()['em']->flush();
 
-        $this->getDi()['logger']->info('Removed mail message #%s', $id);
+        $this->getDi()['logger']->info('Removed mail message #{id}', ['id' => $id]);
 
         return true;
     }
@@ -280,8 +275,8 @@ Order our services at {{ "order"|url }}
             foreach ($clients as $client) {
                 $clientInfo = $clientService->get(['id' => $client['id']]);
                 $recipients[] = [
-                    'email' => $clientInfo->email,
-                    'name' => $clientInfo->first_name . ' ' . $clientInfo->last_name,
+                    'email' => $clientInfo->getEmail(),
+                    'name' => $clientInfo->getFirstName() . ' ' . $clientInfo->getLastName(),
                 ];
             }
         }
@@ -306,7 +301,7 @@ Order our services at {{ "order"|url }}
             return 'Unknown';
         }
 
-        return $client->email;
+        return $client->getEmail() ?? 'Unknown';
     }
 
     private function _getTestClientId(): int

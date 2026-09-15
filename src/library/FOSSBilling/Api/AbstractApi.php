@@ -28,11 +28,10 @@ class AbstractApi implements InjectionAwareInterface
      */
     protected $mod;
 
-    // TODO: Find a way to correctly set the type. Maybe a module's service should extend a "Service" class?
-    protected $service;
+    protected ?object $service = null;
 
     /**
-     * @var \Model_Admin|\Model_Client|\Model_Guest
+     * @var \Box\Mod\Client\Entity\Client|\Box\Mod\Staff\Entity\Admin|\FOSSBilling\Identity\Guest
      */
     protected $identity;
 
@@ -70,7 +69,7 @@ class AbstractApi implements InjectionAwareInterface
     }
 
     /**
-     * @param \Model_Admin|\Model_Client|\Model_Guest $identity
+     * @param \Box\Mod\Client\Entity\Client|\Box\Mod\Staff\Entity\Admin|\FOSSBilling\Identity\Guest $identity
      */
     public function setIdentity($identity): void
     {
@@ -78,22 +77,24 @@ class AbstractApi implements InjectionAwareInterface
     }
 
     /**
-     * @return \Model_Admin|\Model_Client|\Model_Guest
+     * @return \Box\Mod\Client\Entity\Client|\Box\Mod\Staff\Entity\Admin|\FOSSBilling\Identity\Guest
      */
     public function getIdentity()
     {
         return $this->identity;
     }
 
-    // TODO: Find a way to correctly set the type. Maybe a module's service should extend a "Service" class?
-    public function setService($service): void
+    public function setService(object $service): void
     {
         $this->service = $service;
     }
 
-    // TODO: Find a way to correctly set the type. Maybe a module's service should extend a "Service" class?
-    public function getService()
+    public function getService(): object
     {
+        if ($this->service === null) {
+            throw new Exception('Service object is not set for the API');
+        }
+
         return $this->service;
     }
 
@@ -117,5 +118,15 @@ class AbstractApi implements InjectionAwareInterface
     protected function checkPermissions(string $module, ?string $key = null, mixed $constraint = null): void
     {
         $this->getDi()['mod_service']('Staff')->checkPermissionsAndThrowException($module, $key, $constraint, $this->identity);
+    }
+
+    protected function checkCaptchaIfEnabled(array $data): void
+    {
+        $extensionService = $this->getDi()['mod_service']('extension');
+        if (!$extensionService->isExtensionActive('mod', 'antispam')) {
+            return;
+        }
+
+        $this->getDi()['mod_service']('Antispam')->checkCaptcha($data);
     }
 }

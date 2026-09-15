@@ -32,7 +32,7 @@
         <form method="post" action="{{ 'extension/config_save'|api_url }}" {{ fb_api_form({message: 'Settings Updated'|trans}) }}>
             <div class="card-body">
                 <div class="alert alert-info" role="alert">
-                    <strong class="me-1">{{ 'Information:'|trans }}</strong>{{ 'These settings affect renewal timing, how addon orders appear in lists, and how suspended orders are automatically cleaned up.'|trans }}
+                    <strong class="me-1">{{ 'Information:'|trans }}</strong>{{ 'These settings affect renewal timing, how addon orders appear in lists, and how suspended or unpaid orders are automatically cleaned up.'|trans }}
                 </div>
 
                 <h4 class="card-title mb-2">{{ 'Renewal Logic'|trans }}</h4>
@@ -90,6 +90,27 @@
                     <div class="col-12">
                         <label class="form-label" for="suspend_reason_list">{{ 'Suspension Reasons'|trans }}</label>
                         <textarea class="form-control" id="suspend_reason_list" name="suspend_reason_list" rows="3">{{ params.suspend_reason_list|default('') }}</textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body border-top">
+                <h4 class="card-title mb-2">{{ 'Unpaid Orders'|trans }}</h4>
+                <p class="text-secondary mb-3">{{ 'Define when orders that were never paid, and never set up, should be automatically removed.'|trans }}</p>
+                <div class="row g-3">
+                    <div class="col-lg-6">
+                        <label class="form-label" for="batch_cancel_unpaid">{{ 'Auto Removal Policy'|trans }}</label>
+                        <select class="form-select" id="batch_cancel_unpaid" name="batch_cancel_unpaid">
+                            <option value="1" {{ params.batch_cancel_unpaid|default('0') ? 'selected' : '' }}>{{ 'Remove Unpaid Orders'|trans }}</option>
+                            <option value="0" {{ params.batch_cancel_unpaid|default('0') ? '' : 'selected' }}>{{ 'Do Not Remove Unpaid Orders'|trans }}</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-6">
+                        <label class="form-label" for="batch_cancel_unpaid_after_days">{{ 'Remove After'|trans }}</label>
+                        <div class="input-group">
+                            <input class="form-control" id="batch_cancel_unpaid_after_days" type="number" min="0" name="batch_cancel_unpaid_after_days" value="{{ params.batch_cancel_unpaid_after_days|default('') }}" placeholder="7">
+                            <span class="input-group-text">{{ 'days'|trans }}</span>
+                        </div>
+                        <small class="form-hint">{{ 'Counted from the invoice due date. If no unpaid invoice remains, counted from the order creation date instead. Defaults to 7 days when left blank.'|trans }}</small>
                     </div>
                 </div>
             </div>

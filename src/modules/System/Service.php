@@ -11,10 +11,20 @@ declare(strict_types=1);
 
 namespace Box\Mod\System;
 
-use Doctrine\DBAL\ArrayParameterType;
+use Box\Mod\System\Entity\Setting;
+use Box\Mod\System\Repository\SettingRepository;
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Exception\DeadlockException;
+use Doctrine\DBAL\Exception\LockWaitTimeoutException;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use Doctrine\DBAL\Platforms\SQLitePlatform;
+use FOSSBilling\Cache\CacheFactory;
 use FOSSBilling\Config;
+use FOSSBilling\Doctrine\EntityManagerFactory;
+use FOSSBilling\Doctrine\RowLock;
 use FOSSBilling\Environment;
 use FOSSBilling\GeoIP\Reader;
+use FOSSBilling\Period;
 use FOSSBilling\Sanitizer\BrowserHtmlSanitizer;
 use FOSSBilling\SentryHelper;
 use FOSSBilling\Twig\SandboxedStringRenderer;
@@ -26,9 +36,9 @@ use Symfony\Contracts\Cache\ItemInterface;
 
 class Service
 {
-    private const int MYSQL_DUPLICATE_ENTRY_ERROR = 23000;
-
     protected ?Container $di = null;
+
+    protected SettingRepository $settingRepository;
 
     private Filesystem $filesystem;
 
@@ -40,6 +50,7 @@ class Service
     public function setDi(Container $di): void
     {
         $this->di = $di;
+        $this->settingRepository = $di['em']->getRepository(Setting::class);
         if (isset($di['filesystem'])) {
             $this->filesystem = $di['filesystem'];
         }
@@ -107,75 +118,62 @@ class Service
             throw new \FOSSBilling\Exception('Parameter key is missing.');
         }
 
-        $query = $this->di['dbal']->createQueryBuilder();
-        $query
-            ->select('value')
-            ->from('setting')
-            ->where('param = :param')
-            ->setParameter('param', $param);
-
-        $result = $query->executeQuery()->fetchOne();
-        if ($result === false) {
+        $setting = $this->settingRepository->findOneByParam($param);
+        if ($setting === null) {
             return $default;
         }
 
-        return $result;
+        return $setting->getValue();
     }
 
     public function setParamValue($param, $value, $createIfNotExists = true): bool
     {
-        // Skip this param if the user isn't permitted to update it.
-        if (!$this->canUpdateParam($param)) {
-            return true;
-        }
-
-        if ($this->paramExists($param)) {
-            $query = $this->di['dbal']->createQueryBuilder();
-            $query
-                ->update('setting')
-                ->set('value', ':value')
-                ->where('param = :param')
-                ->setParameter('param', $param)
-                ->setParameter('value', $value)
-                ->executeStatement();
-        } elseif ($createIfNotExists) {
-            try {
-                $query = $this->di['dbal']->createQueryBuilder();
-                $query
-                    ->insert('setting')
-                    ->values([
-                        'param' => ':param',
-                        'value' => ':value',
-                        'created_at' => ':created_at',
-                        'updated_at' => ':updated_at',
-                    ])
-                    ->setParameter('param', $param)
-                    ->setParameter('value', $value)
-                    ->setParameter('created_at', date('Y-m-d H:i:s'))
-                    ->setParameter('updated_at', date('Y-m-d H:i:s'))
-                    ->executeStatement();
-            } catch (\Exception $e) {
-                if ($e->getCode() != self::MYSQL_DUPLICATE_ENTRY_ERROR) {
-                    throw $e;
-                }
-            }
-        }
+        $this->writeParamValue((string) $param, $value, $createIfNotExists);
+        $this->di['em']->flush();
 
         return true;
     }
 
+    /**
+     * Stage a setting write without flushing; the caller controls when the batch is flushed.
+     * A failed flush closes the EntityManager, so the constraint conflict is never swallowed here.
+     */
+    private function writeParamValue(string $param, $value, bool $createIfNotExists): void
+    {
+        $value = $value === null ? null : (string) $value;
+
+        // Normalize the key so the permission check and the lookup below
+        // agree on it, then reject anything outside the canonical charset.
+        $param = strtolower($param);
+        if (!preg_match('/^[a-z0-9_]+$/', $param)) {
+            throw new \FOSSBilling\InformationException('Invalid parameter name, received: param_.', ['param_' => $param]);
+        }
+
+        // Skip this param if the user isn't permitted to update it.
+        if (!$this->canUpdateParam($param)) {
+            return;
+        }
+
+        $setting = $this->settingRepository->findOneByParam($param);
+        if ($setting !== null) {
+            $setting->setValue($value);
+
+            return;
+        }
+
+        if (!$createIfNotExists) {
+            return;
+        }
+
+        $setting = new Setting();
+        $setting->setParam($param);
+        $setting->setValue($value);
+        $this->di['em']->persist($setting);
+    }
+
     public function paramExists($param): bool
     {
-        $query = $this->di['dbal']->createQueryBuilder();
-        $query
-            ->select('id')
-            ->from('setting')
-            ->where('param = :param')
-            ->setParameter('param', $param);
-
-        $result = $query->executeQuery()->fetchOne();
-
-        return (bool) $result;
+        return $this->settingRepository->findOneByParam((string) $param) !== null;
     }
 
     /**
@@ -192,17 +190,9 @@ class Service
                 throw new \FOSSBilling\InformationException('Invalid parameter name, received: param_.', ['param_' => $param]);
             }
         }
-        $query = $this->di['dbal']->createQueryBuilder();
-        $query
-            ->select('param', 'value')
-            ->from('setting')
-            ->where('param IN (:params)')
-            ->setParameter('params', $params, ArrayParameterType::STRING);
-
-        $rows = $query->executeQuery()->fetchAllAssociative();
         $result = [];
-        foreach ($rows as $row) {
-            $result[$row['param']] = $row['value'];
+        foreach ($this->settingRepository->findByParams($params) as $setting) {
+            $result[(string) $setting->getParam()] = $setting->getValue();
         }
 
         return $result;
@@ -250,28 +240,30 @@ class Service
             $faviconUrl = SYSTEM_URL . $faviconUrl;
         }
 
+        // Returned raw: output contexts escape on render, so escaping here
+        // double-escapes in templates and corrupts stored snapshots (#4305).
         return [
             'www' => SYSTEM_URL,
-            'name' => isset($results['company_name']) ? htmlspecialchars((string) $results['company_name'], ENT_QUOTES, 'UTF-8') : null,
-            'email' => isset($results['company_email']) ? htmlspecialchars((string) $results['company_email'], ENT_QUOTES, 'UTF-8') : null,
-            'tel' => isset($results['company_tel']) ? htmlspecialchars((string) $results['company_tel'], ENT_QUOTES, 'UTF-8') : null,
+            'name' => isset($results['company_name']) ? (string) $results['company_name'] : null,
+            'email' => isset($results['company_email']) ? (string) $results['company_email'] : null,
+            'tel' => isset($results['company_tel']) ? (string) $results['company_tel'] : null,
             'signature' => $results['company_signature'] ?? null,
             'logo_url' => $logoUrl,
             'logo_url_dark' => $logoUrlDark,
             'favicon_url' => $faviconUrl,
-            'address_1' => isset($results['company_address_1']) ? htmlspecialchars((string) $results['company_address_1'], ENT_QUOTES, 'UTF-8') : null,
-            'address_2' => isset($results['company_address_2']) ? htmlspecialchars((string) $results['company_address_2'], ENT_QUOTES, 'UTF-8') : null,
-            'address_3' => isset($results['company_address_3']) ? htmlspecialchars((string) $results['company_address_3'], ENT_QUOTES, 'UTF-8') : null,
+            'address_1' => isset($results['company_address_1']) ? (string) $results['company_address_1'] : null,
+            'address_2' => isset($results['company_address_2']) ? (string) $results['company_address_2'] : null,
+            'address_3' => isset($results['company_address_3']) ? (string) $results['company_address_3'] : null,
             'account_number' => $results['company_account_number'] ?? null,
-            'bank_name' => isset($results['company_bank_name']) ? htmlspecialchars((string) $results['company_bank_name'], ENT_QUOTES, 'UTF-8') : null,
-            'bic' => isset($results['company_bic']) ? htmlspecialchars((string) $results['company_bic'], ENT_QUOTES, 'UTF-8') : null,
+            'bank_name' => isset($results['company_bank_name']) ? (string) $results['company_bank_name'] : null,
+            'bic' => isset($results['company_bic']) ? (string) $results['company_bic'] : null,
             'display_bank_info' => $results['company_display_bank_info'] ?? null,
             'bank_info_pagebottom' => $results['company_bank_info_pagebottom'] ?? null,
-            'number' => isset($results['company_number']) ? htmlspecialchars((string) $results['company_number'], ENT_QUOTES, 'UTF-8') : null,
+            'number' => isset($results['company_number']) ? (string) $results['company_number'] : null,
             'note' => $results['company_note'] ?? null,
             'privacy_policy' => $results['company_privacy_policy'] ?? null,
             'tos' => $results['company_tos'] ?? null,
-            'vat_number' => isset($results['company_vat_number']) ? htmlspecialchars((string) $results['company_vat_number'], ENT_QUOTES, 'UTF-8') : null,
+            'vat_number' => isset($results['company_vat_number']) ? (string) $results['company_vat_number'] : null,
         ];
     }
 
@@ -280,12 +272,9 @@ class Service
      */
     public function getParams($data): array
     {
-        $query = 'SELECT param, value
-                  FROM setting';
-        $rows = $this->di['db']->getAll($query);
         $result = [];
-        foreach ($rows as $row) {
-            $result[$row['param']] = $row['value'];
+        foreach ($this->settingRepository->findAll() as $setting) {
+            $result[(string) $setting->getParam()] = $setting->getValue();
         }
 
         return $result;
@@ -302,8 +291,11 @@ class Service
         }
 
         foreach ($data as $key => $val) {
-            $this->setParamValue($key, $val, true);
+            $this->writeParamValue((string) $key, $val, true);
         }
+
+        // Flush the batch once; a unique-constraint collision surfaces to the caller.
+        $this->di['em']->flush();
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminSettingsUpdate']);
 
@@ -360,7 +352,7 @@ class Service
                 );
             }
         } catch (\Exception $e) {
-            error_log($e->getMessage());
+            $this->di['logger']->error($e->getMessage());
         }
 
         // Check if FOSSBilling is behind on database patches
@@ -379,7 +371,7 @@ class Service
                 );
             }
         } catch (\Exception $e) {
-            error_log($e->getMessage());
+            $this->di['logger']->error($e->getMessage());
         }
 
         if (Environment::isProduction()) {
@@ -488,7 +480,7 @@ class Service
                 );
             }
         } catch (\Exception $e) {
-            error_log($e->getMessage());
+            $this->di['logger']->error($e->getMessage());
         }
 
         if ($type === null || $type === '') {
@@ -517,9 +509,17 @@ class Service
         }
     }
 
-    public function templateExists($file, $identity = null): bool
+    public function templateExists(string $file, ?\Box\Mod\Staff\Entity\Admin $identity = null): bool
     {
-        if ($identity instanceof \Model_Admin) {
+        $file = trim($file);
+        if ($file === '' || str_contains($file, "\0") || Path::isAbsolute($file) || str_contains($file, '..') || str_contains($file, '\\')) {
+            return false;
+        }
+        if (!preg_match('/\A[a-zA-Z0-9_\-\/]+\.html\.twig\z/', $file)) {
+            return false;
+        }
+
+        if ($identity instanceof \Box\Mod\Staff\Entity\Admin) {
             $client = false;
         } else {
             $client = true;
@@ -527,7 +527,13 @@ class Service
         $themeService = $this->di['mod_service']('theme');
         $theme = $themeService->getThemeConfig($client);
         foreach ($theme['paths'] as $path) {
-            if ($this->filesystem->exists(Path::join($path, $file))) {
+            $candidate = Path::join($path, $file);
+            $canonicalBase = Path::canonicalize($path);
+            $canonicalCandidate = Path::canonicalize($candidate);
+            if (!Path::isBasePath($canonicalBase, $canonicalCandidate)) {
+                continue;
+            }
+            if ($this->filesystem->exists($canonicalCandidate)) {
                 return true;
             }
         }
@@ -546,7 +552,7 @@ class Service
             $vars,
             'Payment adapter template',
             function (\Twig\Sandbox\SecurityError $e): void {
-                $this->di['logger']->setChannel('security')->warning('Payment adapter template sandbox violation', [
+                $this->di['logger']->withChannel('security')->warning('Payment adapter template sandbox violation', [
                     'error' => $e->getMessage(),
                 ]);
             }
@@ -581,11 +587,23 @@ class Service
             $vars,
             'Email template',
             function (\Twig\Sandbox\SecurityError $e): void {
-                $this->di['logger']->setChannel('security')->warning('Email template sandbox violation', [
+                $this->di['logger']->withChannel('security')->warning('Email template sandbox violation', [
                     'error' => $e->getMessage(),
                 ]);
             }
         );
+    }
+
+    /**
+     * Render an email subject line (plaintext header) through the
+     * HTML-autoescaping email environment, decoding once to restore it as
+     * typed. Never use this for the HTML body.
+     */
+    public function renderEmailSubjectString(string $tpl, array $vars, ?string $timezone = null): string
+    {
+        $rendered = $this->renderEmailTplString($tpl, $vars, $timezone);
+
+        return html_entity_decode($rendered, ENT_QUOTES | ENT_HTML5, 'UTF-8');
     }
 
     public function checkEmailTplSyntax(string $tpl): void
@@ -608,6 +626,21 @@ class Service
         $path = $cachePath ?? PATH_CACHE;
         $this->filesystem->remove($path);
         $this->filesystem->mkdir($path);
+
+        // Also flush the configured application/rate-limiter/Doctrine cache pools, which may be
+        // backed by Redis or Memcached rather than the filesystem path cleared above.
+        CacheFactory::clearAll();
+
+        // clearAll() above only reaches CacheFactory::NAMESPACE_DOCTRINE's own bare namespace -
+        // EntityManagerFactory actually stores the Doctrine metadata/query/result cache under a
+        // namespace hashed from the current entity files' mtimes/sizes (so it self-invalidates on
+        // an entity change without needing this call at all), which clearAll()'s fixed namespace
+        // list can never know to include. Harmless to skip on the filesystem driver (the
+        // remove()/mkdir() above already covers it), but a Redis/Memcached-backed pool has no
+        // other way to ever be reached. clearNamespace() is best-effort, same as clearAll() itself
+        // above - a cache-backend hiccup here must not make clearCache() report failure when the
+        // filesystem cache was already cleared fine.
+        CacheFactory::clearNamespace(EntityManagerFactory::metadataCacheNamespace());
 
         return true;
     }
@@ -647,39 +680,38 @@ class Service
             return '-';
         }
 
-        $p = \Box_Period::getPredefined();
+        $p = Period::getPredefined();
         if (isset($p[$code])) {
             return $p[$code];
         }
 
-        $p = new \Box_Period($code);
+        $p = new Period($code);
 
         return $p->getTitle();
     }
 
-    public function getPublicParamValue($param)
+    public function getPublicParamValue($param): ?string
     {
-        $query = $this->di['dbal']->createQueryBuilder();
-        $query
-            ->select('value')
-            ->from('setting')
-            ->where('param = :param')
-            ->andWhere('public = 1')
-            ->setParameter('param', $param);
-
-        $result = $query->executeQuery()->fetchOne();
-        if ($result === false) {
+        $setting = $this->settingRepository->findOnePublicByParam((string) $param);
+        if ($setting === null) {
             throw new \FOSSBilling\Exception('Parameter :param does not exist', [':param' => $param]);
         }
 
-        return $result;
+        return $setting->getValue();
     }
 
-    public function getNameservers()
+    /**
+     * @return mixed[]
+     */
+    public function getNameservers(): array
     {
-        $query = "SELECT param, value FROM setting WHERE param IN ('nameserver_1', 'nameserver_2', 'nameserver_3', 'nameserver_4')";
+        $settings = $this->settingRepository->findByParams(['nameserver_1', 'nameserver_2', 'nameserver_3', 'nameserver_4']);
+        $result = [];
+        foreach ($settings as $setting) {
+            $result[(string) $setting->getParam()] = $setting->getValue();
+        }
 
-        return $this->di['db']->getAssoc($query);
+        return $result;
     }
 
     public function getPendingMessages()
@@ -718,18 +750,151 @@ class Service
         $geoipReader->updateDefaultDatabases();
 
         try {
-            // Prune the FS cache
+            // Prune the cache. Only filesystem-backed pools support this; Redis/Memcached
+            // expire entries on their own and don't implement PruneableInterface.
             $cache = $di['cache'];
-            if ($cache->prune()) {
-                $di['logger']->setChannel('cron')->info('Pruned the filesystem cache');
+            if ($cache instanceof \Symfony\Component\Cache\PruneableInterface && $cache->prune()) {
+                $di['logger']->withChannel('cron')->info('Pruned the filesystem cache');
             }
         } catch (\Exception $e) {
-            error_log($e->getMessage());
+            $di['logger']->error($e->getMessage());
         }
+    }
+
+    /**
+     * Claims a numeric counter setting's current value and advances it, under a row lock so two
+     * concurrent callers are never handed the same number. Returns null if it is missing or not
+     * numeric and no $seed was given to repair it with.
+     *
+     * A $seed is only used if the setting is still missing or invalid once the lock is held, so
+     * concurrent callers seeding the same value cannot both reserve it. If they collide on
+     * creating the row, the loser reserves from the winner's row instead.
+     *
+     * Not subject to canUpdateParam(): this reserves an internal counter rather than applying a
+     * user-driven settings change, and must work in client and cron contexts.
+     *
+     * Callers should invoke this before doing any of their own reads on the shared connection,
+     * not after. On SQLite, an outer transaction that already read something is holding a SHARED
+     * lock the whole time this method runs; if a competing writer is holding RESERVED when this
+     * method's own lock-escalating write attempts to upgrade that SHARED lock, the outer
+     * transaction cannot release just its read - only rolling back the whole thing would - so
+     * sustained contention can exhaust every retry with the outer transaction still open. This
+     * doesn't apply to the getNextInvoiceNumber() caller today (it calls this before its own
+     * flush() opens any transaction), but would matter for a future caller that reserves from
+     * partway through an already-open transaction.
+     */
+    public function reserveNextNumericParamValue(string $param, ?int $seed = null): ?int
+    {
+        if (empty($param)) {
+            throw new \FOSSBilling\Exception('Parameter key is missing.');
+        }
+
+        // On MySQL/PostgreSQL this only ever needs the single, unconditional retry below: two
+        // callers seeding a counter that does not exist yet both pass the locking read (InnoDB gap
+        // locks are shared, so neither blocks the other) and collide on the insert instead - the
+        // loser's transaction rolls back, and its one retry finds the winner's row already there,
+        // so there's no further contention to loop on.
+        //
+        // SQLite is different: DriverManagerFactory's pdo_sqlite connection sets no busy timeout,
+        // so doReserveNumericParamValue()'s lock-escalating write fails outright (non-blocking)
+        // rather than waiting, surfacing here as LockWaitTimeoutException - the same as MySQL's
+        // gap-lock collision from this method's point of view, but for a different reason. With
+        // only two or three concurrent SQLite writers this is still typically a one-shot race the
+        // single retry resolves, but with more than two, the retry itself can collide again (all
+        // attempts landing at roughly the same instant, not staggered) - so this loops with a short
+        // random backoff between attempts, up to a small bound, rather than assuming one retry is
+        // always enough on every driver.
+        $attempts = 0;
+        while (true) {
+            try {
+                return $this->reserveNumericParamValue($param, $seed);
+            } catch (UniqueConstraintViolationException|DeadlockException|LockWaitTimeoutException $e) {
+                if (++$attempts >= 5) {
+                    throw $e;
+                }
+
+                usleep(random_int(5_000, 25_000));
+            }
+        }
+    }
+
+    private function reserveNumericParamValue(string $param, ?int $seed): ?int
+    {
+        /** @var Connection $connection */
+        $connection = $this->di['dbal'];
+
+        return $connection->transactional(fn (Connection $connection): ?int => $this->doReserveNumericParamValue($connection, $param, $seed));
+    }
+
+    private function doReserveNumericParamValue(Connection $connection, string $param, ?int $seed): ?int
+    {
+        // RowLock::suffix() appends `FOR UPDATE` on MySQL/PostgreSQL, taking the write lock at
+        // the SELECT below. SQLite has no such clause, and a plain deferred transaction - whether
+        // opened at the top level via BEGIN, or nested via SAVEPOINT when $connection already has
+        // an outer transaction open - takes no lock at all until the first write. Two concurrent
+        // transactions could otherwise both pass the read under a shared lock before either takes
+        // a write lock, and the second writer - having cached a stale $current - would silently
+        // write the same value the first writer already committed.
+        //
+        // SQLite escalates a transaction's lock to RESERVED on its first write statement,
+        // regardless of nesting depth: a SAVEPOINT doesn't get its own independent lock, it
+        // shares the one connection-wide transaction's lock state. Issuing a real write - even
+        // this no-op UPDATE, which affects zero rows whenever the counter doesn't exist yet -
+        // before the read below forces that escalation immediately and uniformly, whether or not
+        // there's an open outer transaction, so only one caller can ever be mid-reservation at a
+        // time. At most one connection can hold RESERVED simultaneously, so a second writer's own
+        // attempt at this same statement blocks (or fails outright, with SQLite's non-blocking
+        // busy behaviour) until the first has committed or rolled back. Verified against real
+        // SQLite for both the top-level and nested cases - see
+        // ReserveNumericParamValueConcurrencyTest.php.
+        if ($connection->getDatabasePlatform() instanceof SQLitePlatform) {
+            $connection->executeStatement(
+                'UPDATE setting SET updated_at = updated_at WHERE param = :param',
+                ['param' => $param]
+            );
+        }
+
+        $now = date('Y-m-d H:i:s');
+        $current = $connection->fetchOne(
+            'SELECT value FROM setting WHERE param = :param' . RowLock::suffix($connection),
+            ['param' => $param]
+        );
+
+        $exists = $current !== false;
+        if (!$exists || filter_var($current, FILTER_VALIDATE_INT) === false) {
+            if ($seed === null) {
+                return null;
+            }
+
+            if ($exists) {
+                $connection->executeStatement(
+                    'UPDATE setting SET value = :value, updated_at = :updated_at WHERE param = :param',
+                    ['value' => (string) ($seed + 1), 'updated_at' => $now, 'param' => $param]
+                );
+            } else {
+                $connection->executeStatement(
+                    'INSERT INTO setting (param, value, created_at, updated_at) VALUES (:param, :value, :created_at, :updated_at)',
+                    ['param' => $param, 'value' => (string) ($seed + 1), 'created_at' => $now, 'updated_at' => $now]
+                );
+            }
+
+            return $seed;
+        }
+
+        $connection->executeStatement(
+            'UPDATE setting SET value = :value, updated_at = :updated_at WHERE param = :param',
+            ['value' => (string) (intval($current) + 1), 'updated_at' => $now, 'param' => $param]
+        );
+
+        return intval($current);
     }
 
     private function canUpdateParam(string $param): bool
     {
+        // Compare case-insensitively so the check agrees with the lookup,
+        // which resolves case-insensitively on some database drivers.
+        $param = strtolower($param);
+
         $company = [
             'company_name',
             'company_email',

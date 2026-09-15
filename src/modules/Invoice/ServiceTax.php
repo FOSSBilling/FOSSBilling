@@ -11,15 +11,22 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice;
 
+use Box\Mod\Client\Entity\Client;
+use Box\Mod\Invoice\Entity\Invoice;
+use Box\Mod\Invoice\Entity\Tax;
+use Box\Mod\Invoice\Repository\TaxRepository;
 use FOSSBilling\InjectionAwareInterface;
 
 class ServiceTax implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 
+    protected TaxRepository $taxRepository;
+
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
+        $this->taxRepository = $di['em']->getRepository(Tax::class);
     }
 
     public function getDi(): ?\Pimple\Container
@@ -27,107 +34,103 @@ class ServiceTax implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function getTaxRateForClient(\Model_Client $model, &$title = null)
+    public function getTaxRepository(): TaxRepository
+    {
+        return $this->taxRepository;
+    }
+
+    public function getTaxRateForClient(?Client $model, &$title = null)
     {
         $clientService = $this->di['mod_service']('client');
         if (!$clientService->isClientTaxable($model)) {
             return 0;
         }
 
-        $tax = $this->di['db']->findOne('Tax', 'state = ? and country = ?', [$model->state, $model->country]);
+        $tax = $this->taxRepository->findOneByStateAndCountry($model?->getState(), $model?->getCountry());
         // find rate which matches clients country and state
 
-        if ($tax instanceof \Model_Tax) {
-            $title = $tax->name;
+        if ($tax instanceof Tax) {
+            $title = $tax->getName();
 
-            return $tax->taxrate;
+            return $tax->getTaxrate();
         }
 
         // find rate which matches clients country
-        $tax = $this->di['db']->findOne('Tax', 'country = ?', [$model->country]);
-        if ($tax instanceof \Model_Tax) {
-            $title = $tax->name;
+        $tax = $this->taxRepository->findOneByCountry($model?->getCountry());
+        if ($tax instanceof Tax) {
+            $title = $tax->getName();
 
-            return $tax->taxrate;
+            return $tax->getTaxrate();
         }
 
         // find global rate
-        $tax = $this->di['db']->findOne('Tax', '(state is NULL or state = "") and (country is null or country = "")');
-        if ($tax instanceof \Model_Tax) {
-            $title = $tax->name;
+        $tax = $this->taxRepository->findGlobalRate();
+        if ($tax instanceof Tax) {
+            $title = $tax->getName();
 
-            return $tax->taxrate;
+            return $tax->getTaxrate();
         }
 
         return 0;
     }
 
-    public function getTax(\Model_Invoice $invoice)
+    public function getTax(Invoice $invoice)
     {
-        if ($invoice->taxrate <= 0) {
+        if ($invoice->getTaxrate() <= 0) {
             return 0;
         }
 
         $tax = 0;
-        $invoiceItems = $this->di['db']->find('InvoiceItem', 'invoice_id = ?', [$invoice->id]);
+        $invoiceItems = $this->di['em']->getRepository(Entity\InvoiceItem::class)->findByInvoiceId((int) $invoice->getId());
         $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
         foreach ($invoiceItems as $item) {
-            $tax += $invoiceItemService->getTax($item) * $item->quantity;
+            $tax += $invoiceItemService->getTax($item) * ($item->getQuantity() ?? 1);
         }
 
         return $tax;
     }
 
-    public function delete(\Model_Tax $model): bool
+    public function delete(Tax $model): bool
     {
-        $name = $model->name;
-        $this->di['db']->trash($model);
-        $this->di['logger']->info('Deleted tax rule %s', $name);
+        $name = $model->getName();
+        $this->di['em']->remove($model);
+        $this->di['em']->flush();
+        $this->di['logger']->info('Deleted tax rule {name}', ['name' => $name]);
 
         return true;
     }
 
-    public function create(array $data)
+    public function create(array $data): ?int
     {
-        $model = $this->di['db']->dispense('Tax');
-        $model->name = $data['name'];
-        $model->country = (!isset($data['country']) || empty($data['country'])) ? null : $data['country'];
-        $model->state = (!isset($data['state']) || empty($data['state'])) ? null : $data['state'];
-        $model->taxrate = $data['taxrate'];
-        $model->created_at = date('Y-m-d H:i:s');
-        $model->updated_at = date('Y-m-d H:i:s');
-        $newId = $this->di['db']->store($model);
+        $model = new Tax();
+        $model->setName($data['name']);
+        $model->setCountry((!isset($data['country']) || empty($data['country'])) ? null : $data['country']);
+        $model->setState((!isset($data['state']) || empty($data['state'])) ? null : $data['state']);
+        $model->setTaxrate($data['taxrate']);
 
-        $this->di['logger']->info('Created new tax rule %s', $model->name);
+        $this->di['em']->persist($model);
+        $this->di['em']->flush();
 
-        return $newId;
+        $this->di['logger']->info('Created new tax rule {model_name}', ['model_name' => $model->getName()]);
+
+        return $model->getId();
     }
 
-    public function update(\Model_Tax $model, array $data): bool
+    public function update(Tax $model, array $data): bool
     {
-        $model->name = $data['name'];
-        $model->country = (!isset($data['country']) || empty($data['country'])) ? null : $data['country'];
-        $model->state = (!isset($data['state']) || empty($data['state'])) ? null : $data['state'];
-        $model->taxrate = $data['taxrate'];
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
+        $model->setName($data['name']);
+        $model->setCountry((!isset($data['country']) || empty($data['country'])) ? null : $data['country']);
+        $model->setState((!isset($data['state']) || empty($data['state'])) ? null : $data['state']);
+        $model->setTaxrate($data['taxrate']);
+        $this->di['em']->flush();
 
-        $this->di['logger']->info('Updated tax rule %s', $model->name);
+        $this->di['logger']->info('Updated tax rule {model_name}', ['model_name' => $model->getName()]);
 
         return true;
     }
 
-    public function getSearchQuery($data): array
+    public function toApiArray(Tax $model, $deep = false, $identity = null)
     {
-        $sql = 'SELECT *
-            FROM tax
-            ORDER BY id desc';
-
-        return [$sql, []];
-    }
-
-    public function toApiArray(\Model_Tax $model, $deep = false, $identity = null)
-    {
-        return $this->di['db']->toArray($model);
+        return $model->toApiArray();
     }
 }

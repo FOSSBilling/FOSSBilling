@@ -1,0 +1,8 @@
+{#
+    Proves the `default` theme package's shared-resource fallback tier
+    resolves through the real TwigFactory -> Theme\Service::getPackageSharedHtmlPath()
+    -> TwigLoader chain, not just via direct TwigLoader unit construction.
+
+    Nothing in `default/admin` or `default/client` includes this template, so
+    it has zero visible effect. Deliberately trivial and area-neutral.
+#}

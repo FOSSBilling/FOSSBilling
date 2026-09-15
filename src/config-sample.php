@@ -134,7 +134,10 @@ return [
 
     'db' => [
         /*
-         * Database type. Don't change this if in doubt.
+         * Database driver. Don't change this if in doubt.
+         * Supported: 'pdo_mysql' (MySQL/MariaDB), 'pdo_pgsql' (PostgreSQL), 'pdo_sqlite' (SQLite).
+         * pdo_sqlite ignores 'host'/'port'/'user'/'password' below and instead reads a 'path'
+         * (filesystem path to the database file) or 'memory' (bool, for an in-memory database).
          */
         'driver' => 'pdo_mysql',
 
@@ -162,6 +165,67 @@ return [
          * Database Port.
          */
         'port' => getenv('DB_PORT') ?: '3306',
+
+        /*
+         * Optional session timeouts (seconds) applied to database connections.
+         * When unset, the MySQL server defaults are preserved.
+         */
+        // 'interactive_timeout' => 28800,
+        // 'wait_timeout' => 28800,
+    ],
+
+    /*
+     * Cache backend used for the general application cache, the rate limiter, and the
+     * Doctrine ORM metadata/query/result cache. This is unrelated to the 'twig' cache below.
+     */
+    'cache' => [
+        /*
+         * Supported values: 'filesystem' (default), 'redis', 'memcached'.
+         * 'redis' requires the PHP redis (or relay) extension, and 'memcached' requires the
+         * PHP memcached extension. Also configurable from the admin area under System > Settings > Cache.
+         */
+        'driver' => 'filesystem',
+
+        /*
+         * Used when 'driver' is set to 'redis'.
+         */
+        'redis' => [
+            'host' => '127.0.0.1',
+            'port' => 6379,
+            'password' => null,
+            'database' => 0,
+
+            /*
+             * TLS ('rediss://') for the connection to the Redis server. Required whenever
+             * 'password' is set and 'host' isn't a loopback address (127.0.0.1, ::1, localhost) -
+             * see CacheFactory::assertRedisTransportIsSafe() for why. Also configurable from the
+             * admin area under System > Settings > Cache.
+             */
+            'tls' => [
+                'enabled' => false,
+
+                // Verify the server's certificate, and that its certificate name matches 'host'.
+                // Leave both enabled unless you have a specific reason not to.
+                'verify_peer' => true,
+                'verify_peer_name' => true,
+
+                // Path to a CA bundle to trust, if the Redis server's certificate isn't signed by
+                // a CA your system already trusts.
+                'cafile' => null,
+
+                // Only for a self-signed certificate in a development/testing environment - never
+                // enable this in production.
+                'allow_self_signed' => false,
+            ],
+        ],
+
+        /*
+         * Used when 'driver' is set to 'memcached'.
+         */
+        'memcached' => [
+            'host' => '127.0.0.1',
+            'port' => 11211,
+        ],
     ],
 
     'twig' => [
@@ -186,13 +250,13 @@ return [
     'rate_limiter' => [
         'enabled' => true,
 
-        /**
+        /*
          * Any IP address within this list will not be put through the rate-limiter system.
          * This is useful if you have an application with a static IP address that needs to make frequent API requests to FOSSBilling.
          */
         'whitelist_ips' => [],
 
-        /**
+        /*
          * Override individual rate limiter policies here.
          * Defaults are defined in FOSSBilling\Security\RateLimiter::getDefaultConfig().
          */

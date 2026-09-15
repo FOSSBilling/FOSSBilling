@@ -15,9 +15,6 @@ use function Tests\Helpers\container;
 test('getDi returns dependency injection container', function (): void {
     $controller = new Box\Mod\Activity\Controller\Admin();
     $di = container();
-    $dbMock = Mockery::mock('Box_Database');
-
-    $di['db'] = $dbMock;
     $controller->setDi($di);
     $result = $controller->getDi();
     expect($result)->toEqual($di);
@@ -28,7 +25,7 @@ test('fetchNavigation returns array', function (): void {
     $di = container();
     $link = 'activity';
 
-    $urlMock = Mockery::mock('Box_Url');
+    $urlMock = Mockery::mock(FOSSBilling\Url::class);
     /** @var Mockery\Expectation $expectation */
     $expectation = $urlMock->shouldReceive('adminLink');
     $expectation->atLeast()->once();

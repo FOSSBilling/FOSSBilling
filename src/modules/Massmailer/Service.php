@@ -14,6 +14,7 @@ namespace Box\Mod\Massmailer;
 use Box\Mod\Massmailer\Entity\MassmailerMessage;
 use Box\Mod\Massmailer\Repository\MassmailerMessageRepository;
 use Doctrine\DBAL\ArrayParameterType;
+use Doctrine\DBAL\ParameterType;
 use FOSSBilling\Enums\ClientOrderStatusEnum;
 use FOSSBilling\Enums\ClientStatusEnum;
 use FOSSBilling\Environment;
@@ -103,22 +104,14 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         $extensionService = $this->di['mod_service']('extension');
 
-        $sql = '
-        CREATE TABLE IF NOT EXISTS `mod_massmailer` (
-        `id` bigint(20) NOT NULL AUTO_INCREMENT,
-        `from_email` varchar(255) DEFAULT NULL,
-        `from_name` varchar(255) DEFAULT NULL,
-        `subject` varchar(255) DEFAULT NULL,
-        `content` text DEFAULT NULL,
-        `filter` text DEFAULT NULL,
-        `status` varchar(255) DEFAULT NULL,
-        `sent_at` varchar(35) DEFAULT NULL,
-        `created_at` varchar(35) DEFAULT NULL,
-        `updated_at` varchar(35) DEFAULT NULL,
-        PRIMARY KEY (`id`)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 AUTO_INCREMENT=1;
-        ';
-        $this->di['dbal']->executeStatement($sql);
+        // Raw MySQL-only DDL here (backticks, ENGINE=InnoDB) would fail outright on
+        // PostgreSQL/SQLite. mod_massmailer already exists in structure.sql, so this hook is
+        // already redundant on MySQL fresh installs - it's only load-bearing on PG/SQLite,
+        // where nothing else creates the table. SchemaSynchronizer::syncEntities() creates (or
+        // catches up) just this module's own table from current metadata, additively and
+        // safely, scoped so installing this one extension never reports every *other* table in
+        // the app as missing.
+        \FOSSBilling\Doctrine\SchemaSynchronizer::syncEntities($this->di['em'], [MassmailerMessage::class]);
 
         // default config values
         $extensionService->setConfig(['ext' => 'mod_massmailer', 'limit' => '2', 'interval' => '10', 'test_client_id' => 1]);
@@ -135,17 +128,30 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $query = $this->di['dbal']->createQueryBuilder();
         $query
-            ->select('DISTINCT c.id')
+            ->select('DISTINCT c.id, c.email')
             ->from('client', 'c')
             ->leftJoin('c', 'client_order', 'co', 'co.client_id = c.id')
             ->orderBy('c.id', 'DESC');
+        $query
+            ->andWhere('c.email IS NOT NULL AND TRIM(c.email) != :empty_email')
+            ->setParameter('empty_email', '', ParameterType::STRING);
 
         $this->appendInCondition($query, 'c.status', 'client_status', $filter[self::FILTER_CLIENT_STATUS] ?? [], ArrayParameterType::STRING);
         $this->appendInCondition($query, 'c.client_group_id', 'client_groups', $filter[self::FILTER_CLIENT_GROUPS] ?? [], ArrayParameterType::INTEGER);
         $this->appendInCondition($query, 'co.product_id', 'has_order', $filter[self::FILTER_HAS_ORDER] ?? [], ArrayParameterType::INTEGER);
         $this->appendInCondition($query, 'co.status', 'has_order_with_status', $filter[self::FILTER_HAS_ORDER_WITH_STATUS] ?? [], ArrayParameterType::STRING);
 
-        return $query->executeQuery()->fetchAllAssociative();
+        $rows = $query->executeQuery()->fetchAllAssociative();
+
+        $validator = $this->di['validator'];
+
+        return array_values(array_map(
+            static fn (array $row): array => ['id' => (int) $row['id']],
+            array_filter(
+                $rows,
+                static fn (array $row): bool => $validator->isEmailValid(trim((string) $row['email']))
+            )
+        ));
     }
 
     public function normalizeFilter(mixed $filter, bool $strict = false): array
@@ -219,7 +225,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $clientArr = $clientService->toApiArray($client, true, null);
 
         $vars = ['c' => $clientArr];
-        $ps = $systemService->renderEmailTplString($model->getSubject(), $vars);
+        $ps = $systemService->renderEmailSubjectString($model->getSubject(), $vars);
         $pc = $systemService->renderEmailTplString($model->getContent(), $vars);
 
         return [$ps, $pc];
@@ -227,15 +233,19 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function sendMessage(MassmailerMessage $model, int $client_id, bool $sendNow = false): bool
     {
-        [$ps, $pc] = $this->getParsed($model, $client_id);
-
         $clientService = $this->di['mod_service']('client');
-
         $client = $clientService->get(['id' => $client_id]);
 
+        $email = trim((string) $client->getEmail());
+        if (!$this->di['validator']->isEmailValid($email)) {
+            throw new InformationException('Client does not have a valid email address');
+        }
+
+        [$ps, $pc] = $this->getParsed($model, $client_id);
+
         $data = [
-            'to' => $client->email,
-            'to_name' => $client->first_name . ' ' . $client->last_name,
+            'to' => $email,
+            'to_name' => $client->getFirstName() . ' ' . $client->getLastName(),
             'from' => $model->getFromEmail(),
             'from_name' => $model->getFromName(),
             'subject' => $ps,
@@ -251,7 +261,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         if (!Environment::isProduction()) {
             // @phpstan-ignore if.alwaysFalse
             if (DEBUG) {
-                error_log('Skip email sending. Application ENV: ' . Environment::getCurrentEnvironment());
+                $this->di['logger']->debug('Skip email sending. Application ENV: ' . Environment::getCurrentEnvironment());
             }
 
             return true;

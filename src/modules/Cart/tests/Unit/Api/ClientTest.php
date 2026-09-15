@@ -11,12 +11,12 @@
 declare(strict_types=1);
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 
 test('checkout processes cart and returns result array', function (): void {
     $clientApi = apiEndpoint(new Box\Mod\Cart\Api\Client());
     $api = apiEndpoint(new Box\Mod\Cart\Api\Client());
-    $cart = new Model_Cart();
-    $cart->loadBean(new Tests\Helpers\DummyBean());
+    $cart = createEntity(Box\Mod\Cart\Entity\Cart::class);
 
     $serviceMock = Mockery::mock(Box\Mod\Cart\Service::class)->makePartial();
     $serviceMock->shouldReceive('getSessionCart')->atLeast()->once()
@@ -35,8 +35,7 @@ test('checkout processes cart and returns result array', function (): void {
 
     $clientApi->setService($serviceMock);
 
-    $client = new Model_Client();
-    $client->loadBean(new Tests\Helpers\DummyBean());
+    $client = createEntity(Box\Mod\Client\Entity\Client::class);
 
     $clientApi->setIdentity($client);
 

@@ -15,6 +15,10 @@ declare(strict_types=1);
 
 namespace Box\Mod\Order\Api;
 
+use Box\Mod\Client\Entity\Client as ClientEntity;
+use Box\Mod\Order\Entity\Order;
+use Box\Mod\Order\Repository\OrderRepository;
+use FOSSBilling\InformationException;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
@@ -22,6 +26,15 @@ use Symfony\Component\HttpFoundation\Response;
 
 class Admin extends \FOSSBilling\Api\AbstractApi
 {
+    private ?OrderRepository $orderRepository = null;
+
+    protected function getOrderRepository(): OrderRepository
+    {
+        $this->orderRepository ??= $this->getDi()['em']->getRepository(Order::class);
+
+        return $this->orderRepository;
+    }
+
     /**
      * Get order details.
      *
@@ -97,13 +110,14 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             $this->checkPermissions('invoice');
 
             if (($data['invoice_option'] ?? 'no-invoice') !== 'issue-invoice') {
-                throw new \FOSSBilling\InformationException('Marking an invoice as paid requires the order to issue an invoice.');
+                throw new InformationException('Marking an invoice as paid requires the order to issue an invoice.');
             }
 
             $this->getDi()['mod_service']('Invoice')->validateAdminMarkAsPaidRequest($data);
         }
 
-        $client = $this->di['db']->getExistingModelById('Client', $data['client_id'], 'Client not found');
+        $client = $this->di['em']->getRepository(ClientEntity::class)->find($data['client_id'])
+            ?? throw new InformationException('Client not found');
         $product = $this->di['mod_service']('product')->findProductById((int) $data['product_id']);
 
         return $this->getService()->createOrder($client, $product, $data);
@@ -121,6 +135,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional string $reason - order status change reason
      * @optional string $notes - order notes
      * @optional array  $meta - list of meta properties
+     * @optional int $suspension_grace_days - per-order grace period override; empty inherits the product setting
      *
      * @return bool
      */
@@ -160,7 +175,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $order = $this->_getOrder($data);
 
-        if ($order->status == \Model_ClientOrder::STATUS_PENDING_SETUP || $order->status == \Model_ClientOrder::STATUS_FAILED_SETUP) {
+        if ($order->getStatus() == Order::STATUS_PENDING_SETUP || $order->getStatus() == Order::STATUS_FAILED_SETUP) {
             return $this->activate($data);
         }
 
@@ -197,8 +212,8 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('order', 'manage');
 
         $order = $this->_getOrder($data);
-        if ($order->status != \Model_ClientOrder::STATUS_SUSPENDED) {
-            throw new \FOSSBilling\InformationException('Only suspended orders can be unsuspended');
+        if ($order->getStatus() != Order::STATUS_SUSPENDED) {
+            throw new InformationException('Only suspended orders can be unsuspended');
         }
 
         return $this->getService()->unsuspendFromOrder($order);
@@ -252,8 +267,8 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('order', 'manage');
 
         $order = $this->_getOrder($data);
-        if ($order->status != \Model_ClientOrder::STATUS_CANCELED) {
-            throw new \FOSSBilling\InformationException('Only canceled orders can be uncanceled');
+        if ($order->getStatus() != Order::STATUS_CANCELED) {
+            throw new InformationException('Only canceled orders can be uncanceled');
         }
 
         return $this->getService()->uncancelFromOrder($order);
@@ -297,6 +312,18 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
+     * Send final warnings for orders due to be suspended within 24 hours.
+     *
+     * @return bool
+     */
+    public function batch_send_suspension_warnings($data)
+    {
+        $this->checkPermissions('order', 'manage');
+
+        return $this->getService()->batchSendSuspensionWarnings();
+    }
+
+    /**
      * Cancel all suspended orders.
      * Configure how many days suspended order should be kept before canceling.
      *
@@ -307,6 +334,19 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('order', 'manage');
 
         return $this->getService()->batchCancelSuspended();
+    }
+
+    /**
+     * Remove pending-setup orders whose linked invoice has been unpaid past its due date for too long.
+     * Configure how many days an unpaid order should be kept before it is removed.
+     *
+     * @return bool
+     */
+    public function batch_cancel_unpaid($data)
+    {
+        $this->checkPermissions('order', 'manage');
+
+        return $this->getService()->batchCancelUnpaid();
     }
 
     /**
@@ -354,7 +394,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $order = $this->_getOrder($data);
 
-        $data['client_order_id'] = $order->id;
+        $data['client_order_id'] = $order->getId();
 
         [$sql, $bindings] = $this->getService()->getOrderStatusSearchQuery($data);
 
@@ -424,11 +464,11 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('order', 'view');
 
         return [
-            \Model_ClientOrder::STATUS_PENDING_SETUP => 'Pending Setup',
-            \Model_ClientOrder::STATUS_FAILED_SETUP => 'Setup Failed',
-            \Model_ClientOrder::STATUS_ACTIVE => 'Active',
-            \Model_ClientOrder::STATUS_SUSPENDED => 'Suspended',
-            \Model_ClientOrder::STATUS_CANCELED => 'Canceled',
+            Order::STATUS_PENDING_SETUP => 'Pending Setup',
+            Order::STATUS_FAILED_SETUP => 'Setup Failed',
+            Order::STATUS_ACTIVE => 'Active',
+            Order::STATUS_SUSPENDED => 'Suspended',
+            Order::STATUS_CANCELED => 'Canceled',
         ];
     }
 
@@ -456,7 +496,12 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         ];
         $this->getDi()['validator']->checkRequiredParamsForArray($required, $data);
 
-        return $this->getDi()['db']->getExistingModelById('ClientOrder', $data['id'], 'Order Not Found');
+        $order = $this->getOrderRepository()->find((int) $data['id']);
+        if (!$order instanceof Order) {
+            throw new InformationException('Order Not Found');
+        }
+
+        return $order;
     }
 
     /**
@@ -480,6 +525,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
     public function export_csv($data): Response
     {
+        $this->checkPermissions('order', 'view');
         $this->checkPermissions('order', 'export');
 
         $data['headers'] ??= [];

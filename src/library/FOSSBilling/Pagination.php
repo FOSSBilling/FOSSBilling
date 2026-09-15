@@ -12,7 +12,8 @@ declare(strict_types=1);
 namespace FOSSBilling;
 
 use Doctrine\ORM\QueryBuilder;
-use Doctrine\ORM\Tools\Pagination\Paginator as DoctrinePaginator;
+use Doctrine\ORM\Tools\Pagination\OffsetPaginator;
+use Doctrine\ORM\Tools\Pagination\Window;
 use FOSSBilling\Interfaces\ApiArrayInterface;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
@@ -103,11 +104,11 @@ class Pagination implements InjectionAwareInterface
         }
 
         $paginatedQuery = $query . sprintf(' LIMIT %u, %u', $offset, $pagination->perPage);
-        $result = $this->di['db']->getAll($paginatedQuery, $params);
+        $result = $this->di['em']->getConnection()->fetchAllAssociative($paginatedQuery, $params);
 
         $query = rtrim($query, " ;\n\r\t");
         $countQuery = 'SELECT COUNT(1) FROM (' . $query . ') AS sub';
-        $total = (int) $this->di['db']->getCell($countQuery, $params);
+        $total = (int) $this->di['em']->getConnection()->fetchOne($countQuery, $params);
 
         return $this->buildPaginatedResponse($pagination->page, $pagination->perPage, $total, $result);
     }
@@ -154,16 +155,14 @@ class Pagination implements InjectionAwareInterface
      */
     public function paginateMappedQuery(QueryBuilder $qb, PaginationOptions $pagination, callable $mapper): array
     {
-        $qb->setFirstResult(($pagination->page - 1) * $pagination->perPage)
-            ->setMaxResults($pagination->perPage);
-        $paginator = new DoctrinePaginator($qb, true);
-        $total = count($paginator);
+        $page = (new OffsetPaginator(true))
+            ->paginate($qb, Window::fromPageNumberAndSize($pagination->page, $pagination->perPage));
 
         $list = [];
-        foreach ($paginator as $entity) {
+        foreach ($page->getItems() as $entity) {
             $list[] = $mapper($entity);
         }
 
-        return $this->buildPaginatedResponse($pagination->page, $pagination->perPage, $total, $list);
+        return $this->buildPaginatedResponse($pagination->page, $pagination->perPage, $page->getTotalCount(), $list);
     }
 }

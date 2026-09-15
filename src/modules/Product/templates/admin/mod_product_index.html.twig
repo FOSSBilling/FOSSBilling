@@ -233,7 +233,7 @@ document.addEventListener('DOMContentLoaded', function () {
             continue;
         }
 
-        const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+        const modal = tabler.Modal.getOrCreateInstance(modalElement);
         if (window.location.hash === hash) {
             modal.show();
         }

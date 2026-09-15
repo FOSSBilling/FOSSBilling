@@ -1,25 +1,24 @@
 <?php
 
 declare(strict_types=1);
-/**
- * Copyright 2022-2025 FOSSBilling
- * SPDX-License-Identifier: Apache-2.0.
- *
- * @copyright FOSSBilling (https://www.fossbilling.org)
- * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
- */
 
 namespace Box\Mod\Client;
 
+use Box\Mod\Client\Entity\Client;
+use Box\Mod\Client\Entity\ClientBalance;
+use Box\Mod\Client\Repository\ClientBalanceRepository;
+use Doctrine\ORM\QueryBuilder;
 use FOSSBilling\InjectionAwareInterface;
 
 class ServiceBalance implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
+    private ClientBalanceRepository $clientBalanceRepository;
 
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
+        $this->clientBalanceRepository = $di['em']->getRepository(ClientBalance::class);
     }
 
     public function getDi(): ?\Pimple\Container
@@ -27,47 +26,90 @@ class ServiceBalance implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function getClientBalance(\Model_Client $c): float
+    public function getClientBalance(Client $c): float
     {
-        return (float) $this->clientTotal($c);
+        return $this->clientTotal($c);
     }
 
-    public function clientTotal(\Model_Client $c)
+    /**
+     * Must be called within a transaction, held until the deduction has been written. The lock is
+     * released when the transaction ends, and the balance is unprotected from that point on.
+     */
+    public function getClientBalanceForUpdate(Client|int $c): float
     {
-        $sql = '
-        SELECT SUM(amount) as client_total
-        FROM client_balance
-        WHERE client_id = ?
-        GROUP BY client_id
-        ';
+        $clientId = $c instanceof Client ? $c->getId() : $c;
 
-        return $this->di['db']->getCell($sql, [$c->id]);
+        return $this->clientBalanceRepository->getClientBalanceSumForUpdate((int) $clientId);
     }
 
-    public function rmByClient(\Model_Client $client): void
+    public function clientTotal(Client $c): float
     {
-        $clientBalances = $this->di['db']->find('ClientBalance', 'client_id = ?', [$client->id]);
-        foreach ($clientBalances as $balanceModel) {
-            $this->di['db']->trash($balanceModel);
+        return $this->clientBalanceRepository->getClientBalanceSum((int) $c->getId());
+    }
+
+    public function rmByClient(Client $client): void
+    {
+        $balances = $this->clientBalanceRepository->findBy(['client' => $client]);
+        foreach ($balances as $balance) {
+            $this->di['em']->remove($balance);
+        }
+        if (!empty($balances)) {
+            $this->di['em']->flush();
         }
     }
 
-    public function rm(\Model_ClientBalance $model): void
+    public function rm(ClientBalance $model): void
     {
-        $this->di['db']->trash($model);
+        $this->di['em']->remove($model);
+        $this->di['em']->flush();
     }
 
-    public function toApiArray(\Model_ClientBalance $model): array
+    public function toApiArray(ClientBalance $model, ?Client $client = null): array
     {
-        $client = $this->di['db']->getExistingModelById('Client', $model->client_id, 'Client not found');
+        $client ??= $model->getClient();
+        if (!$client instanceof Client) {
+            throw new \FOSSBilling\InformationException('Client not found');
+        }
 
         return [
-            'id' => $model->id,
-            'description' => $model->description,
-            'amount' => $model->amount,
-            'currency' => $client->currency,
-            'created_at' => $model->created_at,
+            'id' => $model->getId(),
+            'description' => $model->getDescription(),
+            'amount' => $model->getAmount(),
+            'currency' => $client->getCurrency(),
+            'created_at' => $model->getCreatedAt()?->format('Y-m-d H:i:s'),
         ];
+    }
+
+    public function getSearchQueryBuilder(array $data = []): QueryBuilder
+    {
+        $queryBuilder = $this->clientBalanceRepository->createQueryBuilder('m');
+
+        $id = $data['id'] ?? null;
+        $clientId = $data['client_id'] ?? null;
+        $dateFrom = $data['date_from'] ?? null;
+        $dateTo = $data['date_to'] ?? null;
+
+        if ($id !== null && $id !== '') {
+            $queryBuilder->andWhere('m.id = :id')
+                ->setParameter('id', $id);
+        }
+
+        if ($clientId !== null && $clientId !== '') {
+            $queryBuilder->andWhere('IDENTITY(m.client) = :client_id')
+                ->setParameter('client_id', $clientId);
+        }
+
+        if ($dateFrom !== null && $dateFrom !== '') {
+            $queryBuilder->andWhere('m.createdAt >= :date_from')
+                ->setParameter('date_from', new \DateTimeImmutable(date('Y-m-d H:i:s', strtotime((string) $dateFrom))));
+        }
+
+        if ($dateTo !== null && $dateTo !== '') {
+            $queryBuilder->andWhere('m.createdAt <= :date_to')
+                ->setParameter('date_to', new \DateTimeImmutable(date('Y-m-d H:i:s', strtotime((string) $dateTo))));
+        }
+
+        return $queryBuilder->orderBy('m.id', 'DESC');
     }
 
     public function getSearchQuery($data): array
@@ -86,22 +128,22 @@ class ServiceBalance implements InjectionAwareInterface
 
         if ($id !== null) {
             $where[] = 'm.id = :id';
-            $params[':id'] = $id;
+            $params['id'] = $id;
         }
 
         if ($client_id !== null) {
             $where[] = 'm.client_id = :client_id';
-            $params[':client_id'] = $client_id;
+            $params['client_id'] = $client_id;
         }
 
         if ($date_from !== null) {
             $where[] = 'm.created_at >= :date_from';
-            $params[':date_from'] = strtotime($date_from);
+            $params['date_from'] = strtotime($date_from);
         }
 
         if ($date_to !== null) {
             $where[] = 'm.created_at <= :date_to';
-            $params[':date_to'] = strtotime($date_to);
+            $params['date_to'] = strtotime($date_to);
         }
 
         if (!empty($where)) {
@@ -110,36 +152,5 @@ class ServiceBalance implements InjectionAwareInterface
         $q .= ' ORDER by m.id DESC';
 
         return [$q, $params];
-    }
-
-    /**
-     * @param float|string $amount
-     * @param string       $description
-     *
-     * @return \Model_ClientBalance
-     *
-     * @throws \FOSSBilling\InformationException
-     */
-    public function deductFunds(\Model_Client $client, $amount, $description, ?array $data = null)
-    {
-        if (!is_numeric($amount)) {
-            throw new \FOSSBilling\InformationException('Funds amount is invalid');
-        }
-
-        if (strlen(trim($description)) == 0) {
-            throw new \FOSSBilling\InformationException('Funds description is invalid');
-        }
-
-        $credit = $this->di['db']->dispense('ClientBalance');
-        $credit->client_id = $client->id;
-        $credit->type = $data['type'] ?? 'default';
-        $credit->rel_id = $data['rel_id'] ?? null;
-        $credit->description = $description;
-        $credit->amount = -$amount;
-        $credit->created_at = date('Y-m-d H:i:s');
-        $credit->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($credit);
-
-        return $credit;
     }
 }

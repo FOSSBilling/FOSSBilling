@@ -11,6 +11,9 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicedownloadable\Api;
 
+use Box\Mod\Order\Entity\Order;
+use Box\Mod\Servicedownloadable\Entity\ServiceDownloadable;
+use Box\Mod\Servicedownloadable\Entity\ServiceDownloadableFile;
 use FOSSBilling\Validation\Api\RequiredParams;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -23,7 +26,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
      * Use GET to call this method. Sends file attached to order.
      * Sends file as attachment.
      */
-    #[RequiredParams(['order_id' => 'Order ID is required'])]
+    #[RequiredParams(['order_id' => 'Order ID is required', 'file_id' => 'File ID is required'])]
     public function send_file($data): Response
     {
         if (empty($data['order_id'])) {
@@ -31,19 +34,25 @@ class Client extends \FOSSBilling\Api\AbstractApi
         }
 
         $identity = $this->getIdentity();
-        $order = $this->getDi()['db']->findOne('ClientOrder', 'id = :id AND client_id = :client_id', [':id' => $data['order_id'], ':client_id' => $identity->id]);
-        if (!$order instanceof \Model_ClientOrder) {
+        $order = $this->getDi()['em']->getRepository(Order::class)->findOneBy(['id' => $data['order_id'], 'clientId' => $identity->getId()]);
+        if (!$order instanceof Order) {
             throw new \FOSSBilling\InformationException('Order not found');
         }
 
         $orderService = $this->getDi()['mod_service']('order');
+        $orderService->assertOrderUsable($order);
         $s = $orderService->getOrderService($order);
-        if (!$s instanceof \Model_ServiceDownloadable || $order->status !== 'active') {
+        if (!$s instanceof ServiceDownloadable || $order->getStatus() !== 'active') {
             throw new \FOSSBilling\Exception('Order is not activated');
+        }
+
+        $file = $s->findFileById((int) $data['file_id']);
+        if (!$file instanceof ServiceDownloadableFile) {
+            throw new \FOSSBilling\InformationException('File not found');
         }
 
         $service = $this->getService();
 
-        return $service->sendFile($s);
+        return $service->sendFile($file);
     }
 }

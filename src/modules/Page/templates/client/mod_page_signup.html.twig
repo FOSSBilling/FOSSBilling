@@ -102,12 +102,13 @@
                             {% endif %}
 
                             {% if 'country' in r %}
+                                {% set selected_country = request.country|default(guest.system_default_country) %}
                                 <div class="mb-3">
                                     <label class="form-label" for="country">{{ 'Country'|trans }}</label>
                                     <select class="form-select" id="country" name="country" required="required">
                                         <option value="">{{ '-- Select Country --'|trans }}</option>
                                         {% for val,label in guest.system_countries %}
-                                            <option value="{{ val }}" label="{{ label|e }}" {% if request.country|default(guest.system_default_country) == val %}selected{% endif %}>{{ label|e }}</option>
+                                            <option value="{{ val }}" label="{{ label|e }}" {% if selected_country == val %}selected{% endif %}>{{ label|e }}</option>
                                         {% endfor %}
                                     </select>
                                 </div>
@@ -154,13 +155,13 @@
 
                             {% set custom_fields = guest.client_custom_fields %}
                             {% for field_name, field in custom_fields %}
-                                {% if field.active %}
+                                {% if field.active|default(false) %}
                                     <div class="mb-3">
                                         <label class="form-label"
-                                               for="{{ field_name }}">{{ field.title is not empty ? field.title : field_name|capitalize }}</label>
+                                               for="{{ field_name }}">{{ field.title|default(field_name|capitalize) }}</label>
                                         <input class="form-control" id="{{ field_name }}" type="text"
-                                               name="{{ field_name }}" value="{{ request.(field_name) }}"
-                                               {% if field.required %}required="required"{% endif %} />
+                                               name="{{ field_name }}" value="{{ request.(field_name)|default('') }}"
+                                               {% if field.required|default(false) %}required="required"{% endif %} />
                                     </div>
                                 {% endif %}
                             {% endfor %}

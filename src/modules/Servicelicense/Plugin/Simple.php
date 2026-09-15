@@ -11,6 +11,9 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicelicense\Plugin;
 
+use Box\Mod\Order\Entity\Order;
+use Box\Mod\Servicelicense\Entity\ServiceLicense;
+
 class Simple
 {
     protected ?\Pimple\Container $di = null;
@@ -28,7 +31,7 @@ class Simple
     /**
      * License generation script.
      */
-    public function generate(\Model_ServiceLicense $service, \Model_ClientOrder $order, array $config): string
+    public function generate(ServiceLicense $service, Order $order, array $config): string
     {
         $length = $config['length'] ?? 25;
         $prefix = $config['prefix'] ?? null;

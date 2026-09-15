@@ -110,7 +110,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Update product settings.
      *
-     * @optional array $pricing - product pricing configuration
+     * @optional array $pricing - product pricing configuration. Shape: {type: "free"|"once"|"recurrent", once: {price, setup}, recurrent: {"<PERIOD_CODE>": {price, setup, enabled}, ...}}.
+     *                             Each recurrent key is a billing period code (quantity + unit letter, e.g. "1M", "3Y", "45D"; D 1-90, W 1-52, M 1-24, Y 1-5).
+     *                             Submitting recurrent replaces the product's full set of billing periods - omitted codes are removed, at least one must remain.
      * @optional array $config - product configuration options depending on type
      * @optional array $upgrades - array of upgradable products
      * @optional array $addons - array of addon products
@@ -125,6 +127,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional bool $stock_control - product stock control flag.
      * @optional bool $allow_quantity_select - client can select product quantity on order form flag
      * @optional bool $quantity_in_stock - quantity available for sale. When out of stock, new order cannot be placed.
+     * @optional int $suspension_grace_days - days after service expiration before automatic suspension
      *
      * @return bool
      *
@@ -238,7 +241,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Addon update.
      *
-     * @optional array $pricing - product pricing configuration
+     * @optional array $pricing - product pricing configuration. Shape: {type: "free"|"once"|"recurrent", once: {price, setup}, recurrent: {"<PERIOD_CODE>": {price, setup, enabled}, ...}}.
+     *                             Each recurrent key is a billing period code (quantity + unit letter, e.g. "1M", "3Y", "45D"; D 1-90, W 1-52, M 1-24, Y 1-5).
+     *                             Submitting recurrent replaces the product's full set of billing periods - omitted codes are removed, at least one must remain.
      * @optional array $config - product configuration options depending on type
      * @optional array $upgrades - array of upgradable products
      * @optional array $addons - array of addon products
@@ -267,7 +272,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         if (!$model instanceof Product || !$model->isAddon()) {
             throw new \FOSSBilling\InformationException('Addon not found');
         }
-        $this->di['logger']->info('Updated addon #%s', $model->getId());
+        $this->di['logger']->info('Updated addon #{model_id}', ['model_id' => $model->getId()]);
 
         return $this->update($data);
     }
@@ -477,6 +482,24 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $model = $this->getService()->findPromoById((int) $id);
 
         return $this->getService()->toPromoApiArray($model, true, $this->getIdentity());
+    }
+
+    /**
+     * Duplicate an existing promo code.
+     *
+     * @return int - ID of the new promo code
+     *
+     * @throws \FOSSBilling\Exception
+     */
+    #[RequiredParams(['id' => 'Promo ID was not passed'])]
+    public function promo_duplicate($data)
+    {
+        $this->checkPermissions('product', 'manage_promos');
+
+        $service = $this->getService();
+        $model = $service->findPromoById((int) $data['id']);
+
+        return $service->duplicatePromo($model);
     }
 
     /**

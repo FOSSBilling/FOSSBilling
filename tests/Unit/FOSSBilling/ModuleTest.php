@@ -15,14 +15,7 @@ use FOSSBilling\Module;
 use function Tests\Helpers\container;
 
 test('empty config', function (): void {
-    $dbMock = Mockery::mock('Box_Database');
-    /** @var Mockery\Expectation $expectation */
-    $expectation = $dbMock->shouldReceive('findOne');
-    $expectation->atLeast()->once();
-    $expectation->andReturn(null);
-
     $di = container();
-    $di['db'] = $dbMock;
 
     $mod = new Module('api');
     $mod->setDi($di);
@@ -43,7 +36,7 @@ test('core mod', function (): void {
 
 test('manifest', function (): void {
     $di = container();
-    $di['url'] = new Box_Url();
+    $di['url'] = new FOSSBilling\Url();
 
     $mod = new Module('Cookieconsent');
     $mod->setDi($di);

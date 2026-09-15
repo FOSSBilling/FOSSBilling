@@ -38,6 +38,84 @@
                 <div class="col-lg-6">
                     <label class="form-label">{{ 'Conversion Rate'|trans }}</label>
                     <input class="form-control" type="text" name="conversion_rate" value="{{ currency.conversion_rate }}" required>
+                    <div class="form-hint">{{ 'The value of one unit of the default currency in this currency.'|trans }}</div>
+                </div>
+                {% if not currency.default %}
+                <div class="col-lg-6 d-flex align-items-end">
+                    <div class="form-check mb-2">
+                        <input type="hidden" name="is_rate_manual" value="0">
+                        <input class="form-check-input" id="is-rate-manual" type="checkbox" name="is_rate_manual" value="1"{% if currency.is_rate_manual|default(false) %} checked{% endif %}>
+                        <label class="form-check-label" for="is-rate-manual">{{ 'Manual rate override'|trans }}</label>
+                        <div class="form-hint">{{ 'Preserve this rate when scheduled or on-demand rate synchronization runs.'|trans }}</div>
+                    </div>
+                </div>
+                {% endif %}
+                <div class="col-12">
+                    {% set has_formatting_overrides = currency.format_pattern|default('') is not empty or currency.fraction_digits|default(null) is not null %}
+                    <div class="accordion" id="currency-formatting-accordion">
+                        <div class="accordion-item">
+                            <div class="accordion-header">
+                                <button
+                                    class="accordion-button{% if not has_formatting_overrides %} collapsed{% endif %}"
+                                    type="button"
+                                    data-bs-toggle="collapse"
+                                    data-bs-target="#currency-formatting"
+                                    aria-expanded="{{ has_formatting_overrides ? 'true' : 'false' }}"
+                                    aria-controls="currency-formatting"
+                                >
+                                    {{ 'Display Formatting (Advanced)'|trans }}
+                                    <div class="accordion-button-toggle">
+                                        <svg class="icon">
+                                            <use href="#chevron-down" />
+                                        </svg>
+                                    </div>
+                                </button>
+                            </div>
+                            <div
+                                class="accordion-collapse collapse{% if has_formatting_overrides %} show{% endif %}"
+                                id="currency-formatting"
+                                data-bs-parent="#currency-formatting-accordion"
+                            >
+                                <div class="accordion-body">
+                                    <p class="text-secondary">
+                                        {{ 'Leave these fields blank to use the standard format for the active language and currency. These settings affect display only; calculations and payment gateway values are unchanged.'|trans }}
+                                    </p>
+                                    <div class="row g-3">
+                                        <div class="col-lg-6">
+                                            <label class="form-label" for="fraction-digits">{{ 'Decimal Places'|trans }}</label>
+                                            <select class="form-select" id="fraction-digits" name="fraction_digits">
+                                                <option value="">{{ 'Automatic (Currency Default)'|trans }}</option>
+                                                {% for digit in 0..6 %}
+                                                    <option value="{{ digit }}"{% if currency.fraction_digits is same as(digit) %} selected{% endif %}>{{ digit }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <div class="form-hint">{{ 'Overrides only the number of displayed decimal places.'|trans }}</div>
+                                        </div>
+                                        <div class="col-lg-6">
+                                            <label class="form-label" for="format-pattern">{{ 'Format Pattern'|trans }}</label>
+                                            <input
+                                                class="form-control"
+                                                id="format-pattern"
+                                                type="text"
+                                                name="format_pattern"
+                                                value="{{ currency.format_pattern|default('') }}"
+                                                maxlength="100"
+                                                placeholder="{{ currency.code }} {amount}"
+                                            >
+                                            <div class="form-hint">{{ 'Plain text containing {amount} exactly once. Example: %code% {amount}'|trans({'%code%': currency.code}) }}</div>
+                                        </div>
+                                        <div class="col-12">
+                                            <div class="rounded border p-3">
+                                                <div><span class="text-secondary">{{ 'Standard Format:'|trans }}</span> <span id="currency-default-preview"></span></div>
+                                                <div><span class="text-secondary">{{ 'Effective Display:'|trans }}</span> <strong id="currency-effective-preview"></strong></div>
+                                            </div>
+                                            <button class="btn btn-sm btn-ghost-secondary mt-2" id="reset-formatting" type="button">{{ 'Reset to Standard Format'|trans }}</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -51,4 +129,44 @@
     </div>
     {% endif %}
 </div>
+{% endblock %}
+
+{% block js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const currency = JSON.parse('{{ currency|json_encode|e('js') }}');
+        const fractionDigits = document.getElementById('fraction-digits');
+        const formatPattern = document.getElementById('format-pattern');
+        const defaultPreview = document.getElementById('currency-default-preview');
+        const effectivePreview = document.getElementById('currency-effective-preview');
+        const resetButton = document.getElementById('reset-formatting');
+        if (!fractionDigits || !formatPattern || !defaultPreview || !effectivePreview || !resetButton) {
+            return;
+        }
+
+        const renderPreview = function () {
+            const selectedDigits = fractionDigits.value === '' ? null : Number(fractionDigits.value);
+            defaultPreview.textContent = FOSSBilling.currency.format(1234, {
+                code: currency.code,
+                format_pattern: null,
+                fraction_digits: null,
+            });
+            effectivePreview.textContent = FOSSBilling.currency.format(1234, {
+                code: currency.code,
+                format_pattern: formatPattern.value || null,
+                fraction_digits: selectedDigits,
+            });
+        };
+
+        fractionDigits.addEventListener('change', renderPreview);
+        formatPattern.addEventListener('input', renderPreview);
+        resetButton.addEventListener('click', function () {
+            fractionDigits.value = '';
+            formatPattern.value = '';
+            renderPreview();
+        });
+
+        renderPreview();
+    });
+</script>
 {% endblock %}

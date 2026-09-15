@@ -10,7 +10,16 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Activity\Entity\ActivityAdminHistory;
+use Box\Mod\Activity\Entity\ActivityClientHistory;
+use Box\Mod\Activity\Entity\ActivitySystem;
+use Box\Mod\Activity\Repository\ActivityClientHistoryRepository;
+use Box\Mod\Activity\Repository\ActivitySystemRepository;
+use Box\Mod\Client\Entity\Client;
+use Doctrine\ORM\EntityManagerInterface;
+
 use function Tests\Helpers\container;
+use function Tests\Helpers\setEntityId;
 
 dataset('searchFilters', fn (): array => [
     [[], 'FROM activity_system ', true],
@@ -29,9 +38,6 @@ test('dependency injection', function (): void {
     $service = new Box\Mod\Activity\Service();
 
     $di = container();
-    $dbMock = Mockery::mock('Box_Database');
-
-    $di['db'] = $dbMock;
     $service->setDi($di);
     $result = $service->getDi();
     expect($result)->toEqual($di);
@@ -46,6 +52,98 @@ test('get search query', function (array $filterKey, string $search, bool $expec
     expect($result[1])->toBeArray();
     expect(str_contains((string) $result[0], $search))->toEqual($expected);
 })->with('searchFilters');
+
+test('log event persists a system activity entity', function (): void {
+    $persisted = null;
+    $entityManager = Mockery::mock(EntityManagerInterface::class);
+    $entityManager->shouldReceive('persist')->once()->withArgs(function (ActivitySystem $activity) use (&$persisted): bool {
+        $persisted = $activity;
+
+        return true;
+    });
+    $entityManager->shouldReceive('flush')->once();
+
+    $extensionService = Mockery::mock(Box\Mod\Extension\Service::class);
+    $extensionService->shouldReceive('isExtensionActive')->once()->with('mod', 'demo')->andReturnFalse();
+
+    $di = container();
+    $di['em'] = $entityManager;
+    $di['mod_service'] = $di->protect(fn (): object => $extensionService);
+
+    $service = new Box\Mod\Activity\Service();
+    $service->setDi($di);
+    $service->logEvent([
+        'client_id' => 3,
+        'admin_id' => 4,
+        'priority' => 5,
+        'message' => 'Test event',
+    ]);
+
+    expect($persisted)->toBeInstanceOf(ActivitySystem::class)
+        ->and($persisted->getClientId())->toBe(3)
+        ->and($persisted->getAdminId())->toBe(4)
+        ->and($persisted->getPriority())->toBe(5)
+        ->and($persisted->getMessage())->toBe('Test event');
+});
+
+test('login events persist history entities', function (string $method, string $entityClass, string $idGetter): void {
+    $persisted = null;
+    $entityManager = Mockery::mock(EntityManagerInterface::class);
+    $entityManager->shouldReceive('persist')->once()->withArgs(function (object $history) use (&$persisted, $entityClass): bool {
+        $persisted = $history;
+
+        return $history instanceof $entityClass;
+    });
+    $entityManager->shouldReceive('flush')->once();
+
+    $extensionService = Mockery::mock(Box\Mod\Extension\Service::class);
+    $extensionService->shouldReceive('isExtensionActive')->once()->with('mod', 'demo')->andReturnFalse();
+
+    $di = container();
+    $di['em'] = $entityManager;
+    $di['mod_service'] = $di->protect(fn (): object => $extensionService);
+
+    $event = new Box_Event(null, $method, ['id' => 7, 'ip' => '192.0.2.1']);
+    $event->setDi($di);
+
+    Box\Mod\Activity\Service::{$method}($event);
+
+    expect($persisted)->toBeInstanceOf($entityClass)
+        ->and($persisted->{$idGetter}())->toBe(7)
+        ->and($persisted->getIp())->toBe('192.0.2.1');
+})->with([
+    ['onAfterClientLogin', ActivityClientHistory::class, 'getClientId'],
+    ['onAfterAdminLogin', ActivityAdminHistory::class, 'getAdminId'],
+]);
+
+test('logs retention failures through the application logger', function (): void {
+    $dbal = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbal->shouldReceive('executeStatement')
+        ->once()
+        ->andThrow(new RuntimeException('activity cleanup failed'));
+
+    $extensionService = Mockery::mock(Box\Mod\Extension\Service::class);
+    $extensionService->shouldReceive('getConfig')
+        ->once()
+        ->with('mod_activity')
+        ->andReturn(['max_age' => 30, 'email_max_age' => 0]);
+
+    $logger = new Tests\Helpers\TestLogger();
+    $di = container();
+    $di['dbal'] = $dbal;
+    $di['logger'] = $logger;
+    $di['mod_service'] = $di->protect(fn (string $name): object => $extensionService);
+
+    $event = new Box_Event(null, 'onBeforeAdminCronRun');
+    $event->setDi($di);
+
+    Box\Mod\Activity\Service::onBeforeAdminCronRun($event);
+
+    expect($logger->calls)->toContain([
+        'method' => 'error',
+        'params' => ['activity cleanup failed'],
+    ]);
+});
 
 test('log email', function (): void {
     $service = new Box\Mod\Activity\Service();
@@ -115,9 +213,10 @@ test('log email stores the given attachment', function (): void {
 
 test('to api array', function (): void {
     $service = new Box\Mod\Activity\Service();
-    $clientHistoryModel = new Model_ActivityClientHistory();
-    $clientHistoryModel->loadBean(new Tests\Helpers\DummyBean());
-    $clientHistoryModel->client_id = 1;
+    $clientHistoryModel = (new ActivityClientHistory())
+        ->setClientId(1)
+        ->setIp('192.0.2.1')
+        ->setCreatedAt(new DateTime('2026-01-01 12:00:00'));
 
     $resultMock = Mockery::mock(Doctrine\DBAL\Result::class);
     $resultMock->shouldReceive('fetchAssociative')
@@ -132,7 +231,7 @@ test('to api array', function (): void {
     $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
     $dbalMock->shouldReceive('executeQuery')
         ->once()
-        ->with('SELECT id, first_name, last_name, email FROM client WHERE id = ?', [$clientHistoryModel->client_id])
+        ->with('SELECT id, first_name, last_name, email FROM client WHERE id = ?', [1])
         ->andReturn($resultMock);
 
     $di = container();
@@ -145,6 +244,7 @@ test('to api array', function (): void {
     expect($result)->toHaveKey('id');
     expect($result)->toHaveKey('ip');
     expect($result)->toHaveKey('created_at');
+    expect($result['created_at'])->toBe('2026-01-01 12:00:00');
 
     expect($result['client'])->toBeArray();
     expect($result['client'])->toHaveKey('id');
@@ -153,22 +253,37 @@ test('to api array', function (): void {
     expect($result['client'])->toHaveKey('email');
 });
 
-test('remove by client', function (): void {
+test('remove by Doctrine client', function (): void {
     $service = new Box\Mod\Activity\Service();
-    $clientModel = new Model_Client();
-    $clientModel->loadBean(new Tests\Helpers\DummyBean());
-    $clientModel->id = 1;
+    $client = new Client();
+    setEntityId($client, 2);
 
-    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
-    $dbalMock->shouldReceive('executeStatement')
-        ->once()
-        ->with('DELETE FROM activity_system WHERE client_id = ?', [$clientModel->id])
-        ->andReturn(1);
+    $clientHistoryRepository = Mockery::mock(ActivityClientHistoryRepository::class);
+    $clientHistoryRepository->shouldReceive('deleteByClientId')->once()->with(2)->andReturn(1);
+    $activitySystemRepository = Mockery::mock(ActivitySystemRepository::class);
+    $activitySystemRepository->shouldReceive('deleteByClientId')->once()->with(2)->andReturn(1);
+
+    $entityManager = Mockery::mock(EntityManagerInterface::class);
+    $entityManager->shouldReceive('getRepository')->once()->with(ActivityClientHistory::class)->andReturn($clientHistoryRepository);
+    $entityManager->shouldReceive('getRepository')->once()->with(ActivitySystem::class)->andReturn($activitySystemRepository);
 
     $di = container();
-    $di['dbal'] = $dbalMock;
-
+    $di['em'] = $entityManager;
     $service->setDi($di);
 
-    $service->rmByClient($clientModel);
+    $service->rmByClient($client);
+});
+
+test('remove by client returns early when the client id is null', function (): void {
+    $service = new Box\Mod\Activity\Service();
+    $client = new Client();
+
+    $entityManager = Mockery::mock(EntityManagerInterface::class);
+    $entityManager->shouldNotReceive('getRepository');
+
+    $di = container();
+    $di['em'] = $entityManager;
+    $service->setDi($di);
+
+    $service->rmByClient($client);
 });

@@ -15,17 +15,26 @@ use Box\Mod\Currency\Entity\Currency;
 use Box\Mod\Currency\Repository\CurrencyRepository;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
+use Symfony\Component\Intl\Currencies;
 use Symfony\Contracts\Cache\ItemInterface;
+use Twig\Extra\Intl\IntlExtension;
 
 class Service implements InjectionAwareInterface
 {
+    private const string AMOUNT_PLACEHOLDER = '{amount}';
+    private const int MAX_FRACTION_DIGITS = 6;
+
     protected ?\Pimple\Container $di = null;
     protected ?CurrencyRepository $currencyRepository = null;
+    private ?IntlExtension $intlExtension = null;
+    /** @var array<string, array{format_pattern: ?string, fraction_digits: ?int}> */
+    private array $formattingCache = [];
 
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
         $this->currencyRepository = $this->di['em']->getRepository(Currency::class);
+        $this->formattingCache = [];
     }
 
     public function getDi(): ?\Pimple\Container
@@ -62,7 +71,7 @@ class Service implements InjectionAwareInterface
             'edit' => [
                 'type' => 'bool',
                 'display_name' => __trans('Edit Currencies'),
-                'description' => __trans('Allows the staff member to update currency conversion rates.'),
+                'description' => __trans('Allows the staff member to update currency conversion rates and display formatting.'),
             ],
             'delete' => [
                 'type' => 'bool',
@@ -204,11 +213,13 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Exception("Currency with code {$currencyCode} not found after clearing identity map.");
         }
 
-        $currency->setIsDefault(true);
+        $currency
+            ->setIsDefault(true)
+            ->setIsRateManual(false);
         $em->persist($currency);
         $em->flush();
 
-        $this->di['logger']->info('Set currency %s as default.', $currency->getCode());
+        $this->di['logger']->info('Set currency {currency_code} as default.', ['currency_code' => $currency->getCode()]);
 
         return true;
     }
@@ -229,23 +240,27 @@ class Service implements InjectionAwareInterface
      *
      * @param string            $currencyCode   The ISO currency code (e.g., 'USD')
      * @param string|float|null $conversionRate The conversion rate to the default currency (optional)
+     * @param bool              $isRateManual   Whether bulk rate synchronization should preserve this rate
      *
      * @return string The code of the newly created currency
      *
      * @throws \FOSSBilling\Exception If currency code is invalid or if fetching the conversion rate fails
      */
-    public function createCurrency(string $currencyCode, string|float|null $conversionRate = 1.0): string
-    {
+    public function createCurrency(
+        string $currencyCode,
+        string|float|null $conversionRate = 1.0,
+        bool $isRateManual = false,
+    ): string {
+        if ($isRateManual && ($conversionRate === null || $conversionRate === '')) {
+            throw new InformationException('A conversion rate is required when manual override is enabled.');
+        }
+
         if ($conversionRate === null || $conversionRate === '') {
             try {
                 $conversionRate = $this->getRate(null, $currencyCode);
             } catch (\Exception $e) {
                 // If rate fetch fails, log a warning and use a default rate of 1.0
-                $this->di['logger']->warning(
-                    'Failed to fetch conversion rate for %s: %s. Using default rate of 1.0.',
-                    $currencyCode,
-                    $e->getMessage()
-                );
+                $this->di['logger']->warning('Failed to fetch conversion rate for {currency_code}: {exception}. Using default rate of 1.0.', ['currency_code' => $currencyCode, 'exception' => $e]);
                 $conversionRate = 1.0;
             }
         } else {
@@ -257,13 +272,15 @@ class Service implements InjectionAwareInterface
         }
 
         $currency = new Currency($currencyCode);
-        $currency->setConversionRate($conversionRate);
+        $currency
+            ->setConversionRate($conversionRate)
+            ->setIsRateManual($isRateManual);
 
         $em = $this->di['em'];
         $em->persist($currency);
         $em->flush();
 
-        $this->di['logger']->info('Added new currency %s.', $currency->getCode());
+        $this->di['logger']->info('Added new currency {currency_code}.', ['currency_code' => $currency->getCode()]);
 
         return $currency->getCode();
     }
@@ -296,7 +313,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminDeleteCurrency', 'params' => ['code' => $currencyCode]]);
 
-        $this->di['logger']->info('Removed currency %s.', $currency->getCode());
+        $this->di['logger']->info('Removed currency {currency_code}.', ['currency_code' => $currency->getCode()]);
 
         return true;
     }
@@ -306,15 +323,33 @@ class Service implements InjectionAwareInterface
      *
      * @param string            $currencyCode   Currency code to update
      * @param string|float|null $conversionRate Conversion rate (optional)
+     * @param array{
+     *     format_pattern?: mixed,
+     *     fraction_digits?: mixed
+     * } $formatting Formatting values to update; omitted keys are left unchanged
+     * @param bool|null $isRateManual Whether bulk rate synchronization should preserve this rate; null leaves it unchanged
      *
      * @throws \FOSSBilling\Exception If currency not found
-     * @throws InformationException   If conversion rate is invalid
+     * @throws InformationException   If a provided value is invalid
      */
-    public function updateCurrency(string $currencyCode, string|float|null $conversionRate = null): bool
-    {
+    public function updateCurrency(
+        string $currencyCode,
+        string|float|null $conversionRate = null,
+        array $formatting = [],
+        ?bool $isRateManual = null,
+    ): bool {
         $model = $this->currencyRepository->findOneByCode($currencyCode);
         if (!$model instanceof Currency) {
             throw new \FOSSBilling\Exception('Currency not found.');
+        }
+
+        $updateFormatPattern = array_key_exists('format_pattern', $formatting);
+        $updateFractionDigits = array_key_exists('fraction_digits', $formatting);
+        $formatPattern = $updateFormatPattern ? $this->normalizeFormatPattern($formatting['format_pattern']) : null;
+        $fractionDigits = $updateFractionDigits ? $this->normalizeFractionDigits($formatting['fraction_digits']) : null;
+
+        if ($isRateManual === true && $model->isDefault()) {
+            throw new InformationException('The default currency cannot use a manual rate override.');
         }
 
         if ($conversionRate !== null) {
@@ -324,13 +359,148 @@ class Service implements InjectionAwareInterface
             $model->setConversionRate($conversionRate);
         }
 
+        if ($updateFormatPattern) {
+            $model->setFormatPattern($formatPattern);
+        }
+
+        if ($updateFractionDigits) {
+            $model->setFractionDigits($fractionDigits);
+        }
+
+        if ($isRateManual !== null) {
+            $model->setIsRateManual($isRateManual);
+        }
+
         $em = $this->di['em'];
         $em->persist($model);
         $em->flush();
 
-        $this->di['logger']->info('Updated currency %s.', $model->getCode());
+        unset($this->formattingCache[$currencyCode]);
+        $this->di['logger']->info('Updated currency {model_code}.', ['model_code' => $model->getCode()]);
 
         return true;
+    }
+
+    /**
+     * Format a currency amount using Twig IntlExtra semantics and optional per-currency overrides.
+     *
+     * Call-site attributes take precedence over the stored fraction digit override.
+     */
+    public function formatCurrency(mixed $amount, string $currencyCode, array $attributes = [], ?string $locale = null): string
+    {
+        $formatting = $this->getFormattingOverrides($currencyCode);
+        $intl = $this->intlExtension ??= new IntlExtension();
+
+        if ($formatting['format_pattern'] === null) {
+            $attributes = $this->applyFractionDigits($attributes, $formatting['fraction_digits']);
+
+            return $intl->formatCurrency($amount, $currencyCode, $attributes, $locale);
+        }
+
+        $attributes = $this->applyFractionDigits($attributes, $this->resolveFractionDigits($currencyCode, $formatting['fraction_digits']));
+        $formattedAmount = $intl->formatNumber($amount, $attributes, 'decimal', 'default', $locale);
+
+        return str_replace(self::AMOUNT_PLACEHOLDER, $formattedAmount, $formatting['format_pattern']);
+    }
+
+    public function formatNumber(mixed $amount, string $currencyCode, array $attributes = [], ?string $locale = null): string
+    {
+        $formatting = $this->getFormattingOverrides($currencyCode);
+        $attributes = $this->applyFractionDigits($attributes, $this->resolveFractionDigits($currencyCode, $formatting['fraction_digits']));
+        $intl = $this->intlExtension ??= new IntlExtension();
+
+        return $intl->formatNumber($amount, $attributes, 'decimal', 'default', $locale);
+    }
+
+    private function normalizeFormatPattern(mixed $formatPattern): ?string
+    {
+        if ($formatPattern !== null && !is_string($formatPattern)) {
+            throw new InformationException('Currency format pattern must be plain text.');
+        }
+
+        $formatPattern = trim($formatPattern ?? '');
+        if ($formatPattern === '') {
+            return null;
+        }
+
+        if (mb_strlen($formatPattern) > 100) {
+            throw new InformationException('Currency format pattern cannot exceed 100 characters.');
+        }
+
+        if (substr_count($formatPattern, self::AMOUNT_PLACEHOLDER) !== 1) {
+            throw new InformationException('Currency format pattern must contain exactly one {amount} placeholder.');
+        }
+
+        if (preg_match('/[\x00-\x1F\x7F]/u', $formatPattern) === 1) {
+            throw new InformationException('Currency format pattern must be a single line of plain text.');
+        }
+
+        return $formatPattern;
+    }
+
+    private function normalizeFractionDigits(mixed $fractionDigits): ?int
+    {
+        if ($fractionDigits === null || $fractionDigits === '') {
+            return null;
+        }
+
+        if (!is_int($fractionDigits) && !is_string($fractionDigits)) {
+            throw new InformationException('Currency fraction digits must be a whole number between 0 and 6.');
+        }
+
+        $normalized = filter_var($fractionDigits, FILTER_VALIDATE_INT, [
+            'options' => [
+                'min_range' => 0,
+                'max_range' => self::MAX_FRACTION_DIGITS,
+            ],
+        ]);
+
+        if ($normalized === false) {
+            throw new InformationException('Currency fraction digits must be a whole number between 0 and 6.');
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * @return array{format_pattern: ?string, fraction_digits: ?int}
+     */
+    private function getFormattingOverrides(string $currencyCode): array
+    {
+        if (isset($this->formattingCache[$currencyCode])) {
+            return $this->formattingCache[$currencyCode];
+        }
+
+        $currency = $this->currencyRepository->findOneByCode($currencyCode);
+        if (!$currency instanceof Currency) {
+            return $this->formattingCache[$currencyCode] = [
+                'format_pattern' => null,
+                'fraction_digits' => null,
+            ];
+        }
+
+        return $this->formattingCache[$currencyCode] = [
+            'format_pattern' => $currency->getFormatPattern(),
+            'fraction_digits' => $currency->getFractionDigits(),
+        ];
+    }
+
+    private function applyFractionDigits(array $attributes, ?int $fractionDigits): array
+    {
+        if ($fractionDigits !== null && !array_key_exists('fraction_digit', $attributes)) {
+            $attributes['fraction_digit'] = $fractionDigits;
+        }
+
+        return $attributes;
+    }
+
+    private function resolveFractionDigits(string $currencyCode, ?int $fractionDigits): ?int
+    {
+        if ($fractionDigits !== null) {
+            return $fractionDigits;
+        }
+
+        return Currencies::exists($currencyCode) ? Currencies::getFractionDigits($currencyCode) : null;
     }
 
     /**
@@ -355,6 +525,8 @@ class Service implements InjectionAwareInterface
         foreach ($all as $currency) {
             if ($currency->isDefault()) {
                 $rate = 1.0;
+            } elseif ($currency->isRateManual()) {
+                continue;
             } else {
                 $rate = $this->getRate($defaultCurrency->getCode(), $currency->getCode());
             }
@@ -365,7 +537,7 @@ class Service implements InjectionAwareInterface
 
         $em->flush();
 
-        $this->di['logger']->info('Updated %d currency rates.', $updatedCount);
+        $this->di['logger']->info('Updated {updated_count} currency rates.', ['updated_count' => $updatedCount]);
 
         return true;
     }
@@ -456,7 +628,7 @@ class Service implements InjectionAwareInterface
 
             if ($array['result'] !== 'success') {
                 $item->expiresAfter(15 * 60 * 60); // Try again in 15 min
-                error_log('ExchangeRate-API Gave an error: ' . $array['error-type']);
+                $this->di['logger']->error('ExchangeRate-API Gave an error: ' . $array['error-type']);
 
                 throw new \FOSSBilling\Exception('There was an error when fetching currency rates from ExchangeRate-API. See the error log for details.');
             }
@@ -509,7 +681,7 @@ class Service implements InjectionAwareInterface
             $array = $response->toArray();
 
             if ($array['success'] !== true) {
-                error_log($array['error']['info']);
+                $this->di['logger']->error($array['error']['info']);
 
                 throw new \FOSSBilling\Exception('There was an error when fetching currency rates from Currency Data API. See the error log for details.');
             }
@@ -542,7 +714,7 @@ class Service implements InjectionAwareInterface
             $array = $response->toArray();
 
             if ($array['success'] !== true) {
-                error_log($array['error']['info']);
+                $this->di['logger']->error($array['error']['info']);
 
                 throw new \FOSSBilling\Exception('There was an error when fetching currency rates from currencylayer. See the error log for details.');
             }
@@ -585,7 +757,7 @@ class Service implements InjectionAwareInterface
                 $currencyService->updateCurrencyRates();
             }
         } catch (\Exception $e) {
-            error_log($e->getMessage());
+            $di['logger']->error($e->getMessage());
         }
 
         return true;

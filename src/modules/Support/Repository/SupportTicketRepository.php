@@ -14,6 +14,7 @@ namespace Box\Mod\Support\Repository;
 use Box\Mod\Support\Entity\SupportTicket;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
+use FOSSBilling\Doctrine\SqlExpr;
 
 class SupportTicketRepository extends EntityRepository
 {
@@ -298,18 +299,22 @@ class SupportTicketRepository extends EntityRepository
      */
     public function findExpiredOnHold(\DateTimeInterface $now): array
     {
-        $sql = 'SELECT st.*
+        $connection = $this->getEntityManager()->getConnection();
+        // sh.close_after is per-row (each helpdesk sets its own window), so it can't be reduced
+        // to a single bound parameter the way :now can - see SqlExpr::addHours().
+        $expiresAt = SqlExpr::addHours($connection, 'st.updated_at', 'sh.close_after');
+
+        $sql = "SELECT st.*
                 FROM support_ticket AS st
                     LEFT JOIN support_helpdesk sh ON sh.id = st.support_helpdesk_id
                 WHERE st.status = :status
-                  AND DATE_ADD(st.updated_at, INTERVAL sh.close_after HOUR) < :now
-                ORDER BY st.id ASC';
+                  AND {$expiresAt} < :now
+                ORDER BY st.id ASC";
 
-        return $this->getEntityManager()->getConnection()
-            ->fetchAllAssociative($sql, [
-                'status' => SupportTicket::STATUS_ONHOLD,
-                'now' => $now->format('Y-m-d H:i:s'),
-            ]);
+        return $connection->fetchAllAssociative($sql, [
+            'status' => SupportTicket::STATUS_ONHOLD,
+            'now' => $now->format('Y-m-d H:i:s'),
+        ]);
     }
 
     /**
