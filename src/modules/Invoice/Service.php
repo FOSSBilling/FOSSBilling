@@ -2412,7 +2412,7 @@ class Service implements InjectionAwareInterface
         ];
 
         foreach ($sourceData as $label => $data) {
-            if ($data === null || empty(trim($data))) {
+            if ($data === null || empty(trim((string) $data))) {
                 unset($sourceData[$label]);
             } else {
                 ++$lines;
@@ -2437,7 +2437,7 @@ class Service implements InjectionAwareInterface
         ];
 
         foreach ($sourceData as $label => $data) {
-            if ($data === null || empty(trim($data))) {
+            if ($data === null || empty(trim((string) $data))) {
                 unset($sourceData[$label]);
             } else {
                 ++$lines;
@@ -2449,30 +2449,23 @@ class Service implements InjectionAwareInterface
 
     private function getFooterInfo(array $company): array
     {
-        $sourceData = [
-            'company_name' => $company['name'],
-            'bank_name' => $company['bank_name'],
-            'account_number' => $company['account_number'],
-            'bic' => $company['bic'],
-            'display_bank_info' => $company['display_bank_info'],
-            'company_vat' => $company['vat_number'],
-            'company_number' => $company['number'],
-            'www' => $company['www'],
-            'email' => $company['email'],
-            'phone' => $company['tel'],
-            'signature' => $company['signature'],
-            'address_1' => $company['address_1'],
-            'address_2' => $company['address_2'],
-            'address_3' => $company['address_3'],
+        // Keep all keys defined so PDF templates rendered with strict_variables don't fail on missing optional company details.
+        return [
+            'company_name' => $company['name'] ?? null,
+            'bank_name' => $company['bank_name'] ?? null,
+            'account_number' => $company['account_number'] ?? null,
+            'bic' => $company['bic'] ?? null,
+            'display_bank_info' => $company['display_bank_info'] ?? null,
+            'company_vat' => $company['vat_number'] ?? null,
+            'company_number' => $company['number'] ?? null,
+            'www' => $company['www'] ?? null,
+            'email' => $company['email'] ?? null,
+            'phone' => $company['tel'] ?? null,
+            'signature' => $company['signature'] ?? null,
+            'address_1' => $company['address_1'] ?? null,
+            'address_2' => $company['address_2'] ?? null,
+            'address_3' => $company['address_3'] ?? null,
         ];
-
-        foreach ($sourceData as $label => $data) {
-            if ($data === null || empty(trim($data))) {
-                unset($sourceData[$label]);
-            }
-        }
-
-        return $sourceData;
     }
 
     /**
