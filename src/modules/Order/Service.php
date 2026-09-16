@@ -555,7 +555,7 @@ class Service implements InjectionAwareInterface
             $clientModels = $this->di['em']->getRepository(ClientEntity::class)->findBy(['id' => $clientIds]);
             $clientService = $this->di['mod_service']('client');
             foreach ($clientModels as $client) {
-                $clients[$client->getId()] = $clientService->toApiArray($client, false, $identity);
+                $clients[$client->getId()] = $clientService->toApiArray($client, false);
             }
         }
 
