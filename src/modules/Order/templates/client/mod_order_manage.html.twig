@@ -44,68 +44,68 @@
                         </tr>
 
                         <tr>
-                            <td><label>{{ 'Product Name'|trans }}</label></td>
+                            <td><label>{{ 'Product name'|trans }}</label></td>
                             <td><strong>{{ order.title }}</strong></td>
                         </tr>
 
                         <tr>
-                            <td><label>{{ 'Payment Amount'|trans }}</label></td>
+                            <td><label>{{ 'Payment amount'|trans }}</label></td>
                             <td>{{ order.total|format_currency(order.currency ?? default_currency) }}</td>
                         </tr>
 
                         {% if order.discount and order.discount > 0 %}
                             <tr>
-                                <td><label>{{ 'Order Discount'|trans }}</label></td>
+                                <td><label>{{ 'Order discount'|trans }}</label></td>
                                 <td>-{{ order.discount|format_currency(order.currency ?? default_currency) }}</td>
                             </tr>
 
                             <tr>
-                                <td><label>{{ 'Payment Amount After Discount'|trans }}</label></td>
+                                <td><label>{{ 'Payment amount after discount'|trans }}</label></td>
                                 <td>{{ (order.total - order.discount)|format_currency(order.currency ?? default_currency) }}</td>
                             </tr>
                         {% endif %}
 
                         {% if order.period %}
                             <tr>
-                                <td><label>{{ 'Billing Cycle'|trans }}</label></td>
+                                <td><label>{{ 'Billing cycle'|trans }}</label></td>
                                 <td>{{ order.period|period_title }}</td>
                             </tr>
                         {% endif %}
 
                         <tr>
-                            <td><label>{{ 'Order Status'|trans }}</label></td>
+                            <td><label>{{ 'Order status'|trans }}</label></td>
                             <td>
                                 {{ mf.status_badge(order.status, 'order') }}
                             </td>
                         </tr>
 
                         <tr>
-                            <td><label>{{ 'Order Created'|trans }}</label></td>
+                            <td><label>{{ 'Order created'|trans }}</label></td>
                             <td>{{ order.created_at|format_date }}</td>
                         </tr>
 
                         <tr>
-                            <td><label>{{ 'Activated At'|trans }}</label></td>
+                            <td><label>{{ 'Activated at'|trans }}</label></td>
                             <td>{% if order.activated_at %}{{ order.activated_at|format_date }}{% else %}-{% endif %}</td>
                         </tr>
 
                         {% if order.period %}
                             <tr>
-                                <td><label>{{ 'Renewal Date'|trans }} {% if order.expires_at %} in {{ order.expires_at|daysleft }} day(s) {% endif %}</label></td>
+                                <td><label>{{ 'Renewal date'|trans }} {% if order.expires_at %} in {{ order.expires_at|daysleft }} day(s) {% endif %}</label></td>
                                 <td>{% if order.expires_at %}{{ order.expires_at|format_date }}{% else %}-{% endif %}</td>
                             </tr>
                         {% endif %}
 
                         {% if order.notes %}
                             <tr>
-                                <td><label>{{ 'Order Notes'|trans }}</label></td>
+                                <td><label>{{ 'Order notes'|trans }}</label></td>
                                 <td>{{ (order.notes ?? '')|markdown_to_html }}</td>
                             </tr>
                         {% endif %}
 
                         {% if order.active_tickets > 0 %}
                             <tr>
-                                <td><label>{{ 'Active Support Tickets'|trans }}</label></td>
+                                <td><label>{{ 'Active support tickets'|trans }}</label></td>
                                 <td>
                                     <div class="num"><a href="{{ 'support'|url }}" class="redNum">{{ order.active_tickets }}</a></div>
                                     {# <div class="num"><a href="{{ 'support'|url }}" class="greenNum">{{ order.active_tickets }}</a></div> #}
@@ -124,11 +124,11 @@
                         <script>window.onRenewalInvoiceCreated = (hash) => { window.location = "{{ 'invoice'|url }}/" + hash; };</script>
                     {% endif %}
                     {% if upgradables %}
-                        <button class="btn btn-success btn-sm" type="button" id="request-upgrade" data-bs-toggle="modal" data-bs-target="#upgrade-request-modal">{{ 'Request Upgrade'|trans }}</button>
+                        <button class="btn btn-success btn-sm" type="button" id="request-upgrade" data-bs-toggle="modal" data-bs-target="#upgrade-request-modal">{{ 'Request upgrade'|trans }}</button>
                     {% endif %}
-                    <button class="btn btn-info btn-sm" type="button" id="open-ticket" data-bs-toggle="modal" data-bs-target="#open-ticket-modal">{{ 'Open Ticket'|trans }}</button>
+                    <button class="btn btn-info btn-sm" type="button" id="open-ticket" data-bs-toggle="modal" data-bs-target="#open-ticket-modal">{{ 'Open ticket'|trans }}</button>
                     {% if order.status == 'active' %}
-                        <button class="btn btn-danger btn-sm" type="button" id="request-cancel" data-bs-toggle="modal" data-bs-target="#cancel-request-modal">{{ 'Request Cancellation'|trans }}</button>
+                        <button class="btn btn-danger btn-sm" type="button" id="request-cancel" data-bs-toggle="modal" data-bs-target="#cancel-request-modal">{{ 'Request cancellation'|trans }}</button>
                     {% endif %}
                     {{ render_widgets('client.order.manage.actions.end', { 'order': order }) }}
                 </div>
@@ -160,8 +160,8 @@
                             <tr>
                                 <th>{{ 'Product/Service'|trans }}</th>
                                 <th>{{ 'Price'|trans }}</th>
-                                <th>{{ 'Billing Cycle'|trans }}</th>
-                                <th>{{ 'Next Due Date'|trans }}</th>
+                                <th>{{ 'Billing cycle'|trans }}</th>
+                                <th>{{ 'Next due date'|trans }}</th>
                                 <th>{{ 'Status'|trans }}</th>
                                 <th>{{ 'Actions'|trans }}</th>
                             </tr>
@@ -245,7 +245,7 @@
                                 </div>
                             </div>
                             <div class="modal-footer">
-                                <button type="submit" class="btn btn-primary">{{ 'Open Ticket'|trans }}</button>
+                                <button type="submit" class="btn btn-primary">{{ 'Open ticket'|trans }}</button>
                             </div>
                         </form>
                     </div>
@@ -256,7 +256,7 @@
                 <div class="modal-dialog">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h1 class="modal-title fs-5">{{ 'Submit Upgrade Request'|trans }}</h1>
+                            <h1 class="modal-title fs-5">{{ 'Submit upgrade request'|trans }}</h1>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
                         </div>
                         <form action="" method="post" id="upgrade-request-form" class="request-upgrade">

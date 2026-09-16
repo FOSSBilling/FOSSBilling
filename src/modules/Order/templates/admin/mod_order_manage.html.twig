@@ -367,7 +367,7 @@
                                     <input class="form-control" id="order_price" type="number" min="0" step="any" name="price" value="{{ order.price }}" required>
                                 </div>
                                 <div class="col-lg-6">
-                                    <label class="form-label">{{ 'Invoice Option'|trans }}</label>
+                                    <label class="form-label">{{ 'Invoice option'|trans }}</label>
                                     {{ mf.selectbox('invoice_option', admin.order_get_invoice_options, order.invoice_option) }}
                                 </div>
                                 <div class="col-lg-6">
@@ -379,7 +379,7 @@
                                     {{ mf.selectbox('period', period_options, order.period, 0, 'Not recurrent'|trans) }}
                                 </div>
                                 <div class="col-lg-6">
-                                    <label class="form-label" for="expires_at">{{ 'Date Expires'|trans }}</label>
+                                    <label class="form-label" for="expires_at">{{ 'Date expires'|trans }}</label>
                                     <div class="input-icon">
                                         <input class="form-control datepicker"
                                                id="expires_at"
@@ -661,7 +661,7 @@
 
         <div class="tab-pane fade" id="tab-support" role="tabpanel">
             {% embed 'partial_admin_related_section.html.twig' with {
-                title: 'Order Support Tickets'|trans,
+                title: 'Order support tickets'|trans,
                 subtitle: 'Review support conversations linked to this order and open the relevant ticket details.'|trans,
                 card_class: 'm-3'
             } %}
