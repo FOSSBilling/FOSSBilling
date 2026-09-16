@@ -47,7 +47,7 @@ FROM php-base AS composer-base
 
 WORKDIR /app
 
-COPY --from=composer:2@sha256:d8f6343d3fae98107426bc49163ccad46ef85aabd4a27d80a74401fab4aba332 /usr/bin/composer /usr/bin/composer
+COPY --from=composer:2@sha256:aaeab4b6b031e0a88efb907f0f26b563532a644fc2f4ea0d000ecf8658f7a2b8 /usr/bin/composer /usr/bin/composer
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends git \
@@ -104,7 +104,7 @@ ARG INSTALL_TRANSLATIONS=true
 ARG TRANSLATIONS_URL=https://github.com/FOSSBilling/locale/releases/latest/download/translations.zip
 ARG TRANSLATIONS_SHA256=
 
-COPY --from=composer:2@sha256:d8f6343d3fae98107426bc49163ccad46ef85aabd4a27d80a74401fab4aba332 /usr/bin/composer /usr/bin/composer
+COPY --from=composer:2@sha256:aaeab4b6b031e0a88efb907f0f26b563532a644fc2f4ea0d000ecf8658f7a2b8 /usr/bin/composer /usr/bin/composer
 COPY composer.json ./composer.json
 COPY src ./src
 COPY README.md LICENSE ./src/
