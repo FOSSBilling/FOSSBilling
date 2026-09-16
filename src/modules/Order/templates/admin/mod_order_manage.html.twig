@@ -92,26 +92,26 @@
                                         <td><a href='{{ "product/manage/#{order.product_id}"|url }}'><strong>{{ order.title }}</strong></a></td>
                                     </tr>
                                     <tr>
-                                        <td class="text-end">{{ 'Payment Amount'|trans }}</td>
+                                        <td class="text-end">{{ 'Payment amount'|trans }}</td>
                                         <td>{{ order.total|format_currency(order.currency ?? default_currency) }} {% if order.period %}{{ order.period|period_title }}{% endif %}{% if order.quantity > 1 %}({{ order.quantity }} x {{ order.price|format_currency(order.currency ?? default_currency) }}){% endif %}</td>
                                     </tr>
                                     {% if order.discount and order.discount > 0%}
                                     <tr>
-                                        <td class="text-end">{{ 'Order Discount'|trans }}</td>
+                                        <td class="text-end">{{ 'Order discount'|trans }}</td>
                                         <td>-{{ order.discount|format_currency(order.currency ?? default_currency) }} </td>
                                     </tr>
                                     <tr>
-                                        <td class="text-end">{{ 'Payment Amount After Discount'|trans }}</td>
+                                        <td class="text-end">{{ 'Payment amount after discount'|trans }}</td>
                                         <td>{{ (order.total - order.discount)|format_currency(order.currency ?? default_currency)}} </td>
                                     </tr>
                                     {% endif %}
                                     <tr>
-                                        <td class="text-end">{{ 'Order Status'|trans }}</td>
+                                        <td class="text-end">{{ 'Order status'|trans }}</td>
                                         <td>{{ mf.status_badge(order.status, 'order') }}</td>
                                     </tr>
                                     {% if order.notes %}
                                     <tr>
-                                        <td class="text-end">{{ 'Order Notes'|trans }}</td>
+                                        <td class="text-end">{{ 'Order notes'|trans }}</td>
                                         <td>
                                             <svg class="icon">
                                                 <use href="#notes" />
@@ -121,24 +121,24 @@
                                     </tr>
                                     {% endif %}
                                     <tr>
-                                        <td class="text-end">{{ 'Order Date'|trans }}</td>
+                                        <td class="text-end">{{ 'Order date'|trans }}</td>
                                         <td>{{ order.created_at|format_date }}</td>
                                     </tr>
                                     <tr>
-                                        <td class="text-end">{{ 'Activation Date'|trans }}</td>
+                                        <td class="text-end">{{ 'Activation date'|trans }}</td>
                                         <td>{% if order.activated_at %}{{ order.activated_at|format_date }} ({{ order.activated_at|timeago }} {{ 'ago'|trans }}){% else %}-{% endif %}</td>
                                     </tr>
                                     <tr>
-                                        <td class="text-end">{{ 'Renewal Date'|trans }}</td>
+                                        <td class="text-end">{{ 'Renewal date'|trans }}</td>
                                         <td>{% if order.expires_at %}{{ order.expires_at|format_date }} ({{ order.expires_at|daysleft }} {{ 'day(s)'|trans }}){% else %}-{% endif %}</td>
                                     </tr>
                                     <tr>
-                                        <td class="text-end">{{ 'Order Group ID'|trans }}</td>
+                                        <td class="text-end">{{ 'Order group ID'|trans }}</td>
                                         <td>{{ order.group_id|default('-') }}</td>
                                     </tr>
                                     {% if order.promo_id %}
                                     <tr>
-                                        <td class="text-end">{{ 'Order Promo Code'|trans }}</td>
+                                        <td class="text-end">{{ 'Order promo code'|trans }}</td>
                                         <td>
                                             {% set promo = admin.product_promo_get({ 'id': order.promo_id }) %}
                                             {{ promo.code }}
@@ -147,7 +147,7 @@
                                     {% endif %}
                                     {% if order.active_tickets > 0 %}
                                     <tr>
-                                        <td class="text-end">{{ 'Active Support Tickets'|trans }}</td>
+                                        <td class="text-end">{{ 'Active support tickets'|trans }}</td>
                                         <td>
                                             <div class="num">
                                                 <a href="{{ 'support'|url(query: { 'status': 'open', 'order_id': order.id }) }}" class="redNum">{{ order.active_tickets }}</a>
