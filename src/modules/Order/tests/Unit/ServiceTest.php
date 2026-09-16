@@ -78,11 +78,23 @@ test('batch order serialization does not expose admin-only client details', func
     $clientRepository = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
     $clientRepository->shouldReceive('findBy')->once()->with(['id' => [7]])->andReturn([$client]);
 
+    // Realistic non-admin client payload: the fields the admin order list UI needs
+    // (see mod_order_index.html.twig and partial_dashboard_orders_card.html.twig,
+    // which read order.client.email/first_name/last_name). An ID-only reference
+    // would break those templates, so the boundary must keep general fields while
+    // excluding admin-only ones.
+    $generalClient = [
+        'id' => 7,
+        'email' => 'jane@example.com',
+        'first_name' => 'Jane',
+        'last_name' => 'Doe',
+    ];
+
     $clientService = Mockery::mock(Box\Mod\Client\Service::class);
     $clientService->shouldReceive('toApiArray')
         ->once()
-        ->with($client, false)
-        ->andReturn(['id' => 7]);
+        ->withArgs(fn (...$args) => count($args) === 2 && $args[0] === $client && $args[1] === false)
+        ->andReturn($generalClient);
 
     $productService = Mockery::mock(Box\Mod\Product\Service::class);
     $productService->shouldReceive('getProductPluginMap')->once()->with([3])->andReturn([]);
@@ -121,7 +133,36 @@ test('batch order serialization does not expose admin-only client details', func
 
     $result = $service->getBatchForApi([11], $admin);
 
-    expect($result[0]['client'])->toBe(['id' => 7]);
+    // The batch boundary forwards no identity, so the embedded client must be
+    // the general (non-admin) representation: UI fields present, admin-only
+    // fields absent.
+    expect($result[0]['client'])->toBe($generalClient);
+    foreach (['aid', 'status', 'notes', 'ip', 'billing_email', 'group', 'client_group', 'api_token'] as $adminOnlyKey) {
+        expect($result[0]['client'])->not->toHaveKey($adminOnlyKey);
+    }
+});
+
+test('batch client serialization excludes admin-only fields on the real path', function (): void {
+    $client = createEntity(Box\Mod\Client\Entity\Client::class);
+    $client->setEmail('jane@example.com');
+    $client->setFirstName('Jane');
+    $client->setLastName('Doe');
+
+    $di = container();
+    $di['mod_config'] = $di->protect(fn (string $name) => []);
+
+    $clientService = new Box\Mod\Client\Service();
+    $clientService->setDi($di);
+
+    $admin = createEntity(Box\Mod\Staff\Entity\Admin::class);
+    $general = $clientService->toApiArray($client, false);
+    $adminView = $clientService->toApiArray($client, false, $admin);
+
+    expect($general['email'])->toBe('jane@example.com');
+    foreach (['aid', 'status', 'notes', 'ip', 'billing_email'] as $adminOnlyKey) {
+        expect($general)->not->toHaveKey($adminOnlyKey);
+        expect($adminView)->toHaveKey($adminOnlyKey);
+    }
 });
 
 test('onAfterAdminOrderActivate fires template', function (): void {
