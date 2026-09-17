@@ -242,7 +242,7 @@
                 FOSSBilling.api.guest.post('servicedomain/check', { sld: sld, tld: tld },
                     function(result) {
                         if (generation !== domainCheckGeneration) return;
-                        setRegistrationPricing(tld);
+                        setRegistrationPricing(tld, generation);
                         const registerConfig = document.getElementById('register-config');
                         if (registerConfig) fadeIn(registerConfig);
                         domainChecked = true;
@@ -299,7 +299,7 @@
                 FOSSBilling.api.guest.post('servicedomain/can_be_transferred', { sld: sld, tld: tld },
                     function(result) {
                         if (generation !== transferCheckGeneration) return;
-                        setTransferPricing(tld);
+                        setTransferPricing(tld, generation);
                         const transferConfig = document.getElementById('transfer-config');
                         if (transferConfig) fadeIn(transferConfig);
                         transferChecked = true;
@@ -312,9 +312,10 @@
 
         updateTransferCodeRequirement();
 
-        function setRegistrationPricing(tld) {
+        function setRegistrationPricing(tld, generation) {
             FOSSBilling.api.guest.post('servicedomain/pricing', { tld: tld },
                 function(result) {
+                    if (generation !== domainCheckGeneration) return;
                     const yearsSelect = document.getElementById('registration-years');
                     if (!yearsSelect) return;
                     yearsSelect.innerHTML = '';
@@ -346,9 +347,10 @@
             );
         }
 
-        function setTransferPricing(tld) {
+        function setTransferPricing(tld, generation) {
             FOSSBilling.api.guest.post('servicedomain/pricing', { tld: tld },
                 function(result) {
+                    if (generation !== transferCheckGeneration) return;
                     const price = formatCurrency(result.price_transfer, {{ currency.conversion_rate }}, "{{ currency.code }}");
                     const transferPriceEl = document.getElementById('transfer-price');
                     if (transferPriceEl) transferPriceEl.textContent = price;
