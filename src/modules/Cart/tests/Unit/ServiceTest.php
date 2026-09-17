@@ -795,6 +795,7 @@ test('createFromCart with promo entity uses product promo service', function ():
 
     $productService = Mockery::mock(ProductService::class);
     $productService->shouldReceive('findPromoById')->once()->with(7)->andReturn($promo);
+    $productService->shouldReceive('clientHasActivePromoApplicationForUpdate')->once()->with($client, $promo)->andReturn(false);
     $productService->shouldReceive('reservePromoForOrder')->once()->with($promo, Mockery::type(Order::class));
     $productService->shouldReceive('createCheckoutPromoRedemptions')->once()->with(
         $promo,
@@ -873,6 +874,71 @@ test('createFromCart with promo entity uses product promo service', function ():
     expect($result[1])->toBeNull();
     expect($result[2])->toBeArray();
     expect(count($result[2]))->toBe(1);
+});
+
+test('createFromCart aborts inside the transaction when the once-per-client guard trips', function (): void {
+    $cart = createEntity(Cart::class);
+    $cart->id = 3;
+    $cart->currency_id = 2;
+    $cart->promo_id = 7;
+
+    $client = createEntity(Client::class);
+    $client->id = 9;
+    $client->currency = 'USD';
+
+    $currency = Mockery::mock(Currency::class)->makePartial();
+    $currency->shouldReceive('getCode')->once()->andReturn('USD');
+
+    $currencyRepository = Mockery::mock(CurrencyRepository::class);
+    $currencyRepository->shouldReceive('find')->once()->with(2)->andReturn($currency);
+
+    $currencyService = Mockery::mock(CurrencyService::class);
+    $currencyService->shouldReceive('getCurrencyRepository')->once()->andReturn($currencyRepository);
+
+    $clientService = Mockery::mock(Box\Mod\Client\Service::class);
+    $clientService->shouldReceive('isClientTaxable')->once()->with($client)->andReturn(false);
+
+    $promo = new Promo();
+    $promo->setCode('PROMO');
+    $promoIdReflection = new ReflectionProperty($promo, 'id');
+    $promoIdReflection->setValue($promo, 7);
+
+    $productService = Mockery::mock(ProductService::class);
+    $productService->shouldReceive('findPromoById')->once()->with(7)->andReturn($promo);
+    // A concurrent checkout committed first: the in-transaction guard sees it.
+    $productService->shouldReceive('clientHasActivePromoApplicationForUpdate')->once()->with($client, $promo)->andReturn(true);
+    $productService->shouldNotReceive('reservePromoForOrder');
+    $productService->shouldNotReceive('createCheckoutPromoRedemptions');
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('wrapInTransaction')->once()->with(Mockery::type(Closure::class))->andReturnUsing(fn (Closure $callback) => $callback());
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('getSessionCart')->once()->andReturn($cart);
+    $serviceMock->shouldReceive('toApiArray')->once()->with($cart)->andReturn([
+        'items' => [['id' => 1]],
+        'total' => 0,
+    ]);
+    // The guard runs first inside the transaction: no order is ever created.
+    $serviceMock->shouldNotReceive('getCartProducts');
+
+    $dbMock = Mockery::mock(Box_Database::class)->shouldIgnoreMissing();
+    $dbMock->shouldReceive('getExistingModelById')->atLeast()->once()->andReturn(cartServiceCreateLegacyClient());
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['em'] = $emMock;
+    $di['mod_service'] = $di->protect(fn ($serviceName, $sub = '') => match ($serviceName) {
+        'currency' => $currencyService,
+        'client' => $clientService,
+        'Product' => $productService,
+        default => null,
+    });
+
+    $serviceMock->setDi($di);
+
+    expect(fn () => $serviceMock->createFromCart($client))
+        ->toThrow(FOSSBilling\InformationException::class, 'You have already used this promo code. Please remove the promo code and checkout again.');
 });
 
 test('createFromCart normalizes legacy invoice id before setting it on the order', function (): void {
@@ -1017,6 +1083,7 @@ test('createFromCart compensates promo usage on transaction failure', function (
 
     $productService = Mockery::mock(ProductService::class);
     $productService->shouldReceive('findPromoById')->once()->with(7)->andReturn($promo);
+    $productService->shouldReceive('clientHasActivePromoApplicationForUpdate')->once()->with($client, $promo)->andReturn(false);
     $productService->shouldReceive('reservePromoForOrder')->once()->with($promo, Mockery::type(Order::class));
 
     // Simulate Doctrine-side failure during redemption creation.

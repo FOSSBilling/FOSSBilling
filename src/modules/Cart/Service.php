@@ -686,6 +686,19 @@ class Service implements InjectionAwareInterface
         return $this->getProductService()->clientHasActivePromoApplication($client, $promo);
     }
 
+    /**
+     * In-transaction re-check of the once-per-client limit. The fail-fast check in
+     * checkoutCart() runs before the transaction opens, so concurrent checkouts can all pass
+     * it; the client-row mutex serializes them here instead. Throws the same exception as a
+     * normal reuse.
+     */
+    private function assertClientAbleToUsePromoForUpdate(Client|\Model_Client $client, Promo $promo): void
+    {
+        if ($this->getProductService()->clientHasActivePromoApplicationForUpdate($client, $promo)) {
+            throw new \FOSSBilling\InformationException('You have already used this promo code. Please remove the promo code and checkout again.', null, 9874);
+        }
+    }
+
     public function getCartProducts(Cart|\Model_Cart $model): array
     {
         return $this->findCartProducts($model);
@@ -795,6 +808,10 @@ class Service implements InjectionAwareInterface
 
         try {
             return $this->di['em']->wrapInTransaction(function () use ($ca, $cart, $client, $legacyClient, $currency, $currencyCode, $gateway_id, $taxed, $promo, $promoProductService, $promoId, &$reservedOrderIds, &$reservedCount) {
+                if ($promo instanceof Promo) {
+                    $this->assertClientAbleToUsePromoForUpdate($client, $promo);
+                }
+
                 if ($this->clientCurrency($client) != $currencyCode) {
                     throw new \FOSSBilling\InformationException('Selected currency :selected does not match your profile currency :code. Please change cart currency to continue.', [':selected' => $currencyCode, ':code' => $this->clientCurrency($client)]);
                 }

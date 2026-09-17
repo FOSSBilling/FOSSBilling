@@ -1321,6 +1321,62 @@ test('client has active promo application', function (): void {
     expect($service->clientHasActivePromoApplication($client, $promo))->toBeTrue();
 });
 
+test('client has active promo application for update skips the lock when promo is not once per client', function (): void {
+    $service = new Service();
+    $promo = productTestCreatePromoEntity(5)->setOncePerClient(false);
+
+    $client = createEntity(Client::class, ['id' => 9]);
+
+    $repoMock = Mockery::mock(PromoRedemptionRepository::class);
+    $repoMock->shouldNotReceive('clientHasActiveCheckoutApplicationForUpdate');
+
+    $emMock = new class($repoMock) {
+        public function __construct(private $repo)
+        {
+        }
+
+        public function getRepository(string $class): object
+        {
+            return $this->repo;
+        }
+    };
+
+    $di = container();
+    $di['em'] = $emMock;
+
+    $service->setDi($di);
+
+    expect($service->clientHasActivePromoApplicationForUpdate($client, $promo))->toBeFalse();
+});
+
+test('client has active promo application for update delegates to the locking repository method', function (): void {
+    $service = new Service();
+    $promo = productTestCreatePromoEntity(5)->setOncePerClient(true);
+
+    $client = createEntity(Client::class, ['id' => 9]);
+
+    $repoMock = Mockery::mock(PromoRedemptionRepository::class);
+    $repoMock->shouldReceive('clientHasActiveCheckoutApplicationForUpdate')->once()->with(5, 9)->andReturn(true);
+
+    $emMock = new class($repoMock) {
+        public function __construct(private $repo)
+        {
+        }
+
+        public function getRepository(string $class): object
+        {
+            return $this->repo;
+        }
+    };
+
+    $di = container();
+    $di['em'] = $emMock;
+
+    $service->setDi($di);
+
+    expect($service->clientHasActivePromoApplicationForUpdate($client, $promo))->toBeTrue();
+});
+
 test('promo can be applied', function (Promo $promo, bool $expectedResult): void {
     $service = new Service();
     expect($service->promoCanBeApplied($promo))->toBe($expectedResult);

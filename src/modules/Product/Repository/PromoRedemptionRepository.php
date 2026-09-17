@@ -108,6 +108,46 @@ class PromoRedemptionRepository extends EntityRepository
         return $count > 0;
     }
 
+    /**
+     * Locking variant of clientHasActiveCheckoutApplication(), for use inside the checkout
+     * transaction. Redemption rows are insert-only, so a plain COUNT cannot serialize concurrent
+     * checkouts against each other: lock the client row as the mutex instead, then re-read.
+     *
+     * Must be called within a transaction, held until the checkout's redemption rows are written.
+     */
+    public function clientHasActiveCheckoutApplicationForUpdate(int $promoId, int $clientId): bool
+    {
+        $connection = $this->getEntityManager()->getConnection();
+
+        if (!$connection->isTransactionActive()) {
+            throw new \FOSSBilling\Exception('Promo redemption cannot be locked outside of a transaction.');
+        }
+
+        // The mutex: every checkout for this client collides here, checkouts for other clients
+        // do not.
+        $connection->fetchOne(
+            'SELECT id FROM client WHERE id = :client_id FOR UPDATE',
+            ['client_id' => $clientId]
+        );
+
+        // A locking read, because a plain one can be served from the transaction snapshot, which
+        // under REPEATABLE READ can predate the checkout we just waited on above.
+        $count = (int) $connection->fetchOne(
+            'SELECT COUNT(pr.id) FROM promo_redemption pr'
+            . ' WHERE pr.promo_id = :promo_id AND pr.client_id = :client_id'
+            . ' AND pr.phase = :phase AND pr.status IN (:statuses) FOR UPDATE',
+            [
+                'promo_id' => $promoId,
+                'client_id' => $clientId,
+                'phase' => PromoRedemption::PHASE_CHECKOUT,
+                'statuses' => [PromoRedemption::STATUS_RESERVED, PromoRedemption::STATUS_COMMITTED],
+            ],
+            ['statuses' => \Doctrine\DBAL\ArrayParameterType::STRING]
+        );
+
+        return $count > 0;
+    }
+
     public function countByPromoId(int $promoId): int
     {
         return (int) $this->createQueryBuilder('pr')
