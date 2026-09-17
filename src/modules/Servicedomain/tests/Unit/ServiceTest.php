@@ -1378,18 +1378,27 @@ test('batch syncs expiration dates', function (): void {
     expect($result)->toBeTrue();
 });
 
-test('does not advance the last sync marker when a domain sync fails', function (): void {
+test('advances the last sync marker when a domain sync fails', function (): void {
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('syncExpirationDate')
-        ->atLeast()->once()
+        ->once()
         ->andThrow(new Exception('registrar unavailable'));
 
+    $lastSync = null;
     $systemServiceMock = Mockery::mock(SystemService::class);
     $systemServiceMock->shouldReceive('getParamValue')
-        ->atLeast()->once()
-        ->andReturn(null);
+        ->twice()
+        ->andReturnUsing(static function () use (&$lastSync): ?string {
+            return $lastSync;
+        });
     $systemServiceMock->shouldReceive('setParamValue')
-        ->never();
+        ->once()
+        ->with('servicedomain_last_sync', Mockery::type('string'))
+        ->andReturnUsing(static function (string $key, string $value) use (&$lastSync): bool {
+            $lastSync = $value;
+
+            return true;
+        });
 
     $domainModel = new ServiceDomain();
     $domainRepo = Mockery::mock(DomainRepository::class);
@@ -1405,9 +1414,11 @@ test('does not advance the last sync marker when a domain sync fails', function 
     $di['logger'] = new Tests\Helpers\TestLogger();
     $serviceMock->setDi($di);
 
-    $result = $serviceMock->batchSyncExpirationDates();
+    $firstResult = $serviceMock->batchSyncExpirationDates();
+    $secondResult = $serviceMock->batchSyncExpirationDates();
 
-    expect($result)->toBeTrue();
+    expect($firstResult)->toBeTrue()
+        ->and($secondResult)->toBeFalse();
 });
 
 test('returns false when batch sync already run today', function (): void {

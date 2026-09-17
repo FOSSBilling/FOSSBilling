@@ -840,19 +840,15 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $list = $this->getDomainRepository()->findAll();
 
-        $hasFailures = false;
         foreach ($list as $domain) {
             try {
                 $this->syncExpirationDate($domain);
             } catch (\Exception $e) {
-                $hasFailures = true;
                 $this->di['logger']->error($e->getMessage());
             }
         }
 
-        if (!$hasFailures) {
-            $ss->setParamValue($key, date('Y-m-d H:i:s'));
-        }
+        $ss->setParamValue($key, date('Y-m-d H:i:s'));
 
         $this->di['logger']->info('Executed action to synchronize domain expiration dates with registrar');
 
