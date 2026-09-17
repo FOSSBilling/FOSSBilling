@@ -97,13 +97,18 @@ class Guest extends \FOSSBilling\Api\AbstractApi
 
             // Keyed independently of the IP limiter above so that spreading
             // probes across IPs doesn't help an attacker hammer one address.
-            // Consumed only after the CAPTCHA check so a stream of invalid
-            // CAPTCHA submissions can't burn through one address's quota.
-            $emailLimit = $this->getDi()['rate_limiter']->consume('client_signup_email', $email);
+            // Check the quota without consuming it. A token is recorded only
+            // after client validation succeeds, so malformed submissions
+            // cannot exhaust another address's signup quota.
+            $emailLimit = $this->getDi()['rate_limiter']->consume('client_signup_email', $email, 0);
 
             $autoLogin = Tools::normalizeBoolean($config['auto_login_after_signup'] ?? true, true);
 
             if ($emailLimit->isLimited() || $service->clientAlreadyExists($email)) {
+                if (!$emailLimit->isLimited()) {
+                    $this->getDi()['rate_limiter']->consume('client_signup_email', $email);
+                }
+
                 // Never disclose whether this address is already registered:
                 // no distinct error, no duplicate row, and the same return
                 // value as a genuine signup below. Falling through to an
@@ -125,6 +130,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             }
 
             $client = $service->guestCreateClient($data);
+            $this->getDi()['rate_limiter']->consume('client_signup_email', $email);
 
             if (isset($config['require_email_confirmation']) && (bool) $config['require_email_confirmation']) {
                 $service->sendEmailConfirmationForClient($client);

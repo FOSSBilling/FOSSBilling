@@ -177,6 +177,52 @@ test('create returns true without creating an account when the per-email signup 
     expect($result)->toBeTrue();
 });
 
+test('create does not consume the per-email signup quota when client validation fails', function (): void {
+    $guestClient = apiEndpoint(new Box\Mod\Client\Api\Guest());
+    $data = [
+        'email' => 'test@email.com',
+        'first_name' => 'John',
+        'password' => 'testpassword',
+        'password_confirm' => 'testpassword',
+        'country' => 'ZZ',
+    ];
+
+    $serviceMock = Mockery::mock(Box\Mod\Client\Service::class);
+    $serviceMock->shouldReceive('clientAlreadyExists')->once()->andReturn(false);
+    $serviceMock->shouldReceive('checkExtraRequiredFields')->once();
+    $serviceMock->shouldReceive('checkCustomFields')->once();
+    $serviceMock->shouldReceive('guestCreateClient')->once()->andThrow(new FOSSBilling\InformationException('Invalid country code: ZZ'));
+
+    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock->shouldReceive('isPasswordStrong')->once();
+    $validatorMock->shouldReceive('passwordsMatch')->once();
+
+    $rateLimiterMock = Mockery::mock(FOSSBilling\Security\RateLimiter::class);
+    $rateLimiterMock->shouldReceive('consumeOrThrow')
+        ->once()
+        ->with('client_signup', Mockery::type('string'))
+        ->andReturn(new FOSSBilling\Security\RateLimitResult('client_signup', false, 5, 4));
+    $rateLimiterMock->shouldReceive('consume')
+        ->once()
+        ->with('client_signup_email', $data['email'], 0)
+        ->andReturn(new FOSSBilling\Security\RateLimitResult('client_signup_email', false, 5, 5));
+
+    $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
+    $toolsMock->shouldReceive('validateAndSanitizeEmail')->once()->andReturn($data['email']);
+
+    $di = container();
+    $di['mod_config'] = $di->protect(fn ($name): array => ['disable_signup' => false]);
+    $di['validator'] = $validatorMock;
+    $di['rate_limiter'] = $rateLimiterMock;
+    $di['tools'] = $toolsMock;
+
+    $guestClient->setDi($di);
+    $guestClient->setService($serviceMock);
+
+    expect(fn (): bool => $guestClient->create($data))
+        ->toThrow(FOSSBilling\InformationException::class, 'Invalid country code: ZZ');
+});
+
 test('create throws exception when signup is disabled', function (): void {
     $guestClient = apiEndpoint(new Box\Mod\Client\Api\Guest());
     $configArr = [
