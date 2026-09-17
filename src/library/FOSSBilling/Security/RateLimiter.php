@@ -100,7 +100,7 @@ class RateLimiter implements InjectionAwareInterface
 
         $factory = $this->getFactory($policyName, $policy);
         $limit = $factory->create($this->hashSubject($subject))->consume($tokens);
-        $limited = !$limit->isAccepted();
+        $limited = $tokens === 0 ? $limit->getRemainingTokens() < 1 : !$limit->isAccepted();
         $result = new RateLimitResult(
             $policyName,
             $limited,
