@@ -269,6 +269,7 @@
                 return;
             }
             transferChecked = false;
+            updateTransferCodeRequirement();
             if (transferCheck) transferCheck.style.display = '';
             const transferConfig = document.getElementById('transfer-config');
             if (transferConfig) transferConfig.style.display = 'none';
@@ -279,10 +280,7 @@
         }
 
         if (transferTldSelect) {
-            transferTldSelect.addEventListener('change', function() {
-                resetTransferCheck();
-                updateTransferCodeRequirement();
-            });
+            transferTldSelect.addEventListener('change', resetTransferCheck);
         }
 
         if (transferCheck) {
