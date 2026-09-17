@@ -121,7 +121,7 @@ class TransactionRepository extends EntityRepository
 
         $search = $data['search'] ?? null;
         if ($search) {
-            $qb->andWhere('t.note LIKE :note OR IDENTITY(t.invoice) LIKE :search_invoice_id OR t.txnId LIKE :search_txn_id OR t.ipn LIKE :ipn')
+            $qb->andWhere('(t.note LIKE :note OR IDENTITY(t.invoice) LIKE :search_invoice_id OR t.txnId LIKE :search_txn_id OR t.ipn LIKE :ipn)')
                 ->setParameter('note', "%$search%")
                 ->setParameter('search_invoice_id', "%$search%")
                 ->setParameter('search_txn_id', "%$search%")

@@ -73,7 +73,7 @@ class InvoiceRepository extends EntityRepository
 
         $idNr = $data['nr'] ?? null;
         if ($idNr) {
-            $qb->andWhere('i.id = :id_nr OR i.nr = :id_nr')->setParameter('id_nr', $idNr);
+            $qb->andWhere('(i.id = :id_nr OR i.nr = :id_nr)')->setParameter('id_nr', $idNr);
         }
 
         $approved = $data['approved'] ?? null;
@@ -136,7 +136,7 @@ class InvoiceRepository extends EntityRepository
         $search = $data['search'] ?? null;
         if ($search) {
             $searchNumeric = (int) preg_replace('/[^0-9]/', '', (string) $search);
-            $qb->andWhere('i.id = :search_numeric_id OR i.nr LIKE :search_like OR i.id LIKE :search OR i.id IN (SELECT IDENTITY(ii.invoice) FROM ' . InvoiceItem::class . ' ii WHERE ii.title LIKE :search_like)')
+            $qb->andWhere('(i.id = :search_numeric_id OR i.nr LIKE :search_like OR i.id LIKE :search OR i.id IN (SELECT IDENTITY(ii.invoice) FROM ' . InvoiceItem::class . ' ii WHERE ii.title LIKE :search_like))')
                 ->setParameter('search_numeric_id', $searchNumeric)
                 ->setParameter('search_like', '%' . $search . '%')
                 ->setParameter('search', $search);
