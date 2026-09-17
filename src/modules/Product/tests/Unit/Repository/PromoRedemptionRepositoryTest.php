@@ -70,7 +70,8 @@ test('promo filtered queries match only redemptions of the given promo', functio
         ->and($repository->getUsageStatsByPromoId($unusedId)['recorded_applications'])->toBe(0);
 
     expect($repository->getSearchQueryBuilder(['promo_id' => $promoId])->getQuery()->getResult())->toHaveCount(1)
-        ->and($repository->getSearchQueryBuilder(['promo_id' => $unusedId])->getQuery()->getResult())->toBe([]);
+        ->and($repository->getSearchQueryBuilder(['promo_id' => $unusedId])->getQuery()->getResult())->toBe([])
+        ->and($repository->getSearchQueryBuilder(['promo_id' => 0])->getQuery()->getResult())->toBe([]);
 });
 
 test('find invoice summary selects stored serie and nr columns', function (): void {
