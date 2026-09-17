@@ -336,7 +336,7 @@ class Service implements InjectionAwareInterface
     {
         ++$familyIndex;
 
-        return (string) $cart->getId() . '_' . $familyIndex;
+        return $cart->getId() . '_' . $familyIndex;
     }
 
     protected function getReservedQuantityInCart(Cart $cart, int $productId): int
