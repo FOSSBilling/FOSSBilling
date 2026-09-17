@@ -27,6 +27,15 @@ use FOSSBilling\InjectionAwareInterface;
 
 class Service implements InjectionAwareInterface
 {
+    /**
+     * Internal cart-item config key recording which order family (one
+     * add-to-cart action: the product plus its bundled domain and selected
+     * addons) an item belongs to. Server-side bookkeeping only: stamped after
+     * the client-input filter in addItem(), consumed and stripped at checkout
+     * when per-family order group_ids are assigned.
+     */
+    public const string CART_FAMILY_KEY = '__cart_family';
+
     protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
@@ -246,9 +255,15 @@ class Service implements InjectionAwareInterface
             }
         }
 
+        $familyToken = bin2hex(random_bytes(16));
+
         foreach ($list as $c) {
             $productFromList = $c['product'];
             $productFromListConfig = $this->getProductService()->prepareCartProductConfig($productFromList, $c['config']);
+            // One add-to-cart action equals one order family. Stamped after
+            // prepareCartProductConfig() so the client-input filter can
+            // neither strip it nor be bypassed with a forged value.
+            $productFromListConfig[self::CART_FAMILY_KEY] = $familyToken;
             $this->addProduct($cart, $productFromList, $productFromListConfig);
         }
 
@@ -284,6 +299,44 @@ class Service implements InjectionAwareInterface
         $this->di['em']->flush();
 
         return true;
+    }
+
+    /**
+     * Resolve the order group_id for one cart item at checkout.
+     *
+     * Items stamped with the same family token share one group_id
+     * ("<cart_id>_<n>"), keeping exactly one group_master per group. Items
+     * from carts built before family stamping carry no token: standalone
+     * items each start their own family, while an addon row rejoins the most
+     * recent family of its parent product when one exists. Anything unmatched
+     * gets its own family rather than joining an unrelated one, so a paid
+     * item can never be hidden as another family's addon.
+     */
+    private function resolveFamilyGroupId(
+        Cart $cart,
+        array $item,
+        mixed $familyToken,
+        array &$familyGroupIds,
+        array &$lastGroupIdByProductId,
+        int &$familyIndex,
+    ): string {
+        if (is_string($familyToken) && $familyToken !== '') {
+            return $familyGroupIds[$familyToken] ??= $this->nextFamilyGroupId($cart, $familyIndex);
+        }
+
+        $parentProductId = isset($item['parent_id']) ? (int) $item['parent_id'] : null;
+        if ($parentProductId !== null && isset($lastGroupIdByProductId[$parentProductId])) {
+            return $lastGroupIdByProductId[$parentProductId];
+        }
+
+        return $this->nextFamilyGroupId($cart, $familyIndex);
+    }
+
+    private function nextFamilyGroupId(Cart $cart, int &$familyIndex): string
+    {
+        ++$familyIndex;
+
+        return (string) $cart->getId() . '_' . $familyIndex;
     }
 
     protected function getReservedQuantityInCart(Cart $cart, int $productId): int
@@ -647,10 +700,16 @@ class Service implements InjectionAwareInterface
                 $invoiceModel = null;
                 $master_order = null;
                 $requestedProductQuantities = [];
-                $i = 0;
+                $familyGroupIds = [];
+                $lastGroupIdByProductId = [];
+                $familyIndex = 0;
 
                 foreach ($this->getCartProducts($cart) as $p) {
                     $item = $this->cartProductToApiArray($p);
+                    // Family bookkeeping is cart-transient: consume it for
+                    // grouping, then keep it out of the stored order config.
+                    $familyToken = $item[self::CART_FAMILY_KEY] ?? null;
+                    unset($item[self::CART_FAMILY_KEY]);
 
                     $product = $this->getProductService()->findProductById((int) $item['product_id']);
                     if ($product->getStatus() !== 'enabled') {
@@ -688,8 +747,13 @@ class Service implements InjectionAwareInterface
                     $order->setProductId($item['product_id']);
                     $order->setFormId($item['form_id']);
 
-                    $order->setGroupId((string) $cart->getId());
-                    $order->setGroupMaster($i == 0);
+                    // group_master marks "is not an addon", not "was first in
+                    // the cart: one family shares one group_id with a single
+                    // master, addons nest under it.
+                    $groupId = $this->resolveFamilyGroupId($cart, $item, $familyToken, $familyGroupIds, $lastGroupIdByProductId, $familyIndex);
+                    $order->setGroupId($groupId);
+                    $order->setGroupMaster(!$product->isAddon());
+                    $lastGroupIdByProductId[(int) $product->getId()] = $groupId;
                     $order->setInvoiceOption('issue-invoice');
                     $order->setTitle($item['title']);
                     $order->setCurrency($currencyCode);
@@ -756,8 +820,6 @@ class Service implements InjectionAwareInterface
                     }
 
                     $master_order ??= $order;
-
-                    ++$i;
                 }
 
                 if ($ca['total'] > 0) { // crete invoice if order total > 0

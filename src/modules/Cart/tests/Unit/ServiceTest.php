@@ -996,6 +996,279 @@ test('createFromCart sets the unpaid invoice id on orders when checkout produces
     expect($ids)->toBeArray()->toHaveCount(1);
 });
 
+test('createFromCart keeps every non-addon order visible in legacy multi-item carts (GH-4333)', function (): void {
+    // Carts built before family stamping carry no __cart_family token: each
+    // standalone item becomes its own family (own group_id, group master),
+    // while an addon row rejoins its parent product's family.
+    $cart = createEntity(Cart::class);
+    $cart->id = 3;
+    $cart->currency_id = 2;
+
+    $client = createEntity(Client::class);
+    $client->id = 9;
+    $client->currency = 'USD';
+
+    $currency = Mockery::mock(Currency::class)->makePartial();
+    $currency->shouldReceive('getCode')->atLeast()->once()->andReturn('USD');
+    $currency->shouldReceive('getConversionRate')->atLeast()->once()->andReturn(1.0);
+
+    $currencyRepository = Mockery::mock(CurrencyRepository::class);
+    $currencyRepository->shouldReceive('find')->once()->with(2)->andReturn($currency);
+
+    $currencyService = Mockery::mock(CurrencyService::class);
+    $currencyService->shouldReceive('getCurrencyRepository')->once()->andReturn($currencyRepository);
+
+    $clientService = Mockery::mock(Box\Mod\Client\Service::class);
+    $clientService->shouldReceive('isClientTaxable')->once()->with($client)->andReturn(false);
+
+    $newProduct = function (int $id, bool $isAddon): Product {
+        $product = new Product();
+        $reflection = new ReflectionProperty($product, 'id');
+        $reflection->setValue($product, $id);
+        $product->setStatus('enabled');
+        $product->setType('service');
+        $product->setSetup('manual');
+        $product->setIsAddon($isAddon);
+
+        return $product;
+    };
+    $firstProduct = $newProduct(5, false);
+    $secondProduct = $newProduct(6, false);
+    $addonProduct = $newProduct(7, true);
+
+    $cartProductOne = createEntity(CartProduct::class);
+    $cartProductOne->id = 13;
+    $cartProductTwo = createEntity(CartProduct::class);
+    $cartProductTwo->id = 14;
+    $cartProductThree = createEntity(CartProduct::class);
+    $cartProductThree->id = 15;
+
+    $itemFor = fn (int $productId, string $title, array $extra = []): array => array_merge([
+        'product_id' => $productId,
+        'form_id' => null,
+        'title' => $title,
+        'type' => 'service',
+        'unit' => 'service',
+        'period' => '1M',
+        'quantity' => 1,
+        'price' => 0,
+        'discount_price' => 0,
+        'setup_price' => 0,
+        'discount_setup' => 0,
+        'notes' => null,
+    ], $extra);
+
+    $productService = Mockery::mock(ProductService::class);
+    $productService->shouldReceive('findProductById')->atLeast()->once()->andReturnUsing(
+        fn (int $id): Product => match ($id) {
+            5 => $firstProduct,
+            6 => $secondProduct,
+            7 => $addonProduct,
+            default => throw new RuntimeException('Unexpected product id ' . $id),
+        }
+    );
+    $productService->shouldReceive('reserveStockForOrder')->times(3)->with(Mockery::type(Order::class));
+
+    $orderService = Mockery::mock(Box\Mod\Order\Service::class)->makePartial();
+    $orderService->shouldReceive('saveStatusChange')->times(3)->with(Mockery::type(Order::class), 'Order Created');
+    $orderService->shouldReceive('toApiArray')
+        ->times(3)
+        ->with(Mockery::type(Order::class), false, $client)
+        ->andReturnUsing(fn (Order $order): array => [
+            'product_id' => $order->getProductId(),
+            'total' => 0,
+            'discount' => 0,
+        ]);
+
+    $createdOrders = [];
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('wrapInTransaction')->once()->with(Mockery::type(Closure::class))->andReturnUsing(fn (Closure $callback) => $callback());
+    $emMock->shouldReceive('persist')->atLeast()->once()->with(Mockery::on(function ($entity) use (&$createdOrders): bool {
+        if ($entity instanceof Order) {
+            $createdOrders[] = $entity;
+        }
+
+        return true;
+    }));
+    $emMock->shouldReceive('flush')->atLeast()->once();
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('getSessionCart')->once()->andReturn($cart);
+    $serviceMock->shouldReceive('toApiArray')->once()->with($cart)->andReturn([
+        'items' => [['id' => 1], ['id' => 2], ['id' => 3]],
+        'total' => 0,
+    ]);
+    $serviceMock->shouldReceive('getCartProducts')->once()->with($cart)->andReturn([$cartProductOne, $cartProductTwo, $cartProductThree]);
+    $serviceMock->shouldReceive('cartProductToApiArray')->times(3)->andReturnUsing(
+        fn (CartProduct $cartProduct): array => match ($cartProduct->getId()) {
+            13 => $itemFor(5, 'First product'),
+            14 => $itemFor(6, 'Second product'),
+            // Legacy addon rows still carry the parent product id stamped by
+            // Product\Service::getSelectedAddonsForCart().
+            15 => $itemFor(7, 'Addon product', ['parent_id' => 5]),
+            default => throw new RuntimeException('Unexpected cart product'),
+        }
+    );
+    $serviceMock->shouldReceive('isStockAvailable')->atLeast()->once()->andReturn(true);
+
+    $di = container();
+    $di['em'] = $emMock;
+    $di['mod_service'] = $di->protect(fn ($serviceName, $sub = '') => match ($serviceName) {
+        'currency' => $currencyService,
+        'client' => $clientService,
+        'Product' => $productService,
+        'order', 'Order' => $orderService,
+        default => null,
+    });
+
+    $serviceMock->setDi($di);
+    [$masterOrder, $invoiceModel, $ids] = $serviceMock->createFromCart($client);
+
+    expect($createdOrders)->toHaveCount(3);
+    expect(array_map(fn (Order $order): bool => $order->isGroupMaster(), $createdOrders))->toBe([true, true, false]);
+    expect(array_map(fn (Order $order): ?string => $order->getGroupId(), $createdOrders))->toBe(['3_1', '3_2', '3_1']);
+    expect($masterOrder)->toBe($createdOrders[0]);
+    expect($invoiceModel)->toBeNull();
+    expect($ids)->toBeArray()->toHaveCount(3);
+});
+
+test('createFromCart groups stamped cart families under shared group ids', function (): void {
+    // One add-to-cart action (parent + bundled domain/addons) shares a
+    // __cart_family token and must end up in one group with a single master,
+    // while a second family gets its own group.
+    $cart = createEntity(Cart::class);
+    $cart->id = 3;
+    $cart->currency_id = 2;
+
+    $client = createEntity(Client::class);
+    $client->id = 9;
+    $client->currency = 'USD';
+
+    $currency = Mockery::mock(Currency::class)->makePartial();
+    $currency->shouldReceive('getCode')->atLeast()->once()->andReturn('USD');
+    $currency->shouldReceive('getConversionRate')->atLeast()->once()->andReturn(1.0);
+
+    $currencyRepository = Mockery::mock(CurrencyRepository::class);
+    $currencyRepository->shouldReceive('find')->once()->with(2)->andReturn($currency);
+
+    $currencyService = Mockery::mock(CurrencyService::class);
+    $currencyService->shouldReceive('getCurrencyRepository')->once()->andReturn($currencyRepository);
+
+    $clientService = Mockery::mock(Box\Mod\Client\Service::class);
+    $clientService->shouldReceive('isClientTaxable')->once()->with($client)->andReturn(false);
+
+    $newProduct = function (int $id, bool $isAddon): Product {
+        $product = new Product();
+        $reflection = new ReflectionProperty($product, 'id');
+        $reflection->setValue($product, $id);
+        $product->setStatus('enabled');
+        $product->setType('service');
+        $product->setSetup('manual');
+        $product->setIsAddon($isAddon);
+
+        return $product;
+    };
+
+    $productsById = [
+        5 => $newProduct(5, false),
+        6 => $newProduct(6, false),
+        7 => $newProduct(7, true),
+    ];
+
+    $cartProductOne = createEntity(CartProduct::class);
+    $cartProductOne->id = 13;
+    $cartProductTwo = createEntity(CartProduct::class);
+    $cartProductTwo->id = 14;
+    $cartProductThree = createEntity(CartProduct::class);
+    $cartProductThree->id = 15;
+
+    $itemFor = fn (int $productId, string $title, string $family, array $extra = []): array => array_merge([
+        'product_id' => $productId,
+        'form_id' => null,
+        'title' => $title,
+        'type' => 'service',
+        'unit' => 'service',
+        'period' => '1M',
+        'quantity' => 1,
+        'price' => 0,
+        'discount_price' => 0,
+        'setup_price' => 0,
+        'discount_setup' => 0,
+        'notes' => null,
+        Service::CART_FAMILY_KEY => $family,
+    ], $extra);
+
+    $productService = Mockery::mock(ProductService::class);
+    $productService->shouldReceive('findProductById')->atLeast()->once()->andReturnUsing(
+        fn (int $id): Product => $productsById[$id] ?? throw new RuntimeException('Unexpected product id ' . $id)
+    );
+    $productService->shouldReceive('reserveStockForOrder')->times(3)->with(Mockery::type(Order::class));
+
+    $orderService = Mockery::mock(Box\Mod\Order\Service::class)->makePartial();
+    $orderService->shouldReceive('saveStatusChange')->times(3)->with(Mockery::type(Order::class), 'Order Created');
+    $orderService->shouldReceive('toApiArray')
+        ->times(3)
+        ->with(Mockery::type(Order::class), false, $client)
+        ->andReturnUsing(fn (Order $order): array => [
+            'product_id' => $order->getProductId(),
+            'total' => 0,
+            'discount' => 0,
+        ]);
+
+    $createdOrders = [];
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('wrapInTransaction')->once()->with(Mockery::type(Closure::class))->andReturnUsing(fn (Closure $callback) => $callback());
+    $emMock->shouldReceive('persist')->atLeast()->once()->with(Mockery::on(function ($entity) use (&$createdOrders): bool {
+        if ($entity instanceof Order) {
+            $createdOrders[] = $entity;
+        }
+
+        return true;
+    }));
+    $emMock->shouldReceive('flush')->atLeast()->once();
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('getSessionCart')->once()->andReturn($cart);
+    $serviceMock->shouldReceive('toApiArray')->once()->with($cart)->andReturn([
+        'items' => [['id' => 1], ['id' => 2], ['id' => 3]],
+        'total' => 0,
+    ]);
+    $serviceMock->shouldReceive('getCartProducts')->once()->with($cart)->andReturn([$cartProductOne, $cartProductTwo, $cartProductThree]);
+    $serviceMock->shouldReceive('cartProductToApiArray')->times(3)->andReturnUsing(
+        fn (CartProduct $cartProduct): array => match ($cartProduct->getId()) {
+            13 => $itemFor(5, 'First product', 'family-a'),
+            14 => $itemFor(7, 'Addon product', 'family-a', ['parent_id' => 5]),
+            15 => $itemFor(6, 'Second product', 'family-b'),
+            default => throw new RuntimeException('Unexpected cart product'),
+        }
+    );
+    $serviceMock->shouldReceive('isStockAvailable')->atLeast()->once()->andReturn(true);
+
+    $di = container();
+    $di['em'] = $emMock;
+    $di['mod_service'] = $di->protect(fn ($serviceName, $sub = '') => match ($serviceName) {
+        'currency' => $currencyService,
+        'client' => $clientService,
+        'Product' => $productService,
+        'order', 'Order' => $orderService,
+        default => null,
+    });
+
+    $serviceMock->setDi($di);
+    [$masterOrder, $invoiceModel, $ids] = $serviceMock->createFromCart($client);
+
+    expect($createdOrders)->toHaveCount(3);
+    expect(array_map(fn (Order $order): bool => $order->isGroupMaster(), $createdOrders))->toBe([true, false, true]);
+    expect(array_map(fn (Order $order): ?string => $order->getGroupId(), $createdOrders))->toBe(['3_1', '3_1', '3_2']);
+    // Family bookkeeping must not leak into the stored order config.
+    foreach ($createdOrders as $order) {
+        expect(json_decode((string) $order->getConfig(), true))->not->toHaveKey(Service::CART_FAMILY_KEY);
+    }
+    expect($masterOrder)->toBe($createdOrders[0]);
+    expect($invoiceModel)->toBeNull();
+    expect($ids)->toBeArray()->toHaveCount(3);
+});
+
 test('createFromCart compensates promo usage on transaction failure', function (): void {
     $cart = createEntity(Cart::class);
     $cart->id = 3;
@@ -2105,4 +2378,66 @@ test('addItem strips client-injected hosting_plan_id', function (): void {
     expect($hostingCall)->toHaveKey('domain');
     expect($hostingCall)->toHaveKey('multiple');
     expect($hostingCall['domain'])->toHaveKey('action', 'owndomain');
+});
+
+test('addItem stamps one shared cart family across parent and addons', function (): void {
+    $cartModel = new Cart();
+    $cartReflection = new ReflectionProperty($cartModel, 'id');
+    $cartReflection->setValue($cartModel, 1);
+
+    $parentModel = createProductEntity(id: 5, type: 'custom');
+    $addonModel = createProductEntity(id: 9, type: 'custom');
+
+    $eventMock = Mockery::mock(Box_EventManager::class)->shouldIgnoreMissing();
+    $eventMock->shouldReceive('fire')->atLeast()->once();
+
+    $cartProductRepo = Mockery::mock(CartProductRepository::class);
+    $cartProductRepo->shouldReceive('findByCartId')->atLeast()->once()->andReturn([]);
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(CartProduct::class)->andReturn($cartProductRepo);
+
+    $productServiceMock = Mockery::mock(ProductService::class);
+    $productServiceMock->shouldReceive('getProductModuleService')->atLeast()->once()->andReturn(new stdClass());
+    $productServiceMock->shouldReceive('prepareCartProductConfig')->atLeast()->once()->andReturnUsing(fn (Product $product, array $config): array => $config);
+    $productServiceMock->shouldReceive('getSelectedAddonsForCart')
+        ->once()
+        ->with($parentModel, ['9' => ['selected' => true]])
+        ->andReturn([['product' => $addonModel, 'config' => ['selected' => true]]]);
+
+    $storedConfigs = [];
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('isRecurrentPricing')->atLeast()->once()->andReturn(false);
+    $serviceMock->shouldReceive('isStockAvailable')->atLeast()->once()->andReturn(true);
+    $serviceMock->shouldReceive('addProduct')
+        ->atLeast()->once()
+        ->with(Mockery::type(Cart::class), Mockery::type(Product::class), Mockery::type('array'))
+        ->andReturnUsing(function (Cart $cart, Product $product, array $config) use (&$storedConfigs): bool {
+            $storedConfigs[] = $config;
+
+            return true;
+        });
+
+    $di = container();
+    $di['em'] = $emMock;
+    $di['events_manager'] = $eventMock;
+    $di['mod_service'] = $di->protect(fn ($name) => $name === 'Product' ? $productServiceMock : new stdClass());
+    $di['logger'] = new FOSSBilling\Logger();
+    $serviceMock->setDi($di);
+
+    expect($serviceMock->addItem($cartModel, $parentModel, ['addons' => ['9' => ['selected' => true]]]))->toBeTrue();
+    expect($storedConfigs)->toHaveCount(2);
+
+    $firstFamily = $storedConfigs[0][Service::CART_FAMILY_KEY] ?? null;
+    expect($firstFamily)->toBeString();
+    expect($firstFamily)->not->toBe('');
+    expect($storedConfigs[1][Service::CART_FAMILY_KEY] ?? null)->toBe($firstFamily);
+
+    // A separate add-to-cart action starts a new family.
+    expect($serviceMock->addItem($cartModel, $parentModel, []))->toBeTrue();
+    expect($storedConfigs)->toHaveCount(3);
+    $secondFamily = $storedConfigs[2][Service::CART_FAMILY_KEY] ?? null;
+    expect($secondFamily)->toBeString();
+    expect($secondFamily)->not->toBe('');
+    expect($secondFamily)->not->toBe($firstFamily);
 });
