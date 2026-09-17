@@ -60,7 +60,7 @@ class PromoRedemptionRepository extends EntityRepository
     {
         $qb = $this->createQueryBuilder('pr');
 
-        if (!empty($data['promo_id'])) {
+        if (array_key_exists('promo_id', $data)) {
             $qb->andWhere('pr.promoId = :promoId')
                 ->setParameter('promoId', $data['promo_id']);
         }

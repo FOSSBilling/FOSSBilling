@@ -508,6 +508,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     public function promo_redemption_get_list($data)
     {
         $this->checkPermissions('product', 'view');
+        $this->checkPermissions('client', 'view');
+        $this->checkPermissions('order', 'view');
+        $this->checkPermissions('invoice', 'view');
 
         /** @var \Box\Mod\Product\Repository\PromoRedemptionRepository $repo */
         $repo = $this->getService()->getPromoRedemptionRepository();
