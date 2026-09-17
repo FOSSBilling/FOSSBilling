@@ -228,7 +228,9 @@ class Session implements InjectionAwareInterface
             return $sessionID;
         }
 
-        return $_COOKIE[$this->session->getName()] ?? '';
+        $sessionID = $_COOKIE[$this->session->getName()] ?? '';
+
+        return is_string($sessionID) ? $sessionID : '';
     }
 
     private function configureCookieName(): void
