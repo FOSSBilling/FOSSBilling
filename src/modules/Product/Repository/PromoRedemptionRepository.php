@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Box\Mod\Product\Repository;
 
 use Box\Mod\Product\Entity\PromoRedemption;
+use Doctrine\DBAL\Platforms\PostgreSQLPlatform;
 use Doctrine\DBAL\Platforms\SQLitePlatform;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
@@ -125,7 +126,9 @@ class PromoRedemptionRepository extends EntityRepository
             throw new \FOSSBilling\Exception('Promo redemption cannot be locked outside of a transaction.');
         }
 
-        if ($connection->getDatabasePlatform() instanceof SQLitePlatform) {
+        $platform = $connection->getDatabasePlatform();
+
+        if ($platform instanceof SQLitePlatform) {
             // SQLite has no SELECT ... FOR UPDATE, and a deferred transaction takes no lock at
             // all until the first write. Two concurrent checkouts could otherwise both pass the
             // read below under a shared lock before either takes a write lock. This no-op UPDATE
@@ -145,12 +148,18 @@ class PromoRedemptionRepository extends EntityRepository
             ['client_id' => $clientId]
         );
 
-        // A locking read, because a plain one can be served from the transaction snapshot, which
-        // under REPEATABLE READ can predate the checkout we just waited on above.
+        // PostgreSQL rejects locking clauses on aggregate queries outright, so the COUNT goes
+        // without FOR UPDATE there. That loses nothing: under PostgreSQL's default READ COMMITTED
+        // isolation every statement sees a fresh snapshot, so once the client-row mutex above is
+        // held, this read already reflects everything committed before it. The locking read only
+        // matters where the transaction snapshot can predate the mutex wait (MySQL/MariaDB
+        // REPEATABLE READ).
+        $countLock = ($platform instanceof SQLitePlatform || $platform instanceof PostgreSQLPlatform) ? '' : ' FOR UPDATE';
+
         $count = (int) $connection->fetchOne(
             'SELECT COUNT(pr.id) FROM promo_redemption pr'
             . ' WHERE pr.promo_id = :promo_id AND pr.client_id = :client_id'
-            . ' AND pr.phase = :phase AND pr.status IN (:statuses)' . RowLock::suffix($connection),
+            . ' AND pr.phase = :phase AND pr.status IN (:statuses)' . $countLock,
             [
                 'promo_id' => $promoId,
                 'client_id' => $clientId,
