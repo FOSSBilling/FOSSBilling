@@ -209,8 +209,10 @@
         const registerSldInput = document.querySelector('input[name="domain[register_sld]"]');
         const registerTldSelect = document.querySelector('select[name="domain[register_tld]"]');
         let domainChecked = false;
+        let domainCheckGeneration = 0;
 
         const resetRegisterCheck = () => {
+            domainCheckGeneration++;
             if (!domainChecked) {
                 return;
             }
@@ -233,11 +235,13 @@
         if (domainCheck) {
             domainCheck.addEventListener('click', function(event) {
                 event.preventDefault();
+                const generation = ++domainCheckGeneration;
                 const sld = document.querySelector('input[name="domain[register_sld]"]').value.toLowerCase();
                 const tld = document.querySelector('select[name="domain[register_tld]"]').value.toLowerCase();
 
                 FOSSBilling.api.guest.post('servicedomain/check', { sld: sld, tld: tld },
                     function(result) {
+                        if (generation !== domainCheckGeneration) return;
                         setRegistrationPricing(tld);
                         const registerConfig = document.getElementById('register-config');
                         if (registerConfig) fadeIn(registerConfig);
@@ -253,6 +257,7 @@
         const transferSldInput = document.querySelector('input[name="domain[transfer_sld]"]');
         const transferTldSelect = document.querySelector('select[name="domain[transfer_tld]"]');
         let transferChecked = false;
+        let transferCheckGeneration = 0;
 
         function updateTransferCodeRequirement() {
             const selectedOption = transferTldSelect && transferTldSelect.options[transferTldSelect.selectedIndex];
@@ -265,6 +270,7 @@
         }
 
         const resetTransferCheck = () => {
+            transferCheckGeneration++;
             if (!transferChecked) {
                 return;
             }
@@ -286,11 +292,13 @@
         if (transferCheck) {
             transferCheck.addEventListener('click', function(event) {
                 event.preventDefault();
+                const generation = ++transferCheckGeneration;
                 const sld = document.querySelector('input[name="domain[transfer_sld]"]').value.toLowerCase();
                 const tld = document.querySelector('select[name="domain[transfer_tld]"]').value.toLowerCase();
 
                 FOSSBilling.api.guest.post('servicedomain/can_be_transferred', { sld: sld, tld: tld },
                     function(result) {
+                        if (generation !== transferCheckGeneration) return;
                         setTransferPricing(tld);
                         const transferConfig = document.getElementById('transfer-config');
                         if (transferConfig) fadeIn(transferConfig);
