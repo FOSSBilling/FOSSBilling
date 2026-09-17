@@ -61,3 +61,41 @@ test('processes a transaction when the invoice and callback gateways match', fun
 
     expect($adapter->processTransaction(null, 20, ['get' => ['invoice_id' => 10]], 5))->toBeTrue();
 });
+
+test('rejects a transaction when the callback gateway differs from the invoice gateway', function (): void {
+    $gateway = createEntity(PayGateway::class, ['id' => 5]);
+    $invoice = createEntity(Invoice::class, ['id' => 10, 'client_id' => 42]);
+    $invoice->setGateway($gateway);
+
+    $transactionRepository = Mockery::mock();
+    $transactionRepository->shouldReceive('find')->once()->with(20)->andReturn(null);
+    $invoiceRepository = Mockery::mock();
+    $invoiceRepository->shouldReceive('find')->once()->with(10)->andReturn($invoice);
+
+    $entityManager = Mockery::mock();
+    $entityManager->shouldReceive('getRepository')->with(Transaction::class)->andReturn($transactionRepository);
+    $entityManager->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepository);
+
+    $invoiceService = Mockery::mock();
+    $invoiceService->shouldNotReceive('isInvoiceTypeDeposit');
+    $invoiceService->shouldNotReceive('payInvoiceWithCredits');
+    $invoiceService->shouldNotReceive('doBatchPayWithCredits');
+
+    $loggedInClient = Mockery::mock();
+    $loggedInClient->shouldReceive('getId')->once()->andReturn(42);
+
+    $auth = Mockery::mock();
+    $auth->shouldReceive('isClientLoggedIn')->once()->andReturnTrue();
+
+    $di = container();
+    $di['em'] = $entityManager;
+    $di['auth'] = $auth;
+    $di['loggedin_client'] = $loggedInClient;
+    $di['mod_service'] = $di->protect(fn (string $name): object => $invoiceService);
+
+    $adapter = new Payment_Adapter_ClientBalance();
+    $adapter->setDi($di);
+
+    expect(fn (): mixed => $adapter->processTransaction(null, 20, ['get' => ['invoice_id' => 10]], 6))
+        ->toThrow(Payment_Exception::class, 'Invoice is not configured to use this payment gateway.');
+});
