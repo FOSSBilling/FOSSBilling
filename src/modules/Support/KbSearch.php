@@ -13,8 +13,8 @@ namespace Box\Mod\Support;
 
 final class KbSearch
 {
-    public const MAX_QUERY_LENGTH = 255;
-    public const MAX_TERMS = 10;
+    public const int MAX_QUERY_LENGTH = 255;
+    public const int MAX_TERMS = 10;
 
     /**
      * @return list<string>
