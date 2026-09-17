@@ -4,12 +4,11 @@ declare(strict_types=1);
 
 use Symfony\Component\Filesystem\Path;
 
-test('theme configuration directories are protected at any nesting depth', function (string $configurationFile, string $expectedRule): void {
-    $configuration = file_get_contents(Path::join(__DIR__, '..', '..', $configurationFile));
+test('theme configuration directories are protected at any nesting depth', function (): void {
+    // Only the shipped Apache configuration is asserted here.
+    // .ddev/nginx/fossbilling-security.conf is dev-only and isn't copied into the CI test image.
+    $configuration = file_get_contents(Path::join(__DIR__, '..', '..', 'src/.htaccess'));
 
     expect($configuration)->not->toBeFalse()
-        ->and($configuration)->toContain($expectedRule);
-})->with([
-    'Apache' => ['src/.htaccess', 'RewriteCond %{REQUEST_URI} ^/themes/(?:[^/]+/)+config/ [NC]'],
-    'Nginx' => ['.ddev/nginx/fossbilling-security.conf', 'location ~* ^/themes/(?:[^/]+/)+config/ {'],
-]);
+        ->and($configuration)->toContain('RewriteCond %{REQUEST_URI} ^/themes/(?:[^/]+/)+config/ [NC]');
+});
