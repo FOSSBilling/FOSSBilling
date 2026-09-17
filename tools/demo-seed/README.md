@@ -6,9 +6,11 @@ Repeatable, additive test-data seeder for a FOSSBilling instance. All records us
 
 ```bash
 APP_URL=https://fossbilling.ddev.site TEST_API_KEY=... php tools/demo-seed/demo-seed.php
-php tools/demo-seed/demo-seed.php --url=... --key=... --dry-run
-php tools/demo-seed/demo-seed.php --url=... --key=... --limit-clients=5 --limit-orders=5 --limit-tickets=5
+APP_URL=https://example.test TEST_API_KEY=... php tools/demo-seed/demo-seed.php --dry-run
+APP_URL=https://example.test TEST_API_KEY=... php tools/demo-seed/demo-seed.php --limit-clients=5 --limit-orders=5 --limit-tickets=5
 ```
+
+The admin API key must be provided through `TEST_API_KEY`; command-line arguments can be visible to other users on the system.
 
 Writes `tools/demo-seed/manifest.json` with every created ID plus the shared
 test passwords (`DemoPass123!` for clients and demo staff).

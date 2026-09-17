@@ -11,7 +11,7 @@
  *
  * Usage:
  *   APP_URL=https://fossbilling.ddev.site TEST_API_KEY=... php tools/demo-seed/demo-seed.php
- *   php tools/demo-seed/demo-seed.php --url=https://fossbilling.ddev.site --key=... [--dry-run] [--limit-clients=5]
+ *   APP_URL=https://fossbilling.ddev.site TEST_API_KEY=... php tools/demo-seed/demo-seed.php [--dry-run] [--limit-clients=5]
  *
  * Output: tools/demo-seed/manifest.json
  *
@@ -22,22 +22,22 @@
 
 declare(strict_types=1);
 
-$options = getopt('', ['url:', 'key:', 'dry-run', 'limit-clients::', 'limit-orders::', 'limit-tickets::', 'help']);
+$options = getopt('', ['url:', 'dry-run', 'limit-clients::', 'limit-orders::', 'limit-tickets::', 'help']);
 if (isset($options['help'])) {
-    echo "Usage: demo-seed.php [--url=...] [--key=...] [--dry-run] [--limit-clients=N] [--limit-orders=N] [--limit-tickets=N]\n";
+    echo "Usage: demo-seed.php [--url=...] [--dry-run] [--limit-clients=N] [--limit-orders=N] [--limit-tickets=N]\n";
     echo "Env: APP_URL, TEST_API_KEY\n";
     exit(0);
 }
 
 $baseUrl = rtrim((string) ($options['url'] ?? getenv('APP_URL') ?: 'https://fossbilling.ddev.site'), '/');
-$apiKey = (string) ($options['key'] ?? getenv('TEST_API_KEY') ?: '');
+$apiKey = (string) (getenv('TEST_API_KEY') ?: '');
 $dryRun = isset($options['dry-run']);
 $limitClients = isset($options['limit-clients']) ? (int) $options['limit-clients'] : 0;
 $limitOrders = isset($options['limit-orders']) ? (int) $options['limit-orders'] : 0;
 $limitTickets = isset($options['limit-tickets']) ? (int) $options['limit-tickets'] : 0;
 
 if ($apiKey === '') {
-    fwrite(STDERR, "Missing API key. Set TEST_API_KEY or pass --key=...\n");
+    fwrite(STDERR, "Missing API key. Set TEST_API_KEY.\n");
     exit(2);
 }
 
