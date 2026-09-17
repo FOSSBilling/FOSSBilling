@@ -1657,6 +1657,24 @@ class Service implements InjectionAwareInterface
         return $this->getPromoRedemptionRepository()->clientHasActiveCheckoutApplication($promoId, $clientId);
     }
 
+    /**
+     * Locking variant of clientHasActivePromoApplication(), for the checkout transaction.
+     * Promos without the once-per-client flag never lock: there is nothing to serialize.
+     */
+    public function clientHasActivePromoApplicationForUpdate(Client $client, Promo $promo): bool
+    {
+        $promoData = $this->getPromoSourceArray($promo);
+        if (empty($promoData['once_per_client'])) {
+            return false;
+        }
+
+        $promoId = (int) ($promoData['id'] ?? 0);
+
+        $clientId = (int) $client->getId();
+
+        return $this->getPromoRedemptionRepository()->clientHasActiveCheckoutApplicationForUpdate($promoId, $clientId);
+    }
+
     public function commitReservedPromoRedemptionsForInvoice(Invoice $invoice): void
     {
         $redemptions = $this->getPromoRedemptionRepository()->findBy([

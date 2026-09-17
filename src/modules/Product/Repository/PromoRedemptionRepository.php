@@ -12,8 +12,10 @@ declare(strict_types=1);
 namespace Box\Mod\Product\Repository;
 
 use Box\Mod\Product\Entity\PromoRedemption;
+use Doctrine\DBAL\Platforms\SQLitePlatform;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
+use FOSSBilling\Doctrine\RowLock;
 
 class PromoRedemptionRepository extends EntityRepository
 {
@@ -104,6 +106,59 @@ class PromoRedemptionRepository extends EntityRepository
             ->setParameter('statuses', [PromoRedemption::STATUS_RESERVED, PromoRedemption::STATUS_COMMITTED])
             ->getQuery()
             ->getSingleScalarResult();
+
+        return $count > 0;
+    }
+
+    /**
+     * Locking variant of clientHasActiveCheckoutApplication(), for use inside the checkout
+     * transaction. Redemption rows are insert-only, so a plain COUNT cannot serialize concurrent
+     * checkouts against each other: lock the client row as the mutex instead, then re-read.
+     *
+     * Must be called within a transaction, held until the checkout's redemption rows are written.
+     */
+    public function clientHasActiveCheckoutApplicationForUpdate(int $promoId, int $clientId): bool
+    {
+        $connection = $this->getEntityManager()->getConnection();
+
+        if (!$connection->isTransactionActive()) {
+            throw new \FOSSBilling\Exception('Promo redemption cannot be locked outside of a transaction.');
+        }
+
+        if ($connection->getDatabasePlatform() instanceof SQLitePlatform) {
+            // SQLite has no SELECT ... FOR UPDATE, and a deferred transaction takes no lock at
+            // all until the first write. Two concurrent checkouts could otherwise both pass the
+            // read below under a shared lock before either takes a write lock. This no-op UPDATE
+            // changes no values but forces lock escalation immediately, so only one checkout can
+            // be mid-check at a time; the loser fails outright on the busy connection and rolls
+            // back instead of double-redeeming.
+            $connection->executeStatement(
+                'UPDATE client SET updated_at = updated_at WHERE id = :client_id',
+                ['client_id' => $clientId]
+            );
+        }
+
+        // The mutex: every checkout for this client collides here, checkouts for other clients
+        // do not.
+        $connection->fetchOne(
+            'SELECT id FROM client WHERE id = :client_id' . RowLock::suffix($connection),
+            ['client_id' => $clientId]
+        );
+
+        // A locking read, because a plain one can be served from the transaction snapshot, which
+        // under REPEATABLE READ can predate the checkout we just waited on above.
+        $count = (int) $connection->fetchOne(
+            'SELECT COUNT(pr.id) FROM promo_redemption pr'
+            . ' WHERE pr.promo_id = :promo_id AND pr.client_id = :client_id'
+            . ' AND pr.phase = :phase AND pr.status IN (:statuses)' . RowLock::suffix($connection),
+            [
+                'promo_id' => $promoId,
+                'client_id' => $clientId,
+                'phase' => PromoRedemption::PHASE_CHECKOUT,
+                'statuses' => [PromoRedemption::STATUS_RESERVED, PromoRedemption::STATUS_COMMITTED],
+            ],
+            ['statuses' => \Doctrine\DBAL\ArrayParameterType::STRING]
+        );
 
         return $count > 0;
     }
