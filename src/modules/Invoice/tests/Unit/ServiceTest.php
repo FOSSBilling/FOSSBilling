@@ -495,9 +495,11 @@ test('uses the client billing email for invoice notifications', function (): voi
     expect($service->withBillingRecipient($email, $invoice))->toBe([
         'to_client' => 42,
         'code' => 'mod_invoice_created',
-        'to' => 'billing@example.com',
+        'client_billing_email' => 'billing@example.com',
     ]);
     expect($service->withBillingRecipient($email, ['client' => ['billing_email' => null]]))->toBe($email);
+    expect($service->withBillingRecipient($email, ['client' => ['billing_email' => 'not-an-email']]))->toBe($email);
+    expect($service->withBillingRecipient($email, ['client' => []]))->toBe($email);
 });
 
 test('handles event after invoice is due', function (): void {
@@ -1382,6 +1384,39 @@ test('pays a zero-total invoice without recording a balance transaction', functi
     expect($service->tryPayWithCredits($invoice))->toBeTrue();
 });
 
+test('records a balance transaction for a one-cent invoice', function (): void {
+    $invoice = createEntity(Invoice::class);
+
+    $invoice->id = 10;
+    $invoice->nr = '2024-001';
+    $invoice->client_id = 20;
+    $invoice->approved = 1;
+    $invoice->status = Invoice::STATUS_UNPAID;
+
+    $balanceService = Mockery::mock(Box\Mod\Client\ServiceBalance::class);
+    $balanceService->shouldReceive('getClientBalanceForUpdate')->once()->with(20)->andReturn(0.01);
+
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('getTotalWithTax')->once()->with($invoice)->andReturn(0.01);
+    $service->shouldReceive('markAsPaid')->once()->with($invoice, false, false, true)->andReturn(true);
+
+    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 20]);
+
+    $di = container();
+    $di['em']->shouldReceive('getReference')->with(Box\Mod\Client\Entity\Client::class, 20)->andReturn($client);
+    $di['em']->shouldReceive('persist')->once()->with(
+        Mockery::on(fn (ClientBalance $balance): bool => $balance->getClient()?->getId() === 20
+            && $balance->getType() === 'invoice'
+            && $balance->getRelId() === '10'
+            && $balance->getAmount() === '-0.01')
+    );
+    $di['em']->shouldReceive('flush')->once();
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $balanceService);
+    $service->setDi($di);
+
+    expect($service->tryPayWithCredits($invoice))->toBeTrue();
+});
+
 test('pays an invoice with credits and records a balance transaction', function (): void {
     $invoice = createEntity(Invoice::class);
 
@@ -1479,6 +1514,63 @@ test('does not deduct credits when the locked balance is insufficient', function
 
     $service = Mockery::mock(Service::class)->makePartial();
     $service->shouldReceive('getTotalWithTax')->once()->with($invoice)->andReturn(50.0);
+    $service->shouldNotReceive('markAsPaid');
+
+    $di = container();
+    $di['em']->getRepository(Invoice::class)->shouldReceive('lockAndGetStatus')->with(10)
+        ->andReturn(Invoice::STATUS_UNPAID);
+    $di['em']->shouldNotReceive('persist');
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $balanceService);
+    $service->setDi($di);
+
+    expect($service->tryPayWithCredits($invoice))->toBeFalse();
+});
+
+test('pays a fully funded invoice despite floating-point rounding dust', function (): void {
+    $invoice = createEntity(Invoice::class);
+    $invoice->id = 10;
+    $invoice->nr = '2024-001';
+    $invoice->client_id = 20;
+    $invoice->approved = 1;
+    $invoice->status = Invoice::STATUS_UNPAID;
+
+    $balanceService = Mockery::mock(Box\Mod\Client\ServiceBalance::class);
+    // 0.30 and 0.1 * 3 are equal at two-decimal scale but not as raw floats.
+    $balanceService->shouldReceive('getClientBalanceForUpdate')->once()->with(20)->andReturn(0.30);
+
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('getTotalWithTax')->once()->with($invoice)->andReturn(0.1 * 3);
+    $service->shouldReceive('markAsPaid')->once()->with($invoice, false, false, true)->andReturn(true);
+
+    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 20]);
+
+    $di = container();
+    $di['em']->shouldReceive('getReference')->with(Box\Mod\Client\Entity\Client::class, 20)->andReturn($client);
+    $di['em']->shouldReceive('persist')->once()->with(
+        Mockery::on(fn (ClientBalance $balance): bool => $balance->getClient()?->getId() === 20
+            && $balance->getType() === 'invoice'
+            && $balance->getRelId() === '10'
+            && round((float) $balance->getAmount(), 2) === -0.30)
+    );
+    $di['em']->shouldReceive('flush')->once();
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $balanceService);
+    $service->setDi($di);
+
+    expect($service->tryPayWithCredits($invoice))->toBeTrue();
+});
+
+test('does not pay a one-cent invoice with a zero credit balance', function (): void {
+    $invoice = createEntity(Invoice::class);
+    $invoice->id = 10;
+    $invoice->client_id = 20;
+    $invoice->approved = 1;
+    $invoice->status = Invoice::STATUS_UNPAID;
+
+    $balanceService = Mockery::mock(Box\Mod\Client\ServiceBalance::class);
+    $balanceService->shouldReceive('getClientBalanceForUpdate')->once()->with(20)->andReturn(0.0);
+
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('getTotalWithTax')->once()->with($invoice)->andReturn(0.01);
     $service->shouldNotReceive('markAsPaid');
 
     $di = container();

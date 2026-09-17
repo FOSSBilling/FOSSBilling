@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Box\Mod\Support\Repository;
 
 use Box\Mod\Support\Entity\KbArticle;
+use Box\Mod\Support\KbSearch;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
 
@@ -38,10 +39,7 @@ class KbArticleRepository extends EntityRepository
         }
 
         if ($search !== null && trim($search) !== '') {
-            $search = mb_strtolower(trim($search));
-            $terms = preg_split('/\s+/', $search, -1, PREG_SPLIT_NO_EMPTY) ?: [];
-
-            foreach ($terms as $index => $term) {
+            foreach (KbSearch::terms($search) as $index => $term) {
                 $qb->andWhere(sprintf(
                     '(LOWER(a.title) LIKE :searchTerm%s OR LOWER(a.content) LIKE :searchTerm%s OR LOWER(c.title) LIKE :searchTerm%s OR LOWER(c.description) LIKE :searchTerm%s)',
                     $index,

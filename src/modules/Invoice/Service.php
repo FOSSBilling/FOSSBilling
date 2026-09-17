@@ -707,12 +707,13 @@ class Service implements InjectionAwareInterface
     /**
      * Route invoice notifications to the client's optional billing address while retaining
      * to_client so templates, timezone handling, and client email history keep working.
+     * Uses the internal `client_billing_email` override validated by the email service.
      */
     public function withBillingRecipient(array $email, array $invoice): array
     {
         $billingEmail = trim((string) ($invoice['client']['billing_email'] ?? ''));
-        if ($billingEmail !== '') {
-            $email['to'] = $billingEmail;
+        if ($billingEmail !== '' && filter_var($billingEmail, FILTER_VALIDATE_EMAIL) !== false) {
+            $email['client_billing_email'] = $billingEmail;
         }
 
         return $email;
@@ -1091,10 +1092,9 @@ class Service implements InjectionAwareInterface
             }
 
             $required = $this->getTotalWithTax($invoice);
-            $epsilon = 0.01;
-            $difference = $balance - $required;
-
-            if ($difference < -$epsilon) {
+            // Compare at two-decimal monetary scale: balances are DECIMAL(18,2) sums while the
+            // total is float arithmetic, so e.g. 0.30 and 0.1 * 3 differ as raw floats.
+            if (round($balance, 2) < round($required, 2)) {
                 // @phpstan-ignore if.alwaysFalse (DEBUG is a runtime constant that may be true during debugging)
                 if (DEBUG) {
                     $this->di['logger']->withChannel('billing')->info("Invoice {$invoice->getId()} could not be paid with credits. Money in balance {$balance} Required: {$required}.");
@@ -1108,8 +1108,8 @@ class Service implements InjectionAwareInterface
                 $this->di['logger']->withChannel('billing')->info("Setting invoice {$invoice->getId()} as paid with credits for the amount of {$required}.");
             }
 
-            if ($required > $epsilon) {
-                // Nothing at or below the epsilon is actually charged against the client's balance,
+            if ($required > 0.0) {
+                // Nothing is charged against the client's balance for a zero or negative invoice,
                 // so don't record a $0 credit transaction.
                 $balanceTransaction = new ClientBalance();
                 $balanceTransaction->setClient($this->di['em']->getReference(Client::class, $clientId));

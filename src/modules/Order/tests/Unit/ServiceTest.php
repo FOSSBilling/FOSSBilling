@@ -70,6 +70,101 @@ test('counter returns status counts', function (): void {
     expect($result)->toHaveKey(Order::STATUS_CANCELED);
 });
 
+test('batch order serialization does not expose admin-only client details', function (): void {
+    $client = createEntity(Box\Mod\Client\Entity\Client::class);
+    setEntityId($client, 7);
+    $admin = createEntity(Box\Mod\Staff\Entity\Admin::class);
+
+    $clientRepository = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
+    $clientRepository->shouldReceive('findBy')->once()->with(['id' => [7]])->andReturn([$client]);
+
+    // Realistic non-admin client payload: the fields the admin order list UI needs
+    // (see mod_order_index.html.twig and partial_dashboard_orders_card.html.twig,
+    // which read order.client.email/first_name/last_name). An ID-only reference
+    // would break those templates, so the boundary must keep general fields while
+    // excluding admin-only ones.
+    $generalClient = [
+        'id' => 7,
+        'email' => 'jane@example.com',
+        'first_name' => 'Jane',
+        'last_name' => 'Doe',
+    ];
+
+    $clientService = Mockery::mock(Box\Mod\Client\Service::class);
+    $clientService->shouldReceive('toApiArray')
+        ->once()
+        ->withArgs(fn (...$args) => count($args) === 2 && $args[0] === $client && $args[1] === false)
+        ->andReturn($generalClient);
+
+    $productService = Mockery::mock(Box\Mod\Product\Service::class);
+    $productService->shouldReceive('getProductPluginMap')->once()->with([3])->andReturn([]);
+
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('fetchAllAssociative')
+        ->once()
+        ->with('SELECT * FROM client_order WHERE id IN (?)', [11])
+        ->andReturn([[
+            'id' => 11,
+            'client_id' => 7,
+            'product_id' => 3,
+            'config' => '{}',
+            'price' => 10,
+            'quantity' => 1,
+            'title' => 'Example order',
+        ]]);
+    $connection->shouldReceive('fetchAllAssociative')->twice()->andReturn([]);
+
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->andReturn($connection);
+    $em->shouldReceive('getRepository')
+        ->once()
+        ->with(Box\Mod\Client\Entity\Client::class)
+        ->andReturn($clientRepository);
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(fn (string $name) => match ($name) {
+        'client' => $clientService,
+        'product' => $productService,
+    });
+
+    $service = new Service();
+    $service->setDi($di);
+
+    $result = $service->getBatchForApi([11], $admin);
+
+    // The batch boundary forwards no identity, so the embedded client must be
+    // the general (non-admin) representation: UI fields present, admin-only
+    // fields absent.
+    expect($result[0]['client'])->toBe($generalClient);
+    foreach (['aid', 'status', 'notes', 'ip', 'billing_email', 'group', 'client_group', 'api_token'] as $adminOnlyKey) {
+        expect($result[0]['client'])->not->toHaveKey($adminOnlyKey);
+    }
+});
+
+test('batch client serialization excludes admin-only fields on the real path', function (): void {
+    $client = createEntity(Box\Mod\Client\Entity\Client::class);
+    $client->setEmail('jane@example.com');
+    $client->setFirstName('Jane');
+    $client->setLastName('Doe');
+
+    $di = container();
+    $di['mod_config'] = $di->protect(fn (string $name) => []);
+
+    $clientService = new Box\Mod\Client\Service();
+    $clientService->setDi($di);
+
+    $admin = createEntity(Box\Mod\Staff\Entity\Admin::class);
+    $general = $clientService->toApiArray($client, false);
+    $adminView = $clientService->toApiArray($client, false, $admin);
+
+    expect($general['email'])->toBe('jane@example.com');
+    foreach (['aid', 'status', 'notes', 'ip', 'billing_email'] as $adminOnlyKey) {
+        expect($general)->not->toHaveKey($adminOnlyKey);
+        expect($adminView)->toHaveKey($adminOnlyKey);
+    }
+});
+
 test('onAfterAdminOrderActivate fires template', function (): void {
     $params = ['id' => 1];
 
@@ -1238,8 +1333,6 @@ test('orderStatusAdd records status history', function (): void {
 });
 
 test('getSoonExpiringActiveOrders executes query', function (): void {
-    $order = createEntity(Order::class);
-
     $connectionMock = Mockery::mock(Doctrine\DBAL\Connection::class);
     $connectionMock->shouldReceive('fetchAllAssociative')->atLeast()->once()->andReturn([[], []]);
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
@@ -1256,10 +1349,8 @@ test('getSoonExpiringActiveOrders executes query', function (): void {
     $serviceMock->getSoonExpiringActiveOrders();
 });
 
-test('getSoonExpiringActiveOrdersQuery builds expected SQL and bindings', function (): void {
+test('getSoonExpiringActiveOrdersQuery excludes orders with scheduled cancellations', function (): void {
     $randId = 1;
-
-    $orderStatus = createEntity(Box\Mod\Order\Entity\OrderStatus::class);
 
     $systemService = Mockery::mock(Box\Mod\System\Service::class);
     $systemService->shouldReceive('getParamValue')->atLeast()->once()->andReturn($randId);
@@ -1273,8 +1364,6 @@ test('getSoonExpiringActiveOrdersQuery builds expected SQL and bindings', functi
     $svc = new Service();
     $svc->setDi($di);
 
-    $order = createEntity(Order::class);
-
     $data = ['client_id' => $randId];
     $result = $svc->getSoonExpiringActiveOrdersQuery($data);
 
@@ -1286,6 +1375,13 @@ test('getSoonExpiringActiveOrdersQuery builds expected SQL and bindings', functi
                 AND co.period IS NOT NULL
                 AND co.expires_at IS NOT NULL
                 AND i.id IS NULL
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM client_order_meta cancellation_meta
+                    WHERE cancellation_meta.client_order_id = co.id
+                    AND cancellation_meta.name = :cancellation_meta_name
+                    AND cancellation_meta.value = :cancellation_meta_value
+                )
                 /* Pair non-executed renewal items with paid invoices to skip renewals already queued for activation. */
                 AND NOT EXISTS (
                     SELECT 1
@@ -1301,6 +1397,8 @@ test('getSoonExpiringActiveOrdersQuery builds expected SQL and bindings', functi
     $expectedBindings = [
         'client_id' => $randId,
         'unpaid_invoice_status' => Invoice::STATUS_UNPAID,
+        'cancellation_meta_name' => Service::META_CANCEL_AT_PERIOD_END,
+        'cancellation_meta_value' => '1',
         'pending_item_type' => Box\Mod\Invoice\Entity\InvoiceItem::TYPE_ORDER,
         'pending_item_task' => Box\Mod\Invoice\Entity\InvoiceItem::TASK_RENEW,
         'pending_item_status' => Box\Mod\Invoice\Entity\InvoiceItem::STATUS_EXECUTED,
@@ -1314,6 +1412,54 @@ test('getSoonExpiringActiveOrdersQuery builds expected SQL and bindings', functi
     expect($result[1])->toBeArray();
     expect($result[0])->toEqual($expectedQuery);
     expect($result[1])->toEqual($expectedBindings);
+});
+
+test('getSoonExpiringActiveOrders excludes orders with scheduled cancellation meta', function (): void {
+    $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $connection->executeStatement('CREATE TABLE client_order (id INTEGER PRIMARY KEY, status TEXT, invoice_option TEXT, period TEXT, expires_at TEXT, unpaid_invoice_id INTEGER, client_id INTEGER)');
+    $connection->executeStatement('CREATE TABLE invoice (id INTEGER PRIMARY KEY, status TEXT)');
+    $connection->executeStatement('CREATE TABLE invoice_item (id INTEGER PRIMARY KEY, rel_id INTEGER, invoice_id INTEGER, type TEXT, task TEXT, status TEXT)');
+    $connection->executeStatement('CREATE TABLE client_order_meta (id INTEGER PRIMARY KEY, client_order_id INTEGER, name TEXT, value TEXT)');
+
+    $expiresAt = (new DateTimeImmutable('tomorrow'))->format('Y-m-d H:i:s');
+    $eligibleOrder = [
+        'status' => Order::STATUS_ACTIVE,
+        'invoice_option' => 'issue-invoice',
+        'period' => '1M',
+        'expires_at' => $expiresAt,
+        'unpaid_invoice_id' => null,
+        'client_id' => 1,
+    ];
+    $connection->insert('client_order', ['id' => 1] + $eligibleOrder);
+    $connection->insert('client_order', ['id' => 2] + $eligibleOrder);
+    $connection->insert('client_order_meta', [
+        'client_order_id' => 2,
+        'name' => Service::META_CANCEL_AT_PERIOD_END,
+        'value' => '1',
+    ]);
+
+    $systemService = Mockery::mock(Box\Mod\System\Service::class);
+    $systemService->shouldReceive('getParamValue')->with('invoice_issue_days_before_expire', 14)->andReturn(14);
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getConnection')->andReturn($connection);
+    $emMock->shouldIgnoreMissing();
+
+    $di = container();
+    $di['em'] = $emMock;
+    $di['mod_service'] = $di->protect(fn (string $name): Mockery\MockInterface => match (strtolower($name)) {
+        'system' => $systemService,
+        default => Mockery::mock()->shouldIgnoreMissing(),
+    });
+
+    $svc = new Service();
+    $svc->setDi($di);
+
+    $result = $svc->getSoonExpiringActiveOrders();
+    $ids = array_map(static fn (array $row): int => (int) ($row['id'] ?? 0), $result);
+
+    expect($ids)->toContain(1)
+        ->and($ids)->not->toContain(2);
 });
 
 test('getRelatedOrderIdByType returns id', function (): void {

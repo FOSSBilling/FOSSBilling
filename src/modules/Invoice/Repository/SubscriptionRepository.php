@@ -90,7 +90,7 @@ class SubscriptionRepository extends EntityRepository
 
         $search = $data['search'] ?? null;
         if ($search) {
-            $qb->andWhere('s.sid = :search OR s.id = :search_id')
+            $qb->andWhere('(s.sid = :search OR s.id = :search_id)')
                 ->setParameter('search', $search)
                 ->setParameter('search_id', (int) $search);
         }

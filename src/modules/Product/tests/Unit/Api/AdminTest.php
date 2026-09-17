@@ -410,11 +410,45 @@ test('gets promo redemption list', function (): void {
 
     $di = container();
     $di['pager'] = $pagerMock;
+    $staffServiceMock = $di['mod_service']('staff');
+    foreach ([
+        ['product', 'view'],
+        ['client', 'view'],
+        ['order', 'view'],
+        ['invoice', 'view'],
+    ] as [$module, $permission]) {
+        $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
+            ->once()
+            ->with($module, $permission, null, Mockery::any())
+            ->andReturn(true)
+            ->ordered();
+    }
 
     $api->setService($serviceMock);
     $api->setDi($di);
 
     expect($api->promo_redemption_get_list(['promo_id' => 1]))->toBeArray();
+});
+
+test('promo redemption list requires permission to view enriched client data', function (): void {
+    $api = apiEndpoint(new Admin());
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('getPromoRedemptionRepository')->never();
+
+    $di = container();
+    $staffServiceMock = $di['mod_service']('staff');
+    $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')->byDefault()->andReturn(true);
+    $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
+        ->once()
+        ->with('client', 'view', null, Mockery::any())
+        ->andThrow(new FOSSBilling\InformationException('You need the "client.view" permission to perform this action', [], 403));
+
+    $api->setDi($di);
+    $api->setService($serviceMock);
+
+    expect(fn () => $api->promo_redemption_get_list(['promo_id' => 1]))
+        ->toThrow(FOSSBilling\InformationException::class);
 });
 
 test('updates a promo', function (): void {

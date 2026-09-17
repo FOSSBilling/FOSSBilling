@@ -265,7 +265,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             throw new \FOSSBilling\InformationException('Receiver is not defined. Define to or to_client or to_staff or to_admin parameter');
         }
         $vars = $data;
-        unset($vars['to'], $vars['to_client'], $vars['to_staff'], $vars['to_name'], $vars['from'], $vars['from_name'], $vars['to_admin']);
+        unset($vars['to'], $vars['to_client'], $vars['to_staff'], $vars['to_name'], $vars['from'], $vars['from_name'], $vars['to_admin'], $vars['client_billing_email']);
         unset($vars['default_description'], $vars['default_subject'], $vars['default_template'], $vars['code'], $vars['send_now'], $vars['throw_exceptions'], $vars['attachment']);
 
         $send_now = $data['send_now'] ?? false;
@@ -286,11 +286,13 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         // add additional variables to template
+        $billingRecipient = null;
         if (isset($data['to_client']) && $data['to_client'] > 0) {
             $clientService = $this->di['mod_service']('client');
-            $customer = $clientService->get(['id' => $data['to_client']]);
-            $customer = $clientService->toApiArray($customer);
+            $client = $clientService->get(['id' => $data['to_client']]);
+            $customer = $clientService->toApiArray($client);
             $vars['c'] = $customer;
+            $billingRecipient = $this->resolveClientBillingRecipient($client, $data['client_billing_email'] ?? null);
         }
 
         // send email to admins
@@ -366,9 +368,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $to_name = $oneStaff['name'];
             $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, null, $oneStaff['id'], $send_now, $throw_exceptions, $attachment);
         } elseif (isset($customer)) {
-            // Supplying both keeps the email associated with the client while allowing a
-            // purpose-specific recipient, such as the client's billing address.
-            $to = $data['to'] ?? $customer['email'];
+            // A generic `to` is ignored for client-bound emails so their
+            // rendered data cannot be redirected to an arbitrary recipient.
+            $to = $billingRecipient ?? $customer['email'];
             $to_name = $customer['first_name'] . ' ' . $customer['last_name'];
             $sent = $this->sendMail($to, $from, $subject, $content, $to_name, $from_name, $customer['id'], null, $send_now, $throw_exceptions, $attachment);
         } else {
@@ -378,6 +380,30 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         return $sent;
+    }
+
+    // The only permitted alternate recipient for a client-bound email is the
+    // client's own stored billing address. Anything else falls back to null.
+    private function resolveClientBillingRecipient(Client $client, mixed $requested): ?string
+    {
+        if (!is_string($requested) || trim($requested) === '') {
+            return null;
+        }
+
+        $stored = trim((string) $client->getBillingEmail());
+        $requested = trim($requested);
+
+        if ($stored === '' || filter_var($requested, FILTER_VALIDATE_EMAIL) === false) {
+            return null;
+        }
+
+        if (strcasecmp($stored, $requested) !== 0) {
+            $this->di['logger']->warning('Ignoring client_billing_email override that does not match the stored billing address');
+
+            return null;
+        }
+
+        return $requested;
     }
 
     private function safeStaffTemplateVars(array $staff): array
