@@ -305,7 +305,9 @@ class Service implements InjectionAwareInterface
      * Resolve the order group_id for one cart item at checkout.
      *
      * Items stamped with the same family token share one group_id
-     * ("<cart_id>_<n>"), keeping exactly one group_master per group. Items
+     * ("<cart_id>_<n>"). Every non-addon order in the family is a master -
+     * including a bundled-domain sibling, which is an independently managed
+     * service - while only genuine addon products nest under one. Items
      * from carts built before family stamping carry no token: standalone
      * items each start their own family, while an addon row rejoins the most
      * recent family of its parent product when one exists. Anything unmatched
@@ -748,8 +750,9 @@ class Service implements InjectionAwareInterface
                     $order->setFormId($item['form_id']);
 
                     // group_master marks "is not an addon", not "was first in
-                    // the cart: one family shares one group_id with a single
-                    // master, addons nest under it.
+                    // the cart: one family shares one group_id, every
+                    // non-addon order in it is a master, only genuine addons
+                    // nest under one.
                     $groupId = $this->resolveFamilyGroupId($cart, $item, $familyToken, $familyGroupIds, $lastGroupIdByProductId, $familyIndex);
                     $order->setGroupId($groupId);
                     $order->setGroupMaster(!$product->isAddon());
