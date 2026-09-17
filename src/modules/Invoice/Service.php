@@ -707,12 +707,13 @@ class Service implements InjectionAwareInterface
     /**
      * Route invoice notifications to the client's optional billing address while retaining
      * to_client so templates, timezone handling, and client email history keep working.
+     * Uses the internal `client_billing_email` override validated by the email service.
      */
     public function withBillingRecipient(array $email, array $invoice): array
     {
         $billingEmail = trim((string) ($invoice['client']['billing_email'] ?? ''));
-        if ($billingEmail !== '') {
-            $email['to'] = $billingEmail;
+        if ($billingEmail !== '' && filter_var($billingEmail, FILTER_VALIDATE_EMAIL) !== false) {
+            $email['client_billing_email'] = $billingEmail;
         }
 
         return $email;
