@@ -134,8 +134,8 @@
                                             <a href='{{ "servicehosting/plan/#{hp.id}"|url }}'>{{ hp.name }}</a>
                                         </td>
                                         <td>{{ hp.max_addon }}</td>
-                                        <td>{{ hp.quota }} <span class="text-body-secondary">MB</span></td>
-                                        <td>{{ hp.bandwidth }} <span class="text-body-secondary">MB</span></td>
+                                        <td>{% if hp.quota == 'unlimited' %}{{ 'Unlimited'|trans }}{% else %}{{ hp.quota }} <span class="text-body-secondary">MB</span>{% endif %}</td>
+                                        <td>{% if hp.bandwidth == 'unlimited' %}{{ 'Unlimited'|trans }}{% else %}{{ hp.bandwidth }} <span class="text-body-secondary">MB</span>{% endif %}</td>
                                         <td>
                                             <a class="btn btn-icon" href='{{ "servicehosting/plan/#{hp.id}"|url }}' data-bs-toggle="tooltip" data-bs-placement="top" title="{{ 'Edit Plan Details'|trans }}">
                                                 <svg class="icon">
