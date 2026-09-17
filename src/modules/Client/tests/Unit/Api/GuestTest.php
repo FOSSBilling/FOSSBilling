@@ -251,7 +251,8 @@ test('create returns generic success when a concurrent signup wins the email rac
     $serviceMock->shouldReceive('checkCustomFields')->once();
     // Both requests pass the pre-check; the re-check after the constraint
     // violation sees the winner's row.
-    $serviceMock->shouldReceive('clientAlreadyExists')->twice()->andReturn(false, true);    $serviceMock->shouldReceive('guestCreateClient')->once()->andThrow($duplicateKeyException);
+    $serviceMock->shouldReceive('clientAlreadyExists')->twice()->andReturn(false, true);
+    $serviceMock->shouldReceive('guestCreateClient')->once()->andThrow($duplicateKeyException);
     // Fallback login attempt fails like an ordinary bad-password login.
     $serviceMock->shouldReceive('authorizeClient')->once()->andReturn(null);
 
