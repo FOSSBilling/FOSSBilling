@@ -17,6 +17,7 @@ namespace Box\Mod\Client\Api;
 
 use Box\Mod\Client\Entity\Client;
 use Box\Mod\Client\Entity\ClientPasswordReset;
+use Box\Mod\Client\Service;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use FOSSBilling\Doctrine\EntityManagerFactory;
@@ -141,6 +142,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
 
                 return $this->handleExistingOrRateLimitedSignup($email, $data, $autoLogin);
             }
+
             $this->getDi()['rate_limiter']->consume('client_signup_email', $email);
 
             if (isset($config['require_email_confirmation']) && (bool) $config['require_email_confirmation']) {
@@ -190,18 +192,8 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             return;
         }
 
-        try {
-            $em = $di['em'];
-        } catch (\Throwable) {
-            return;
-        }
-
-        // Unit tests use a Mockery EM that never really closes.
-        if ($em instanceof \Mockery\MockInterface) {
-            return;
-        }
-
-        if ($em instanceof EntityManagerInterface && $em->isOpen()) {
+        $em = $di['em'];
+        if (!$em instanceof EntityManagerInterface || $em->isOpen()) {
             return;
         }
 
@@ -217,7 +209,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         $di['em'] = $freshEm;
 
         try {
-            if ($service instanceof \Box\Mod\Client\Service && !$service instanceof \Mockery\MockInterface) {
+            if ($service instanceof Service) {
                 $service->setDi($di);
             }
         } catch (\Throwable) {

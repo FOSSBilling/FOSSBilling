@@ -14,6 +14,18 @@ use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
 use function Tests\Helpers\moduleService;
 
+function guestClientDuplicateKeyViolation(): Doctrine\DBAL\Exception\UniqueConstraintViolationException
+{
+    $driverException = new class extends Exception implements Doctrine\DBAL\Driver\Exception {
+        public function getSQLState(): ?string
+        {
+            return '23000';
+        }
+    };
+
+    return new Doctrine\DBAL\Exception\UniqueConstraintViolationException($driverException, null);
+}
+
 test('getDi returns dependency injection container', function (): void {
     $guestClient = apiEndpoint(new Box\Mod\Client\Api\Guest());
     $di = container();
@@ -232,21 +244,14 @@ test('create returns generic success when a concurrent signup wins the email rac
         'password_confirm' => 'testpassword',
     ];
 
-    $driverException = new class extends Exception implements Doctrine\DBAL\Driver\Exception {
-        public function getSQLState(): ?string
-        {
-            return '23000';
-        }
-    };
-    $duplicateKeyException = new Doctrine\DBAL\Exception\UniqueConstraintViolationException($driverException, null);
+    $duplicateKeyException = guestClientDuplicateKeyViolation();
 
     $serviceMock = Mockery::mock(Box\Mod\Client\Service::class);
     $serviceMock->shouldReceive('checkExtraRequiredFields')->once();
     $serviceMock->shouldReceive('checkCustomFields')->once();
     // Both requests pass the pre-check; the re-check after the constraint
     // violation sees the winner's row.
-    $serviceMock->shouldReceive('clientAlreadyExists')->twice()->andReturn(false, true);
-    $serviceMock->shouldReceive('guestCreateClient')->once()->andThrow($duplicateKeyException);
+    $serviceMock->shouldReceive('clientAlreadyExists')->twice()->andReturn(false, true);    $serviceMock->shouldReceive('guestCreateClient')->once()->andThrow($duplicateKeyException);
     // Fallback login attempt fails like an ordinary bad-password login.
     $serviceMock->shouldReceive('authorizeClient')->once()->andReturn(null);
 
@@ -292,13 +297,7 @@ test('create rethrows the constraint violation when the email is still free afte
         'password_confirm' => 'testpassword',
     ];
 
-    $driverException = new class extends Exception implements Doctrine\DBAL\Driver\Exception {
-        public function getSQLState(): ?string
-        {
-            return '23000';
-        }
-    };
-    $duplicateKeyException = new Doctrine\DBAL\Exception\UniqueConstraintViolationException($driverException, null);
+    $duplicateKeyException = guestClientDuplicateKeyViolation();
 
     $serviceMock = Mockery::mock(Box\Mod\Client\Service::class);
     $serviceMock->shouldReceive('checkExtraRequiredFields')->once();
