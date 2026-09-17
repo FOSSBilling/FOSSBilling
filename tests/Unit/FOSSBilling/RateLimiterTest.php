@@ -66,6 +66,20 @@ test('password reset policy reports limited result', function (): void {
     expect($second->getReason())->toBe(RateLimitResult::REASON_LIMITED);
 });
 
+test('zero-token consumption checks quota without consuming it', function (): void {
+    $limiter = createRateLimiter(requestIp: '1.1.1.1');
+    $subject = 'subject-' . uniqid('', true);
+
+    $initial = $limiter->consume('client_signup_email', $subject, 0);
+    $limiter->consume('client_signup_email', $subject, 5);
+    $exhausted = $limiter->consume('client_signup_email', $subject, 0);
+
+    expect($initial->isLimited())->toBeFalse();
+    expect($initial->getRemaining())->toBe(5);
+    expect($exhausted->isLimited())->toBeTrue();
+    expect($exhausted->getRemaining())->toBe(0);
+});
+
 test('consume or throw returns allowed result', function (): void {
     $limiter = createRateLimiter(requestIp: '1.1.1.1');
 
