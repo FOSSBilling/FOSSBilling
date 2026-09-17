@@ -46,7 +46,7 @@ Options -Indexes +SymLinksIfOwnerMatch
     RewriteRule ^ - [L]
 
     # Block direct access to sensitive files and file types.
-    RewriteCond %{REQUEST_URI} /themes/[^/]+/config/ [NC]
+    RewriteCond %{REQUEST_URI} ^/themes/(?:[^/]+/)+config/ [NC]
     RewriteRule ^(.*)$ index.php?_url=/$1&_errcode=404 [L]
 
     RewriteCond %{REQUEST_URI} /?.+\.(htaccess|htpasswd|bak|conf|inc|ini|lock|log|old|sh|sql|twig|yaml|php) [NC,OR]
