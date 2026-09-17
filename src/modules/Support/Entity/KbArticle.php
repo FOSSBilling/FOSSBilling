@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Support\Entity;
 
+use Box\Mod\Support\KbSearch;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use FOSSBilling\Doctrine\TimestampTrait;
@@ -199,9 +200,7 @@ class KbArticle implements ApiArrayInterface, TimestampInterface
 
     public function matchesSearch(string $query): bool
     {
-        $terms = preg_split('/\s+/', trim($query), -1, PREG_SPLIT_NO_EMPTY) ?: [];
-
-        foreach ($terms as $term) {
+        foreach (KbSearch::terms($query) as $term) {
             if (stripos($this->title ?? '', $term) === false && stripos($this->content ?? '', $term) === false) {
                 return false;
             }
