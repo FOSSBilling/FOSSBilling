@@ -127,6 +127,42 @@ test('orderbutton product configuration renders a domain product', function (): 
     expect($html)->toBeString();
 });
 
+test('hosting order form collects a required domain transfer code', function (): void {
+    $html = (new StrictTemplateRenderer())->renderTemplate(
+        PATH_MODS . '/Servicehosting/templates/client/mod_servicehosting_order_form.html.twig',
+        [
+            'request' => edgeCaseRequest([
+                'transfer_sld' => 'example',
+                'transfer_code' => 'EPP-CODE',
+            ]),
+            'guest' => edgeCaseGuest([
+                'serviceDomain_tlds' => [
+                    [
+                        'tld' => '.com',
+                        'require_transfer_code' => true,
+                    ],
+                ],
+            ]),
+            'product' => [
+                'pricing' => [],
+                'config' => [
+                    'allow_domain_register' => false,
+                    'allow_domain_transfer' => true,
+                    'allow_domain_own' => false,
+                    'allow_subdomain' => false,
+                ],
+            ],
+            'product_details' => 'Hosting plan',
+        ],
+    );
+
+    expect($html)
+        ->toContain('data-require-transfer-code="1"')
+        ->toContain('name="domain[transfer_code]"')
+        ->toContain('value="EPP-CODE"')
+        ->toContain('id="transfer-code-hint"');
+});
+
 test('email template example renders without calling email globals in admin context', function (): void {
     $templateSource = file_get_contents(PATH_MODS . '/Email/templates/admin/mod_email_template.html.twig');
     expect($templateSource)->not()->toBeFalse();
