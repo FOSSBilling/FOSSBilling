@@ -421,8 +421,8 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * it will be created. Default email template file must exist at mod_example/templates/email/mod_example_code.html.twig file.
      *
      * @optional string $to_staff - True to send to all active staff members. Default false
-     * @optional string $to_client - Set client ID to send email to client. Default null
-     * @optional string $to - receivers email
+     * @optional string $to_client - Set client ID to send email to client. Default null. Cannot be combined with `to`.
+     * @optional string $to - receivers email. Only for non-client emails; ignored for client-bound sends.
      * @optional string $from - from email. Default - company email
      * @optional string $from_name - from name. Default - company name
      * @optional string $default_subject - Default email subject if template does not exist
@@ -439,6 +439,14 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         if (!isset($data['to']) && !isset($data['to_staff']) && !isset($data['to_client'])) {
             throw new \FOSSBilling\InformationException('Receiver is not defined. Define to or to_client or to_staff parameter');
+        }
+
+        if (isset($data['client_billing_email'])) {
+            throw new \FOSSBilling\InformationException('client_billing_email cannot be set via the API');
+        }
+
+        if (!empty($data['to_client']) && !empty($data['to'])) {
+            throw new \FOSSBilling\InformationException('Parameters `to` and `to_client` cannot be combined. Client-bound emails are always sent to the client\'s registered email address.');
         }
 
         return $this->getService()->sendTemplate($data);
