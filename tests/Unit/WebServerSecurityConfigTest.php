@@ -17,7 +17,9 @@ test('cron entry point refuses non-CLI execution before bootstrapping', function
     $cron = file_get_contents(Path::join(__DIR__, '..', '..', 'src/cron.php'));
 
     expect($cron)->not->toBeFalse()
-        ->and($cron)->toContain("if (php_sapi_name() !== 'cli')");
+        ->and($cron)->toMatch(
+            "/if\s*\(\s*php_sapi_name\(\)\s*!==\s*'cli'\s*\)\s*\{\s*exit\s*\(/s"
+        );
 
     $guardPosition = strpos((string) $cron, 'php_sapi_name()');
     $bootstrapPosition = strpos((string) $cron, 'require_once __DIR__');
