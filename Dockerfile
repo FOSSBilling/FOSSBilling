@@ -163,6 +163,7 @@ COPY src/modules ./src/modules
 COPY --from=php-dev-vendor /app/src/vendor ./src/vendor
 COPY composer.json composer.lock phpstan.neon phpunit.xml.dist ./
 COPY tests ./tests
+COPY tools ./tools
 
 RUN set -eux; \
   php -r '$config = require "./src/config-sample.php"; file_put_contents("./src/config.php", "<?php\nreturn " . var_export($config, true) . ";\n");'; \
