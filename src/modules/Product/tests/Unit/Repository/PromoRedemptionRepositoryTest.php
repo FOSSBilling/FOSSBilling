@@ -74,6 +74,186 @@ test('promo filtered queries match only redemptions of the given promo', functio
         ->and($repository->getSearchQueryBuilder(['promo_id' => 0])->getQuery()->getResult())->toBe([]);
 });
 
+test('locking checkout-application check requires a transaction and sees committed rows', function (): void {
+    $entityManager = promoRedemptionEntityManager();
+    $metadata = array_map(
+        $entityManager->getClassMetadata(...),
+        [Promo::class, PromoRedemption::class],
+    );
+    (new Doctrine\ORM\Tools\SchemaTool($entityManager))->createSchema($metadata);
+    // The locking variant mutexes on the client row, which the entity schema above does not
+    // create; a minimal table is enough since the queries only touch id and updated_at.
+    $entityManager->getConnection()->executeStatement('CREATE TABLE client (id INTEGER PRIMARY KEY, updated_at TEXT)');
+    $entityManager->getConnection()->insert('client', ['id' => 1]);
+
+    $promo = new Promo();
+    $entityManager->persist($promo);
+    $entityManager->flush();
+    $promoId = (int) $promo->getId();
+
+    $repository = $entityManager->getRepository(PromoRedemption::class);
+
+    // Outside a transaction no lock can be held until the redemption rows are written.
+    expect(fn () => $repository->clientHasActiveCheckoutApplicationForUpdate($promoId, 1))
+        ->toThrow(FOSSBilling\Exception::class);
+
+    expect($entityManager->wrapInTransaction(
+        fn () => $repository->clientHasActiveCheckoutApplicationForUpdate($promoId, 1)
+    ))->toBeFalse();
+
+    $entityManager->persist((new PromoRedemption())
+        ->setPromo($promo)
+        ->setClientId(1)
+        ->setClientOrderId(1)
+        ->setPhase(PromoRedemption::PHASE_CHECKOUT)
+        ->setStatus(PromoRedemption::STATUS_COMMITTED));
+    $entityManager->flush();
+
+    expect($entityManager->wrapInTransaction(
+        fn () => $repository->clientHasActiveCheckoutApplicationForUpdate($promoId, 1)
+    ))->toBeTrue();
+});
+
+test('locking checkout-application check mutexes the client row before reading', function (): void {
+    // The COUNT alone cannot serialize insert-only rows; the client-row lock is what makes
+    // concurrent checkouts wait for each other. Pin the order: mutex first, read second.
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('isTransactionActive')->once()->andReturn(true);
+    $connection->shouldReceive('getDatabasePlatform')->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\MySQLPlatform::class));
+    $connection->shouldReceive('fetchOne')
+        ->once()
+        ->ordered()
+        ->with('SELECT id FROM client WHERE id = :client_id FOR UPDATE', ['client_id' => 1])
+        ->andReturn(1);
+    $connection->shouldReceive('fetchOne')
+        ->once()
+        ->ordered()
+        ->with(
+            'SELECT COUNT(pr.id) FROM promo_redemption pr WHERE pr.promo_id = :promo_id AND pr.client_id = :client_id AND pr.phase = :phase AND pr.status IN (:statuses) FOR UPDATE',
+            [
+                'promo_id' => 5,
+                'client_id' => 1,
+                'phase' => PromoRedemption::PHASE_CHECKOUT,
+                'statuses' => [PromoRedemption::STATUS_RESERVED, PromoRedemption::STATUS_COMMITTED],
+            ],
+            ['statuses' => Doctrine\DBAL\ArrayParameterType::STRING]
+        )
+        ->andReturn(0);
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getConnection')->andReturn($connection);
+
+    $repository = new Box\Mod\Product\Repository\PromoRedemptionRepository(
+        $emMock,
+        new Doctrine\ORM\Mapping\ClassMetadata(PromoRedemption::class)
+    );
+
+    expect($repository->clientHasActiveCheckoutApplicationForUpdate(5, 1))->toBeFalse();
+});
+
+test('locking checkout-application check skips the aggregate lock on PostgreSQL', function (): void {
+    // PostgreSQL rejects FOR UPDATE on aggregate queries outright. The client-row mutex is a
+    // plain row select and stays locking; the COUNT goes without, which is still correct there
+    // because READ COMMITTED gives every statement a fresh snapshot once the mutex is held.
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('isTransactionActive')->once()->andReturn(true);
+    $connection->shouldReceive('getDatabasePlatform')->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\PostgreSQLPlatform::class));
+    $connection->shouldReceive('fetchOne')
+        ->once()
+        ->ordered()
+        ->with('SELECT id FROM client WHERE id = :client_id FOR UPDATE', ['client_id' => 1])
+        ->andReturn(1);
+    $connection->shouldReceive('fetchOne')
+        ->once()
+        ->ordered()
+        ->with(
+            'SELECT COUNT(pr.id) FROM promo_redemption pr WHERE pr.promo_id = :promo_id AND pr.client_id = :client_id AND pr.phase = :phase AND pr.status IN (:statuses)',
+            [
+                'promo_id' => 5,
+                'client_id' => 1,
+                'phase' => PromoRedemption::PHASE_CHECKOUT,
+                'statuses' => [PromoRedemption::STATUS_RESERVED, PromoRedemption::STATUS_COMMITTED],
+            ],
+            ['statuses' => Doctrine\DBAL\ArrayParameterType::STRING]
+        )
+        ->andReturn(0);
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getConnection')->andReturn($connection);
+
+    $repository = new Box\Mod\Product\Repository\PromoRedemptionRepository(
+        $emMock,
+        new Doctrine\ORM\Mapping\ClassMetadata(PromoRedemption::class)
+    );
+
+    expect($repository->clientHasActiveCheckoutApplicationForUpdate(5, 1))->toBeFalse();
+});
+
+function promoRedemptionPostgresDsn(): string
+{
+    return getenv('FOSSBILLING_TEST_PGSQL_DSN') ?: 'pgsql://postgres:postgres@127.0.0.1:5432/postgres';
+}
+
+function promoRedemptionPostgresAvailable(): bool
+{
+    try {
+        DriverManager::getConnection((new Doctrine\DBAL\Tools\DsnParser())->parse(promoRedemptionPostgresDsn()))->fetchOne('SELECT 1');
+
+        return true;
+    } catch (Throwable) {
+        return false;
+    }
+}
+
+function promoRedemptionPostgresEntityManager(): EntityManager
+{
+    $config = ORMSetup::createAttributeMetadataConfig([Path::join(__DIR__, '..', '..', '..', 'Entity')], true);
+    $config->setProxyDir(sys_get_temp_dir());
+    $config->setProxyNamespace('FOSSBillingTestProxies');
+
+    return new EntityManager(DriverManager::getConnection((new Doctrine\DBAL\Tools\DsnParser())->parse(promoRedemptionPostgresDsn())), $config);
+}
+
+test('locking checkout-application check runs on real PostgreSQL', function (): void {
+    $entityManager = promoRedemptionPostgresEntityManager();
+    $connection = $entityManager->getConnection();
+    // A single fixed, always-recreated schema rather than a fresh randomly-named one per test:
+    // dropping-and-recreating it here means a run never leaves a stray schema behind.
+    $connection->executeStatement('DROP SCHEMA IF EXISTS fb_promo_redemption_test CASCADE');
+    $connection->executeStatement('CREATE SCHEMA fb_promo_redemption_test');
+    $connection->executeStatement('SET search_path TO fb_promo_redemption_test');
+    $metadata = array_map(
+        $entityManager->getClassMetadata(...),
+        [Promo::class, PromoRedemption::class],
+    );
+    (new Doctrine\ORM\Tools\SchemaTool($entityManager))->createSchema($metadata);
+    $connection->executeStatement('CREATE TABLE client (id SERIAL PRIMARY KEY, updated_at TIMESTAMP NULL)');
+    $connection->insert('client', ['id' => 1]);
+
+    $promo = new Promo();
+    $entityManager->persist($promo);
+    $entityManager->flush();
+    $promoId = (int) $promo->getId();
+
+    $repository = $entityManager->getRepository(PromoRedemption::class);
+
+    expect($entityManager->wrapInTransaction(
+        fn () => $repository->clientHasActiveCheckoutApplicationForUpdate($promoId, 1)
+    ))->toBeFalse();
+
+    $entityManager->persist((new PromoRedemption())
+        ->setPromo($promo)
+        ->setClientId(1)
+        ->setClientOrderId(1)
+        ->setPhase(PromoRedemption::PHASE_CHECKOUT)
+        ->setStatus(PromoRedemption::STATUS_COMMITTED));
+    $entityManager->flush();
+
+    expect($entityManager->wrapInTransaction(
+        fn () => $repository->clientHasActiveCheckoutApplicationForUpdate($promoId, 1)
+    ))->toBeTrue();
+})->skip(fn (): bool => !promoRedemptionPostgresAvailable(), 'No PostgreSQL server reachable at FOSSBILLING_TEST_PGSQL_DSN (or the localhost:5432 default) - this test only runs when one is available.');
+
 test('find invoice summary selects stored serie and nr columns', function (): void {
     $entityManager = promoRedemptionEntityManager();
     $connection = $entityManager->getConnection();

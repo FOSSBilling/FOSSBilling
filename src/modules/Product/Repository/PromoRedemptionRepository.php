@@ -12,8 +12,11 @@ declare(strict_types=1);
 namespace Box\Mod\Product\Repository;
 
 use Box\Mod\Product\Entity\PromoRedemption;
+use Doctrine\DBAL\Platforms\PostgreSQLPlatform;
+use Doctrine\DBAL\Platforms\SQLitePlatform;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
+use FOSSBilling\Doctrine\RowLock;
 
 class PromoRedemptionRepository extends EntityRepository
 {
@@ -104,6 +107,67 @@ class PromoRedemptionRepository extends EntityRepository
             ->setParameter('statuses', [PromoRedemption::STATUS_RESERVED, PromoRedemption::STATUS_COMMITTED])
             ->getQuery()
             ->getSingleScalarResult();
+
+        return $count > 0;
+    }
+
+    /**
+     * Locking variant of clientHasActiveCheckoutApplication(), for use inside the checkout
+     * transaction. Redemption rows are insert-only, so a plain COUNT cannot serialize concurrent
+     * checkouts against each other: lock the client row as the mutex instead, then re-read.
+     *
+     * Must be called within a transaction, held until the checkout's redemption rows are written.
+     */
+    public function clientHasActiveCheckoutApplicationForUpdate(int $promoId, int $clientId): bool
+    {
+        $connection = $this->getEntityManager()->getConnection();
+
+        if (!$connection->isTransactionActive()) {
+            throw new \FOSSBilling\Exception('Promo redemption cannot be locked outside of a transaction.');
+        }
+
+        $platform = $connection->getDatabasePlatform();
+
+        if ($platform instanceof SQLitePlatform) {
+            // SQLite has no SELECT ... FOR UPDATE, and a deferred transaction takes no lock at
+            // all until the first write. Two concurrent checkouts could otherwise both pass the
+            // read below under a shared lock before either takes a write lock. This no-op UPDATE
+            // changes no values but forces lock escalation immediately, so only one checkout can
+            // be mid-check at a time; the loser fails outright on the busy connection and rolls
+            // back instead of double-redeeming.
+            $connection->executeStatement(
+                'UPDATE client SET updated_at = updated_at WHERE id = :client_id',
+                ['client_id' => $clientId]
+            );
+        }
+
+        // The mutex: every checkout for this client collides here, checkouts for other clients
+        // do not.
+        $connection->fetchOne(
+            'SELECT id FROM client WHERE id = :client_id' . RowLock::suffix($connection),
+            ['client_id' => $clientId]
+        );
+
+        // PostgreSQL rejects locking clauses on aggregate queries outright, so the COUNT goes
+        // without FOR UPDATE there. That loses nothing: under PostgreSQL's default READ COMMITTED
+        // isolation every statement sees a fresh snapshot, so once the client-row mutex above is
+        // held, this read already reflects everything committed before it. The locking read only
+        // matters where the transaction snapshot can predate the mutex wait (MySQL/MariaDB
+        // REPEATABLE READ).
+        $countLock = ($platform instanceof SQLitePlatform || $platform instanceof PostgreSQLPlatform) ? '' : ' FOR UPDATE';
+
+        $count = (int) $connection->fetchOne(
+            'SELECT COUNT(pr.id) FROM promo_redemption pr'
+            . ' WHERE pr.promo_id = :promo_id AND pr.client_id = :client_id'
+            . ' AND pr.phase = :phase AND pr.status IN (:statuses)' . $countLock,
+            [
+                'promo_id' => $promoId,
+                'client_id' => $clientId,
+                'phase' => PromoRedemption::PHASE_CHECKOUT,
+                'statuses' => [PromoRedemption::STATUS_RESERVED, PromoRedemption::STATUS_COMMITTED],
+            ],
+            ['statuses' => \Doctrine\DBAL\ArrayParameterType::STRING]
+        );
 
         return $count > 0;
     }
