@@ -21,7 +21,7 @@ final class KbSearch
      */
     public static function terms(string $query): array
     {
-        $query = mb_strtolower(mb_substr(trim($query), 0, self::MAX_QUERY_LENGTH));
+        $query = mb_substr(mb_strtolower(mb_substr(trim($query), 0, self::MAX_QUERY_LENGTH)), 0, self::MAX_QUERY_LENGTH);
         $terms = preg_split('/\s+/', $query, -1, PREG_SPLIT_NO_EMPTY) ?: [];
 
         return array_slice($terms, 0, self::MAX_TERMS);

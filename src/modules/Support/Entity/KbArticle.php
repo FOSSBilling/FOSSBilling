@@ -201,7 +201,7 @@ class KbArticle implements ApiArrayInterface, TimestampInterface
     public function matchesSearch(string $query): bool
     {
         foreach (KbSearch::terms($query) as $term) {
-            if (stripos($this->title ?? '', $term) === false && stripos($this->content ?? '', $term) === false) {
+            if (mb_stripos($this->title ?? '', $term) === false && mb_stripos($this->content ?? '', $term) === false) {
                 return false;
             }
         }
