@@ -44,7 +44,7 @@
                 </td>
                 <td class="text-wrap">
                     <strong>{{ extension.name }}</strong> {{ latest.tag }}<br>
-                    <span>by <a href="{{ extension.author.URL }}" target="_blank">{{ extension.author.id }}</a></span>
+                    <span>by {% if extension.author.URL is defined %}<a href="{{ extension.author.URL }}" target="_blank">{{ extension.author.id }}</a>{% else %}{{ extension.author.id }}{% endif %}</span>
                 </td>
                 <td class="text-wrap">
                     {{ extension.description|truncate(150) }}<br>
