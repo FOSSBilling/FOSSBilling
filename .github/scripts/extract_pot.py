@@ -1,31 +1,16 @@
 #!/usr/bin/env python3
 """Extract gettext msgids from FOSSBilling sources into a messages.pot file.
 
-Open-source replacement for the manual Poedit Pro step documented in
-FOSSBilling/locale's readme. Covers the two places translatable strings live:
-
-- Twig templates: string literals passed to the ``|trans`` filter
-  (``{{ '...'|trans }}``, including ``|trans({...})`` with params).
-- PHP sources: first-arg literals of ``__trans()``, ``__pluralTrans()``
-  (args 1+2) and the exception keywords (``Exception``,
-  ``InformationException``, ``Server_Exception``, ``Registrar_Exception``,
-  ``Payment_Exception``) — matching GNU xgettext ``--keyword`` behaviour,
-  including ``new X('...')`` (even namespaced) and skipping ``function``
-  definitions, method/static calls and non-literal first arguments.
-
-Scope mirrors the historical Poedit runs: ``src/`` minus ``vendor/``,
-``install/``, ``data/``, ``load.php``, ``*/tests/*`` and the
-``*.js/*.html/*.css/*.scss/*.md`` extensions. Only ``*.php`` and ``*.twig``
-files are scanned. Obsolete msgids (no longer in source) are dropped by
-design — Crowdin keeps them in translation memory.
+Open-source replacement for the manual Poedit Pro step. Scans Twig
+``|trans`` literals and PHP ``__trans`` / ``__pluralTrans`` / exception
+keywords under ``src/`` (minus vendor, install, data, load.php, tests and
+web-asset extensions); obsolete msgids are dropped.
 
 Usage:
     extract_pot.py <src_dir> <out.pot>
-    extract_pot.py --diff <old.pot> <new.pot>   # msgid-set comparison
-
-The ``--diff`` mode prints added/removed msgids and flags casing-only
-changes (e.g. Title-Case migrations), which silently invalidate existing
-translations because gettext msgid matching is case-sensitive.
+    extract_pot.py --diff <old.pot> <new.pot>   # msgid-set comparison,
+        # flagging casing-only changes (gettext matches case-sensitively,
+        # so those silently invalidate existing translations)
 """
 
 from __future__ import annotations
@@ -35,6 +20,7 @@ import datetime
 import os
 import re
 import sys
+from typing import NamedTuple
 
 # ---------------------------------------------------------------------------
 # Configuration (mirrors the historical Poedit runs + project decisions)
@@ -100,15 +86,9 @@ def _decode_php_double(body: str) -> str:
         if seq in _PHP_DOUBLE_ESCAPES:
             return _PHP_DOUBLE_ESCAPES[seq]
         if seq.startswith("x"):
-            try:
-                return chr(int(seq[1:] or "0", 16))
-            except ValueError:
-                return match.group(0)
+            return chr(int(seq[1:] or "0", 16))
         if seq[0].isdigit():
-            try:
-                return chr(int(seq, 8) & 0xFF)
-            except ValueError:
-                return match.group(0)
+            return chr(int(seq, 8) & 0xFF)
         return match.group(0)
 
     return re.sub(r"\\(x[0-9A-Fa-f]{1,2}|[0-7]{1,3}|.)", repl, body, flags=re.DOTALL)
@@ -120,7 +100,6 @@ def _decode_single(body: str) -> str:
 
 
 def po_escape(text: str) -> str:
-    """Escape a msgid for .pot output (single logical line, UTF-8 kept raw)."""
     out = text.replace("\\", "\\\\").replace('"', '\\"')
     out = out.replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t")
     return out
@@ -203,20 +182,17 @@ _PHP_CALL = re.compile(
 # (e.g. `$5`) is literal and kept. Single-quoted strings never interpolate.
 _PHP_DYNAMIC_DQOUTE = re.compile(r"(?<!\\)\$(?=[A-Za-z_{\x80-\xff])")
 
-class Occurrence:
-    __slots__ = ("msgid", "plural", "ref")
-
-    def __init__(self, msgid: str, plural: str | None, ref: str):
-        self.msgid = msgid
-        self.plural = plural
-        self.ref = ref
+class Occurrence(NamedTuple):
+    msgid: str
+    plural: str | None
+    ref: str
 
 
 def _line_no(text: str, offset: int) -> int:
     return text.count("\n", 0, offset) + 1
 
 
-def extract_twig(path: str, rel: str, text: str, occurrences: list[Occurrence], stats: dict) -> None:
+def extract_twig(rel: str, text: str, occurrences: list[Occurrence], stats: dict) -> None:
     masked = _mask_twig_comments(text)
     for match in _TWIG_TRANS.finditer(masked):
         if match.group("sbody") is not None:
@@ -254,11 +230,10 @@ def _read_php_literal(masked: str, start: int) -> tuple[str, int, bool] | None:
     return _decode_php_double(body), match.end(), bool(_PHP_DYNAMIC_DQOUTE.search(body))
 
 
-def extract_php(path: str, rel: str, text: str, occurrences: list[Occurrence], stats: dict) -> None:
+def extract_php(rel: str, text: str, occurrences: list[Occurrence], stats: dict) -> None:
     masked = _mask_php_comments(text)
     for match in _PHP_CALL.finditer(masked):
         keyword = match.group("kw")
-        # Skip `function __trans(` definitions.
         if re.search(r"\bfunction\s*$", masked[max(0, match.start() - 200) : match.start()]):
             stats["skipped_defs"] += 1
             continue
@@ -280,7 +255,7 @@ def extract_php(path: str, rel: str, text: str, occurrences: list[Occurrence], s
             snippet = masked[match.start() : match.start() + 60].replace("\n", " ")
             stats["skipped"].append(f"{rel}:{_line_no(masked, match.start())} interpolated {snippet}")
             continue
-        # End offset of the first literal: rescan from the arg start.
+        # Rescan the first literal to find where it ends (for the plural arg).
         arg_start = match.start("arg")
         parsed = _read_php_literal(masked, arg_start)
         end = parsed[1] if parsed else match.end()
@@ -315,9 +290,9 @@ def extract_all(src_dir: str) -> tuple[list[Occurrence], dict]:
             text = handle.read()
         stats["files"] += 1
         if full.endswith(".twig"):
-            extract_twig(full, rel, text, occurrences, stats)
+            extract_twig(rel, text, occurrences, stats)
         else:
-            extract_php(full, rel, text, occurrences, stats)
+            extract_php(rel, text, occurrences, stats)
     return occurrences, stats
 
 
@@ -369,7 +344,6 @@ def write_pot(occurrences: list[Occurrence], out_path: str) -> int:
 # ---------------------------------------------------------------------------
 
 def _po_unescape(quoted: str) -> str:
-    """Decode one PO quoted string (handles \\n, \\t, \\", \\\\, etc.)."""
     body = quoted[1:-1]
     out: list[str] = []
     i = 0
@@ -411,10 +385,6 @@ def parse_pot_entries(path: str) -> dict[str, str | None]:
             plural = "".join(plural_parts) or None
             entries[msgid] = plural
     return entries
-
-
-def parse_pot_ids(path: str) -> set[str]:
-    return set(parse_pot_entries(path))
 
 
 def cmd_diff(old_path: str, new_path: str) -> int:
