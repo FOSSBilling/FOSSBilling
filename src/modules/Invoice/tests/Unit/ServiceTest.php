@@ -666,9 +666,11 @@ test('uses the client billing email for invoice notifications', function (): voi
     expect($service->withBillingRecipient($email, $invoice))->toBe([
         'to_client' => 42,
         'code' => 'mod_invoice_created',
-        'to' => 'billing@example.com',
+        'client_billing_email' => 'billing@example.com',
     ]);
     expect($service->withBillingRecipient($email, ['client' => ['billing_email' => null]]))->toBe($email);
+    expect($service->withBillingRecipient($email, ['client' => ['billing_email' => 'not-an-email']]))->toBe($email);
+    expect($service->withBillingRecipient($email, ['client' => []]))->toBe($email);
 });
 
 test('handles event after invoice is due', function (): void {

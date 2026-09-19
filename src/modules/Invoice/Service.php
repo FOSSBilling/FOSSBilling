@@ -709,8 +709,8 @@ class Service implements InjectionAwareInterface
     public function withBillingRecipient(array $email, array $invoice): array
     {
         $billingEmail = trim((string) ($invoice['client']['billing_email'] ?? ''));
-        if ($billingEmail !== '') {
-            $email['to'] = $billingEmail;
+        if ($billingEmail !== '' && filter_var($billingEmail, FILTER_VALIDATE_EMAIL) !== false) {
+            $email['client_billing_email'] = $billingEmail;
         }
 
         return $email;
