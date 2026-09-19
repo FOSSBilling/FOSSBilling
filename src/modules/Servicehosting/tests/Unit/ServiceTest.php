@@ -357,11 +357,104 @@ test('action activate synchronizes an imported account without creating it', fun
         ->and($model->getUsername())->toBe('client@example.com');
 });
 
+test('action activate completes an import when the server cannot be reached', function (): void {
+    // An imported account already exists on the server, so a server we cannot reach must not
+    // fail an activation that creates nothing.
+    $orderModel = createEntity(Order::class);
+
+    $model = new ServiceHosting();
+    $model->setServiceHostingServer(new ServiceHostingServer());
+    $model->setSld('example');
+    $model->setTld('.com');
+
+    $orderServiceMock = Mockery::mock(OrderService::class);
+    $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($model);
+    $orderServiceMock->shouldReceive('getConfig')->atLeast()->once()->andReturn(['import' => true]);
+
+    $serverRepo = Mockery::mock(ServiceHostingServerRepository::class)->shouldIgnoreMissing();
+    $serverRepo->shouldReceive('find')->atLeast()->once()->andReturn(new ServiceHostingServer());
+
+    $emMock = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
+    $emMock->shouldReceive('getRepository')->with(ServiceHostingServer::class)->andReturn($serverRepo);
+    $emMock->shouldReceive('flush')->atLeast()->once();
+
+    $di = container();
+    $di['em'] = $emMock;
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $serverManagerMock = Mockery::mock('\Server_Manager_Custom');
+    $serverManagerMock->shouldReceive('getPasswordLength')->atLeast()->once()->andReturn(12);
+    $serverManagerMock->shouldReceive('generateUsername')->atLeast()->once()->andReturn('example');
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('getServerManager')->atLeast()->once()->andReturn($serverManagerMock);
+    $serviceMock->shouldReceive('_getAM')->once()->andThrow(new FOSSBilling\Exception('Server manager is not configured'));
+    $serviceMock->setDi($di);
+
+    $result = $serviceMock->action_activate($orderModel);
+
+    expect($result)->toBe(['username' => 'example'])
+        ->and($model->getUsername())->toBe('example');
+});
+
+test('action activate keeps stored values when the server reports an incomplete account', function (): void {
+    $orderModel = createEntity(Order::class);
+
+    $model = new ServiceHosting();
+    $model->setServiceHostingServer(new ServiceHostingServer());
+    $model->setSld('example');
+    $model->setTld('.com');
+    $model->setIp('10.0.0.1');
+
+    $orderServiceMock = Mockery::mock(OrderService::class);
+    $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturn($model);
+    $orderServiceMock->shouldReceive('getConfig')->atLeast()->once()->andReturn([]);
+
+    $serverRepo = Mockery::mock(ServiceHostingServerRepository::class)->shouldIgnoreMissing();
+    $serverRepo->shouldReceive('find')->atLeast()->once()->andReturn(new ServiceHostingServer());
+
+    $emMock = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
+    $emMock->shouldReceive('getRepository')->with(ServiceHostingServer::class)->andReturn($serverRepo);
+    $emMock->shouldReceive('flush')->atLeast()->once();
+
+    $di = container();
+    $di['em'] = $emMock;
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
+    $logger = new Tests\Helpers\TestLogger();
+    $di['logger'] = $logger;
+
+    $serverManagerMock = Mockery::mock('\Server_Manager_Custom');
+    $serverManagerMock->shouldReceive('getPasswordLength')->atLeast()->once()->andReturn(12);
+    $serverManagerMock->shouldReceive('generateUsername')->atLeast()->once()->andReturn('example');
+
+    $account = (new Server_Account())->setUsername('example')->setIp('10.0.0.1');
+
+    $adapterMock = Mockery::mock('\Server_Manager_Custom');
+    $adapterMock->shouldReceive('createAccount')->once();
+    $adapterMock->shouldReceive('synchronizeAccount')->once()->andReturn(new Server_Account());
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('getServerManager')->atLeast()->once()->andReturn($serverManagerMock);
+    $serviceMock->shouldReceive('_getAM')->once()->andReturn([$adapterMock, $account]);
+    $serviceMock->setDi($di);
+
+    $result = $serviceMock->action_activate($orderModel);
+
+    $warnings = array_filter($logger->calls, static fn (array $call): bool => $call['method'] === 'warning');
+
+    expect($result)->toBe(['username' => 'example'])
+        ->and($model->getUsername())->toBe('example')
+        ->and($model->getIp())->toBe('10.0.0.1')
+        ->and($warnings)->toHaveCount(2);
+});
+
 test('action activate does not recreate an account that was already provisioned', function (): void {
     // Regression test: if a previous activation attempt already created the
     // account on the server (its username was persisted), retrying must not
     // call createAccount() again - the account already exists remotely and
-    // doing so only fails with a duplicate-account server error.
+    // doing so only fails with a duplicate-account server error. Synchronizing
+    // is safe to repeat and picks up anything the first attempt failed to store.
     $orderModel = createEntity(Order::class);
 
     $model = new ServiceHosting();
@@ -389,14 +482,21 @@ test('action activate does not recreate an account that was already provisioned'
     $serverManagerMock->shouldReceive('getPasswordLength')->atLeast()->once()->andReturn(12);
     $serverManagerMock->shouldNotReceive('generateUsername');
 
+    $account = (new Server_Account())->setUsername('example');
+
+    $adapterMock = Mockery::mock('\Server_Manager_Custom');
+    $adapterMock->shouldNotReceive('createAccount');
+    $adapterMock->shouldReceive('synchronizeAccount')->once()->andReturn((clone $account)->setIp('203.0.113.10'));
+
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('getServerManager')->atLeast()->once()->andReturn($serverManagerMock);
-    $serviceMock->shouldNotReceive('_getAM');
+    $serviceMock->shouldReceive('_getAM')->once()->andReturn([$adapterMock, $account]);
     $serviceMock->setDi($di);
 
     $result = $serviceMock->action_activate($orderModel);
 
-    expect($result)->toBe(['username' => 'example']);
+    expect($result)->toBe(['username' => 'example'])
+        ->and($model->getIp())->toBe('203.0.113.10');
 });
 
 test('action renew', function (): void {

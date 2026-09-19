@@ -250,27 +250,28 @@ class Service implements InjectionAwareInterface
         $model->setUsername($username);
         $model->setPass($pass);
 
-        // If the order's configuration does not specify that the service should be imported, create an account for the service on the server
+        // If the order's configuration does not specify that the service should be imported, create an account for the service on the server.
+        // Kept out of the block below so a server that refuses to create the account still fails the activation.
         $adapter = null;
         $account = null;
-        if (!$alreadyProvisioned) {
+        if (!$alreadyProvisioned && (!isset($config['import']) || !$config['import'])) {
             [$adapter, $account] = $this->_getAM($model);
-            if (!isset($config['import']) || !$config['import']) {
-                $adapter->createAccount($account);
-            }
+            $adapter->createAccount($account);
         }
 
         // Update the service's password to a placeholder value for security reasons
         $model->setPass(self::PASSWORD_PLACEHOLDER);
 
-        // Pull the username and IP the server actually assigned (or, for imports, already has).
-        // Not every manager can synchronize, so a failure here must not undo a successful activation.
-        if ($adapter !== null && $account !== null) {
-            try {
-                $this->applySync($model, $adapter, $account);
-            } catch (\Throwable $e) {
-                $this->di['logger']->info('Skipped post-activation sync of hosting account {model_id}: {error}', ['model_id' => $model->getId(), 'error' => $e->getMessage()]);
+        // Pull the username and IP the server assigned, or for an import, already has.
+        // Best effort: an unreachable server or a manager that cannot synchronize must not undo the activation.
+        try {
+            if ($adapter === null) {
+                [$adapter, $account] = $this->_getAM($model);
             }
+
+            $this->applySync($model, $adapter, $account);
+        } catch (\Exception $e) {
+            $this->di['logger']->warning('Skipped post-activation sync of hosting account {model_id}: {error}', ['model_id' => $model->getId(), 'error' => $e->getMessage()]);
         }
 
         // Save the service
@@ -499,12 +500,17 @@ class Service implements InjectionAwareInterface
     {
         $updated = $adapter->synchronizeAccount($account);
 
-        if ($account->getUsername() != $updated->getUsername()) {
+        // Runs on every activation now, so an incomplete response must not wipe a stored value.
+        if (!empty($updated->getUsername()) && $updated->getUsername() !== $account->getUsername()) {
             $model->setUsername($updated->getUsername());
+        } elseif (empty($updated->getUsername()) && !empty($account->getUsername())) {
+            $this->di['logger']->warning('Server reported no username for hosting account {model_id}, keeping the stored one', ['model_id' => $model->getId()]);
         }
 
-        if ($account->getIp() != $updated->getIp()) {
+        if (!empty($updated->getIp()) && $updated->getIp() !== $account->getIp()) {
             $model->setIp($updated->getIp());
+        } elseif (empty($updated->getIp()) && !empty($account->getIp())) {
+            $this->di['logger']->warning('Server reported no IP for hosting account {model_id}, keeping the stored one', ['model_id' => $model->getId()]);
         }
     }
 
