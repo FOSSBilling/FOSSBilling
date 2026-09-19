@@ -1707,3 +1707,49 @@ test('legacy entity decode patch rolls back row repairs when the patch level can
     expect(fn (): mixed => (new ReflectionMethod($patcher, 'patch116'))->invoke($patcher))
         ->toThrow(FOSSBilling\Exception::class, 'There was an error while applying database patches');
 });
+
+test('news post description patch follows the session schema patch', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 116);
+
+    expect($patches)->toHaveKey(117)
+        ->and($patches[117][1])->toBe('patch117');
+});
+
+test('news post description patch adds the column for existing installs', function (): void {
+    $columns = Mockery::mock(PDOStatement::class);
+    $columns->expects('execute')->with([])->andReturnTrue();
+    $columns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([]);
+
+    $addColumn = Mockery::mock(PDOStatement::class);
+    $addColumn->expects('execute')->with([])->andReturnTrue();
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `post`')->andReturn($columns);
+    $pdo->expects('prepare')
+        ->with('ALTER TABLE `post` ADD COLUMN `description` TEXT DEFAULT NULL AFTER `title`')
+        ->andReturn($addColumn);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch117'))->invoke($patcher);
+});
+
+test('news post description patch is a no-op when the column already exists', function (): void {
+    $columns = Mockery::mock(PDOStatement::class);
+    $columns->expects('execute')->with([])->andReturnTrue();
+    $columns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([['Field' => 'description']]);
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `post`')->andReturn($columns);
+    $pdo->shouldNotReceive('prepare')->with('ALTER TABLE `post` ADD COLUMN `description` TEXT DEFAULT NULL AFTER `title`');
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch117'))->invoke($patcher);
+});
