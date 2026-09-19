@@ -86,7 +86,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $product->getTitle();
     }
 
-    public function validateOrderData(&$data): void
+    public function validateOrderData(&$data, ?Product $product = null): void
     {
         $validator = $this->di['validator'];
 
