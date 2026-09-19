@@ -100,11 +100,8 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
             throw new Registrar_Exception('Premium domains cannot be registered.');
         }
 
-        if (isset($result->CommandResponse->DomainCheckResult['Available']) && $result->CommandResponse->DomainCheckResult['Available'] == 'true') {
-            return true;
-        }
-
-        return false;
+        return isset($result->CommandResponse->DomainCheckResult['Available'])
+            && $result->CommandResponse->DomainCheckResult['Available'] == 'true';
     }
 
     /**
@@ -288,11 +285,9 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
         ];
 
         $result = $this->_makeRequest($params);
-        if (isset($result->CommandResponse->DomainTransferCreateResult['Transfer']) && $result->CommandResponse->DomainTransferCreateResult['Transfer'] == 'true') {
-            return true;
-        }
 
-        return false;
+        return isset($result->CommandResponse->DomainTransferCreateResult['Transfer'])
+            && $result->CommandResponse->DomainTransferCreateResult['Transfer'] == 'true';
     }
 
     /**

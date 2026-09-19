@@ -10,6 +10,11 @@
 
 declare(strict_types=1);
 
+use Pimple\Container;
+use Psr\Log\NullLogger;
+use Symfony\Component\HttpClient\MockHttpClient;
+use Symfony\Component\HttpClient\Response\MockResponse;
+
 dataset('sanitizeContentProvider', fn (): array => [
     // [input, expected_output, allowSafeHtml]
     ['', '', false],
@@ -164,4 +169,20 @@ test('validate and sanitize email returns the address unescaped', function (): v
     $tools = new FOSSBilling\Tools();
 
     expect($tools->validateAndSanitizeEmail('foo&bar@example.com', true, false))->toBe('foo&bar@example.com');
+});
+
+test('external IP lookup skips private responses and trims a public response', function (): void {
+    $httpClient = new MockHttpClient([
+        new MockResponse('192.168.1.10'),
+        new MockResponse("8.8.8.8\n"),
+    ]);
+    $di = new Container();
+    $di['http_client'] = $httpClient;
+    $di['logger'] = new NullLogger();
+
+    $tools = new FOSSBilling\Tools();
+    $tools->setDi($di);
+
+    expect($tools->getExternalIP())->toBe('8.8.8.8')
+        ->and($httpClient->getRequestsCount())->toBe(2);
 });

@@ -287,10 +287,6 @@ class SentryHelper
             return true;
         }
 
-        if (Version::isPreviewVersion()) {
-            return true;
-        }
-
-        return false;
+        return Version::isPreviewVersion();
     }
 }

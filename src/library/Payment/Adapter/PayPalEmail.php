@@ -558,11 +558,8 @@ document.addEventListener('DOMContentLoaded', function() {
         ];
 
         $rows = $this->di['em']->getConnection()->fetchAllAssociative($sql, $bindings);
-        if (FOSSBilling\Tools::safeCount($rows) > 1) {
-            return true;
-        }
 
-        return false;
+        return count($rows) > 1;
     }
 
     public function getInvoiceTitle(array $invoice): string

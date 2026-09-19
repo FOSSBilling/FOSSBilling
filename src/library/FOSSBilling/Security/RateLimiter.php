@@ -16,6 +16,7 @@ use FOSSBilling\InjectionAwareInterface;
 use Pimple\Container;
 use Psr\Cache\CacheItemPoolInterface;
 use Symfony\Component\Filesystem\Path;
+use Symfony\Component\HttpFoundation\IpUtils;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\RateLimiter\Storage\CacheStorage;
 
@@ -396,7 +397,7 @@ class RateLimiter implements InjectionAwareInterface
     {
         $whitelist = $this->getConfig()['whitelist_ips'] ?? [];
 
-        return \Symfony\Component\HttpFoundation\IpUtils::checkIp($subject, $whitelist);
+        return IpUtils::checkIp($subject, $whitelist);
     }
 
     private function isIpAddress(string $subject): bool

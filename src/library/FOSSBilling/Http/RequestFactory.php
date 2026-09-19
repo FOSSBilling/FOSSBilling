@@ -224,13 +224,6 @@ final class RequestFactory
 
     private static function isLocalNetworkAddress(string $address): bool
     {
-        return IpUtils::checkIp($address, [
-            '127.0.0.0/8',
-            '10.0.0.0/8',
-            '172.16.0.0/12',
-            '192.168.0.0/16',
-            '::1/128',
-            'fc00::/7',
-        ]);
+        return IpUtils::checkIp($address, IpUtils::PRIVATE_SUBNETS);
     }
 }

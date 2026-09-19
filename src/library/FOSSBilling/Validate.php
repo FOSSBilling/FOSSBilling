@@ -11,27 +11,16 @@ declare(strict_types=1);
 
 namespace FOSSBilling;
 
-use Symfony\Component\Filesystem\Filesystem;
-use Symfony\Component\Filesystem\Path;
 use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Contracts\HttpClient\Exception\ExceptionInterface;
 
 class Validate
 {
     protected ?\Pimple\Container $di = null;
-    private Filesystem $filesystem;
-
-    public function __construct()
-    {
-        $this->filesystem = new Filesystem();
-    }
 
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
-        if (isset($di['filesystem'])) {
-            $this->filesystem = $di['filesystem'];
-        }
     }
 
     public function getDi(): ?\Pimple\Container
@@ -59,11 +48,9 @@ class Validate
             return !str_contains($sld, '.') && strlen($sld) < 64;
         }
 
-        if (preg_match('/^[a-z0-9]+[a-z0-9\-]*[a-z0-9]+$/i', $sld) && strlen($sld) < 64 && substr($sld, 2, 2) != '--') {
-            return true;
-        }
-
-        return false;
+        return preg_match('/^[a-z0-9]+[a-z0-9\-]*[a-z0-9]+$/i', $sld) === 1
+            && strlen($sld) < 64
+            && substr($sld, 2, 2) !== '--';
     }
 
     /**
@@ -86,7 +73,6 @@ class Validate
             $item->expiresAfter(86400);
 
             $httpClient = $this->di['http_client'];
-            $dbPath = Path::join(PATH_CACHE, 'tlds.txt');
 
             try {
                 $response = $httpClient->request('GET', 'https://publicsuffix.org/list/public_suffix_list.dat');
@@ -97,28 +83,28 @@ class Validate
                 $content = null;
             }
 
-            if ($content !== null) {
-                $this->filesystem->dumpFile($dbPath, $content);
-            } else {
+            if ($content === null) {
                 $item->expiresAfter(3600);
 
                 return [];
             }
 
-            @$database = file($dbPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-            $this->filesystem->remove($dbPath);
+            $database = preg_split('/\R/', $content, -1, PREG_SPLIT_NO_EMPTY);
+
             if (!$database) {
                 $item->expiresAfter(3600);
 
                 return [];
             }
 
-            $validTlds = array_filter($database, fn ($tld): bool => !str_starts_with($tld, '/'));
-
             $result = [];
-            foreach ($validTlds as $tld) {
+            foreach ($database as $tld) {
+                $tld = trim($tld);
                 if (str_contains($tld, 'END ICANN DOMAINS')) {
                     break;
+                }
+                if ($tld === '' || str_starts_with($tld, '//')) {
+                    continue;
                 }
                 $tld = idn_to_ascii($tld);
                 if ($tld !== false) {
@@ -138,11 +124,7 @@ class Validate
 
         if (!$validTlds) {
             // Fallback behavior if we fail to get a valid list
-            if (str_starts_with($tld, 'xn--') || preg_match('/^[a-z]+$/', $tld)) {
-                return true;
-            }
-
-            return false;
+            return str_starts_with($tld, 'xn--') || preg_match('/^[a-z]+$/', $tld) === 1;
         }
 
         return $validTlds[$tld] ?? false;
