@@ -656,11 +656,11 @@ test('activateExistingExtension requires type and id', function (): void {
     $service = new Service();
 
     expect(fn () => $service->activateExistingExtension([]))
-        ->toThrow(\FOSSBilling\InformationException::class);
+        ->toThrow(FOSSBilling\InformationException::class);
     expect(fn () => $service->activateExistingExtension(['id' => 'extensionId']))
-        ->toThrow(\FOSSBilling\InformationException::class);
+        ->toThrow(FOSSBilling\InformationException::class);
     expect(fn () => $service->activateExistingExtension(['type' => 'extensionType']))
-        ->toThrow(\FOSSBilling\InformationException::class);
+        ->toThrow(FOSSBilling\InformationException::class);
 });
 
 test('activateExistingExtension throws exception on activation failure', function (): void {
