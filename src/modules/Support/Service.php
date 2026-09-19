@@ -578,7 +578,13 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 $data['client'] = [];
             } elseif (!isset($clients[$ticket['client_id']])) {
                 $this->di['logger']->error('Missing client for ticket ' . $ticket['id']);
-                $data['author'] = [];
+                // The client row is gone: fall back to the stored contact
+                // details so templates rendering author.name/email/role keep working.
+                $data['author'] = [
+                    'name' => $ticket['author_name'] ?? '',
+                    'email' => $ticket['author_email'] ?? '',
+                    'role' => 'guest',
+                ];
                 $data['client'] = [];
             } else {
                 $data['author'] = $clientAuthors[$ticket['client_id']];
@@ -702,7 +708,13 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
         $this->di['logger']->error('Missing client for ticket ' . $ticket->getId());
 
-        return [];
+        // The client row is gone: fall back to the stored contact details
+        // so templates rendering author.name/email/role keep working.
+        return [
+            'name' => $ticket->getAuthorName() ?? '',
+            'email' => $ticket->getAuthorEmail() ?? '',
+            'role' => 'guest',
+        ];
     }
 
     private function clientToTicketApiArray(\Model_Client $client, \Model_Admin|\Model_Client|null $identity = null): array

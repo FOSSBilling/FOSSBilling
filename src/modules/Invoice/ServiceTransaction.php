@@ -262,7 +262,7 @@ class ServiceTransaction implements InjectionAwareInterface
             'updated_at' => $model->updated_at,
         ];
         if ($deep) {
-            $result['ipn'] = json_decode($model->ipn ?? '', true);
+            $result['ipn'] = json_decode($model->ipn ?? '', true) ?? [];
         }
 
         return $result;
