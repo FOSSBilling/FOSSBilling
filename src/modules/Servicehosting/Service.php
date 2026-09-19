@@ -1452,11 +1452,11 @@ class Service implements InjectionAwareInterface
 
         if (isset($data['domain']['action'])) {
             $this->validateDomainAction($data, $c);
-        }
 
-        [$sld, $tld] = $this->_getDomainTuple($data);
-        $data['sld'] = $sld;
-        $data['tld'] = $tld;
+            [$sld, $tld] = $this->_getDomainTuple($data);
+            $data['sld'] = $sld;
+            $data['tld'] = $tld;
+        }
 
         return $data;
     }
