@@ -17,6 +17,7 @@ use FOSSBilling\Tools;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -115,7 +116,7 @@ class Service implements InjectionAwareInterface
         ];
     }
 
-    private function validateFileUpload(\Symfony\Component\HttpFoundation\File\UploadedFile $file): void
+    private function validateFileUpload(UploadedFile $file): void
     {
         $allowedTypes = $this->getAllowedFileTypes();
 
@@ -302,7 +303,7 @@ class Service implements InjectionAwareInterface
         return $storedFilename;
     }
 
-    private function storeUploadedFile(\Symfony\Component\HttpFoundation\File\UploadedFile $file): string
+    private function storeUploadedFile(UploadedFile $file): string
     {
         $storedFilename = $this->generateStoredFilename();
         $file->move(PATH_UPLOADS, $storedFilename);
@@ -360,6 +361,9 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('File upload failed: no files in request.');
         }
         $file = $request->files->get('file_data');
+        if (!$file instanceof UploadedFile) {
+            throw new \FOSSBilling\Exception('File upload failed: no files in request.');
+        }
         $fileName = $file->getClientOriginalName();
 
         $errorCode = $file->getError();
