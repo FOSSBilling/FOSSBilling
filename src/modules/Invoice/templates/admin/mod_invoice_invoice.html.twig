@@ -67,12 +67,16 @@
                                     <td class="text-end">{{ 'Number'|trans }}:</td>
                                     <td>{{ invoice.serie }}{{ "%05s"|format(invoice.nr) }}</td>
                                 </tr>
-                                <tr>
-                                    <td class="text-end">{{ 'Client'|trans }}:</td>
-                                    <td>
-                                        <a href='{{ "client/manage/#{invoice.client.id}"|url }}'>{{ invoice.client.first_name }} {{ invoice.client.last_name }}</a>
-                                    </td>
-                                </tr>
+                                    <tr>
+                                        <td class="text-end">{{ 'Client'|trans }}:</td>
+                                        <td>
+                                            {% if invoice.client %}
+                                            <a href='{{ "client/manage/#{invoice.client.id}"|url }}'>{{ invoice.client.first_name }} {{ invoice.client.last_name }}</a>
+                                            {% else %}
+                                            {{ 'Deleted client'|trans }}
+                                            {% endif %}
+                                        </td>
+                                    </tr>
                                 <tr>
                                     <td class="text-end">{{ 'Status'|trans }}:</td>
                                     <td>{{ mf.status_badge(invoice.status, 'invoice') }}</td>
