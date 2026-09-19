@@ -17,6 +17,10 @@ namespace Box\Mod\Client\Api;
 
 use Box\Mod\Client\Entity\Client;
 use Box\Mod\Client\Entity\ClientPasswordReset;
+use Box\Mod\Client\Service;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use Doctrine\ORM\EntityManagerInterface;
+use FOSSBilling\Doctrine\EntityManagerFactory;
 use FOSSBilling\Http\CookieNames;
 use FOSSBilling\Security\RandomizedTimeFloor;
 use FOSSBilling\Tools;
@@ -97,34 +101,49 @@ class Guest extends \FOSSBilling\Api\AbstractApi
 
             // Keyed independently of the IP limiter above so that spreading
             // probes across IPs doesn't help an attacker hammer one address.
-            // Consumed only after the CAPTCHA check so a stream of invalid
-            // CAPTCHA submissions can't burn through one address's quota.
-            $emailLimit = $this->getDi()['rate_limiter']->consume('client_signup_email', $email);
+            // Check the quota without consuming it. A token is recorded only
+            // after client validation succeeds, so malformed submissions
+            // cannot exhaust another address's signup quota.
+            $emailLimit = $this->getDi()['rate_limiter']->consume('client_signup_email', $email, 0);
 
             $autoLogin = Tools::normalizeBoolean($config['auto_login_after_signup'] ?? true, true);
 
             if ($emailLimit->isLimited() || $service->clientAlreadyExists($email)) {
-                // Never disclose whether this address is already registered:
-                // no distinct error, no duplicate row, and the same return
-                // value as a genuine signup below. Falling through to an
-                // ordinary login attempt keeps the response and any session
-                // side effects identical to the success path, reusing
-                // login()'s own timing- and message-safe handling instead of
-                // reimplementing it here.
-                $this->getDi()['logger']->setChannel('security')->info('Client signup declined for an existing or rate-limited email %s from IP %s', $email, $this->getIp());
-
-                if ($autoLogin) {
-                    try {
-                        $this->login(['email' => $email, 'password' => $data['password']]);
-                    } catch (\Throwable $e) {
-                        error_log($e->getMessage());
-                    }
+                if (!$emailLimit->isLimited()) {
+                    $this->getDi()['rate_limiter']->consume('client_signup_email', $email);
                 }
 
-                return true;
+                return $this->handleExistingOrRateLimitedSignup($email, $data, $autoLogin);
             }
 
-            $client = $service->guestCreateClient($data);
+            try {
+                $client = $service->guestCreateClient($data);
+            } catch (UniqueConstraintViolationException $exception) {
+                $this->resetEntityManagerAfterViolation($service);
+
+                // guestCreateClient() only persists a Client, whose sole
+                // unique key is `client.email`. Re-check so an unrelated
+                // constraint failure still surfaces instead of being masked
+                // as an existing-account signup.
+                try {
+                    $duplicate = $service->clientAlreadyExists($email);
+                } catch (\Throwable) {
+                    throw $exception;
+                }
+
+                if (!$duplicate) {
+                    throw $exception;
+                }
+
+                // The zero-token probe above passed (a limited result would
+                // have returned early), so record the quota use just like the
+                // existing-account path does.
+                $this->getDi()['rate_limiter']->consume('client_signup_email', $email);
+
+                return $this->handleExistingOrRateLimitedSignup($email, $data, $autoLogin);
+            }
+
+            $this->getDi()['rate_limiter']->consume('client_signup_email', $email);
 
             if (isset($config['require_email_confirmation']) && (bool) $config['require_email_confirmation']) {
                 $service->sendEmailConfirmationForClient($client);
@@ -141,6 +160,61 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             return true;
         } finally {
             RandomizedTimeFloor::apply($startedAt, 300, 450);
+        }
+    }
+
+    private function handleExistingOrRateLimitedSignup(string $email, array $data, bool $autoLogin): bool
+    {
+        // Never disclose whether this address is already registered:
+        // no distinct error, no duplicate row, and the same return
+        // value as a genuine signup below. Falling through to an
+        // ordinary login attempt keeps the response and any session
+        // side effects identical to the success path, reusing
+        // login()'s own timing- and message-safe handling instead of
+        // reimplementing it here.
+        $this->getDi()['logger']->setChannel('security')->info('Client signup declined for an existing or rate-limited email %s from IP %s', $email, $this->getIp());
+
+        if ($autoLogin) {
+            try {
+                $this->login(['email' => $email, 'password' => $data['password']]);
+            } catch (\Throwable $e) {
+                error_log($e->getMessage());
+            }
+        }
+
+        return true;
+    }
+
+    private function resetEntityManagerAfterViolation(object $service): void
+    {
+        $di = $this->getDi();
+        if (!$di->offsetExists('em')) {
+            return;
+        }
+
+        $em = $di['em'];
+        if (!$em instanceof EntityManagerInterface || $em->isOpen()) {
+            return;
+        }
+
+        // A failed flush closes the EntityManager; replace it so the
+        // duplicate re-check and fallback login below use a usable one.
+        try {
+            $freshEm = EntityManagerFactory::create();
+        } catch (\Throwable) {
+            return;
+        }
+
+        unset($di['em']);
+        $di['em'] = $freshEm;
+
+        try {
+            if ($service instanceof Service) {
+                $service->setDi($di);
+            }
+        } catch (\Throwable) {
+            // The fallback login already tolerates failures; keep the
+            // generic signup response even if the refresh fails.
         }
     }
 
