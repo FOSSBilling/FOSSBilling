@@ -83,12 +83,18 @@ class i18n
      */
     private static function getBrowserLocale(Request $request, ?CookieQueue $cookies = null): ?string
     {
+        // ext-intl is optional on some hosts. Without the Locale class these
+        // calls error fatally, so bail out and use the default locale.
+        if (!class_exists(\Locale::class)) {
+            return null;
+        }
+
         $header = $request->headers->get('Accept-Language', '');
 
         try {
             $detectedLocale = @\Locale::acceptFromHttp($header);
             $detectedLocale = @\Locale::canonicalize($detectedLocale . '.utf8');
-        } catch (\Exception) {
+        } catch (\Throwable) {
             $detectedLocale = '';
         }
 
@@ -98,7 +104,7 @@ class i18n
 
         try {
             $matchingLocale = \Locale::lookup(self::getLocales(), $detectedLocale, false, null);
-        } catch (\Exception) {
+        } catch (\Throwable) {
             $matchingLocale = null;
         }
 

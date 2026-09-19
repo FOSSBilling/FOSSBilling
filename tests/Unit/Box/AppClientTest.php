@@ -155,7 +155,7 @@ test('get_custom_page still returns 404 when the top-level template is missing',
     expect($response->getStatusCode())->toBe(404);
 });
 
-test('render() converts a Twig cache write failure into a report:false exception (regression for FOSSBILLING-EBW)', function (string $message): void {
+test('render() converts a Twig cache write failure into a report:false exception', function (string $message): void {
     $app = new class extends Box_AppClient {
         public function triggerCacheWriteFailure(RuntimeException $e): never
         {
@@ -202,6 +202,20 @@ test('render() rethrows a RuntimeException unrelated to the Twig cache unchanged
 
     expect(fn () => $app->triggerCacheWriteFailure(new RuntimeException('Something else entirely.')))
         ->toThrow(RuntimeException::class, 'Something else entirely.');
+});
+
+test('setUrl normalizes null and empty string to /', function (): void {
+    $app = new Box_AppClient();
+    $url = new ReflectionProperty(Box_App::class, 'url');
+
+    $app->setUrl(null);
+    expect($url->getValue($app))->toBe('/');
+
+    $app->setUrl('');
+    expect($url->getValue($app))->toBe('/');
+
+    $app->setUrl('//.env');
+    expect($url->getValue($app))->toBe('//.env');
 });
 
 test('numeric custom page paths return a themed 404', function (): void {
