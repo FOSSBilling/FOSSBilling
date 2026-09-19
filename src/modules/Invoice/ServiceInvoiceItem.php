@@ -218,12 +218,17 @@ class ServiceInvoiceItem implements InjectionAwareInterface
             return 0;
         }
 
-        $rate = $this->di['em']->getConnection()->fetchOne('SELECT taxrate FROM invoice WHERE id = :id', ['id' => $item->getInvoice()?->getId()]);
-        if ($rate <= 0) {
+        $price = $item->getPrice();
+        if (!is_numeric($price)) {
             return 0;
         }
 
-        return round($item->getPrice() * $rate / 100, 2);
+        $rate = $this->di['em']->getConnection()->fetchOne('SELECT taxrate FROM invoice WHERE id = :id', ['id' => $item->getInvoice()?->getId()]);
+        if (!is_numeric($rate) || $rate <= 0) {
+            return 0;
+        }
+
+        return round((float) $price * (float) $rate / 100, 2);
     }
 
     public function update(InvoiceItem $item, array $data): void

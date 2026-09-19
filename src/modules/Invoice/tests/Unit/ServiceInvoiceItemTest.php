@@ -453,6 +453,30 @@ test('gets tax', function (): void {
     expect($result)->toBe($expected);
 });
 
+test('returns zero tax when the price is not numeric', function (): void {
+    $item = createEntity(InvoiceItem::class, ['invoice_id' => 2, 'taxed' => true, 'price' => 'not-a-number']);
+
+    $service = invoiceItemService();
+
+    $result = $service->getTax($item);
+    expect($result)->toBe(0);
+});
+
+test('returns zero tax when the tax rate is not numeric', function (): void {
+    $item = createEntity(InvoiceItem::class, ['invoice_id' => 2, 'taxed' => true, 'price' => 12]);
+
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('fetchOne')
+        ->atLeast()->once()
+        ->andReturn('not-a-number');
+
+    $service = invoiceItemService();
+    $service->getDi()['em']->shouldReceive('getConnection')->andReturn($connection);
+
+    $result = $service->getTax($item);
+    expect($result)->toBe(0);
+});
+
 test('updates an item', function (): void {
     $item = createEntity(InvoiceItem::class, ['quantity' => 3]);
 
