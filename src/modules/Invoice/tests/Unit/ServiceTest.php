@@ -1650,7 +1650,7 @@ test('records a balance transaction for a one-cent invoice', function (): void {
     $client->id = 20;
 
     $balanceService = Mockery::mock(Box\Mod\Client\ServiceBalance::class);
-    $balanceService->shouldReceive('getClientBalance')->once()->with($client)->andReturn(0.0);
+    $balanceService->shouldReceive('getClientBalance')->once()->with($client)->andReturn(0.01);
 
     $dbalMock = Mockery::mock();
     expectCreditPaymentLock($dbalMock, 20, Model_Invoice::STATUS_UNPAID);
@@ -1665,6 +1665,46 @@ test('records a balance transaction for a one-cent invoice', function (): void {
 
     $service = Mockery::mock(Service::class)->makePartial();
     $service->shouldReceive('getTotalWithTax')->once()->with($invoice)->andReturn(0.01);
+    $service->shouldReceive('markAsPaid')->once()->with($invoice, false, false, true)->andReturn(true);
+
+    $di = container();
+    $di['db'] = $db;
+    $di['dbal'] = $dbalMock;
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $balanceService);
+    $service->setDi($di);
+
+    expect($service->tryPayWithCredits($invoice))->toBeTrue();
+});
+
+test('pays a fully funded invoice despite floating-point rounding dust', function (): void {
+    $invoice = new Model_Invoice();
+    $invoice->loadBean(new Tests\Helpers\DummyBean());
+    $invoice->id = 10;
+    $invoice->client_id = 20;
+    $invoice->approved = 1;
+    $invoice->status = Model_Invoice::STATUS_UNPAID;
+
+    $client = new Model_Client();
+    $client->loadBean(new Tests\Helpers\DummyBean());
+    $client->id = 20;
+
+    $balanceService = Mockery::mock(Box\Mod\Client\ServiceBalance::class);
+    // 0.30 and 0.1 * 3 are equal at two-decimal scale but not as raw floats.
+    $balanceService->shouldReceive('getClientBalance')->once()->with($client)->andReturn(0.30);
+
+    $dbalMock = Mockery::mock();
+    expectCreditPaymentLock($dbalMock, 20, Model_Invoice::STATUS_UNPAID);
+
+    $db = Mockery::mock(Box_Database::class);
+    $db->shouldReceive('load')->once()->with('Client', 20)->andReturn($client);
+    $db->shouldReceive('find')->once()->with('InvoiceItem', 'invoice_id = ?', [10])->andReturn([]);
+    $balanceTransaction = new Model_ClientBalance();
+    $balanceTransaction->loadBean(new Tests\Helpers\DummyBean());
+    $db->shouldReceive('dispense')->once()->with('ClientBalance')->andReturn($balanceTransaction);
+    $db->shouldReceive('store')->once();
+
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('getTotalWithTax')->once()->with($invoice)->andReturn(0.1 * 3);
     $service->shouldReceive('markAsPaid')->once()->with($invoice, false, false, true)->andReturn(true);
 
     $di = container();
