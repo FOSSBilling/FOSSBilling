@@ -510,6 +510,9 @@ class UpdatePatcher implements InjectionAwareInterface
             98 => 'patch98',
             99 => 'patch99',
             100 => 'patch100',
+            // Same number and meaning as main's patch117: installs predating
+            // the news post description field need the column added.
+            117 => 'patch117',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -2495,6 +2498,15 @@ class UpdatePatcher implements InjectionAwareInterface
                 PRIMARY KEY (`id`),
                 UNIQUE KEY `pay_gateway_product_gateway_cache_key` (`pay_gateway_id`, `cache_key`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8;');
+        }
+    }
+
+    private function patch117(): void
+    {
+        // Installs predating the news post description field miss the column
+        // while the entity and repository already select it.
+        if (!$this->tableHasColumn('post', 'description')) {
+            $this->executeSql('ALTER TABLE `post` ADD COLUMN `description` TEXT DEFAULT NULL AFTER `title`');
         }
     }
 

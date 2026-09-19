@@ -32,9 +32,11 @@ test('invoice item attempts patch follows the manual currency rate patch', funct
 test('tld periods patch follows the invoice item attempts patch', function (): void {
     $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 97);
 
-    expect($patches)->toHaveCount(3)
+    expect($patches)->toHaveCount(4)
         ->toHaveKey(98)
-        ->and($patches[98][1])->toBe('patch98');
+        ->and($patches[98][1])->toBe('patch98')
+        ->and($patches)->toHaveKey(117)
+        ->and($patches[117][1])->toBe('patch117');
 });
 
 test('tld periods patch adds the column for existing installs', function (): void {
@@ -141,6 +143,52 @@ test('client balance gateway patch restores one-time payments', function (): voi
     $patcher = new UpdatePatcher();
     $patcher->setDi($di);
     (new ReflectionMethod($patcher, 'patch91'))->invoke($patcher);
+});
+
+test('news post description patch follows the latest 0.8-next patch', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 100);
+
+    expect($patches)->toHaveKey(117)
+        ->and($patches[117][1])->toBe('patch117');
+});
+
+test('news post description patch adds the column for existing installs', function (): void {
+    $columns = Mockery::mock(PDOStatement::class);
+    $columns->expects('execute')->with([])->andReturnTrue();
+    $columns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([]);
+
+    $addColumn = Mockery::mock(PDOStatement::class);
+    $addColumn->expects('execute')->with([])->andReturnTrue();
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `post`')->andReturn($columns);
+    $pdo->expects('prepare')
+        ->with('ALTER TABLE `post` ADD COLUMN `description` TEXT DEFAULT NULL AFTER `title`')
+        ->andReturn($addColumn);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch117'))->invoke($patcher);
+});
+
+test('news post description patch is a no-op when the column already exists', function (): void {
+    $columns = Mockery::mock(PDOStatement::class);
+    $columns->expects('execute')->with([])->andReturnTrue();
+    $columns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([['Field' => 'description']]);
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `post`')->andReturn($columns);
+    $pdo->shouldNotReceive('prepare')->with('ALTER TABLE `post` ADD COLUMN `description` TEXT DEFAULT NULL AFTER `title`');
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch117'))->invoke($patcher);
 });
 
 test('legacy email patch restores untouched 0.7.2 defaults without replacing customizations', function (): void {
