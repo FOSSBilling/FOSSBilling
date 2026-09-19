@@ -32,7 +32,7 @@
   "devDependencies": {
     "@playwright/test": "1.63.0",
     "@types/node": "24.13.5",
-    "autoprefixer": "10.6.0",
+    "autoprefixer": "10.6.1",
     "ckeditor5": "48.5.0",
     "esbuild": "0.28.2",
     "github-markdown-css": "5.9.0",
