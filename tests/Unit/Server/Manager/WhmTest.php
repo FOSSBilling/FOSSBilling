@@ -89,6 +89,20 @@ test('createAccount assigns the plan\'s acl custom value to the reseller via set
     ]);
 });
 
+test('synchronizeAccount casts the suspended flag to bool', function (): void {
+    $client = new MockHttpClient(fn (): MockResponse => new MockResponse(json_encode([
+        'acct' => [
+            ['suspended' => 1, 'domain' => 'example.com', 'user' => 'example', 'ip' => '1.2.3.4'],
+        ],
+    ])));
+    $manager = createWhmManager($client);
+    $account = createWhmAccount(new Server_Package(), false);
+
+    $updated = $manager->synchronizeAccount($account);
+
+    expect($updated->getSuspended())->toBeTrue();
+});
+
 test('createAccount never calls setupreseller or setacls for a non-reseller account', function (): void {
     $requests = [];
     $manager = createWhmManager(createWhmAccountCreationClient($requests));
