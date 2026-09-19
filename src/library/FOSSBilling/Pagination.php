@@ -103,12 +103,13 @@ class Pagination implements InjectionAwareInterface
             throw new InformationException('Invalid SQL query. Missing FROM clause.');
         }
 
-        $paginatedQuery = $query . sprintf(' LIMIT %u, %u', $offset, $pagination->perPage);
-        $result = $this->di['em']->getConnection()->fetchAllAssociative($paginatedQuery, $params);
+        $connection = $this->di['em']->getConnection();
+        $paginatedQuery = $connection->getDatabasePlatform()->modifyLimitQuery($query, $pagination->perPage, $offset);
+        $result = $connection->fetchAllAssociative($paginatedQuery, $params);
 
         $query = rtrim($query, " ;\n\r\t");
         $countQuery = 'SELECT COUNT(1) FROM (' . $query . ') AS sub';
-        $total = (int) $this->di['em']->getConnection()->fetchOne($countQuery, $params);
+        $total = (int) $connection->fetchOne($countQuery, $params);
 
         return $this->buildPaginatedResponse($pagination->page, $pagination->perPage, $total, $result);
     }

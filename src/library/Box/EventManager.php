@@ -12,6 +12,9 @@ class Box_EventManager implements FOSSBilling\InjectionAwareInterface
 {
     protected ?Pimple\Container $di = null;
 
+    /** @var array<string, list<array{rel_id: mixed, meta_value: mixed}>>|null */
+    private ?array $databaseListeners = null;
+
     public const GLOBAL_LISTENER_NAME = 'onEveryEvent';
 
     public function setDi(Pimple\Container $di): void
@@ -50,48 +53,60 @@ class Box_EventManager implements FOSSBilling\InjectionAwareInterface
 
         $eventName = $e->getName();
 
-        $this->_connectDatabaseHooks($disp, $eventName);
-        $this->_connectDatabaseHooks($disp, self::GLOBAL_LISTENER_NAME, $eventName); // Also connect global listeners (onEveryEvent) to the fired event
+        $this->connectDatabaseHooks($disp, $eventName);
+        $this->connectDatabaseHooks($disp, self::GLOBAL_LISTENER_NAME, $eventName); // Also connect global listeners (onEveryEvent) to the fired event
 
         $disp->notify($e);
 
         return $e->getReturnValue();
     }
 
-    /**
-     * @param Box_EventDispatcher $disp
-     * @param string              $event
-     */
-    private function _connectDatabaseHooks(&$disp, $event, ?string $dispatchEventName = null): void
+    public function clearListenerCache(): void
     {
-        $sql = "SELECT id, rel_id, meta_value
-            FROM extension_meta
-            WHERE extension = 'mod_hook'
-            AND rel_type = 'mod'
-            AND meta_key = 'listener'
-            AND meta_value = :event
-        ";
-        $list = $this->di['em']->getConnection()->fetchAllAssociative($sql, ['event' => $event]);
+        $this->databaseListeners = null;
+    }
 
-        // no need to connect listeners
-        if (empty($list)) {
-            return;
-        }
+    private function connectDatabaseHooks(Box_EventDispatcher $disp, string $event, ?string $dispatchEventName = null): void
+    {
+        $listeners = $this->getDatabaseListeners()[$event] ?? [];
 
-        foreach ($list as $listener) {
+        foreach ($listeners as $listener) {
             $mod = $listener['rel_id'];
-            $event = $listener['meta_value'];
-            $dispatchEvent = $dispatchEventName ?? $event;
+            $listenerEvent = $listener['meta_value'];
+            $dispatchEvent = $dispatchEventName ?? $listenerEvent;
 
             try {
-                $s = $this->di['mod_service']($mod);
+                $service = $this->di['mod_service']($mod);
 
-                if (method_exists($s, $event)) {
-                    $disp->connect($dispatchEvent, [$s::class, $event]);
+                if (method_exists($service, $listenerEvent)) {
+                    $disp->connect($dispatchEvent, [$service::class, $listenerEvent]);
                 }
             } catch (Exception $e) {
                 $this->di['logger']->withChannel('event')->error($e->getMessage());
             }
         }
+    }
+
+    /** @return array<string, list<array{rel_id: mixed, meta_value: mixed}>> */
+    private function getDatabaseListeners(): array
+    {
+        if ($this->databaseListeners !== null) {
+            return $this->databaseListeners;
+        }
+
+        $sql = "SELECT rel_id, meta_value
+            FROM extension_meta
+            WHERE extension = 'mod_hook'
+            AND rel_type = 'mod'
+            AND meta_key = 'listener'
+        ";
+        $listeners = $this->di['em']->getConnection()->fetchAllAssociative($sql);
+        $this->databaseListeners = [];
+
+        foreach ($listeners as $listener) {
+            $this->databaseListeners[(string) $listener['meta_value']][] = $listener;
+        }
+
+        return $this->databaseListeners;
     }
 }
