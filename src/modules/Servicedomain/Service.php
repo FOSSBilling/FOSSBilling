@@ -759,18 +759,19 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $client = $this->di['em']->getRepository(Client::class)->find($model->getClientId())
             ?? throw new \FOSSBilling\Exception('Client not found');
 
-        $email = empty($model->getContactEmail()) ? $client->getEmail() : $model->getContactEmail();
-        $first_name = empty($model->getContactFirstName()) ? $client->getFirstName() : $model->getContactFirstName();
-        $last_name = empty($model->getContactLastName()) ? $client->getLastName() : $model->getContactLastName();
-        $city = empty($model->getContactCity()) ? $client->getCity() : $model->getContactCity();
-        $zip = empty($model->getContactPostcode()) ? $client->getPostcode() : $model->getContactPostcode();
-        $country = empty($model->getContactCountry()) ? $client->getCountry() : $model->getContactCountry();
-        $state = empty($model->getContactState()) ? $client->getState() : $model->getContactState();
-        $phone = empty($model->getContactPhone()) ? $client->getPhone() : $model->getContactPhone();
-        $phone_cc = empty($model->getContactPhoneCc()) ? $client->getPhoneCc() : $model->getContactPhoneCc();
-        $company = empty($model->getContactCompany()) ? $client->getCompany() : $model->getContactCompany();
-        $address1 = empty($model->getContactAddress1()) ? $client->getAddress1() : $model->getContactAddress1();
-        $address2 = empty($model->getContactAddress2()) ? $client->getAddress2() : $model->getContactAddress2();
+        // Either side can be null, so coalesce to '' for the registrar adapters.
+        $email = (string) (empty($model->getContactEmail()) ? $client->getEmail() : $model->getContactEmail());
+        $first_name = (string) (empty($model->getContactFirstName()) ? $client->getFirstName() : $model->getContactFirstName());
+        $last_name = (string) (empty($model->getContactLastName()) ? $client->getLastName() : $model->getContactLastName());
+        $city = (string) (empty($model->getContactCity()) ? $client->getCity() : $model->getContactCity());
+        $zip = (string) (empty($model->getContactPostcode()) ? $client->getPostcode() : $model->getContactPostcode());
+        $country = (string) (empty($model->getContactCountry()) ? $client->getCountry() : $model->getContactCountry());
+        $state = (string) (empty($model->getContactState()) ? $client->getState() : $model->getContactState());
+        $phone = (string) (empty($model->getContactPhone()) ? $client->getPhone() : $model->getContactPhone());
+        $phone_cc = (string) (empty($model->getContactPhoneCc()) ? $client->getPhoneCc() : $model->getContactPhoneCc());
+        $company = (string) (empty($model->getContactCompany()) ? $client->getCompany() : $model->getContactCompany());
+        $address1 = (string) (empty($model->getContactAddress1()) ? $client->getAddress1() : $model->getContactAddress1());
+        $address2 = (string) (empty($model->getContactAddress2()) ? $client->getAddress2() : $model->getContactAddress2());
         $birthday = !empty($client->getBirthday()) ? $client->getBirthday()->format('Y-m-d') : '';
         $company_number = !empty($client->getCompanyNumber()) ? $client->getCompanyNumber() : '';
         $document_nr = (string) ($this->di['mod_service']('client')->resolveDocumentNumber($client) ?? '');
