@@ -17,7 +17,6 @@ use Box\Mod\Product\Entity\Product;
 
 use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
-use function Tests\Helpers\setEntityId;
 
 function orderServiceCreateProductEntity(?int $id = null, ?string $type = null): Product
 {
@@ -77,8 +76,7 @@ test('counter returns status counts', function (): void {
 });
 
 test('batch order serialization does not expose admin-only client details', function (): void {
-    $client = createEntity(Box\Mod\Client\Entity\Client::class);
-    setEntityId($client, 7);
+    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 7]);
     $admin = createEntity(Box\Mod\Staff\Entity\Admin::class);
 
     $clientRepository = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
