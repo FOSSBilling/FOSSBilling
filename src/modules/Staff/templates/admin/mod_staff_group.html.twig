@@ -209,7 +209,7 @@
                                                                     <div class="form-check mt-1">
                                                                         <input class="form-check-input permission-box" id="input-{{ modName }}-{{ permissionName }}" type="checkbox" name="permissions[{{ modName }}][{{ permissionName }}]" value="1"{% if group.permissions[modName][permissionName]|default(false) %} checked {% endif %}>
                                                                         <label class="form-check-label" for="input-{{ modName }}-{{ permissionName }}">{{ permission.display_name }}
-                                                                            <svg class="icon" data-bs-toggle="tooltip" data-bs-title="{{ permission.description }}" data-bs-placement="right"><use href="#info-circle"/></svg>
+                                                                            <svg class="icon" data-bs-toggle="tooltip" data-bs-title="{{ permission.description|default('') }}" data-bs-placement="right"><use href="#info-circle"/></svg>
                                                                         </label>
                                                                     </div>
                                                                 </div>
@@ -218,7 +218,7 @@
                                                             {% if permission.type == 'select' %}
                                                                 <div class="col-lg-6">
                                                                     <label for="input-{{ modName }}-{{ permissionName }}" class="form-label">{{ permission.display_name }}
-                                                                        <svg class="icon" data-bs-toggle="tooltip" data-bs-title="{{ permission.description }}" data-bs-placement="right"><use href="#info-circle"/></svg>
+                                                                        <svg class="icon" data-bs-toggle="tooltip" data-bs-title="{{ permission.description|default('') }}" data-bs-placement="right"><use href="#info-circle"/></svg>
                                                                     </label>
                                                                     <select class="form-select permission-select" id="input-{{ modName }}-{{ permissionName }}" name="permissions[{{ modName }}][{{ permissionName }}]">
                                                                         <option value="">{{ 'None'|trans }}</option>
