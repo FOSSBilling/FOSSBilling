@@ -155,6 +155,24 @@ test('throws exception for invalid order data action', function (): void {
         ->toThrow(FOSSBilling\Exception::class);
 });
 
+test('validateOrderData accepts an optional product argument', function (): void {
+    $service = new Service();
+    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock->shouldReceive('checkRequiredParamsForArray')
+        ->atLeast()->once();
+
+    $di = container();
+    $di['validator'] = $validatorMock;
+    $service->setDi($di);
+
+    $data = [
+        'action' => 'NonExistingAction',
+    ];
+
+    expect(fn () => $service->validateOrderData($data, new Box\Mod\Product\Entity\Product()))
+        ->toThrow(FOSSBilling\Exception::class);
+});
+
 test('throws exception for transfer order data with invalid tld', function (array $data, array $isSldValidArr, array $tldFindOneByTldArr, array $canBeTransferred): void {
     $service = new Service();
     $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
