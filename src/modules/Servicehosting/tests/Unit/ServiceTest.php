@@ -1555,12 +1555,14 @@ test('getOrderableHpPairs returns empty array when no products reference plans',
 });
 
 test('get domain product from config returns false when no domain action is supplied', function (): void {
-    $service = Mockery::mock(Service::class)->makePartial();
-    $service->shouldReceive('attachOrderConfig')->andReturnUsing(fn (Product $product, array $data): array => $data);
-    $service->shouldReceive('validateOrderData')->andReturnNull();
+    $service = new Service();
+    $service->setDi(container());
 
-    $product = createEntity(Product::class, ['title' => 'Hosting']);
-    $data = ['sld' => 'example', 'tld' => '.com'];
+    $product = createEntity(Product::class, [
+        'title' => 'Hosting',
+        'config' => json_encode(['server_id' => 1, 'hosting_plan_id' => 2]),
+    ]);
+    $data = ['server_id' => 1, 'hosting_plan_id' => 2, 'sld' => 'example', 'tld' => '.com'];
 
     expect($service->getDomainProductFromConfig($product, $data))->toBeFalse();
 });
