@@ -57,6 +57,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      */
+    #[RequiredParams(['order_id' => 'Order ID is missing'])]
     public function update_nameservers($data)
     {
         $this->checkPermissions('servicedomain', 'manage_domains');
@@ -71,6 +72,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      */
+    #[RequiredParams(['order_id' => 'Order ID is missing'])]
     public function update_contacts($data)
     {
         $this->checkPermissions('servicedomain', 'manage_domains');
@@ -85,6 +87,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      */
+    #[RequiredParams(['order_id' => 'Order ID is missing'])]
     public function enable_privacy_protection($data)
     {
         $this->checkPermissions('servicedomain', 'manage_domains');
@@ -99,6 +102,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      */
+    #[RequiredParams(['order_id' => 'Order ID is missing'])]
     public function disable_privacy_protection($data)
     {
         $this->checkPermissions('servicedomain', 'manage_domains');
@@ -127,6 +131,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      */
+    #[RequiredParams(['order_id' => 'Order ID is missing'])]
     public function get_transfer_code($data)
     {
         $this->checkPermissions('servicedomain', 'manage_domains');
@@ -141,6 +146,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      */
+    #[RequiredParams(['order_id' => 'Order ID is missing'])]
     public function lock($data)
     {
         $this->checkPermissions('servicedomain', 'manage_domains');
@@ -155,6 +161,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      */
+    #[RequiredParams(['order_id' => 'Order ID is missing'])]
     public function unlock($data)
     {
         $this->checkPermissions('servicedomain', 'manage_domains');

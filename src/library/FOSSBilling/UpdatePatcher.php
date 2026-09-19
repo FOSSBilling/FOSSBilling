@@ -687,6 +687,7 @@ class UpdatePatcher implements InjectionAwareInterface
             114 => 'patch114',
             115 => 'patch115',
             116 => 'patch116',
+            117 => 'patch117',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -3709,6 +3710,15 @@ class UpdatePatcher implements InjectionAwareInterface
         }
         if (!$this->tableHasIndex('session', 'session_lifetime_idx')) {
             $this->executeSql('ALTER TABLE `session` ADD INDEX `session_lifetime_idx` (`lifetime`)');
+        }
+    }
+
+    private function patch117(): void
+    {
+        // Installs predating the news post description field miss the column
+        // while the entity and repository already select it.
+        if (!$this->tableHasColumn('post', 'description')) {
+            $this->executeSql('ALTER TABLE `post` ADD COLUMN `description` TEXT DEFAULT NULL AFTER `title`');
         }
     }
 
