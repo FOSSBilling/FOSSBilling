@@ -418,6 +418,38 @@ test('refuses to delete a gateway with existing transactions', function (): void
         ->toThrow(FOSSBilling\InformationException::class, 'Cannot remove payment gateway with existing transactions');
 });
 
+test('active gateways without an adapter logo get a default logo', function (): void {
+    $payGateway = createEntity(PayGateway::class, [
+        'id' => 9,
+        'gateway' => 'Custom',
+        'name' => 'Custom',
+        'acceptedCurrencies' => json_encode(['USD']),
+    ]);
+
+    $repo = Mockery::mock(PayGatewayRepository::class);
+    $repo->shouldReceive('findEnabledOrderedByIdDesc')
+        ->once()
+        ->andReturn([$payGateway]);
+
+    $service = Mockery::mock(ServicePayGateway::class)->makePartial();
+    $di = container();
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($repo);
+    $di['em'] = $em;
+    $service->setDi($di);
+    $service->shouldReceive('getPaymentAdapter')->once()->andReturn(new class {
+        public function getConfig(): array
+        {
+            return [];
+        }
+    });
+
+    $result = $service->getActive([]);
+
+    expect($result)->toHaveCount(1);
+    expect($result[0]['logo'])->toHaveKeys(['logo', 'height', 'width']);
+});
+
 test('gets active gateways as pairs', function (): void {
     $payGateway = createEntity(PayGateway::class, ['id' => 5, 'name' => 'Custom']);
 

@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 use Box\Mod\Order\Entity\Order;
 use Box\Mod\Order\Service as OrderService;
+use Box\Mod\Product\Entity\Product;
 use Box\Mod\Servicehosting\Entity\ServiceHosting;
 use Box\Mod\Servicehosting\Entity\ServiceHostingHp;
 use Box\Mod\Servicehosting\Entity\ServiceHostingServer;
@@ -1210,7 +1211,7 @@ test('get free tlds free tlds are not set', function (): void {
     });
 
     $service->setDi($di);
-    $product = new Box\Mod\Product\Entity\Product();
+    $product = new Product();
     $result = $service->getFreeTlds($product);
     expect($result)->toBeArray();
 });
@@ -1223,7 +1224,7 @@ test('get free tlds', function (): void {
     $di = container();
 
     $service->setDi($di);
-    $product = new Box\Mod\Product\Entity\Product();
+    $product = new Product();
     $product->setConfig(json_encode($config));
 
     $result = $service->getFreeTlds($product);
@@ -1446,7 +1447,7 @@ test('clientSettableConfigKeys returns the hosting allowlist', function (): void
 
 test('validateOrderData rejects admin-controlled values differing from product config', function (string $field, mixed $injectedValue): void {
     $service = new Service();
-    $product = createEntity(Box\Mod\Product\Entity\Product::class, [
+    $product = createEntity(Product::class, [
         'config' => json_encode(['server_id' => 1, 'hosting_plan_id' => 2, 'reseller' => false]),
     ]);
     $data = [
@@ -1474,7 +1475,7 @@ test('validateOrderData rejects admin-controlled values differing from product c
 
 test('validateOrderData accepts values matching product config', function (): void {
     $service = new Service();
-    $product = createEntity(Box\Mod\Product\Entity\Product::class, [
+    $product = createEntity(Product::class, [
         'config' => json_encode(['server_id' => 1, 'hosting_plan_id' => 2, 'reseller' => false]),
     ]);
     $data = [
@@ -1492,10 +1493,10 @@ test('validateOrderData accepts values matching product config', function (): vo
 test('getOrderableHpPairs returns only plans referenced by enabled products', function (): void {
     $service = new Service();
 
-    $hostingProduct = createEntity(Box\Mod\Product\Entity\Product::class, [
+    $hostingProduct = createEntity(Product::class, [
         'config' => json_encode(['server_id' => 1, 'hosting_plan_id' => 3]),
     ]);
-    $unrelatedProduct = createEntity(Box\Mod\Product\Entity\Product::class, [
+    $unrelatedProduct = createEntity(Product::class, [
         'config' => '{}',
     ]);
 
@@ -1522,7 +1523,7 @@ test('getOrderableHpPairs returns only plans referenced by enabled products', fu
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')
-        ->with(Box\Mod\Product\Entity\Product::class)
+        ->with(Product::class)
         ->andReturn($productRepo);
     $emMock->shouldReceive('getRepository')
         ->with(ServiceHostingHp::class)
@@ -1543,7 +1544,7 @@ test('getOrderableHpPairs returns empty array when no products reference plans',
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')
-        ->with(Box\Mod\Product\Entity\Product::class)
+        ->with(Product::class)
         ->andReturn($productRepo);
 
     $di = container();
@@ -1551,4 +1552,29 @@ test('getOrderableHpPairs returns empty array when no products reference plans',
     $service->setDi($di);
 
     expect($service->getOrderableHpPairs())->toBe([]);
+});
+
+test('get domain product from config returns false when no domain action is supplied', function (): void {
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('attachOrderConfig')->andReturnUsing(fn (Product $product, array $data): array => $data);
+    $service->shouldReceive('validateOrderData')->andReturnNull();
+
+    $product = createEntity(Product::class, ['title' => 'Hosting']);
+    $data = ['sld' => 'example', 'tld' => '.com'];
+
+    expect($service->getDomainProductFromConfig($product, $data))->toBeFalse();
+});
+
+test('cart product title falls back when owndomain fields are missing', function (): void {
+    $service = new Service();
+    $di = container();
+    $di['validator'] = new FOSSBilling\Validate();
+    $service->setDi($di);
+
+    $product = createEntity(Product::class, [
+        'title' => 'Hosting',
+        'config' => json_encode(['domain' => ['action' => 'owndomain']]),
+    ]);
+
+    expect($service->getCartProductTitle($product, []))->toBe('Hosting');
 });
