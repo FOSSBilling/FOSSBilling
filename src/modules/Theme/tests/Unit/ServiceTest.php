@@ -233,12 +233,44 @@ test('getThemeSettings returns theme settings', function (): void {
         ->atLeast()
         ->once()
         ->andReturn('default');
+    $themeMock->shouldReceive('getPresetFromSettingsDataFile')
+        ->atLeast()
+        ->once()
+        ->andReturn([]);
 
     $di = themeContainerWithRepository($repositoryMock);
 
     $service->setDi($di);
     $result = $service->getThemeSettings($themeMock, 'default');
     expect($result)->toBeArray();
+});
+
+test('getThemeSettings fills keys missing from saved presets with shipped defaults', function (): void {
+    $service = new Service();
+    $extensionMetaModel = (new ExtensionMeta())->setMetaValue(json_encode(['custom_key' => 'saved']));
+
+    $repositoryMock = Mockery::mock(Box\Mod\Extension\Repository\ExtensionMetaRepository::class);
+    $repositoryMock->shouldReceive('findOneByExtensionAndScope')
+        ->atLeast()
+        ->once()
+        ->andReturn($extensionMetaModel);
+
+    $themeMock = Mockery::mock(Model\Theme::class);
+    $themeMock->shouldReceive('getName')
+        ->atLeast()
+        ->once()
+        ->andReturn('default');
+    $themeMock->shouldReceive('getPresetFromSettingsDataFile')
+        ->atLeast()
+        ->once()
+        ->with('default')
+        ->andReturn(['custom_key' => 'default', 'new_key' => 'default-value']);
+
+    $di = themeContainerWithRepository($repositoryMock);
+
+    $service->setDi($di);
+    $result = $service->getThemeSettings($themeMock, 'default');
+    expect($result)->toBe(['custom_key' => 'saved', 'new_key' => 'default-value']);
 });
 
 test('getThemeSettings with empty presets returns empty array', function (): void {
