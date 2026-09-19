@@ -57,6 +57,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return array
      */
+    #[RequiredParams(['id' => 'Invoice ID is missing'])]
     public function get($data)
     {
         $this->checkPermissions('invoice', 'view');
@@ -76,6 +77,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      */
+    #[RequiredParams(['id' => 'Invoice ID is missing'])]
     public function mark_as_paid($data)
     {
         $this->checkPermissions('invoice', 'manage_invoices');
@@ -115,6 +117,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      */
+    #[RequiredParams(['id' => 'Invoice ID is missing'])]
     public function approve($data)
     {
         $this->checkPermissions('invoice', 'manage_invoices');
@@ -131,6 +134,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      */
+    #[RequiredParams(['id' => 'Invoice ID is missing'])]
     public function refund($data)
     {
         $this->checkPermissions('invoice', 'manage_invoices');
@@ -180,6 +184,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      */
+    #[RequiredParams(['id' => 'Invoice ID is missing'])]
     public function update($data)
     {
         $this->checkPermissions('invoice', 'manage_invoices');
@@ -243,6 +248,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      */
+    #[RequiredParams(['id' => 'Invoice ID is missing'])]
     public function delete($data)
     {
         $this->checkPermissions('invoice', 'manage_invoices');
@@ -293,6 +299,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      */
+    #[RequiredParams(['id' => 'Invoice ID is missing'])]
     public function pay_with_credits($data)
     {
         $this->checkPermissions('invoice', 'manage_invoices');
@@ -367,6 +374,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      */
+    #[RequiredParams(['id' => 'Invoice ID is missing'])]
     public function send_reminder($data)
     {
         $this->checkPermissions('invoice', 'manage_invoices');
