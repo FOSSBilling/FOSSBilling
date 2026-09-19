@@ -2097,3 +2097,55 @@ test('addItem strips client-injected hosting_plan_id', function (): void {
     expect($hostingCall)->toHaveKey('multiple');
     expect($hostingCall['domain'])->toHaveKey('action', 'owndomain');
 });
+
+describe('resolveFamilyGroupId', function (): void {
+    $resolve = function (Cart $cart, array $item, mixed $token, array &$groupIds, array &$lastByProduct, int &$index): string {
+        $method = new ReflectionMethod(Service::class, 'resolveFamilyGroupId');
+
+        return $method->invokeArgs(new Service(), [$cart, $item, $token, &$groupIds, &$lastByProduct, &$index]);
+    };
+
+    test('items sharing a family token share one group id', function () use ($resolve): void {
+        $cart = createEntity(Cart::class, ['id' => 5]);
+        $groupIds = [];
+        $lastByProduct = [];
+        $index = 0;
+
+        $first = $resolve($cart, ['product_id' => 1], 'token-a', $groupIds, $lastByProduct, $index);
+        $second = $resolve($cart, ['product_id' => 1], 'token-a', $groupIds, $lastByProduct, $index);
+        $other = $resolve($cart, ['product_id' => 2], 'token-b', $groupIds, $lastByProduct, $index);
+
+        expect($first)->toBe('5_1')
+            ->and($second)->toBe('5_1')
+            ->and($other)->toBe('5_2');
+    });
+
+    test('addon items without a token rejoin the parent product family', function () use ($resolve): void {
+        $cart = createEntity(Cart::class, ['id' => 5]);
+        $groupIds = [];
+        $lastByProduct = [];
+        $index = 0;
+
+        $parent = $resolve($cart, ['product_id' => 7], null, $groupIds, $lastByProduct, $index);
+        $lastByProduct[7] = $parent;
+        $addon = $resolve($cart, ['product_id' => 8, 'parent_id' => 7], null, $groupIds, $lastByProduct, $index);
+
+        expect($parent)->toBe('5_1')
+            ->and($addon)->toBe('5_1');
+    });
+
+    test('unmatched items each start their own family', function () use ($resolve): void {
+        $cart = createEntity(Cart::class, ['id' => 5]);
+        $groupIds = [];
+        $lastByProduct = [];
+        $index = 0;
+
+        $first = $resolve($cart, ['product_id' => 1], null, $groupIds, $lastByProduct, $index);
+        $second = $resolve($cart, ['product_id' => 2], null, $groupIds, $lastByProduct, $index);
+        $orphanAddon = $resolve($cart, ['product_id' => 3, 'parent_id' => 99], null, $groupIds, $lastByProduct, $index);
+
+        expect($first)->toBe('5_1')
+            ->and($second)->toBe('5_2')
+            ->and($orphanAddon)->toBe('5_3');
+    });
+});
