@@ -408,12 +408,15 @@ def cmd_diff(old_path: str, new_path: str) -> int:
     added = sorted(new_ids - old_ids)
     removed = sorted(old_ids - new_ids)
 
-    removed_lookup = {msgid.casefold(): msgid for msgid in removed}
+    removed_lookup: dict[str, list[str]] = {}
+    for msgid in removed:
+        removed_lookup.setdefault(msgid.casefold(), []).append(msgid)
     casing_changes: list[tuple[str, str]] = []
     real_added: list[str] = []
     for msgid in added:
-        if msgid.casefold() in removed_lookup:
-            casing_changes.append((removed_lookup[msgid.casefold()], msgid))
+        candidates = removed_lookup.get(msgid.casefold(), [])
+        if candidates:
+            casing_changes.append((candidates.pop(0), msgid))
         else:
             real_added.append(msgid)
     changed_set = {old for old, _ in casing_changes}
