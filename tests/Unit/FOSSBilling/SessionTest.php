@@ -150,3 +150,11 @@ test('destroying an admin login regenerates the session with the configured grac
 
     $session->destroy('admin');
 });
+
+test('session validation ignores a non-string session cookie', function (): void {
+    session_name('PHPSESSID');
+    session_id('');
+    $_COOKIE['PHPSESSID'] = ['malformed-session'];
+
+    expect(invokePrivate(createSession(), 'canUseSession'))->toBeNull();
+});

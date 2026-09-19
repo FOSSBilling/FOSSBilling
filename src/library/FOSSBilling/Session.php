@@ -139,7 +139,8 @@ class Session implements InjectionAwareInterface
         $sessionName = session_name();
         $sessionID = session_id();
         if ($sessionID === '') {
-            $sessionID = $sessionName !== false ? ($_COOKIE[$sessionName] ?? '') : '';
+            $cookieID = $sessionName !== false ? ($_COOKIE[$sessionName] ?? '') : '';
+            $sessionID = is_string($cookieID) ? $cookieID : '';
         }
 
         if ($sessionID === '') {
@@ -187,7 +188,8 @@ class Session implements InjectionAwareInterface
         $sessionID = session_id();
         if ($sessionID === '') {
             $sessionName = session_name();
-            $sessionID = $sessionName !== false ? ($_COOKIE[$sessionName] ?? '') : '';
+            $cookieID = $sessionName !== false ? ($_COOKIE[$sessionName] ?? '') : '';
+            $sessionID = is_string($cookieID) ? $cookieID : '';
         }
 
         if ($sessionID === '') {
