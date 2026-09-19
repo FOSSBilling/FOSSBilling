@@ -198,6 +198,26 @@ test('setVars encrypts and sets variables', function (): void {
     expect($result)->toBeTrue();
 });
 
+test('setVars rejects variables that cannot be encoded', function (): void {
+    $service = new Box\Mod\Email\Service();
+
+    $di = container();
+    $cryptMock = Mockery::mock('\Box_Crypt');
+    $cryptMock->shouldNotReceive('encrypt');
+
+    $em = emailBuildEm();
+    $em->shouldNotReceive('flush');
+
+    $di['em'] = $em;
+    $di['crypt'] = $cryptMock;
+    $service->setDi($di);
+
+    $t = emailTemplate();
+
+    expect(fn (): bool => $service->setVars($t, ['unencodable' => INF]))
+        ->toThrow(\FOSSBilling\Exception::class, 'Failed to encode email template variables.');
+});
+
 test('getVars decrypts and returns variables', function (): void {
     $service = new Box\Mod\Email\Service();
 

@@ -129,7 +129,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function setVars(EmailTemplate $template, array $vars): bool
     {
-        $template->setVars($this->di['crypt']->encrypt(json_encode($vars), Config::getProperty('info.salt')));
+        $encoded = json_encode($vars);
+        if ($encoded === false) {
+            throw new \FOSSBilling\Exception('Failed to encode email template variables.');
+        }
+        $template->setVars($this->di['crypt']->encrypt($encoded, Config::getProperty('info.salt')));
         $this->di['em']->flush();
 
         return true;
