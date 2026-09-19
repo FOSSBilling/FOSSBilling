@@ -477,12 +477,15 @@ class ServiceTransaction implements InjectionAwareInterface
 
     public function preProcessTransaction(Transaction $model): bool
     {
-        $output = $this->processTransactionWithErrorHandling((int) $model->getId());
+        // Processing failures throw, so reaching this point means the
+        // transaction was handled successfully regardless of what the
+        // gateway adapter itself returns (some return void).
+        $this->processTransactionWithErrorHandling((int) $model->getId());
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminTransactionProcess', 'params' => ['id' => $model->getId()]]);
         $this->di['logger']->info('Processed transaction #{model_id}', ['model_id' => $model->getId()]);
 
-        return !empty($output);
+        return true;
     }
 
     /**
