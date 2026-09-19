@@ -43,8 +43,7 @@ PHP_KEYWORDS_PLURAL = {"__pluralTrans"}
 
 HEADER_TEMPLATE = """\
 # en_US translation of FOSSBilling Application
-# Copyright 2022 FOSSBilling
-# Copyright 2011-2021 BoxBilling
+# Copyright 2022-2026 FOSSBilling
 #
 #, fuzzy
 msgid ""
