@@ -56,15 +56,16 @@ test('FOSSBILLING-PJB/PJC: custom transport without DSN throws InformationExcept
 });
 
 test('FOSSBILLING-PJB/PJC: send failures surface as FOSSBilling Exception, not raw Error', function (): void {
-    // .invalid never resolves, forcing a transport failure without depending
-    // on disabled functions.
+    // Unsupported scheme fails inside Transport::fromDsn() with no DNS or
+    // socket access, and throws outside TransportExceptionInterface so it
+    // specifically exercises the Throwable boundary.
     $mail = new Mail(
         ['email' => 'sender@example.com'],
         ['email' => 'receiver@example.com'],
         'Subject',
         '<p>Body</p>',
         'custom',
-        'smtp://unroutable.invalid:25'
+        'unsupported://default'
     );
 
     expect(fn () => $mail->send())->toThrow(FOSSBilling\Exception::class);
