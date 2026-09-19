@@ -82,6 +82,10 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
 
         $ipn = $data['post'];
 
+        if (!isset($ipn['mc_currency']) && isset($ipn['amount_currency'])) {
+            $ipn['mc_currency'] = $ipn['amount_currency'];
+        }
+
         $tx = $api_admin->invoice_transaction_get(['id' => $id]);
 
         // Set the invoice ID if it's not set
@@ -132,6 +136,8 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
 
                         return;
                     }
+
+                    $this->validateCurrency($ipn['mc_currency'] ?? null, $invoice['currency'] ?? null);
 
                     // Claim transaction for processing
                     // Prevents race conditions when multiple Completed IPNs arrive simultaneously
@@ -216,6 +222,8 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                 break;
 
             case 'subscr_signup':
+                $this->validateCurrency($ipn['mc_currency'] ?? null, $invoice['currency'] ?? null);
+
                 $existingSubscription = $this->di['db']->findOne('Subscription', 'sid = :sid', [':sid' => $ipn['subscr_id']]);
 
                 if (!$existingSubscription instanceof Model_Subscription) {
@@ -277,6 +285,18 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
             'updated_at' => date('Y-m-d H:i:s'),
         ];
         $api_admin->invoice_transaction_update($d);
+    }
+
+    private function validateCurrency($received, $expected): void
+    {
+        $received = trim((string) $received);
+        $expected = trim((string) $expected);
+        if ($received === '' || $expected === '') {
+            throw new Payment_Exception('PayPal payment is missing currency details');
+        }
+        if (strcasecmp($received, $expected) !== 0) {
+            throw new Payment_Exception(sprintf('PayPal payment currency %s does not match invoice currency %s', $received, $expected));
+        }
     }
 
     private function serviceUrl(): string

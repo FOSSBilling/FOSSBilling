@@ -45,6 +45,41 @@ function callIsIpnValid(Payment_Adapter_PayPalEmail $adapter, string $rawPostBod
     return (bool) $reflection->getMethod('_isIpnValid')->invokeArgs($adapter, [['http_raw_post_data' => $rawPostBody]]);
 }
 
+function callValidateCurrency(Payment_Adapter_PayPalEmail $adapter, mixed $received, mixed $expected): void
+{
+    $reflection = new ReflectionClass($adapter);
+    $reflection->getMethod('validateCurrency')->invokeArgs($adapter, [$received, $expected]);
+}
+
+describe('validateCurrency', function (): void {
+    test('accepts a currency matching the invoice case-insensitively', function (): void {
+        $adapter = buildPayPalEmailAdapter('merchant@example.com', 'VERIFIED');
+
+        expect(fn () => callValidateCurrency($adapter, 'usd', 'USD'))->not->toThrow(Payment_Exception::class);
+    });
+
+    test('rejects a currency that does not match the invoice', function (): void {
+        $adapter = buildPayPalEmailAdapter('merchant@example.com', 'VERIFIED');
+
+        expect(fn () => callValidateCurrency($adapter, 'MXN', 'USD'))
+            ->toThrow(Payment_Exception::class, 'PayPal payment currency MXN does not match invoice currency USD');
+    });
+
+    test('rejects a payment with no currency', function (): void {
+        $adapter = buildPayPalEmailAdapter('merchant@example.com', 'VERIFIED');
+
+        expect(fn () => callValidateCurrency($adapter, null, 'USD'))
+            ->toThrow(Payment_Exception::class, 'PayPal payment is missing currency details');
+    });
+
+    test('rejects a payment when the invoice currency is unknown', function (): void {
+        $adapter = buildPayPalEmailAdapter('merchant@example.com', 'VERIFIED');
+
+        expect(fn () => callValidateCurrency($adapter, 'USD', null))
+            ->toThrow(Payment_Exception::class, 'PayPal payment is missing currency details');
+    });
+});
+
 describe('_isIpnValid receiver verification', function (): void {
     test('accepts a payment made to the configured merchant account', function (): void {
         $adapter = buildPayPalEmailAdapter('merchant@example.com', 'VERIFIED');
