@@ -475,7 +475,7 @@ class ServiceTransaction implements InjectionAwareInterface
         return $affectedRows > 0;
     }
 
-    public function preProcessTransaction(Transaction $model)
+    public function preProcessTransaction(Transaction $model): bool
     {
         $output = $this->processTransactionWithErrorHandling((int) $model->getId());
 
