@@ -20,6 +20,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: 'Extract msgids (head)'
         run: python3 .github/scripts/extract_pot.py src /tmp/head.pot
@@ -41,6 +42,9 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: 'Comment on PR'
+        # Fork PRs get a read-only token, so commenting may fail there;
+        # the extraction result above is still visible in the job log.
+        continue-on-error: true
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
         env:
           POT_DIFF: ${{ steps.diff.outputs.body }}

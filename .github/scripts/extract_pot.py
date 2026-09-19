@@ -16,6 +16,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import bisect
 import datetime
 import os
 import re
@@ -118,9 +119,15 @@ _PHP_TOKEN = re.compile(
 )
 
 
-def _mask_php_comments(text: str) -> str:
-    """Blank out PHP comments, honouring strings and heredocs (offsets stable)."""
+def _mask_php_comments(text: str) -> tuple[str, list[tuple[int, int]]]:
+    """Blank out PHP comments, honouring strings and heredocs (offsets stable).
+
+    Also returns the spans of ordinary string literals and heredoc bodies so
+    callers can ignore keyword-like text inside string content (which real
+    xgettext never extracts).
+    """
     out: list[str] = []
+    spans: list[tuple[int, int]] = []
     pos = 0
     for match in _PHP_TOKEN.finditer(text):
         kind = match.lastgroup
@@ -128,6 +135,7 @@ def _mask_php_comments(text: str) -> str:
             tag = match.group("htag")
             end = re.search(rf"^[ \t]*{re.escape(tag)}[ \t;]*$", text[match.end():], re.MULTILINE)
             stop = match.end() + end.end() if end else len(text)
+            spans.append((match.start(), stop))
             out.append(text[pos:stop])
             pos = stop
             continue
@@ -136,10 +144,17 @@ def _mask_php_comments(text: str) -> str:
         if kind in ("linec", "blockc"):
             out.append(re.sub(r"[^\n]", " ", token))
         else:
+            spans.append((match.start(), match.end()))
             out.append(token)
         pos = match.end()
     out.append(text[pos:])
-    return "".join(out)
+    return "".join(out), spans
+
+
+def _in_spans(spans: list[tuple[int, int]], starts: list[int], offset: int) -> bool:
+    """Whether offset falls inside a string/heredoc span (spans are sorted)."""
+    idx = bisect.bisect_right(starts, offset) - 1
+    return idx >= 0 and spans[idx][0] <= offset < spans[idx][1]
 
 
 _TWIG_COMMENT = re.compile(r"\{#.*?#\}", re.DOTALL)
@@ -230,8 +245,11 @@ def _read_php_literal(masked: str, start: int) -> tuple[str, int, bool] | None:
 
 
 def extract_php(rel: str, text: str, occurrences: list[Occurrence], stats: dict) -> None:
-    masked = _mask_php_comments(text)
+    masked, spans = _mask_php_comments(text)
+    starts = [start for start, _ in spans]
     for match in _PHP_CALL.finditer(masked):
+        if _in_spans(spans, starts, match.start()):
+            continue
         keyword = match.group("kw")
         if re.search(r"\bfunction\s*$", masked[max(0, match.start() - 200) : match.start()]):
             stats["skipped_defs"] += 1
@@ -258,6 +276,13 @@ def extract_php(rel: str, text: str, occurrences: list[Occurrence], stats: dict)
         arg_start = match.start("arg")
         parsed = _read_php_literal(masked, arg_start)
         end = parsed[1] if parsed else match.end()
+        # A concatenated first argument ('a ' . $b) never matches at runtime
+        # as a msgid, so skip it instead of recording the literal prefix.
+        if re.match(r"\s*[),]", masked[end:]) is None:
+            stats["skipped_dynamic"] += 1
+            snippet = masked[match.start() : match.start() + 60].replace("\n", " ")
+            stats["skipped"].append(f"{rel}:{_line_no(masked, match.start())} concat {snippet}")
+            continue
         plural: str | None = None
         if keyword in PHP_KEYWORDS_PLURAL:
             rest = re.match(r"\s*,\s*", masked[end:])
@@ -441,10 +466,17 @@ def cmd_diff(old_path: str, new_path: str) -> int:
         for msgid in old_ids & new_ids
         if old_entries[msgid] != new_entries[msgid]
     )
-    if plural_changed:
+    plural_changed_pairs = sorted(
+        (old, new)
+        for old, new in casing_changes
+        if old_entries[old] != new_entries[new]
+    )
+    if plural_changed or plural_changed_pairs:
         print("\nChanged plural forms:")
         for msgid in plural_changed:
             print(f"  ~ {msgid!r}: {old_entries[msgid]!r} -> {new_entries[msgid]!r}")
+        for old, new in plural_changed_pairs:
+            print(f"  ~ {old!r} -> {new!r}: {old_entries[old]!r} -> {new_entries[new]!r}")
     return 0
 
 
