@@ -758,6 +758,19 @@ test('get server managers', function (): void {
     expect($result)->toBeArray();
 });
 
+test('get server managers skips managers without a usable config', function (): void {
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('getServerManagerConfig')->andReturnUsing(
+        fn ($manager) => $manager === 'Custom' ? [] : ['label' => $manager]
+    );
+
+    $result = $service->getServerManagers();
+
+    expect($result)->toBeArray();
+    expect($result)->not->toHaveKey('Custom');
+    expect($result)->not->toBeEmpty();
+});
+
 test('get server manager config', function (): void {
     $service = new Service();
     $manager = 'Custom';
