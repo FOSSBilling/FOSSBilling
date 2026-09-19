@@ -3,7 +3,7 @@
 <form method="post" action="{{ 'order/update_config'|api_url }}" {{ fb_api_form({message: 'Order Updated'|trans}) }}>
     <input type="hidden" name="config[form_id]" value="{{ config.form_id }}"/>
     <input type="hidden" name="config[id]" value="{{ config.id }}"/>
-    <input type="hidden" name="config[product_id]" value="{{ form.product_id }}"/>
+    <input type="hidden" name="config[product_id]" value="{{ order.product_id }}"/>
     <input type="hidden" name="config[type]" value="{{ config.type }}"/>
     <input type="hidden" name="config[quantity]" value="{{ config.quantity }}"/>
     <input type="hidden" name="config[price]" value="{{ config.price }}"/>
@@ -16,7 +16,7 @@
 
     <div class="card-body">
         <div class="mb-3">
-            <h3 class="card-title mb-1">{{ form.title }}</h3>
+            <h3 class="card-title mb-1">{{ form.name }}</h3>
             <p class="text-secondary mb-0">{{ 'Update the values captured by this form for the current order.'|trans }}</p>
         </div>
         <div class="row g-4">
