@@ -736,20 +736,22 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $d->setNs4($model->ns4);
 
         // merge info with current profile
-        $client = $this->di['db']->load('Client', $model->client_id);
+        $client = $this->di['db']->load('Client', $model->client_id)
+            ?? throw new \FOSSBilling\Exception('Client not found');
 
-        $email = empty($model->contact_email) ? $client->email : $model->contact_email;
-        $first_name = empty($model->contact_first_name) ? $client->first_name : $model->contact_first_name;
-        $last_name = empty($model->contact_last_name) ? $client->last_name : $model->contact_last_name;
-        $city = empty($model->contact_city) ? $client->city : $model->contact_city;
-        $zip = empty($model->contact_postcode) ? $client->postcode : $model->contact_postcode;
-        $country = empty($model->contact_country) ? $client->country : $model->contact_country;
-        $state = empty($model->contact_state) ? $client->state : $model->contact_state;
-        $phone = empty($model->contact_phone) ? $client->phone : $model->contact_phone;
-        $phone_cc = empty($model->contact_phone_cc) ? $client->phone_cc : $model->contact_phone_cc;
-        $company = empty($model->contact_company) ? $client->company : $model->contact_company;
-        $address1 = empty($model->contact_address1) ? $client->address_1 : $model->contact_address1;
-        $address2 = empty($model->contact_address2) ? $client->address_2 : $model->contact_address2;
+        // Either side can be null, so coalesce to '' for the registrar adapters.
+        $email = (string) (empty($model->contact_email) ? $client->email : $model->contact_email);
+        $first_name = (string) (empty($model->contact_first_name) ? $client->first_name : $model->contact_first_name);
+        $last_name = (string) (empty($model->contact_last_name) ? $client->last_name : $model->contact_last_name);
+        $city = (string) (empty($model->contact_city) ? $client->city : $model->contact_city);
+        $zip = (string) (empty($model->contact_postcode) ? $client->postcode : $model->contact_postcode);
+        $country = (string) (empty($model->contact_country) ? $client->country : $model->contact_country);
+        $state = (string) (empty($model->contact_state) ? $client->state : $model->contact_state);
+        $phone = (string) (empty($model->contact_phone) ? $client->phone : $model->contact_phone);
+        $phone_cc = (string) (empty($model->contact_phone_cc) ? $client->phone_cc : $model->contact_phone_cc);
+        $company = (string) (empty($model->contact_company) ? $client->company : $model->contact_company);
+        $address1 = (string) (empty($model->contact_address1) ? $client->address_1 : $model->contact_address1);
+        $address2 = (string) (empty($model->contact_address2) ? $client->address_2 : $model->contact_address2);
         $birthday = !empty($client->birthday) ? $client->birthday : '';
         $company_number = !empty($client->company_number) ? $client->company_number : '';
         $document_nr = (string) ($this->di['mod_service']('client')->resolveDocumentNumber($client) ?? '');

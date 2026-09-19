@@ -1089,8 +1089,12 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public function resolveDocumentNumber(Client|\Model_Client $client): ?string
+    public function resolveDocumentNumber(Client|\Model_Client|null $client): ?string
     {
+        if (!$client instanceof Client && !$client instanceof \Model_Client) {
+            return null;
+        }
+
         $config = $this->di['mod_config']('client');
         $customFields = $config['custom_fields'] ?? [];
 

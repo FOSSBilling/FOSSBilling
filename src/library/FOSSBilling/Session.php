@@ -253,11 +253,15 @@ class Session implements InjectionAwareInterface
 
     private function handleObsoleteSession(): void
     {
-        if (!$this->isObsoleteSession($_SESSION)) {
+        // $_SESSION is unset when no session is active; default to [] so the
+        // array-typed checks below never receive null.
+        $sessionData = $_SESSION ?? [];
+
+        if (!$this->isObsoleteSession($sessionData)) {
             return;
         }
 
-        if ($this->isObsoleteSessionExpired($_SESSION)) {
+        if ($this->isObsoleteSessionExpired($sessionData)) {
             $this->clearAuthenticationData();
             unset($_SESSION[self::OBSOLETE_FLAG], $_SESSION[self::OBSOLETE_EXPIRES_AT]);
             $this->rotateSessionId();
