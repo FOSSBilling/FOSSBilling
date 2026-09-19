@@ -98,7 +98,7 @@ test('updates a subscription', function (): void {
     expect($result)->toBeTrue();
 });
 
-test('cancels a subscription at the gateway when canceled status is saved', function (): void {
+test('cancels the stored subscription at the gateway when canceled status is saved', function (): void {
     $service = new ServiceSubscription();
     $subscriptionModel = new Model_Subscription();
     $subscriptionModel->loadBean(new Tests\Helpers\DummyBean());
@@ -139,7 +139,8 @@ test('cancels a subscription at the gateway when canceled status is saved', func
 
     expect($service->update($subscriptionModel, ['status' => 'canceled', 'sid' => 'sub_new', 'skip_gateway' => true]))->toBeTrue()
         ->and($subscriptionModel->status)->toBe('canceled')
-        ->and($adapter->canceledSubscriptionId)->toBe('sub_new');
+        ->and($subscriptionModel->sid)->toBe('sub_new')
+        ->and($adapter->canceledSubscriptionId)->toBe('sub_old');
 });
 
 test('does not call the gateway when canceling a subscription without a sid', function (): void {

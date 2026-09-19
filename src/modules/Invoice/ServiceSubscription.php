@@ -56,7 +56,7 @@ class ServiceSubscription implements InjectionAwareInterface
     public function update(\Model_Subscription $model, array $data): bool
     {
         if (($data['status'] ?? null) === 'canceled') {
-            $this->cancelAtGateway($model, (string) ($data['sid'] ?? $model->sid));
+            $this->cancelAtGateway($model);
         }
 
         return $this->persistUpdate($model, $data);
@@ -241,9 +241,9 @@ class ServiceSubscription implements InjectionAwareInterface
         $this->persistUpdate($model, ['status' => self::STATUS_PENDING_CANCELLATION]);
     }
 
-    private function cancelAtGateway(\Model_Subscription $model, ?string $subscriptionId = null): void
+    private function cancelAtGateway(\Model_Subscription $model): void
     {
-        $subscriptionId = trim($subscriptionId ?? (string) $model->sid);
+        $subscriptionId = trim((string) $model->sid);
         if ($subscriptionId === '') {
             return;
         }
