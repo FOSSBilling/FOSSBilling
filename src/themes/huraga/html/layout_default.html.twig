@@ -227,7 +227,7 @@
                                 <span>&copy; {{ 'now'|date('Y') }} {{ settings.footer_signature|default(company.signature) }}
                                     {% if company.bank_info_pagebottom == 1 %}
                                         <br/>
-                                        <b>{{'Payment Information'|trans}}</b> - {{'Bank Name'|trans}}: {{ company.bank_name }} | {{'BIC / SWIFT Code'|trans}}: {{ company.bic }} | {{'Account Number'|trans}}: {{ company.account_number }}
+                                        <b>{{'Payment Information'|trans}}</b> - {{'Bank Name'|trans}}: {{ company.bank_name|default('') }} | {{'BIC / SWIFT Code'|trans}}: {{ company.bic|default('') }} | {{'Account Number'|trans}}: {{ company.account_number|default('') }}
                                     {% endif %}
                                 </span>
                             </div>

@@ -515,7 +515,7 @@ class ServiceTransaction implements InjectionAwareInterface
         $this->di['events_manager']->fire(['event' => 'onAfterAdminTransactionProcess', 'params' => ['id' => $model->id]]);
         $this->di['logger']->info('Processed transaction #%s', $model->id);
 
-        return !empty($output) ? $output : true;
+        return !empty($output);
     }
 
     /**
