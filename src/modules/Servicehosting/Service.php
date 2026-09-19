@@ -869,7 +869,7 @@ class Service implements InjectionAwareInterface
             $config = $this->getServerManagerConfig($serverManager);
 
             // Skip managers whose config cannot be loaded (missing class,
-            // unloadable file, no form definition): the admin templates read
+            // broken file, no form definition): the admin templates read
             // `manager.label`, so an empty config would crash the page.
             if ($config !== []) {
                 $serverManagers[$serverManager] = $config;
