@@ -203,7 +203,7 @@
                                                     {% endif %}
 
                                                     <div class="row g-3">
-                                                        {% for permissionName, permission in mod.permissions %}
+                                                        {% for permissionName, permission in mod.permissions if permission is iterable %}
                                                             {% if permission.type == 'bool' %}
                                                                 <div class="col-lg-6">
                                                                     <div class="form-check mt-1">
