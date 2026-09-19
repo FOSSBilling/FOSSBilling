@@ -72,7 +72,7 @@ test('XOR property present only in stored fingerprint counts as differing', func
     expect(createFingerprint($properties)->checkFingerprint($stored))->toBeFalse();
 });
 
-test('constructor sources request headers and remote address into fingerprint properties', function (): void {
+test('constructor sources request headers and anonymized trusted client IP into fingerprint properties', function (): void {
     $request = Request::create('https://example.com/', 'GET');
     $request->server->set('REMOTE_ADDR', '203.0.113.42');
     $request->headers->set('User-Agent', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
@@ -90,8 +90,8 @@ test('constructor sources request headers and remote address into fingerprint pr
         ->and($generated)->toHaveKey('ip')
         ->and($generated['browser'])->toBe(md5('Chrome'))
         ->and($generated['os'])->toBe(md5('Linux'))
-        ->and($generated['ip'])->toBe(md5('203.0.113.42'))
+        ->and($generated['ip'])->toBe(md5('203.0.113.0'))
         ->and($generated['language'])->toBe(md5('en-US,en;q=0.9'))
         ->and($generated['referrer'])->toBe(md5('https://referrer.example.com/'))
-        ->and($generated['forwardedFor'])->toBe(md5('198.51.100.1'));
+        ->and($generated)->not->toHaveKey('forwardedFor');
 });

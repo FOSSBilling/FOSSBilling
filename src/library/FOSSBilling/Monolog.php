@@ -19,7 +19,8 @@ use Symfony\Component\Filesystem\Path;
 
 class Monolog
 {
-    protected $logger;
+    /** @var array<string, Logger> */
+    protected array $logger = [];
     public string $dateFormat = 'd-M-Y H:i:s e';
     public string $outputFormat = "[%datetime%] %channel%.%level_name%: %message% %context% %extra%\n";
 
@@ -38,28 +39,26 @@ class Monolog
         'email',
     ];
 
-    public function __construct()
-    {
-        $channels = $this->channels;
-
-        foreach ($channels as $channel) {
-            $path = Path::join(PATH_LOG, $channel, "{$channel}.log");
-
-            $this->logger[$channel] = new Logger($channel);
-            $rotatingHandler = new RotatingFileHandler($path, 90, Level::Debug);
-            $this->logger[$channel]->pushHandler($rotatingHandler);
-
-            $formatter = new LineFormatter($this->outputFormat, $this->dateFormat, true, true, true);
-            $rotatingHandler->setFormatter($formatter);
-        }
-    }
-
     /**
      * @return Logger The logger for the specified channel. If the channel does not exist, the default logger (the 'application' channel) is returned.
      */
     public function getChannel(string $channel = 'application'): Logger
     {
-        return $this->logger[$channel] ?? $this->logger['application'];
+        if (!in_array($channel, $this->channels, true)) {
+            $channel = 'application';
+        }
+
+        if (isset($this->logger[$channel])) {
+            return $this->logger[$channel];
+        }
+
+        $path = Path::join(PATH_LOG, $channel, "{$channel}.log");
+        $logger = new Logger($channel);
+        $handler = new RotatingFileHandler($path, 90, Level::Debug);
+        $handler->setFormatter(new LineFormatter($this->outputFormat, $this->dateFormat, true, true, true));
+        $logger->pushHandler($handler);
+
+        return $this->logger[$channel] = $logger;
     }
 
     /**

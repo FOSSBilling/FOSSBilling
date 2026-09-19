@@ -118,6 +118,7 @@ class Service implements InjectionAwareInterface
                 AND rel_id = :mod
                 AND meta_key = 'listener'";
             $di['em']->getConnection()->executeStatement($q, ['mod' => $params['id']]);
+            $di['events_manager']->clearListenerCache();
         }
 
         $event->setReturnValue(true);
@@ -175,6 +176,8 @@ class Service implements InjectionAwareInterface
                     }
                 }
             });
+
+            $this->di['events_manager']->clearListenerCache();
 
             return true;
         } finally {
