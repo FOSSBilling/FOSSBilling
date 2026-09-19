@@ -2441,3 +2441,46 @@ test('can client submit new ticket', function (?SupportTicket $ticket, int $hour
         expect($result)->toBeTrue();
     }
 })->with('canClientSubmitNewTicketProvider');
+
+test('batch ticket list falls back to a guest author when the client is missing', function (): void {
+    $service = Mockery::mock(Service::class)->makePartial();
+
+    $ticketRow = [
+        'id' => 7,
+        'support_helpdesk_id' => 3,
+        'client_id' => 9,
+        'access_hash' => null,
+        'author_name' => 'Gone Client',
+        'author_email' => 'gone@example.com',
+    ];
+
+    $ticketRepo = Mockery::mock(SupportTicketRepository::class);
+    $ticketRepo->shouldReceive('findBatchRowsByIds')->once()->andReturn([$ticketRow]);
+    $service->shouldReceive('getSupportTicketRepository')->andReturn($ticketRepo);
+
+    $messageRepo = Mockery::mock(SupportTicketMessageRepository::class);
+    $messageRepo->shouldReceive('countRepliesByTicketIds')->once()->andReturn([]);
+    $messageRepo->shouldReceive('findFirstIdsByTicketIds')->once()->andReturn([]);
+    $service->shouldReceive('getSupportTicketMessageRepository')->andReturn($messageRepo);
+
+    $helpdeskRepo = Mockery::mock(HelpdeskRepository::class);
+    $helpdeskRepo->shouldReceive('findByIds')->once()->andReturn([]);
+    $service->shouldReceive('getHelpdeskRepository')->andReturn($helpdeskRepo);
+
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('fetchAllAssociative')->once()->andReturn([]);
+
+    $di = container();
+    $di['dbal'] = $dbalMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $service->setDi($di);
+
+    $result = $service->getBatchForApi([7], false, null);
+
+    expect($result)->toHaveCount(1);
+    expect($result[0]['author'])->toBe([
+        'name' => 'Gone Client',
+        'email' => 'gone@example.com',
+        'role' => 'guest',
+    ]);
+});
