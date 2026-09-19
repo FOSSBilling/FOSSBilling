@@ -283,6 +283,48 @@ test('createAndProcess skips processing when transaction is already processed', 
     expect($result)->toBe(1);
 });
 
+test('preProcessTransaction returns a boolean result', function (): void {
+    $transactionModel = createEntity(Transaction::class, ['id' => 5]);
+
+    $eventsMock = Mockery::mock('\Box_EventManager');
+    $eventsMock->shouldReceive('fire')->atLeast()->once();
+
+    $di = container();
+    $di['events_manager'] = $eventsMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $service = Mockery::mock(ServiceTransaction::class)->makePartial();
+    $service->shouldReceive('processTransaction')
+        ->with(5)
+        ->once()
+        ->andReturn(1);
+    $service->setDi($di);
+
+    $result = $service->preProcessTransaction($transactionModel);
+    expect($result)->toBeTrue();
+});
+
+test('preProcessTransaction returns true when the adapter returns nothing', function (): void {
+    $transactionModel = createEntity(Transaction::class, ['id' => 5]);
+
+    $eventsMock = Mockery::mock('\Box_EventManager');
+    $eventsMock->shouldReceive('fire')->atLeast()->once();
+
+    $di = container();
+    $di['events_manager'] = $eventsMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $service = Mockery::mock(ServiceTransaction::class)->makePartial();
+    $service->shouldReceive('processTransaction')
+        ->with(5)
+        ->once()
+        ->andReturnNull();
+    $service->setDi($di);
+
+    $result = $service->preProcessTransaction($transactionModel);
+    expect($result)->toBeTrue();
+});
+
 test('preProcessTransaction marks error on a generic exception', function (): void {
     $transactionModel = createEntity(Transaction::class, ['id' => 5]);
     $transactionModel->setStatus(Transaction::STATUS_PROCESSING);

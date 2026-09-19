@@ -652,6 +652,52 @@ test('activateExistingExtension activates existing extension', function (): void
     expect($result)->toBeArray();
 });
 
+test('activateExistingExtension requires type and id', function (): void {
+    $service = new Service();
+
+    expect(fn () => $service->activateExistingExtension([]))
+        ->toThrow(FOSSBilling\InformationException::class);
+    expect(fn () => $service->activateExistingExtension(['id' => 'extensionId']))
+        ->toThrow(FOSSBilling\InformationException::class);
+    expect(fn () => $service->activateExistingExtension(['type' => 'extensionType']))
+        ->toThrow(FOSSBilling\InformationException::class);
+});
+
+test('activateExistingExtension accepts zero-like identifiers', function (): void {
+    $data = [
+        'id' => '0',
+        'type' => '0',
+    ];
+
+    $extensionRepository = Mockery::mock(ExtensionRepository::class);
+    $extensionRepository->shouldReceive('findOneByTypeAndName')
+        ->once()
+        ->with('0', '0')
+        ->andReturnNull();
+
+    $em = extensionBuildEm($extensionRepository);
+    $em->shouldReceive('persist')->atLeast()->once();
+    $em->shouldReceive('flush')->atLeast()->once();
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('activate')
+        ->once()
+        ->andReturn([]);
+
+    $eventMock = Mockery::mock(Box_EventManager::class);
+    $eventMock->shouldReceive('fire')->atLeast()->once();
+
+    $di = container();
+    $di['em'] = $em;
+    $di['events_manager'] = $eventMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $serviceMock->setDi($di);
+
+    expect($serviceMock->activateExistingExtension($data))->toBeArray();
+});
+
 test('activateExistingExtension throws exception on activation failure', function (): void {
     $data = [
         'id' => 'extensionId',
