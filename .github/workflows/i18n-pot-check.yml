@@ -1,4 +1,4 @@
-name: Translation source check
+name: Translation Source Check
 
 on:
   pull_request:
