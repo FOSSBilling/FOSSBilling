@@ -131,9 +131,18 @@ def _mask_php_comments(text: str) -> tuple[str, list[tuple[int, int]]]:
     pos = 0
     for match in _PHP_TOKEN.finditer(text):
         kind = match.lastgroup
+        if match.start() < pos:
+            # Inside an already-consumed heredoc body; it was copied verbatim.
+            continue
         if kind == "heredoc":
             tag = match.group("htag")
-            end = re.search(rf"^[ \t]*{re.escape(tag)}[ \t;]*$", text[match.end():], re.MULTILINE)
+            # Flexible heredoc (PHP 7.3+): indented marker optionally
+            # followed by `;` or `,` when used inside an expression.
+            end = re.search(
+                rf"^[ \t]*{re.escape(tag)}[ \t]*[;,]?[ \t]*$",
+                text[match.end():],
+                re.MULTILINE,
+            )
             stop = match.end() + end.end() if end else len(text)
             spans.append((match.start(), stop))
             out.append(text[pos:stop])
