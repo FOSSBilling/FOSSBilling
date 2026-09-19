@@ -304,12 +304,11 @@ class UpdateFinalization implements InjectionAwareInterface
 
     /**
      * Mirrors checkInstaller()'s guard in load.php: skipped for explicit dev/test
-     * environments and while debugging, so those instances keep the installer.
+     * environments, so those instances keep the installer.
      */
     private function shouldRemoveInstallDirectory(): bool
     {
-        // @phpstan-ignore booleanNot.alwaysTrue (DEBUG is a runtime constant)
-        return Environment::isProduction() && !DEBUG;
+        return Environment::isProduction();
     }
 
     private function getAvailablePatchCount(): ?int
