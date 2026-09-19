@@ -188,6 +188,10 @@ class UpdatePatcher implements InjectionAwareInterface
                 call_user_func($patch);
                 $this->setPatchLevel($patchLevel);
             }
+
+            if ($patches !== [] && $this->di !== null && $this->di->offsetExists('events_manager')) {
+                $this->di['events_manager']->clearListenerCache();
+            }
         }
 
         // Portable (plain UPDATE ... WHERE, no MySQL-specific syntax) and idempotent, so it

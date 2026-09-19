@@ -74,7 +74,10 @@ final readonly class CsvResponseFactory
                     $csv->insertOne($headers);
                     $wroteHeaders = true;
                 }
-                $csv->insertOne(array_intersect_key($row, $headerMap));
+                $csv->insertOne(array_map(
+                    static fn (string $header): mixed => $row[$header] ?? null,
+                    $headers,
+                ));
             }
 
             // Preserve an explicitly requested header row for an empty result set.

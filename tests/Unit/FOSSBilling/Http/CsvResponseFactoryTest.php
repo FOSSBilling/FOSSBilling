@@ -105,3 +105,22 @@ test('CSV factory exports all non-sensitive columns when no headers are specifie
         ->and($content)->not->toContain('leaked-salt')
         ->and($content)->not->toContain('leaked-token');
 });
+
+test('CSV factory writes values in requested header order and preserves missing columns', function (): void {
+    $connection = Mockery::mock(Connection::class);
+    $connection->shouldReceive('getDatabasePlatform')->once()->andReturn(new MySQLPlatform());
+    $connection->shouldReceive('iterateAssociative')
+        ->with('SELECT * FROM `client`')
+        ->andReturn(new ArrayIterator([
+            [
+                'id' => 1,
+                'email' => 'client@example.com',
+                'status' => 'active',
+            ],
+        ]));
+
+    $factory = new CsvResponseFactory($connection);
+    $response = $factory->create('client', 'clients.csv', ['status', 'email', 'missing']);
+
+    expect(getStreamedCsvContent($response))->toBe("status,email,missing\nactive,client@example.com,\n");
+});
