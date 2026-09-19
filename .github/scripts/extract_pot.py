@@ -261,10 +261,24 @@ def extract_php(rel: str, text: str, occurrences: list[Occurrence], stats: dict)
         plural: str | None = None
         if keyword in PHP_KEYWORDS_PLURAL:
             rest = re.match(r"\s*,\s*", masked[end:])
-            if rest:
-                second = _read_php_literal(masked, end + rest.end())
-                if second is not None and not second[2]:
-                    plural = second[0]
+            second = (
+                _read_php_literal(masked, end + rest.end())
+                if rest
+                else None
+            )
+            # A plural entry is only valid with a complete static second
+            # literal; anything else (missing, dynamic, concatenated)
+            # would mistranslate, so skip the whole call.
+            if (
+                second is None
+                or second[2]
+                or not re.match(r"\s*(?:,|\))", masked[second[1]:])
+            ):
+                stats["skipped_dynamic"] += 1
+                snippet = masked[match.start() : match.start() + 60].replace("\n", " ")
+                stats["skipped"].append(f"{rel}:{_line_no(masked, match.start())} {snippet}")
+                continue
+            plural = second[0]
         occurrences.append(Occurrence(first, plural, f"{rel}:{_line_no(masked, match.start())}"))
         stats["php"] += 1
 

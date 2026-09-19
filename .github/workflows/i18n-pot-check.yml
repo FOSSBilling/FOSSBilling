@@ -42,10 +42,12 @@ jobs:
 
       - name: 'Comment on PR'
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        env:
+          POT_DIFF: ${{ steps.diff.outputs.body }}
         with:
           script: |
             const marker = '<!-- fossbilling-i18n-pot-diff -->';
-            const diff = `${{ steps.diff.outputs.body }}`.trim() || '(no output)';
+            const diff = (process.env.POT_DIFF || '').trim() || '(no output)';
             const body = `${marker}\n### Translation Source Check\n\n` +
               `How this PR changes the gettext msgid set ` +
               `(casing-only changes silently invalidate existing translations):\n\n` +
