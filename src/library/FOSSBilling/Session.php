@@ -214,6 +214,13 @@ class Session implements InjectionAwareInterface
 
     private function configureCookieName(): void
     {
+        // The cookie name cannot be changed once output started; renaming
+        // attempts would only emit warnings while the session continues
+        // under the previous name regardless.
+        if (headers_sent()) {
+            return;
+        }
+
         $previousName = session_name();
 
         session_name(CookieNames::SESSION);
