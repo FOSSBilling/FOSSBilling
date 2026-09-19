@@ -18,6 +18,7 @@ use Psr\Cache\CacheItemPoolInterface;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 use Symfony\Component\Cache\Adapter\MemcachedAdapter;
 use Symfony\Component\Cache\Adapter\RedisAdapter;
+use Symfony\Component\HttpFoundation\IpUtils;
 use Symfony\Contracts\Cache\CacheInterface;
 
 class CacheFactory
@@ -283,7 +284,7 @@ class CacheFactory
             return false;
         }
 
-        return $ip === '::1' || str_starts_with($ip, '127.');
+        return IpUtils::checkIp($ip, ['127.0.0.0/8', '::1/128']);
     }
 
     private static function createMemcachedAdapter(array $memcachedConfig, string $namespace, int $defaultLifetime): MemcachedAdapter

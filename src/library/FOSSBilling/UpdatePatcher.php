@@ -1023,13 +1023,11 @@ class UpdatePatcher implements InjectionAwareInterface
         $newUploadsPath = Path::join(PATH_ROOT, 'data', 'uploads');
 
         if ($filesystem->exists($oldUploadsPath) && $filesystem->exists($newUploadsPath)) {
-            foreach (glob($oldUploadsPath . '/*') ?: [] as $oldFile) {
-                if (is_file($oldFile)) {
-                    $filename = basename($oldFile);
-                    $newFilePath = Path::join($newUploadsPath, $filename);
-                    if (!$filesystem->exists($newFilePath)) {
-                        $filesystem->rename($oldFile, $newFilePath);
-                    }
+            $files = (new Finder())->files()->in($oldUploadsPath)->depth('== 0');
+            foreach ($files as $oldFile) {
+                $newFilePath = Path::join($newUploadsPath, $oldFile->getFilename());
+                if (!$filesystem->exists($newFilePath)) {
+                    $filesystem->rename($oldFile->getPathname(), $newFilePath);
                 }
             }
         }

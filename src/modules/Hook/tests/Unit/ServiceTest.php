@@ -125,6 +125,9 @@ test('handles on after admin deactivate extension', function (): void {
 
     $di = container();
     $di['em']->shouldReceive('getConnection')->andReturn($connection);
+    $eventsManager = Mockery::mock(Box_EventManager::class);
+    $eventsManager->shouldReceive('clearListenerCache')->once();
+    $di['events_manager'] = $eventsManager;
 
     /** @var Mockery\Expectation $expectation4 */
     $expectation4 = $eventMock->shouldReceive('getDi');
@@ -213,6 +216,9 @@ test('batch connects', function (): void {
     $validatorExpectation = $validatorMock->shouldReceive('checkRequiredParamsForArray');
     $validatorExpectation->atLeast()->once();
     $di['validator'] = $validatorMock;
+    $eventsManager = Mockery::mock(Box_EventManager::class);
+    $eventsManager->shouldReceive('clearListenerCache')->once();
+    $di['events_manager'] = $eventsManager;
     $service->setDi($di);
     $result = $service->batchConnect($mod);
     expect($result)->toBeTrue();

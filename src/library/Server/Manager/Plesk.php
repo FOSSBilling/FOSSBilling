@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 use PleskX\Api\Client;
+use Symfony\Component\HttpFoundation\Request;
 
 /**
  * Copyright 2022-2025 FOSSBilling
@@ -69,7 +70,8 @@ class Server_Manager_Plesk extends Server_Manager
         $protocol = $this->_config['secure'] ? 'https' : 'http';
         $url = $protocol . '://' . $this->_config['host'] . ':' . $this->_config['port'];
         if ($account) {
-            $sessionId = $this->_client->session()->create($account->getUsername(), $_SERVER['REMOTE_ADDR']);
+            $clientIp = Request::createFromGlobals()->getClientIp() ?? '';
+            $sessionId = $this->_client->session()->create($account->getUsername(), $clientIp);
             $url .= '/enterprise/rsession_init.php?PHPSESSID=' . $sessionId;
         }
 
