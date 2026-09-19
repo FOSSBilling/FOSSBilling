@@ -172,7 +172,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         // side effects identical to the success path, reusing
         // login()'s own timing- and message-safe handling instead of
         // reimplementing it here.
-        $this->getDi()['logger']->setChannel('security')->info('Client signup declined for an existing or rate-limited email %s from IP %s', $email, $this->getIp());
+        $this->getDi()['logger']->setChannel('security')->info('Client signup declined for an existing or rate-limited email from IP {ip}.', ['ip' => $this->getIp()]);
 
         if ($autoLogin) {
             try {

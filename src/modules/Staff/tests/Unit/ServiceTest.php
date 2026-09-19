@@ -20,6 +20,8 @@ use Box\Mod\Support\Repository\HelpdeskRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
+use function Tests\Helpers\setEntityId;
 
 class StaffPdoMock extends PDO
 {
@@ -994,9 +996,9 @@ test('onAfterClientOpenTicket sends mod_staff_ticket_open email', function (): v
 
     $clientId = 7;
     $ticketModel = new Box\Mod\Support\Entity\SupportTicket();
-    \Tests\Helpers\setEntityId($ticketModel, 1);
+    setEntityId($ticketModel, 1);
     $helpdesk = new Helpdesk();
-    \Tests\Helpers\setEntityId($helpdesk, 1);
+    setEntityId($helpdesk, 1);
     $ticketModel->setSupportHelpdesk($helpdesk);
     $ticketModel->setClientId($clientId);
     $clientModel = createEntity(Box\Mod\Client\Entity\Client::class);
@@ -1089,9 +1091,9 @@ test('onAfterClientOpenTicket sends mod_support_helpdesk_ticket_open email', fun
 
     $clientId = 7;
     $ticketModel = new Box\Mod\Support\Entity\SupportTicket();
-    \Tests\Helpers\setEntityId($ticketModel, 1);
+    setEntityId($ticketModel, 1);
     $helpdesk = new Helpdesk();
-    \Tests\Helpers\setEntityId($helpdesk, 1);
+    setEntityId($helpdesk, 1);
     $ticketModel->setSupportHelpdesk($helpdesk);
     $ticketModel->setClientId($clientId);
     $clientModel = createEntity(Box\Mod\Client\Entity\Client::class);
