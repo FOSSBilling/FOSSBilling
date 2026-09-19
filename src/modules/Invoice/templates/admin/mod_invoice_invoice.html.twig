@@ -70,7 +70,11 @@
                                 <tr>
                                     <td class="text-end">{{ 'Client'|trans }}:</td>
                                     <td>
+                                        {% if invoice.client %}
                                         <a href='{{ "client/manage/#{invoice.client.id}"|url }}'>{{ invoice.client.first_name }} {{ invoice.client.last_name }}</a>
+                                        {% else %}
+                                        {{ 'Deleted client'|trans }}
+                                        {% endif %}
                                     </td>
                                 </tr>
                                 <tr>
