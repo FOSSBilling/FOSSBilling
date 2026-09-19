@@ -204,6 +204,20 @@ test('render() rethrows a RuntimeException unrelated to the Twig cache unchanged
         ->toThrow(RuntimeException::class, 'Something else entirely.');
 });
 
+test('setUrl normalizes null and empty string to / (regression for FOSSBILLING-CJ0)', function (): void {
+    $app = new Box_AppClient();
+    $url = new ReflectionProperty(Box_App::class, 'url');
+
+    $app->setUrl(null);
+    expect($url->getValue($app))->toBe('/');
+
+    $app->setUrl('');
+    expect($url->getValue($app))->toBe('/');
+
+    $app->setUrl('//.env');
+    expect($url->getValue($app))->toBe('//.env');
+});
+
 test('numeric custom page paths return a themed 404', function (): void {
     $app = appClientWithRender(static function (string $fileName): string {
         if ($fileName === 'error') {
