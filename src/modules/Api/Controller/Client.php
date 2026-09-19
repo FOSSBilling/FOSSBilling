@@ -96,7 +96,11 @@ class Client implements InjectionAwareInterface
             // Sentry by default only captures unhandled exceptions, so we need to manually capture these.
             \Sentry\captureException($exc);
 
-            return $this->renderJson(null, $exc);
+            $displayException = \FOSSBilling\Environment::isProduction() && !($exc instanceof \FOSSBilling\Exception)
+                ? new \FOSSBilling\Exception('An unexpected error occurred.', [], 9998, $exc)
+                : ($exc instanceof \Exception ? $exc : new \FOSSBilling\Exception($exc->getMessage(), [], $exc->getCode(), $exc));
+
+            return $this->renderJson(null, $displayException);
         }
     }
 
