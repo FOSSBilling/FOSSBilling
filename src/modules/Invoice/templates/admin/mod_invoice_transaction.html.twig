@@ -270,11 +270,11 @@
                         card_class: 'mb-0'
                     } %}
                         {% block form_content %}
-                            {% if transaction.ipn.get %}
+                            {% if transaction.ipn.get|default([]) %}
                             <div class="table-responsive">
                                 <table class="table card-table table-vcenter table-striped text-nowrap">
                                     <tbody>
-                                        {% for key, val in transaction.ipn.get %}
+                                        {% for key, val in transaction.ipn.get|default([]) %}
                                         <tr>
                                             <td class="w-25">{{ key }}</td>
                                             <td>{{ val }}</td>
@@ -295,11 +295,11 @@
                         card_class: 'mb-0'
                     } %}
                         {% block form_content %}
-                            {% if transaction.ipn.post %}
+                            {% if transaction.ipn.post|default([]) %}
                             <div class="table-responsive">
                                 <table class="table card-table table-vcenter table-striped text-nowrap">
                                     <tbody>
-                                        {% for key, val in transaction.ipn.post %}
+                                        {% for key, val in transaction.ipn.post|default([]) %}
                                         <tr>
                                             <td class="w-25">{{ key }}</td>
                                             <td>{{ val }}</td>
@@ -320,11 +320,11 @@
                         card_class: 'mb-0'
                     } %}
                         {% block form_content %}
-                            {% if transaction.ipn.server %}
+                            {% if transaction.ipn.server|default([]) %}
                             <div class="table-responsive">
                                 <table class="table card-table table-vcenter table-striped text-nowrap">
                                     <tbody>
-                                        {% for key, val in transaction.ipn.server %}
+                                        {% for key, val in transaction.ipn.server|default([]) %}
                                         <tr>
                                             <td class="w-25">{{ key }}</td>
                                             <td>{{ val }}</td>
@@ -345,8 +345,8 @@
                         card_class: 'mb-0'
                     } %}
                         {% block form_content %}
-                            {% if transaction.ipn.http_raw_post_data %}
-                            <pre class="mb-0 text-wrap">{{ transaction.ipn.http_raw_post_data }}</pre>
+                            {% if transaction.ipn.http_raw_post_data|default('') %}
+                            <pre class="mb-0 text-wrap">{{ transaction.ipn.http_raw_post_data|default('') }}</pre>
                             {% else %}
                             <p class="text-muted mb-0">{{ 'No raw POST payload received'|trans }}</p>
                             {% endif %}

@@ -169,6 +169,15 @@ test('converts to api array', function (): void {
         ->and($result['amount'])->toBe(0.0);
 });
 
+test('converts to api array with an empty ipn payload', function (): void {
+    $service = transactionService();
+
+    $transactionModel = createEntity(Transaction::class, ['id' => 6]);
+
+    $result = $service->toApiArray($transactionModel, true);
+    expect($result['ipn'])->toBe([]);
+});
+
 test('converts a transaction result without database access', function (): void {
     $service = transactionService();
 
