@@ -385,6 +385,14 @@ class ServicePayGateway implements InjectionAwareInterface
                 if (!empty($config['logo'])) {
                     $gateway['logo'] = $config['logo'];
                     $gateway['logo']['logo'] = $this->resolveGatewayLogo($config['logo']);
+                } else {
+                    // Templates read gtw.logo.logo/height/width unconditionally,
+                    // so always provide the key even when the adapter ships no logo.
+                    $gateway['logo'] = [
+                        'logo' => $this->resolveGatewayLogo([]),
+                        'height' => '50px',
+                        'width' => '50px',
+                    ];
                 }
 
                 $result[] = $gateway;

@@ -791,6 +791,12 @@ class Service implements InjectionAwareInterface
         [$sld, $tld] = [null, null];
 
         if ($data['domain']['action'] == 'owndomain') {
+            $required = [
+                'owndomain_sld' => 'Hosting product must have defined owndomain_sld parameter',
+                'owndomain_tld' => 'Hosting product must have defined owndomain_tld parameter',
+            ];
+            $this->di['validator']->checkRequiredParamsForArray($required, $data['domain']);
+
             $sld = $data['domain']['owndomain_sld'];
             $tld = str_contains((string) $data['domain']['owndomain_tld'], '.') ? $data['domain']['owndomain_tld'] : '.' . $data['domain']['owndomain_tld'];
         }
@@ -1490,7 +1496,15 @@ class Service implements InjectionAwareInterface
 
         $c = json_decode($product->getConfig() ?? '', true) ?? [];
 
-        $dc = $data['domain'];
+        $dc = $data['domain'] ?? null;
+
+        // Hosting can be ordered without domain fields (e.g. API orders
+        // carrying only sld/tld): there is no domain action to attach
+        // a product for.
+        if (!is_array($dc) || ($dc['action'] ?? null) === null) {
+            return false;
+        }
+
         $action = $dc['action'];
 
         if ($action == 'subdomain') {
