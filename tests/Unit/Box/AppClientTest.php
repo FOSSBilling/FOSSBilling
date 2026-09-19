@@ -155,7 +155,7 @@ test('get_custom_page still returns 404 when the top-level template is missing',
     expect($response->getStatusCode())->toBe(404);
 });
 
-test('render() converts a Twig cache write failure into a report:false exception (regression for FOSSBILLING-EBW)', function (string $message): void {
+test('render() converts a Twig cache write failure into a report:false exception', function (string $message): void {
     $app = new class extends Box_AppClient {
         public function triggerCacheWriteFailure(RuntimeException $e): never
         {
