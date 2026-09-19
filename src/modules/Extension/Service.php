@@ -615,6 +615,10 @@ class Service implements InjectionAwareInterface
 
     public function activateExistingExtension(array $data): array
     {
+        if (empty($data['type']) || empty($data['id'])) {
+            throw new \FOSSBilling\InformationException('Extension type and ID are required');
+        }
+
         $ext = $this->getExtensionRepository()->findOneByTypeAndName($data['type'], $data['id']);
         $persistedNewly = false;
         if (!$ext instanceof Extension) {

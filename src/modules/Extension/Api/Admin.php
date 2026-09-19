@@ -141,6 +141,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['id' => 'Extension ID was not passed', 'type' => 'Extension type was not passed'])]
     public function update($data)
     {
         $this->checkPermissions('extension', 'manage_extensions');
@@ -179,6 +180,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['id' => 'Extension ID was not passed', 'type' => 'Extension type was not passed'])]
     public function deactivate($data): bool
     {
         $this->checkPermissions('extension', 'manage_extensions');
