@@ -182,7 +182,7 @@ test('addReplyTo accepts an array of address strings', function (): void {
         ->toBe(['support@example.com', 'billing@example.com']);
 });
 
-test('send with an unknown transport throws InformationException (regression for FOSSBILLING-PJB/PJC)', function (): void {
+test('send with an unknown transport throws InformationException', function (): void {
     $mail = new Mail(
         ['email' => 'sender@example.com'],
         ['email' => 'receiver@example.com'],
@@ -194,7 +194,7 @@ test('send with an unknown transport throws InformationException (regression for
     expect(fn () => $mail->send())->toThrow(FOSSBilling\InformationException::class);
 });
 
-test('send with a custom transport and no DSN throws InformationException (regression for FOSSBILLING-PJB/PJC)', function (): void {
+test('send with a custom transport and no DSN throws InformationException', function (): void {
     $mail = new Mail(
         ['email' => 'sender@example.com'],
         ['email' => 'receiver@example.com'],
@@ -206,7 +206,7 @@ test('send with a custom transport and no DSN throws InformationException (regre
     expect(fn () => $mail->send())->toThrow(FOSSBilling\InformationException::class);
 });
 
-test('send failures surface as FOSSBilling Exception, not raw Error (regression for FOSSBILLING-PJB/PJC)', function (): void {
+test('send failures surface as FOSSBilling Exception, not raw Error', function (): void {
     // Unsupported scheme fails inside Transport::fromDsn() with no DNS or
     // socket access, and throws outside TransportExceptionInterface so it
     // specifically exercises the Throwable boundary.

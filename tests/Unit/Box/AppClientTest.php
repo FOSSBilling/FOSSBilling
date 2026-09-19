@@ -204,7 +204,7 @@ test('render() rethrows a RuntimeException unrelated to the Twig cache unchanged
         ->toThrow(RuntimeException::class, 'Something else entirely.');
 });
 
-test('setUrl normalizes null and empty string to / (regression for FOSSBILLING-CJ0)', function (): void {
+test('setUrl normalizes null and empty string to /', function (): void {
     $app = new Box_AppClient();
     $url = new ReflectionProperty(Box_App::class, 'url');
 
