@@ -461,6 +461,11 @@ class TwigFactory
 
     private function getDefaultCurrencyFractionDigits(): int
     {
+        // Symfony's intl component reads gzipped data maps and throws without zlib.
+        if (!extension_loaded('zlib')) {
+            return 2;
+        }
+
         $code = $this->getDefaultCurrencyCode();
 
         if ($code !== null && Currencies::exists($code)) {

@@ -44,7 +44,7 @@ class Box_App
 
     public function __construct(array|object $options = [], ?StandardDebugBar $debugBar = null)
     {
-        $this->options = new ArrayObject($options);
+        $this->options = new ArrayObject((array) $options);
 
         if (!$debugBar) {
             $this->debugBar = new StandardDebugBar();

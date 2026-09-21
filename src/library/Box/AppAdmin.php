@@ -19,7 +19,7 @@ class Box_AppAdmin extends Box_App
     {
         $m = $this->di['mod']($this->mod);
         $controller = $m->getAdminController();
-        if (!is_null($controller)) {
+        if (!is_null($controller) && method_exists($controller, 'register')) {
             $controller->register($this);
         }
     }

@@ -230,7 +230,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                     $sd = [
                         'client_id' => $client_id,
                         'gateway_id' => $gateway_id,
-                        'currency' => $ipn['mc_currency'],
+                        'currency' => $ipn['mc_currency'] ?? '',
                         'sid' => $ipn['subscr_id'],
                         'status' => 'active',
                         'period' => str_replace(' ', '', $ipn['period3']),
@@ -409,10 +409,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 LIMIT 2';
 
         $bindings = [
-            ':transaction_id' => $ipn['txn_id'],
-            ':transaction_status' => $ipn['payment_status'],
-            ':transaction_type' => $ipn['txn_type'],
-            ':transaction_amount' => $ipn['mc_gross'],
+            ':transaction_id' => $ipn['txn_id'] ?? null,
+            ':transaction_status' => $ipn['payment_status'] ?? null,
+            ':transaction_type' => $ipn['txn_type'] ?? null,
+            ':transaction_amount' => $ipn['mc_gross'] ?? null,
         ];
 
         $rows = $this->di['db']->getAll($sql, $bindings);
