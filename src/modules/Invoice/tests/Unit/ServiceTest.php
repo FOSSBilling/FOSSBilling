@@ -1707,6 +1707,7 @@ test('refunds invoice with negative invoice logic', function (): void {
         ->once()
         ->with($newId)
         ->andReturn(Invoice::STATUS_PAID);
+    $invoiceRepo->shouldReceive('findBy')->andReturn([]);
     $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
     $persisted = [];
     $em->shouldReceive('persist')
@@ -1797,6 +1798,7 @@ test('refunds invoice with credit note logic and reserved numbering', function (
         ->once()
         ->with(9)
         ->andReturn(Invoice::STATUS_PAID);
+    $invoiceRepo->shouldReceive('findBy')->andReturn([]);
     $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
     $creditNote = null;
     $em->shouldReceive('persist')
@@ -1872,6 +1874,7 @@ test('refundInvoice keeps the refund successful when notification delivery fails
         ->once()
         ->with(9)
         ->andReturn(Invoice::STATUS_PAID);
+    $invoiceRepo->shouldReceive('findBy')->andReturn([]);
     $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
     $em->shouldReceive('persist')
         ->atLeast()->once()
@@ -4198,6 +4201,7 @@ test('refundInvoice supports partial line refunds and flips to refunded at full'
 
     $invoiceRepo = Mockery::mock(InvoiceRepository::class);
     $invoiceRepo->shouldReceive('lockAndGetStatus')->andReturn(Invoice::STATUS_PAID);
+    $invoiceRepo->shouldReceive('findBy')->andReturn([]);
     $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
 
     $di = container();
@@ -4243,6 +4247,7 @@ test('refundInvoice validates partial refund input', function (): void {
 
     $invoiceRepo = Mockery::mock(InvoiceRepository::class);
     $invoiceRepo->shouldReceive('lockAndGetStatus')->andReturn(Invoice::STATUS_PAID);
+    $invoiceRepo->shouldReceive('findBy')->andReturn([]);
     $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
 
     $clientRepo = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
@@ -4282,7 +4287,7 @@ test('refundInvoice validates partial refund input', function (): void {
     expect(fn () => $serviceMock->refundInvoice($invoiceModel, null, [12 => 1]))
         ->toThrow(FOSSBilling\InformationException::class, 'Only charge lines');
     expect(fn () => $serviceMock->refundInvoice($invoiceModel, null, [11 => 5]))
-        ->toThrow(FOSSBilling\InformationException::class, 'exceeds the invoiced quantity');
+        ->toThrow(FOSSBilling\InformationException::class, 'exceeds the remaining refundable quantity');
     expect(fn () => $serviceMock->refundInvoice($invoiceModel, null, [11 => 0]))
         ->toThrow(FOSSBilling\InformationException::class, 'No invoice lines selected');
 });
@@ -4332,6 +4337,7 @@ test('debitInvoice issues a payable debit note linked to the original', function
             && isset($email['invoice'], $email['original_invoice']));
 
     $em = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
+    $em->shouldReceive('wrapInTransaction')->andReturnUsing(fn (callable $callback): mixed => $callback());
     $debitNote = null;
     $em->shouldReceive('persist')->atLeast()->once()->andReturnUsing(
         function (object $entity) use ($invoiceModel, &$debitNote): void {
@@ -4342,6 +4348,11 @@ test('debitInvoice issues a payable debit note linked to the original', function
         }
     );
     $em->shouldReceive('flush')->atLeast()->once();
+
+    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('lockAndGetState')
+        ->andReturn(['status' => Invoice::STATUS_UNPAID, 'approved' => true]);
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
 
     $di = container();
     $di['em'] = $em;
@@ -4546,4 +4557,103 @@ test('deleteInvoiceByAdmin only deletes unapproved unpaid invoices', function ()
     $serviceMock->shouldReceive('rmInvoice')->once()->with($invoice, true)->andReturn(true);
 
     expect($serviceMock->deleteInvoiceByAdmin($invoice))->toBeTrue();
+});
+
+test('debitInvoice writes nothing when lines are invalid', function (): void {
+    $invoiceModel = createEntity(Invoice::class, ['clientId' => 5]);
+    $invoiceModel->setApproved(true);
+    $invoiceModel->setStatus(Invoice::STATUS_UNPAID);
+    setEntityId($invoiceModel, 10);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('toApiArray')->andReturn(['id' => 10]);
+
+    $eventManagerMock = Mockery::mock('\Box_EventManager');
+    $eventManagerMock->shouldReceive('fire')->twice();
+
+    // Strict entity manager: any write attempt fails the test.
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldNotReceive('wrapInTransaction', 'persist', 'flush');
+
+    $di = container();
+    $di['em'] = $em;
+    $di['events_manager'] = $eventManagerMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $serviceMock->setDi($di);
+
+    expect(fn () => $serviceMock->debitInvoice($invoiceModel, [['title' => 'X', 'price' => 0]]))
+        ->toThrow(FOSSBilling\InformationException::class, 'positive amount');
+    expect(fn () => $serviceMock->debitInvoice($invoiceModel, [['title' => '', 'price' => 5]]))
+        ->toThrow(FOSSBilling\InformationException::class, 'No debit lines given');
+});
+
+test('refundInvoice enforces per-line remaining quantities across partials', function (): void {
+    $line = createEntity(InvoiceItem::class, ['price' => 40.0, 'quantity' => 1, 'taxed' => false]);
+    setEntityId($line, 12);
+
+    $invoiceModel = createEntity(Invoice::class, ['clientId' => 5]);
+    $invoiceModel->setStatus(Invoice::STATUS_PAID);
+    setEntityId($invoiceModel, 10);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('getTotal')->andReturn(40.0);
+    $serviceMock->shouldReceive('getTax')->andReturn(0.0);
+    $serviceMock->shouldReceive('countIncome')->once();
+    $serviceMock->shouldReceive('addNote')->twice();
+    $serviceMock->shouldReceive('toApiArray')->andReturn(['id' => 1, 'total' => -40.0]);
+    $serviceMock->shouldReceive('extendInvoiceHashLifetime')->once();
+
+    $eventManagerMock = Mockery::mock('\Box_EventManager');
+    $eventManagerMock->shouldReceive('fire')->atLeast()->once();
+
+    $systemService = Mockery::mock(SystemService::class);
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_refund_logic', 'manual')
+        ->andReturn('credit_note');
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_hash_lifetime_days', '90')
+        ->andReturn(90);
+    $systemService->shouldReceive('reserveNextNumericParamValue')
+        ->andReturn(7);
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_cn_series', 'CN-')
+        ->andReturn('CN-');
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_number_padding')
+        ->andReturn(5);
+    $systemService->shouldReceive('getCompany')
+        ->andReturn([]);
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_email_attach_pdf')
+        ->andReturn(false);
+
+    $emailService = Mockery::mock(EmailService::class);
+    $emailService->shouldReceive('sendTemplate')->once();
+
+    [$em, $invoiceItemRepo] = invoiceItemEmAndRepo();
+    $invoiceItemRepo->shouldReceive('findByInvoiceId')->andReturn([$line]);
+    $em->shouldReceive('persist')->atLeast()->once();
+    $em->shouldReceive('flush')->atLeast()->once();
+
+    $creditedItem = createEntity(InvoiceItem::class, ['quantity' => 1]);
+    $creditedItem->setRefundedItemId(12);
+
+    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('lockAndGetStatus')->andReturn(Invoice::STATUS_PAID);
+    $invoiceRepo->shouldReceive('findBy')->andReturn([], [$creditedItem]);
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(moduleService([
+        'system' => $systemService,
+        'email' => $emailService,
+    ]));
+    $di['events_manager'] = $eventManagerMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $serviceMock->setDi($di);
+
+    expect($serviceMock->refundInvoice($invoiceModel, null, [12 => 1]))->toBeInt();
+    expect(fn () => $serviceMock->refundInvoice($invoiceModel, null, [12 => 1]))
+        ->toThrow(FOSSBilling\InformationException::class, 'remaining');
 });

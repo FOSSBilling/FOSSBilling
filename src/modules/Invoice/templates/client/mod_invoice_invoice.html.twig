@@ -4,24 +4,6 @@
 {% import "macro_functions.html.twig" as mf %}
 
 {% set nr = invoice.serie ~ "%05s"|format(invoice.nr) %}
-{% set credit_note_for_invoice = null %}
-{% set debit_note_for_invoice = null %}
-{% set refunded_by_invoices = [] %}
-{% set debited_by_invoices = [] %}
-{% if client %}
-    {% if invoice.credit_note_for_invoice_id %}
-        {% set credit_note_for_invoice = client.invoice_get_list({ 'id': invoice.credit_note_for_invoice_id, 'per_page': 1 }).list|first %}
-    {% endif %}
-    {% if invoice.debit_note_for_invoice_id %}
-        {% set debit_note_for_invoice = client.invoice_get_list({ 'id': invoice.debit_note_for_invoice_id, 'per_page': 1 }).list|first %}
-    {% endif %}
-    {% for refunded_by_id in invoice.refunded_by_invoice_ids|default([]) %}
-        {% set refunded_by_invoices = refunded_by_invoices|merge([client.invoice_get_list({ 'id': refunded_by_id, 'per_page': 1 }).list|first]) %}
-    {% endfor %}
-    {% for debited_by_id in invoice.debited_by_invoice_ids|default([]) %}
-        {% set debited_by_invoices = debited_by_invoices|merge([client.invoice_get_list({ 'id': debited_by_id, 'per_page': 1 }).list|first]) %}
-    {% endfor %}
-{% endif %}
 {% if invoice.credit_note_for_invoice_id %}
     {% set doc_label = 'Credit Note'|trans %}
 {% elseif invoice.debit_note_for_invoice_id %}
@@ -99,17 +81,17 @@
                                 <div class="well small">
                                     <h4 class="fw-light mt-2 mb-3">{{ doc_label }} #{{ nr }}</h4>
                                     <dl class="row">
-                                        {% if credit_note_for_invoice or debit_note_for_invoice %}
+                                        {% if invoice.credit_note_for_invoice_id or invoice.debit_note_for_invoice_id %}
                                         <dt class="col-sm-4 text-muted">{{ 'Refers to invoice'|trans }}</dt>
-                                        <dd class="col-sm-8">#{{ (credit_note_for_invoice ?? debit_note_for_invoice).serie_nr }}</dd>
+                                        <dd class="col-sm-8">#{{ invoice.related_invoices[invoice.credit_note_for_invoice_id ?? invoice.debit_note_for_invoice_id]|default(invoice.credit_note_for_invoice_id ?? invoice.debit_note_for_invoice_id) }}</dd>
                                         {% endif %}
-                                        {% if refunded_by_invoices %}
+                                        {% if invoice.refunded_by_invoice_ids %}
                                         <dt class="col-sm-4 text-muted">{{ 'Credited by'|trans }}</dt>
-                                        <dd class="col-sm-8">{% for ref in refunded_by_invoices %}#{{ ref.serie_nr }}{% if not loop.last %}, {% endif %}{% endfor %}</dd>
+                                        <dd class="col-sm-8">{% for ref_id in invoice.refunded_by_invoice_ids %}#{{ invoice.related_invoices[ref_id]|default(ref_id) }}{% if not loop.last %}, {% endif %}{% endfor %}</dd>
                                         {% endif %}
-                                        {% if debited_by_invoices %}
+                                        {% if invoice.debited_by_invoice_ids %}
                                         <dt class="col-sm-4 text-muted">{{ 'Debited by'|trans }}</dt>
-                                        <dd class="col-sm-8">{% for ref in debited_by_invoices %}#{{ ref.serie_nr }}{% if not loop.last %}, {% endif %}{% endfor %}</dd>
+                                        <dd class="col-sm-8">{% for ref_id in invoice.debited_by_invoice_ids %}#{{ invoice.related_invoices[ref_id]|default(ref_id) }}{% if not loop.last %}, {% endif %}{% endfor %}</dd>
                                         {% endif %}
                                         <dt class="col-sm-4 text-muted">{{ 'Invoice Date'|trans }}</dt>
                                         <dd class="col-sm-8">

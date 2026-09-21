@@ -59,6 +59,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
 
         $result = $this->getService()->toApiArray($model, true, $identity);
         $result['debited_by_invoice_ids'] = $this->getService()->getDebitingInvoiceIds($model);
+        $result['related_invoices'] = $this->getService()->getRelatedInvoiceReferences($model);
 
         return $result;
     }

@@ -44,7 +44,11 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         $service = $this->getService();
         $service->checkInvoiceAuth($model, InvoiceOperation::READ);
 
-        return $service->toApiArray($model, true, $this->getIdentity());
+        $result = $service->toApiArray($model, true, $this->getIdentity());
+        $result['debited_by_invoice_ids'] = $service->getDebitingInvoiceIds($model);
+        $result['related_invoices'] = $service->getRelatedInvoiceReferences($model);
+
+        return $result;
     }
 
     /**

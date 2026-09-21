@@ -216,29 +216,33 @@
                         {% endif %}
 
                         {% if invoice.status == 'paid' %}
-                        <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#refundModal">
+                        <a class="btn btn-primary"
+                            {{ fb_api_link({href: 'invoice/refund'|api_url(query: {'id': invoice.id}), modal: {type: 'confirm', title: 'Refund the full remaining amount?'|trans}, redirect: 'invoice'|url}) }}>
                             <svg class="icon" width="24" height="24">
                                 <use href="#receipt-refund" />
                             </svg>
                             <span>{{ 'Refund'|trans }}</span>
                         </a>
+                        <a href="#" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#refundModal">
+                            <span>{{ 'Partial refund'|trans }}</span>
+                        </a>
                         <div class="modal fade" id="refundModal" tabindex="-1" aria-labelledby="refundModalLabel" aria-hidden="true">
                         <div class="modal-dialog">
                             <form class="modal-content" method="post" action="{{ 'invoice/refund'|api_url }}" {{ fb_api_form({redirect: 'invoice'|url}) }}>
                             <div class="modal-header">
-                                <h5 class="modal-title" id="refundModalLabel">{{ 'Refund invoice'|trans }}</h5>
+                                <h5 class="modal-title" id="refundModalLabel">{{ 'Partial refund'|trans }}</h5>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
                             </div>
                             <div class="modal-body">
                                 <input type="hidden" name="id" value="{{ invoice.id }}">
                                 <p class="text-secondary">
-                                    {{ 'Reduce a line quantity to refund it partially, or leave all quantities untouched for a full refund.'|trans }}
+                                    {{ 'Refund selected lines, up to the quantities still remaining from earlier refunds.'|trans }}
                                 </p>
                                 {% for i, item in invoice.lines %}
                                 <div class="row g-2 align-items-center mb-2">
                                     <label class="col-7 col-form-label text-truncate" for="refund-item-{{ item.id }}">{{ item.title }}</label>
                                     <div class="col-5">
-                                        <input class="form-control" type="number" id="refund-item-{{ item.id }}" name="items[{{ item.id }}]" value="{{ item.quantity }}" min="0" max="{{ item.quantity }}">
+                                        <input class="form-control" type="number" id="refund-item-{{ item.id }}" name="items[{{ item.id }}]" value="{{ item.remaining_quantity|default(item.quantity) }}" min="0" max="{{ item.remaining_quantity|default(item.quantity) }}">
                                     </div>
                                 </div>
                                 {% endfor %}

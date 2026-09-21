@@ -257,6 +257,14 @@ test('partial refunds accumulate on the original until fully refunded', function
             expect((float) $invoice['remaining_refundable'])->toEqual(60.0);
             expect($invoice['refunded_by_invoice_ids'])->toContain($firstCnId);
 
+            // The same line cannot be refunded twice.
+            $repeat = Tests\Helpers\ApiClient::request('admin/invoice/refund', [
+                'id' => $invoiceId,
+                'items' => [$lineIds['E2E line B'] => 1],
+            ]);
+            expect($repeat->wasSuccessful())->toBeFalse();
+            expect($repeat->getErrorMessage())->toContain('remaining');
+
             $second = Tests\Helpers\ApiClient::request('admin/invoice/refund', [
                 'id' => $invoiceId,
                 'items' => [$lineIds['E2E line A'] => 1],

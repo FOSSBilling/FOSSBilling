@@ -217,6 +217,11 @@ class Service implements InjectionAwareInterface
         return $this->invoiceNumberPadding;
     }
 
+    private function formatSerieNr(?string $serie, int|string|null $nr): string
+    {
+        return $serie . sprintf('%0' . $this->getInvoiceNumberPadding() . 's', $nr ?? '');
+    }
+
     public function toApiArray(Invoice $invoice, $deep = true, $identity = null, bool $includeClientBillingEmail = false): array
     {
         $this->ensureValidHash($invoice);
@@ -318,7 +323,7 @@ class Service implements InjectionAwareInterface
         $result['client_id'] = $invoice->getClientId();
 
         $nr = is_numeric($row['nr']) ? intval($row['nr']) : $result['id'];
-        $result['serie_nr'] = $result['serie'] . sprintf('%0' . $this->getInvoiceNumberPadding() . 's', $nr);
+        $result['serie_nr'] = $this->formatSerieNr($invoice->getSerie(), $nr);
 
         $result['hash'] = $row['hash'];
         $result['hash_expires_at'] = $row['hash_expires_at'] ?? null;
@@ -395,10 +400,9 @@ class Service implements InjectionAwareInterface
         $result['refunded_total'] = round((float) ($row['refund'] ?? 0), 2);
         $result['remaining_refundable'] = round(max(0, $result['total'] - $result['refunded_total']), 2);
         if ($invoice->getStatus() === Invoice::STATUS_REFUNDED || $result['refunded_total'] > 0) {
-            $refundingNotes = $this->di['em']->getRepository(Invoice::class)->findBy(['creditNoteForInvoiceId' => $invoice->getId()]);
             $result['refunded_by_invoice_ids'] = array_map(
                 fn (Invoice $creditNote): ?int => $creditNote->getId(),
-                $refundingNotes
+                $this->findRefundingInvoices($invoice)
             );
         }
         $result['income'] = ($row['base_income'] ?? 0) - ($row['base_refund'] ?? 0);
@@ -1410,6 +1414,7 @@ class Service implements InjectionAwareInterface
                         $pi->setInvoice($new);
                         $pi->setType($item->getType());
                         $pi->setRelId($item->getRelId());
+                        $pi->setRefundedItemId($item->getId());
                         $pi->setTask($item->getTask());
                         $pi->setStatus(InvoiceItem::STATUS_EXECUTED); // Mark refund invoice as executed
                         $pi->setTitle($item->getTitle());
@@ -1478,16 +1483,30 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * Resolve which lines a refund credits: every line at full quantity when
-     * no selection is given, otherwise the selected line/quantity pairs.
+     * Resolve which lines a refund credits: every line at its remaining
+     * quantity when no selection is given, otherwise the selected
+     * line/quantity pairs validated against their remainders.
      *
      * @return list<array{InvoiceItem, int}>
      */
     private function resolveRefundLines(Invoice $invoice, ?array $items): array
     {
         $invoiceItems = $this->getInvoiceItemRepository()->findByInvoiceId((int) $invoice->getId());
+        $credited = $this->getCreditedQuantities($invoice);
+
         if (empty($items)) {
-            return array_map(fn (InvoiceItem $item): array => [$item, $item->getQuantity() ?? 1], $invoiceItems);
+            $lines = [];
+            foreach ($invoiceItems as $item) {
+                $remaining = ($item->getQuantity() ?? 1) - ($credited[(int) $item->getId()] ?? 0);
+                if ($remaining > 0) {
+                    $lines[] = [$item, $remaining];
+                }
+            }
+            if ($lines === [] && $invoiceItems !== []) {
+                throw new InformationException('No remaining refundable amount on this invoice');
+            }
+
+            return $lines;
         }
 
         $byId = [];
@@ -1511,9 +1530,10 @@ class Service implements InjectionAwareInterface
             if (($item->getPrice() ?? 0) <= 0) {
                 throw new InformationException('Only charge lines can be refunded');
             }
+            $remaining = ($item->getQuantity() ?? 1) - ($credited[$id] ?? 0);
             $qty = PriceValidator::validateQuantity($qty);
-            if ($qty > ($item->getQuantity() ?? 1)) {
-                throw new InformationException('Refund quantity exceeds the invoiced quantity');
+            if ($qty > $remaining) {
+                throw new InformationException('Refund quantity exceeds the remaining refundable quantity of :max', [':max' => $remaining]);
             }
             $lines[] = [$item, $qty];
         }
@@ -1523,6 +1543,88 @@ class Service implements InjectionAwareInterface
         }
 
         return $lines;
+    }
+
+    /**
+     * Credit notes issued against the given invoice, newest last.
+     *
+     * @return list<Invoice>
+     */
+    private function findRefundingInvoices(Invoice $invoice): array
+    {
+        return $this->di['em']->getRepository(Invoice::class)->findBy(['creditNoteForInvoiceId' => $invoice->getId()]);
+    }
+
+    /**
+     * Display references (id => number) for every invoice related to the
+     * given one, loaded in a single query for detail views.
+     *
+     * @return array<int, string>
+     */
+    public function getRelatedInvoiceReferences(Invoice $invoice): array
+    {
+        $ids = array_filter([
+            $invoice->getCreditNoteForInvoiceId(),
+            $invoice->getDebitNoteForInvoiceId(),
+        ]);
+        foreach ($this->findRefundingInvoices($invoice) as $creditNote) {
+            $ids[] = $creditNote->getId();
+        }
+        foreach ($this->getDebitingInvoiceIds($invoice) as $id) {
+            $ids[] = $id;
+        }
+        $ids = array_values(array_unique(array_filter($ids)));
+        if ($ids === []) {
+            return [];
+        }
+
+        $references = [];
+        $related = $this->di['em']->getRepository(Invoice::class)->findBy(['id' => $ids]);
+        foreach ($related as $item) {
+            $nr = is_numeric($item->getNr()) ? (int) $item->getNr() : (int) $item->getId();
+            $references[(int) $item->getId()] = $this->formatSerieNr($item->getSerie(), $nr);
+        }
+
+        return $references;
+    }
+
+    /**
+     * Remaining refundable quantity per invoice line, after earlier partials.
+     *
+     * @return array<int, int> line id => remaining qty
+     */
+    public function getLineRemainingQuantities(Invoice $invoice): array
+    {
+        $remaining = [];
+        $credited = $this->getCreditedQuantities($invoice);
+        $items = $this->getInvoiceItemRepository()->findByInvoiceId((int) $invoice->getId());
+        foreach ($items as $item) {
+            $remaining[(int) $item->getId()] = max(0, ($item->getQuantity() ?? 1) - ($credited[(int) $item->getId()] ?? 0));
+        }
+
+        return $remaining;
+    }
+
+    /**
+     * Quantities already credited per source line across all credit notes
+     * issued against the given invoice.
+     *
+     * @return array<int, int> source line id => credited quantity
+     */
+    private function getCreditedQuantities(Invoice $invoice): array
+    {
+        $credited = [];
+        foreach ($this->findRefundingInvoices($invoice) as $creditNote) {
+            $items = $this->getInvoiceItemRepository()->findByInvoiceId((int) $creditNote->getId());
+            foreach ($items as $item) {
+                $sourceId = $item->getRefundedItemId();
+                if ($sourceId !== null) {
+                    $credited[$sourceId] = ($credited[$sourceId] ?? 0) + ($item->getQuantity() ?? 0);
+                }
+            }
+        }
+
+        return $credited;
     }
 
     /**
@@ -1537,60 +1639,142 @@ class Service implements InjectionAwareInterface
     {
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminInvoiceDebit', 'params' => $this->toApiArray($invoice)]);
 
-        if (!$invoice->isApproved()
-            || !in_array($invoice->getStatus(), [Invoice::STATUS_UNPAID, Invoice::STATUS_PAID], true)
-            || $invoice->getCreditNoteForInvoiceId() !== null
-        ) {
+        if (!$this->isDebitable($invoice)) {
             throw new InformationException('Only approved unpaid or paid invoices can be debited');
         }
 
+        // Validate every line before anything is written.
+        $debitLines = $this->resolveDebitLines($items);
         $systemService = $this->di['mod_service']('system');
 
-        $new = new Invoice();
-        $new->setClientId($invoice->getClientId());
-        $new->setDebitNoteForInvoiceId($invoice->getId());
-        $new->setHash(bin2hex(random_bytes(random_int(15, 30))));
-        $new->setHashExpiresAt($this->computeHashExpiration());
-        $new->setStatus(Invoice::STATUS_UNPAID);
-        $new->setCurrency($invoice->getCurrency());
-        $new->setApproved(true);
-        $new->setTaxname($invoice->getTaxname());
-        $new->setTaxrate($invoice->getTaxrate());
+        $new = $this->di['em']->wrapInTransaction(function () use ($invoice, $note, $debitLines, $systemService): Invoice {
+            // Reserve the number before any invoice reads. SQLite must acquire its write
+            // lock before the locking read; the outer transaction rolls this back on failure.
+            $next_nr = $systemService->reserveNextNumericParamValue('invoice_dn_starting_number', 1);
+            if ($next_nr === null) {
+                throw new \FOSSBilling\Exception('Unable to determine the next debit note number');
+            }
 
-        $new->setSellerCompany($invoice->getSellerCompany());
-        $new->setSellerCompanyVat($invoice->getSellerCompanyVat());
-        $new->setSellerCompanyNumber($invoice->getSellerCompanyNumber());
-        $new->setSellerAddress($invoice->getSellerAddress());
-        $new->setSellerPhone($invoice->getSellerPhone());
-        $new->setSellerEmail($invoice->getSellerEmail());
+            // Recheck eligibility against the locked state; the invoice may
+            // have been paid, canceled, or refunded while waiting on the lock.
+            $state = $this->lockAndRefreshInvoice($invoice);
+            if (!$state['approved']
+                || !in_array($state['status'], [Invoice::STATUS_UNPAID, Invoice::STATUS_PAID], true)
+                || $invoice->getCreditNoteForInvoiceId() !== null
+            ) {
+                throw new InformationException('Only approved unpaid or paid invoices can be debited');
+            }
 
-        $new->setBuyerFirstName($invoice->getBuyerFirstName());
-        $new->setBuyerLastName($invoice->getBuyerLastName());
-        $new->setBuyerCompany($invoice->getBuyerCompany());
-        $new->setBuyerCompanyVat($invoice->getBuyerCompanyVat());
-        $new->setBuyerCompanyNumber($invoice->getBuyerCompanyNumber());
-        $new->setBuyerAddress($invoice->getBuyerAddress());
-        $new->setBuyerCity($invoice->getBuyerCity());
-        $new->setBuyerState($invoice->getBuyerState());
-        $new->setBuyerCountry($invoice->getBuyerCountry());
-        $new->setBuyerPhone($invoice->getBuyerPhone());
-        $new->setBuyerPhoneCc($invoice->getBuyerPhoneCc());
-        $new->setBuyerEmail($invoice->getBuyerEmail());
-        $new->setBuyerZip($invoice->getBuyerZip());
-        $new->setText1($invoice->getText1());
-        $new->setText2($invoice->getText2());
+            $new = new Invoice();
+            $new->setClientId($invoice->getClientId());
+            $new->setDebitNoteForInvoiceId($invoice->getId());
+            $new->setHash(bin2hex(random_bytes(random_int(15, 30))));
+            $new->setHashExpiresAt($this->computeHashExpiration());
+            $new->setStatus(Invoice::STATUS_UNPAID);
+            $new->setCurrency($invoice->getCurrency());
+            $new->setApproved(true);
+            $new->setTaxname($invoice->getTaxname());
+            $new->setTaxrate($invoice->getTaxrate());
 
-        $invoice_due_days = $systemService->getParamValue('invoice_due_days');
-        if (!is_numeric($invoice_due_days)) {
-            $invoice_due_days = 1;
+            $new->setSellerCompany($invoice->getSellerCompany());
+            $new->setSellerCompanyVat($invoice->getSellerCompanyVat());
+            $new->setSellerCompanyNumber($invoice->getSellerCompanyNumber());
+            $new->setSellerAddress($invoice->getSellerAddress());
+            $new->setSellerPhone($invoice->getSellerPhone());
+            $new->setSellerEmail($invoice->getSellerEmail());
+
+            $new->setBuyerFirstName($invoice->getBuyerFirstName());
+            $new->setBuyerLastName($invoice->getBuyerLastName());
+            $new->setBuyerCompany($invoice->getBuyerCompany());
+            $new->setBuyerCompanyVat($invoice->getBuyerCompanyVat());
+            $new->setBuyerCompanyNumber($invoice->getBuyerCompanyNumber());
+            $new->setBuyerAddress($invoice->getBuyerAddress());
+            $new->setBuyerCity($invoice->getBuyerCity());
+            $new->setBuyerState($invoice->getBuyerState());
+            $new->setBuyerCountry($invoice->getBuyerCountry());
+            $new->setBuyerPhone($invoice->getBuyerPhone());
+            $new->setBuyerPhoneCc($invoice->getBuyerPhoneCc());
+            $new->setBuyerEmail($invoice->getBuyerEmail());
+            $new->setBuyerZip($invoice->getBuyerZip());
+            $new->setText1($invoice->getText1());
+            $new->setText2($invoice->getText2());
+            $new->setSerie($systemService->getParamValue('invoice_dn_series', 'DN-'));
+            $new->setNr($next_nr);
+
+            $invoice_due_days = $systemService->getParamValue('invoice_due_days');
+            if (!is_numeric($invoice_due_days)) {
+                $invoice_due_days = 1;
+            }
+            $new->setDueAt(new \DateTime(date('Y-m-d H:i:s', strtotime("+{$invoice_due_days} day"))));
+            $this->di['em']->persist($new);
+            $this->di['em']->flush();
+
+            $entityManager = $this->di['em'];
+            foreach ($debitLines as [$title, $price, $quantity, $unit, $taxed]) {
+                $pi = new InvoiceItem();
+                $pi->setInvoice($new);
+                $pi->setType(InvoiceItem::TYPE_CUSTOM);
+                $pi->setTask(InvoiceItem::TASK_VOID);
+                $pi->setStatus(InvoiceItem::STATUS_PENDING_PAYMENT);
+                $pi->setTitle($title);
+                $pi->setQuantity($quantity);
+                $pi->setUnit($unit);
+                $pi->setCharged(0);
+                $pi->setPrice($price);
+                $pi->setTaxed($taxed);
+                $entityManager->persist($pi);
+            }
+            $entityManager->flush();
+
+            $this->countIncome($new);
+
+            $this->addNote($invoice, "Debit invoice #{$new->getId()} generated.");
+            $this->addNote($new, "Debit for #{$invoice->getId()} invoice.");
+            if (!empty($note)) {
+                $this->addNote($new, $note);
+            }
+
+            return $new;
+        });
+        $result = (int) $new->getId();
+
+        try {
+            $this->sendDebitEmail($invoice, $new);
+        } catch (\Throwable $exception) {
+            $this->di['logger']->withChannel('email')->error('Failed to send debit email', [
+                'invoice_id' => $invoice->getId(),
+                'debit_note_id' => $new->getId(),
+                'exception' => $exception,
+            ]);
         }
-        $new->setDueAt(new \DateTime(date('Y-m-d H:i:s', strtotime("+{$invoice_due_days} day"))));
-        $this->di['em']->persist($new);
-        $this->di['em']->flush();
 
-        $entityManager = $this->di['em'];
-        $hasLines = false;
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoiceDebit', 'params' => ['id' => $invoice->getId()]]);
+
+        $this->di['logger']->info("Debited invoice #{$invoice->getId()}.");
+
+        return $result;
+    }
+
+    private function isDebitable(Invoice $invoice): bool
+    {
+        return $invoice->isApproved()
+            && in_array($invoice->getStatus(), [Invoice::STATUS_UNPAID, Invoice::STATUS_PAID], true)
+            && $invoice->getCreditNoteForInvoiceId() === null;
+    }
+
+    /**
+     * Validate and normalize debit lines before anything is written, so a bad
+     * line can never leave a half-created debit note behind.
+     *
+     * @return list<array{string, float, int, ?string, bool}>
+     */
+    private function resolveDebitLines(array $items): array
+    {
+        $lines = [];
         foreach ($items as $entry) {
+            if (!is_array($entry)) {
+                throw new InformationException('Debit lines are invalid');
+            }
             $title = trim((string) ($entry['title'] ?? ''));
             if ($title === '') {
                 continue;
@@ -1599,50 +1783,20 @@ class Service implements InjectionAwareInterface
             if ($price <= 0) {
                 throw new InformationException('Debit lines must charge a positive amount');
             }
-            $pi = new InvoiceItem();
-            $pi->setInvoice($new);
-            $pi->setType(InvoiceItem::TYPE_CUSTOM);
-            $pi->setTask(InvoiceItem::TASK_VOID);
-            $pi->setStatus(InvoiceItem::STATUS_PENDING_PAYMENT);
-            $pi->setTitle($title);
-            $pi->setQuantity(PriceValidator::validateQuantity($entry['quantity'] ?? 1));
-            $pi->setUnit($entry['unit'] ?? null);
-            $pi->setCharged(0);
-            $pi->setPrice($price);
-            $pi->setTaxed((bool) ($entry['taxed'] ?? false));
-            $entityManager->persist($pi);
-            $hasLines = true;
+            $lines[] = [
+                $title,
+                $price,
+                PriceValidator::validateQuantity($entry['quantity'] ?? 1),
+                $entry['unit'] ?? null,
+                (bool) ($entry['taxed'] ?? false),
+            ];
         }
-        if (!$hasLines) {
+
+        if ($lines === []) {
             throw new InformationException('No debit lines given');
         }
-        $entityManager->flush();
 
-        $this->countIncome($new);
-
-        $this->addNote($invoice, "Debit invoice #{$new->getId()} generated.");
-        $this->addNote($new, "Debit for #{$invoice->getId()} invoice.");
-        if (!empty($note)) {
-            $this->addNote($new, $note);
-        }
-
-        $next_nr = $systemService->reserveNextNumericParamValue('invoice_dn_starting_number', 1);
-        if ($next_nr === null) {
-            throw new \FOSSBilling\Exception('Unable to determine the next debit note number');
-        }
-        $new->setSerie($systemService->getParamValue('invoice_dn_series', 'DN-'));
-        $new->setNr($next_nr);
-        $this->di['em']->persist($new);
-        $this->di['em']->flush();
-
-        $result = (int) $new->getId();
-        $this->sendDebitEmail($invoice, $new);
-
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoiceDebit', 'params' => ['id' => $invoice->getId()]]);
-
-        $this->di['logger']->info("Debited invoice #{$invoice->getId()}.");
-
-        return $result;
+        return $lines;
     }
 
     /**

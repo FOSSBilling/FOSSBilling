@@ -68,6 +68,9 @@ class InvoiceItem implements ApiArrayInterface, TimestampInterface
     #[ORM\Column(name: 'rel_id', type: Types::TEXT, nullable: true)]
     private ?string $relId = null;
 
+    #[ORM\Column(name: 'refunded_item_id', type: Types::BIGINT, nullable: true)]
+    private ?int $refundedItemId = null;
+
     #[ORM\Column(type: Types::STRING, length: 100, nullable: true)]
     private ?string $task = null;
 
@@ -135,6 +138,18 @@ class InvoiceItem implements ApiArrayInterface, TimestampInterface
     public function setRelId(?string $relId): self
     {
         $this->relId = $relId;
+
+        return $this;
+    }
+
+    public function getRefundedItemId(): ?int
+    {
+        return $this->refundedItemId;
+    }
+
+    public function setRefundedItemId(?int $refundedItemId): self
+    {
+        $this->refundedItemId = $refundedItemId;
 
         return $this;
     }

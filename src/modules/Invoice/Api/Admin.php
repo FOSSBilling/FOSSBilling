@@ -79,6 +79,13 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $result['promo_applications'] = $this->getService()->getInvoicePromoApplications($model);
         $result['debited_by_invoice_ids'] = $this->getService()->getDebitingInvoiceIds($model);
 
+        if (!empty($result['lines'])) {
+            $remaining = $this->getService()->getLineRemainingQuantities($model);
+            foreach ($result['lines'] as $i => $line) {
+                $result['lines'][$i]['remaining_quantity'] = $remaining[$line['id']] ?? $line['quantity'];
+            }
+        }
+
         return $result;
     }
 
@@ -158,8 +165,11 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $model = $this->_getInvoice($data);
         $note = $data['note'] ?? null;
         $items = $data['items'] ?? null;
+        if ($items !== null && (!is_array($items) || $items === [])) {
+            throw new InformationException('Refund lines are invalid');
+        }
 
-        return $this->getService()->refundInvoice($model, $note, is_array($items) ? $items : null);
+        return $this->getService()->refundInvoice($model, $note, $items);
     }
 
     /**
