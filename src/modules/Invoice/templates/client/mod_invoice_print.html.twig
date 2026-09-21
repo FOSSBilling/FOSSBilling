@@ -17,7 +17,7 @@
     <div class="row">
         <div class="col-md-10 offset-md-1">
             <div class="text-center">
-                <h2 id="invoice-title">{% if invoice.credit_note_for_invoice_id %}{{ 'Credit Note'|trans }}{% else %}{{ 'Invoice'|trans }}{% endif %} {{ nr }}</h2>
+                <h2 id="invoice-title">{% if invoice.credit_note_for_invoice_id %}{{ 'Credit Note'|trans }}{% elseif invoice.debit_note_for_invoice_id %}{{ 'Debit Note'|trans }}{% else %}{{ 'Invoice'|trans }}{% endif %} {{ nr }}</h2>
             </div>
 
             <div class="row">

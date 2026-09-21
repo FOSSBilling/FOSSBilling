@@ -87,10 +87,22 @@
                                     <td><a href="{{ 'invoice/manage'|url }}/{{ invoice.credit_note_for_invoice_id }}">{{ 'Invoice'|trans }} #{{ invoice.credit_note_for_invoice_id }}</a></td>
                                 </tr>
                                 {% endif %}
-                                {% if invoice.refunded_by_invoice_id %}
+                                {% if invoice.debit_note_for_invoice_id %}
+                                <tr>
+                                    <td class="text-end">{{ 'Debit note for'|trans }}:</td>
+                                    <td><a href="{{ 'invoice/manage'|url }}/{{ invoice.debit_note_for_invoice_id }}">{{ 'Invoice'|trans }} #{{ invoice.debit_note_for_invoice_id }}</a></td>
+                                </tr>
+                                {% endif %}
+                                {% if invoice.refunded_by_invoice_ids %}
                                 <tr>
                                     <td class="text-end">{{ 'Refunded by'|trans }}:</td>
-                                    <td><a href="{{ 'invoice/manage'|url }}/{{ invoice.refunded_by_invoice_id }}">{{ 'Invoice'|trans }} #{{ invoice.refunded_by_invoice_id }}</a></td>
+                                    <td>{% for refunded_by_id in invoice.refunded_by_invoice_ids %}<a href="{{ 'invoice/manage'|url }}/{{ refunded_by_id }}">{{ 'Invoice'|trans }} #{{ refunded_by_id }}</a>{% if not loop.last %}, {% endif %}{% endfor %}</td>
+                                </tr>
+                                {% endif %}
+                                {% if invoice.debited_by_invoice_ids %}
+                                <tr>
+                                    <td class="text-end">{{ 'Debited by'|trans }}:</td>
+                                    <td>{% for debited_by_id in invoice.debited_by_invoice_ids %}<a href="{{ 'invoice/manage'|url }}/{{ debited_by_id }}">{{ 'Invoice'|trans }} #{{ debited_by_id }}</a>{% if not loop.last %}, {% endif %}{% endfor %}</td>
                                 </tr>
                                 {% endif %}
                                 {% if invoice.tax %}
@@ -103,6 +115,12 @@
                                     <td class="text-end">{{ 'Total'|trans }}:</td>
                                     <td>{{ invoice.total|format_currency(invoice.currency ?? default_currency) }}</td>
                                 </tr>
+                                {% if invoice.refunded_total > 0 %}
+                                <tr>
+                                    <td class="text-end">{{ 'Refunded'|trans }}:</td>
+                                    <td>{{ invoice.refunded_total|format_currency(invoice.currency ?? default_currency) }}</td>
+                                </tr>
+                                {% endif %}
                                 <tr>
                                     <td class="text-end">{{ 'Currency'|trans }}:</td>
                                     <td>{{ invoice.currency|currency_name }}</td>
@@ -199,12 +217,95 @@
 
                         {% if invoice.status == 'paid' %}
                         <a class="btn btn-primary"
-                            {{ fb_api_link({href: 'invoice/refund'|api_url(query: {'id': invoice.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'invoice'|url}) }}>
+                            {{ fb_api_link({href: 'invoice/refund'|api_url(query: {'id': invoice.id}), modal: {type: 'confirm', title: 'Refund the full remaining amount?'|trans}, redirect: 'invoice'|url}) }}>
                             <svg class="icon" width="24" height="24">
                                 <use href="#receipt-refund" />
                             </svg>
                             <span>{{ 'Refund'|trans }}</span>
                         </a>
+                        <a href="#" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#refundModal">
+                            <span>{{ 'Partial refund'|trans }}</span>
+                        </a>
+                        <div class="modal fade" id="refundModal" tabindex="-1" aria-labelledby="refundModalLabel" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <form class="modal-content" method="post" action="{{ 'invoice/refund'|api_url }}" {{ fb_api_form({redirect: 'invoice'|url}) }}>
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="refundModalLabel">{{ 'Partial refund'|trans }}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
+                            </div>
+                            <div class="modal-body">
+                                <input type="hidden" name="id" value="{{ invoice.id }}">
+                                <p class="text-secondary">
+                                    {{ 'Refund selected lines, up to the quantities still remaining from earlier refunds.'|trans }}
+                                </p>
+                                {% for i, item in invoice.lines %}
+                                <div class="row g-2 align-items-center mb-2">
+                                    <label class="col-7 col-form-label text-truncate" for="refund-item-{{ item.id }}">{{ item.title }}</label>
+                                    <div class="col-5">
+                                        <input class="form-control" type="number" id="refund-item-{{ item.id }}" name="items[{{ item.id }}]" value="{{ item.remaining_quantity|default(item.quantity) }}" min="0" max="{{ item.remaining_quantity|default(item.quantity) }}">
+                                    </div>
+                                </div>
+                                {% endfor %}
+                                <div>
+                                    <label class="form-label" for="refund-note">{{ 'Note'|trans }}</label>
+                                    <input class="form-control" type="text" name="note" id="refund-note">
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <a href="#" class="btn btn-link link-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</a>
+                                <input type="submit" class="btn btn-primary" value="{{ 'Refund'|trans }}">
+                            </div>
+                            </form>
+                        </div>
+                        </div>
+                        {% endif %}
+                        {% if invoice.approved and (invoice.status == 'unpaid' or invoice.status == 'paid') and not invoice.credit_note_for_invoice_id %}
+                        <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#debitModal">
+                            <svg class="icon" width="24" height="24">
+                                <use href="#receipt" />
+                            </svg>
+                            <span>{{ 'Debit'|trans }}</span>
+                        </a>
+                        <div class="modal fade" id="debitModal" tabindex="-1" aria-labelledby="debitModalLabel" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <form class="modal-content" method="post" action="{{ 'invoice/debit'|api_url }}" {{ fb_api_form({redirect: 'invoice'|url}) }}>
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="debitModalLabel">{{ 'Issue debit note'|trans }}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
+                            </div>
+                            <div class="modal-body">
+                                <input type="hidden" name="id" value="{{ invoice.id }}">
+                                <p class="text-secondary">
+                                    {{ 'Add charges the original invoice missed. A separate payable debit note is issued; the original is left untouched.'|trans }}
+                                </p>
+                                {% for n in 0..2 %}
+                                <div class="row g-2 align-items-center mb-2">
+                                    <div class="col-6">
+                                        <input class="form-control" type="text" name="items[{{ n }}][title]" placeholder="{{ 'Title'|trans }}">
+                                    </div>
+                                    <div class="col-3">
+                                        <input class="form-control" type="text" name="items[{{ n }}][price]" placeholder="{{ 'Price'|trans }}">
+                                    </div>
+                                    <div class="col-2">
+                                        <input class="form-control text-center" type="number" name="items[{{ n }}][quantity]" value="1" min="1" max="1000">
+                                    </div>
+                                    <div class="col-1 text-center">
+                                        <input class="form-check-input m-0 align-middle" type="checkbox" name="items[{{ n }}][taxed]" value="1" title="{{ 'Tax'|trans }}">
+                                    </div>
+                                </div>
+                                {% endfor %}
+                                <div>
+                                    <label class="form-label" for="debit-note">{{ 'Note'|trans }}</label>
+                                    <input class="form-control" type="text" name="note" id="debit-note">
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <a href="#" class="btn btn-link link-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</a>
+                                <input type="submit" class="btn btn-primary" value="{{ 'Issue'|trans }}">
+                            </div>
+                            </form>
+                        </div>
+                        </div>
                         {% endif %}
                         <a href='{{ "invoice/pdf/#{invoice.hash}"|url(area: 'client') }}' class="btn btn-primary" target="_blank">
                             <svg class="icon" width="24" height="24">

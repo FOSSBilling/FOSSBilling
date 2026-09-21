@@ -4,18 +4,15 @@
 {% import "macro_functions.html.twig" as mf %}
 
 {% set nr = invoice.serie ~ "%05s"|format(invoice.nr) %}
-{% set credit_note_for_invoice = null %}
-{% set refunded_by_invoice = null %}
-{% if client %}
-    {% if invoice.credit_note_for_invoice_id %}
-        {% set credit_note_for_invoice = client.invoice_get_list({ 'id': invoice.credit_note_for_invoice_id, 'per_page': 1 }).list|first %}
-    {% endif %}
-    {% if invoice.refunded_by_invoice_id %}
-        {% set refunded_by_invoice = client.invoice_get_list({ 'id': invoice.refunded_by_invoice_id, 'per_page': 1 }).list|first %}
-    {% endif %}
+{% if invoice.credit_note_for_invoice_id %}
+    {% set doc_label = 'Credit Note'|trans %}
+{% elseif invoice.debit_note_for_invoice_id %}
+    {% set doc_label = 'Debit Note'|trans %}
+{% else %}
+    {% set doc_label = 'Invoice'|trans %}
 {% endif %}
 
-{% block meta_title %}{% if invoice.credit_note_for_invoice_id %}{{ 'Credit Note'|trans }}{% else %}{{ 'Invoice'|trans }}{% endif %} #{{ nr }}{% endblock %}
+{% block meta_title %}{{ doc_label }} #{{ nr }}{% endblock %}
 
 {% block body_class %}invoice-invoice{% endblock %}
 
@@ -65,7 +62,7 @@
                 <div class="card-header py-3 py-3">
                     <div class="d-flex justify-content-between">
                         <div class="d-flex flex-column">
-                            <h5 class="mb-1 d-flex align-items-center">{% if invoice.credit_note_for_invoice_id %}{{ 'Credit Note'|trans }}{% else %}{{ 'Invoice'|trans }}{% endif %}</h5>
+                            <h5 class="mb-1 d-flex align-items-center">{{ doc_label }}</h5>
                             <span class="small text-muted">{{ 'You can print this invoice or export it to a PDF file by clicking on the corresponding button.'|trans }}</span>
                         </div>
                         <div class="d-flex align-items-center">
@@ -82,15 +79,19 @@
                         <div class="row">
                             <div class="col-md-6 mb-4">
                                 <div class="well small">
-                                    <h4 class="fw-light mt-2 mb-3">{% if invoice.credit_note_for_invoice_id %}{{ 'Credit Note'|trans }}{% else %}{{ 'Invoice'|trans }}{% endif %} #{{ nr }}</h4>
+                                    <h4 class="fw-light mt-2 mb-3">{{ doc_label }} #{{ nr }}</h4>
                                     <dl class="row">
-                                        {% if credit_note_for_invoice %}
+                                        {% if invoice.credit_note_for_invoice_id or invoice.debit_note_for_invoice_id %}
                                         <dt class="col-sm-4 text-muted">{{ 'Refers to invoice'|trans }}</dt>
-                                        <dd class="col-sm-8">#{{ credit_note_for_invoice.serie_nr }}</dd>
+                                        <dd class="col-sm-8">#{{ invoice.related_invoices[invoice.credit_note_for_invoice_id ?? invoice.debit_note_for_invoice_id]|default(invoice.credit_note_for_invoice_id ?? invoice.debit_note_for_invoice_id) }}</dd>
                                         {% endif %}
-                                        {% if refunded_by_invoice %}
+                                        {% if invoice.refunded_by_invoice_ids %}
                                         <dt class="col-sm-4 text-muted">{{ 'Credited by'|trans }}</dt>
-                                        <dd class="col-sm-8">#{{ refunded_by_invoice.serie_nr }}</dd>
+                                        <dd class="col-sm-8">{% for ref_id in invoice.refunded_by_invoice_ids %}#{{ invoice.related_invoices[ref_id]|default(ref_id) }}{% if not loop.last %}, {% endif %}{% endfor %}</dd>
+                                        {% endif %}
+                                        {% if invoice.debited_by_invoice_ids %}
+                                        <dt class="col-sm-4 text-muted">{{ 'Debited by'|trans }}</dt>
+                                        <dd class="col-sm-8">{% for ref_id in invoice.debited_by_invoice_ids %}#{{ invoice.related_invoices[ref_id]|default(ref_id) }}{% if not loop.last %}, {% endif %}{% endfor %}</dd>
                                         {% endif %}
                                         <dt class="col-sm-4 text-muted">{{ 'Invoice Date'|trans }}</dt>
                                         <dd class="col-sm-8">

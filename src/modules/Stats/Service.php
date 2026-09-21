@@ -271,11 +271,12 @@ class Service implements InjectionAwareInterface
                 FROM invoice
                 WHERE created_at BETWEEN :date_from AND :date_to
                 AND approved = true
-                AND status = :status
+                AND (status = :refunded OR (status = :paid AND base_refund > 0))
                 GROUP BY date";
 
         $result = $dbal->executeQuery($query, [
-            'status' => Invoice::STATUS_REFUNDED,
+            'refunded' => Invoice::STATUS_REFUNDED,
+            'paid' => Invoice::STATUS_PAID,
             'date_from' => date('Y-m-d', $time_from),
             'date_to' => date('Y-m-d', $time_to),
         ]);
@@ -307,11 +308,12 @@ class Service implements InjectionAwareInterface
                 FROM invoice
                 WHERE paid_at BETWEEN :date_from AND :date_to
                 AND approved = true
-                AND status = :status
+                AND (status = :paid OR status = :refunded)
                 GROUP BY date";
 
         $result = $dbal->executeQuery($query, [
-            'status' => Invoice::STATUS_PAID,
+            'paid' => Invoice::STATUS_PAID,
+            'refunded' => Invoice::STATUS_REFUNDED,
             'date_from' => date('Y-m-d', $time_from),
             'date_to' => date('Y-m-d', $time_to),
         ]);
