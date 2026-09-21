@@ -17,6 +17,7 @@ use Egulias\EmailValidator\Validation\MultipleValidationWithAnd;
 use Egulias\EmailValidator\Validation\RFCValidation;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
+use Symfony\Component\HttpFoundation\IpUtils;
 
 class Tools
 {
@@ -370,8 +371,8 @@ class Tools
                     'timeout' => 2,
                 ]);
 
-                $ip = filter_var($response->getContent(), FILTER_VALIDATE_IP);
-                if ($ip) {
+                $ip = filter_var(trim($response->getContent()), FILTER_VALIDATE_IP);
+                if ($ip && !IpUtils::checkIp($ip, IpUtils::PRIVATE_SUBNETS)) {
                     return $ip;
                 }
             } catch (\Exception $e) {
