@@ -21,113 +21,139 @@ use function Tests\Helpers\assertApiSuccess;
 
 test('addon quantity flows from cart to order and invoice', function (): void {
     Tests\Helpers\ApiClient::resetCookies();
-    ['parent' => $parentId, 'addon' => $addonId] = addonQtyCreateParentWithAddon(true);
+    $parentId = null;
+    $addonId = null;
 
-    // The API client shares one cookie jar and every admin-token call stamps
-    // an admin session into it, while profile_api_key_reset prefers session
-    // auth (demanding a CSRF token) whenever one is present. Prepare the
-    // client and token first (resetting the session in between), then build
-    // the cart last so no reset orphans it before checkout.
-    Tests\Helpers\ApiClient::resetCookies();
-    $clientToken = addonQtyCreateClientWithToken();
-    $addResult = Tests\Helpers\ApiClient::request('guest/cart/add_item', [
-        'id' => $parentId,
-        'multiple' => 1,
-        'addons' => [$addonId => ['selected' => 1, 'quantity' => 3]],
-    ]);
-    assertApiSuccess($addResult);
+    try {
+        ['parent' => $parentId, 'addon' => $addonId] = addonQtyCreateParentWithAddon(true);
 
-    $cart = addonQtyGetCart();
-    $addonLine = addonQtyFindLine($cart, $addonId);
-    expect($addonLine['quantity'])->toBe(3);
-    expect((float) $addonLine['total'])->toBe(6.0);
+        // The API client shares one cookie jar and every admin-token call stamps
+        // an admin session into it, while profile_api_key_reset prefers session
+        // auth (demanding a CSRF token) whenever one is present. Prepare the
+        // client and token first (resetting the session in between), then build
+        // the cart last so no reset orphans it before checkout.
+        Tests\Helpers\ApiClient::resetCookies();
+        $clientToken = addonQtyCreateClientWithToken();
+        $addResult = Tests\Helpers\ApiClient::request('guest/cart/add_item', [
+            'id' => $parentId,
+            'multiple' => 1,
+            'addons' => [$addonId => ['selected' => 1, 'quantity' => 3]],
+        ]);
+        assertApiSuccess($addResult);
 
-    $checkout = Tests\Helpers\ApiClient::request('client/cart/checkout', [
-        'gateway_id' => addonQtyCustomGatewayId(),
-    ], 'client', $clientToken);
-    assertApiSuccess($checkout);
+        $cart = addonQtyGetCart();
+        $addonLine = addonQtyFindLine($cart, $addonId);
+        expect($addonLine['quantity'])->toBe(3);
+        expect((float) $addonLine['total'])->toBe(6.0);
 
-    $orders = $checkout->getResult()['orders'];
-    expect($orders)->toHaveCount(2);
+        $checkout = Tests\Helpers\ApiClient::request('client/cart/checkout', [
+            'gateway_id' => addonQtyCustomGatewayId(),
+        ], 'client', $clientToken);
+        assertApiSuccess($checkout);
 
-    $addonOrder = null;
-    foreach ($orders as $orderId) {
-        $order = addonQtyGetOrder($orderId);
-        if ((int) $order['product_id'] === $addonId) {
-            $addonOrder = $order;
+        $orders = $checkout->getResult()['orders'];
+        expect($orders)->toHaveCount(2);
+
+        $addonOrder = null;
+        foreach ($orders as $orderId) {
+            $order = addonQtyGetOrder($orderId);
+            if ((int) $order['product_id'] === $addonId) {
+                $addonOrder = $order;
+            }
         }
+        expect($addonOrder)->not->toBeNull();
+        expect((int) $addonOrder['quantity'])->toBe(3);
+        expect($addonOrder['group_master'])->toBeFalse();
+
+        $invoice = addonQtyGetInvoice((int) $addonOrder['unpaid_invoice_id']);
+        $addonInvoiceLine = addonQtyFindInvoiceLine($invoice, (int) $addonOrder['id']);
+        expect((int) $addonInvoiceLine['quantity'])->toBe(3);
+    } finally {
+        // Client deletion cascades to the checkout orders and invoices,
+        // freeing the products for deletion. Runs on failure too so a
+        // broken assertion cannot pollute the shared E2E database.
+        addonQtyCleanupClient();
+        addonQtyDeleteProductIfCreated($addonId);
+        addonQtyDeleteProductIfCreated($parentId);
     }
-    expect($addonOrder)->not->toBeNull();
-    expect((int) $addonOrder['quantity'])->toBe(3);
-    expect($addonOrder['group_master'])->toBeFalse();
-
-    $invoice = addonQtyGetInvoice((int) $addonOrder['unpaid_invoice_id']);
-    $addonInvoiceLine = addonQtyFindInvoiceLine($invoice, (int) $addonOrder['id']);
-    expect((int) $addonInvoiceLine['quantity'])->toBe(3);
-
-    addonQtyCleanupClient();
 });
 
 test('addon quantity is rejected when the addon disallows it', function (): void {
     Tests\Helpers\ApiClient::resetCookies();
-    ['parent' => $parentId, 'addon' => $addonId] = addonQtyCreateParentWithAddon(false);
+    $parentId = null;
+    $addonId = null;
 
-    $result = Tests\Helpers\ApiClient::request('guest/cart/add_item', [
-        'id' => $parentId,
-        'multiple' => 1,
-        'addons' => [$addonId => ['selected' => 1, 'quantity' => 3]],
-    ]);
-    expect($result->wasSuccessful())->toBeFalse();
-    expect($result->getErrorMessage())->toContain('invalid for the associated product');
+    try {
+        ['parent' => $parentId, 'addon' => $addonId] = addonQtyCreateParentWithAddon(false);
 
-    addonQtyDeleteProduct($addonId);
-    addonQtyDeleteProduct($parentId);
+        $result = Tests\Helpers\ApiClient::request('guest/cart/add_item', [
+            'id' => $parentId,
+            'multiple' => 1,
+            'addons' => [$addonId => ['selected' => 1, 'quantity' => 3]],
+        ]);
+        expect($result->wasSuccessful())->toBeFalse();
+        expect($result->getErrorMessage())->toContain('invalid for the associated product');
+    } finally {
+        addonQtyDeleteProductIfCreated($addonId);
+        addonQtyDeleteProductIfCreated($parentId);
+    }
 });
 
 test('addon quantity respects stock without disclosing it', function (): void {
     Tests\Helpers\ApiClient::resetCookies();
-    ['parent' => $parentId, 'addon' => $addonId] = addonQtyCreateParentWithAddon(true, 2);
+    $parentId = null;
+    $addonId = null;
 
-    $overstock = Tests\Helpers\ApiClient::request('guest/cart/add_item', [
-        'id' => $parentId,
-        'multiple' => 1,
-        'addons' => [$addonId => ['selected' => 1, 'quantity' => 5]],
-    ]);
-    expect($overstock->wasSuccessful())->toBeFalse();
-    expect($overstock->getErrorMessage())->toContain('out of stock');
+    try {
+        ['parent' => $parentId, 'addon' => $addonId] = addonQtyCreateParentWithAddon(true, 2);
 
-    $withinStock = Tests\Helpers\ApiClient::request('guest/cart/add_item', [
-        'id' => $parentId,
-        'multiple' => 1,
-        'addons' => [$addonId => ['selected' => 1, 'quantity' => 2]],
-    ]);
-    assertApiSuccess($withinStock);
+        $overstock = Tests\Helpers\ApiClient::request('guest/cart/add_item', [
+            'id' => $parentId,
+            'multiple' => 1,
+            'addons' => [$addonId => ['selected' => 1, 'quantity' => 5]],
+        ]);
+        expect($overstock->wasSuccessful())->toBeFalse();
+        expect($overstock->getErrorMessage())->toContain('out of stock');
 
-    $product = addonQtyGetProduct($parentId);
-    foreach ($product['addons'] as $addon) {
-        expect($addon)->not->toHaveKey('quantity_in_stock');
-        expect($addon)->not->toHaveKey('stock_control');
+        $withinStock = Tests\Helpers\ApiClient::request('guest/cart/add_item', [
+            'id' => $parentId,
+            'multiple' => 1,
+            'addons' => [$addonId => ['selected' => 1, 'quantity' => 2]],
+        ]);
+        assertApiSuccess($withinStock);
+
+        $product = addonQtyGetProduct($parentId);
+        foreach ($product['addons'] as $addon) {
+            expect($addon)->not->toHaveKey('quantity_in_stock');
+            expect($addon)->not->toHaveKey('stock_control');
+        }
+    } finally {
+        addonQtyDeleteProductIfCreated($addonId);
+        addonQtyDeleteProductIfCreated($parentId);
     }
-
-    addonQtyDeleteProduct($addonId);
-    addonQtyDeleteProduct($parentId);
 });
 
 test('addon quantity input is only rendered for enabled addons without stock hints', function (): void {
     Tests\Helpers\ApiClient::resetCookies();
-    ['parent' => $parentId, 'addon' => $addonId] = addonQtyCreateParentWithAddon(true, 7);
-    $plainAddonId = addonQtyCreateAddon(false);
-    addonQtyLinkAddons($parentId, [$addonId, $plainAddonId]);
+    $parentId = null;
+    $addonId = null;
+    $plainAddonId = null;
 
-    $page = @file_get_contents(rtrim((string) getenv('APP_URL'), '/') . '/order?product=' . $parentId);
-    expect($page)->not->toBeFalse();
-    expect($page)->toContain("addons[{$addonId}][quantity]");
-    expect($page)->not->toContain("addons[{$plainAddonId}][quantity]");
-    expect((bool) preg_match('/addons\[\d+\]\[quantity\][^>]*max=/', (string) $page))->toBeFalse();
+    try {
+        ['parent' => $parentId, 'addon' => $addonId] = addonQtyCreateParentWithAddon(true, 7);
+        $plainAddonId = addonQtyCreateAddon(false);
+        addonQtyLinkAddons($parentId, [$addonId, $plainAddonId]);
 
-    addonQtyDeleteProduct($plainAddonId);
-    addonQtyDeleteProduct($addonId);
-    addonQtyDeleteProduct($parentId);
+        $page = @file_get_contents(rtrim((string) getenv('APP_URL'), '/') . '/order?product=' . $parentId);
+        expect($page)->not->toBeFalse();
+        expect($page)->toContain("addons[{$addonId}][quantity]");
+        expect($page)->not->toContain("addons[{$plainAddonId}][quantity]");
+        expect((bool) preg_match('/addons\[\d+\]\[quantity\][^>]*max=/', (string) $page))->toBeFalse();
+    } finally {
+        addonQtyDeleteProductIfCreated($plainAddonId);
+        addonQtyDeleteProductIfCreated($addonId);
+        addonQtyDeleteProductIfCreated($parentId);
+    }
 });
 
 function addonQtyCreateParentWithAddon(bool $allowQuantity, ?int $stock = null): array
@@ -306,4 +332,11 @@ function addonQtyDeleteProduct(int $productId): void
 {
     $result = Tests\Helpers\ApiClient::request('admin/product/delete', ['id' => $productId]);
     assertApiSuccess($result);
+}
+
+function addonQtyDeleteProductIfCreated(?int $productId): void
+{
+    if ($productId !== null) {
+        addonQtyDeleteProduct($productId);
+    }
 }
