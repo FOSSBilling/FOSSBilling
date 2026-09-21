@@ -10,7 +10,6 @@
 
 declare(strict_types=1);
 
-use Pimple\Container;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
 
@@ -169,7 +168,7 @@ test('external IP lookup skips private responses and trims a public response', f
         new MockResponse('192.168.1.10'),
         new MockResponse("8.8.8.8\n"),
     ]);
-    $di = new Container();
+    $di = new Pimple\Container();
     $di['http_client'] = $httpClient;
 
     $tools = new FOSSBilling\Tools();
