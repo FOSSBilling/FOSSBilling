@@ -58,8 +58,6 @@ class Service implements InjectionAwareInterface
         'due_at', 'reminded_at', 'paid_at', 'created_at', 'updated_at',
     ];
 
-    private ?bool $allowUnpaidInvoiceEdits = null;
-
     /** Subset of EXPORTABLE_COLUMNS used when the caller passes no headers. */
     private const array DEFAULT_EXPORT_COLUMNS = [
         'id', 'client_id', 'nr', 'currency', 'credit', 'base_income', 'base_refund',
@@ -1509,8 +1507,7 @@ class Service implements InjectionAwareInterface
         $this->di['logger']->info("Updated invoice {$model->getId()}.");
 
         // An edit to an already-approved invoice changes what the client was
-        // sent, so re-send it (unless this update is itself approving, in
-        // which case the approval path already sends).
+        // sent, so re-send it (the approval path sends on its own).
         if ($wasApproved && $model->isApproved() && empty($data['approve'])) {
             $this->resendUpdatedInvoice($model);
         }
@@ -1644,9 +1641,8 @@ class Service implements InjectionAwareInterface
             } else {
                 $clientService = $this->di['mod_service']('client');
                 $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
-                // Bypasses the edit lock: this runs inside the invoice lock
-                // with its own unpaid check, and promo application stays
-                // available on approved unpaid invoices by design.
+                // Promo application holds the invoice lock with its own unpaid
+                // check, so it bypasses the edit lock by design.
                 $invoiceItemService->addNew($invoice, [
                     'title' => __trans('Discount: :product', [':product' => $order->getTitle()]),
                     'price' => $amount * -1,
@@ -2585,16 +2581,12 @@ class Service implements InjectionAwareInterface
      */
     public function allowUnpaidInvoiceEdits(): bool
     {
-        if ($this->allowUnpaidInvoiceEdits !== null) {
-            return $this->allowUnpaidInvoiceEdits;
-        }
-
         /**
          * @var \Box\Mod\System\Service $systemService
          */
         $systemService = $this->di['mod_service']('system');
 
-        return $this->allowUnpaidInvoiceEdits = (bool) $systemService->getParamValue('invoice_allow_edit_unpaid', false);
+        return (bool) $systemService->getParamValue('invoice_allow_edit_unpaid', false);
     }
 
     /**

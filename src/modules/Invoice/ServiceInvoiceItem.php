@@ -46,12 +46,6 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         return $this->invoiceItemRepository;
     }
 
-    /**
-     * Refuse line changes on invoices whose content is locked (approved,
-     * paid, refunded, or canceled without the unpaid-edits setting).
-     * Internal flows with their own locking (e.g. promo application) pass
-     * $skipEditableCheck to bypass this.
-     */
     private function assertInvoiceEditable(?Invoice $invoice, bool $skipEditableCheck = false): void
     {
         if ($skipEditableCheck || !$invoice instanceof Invoice) {
