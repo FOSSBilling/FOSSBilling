@@ -243,7 +243,6 @@ test('gets tax when price is an empty string', function (): void {
     // RedBean hands back an empty string, not null, for an unset float column.
     // getTax() must not choke on that with a "non-numeric value" warning.
     $service = new ServiceInvoiceItem();
-    $rate = 0.21;
     $invoiceItemModel = new Model_InvoiceItem();
     $invoiceItemModel->loadBean(new Tests\Helpers\DummyBean());
     $invoiceItemModel->invoice_id = 2;
@@ -252,16 +251,14 @@ test('gets tax when price is an empty string', function (): void {
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getCell')
-        ->atLeast()->once()
-        ->andReturn($rate);
+        ->never();
 
     $di = container();
     $di['db'] = $dbMock;
     $service->setDi($di);
 
     $result = $service->getTax($invoiceItemModel);
-    expect($result)->toBeFloat();
-    expect($result)->toBe(0.0);
+    expect($result)->toBe(0);
 });
 
 test('returns zero tax when the price is not numeric', function (): void {
@@ -274,8 +271,7 @@ test('returns zero tax when the price is not numeric', function (): void {
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('getCell')
-        ->atLeast()->once()
-        ->andReturn(0.21);
+        ->never();
 
     $di = container();
     $di['db'] = $dbMock;
