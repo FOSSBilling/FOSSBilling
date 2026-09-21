@@ -307,6 +307,32 @@ test('lockAndGetStatus reads the status inside a transaction on every supported 
     expect($status)->toBe(Invoice::STATUS_UNPAID);
 });
 
+test('lockAndGetState reads status and approval inside a transaction', function (): void {
+    $entityManager = invoiceEntityManager();
+    $metadata = [$entityManager->getClassMetadata(Invoice::class)];
+    (new Doctrine\ORM\Tools\SchemaTool($entityManager))->createSchema($metadata);
+
+    $invoice = new Invoice();
+    $invoice->setStatus(Invoice::STATUS_UNPAID);
+    $invoice->setApproved(true);
+    $entityManager->persist($invoice);
+    $entityManager->flush();
+
+    $connection = $entityManager->getConnection();
+    $connection->beginTransaction();
+
+    try {
+        $state = $entityManager->getRepository(Invoice::class)->lockAndGetState($invoice->getId());
+    } finally {
+        $connection->rollBack();
+    }
+
+    expect($state)->toBe([
+        'status' => Invoice::STATUS_UNPAID,
+        'approved' => true,
+    ]);
+});
+
 test('lockAndGetStatus rejects being called outside of a transaction', function (): void {
     $entityManager = invoiceEntityManager();
     $metadata = [$entityManager->getClassMetadata(Invoice::class)];

@@ -392,6 +392,10 @@ test('generates invoice items from order with a recurring promo and casts rel_id
             return true;
         });
     $em->shouldReceive('flush')->twice();
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('isTransactionActive')->andReturnFalse();
+    $em->shouldReceive('getConnection')->andReturn($connection);
+    $em->shouldReceive('wrapInTransaction')->andReturnUsing(fn (callable $callback): mixed => $callback());
     $repo = Mockery::mock(InvoiceItemRepository::class);
     $em->shouldReceive('getRepository')->with(InvoiceItem::class)->andReturn($repo);
     $clientRepo = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
@@ -418,6 +422,9 @@ test('generates invoice items from order with a recurring promo and casts rel_id
 
     $invoiceServiceMock = Mockery::mock(InvoiceService::class);
     $invoiceServiceMock->shouldReceive('isInvoiceEditable')->andReturn(true);
+    $invoiceServiceMock->shouldReceive('lockInvoiceState')
+        ->andReturn(['status' => Invoice::STATUS_UNPAID, 'approved' => false]);
+    $invoiceServiceMock->shouldReceive('isInvoiceStateEditable')->andReturn(true);
     $di = container();
     $di['em'] = $em;
     $di['mod_service'] = $di->protect(fn (string $module): Mockery\MockInterface => match ($module) {

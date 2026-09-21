@@ -791,41 +791,17 @@ class Service implements InjectionAwareInterface
 
     public function markAsPaid(Invoice $invoice, $charge = true, $execute = false, bool $deferEvents = false): bool
     {
-        if ($invoice->getStatus() == Invoice::STATUS_PAID) {
+        /** @var InvoiceItem[] $invoiceItems */
+        $invoiceItems = [];
+        $paid = $this->di['em']->wrapInTransaction(function () use (&$invoiceItems, $invoice, $charge): bool {
+            return $this->markAsPaidInTransaction($invoice, $charge, $invoiceItems);
+        });
+
+        // Another payment request may have acquired the row lock first and completed the payment.
+        // Treat that as an idempotent success, but do not send duplicate events or execute tasks.
+        if (!$paid) {
             return true;
         }
-
-        $invoiceItems = $this->getInvoiceItemRepository()->findByInvoiceId((int) $invoice->getId());
-        $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
-        $systemService = $this->di['mod_service']('system');
-
-        $this->di['em']->wrapInTransaction(function () use ($invoice, $charge, $invoiceItems, $invoiceItemService, $systemService): void {
-            foreach ($invoiceItems as $item) {
-                $invoiceItemService->markAsPaid($item, $charge);
-            }
-
-            $currencyService = $this->di['mod_service']('currency');
-            /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
-            $currencyRepository = $currencyService->getCurrencyRepository();
-
-            $invoice->setSerie($systemService->getParamValue('invoice_series_paid'));
-            $invoice->setApproved(true);
-
-            $currencyRate = $currencyRepository->getRateByCode((string) $invoice->getCurrency());
-            if ($currencyRate === null) {
-                throw new \FOSSBilling\Exception("Currency rate for code '{$invoice->getCurrency()}' is not configured.");
-            }
-            $invoice->setCurrencyRate($currencyRate);
-
-            $invoice->setStatus(Invoice::STATUS_PAID);
-            $invoice->setPaidAt(new \DateTime());
-            $this->di['em']->persist($invoice);
-            $this->di['em']->flush();
-
-            $this->countIncome($invoice);
-            $productService = $this->di['mod_service']('Product');
-            $productService->commitReservedPromoRedemptionsForInvoice($invoice);
-        });
 
         // Listeners render PDFs and send email, so a caller holding row locks defers this until
         // after it has committed rather than holding them for the duration of an SMTP send.
@@ -834,10 +810,55 @@ class Service implements InjectionAwareInterface
         }
 
         if ($execute) {
-            $this->executeInvoiceItemTasks($invoiceItems, $invoiceItemService);
+            $this->executeInvoiceItemTasks($invoiceItems, $this->di['mod_service']('Invoice', 'InvoiceItem'));
         }
 
         $this->di['logger']->info("Marked invoice {$invoice->getId()} as paid.");
+
+        return true;
+    }
+
+    /**
+     * Mark an invoice as paid while the caller owns its invoice-row lock.
+     *
+     * @param InvoiceItem[] $invoiceItems
+     */
+    private function markAsPaidInTransaction(Invoice $invoice, bool $charge, array &$invoiceItems): bool
+    {
+        $state = $this->lockAndRefreshInvoice($invoice);
+        if ($state['status'] === Invoice::STATUS_PAID) {
+            return false;
+        }
+
+        $invoiceItems = $this->getInvoiceItemRepository()->findByInvoiceId((int) $invoice->getId());
+        $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
+        $systemService = $this->di['mod_service']('system');
+
+        foreach ($invoiceItems as $item) {
+            $invoiceItemService->markAsPaid($item, $charge);
+        }
+
+        $currencyService = $this->di['mod_service']('currency');
+        /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
+        $currencyRepository = $currencyService->getCurrencyRepository();
+
+        $invoice->setSerie($systemService->getParamValue('invoice_series_paid'));
+        $invoice->setApproved(true);
+
+        $currencyRate = $currencyRepository->getRateByCode((string) $invoice->getCurrency());
+        if ($currencyRate === null) {
+            throw new \FOSSBilling\Exception("Currency rate for code '{$invoice->getCurrency()}' is not configured.");
+        }
+        $invoice->setCurrencyRate($currencyRate);
+
+        $invoice->setStatus(Invoice::STATUS_PAID);
+        $invoice->setPaidAt(new \DateTime());
+        $this->di['em']->persist($invoice);
+        $this->di['em']->flush();
+
+        $this->countIncome($invoice);
+        $productService = $this->di['mod_service']('Product');
+        $productService->commitReservedPromoRedemptionsForInvoice($invoice);
 
         return true;
     }
@@ -1101,9 +1122,12 @@ class Service implements InjectionAwareInterface
     {
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminInvoiceApprove', 'params' => $this->toApiArray($invoice)]);
 
-        $invoice->setApproved(true);
-        $this->di['em']->persist($invoice);
-        $this->di['em']->flush();
+        $this->di['em']->wrapInTransaction(function () use ($invoice): void {
+            $this->lockAndRefreshInvoice($invoice);
+            $invoice->setApproved(true);
+            $this->di['em']->persist($invoice);
+            $this->di['em']->flush();
+        });
 
         if (isset($data['use_credits']) && $data['use_credits']) {
             $this->tryPayWithCredits($invoice);
@@ -1136,30 +1160,22 @@ class Service implements InjectionAwareInterface
 
     public function tryPayWithCredits(Invoice $invoice): bool
     {
-        if (!$invoice->isApproved()) {
-            return false;
-        }
-        if ($invoice->getStatus() == Invoice::STATUS_PAID) {
-            if (DEBUG) {
-                $this->di['logger']->withChannel('billing')->info("Skipping credit payment for already paid invoice {$invoice->getId()}.");
+        $paid = $this->di['em']->wrapInTransaction(function () use ($invoice): bool {
+            // Refresh after locking so a stale entity cannot authorize a credit deduction.
+            $state = $this->lockAndRefreshInvoice($invoice);
+            if (!$state['approved']) {
+                return false;
+            }
+            if ($state['status'] === Invoice::STATUS_PAID) {
+                return false;
             }
 
-            return false;
-        }
-
-        $paid = $this->di['em']->wrapInTransaction(function () use ($invoice): bool {
             $clientId = (int) $invoice->getClientId();
             $cbrepo = $this->di['mod_service']('Client', 'Balance');
 
             // Locks the balance for the rest of this transaction, so a concurrent request cannot
             // spend the same credit.
             $balance = $cbrepo->getClientBalanceForUpdate($clientId);
-
-            // Another request could have paid this invoice while we waited for the lock. A locking
-            // read, as a plain one can be served from a snapshot predating that request's commit.
-            if ($this->getInvoiceRepository()->lockAndGetStatus((int) $invoice->getId()) === Invoice::STATUS_PAID) {
-                return false;
-            }
 
             $required = $this->getTotalWithTax($invoice);
             // Compare at two-decimal monetary scale: balances are DECIMAL(18,2) sums while the
@@ -1398,109 +1414,121 @@ class Service implements InjectionAwareInterface
 
     public function updateInvoice(Invoice $model, array $data): bool
     {
+        // Fast rejection for the common case; the authoritative check is repeated after the row
+        // lock inside the mutation transaction below.
         if (!$this->isInvoiceEditable($model)) {
             throw new InformationException('This invoice can no longer be edited. Approved invoices are locked once issued; correct them with a credit note or a replacement invoice.');
         }
 
         $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
-        $previousStatus = $model->getStatus();
-        $wasApproved = $model->isApproved();
+        $previousStatus = null;
+        $wasApproved = false;
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminInvoiceUpdate', 'params' => $data]);
 
-        if (!empty($data['gateway_id'])) {
-            $gateway = $this->di['em']->getRepository(PayGateway::class)->find((int) $data['gateway_id']);
-            if (!$gateway instanceof PayGateway) {
-                throw new InformationException('Payment gateway not found');
+        $this->di['em']->wrapInTransaction(function () use ($model, $data, $invoiceItemService, &$previousStatus, &$wasApproved): void {
+            $this->lockAndRefreshInvoice($model);
+            if (!$this->isInvoiceEditable($model)) {
+                throw new InformationException('This invoice can no longer be edited. Approved invoices are locked once issued; correct them with a credit note or a replacement invoice.');
             }
-            if (!$gateway->isEnabled()) {
-                throw new InformationException('Payment gateway is not enabled');
+
+            $previousStatus = $model->getStatus();
+            $wasApproved = $model->isApproved();
+
+            if (!empty($data['gateway_id'])) {
+                $gateway = $this->di['em']->getRepository(PayGateway::class)->find((int) $data['gateway_id']);
+                if (!$gateway instanceof PayGateway) {
+                    throw new InformationException('Payment gateway not found');
+                }
+                if (!$gateway->isEnabled()) {
+                    throw new InformationException('Payment gateway is not enabled');
+                }
+                $model->setGateway($gateway);
+            } elseif (array_key_exists('gateway_id', $data) && $data['gateway_id'] === null) {
+                $model->setGateway(null);
             }
-            $model->setGateway($gateway);
-        } elseif (array_key_exists('gateway_id', $data) && $data['gateway_id'] === null) {
-            $model->setGateway(null);
-        }
-        $model->setText1($data['text_1'] ?? $model->getText1());
-        $model->setText2($data['text_2'] ?? $model->getText2());
-        $model->setSellerCompany($data['seller_company'] ?? $model->getSellerCompany());
-        $model->setSellerCompanyVat($data['seller_company_vat'] ?? $model->getSellerCompanyVat());
-        $model->setSellerCompanyNumber($data['seller_company_number'] ?? $model->getSellerCompanyNumber());
-        $model->setSellerAddress($data['seller_address'] ?? $model->getSellerAddress());
-        $model->setSellerPhone($data['seller_phone'] ?? $model->getSellerPhone());
-        $model->setSellerEmail($data['seller_email'] ?? $model->getSellerEmail());
-        $model->setBuyerFirstName($data['buyer_first_name'] ?? $model->getBuyerFirstName());
-        $model->setBuyerLastName($data['buyer_last_name'] ?? $model->getBuyerLastName());
-        $model->setBuyerCompany($data['buyer_company'] ?? $model->getBuyerCompany());
-        $model->setBuyerCompanyVat($data['buyer_company_vat'] ?? $model->getBuyerCompanyVat());
-        $model->setBuyerCompanyNumber($data['buyer_company_number'] ?? $model->getBuyerCompanyNumber());
-        $model->setBuyerAddress($data['buyer_address'] ?? $model->getBuyerAddress());
-        $model->setBuyerCity($data['buyer_city'] ?? $model->getBuyerCity());
-        $model->setBuyerState($data['buyer_state'] ?? $model->getBuyerState());
-        $model->setBuyerCountry($data['buyer_country'] ?? $model->getBuyerCountry());
-        $model->setBuyerZip($data['buyer_zip'] ?? $model->getBuyerZip());
-        $model->setBuyerPhone($data['buyer_phone'] ?? $model->getBuyerPhone());
-        $model->setBuyerEmail($data['buyer_email'] ?? $model->getBuyerEmail());
+            $model->setText1($data['text_1'] ?? $model->getText1());
+            $model->setText2($data['text_2'] ?? $model->getText2());
+            $model->setSellerCompany($data['seller_company'] ?? $model->getSellerCompany());
+            $model->setSellerCompanyVat($data['seller_company_vat'] ?? $model->getSellerCompanyVat());
+            $model->setSellerCompanyNumber($data['seller_company_number'] ?? $model->getSellerCompanyNumber());
+            $model->setSellerAddress($data['seller_address'] ?? $model->getSellerAddress());
+            $model->setSellerPhone($data['seller_phone'] ?? $model->getSellerPhone());
+            $model->setSellerEmail($data['seller_email'] ?? $model->getSellerEmail());
+            $model->setBuyerFirstName($data['buyer_first_name'] ?? $model->getBuyerFirstName());
+            $model->setBuyerLastName($data['buyer_last_name'] ?? $model->getBuyerLastName());
+            $model->setBuyerCompany($data['buyer_company'] ?? $model->getBuyerCompany());
+            $model->setBuyerCompanyVat($data['buyer_company_vat'] ?? $model->getBuyerCompanyVat());
+            $model->setBuyerCompanyNumber($data['buyer_company_number'] ?? $model->getBuyerCompanyNumber());
+            $model->setBuyerAddress($data['buyer_address'] ?? $model->getBuyerAddress());
+            $model->setBuyerCity($data['buyer_city'] ?? $model->getBuyerCity());
+            $model->setBuyerState($data['buyer_state'] ?? $model->getBuyerState());
+            $model->setBuyerCountry($data['buyer_country'] ?? $model->getBuyerCountry());
+            $model->setBuyerZip($data['buyer_zip'] ?? $model->getBuyerZip());
+            $model->setBuyerPhone($data['buyer_phone'] ?? $model->getBuyerPhone());
+            $model->setBuyerEmail($data['buyer_email'] ?? $model->getBuyerEmail());
 
-        $paid_at = $data['paid_at'] ?? ($model->getPaidAt() ? $model->getPaidAt()->format('Y-m-d H:i:s') : null);
-        if (empty($paid_at)) {
-            $model->setPaidAt(null);
-        } else {
-            $paidAtTimestamp = strtotime((string) $paid_at);
-            if ($paidAtTimestamp === false) {
-                throw new InformationException('Invalid date format for paid_at: :value', [':value' => (string) $paid_at]);
+            $paid_at = $data['paid_at'] ?? ($model->getPaidAt() ? $model->getPaidAt()->format('Y-m-d H:i:s') : null);
+            if (empty($paid_at)) {
+                $model->setPaidAt(null);
+            } else {
+                $paidAtTimestamp = strtotime((string) $paid_at);
+                if ($paidAtTimestamp === false) {
+                    throw new InformationException('Invalid date format for paid_at: :value', [':value' => (string) $paid_at]);
+                }
+                $model->setPaidAt(new \DateTime(date('Y-m-d H:i:s', $paidAtTimestamp)));
             }
-            $model->setPaidAt(new \DateTime(date('Y-m-d H:i:s', $paidAtTimestamp)));
-        }
 
-        $due_at = $data['due_at'] ?? ($model->getDueAt() ? $model->getDueAt()->format('Y-m-d H:i:s') : null);
-        if (empty($due_at)) {
-            $model->setDueAt(null);
-        } else {
-            $dueAtTimestamp = strtotime((string) $due_at);
-            if ($dueAtTimestamp === false) {
-                throw new InformationException('Invalid date format for due_at: :value', [':value' => (string) $due_at]);
+            $due_at = $data['due_at'] ?? ($model->getDueAt() ? $model->getDueAt()->format('Y-m-d H:i:s') : null);
+            if (empty($due_at)) {
+                $model->setDueAt(null);
+            } else {
+                $dueAtTimestamp = strtotime((string) $due_at);
+                if ($dueAtTimestamp === false) {
+                    throw new InformationException('Invalid date format for due_at: :value', [':value' => (string) $due_at]);
+                }
+                $model->setDueAt(new \DateTime(date('Y-m-d H:i:s', $dueAtTimestamp)));
             }
-            $model->setDueAt(new \DateTime(date('Y-m-d H:i:s', $dueAtTimestamp)));
-        }
 
-        $model->setSerie($data['serie'] ?? $model->getSerie());
-        $model->setNr($data['nr'] ?? $model->getNr());
-        $model->setStatus($data['status'] ?? $model->getStatus());
-        $model->setTaxrate($data['taxrate'] ?? $model->getTaxrate());
-        $model->setTaxname($data['taxname'] ?? $model->getTaxname());
-        $model->setApproved((bool) ($data['approved'] ?? $model->isApproved()));
-        $model->setNotes($data['notes'] ?? $model->getNotes());
+            $model->setSerie($data['serie'] ?? $model->getSerie());
+            $model->setNr($data['nr'] ?? $model->getNr());
+            $model->setStatus($data['status'] ?? $model->getStatus());
+            $model->setTaxrate($data['taxrate'] ?? $model->getTaxrate());
+            $model->setTaxname($data['taxname'] ?? $model->getTaxname());
+            $model->setApproved((bool) ($data['approved'] ?? $model->isApproved()));
+            $model->setNotes($data['notes'] ?? $model->getNotes());
 
-        $created_at = $data['created_at'] ?? '';
-        if (!empty($created_at)) {
-            $createdAtTimestamp = strtotime((string) $created_at);
-            if ($createdAtTimestamp === false) {
-                throw new InformationException('Invalid date format for created_at: :value', [':value' => (string) $created_at]);
+            $created_at = $data['created_at'] ?? '';
+            if (!empty($created_at)) {
+                $createdAtTimestamp = strtotime((string) $created_at);
+                if ($createdAtTimestamp === false) {
+                    throw new InformationException('Invalid date format for created_at: :value', [':value' => (string) $created_at]);
+                }
+                $model->setCreatedAt(new \DateTime(date('Y-m-d H:i:s', $createdAtTimestamp)));
             }
-            $model->setCreatedAt(new \DateTime(date('Y-m-d H:i:s', $createdAtTimestamp)));
-        }
 
-        $ni = $data['new_item'] ?? [];
-        if (isset($ni['title']) && !empty($ni['title'])) {
-            $invoiceItemService->addNew($model, $ni);
-        }
-
-        $items = $data['items'] ?? [];
-        foreach ($items as $id => $d) {
-            $item = $this->getInvoiceItemRepository()->find((int) $id);
-            if ($item instanceof InvoiceItem) {
-                $invoiceItemService->update($item, $d);
+            $ni = $data['new_item'] ?? [];
+            if (isset($ni['title']) && !empty($ni['title'])) {
+                $invoiceItemService->addNew($model, $ni);
             }
-        }
 
-        $this->di['em']->persist($model);
-        $this->di['em']->flush();
+            $items = $data['items'] ?? [];
+            foreach ($items as $id => $d) {
+                $item = $this->getInvoiceItemRepository()->find((int) $id);
+                if ($item instanceof InvoiceItem) {
+                    $invoiceItemService->update($item, $d);
+                }
+            }
 
-        if ($previousStatus === Invoice::STATUS_UNPAID && $model->getStatus() === Invoice::STATUS_CANCELED) {
-            $productService = $this->di['mod_service']('Product');
-            $productService->releaseReservedPromoRedemptionsForInvoice($model, 'invoice_canceled');
-            $productService->releaseReservedStockForInvoice($model, 'invoice_canceled');
-        }
+            $this->di['em']->persist($model);
+            $this->di['em']->flush();
+
+            if ($previousStatus === Invoice::STATUS_UNPAID && $model->getStatus() === Invoice::STATUS_CANCELED) {
+                $productService = $this->di['mod_service']('Product');
+                $productService->releaseReservedPromoRedemptionsForInvoice($model, 'invoice_canceled');
+                $productService->releaseReservedStockForInvoice($model, 'invoice_canceled');
+            }
+        });
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoiceUpdate', 'params' => $this->toApiArray($model)]);
 
@@ -1851,14 +1879,20 @@ class Service implements InjectionAwareInterface
         return null;
     }
 
-    public function rmInvoice(Invoice $model): bool
+    public function rmInvoice(Invoice $model, bool $requireUnapprovedUnpaid = false): bool
     {
-        $productService = $this->di['mod_service']('Product');
-        $productService->releaseReservedPromoRedemptionsForInvoice($model, 'invoice_deleted');
-        $productService->releaseReservedStockForInvoice($model, 'invoice_deleted');
-
         $entityManager = $this->di['em'];
-        $entityManager->wrapInTransaction(function () use ($model, $entityManager): void {
+        $entityManager->wrapInTransaction(function () use ($model, $entityManager, $requireUnapprovedUnpaid): void {
+            $this->lockAndRefreshInvoice($model);
+
+            if ($requireUnapprovedUnpaid && ($model->isApproved() || $model->getStatus() !== Invoice::STATUS_UNPAID)) {
+                throw new InformationException('Only unapproved, unpaid invoices can be deleted. Revoke an approved invoice instead.');
+            }
+
+            $productService = $this->di['mod_service']('Product');
+            $productService->releaseReservedPromoRedemptionsForInvoice($model, 'invoice_deleted');
+            $productService->releaseReservedStockForInvoice($model, 'invoice_deleted');
+
             // remove related invoice from orders
             $sql = '
                 UPDATE client_order
@@ -1887,6 +1921,8 @@ class Service implements InjectionAwareInterface
 
     public function deleteInvoiceByAdmin(Invoice $model): bool
     {
+        // Fast rejection for the common case; rmInvoice rechecks the fresh state under its row
+        // lock before detaching or deleting anything.
         if ($model->isApproved() || $model->getStatus() !== Invoice::STATUS_UNPAID) {
             throw new InformationException('Only unapproved, unpaid invoices can be deleted. Revoke an approved invoice instead.');
         }
@@ -1894,7 +1930,7 @@ class Service implements InjectionAwareInterface
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminInvoiceDelete', 'params' => ['id' => $model->getId()]]);
 
         $id = $model->getId();
-        $this->rmInvoice($model);
+        $this->rmInvoice($model, true);
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoiceDelete', 'params' => ['id' => $id]]);
 
@@ -2599,15 +2635,60 @@ class Service implements InjectionAwareInterface
      */
     public function isInvoiceEditable(Invoice $invoice): bool
     {
-        if (in_array($invoice->getStatus(), [Invoice::STATUS_PAID, Invoice::STATUS_REFUNDED, Invoice::STATUS_CANCELED], true)) {
+        return $this->isInvoiceStateEditable($invoice->getStatus(), $invoice->isApproved());
+    }
+
+    public function isInvoiceStateEditable(string $status, bool $approved): bool
+    {
+        if (in_array($status, [Invoice::STATUS_PAID, Invoice::STATUS_REFUNDED, Invoice::STATUS_CANCELED], true)) {
             return false;
         }
 
-        if (!$invoice->isApproved()) {
+        if (!$approved) {
             return true;
         }
 
         return $this->allowUnpaidInvoiceEdits();
+    }
+
+    /**
+     * Lock an invoice row and return its current approval/status state.
+     *
+     * Callers must keep the surrounding transaction open until their mutation is complete. The
+     * lock is the serialization point shared by invoice edits, item edits, approval, payment,
+     * and deletion.
+     *
+     * @return array{status: string, approved: bool}
+     */
+    public function lockInvoiceState(Invoice $invoice): array
+    {
+        if ($invoice->getId() === null) {
+            return [
+                'status' => $invoice->getStatus(),
+                'approved' => $invoice->isApproved(),
+            ];
+        }
+
+        $state = $this->getInvoiceRepository()->lockAndGetState((int) $invoice->getId());
+        if ($state === null) {
+            throw new InformationException('Invoice not found');
+        }
+
+        return $state;
+    }
+
+    /**
+     * @return array{status: string, approved: bool}
+     */
+    private function lockAndRefreshInvoice(Invoice $invoice): array
+    {
+        $state = $this->lockInvoiceState($invoice);
+
+        if ($invoice->getId() !== null) {
+            $this->di['em']->refresh($invoice);
+        }
+
+        return $state;
     }
 
     /**

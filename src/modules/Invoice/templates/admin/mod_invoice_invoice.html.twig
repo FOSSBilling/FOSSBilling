@@ -133,7 +133,7 @@
                             </svg>
                             <span>{{ 'View as Client'|trans }}</span>
                         </a>
-                        {% if invoice.editable %}
+                        {% if invoice.status == 'unpaid' and not invoice.approved %}
                         <a class="btn btn-danger"
                             {{ fb_api_link({href: 'invoice/delete'|api_url(query: {id: invoice.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'invoice'|url}) }}>
                             <svg class="icon" width="24" height="24">
@@ -771,7 +771,7 @@
         </div>
         <div class="d-grid gap-2">
             <button class="btn btn-primary" type="button" onclick="window.print()">{{ 'Print'|trans }}</button>
-            {% if invoice.status == 'unpaid' and invoice.editable %}
+            {% if invoice.status == 'unpaid' and not invoice.approved %}
                 <a class="btn btn-danger" href="{{ 'invoice/delete'|api_url(query: { 'id': invoice.id }) }}"
                     {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'invoice'|url}) }}>
                     {{ 'Delete'|trans }}
