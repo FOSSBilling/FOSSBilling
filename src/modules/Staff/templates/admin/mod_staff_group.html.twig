@@ -218,7 +218,7 @@
                                                             {% if permission is iterable and permission.type == 'select' %}
                                                                 <div class="col-lg-6">
                                                                     <label for="input-{{ modName }}-{{ permissionName }}" class="form-label">{{ permission.display_name }}
-                                                                        <svg class="icon" data-bs-toggle="tooltip" data-bs-title="{{ permission.description }}" data-bs-placement="right"><use href="#info-circle"/></svg>
+                                                                        <svg class="icon" data-bs-toggle="tooltip" data-bs-title="{{ permission.description|default('') }}" data-bs-placement="right"><use href="#info-circle"/></svg>
                                                                     </label>
                                                                     <select class="form-select permission-select" id="input-{{ modName }}-{{ permissionName }}" name="permissions[{{ modName }}][{{ permissionName }}]">
                                                                         <option value="">{{ 'None'|trans }}</option>
