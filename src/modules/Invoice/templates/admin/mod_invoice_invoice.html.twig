@@ -81,6 +81,18 @@
                                     <td class="text-end">{{ 'Status'|trans }}:</td>
                                     <td>{{ mf.status_badge(invoice.status, 'invoice') }}</td>
                                 </tr>
+                                {% if invoice.credit_note_for_invoice_id %}
+                                <tr>
+                                    <td class="text-end">{{ 'Credit note for'|trans }}:</td>
+                                    <td><a href="{{ 'invoice/manage'|url }}/{{ invoice.credit_note_for_invoice_id }}">{{ 'Invoice'|trans }} #{{ invoice.credit_note_for_invoice_id }}</a></td>
+                                </tr>
+                                {% endif %}
+                                {% if invoice.refunded_by_invoice_id %}
+                                <tr>
+                                    <td class="text-end">{{ 'Refunded by'|trans }}:</td>
+                                    <td><a href="{{ 'invoice/manage'|url }}/{{ invoice.refunded_by_invoice_id }}">{{ 'Invoice'|trans }} #{{ invoice.refunded_by_invoice_id }}</a></td>
+                                </tr>
+                                {% endif %}
                                 {% if invoice.tax %}
                                 <tr>
                                     <td class="text-end">{{ invoice.taxname }} {{ invoice.taxrate }}%</td>

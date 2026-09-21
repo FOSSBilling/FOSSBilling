@@ -1644,10 +1644,10 @@ test('refunds invoice with negative invoice logic', function (): void {
     $tax = 2.2;
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('getTotal')
-        ->once()
+        ->atLeast()->once()
         ->andReturn($total);
     $serviceMock->shouldReceive('getTax')
-        ->once()
+        ->atLeast()->once()
         ->andReturn($tax);
     $serviceMock->shouldReceive('countIncome')
         ->once();
@@ -1655,9 +1655,15 @@ test('refunds invoice with negative invoice logic', function (): void {
         ->times(3);
     $serviceMock->shouldReceive('toApiArray')
         ->atLeast()->once()
-        ->andReturn(['id' => $newId]);
+        ->andReturn(['id' => $newId, 'total' => -12.2]);
+    $serviceMock->shouldReceive('getNextInvoiceNumber')
+        ->once()
+        ->andReturn(42);
+    $serviceMock->shouldReceive('extendInvoiceHashLifetime')
+        ->once();
 
-    $invoiceModel = createEntity(Invoice::class);
+    $invoiceModel = createEntity(Invoice::class, ['clientId' => 5]);
+    $invoiceModel->setStatus(Invoice::STATUS_PAID);
 
     $invoiceModel->id = $newId;
 
@@ -1669,13 +1675,204 @@ test('refunds invoice with negative invoice logic', function (): void {
 
     $systemService = Mockery::mock(SystemService::class);
     $systemService->shouldReceive('getParamValue')
-        ->atLeast()->once()
+        ->with('invoice_refund_logic', 'manual')
         ->andReturn('negative_invoice');
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_number_padding')
+        ->andReturn(5);
+    $systemService->shouldReceive('getCompany')
+        ->andReturn([]);
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_series_paid')
+        ->andReturn('FB-');
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_hash_lifetime_days', '90')
+        ->andReturn(90);
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_email_attach_pdf')
+        ->andReturn(false);
+
+    $emailService = Mockery::mock(EmailService::class);
+    $emailService->shouldReceive('sendTemplate')
+        ->once()
+        ->withArgs(fn (array $email): bool => $email['code'] === 'mod_invoice_refunded'
+            && isset($email['invoice'], $email['original_invoice']));
 
     [$em, $invoiceItemRepo] = invoiceItemEmAndRepo();
     $invoiceItemRepo->shouldReceive('findByInvoiceId')
         ->atLeast()->once()
         ->andReturn([$invoiceItemModel]);
+    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('lockAndGetStatus')
+        ->once()
+        ->with($newId)
+        ->andReturn(Invoice::STATUS_PAID);
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
+    $persisted = [];
+    $em->shouldReceive('persist')
+        ->atLeast()->once()
+        ->andReturnUsing(function (object $entity) use ($newId, &$persisted): void {
+            if ($entity instanceof Invoice && $entity->getId() === null) {
+                setEntityId($entity, $newId);
+            }
+            $persisted[] = $entity;
+        });
+    $em->shouldReceive('flush')
+        ->atLeast()->once();
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(moduleService([
+        'system' => $systemService,
+        'email' => $emailService,
+    ]));
+    $di['events_manager'] = $eventManagerMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $serviceMock->setDi($di);
+    $result = $serviceMock->refundInvoice($invoiceModel, 'customNote');
+    expect($result)->toBeInt()->toBe($newId);
+    expect($invoiceModel->getStatus())->toBe(Invoice::STATUS_REFUNDED);
+
+    $creditNote = null;
+    foreach ($persisted as $entity) {
+        if ($entity instanceof Invoice && $entity->getId() === $newId && $entity !== $invoiceModel) {
+            $creditNote = $entity;
+        }
+    }
+    expect($creditNote)->not->toBeNull();
+    expect($creditNote->getCreditNoteForInvoiceId())->toBe($invoiceModel->getId());
+    expect($creditNote->getNr())->toBe('42');
+});
+
+test('refunds invoice with credit note logic and reserved numbering', function (): void {
+    $newId = 2;
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('getTotal')->andReturn(20.0);
+    $serviceMock->shouldReceive('getTax')->andReturn(0.0);
+    $serviceMock->shouldReceive('countIncome')->once();
+    $serviceMock->shouldReceive('addNote')->times(2);
+    $serviceMock->shouldReceive('toApiArray')->andReturn(['id' => $newId, 'total' => -20.0]);
+    $serviceMock->shouldReceive('extendInvoiceHashLifetime')->once();
+
+    $invoiceModel = createEntity(Invoice::class, ['clientId' => 5]);
+    $invoiceModel->setStatus(Invoice::STATUS_PAID);
+    setEntityId($invoiceModel, 9);
+
+    $invoiceItemModel = createEntity(InvoiceItem::class, []);
+
+    $eventManagerMock = Mockery::mock('\Box_EventManager');
+    $eventManagerMock->shouldReceive('fire')->atLeast()->once();
+
+    $systemService = Mockery::mock(SystemService::class);
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_refund_logic', 'manual')
+        ->andReturn('credit_note');
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_number_padding')
+        ->andReturn(5);
+    $systemService->shouldReceive('getCompany')
+        ->andReturn([]);
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_hash_lifetime_days', '90')
+        ->andReturn(90);
+    $systemService->shouldReceive('reserveNextNumericParamValue')
+        ->once()
+        ->with('invoice_cn_starting_number', 1)
+        ->andReturn(7);
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_cn_series', 'CN-')
+        ->andReturn('CN-');
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_email_attach_pdf')
+        ->andReturn(false);
+
+    $emailService = Mockery::mock(EmailService::class);
+    $emailService->shouldReceive('sendTemplate')->once();
+
+    [$em, $invoiceItemRepo] = invoiceItemEmAndRepo();
+    $invoiceItemRepo->shouldReceive('findByInvoiceId')->andReturn([$invoiceItemModel]);
+    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('lockAndGetStatus')
+        ->once()
+        ->with(9)
+        ->andReturn(Invoice::STATUS_PAID);
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
+    $creditNote = null;
+    $em->shouldReceive('persist')
+        ->atLeast()->once()
+        ->andReturnUsing(function (object $entity) use ($newId, &$creditNote): void {
+            if ($entity instanceof Invoice && $entity->getId() === null) {
+                setEntityId($entity, $newId);
+            }
+            if ($entity instanceof Invoice && $entity->getStatus() === Invoice::STATUS_REFUNDED && $entity->getId() === $newId) {
+                $creditNote = $entity;
+            }
+        });
+    $em->shouldReceive('flush')->atLeast()->once();
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(moduleService([
+        'system' => $systemService,
+        'email' => $emailService,
+    ]));
+    $di['events_manager'] = $eventManagerMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $serviceMock->setDi($di);
+    expect($serviceMock->refundInvoice($invoiceModel))->toBe($newId);
+    expect($invoiceModel->getStatus())->toBe(Invoice::STATUS_REFUNDED);
+    expect($creditNote)->not->toBeNull();
+    expect($creditNote->getSerie())->toBe('CN-');
+    expect($creditNote->getNr())->toBe('7');
+    expect($creditNote->getCreditNoteForInvoiceId())->toBe($invoiceModel->getId());
+});
+
+test('refundInvoice keeps the refund successful when notification delivery fails', function (): void {
+    $newId = 2;
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('getTotal')->andReturn(20.0);
+    $serviceMock->shouldReceive('getTax')->andReturn(0.0);
+    $serviceMock->shouldReceive('countIncome')->once();
+    $serviceMock->shouldReceive('addNote')->times(2);
+    $serviceMock->shouldReceive('toApiArray')->andReturn(['id' => $newId, 'total' => -20.0]);
+
+    $invoiceModel = createEntity(Invoice::class, ['clientId' => 5]);
+    $invoiceModel->setStatus(Invoice::STATUS_PAID);
+    setEntityId($invoiceModel, 9);
+
+    $systemService = Mockery::mock(SystemService::class);
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_refund_logic', 'manual')
+        ->andReturn('credit_note');
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_hash_lifetime_days', '90')
+        ->andReturn(90);
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_email_attach_pdf')
+        ->andReturn(false);
+    $systemService->shouldReceive('reserveNextNumericParamValue')
+        ->once()
+        ->with('invoice_cn_starting_number', 1)
+        ->andReturn(7);
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_cn_series', 'CN-')
+        ->andReturn('CN-');
+
+    $emailService = Mockery::mock(EmailService::class);
+    $emailService->shouldReceive('sendTemplate')
+        ->once()
+        ->andThrow(new RuntimeException('queue failed'));
+
+    [$em, $invoiceItemRepo] = invoiceItemEmAndRepo();
+    $invoiceItemRepo->shouldReceive('findByInvoiceId')->andReturn([]);
+    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('lockAndGetStatus')
+        ->once()
+        ->with(9)
+        ->andReturn(Invoice::STATUS_PAID);
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
     $em->shouldReceive('persist')
         ->atLeast()->once()
         ->andReturnUsing(function (object $entity) use ($newId): void {
@@ -1683,18 +1880,67 @@ test('refunds invoice with negative invoice logic', function (): void {
                 setEntityId($entity, $newId);
             }
         });
-    $em->shouldReceive('flush')
-        ->atLeast()->once();
+    $em->shouldReceive('flush')->atLeast()->once();
+
+    $eventsManager = Mockery::mock('\Box_EventManager');
+    $eventsManager->shouldReceive('fire')->atLeast()->once();
+    $logger = new Tests\Helpers\TestLogger();
 
     $di = container();
     $di['em'] = $em;
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $systemService);
-    $di['events_manager'] = $eventManagerMock;
-    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod_service'] = $di->protect(moduleService([
+        'system' => $systemService,
+        'email' => $emailService,
+    ]));
+    $di['events_manager'] = $eventsManager;
+    $di['logger'] = $logger;
 
     $serviceMock->setDi($di);
-    $result = $serviceMock->refundInvoice($invoiceModel, 'customNote');
-    expect($result)->toBeInt()->toBe($newId);
+    expect($serviceMock->refundInvoice($invoiceModel))->toBe($newId)
+        ->and($invoiceModel->getStatus())->toBe(Invoice::STATUS_REFUNDED);
+
+    $emailErrors = array_filter(
+        $logger->calls,
+        static fn (array $call): bool => ($call['method'] ?? null) === 'error' && ($call['channel'] ?? null) === 'email'
+    );
+    expect($emailErrors)->not->toBeEmpty();
+});
+
+test('refundInvoice refuses invoices that are not paid', function (): void {
+    foreach ([Invoice::STATUS_UNPAID, Invoice::STATUS_REFUNDED, Invoice::STATUS_CANCELED] as $status) {
+        $service = new Service();
+        $invoice = createEntity(Invoice::class, ['id' => 10]);
+        $invoice->setStatus($status);
+
+        $systemMock = Mockery::mock(SystemService::class);
+        $systemMock->shouldReceive('getParamValue')
+            ->with('invoice_refund_logic', 'manual')
+            ->andReturn('credit_note');
+        $systemMock->shouldReceive('getParamValue')
+            ->with('invoice_number_padding')
+            ->andReturn(5);
+        $systemMock->shouldReceive('getCompany')
+            ->andReturn([]);
+        $systemMock->shouldReceive('getParamValue')
+            ->with('invoice_hash_lifetime_days', '90')
+            ->andReturn(90);
+        $systemMock->shouldReceive('reserveNextNumericParamValue')
+            ->once()
+            ->with('invoice_cn_starting_number', 1)
+            ->andReturn(1);
+
+        $di = container();
+        $invoiceRepo = $di['em']->getRepository(Invoice::class);
+        $invoiceRepo->shouldReceive('lockAndGetStatus')
+            ->once()
+            ->with(10)
+            ->andReturn($status);
+        $di['mod_service'] = $di->protect(moduleService(['system' => $systemMock]));
+        $service->setDi($di);
+
+        expect(fn () => $service->refundInvoice($invoice))
+            ->toThrow(FOSSBilling\InformationException::class, 'Only paid invoices can be refunded');
+    }
 });
 
 test('updates an invoice', function (): void {
