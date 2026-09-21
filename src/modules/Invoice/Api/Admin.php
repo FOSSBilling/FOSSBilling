@@ -73,7 +73,12 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $this->_getInvoice($data);
 
-        return $this->getService()->toApiArray($model, true, $this->getIdentity());
+        // Detail view only: the list endpoint serializes every row through
+        // toApiArray, where per-invoice promo lookups would be N+1 queries.
+        $result = $this->getService()->toApiArray($model, true, $this->getIdentity());
+        $result['promo_applications'] = $this->getService()->getInvoicePromoApplications($model);
+
+        return $result;
     }
 
     /**

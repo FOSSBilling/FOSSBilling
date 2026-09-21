@@ -125,9 +125,14 @@ test('admin can apply and remove promos on orders and unpaid invoices', function
         assertApiSuccess($added);
         expect((float) $added->getResult())->toEqual(15.0);
 
+        // Pay the checkout invoice first: renewing against an unpaid invoice
+        // would simply return that same invoice instead of a renewal.
+        autoPromoMarkInvoicePaid((int) $order['unpaid_invoice_id']);
+
         // Recurring promos carry forward to renewal invoices.
         $renewal = Tests\Helpers\ApiClient::request('admin/invoice/renewal_invoice', ['id' => $orderId]);
         assertApiSuccess($renewal);
+        expect((int) $renewal->getResult())->not->toBe((int) $order['unpaid_invoice_id']);
         $renewalInvoice = autoPromoGetInvoice((int) $renewal->getResult());
         expect(autoPromoHasDiscountLine($renewalInvoice, $orderId, -15.0))->toBeTrue();
     } finally {
@@ -240,6 +245,16 @@ function autoPromoHasDiscountLine(array $invoice, int $orderId, float $price): b
     return false;
 }
 
+function autoPromoMarkInvoicePaid(int $invoiceId): void
+{
+    $result = Tests\Helpers\ApiClient::request('admin/invoice/mark_as_paid', [
+        'id' => $invoiceId,
+        'gateway_id' => autoPromoCustomGatewayId(),
+        'transactionId' => 'txn' . uniqid(),
+    ]);
+    assertApiSuccess($result);
+}
+
 function autoPromoCustomGatewayId(): int
 {
     $result = Tests\Helpers\ApiClient::request('admin/invoice/gateway_get_pairs');
@@ -289,3 +304,84 @@ function autoPromoDeleteProduct(?int $productId): void
     $result = Tests\Helpers\ApiClient::request('admin/product/delete', ['id' => $productId]);
     assertApiSuccess($result);
 }
+
+test('stacked recurring promos renew without repeating a one-time primary', function (): void {
+    Tests\Helpers\ApiClient::resetCookies();
+    $productId = null;
+    $promoAId = null;
+    $promoBId = null;
+    $originalMode = 'best_single';
+
+    try {
+        $params = Tests\Helpers\ApiClient::request('admin/system/get_params');
+        assertApiSuccess($params);
+        $originalMode = $params->getResult()['promo_stacking_mode'] ?? 'best_single';
+
+        $setMode = Tests\Helpers\ApiClient::request('admin/system/update_params', [
+            'promo_stacking_mode' => 'stack_all_eligible',
+        ]);
+        assertApiSuccess($setMode);
+
+        $productId = autoPromoCreateProduct(100.0);
+        // Stackable pair: 20% recurring plus a one-time absolute promo.
+        // The absolute promo is the higher value, so it becomes primary.
+        $promoAId = autoPromoCreatePromo('E2EStk' . strtoupper(uniqid()), 'absolute', 25, [
+            'active' => 1, 'recurring' => 0, 'auto_apply' => 1, 'stackable' => 1,
+        ]);
+        $promoBId = autoPromoCreatePromo('E2EStk' . strtoupper(uniqid()), 'percentage', 20, [
+            'active' => 1, 'recurring' => 1, 'auto_apply' => 1, 'stackable' => 1,
+        ]);
+
+        ['id' => $clientId, 'token' => $clientToken, 'password' => $password, 'email' => $email]
+            = autoPromoCreateClient();
+
+        Tests\Helpers\ApiClient::resetCookies();
+        $login = Tests\Helpers\ApiClient::request('guest/client/login', ['email' => $email, 'password' => $password]);
+        assertApiSuccess($login);
+        Tests\Helpers\ApiClient::request('guest/cart/add_item', ['id' => $productId]);
+
+        $cart = autoPromoGetCart();
+        expect((float) $cart['discount'])->toEqual(45.0);
+        expect($cart['auto_promos'])->toHaveCount(2);
+
+        $checkout = Tests\Helpers\ApiClient::request('client/cart/checkout', [
+            'gateway_id' => autoPromoCustomGatewayId(),
+        ], 'client', $clientToken);
+        assertApiSuccess($checkout);
+        $orderIds = $checkout->getResult()['orders'];
+        expect($orderIds)->toHaveCount(1);
+
+        $order = autoPromoGetOrder((int) $orderIds[0]);
+        expect((int) $order['promo_id'])->toBe($promoAId);
+        expect($order['promo_recurring'])->toBeFalse();
+        expect((float) $order['discount'])->toEqual(45.0);
+
+        // Pay the checkout invoice first: renewing against an unpaid invoice
+        // would simply return that same invoice instead of a renewal. Paying
+        // also commits the checkout redemptions renewals are valued from.
+        autoPromoMarkInvoicePaid((int) $order['unpaid_invoice_id']);
+
+        // Renewal repeats only the recurring stacked promo, not the one-time primary.
+        $renewal = Tests\Helpers\ApiClient::request('admin/invoice/renewal_invoice', ['id' => (int) $orderIds[0]]);
+        assertApiSuccess($renewal);
+        expect((int) $renewal->getResult())->not->toBe((int) $order['unpaid_invoice_id']);
+        $renewalInvoice = autoPromoGetInvoice((int) $renewal->getResult());
+
+        $renewalDiscount = 0.0;
+        foreach ($renewalInvoice['lines'] ?? [] as $line) {
+            if (($line['unit'] ?? null) === 'discount') {
+                $renewalDiscount += (float) ($line['price'] ?? 0);
+            }
+        }
+        expect($renewalDiscount)->toEqual(-20.0);
+    } finally {
+        $restore = Tests\Helpers\ApiClient::request('admin/system/update_params', [
+            'promo_stacking_mode' => $originalMode,
+        ]);
+        assertApiSuccess($restore);
+        autoPromoCleanupClient();
+        autoPromoDeactivatePromo($promoAId);
+        autoPromoDeactivatePromo($promoBId);
+        autoPromoDeleteProduct($productId);
+    }
+});

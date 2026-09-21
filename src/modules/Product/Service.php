@@ -1514,10 +1514,12 @@ class Service implements InjectionAwareInterface
      *
      * The order keeps the highest-value promo as its primary promo_id for
      * backward compatibility (renewal lookups, reporting); every promo gets
-     * its own checkout redemption row. promo_recurring is set when any of the
-     * applied promos is recurring.
+     * its own checkout redemption row. promo_recurring follows the primary
+     * promo only, so a one-time primary never renews just because a stacked
+     * promo is recurring - stacked recurring promos carry forward through
+     * their own checkout redemptions instead.
      *
-     * @param list<Promo> $promos
+     * @param list<Promo> $promos value-ordered, highest first
      */
     public function reservePromosForOrder(array $promos, Order $order): void
     {
@@ -1525,16 +1527,13 @@ class Service implements InjectionAwareInterface
             return;
         }
 
-        $recurring = false;
         foreach ($promos as $promo) {
             $this->usePromo($promo);
-            $promoData = $this->getPromoSourceArray($promo);
-            $recurring = $recurring || !empty($promoData['recurring']);
         }
 
         $primary = $promos[0];
         $order->setPromoId((int) $primary->getId());
-        $order->setPromoRecurring($recurring);
+        $order->setPromoRecurring($primary->isRecurring());
         $order->setPromoUsed(1);
         $this->di['em']->persist($order);
     }
@@ -1857,10 +1856,14 @@ class Service implements InjectionAwareInterface
 
         // Additional stacked promos are valued first so the primary promo can
         // be charged with the remainder of the historical order discount.
-        // Orders without a primary promo cannot have stacked promos (applying
-        // promos always records a primary), so skip the lookup entirely.
+        // Gated on the primary promo id alone (not promo_recurring): a
+        // one-time primary must not renew itself, but recurring promos
+        // stacked beside it still carry forward through their own checkout
+        // redemptions. Orders without a primary promo cannot have stacked
+        // promos (applying promos always records a primary), so skip the
+        // lookup entirely then.
         $additionalAmounts = [];
-        $additionalPromos = ($order->isPromoRecurring() && $order->getPromoId())
+        $additionalPromos = $order->getPromoId() !== null
             ? $this->findCommittedCheckoutPromosForOrder($order, $order->getPromoId())
             : [];
         foreach ($additionalPromos as $promo) {

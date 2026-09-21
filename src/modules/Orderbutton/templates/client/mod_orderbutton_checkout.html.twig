@@ -147,8 +147,8 @@
                                 </tr>
                                 {% for auto_promo in cart.auto_promos|default([]) %}
                                 <tr>
-                                    <td>{{ auto_promo.title }}</td>
-                                    <td>- {{ (auto_promo.discount * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</td>
+                                    <td class="ps-4"><span class="text-secondary">{{ auto_promo.title }}</span></td>
+                                    <td>{{ (auto_promo.discount * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</td>
                                 </tr>
                                 {% endfor %}
                             {% endif %}

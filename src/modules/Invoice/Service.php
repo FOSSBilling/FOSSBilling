@@ -444,8 +444,6 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        $result['promo_applications'] = $this->getInvoicePromoApplications($invoice);
-
         return $result;
     }
 
@@ -1562,6 +1560,13 @@ class Service implements InjectionAwareInterface
         }
 
         $amount = $this->di['em']->wrapInTransaction(function () use ($invoice, $order, $client, $promo, $productService, $amount): float {
+            // The unpaid pre-check above races with payment: re-read the
+            // status under a row lock so a concurrent markAsPaid cannot slip
+            // between the check and these writes.
+            if ($this->getInvoiceRepository()->lockAndGetStatus((int) $invoice->getId()) !== Invoice::STATUS_UNPAID) {
+                throw new InformationException('Promotions can only be applied to unpaid invoices');
+            }
+
             // In-transaction re-check so concurrent applications cannot both
             // consume the last once-per-client use.
             if ($productService->clientHasActivePromoApplicationForUpdate($client, $promo)) {
@@ -1573,8 +1578,20 @@ class Service implements InjectionAwareInterface
             $order->setDiscount((float) ($order->getDiscount() ?? 0) + $amount);
             if ($order->getPromoId() === null) {
                 $order->setPromoId((int) $promo->getId());
+                $order->setPromoRecurring($promo->isRecurring());
+            } else {
+                // promo_recurring follows the primary promo only: stacking a
+                // recurring promo beside a one-time primary must not make the
+                // primary renew. The stacked promo carries forward through
+                // its own checkout redemption instead. A deleted primary
+                // keeps its existing flag; renewal skips it either way.
+                try {
+                    $primaryPromo = $productService->findPromoById($order->getPromoId());
+                    $order->setPromoRecurring($primaryPromo->isRecurring());
+                } catch (\FOSSBilling\Exception) {
+                    // Leave the existing flag untouched.
+                }
             }
-            $order->setPromoRecurring((bool) $order->isPromoRecurring() || $promo->isRecurring());
             $order->setPromoUsed(1);
             $this->di['em']->persist($order);
 
@@ -1652,6 +1669,12 @@ class Service implements InjectionAwareInterface
         }
 
         $amount = $this->di['em']->wrapInTransaction(function () use ($invoice, $order, $promo, $productService, $amount): float {
+            // Same race as applying: a concurrent markAsPaid must not slip
+            // between the pre-check and these writes.
+            if ($this->getInvoiceRepository()->lockAndGetStatus((int) $invoice->getId()) !== Invoice::STATUS_UNPAID) {
+                throw new InformationException('Promotions can only be removed from unpaid invoices');
+            }
+
             $productService->releaseCheckoutPromoRedemptions($order, $promo, 'admin_removed', $invoice);
 
             $order->setDiscount(max(0.0, (float) ($order->getDiscount() ?? 0) - $amount));
@@ -1683,13 +1706,15 @@ class Service implements InjectionAwareInterface
                 $order->setPromoRecurring(false);
                 $order->setPromoUsed(0);
             } else {
-                $first = array_values($remainingPromos)[0];
-                $recurring = false;
-                foreach ($remainingPromos as $remainingPromo) {
-                    $recurring = $recurring || $remainingPromo->isRecurring();
+                // Keep the current primary when it remains applied; otherwise
+                // fall back to the earliest remaining application. Either way
+                // promo_recurring follows that primary promo only.
+                $primaryId = (int) $order->getPromoId();
+                if (!isset($remainingPromos[$primaryId])) {
+                    $primaryId = array_key_first($remainingPromos);
+                    $order->setPromoId($primaryId);
                 }
-                $order->setPromoId((int) $first->getId());
-                $order->setPromoRecurring($recurring);
+                $order->setPromoRecurring($remainingPromos[$primaryId]->isRecurring());
                 $order->setPromoUsed(1);
             }
             $this->di['em']->persist($order);

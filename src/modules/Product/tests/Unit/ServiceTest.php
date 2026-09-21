@@ -3208,7 +3208,7 @@ test('resolvePromoReference throws for unknown codes', function (): void {
 });
 
 test('reservePromosForOrder reserves every promo and records the primary', function (): void {
-    $first = productTestCreatePromoEntity(7)->setRecurring(false);
+    $first = productTestCreatePromoEntity(7)->setRecurring(true);
     $second = productTestCreatePromoEntity(8)->setRecurring(true);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
@@ -3228,6 +3228,27 @@ test('reservePromosForOrder reserves every promo and records the primary', funct
     expect($order->getPromoId())->toBe(7);
     expect($order->isPromoRecurring())->toBeTrue();
     expect($order->getPromoUsed())->toBe(1);
+});
+
+test('reservePromosForOrder keeps a one-time primary from renewing', function (): void {
+    $first = productTestCreatePromoEntity(7)->setRecurring(false);
+    $second = productTestCreatePromoEntity(8)->setRecurring(true);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('usePromo')->twice();
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('persist')->once();
+
+    $di = container();
+    $di['em'] = $emMock;
+    $serviceMock->setDi($di);
+
+    $order = createEntity(Order::class, ['id' => 3]);
+    $serviceMock->reservePromosForOrder([$first, $second], $order);
+
+    expect($order->getPromoId())->toBe(7);
+    expect($order->isPromoRecurring())->toBeFalse();
 });
 
 test('releaseCheckoutPromoRedemptions releases reserved rows and reports the count', function (): void {
@@ -3273,4 +3294,128 @@ test('releaseCheckoutPromoRedemptions returns zero when nothing is reserved', fu
     $serviceMock->setDi($di);
 
     expect($serviceMock->releaseCheckoutPromoRedemptions($order, $promo, 'admin_removed'))->toBe(0);
+});
+
+test('renewal skips a one-time primary but keeps stacked recurring promos', function (): void {
+    $order = createEntity(Order::class, [
+        'id' => 21,
+        'promo_id' => 15,
+        'promo_recurring' => false,
+        'product_id' => 17,
+        'discount' => 30.0,
+        'currency' => 'USD',
+    ]);
+    $product = productTestCreateProductEntity(17)->setType('service');
+
+    $stackedPromo = productTestCreatePromoEntity(16)->setCode('STACK')->setRecurring(true);
+    $stackedRedemption = new PromoRedemption();
+    $stackedRedemption->setPromo($stackedPromo)
+        ->setPhase(PromoRedemption::PHASE_CHECKOUT)
+        ->setStatus(PromoRedemption::STATUS_COMMITTED)
+        ->setDiscountAmount(10.0);
+
+    $redemptionRepo = Mockery::mock(PromoRedemptionRepository::class);
+    $redemptionRepo->shouldReceive('findBy')
+        ->once()
+        ->with([
+            'clientOrderId' => 21,
+            'phase' => PromoRedemption::PHASE_CHECKOUT,
+            'status' => PromoRedemption::STATUS_COMMITTED,
+        ])
+        ->andReturn([$stackedRedemption]);
+    $redemptionRepo->shouldReceive('findBy')
+        ->once()
+        ->with([
+            'clientOrderId' => 21,
+            'promo' => $stackedPromo,
+            'phase' => PromoRedemption::PHASE_CHECKOUT,
+            'status' => PromoRedemption::STATUS_COMMITTED,
+        ])
+        ->andReturn([$stackedRedemption]);
+
+    $apiGuest = new class {
+        public function currency_format(array $data): string
+        {
+            return $data['code'] . ' ' . $data['price'];
+        }
+    };
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('findProductById')->andReturn($product);
+    $serviceMock->shouldReceive('getPromoRedemptionRepository')->andReturn($redemptionRepo);
+
+    $di = container();
+    $di['api_guest'] = $apiGuest;
+    $serviceMock->setDi($di);
+
+    $result = $serviceMock->getRenewalPromoAdjustments($order, 100.0, 1.0);
+
+    // The one-time primary must not repeat; only the stacked promo applies.
+    expect($result)->toHaveCount(1);
+    expect($result[0]['promo'])->toBe($stackedPromo);
+    expect($result[0]['discount_amount'])->toEqual(10.0);
+});
+
+test('renewal splits the historical discount between primary and stacked promos', function (): void {
+    $order = createEntity(Order::class, [
+        'id' => 22,
+        'promo_id' => 15,
+        'promo_recurring' => true,
+        'product_id' => 17,
+        'discount' => 30.0,
+        'currency' => 'USD',
+    ]);
+    $product = productTestCreateProductEntity(17)->setType('service');
+    $primaryPromo = productTestCreatePromoEntity(15)->setCode('PRIMARY')->setRecurring(true);
+
+    $stackedPromo = productTestCreatePromoEntity(16)->setCode('STACK')->setRecurring(true);
+    $stackedRedemption = new PromoRedemption();
+    $stackedRedemption->setPromo($stackedPromo)
+        ->setPhase(PromoRedemption::PHASE_CHECKOUT)
+        ->setStatus(PromoRedemption::STATUS_COMMITTED)
+        ->setDiscountAmount(10.0);
+
+    $redemptionRepo = Mockery::mock(PromoRedemptionRepository::class);
+    $redemptionRepo->shouldReceive('findBy')
+        ->once()
+        ->with([
+            'clientOrderId' => 22,
+            'phase' => PromoRedemption::PHASE_CHECKOUT,
+            'status' => PromoRedemption::STATUS_COMMITTED,
+        ])
+        ->andReturn([$stackedRedemption]);
+    $redemptionRepo->shouldReceive('findBy')
+        ->once()
+        ->with([
+            'clientOrderId' => 22,
+            'promo' => $stackedPromo,
+            'phase' => PromoRedemption::PHASE_CHECKOUT,
+            'status' => PromoRedemption::STATUS_COMMITTED,
+        ])
+        ->andReturn([$stackedRedemption]);
+
+    $apiGuest = new class {
+        public function currency_format(array $data): string
+        {
+            return $data['code'] . ' ' . $data['price'];
+        }
+    };
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('findProductById')->andReturn($product);
+    $serviceMock->shouldReceive('findPromoById')->once()->with(15)->andReturn($primaryPromo);
+    $serviceMock->shouldReceive('getPromoRedemptionRepository')->andReturn($redemptionRepo);
+
+    $di = container();
+    $di['api_guest'] = $apiGuest;
+    $serviceMock->setDi($di);
+
+    $result = $serviceMock->getRenewalPromoAdjustments($order, 100.0, 1.0);
+
+    // Primary owns the remainder (30 - 10), stacked keeps its share.
+    expect($result)->toHaveCount(2);
+    expect($result[0]['promo'])->toBe($primaryPromo);
+    expect($result[0]['discount_amount'])->toEqual(20.0);
+    expect($result[1]['promo'])->toBe($stackedPromo);
+    expect($result[1]['discount_amount'])->toEqual(10.0);
 });

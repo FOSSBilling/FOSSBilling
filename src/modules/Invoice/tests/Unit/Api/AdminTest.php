@@ -121,6 +121,9 @@ test('gets an invoice', function (): void {
     $serviceMock->shouldReceive('toApiArray')
         ->atLeast()->once()
         ->andReturn([]);
+    $serviceMock->shouldReceive('getInvoicePromoApplications')
+        ->atLeast()->once()
+        ->andReturn([]);
 
     $model = createEntity(Invoice::class);
 
@@ -135,6 +138,30 @@ test('gets an invoice', function (): void {
     $data['id'] = 1;
     $result = $api->get($data);
     expect($result)->toBeArray();
+});
+
+test('gets an invoice with promo applications', function (): void {
+    $api = apiEndpoint(new Admin());
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('toApiArray')
+        ->once()
+        ->andReturn(['id' => 1]);
+    $serviceMock->shouldReceive('getInvoicePromoApplications')
+        ->once()
+        ->andReturn([['promo_id' => 7, 'code' => 'ADMIN10']]);
+
+    $model = createEntity(Invoice::class);
+
+    $di = container();
+    $di['em']->getRepository(Invoice::class)->shouldReceive('find')->once()->andReturn($model);
+
+    $api->setDi($di);
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($di['em']->getRepository(Invoice::class));
+    $api->setService($serviceMock);
+    $api->setIdentity(\Tests\Helpers\admin());
+
+    $result = $api->get(['id' => 1]);
+    expect($result['promo_applications'])->toBe([['promo_id' => 7, 'code' => 'ADMIN10']]);
 });
 
 test('marks invoice as paid', function (): void {
