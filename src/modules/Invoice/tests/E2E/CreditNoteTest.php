@@ -202,11 +202,12 @@ function creditNoteDeleteProduct(?int $productId): void
     $deleted = Tests\Helpers\ApiClient::request('admin/product/delete', ['id' => $productId]);
     assertApiSuccess($deleted);
 }
+
 test('partial refunds accumulate on the original until fully refunded', function (): void {
     Tests\Helpers\ApiClient::resetCookies();
 
     try {
-        ['id' => $clientId, 'token' => $clientToken] = creditNoteCreateClient();
+        ['id' => $clientId] = creditNoteCreateClient();
 
         $prepared = Tests\Helpers\ApiClient::request('admin/invoice/prepare', ['client_id' => $clientId]);
         assertApiSuccess($prepared);

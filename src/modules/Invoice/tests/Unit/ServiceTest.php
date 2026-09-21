@@ -4228,7 +4228,6 @@ test('refundInvoice validates partial refund input', function (): void {
     $discount = createEntity(InvoiceItem::class, ['price' => -10.0, 'quantity' => 1, 'taxed' => false]);
     setEntityId($discount, 12);
 
-    $service = new Service();
     $invoiceModel = createEntity(Invoice::class, ['clientId' => 5]);
     $invoiceModel->setStatus(Invoice::STATUS_PAID);
     setEntityId($invoiceModel, 10);
