@@ -134,12 +134,18 @@
                     {% endblock %}
 
                     {% block summary_actions %}
+                        {% if not invoice.editable %}
+                        <div class="alert alert-warning w-100 mb-2" role="alert">
+                            {{ 'This invoice is locked. Approved invoices cannot be edited once issued; correct them with a credit note or a replacement invoice.'|trans }}
+                        </div>
+                        {% endif %}
                         <a href='{{ "invoice/#{invoice.hash}"|url(area: 'client') }}' class="btn btn-primary" target="_blank">
                             <svg class="icon" width="24" height="24">
                                 <use href="#eye" />
                             </svg>
                             <span>{{ 'View as Client'|trans }}</span>
                         </a>
+                        {% if invoice.status == 'unpaid' and not invoice.approved %}
                         <a class="btn btn-danger"
                             {{ fb_api_link({href: 'invoice/delete'|api_url(query: {id: invoice.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'invoice'|url}) }}>
                             <svg class="icon" width="24" height="24">
@@ -147,6 +153,7 @@
                             </svg>
                             <span>{{ 'Delete'|trans }}</span>
                         </a>
+                        {% endif %}
                         {% if invoice.status == 'unpaid' %}
                         <a class="btn btn-primary" {{ fb_api_link({href: 'invoice/send_reminder'|api_url(query: {id: invoice.id}), message: 'Payment Reminder Sent'|trans}) }}>
                             <svg class="icon" width="24" height="24">
@@ -214,7 +221,7 @@
                 card_class: 'mb-3'
             } %}
                 {% block section_content %}
-                {% if not invoice.approved %}
+                {% if invoice.editable %}
                 <form method="post" action="{{ 'invoice/update'|api_url }}" {{ fb_api_form({reload: true}) }}>
                     <table class="table card-table table-vcenter table-striped text-nowrap">
                         <thead>
@@ -475,6 +482,7 @@
         <div class="tab-pane fade" id="tab-manage" role="tabpanel">
             <div class="card-body">
                 <form method="post" action="{{ 'invoice/update'|api_url }}" {{ fb_api_form({ reload: true}) }}>
+                    <fieldset {% if not invoice.editable %}disabled{% endif %}>
                     {% embed 'partial_admin_form_card.html.twig' with {
                         title: 'Invoice Status and Numbering'|trans,
                         subtitle: 'Control the invoice lifecycle, approval state, and displayed numbering.'|trans,
@@ -603,6 +611,7 @@
                         {% endblock %}
                     {% endembed %}
                     <input type="hidden" name="id" value="{{ invoice.id }}">
+                    </fieldset>
                 </form>
             </div>
         </div>
@@ -610,6 +619,7 @@
         <div class="tab-pane fade" id="tab-texts" role="tabpanel">
             <div class="card-body">
                 <form method="post" action="{{ 'invoice/update'|api_url }}" {{ fb_api_form({message: 'Invoice Updated'|trans}) }}>
+                    <fieldset {% if not invoice.editable %}disabled{% endif %}>
                     {% embed 'partial_admin_form_card.html.twig' with {
                         title: 'Invoice Text Content'|trans,
                         subtitle: 'Edit the rich text shown above and below the invoice item table.'|trans
@@ -633,6 +643,7 @@
                         {% endblock %}
                     {% endembed %}
                     <input type="hidden" name="id" value="{{ invoice.id }}">
+                    </fieldset>
                 </form>
             </div>
         </div>
@@ -641,6 +652,7 @@
             <div class="card-body">
                 {% set seller = invoice.seller %}
                 <form method="post" action="{{ 'invoice/update'|api_url }}" {{ fb_api_form({message: 'Invoice Updated'|trans}) }}>
+                    <fieldset {% if not invoice.editable %}disabled{% endif %}>
                     {% embed 'partial_admin_form_card.html.twig' with {
                         title: 'Company Details at Time of Purchase'|trans,
                         subtitle: 'Review and correct the seller details stored on this invoice.'|trans
@@ -680,6 +692,7 @@
                         {% endblock %}
                     {% endembed %}
                     <input type="hidden" name="id" value="{{ invoice.id }}">
+                    </fieldset>
                 </form>
             </div>
         </div>
@@ -688,6 +701,7 @@
             <div class="card-body">
                 {% set buyer = invoice.buyer %}
                 <form method="post" action="{{ 'invoice/update'|api_url }}" {{ fb_api_form({message: 'Invoice Updated'|trans}) }}>
+                    <fieldset {% if not invoice.editable %}disabled{% endif %}>
                     {% embed 'partial_admin_form_card.html.twig' with {
                         title: 'Client Details at Time of Purchase'|trans,
                         subtitle: 'Review and correct the stored buyer details for this invoice.'|trans
@@ -751,6 +765,7 @@
                         {% endblock %}
                     {% endembed %}
                     <input type="hidden" name="id" value="{{ invoice.id }}">
+                    </fieldset>
                 </form>
             </div>
         </div>
@@ -768,7 +783,7 @@
         </div>
         <div class="d-grid gap-2">
             <button class="btn btn-primary" type="button" onclick="window.print()">{{ 'Print'|trans }}</button>
-            {% if invoice.status == 'unpaid' %}
+            {% if invoice.status == 'unpaid' and not invoice.approved %}
                 <a class="btn btn-danger" href="{{ 'invoice/delete'|api_url(query: { 'id': invoice.id }) }}"
                     {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'invoice'|url}) }}>
                     {{ 'Delete'|trans }}
