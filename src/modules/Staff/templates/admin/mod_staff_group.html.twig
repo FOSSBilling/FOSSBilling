@@ -203,8 +203,8 @@
                                                     {% endif %}
 
                                                     <div class="row g-3">
-                                                        {% for permissionName, permission in mod.permissions if permission is iterable %}
-                                                            {% if permission.type == 'bool' %}
+                                                        {% for permissionName, permission in mod.permissions %}
+                                                            {% if permission is iterable and permission.type == 'bool' %}
                                                                 <div class="col-lg-6">
                                                                     <div class="form-check mt-1">
                                                                         <input class="form-check-input permission-box" id="input-{{ modName }}-{{ permissionName }}" type="checkbox" name="permissions[{{ modName }}][{{ permissionName }}]" value="1"{% if group.permissions[modName][permissionName]|default(false) %} checked {% endif %}>
@@ -215,7 +215,7 @@
                                                                 </div>
                                                             {% endif %}
 
-                                                            {% if permission.type == 'select' %}
+                                                            {% if permission is iterable and permission.type == 'select' %}
                                                                 <div class="col-lg-6">
                                                                     <label for="input-{{ modName }}-{{ permissionName }}" class="form-label">{{ permission.display_name }}
                                                                         <svg class="icon" data-bs-toggle="tooltip" data-bs-title="{{ permission.description|default('') }}" data-bs-placement="right"><use href="#info-circle"/></svg>
