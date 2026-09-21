@@ -238,6 +238,12 @@ class Session implements InjectionAwareInterface
 
     private function configureCookieName(): void
     {
+        // The cookie name cannot be changed once output started; the rename
+        // would only emit warnings while the session keeps the previous name.
+        if (headers_sent()) {
+            return;
+        }
+
         $previousName = $this->session->getName();
 
         $this->session->setName(CookieNames::SESSION);
