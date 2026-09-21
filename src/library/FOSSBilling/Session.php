@@ -238,8 +238,7 @@ class Session implements InjectionAwareInterface
 
     private function configureCookieName(): void
     {
-        // The cookie name cannot be changed once output started; the rename
-        // would only emit warnings while the session keeps the previous name.
+        // The cookie name cannot be changed once output started; renaming now would only emit warnings.
         if (headers_sent()) {
             return;
         }
