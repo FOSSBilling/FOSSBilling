@@ -14,6 +14,7 @@ namespace Box\Mod\Invoice\Repository;
 use Box\Mod\Client\Entity\Client;
 use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\InvoiceItem;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
 use FOSSBilling\Doctrine\RowLock;
@@ -221,7 +222,7 @@ class InvoiceRepository extends EntityRepository
 
         return [
             'status' => (string) $row['status'],
-            'approved' => (bool) $row['approved'],
+            'approved' => $connection->convertToPHPValue($row['approved'], Types::BOOLEAN) ?? false,
         ];
     }
 
