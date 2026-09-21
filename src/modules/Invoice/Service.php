@@ -1553,19 +1553,24 @@ class Service implements InjectionAwareInterface
         }
 
         $rawDiscount = (float) $productService->getProductDiscount($product, $promo, $promoConfig);
-        $remaining = (float) $order->getPrice() * (float) $order->getQuantity() - (float) ($order->getDiscount() ?? 0);
-        $amount = min($rawDiscount * $rate, $remaining);
-        if ($amount <= 0) {
+        $discountBase = $rawDiscount * $rate;
+        if ($discountBase <= 0) {
             throw new InformationException('This promo code gives no discount on the selected order');
         }
 
-        $amount = $this->di['em']->wrapInTransaction(function () use ($invoice, $order, $client, $promo, $productService, $amount): float {
+        $amount = $this->di['em']->wrapInTransaction(function () use ($invoice, $order, $client, $promo, $productService, $discountBase): float {
             // The unpaid pre-check above races with payment: re-read the
             // status under a row lock so a concurrent markAsPaid cannot slip
-            // between the check and these writes.
+            // between the check and these writes. The lock also serializes
+            // concurrent promo edits on this invoice.
             if ($this->getInvoiceRepository()->lockAndGetStatus((int) $invoice->getId()) !== Invoice::STATUS_UNPAID) {
                 throw new InformationException('Promotions can only be applied to unpaid invoices');
             }
+
+            // Refresh against changes committed while waiting for the lock,
+            // then value the discount from that state rather than the
+            // pre-transaction snapshot.
+            $this->di['em']->refresh($order);
 
             // In-transaction re-check so concurrent applications cannot both
             // consume the last once-per-client use.
@@ -1574,6 +1579,12 @@ class Service implements InjectionAwareInterface
             }
 
             $productService->usePromo($promo);
+
+            $remaining = (float) $order->getPrice() * (float) $order->getQuantity() - (float) ($order->getDiscount() ?? 0);
+            $amount = min($discountBase, $remaining);
+            if ($amount <= 0) {
+                throw new InformationException('This promo code gives no discount on the selected order');
+            }
 
             $order->setDiscount((float) ($order->getDiscount() ?? 0) + $amount);
             if ($order->getPromoId() === null) {
@@ -1648,34 +1659,43 @@ class Service implements InjectionAwareInterface
         $order = $this->findPromoTargetOrder($invoice, $order);
 
         $productService = $this->di['mod_service']('Product');
-        $redemptions = $productService->getPromoRedemptionRepository()->findBy([
-            'clientOrderId' => (int) $order->getId(),
-            'promo' => $promo,
-            'phase' => \Box\Mod\Product\Entity\PromoRedemption::PHASE_CHECKOUT,
-            'status' => \Box\Mod\Product\Entity\PromoRedemption::STATUS_RESERVED,
-        ]);
 
-        if ($redemptions === []) {
-            throw new InformationException('This promotion is not applied to the selected order');
-        }
-
-        $amount = 0.0;
-        foreach ($redemptions as $redemption) {
-            $amount += (float) ($redemption->getDiscountAmount() ?? 0);
-        }
-
-        if ($amount <= 0) {
-            throw new InformationException('This promotion has no discount recorded on the selected order');
-        }
-
-        $amount = $this->di['em']->wrapInTransaction(function () use ($invoice, $order, $promo, $productService, $amount): float {
+        // Reserved redemptions are read inside the transaction, after the
+        // lock: a concurrent removal (or cancellation releasing them) must
+        // not make this call subtract a discount twice.
+        $amount = $this->di['em']->wrapInTransaction(function () use ($invoice, $order, $promo, $productService): float {
             // Same race as applying: a concurrent markAsPaid must not slip
             // between the pre-check and these writes.
             if ($this->getInvoiceRepository()->lockAndGetStatus((int) $invoice->getId()) !== Invoice::STATUS_UNPAID) {
                 throw new InformationException('Promotions can only be removed from unpaid invoices');
             }
 
-            $productService->releaseCheckoutPromoRedemptions($order, $promo, 'admin_removed', $invoice);
+            $redemptions = $productService->getPromoRedemptionRepository()->findBy([
+                'clientOrderId' => (int) $order->getId(),
+                'promo' => $promo,
+                'phase' => \Box\Mod\Product\Entity\PromoRedemption::PHASE_CHECKOUT,
+                'status' => \Box\Mod\Product\Entity\PromoRedemption::STATUS_RESERVED,
+            ]);
+
+            if ($redemptions === []) {
+                throw new InformationException('This promotion is not applied to the selected order');
+            }
+
+            $amount = 0.0;
+            foreach ($redemptions as $redemption) {
+                $amount += (float) ($redemption->getDiscountAmount() ?? 0);
+            }
+
+            if ($amount <= 0) {
+                throw new InformationException('This promotion has no discount recorded on the selected order');
+            }
+
+            $released = $productService->releaseCheckoutPromoRedemptions($order, $promo, 'admin_removed', $invoice);
+            if ($released === 0) {
+                throw new InformationException('This promotion is not applied to the selected order');
+            }
+
+            $this->di['em']->refresh($order);
 
             $order->setDiscount(max(0.0, (float) ($order->getDiscount() ?? 0) - $amount));
 

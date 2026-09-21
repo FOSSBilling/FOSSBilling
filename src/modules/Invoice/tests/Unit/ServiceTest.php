@@ -3703,7 +3703,12 @@ test('promoRemoveFromInvoice throws when the promo is not applied', function ():
     $productService->shouldReceive('getPromoRedemptionRepository')->once()->andReturn($redemptionRepo);
 
     $em = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
+    $em->shouldReceive('wrapInTransaction')->once()->andReturnUsing(fn (callable $callback): mixed => $callback());
     $em->shouldReceive('getRepository')->with(InvoiceItem::class)->andReturn($invoiceItemRepo);
+
+    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('lockAndGetStatus')->once()->with(10)->andReturn(Invoice::STATUS_UNPAID);
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
 
     $di = container();
     $di['em'] = $em;
@@ -3781,14 +3786,12 @@ test('promoRemoveFromInvoice aborts when the invoice is paid concurrently', func
     $order = createEntity(Order::class, ['id' => 20, 'unpaid_invoice_id' => 10]);
     $promo = new Box\Mod\Product\Entity\Promo();
 
-    $redemption = new Box\Mod\Product\Entity\PromoRedemption();
-    $redemption->setDiscountAmount(25.0);
-
     $redemptionRepo = Mockery::mock(Box\Mod\Product\Repository\PromoRedemptionRepository::class);
-    $redemptionRepo->shouldReceive('findBy')->once()->andReturn([$redemption]);
+    // The lock aborts before any redemption rows are read.
+    $redemptionRepo->shouldNotReceive('findBy');
 
     $productService = Mockery::mock(ProductService::class);
-    $productService->shouldReceive('getPromoRedemptionRepository')->once()->andReturn($redemptionRepo);
+    $productService->shouldReceive('getPromoRedemptionRepository')->andReturn($redemptionRepo);
     $productService->shouldNotReceive('releaseCheckoutPromoRedemptions');
 
     $invoiceRepo = Mockery::mock(InvoiceRepository::class);
