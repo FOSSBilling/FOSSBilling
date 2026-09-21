@@ -45,8 +45,10 @@ test('refunding a paid invoice issues a linked credit note and settles the origi
         $params = Tests\Helpers\ApiClient::request('admin/system/get_params');
         assertApiSuccess($params);
         $originalLogic = $params->getResult()['invoice_refund_logic'] ?? 'credit_note';
+        $originalSeries = $params->getResult()['invoice_cn_series'] ?? 'CN-';
         $setLogic = Tests\Helpers\ApiClient::request('admin/system/update_params', [
             'invoice_refund_logic' => 'credit_note',
+            'invoice_cn_series' => 'CN-',
         ]);
         assertApiSuccess($setLogic);
 
@@ -84,6 +86,7 @@ test('refunding a paid invoice issues a linked credit note and settles the origi
         } finally {
             $restore = Tests\Helpers\ApiClient::request('admin/system/update_params', [
                 'invoice_refund_logic' => $originalLogic,
+                'invoice_cn_series' => $originalSeries,
             ]);
             assertApiSuccess($restore);
         }

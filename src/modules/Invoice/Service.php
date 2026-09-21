@@ -1314,108 +1314,113 @@ class Service implements InjectionAwareInterface
         switch ($logic) {
             case 'credit_note':
             case 'negative_invoice':
-                if ($invoice->getStatus() !== Invoice::STATUS_PAID) {
-                    throw new InformationException('Only paid invoices can be refunded');
-                }
-
-                $total = $this->getTotalWithTax($invoice);
-                if ($total <= 0) {
-                    throw new InformationException('Cannot refund invoice with negative amount');
-                }
-
-                $new = new Invoice();
-                $new->setClientId($invoice->getClientId());
-                $new->setCreditNoteForInvoiceId($invoice->getId());
-                $new->setHash(bin2hex(random_bytes(random_int(15, 30))));
-                $new->setHashExpiresAt($this->computeHashExpiration());
-                $new->setStatus(Invoice::STATUS_REFUNDED);
-                $new->setCurrency($invoice->getCurrency());
-                $new->setApproved(true);
-                $new->setTaxname($invoice->getTaxname());
-                $new->setTaxrate($invoice->getTaxrate());
-
-                $new->setSellerCompany($invoice->getSellerCompany());
-                $new->setSellerCompanyVat($invoice->getSellerCompanyVat());
-                $new->setSellerCompanyNumber($invoice->getSellerCompanyNumber());
-                $new->setSellerAddress($invoice->getSellerAddress());
-                $new->setSellerPhone($invoice->getSellerPhone());
-                $new->setSellerEmail($invoice->getSellerEmail());
-
-                $new->setBuyerFirstName($invoice->getBuyerFirstName());
-                $new->setBuyerLastName($invoice->getBuyerLastName());
-                $new->setBuyerCompany($invoice->getBuyerCompany());
-                $new->setBuyerCompanyVat($invoice->getBuyerCompanyVat());
-                $new->setBuyerCompanyNumber($invoice->getBuyerCompanyNumber());
-                $new->setBuyerAddress($invoice->getBuyerAddress());
-                $new->setBuyerCity($invoice->getBuyerCity());
-                $new->setBuyerState($invoice->getBuyerState());
-                $new->setBuyerCountry($invoice->getBuyerCountry());
-                $new->setBuyerPhone($invoice->getBuyerPhone());
-                $new->setBuyerPhoneCc($invoice->getBuyerPhoneCc());
-                $new->setBuyerEmail($invoice->getBuyerEmail());
-                $new->setBuyerZip($invoice->getBuyerZip());
-                $new->setText1($invoice->getText1());
-                $new->setText2($invoice->getText2());
-
-                $new->setPaidAt(new \DateTime());
-                $this->di['em']->persist($new);
-                $this->di['em']->flush();
-
-                $invoiceItems = $this->getInvoiceItemRepository()->findByInvoiceId((int) $invoice->getId());
-                $entityManager = $this->di['em'];
-                foreach ($invoiceItems as $item) {
-                    $pi = new InvoiceItem();
-                    $pi->setInvoice($new);
-                    $pi->setType($item->getType());
-                    $pi->setRelId($item->getRelId());
-                    $pi->setTask($item->getTask());
-                    $pi->setStatus(InvoiceItem::STATUS_EXECUTED); // Mark refund invoice as executed
-                    $pi->setTitle($item->getTitle());
-                    $pi->setPeriod($item->getPeriod());
-                    $pi->setQuantity($item->getQuantity());
-                    $pi->setUnit($item->getUnit());
-                    $pi->setCharged(1);
-                    $pi->setPrice(-($item->getPrice() ?? 0));
-                    $pi->setTaxed($item->getTaxed());
-                    $entityManager->persist($pi);
-                }
-                $entityManager->flush();
-
-                $this->countIncome($new);
-
-                $invoice->setStatus(Invoice::STATUS_REFUNDED);
-                $this->di['em']->persist($invoice);
-                $this->di['em']->flush();
-
-                $this->addNote($invoice, "Refund invoice #{$new->getId()} generated.");
-                $this->addNote($new, "Refund for #{$invoice->getId()} invoice.");
-                if (!empty($note)) {
-                    $this->addNote($new, $note);
-                }
-
-                if ($logic == 'negative_invoice') {
-                    $new->setSerie($systemService->getParamValue('invoice_series_paid'));
-                    $new->setNr($this->getNextInvoiceNumber());
-                    $this->di['em']->persist($new);
-                    $this->di['em']->flush();
-                }
-
-                if ($logic == 'credit_note') {
-                    // Claimed and advanced in one locked step, otherwise two
-                    // concurrent refunds take the same number and issue two
-                    // credit notes sharing one number.
-                    $next_nr = $systemService->reserveNextNumericParamValue('invoice_cn_starting_number', 1);
-                    if ($next_nr === null) {
-                        throw new \FOSSBilling\Exception('Unable to determine the next credit note number');
+                $new = $this->di['em']->wrapInTransaction(function () use ($invoice, $logic, $note, $systemService): Invoice {
+                    // Reserve the number before any invoice reads. SQLite must acquire its write
+                    // lock before the locking read; the outer transaction rolls this back on failure.
+                    $nextNumber = $logic === 'negative_invoice'
+                        ? $this->getNextInvoiceNumber()
+                        : $systemService->reserveNextNumericParamValue('invoice_cn_starting_number', 1);
+                    if ($nextNumber === null) {
+                        throw new \FOSSBilling\Exception('Unable to determine the next invoice number');
                     }
-                    $new->setSerie($systemService->getParamValue('invoice_cn_series', 'CN-'));
-                    $new->setNr($next_nr);
+
+                    // Use the current locked status rather than the possibly stale entity state.
+                    if ($this->getInvoiceRepository()->lockAndGetStatus((int) $invoice->getId()) !== Invoice::STATUS_PAID) {
+                        throw new InformationException('Only paid invoices can be refunded');
+                    }
+
+                    $total = $this->getTotalWithTax($invoice);
+                    if ($total <= 0) {
+                        throw new InformationException('Cannot refund invoice with negative amount');
+                    }
+
+                    $new = new Invoice();
+                    $new->setClientId($invoice->getClientId());
+                    $new->setCreditNoteForInvoiceId($invoice->getId());
+                    $new->setHash(bin2hex(random_bytes(random_int(15, 30))));
+                    $new->setHashExpiresAt($this->computeHashExpiration());
+                    $new->setStatus(Invoice::STATUS_REFUNDED);
+                    $new->setCurrency($invoice->getCurrency());
+                    $new->setApproved(true);
+                    $new->setTaxname($invoice->getTaxname());
+                    $new->setTaxrate($invoice->getTaxrate());
+
+                    $new->setSellerCompany($invoice->getSellerCompany());
+                    $new->setSellerCompanyVat($invoice->getSellerCompanyVat());
+                    $new->setSellerCompanyNumber($invoice->getSellerCompanyNumber());
+                    $new->setSellerAddress($invoice->getSellerAddress());
+                    $new->setSellerPhone($invoice->getSellerPhone());
+                    $new->setSellerEmail($invoice->getSellerEmail());
+
+                    $new->setBuyerFirstName($invoice->getBuyerFirstName());
+                    $new->setBuyerLastName($invoice->getBuyerLastName());
+                    $new->setBuyerCompany($invoice->getBuyerCompany());
+                    $new->setBuyerCompanyVat($invoice->getBuyerCompanyVat());
+                    $new->setBuyerCompanyNumber($invoice->getBuyerCompanyNumber());
+                    $new->setBuyerAddress($invoice->getBuyerAddress());
+                    $new->setBuyerCity($invoice->getBuyerCity());
+                    $new->setBuyerState($invoice->getBuyerState());
+                    $new->setBuyerCountry($invoice->getBuyerCountry());
+                    $new->setBuyerPhone($invoice->getBuyerPhone());
+                    $new->setBuyerPhoneCc($invoice->getBuyerPhoneCc());
+                    $new->setBuyerEmail($invoice->getBuyerEmail());
+                    $new->setBuyerZip($invoice->getBuyerZip());
+                    $new->setText1($invoice->getText1());
+                    $new->setText2($invoice->getText2());
+                    $new->setSerie($logic === 'negative_invoice'
+                        ? $systemService->getParamValue('invoice_series_paid')
+                        : $systemService->getParamValue('invoice_cn_series', 'CN-'));
+                    $new->setNr($nextNumber);
+
+                    $new->setPaidAt(new \DateTime());
                     $this->di['em']->persist($new);
                     $this->di['em']->flush();
-                }
+
+                    $invoiceItems = $this->getInvoiceItemRepository()->findByInvoiceId((int) $invoice->getId());
+                    $entityManager = $this->di['em'];
+                    foreach ($invoiceItems as $item) {
+                        $pi = new InvoiceItem();
+                        $pi->setInvoice($new);
+                        $pi->setType($item->getType());
+                        $pi->setRelId($item->getRelId());
+                        $pi->setTask($item->getTask());
+                        $pi->setStatus(InvoiceItem::STATUS_EXECUTED); // Mark refund invoice as executed
+                        $pi->setTitle($item->getTitle());
+                        $pi->setPeriod($item->getPeriod());
+                        $pi->setQuantity($item->getQuantity());
+                        $pi->setUnit($item->getUnit());
+                        $pi->setCharged(1);
+                        $pi->setPrice(-($item->getPrice() ?? 0));
+                        $pi->setTaxed($item->getTaxed());
+                        $entityManager->persist($pi);
+                    }
+                    $entityManager->flush();
+
+                    $this->countIncome($new);
+
+                    $invoice->setStatus(Invoice::STATUS_REFUNDED);
+                    $this->di['em']->persist($invoice);
+                    $this->di['em']->flush();
+
+                    $this->addNote($invoice, "Refund invoice #{$new->getId()} generated.");
+                    $this->addNote($new, "Refund for #{$invoice->getId()} invoice.");
+                    if (!empty($note)) {
+                        $this->addNote($new, $note);
+                    }
+
+                    return $new;
+                });
                 $result = (int) $new->getId();
 
-                $this->sendRefundEmail($invoice, $new);
+                try {
+                    $this->sendRefundEmail($invoice, $new);
+                } catch (\Throwable $exception) {
+                    $this->di['logger']->withChannel('email')->error('Failed to send refund email', [
+                        'invoice_id' => $invoice->getId(),
+                        'credit_note_id' => $new->getId(),
+                        'exception' => $exception,
+                    ]);
+                }
 
                 break;
 
