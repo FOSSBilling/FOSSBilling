@@ -23,11 +23,13 @@ test('addon quantity flows from cart to order and invoice', function (): void {
     Tests\Helpers\ApiClient::resetCookies();
     ['parent' => $parentId, 'addon' => $addonId] = addonQtyCreateParentWithAddon(true);
 
-    // The API client shares one cookie jar, so drop the admin session from
-    // setup: profile_api_key_reset prefers session auth and would otherwise
-    // demand a CSRF token instead of accepting the admin API token.
+    // The API client shares one cookie jar and every admin-token call stamps
+    // an admin session into it, while profile_api_key_reset prefers session
+    // auth (demanding a CSRF token) whenever one is present. Prepare the
+    // client and token first (resetting the session in between), then build
+    // the cart last so no reset orphans it before checkout.
     Tests\Helpers\ApiClient::resetCookies();
-
+    $clientToken = addonQtyCreateClientWithToken();
     $addResult = Tests\Helpers\ApiClient::request('guest/cart/add_item', [
         'id' => $parentId,
         'multiple' => 1,
@@ -40,7 +42,6 @@ test('addon quantity flows from cart to order and invoice', function (): void {
     expect($addonLine['quantity'])->toBe(3);
     expect((float) $addonLine['total'])->toBe(6.0);
 
-    $clientToken = addonQtyCreateClientWithToken();
     $checkout = Tests\Helpers\ApiClient::request('client/cart/checkout', [
         'gateway_id' => addonQtyCustomGatewayId(),
     ], 'client', $clientToken);
@@ -261,25 +262,27 @@ function addonQtyCustomGatewayId(): int
 
 function addonQtyCreateClientWithToken(): string
 {
-    $password = 'A1a' . bin2hex(random_bytes(6));
     $email = 'client_' . uniqid() . '@example.com';
-    $created = Tests\Helpers\ApiClient::request('guest/client/create', [
+    // Created via the admin API rather than guest signup so this test never
+    // consumes from the shared client_signup rate limit budget. The cart
+    // stays in the current session; token login below attaches the client
+    // to that same session, so no guest login (and cart transfer) is needed.
+    $created = Tests\Helpers\ApiClient::request('admin/client/create', [
         'email' => $email,
         'first_name' => 'Test',
-        'password' => $password,
-        'password_confirm' => $password,
+        'password' => 'A1a' . bin2hex(random_bytes(6)),
+        'send_welcome_email' => 0,
     ]);
     assertApiSuccess($created);
+    $GLOBALS['addonQtyClientId'] = (int) $created->getResult();
 
-    $login = Tests\Helpers\ApiClient::request('guest/client/login', [
-        'email' => $email,
-        'password' => $password,
-    ]);
-    assertApiSuccess($login);
-    $GLOBALS['addonQtyClientId'] = (int) $login->getResult()['id'];
+    // The create call above stamped an admin session into the shared cookie
+    // jar; drop it so the mint call below authenticates with the admin API
+    // token instead of failing session-auth CSRF validation.
+    Tests\Helpers\ApiClient::resetCookies();
 
-    // Mint a client API token via the admin API (no session/CSRF involved),
-    // which can then authenticate client/* calls made with basic auth.
+    // Mint a client API token via the admin API, which can then authenticate
+    // client/* calls made with basic auth.
     $token = Tests\Helpers\ApiClient::request('admin/profile/api_key_reset', [
         'id' => $GLOBALS['addonQtyClientId'],
     ]);
