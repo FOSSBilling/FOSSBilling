@@ -850,6 +850,25 @@ class Service implements InjectionAwareInterface
         $invoice = null;
         $markInvoicePaid = \FOSSBilling\Tools::normalizeBoolean($data['mark_invoice_paid'] ?? false);
 
+        $productService = $this->di['mod_service']('Product');
+        $promo = $productService->resolvePromoReference(
+            isset($data['promo_code']) ? (string) $data['promo_code'] : null,
+            isset($data['promo_id']) ? (int) $data['promo_id'] : null
+        );
+        if ($promo instanceof \Box\Mod\Product\Entity\Promo) {
+            if (!$productService->promoCanBeApplied($promo)) {
+                throw new InformationException('The promo code has expired or does not exist');
+            }
+
+            if (!$productService->isPromoAvailableForClientGroup($promo, $client)) {
+                throw new InformationException('Promo code cannot be applied to this client');
+            }
+
+            if (!$productService->canClientUsePromo($client, $promo)) {
+                throw new InformationException('This client has already used this promo code');
+            }
+        }
+
         $id = $this->di['em']->wrapInTransaction(function () use (
             $client,
             $config,
@@ -862,6 +881,7 @@ class Service implements InjectionAwareInterface
             $period,
             $price,
             $product,
+            $promo,
             $quantity,
             &$invoice
         ) {
@@ -902,6 +922,37 @@ class Service implements InjectionAwareInterface
                     throw new \FOSSBilling\Exception("Currency rate for '{$currency->getCode()}' is not configured");
                 }
                 $order->setPrice($line['price'] * $rate);
+            }
+
+            $promoDiscount = 0.0;
+            if ($promo instanceof \Box\Mod\Product\Entity\Promo) {
+                $productService = $this->di['mod_service']('Product');
+                $promoConfig = array_merge($config, ['quantity' => $quantity]);
+                if (!$productService->isPromoApplicableToProduct($promo, $product, $promoConfig)) {
+                    throw new InformationException('This promo code does not apply to the selected product or billing period');
+                }
+
+                // In-transaction re-check so concurrent admin orders cannot
+                // both consume the last once-per-client use.
+                if ($productService->clientHasActivePromoApplicationForUpdate($client, $promo)) {
+                    throw new InformationException('This client has already used this promo code');
+                }
+
+                $rate = $currencyRepository->getRateByCode($currency->getCode());
+                if ($rate === null) {
+                    throw new \FOSSBilling\Exception("Currency rate for '{$currency->getCode()}' is not configured");
+                }
+
+                $rawDiscount = (float) $productService->getProductDiscount($product, $promo, $promoConfig);
+                $orderTotal = (float) $order->getPrice() * (float) $order->getQuantity();
+                $promoDiscount = min($rawDiscount * $rate, $orderTotal);
+                if ($promoDiscount > 0) {
+                    $productService->usePromo($promo);
+                    $order->setPromoId((int) $promo->getId());
+                    $order->setPromoRecurring($promo->isRecurring());
+                    $order->setPromoUsed(1);
+                    $order->setDiscount($promoDiscount);
+                }
             }
 
             $order->setNotes($data['notes'] ?? null);
@@ -946,10 +997,52 @@ class Service implements InjectionAwareInterface
                 $invoiceService = $this->di['mod_service']('invoice');
 
                 try {
-                    $invoice = $invoiceService->generateForOrder($order);
+                    // Promo lines are added explicitly below so the first
+                    // invoice records a checkout redemption, not a renewal one.
+                    $invoice = $invoiceService->generateForOrder($order, null, false);
                 } catch (InformationException $e) {
                     $this->di['logger']->warning($e->getMessage());
                 }
+
+                if ($promo instanceof \Box\Mod\Product\Entity\Promo && $promoDiscount > 0 && $invoice instanceof Invoice) {
+                    $clientService = $this->di['mod_service']('client');
+                    $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
+                    $invoiceItemService->addNew($invoice, [
+                        'title' => __trans('Discount: :product', [':product' => $order->getTitle()]),
+                        'price' => $promoDiscount * -1,
+                        'quantity' => 1,
+                        'unit' => 'discount',
+                        'rel_id' => (string) $order->getId(),
+                        'taxed' => $clientService->isClientTaxable($client),
+                    ]);
+
+                    $productService = $this->di['mod_service']('Product');
+                    $productService->createPromoRedemption(
+                        $promo,
+                        $client,
+                        $order,
+                        $invoice,
+                        \Box\Mod\Product\Entity\PromoRedemption::PHASE_CHECKOUT,
+                        $promoDiscount,
+                        $currency->getCode(),
+                        $order->getCreatedAt()?->format('Y-m-d H:i:s'),
+                        \Box\Mod\Product\Entity\PromoRedemption::STATUS_RESERVED,
+                    );
+                }
+            }
+
+            if ($promo instanceof \Box\Mod\Product\Entity\Promo && $promoDiscount > 0 && !$invoice instanceof Invoice) {
+                $this->di['mod_service']('Product')->createPromoRedemption(
+                    $promo,
+                    $client,
+                    $order,
+                    null,
+                    \Box\Mod\Product\Entity\PromoRedemption::PHASE_CHECKOUT,
+                    $promoDiscount,
+                    $currency->getCode(),
+                    $order->getCreatedAt()?->format('Y-m-d H:i:s'),
+                    \Box\Mod\Product\Entity\PromoRedemption::STATUS_COMMITTED,
+                );
             }
 
             return $orderId;

@@ -1056,6 +1056,68 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         return $taxService->setupEUTaxes($data);
     }
 
+    /**
+     * Apply an existing promotion to an order on an unpaid invoice.
+     *
+     * @optional string $promo_code - promo code to apply (takes precedence over promo_id)
+     * @optional int $promo_id - promo ID to apply
+     * @optional int $order_id - order on the invoice to discount; required when the invoice covers several orders
+     *
+     * @return float - applied discount amount in the invoice currency
+     */
+    #[RequiredParams(['id' => 'Invoice ID is missing'])]
+    public function promo_add($data): float
+    {
+        $this->checkPermissions('invoice', 'manage_invoices');
+        $this->checkPermissions('product', 'manage_promos');
+
+        $model = $this->_getInvoice($data);
+        [$promo, $order] = $this->resolvePromoAndOrder($data);
+
+        return $this->getService()->promoAddToInvoice($model, $promo, $order);
+    }
+
+    /**
+     * Remove a previously applied promotion from an order on an unpaid invoice.
+     *
+     * @optional string $promo_code - promo code to remove (takes precedence over promo_id)
+     * @optional int $promo_id - promo ID to remove
+     * @optional int $order_id - order on the invoice to remove the discount from; required when the invoice covers several orders
+     *
+     * @return float - removed discount amount in the invoice currency
+     */
+    #[RequiredParams(['id' => 'Invoice ID is missing'])]
+    public function promo_remove($data): float
+    {
+        $this->checkPermissions('invoice', 'manage_invoices');
+        $this->checkPermissions('product', 'manage_promos');
+
+        $model = $this->_getInvoice($data);
+        [$promo, $order] = $this->resolvePromoAndOrder($data);
+
+        return $this->getService()->promoRemoveFromInvoice($model, $promo, $order);
+    }
+
+    /**
+     * @return array{0: \Box\Mod\Product\Entity\Promo, 1: ?Order}
+     */
+    private function resolvePromoAndOrder(array $data): array
+    {
+        $productService = $this->getDi()['mod_service']('Product');
+        $promo = $productService->resolvePromoReference(
+            isset($data['promo_code']) ? (string) $data['promo_code'] : null,
+            isset($data['promo_id']) ? (int) $data['promo_id'] : null
+        ) ?? throw new InformationException('Promo code or promo ID was not passed');
+
+        $order = null;
+        if (!empty($data['order_id'])) {
+            $order = $this->getDi()['em']->getRepository(Order::class)->find((int) $data['order_id'])
+                ?? throw new InformationException('Order not found');
+        }
+
+        return [$promo, $order];
+    }
+
     #[RequiredParams(['id' => 'Invoice ID was not passed'])]
     private function _getInvoice($data)
     {

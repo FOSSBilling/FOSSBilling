@@ -434,6 +434,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional int $maxuses - how many times this promo code can be used
      * @optional string $start_at - date (Y-m-d) when will this promo code be active
      * @optional string $end_at - date (Y-m-d) when this promo code expires
+     * @optional bool $auto_apply - apply automatically when targeting matches, without a code
+     * @optional int $priority - ordering for automatic application (higher wins ties)
+     * @optional bool $stackable - can combine with other automatic promos
      *
      * @return int - new promo code id
      *
@@ -546,6 +549,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional string $start_at - date (Y-m-d) when will this promo code be active
      * @optional string $end_at - date (Y-m-d) when this promo code expires
      * @optional int $used - how many times this promo code was already used
+     * @optional bool $auto_apply - apply automatically when targeting matches, without a code
+     * @optional int $priority - ordering for automatic application (higher wins ties)
+     * @optional bool $stackable - can combine with other automatic promos
      *
      * @return bool
      *

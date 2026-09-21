@@ -339,12 +339,14 @@ test('generates invoice items from order with a recurring promo and casts rel_id
     $clientServiceMock->shouldReceive('isClientTaxable')->with($clientModel)->andReturn(false);
 
     $productServiceMock = Mockery::mock(Box\Mod\Product\Service::class);
-    $productServiceMock->shouldReceive('getRenewalPromoAdjustment')
+    $productServiceMock->shouldReceive('getRenewalPromoAdjustments')
         ->andReturn([
-            'promo' => $promo,
-            'discount_amount' => 5.0,
-            'title' => 'Recurring discount',
-            'currency' => 'USD',
+            [
+                'promo' => $promo,
+                'discount_amount' => 5.0,
+                'title' => 'Recurring discount',
+                'currency' => 'USD',
+            ],
         ]);
     $productServiceMock->shouldReceive('createPromoRedemption')->once()->andReturn(1);
 
@@ -402,7 +404,7 @@ test('generates invoice item from order with an explicit line title override', f
     $clientServiceMock->shouldReceive('isClientTaxable')->with($clientModel)->andReturn(false);
 
     $productServiceMock = Mockery::mock(Box\Mod\Product\Service::class);
-    $productServiceMock->shouldReceive('getRenewalPromoAdjustment')->andReturnNull();
+    $productServiceMock->shouldReceive('getRenewalPromoAdjustments')->andReturn([]);
 
     $di = container();
     $di['em'] = $em;

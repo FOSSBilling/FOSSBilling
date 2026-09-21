@@ -145,6 +145,12 @@
                                     <td><strong>{{ 'Discount:'|trans }}</strong></td>
                                     <td><strong>- {{ (cart.discount * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</strong></td>
                                 </tr>
+                                {% for auto_promo in cart.auto_promos|default([]) %}
+                                <tr>
+                                    <td>{{ auto_promo.title }}</td>
+                                    <td>- {{ (auto_promo.discount * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</td>
+                                </tr>
+                                {% endfor %}
                             {% endif %}
 
                             {% set tax_amount = 0 %}

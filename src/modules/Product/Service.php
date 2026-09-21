@@ -49,6 +49,10 @@ class Service implements InjectionAwareInterface
     final public const string SETUP_AFTER_PAYMENT = 'after_payment';
     final public const string SETUP_MANUAL = 'manual';
 
+    final public const string STACKING_BEST_SINGLE = 'best_single';
+    final public const string STACKING_STACK_ALL = 'stack_all_eligible';
+    final public const string STACKING_PRIORITY_FIRST = 'priority_first';
+
     protected ?\Pimple\Container $di = null;
     protected ?ProductRepository $productRepository = null;
     protected ?ProductCategoryRepository $productCategoryRepository = null;
@@ -1278,6 +1282,9 @@ class Service implements InjectionAwareInterface
             ->setRecurring($model->isRecurring())
             ->setUsed(0)
             ->setMaxUses($model->getMaxUses())
+            ->setAutoApply($model->isAutoApply())
+            ->setPriority($model->getPriority())
+            ->setStackable($model->isStackable())
             ->setProducts($model->getProducts())
             ->setPeriods($model->getPeriods())
             ->setClientGroups($model->getClientGroups())
@@ -1451,6 +1458,88 @@ class Service implements InjectionAwareInterface
     }
 
     /**
+     * Multi-promo variant of createCheckoutPromoRedemptions().
+     *
+     * @param list<Promo>                   $promos                   promos applied to every order in $orders
+     * @param list<Order>                   $orders
+     * @param array<int, array<int, float>> $discountsByOrderAndPromo optional per-order, per-promo discount
+     *                                                                amounts ([orderId => [promoId => amount]]).
+     *                                                                Falls back to the order total discount for
+     *                                                                single-promo calls, matching the legacy behavior.
+     */
+    public function createCheckoutPromoRedemptionsForPromos(
+        array $promos,
+        Client $client,
+        array $orders,
+        ?Invoice $invoice,
+        string $status,
+        array $discountsByOrderAndPromo = [],
+    ): void {
+        if ($promos === [] || $orders === []) {
+            return;
+        }
+
+        $singlePromo = count($promos) === 1;
+        foreach ($orders as $order) {
+            $orderId = (int) $order->getId();
+            $currency = $order->getCurrency();
+            $createdAt = $order->getCreatedAt()?->format('Y-m-d H:i:s');
+
+            foreach ($promos as $promo) {
+                $promoId = (int) $promo->getId();
+                $discount = $discountsByOrderAndPromo[$orderId][$promoId]
+                    ?? ($singlePromo && $order->getDiscount() !== null ? (float) $order->getDiscount() : 0.0);
+
+                $redemption = $this->newPromoRedemption(
+                    $promo,
+                    $client,
+                    $order,
+                    $invoice,
+                    PromoRedemption::PHASE_CHECKOUT,
+                    $discount,
+                    $currency,
+                    $createdAt,
+                    $status,
+                );
+
+                $this->di['em']->persist($redemption);
+            }
+        }
+
+        $this->di['em']->flush();
+    }
+
+    /**
+     * Reserve usage counters for several promos against one order.
+     *
+     * The order keeps the highest-value promo as its primary promo_id for
+     * backward compatibility (renewal lookups, reporting); every promo gets
+     * its own checkout redemption row. promo_recurring is set when any of the
+     * applied promos is recurring.
+     *
+     * @param list<Promo> $promos
+     */
+    public function reservePromosForOrder(array $promos, Order $order): void
+    {
+        if ($promos === []) {
+            return;
+        }
+
+        $recurring = false;
+        foreach ($promos as $promo) {
+            $this->usePromo($promo);
+            $promoData = $this->getPromoSourceArray($promo);
+            $recurring = $recurring || !empty($promoData['recurring']);
+        }
+
+        $primary = $promos[0];
+        $order->setPromoId((int) $primary->getId());
+        $order->setPromoRecurring($recurring);
+        $order->setPromoUsed(1);
+        $this->di['em']->persist($order);
+    }
+
+    /**
      * Release promo reservations left behind by a failed checkout.
      *
      * A normal checkout runs through the shared Doctrine transaction, so a
@@ -1498,6 +1587,242 @@ class Service implements InjectionAwareInterface
         });
     }
 
+    public function getPromoStackingMode(): string
+    {
+        try {
+            $mode = $this->di['mod_service']('system')->getParamValue('promo_stacking_mode', self::STACKING_BEST_SINGLE);
+        } catch (\Exception) {
+            return self::STACKING_BEST_SINGLE;
+        }
+
+        return match ($mode) {
+            self::STACKING_STACK_ALL,
+            self::STACKING_PRIORITY_FIRST => $mode,
+            default => self::STACKING_BEST_SINGLE,
+        };
+    }
+
+    /**
+     * Find automatic promotions eligible for the given client and product lines.
+     *
+     * @param list<array{product: Product, config?: array}> $lines product lines to test applicability against
+     *
+     * @return list<array{promo: Promo, discount: float}> eligible promos with their total discount
+     *                                                    across all applicable lines (base currency)
+     */
+    public function findEligibleAutoPromos(Client $client, array $lines): array
+    {
+        if ($lines === []) {
+            return [];
+        }
+
+        $eligible = [];
+        foreach ($this->getPromoRepository()->findAutoApplyPromos() as $promo) {
+            if (!$this->promoCanBeApplied($promo)) {
+                continue;
+            }
+
+            if (!$this->isPromoAvailableForClientGroup($promo, $client)) {
+                continue;
+            }
+
+            if (!$this->canClientUsePromo($client, $promo)) {
+                continue;
+            }
+
+            $discount = 0.0;
+            foreach ($lines as $line) {
+                $product = $line['product'];
+                $config = $line['config'] ?? [];
+                if (!$this->isPromoApplicableToProduct($promo, $product, $config)) {
+                    continue;
+                }
+
+                $discount += (float) $this->getProductDiscount($product, $promo, $config);
+            }
+
+            if ($discount <= 0) {
+                continue;
+            }
+
+            $eligible[] = ['promo' => $promo, 'discount' => $discount];
+        }
+
+        return $eligible;
+    }
+
+    /**
+     * Narrow eligible automatic promos down to the ones that actually apply,
+     * according to the configured stacking mode.
+     *
+     * @param list<array{promo: Promo, discount: float}> $eligible
+     *
+     * @return list<Promo>
+     */
+    public function resolvePromosToApply(array $eligible): array
+    {
+        if ($eligible === []) {
+            return [];
+        }
+
+        usort($eligible, static fn (array $a, array $b): int => $b['promo']->getPriority() <=> $a['promo']->getPriority()
+            ?: $b['discount'] <=> $a['discount']);
+
+        $mode = $this->getPromoStackingMode();
+
+        if ($mode === self::STACKING_PRIORITY_FIRST) {
+            return [$eligible[0]['promo']];
+        }
+
+        if ($mode === self::STACKING_BEST_SINGLE) {
+            $best = $eligible[0];
+            foreach ($eligible as $candidate) {
+                if ($candidate['discount'] > $best['discount']) {
+                    $best = $candidate;
+                }
+            }
+
+            return [$best['promo']];
+        }
+
+        // STACKING_STACK_ALL: every stackable promo applies, plus at most one
+        // non-stackable promo (the most valuable one).
+        $result = [];
+        $bestNonStackable = null;
+        foreach ($eligible as $candidate) {
+            if ($candidate['promo']->isStackable()) {
+                $result[] = $candidate['promo'];
+
+                continue;
+            }
+
+            if ($bestNonStackable === null || $candidate['discount'] > $bestNonStackable['discount']) {
+                $bestNonStackable = $candidate;
+            }
+        }
+
+        if ($bestNonStackable !== null) {
+            $result[] = $bestNonStackable['promo'];
+        }
+
+        // Highest-value promo first so it becomes the order's primary promo.
+        $discounts = [];
+        foreach ($eligible as $candidate) {
+            $discounts[(int) $candidate['promo']->getId()] = $candidate['discount'];
+        }
+
+        usort($result, static fn (Promo $a, Promo $b): int => ($discounts[(int) $b->getId()] ?? 0.0) <=> ($discounts[(int) $a->getId()] ?? 0.0));
+
+        return $result;
+    }
+
+    /**
+     * Convenience wrapper: eligible automatic promos narrowed by stacking mode.
+     *
+     * @param list<array{product: Product, config?: array}> $lines
+     *
+     * @return list<Promo>
+     */
+    public function resolveAutoPromosForLines(Client $client, array $lines): array
+    {
+        return $this->resolvePromosToApply($this->findEligibleAutoPromos($client, $lines));
+    }
+
+    /**
+     * Resolve an admin-supplied promo reference (code wins over id).
+     *
+     * Returns null when neither is given. Throws when a given reference does
+     * not resolve to a usable promo.
+     */
+    public function resolvePromoReference(?string $code, ?int $id): ?Promo
+    {
+        if ($code !== null && trim($code) !== '') {
+            $promo = $this->findActivePromoByCode(trim($code));
+            if (!$promo instanceof Promo) {
+                throw new \FOSSBilling\InformationException('The promo code has expired or does not exist');
+            }
+
+            return $promo;
+        }
+
+        if ($id !== null && $id > 0) {
+            $promo = $this->findPromoById($id);
+            if (!$this->promoCanBeApplied($promo)) {
+                throw new \FOSSBilling\InformationException('The promo code has expired or does not exist');
+            }
+
+            return $promo;
+        }
+
+        return null;
+    }
+
+    /**
+     * Release reserved checkout redemptions for one promo on one order (used
+     * when an admin removes a promo from an unpaid invoice). Only reserved
+     * rows are eligible; usage counters are decremented accordingly.
+     *
+     * @return int number of released redemptions
+     */
+    public function releaseCheckoutPromoRedemptions(Order $order, Promo $promo, string $reason, ?Invoice $invoice = null): int
+    {
+        $criteria = [
+            'clientOrderId' => (int) $order->getId(),
+            'promo' => $promo,
+            'phase' => PromoRedemption::PHASE_CHECKOUT,
+            'status' => PromoRedemption::STATUS_RESERVED,
+        ];
+        if ($invoice instanceof Invoice) {
+            $criteria['invoiceId'] = (int) $invoice->getId();
+        }
+
+        $redemptions = $this->getPromoRedemptionRepository()->findBy($criteria);
+        if ($redemptions === []) {
+            return 0;
+        }
+
+        $count = count($redemptions);
+        $this->releasePromoRedemptions($redemptions, $reason);
+
+        return $count;
+    }
+
+    /**
+     * Recurring promos previously applied to an order at checkout, excluding
+     * the order's primary promo.
+     *
+     * @return list<Promo>
+     */
+    public function findCommittedCheckoutPromosForOrder(Order $order, ?int $excludePromoId = null): array
+    {
+        $redemptions = $this->getPromoRedemptionRepository()->findBy([
+            'clientOrderId' => (int) $order->getId(),
+            'phase' => PromoRedemption::PHASE_CHECKOUT,
+            'status' => PromoRedemption::STATUS_COMMITTED,
+        ]);
+
+        $promos = [];
+        foreach ($redemptions as $redemption) {
+            $promo = $redemption->getPromo();
+            if (!$promo instanceof Promo) {
+                continue;
+            }
+
+            $promoId = (int) $promo->getId();
+            if ($excludePromoId !== null && $promoId === $excludePromoId) {
+                continue;
+            }
+
+            if (!$promo->isRecurring()) {
+                continue;
+            }
+
+            $promos[$promoId] = $promo;
+        }
+
+        return array_values($promos);
+    }
+
     /**
      * @return array{
      *     promo: Promo,
@@ -1508,6 +1833,82 @@ class Service implements InjectionAwareInterface
      */
     public function getRenewalPromoAdjustment(Order $order, float $price, float $quantity): ?array
     {
+        return $this->getRenewalPromoAdjustments($order, $price, $quantity)[0] ?? null;
+    }
+
+    /**
+     * Renewal adjustments for the order's primary promo plus any additional
+     * recurring promos stacked onto it at checkout. The total is capped at the
+     * order total.
+     *
+     * @return list<array{
+     *     promo: Promo,
+     *     discount_amount: float,
+     *     title: string,
+     *     currency: string
+     * }>
+     */
+    public function getRenewalPromoAdjustments(Order $order, float $price, float $quantity): array
+    {
+        $orderTotal = $price * $quantity;
+        if ($orderTotal <= 0) {
+            return [];
+        }
+
+        // Additional stacked promos are valued first so the primary promo can
+        // be charged with the remainder of the historical order discount.
+        // Orders without a primary promo cannot have stacked promos (applying
+        // promos always records a primary), so skip the lookup entirely.
+        $additionalAmounts = [];
+        $additionalPromos = ($order->isPromoRecurring() && $order->getPromoId())
+            ? $this->findCommittedCheckoutPromosForOrder($order, $order->getPromoId())
+            : [];
+        foreach ($additionalPromos as $promo) {
+            $discountAmount = $this->getRecurringPromoDiscountForOrder($order, $promo);
+            if ($discountAmount !== null && $discountAmount > 0) {
+                $additionalAmounts[(int) $promo->getId()] = ['promo' => $promo, 'discount' => $discountAmount];
+            }
+        }
+
+        $adjustments = [];
+        $allocated = 0.0;
+
+        $primary = $this->getPrimaryRenewalPromoAdjustment($order, $price, $quantity, array_sum(array_column($additionalAmounts, 'discount')));
+        if ($primary !== null) {
+            $adjustments[] = $primary;
+            $allocated += $primary['discount_amount'];
+        }
+
+        foreach ($additionalAmounts as $entry) {
+            $remaining = $orderTotal - $allocated;
+            if ($remaining <= 0) {
+                break;
+            }
+
+            $discountAmount = min($entry['discount'], $remaining);
+            $allocated += $discountAmount;
+
+            $adjustments[] = [
+                'promo' => $entry['promo'],
+                'discount_amount' => $discountAmount,
+                'title' => $this->getPromoDiscountTitle($entry['promo'], $order->getCurrency() ?? ''),
+                'currency' => $order->getCurrency() ?? '',
+            ];
+        }
+
+        return $adjustments;
+    }
+
+    /**
+     * @return array{
+     *     promo: Promo,
+     *     discount_amount: float,
+     *     title: string,
+     *     currency: string
+     * }|null
+     */
+    private function getPrimaryRenewalPromoAdjustment(Order $order, float $price, float $quantity, float $stackedDiscount): ?array
+    {
         $promoRecurring = $order->isPromoRecurring();
         $promoId = $order->getPromoId();
         if (!$promoRecurring || !$promoId) {
@@ -1516,6 +1917,9 @@ class Service implements InjectionAwareInterface
 
         $productId = $order->getProductId();
         $discountAmount = (float) ($order->getDiscount() ?? 0);
+        // With stacked promos the order discount is the combined total; the
+        // primary promo only owns the remainder after the stacked shares.
+        $discountAmount = max(0.0, $discountAmount - $stackedDiscount);
         $currency = $order->getCurrency() ?? '';
         $product = $this->findProductById((int) $productId);
 
@@ -1556,6 +1960,47 @@ class Service implements InjectionAwareInterface
             'title' => $this->getPromoDiscountTitle($promo, $currency),
             'currency' => $currency,
         ];
+    }
+
+    /**
+     * Renewal discount for one specific recurring promo on an order.
+     *
+     * Non-domain products reuse the promo's recorded checkout amount so
+     * admin price overrides are respected; domain products are repriced from
+     * current registrar data, matching the primary-promo behavior.
+     */
+    private function getRecurringPromoDiscountForOrder(Order $order, Promo $promo): ?float
+    {
+        $product = $this->findProductById((int) $order->getProductId());
+        $currency = $order->getCurrency() ?? '';
+
+        if ($product->getType() === self::DOMAIN) {
+            $config = json_decode($order->getConfig() ?? '', true) ?? [];
+            $discountAmount = $this->getRenewalProductDiscount($product, $promo, $config);
+
+            $currencyService = $this->di['mod_service']('Currency');
+            $currencyRepository = $currencyService->getCurrencyRepository();
+            $rate = $currencyRepository->getRateByCode($currency);
+            if ($rate === null) {
+                throw new \FOSSBilling\Exception("Currency conversion rate cannot be determined for code {$currency}");
+            }
+
+            return $discountAmount * $rate;
+        }
+
+        $redemptions = $this->getPromoRedemptionRepository()->findBy([
+            'clientOrderId' => (int) $order->getId(),
+            'promo' => $promo,
+            'phase' => PromoRedemption::PHASE_CHECKOUT,
+            'status' => PromoRedemption::STATUS_COMMITTED,
+        ]);
+
+        $discountAmount = 0.0;
+        foreach ($redemptions as $redemption) {
+            $discountAmount += (float) ($redemption->getDiscountAmount() ?? 0);
+        }
+
+        return $discountAmount > 0 ? $discountAmount : null;
     }
 
     public function toPromoApiArray(Promo $model, $deep = false, $identity = null)
@@ -2514,6 +2959,9 @@ class Service implements InjectionAwareInterface
             ->setRecurring((bool) ($data['recurring'] ?? $promo->isRecurring()))
             ->setUsed(isset($data['used']) ? (int) $data['used'] : $promo->getUsed())
             ->setMaxUses(isset($data['maxuses']) ? (int) $data['maxuses'] : $promo->getMaxUses())
+            ->setAutoApply((bool) ($data['auto_apply'] ?? $promo->isAutoApply()))
+            ->setPriority(isset($data['priority']) ? (int) $data['priority'] : $promo->getPriority())
+            ->setStackable((bool) ($data['stackable'] ?? $promo->isStackable()))
             ->setProducts($this->encodePromoSelection($data['products'] ?? $this->decodePromoSelection($promo->getProducts())))
             ->setPeriods($this->encodePromoSelection($data['periods'] ?? $this->decodePromoSelection($promo->getPeriods())))
             ->setClientGroups($this->encodePromoSelection($data['client_groups'] ?? $this->decodePromoSelection($promo->getClientGroups())))

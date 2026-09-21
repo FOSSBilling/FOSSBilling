@@ -78,6 +78,11 @@ class PromoRedemptionRepository extends EntityRepository
                 ->setParameter('clientOrderId', $data['client_order_id']);
         }
 
+        if (!empty($data['invoice_id'])) {
+            $qb->andWhere('pr.invoiceId = :invoiceId')
+                ->setParameter('invoiceId', $data['invoice_id']);
+        }
+
         if (!empty($data['phase'])) {
             $qb->andWhere('pr.phase = :phase')
                 ->setParameter('phase', $data['phase']);

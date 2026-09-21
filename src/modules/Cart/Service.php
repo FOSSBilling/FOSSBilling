@@ -508,12 +508,17 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('Currency not found and no default currency is configured');
         }
 
+        // Manual promo codes always win; automatic promos only resolve when no
+        // code was entered, so clients are never surprised by stacked savings.
+        $effective = $this->getEffectiveCartPromos($model);
+        $promos = $effective['promos'];
+
         $items = [];
         $total = 0;
         $cart_discount = 0;
         $items_discount = 0;
         foreach ($products as $product) {
-            $p = $this->cartProductToApiArray($product, $model, $products);
+            $p = $this->cartProductToApiArray($product, $model, $products, $promos);
             $total += $p['total'] + $p['setup_price'];
             $items_discount += $p['discount'];
             $items[] = $p;
@@ -527,8 +532,28 @@ class Service implements InjectionAwareInterface
             $promocode = null;
         }
 
+        $autoPromos = [];
+        if ($effective['source'] === 'auto') {
+            $promoTotals = [];
+            foreach ($products as $product) {
+                foreach ($this->getItemPromoDiscountShares($product, $promos, $model, $products) as $promoId => $share) {
+                    $promoTotals[$promoId] = ($promoTotals[$promoId] ?? 0.0) + $share;
+                }
+            }
+
+            foreach ($promos as $promo) {
+                $autoPromos[] = [
+                    'code' => $promo->getCode(),
+                    'title' => $this->getProductService()->getPromoDiscountTitle($promo, $currency->getCode()),
+                    'discount' => $promoTotals[(int) $promo->getId()] ?? 0.0,
+                ];
+            }
+        }
+
         return [
             'promocode' => $promocode,
+            'promo_source' => $effective['source'],
+            'auto_promos' => $autoPromos,
             'discount' => $items_discount,
             'subtotal' => $total,
             'total' => $total - $items_discount,
@@ -536,6 +561,76 @@ class Service implements InjectionAwareInterface
             'currency' => $currency->toApiArray(),
             'subscribable' => $this->getSubscriptionPeriodFromItems($items) !== null,
         ];
+    }
+
+    /**
+     * Promos in effect for a cart: the manual code when one is set, otherwise
+     * the eligible automatic promos for the (logged-in) client.
+     *
+     * @return array{source: 'manual'|'auto'|null, promos: list<Promo>}
+     */
+    public function getEffectiveCartPromos(Cart $cart, ?Client $client = null, ?array $cartProducts = null): array
+    {
+        $promoId = $cart->getPromoId();
+        if ($promoId) {
+            return [
+                'source' => 'manual',
+                'promos' => [$this->getProductService()->findPromoById((int) $promoId)],
+            ];
+        }
+
+        $client ??= $this->getLoggedInClientOrNull();
+        if (!$client instanceof Client) {
+            return ['source' => null, 'promos' => []];
+        }
+
+        $lines = $this->getCartPromoLines($cart, $cartProducts);
+        if ($lines === []) {
+            return ['source' => null, 'promos' => []];
+        }
+
+        try {
+            $promos = $this->getProductService()->resolveAutoPromosForLines($client, $lines);
+        } catch (\Throwable $e) {
+            $this->di['logger']->warning('Automatic promo resolution failed: {exception}', ['exception' => $e]);
+
+            return ['source' => null, 'promos' => []];
+        }
+
+        return [
+            'source' => $promos === [] ? null : 'auto',
+            'promos' => $promos,
+        ];
+    }
+
+    /**
+     * @return list<array{product: Product, config: array}>
+     */
+    private function getCartPromoLines(Cart $cart, ?array $cartProducts = null): array
+    {
+        $lines = [];
+        foreach ($cartProducts ?? $this->getCartProducts($cart) as $cartProduct) {
+            try {
+                $product = $this->getProductService()->findProductById((int) $cartProduct->getProductId());
+            } catch (\Throwable) {
+                continue;
+            }
+
+            $lines[] = ['product' => $product, 'config' => $this->getItemConfig($cartProduct)];
+        }
+
+        return $lines;
+    }
+
+    private function getLoggedInClientOrNull(): ?Client
+    {
+        try {
+            $client = $this->di['loggedin_client'];
+        } catch (\Exception) {
+            return null;
+        }
+
+        return $client instanceof Client ? $client : null;
     }
 
     private function getSubscriptionPeriodFromItems(array $items): ?string
@@ -592,6 +687,35 @@ class Service implements InjectionAwareInterface
     }
 
     /**
+     * Automatic promos eligible right now, minus any that fail the fail-fast
+     * checkout guards (changed limits, group moves, prior use).
+     *
+     * @return list<Promo>
+     */
+    private function filterUsableAutoPromos(Cart $cart, Client $client, ?array $cartProducts = null): array
+    {
+        $effective = $this->getEffectiveCartPromos($cart, $client, $cartProducts);
+        if ($effective['source'] !== 'auto') {
+            return [];
+        }
+
+        $usable = [];
+        foreach ($effective['promos'] as $promo) {
+            if (!$this->isClientAbleToUsePromo($client, $promo)) {
+                continue;
+            }
+
+            if (!$this->getProductService()->isPromoAvailableForClientGroup($promo, $client)) {
+                continue;
+            }
+
+            $usable[] = $promo;
+        }
+
+        return $usable;
+    }
+
+    /**
      * In-transaction re-check of the once-per-client limit. The fail-fast check in
      * checkoutCart() runs before the transaction opens, so concurrent checkouts can all pass
      * it; the client-row mutex serializes them here instead. Throws the same exception as a
@@ -601,6 +725,16 @@ class Service implements InjectionAwareInterface
     {
         if ($this->getProductService()->clientHasActivePromoApplicationForUpdate($client, $promo)) {
             throw new \FOSSBilling\InformationException('You have already used this promo code. Please remove the promo code and checkout again.', null, 9874);
+        }
+    }
+
+    /**
+     * @param list<Promo> $promos
+     */
+    private function assertClientAbleToUsePromosForUpdate(Client $client, array $promos): void
+    {
+        foreach ($promos as $promo) {
+            $this->assertClientAbleToUsePromoForUpdate($client, $promo);
         }
     }
 
@@ -695,8 +829,8 @@ class Service implements InjectionAwareInterface
         $promoProductService = $promoId ? $this->getProductService() : null;
         $promo = $promoId ? $promoProductService?->findPromoById($promoId) : null;
 
-        $reservedOrderIds = [];
-        $reservedCount = 0;
+        $reservedPromoUsage = [];
+        $discountsByOrderAndPromo = [];
         $stockReservedOrders = [];
 
         if (!$client->getCurrency()) {
@@ -705,9 +839,23 @@ class Service implements InjectionAwareInterface
         }
 
         try {
-            return $this->di['em']->wrapInTransaction(function () use ($ca, $cart, $client, $currency, $currencyCode, $gateway_id, $taxed, $promo, $promoProductService, $promoId, &$reservedOrderIds, &$reservedCount, &$stockReservedOrders) {
+            return $this->di['em']->wrapInTransaction(function () use ($ca, $cart, $client, $currency, $currencyCode, $gateway_id, $taxed, $promo, $promoProductService, &$reservedPromoUsage, &$discountsByOrderAndPromo, &$stockReservedOrders) {
+                $effectivePromos = [];
                 if ($promo instanceof Promo) {
                     $this->assertClientAbleToUsePromoForUpdate($client, $promo);
+                    $effectivePromos = [$promo];
+                }
+
+                $cartProducts = $this->getCartProducts($cart);
+
+                if ($effectivePromos === []) {
+                    // A manual code suppresses automatic promos; resolve here
+                    // so totals, reservations, and redemptions share one set.
+                    $effectivePromos = $this->filterUsableAutoPromos($cart, $client, $cartProducts);
+                    if ($effectivePromos !== []) {
+                        $promoProductService ??= $this->getProductService();
+                        $this->assertClientAbleToUsePromosForUpdate($client, $effectivePromos);
+                    }
                 }
 
                 if ($client->getCurrency() != $currencyCode) {
@@ -723,8 +871,8 @@ class Service implements InjectionAwareInterface
                 $lastGroupIdByProductId = [];
                 $familyIndex = 0;
 
-                foreach ($this->getCartProducts($cart) as $p) {
-                    $item = $this->cartProductToApiArray($p);
+                foreach ($cartProducts as $p) {
+                    $item = $this->cartProductToApiArray($p, $cart, $cartProducts, $effectivePromos);
                     // Family bookkeeping is cart-transient: consume it for
                     // grouping, then keep it out of the stored order config.
                     $familyToken = $item[self::CART_FAMILY_KEY] ?? null;
@@ -762,7 +910,9 @@ class Service implements InjectionAwareInterface
 
                     $order = new Order();
                     $order->setClientId((int) $client->getId());
-                    $order->setPromoId($promoId);
+                    // Primary promo for reporting/renewal lookups; every promo
+                    // gets its own redemption row below.
+                    $order->setPromoId($effectivePromos === [] ? null : (int) $effectivePromos[0]->getId());
                     $order->setProductId($item['product_id']);
                     $order->setFormId($item['form_id']);
 
@@ -796,10 +946,22 @@ class Service implements InjectionAwareInterface
                     $stockReservedOrders[] = $order;
 
                     // Reserve promo capacity at order creation time.
-                    if ($promo instanceof Promo) {
-                        $promoProductService->reservePromoForOrder($promo, $order);
-                        $reservedOrderIds[] = $order->getId();
-                        ++$reservedCount;
+                    if ($effectivePromos !== []) {
+                        $promoProductService->reservePromosForOrder($effectivePromos, $order);
+                        $orderId = (int) $order->getId();
+
+                        // Split the capped item discount across promos so each
+                        // redemption row carries its own share for renewals.
+                        $shares = $this->getItemPromoDiscountShares($p, $effectivePromos, $cart, $cartProducts);
+                        foreach ($effectivePromos as $effectivePromo) {
+                            $effectivePromoId = (int) $effectivePromo->getId();
+                            $share = $shares[$effectivePromoId] ?? 0.0;
+                            $discountsByOrderAndPromo[$orderId][$effectivePromoId] = $share * $currency->getConversionRate();
+
+                            $reservedPromoUsage[$effectivePromoId] ??= ['promo' => $effectivePromo, 'orderIds' => [], 'count' => 0];
+                            $reservedPromoUsage[$effectivePromoId]['orderIds'][] = $orderId;
+                            ++$reservedPromoUsage[$effectivePromoId]['count'];
+                        }
                     }
 
                     $orderService = $this->di['mod_service']('order');
@@ -865,14 +1027,14 @@ class Service implements InjectionAwareInterface
                     }
                 }
 
-                if ($promo instanceof Promo) {
+                if ($effectivePromos !== []) {
                     $redemptionStatus = $invoiceModel instanceof Invoice
                         && $invoiceModel->getStatus() === Invoice::STATUS_UNPAID
                         ? \Box\Mod\Product\Entity\PromoRedemption::STATUS_RESERVED
                         : \Box\Mod\Product\Entity\PromoRedemption::STATUS_COMMITTED;
                     $checkoutInvoice = $invoiceModel instanceof Invoice ? $invoiceModel : null;
 
-                    $promoProductService->createCheckoutPromoRedemptions($promo, $client, $orders, $checkoutInvoice, $redemptionStatus);
+                    $promoProductService->createCheckoutPromoRedemptionsForPromos($effectivePromos, $client, $orders, $checkoutInvoice, $redemptionStatus, $discountsByOrderAndPromo);
                 }
 
                 // Activate orders after the checkout state is durably persisted.
@@ -915,13 +1077,13 @@ class Service implements InjectionAwareInterface
                 ];
             });
         } catch (\Throwable $e) {
-            if ($promo instanceof Promo && $reservedCount > 0) {
+            foreach ($reservedPromoUsage as $usage) {
                 try {
-                    $promoProductService->compensateCheckoutPromoFailure($promo, $reservedOrderIds, $reservedCount);
+                    $this->getProductService()->compensateCheckoutPromoFailure($usage['promo'], $usage['orderIds'], $usage['count']);
                 } catch (\Throwable $compensationError) {
                     $this->di['logger']->error('Failed to compensate promo checkout failure', [
                         'exception' => $compensationError,
-                        'promo_id' => $promo->getId(),
+                        'promo_id' => $usage['promo']->getId(),
                     ]);
                 }
             }
@@ -1008,6 +1170,7 @@ class Service implements InjectionAwareInterface
         CartProduct $model,
         ?Cart $cart = null,
         ?array $cartProducts = null,
+        ?array $promosOverride = null,
     ): array {
         $productView = $this->getProductService()->getCartProductViewData($model);
         $config = $productView['config'];
@@ -1015,7 +1178,7 @@ class Service implements InjectionAwareInterface
         $price = $productView['price'];
         $qty = $productView['quantity'];
 
-        [$discount_price, $discount_setup] = $this->getProductDiscount($model, $setup, $cart, $cartProducts);
+        [$discount_price, $discount_setup] = $this->getProductDiscount($model, $setup, $cart, $cartProducts, $promosOverride);
 
         $discount_total = $discount_price + $discount_setup;
 
@@ -1047,18 +1210,23 @@ class Service implements InjectionAwareInterface
         $setup,
         ?Cart $cart = null,
         ?array $cartProducts = null,
+        ?array $promosOverride = null,
     ): array {
         $cart ??= $cartProduct->getCart();
         if (!$cart instanceof Cart) {
             throw new \FOSSBilling\Exception('Cart not found');
         }
-        $discount_price = $this->getRelatedItemsDiscount($cart, $cartProduct, $cartProducts);
-        $discount_setup = 0;
-        if ($cart->getPromoId()) {
-            $promo = $this->getProductService()->findPromoById((int) $cart->getPromoId());
-            // Promo discount should override related item discount
-            $discount_price = $this->getItemPromoDiscount($cartProduct, $promo);
 
+        $promos = $promosOverride ?? $this->getCartManualPromo($cart);
+        if ($promos === []) {
+            return [$this->getRelatedItemsDiscount($cart, $cartProduct, $cartProducts), 0];
+        }
+
+        $shares = $this->getItemPromoDiscountShares($cartProduct, $promos, $cart, $cartProducts);
+        $discount_price = array_sum($shares);
+
+        $discount_setup = 0;
+        foreach ($promos as $promo) {
             $promoApplies = $this->getProductService()->isPromoApplicableToProductById(
                 (int) $cartProduct->getProductId(),
                 $promo,
@@ -1067,9 +1235,71 @@ class Service implements InjectionAwareInterface
 
             if ($promo->isFreeSetup() && $promoApplies) {
                 $discount_setup = $setup;
+
+                break;
             }
         }
 
         return [$discount_price, $discount_setup];
+    }
+
+    private function getCartManualPromo(Cart $cart): array
+    {
+        if (!$cart->getPromoId()) {
+            return [];
+        }
+
+        return [$this->getProductService()->findPromoById((int) $cart->getPromoId())];
+    }
+
+    /**
+     * Split one cart item's price discount across several promos.
+     *
+     * Shares add up to the item's capped discount_price, so per-promo amounts
+     * stay consistent with what is actually charged and recorded.
+     *
+     * @param list<Promo> $promos
+     *
+     * @return array<int, float> promo id => discount share (base currency)
+     */
+    public function getItemPromoDiscountShares(
+        CartProduct $cartProduct,
+        array $promos,
+        ?Cart $cart = null,
+        ?array $cartProducts = null,
+    ): array {
+        $cart ??= $cartProduct->getCart();
+        if (!$cart instanceof Cart) {
+            throw new \FOSSBilling\Exception('Cart not found');
+        }
+
+        $raw = [];
+        foreach ($promos as $promo) {
+            $raw[(int) $promo->getId()] = (float) $this->getItemPromoDiscount($cartProduct, $promo);
+        }
+
+        $rawTotal = array_sum($raw);
+        if ($rawTotal <= 0) {
+            return array_map(static fn (): float => 0.0, $raw);
+        }
+
+        $productView = $this->getProductService()->getCartProductViewData($cartProduct);
+        $subtotal = (float) $productView['price'] * (float) $productView['quantity'];
+        $cappedTotal = min($rawTotal, $subtotal);
+
+        $shares = [];
+        foreach ($raw as $promoId => $amount) {
+            $shares[$promoId] = round($amount / $rawTotal * $cappedTotal, 2);
+        }
+
+        // Rounding can leave the shares a cent off the capped total; fold the
+        // remainder into the largest share so they always reconcile.
+        $drift = round($cappedTotal - array_sum($shares), 2);
+        if ($drift != 0.0) {
+            $largest = array_keys($shares, max($shares))[0];
+            $shares[$largest] = round($shares[$largest] + $drift, 2);
+        }
+
+        return $shares;
     }
 }

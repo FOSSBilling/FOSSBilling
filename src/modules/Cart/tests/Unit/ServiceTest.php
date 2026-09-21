@@ -814,13 +814,14 @@ test('createFromCart with promo entity uses product promo service', function ():
     $productService->shouldReceive('findPromoById')->once()->with(7)->andReturn($promo);
     $productService->shouldReceive('clientHasActivePromoApplicationForUpdate')->once()->with($client, $promo)->andReturn(false);
     $productService->shouldReceive('reserveStockForOrder')->once()->with(Mockery::type(Order::class));
-    $productService->shouldReceive('reservePromoForOrder')->once()->with($promo, Mockery::type(Order::class));
-    $productService->shouldReceive('createCheckoutPromoRedemptions')->once()->with(
-        $promo,
+    $productService->shouldReceive('reservePromosForOrder')->once()->with([$promo], Mockery::type(Order::class));
+    $productService->shouldReceive('createCheckoutPromoRedemptionsForPromos')->once()->with(
+        [$promo],
         $client,
         Mockery::on(fn (array $orders): bool => count($orders) === 1 && $orders[0] instanceof Order),
         null,
-        PromoRedemption::STATUS_COMMITTED
+        PromoRedemption::STATUS_COMMITTED,
+        [0 => [7 => 0.0]]
     );
 
     $product = new Product();
@@ -853,7 +854,7 @@ test('createFromCart with promo entity uses product promo service', function ():
         'total' => 0,
     ]);
     $serviceMock->shouldReceive('getCartProducts')->once()->with($cart)->andReturn([$cartProduct]);
-    $serviceMock->shouldReceive('cartProductToApiArray')->once()->with($cartProduct)->andReturn([
+    $serviceMock->shouldReceive('cartProductToApiArray')->once()->with($cartProduct, $cart, [$cartProduct], [$promo])->andReturn([
         'product_id' => 5,
         'form_id' => null,
         'title' => 'Example product',
@@ -867,6 +868,7 @@ test('createFromCart with promo entity uses product promo service', function ():
         'discount_setup' => 0,
         'notes' => null,
     ]);
+    $serviceMock->shouldReceive('getItemPromoDiscountShares')->once()->with($cartProduct, [$promo], $cart, [$cartProduct])->andReturn([7 => 0.0]);
     $serviceMock->shouldReceive('isStockAvailable')->once()->with($product, 1)->andReturn(true);
 
     $productService->shouldReceive('findProductById')->twice()->with(5)->andReturn($product);
@@ -921,8 +923,8 @@ test('createFromCart aborts inside the transaction when the once-per-client guar
     $productService->shouldReceive('findPromoById')->once()->with(7)->andReturn($promo);
     // A concurrent checkout committed first: the in-transaction guard sees it.
     $productService->shouldReceive('clientHasActivePromoApplicationForUpdate')->once()->with($client, $promo)->andReturn(true);
-    $productService->shouldNotReceive('reservePromoForOrder');
-    $productService->shouldNotReceive('createCheckoutPromoRedemptions');
+    $productService->shouldNotReceive('reservePromosForOrder');
+    $productService->shouldNotReceive('createCheckoutPromoRedemptionsForPromos');
 
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('wrapInTransaction')->once()->with(Mockery::type(Closure::class))->andReturnUsing(fn (Closure $callback) => $callback());
@@ -1022,7 +1024,7 @@ test('createFromCart sets the unpaid invoice id on orders when checkout produces
         'total' => 100,
     ]);
     $serviceMock->shouldReceive('getCartProducts')->once()->with($cart)->andReturn([$cartProduct]);
-    $serviceMock->shouldReceive('cartProductToApiArray')->once()->with($cartProduct)->andReturn([
+    $serviceMock->shouldReceive('cartProductToApiArray')->once()->with($cartProduct, $cart, [$cartProduct], [])->andReturn([
         'product_id' => 5,
         'form_id' => null,
         'title' => 'Example product',
@@ -1363,8 +1365,8 @@ test('createFromCart compensates promo usage on transaction failure', function (
     $productService->shouldReceive('findPromoById')->once()->with(7)->andReturn($promo);
     $productService->shouldReceive('clientHasActivePromoApplicationForUpdate')->once()->with($client, $promo)->andReturn(false);
     $productService->shouldReceive('reserveStockForOrder')->once()->with(Mockery::type(Order::class));
-    $productService->shouldReceive('reservePromoForOrder')->once()->with($promo, Mockery::type(Order::class));
-    $productService->shouldReceive('createCheckoutPromoRedemptions')
+    $productService->shouldReceive('reservePromosForOrder')->once()->with([$promo], Mockery::type(Order::class));
+    $productService->shouldReceive('createCheckoutPromoRedemptionsForPromos')
         ->andThrow(new RuntimeException('Doctrine flush failed'));
     $productService->shouldReceive('compensateCheckoutPromoFailure')
         ->once()
@@ -1398,7 +1400,7 @@ test('createFromCart compensates promo usage on transaction failure', function (
         'total' => 0,
     ]);
     $serviceMock->shouldReceive('getCartProducts')->once()->with($cart)->andReturn([$cartProduct]);
-    $serviceMock->shouldReceive('cartProductToApiArray')->once()->with($cartProduct)->andReturn([
+    $serviceMock->shouldReceive('cartProductToApiArray')->once()->with($cartProduct, $cart, [$cartProduct], [$promo])->andReturn([
         'product_id' => 5,
         'form_id' => null,
         'title' => 'Example product',
@@ -1412,6 +1414,7 @@ test('createFromCart compensates promo usage on transaction failure', function (
         'discount_setup' => 0,
         'notes' => null,
     ]);
+    $serviceMock->shouldReceive('getItemPromoDiscountShares')->once()->with($cartProduct, [$promo], $cart, [$cartProduct])->andReturn([7 => 0.0]);
     $serviceMock->shouldReceive('isStockAvailable')->once()->with($product, 1)->andReturn(true);
 
     $productService->shouldReceive('findProductById')->once()->with(5)->andReturn($product);
@@ -1465,10 +1468,10 @@ test('createFromCart releases reserved stock on transaction failure', function (
     $productService->shouldReceive('findPromoById')->once()->with(7)->andReturn($promo);
     $productService->shouldReceive('clientHasActivePromoApplicationForUpdate')->once()->with($client, $promo)->andReturn(false);
     $productService->shouldReceive('reserveStockForOrder')->once()->with(Mockery::type(Order::class));
-    $productService->shouldReceive('reservePromoForOrder')->once()->with($promo, Mockery::type(Order::class));
+    $productService->shouldReceive('reservePromosForOrder')->once()->with([$promo], Mockery::type(Order::class));
 
     // Simulate Doctrine-side failure during redemption creation.
-    $productService->shouldReceive('createCheckoutPromoRedemptions')
+    $productService->shouldReceive('createCheckoutPromoRedemptionsForPromos')
         ->andThrow(new RuntimeException('Doctrine flush failed'));
 
     $productService->shouldReceive('releaseReservedStockForOrder')
@@ -1500,7 +1503,7 @@ test('createFromCart releases reserved stock on transaction failure', function (
         'total' => 0,
     ]);
     $serviceMock->shouldReceive('getCartProducts')->once()->with($cart)->andReturn([$cartProduct]);
-    $serviceMock->shouldReceive('cartProductToApiArray')->once()->with($cartProduct)->andReturn([
+    $serviceMock->shouldReceive('cartProductToApiArray')->once()->with($cartProduct, $cart, [$cartProduct], [$promo])->andReturn([
         'product_id' => 5,
         'form_id' => null,
         'title' => 'Example product',
@@ -1514,6 +1517,7 @@ test('createFromCart releases reserved stock on transaction failure', function (
         'discount_setup' => 0,
         'notes' => null,
     ]);
+    $serviceMock->shouldReceive('getItemPromoDiscountShares')->once()->with($cartProduct, [$promo], $cart, [$cartProduct])->andReturn([7 => 0.0]);
     $serviceMock->shouldReceive('isStockAvailable')->once()->with($product, 1)->andReturn(true);
 
     $productService->shouldReceive('findProductById')->once()->with(5)->andReturn($product);
@@ -1596,7 +1600,7 @@ test('createFromCart does not roll back order creation when synchronous activati
         'total' => 0,
     ]);
     $serviceMock->shouldReceive('getCartProducts')->once()->with($cart)->andReturn([$cartProduct]);
-    $serviceMock->shouldReceive('cartProductToApiArray')->once()->with($cartProduct)->andReturn([
+    $serviceMock->shouldReceive('cartProductToApiArray')->once()->with($cartProduct, $cart, [$cartProduct], [])->andReturn([
         'product_id' => 5,
         'form_id' => null,
         'title' => 'Example product',
@@ -2111,7 +2115,7 @@ test('toApiArray returns expected structure', function (): void {
     ];
     $serviceMock->shouldReceive('cartProductToApiArray')
         ->once()
-        ->with($cartProductModel, $cartModel, [$cartProductModel])
+        ->with($cartProductModel, $cartModel, [$cartProductModel], [])
         ->andReturn($cartProductApiArray);
 
     $currencyService = Mockery::mock(CurrencyService::class)->shouldIgnoreMissing();
@@ -2132,6 +2136,8 @@ test('toApiArray returns expected structure', function (): void {
 
     $expected = [
         'promocode' => null,
+        'promo_source' => null,
+        'auto_promos' => [],
         'discount' => 0,
         'total' => 1,
         'items' => [$cartProductApiArray],
@@ -2192,8 +2198,7 @@ test('getProductDiscount returns discount array', function (): void {
     $di['mod_service'] = $di->protect(fn () => $productService);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
-    $serviceMock->shouldReceive('getRelatedItemsDiscount')->atLeast()->once()->andReturn(0);
-    $serviceMock->shouldReceive('getItemPromoDiscount')->atLeast()->once()->andReturn($discountPrice);
+    $serviceMock->shouldReceive('getItemPromoDiscountShares')->atLeast()->once()->andReturn([0 => $discountPrice]);
 
     $serviceMock->setDi($di);
     $setupPrice = 0;
@@ -2252,8 +2257,7 @@ test('getProductDiscount returns free setup discount', function (): void {
     $di['mod_service'] = $di->protect(fn () => $productService);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
-    $serviceMock->shouldReceive('getRelatedItemsDiscount')->atLeast()->once()->andReturn(0);
-    $serviceMock->shouldReceive('getItemPromoDiscount')->atLeast()->once()->andReturn($discountPrice);
+    $serviceMock->shouldReceive('getItemPromoDiscountShares')->atLeast()->once()->andReturn([0 => $discountPrice]);
 
     $serviceMock->setDi($di);
     $setupPrice = 25;
@@ -2287,9 +2291,7 @@ test('getProductDiscount does not waive setup fee for a product the promo is not
     $di['mod_service'] = $di->protect(fn () => $productService);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
-    $serviceMock->shouldReceive('getRelatedItemsDiscount')->atLeast()->once()->andReturn(0);
-    // getItemPromoDiscount correctly returns 0 for a non-applicable product.
-    $serviceMock->shouldReceive('getItemPromoDiscount')->atLeast()->once()->andReturn(0);
+    $serviceMock->shouldReceive('getItemPromoDiscountShares')->atLeast()->once()->andReturn([0 => 0]);
 
     $serviceMock->setDi($di);
     $setupPrice = 25;
@@ -2504,4 +2506,122 @@ test('addItem stamps one shared cart family across parent and addons', function 
     expect($secondFamily)->toBeString();
     expect($secondFamily)->not->toBe('');
     expect($secondFamily)->not->toBe($firstFamily);
+});
+
+test('getEffectiveCartPromos returns the manual promo when a code is set', function (): void {
+    $cart = createEntity(Cart::class);
+    $cart->promo_id = 7;
+
+    $promo = createPromoEntity(7);
+
+    $productService = Mockery::mock(ProductService::class);
+    $productService->shouldReceive('findPromoById')->once()->with(7)->andReturn($promo);
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn () => $productService);
+
+    $service = new Service();
+    $service->setDi($di);
+
+    $result = $service->getEffectiveCartPromos($cart);
+
+    expect($result['source'])->toBe('manual');
+    expect($result['promos'])->toBe([$promo]);
+});
+
+test('getEffectiveCartPromos resolves automatic promos for a logged-in client', function (): void {
+    $cart = createEntity(Cart::class);
+
+    $client = createEntity(Client::class);
+    $cartProduct = createEntity(CartProduct::class);
+    $product = createProductEntity(5);
+    $promo = createPromoEntity(7);
+
+    $productService = Mockery::mock(ProductService::class);
+    $productService->shouldReceive('findProductById')->once()->andReturn($product);
+    $productService->shouldReceive('resolveAutoPromosForLines')
+        ->once()
+        ->with($client, Mockery::type('array'))
+        ->andReturn([$promo]);
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn () => $productService);
+    $di['loggedin_client'] = $client;
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('getCartProducts')->once()->with($cart)->andReturn([$cartProduct]);
+    $serviceMock->setDi($di);
+
+    $result = $serviceMock->getEffectiveCartPromos($cart);
+
+    expect($result['source'])->toBe('auto');
+    expect($result['promos'])->toBe([$promo]);
+});
+
+test('getEffectiveCartPromos returns empty for guests without a manual code', function (): void {
+    $cart = createEntity(Cart::class);
+
+    $service = new Service();
+    $service->setDi(container());
+
+    $result = $service->getEffectiveCartPromos($cart);
+
+    expect($result)->toBe(['source' => null, 'promos' => []]);
+});
+
+test('getItemPromoDiscountShares splits the capped total across promos', function (): void {
+    $cartProduct = new CartProduct();
+    $cart = new Cart();
+    $cartProduct->setCart($cart);
+
+    $first = createPromoEntity(7);
+    $second = createPromoEntity(8);
+
+    $productService = Mockery::mock(ProductService::class);
+    $productService->shouldReceive('getCartProductViewData')
+        ->once()
+        ->andReturn(['price' => 100.0, 'quantity' => 1]);
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn () => $productService);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('getItemPromoDiscount')
+        ->twice()
+        ->andReturn(60.0, 40.0);
+    $serviceMock->setDi($di);
+
+    $shares = $serviceMock->getItemPromoDiscountShares($cartProduct, [$first, $second], $cart);
+
+    expect($shares[7])->toEqual(60.0);
+    expect($shares[8])->toEqual(40.0);
+});
+
+test('getItemPromoDiscountShares scales shares down to the item subtotal', function (): void {
+    $cartProduct = new CartProduct();
+    $cart = new Cart();
+    $cartProduct->setCart($cart);
+
+    $first = createPromoEntity(7);
+    $second = createPromoEntity(8);
+
+    $productService = Mockery::mock(ProductService::class);
+    $productService->shouldReceive('getCartProductViewData')
+        ->once()
+        ->andReturn(['price' => 100.0, 'quantity' => 1]);
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn () => $productService);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('getItemPromoDiscount')
+        ->twice()
+        ->andReturn(90.0, 80.0);
+    $serviceMock->setDi($di);
+
+    $shares = $serviceMock->getItemPromoDiscountShares($cartProduct, [$first, $second], $cart);
+
+    // 90:80 scaled to a 100.00 total stays reconciled to the cent.
+    expect(array_sum($shares))->toEqual(100.0);
+    expect($shares[7])->toBeGreaterThan($shares[8]);
 });

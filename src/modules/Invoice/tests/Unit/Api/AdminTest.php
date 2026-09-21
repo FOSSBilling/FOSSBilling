@@ -1423,3 +1423,99 @@ test('requires an invoice id on invoice endpoints', function ($method): void {
     'pay_with_credits',
     'send_reminder',
 ]);
+
+test('adds a promo to an invoice', function (): void {
+    $api = apiEndpoint(new Admin());
+
+    $promo = createEntity(Box\Mod\Product\Entity\Promo::class, ['id' => 7]);
+    $invoice = createEntity(Invoice::class, ['id' => 10]);
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('promoAddToInvoice')->once()->with($invoice, $promo, null)->andReturn(25.0);
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn(
+        (function () use ($invoice) {
+            $repo = Mockery::mock(InvoiceRepository::class);
+            $repo->shouldReceive('find')->once()->with(10)->andReturn($invoice);
+
+            return $repo;
+        })()
+    );
+
+    $productServiceMock = Mockery::mock(Box\Mod\Product\Service::class);
+    $productServiceMock->shouldReceive('resolvePromoReference')->once()->with('ADMIN10', null)->andReturn($promo);
+
+    $di = container();
+    $di['mod_service'] = $di->protect(moduleService(['product' => $productServiceMock]));
+
+    $api->setDi($di);
+    $api->setService($serviceMock);
+
+    expect($api->promo_add(['id' => 10, 'promo_code' => 'ADMIN10']))->toEqual(25.0);
+});
+
+test('removes a promo from an invoice', function (): void {
+    $api = apiEndpoint(new Admin());
+
+    $promo = createEntity(Box\Mod\Product\Entity\Promo::class, ['id' => 7]);
+    $invoice = createEntity(Invoice::class, ['id' => 10]);
+    $order = createEntity(Order::class, ['id' => 20]);
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('promoRemoveFromInvoice')->once()->with($invoice, $promo, $order)->andReturn(25.0);
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn(
+        (function () use ($invoice) {
+            $repo = Mockery::mock(InvoiceRepository::class);
+            $repo->shouldReceive('find')->once()->with(10)->andReturn($invoice);
+
+            return $repo;
+        })()
+    );
+
+    $productServiceMock = Mockery::mock(Box\Mod\Product\Service::class);
+    $productServiceMock->shouldReceive('resolvePromoReference')->once()->with(null, 7)->andReturn($promo);
+
+    $orderRepo = Mockery::mock(OrderRepository::class);
+    $orderRepo->shouldReceive('find')->once()->with(20)->andReturn($order);
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepo);
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(moduleService(['product' => $productServiceMock]));
+
+    $api->setDi($di);
+    $api->setService($serviceMock);
+
+    expect($api->promo_remove(['id' => 10, 'promo_id' => 7, 'order_id' => 20]))->toEqual(25.0);
+});
+
+test('promo endpoints require a promo reference', function (): void {
+    $api = apiEndpoint(new Admin());
+
+    $invoice = createEntity(Invoice::class, ['id' => 10]);
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn(
+        (function () use ($invoice) {
+            $repo = Mockery::mock(InvoiceRepository::class);
+            $repo->shouldReceive('find')->andReturn($invoice);
+
+            return $repo;
+        })()
+    );
+
+    $productServiceMock = Mockery::mock(Box\Mod\Product\Service::class);
+    $productServiceMock->shouldReceive('resolvePromoReference')->andReturn(null);
+
+    $di = container();
+    $di['mod_service'] = $di->protect(moduleService(['product' => $productServiceMock]));
+
+    $api->setDi($di);
+    $api->setService($serviceMock);
+
+    expect(fn () => $api->promo_add(['id' => 10]))
+        ->toThrow(FOSSBilling\InformationException::class, 'Promo code or promo ID was not passed');
+    expect(fn () => $api->promo_remove(['id' => 10]))
+        ->toThrow(FOSSBilling\InformationException::class, 'Promo code or promo ID was not passed');
+});

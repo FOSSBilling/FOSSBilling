@@ -92,6 +92,8 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional string $transactionId - Custom transaction ID to use when the selected gateway is Custom
      * @optional string $created_at - date when order was created. Default: now
      * @optional string $updated_at - date when order was updated. Default: now
+     * @optional string $promo_code - promo code to apply to the order (takes precedence over promo_id)
+     * @optional int $promo_id - promo ID to apply to the order
      *
      * @return int
      */
@@ -102,6 +104,10 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     public function create($data)
     {
         $this->checkPermissions('order', 'manage');
+
+        if ((isset($data['promo_code']) && trim((string) $data['promo_code']) !== '') || !empty($data['promo_id'])) {
+            $this->checkPermissions('product', 'manage_promos');
+        }
 
         $markInvoicePaid = Tools::normalizeBoolean($data['mark_invoice_paid'] ?? false);
         $data['mark_invoice_paid'] = $markInvoicePaid;

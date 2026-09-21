@@ -33,6 +33,11 @@ class PromoRepository extends EntityRepository
                 ->setParameter('search', '%' . $data['search'] . '%');
         }
 
+        if (array_key_exists('auto_apply', $data) && $data['auto_apply'] !== '' && $data['auto_apply'] !== null) {
+            $qb->andWhere('p.autoApply = :autoApply')
+                ->setParameter('autoApply', (bool) $data['auto_apply']);
+        }
+
         switch ($data['status'] ?? null) {
             case 'active':
                 $qb->andWhere('p.active = :active')
@@ -71,6 +76,27 @@ class PromoRepository extends EntityRepository
         ], [
             'id' => 'ASC',
         ]);
+    }
+
+    /**
+     * @return list<Promo>
+     */
+    public function findAutoApplyPromos(): array
+    {
+        $now = new \DateTimeImmutable();
+
+        return $this->createQueryBuilder('p')
+            ->where('p.active = :active')
+            ->andWhere('p.autoApply = :autoApply')
+            ->andWhere('(p.startAt IS NULL OR p.startAt <= :now)')
+            ->andWhere('(p.endAt IS NULL OR p.endAt >= :now)')
+            ->setParameter('active', true)
+            ->setParameter('autoApply', true)
+            ->setParameter('now', $now)
+            ->orderBy('p.priority', 'DESC')
+            ->addOrderBy('p.id', 'ASC')
+            ->getQuery()
+            ->getResult();
     }
 
     public function incrementUsageIfAvailable(int $promoId, \DateTimeInterface $updatedAt): int
