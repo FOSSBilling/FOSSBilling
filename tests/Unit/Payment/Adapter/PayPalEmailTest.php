@@ -1182,4 +1182,49 @@ describe('PayPal subscription IPN handling', function (): void {
         $processed = array_values(array_filter($updates, fn (array $u): bool => ($u['status'] ?? null) === 'processed'));
         expect($processed)->toHaveCount(1);
     });
+
+    test('subscr_signup without a currency fails cleanly instead of warning', function (): void {
+        $apiAdmin = Mockery::mock();
+        $apiAdmin->shouldReceive('invoice_transaction_get')->once()->with(['id' => 42])->andReturn([
+            'invoice_id' => 16, 'type' => null, 'txn_id' => null,
+            'txn_status' => null, 'amount' => null, 'currency' => null,
+        ]);
+        $apiAdmin->shouldReceive('invoice_get')->once()->with(['id' => 16])->andReturn([
+            'id' => 16, 'currency' => 'USD', 'client' => ['id' => 9],
+        ]);
+        $apiAdmin->shouldReceive('invoice_subscription_create')->never();
+        $apiAdmin->shouldReceive('invoice_transaction_update')->byDefault()->andReturnTrue();
+
+        $em = paypalEmMocks();
+        $di = container();
+        $di['em'] = $em;
+        $di['logger'] = new Tests\Helpers\TestLogger();
+        $subscriptionService = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
+        $subscriptionService->shouldNotReceive('getSubscriptionPeriod');
+        $di['mod_service'] = $di->protect(static fn (): object => $subscriptionService);
+
+        paypalProcessAdapter($di)->processTransaction($apiAdmin, 42, [
+            'post' => [
+                'txn_type' => 'subscr_signup',
+                'subscr_id' => 'I-ABC123',
+                'period3' => '1 Y',
+                'amount3' => '120.00',
+            ],
+            'get' => ['invoice_id' => 16],
+        ], 2);
+    })->throws(Payment_Exception::class, 'PayPal payment is missing currency details');
+
+    test('isIpnDuplicate tolerates IPNs missing optional keys', function (): void {
+        $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $connection->shouldReceive('fetchAllAssociative')->once()->andReturn([]);
+        $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+        $em->shouldReceive('getConnection')->andReturn($connection);
+        $di = container();
+        $di['em'] = $em;
+
+        $adapter = new Payment_Adapter_PayPalEmail(['email' => 'merchant@example.com', 'test_mode' => false]);
+        $adapter->setDi($di);
+
+        expect($adapter->isIpnDuplicate(['txn_id' => 'ABC']))->toBeFalse();
+    });
 });

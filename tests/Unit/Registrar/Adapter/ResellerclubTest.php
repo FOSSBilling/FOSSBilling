@@ -407,3 +407,26 @@ test('registerDomain sends the .fr registry consent attribute alongside the FrCo
     expect($body['attr-name1'])->toBe('tnc');
     expect($body['attr-value1'])->toBe('Y');
 });
+
+test('getDomainDetails tolerates a details response missing optional keys', function (): void {
+    $httpClient = new MockHttpClient([
+        new MockResponse('12345'),
+        new MockResponse(json_encode([
+            'admincontact' => [
+                'contactid' => '1', 'name' => 'Example', 'emailaddr' => 'admin@example.com',
+                'company' => 'Example', 'telno' => '123', 'telnocc' => '1',
+                'address1' => 'Street', 'city' => 'City', 'country' => 'US',
+                'state' => 'State', 'zip' => '12345',
+            ],
+        ])),
+    ]);
+    $adapter = createResellerclubAdapter($httpClient);
+    $domain = createResellerclubDomain();
+
+    $adapter->getDomainDetails($domain);
+
+    expect($domain->getRegistrationTime())->toBeNull()
+        ->and($domain->getExpirationTime())->toBeNull()
+        ->and($domain->getEpp())->toBeNull()
+        ->and($domain->getPrivacyEnabled())->toBeFalse();
+});
