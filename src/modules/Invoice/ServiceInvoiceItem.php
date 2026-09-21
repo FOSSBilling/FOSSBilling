@@ -201,12 +201,17 @@ class ServiceInvoiceItem implements InjectionAwareInterface
             return 0;
         }
 
-        $rate = $this->di['db']->getCell('SELECT taxrate FROM invoice WHERE id = :id', ['id' => $item->invoice_id]);
-        if ($rate <= 0) {
+        $price = $item->price;
+        if (!is_numeric($price)) {
             return 0;
         }
 
-        return round((float) $item->price * $rate / 100, 2);
+        $rate = $this->di['db']->getCell('SELECT taxrate FROM invoice WHERE id = :id', ['id' => $item->invoice_id]);
+        if (!is_numeric($rate) || $rate <= 0) {
+            return 0;
+        }
+
+        return round((float) $price * (float) $rate / 100, 2);
     }
 
     public function update(\Model_InvoiceItem $item, array $data): void

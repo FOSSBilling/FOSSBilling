@@ -264,6 +264,48 @@ test('gets tax when price is an empty string', function (): void {
     expect($result)->toBe(0.0);
 });
 
+test('returns zero tax when the price is not numeric', function (): void {
+    $service = new ServiceInvoiceItem();
+    $invoiceItemModel = new Model_InvoiceItem();
+    $invoiceItemModel->loadBean(new Tests\Helpers\DummyBean());
+    $invoiceItemModel->invoice_id = 2;
+    $invoiceItemModel->taxed = true;
+    $invoiceItemModel->price = 'not-a-number';
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('getCell')
+        ->atLeast()->once()
+        ->andReturn(0.21);
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $service->setDi($di);
+
+    $result = $service->getTax($invoiceItemModel);
+    expect($result)->toBe(0);
+});
+
+test('returns zero tax when the tax rate is not numeric', function (): void {
+    $service = new ServiceInvoiceItem();
+    $invoiceItemModel = new Model_InvoiceItem();
+    $invoiceItemModel->loadBean(new Tests\Helpers\DummyBean());
+    $invoiceItemModel->invoice_id = 2;
+    $invoiceItemModel->taxed = true;
+    $invoiceItemModel->price = 12;
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('getCell')
+        ->atLeast()->once()
+        ->andReturn('not-a-number');
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $service->setDi($di);
+
+    $result = $service->getTax($invoiceItemModel);
+    expect($result)->toBe(0);
+});
+
 test('updates an item', function (): void {
     $service = new ServiceInvoiceItem();
     $invoiceItemModel = new Model_InvoiceItem();
