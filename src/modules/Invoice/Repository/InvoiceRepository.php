@@ -14,6 +14,7 @@ namespace Box\Mod\Invoice\Repository;
 use Box\Mod\Client\Entity\Client;
 use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\InvoiceItem;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
 use FOSSBilling\Doctrine\RowLock;
@@ -188,18 +189,41 @@ class InvoiceRepository extends EntityRepository
      */
     public function lockAndGetStatus(int $invoiceId): ?string
     {
-        $connection = $this->getEntityManager()->getConnection();
-
-        if (!$connection->isTransactionActive()) {
+        if (!$this->getEntityManager()->getConnection()->isTransactionActive()) {
             throw new \FOSSBilling\Exception('Invoice status cannot be locked outside of a transaction.');
         }
 
-        $status = $connection->fetchOne(
-            'SELECT status FROM invoice WHERE id = :id' . RowLock::suffix($connection),
+        $state = $this->lockAndGetState($invoiceId);
+
+        return $state['status'] ?? null;
+    }
+
+    /**
+     * Must be called within a transaction, held for as long as the state is acted on.
+     *
+     * @return array{status: string, approved: bool}|null
+     */
+    public function lockAndGetState(int $invoiceId): ?array
+    {
+        $connection = $this->getEntityManager()->getConnection();
+
+        if (!$connection->isTransactionActive()) {
+            throw new \FOSSBilling\Exception('Invoice state cannot be locked outside of a transaction.');
+        }
+
+        $row = $connection->fetchAssociative(
+            'SELECT status, approved FROM invoice WHERE id = :id' . RowLock::suffix($connection),
             ['id' => $invoiceId],
         );
 
-        return $status === false ? null : (string) $status;
+        if ($row === false) {
+            return null;
+        }
+
+        return [
+            'status' => (string) $row['status'],
+            'approved' => $connection->convertToPHPValue($row['approved'], Types::BOOLEAN) ?? false,
+        ];
     }
 
     /**

@@ -307,6 +307,59 @@ test('lockAndGetStatus reads the status inside a transaction on every supported 
     expect($status)->toBe(Invoice::STATUS_UNPAID);
 });
 
+test('lockAndGetState reads status and approval inside a transaction', function (): void {
+    $entityManager = invoiceEntityManager();
+    $metadata = [$entityManager->getClassMetadata(Invoice::class)];
+    (new Doctrine\ORM\Tools\SchemaTool($entityManager))->createSchema($metadata);
+
+    $invoice = new Invoice();
+    $invoice->setStatus(Invoice::STATUS_UNPAID);
+    $invoice->setApproved(true);
+    $entityManager->persist($invoice);
+    $entityManager->flush();
+
+    $connection = $entityManager->getConnection();
+    $connection->beginTransaction();
+
+    try {
+        $state = $entityManager->getRepository(Invoice::class)->lockAndGetState($invoice->getId());
+    } finally {
+        $connection->rollBack();
+    }
+
+    expect($state)->toBe([
+        'status' => Invoice::STATUS_UNPAID,
+        'approved' => true,
+    ]);
+});
+
+test('lockAndGetState uses DBAL boolean conversion for database text values', function (): void {
+    $entityManager = invoiceEntityManager();
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('isTransactionActive')->once()->andReturnTrue();
+    $connection->shouldReceive('getDatabasePlatform')->once()->andReturn(new Doctrine\DBAL\Platforms\SQLitePlatform());
+    $connection->shouldReceive('fetchAssociative')->once()->andReturn([
+        'status' => Invoice::STATUS_UNPAID,
+        'approved' => 'f',
+    ]);
+    $connection->shouldReceive('convertToPHPValue')
+        ->once()
+        ->with('f', Doctrine\DBAL\Types\Types::BOOLEAN)
+        ->andReturnFalse();
+
+    $repositoryEntityManager = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $repositoryEntityManager->shouldReceive('getConnection')->andReturn($connection);
+    $repository = new Box\Mod\Invoice\Repository\InvoiceRepository(
+        $repositoryEntityManager,
+        $entityManager->getClassMetadata(Invoice::class),
+    );
+
+    expect($repository->lockAndGetState(1))->toBe([
+        'status' => Invoice::STATUS_UNPAID,
+        'approved' => false,
+    ]);
+});
+
 test('lockAndGetStatus rejects being called outside of a transaction', function (): void {
     $entityManager = invoiceEntityManager();
     $metadata = [$entityManager->getClassMetadata(Invoice::class)];
