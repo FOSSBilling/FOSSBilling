@@ -20,6 +20,7 @@ use FOSSBilling\Interfaces\TimestampInterface;
 #[ORM\Table(name: 'invoice')]
 #[ORM\Index(name: 'invoice_client_id_idx', columns: ['client_id'])]
 #[ORM\Index(name: 'invoice_status_approved_due_at_idx', columns: ['status', 'approved', 'due_at'])]
+#[ORM\Index(name: 'invoice_credit_note_for_idx', columns: ['credit_note_for_invoice_id'])]
 #[ORM\UniqueConstraint(name: 'hash', columns: ['hash'])]
 #[ORM\HasLifecycleCallbacks]
 class Invoice implements TimestampInterface
@@ -78,6 +79,9 @@ class Invoice implements TimestampInterface
 
     #[ORM\Column(type: Types::STRING, length: 50, options: ['default' => self::STATUS_UNPAID])]
     private string $status = self::STATUS_UNPAID;
+
+    #[ORM\Column(name: 'credit_note_for_invoice_id', type: Types::BIGINT, nullable: true)]
+    private ?int $creditNoteForInvoiceId = null;
 
     #[ORM\Column(name: 'seller_company', type: Types::STRING, length: 255, nullable: true)]
     private ?string $sellerCompany = null;
@@ -330,6 +334,18 @@ class Invoice implements TimestampInterface
     public function setStatus(string $status): self
     {
         $this->status = $status;
+
+        return $this;
+    }
+
+    public function getCreditNoteForInvoiceId(): ?int
+    {
+        return $this->creditNoteForInvoiceId;
+    }
+
+    public function setCreditNoteForInvoiceId(?int $creditNoteForInvoiceId): self
+    {
+        $this->creditNoteForInvoiceId = $creditNoteForInvoiceId;
 
         return $this;
     }

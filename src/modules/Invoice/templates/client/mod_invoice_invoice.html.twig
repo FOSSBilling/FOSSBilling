@@ -5,7 +5,7 @@
 
 {% set nr = invoice.serie ~ "%05s"|format(invoice.nr) %}
 
-{% block meta_title %}{{ 'Invoice'|trans }} #{{ nr }}{% endblock %}
+{% block meta_title %}{% if invoice.credit_note_for_invoice_id %}{{ 'Credit Note'|trans }}{% else %}{{ 'Invoice'|trans }}{% endif %} #{{ nr }}{% endblock %}
 
 {% block body_class %}invoice-invoice{% endblock %}
 
@@ -72,8 +72,16 @@
                         <div class="row">
                             <div class="col-md-6 mb-4">
                                 <div class="well small">
-                                    <h4 class="fw-light mt-2 mb-3">{{ 'Invoice'|trans }} #{{ nr }}</h4>
+                                    <h4 class="fw-light mt-2 mb-3">{% if invoice.credit_note_for_invoice_id %}{{ 'Credit Note'|trans }}{% else %}{{ 'Invoice'|trans }}{% endif %} #{{ nr }}</h4>
                                     <dl class="row">
+                                        {% if invoice.credit_note_for_invoice_id %}
+                                        <dt class="col-sm-4 text-muted">{{ 'Refers to invoice'|trans }}</dt>
+                                        <dd class="col-sm-8">#{{ invoice.credit_note_for_invoice_id }}</dd>
+                                        {% endif %}
+                                        {% if invoice.refunded_by_invoice_id %}
+                                        <dt class="col-sm-4 text-muted">{{ 'Credited by'|trans }}</dt>
+                                        <dd class="col-sm-8">#{{ invoice.refunded_by_invoice_id }}</dd>
+                                        {% endif %}
                                         <dt class="col-sm-4 text-muted">{{ 'Invoice Date'|trans }}</dt>
                                         <dd class="col-sm-8">
                                             {% if invoice.paid_at|trim %}

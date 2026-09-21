@@ -256,6 +256,7 @@ class Service implements InjectionAwareInterface
             'buyer_email' => $invoice->getBuyerEmail(),
             'gateway_id' => $invoice->getGateway()?->getId(),
             'approved' => $invoice->isApproved(),
+            'credit_note_for_invoice_id' => $invoice->getCreditNoteForInvoiceId(),
             'taxname' => $invoice->getTaxname(),
             'taxrate' => $invoice->getTaxrate(),
             'due_at' => $invoice->getDueAt()?->format('Y-m-d H:i:s'),
@@ -385,6 +386,12 @@ class Service implements InjectionAwareInterface
         }
         $result['reminded_at'] = $row['reminded_at'] ?? null;
         $result['approved'] = (bool) $row['approved'];
+        $result['credit_note_for_invoice_id'] = $row['credit_note_for_invoice_id'] ?? null;
+        $result['refunded_by_invoice_id'] = null;
+        if ($invoice->getStatus() === Invoice::STATUS_REFUNDED) {
+            $refundingNote = $this->di['em']->getRepository(Invoice::class)->findOneBy(['creditNoteForInvoiceId' => $invoice->getId()]);
+            $result['refunded_by_invoice_id'] = $refundingNote?->getId();
+        }
         $result['income'] = ($row['base_income'] ?? 0) - ($row['base_refund'] ?? 0);
         $result['refund'] = $row['refund'] ?? 0;
         $result['credit'] = $row['credit'] ?? 0;
@@ -590,13 +597,13 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    private function sendInvoiceEmail(Invoice $invoice, array $invoiceData, string $templateCode, ?int $clientId = null): void
+    private function sendInvoiceEmail(Invoice $invoice, array $invoiceData, string $templateCode, ?int $clientId = null, array $extraVars = []): void
     {
         $email = [
             'to_client' => $clientId ?? $invoice->getClientId(),
             'code' => $templateCode,
             'invoice' => $invoiceData,
-        ];
+        ] + $extraVars;
         $email = $this->withBillingRecipient($email, $invoiceData);
 
         $attachment = $this->getInvoicePdfAttachment($invoice);
@@ -605,6 +612,26 @@ class Service implements InjectionAwareInterface
         }
 
         $this->di['mod_service']('email')->sendTemplate($email);
+    }
+
+    /**
+     * Notify the client that their paid invoice was refunded as a credit note.
+     */
+    private function sendRefundEmail(Invoice $original, Invoice $creditNote): void
+    {
+        $creditNoteData = $this->toApiArray($creditNote);
+        if (($creditNoteData['total'] ?? 0) >= 0 || $original->getClientId() === null) {
+            return;
+        }
+
+        $this->sendInvoiceEmail(
+            $creditNote,
+            $creditNoteData,
+            'mod_invoice_refunded',
+            null,
+            ['original_invoice' => $this->toApiArray($original)]
+        );
+        $this->extendInvoiceHashLifetime($creditNote);
     }
 
     public static function onAfterAdminInvoiceReminderSent(\Box_Event $event): void
@@ -1287,6 +1314,10 @@ class Service implements InjectionAwareInterface
         switch ($logic) {
             case 'credit_note':
             case 'negative_invoice':
+                if ($invoice->getStatus() !== Invoice::STATUS_PAID) {
+                    throw new InformationException('Only paid invoices can be refunded');
+                }
+
                 $total = $this->getTotalWithTax($invoice);
                 if ($total <= 0) {
                     throw new InformationException('Cannot refund invoice with negative amount');
@@ -1294,6 +1325,7 @@ class Service implements InjectionAwareInterface
 
                 $new = new Invoice();
                 $new->setClientId($invoice->getClientId());
+                $new->setCreditNoteForInvoiceId($invoice->getId());
                 $new->setHash(bin2hex(random_bytes(random_int(15, 30))));
                 $new->setHashExpiresAt($this->computeHashExpiration());
                 $new->setStatus(Invoice::STATUS_REFUNDED);
@@ -1351,6 +1383,10 @@ class Service implements InjectionAwareInterface
 
                 $this->countIncome($new);
 
+                $invoice->setStatus(Invoice::STATUS_REFUNDED);
+                $this->di['em']->persist($invoice);
+                $this->di['em']->flush();
+
                 $this->addNote($invoice, "Refund invoice #{$new->getId()} generated.");
                 $this->addNote($new, "Refund for #{$invoice->getId()} invoice.");
                 if (!empty($note)) {
@@ -1359,21 +1395,27 @@ class Service implements InjectionAwareInterface
 
                 if ($logic == 'negative_invoice') {
                     $new->setSerie($systemService->getParamValue('invoice_series_paid'));
+                    $new->setNr($this->getNextInvoiceNumber());
                     $this->di['em']->persist($new);
                     $this->di['em']->flush();
                 }
 
                 if ($logic == 'credit_note') {
-                    $next_nr = $systemService->getParamValue('invoice_cn_starting_number', 1);
+                    // Claimed and advanced in one locked step, otherwise two
+                    // concurrent refunds take the same number and issue two
+                    // credit notes sharing one number.
+                    $next_nr = $systemService->reserveNextNumericParamValue('invoice_cn_starting_number', 1);
+                    if ($next_nr === null) {
+                        throw new \FOSSBilling\Exception('Unable to determine the next credit note number');
+                    }
                     $new->setSerie($systemService->getParamValue('invoice_cn_series', 'CN-'));
                     $new->setNr($next_nr);
                     $this->di['em']->persist($new);
                     $this->di['em']->flush();
-
-                    // update next credit note starting number
-                    $systemService->setParamValue('invoice_cn_starting_number', ++$next_nr, true);
                 }
                 $result = (int) $new->getId();
+
+                $this->sendRefundEmail($invoice, $new);
 
                 break;
 
