@@ -57,7 +57,7 @@ function invoiceItemEmAndRepo(): array
     $em = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
     $em->shouldReceive('wrapInTransaction')->andReturnUsing(fn (callable $callback): mixed => $callback());
     $em->shouldReceive('getRepository')->with(InvoiceItem::class)->andReturn($repo);
-    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
+    $em->shouldReceive('getRepository')->with(Invoice::class)->byDefault()->andReturn($invoiceRepo);
     $em->shouldReceive('refresh')->byDefault();
 
     return [$em, $repo];
