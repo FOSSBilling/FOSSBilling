@@ -801,7 +801,7 @@ class ServiceTransaction implements InjectionAwareInterface
         $note = sprintf('Transaction %s refund', $tx->getId());
 
         $invoiceService = $this->di['mod_service']('Invoice');
-        $invoiceService->refund($invoice, $note);
+        $invoiceService->refundInvoice($invoice, $note);
 
         $this->_markAsProcessed($tx);
 

@@ -164,6 +164,16 @@
                         <label class="form-check-label" for="radioInvoiceRefundLogic">{{ 'Manual - No actions performed'|trans }}</label>
                     </div>
                 </div>
+                <div class="row g-3 mt-1">
+                    <div class="col-lg-6">
+                        <label class="form-label" for="invoice_cn_series">{{ 'Credit Note Prefix / Series'|trans }}</label>
+                        <input class="form-control" id="invoice_cn_series" type="text" name="invoice_cn_series" value="{{ params.invoice_cn_series|default('CN-') }}">
+                    </div>
+                    <div class="col-lg-6">
+                        <label class="form-label" for="invoice_cn_starting_number">{{ 'Next Credit Note Number'|trans }}</label>
+                        <input class="form-control" id="invoice_cn_starting_number" type="number" min="1" name="invoice_cn_starting_number" value="{{ params.invoice_cn_starting_number|default('1') }}">
+                    </div>
+                </div>
             </div>
             <div class="card-body border-top">
                 <h4 class="card-title mb-2">{{ 'Add Funds Settings'|trans }}</h4>
