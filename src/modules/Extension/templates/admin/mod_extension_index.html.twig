@@ -56,7 +56,7 @@
                                     <tr>
                                         <td>
                                             {% set icon_filename = ext.icon_url|split('/')|last %}
-                                            {% if (icon_filename != 'cog.svg') and (icon_filename|split('.')|last == 'svg' and ext.icon_path) %}
+                                            {% if (icon_filename != 'cog.svg') and (icon_filename|split('.')|last == 'svg' and ext.icon_path|default(false)) %}
                                                 <div class="text-primary" style="width:24px;height:24px;">
                                                     {{ source (ext.icon_path, ignore_missing = true) }}
                                                 </div>
