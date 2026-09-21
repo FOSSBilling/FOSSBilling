@@ -66,6 +66,13 @@
                             <div id="period-info" class="form-hint mt-2"></div>
                         </div>
                         {% endif %}
+                        {% if has_permission('product', 'manage_promos') %}
+                        <div class="col-xl-6">
+                            <label class="form-label" for="promo-code">{{ 'Promo Code'|trans }}</label>
+                            <input class="form-control" type="text" name="promo_code" id="promo-code" value="{{ request.promo_code }}" autocomplete="off">
+                            <small class="form-hint">{{ 'Optional. Applies an existing promotion to this order so it is recorded and carries to renewals when recurring.'|trans }}</small>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>

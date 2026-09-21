@@ -396,7 +396,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         return $item;
     }
 
-    public function generateFromOrder(Invoice $proforma, Order $order, $task, $price, array $line = []): void
+    public function generateFromOrder(Invoice $proforma, Order $order, $task, $price, array $line = [], bool $applyPromo = true): void
     {
         $corderService = $this->di['mod_service']('Order');
 
@@ -427,10 +427,14 @@ class ServiceInvoiceItem implements InjectionAwareInterface
 
         $corderService->setUnpaidInvoice($order, $proforma);
 
+        if (!$applyPromo) {
+            return;
+        }
+
         // apply discount for new invoice if promo code is recurrent
         $productService = $this->di['mod_service']('Product');
-        $promoAdjustment = $productService->getRenewalPromoAdjustment($order, (float) $price, (float) $quantity);
-        if ($promoAdjustment !== null) {
+        $promoAdjustments = $productService->getRenewalPromoAdjustments($order, (float) $price, (float) $quantity);
+        foreach ($promoAdjustments as $promoAdjustment) {
             $pd = [
                 'title' => $promoAdjustment['title'],
                 'price' => $promoAdjustment['discount_amount'] * -1,

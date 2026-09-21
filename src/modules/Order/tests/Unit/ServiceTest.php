@@ -1962,6 +1962,7 @@ test('createOrder creates order', function (): void {
 
     $productServiceMock = Mockery::mock(Box\Mod\Servicecustom\Service::class);
     $pricingServiceMock = Mockery::mock(Box\Mod\Product\Service::class);
+    $pricingServiceMock->shouldReceive('resolvePromoReference')->byDefault()->andReturn(null);
     $pricingServiceMock->shouldReceive('getProductOrderLineConfig')->never();
     $pricingServiceMock->shouldReceive('reserveStockForOrder')->once();
 
@@ -2059,6 +2060,7 @@ test('createOrder sets form id from product', function (): void {
 
     $productServiceMock = Mockery::mock(Box\Mod\Servicecustom\Service::class);
     $pricingServiceMock = Mockery::mock(Box\Mod\Product\Service::class);
+    $pricingServiceMock->shouldReceive('resolvePromoReference')->byDefault()->andReturn(null);
     $pricingServiceMock->shouldReceive('getProductOrderLineConfig')->never();
     $pricingServiceMock->shouldReceive('reserveStockForOrder')->once();
 
@@ -2155,6 +2157,7 @@ test('createOrder returns success when invoice follow up fails', function (): vo
 
     $productServiceMock = Mockery::mock(Box\Mod\Servicecustom\Service::class);
     $pricingServiceMock = Mockery::mock(Box\Mod\Product\Service::class);
+    $pricingServiceMock->shouldReceive('resolvePromoReference')->byDefault()->andReturn(null);
     $pricingServiceMock->shouldReceive('getProductOrderLineConfig')->never();
     $pricingServiceMock->shouldReceive('reserveStockForOrder')->once();
 
@@ -2163,7 +2166,7 @@ test('createOrder returns success when invoice follow up fails', function (): vo
     $invoiceServiceMock = Mockery::mock();
     $invoiceServiceMock->shouldReceive('generateForOrder')
         ->once()
-        ->with(Mockery::any())
+        ->with(Mockery::any(), null, false)
         ->andReturn($invoiceModel);
     $invoiceServiceMock->shouldReceive('approveInvoice')
         ->once()
@@ -2289,6 +2292,7 @@ test('createOrder uses product pricing service for domain orders', function (): 
     $domainServiceMock = Mockery::mock(Box\Mod\Servicedomain\Service::class)->shouldIgnoreMissing();
 
     $pricingServiceMock = Mockery::mock(Box\Mod\Product\Service::class);
+    $pricingServiceMock->shouldReceive('resolvePromoReference')->byDefault()->andReturn(null);
     $pricingServiceMock->shouldReceive('getProductOrderLineConfig')
         ->once()
         ->with(
@@ -3686,6 +3690,7 @@ test('createOrder generates an invoice for a zero-price order with issue-invoice
 
     $productServiceMock = Mockery::mock(Box\Mod\Servicecustom\Service::class);
     $pricingServiceMock = Mockery::mock(Box\Mod\Product\Service::class);
+    $pricingServiceMock->shouldReceive('resolvePromoReference')->byDefault()->andReturn(null);
     $pricingServiceMock->shouldReceive('getProductOrderLineConfig')->never();
     $pricingServiceMock->shouldReceive('reserveStockForOrder')->once();
 
@@ -3694,7 +3699,7 @@ test('createOrder generates an invoice for a zero-price order with issue-invoice
     $invoiceServiceMock = Mockery::mock();
     $invoiceServiceMock->shouldReceive('generateForOrder')
         ->once()
-        ->with(Mockery::any())
+        ->with(Mockery::any(), null, false)
         ->andReturn($invoiceModel);
     $invoiceServiceMock->shouldReceive('approveInvoice')
         ->once()
@@ -3802,6 +3807,7 @@ test('createOrder does not roll back when invoice generation fails for a negativ
 
     $productServiceMock = Mockery::mock(Box\Mod\Servicecustom\Service::class);
     $pricingServiceMock = Mockery::mock(Box\Mod\Product\Service::class);
+    $pricingServiceMock->shouldReceive('resolvePromoReference')->byDefault()->andReturn(null);
     $pricingServiceMock->shouldReceive('getProductOrderLineConfig')
         ->atLeast()->once()
         ->andReturn(['price' => -5.0, 'quantity' => 1]);
@@ -3810,7 +3816,7 @@ test('createOrder does not roll back when invoice generation fails for a negativ
     $invoiceServiceMock = Mockery::mock();
     $invoiceServiceMock->shouldReceive('generateForOrder')
         ->once()
-        ->with(Mockery::any())
+        ->with(Mockery::any(), null, false)
         ->andThrow(new FOSSBilling\InformationException('Invoices are not generated for negative amount orders.'));
     $invoiceServiceMock->shouldReceive('approveInvoice')->never();
 
@@ -4496,4 +4502,174 @@ test('exportCSV falls back to defaults when only config is requested', function 
     expect($capturedHeaders)->toContain('id')
         ->and($capturedHeaders)->toContain('title')
         ->and($capturedHeaders)->not->toContain('config');
+});
+
+test('createOrder applies a promo code and records the discount', function (): void {
+    $modelClient = createEntity(Box\Mod\Client\Entity\Client::class, ['currency' => 'USD']);
+
+    $modelProduct = orderServiceCreateProductEntity(1, 'custom');
+
+    $currencyModel = Mockery::mock(Box\Mod\Currency\Entity\Currency::class)->shouldIgnoreMissing();
+    $currencyModel->shouldReceive('getCode')->andReturn('USD');
+
+    $currencyRepositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $currencyRepositoryMock->shouldReceive('findOneByCode')->atLeast()->once()->andReturn($currencyModel);
+    $currencyRepositoryMock->shouldReceive('getRateByCode')->atLeast()->once()->with('USD')->andReturn(1.0);
+
+    $currencyServiceMock = Mockery::mock(Box\Mod\Currency\Service::class);
+    $currencyServiceMock->shouldReceive('getCurrencyRepository')->atLeast()->once()->andReturn($currencyRepositoryMock);
+
+    $cartServiceMock = Mockery::mock(Box\Mod\Cart\Service::class);
+    $cartServiceMock->shouldReceive('isStockAvailable')
+        ->atLeast()->once()
+        ->with($modelProduct, Mockery::any())
+        ->andReturn(true);
+
+    $eventMock = Mockery::mock(Box_EventManager::class);
+    $eventMock->shouldReceive('fire')->atLeast()->once();
+
+    $promo = new Box\Mod\Product\Entity\Promo();
+    $promoReflection = new ReflectionProperty($promo, 'id');
+    $promoReflection->setValue($promo, 7);
+    $promo->setCode('ADMIN10')->setRecurring(true);
+
+    $productServiceMock = Mockery::mock(Box\Mod\Servicecustom\Service::class);
+    $pricingServiceMock = Mockery::mock(Box\Mod\Product\Service::class);
+    $pricingServiceMock->shouldReceive('resolvePromoReference')->once()->with('ADMIN10', null)->andReturn($promo);
+    $pricingServiceMock->shouldReceive('promoCanBeApplied')->once()->with($promo)->andReturn(true);
+    $pricingServiceMock->shouldReceive('isPromoAvailableForClientGroup')->once()->with($promo, $modelClient)->andReturn(true);
+    $pricingServiceMock->shouldReceive('canClientUsePromo')->once()->with($modelClient, $promo)->andReturn(true);
+    $pricingServiceMock->shouldReceive('getProductOrderLineConfig')->never();
+    $pricingServiceMock->shouldReceive('isPromoApplicableToProduct')->once()->andReturn(true);
+    $pricingServiceMock->shouldReceive('clientHasActivePromoApplicationForUpdate')->once()->with($modelClient, $promo)->andReturn(false);
+    $pricingServiceMock->shouldReceive('getProductDiscount')->once()->andReturn(5.0);
+    $pricingServiceMock->shouldReceive('usePromo')->once()->with($promo);
+    $pricingServiceMock->shouldReceive('createPromoRedemption')
+        ->once()
+        ->with(
+            $promo,
+            $modelClient,
+            Mockery::type(Order::class),
+            Mockery::type(Invoice::class),
+            Box\Mod\Product\Entity\PromoRedemption::PHASE_CHECKOUT,
+            5.0,
+            'USD',
+            Mockery::any(),
+            Box\Mod\Product\Entity\PromoRedemption::STATUS_RESERVED
+        )
+        ->andReturn(1);
+    $pricingServiceMock->shouldReceive('reserveStockForOrder')->once();
+
+    $invoiceModel = orderServiceCreateInvoiceModel(10);
+
+    $invoiceServiceMock = Mockery::mock();
+    $invoiceServiceMock->shouldReceive('generateForOrder')
+        ->once()
+        ->with(Mockery::type(Order::class), null, false)
+        ->andReturn($invoiceModel);
+    $invoiceServiceMock->shouldReceive('approveInvoice')->once()->andReturn(true);
+
+    $clientServiceMock = Mockery::mock(Box\Mod\Client\Service::class);
+    $clientServiceMock->shouldReceive('isClientTaxable')->once()->with($modelClient)->andReturn(false);
+
+    $invoiceItemServiceMock = Mockery::mock();
+    $invoiceItemServiceMock->shouldReceive('addNew')
+        ->once()
+        ->with($invoiceModel, Mockery::on(fn (array $item): bool => $item['price'] == -5.0 && $item['unit'] === 'discount'))
+        ->andReturn(99);
+
+    $capturedOrder = null;
+    $persistedEntities = [];
+    $nextOrderId = 1;
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('persist')->atLeast()->once()->andReturnUsing(function ($entity) use (&$persistedEntities, &$capturedOrder): void {
+        $persistedEntities[] = $entity;
+        if ($entity instanceof Order && $capturedOrder === null) {
+            $capturedOrder = $entity;
+        }
+    });
+    $emMock->shouldReceive('flush')->atLeast()->once()->andReturnUsing(function () use (&$persistedEntities, &$nextOrderId): void {
+        foreach ($persistedEntities as $entity) {
+            $refl = new ReflectionClass($entity);
+            if ($refl->hasProperty('id')) {
+                $prop = $refl->getProperty('id');
+                if ($prop->getValue($entity) === null) {
+                    $prop->setValue($entity, $nextOrderId++);
+                }
+            }
+        }
+        $persistedEntities = [];
+    });
+    $emMock->shouldReceive('wrapInTransaction')->once()->andReturnUsing(fn (callable $callback) => $callback());
+    $emMock->shouldReceive('remove')->andReturnNull();
+    $orderRepoMock = Mockery::mock(OrderRepository::class)->shouldIgnoreMissing();
+    $orderRepoMock->shouldReceive('find')->andReturnUsing(function (?int $id): ?object {
+        if ($id === null) {
+            return null;
+        }
+        $order = new Order();
+        $prop = new ReflectionProperty($order, 'id');
+        $prop->setValue($order, $id);
+
+        return $order;
+    });
+    $orderRepoMock->shouldReceive('findOneByOrderIdAndName')->byDefault()->andReturn(null);
+    $emMock->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
+    $emMock->shouldReceive('getRepository')->with(Box\Mod\Order\Entity\OrderMeta::class)->andReturn(Mockery::mock(OrderMetaRepository::class)->shouldIgnoreMissing());
+    $emMock->shouldIgnoreMissing();
+
+    $periodMock = Mockery::mock(FOSSBilling\Period::class);
+    $periodMock->shouldReceive('getCode')->atLeast()->once()->andReturn('1Y');
+
+    $di = container();
+    $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($currencyServiceMock, $cartServiceMock, $productServiceMock, $pricingServiceMock, $invoiceServiceMock, $clientServiceMock, $invoiceItemServiceMock) {
+        if ($serviceName == 'currency') {
+            return $currencyServiceMock;
+        }
+        if ($serviceName == 'cart') {
+            return $cartServiceMock;
+        }
+        if ($serviceName == 'Product') {
+            return $pricingServiceMock;
+        }
+        if ($serviceName == 'invoice' && $sub === 'InvoiceItem') {
+            return $invoiceItemServiceMock;
+        }
+        if ($serviceName == 'invoice') {
+            return $invoiceServiceMock;
+        }
+        if ($serviceName == 'Invoice' && $sub === 'InvoiceItem') {
+            return $invoiceItemServiceMock;
+        }
+        if ($serviceName == 'Invoice') {
+            return $invoiceServiceMock;
+        }
+        if ($serviceName == 'client') {
+            return $clientServiceMock;
+        }
+        if ($serviceName == 'servicecustom') {
+            return $productServiceMock;
+        }
+    });
+    $di['events_manager'] = $eventMock;
+    $di['em'] = $emMock;
+    $di['period'] = $di->protect(fn (): Mockery\MockInterface => $periodMock);
+    $di['logger'] = new FOSSBilling\Logger();
+
+    $svc = new Service();
+    $svc->setDi($di);
+
+    $result = $svc->createOrder($modelClient, $modelProduct, [
+        'period' => '1Y',
+        'price' => '10',
+        'invoice_option' => 'issue-invoice',
+        'promo_code' => 'ADMIN10',
+    ]);
+
+    expect($result)->toBe(1);
+    expect($capturedOrder)->toBeInstanceOf(Order::class);
+    expect((float) $capturedOrder->getDiscount())->toEqual(5.0);
+    expect($capturedOrder->getPromoId())->toBe(7);
+    expect($capturedOrder->isPromoRecurring())->toBeTrue();
+    expect($capturedOrder->getPromoUsed())->toBe(1);
 });

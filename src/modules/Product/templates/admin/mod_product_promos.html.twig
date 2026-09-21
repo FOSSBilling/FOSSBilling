@@ -31,6 +31,33 @@
 {% endblock %}
 
 {% block content %}
+    {% set params = admin.system_get_params %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <div>
+                <h3 class="card-title">{{ 'Automatic Promotion Stacking'|trans }}</h3>
+                <p class="card-subtitle">{{ 'Decide what happens when several automatic promotions match the same checkout.'|trans }}</p>
+            </div>
+        </div>
+        <form method="post" action="{{ 'system/update_params'|api_url }}" {{ fb_api_form({message: 'Settings Updated'|trans}) }}>
+            <div class="card-body">
+                <div class="row g-3 align-items-end">
+                    <div class="col-lg-8">
+                        <label class="form-label" for="promo-stacking-mode">{{ 'Stacking Mode'|trans }}</label>
+                        <select class="form-select" id="promo-stacking-mode" name="promo_stacking_mode">
+                            <option value="best_single" {% if params.promo_stacking_mode|default('best_single') == 'best_single' %}selected{% endif %}>{{ 'Best single promotion - apply the highest-value match only'|trans }}</option>
+                            <option value="stack_all_eligible" {% if params.promo_stacking_mode|default('best_single') == 'stack_all_eligible' %}selected{% endif %}>{{ 'Stack all eligible - combine every stackable match plus the best non-stackable one'|trans }}</option>
+                            <option value="priority_first" {% if params.promo_stacking_mode|default('best_single') == 'priority_first' %}selected{% endif %}>{{ 'Priority first - apply the highest-priority match only'|trans }}</option>
+                        </select>
+                        <small class="form-hint">{{ 'A promotion code entered by the client always takes precedence over automatic promotions.'|trans }}</small>
+                    </div>
+                    <div class="col-lg-4">
+                        <button class="btn btn-primary" type="submit">{{ 'Save'|trans }}</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
     <div class="card">
         <div class="card-header">
             <div>
@@ -61,6 +88,8 @@
                     <tr>
                         <td>
                             <a href='{{ "product/promo/#{promo.id}"|url }}'>{{ promo.code }}</a>
+                            {% if promo.auto_apply %}<br><span class="badge text-bg-info mt-1">{{ 'Automatic'|trans }}</span>{% endif %}
+                            {% if promo.stackable %}<br><span class="badge text-bg-secondary mt-1">{{ 'Stackable'|trans }}</span>{% endif %}
                         </td>
                         <td>{% if promo.type == 'percentage' %}{{ promo.value }}%{% endif %}{% if promo.type == 'absolute' %}{{ promo.value|format_currency(currency.code) }}{% endif %}</td>
                         <td>{% for pid,product in promo.applies_to %}
@@ -257,6 +286,39 @@
                                         </label>
                                         <label class="form-check">
                                             <input class="form-check-input" id="radioFreeSetupNo" type="radio" name="freesetup" value="0" checked>
+                                            <span class="form-check-label">{{ 'No'|trans }}</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">{{ 'Apply Automatically'|trans }}</label>
+                                    <p class="text-secondary small mb-2">{{ 'Apply at checkout whenever the targeting below matches, with no code needed. A manually entered code always takes precedence.'|trans }}</p>
+                                    <div class="d-flex flex-column gap-2">
+                                        <label class="form-check">
+                                            <input class="form-check-input" id="radioAutoApplyYes" type="radio" name="auto_apply" value="1">
+                                            <span class="form-check-label">{{ 'Yes'|trans }}</span>
+                                        </label>
+                                        <label class="form-check">
+                                            <input class="form-check-input" id="radioAutoApplyNo" type="radio" name="auto_apply" value="0" checked>
+                                            <span class="form-check-label">{{ 'No'|trans }}</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="promo-priority-new">{{ 'Priority'|trans }}</label>
+                                    <p class="text-secondary small mb-2">{{ 'Higher priority wins when several automatic promotions match.'|trans }}</p>
+                                    <input class="form-control" type="number" min="0" id="promo-priority-new" name="priority" value="0">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">{{ 'Stackable'|trans }}</label>
+                                    <p class="text-secondary small mb-2">{{ 'Allow combining with other automatic promotions when the stacking mode permits it.'|trans }}</p>
+                                    <div class="d-flex flex-column gap-2">
+                                        <label class="form-check">
+                                            <input class="form-check-input" id="radioStackableYes" type="radio" name="stackable" value="1">
+                                            <span class="form-check-label">{{ 'Yes'|trans }}</span>
+                                        </label>
+                                        <label class="form-check">
+                                            <input class="form-check-input" id="radioStackableNo" type="radio" name="stackable" value="0" checked>
                                             <span class="form-check-label">{{ 'No'|trans }}</span>
                                         </label>
                                     </div>

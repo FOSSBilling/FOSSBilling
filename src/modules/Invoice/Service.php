@@ -447,6 +447,75 @@ class Service implements InjectionAwareInterface
         return $result;
     }
 
+    /**
+     * Promotions recorded against this invoice at checkout, grouped by promo
+     * and order. Used by the admin UI to show and remove applied promos.
+     *
+     * @return list<array{
+     *     promo_id: int,
+     *     code: ?string,
+     *     title: string,
+     *     order_id: ?int,
+     *     discount_amount: float,
+     *     status: string,
+     *     removable: bool
+     * }>
+     */
+    public function getInvoicePromoApplications(Invoice $invoice): array
+    {
+        $productService = $this->di['mod_service']('Product');
+        $redemptions = $productService->getPromoRedemptionRepository()->findBy(
+            [
+                'invoiceId' => (int) $invoice->getId(),
+                'phase' => \Box\Mod\Product\Entity\PromoRedemption::PHASE_CHECKOUT,
+            ],
+            ['id' => 'ASC']
+        );
+
+        if ($redemptions === []) {
+            return [];
+        }
+
+        $grouped = [];
+        foreach ($redemptions as $redemption) {
+            $promo = $redemption->getPromo();
+            if (!$promo instanceof \Box\Mod\Product\Entity\Promo) {
+                continue;
+            }
+
+            $key = $promo->getId() . ':' . ($redemption->getClientOrderId() ?? 0);
+            $grouped[$key] ??= [
+                'promo_id' => (int) $promo->getId(),
+                'code' => $promo->getCode(),
+                'title' => '',
+                'order_id' => $redemption->getClientOrderId() !== null ? (int) $redemption->getClientOrderId() : null,
+                'discount_amount' => 0.0,
+                'status' => $redemption->getStatus(),
+                'removable' => false,
+            ];
+            $grouped[$key]['discount_amount'] += (float) ($redemption->getDiscountAmount() ?? 0);
+            if ($redemption->getStatus() === \Box\Mod\Product\Entity\PromoRedemption::STATUS_RESERVED) {
+                $grouped[$key]['removable'] = true;
+            }
+        }
+
+        $applications = [];
+        foreach ($grouped as $entry) {
+            try {
+                $promo = $productService->findPromoById($entry['promo_id']);
+                $entry['title'] = $productService->getPromoDiscountTitle($promo, $invoice->getCurrency() ?? '');
+            } catch (\Exception) {
+                $entry['title'] = $entry['code'] ?? '';
+            }
+
+            $entry['removable'] = $entry['removable'] && $invoice->getStatus() === Invoice::STATUS_UNPAID;
+            $entry['discount_amount'] = round($entry['discount_amount'], 2);
+            $applications[] = $entry;
+        }
+
+        return $applications;
+    }
+
     public static function onAfterAdminInvoicePaymentReceived(\Box_Event $event): bool
     {
         $params = $event->getParameters();
@@ -1434,6 +1503,324 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
+    /**
+     * Apply an existing promo to one order on an unpaid invoice.
+     *
+     * The discount is recorded as that promo (order discount, discount line,
+     * and checkout redemption) rather than a hand-typed negative line, so it
+     * shows up in promo reporting and carries to renewals when recurring.
+     *
+     * @return float the applied discount amount (invoice currency)
+     */
+    public function promoAddToInvoice(Invoice $invoice, \Box\Mod\Product\Entity\Promo $promo, ?Order $order = null): float
+    {
+        if ($invoice->getStatus() !== Invoice::STATUS_UNPAID) {
+            throw new InformationException('Promotions can only be applied to unpaid invoices');
+        }
+
+        $order = $this->findPromoTargetOrder($invoice, $order);
+        $client = $this->di['em']->getRepository(Client::class)->find($invoice->getClientId())
+            ?? throw new InformationException('Client not found');
+
+        $productService = $this->di['mod_service']('Product');
+        if (!$productService->promoCanBeApplied($promo)) {
+            throw new InformationException('The promo code has expired or does not exist');
+        }
+
+        if (!$productService->isPromoAvailableForClientGroup($promo, $client)) {
+            throw new InformationException('Promo code cannot be applied to this client');
+        }
+
+        if (!$productService->canClientUsePromo($client, $promo)) {
+            throw new InformationException('This client has already used this promo code');
+        }
+
+        $product = $productService->findProductById((int) $order->getProductId());
+        $promoConfig = json_decode($order->getConfig() ?? '', true) ?? [];
+        if ($product->getType() !== \Box\Mod\Product\Service::DOMAIN && !isset($promoConfig['period']) && $order->getPeriod()) {
+            $promoConfig['period'] = $order->getPeriod();
+        }
+
+        if (!$productService->isPromoApplicableToProduct($promo, $product, $promoConfig)) {
+            throw new InformationException('This promo code does not apply to the selected product or billing period');
+        }
+
+        $currencyService = $this->di['mod_service']('Currency');
+        $currencyRepository = $currencyService->getCurrencyRepository();
+        $rate = $currencyRepository->getRateByCode((string) $order->getCurrency());
+        if ($rate === null) {
+            throw new \FOSSBilling\Exception("Currency rate for '{$order->getCurrency()}' is not configured");
+        }
+
+        $rawDiscount = (float) $productService->getProductDiscount($product, $promo, $promoConfig);
+        $discountBase = $rawDiscount * $rate;
+        if ($discountBase <= 0) {
+            throw new InformationException('This promo code gives no discount on the selected order');
+        }
+
+        $amount = $this->di['em']->wrapInTransaction(function () use ($invoice, $order, $client, $promo, $productService, $discountBase): float {
+            // The unpaid pre-check above races with payment: re-read the
+            // status under a row lock so a concurrent markAsPaid cannot slip
+            // between the check and these writes. The lock also serializes
+            // concurrent promo edits on this invoice.
+            if ($this->getInvoiceRepository()->lockAndGetStatus((int) $invoice->getId()) !== Invoice::STATUS_UNPAID) {
+                throw new InformationException('Promotions can only be applied to unpaid invoices');
+            }
+
+            // Refresh against changes committed while waiting for the lock,
+            // then value the discount from that state rather than the
+            // pre-transaction snapshot.
+            $this->di['em']->refresh($order);
+
+            // In-transaction re-check so concurrent applications cannot both
+            // consume the last once-per-client use.
+            if ($productService->clientHasActivePromoApplicationForUpdate($client, $promo)) {
+                throw new InformationException('This client has already used this promo code');
+            }
+
+            $productService->usePromo($promo);
+
+            $remaining = (float) $order->getPrice() * (float) $order->getQuantity() - (float) ($order->getDiscount() ?? 0);
+            $amount = min($discountBase, $remaining);
+            if ($amount <= 0) {
+                throw new InformationException('This promo code gives no discount on the selected order');
+            }
+
+            $order->setDiscount((float) ($order->getDiscount() ?? 0) + $amount);
+            if ($order->getPromoId() === null) {
+                $order->setPromoId((int) $promo->getId());
+                $order->setPromoRecurring($promo->isRecurring());
+            } else {
+                // promo_recurring follows the primary promo only: stacking a
+                // recurring promo beside a one-time primary must not make the
+                // primary renew. The stacked promo carries forward through
+                // its own checkout redemption instead. A deleted primary
+                // keeps its existing flag; renewal skips it either way.
+                try {
+                    $primaryPromo = $productService->findPromoById($order->getPromoId());
+                    $order->setPromoRecurring($primaryPromo->isRecurring());
+                } catch (\FOSSBilling\Exception) {
+                    // Leave the existing flag untouched.
+                }
+            }
+            $order->setPromoUsed(1);
+            $this->di['em']->persist($order);
+
+            $discountLine = $this->findOrderDiscountLine($invoice, $order);
+            if ($discountLine instanceof InvoiceItem) {
+                $discountLine->setPrice((float) ($discountLine->getPrice() ?? 0) - $amount);
+                $this->di['em']->persist($discountLine);
+            } else {
+                $clientService = $this->di['mod_service']('client');
+                $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
+                $invoiceItemService->addNew($invoice, [
+                    'title' => __trans('Discount: :product', [':product' => $order->getTitle()]),
+                    'price' => $amount * -1,
+                    'quantity' => 1,
+                    'unit' => 'discount',
+                    'rel_id' => (string) $order->getId(),
+                    'taxed' => $clientService->isClientTaxable($client),
+                ]);
+            }
+
+            $productService->createPromoRedemption(
+                $promo,
+                $client,
+                $order,
+                $invoice,
+                \Box\Mod\Product\Entity\PromoRedemption::PHASE_CHECKOUT,
+                $amount,
+                $order->getCurrency(),
+                $order->getCreatedAt()?->format('Y-m-d H:i:s'),
+                \Box\Mod\Product\Entity\PromoRedemption::STATUS_RESERVED,
+            );
+
+            $this->di['em']->flush();
+
+            return $amount;
+        });
+
+        $this->di['logger']->info('Applied promo {promo_code} to invoice #{invoice_id}', ['promo_code' => $promo->getCode(), 'invoice_id' => $invoice->getId()]);
+
+        return $amount;
+    }
+
+    /**
+     * Remove a previously applied promo from one order on an unpaid invoice.
+     *
+     * @return float the removed discount amount (invoice currency)
+     */
+    public function promoRemoveFromInvoice(Invoice $invoice, \Box\Mod\Product\Entity\Promo $promo, ?Order $order = null): float
+    {
+        if ($invoice->getStatus() !== Invoice::STATUS_UNPAID) {
+            throw new InformationException('Promotions can only be removed from unpaid invoices');
+        }
+
+        $order = $this->findPromoTargetOrder($invoice, $order);
+
+        $productService = $this->di['mod_service']('Product');
+
+        // Reserved redemptions are read inside the transaction, after the
+        // lock: a concurrent removal (or cancellation releasing them) must
+        // not make this call subtract a discount twice.
+        $amount = $this->di['em']->wrapInTransaction(function () use ($invoice, $order, $promo, $productService): float {
+            // Same race as applying: a concurrent markAsPaid must not slip
+            // between the pre-check and these writes.
+            if ($this->getInvoiceRepository()->lockAndGetStatus((int) $invoice->getId()) !== Invoice::STATUS_UNPAID) {
+                throw new InformationException('Promotions can only be removed from unpaid invoices');
+            }
+
+            $redemptions = $productService->getPromoRedemptionRepository()->findBy([
+                'clientOrderId' => (int) $order->getId(),
+                'promo' => $promo,
+                'phase' => \Box\Mod\Product\Entity\PromoRedemption::PHASE_CHECKOUT,
+                'status' => \Box\Mod\Product\Entity\PromoRedemption::STATUS_RESERVED,
+            ]);
+
+            if ($redemptions === []) {
+                throw new InformationException('This promotion is not applied to the selected order');
+            }
+
+            $amount = 0.0;
+            foreach ($redemptions as $redemption) {
+                $amount += (float) ($redemption->getDiscountAmount() ?? 0);
+            }
+
+            if ($amount <= 0) {
+                throw new InformationException('This promotion has no discount recorded on the selected order');
+            }
+
+            $released = $productService->releaseCheckoutPromoRedemptions($order, $promo, 'admin_removed', $invoice);
+            if ($released === 0) {
+                throw new InformationException('This promotion is not applied to the selected order');
+            }
+
+            $this->di['em']->refresh($order);
+
+            $order->setDiscount(max(0.0, (float) ($order->getDiscount() ?? 0) - $amount));
+
+            // Recompute the primary promo from the remaining active checkout
+            // applications on this order.
+            $remaining = $productService->getPromoRedemptionRepository()->findBy(
+                [
+                    'clientOrderId' => (int) $order->getId(),
+                    'phase' => \Box\Mod\Product\Entity\PromoRedemption::PHASE_CHECKOUT,
+                    'status' => [
+                        \Box\Mod\Product\Entity\PromoRedemption::STATUS_RESERVED,
+                        \Box\Mod\Product\Entity\PromoRedemption::STATUS_COMMITTED,
+                    ],
+                ],
+                ['id' => 'ASC']
+            );
+
+            $remainingPromos = [];
+            foreach ($remaining as $redemption) {
+                $remainingPromo = $redemption->getPromo();
+                if ($remainingPromo instanceof \Box\Mod\Product\Entity\Promo) {
+                    $remainingPromos[(int) $remainingPromo->getId()] = $remainingPromo;
+                }
+            }
+
+            if ($remainingPromos === []) {
+                $order->setPromoId(null);
+                $order->setPromoRecurring(false);
+                $order->setPromoUsed(0);
+            } else {
+                // Keep the current primary when it remains applied; otherwise
+                // fall back to the earliest remaining application. Either way
+                // promo_recurring follows that primary promo only.
+                $primaryId = (int) $order->getPromoId();
+                if (!isset($remainingPromos[$primaryId])) {
+                    $primaryId = array_key_first($remainingPromos);
+                    $order->setPromoId($primaryId);
+                }
+                $order->setPromoRecurring($remainingPromos[$primaryId]->isRecurring());
+                $order->setPromoUsed(1);
+            }
+            $this->di['em']->persist($order);
+
+            $discountLine = $this->findOrderDiscountLine($invoice, $order);
+            if ($discountLine instanceof InvoiceItem) {
+                $newPrice = (float) ($discountLine->getPrice() ?? 0) + $amount;
+                if ($newPrice >= 0) {
+                    $this->di['em']->remove($discountLine);
+                } else {
+                    $discountLine->setPrice($newPrice);
+                    $this->di['em']->persist($discountLine);
+                }
+            }
+
+            $this->di['em']->flush();
+
+            return $amount;
+        });
+
+        $this->di['logger']->info('Removed promo {promo_code} from invoice #{invoice_id}', ['promo_code' => $promo->getCode(), 'invoice_id' => $invoice->getId()]);
+
+        return $amount;
+    }
+
+    private function findPromoTargetOrder(Invoice $invoice, ?Order $order): Order
+    {
+        if ($order instanceof Order) {
+            if ($this->orderBelongsToInvoice($invoice, $order)) {
+                return $order;
+            }
+
+            throw new InformationException('The selected order is not on this invoice');
+        }
+
+        $orderIds = [];
+        foreach ($this->getInvoiceItemRepository()->findByInvoiceId((int) $invoice->getId()) as $item) {
+            if ($item->getType() === InvoiceItem::TYPE_ORDER && is_numeric((string) $item->getRelId())) {
+                $orderIds[(int) $item->getRelId()] = true;
+            }
+        }
+
+        $orderService = $this->di['mod_service']('Order');
+        foreach ($orderService->getOrderRepository()->findByUnpaidInvoiceId((int) $invoice->getId()) as $linkedOrder) {
+            $orderIds[(int) $linkedOrder->getId()] = true;
+        }
+
+        $orderIds = array_keys($orderIds);
+        if ($orderIds === []) {
+            throw new InformationException('This invoice has no orders to apply the promotion to');
+        }
+
+        if (count($orderIds) > 1) {
+            throw new InformationException('This invoice covers several orders; select which order to apply the promotion to');
+        }
+
+        return $this->di['em']->getRepository(Order::class)->find($orderIds[0])
+            ?? throw new InformationException('Order not found');
+    }
+
+    private function orderBelongsToInvoice(Invoice $invoice, Order $order): bool
+    {
+        if ((int) $order->getUnpaidInvoiceId() === (int) $invoice->getId()) {
+            return true;
+        }
+
+        foreach ($this->getInvoiceItemRepository()->findByInvoiceId((int) $invoice->getId()) as $item) {
+            if (is_numeric((string) $item->getRelId()) && (int) $item->getRelId() === (int) $order->getId()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function findOrderDiscountLine(Invoice $invoice, Order $order): ?InvoiceItem
+    {
+        foreach ($this->getInvoiceItemRepository()->findByInvoiceId((int) $invoice->getId()) as $item) {
+            if ($item->getUnit() === 'discount' && (string) $item->getRelId() === (string) $order->getId()) {
+                return $item;
+            }
+        }
+
+        return null;
+    }
+
     public function rmInvoice(Invoice $model): bool
     {
         $productService = $this->di['mod_service']('Product');
@@ -1528,7 +1915,7 @@ class Service implements InjectionAwareInterface
     /**
      * @param int $due_days
      */
-    public function generateForOrder(Order $order, $due_days = null): Invoice
+    public function generateForOrder(Order $order, $due_days = null, bool $applyPromo = true): Invoice
     {
         // check if we do have invoice prepared already
         if ($order->getUnpaidInvoiceId() !== null) {
@@ -1603,7 +1990,7 @@ class Service implements InjectionAwareInterface
         $this->setInvoiceDefaults($proforma);
 
         $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
-        $invoiceItemService->generateFromOrder($proforma, $order, InvoiceItem::TASK_RENEW, $price, $line);
+        $invoiceItemService->generateFromOrder($proforma, $order, InvoiceItem::TASK_RENEW, $price, $line, $applyPromo);
 
         // invoice due date
         if ($due_days > 0) {

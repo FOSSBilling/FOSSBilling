@@ -293,6 +293,32 @@
                 </div>
 
                 <hr class="my-4">
+                <h6 class="card-title text-secondary mb-3">{{ 'Automatic Application'|trans }}</h6>
+                <div class="row g-3">
+                    <div class="col-lg-4">
+                        <label class="form-label d-block">{{ 'Apply Automatically'|trans }}</label>
+                        <div class="d-flex flex-wrap gap-3">
+                            <label class="form-check"><input class="form-check-input" id="radioAutoApplyYes" type="radio" name="auto_apply" value="1"{% if promo.auto_apply %} checked{% endif %}><span class="form-check-label">{{ 'Yes'|trans }}</span></label>
+                            <label class="form-check"><input class="form-check-input" id="radioAutoApplyNo" type="radio" name="auto_apply" value="0"{% if not promo.auto_apply %} checked{% endif %}><span class="form-check-label">{{ 'No'|trans }}</span></label>
+                        </div>
+                        <small class="form-hint">{{ 'When enabled, this promotion applies itself at checkout whenever its targeting matches, with no code needed.'|trans }}</small>
+                    </div>
+                    <div class="col-lg-4">
+                        <label class="form-label" for="promo-priority">{{ 'Priority'|trans }}</label>
+                        <input class="form-control" id="promo-priority" type="number" min="0" name="priority" value="{{ promo.priority|default(0) }}">
+                        <small class="form-hint">{{ 'Higher priority wins when several automatic promotions match. Ties fall back to the configured stacking mode.'|trans }}</small>
+                    </div>
+                    <div class="col-lg-4">
+                        <label class="form-label d-block">{{ 'Stackable'|trans }}</label>
+                        <div class="d-flex flex-wrap gap-3">
+                            <label class="form-check"><input class="form-check-input" id="radioStackableYes" type="radio" name="stackable" value="1"{% if promo.stackable %} checked{% endif %}><span class="form-check-label">{{ 'Yes'|trans }}</span></label>
+                            <label class="form-check"><input class="form-check-input" id="radioStackableNo" type="radio" name="stackable" value="0"{% if not promo.stackable %} checked{% endif %}><span class="form-check-label">{{ 'No'|trans }}</span></label>
+                        </div>
+                        <small class="form-hint">{{ 'Stackable promotions combine with each other when the stacking mode allows it.'|trans }}</small>
+                    </div>
+                </div>
+
+                <hr class="my-4">
                 <div class="row g-4">
                     <div class="col-lg-4">
                         <label class="form-label">{{ 'Applicable Products (Select None to Apply to All)'|trans }}</label>

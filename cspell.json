@@ -64,6 +64,7 @@
         "falsey",
         "unindexed",
         "catchable",
+        "stackable",
         "nelexa",
         "apisecret",
         "cutover",

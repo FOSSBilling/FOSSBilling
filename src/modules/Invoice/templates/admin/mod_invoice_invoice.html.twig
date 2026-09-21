@@ -340,6 +340,78 @@
                 {% endblock %}
             {% endembed %}
 
+            {% if invoice.status == 'unpaid' and has_permission('product', 'manage_promos') %}
+            <div class="card mt-4">
+                <div class="card-header">
+                    <div>
+                        <h3 class="card-title">{{ 'Promotions'|trans }}</h3>
+                        <p class="card-subtitle">{{ 'Apply an existing promotion to an order on this invoice. Recorded promotions appear in promo reporting and carry to renewals when recurring.'|trans }}</p>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if invoice.promo_applications|default([])|length > 0 %}
+                    <div class="table-responsive mb-3">
+                        <table class="table card-table table-vcenter table-striped text-nowrap">
+                            <thead>
+                                <tr>
+                                    <th>{{ 'Promotion'|trans }}</th>
+                                    <th>{{ 'Order'|trans }}</th>
+                                    <th class="text-end">{{ 'Discount'|trans }}</th>
+                                    <th class="w-1"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for application in invoice.promo_applications %}
+                                <tr>
+                                    <td>{{ application.title|default(application.code) }}</td>
+                                    <td>{% if application.order_id %}<a href='{{ "order/manage/#{application.order_id}"|url }}'>#{{ application.order_id }}</a>{% else %}-{% endif %}</td>
+                                    <td class="text-end">-{{ application.discount_amount|format_currency(invoice.currency ?? default_currency) }}</td>
+                                    <td>
+                                        {% if application.removable %}
+                                        <a class="btn btn-icon" href="{{ 'invoice/promo_remove'|api_url(query: { 'id': invoice.id, 'promo_id': application.promo_id, 'order_id': application.order_id }) }}"
+                                            {{ fb_api_link({modal: {type: 'confirm', title: 'Remove this promotion?'|trans}, reload: true}) }}>
+                                            <svg class="icon">
+                                                <use href="#trash" />
+                                            </svg>
+                                        </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-secondary">{{ 'No promotions have been applied to this invoice yet.'|trans }}</p>
+                    {% endif %}
+                    <form method="post" action="{{ 'invoice/promo_add'|api_url }}" {{ fb_api_form({reload: true}) }}>
+                        <input type="hidden" name="id" value="{{ invoice.id }}">
+                        <div class="row g-3 align-items-end">
+                            <div class="col-lg-5">
+                                <label class="form-label" for="promo-code">{{ 'Promo Code'|trans }}</label>
+                                <input class="form-control" type="text" name="promo_code" id="promo-code" autocomplete="off" required>
+                            </div>
+                            {% if invoice.orders|default([])|length > 1 %}
+                            <div class="col-lg-4">
+                                <label class="form-label" for="promo-order">{{ 'Order'|trans }}</label>
+                                <select class="form-select" name="order_id" id="promo-order" required>
+                                    {% for order in invoice.orders %}
+                                    <option value="{{ order.id }}">#{{ order.id }} - {{ order.title }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            {% elseif invoice.orders|default([])|length == 1 %}
+                            <input type="hidden" name="order_id" value="{{ invoice.orders[0].id }}">
+                            {% endif %}
+                            <div class="col-lg-3">
+                                <button type="submit" class="btn btn-primary">{{ 'Apply Promotion'|trans }}</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+
             {% set transactions = admin.invoice_transaction_get_list({ 'invoice_id': invoice.id, 'per_page': 100 }).list %}
             {% if transactions|length > 0 %}
             {% embed 'partial_admin_related_section.html.twig' with {
