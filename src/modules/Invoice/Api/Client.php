@@ -57,7 +57,10 @@ class Client extends \FOSSBilling\Api\AbstractApi
             throw new \FOSSBilling\InformationException('Invoice was not found');
         }
 
-        return $this->getService()->toApiArray($model, true, $identity);
+        $result = $this->getService()->toApiArray($model, true, $identity);
+        $result['debited_by_invoice_ids'] = $this->getService()->getDebitingInvoiceIds($model);
+
+        return $result;
     }
 
     /**

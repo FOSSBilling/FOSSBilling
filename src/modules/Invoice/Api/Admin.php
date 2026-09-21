@@ -77,6 +77,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         // toApiArray, where per-invoice promo lookups would be N+1 queries.
         $result = $this->getService()->toApiArray($model, true, $this->getIdentity());
         $result['promo_applications'] = $this->getService()->getInvoicePromoApplications($model);
+        $result['debited_by_invoice_ids'] = $this->getService()->getDebitingInvoiceIds($model);
 
         return $result;
     }
@@ -145,6 +146,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * Add refunds.
      *
      * @optional string $note - note for refund
+     * @optional array $items - line id => quantity map for a partial refund; omit for a full refund
      *
      * @return bool
      */
@@ -155,8 +157,32 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $this->_getInvoice($data);
         $note = $data['note'] ?? null;
+        $items = $data['items'] ?? null;
 
-        return $this->getService()->refundInvoice($model, $note);
+        return $this->getService()->refundInvoice($model, $note, is_array($items) ? $items : null);
+    }
+
+    /**
+     * Issue a debit note against an invoice.
+     *
+     * @optional string $note - note for the debit note
+     * @optional array $items - list of charge lines, each with title, price, and optional quantity, taxed and unit
+     *
+     * @return int $id - newly generated debit note ID
+     */
+    #[RequiredParams(['id' => 'Invoice ID is missing'])]
+    public function debit($data)
+    {
+        $this->checkPermissions('invoice', 'manage_invoices');
+
+        $model = $this->_getInvoice($data);
+        $note = $data['note'] ?? null;
+        $items = $data['items'] ?? null;
+        if (!is_array($items) || $items === []) {
+            throw new InformationException('Debit lines are missing');
+        }
+
+        return $this->getService()->debitInvoice($model, array_values($items), $note);
     }
 
     /**

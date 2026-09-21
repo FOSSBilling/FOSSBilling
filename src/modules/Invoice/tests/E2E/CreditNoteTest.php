@@ -66,7 +66,8 @@ test('refunding a paid invoice issues a linked credit note and settles the origi
 
             $original = creditNoteGetInvoice($invoiceId);
             expect($original['status'])->toBe('refunded');
-            expect((int) $original['refunded_by_invoice_id'])->toBe($creditNoteId);
+            expect($original['refunded_by_invoice_ids'])->toContain($creditNoteId);
+            expect((float) $original['refunded_total'])->toEqual((float) $original['total']);
 
             // A settled invoice cannot be refunded again.
             $again = Tests\Helpers\ApiClient::request('admin/invoice/refund', ['id' => $invoiceId]);
@@ -198,3 +199,78 @@ function creditNoteDeleteProduct(?int $productId): void
     $deleted = Tests\Helpers\ApiClient::request('admin/product/delete', ['id' => $productId]);
     assertApiSuccess($deleted);
 }
+
+test('partial refunds accumulate on the original until fully refunded', function (): void {
+    Tests\Helpers\ApiClient::resetCookies();
+
+    try {
+        ['id' => $clientId, 'token' => $clientToken] = creditNoteCreateClient();
+
+        $prepared = Tests\Helpers\ApiClient::request('admin/invoice/prepare', ['client_id' => $clientId]);
+        assertApiSuccess($prepared);
+        assertApiResultIsInt($prepared);
+        $invoiceId = (int) $prepared->getResult();
+
+        foreach ([['E2E line A', 60.0], ['E2E line B', 40.0]] as [$title, $price]) {
+            $added = Tests\Helpers\ApiClient::request('admin/invoice/update', [
+                'id' => $invoiceId,
+                'new_item' => ['title' => $title, 'price' => $price, 'quantity' => 1],
+            ]);
+            assertApiSuccess($added);
+        }
+
+        $approved = Tests\Helpers\ApiClient::request('admin/invoice/approve', ['id' => $invoiceId]);
+        assertApiSuccess($approved);
+        creditNoteMarkInvoicePaid($invoiceId);
+
+        $params = Tests\Helpers\ApiClient::request('admin/system/get_params');
+        assertApiSuccess($params);
+        $originalLogic = $params->getResult()['invoice_refund_logic'] ?? 'credit_note';
+        $setLogic = Tests\Helpers\ApiClient::request('admin/system/update_params', [
+            'invoice_refund_logic' => 'credit_note',
+        ]);
+        assertApiSuccess($setLogic);
+
+        try {
+            $invoice = creditNoteGetInvoice($invoiceId);
+            $lineIds = [];
+            foreach ($invoice['lines'] as $line) {
+                $lineIds[$line['title']] = (int) $line['id'];
+            }
+
+            $first = Tests\Helpers\ApiClient::request('admin/invoice/refund', [
+                'id' => $invoiceId,
+                'items' => [$lineIds['E2E line B'] => 1],
+            ]);
+            assertApiSuccess($first);
+            $firstCnId = (int) $first->getResult();
+
+            $firstCn = creditNoteGetInvoice($firstCnId);
+            expect((float) $firstCn['total'])->toEqual(-40.0);
+
+            $invoice = creditNoteGetInvoice($invoiceId);
+            expect($invoice['status'])->toBe('paid');
+            expect((float) $invoice['refunded_total'])->toEqual(40.0);
+            expect((float) $invoice['remaining_refundable'])->toEqual(60.0);
+            expect($invoice['refunded_by_invoice_ids'])->toContain($firstCnId);
+
+            $second = Tests\Helpers\ApiClient::request('admin/invoice/refund', [
+                'id' => $invoiceId,
+                'items' => [$lineIds['E2E line A'] => 1],
+            ]);
+            assertApiSuccess($second);
+
+            $invoice = creditNoteGetInvoice($invoiceId);
+            expect($invoice['status'])->toBe('refunded');
+            expect((float) $invoice['refunded_total'])->toEqual(100.0);
+            expect($invoice['refunded_by_invoice_ids'])->toHaveCount(2);
+        } finally {
+            $restore = Tests\Helpers\ApiClient::request('admin/system/update_params', [
+                'invoice_refund_logic' => $originalLogic,
+            ]);
+            assertApiSuccess($restore);
+        }
+    } finally {
+        creditNoteCleanupClient();
+    }
+});

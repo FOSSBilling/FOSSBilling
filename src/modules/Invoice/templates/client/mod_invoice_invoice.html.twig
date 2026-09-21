@@ -4,8 +4,15 @@
 {% import "macro_functions.html.twig" as mf %}
 
 {% set nr = invoice.serie ~ "%05s"|format(invoice.nr) %}
+{% if invoice.credit_note_for_invoice_id %}
+    {% set doc_label = 'Credit Note'|trans %}
+{% elseif invoice.debit_note_for_invoice_id %}
+    {% set doc_label = 'Debit Note'|trans %}
+{% else %}
+    {% set doc_label = 'Invoice'|trans %}
+{% endif %}
 
-{% block meta_title %}{% if invoice.credit_note_for_invoice_id %}{{ 'Credit Note'|trans }}{% else %}{{ 'Invoice'|trans }}{% endif %} #{{ nr }}{% endblock %}
+{% block meta_title %}{{ doc_label }} #{{ nr }}{% endblock %}
 
 {% block body_class %}invoice-invoice{% endblock %}
 
@@ -72,15 +79,19 @@
                         <div class="row">
                             <div class="col-md-6 mb-4">
                                 <div class="well small">
-                                    <h4 class="fw-light mt-2 mb-3">{% if invoice.credit_note_for_invoice_id %}{{ 'Credit Note'|trans }}{% else %}{{ 'Invoice'|trans }}{% endif %} #{{ nr }}</h4>
+                                    <h4 class="fw-light mt-2 mb-3">{{ doc_label }} #{{ nr }}</h4>
                                     <dl class="row">
-                                        {% if invoice.credit_note_for_invoice_id %}
+                                        {% if invoice.credit_note_for_invoice_id or invoice.debit_note_for_invoice_id %}
                                         <dt class="col-sm-4 text-muted">{{ 'Refers to invoice'|trans }}</dt>
-                                        <dd class="col-sm-8">#{{ invoice.credit_note_for_invoice_id }}</dd>
+                                        <dd class="col-sm-8">#{{ invoice.credit_note_for_invoice_id ?? invoice.debit_note_for_invoice_id }}</dd>
                                         {% endif %}
-                                        {% if invoice.refunded_by_invoice_id %}
+                                        {% if invoice.refunded_by_invoice_ids %}
                                         <dt class="col-sm-4 text-muted">{{ 'Credited by'|trans }}</dt>
-                                        <dd class="col-sm-8">#{{ invoice.refunded_by_invoice_id }}</dd>
+                                        <dd class="col-sm-8">{{ '#' ~ invoice.refunded_by_invoice_ids|join(', #') }}</dd>
+                                        {% endif %}
+                                        {% if invoice.debited_by_invoice_ids %}
+                                        <dt class="col-sm-4 text-muted">{{ 'Debited by'|trans }}</dt>
+                                        <dd class="col-sm-8">{{ '#' ~ invoice.debited_by_invoice_ids|join(', #') }}</dd>
                                         {% endif %}
                                         <dt class="col-sm-4 text-muted">{{ 'Invoice Date'|trans }}</dt>
                                         <dd class="col-sm-8">

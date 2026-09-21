@@ -326,16 +326,18 @@ VALUES
 	(20,'invoice_refund_logic','credit_note',0,NULL,NULL,NOW(),NOW()),
 	(21,'invoice_cn_series','CN-',0,NULL,NULL,NOW(),NOW()),
 	(22,'invoice_cn_starting_number','1',0,NULL,NULL,NOW(),NOW()),
-	(23,'invoice_starting_number','1',0,NULL,NULL,NOW(),NOW()),
-	(24,'nameserver_1',NULL,0,NULL,NULL,NOW(),NOW()),
-	(25,'nameserver_2',NULL,0,NULL,NULL,NOW(),NOW()),
-	(26,'nameserver_3',NULL,0,NULL,NULL,NOW(),NOW()),
-	(27,'nameserver_4',NULL,0,NULL,NULL,NOW(),NOW()),
-	(28,'funds_min_amount','10',0,NULL,NULL,NOW(),NOW()),
-	(29,'funds_max_amount','200',0,NULL,NULL,NOW(),NOW()),
-	(30,'company_favicon','public/branding/favicon.ico',0,NULL,NULL,NOW(),NOW()),
-	(31,'hide_company_public','1',0,NULL,NULL,NOW(),NOW()),
-	(32,'invoice_hash_lifetime_days','90',0,NULL,NULL,NOW(),NOW());
+	(23,'invoice_dn_series','DN-',0,NULL,NULL,NOW(),NOW()),
+	(24,'invoice_dn_starting_number','1',0,NULL,NULL,NOW(),NOW()),
+	(25,'invoice_starting_number','1',0,NULL,NULL,NOW(),NOW()),
+	(26,'nameserver_1',NULL,0,NULL,NULL,NOW(),NOW()),
+	(27,'nameserver_2',NULL,0,NULL,NULL,NOW(),NOW()),
+	(28,'nameserver_3',NULL,0,NULL,NULL,NOW(),NOW()),
+	(29,'nameserver_4',NULL,0,NULL,NULL,NOW(),NOW()),
+	(30,'funds_min_amount','10',0,NULL,NULL,NOW(),NOW()),
+	(31,'funds_max_amount','200',0,NULL,NULL,NOW(),NOW()),
+	(32,'company_favicon','public/branding/favicon.ico',0,NULL,NULL,NOW(),NOW()),
+	(33,'hide_company_public','1',0,NULL,NULL,NOW(),NOW()),
+	(34,'invoice_hash_lifetime_days','90',0,NULL,NULL,NOW(),NOW());
 
 /*!40000 ALTER TABLE `setting` ENABLE KEYS */;
 UNLOCK TABLES;

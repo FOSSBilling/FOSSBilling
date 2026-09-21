@@ -130,7 +130,7 @@ test('seedContent replays every row from the real content.sql, portably', functi
         ->and((int) $connection->fetchOne('SELECT COUNT(*) FROM post'))->toBe(3)
         ->and((int) $connection->fetchOne('SELECT COUNT(*) FROM product'))->toBe(1)
         ->and((int) $connection->fetchOne('SELECT COUNT(*) FROM product_category'))->toBe(1)
-        ->and((int) $connection->fetchOne('SELECT COUNT(*) FROM setting'))->toBe(32)
+        ->and((int) $connection->fetchOne('SELECT COUNT(*) FROM setting'))->toBe(34)
         ->and((int) $connection->fetchOne('SELECT COUNT(*) FROM support_helpdesk'))->toBe(1)
         ->and((int) $connection->fetchOne('SELECT COUNT(*) FROM support_pr'))->toBe(17)
         ->and((int) $connection->fetchOne('SELECT COUNT(*) FROM support_pr_category'))->toBe(7)
@@ -275,7 +275,7 @@ test('seedInstallNudge records the version as a new setting row', function (): v
 
     InstallSeeder::seedInstallNudge($connection, '1.2.3', new DateTimeImmutable('2026-08-23 12:00:00'));
 
-    expect((int) $connection->fetchOne('SELECT COUNT(*) FROM setting'))->toBe(33)
+    expect((int) $connection->fetchOne('SELECT COUNT(*) FROM setting'))->toBe(35)
         ->and($connection->fetchOne("SELECT value FROM setting WHERE param = 'last_error_reporting_nudge'"))->toBe('1.2.3');
 });
 
@@ -297,7 +297,7 @@ test('seedContent completes on a real PostgreSQL server, with boolean columns ho
         ->and(fetchedBool($connection->fetchOne("SELECT enabled FROM pay_gateway WHERE name = 'Custom'")))->toBeTrue()
         ->and(fetchedBool($connection->fetchOne("SELECT test_mode FROM pay_gateway WHERE name = 'Custom'")))->toBeFalse()
         ->and(fetchedBool($connection->fetchOne("SELECT allow_register FROM tld WHERE tld = '.com'")))->toBeTrue()
-        ->and((int) $connection->fetchOne('SELECT COUNT(*) FROM setting'))->toBe(33)
+        ->and((int) $connection->fetchOne('SELECT COUNT(*) FROM setting'))->toBe(35)
         ->and($connection->fetchOne("SELECT value FROM setting WHERE param = 'hide_company_public'"))->toBe('1');
 })->skip(fn (): bool => !postgresAvailable(), 'No local PostgreSQL server reachable at FOSSBILLING_TEST_PGSQL_DSN (or the localhost:5432 default) - this test only runs when one is available.');
 
@@ -306,13 +306,13 @@ test('seedContent resyncs PostgreSQL sequences past content.sql\'s explicit ids,
 
     InstallSeeder::seedContent($connection, $entityManager, realContentSql(), new DateTimeImmutable());
 
-    // content.sql seeds setting rows 1-32 with explicit ids - a PostgreSQL sequence never tracks
+    // content.sql seeds setting rows 1-34 with explicit ids - a PostgreSQL sequence never tracks
     // those on its own (unlike MySQL's AUTO_INCREMENT or SQLite's rowid), so without the resync
     // this collides on the *first* auto-generated insert into any seeded table, exactly as
     // seedInstallNudge() does here.
     InstallSeeder::seedInstallNudge($connection, '1.2.3', new DateTimeImmutable());
     $newSettingId = (int) $connection->fetchOne("SELECT id FROM setting WHERE param = 'last_error_reporting_nudge'");
-    expect($newSettingId)->toBeGreaterThan(32);
+    expect($newSettingId)->toBeGreaterThan(34);
 
     // Every other seeded table with explicit ids needs the same resync, not just `setting` -
     // check every sequence directly (rather than inserting a full row into each table, which

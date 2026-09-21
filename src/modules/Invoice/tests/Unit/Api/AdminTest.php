@@ -124,6 +124,9 @@ test('gets an invoice', function (): void {
     $serviceMock->shouldReceive('getInvoicePromoApplications')
         ->atLeast()->once()
         ->andReturn([]);
+    $serviceMock->shouldReceive('getDebitingInvoiceIds')
+        ->atLeast()->once()
+        ->andReturn([]);
 
     $model = createEntity(Invoice::class);
 
@@ -149,6 +152,9 @@ test('gets an invoice with promo applications', function (): void {
     $serviceMock->shouldReceive('getInvoicePromoApplications')
         ->once()
         ->andReturn([['promo_id' => 7, 'code' => 'ADMIN10']]);
+    $serviceMock->shouldReceive('getDebitingInvoiceIds')
+        ->once()
+        ->andReturn([9]);
 
     $model = createEntity(Invoice::class);
 
@@ -162,6 +168,7 @@ test('gets an invoice with promo applications', function (): void {
 
     $result = $api->get(['id' => 1]);
     expect($result['promo_applications'])->toBe([['promo_id' => 7, 'code' => 'ADMIN10']]);
+    expect($result['debited_by_invoice_ids'])->toBe([9]);
 });
 
 test('marks invoice as paid', function (): void {
@@ -262,11 +269,13 @@ test('refunds an invoice', function (): void {
     $api = apiEndpoint(new Admin());
     $data = [
         'id' => 1,
+        'items' => [5 => 2],
     ];
     $newNegativeInvoiceId = 2;
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('refundInvoice')
-        ->atLeast()->once()
+        ->once()
+        ->with(Mockery::type(Invoice::class), null, [5 => 2])
         ->andReturn($newNegativeInvoiceId);
 
     $model = createEntity(Invoice::class);
@@ -280,6 +289,48 @@ test('refunds an invoice', function (): void {
 
     $result = $api->refund($data);
     expect($result)->toBeInt()->toBe($newNegativeInvoiceId);
+});
+
+test('issues a debit note', function (): void {
+    $api = apiEndpoint(new Admin());
+    $data = [
+        'id' => 1,
+        'note' => 'Undercharge',
+        'items' => [['title' => 'Correction', 'price' => 25, 'quantity' => 1]],
+    ];
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('debitInvoice')
+        ->once()
+        ->with(Mockery::type(Invoice::class), [['title' => 'Correction', 'price' => 25, 'quantity' => 1]], 'Undercharge')
+        ->andReturn(9);
+
+    $model = createEntity(Invoice::class);
+
+    $di = container();
+    $di['em']->getRepository(Invoice::class)->shouldReceive('find')->atLeast()->once()->andReturn($model);
+
+    $api->setDi($di);
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($di['em']->getRepository(Invoice::class));
+    $api->setService($serviceMock);
+
+    expect($api->debit($data))->toBe(9);
+});
+
+test('rejects a debit note without lines', function (): void {
+    $api = apiEndpoint(new Admin());
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldNotReceive('debitInvoice');
+
+    $model = createEntity(Invoice::class);
+
+    $di = container();
+    $di['em']->getRepository(Invoice::class)->shouldReceive('find')->atLeast()->once()->andReturn($model);
+
+    $api->setDi($di);
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($di['em']->getRepository(Invoice::class));
+    $api->setService($serviceMock);
+
+    expect(fn () => $api->debit(['id' => 1]))->toThrow(FOSSBilling\InformationException::class, 'Debit lines are missing');
 });
 
 test('updates an invoice', function (): void {
