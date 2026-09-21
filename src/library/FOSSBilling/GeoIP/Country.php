@@ -38,7 +38,9 @@ class Country implements \JsonSerializable
         }
 
         // Instance the language
-        $country = CountryAlpha2::tryFrom($countryRecord['iso_code']) ?? throw new IncompleteRecord('Unknown country ISO code for the provided IP address');
+        $isoCode = $countryRecord['iso_code'];
+        $country = is_string($isoCode) ? CountryAlpha2::tryFrom($isoCode) : null;
+        $country ??= throw new IncompleteRecord('Unknown country ISO code for the provided IP address');
         $this->name = $country->getNameInLanguage($language);
         $this->flag = $country->getFlagEmoji();
 

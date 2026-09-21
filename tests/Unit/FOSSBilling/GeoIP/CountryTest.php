@@ -18,6 +18,10 @@ test('unknown ISO codes surface as incomplete records', function (): void {
     new Country(['iso_code' => 'EQ'], LanguageAlpha2::English);
 })->throws(IncompleteRecord::class);
 
+test('non-string ISO codes surface as incomplete records', function (): void {
+    new Country(['iso_code' => null], LanguageAlpha2::English);
+})->throws(IncompleteRecord::class);
+
 test('known ISO codes resolve', function (): void {
     $country = new Country(['iso_code' => 'US'], LanguageAlpha2::English);
 
