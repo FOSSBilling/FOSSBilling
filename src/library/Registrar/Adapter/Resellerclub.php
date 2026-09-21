@@ -217,10 +217,10 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         ];
         $data = $this->_makeRequest('domains/details', $params);
 
-        $d->setRegistrationTime($data['creationtime']);
-        $d->setExpirationTime($data['endtime']);
-        $d->setEpp($data['domsecret']);
-        $d->setPrivacyEnabled($data['isprivacyprotected'] == 'true');
+        $d->setRegistrationTime($data['creationtime'] ?? null);
+        $d->setExpirationTime($data['endtime'] ?? null);
+        $d->setEpp($data['domsecret'] ?? null);
+        $d->setPrivacyEnabled(($data['isprivacyprotected'] ?? 'false') == 'true');
 
         /* Contact details */
         $wc = $data['admincontact'];

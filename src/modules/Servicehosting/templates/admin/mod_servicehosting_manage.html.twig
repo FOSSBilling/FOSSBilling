@@ -19,18 +19,22 @@
             <td class="text-end">{{ 'Domain'|trans }}:</td>
             <td><a target="_blank" href="https://{{ service.domain }}">{{ service.domain }}</a></td>
         </tr>
+        {% if server %}
         <tr>
             <td class="text-end">{{ 'Server Name'|trans }}:</td>
             <td><a href='{{ "servicehosting/server/#{server.id}"|url }}'>{{ server.name }}</a></td>
         </tr>
+        {% endif %}
         <tr>
             <td class="text-end">{{ 'Hosting Plan'|trans }}:</td>
             <td><a href='{{ "servicehosting/plan/#{hp.id}"|url }}'>{{ hp.name }}</a></td>
         </tr>
+        {% if server %}
         <tr>
             <td class="text-end">{{ 'Server IP'|trans }}:</td>
             <td>{{ server.ip }}</td>
         </tr>
+        {% endif %}
         <tr>
             <td class="text-end">{{ 'Account IP'|trans }}:</td>
             <td>{{ service.ip }}</td>
@@ -39,6 +43,7 @@
             <td class="text-end">{{ 'Username'|trans }}:</td>
             <td>{{ service.username }}</td>
         </tr>
+        {% if server %}
         <tr>
             <td class="text-end">{{ 'Nameserver 1'|trans }}:</td>
             <td>{{ server.ns1 }}</td>
@@ -47,13 +52,14 @@
             <td class="text-end">{{ 'Nameserver 2'|trans }}:</td>
             <td>{{ server.ns2 }}</td>
         </tr>
-        {% if server.ns3 %}
+        {% endif %}
+        {% if server and server.ns3 %}
             <tr>
                 <td class="text-end">{{ 'Nameserver 3'|trans }}:</td>
                 <td>{{ server.ns3 }}</td>
             </tr>
         {% endif %}
-        {% if server.ns4 %}
+        {% if server and server.ns4 %}
             <tr>
                 <td class="text-end">{{ 'Nameserver 4'|trans }}:</td>
                 <td>{{ server.ns4 }}</td>
@@ -72,13 +78,15 @@
 
 <div class="card-footer d-flex flex-wrap gap-2 justify-content-end">
     {{ order_actions|default('') }}
+    {% if server %}
     <a class="btn btn-primary" href="{{ server.cpanel_url }}" target="_blank">
         <svg class="icon">
             <use href="#server" />
         </svg>
         <span>{{ 'Jump to control panel'|trans }}</span>
     </a>
-    {% if service.reseller %}
+    {% endif %}
+    {% if server and service.reseller %}
         <a class="btn btn-primary" href="{{ server.reseller_cpanel_url }}" target="_blank">
             <svg class="icon">
                 <use href="#server" />
