@@ -692,6 +692,7 @@ class UpdatePatcher implements InjectionAwareInterface
             115 => 'patch115',
             116 => 'patch116',
             117 => 'patch117',
+            118 => 'patch118',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -3721,6 +3722,17 @@ class UpdatePatcher implements InjectionAwareInterface
         // while the entity and repository already select it.
         if (!$this->tableHasColumn('post', 'description')) {
             $this->executeSql('ALTER TABLE `post` ADD COLUMN `description` TEXT DEFAULT NULL AFTER `title`');
+        }
+    }
+
+    private function patch118(): void
+    {
+        // The one-credit-note-per-invoice unique constraint shipped briefly and
+        // was replaced by partial refunds, which need many credit notes per
+        // original. Drop it where the schema sync created it; installs that
+        // never synced it and fresh installs are unaffected.
+        if ($this->tableHasIndex('invoice', 'invoice_credit_note_for_unique')) {
+            $this->executeSql('ALTER TABLE `invoice` DROP INDEX `invoice_credit_note_for_unique`');
         }
     }
 
