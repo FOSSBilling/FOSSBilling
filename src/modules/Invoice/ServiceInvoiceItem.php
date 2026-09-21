@@ -71,7 +71,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
 
         // A caller such as updateInvoice already owns the transaction and invoice-row lock. A
         // standalone item API call creates its own transaction so payment cannot commit between
-        // the editability check and the item flush.
+        // the invoice-state check and the item flush.
         if ($invoice->getId() === null) {
             return $operation();
         }

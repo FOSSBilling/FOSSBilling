@@ -2669,7 +2669,7 @@ class Service implements InjectionAwareInterface
             ];
         }
 
-        $state = $this->getInvoiceRepository()->lockAndGetState((int) $invoice->getId());
+        $state = $this->getInvoiceRepository()->lockAndGetState($invoice->getId());
         if ($state === null) {
             throw new InformationException('Invoice not found');
         }
