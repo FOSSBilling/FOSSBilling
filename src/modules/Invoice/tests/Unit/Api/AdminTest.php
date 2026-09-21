@@ -1406,3 +1406,20 @@ test('export_csv delegates to service when permissions granted', function (): vo
 
     expect($result)->toBeInstanceOf(Symfony\Component\HttpFoundation\Response::class);
 });
+
+test('requires an invoice id on invoice endpoints', function ($method): void {
+    $adminApi = apiEndpoint(new Admin());
+    $dispatcher = new FOSSBilling\Api\Dispatcher();
+
+    expect(fn () => $dispatcher->validateRequiredParams($adminApi, $method, []))
+        ->toThrow(FOSSBilling\InformationException::class, 'Invoice ID is missing');
+})->with([
+    'get',
+    'mark_as_paid',
+    'approve',
+    'refund',
+    'update',
+    'delete',
+    'pay_with_credits',
+    'send_reminder',
+]);
