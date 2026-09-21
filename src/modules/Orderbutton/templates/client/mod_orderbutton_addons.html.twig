@@ -38,7 +38,18 @@
           {% endif %}
         </label>
 
-        <div class="float-end">
+        <div class="float-end d-flex align-items-center gap-2">
+          {% if addon.allow_quantity_select %}
+          <input
+            type="number"
+            name="addons[{{ addon.id }}][quantity]"
+            value="1"
+            min="1"
+            class="form-control"
+            style="max-width: 90px; text-align: center;"
+            aria-label="{{ 'Addon quantity'|trans }}"
+          >
+          {% endif %}
           <input type="radio" class="btn-check" name="addons[{{ addon.id }}][selected]" value="1"
             id="addon_{{ addon.id }}" autocomplete="off">
           <label class="btn btn-outline-success" for="addon_{{ addon.id }}" data-bs-toggle="tooltip"

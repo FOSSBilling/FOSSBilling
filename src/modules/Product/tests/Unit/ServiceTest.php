@@ -384,6 +384,77 @@ test('get selected addons for cart returns prepared addon items', function (): v
     expect($result[0]['config']['parent_id'])->toBe(10);
 });
 
+test('get selected addons for cart keeps quantity when addon allows it', function (): void {
+    $parentProduct = productTestCreateProductEntity(10);
+    $addon = productTestCreateProductEntity(20)->setStatus('enabled')->setType(Service::CUSTOM)->setIsAddon(true)->setAllowQuantitySelect(true);
+
+    $validator = Mockery::mock(FOSSBilling\Validate::class);
+    $validator->shouldNotReceive('checkRequiredParamsForArray');
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('getAddonById')->once()->with(20)->andReturn($addon);
+    $serviceMock->shouldReceive('isRecurrentProductPricing')->once()->with($addon)->andReturn(false);
+
+    $di = container();
+    $di['validator'] = $validator;
+    $serviceMock->setDi($di);
+
+    $result = $serviceMock->getSelectedAddonsForCart($parentProduct, [
+        20 => ['selected' => true, 'quantity' => 3],
+    ]);
+
+    expect($result)->toHaveCount(1);
+    expect($result[0]['config']['quantity'])->toBe(3);
+    expect($result[0]['config']['parent_id'])->toBe(10);
+});
+
+test('get selected addons for cart coerces quantity to one when addon disallows it', function (): void {
+    $parentProduct = productTestCreateProductEntity(10);
+    $addon = productTestCreateProductEntity(20)->setStatus('enabled')->setType(Service::CUSTOM)->setIsAddon(true)->setAllowQuantitySelect(false);
+
+    $validator = Mockery::mock(FOSSBilling\Validate::class);
+    $validator->shouldNotReceive('checkRequiredParamsForArray');
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('getAddonById')->once()->with(20)->andReturn($addon);
+    $serviceMock->shouldReceive('isRecurrentProductPricing')->once()->with($addon)->andReturn(false);
+
+    $di = container();
+    $di['validator'] = $validator;
+    $serviceMock->setDi($di);
+
+    $result = $serviceMock->getSelectedAddonsForCart($parentProduct, [
+        20 => ['selected' => true, 'quantity' => 5],
+    ]);
+
+    expect($result)->toHaveCount(1);
+    expect($result[0]['config']['quantity'])->toBe(1);
+});
+
+test('validate selected addons rejects quantity for addons without quantity selection', function (): void {
+    $parentProduct = productTestCreateProductEntity(10)->setAddons(json_encode([20]));
+    $addon = productTestCreateProductEntity(20)->setStatus('enabled')->setIsAddon(true)->setAllowQuantitySelect(false);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('getAddonById')->once()->with(20)->andReturn($addon);
+
+    expect(fn () => $serviceMock->validateSelectedAddonsForProduct($parentProduct, [
+        20 => ['selected' => true, 'quantity' => 3],
+    ]))->toThrow(FOSSBilling\InformationException::class, 'invalid for the associated product');
+});
+
+test('validate selected addons allows quantity for addons with quantity selection', function (): void {
+    $parentProduct = productTestCreateProductEntity(10)->setAddons(json_encode([20]));
+    $addon = productTestCreateProductEntity(20)->setStatus('enabled')->setIsAddon(true)->setAllowQuantitySelect(true);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('getAddonById')->once()->with(20)->andReturn($addon);
+
+    expect(fn () => $serviceMock->validateSelectedAddonsForProduct($parentProduct, [
+        20 => ['selected' => true, 'quantity' => 3],
+    ]))->not->toThrow(Throwable::class);
+});
+
 test('reduce stock decrements atomically rather than writing back a read value', function (): void {
     $service = new Service();
     $product = productTestCreateProductEntity(1)

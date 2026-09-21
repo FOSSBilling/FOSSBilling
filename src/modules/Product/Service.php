@@ -300,6 +300,11 @@ class Service implements InjectionAwareInterface
             if (!$addon instanceof Product || $addon->getStatus() !== 'enabled' || !in_array((int) $addonId, $validAddons)) {
                 throw new \FOSSBilling\InformationException('One or more of your selected add-ons are invalid for the associated product.');
             }
+
+            $requestedQuantity = max(1, (int) ($properties['quantity'] ?? 1));
+            if ($requestedQuantity > 1 && !$addon->isAllowQuantitySelect()) {
+                throw new \FOSSBilling\InformationException('One or more of your selected add-ons are invalid for the associated product.');
+            }
         }
     }
 
@@ -931,6 +936,7 @@ class Service implements InjectionAwareInterface
                 }
             }
 
+            $addonConfig['quantity'] = $addon->isAllowQuantitySelect() ? max(1, (int) ($addonConfig['quantity'] ?? 1)) : 1;
             $addonConfig['parent_id'] = $parentProduct->getId();
             $selectedAddons[] = [
                 'product' => $addon,
