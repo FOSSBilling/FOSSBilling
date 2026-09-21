@@ -86,11 +86,11 @@
                                     <dl class="row">
                                         {% if credit_note_for_invoice %}
                                         <dt class="col-sm-4 text-muted">{{ 'Refers to invoice'|trans }}</dt>
-                                        <dd class="col-sm-8">#{{ credit_note_for_invoice.serie ~ "%05s"|format(credit_note_for_invoice.nr) }}</dd>
+                                        <dd class="col-sm-8">#{{ credit_note_for_invoice.serie_nr }}</dd>
                                         {% endif %}
                                         {% if refunded_by_invoice %}
                                         <dt class="col-sm-4 text-muted">{{ 'Credited by'|trans }}</dt>
-                                        <dd class="col-sm-8">#{{ refunded_by_invoice.serie ~ "%05s"|format(refunded_by_invoice.nr) }}</dd>
+                                        <dd class="col-sm-8">#{{ refunded_by_invoice.serie_nr }}</dd>
                                         {% endif %}
                                         <dt class="col-sm-4 text-muted">{{ 'Invoice Date'|trans }}</dt>
                                         <dd class="col-sm-8">
