@@ -58,6 +58,8 @@ class Service implements InjectionAwareInterface
         'due_at', 'reminded_at', 'paid_at', 'created_at', 'updated_at',
     ];
 
+    private ?bool $allowUnpaidInvoiceEdits = null;
+
     /** Subset of EXPORTABLE_COLUMNS used when the caller passes no headers. */
     private const array DEFAULT_EXPORT_COLUMNS = [
         'id', 'client_id', 'nr', 'currency', 'credit', 'base_income', 'base_refund',
@@ -385,6 +387,7 @@ class Service implements InjectionAwareInterface
         }
         $result['reminded_at'] = $row['reminded_at'] ?? null;
         $result['approved'] = (bool) $row['approved'];
+        $result['editable'] = $this->isInvoiceEditable($invoice);
         $result['income'] = ($row['base_income'] ?? 0) - ($row['base_refund'] ?? 0);
         $result['refund'] = $row['refund'] ?? 0;
         $result['credit'] = $row['credit'] ?? 0;
@@ -1397,8 +1400,13 @@ class Service implements InjectionAwareInterface
 
     public function updateInvoice(Invoice $model, array $data): bool
     {
+        if (!$this->isInvoiceEditable($model)) {
+            throw new InformationException('This invoice can no longer be edited. Approved invoices are locked once issued; correct them with a credit note or a replacement invoice.');
+        }
+
         $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
         $previousStatus = $model->getStatus();
+        $wasApproved = $model->isApproved();
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminInvoiceUpdate', 'params' => $data]);
 
@@ -1500,7 +1508,30 @@ class Service implements InjectionAwareInterface
 
         $this->di['logger']->info("Updated invoice {$model->getId()}.");
 
+        // An edit to an already-approved invoice changes what the client was
+        // sent, so re-send it (unless this update is itself approving, in
+        // which case the approval path already sends).
+        if ($wasApproved && $model->isApproved() && empty($data['approve'])) {
+            $this->resendUpdatedInvoice($model);
+        }
+
         return true;
+    }
+
+    /**
+     * Re-send an approved invoice whose content just changed, keeping the
+     * client's copy and payment link in sync with what they will be charged.
+     */
+    protected function resendUpdatedInvoice(Invoice $model): void
+    {
+        $invoiceData = $this->toApiArray($model);
+        if (($invoiceData['total'] ?? 0) > 0
+            && $model->getStatus() !== Invoice::STATUS_PAID
+            && $model->getClientId() !== null
+        ) {
+            $this->sendInvoiceEmail($model, $invoiceData, 'mod_invoice_created');
+        }
+        $this->extendInvoiceHashLifetime($model);
     }
 
     /**
@@ -1613,6 +1644,9 @@ class Service implements InjectionAwareInterface
             } else {
                 $clientService = $this->di['mod_service']('client');
                 $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
+                // Bypasses the edit lock: this runs inside the invoice lock
+                // with its own unpaid check, and promo application stays
+                // available on approved unpaid invoices by design.
                 $invoiceItemService->addNew($invoice, [
                     'title' => __trans('Discount: :product', [':product' => $order->getTitle()]),
                     'price' => $amount * -1,
@@ -1620,7 +1654,7 @@ class Service implements InjectionAwareInterface
                     'unit' => 'discount',
                     'rel_id' => (string) $order->getId(),
                     'taxed' => $clientService->isClientTaxable($client),
-                ]);
+                ], true);
             }
 
             $productService->createPromoRedemption(
@@ -1857,6 +1891,10 @@ class Service implements InjectionAwareInterface
 
     public function deleteInvoiceByAdmin(Invoice $model): bool
     {
+        if ($model->isApproved() || $model->getStatus() !== Invoice::STATUS_UNPAID) {
+            throw new InformationException('Only unapproved, unpaid invoices can be deleted. Revoke an approved invoice instead.');
+        }
+
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminInvoiceDelete', 'params' => ['id' => $model->getId()]]);
 
         $id = $model->getId();
@@ -2534,6 +2572,50 @@ class Service implements InjectionAwareInterface
         $systemService = $this->di['mod_service']('system');
 
         return (bool) $systemService->getParamValue('invoice_auto_approval', true);
+    }
+
+    /**
+     * Whether an approved but still unpaid invoice may be edited.
+     *
+     * In many jurisdictions an issued (approved) invoice is immutable and
+     * corrections must go through a credit note or a replacement invoice,
+     * so this defaults to off. Enabling it treats approved unpaid invoices
+     * as editable quotes: lines and details can change and the invoice is
+     * re-sent to the client afterwards.
+     */
+    public function allowUnpaidInvoiceEdits(): bool
+    {
+        if ($this->allowUnpaidInvoiceEdits !== null) {
+            return $this->allowUnpaidInvoiceEdits;
+        }
+
+        /**
+         * @var \Box\Mod\System\Service $systemService
+         */
+        $systemService = $this->di['mod_service']('system');
+
+        return $this->allowUnpaidInvoiceEdits = (bool) $systemService->getParamValue('invoice_allow_edit_unpaid', false);
+    }
+
+    /**
+     * Whether the invoice's content (lines, amounts, details) may be changed.
+     *
+     * Unapproved invoices are drafts and always editable. Approved invoices
+     * are immutable once paid, refunded, or canceled; an approved unpaid
+     * invoice is only editable when the `invoice_allow_edit_unpaid` setting
+     * permits it.
+     */
+    public function isInvoiceEditable(Invoice $invoice): bool
+    {
+        if (in_array($invoice->getStatus(), [Invoice::STATUS_PAID, Invoice::STATUS_REFUNDED, Invoice::STATUS_CANCELED], true)) {
+            return false;
+        }
+
+        if (!$invoice->isApproved()) {
+            return true;
+        }
+
+        return $this->allowUnpaidInvoiceEdits();
     }
 
     /**

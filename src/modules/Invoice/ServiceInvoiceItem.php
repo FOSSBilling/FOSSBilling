@@ -46,6 +46,25 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         return $this->invoiceItemRepository;
     }
 
+    /**
+     * Refuse line changes on invoices whose content is locked (approved,
+     * paid, refunded, or canceled without the unpaid-edits setting).
+     * Internal flows with their own locking (e.g. promo application) pass
+     * $skipEditableCheck to bypass this.
+     */
+    private function assertInvoiceEditable(?Invoice $invoice, bool $skipEditableCheck = false): void
+    {
+        if ($skipEditableCheck || !$invoice instanceof Invoice) {
+            return;
+        }
+
+        /** @var Service $invoiceService */
+        $invoiceService = $this->di['mod_service']('Invoice');
+        if (!$invoiceService->isInvoiceEditable($invoice)) {
+            throw new \FOSSBilling\InformationException('This invoice can no longer be edited. Approved invoices are locked once issued; correct them with a credit note or a replacement invoice.');
+        }
+    }
+
     public function markAsPaid(InvoiceItem $item, $charge = true): void
     {
         if ($charge && !$item->getCharged()) {
@@ -167,8 +186,10 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         }
     }
 
-    public function addNew(Invoice $proforma, array $data): int
+    public function addNew(Invoice $proforma, array $data, bool $skipEditableCheck = false): int
     {
+        $this->assertInvoiceEditable($proforma, $skipEditableCheck);
+
         $title = $data['title'] ?? '';
         if (empty($title)) {
             throw new \FOSSBilling\InformationException('Invoice item title is missing');
@@ -233,6 +254,8 @@ class ServiceInvoiceItem implements InjectionAwareInterface
 
     public function update(InvoiceItem $item, array $data): void
     {
+        $this->assertInvoiceEditable($item->getInvoice());
+
         $item->setTitle($data['title'] ?? $item->getTitle());
         if (isset($data['price'])) {
             $item->setPrice(PriceValidator::validateSignedAmount($data['price']));
@@ -254,6 +277,8 @@ class ServiceInvoiceItem implements InjectionAwareInterface
 
     public function remove(InvoiceItem $model): bool
     {
+        $this->assertInvoiceEditable($model->getInvoice());
+
         $id = $model->getId();
         $this->di['em']->remove($model);
         $this->di['em']->flush();

@@ -3856,3 +3856,144 @@ test('getInvoicePromoApplications groups redemptions by promo and order', functi
     ]);
     expect($result[1])->toMatchArray(['order_id' => 21, 'removable' => false]);
 });
+
+test('isInvoiceEditable gates issued invoices by setting', function (): void {
+    // [approved, status, setting, expected]
+    $cases = [
+        [false, Invoice::STATUS_UNPAID, false, true],
+        [false, Invoice::STATUS_UNPAID, true, true],
+        [true, Invoice::STATUS_UNPAID, false, false],
+        [true, Invoice::STATUS_UNPAID, true, true],
+        [true, Invoice::STATUS_PAID, true, false],
+        [false, Invoice::STATUS_PAID, true, false],
+        [true, Invoice::STATUS_REFUNDED, true, false],
+        [true, Invoice::STATUS_CANCELED, true, false],
+    ];
+
+    foreach ($cases as [$approved, $status, $allow, $expected]) {
+        $service = new Service();
+        $invoice = createEntity(Invoice::class);
+        $invoice->setApproved($approved);
+        $invoice->setStatus($status);
+
+        $systemMock = Mockery::mock(SystemService::class);
+        $systemMock->shouldReceive('getParamValue')->with('invoice_allow_edit_unpaid', false)->andReturn($allow);
+
+        $di = container();
+        $di['mod_service'] = $di->protect(moduleService(['system' => $systemMock]));
+        $service->setDi($di);
+
+        expect($service->isInvoiceEditable($invoice))->toBe($expected);
+    }
+});
+
+test('updateInvoice refuses to edit a locked invoice', function (): void {
+    foreach ([Invoice::STATUS_UNPAID, Invoice::STATUS_PAID] as $status) {
+        $service = new Service();
+        $invoice = createEntity(Invoice::class, ['id' => 10]);
+        $invoice->setApproved(true);
+        $invoice->setStatus($status);
+
+        $systemMock = Mockery::mock(SystemService::class);
+        $systemMock->shouldReceive('getParamValue')->andReturn(false);
+
+        $di = container();
+        $di['mod_service'] = $di->protect(moduleService(['system' => $systemMock]));
+        $service->setDi($di);
+
+        expect(fn () => $service->updateInvoice($invoice, ['notes' => 'Edited']))
+            ->toThrow(FOSSBilling\InformationException::class, 'can no longer be edited');
+    }
+});
+
+test('updateInvoice resends an approved invoice after editing it', function (): void {
+    $invoice = createEntity(Invoice::class, ['id' => 10, 'clientId' => 5]);
+    $invoice->setApproved(true);
+    $invoice->setStatus(Invoice::STATUS_UNPAID);
+
+    $systemMock = Mockery::mock(SystemService::class);
+    $systemMock->shouldReceive('getParamValue')->with('invoice_allow_edit_unpaid', false)->andReturn(true);
+
+    $itemInvoiceServiceMock = Mockery::mock(ServiceInvoiceItem::class);
+    $itemInvoiceServiceMock->shouldNotReceive('addNew', 'update');
+
+    [$em] = invoiceItemEmAndRepo();
+    $eventManagerMock = Mockery::mock('\Box_EventManager');
+    $eventManagerMock->shouldReceive('fire')->atLeast()->once();
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(moduleService([
+        'system' => $systemMock,
+        'invoice:invoiceitem' => $itemInvoiceServiceMock,
+    ]));
+    $di['events_manager'] = $eventManagerMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('toApiArray')->andReturn(['id' => 10, 'total' => 50.0]);
+    $serviceMock->shouldReceive('resendUpdatedInvoice')->once()->with($invoice);
+    $serviceMock->setDi($di);
+
+    expect($serviceMock->updateInvoice($invoice, ['notes' => 'Edited']))->toBeTrue();
+});
+
+test('updateInvoice does not resend a draft invoice', function (): void {
+    $invoice = createEntity(Invoice::class, ['id' => 10, 'clientId' => 5]);
+    $invoice->setApproved(false);
+    $invoice->setStatus(Invoice::STATUS_UNPAID);
+
+    $itemInvoiceServiceMock = Mockery::mock(ServiceInvoiceItem::class);
+    $itemInvoiceServiceMock->shouldNotReceive('addNew', 'update');
+
+    [$em] = invoiceItemEmAndRepo();
+    $eventManagerMock = Mockery::mock('\Box_EventManager');
+    $eventManagerMock->shouldReceive('fire')->atLeast()->once();
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(moduleService(['invoice:invoiceitem' => $itemInvoiceServiceMock]));
+    $di['events_manager'] = $eventManagerMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('toApiArray')->andReturn(['id' => 10, 'total' => 50.0]);
+    $serviceMock->shouldNotReceive('resendUpdatedInvoice');
+    $serviceMock->setDi($di);
+
+    expect($serviceMock->updateInvoice($invoice, ['notes' => 'Edited']))->toBeTrue();
+});
+
+test('deleteInvoiceByAdmin only deletes unapproved unpaid invoices', function (): void {
+    $locked = [
+        [true, Invoice::STATUS_UNPAID],
+        [false, Invoice::STATUS_PAID],
+        [true, Invoice::STATUS_PAID],
+        [true, Invoice::STATUS_CANCELED],
+    ];
+    foreach ($locked as [$approved, $status]) {
+        $service = new Service();
+        $invoice = createEntity(Invoice::class, ['id' => 10]);
+        $invoice->setApproved($approved);
+        $invoice->setStatus($status);
+
+        expect(fn () => $service->deleteInvoiceByAdmin($invoice))
+            ->toThrow(FOSSBilling\InformationException::class, 'Only unapproved, unpaid invoices can be deleted');
+    }
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $invoice = createEntity(Invoice::class, ['id' => 10]);
+    $invoice->setApproved(false);
+    $invoice->setStatus(Invoice::STATUS_UNPAID);
+
+    $eventManagerMock = Mockery::mock('\Box_EventManager');
+    $eventManagerMock->shouldReceive('fire')->twice();
+
+    $di = container();
+    $di['events_manager'] = $eventManagerMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $serviceMock->setDi($di);
+    $serviceMock->shouldReceive('rmInvoice')->once()->with($invoice)->andReturn(true);
+
+    expect($serviceMock->deleteInvoiceByAdmin($invoice))->toBeTrue();
+});

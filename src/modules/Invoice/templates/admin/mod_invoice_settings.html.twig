@@ -59,6 +59,13 @@
                         <span class="form-check-label">{{ 'Enable Auto Invoice Approval'|trans }}</span>
                     </label>
                 </div>
+                <div class="mt-3">
+                    <label class="form-check form-switch form-switch-2">
+                        <input class="form-check-input" name="invoice_allow_edit_unpaid" type="checkbox" value="1" {% if params.invoice_allow_edit_unpaid|default('') == '1' %}checked{% endif %}>
+                        <span class="form-check-label">{{ 'Allow editing approved invoices while unpaid'|trans }}</span>
+                    </label>
+                    <small class="form-hint">{{ 'Approved invoices are otherwise locked once issued. Only enable this where local rules treat an approved unpaid invoice as an editable quote; edited invoices are re-sent to the client.'|trans }}</small>
+                </div>
                 <div class="row g-3 mt-1">
                     <div class="col-lg-6">
                         <label class="form-label" for="invoice_reminder_before_due_days">{{ 'Payment Reminder Days Before Due'|trans }}</label>
