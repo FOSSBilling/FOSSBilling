@@ -4,6 +4,16 @@
 {% import "macro_functions.html.twig" as mf %}
 
 {% set nr = invoice.serie ~ "%05s"|format(invoice.nr) %}
+{% set credit_note_for_invoice = null %}
+{% set refunded_by_invoice = null %}
+{% if client %}
+    {% if invoice.credit_note_for_invoice_id %}
+        {% set credit_note_for_invoice = client.invoice_get_list({ 'id': invoice.credit_note_for_invoice_id, 'per_page': 1 }).list|first %}
+    {% endif %}
+    {% if invoice.refunded_by_invoice_id %}
+        {% set refunded_by_invoice = client.invoice_get_list({ 'id': invoice.refunded_by_invoice_id, 'per_page': 1 }).list|first %}
+    {% endif %}
+{% endif %}
 
 {% block meta_title %}{% if invoice.credit_note_for_invoice_id %}{{ 'Credit Note'|trans }}{% else %}{{ 'Invoice'|trans }}{% endif %} #{{ nr }}{% endblock %}
 
@@ -74,13 +84,13 @@
                                 <div class="well small">
                                     <h4 class="fw-light mt-2 mb-3">{% if invoice.credit_note_for_invoice_id %}{{ 'Credit Note'|trans }}{% else %}{{ 'Invoice'|trans }}{% endif %} #{{ nr }}</h4>
                                     <dl class="row">
-                                        {% if invoice.credit_note_for_invoice_id %}
+                                        {% if credit_note_for_invoice %}
                                         <dt class="col-sm-4 text-muted">{{ 'Refers to invoice'|trans }}</dt>
-                                        <dd class="col-sm-8">#{{ invoice.credit_note_for_invoice_id }}</dd>
+                                        <dd class="col-sm-8">#{{ credit_note_for_invoice.serie ~ "%05s"|format(credit_note_for_invoice.nr) }}</dd>
                                         {% endif %}
-                                        {% if invoice.refunded_by_invoice_id %}
+                                        {% if refunded_by_invoice %}
                                         <dt class="col-sm-4 text-muted">{{ 'Credited by'|trans }}</dt>
-                                        <dd class="col-sm-8">#{{ invoice.refunded_by_invoice_id }}</dd>
+                                        <dd class="col-sm-8">#{{ refunded_by_invoice.serie ~ "%05s"|format(refunded_by_invoice.nr) }}</dd>
                                         {% endif %}
                                         <dt class="col-sm-4 text-muted">{{ 'Invoice Date'|trans }}</dt>
                                         <dd class="col-sm-8">
