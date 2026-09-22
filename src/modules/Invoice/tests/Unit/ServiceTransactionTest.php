@@ -422,3 +422,44 @@ test('markTransactionError does not clobber an already processed transaction', f
 
     expect($transactionModel->status)->toBe(Model_Transaction::STATUS_PROCESSED);
 });
+
+test('refund handling reuses the invoice refund routine', function (): void {
+    $invoiceModel = new Model_Invoice();
+    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
+    $invoiceModel->currency = 'USD';
+
+    $transactionModel = new Model_Transaction();
+    $transactionModel->loadBean(new Tests\Helpers\DummyBean());
+    $transactionModel->id = 5;
+    $transactionModel->status = Model_Transaction::STATUS_APPROVED;
+    $transactionModel->invoice_id = 7;
+    $transactionModel->currency = 'USD';
+    $transactionModel->txn_status = 'complete';
+
+    $invoiceServiceMock = Mockery::mock(Box\Mod\Invoice\Service::class);
+    $invoiceServiceMock->shouldReceive('refundInvoice')
+        ->once()
+        ->with($invoiceModel, Mockery::type('string'))
+        ->andReturn(9);
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('load')
+        ->with('Invoice', 7)
+        ->andReturn($invoiceModel);
+    $dbMock->shouldReceive('store')
+        ->atLeast()->once();
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $invoiceServiceMock);
+
+    $service = new ServiceTransaction();
+    $service->setDi($di);
+
+    $refl = new ReflectionClass($service);
+    $method = $refl->getMethod('_refund');
+    $result = $method->invoke($service, $transactionModel);
+
+    expect($result)->toBe($transactionModel);
+    expect($transactionModel->status)->toBe(Model_Transaction::STATUS_PROCESSED);
+});
