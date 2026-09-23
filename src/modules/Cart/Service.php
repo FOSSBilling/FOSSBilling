@@ -553,7 +553,7 @@ class Service implements InjectionAwareInterface
 
     /**
      * Throw when the promo's bundle condition is not met by the cart,
-     * naming the missing products so the message is actionable.
+     * naming the missing products.
      */
     private function assertPromoCartConditionMet(Cart $cart, Promo $promo, ?array $cartProducts = null): void
     {
