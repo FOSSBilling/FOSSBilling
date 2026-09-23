@@ -129,17 +129,30 @@ class UpdateFinalization implements InjectionAwareInterface
      */
     public function finalizePendingUpdate(): void
     {
-        $this->withFinalizationLock(function (): void {
+        $pending = $this->withFinalizationLock(function (): bool {
             $state = $this->ensureCurrentVersionFinalization();
             if (($state['status'] ?? null) === self::STATUS_PENDING) {
                 $this->finalizeUpdateLocked($state);
-            } else {
-                // No version change (e.g. a code-only deploy with new entity columns), so no
-                // finalization runs - the hash-gated ambient sync covers that drift instead.
-                // @see https://github.com/FOSSBilling/FOSSBilling/issues/4392
-                $this->createPatcher()->ensureSchemaInSync();
+
+                return true;
             }
+
+            return false;
         });
+
+        if ($pending) {
+            return;
+        }
+
+        // No version change (e.g. a code-only deploy with new entity columns), so no
+        // finalization runs - but the schema may still have drifted. Check the metadata hash
+        // outside the lock and take it only when a sync is actually needed; the sync rechecks
+        // the hash inside, so a request that lost the race just no-ops.
+        // @see https://github.com/FOSSBilling/FOSSBilling/issues/4392
+        $patcher = $this->createPatcher();
+        if ($patcher->isSchemaOutOfSync()) {
+            $this->withFinalizationLock(static fn (): bool => $patcher->ensureSchemaInSync());
+        }
     }
 
     public function createPendingState(?string $fromVersion, string $targetVersion, array $context = []): array

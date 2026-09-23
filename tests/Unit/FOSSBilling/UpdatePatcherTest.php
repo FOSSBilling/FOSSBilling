@@ -1975,6 +1975,83 @@ test('ensureSchemaInSync logs, rather than throws, when the database is unreacha
         ->and($errorCalls[0]['params'][0])->toContain('Ambient schema sync failed');
 });
 
+test('isSchemaOutOfSync reports no drift without an entity manager or database', function (): void {
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->shouldNotReceive('prepare');
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+
+    expect($patcher->isSchemaOutOfSync())->toBeFalse();
+
+    $unreachable = Mockery::mock(PDO::class);
+    $unreachable->shouldReceive('prepare')->andThrow(new RuntimeException('connection refused'));
+
+    $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $brokenDi = new Pimple\Container();
+    $brokenDi['pdo'] = $unreachable;
+    $brokenDi['em'] = FOSSBilling\Doctrine\EntityManagerFactory::create($connection);
+    $brokenDi['logger'] = new Tests\Helpers\TestLogger();
+
+    $brokenPatcher = new UpdatePatcher();
+    $brokenPatcher->setDi($brokenDi);
+
+    // Best-effort check: an unreadable database reports "in sync" rather than throwing, so the
+    // per-request call outside the finalization lock stays cheap and silent.
+    expect($brokenPatcher->isSchemaOutOfSync())->toBeFalse();
+});
+
+test('ensureSchemaInSync backs off after a failed attempt until the cooldown ends', function (): void {
+    $dbFile = Path::join(sys_get_temp_dir(), 'fossbilling-schema-cooldown-' . bin2hex(random_bytes(8)) . '.sqlite');
+
+    try {
+        $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $dbFile]);
+        $entityManager = FOSSBilling\Doctrine\EntityManagerFactory::create($connection);
+        FOSSBilling\Doctrine\SchemaInstaller::createSchema($entityManager);
+
+        $connection->executeStatement('DROP INDEX invoice_credit_note_for_idx');
+        $connection->executeStatement('ALTER TABLE invoice DROP COLUMN credit_note_for_invoice_id');
+
+        $columnNames = static fn (): array => array_column(
+            $connection->fetchAllAssociative('PRAGMA table_info(invoice)'),
+            'name'
+        );
+
+        $pdo = new PDO('sqlite:' . $dbFile);
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+        $di = new Pimple\Container();
+        $di['pdo'] = $pdo;
+        $di['em'] = $entityManager;
+        $di['logger'] = new Tests\Helpers\TestLogger();
+
+        $patcher = new UpdatePatcher();
+        $patcher->setDi($di);
+
+        expect($patcher->isSchemaOutOfSync())->toBeTrue();
+
+        // A failed attempt for the current hash suppresses retries: no sync runs, so the column
+        // stays missing instead of redoing full introspection on every request.
+        $currentHash = FOSSBilling\Doctrine\EntityManagerFactory::entityDefinitionsHash();
+        (new ReflectionMethod($patcher, 'recordFailedSyncAttempt'))->invoke($patcher, $currentHash);
+
+        expect($patcher->ensureSchemaInSync())->toBeFalse()
+            ->and($columnNames())->not->toContain('credit_note_for_invoice_id');
+
+        // Once the cooldown expires the same hash retries and the sync completes.
+        $pdo->exec("UPDATE setting SET updated_at = '2000-01-01 00:00:00' WHERE param = 'schema_metadata_hash_failed'");
+
+        expect($patcher->ensureSchemaInSync())->toBeTrue()
+            ->and($columnNames())->toContain('credit_note_for_invoice_id');
+    } finally {
+        (new Filesystem())->remove($dbFile);
+    }
+});
+
 test('ensureSchemaInSync restores note columns missing from an older schema, then goes quiet', function (): void {
     // End-to-end upgrade path for https://github.com/FOSSBilling/FOSSBilling/issues/4392:
     // current entity metadata against a live schema predating the credit/debit-note releases.

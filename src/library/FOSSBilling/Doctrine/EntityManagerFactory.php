@@ -109,6 +109,40 @@ class EntityManagerFactory
     }
 
     /**
+     * Content-based identity of the current entity definitions - unlike
+     * {@see self::metadataCacheNamespace()}, independent of absolute paths and file mtimes, so
+     * every node running the same code computes the same value. Used to gate the ambient schema
+     * sync ({@see \FOSSBilling\UpdatePatcher::ensureSchemaInSync()}): a path/mtime-based identity
+     * would disagree across load-balanced nodes or separately built containers, making each node
+     * re-run the sync after every other node.
+     *
+     * Hashes the multiset of file contents, so renames and comment-only edits change nothing
+     * about the outcome - only added/removed/altered mapping code can flip it, and even then the
+     * sync it triggers is additive-only and idempotent.
+     *
+     * @param list<string>|null $moduleEntityPaths pass the already-computed list from create() to
+     *                                             avoid re-running the Finder; omit to compute it fresh
+     */
+    public static function entityDefinitionsHash(?array $moduleEntityPaths = null): string
+    {
+        $entityDirectories = $moduleEntityPaths ?? self::moduleEntityPaths();
+        if ($entityDirectories === []) {
+            return hash('xxh128', '');
+        }
+
+        $finder = new Finder();
+        $finder->files()->in($entityDirectories)->name('*.php');
+
+        $hashes = [];
+        foreach ($finder as $file) {
+            $hashes[] = hash_file('xxh128', $file->getPathname()) ?: '';
+        }
+        sort($hashes);
+
+        return hash('xxh128', implode('|', $hashes));
+    }
+
+    /**
      * Build a cache namespace seed that changes when local entity definitions change - hashed
      * into the metadata cache's namespace in create() above, so a stale cache never survives
      * an entity attribute edit (a new/renamed column, a new index, ...) regardless of whether

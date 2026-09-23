@@ -25,6 +25,14 @@ use Symfony\Component\Uid\Uuid;
 class UpdatePatcher implements InjectionAwareInterface
 {
     private const string SCHEMA_METADATA_HASH_PARAM = 'schema_metadata_hash';
+    private const string SCHEMA_METADATA_HASH_FAILED_PARAM = 'schema_metadata_hash_failed';
+
+    /**
+     * How long a failed ambient sync suppresses retries for the same metadata hash - a persistently
+     * failing sync (e.g. a DB user without ALTER privileges) would otherwise redo full schema
+     * introspection and log errors on every request. Explicit finalization still syncs regardless.
+     */
+    private const int SCHEMA_SYNC_RETRY_COOLDOWN = 3600;
 
     private ?\Pimple\Container $di = null;
     private Filesystem $filesystem;
@@ -237,9 +245,10 @@ class UpdatePatcher implements InjectionAwareInterface
      * code-only deploy (e.g. `git pull` to a commit that adds an entity column without bumping
      * Version::VERSION) still gets its schema updated instead of crashing on the next query.
      *
-     * The gate is EntityManagerFactory::metadataCacheNamespace(), the same identity Doctrine's
-     * own metadata cache uses - the last-synced value is kept in a plain setting row
-     * (SCHEMA_METADATA_HASH_PARAM), so a match costs a single SELECT.
+     * The gate is EntityManagerFactory::entityDefinitionsHash(), a content hash every node running
+     * the same code computes identically - the last-synced value is kept in a plain setting row
+     * (SCHEMA_METADATA_HASH_PARAM), so a match costs file reads plus a single SELECT and runs
+     * outside the finalization lock (see UpdateFinalization::finalizePendingUpdate()).
      *
      * @return bool whether a sync attempt ran (even if it applied nothing)
      */
@@ -250,12 +259,8 @@ class UpdatePatcher implements InjectionAwareInterface
         }
 
         try {
-            $currentHash = EntityManagerFactory::metadataCacheNamespace();
-            $storedHash = $this->fetchOne('SELECT value FROM setting WHERE param = :param', [
-                'param' => self::SCHEMA_METADATA_HASH_PARAM,
-            ]);
-
-            if ($storedHash === $currentHash) {
+            $currentHash = EntityManagerFactory::entityDefinitionsHash();
+            if ($this->fetchStoredSchemaHash() === $currentHash || $this->isSyncCoolingDown($currentHash)) {
                 return false;
             }
 
@@ -263,11 +268,113 @@ class UpdatePatcher implements InjectionAwareInterface
             // same-version path it never runs on doesn't leave them missing either.
             $this->seedInvoiceNoteSettings();
 
-            return $this->syncPortableSchema() !== null;
+            if ($this->syncPortableSchema() === null) {
+                $this->recordFailedSyncAttempt($currentHash);
+
+                return false;
+            }
+
+            return true;
         } catch (\Throwable $e) {
             $this->logUpdate('error', 'Ambient schema sync failed: ' . $e->getMessage());
+            $this->recordFailedSyncAttempt($currentHash ?? null);
 
             return false;
+        }
+    }
+
+    /**
+     * Whether the live schema may have drifted from current entity metadata - the hash-comparison
+     * half of ensureSchemaInSync(), safe to call without holding the finalization lock. Never
+     * throws: an unreadable database simply reports "in sync" and the next request checks again.
+     */
+    public function isSchemaOutOfSync(): bool
+    {
+        if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('em')) {
+            return false;
+        }
+
+        try {
+            return $this->fetchStoredSchemaHash() !== EntityManagerFactory::entityDefinitionsHash();
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    /**
+     * @throws \Exception when the database cannot be read
+     */
+    private function fetchStoredSchemaHash(): mixed
+    {
+        return $this->fetchOne('SELECT value FROM setting WHERE param = :param', [
+            'param' => self::SCHEMA_METADATA_HASH_PARAM,
+        ]);
+    }
+
+    /**
+     * Whether a sync for this exact metadata hash already failed within the retry cooldown -
+     * see SCHEMA_SYNC_RETRY_COOLDOWN. Read failures fail open (no cooldown), leaving the outcome
+     * to the sync attempt itself rather than guessing from a half-read state.
+     */
+    private function isSyncCoolingDown(string $currentHash): bool
+    {
+        try {
+            $rows = $this->fetchAll('SELECT value, updated_at FROM setting WHERE param = :param', [
+                'param' => self::SCHEMA_METADATA_HASH_FAILED_PARAM,
+            ]);
+        } catch (\Throwable) {
+            return false;
+        }
+
+        $failed = $rows[0] ?? null;
+        if (!is_array($failed) || ($failed['value'] ?? null) !== $currentHash) {
+            return false;
+        }
+
+        $attemptedAt = strtotime((string) ($failed['updated_at'] ?? ''));
+        if ($attemptedAt === false) {
+            return false;
+        }
+
+        return $attemptedAt + self::SCHEMA_SYNC_RETRY_COOLDOWN > time();
+    }
+
+    /**
+     * Remembers a failed sync attempt for the cooldown above. Never throws - called from failure
+     * paths where a second exception would mask the original error or escape a log-and-continue
+     * contract.
+     */
+    private function recordFailedSyncAttempt(?string $currentHash): void
+    {
+        if ($currentHash === null) {
+            return;
+        }
+
+        try {
+            $existing = $this->fetchOne('SELECT value FROM setting WHERE param = :param', [
+                'param' => self::SCHEMA_METADATA_HASH_FAILED_PARAM,
+            ]);
+
+            if ($existing === false) {
+                $now = date('Y-m-d H:i:s');
+                $this->executeSql(
+                    'INSERT INTO setting (param, value, public, created_at, updated_at) VALUES (:param, :value, 0, :created_at, :updated_at)',
+                    [
+                        'param' => self::SCHEMA_METADATA_HASH_FAILED_PARAM,
+                        'value' => $currentHash,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ]
+                );
+            } else {
+                $this->executeSql('UPDATE setting SET value = :value, updated_at = :updated_at WHERE param = :param', [
+                    'value' => $currentHash,
+                    'updated_at' => date('Y-m-d H:i:s'),
+                    'param' => self::SCHEMA_METADATA_HASH_FAILED_PARAM,
+                ]);
+            }
+        } catch (\Throwable) {
+            // Best effort only - the next request retries the bookkeeping too.
         }
     }
 
@@ -395,7 +502,7 @@ class UpdatePatcher implements InjectionAwareInterface
             }
 
             $result = SchemaSynchronizer::syncEntities($entityManager, $eagerEntityClasses);
-            $this->storeSchemaMetadataHash(EntityManagerFactory::metadataCacheNamespace());
+            $this->storeSchemaMetadataHash(EntityManagerFactory::entityDefinitionsHash());
         } catch (\Throwable $e) {
             $this->logUpdate('error', 'Schema sync against the configured database failed: ' . $e->getMessage());
 
