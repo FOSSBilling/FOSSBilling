@@ -415,6 +415,10 @@ class Service implements InjectionAwareInterface
         $ext->setStatus(Extension::STATUS_INSTALLED);
         $this->di['em']->flush();
 
+        if ($ext->getType() === \FOSSBilling\ExtensionManager::TYPE_MOD && $this->di->offsetExists('event_dispatcher')) {
+            $this->di['event_dispatcher']->refresh();
+        }
+
         return $result;
     }
 
@@ -451,6 +455,10 @@ class Service implements InjectionAwareInterface
 
         $this->di['em']->remove($ext);
         $this->di['em']->flush();
+
+        if ($ext->getType() === \FOSSBilling\ExtensionManager::TYPE_MOD && $this->di->offsetExists('event_dispatcher')) {
+            $this->di['event_dispatcher']->refresh();
+        }
 
         return true;
     }

@@ -198,6 +198,12 @@ $di['events_manager'] = function () use ($di) {
     return $service;
 };
 
+$di['event_dispatcher'] = fn (): FOSSBilling\Events\EventDispatcher => new FOSSBilling\Events\EventDispatcher(
+    fn (): array => $di['mod_service']('extension')->getCoreAndActiveModules(),
+    fn (string $module): object => $di['mod_service']($module),
+    $di['logger']->withChannel('event'),
+);
+
 /*
  * Creates a new session, applying specified security rules depending on the config.php settings.
  *

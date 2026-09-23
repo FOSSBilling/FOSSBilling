@@ -60,6 +60,23 @@ If you need to sell a new type of product you will implement a Service type modu
 
 Other modules extend the whole FOSSBilling API with any functionality needed. Check existing modules to get an idea of what is already shipped with the default structure of FOSSBilling.
 
+### Typed module events
+
+New extension points can use event classes extending `FOSSBilling\Events\Event`. Dispatch them through `$di['event_dispatcher']->dispatch($event)`. A module's `Service` class can listen with Symfony's `#[AsEventListener]` attribute on a public instance method. The first parameter must name the event class; the method name can be anything.
+
+```php
+use Box\Mod\Support\Event\BeforeGuestTicketCreateEvent;
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
+
+#[AsEventListener]
+public function customizeGuestTicket(BeforeGuestTicketCreateEvent $event): void
+{
+    $event->setSubject('Support request: ' . $event->getSubject());
+}
+```
+
+Listeners on core and active modules are registered when the typed dispatcher is first used. Activating or deactivating a module refreshes registrations within the same request. Symfony listener priorities are supported. Existing string-named hooks continue to run during migration; for guest ticket creation, they run before the typed event, and the typed event receives their result. Typed event classes should expose setters only for fields listeners are allowed to change. Other event data can be readonly.
+
 ## How can I contribute?
 
 There are a lot of different ways that you can get involved in the FOSSBilling project. Let's take a look at some of the main ones:

@@ -22,6 +22,7 @@ use Box\Mod\Support\Entity\SupportTicket;
 use Box\Mod\Support\Entity\SupportTicketMessage;
 use Box\Mod\Support\Entity\SupportTicketMessageHistory;
 use Box\Mod\Support\Entity\SupportTicketNote;
+use Box\Mod\Support\Event\BeforeGuestTicketCreateEvent;
 use Box\Mod\Support\Repository\CannedResponseCategoryRepository;
 use Box\Mod\Support\Repository\CannedResponseRepository;
 use Box\Mod\Support\Repository\HelpdeskRepository;
@@ -1051,6 +1052,16 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $subject = $altered['subject'] ?? null;
             $message = $altered['content'] ?? $altered['message'] ?? null;
         }
+
+        $ticketEvent = $this->di['event_dispatcher']->dispatch(new BeforeGuestTicketCreateEvent(
+            input: $event_params,
+            status: $status,
+            subject: $subject,
+            message: $message,
+        ));
+        $status = $ticketEvent->getStatus();
+        $subject = $ticketEvent->getSubject();
+        $message = $ticketEvent->getMessage();
 
         $helpdesk = isset($data['support_helpdesk_id'])
             ? $this->getHelpdeskRepository()->find((int) $data['support_helpdesk_id'])
