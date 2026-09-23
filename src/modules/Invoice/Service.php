@@ -929,40 +929,59 @@ class Service implements InjectionAwareInterface
         }
 
         if ($payGateway->getGateway() === 'Custom' && $payGateway->isEnabled()) {
-            $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
-            $invoiceTotal = $this->getTotalWithTax($invoice);
-            $newtx = $transactionService->create([
-                'invoice_id' => $invoice->getId(),
-                'gateway_id' => $invoice->getGateway()?->getId(),
-                'currency' => $invoice->getCurrency(),
-                'status' => 'received',
-                'source' => 'admin',
-                'post' => [
+            return $this->di['em']->wrapInTransaction(function () use ($invoice, $execute, $payGateway, $transactionId): bool {
+                // Re-validate under the invoice lock: the invoice may have
+                // been canceled or replaced after the preflight check above.
+                // Creating the transaction record in this transaction means a
+                // rejection rolls it back instead of stranding a received
+                // record on a canceled invoice.
+                $state = $this->lockAndRefreshInvoice($invoice);
+                if ($state['status'] === Invoice::STATUS_PAID) {
+                    return false;
+                }
+                // Re-read through the repository: the entity getter was
+                // already narrowed by the preflight check above, while the
+                // row may have changed under us.
+                $locked = $this->di['em']->getRepository(Invoice::class)->find($invoice->getId());
+                if ($state['status'] === Invoice::STATUS_CANCELED || ($locked instanceof Invoice && $locked->getReplacedByInvoiceId() !== null)) {
+                    throw new InformationException('This invoice was canceled and cannot be marked as paid');
+                }
+
+                $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
+                $invoiceTotal = $this->getTotalWithTax($invoice);
+                $newtx = $transactionService->create([
                     'invoice_id' => $invoice->getId(),
+                    'gateway_id' => $invoice->getGateway()?->getId(),
+                    'currency' => $invoice->getCurrency(),
+                    'status' => 'received',
+                    'source' => 'admin',
+                    'post' => [
+                        'invoice_id' => $invoice->getId(),
+                        'txn_id' => $transactionId,
+                    ],
                     'txn_id' => $transactionId,
-                ],
-                'txn_id' => $transactionId,
-            ]);
-            $transaction = $this->di['em']->getRepository(Transaction::class)->find((int) $newtx);
-            if ($transaction === null) {
-                throw new InformationException('Transaction not found');
-            }
-            if ((int) $transaction->getInvoice()?->getId() !== (int) $invoice->getId()) {
-                throw new InformationException('Transaction ID is already associated with another invoice.');
-            }
+                ]);
+                $transaction = $this->di['em']->getRepository(Transaction::class)->find((int) $newtx);
+                if ($transaction === null) {
+                    throw new InformationException('Transaction not found');
+                }
+                if ((int) $transaction->getInvoice()?->getId() !== (int) $invoice->getId()) {
+                    throw new InformationException('Transaction ID is already associated with another invoice.');
+                }
 
-            $result = $this->markAsPaid($invoice, false, $execute);
-            if ($result) {
-                $transaction->setAmount((string) $invoiceTotal);
-                $transaction->setCurrency($invoice->getCurrency());
-                $transaction->setStatus(Transaction::STATUS_PROCESSED);
-                $gatewayTitle = $payGateway->getName() ?: $payGateway->getGateway();
-                $transaction->setNote(sprintf('%s transaction No: %s', $gatewayTitle, $transactionId));
-                $transaction->setUpdatedAt(new \DateTime());
-                $this->di['em']->flush();
-            }
+                $result = $this->markAsPaid($invoice, false, $execute);
+                if ($result) {
+                    $transaction->setAmount((string) $invoiceTotal);
+                    $transaction->setCurrency($invoice->getCurrency());
+                    $transaction->setStatus(Transaction::STATUS_PROCESSED);
+                    $gatewayTitle = $payGateway->getName() ?: $payGateway->getGateway();
+                    $transaction->setNote(sprintf('%s transaction No: %s', $gatewayTitle, $transactionId));
+                    $transaction->setUpdatedAt(new \DateTime());
+                    $this->di['em']->flush();
+                }
 
-            return $result;
+                return $result;
+            });
         }
 
         return $this->markAsPaid($invoice, false, $execute);
@@ -2175,6 +2194,12 @@ class Service implements InjectionAwareInterface
             }
         }
 
+        // Lock the order before reading any of its state: two staff requests
+        // attaching the same pending order hold different invoice locks, so
+        // only the order row itself serializes them. Held through line
+        // creation and linking below.
+        $this->lockAndRefreshOrder($order);
+
         if ((int) $order->getClientId() !== (int) $invoice->getClientId()) {
             throw new InformationException('Order does not belong to this invoice\'s client');
         }
@@ -3134,6 +3159,10 @@ class Service implements InjectionAwareInterface
 
         $this->checkInvoiceAuth($invoice, InvoiceOperation::PAYMENT);
 
+        if ($invoice->getStatus() === Invoice::STATUS_CANCELED || $invoice->getReplacedByInvoiceId() !== null) {
+            throw new InformationException('This invoice was canceled and cannot be paid');
+        }
+
         $gtw = $this->di['em']->getRepository(PayGateway::class)->find((int) $data['gateway_id']);
         if (!$gtw instanceof PayGateway) {
             throw new InformationException('Payment method not found', null, 813);
@@ -3490,6 +3519,22 @@ class Service implements InjectionAwareInterface
         }
 
         return $state;
+    }
+
+    /**
+     * Lock an order row and refresh the entity, so a concurrent request
+     * cannot attach the same order to another invoice between the link check
+     * and the line creation below. The caller must hold the surrounding
+     * transaction open until linking is complete.
+     */
+    private function lockAndRefreshOrder(Order $order): void
+    {
+        if ($order->getId() === null) {
+            return;
+        }
+
+        $this->di['em']->getRepository(Order::class)->lockAndGetUnpaidInvoiceId($order->getId());
+        $this->di['em']->refresh($order);
     }
 
     /**
