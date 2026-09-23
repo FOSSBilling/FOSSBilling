@@ -3367,11 +3367,6 @@ test('renewal splits the historical discount between primary and stacked promos'
     ]);
     $product = productTestCreateProductEntity(17)->setType('service');
     $primaryPromo = productTestCreatePromoEntity(15)->setCode('PRIMARY')->setRecurring(true);
-    $primaryRedemption = new PromoRedemption();
-    $primaryRedemption->setPromo($primaryPromo)
-        ->setPhase(PromoRedemption::PHASE_CHECKOUT)
-        ->setStatus(PromoRedemption::STATUS_COMMITTED)
-        ->setDiscountAmount(20.0);
 
     $stackedPromo = productTestCreatePromoEntity(16)->setCode('STACK')->setRecurring(true);
     $stackedRedemption = new PromoRedemption();
@@ -3397,7 +3392,7 @@ test('renewal splits the historical discount between primary and stacked promos'
             'phase' => PromoRedemption::PHASE_CHECKOUT,
             'status' => PromoRedemption::STATUS_COMMITTED,
         ])
-        ->andReturn([$primaryRedemption]);
+        ->andReturn([]);
     $redemptionRepo->shouldReceive('findBy')
         ->once()
         ->with([
