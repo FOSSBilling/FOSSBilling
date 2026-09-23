@@ -335,6 +335,56 @@ test('rejects a debit note without lines', function (): void {
     expect(fn () => $api->debit(['id' => 1]))->toThrow(FOSSBilling\InformationException::class, 'Debit lines are missing');
 });
 
+test('attaches a product order to an invoice', function (): void {
+    $api = apiEndpoint(new Admin());
+    $data = [
+        'id' => 1,
+        'product_id' => 7,
+        'quantity' => 2,
+        'config' => ['username' => 'client'],
+    ];
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('attachOrderToInvoice')
+        ->once()
+        ->with(Mockery::type(Invoice::class), $data)
+        ->andReturn(42);
+
+    $model = createEntity(Invoice::class);
+
+    $di = container();
+    $di['em']->getRepository(Invoice::class)->shouldReceive('find')->atLeast()->once()->andReturn($model);
+
+    $api->setDi($di);
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($di['em']->getRepository(Invoice::class));
+    $api->setService($serviceMock);
+
+    expect($api->attach_order($data))->toBe(42);
+});
+
+test('reissues an invoice', function (): void {
+    $api = apiEndpoint(new Admin());
+    $data = [
+        'id' => 1,
+        'reason' => 'Client asked to add hosting',
+    ];
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('reissueInvoice')
+        ->once()
+        ->with(Mockery::type(Invoice::class), $data)
+        ->andReturn(11);
+
+    $model = createEntity(Invoice::class);
+
+    $di = container();
+    $di['em']->getRepository(Invoice::class)->shouldReceive('find')->atLeast()->once()->andReturn($model);
+
+    $api->setDi($di);
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($di['em']->getRepository(Invoice::class));
+    $api->setService($serviceMock);
+
+    expect($api->reissue($data))->toBe(11);
+});
+
 test('updates an invoice', function (): void {
     $api = apiEndpoint(new Admin());
     $data = [

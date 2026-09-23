@@ -14,8 +14,10 @@ namespace Box\Mod\Cart;
 use Box\Mod\Cart\Entity\Cart;
 use Box\Mod\Cart\Entity\CartProduct;
 use Box\Mod\Cart\Event\AfterProductAddedToCartEvent;
+use Box\Mod\Cart\Event\AfterStaffOrderCreateEvent;
 use Box\Mod\Cart\Event\BeforeClientCheckoutEvent;
 use Box\Mod\Cart\Event\BeforeProductAddedToCartEvent;
+use Box\Mod\Cart\Event\BeforeStaffCheckoutEvent;
 use Box\Mod\Cart\Repository\CartProductRepository;
 use Box\Mod\Cart\Repository\CartRepository;
 use Box\Mod\Client\Entity\Client;
@@ -25,6 +27,7 @@ use Box\Mod\Order\Entity\Order;
 use Box\Mod\Order\Event\AfterClientOrderCreateEvent;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Product\Entity\Promo;
+use Box\Mod\Product\Service as ProductService;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use FOSSBilling\Doctrine\EntityManagerFactory;
 use FOSSBilling\InjectionAwareInterface;
@@ -40,6 +43,15 @@ class Service implements InjectionAwareInterface
      * when per-family order group_ids are assigned.
      */
     public const string CART_FAMILY_KEY = '__cart_family';
+
+    /**
+     * Staff baskets live in the same cart tables as client carts but under a
+     * synthetic session key scoped to the admin and the client, so a staff
+     * basket can never collide with a browser session cart. Expired-basket
+     * cleanup never touches them implicitly: they are discarded explicitly
+     * or destroyed on checkout.
+     */
+    public const string STAFF_BASKET_PREFIX = 'staff:';
 
     protected ?\Pimple\Container $di = null;
 
@@ -150,8 +162,51 @@ class Service implements InjectionAwareInterface
             }
         }
 
+        return $this->createCart($sessionID, $currency);
+    }
+
+    public static function staffBasketKey(int $adminId, int $clientId): string
+    {
+        return self::STAFF_BASKET_PREFIX . $adminId . ':' . $clientId;
+    }
+
+    public function isStaffBasket(Cart $cart): bool
+    {
+        return str_starts_with((string) $cart->getSessionId(), self::STAFF_BASKET_PREFIX);
+    }
+
+    /**
+     * Get (creating if needed) the staff basket for one admin acting for one
+     * client. Currency follows the client, never the admin's session.
+     */
+    public function getStaffBasket(Client $client, int $adminId): Cart
+    {
+        $key = self::staffBasketKey($adminId, (int) $client->getId());
+        $cart = $this->getCartRepository()->findBySessionId($key);
+
+        if ($cart instanceof Cart) {
+            return $cart;
+        }
+
+        $currencyService = $this->di['mod_service']('currency');
+
+        $currency = $currencyService->getCurrencyByClientId((int) $client->getId());
+        if (!$currency instanceof Currency) {
+            /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
+            $currencyRepository = $currencyService->getCurrencyRepository();
+            $currency = $currencyRepository->findDefault();
+            if (!$currency instanceof Currency) {
+                throw new \FOSSBilling\Exception('Default currency not found');
+            }
+        }
+
+        return $this->createCart($key, $currency);
+    }
+
+    private function createCart(string $sessionId, Currency $currency): Cart
+    {
         $cart = new Cart();
-        $cart->setSessionId($sessionID);
+        $cart->setSessionId($sessionId);
         $cart->setCurrencyId($currency->getId());
 
         try {
@@ -159,7 +214,7 @@ class Service implements InjectionAwareInterface
             $this->di['em']->flush();
         } catch (UniqueConstraintViolationException $exception) {
             $this->resetEntityManager();
-            $cart = $this->getCartRepository()->findBySessionId($sessionID);
+            $cart = $this->getCartRepository()->findBySessionId($sessionId);
             if (!$cart instanceof Cart) {
                 throw $exception;
             }
@@ -168,8 +223,12 @@ class Service implements InjectionAwareInterface
         return $cart;
     }
 
-    public function addItem(Cart $cart, Product $product, array $data): bool
+    public function addItem(Cart $cart, Product $product, array $data, ?float $priceOverride = null): bool
     {
+        if ($priceOverride !== null && $priceOverride < 0) {
+            throw new \FOSSBilling\InformationException('Price override cannot be negative');
+        }
+
         $cartId = (int) $cart->getId();
         $productId = $this->getProductId($product);
         $this->di['event_dispatcher']->dispatch(new BeforeProductAddedToCartEvent($cartId, $productId));
@@ -190,6 +249,10 @@ class Service implements InjectionAwareInterface
         $addons = $data['addons'] ?? [];
         unset($data['id']);
         unset($data['addons']);
+        // A forged override in request input must never reach pricing: the
+        // only legitimate override is the server-side stamp below, passed
+        // explicitly by staff callers (client add_item has no such param).
+        unset($data[ProductService::PRICE_OVERRIDE_KEY]);
 
         $productConfig = json_decode($product->getConfig() ?? '', true) ?? [];
 
@@ -269,6 +332,7 @@ class Service implements InjectionAwareInterface
 
         $familyToken = bin2hex(random_bytes(16));
 
+        $isMainRow = true;
         foreach ($list as $c) {
             $productFromList = $c['product'];
             $productFromListConfig = $this->getProductService()->prepareCartProductConfig($productFromList, $c['config']);
@@ -276,6 +340,15 @@ class Service implements InjectionAwareInterface
             // prepareCartProductConfig() so the client-input filter can
             // neither strip it nor be bypassed with a forged value.
             $productFromListConfig[self::CART_FAMILY_KEY] = $familyToken;
+            // Staff price overrides apply to the main product row only;
+            // bundled domains and addons stay on catalog pricing. Strip a
+            // forged value from every row first: addon configs pass through
+            // unfiltered for services without a client key allowlist.
+            unset($productFromListConfig[ProductService::PRICE_OVERRIDE_KEY]);
+            if ($isMainRow && $priceOverride !== null) {
+                $productFromListConfig[ProductService::PRICE_OVERRIDE_KEY] = $priceOverride;
+            }
+            $isMainRow = false;
             $this->addProduct($cart, $productFromList, $productFromListConfig);
         }
 
@@ -504,7 +577,11 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function toApiArray(Cart $model, $deep = false, $identity = null): array
+    /**
+     * @param ?Client $client explicit client for automatic-promo resolution
+     *                        (staff baskets have no logged-in client)
+     */
+    public function toApiArray(Cart $model, $deep = false, $identity = null, ?Client $client = null): array
     {
         $products = $this->getCartProducts($model);
 
@@ -522,7 +599,7 @@ class Service implements InjectionAwareInterface
 
         // Manual promo codes always win; automatic promos only resolve when no
         // code was entered, so clients are never surprised by stacked savings.
-        $effective = $this->getEffectiveCartPromos($model);
+        $effective = $this->getEffectiveCartPromos($model, $client);
         $promos = $effective['promos'];
 
         $items = [];
@@ -688,9 +765,9 @@ class Service implements InjectionAwareInterface
         return $this->getProductService()->promoCanBeApplied($promo);
     }
 
-    public function isPromoAvailableForClientGroup(Promo $promo)
+    public function isPromoAvailableForClientGroup(Promo $promo, ?Client $client = null)
     {
-        return $this->getProductService()->isPromoAvailableForClientGroup($promo);
+        return $this->getProductService()->isPromoAvailableForClientGroup($promo, $client);
     }
 
     protected function clientHadUsedPromo(Client $client, Promo $promo): bool
@@ -807,8 +884,103 @@ class Service implements InjectionAwareInterface
 
     public function createFromCart(Client $client, $gateway_id = null): array
     {
-        $cart = $this->getSessionCart();
-        $ca = $this->toApiArray($cart);
+        return $this->createOrdersFromCart($this->getSessionCart(), $client, ['gateway_id' => $gateway_id]);
+    }
+
+    /**
+     * Check out a staff basket: same order/invoice shape as a client checkout
+     * (family group_ids, one invoice, promo redemptions), with staff deltas -
+     * disabled products allowed, optional activation opt-out, optional
+     * mark-as-paid. The basket row is destroyed only on success.
+     *
+     * Options: gateway_id, activate (default true), mark_invoice_paid,
+     * transactionId (Custom gateway note, mirroring admin order creation).
+     */
+    public function checkoutStaffBasket(Cart $basket, Client $client, int $adminId, array $options = []): array
+    {
+        if (!$this->isStaffBasket($basket)) {
+            throw new \FOSSBilling\Exception('Not a staff basket');
+        }
+
+        if ($basket->getSessionId() !== self::staffBasketKey($adminId, (int) $client->getId())) {
+            throw new \FOSSBilling\Exception('Staff basket does not belong to this admin and client');
+        }
+
+        $promoId = $basket->getPromoId();
+        if ($promoId) {
+            $promo = $this->getProductService()->findPromoById($promoId);
+            if (!$this->isClientAbleToUsePromo($client, $promo)) {
+                throw new \FOSSBilling\InformationException('This client has already used this promo code. Please remove the promo code and checkout again.', null, 9874);
+            }
+
+            if (!$this->isPromoAvailableForClientGroup($promo, $client)) {
+                throw new \FOSSBilling\InformationException('Promo code cannot be applied to this client account');
+            }
+        }
+
+        $this->di['event_dispatcher']->dispatch(new BeforeStaffCheckoutEvent(
+            $adminId,
+            (int) $client->getId(),
+            (int) $basket->getId(),
+        ));
+
+        [$order, $invoice, $orders] = $this->createOrdersFromCart($basket, $client, [
+            'gateway_id' => $options['gateway_id'] ?? null,
+            'allow_disabled' => true,
+            'activate' => $options['activate'] ?? true,
+        ]);
+
+        $this->rm($basket);
+
+        $this->di['logger']->info('Checked out staff basket for client #{client_id}', ['client_id' => $client->getId()]);
+
+        $this->di['event_dispatcher']->dispatch(new AfterStaffOrderCreateEvent(
+            $adminId,
+            (int) $client->getId(),
+            (int) $order->getId(),
+        ));
+
+        $result = [
+            'gateway_id' => $options['gateway_id'] ?? null,
+            'invoice_id' => $invoice instanceof Invoice ? $invoice->getId() : null,
+            'invoice_hash' => null,
+            'order_id' => $order->getId(),
+            'orders' => $orders,
+        ];
+
+        $isInvoiceUnpaid = $invoice instanceof Invoice
+            && $invoice->getStatus() === Invoice::STATUS_UNPAID;
+
+        if ($isInvoiceUnpaid) {
+            $result['invoice_hash'] = $invoice->getHash();
+
+            if (!empty($options['mark_invoice_paid'])) {
+                $this->di['mod_service']('Invoice')->markAsPaidByAdmin($invoice, [
+                    'gateway_id' => $options['gateway_id'] ?? null,
+                    'transactionId' => $options['transactionId'] ?? null,
+                ]);
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Shared order-creation core behind client and staff checkouts: one order
+     * row per basket item (family group_ids assigned server-side), a single
+     * invoice for the whole basket, promo redemptions, then activation.
+     *
+     * Options: gateway_id, allow_disabled (staff may order disabled products,
+     * mirroring the admin single-order flow), activate (staff may leave
+     * orders pending setup instead of the cart's automatic activation).
+     */
+    public function createOrdersFromCart(Cart $cart, Client $client, array $options = []): array
+    {
+        $gateway_id = $options['gateway_id'] ?? null;
+        $allowDisabledProducts = $options['allow_disabled'] ?? false;
+        $activate = $options['activate'] ?? true;
+
+        $ca = $this->toApiArray($cart, false, null, $client);
         if (\FOSSBilling\Tools::safeCount($ca['items']) == 0) {
             throw new \FOSSBilling\InformationException('Cannot checkout an empty cart');
         }
@@ -841,7 +1013,7 @@ class Service implements InjectionAwareInterface
         }
 
         try {
-            return $this->di['em']->wrapInTransaction(function () use ($ca, $cart, $client, $currency, $currencyCode, $gateway_id, $taxed, $promo, $promoProductService, &$reservedPromoUsage, &$discountsByOrderAndPromo, &$stockReservedOrders) {
+            return $this->di['em']->wrapInTransaction(function () use ($ca, $cart, $client, $currency, $currencyCode, $gateway_id, $taxed, $promo, $promoProductService, $activate, $allowDisabledProducts, &$reservedPromoUsage, &$discountsByOrderAndPromo, &$stockReservedOrders) {
                 $effectivePromos = [];
                 if ($promo instanceof Promo) {
                     $this->assertClientAbleToUsePromoForUpdate($client, $promo);
@@ -879,9 +1051,13 @@ class Service implements InjectionAwareInterface
                     // grouping, then keep it out of the stored order config.
                     $familyToken = $item[self::CART_FAMILY_KEY] ?? null;
                     unset($item[self::CART_FAMILY_KEY]);
+                    // Internal bookkeeping only: the resolved price already
+                    // carries the override, and renewals re-price from the
+                    // order like any other admin-set price.
+                    unset($item[ProductService::PRICE_OVERRIDE_KEY]);
 
                     $product = $this->getProductService()->findProductById((int) $item['product_id']);
-                    if ($product->getStatus() !== 'enabled') {
+                    if (!$allowDisabledProducts && $product->getStatus() !== 'enabled') {
                         throw new \FOSSBilling\InformationException('Unable to complete order. One or more of the selected products are invalid.');
                     }
 
@@ -1040,26 +1216,30 @@ class Service implements InjectionAwareInterface
                 }
 
                 // Activate orders after the checkout state is durably persisted.
+                // Staff checkouts can opt out, leaving orders pending setup.
                 $orderService = $this->di['mod_service']('Order');
                 $ids = [];
                 foreach ($orders as $order) {
                     $ids[] = $order->getId();
+                    if (!$activate) {
+                        continue;
+                    }
                     $oa = $orderService->toApiArray($order, false, $client);
                     $product = $this->getProductService()->findProductById((int) $oa['product_id']);
 
                     try {
-                        if ($product->getSetup() == \Box\Mod\Product\Service::SETUP_AFTER_ORDER) {
+                        if ($product->getSetup() == ProductService::SETUP_AFTER_ORDER) {
                             $orderService->activateOrder($order);
                         }
 
-                        if ($ca['total'] <= 0 && $product->getSetup() == \Box\Mod\Product\Service::SETUP_AFTER_PAYMENT && $oa['total'] - $oa['discount'] <= 0) {
+                        if ($ca['total'] <= 0 && $product->getSetup() == ProductService::SETUP_AFTER_PAYMENT && $oa['total'] - $oa['discount'] <= 0) {
                             $orderService->activateOrder($order);
                         }
 
                         $isPaid = $invoiceModel instanceof Invoice
                             && $invoiceModel->getStatus() === Invoice::STATUS_PAID;
 
-                        if ($ca['total'] > 0 && $product->getSetup() == \Box\Mod\Product\Service::SETUP_AFTER_PAYMENT && $isPaid) {
+                        if ($ca['total'] > 0 && $product->getSetup() == ProductService::SETUP_AFTER_PAYMENT && $isPaid) {
                             $orderService->activateOrder($order);
                         }
                     } catch (\Throwable $e) {
@@ -1153,7 +1333,7 @@ class Service implements InjectionAwareInterface
         return json_decode($model->getConfig() ?? '', true) ?? [];
     }
 
-    private function getProductService(): \Box\Mod\Product\Service
+    private function getProductService(): ProductService
     {
         return $this->di['mod_service']('Product');
     }

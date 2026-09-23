@@ -53,6 +53,16 @@ class Service implements InjectionAwareInterface
     final public const string STACKING_STACK_ALL = 'stack_all_eligible';
     final public const string STACKING_PRIORITY_FIRST = 'priority_first';
 
+    /**
+     * Internal cart-item config key carrying a staff-set unit price override.
+     * Stamped server-side after prepareCartProductConfig() (like the cart
+     * family token) so it can never be smuggled in through a client request;
+     * addItem() strips any incoming value first. Honored for every product
+     * type except domains, which are always re-priced from the TLD table -
+     * matching the admin single-order flow.
+     */
+    final public const string PRICE_OVERRIDE_KEY = '__price_override';
+
     protected ?\Pimple\Container $di = null;
     protected ?ProductRepository $productRepository = null;
     protected ?ProductCategoryRepository $productCategoryRepository = null;
@@ -1919,10 +1929,6 @@ class Service implements InjectionAwareInterface
         }
 
         $productId = $order->getProductId();
-        $discountAmount = (float) ($order->getDiscount() ?? 0);
-        // With stacked promos the order discount is the combined total; the
-        // primary promo only owns the remainder after the stacked shares.
-        $discountAmount = max(0.0, $discountAmount - $stackedDiscount);
         $currency = $order->getCurrency() ?? '';
         $product = $this->findProductById((int) $productId);
 
@@ -1936,7 +1942,14 @@ class Service implements InjectionAwareInterface
             $promo = $this->findPromoById((int) $promoId);
         }
 
-        if ($product->getType() === self::DOMAIN) {
+        if ($product->getType() !== self::DOMAIN) {
+            // Stacked orders store their combined discount on the order, but
+            // each promo's own checkout share is recorded separately.
+            $discountAmount = $this->getRecurringPromoDiscountForOrder($order, $promo);
+            // Preserve renewal behavior for orders created before
+            // per-promo redemption amounts were recorded.
+            $discountAmount ??= max(0.0, (float) ($order->getDiscount() ?? 0) - $stackedDiscount);
+        } else {
             $configValue = $order->getConfig();
             $config = json_decode($configValue ?? '', true) ?? [];
             $discountAmount = $this->getRenewalProductDiscount($product, $promo, $config);
@@ -2003,7 +2016,7 @@ class Service implements InjectionAwareInterface
             $discountAmount += (float) ($redemption->getDiscountAmount() ?? 0);
         }
 
-        return $discountAmount > 0 ? $discountAmount : null;
+        return $redemptions === [] ? null : $discountAmount;
     }
 
     public function toPromoApiArray(Promo $model, $deep = false, $identity = null)
@@ -2177,6 +2190,44 @@ class Service implements InjectionAwareInterface
         $this->releasePromoRedemptions($redemptions, $reason);
     }
 
+    /**
+     * Move reserved promo redemptions to another invoice when their orders
+     * move with it (e.g. invoice reissue), so paying the new invoice commits
+     * them instead of leaving them stranded on a canceled one.
+     *
+     * @param int[] $orderIds
+     *
+     * @return int number of transferred redemptions
+     */
+    public function transferReservedPromoRedemptionsForOrders(array $orderIds, Invoice $invoice): int
+    {
+        $orderIds = array_values(array_unique(array_map(intval(...), $orderIds)));
+        if ($orderIds === []) {
+            return 0;
+        }
+
+        $redemptions = $this->getPromoRedemptionRepository()->findBy([
+            'clientOrderId' => $orderIds,
+            'status' => PromoRedemption::STATUS_RESERVED,
+        ]);
+
+        $transferred = 0;
+        foreach ($redemptions as $redemption) {
+            if (!$redemption instanceof PromoRedemption) {
+                continue;
+            }
+
+            $redemption->setInvoiceId((int) $invoice->getId());
+            ++$transferred;
+        }
+
+        if ($transferred > 0) {
+            $this->di['em']->flush();
+        }
+
+        return $transferred;
+    }
+
     public function updatePromo(Promo $model, array $data = []): bool
     {
         $promo = $model;
@@ -2237,9 +2288,15 @@ class Service implements InjectionAwareInterface
         }
 
         $quantity = max(1, (int) ($config['quantity'] ?? 1));
+        $price = (float) $this->getProductPrice($product, $config);
+
+        $override = ($config ?? [])[self::PRICE_OVERRIDE_KEY] ?? null;
+        if (is_numeric($override) && (float) $override >= 0) {
+            $price = (float) $override;
+        }
 
         return [
-            'price' => (float) $this->getProductPrice($product, $config),
+            'price' => $price,
             'quantity' => $quantity,
             'setup_price' => $this->getProductSetupPrice($product, $config),
         ];

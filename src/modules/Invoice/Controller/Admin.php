@@ -127,7 +127,19 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         $api = $this->di['api_admin'];
         $invoice = $api->invoice_get(['id' => $id]);
 
-        return $app->render('mod_invoice_invoice', ['invoice' => $invoice]);
+        // Loaded here rather than in Twig so an unknown id degrades to no
+        // selection instead of breaking the whole invoice page.
+        $attachProduct = null;
+        $attachProductId = $app->getRequest()->query->get('attach_product_id');
+        if ($attachProductId !== null && (string) $attachProductId !== '') {
+            try {
+                $attachProduct = $api->product_get(['id' => (int) $attachProductId]);
+            } catch (\Exception) {
+                $attachProduct = null;
+            }
+        }
+
+        return $app->render('mod_invoice_invoice', ['invoice' => $invoice, 'attach_product' => $attachProduct]);
     }
 
     public function get_transaction(\Box_App $app, $id): string
