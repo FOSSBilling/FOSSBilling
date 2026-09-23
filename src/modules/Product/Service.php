@@ -1919,10 +1919,6 @@ class Service implements InjectionAwareInterface
         }
 
         $productId = $order->getProductId();
-        $discountAmount = (float) ($order->getDiscount() ?? 0);
-        // With stacked promos the order discount is the combined total; the
-        // primary promo only owns the remainder after the stacked shares.
-        $discountAmount = max(0.0, $discountAmount - $stackedDiscount);
         $currency = $order->getCurrency() ?? '';
         $product = $this->findProductById((int) $productId);
 
@@ -1936,7 +1932,16 @@ class Service implements InjectionAwareInterface
             $promo = $this->findPromoById((int) $promoId);
         }
 
-        if ($product->getType() === self::DOMAIN) {
+        if ($product->getType() !== self::DOMAIN) {
+            // Stacked orders store their combined discount on the order, but
+            // each promo's own checkout share is recorded separately.
+            $discountAmount = $this->getRecurringPromoDiscountForOrder($order, $promo);
+            if ($discountAmount === null) {
+                // Preserve renewal behavior for orders created before
+                // per-promo redemption amounts were recorded.
+                $discountAmount = max(0.0, (float) ($order->getDiscount() ?? 0) - $stackedDiscount);
+            }
+        } else {
             $configValue = $order->getConfig();
             $config = json_decode($configValue ?? '', true) ?? [];
             $discountAmount = $this->getRenewalProductDiscount($product, $promo, $config);
