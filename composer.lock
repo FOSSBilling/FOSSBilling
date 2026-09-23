@@ -751,16 +751,16 @@
         },
         {
             "name": "doctrine/orm",
-            "version": "3.7.1",
+            "version": "3.7.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/doctrine/orm.git",
-                "reference": "037807a39697890dcede8b766c5efe8a1b4855fe"
+                "reference": "6b47a02cd1d7119ef4d8f90ca6d49651accef1a3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/doctrine/orm/zipball/037807a39697890dcede8b766c5efe8a1b4855fe",
-                "reference": "037807a39697890dcede8b766c5efe8a1b4855fe",
+                "url": "https://api.github.com/repos/doctrine/orm/zipball/6b47a02cd1d7119ef4d8f90ca6d49651accef1a3",
+                "reference": "6b47a02cd1d7119ef4d8f90ca6d49651accef1a3",
                 "shasum": ""
             },
             "require": {
@@ -784,7 +784,7 @@
                 "doctrine/coding-standard": "^14.0",
                 "phpbench/phpbench": "^1.0",
                 "phpstan/extension-installer": "^1.4",
-                "phpstan/phpstan": "2.1.23",
+                "phpstan/phpstan": "2.2.14",
                 "phpstan/phpstan-deprecation-rules": "^2",
                 "phpunit/phpunit": "^10.5.0 || ^11.5",
                 "psr/log": "^1 || ^2 || ^3",
@@ -835,9 +835,9 @@
             ],
             "support": {
                 "issues": "https://github.com/doctrine/orm/issues",
-                "source": "https://github.com/doctrine/orm/tree/3.7.1"
+                "source": "https://github.com/doctrine/orm/tree/3.7.2"
             },
-            "time": "2026-09-14T05:45:59+00:00"
+            "time": "2026-09-23T05:28:00+00:00"
         },
         {
             "name": "doctrine/persistence",
