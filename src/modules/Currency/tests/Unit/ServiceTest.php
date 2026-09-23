@@ -10,6 +10,10 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Currency\Event\AfterAdminDeleteCurrencyEvent;
+use Box\Mod\Currency\Event\BeforeAdminDeleteCurrencyEvent;
+use Symfony\Component\EventDispatcher\EventDispatcher as SymfonyEventDispatcher;
+
 use function Tests\Helpers\container;
 
 test('di returns dependency injection container', function (): void {
@@ -391,24 +395,30 @@ test('removeCurrency removes currency', function (): void {
     $emMock->shouldReceive('getRepository')
         ->atLeast()->once()
         ->andReturn($repositoryMock);
-    $emMock->shouldReceive('remove')
-        ->atLeast()->once()
-        ->with($model);
-    $emMock->shouldReceive('flush')
-        ->atLeast()->once();
+    $events = new ArrayObject();
+    $eventDispatcher = new SymfonyEventDispatcher();
+    foreach ([BeforeAdminDeleteCurrencyEvent::class, AfterAdminDeleteCurrencyEvent::class] as $eventClass) {
+        $eventDispatcher->addListener($eventClass, static function (object $event) use ($events): void {
+            $events->append($event);
+        });
+    }
 
-    $eventsManager = Mockery::mock(Box_EventManager::class);
-    $eventsManager->shouldReceive('fire')
+    $emMock->shouldReceive('remove')
         ->once()
-        ->with(['event' => 'onBeforeAdminDeleteCurrency', 'params' => ['code' => 'EUR']]);
-    $eventsManager->shouldReceive('fire')
+        ->with($model)
+        ->andReturnUsing(function () use ($events): void {
+            expect($events->getArrayCopy())->toHaveCount(1);
+            expect($events[0])->toBeInstanceOf(BeforeAdminDeleteCurrencyEvent::class);
+        });
+    $emMock->shouldReceive('flush')
         ->once()
-        ->with(['event' => 'onAfterAdminDeleteCurrency', 'params' => ['code' => 'EUR']]);
+        ->andReturnUsing(function () use ($events): void {
+            expect($events->getArrayCopy())->toHaveCount(1);
+        });
 
     $di = new Pimple\Container();
     $di['em'] = $emMock;
-    $di['events_manager'] = $eventsManager;
-    $di['event_dispatcher'] = new FOSSBilling\Events\EventDispatcher(static fn (): array => [], static fn (string $module): object => new stdClass());
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $service = new Box\Mod\Currency\Service();
@@ -416,6 +426,10 @@ test('removeCurrency removes currency', function (): void {
     $result = $service->removeCurrency('EUR');
 
     expect($result)->toBeTrue();
+    expect(array_map(static fn (object $event): string => $event::class, $events->getArrayCopy()))
+        ->toBe([BeforeAdminDeleteCurrencyEvent::class, AfterAdminDeleteCurrencyEvent::class]);
+    expect($events[0]->code)->toBe('EUR');
+    expect($events[1]->code)->toBe('EUR');
 });
 
 test('removeCurrency throws exception when currency is not found', function (): void {
@@ -812,15 +826,9 @@ test('removeCurrency deletes currency by code', function (): void {
     $emMock->shouldReceive('flush')
         ->atLeast()->once();
 
-    $manager = Mockery::mock('Box_EventManager');
-    $manager->shouldReceive('fire')
-        ->atLeast()->once()
-        ->andReturn(true);
-
     $di = new Pimple\Container();
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['em'] = $emMock;
-    $di['events_manager'] = $manager;
     $di['event_dispatcher'] = new FOSSBilling\Events\EventDispatcher(static fn (): array => [], static fn (string $module): object => new stdClass());
 
     $service = new Box\Mod\Currency\Service();

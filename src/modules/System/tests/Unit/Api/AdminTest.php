@@ -10,6 +10,10 @@
 
 declare(strict_types=1);
 
+use Box\Mod\System\Event\AfterAdminManualUpdateEvent;
+use Box\Mod\System\Event\AfterAdminUpdateCoreEvent;
+use Box\Mod\System\Event\BeforeAdminManualUpdateEvent;
+use Box\Mod\System\Event\BeforeAdminUpdateCoreEvent;
 use FOSSBilling\Config;
 
 use function Tests\Helpers\container;
@@ -53,6 +57,146 @@ test('update params', function (): void {
     $result = $api->update_params($data);
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
+});
+
+test('update core dispatches its before event before the updater runs', function (): void {
+    $api = apiEndpoint(new Box\Mod\System\Api\Admin());
+    $admin = Tests\Helpers\admin(['id' => 1]);
+    $api->setIdentity($admin);
+
+    $sequence = [];
+    $eventDispatcher = new class($sequence) {
+        public array $events = [];
+
+        public function __construct(private array &$sequence)
+        {
+        }
+
+        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        {
+            $this->events[] = $event;
+            $this->sequence[] = 'before-event';
+
+            return $event;
+        }
+    };
+
+    $updater = Mockery::mock();
+    $updater->shouldReceive('getUpdateBranch')->once()->andReturn('stable');
+    $updater->shouldReceive('isUpdateAvailable')->once()->andReturn(true);
+    $updater->shouldReceive('getLatestVersion')->once()->andReturn('next-version');
+    $updater->shouldReceive('performUpdate')->once()->andReturnUsing(static function () use (&$sequence): void {
+        $sequence[] = 'perform-update';
+    });
+
+    $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffService->shouldReceive('checkPermissionsAndThrowException')
+        ->once()
+        ->with('system', 'system_update', null, $admin);
+
+    $di = container();
+    $di['event_dispatcher'] = $eventDispatcher;
+    $di['updater'] = $updater;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod_service'] = $di->protect(fn (string $serviceName): mixed => $serviceName === 'Staff' ? $staffService : false);
+    $api->setDi($di);
+
+    expect($api->update_core([]))->toBeTrue()
+        ->and($sequence)->toBe(['before-event', 'perform-update'])
+        ->and($eventDispatcher->events)->toHaveCount(1)
+        ->and($eventDispatcher->events[0])->toBeInstanceOf(BeforeAdminUpdateCoreEvent::class);
+});
+
+test('finalize update dispatches its after event after finalization', function (): void {
+    $api = apiEndpoint(new Box\Mod\System\Api\Admin());
+    $admin = Tests\Helpers\admin(['id' => 1]);
+    $api->setIdentity($admin);
+
+    $sequence = [];
+    $eventDispatcher = new class($sequence) {
+        public array $events = [];
+
+        public function __construct(private array &$sequence)
+        {
+        }
+
+        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        {
+            $this->events[] = $event;
+            $this->sequence[] = 'after-event';
+
+            return $event;
+        }
+    };
+
+    $updateFinalization = Mockery::mock();
+    $updateFinalization->shouldReceive('isRequired')->once()->andReturn(false);
+    $updateFinalization->shouldReceive('finalizeUpdate')->once()->andReturnUsing(static function () use (&$sequence): void {
+        $sequence[] = 'finalize-update';
+    });
+
+    $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffService->shouldReceive('checkPermissionsAndThrowException')
+        ->once()
+        ->with('system', 'system_update', null, $admin);
+
+    $di = container();
+    $di['event_dispatcher'] = $eventDispatcher;
+    $di['update_finalization'] = $updateFinalization;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod_service'] = $di->protect(fn (string $serviceName): mixed => $serviceName === 'Staff' ? $staffService : false);
+    $api->setDi($di);
+
+    expect($api->finalize_update())->toBeTrue()
+        ->and($sequence)->toBe(['finalize-update', 'after-event'])
+        ->and($eventDispatcher->events)->toHaveCount(1)
+        ->and($eventDispatcher->events[0])->toBeInstanceOf(AfterAdminUpdateCoreEvent::class);
+});
+
+test('manual update dispatches before and after events around the update', function (): void {
+    $api = apiEndpoint(new Box\Mod\System\Api\Admin());
+    $admin = Tests\Helpers\admin(['id' => 1]);
+    $api->setIdentity($admin);
+
+    $sequence = [];
+    $eventDispatcher = new class($sequence) {
+        public array $events = [];
+
+        public function __construct(private array &$sequence)
+        {
+        }
+
+        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        {
+            $this->events[] = $event;
+            $this->sequence[] = $event instanceof BeforeAdminManualUpdateEvent ? 'before-event' : 'after-event';
+
+            return $event;
+        }
+    };
+
+    $updater = Mockery::mock();
+    $updater->shouldReceive('performManualUpdate')->once()->andReturnUsing(static function () use (&$sequence): void {
+        $sequence[] = 'perform-manual-update';
+    });
+
+    $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffService->shouldReceive('checkPermissionsAndThrowException')
+        ->once()
+        ->with('system', 'system_update', null, $admin);
+
+    $di = container();
+    $di['event_dispatcher'] = $eventDispatcher;
+    $di['updater'] = $updater;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod_service'] = $di->protect(fn (string $serviceName): mixed => $serviceName === 'Staff' ? $staffService : false);
+    $api->setDi($di);
+
+    expect($api->manual_update())->toBeTrue()
+        ->and($sequence)->toBe(['before-event', 'perform-manual-update', 'after-event'])
+        ->and($eventDispatcher->events)->toHaveCount(2)
+        ->and($eventDispatcher->events[0])->toBeInstanceOf(BeforeAdminManualUpdateEvent::class)
+        ->and($eventDispatcher->events[1])->toBeInstanceOf(AfterAdminManualUpdateEvent::class);
 });
 
 test('update cache settings clears the saved redis password only when explicitly requested', function (): void {

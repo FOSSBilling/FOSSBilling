@@ -286,8 +286,8 @@ class Service
 
     public function updateParams($data): bool
     {
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminSettingsUpdate', 'params' => $data]);
-        $this->di['event_dispatcher']->dispatch(new BeforeAdminSettingsUpdateEvent($data));
+        $parameterNames = array_map(static fn (int|string $key): string => (string) $key, array_keys($data));
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminSettingsUpdateEvent($parameterNames));
 
         foreach ($data as $key => $val) {
             if (!$this->canUpdateParam($key)) {
@@ -302,7 +302,6 @@ class Service
         // Flush the batch once; a unique-constraint collision surfaces to the caller.
         $this->di['em']->flush();
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminSettingsUpdate']);
         $this->di['event_dispatcher']->dispatch(new AfterAdminSettingsUpdateEvent());
 
         $this->di['logger']->info('Updated system general settings');

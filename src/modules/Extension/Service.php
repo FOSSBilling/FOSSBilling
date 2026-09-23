@@ -14,8 +14,12 @@ namespace Box\Mod\Extension;
 use Box\Mod\Cron\Event\BeforeAdminCronRunEvent;
 use Box\Mod\Extension\Entity\Extension;
 use Box\Mod\Extension\Entity\ExtensionMeta;
+use Box\Mod\Extension\Event\AfterAdminActivateExtensionEvent;
+use Box\Mod\Extension\Event\AfterAdminExtensionConfigSaveEvent;
 use Box\Mod\Extension\Event\AfterExtensionActivatedEvent;
 use Box\Mod\Extension\Event\AfterExtensionDeactivatedEvent;
+use Box\Mod\Extension\Event\BeforeAdminActivateExtensionEvent;
+use Box\Mod\Extension\Event\BeforeAdminExtensionConfigSaveEvent;
 use Box\Mod\Extension\Repository\ExtensionMetaRepository;
 use Box\Mod\Extension\Repository\ExtensionRepository;
 use FOSSBilling\Config;
@@ -646,7 +650,7 @@ class Service implements InjectionAwareInterface
             $persistedNewly = true;
         }
         $ext_id = $ext->getId();
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminActivateExtension', 'params' => ['id' => $ext_id]]);
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminActivateExtensionEvent((int) $ext_id, $ext->getType(), $ext->getName()));
 
         try {
             $result = $this->activate($ext);
@@ -658,7 +662,7 @@ class Service implements InjectionAwareInterface
 
             throw $e;
         }
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminActivateExtension', 'params' => ['id' => $ext_id]]);
+        $this->di['event_dispatcher']->dispatch(new AfterAdminActivateExtensionEvent((int) $ext_id, $ext->getType(), $ext->getName()));
         $this->di['logger']->info('Activated extension "{data_id}"', ['data_id' => $data['id']]);
 
         return $result;
@@ -697,7 +701,12 @@ class Service implements InjectionAwareInterface
         $ext = $data['ext'];
         $this->getConfig($ext); // Creates new config if it does not exist in DB
 
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminExtensionConfigSave', 'params' => $data]);
+        $configurationKeys = array_values(array_filter(
+            array_keys($data),
+            static fn (int|string $key): bool => is_string($key) && $key !== 'ext',
+        ));
+        sort($configurationKeys);
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminExtensionConfigSaveEvent($ext, $configurationKeys));
 
         $meta = $this->getExtensionMetaRepository()->findOneByExtensionAndScope($ext, 'config');
         $config = json_encode($data);
@@ -714,7 +723,7 @@ class Service implements InjectionAwareInterface
         }
         $this->di['em']->flush();
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminExtensionConfigSave', 'params' => $data]);
+        $this->di['event_dispatcher']->dispatch(new AfterAdminExtensionConfigSaveEvent($ext, $configurationKeys));
         $this->di['logger']->info("Updated extension {$ext} configuration.");
         $this->di['cache']->delete("config_{$ext}");
 

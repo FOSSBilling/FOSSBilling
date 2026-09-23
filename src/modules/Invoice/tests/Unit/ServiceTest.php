@@ -23,9 +23,18 @@ use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Subscription;
 use Box\Mod\Invoice\Entity\Transaction;
 use Box\Mod\Invoice\Event\AfterAdminGenerateRenewalInvoiceEvent;
+use Box\Mod\Invoice\Event\AfterAdminInvoiceApproveEvent;
+use Box\Mod\Invoice\Event\AfterAdminInvoiceDebitEvent;
 use Box\Mod\Invoice\Event\AfterAdminInvoiceDeleteEvent;
+use Box\Mod\Invoice\Event\AfterAdminInvoicePaymentReceivedEvent;
+use Box\Mod\Invoice\Event\AfterAdminInvoiceRefundEvent;
+use Box\Mod\Invoice\Event\AfterAdminInvoiceUpdateEvent;
 use Box\Mod\Invoice\Event\BeforeAdminGenerateRenewalInvoiceEvent;
+use Box\Mod\Invoice\Event\BeforeAdminInvoiceApproveEvent;
+use Box\Mod\Invoice\Event\BeforeAdminInvoiceDebitEvent;
 use Box\Mod\Invoice\Event\BeforeAdminInvoiceDeleteEvent;
+use Box\Mod\Invoice\Event\BeforeAdminInvoiceRefundEvent;
+use Box\Mod\Invoice\Event\BeforeAdminInvoiceUpdateEvent;
 use Box\Mod\Invoice\Repository\InvoiceItemRepository;
 use Box\Mod\Invoice\Repository\InvoiceRepository;
 use Box\Mod\Invoice\Repository\PayGatewayRepository;
@@ -373,52 +382,32 @@ test('to api array self-heals invoice with missing hash', function (): void {
 });
 
 test('handles after admin invoice payment received event', function (): void {
-    $service = new Service();
-    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $service = Mockery::mock(Service::class)->makePartial();
     $arr = [
         'total' => 1,
         'client' => [
             'id' => 0,
         ],
     ];
-    $serviceMock->shouldReceive('toApiArray')
-        ->atLeast()->once()
-        ->andReturn($arr);
-    $serviceMock->shouldReceive('getInvoicePdfAttachment')
-        ->atLeast()->once()
-        ->andReturn(null);
-
-    $eventMock = Mockery::mock('\Box_Event');
-    $eventMock->shouldReceive('getParameters')
-        ->atLeast()->once();
+    $service->shouldReceive('toApiArray')->once()->andReturn($arr);
+    $service->shouldReceive('withBillingRecipient')->once()->andReturnUsing(static fn (array $email): array => $email);
+    $service->shouldReceive('getInvoicePdfAttachment')->once()->andReturnNull();
 
     $emailService = Mockery::mock(EmailService::class);
     $emailService->shouldReceive('sendTemplate')
-        ->atLeast()->once();
+        ->once()
+        ->with(Mockery::on(static fn (array $email): bool => $email['code'] === 'mod_invoice_paid' && $email['invoice'] === $arr));
 
-    $invoiceModel = createEntity(Invoice::class);
+    $invoiceModel = createEntity(Invoice::class, ['id' => 18]);
 
     $di = container();
     $di['em']->getRepository(Invoice::class)->shouldReceive('find')
-        ->atLeast()->once()
+        ->once()->with(18)
         ->andReturn($invoiceModel);
-    $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($emailService, $serviceMock) {
-        if ($serviceName === 'invoice') {
-            return $serviceMock;
-        }
-        if ($serviceName === 'email') {
-            return $emailService;
-        }
-    });
+    $di['mod_service'] = $di->protect(moduleService(['email' => $emailService]));
 
     $service->setDi($di);
-    $serviceMock->setDi($di);
-    $eventMock->shouldReceive('getDi')
-        ->atLeast()->once()
-        ->andReturn($di);
-
-    $result = $service->onAfterAdminInvoicePaymentReceived($eventMock);
-    expect($result)->toBeBool()->toBeTrue();
+    $service->sendPaidInvoiceEmail(new AfterAdminInvoicePaymentReceivedEvent(18));
 });
 
 test('handles after admin invoice reminder sent event', function (): void {
@@ -1017,9 +1006,19 @@ test('marks invoice as paid', function (): void {
         ->atLeast()->once()
         ->andReturn($currencyRepositoryMock);
 
-    $eventManagerMock = Mockery::mock('\Box_EventManager');
-    $eventManagerMock->shouldReceive('fire')
-        ->atLeast()->once();
+    $events = [];
+    $eventDispatcher = new class($events) {
+        public function __construct(private array &$events)
+        {
+        }
+
+        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        {
+            $this->events[] = $event;
+
+            return $event;
+        }
+    };
 
     [$em, $invoiceItemRepo] = invoiceItemEmAndRepo();
     $invoiceItemRepo->shouldReceive('findByInvoiceId')
@@ -1047,12 +1046,15 @@ test('marks invoice as paid', function (): void {
         }
     });
     $di['em'] = $em;
-    $di['events_manager'] = $eventManagerMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $serviceMock->setDi($di);
     $result = $serviceMock->markAsPaid($invoiceModel, true, true);
-    expect($result)->toBeBool()->toBeTrue();
+    expect($result)->toBeBool()->toBeTrue()
+        ->and($events)->toHaveCount(1)
+        ->and($events[0])->toBeInstanceOf(AfterAdminInvoicePaymentReceivedEvent::class)
+        ->and($events[0]->invoiceId)->toBe((int) $invoiceModel->getId());
 });
 
 test('admin mark as paid with custom gateway records transaction and marks invoice paid', function (): void {
@@ -1334,32 +1336,78 @@ test('sets invoice defaults', function (): void {
 });
 
 test('approves an invoice', function (): void {
-    $service = new Service();
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $steps = [];
     $serviceMock->shouldReceive('tryPayWithCredits')
-        ->atLeast()->once();
-    $serviceMock->shouldReceive('toApiArray')
-        ->atLeast()->once()
-        ->andReturn(['id' => 1]);
+        ->once()
+        ->andReturnUsing(function () use (&$steps): bool {
+            $steps[] = 'credits';
+
+            return true;
+        });
 
     $data['use_credits'] = true;
 
     $invoiceModel = createEntity(Invoice::class);
 
-    $eventManagerMock = Mockery::mock('\Box_EventManager');
-    $eventManagerMock->shouldReceive('fire')
-        ->atLeast()->once();
+    $eventDispatcher = new class($steps) {
+        public function __construct(private array &$steps)
+        {
+        }
+
+        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        {
+            $this->steps[] = $event;
+
+            return $event;
+        }
+    };
 
     $di = container();
     $di['em']->shouldReceive('persist')->atLeast()->once();
     $di['em']->shouldReceive('flush')->atLeast()->once();
-    $di['events_manager'] = $eventManagerMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $serviceMock->setDi($di);
 
     $result = $serviceMock->approveInvoice($invoiceModel, $data);
-    expect($result)->toBeTrue();
+    expect($result)->toBeTrue()
+        ->and($steps)->toHaveCount(3)
+        ->and($steps[0])->toBeInstanceOf(BeforeAdminInvoiceApproveEvent::class)
+        ->and($steps[0]->invoiceId)->toBe((int) $invoiceModel->getId())
+        ->and($steps[1])->toBe('credits')
+        ->and($steps[2])->toBeInstanceOf(AfterAdminInvoiceApproveEvent::class)
+        ->and($steps[2]->invoiceId)->toBe((int) $invoiceModel->getId());
+});
+
+test('typed invoice approval listener emails an unpaid invoice and extends its link', function (): void {
+    $invoice = createEntity(Invoice::class, ['id' => 14]);
+    $invoiceData = ['id' => 14, 'total' => 25.0, 'status' => Invoice::STATUS_UNPAID, 'client' => ['id' => 8]];
+
+    $invoiceRepository = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepository->shouldReceive('find')->once()->with(14)->andReturn($invoice);
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->once()->with(Invoice::class)->andReturn($invoiceRepository);
+
+    $emailService = Mockery::mock(EmailService::class);
+    $emailService->shouldReceive('sendTemplate')->once()->with(Mockery::on(static fn (array $email): bool => $email['to_client'] === 8
+        && $email['code'] === 'mod_invoice_created'
+        && $email['invoice'] === $invoiceData));
+
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('toApiArray')->once()->with($invoice, true, null, true)->andReturn($invoiceData);
+    $service->shouldReceive('withBillingRecipient')->once()->andReturnUsing(static fn (array $email): array => $email);
+    $service->shouldReceive('getInvoicePdfAttachment')->once()->with($invoice)->andReturnNull();
+    $service->shouldReceive('extendInvoiceHashLifetime')->once()->with($invoice);
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(moduleService(['email' => $emailService]));
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $service->setDi($di);
+
+    $service->sendApprovedInvoiceEmail(new AfterAdminInvoiceApproveEvent(14));
 });
 
 test('gets total with tax', function (): void {
@@ -1668,9 +1716,19 @@ test('refunds invoice with negative invoice logic', function (): void {
 
     $invoiceItemModel = createEntity(InvoiceItem::class, []);
 
-    $eventManagerMock = Mockery::mock('\Box_EventManager');
-    $eventManagerMock->shouldReceive('fire')
-        ->atLeast()->once();
+    $events = [];
+    $eventDispatcher = new class($events) {
+        public function __construct(private array &$events)
+        {
+        }
+
+        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        {
+            $this->events[] = $event;
+
+            return $event;
+        }
+    };
 
     $systemService = Mockery::mock(SystemService::class);
     $systemService->shouldReceive('getParamValue')
@@ -1726,13 +1784,18 @@ test('refunds invoice with negative invoice logic', function (): void {
         'system' => $systemService,
         'email' => $emailService,
     ]));
-    $di['events_manager'] = $eventManagerMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $serviceMock->setDi($di);
     $result = $serviceMock->refundInvoice($invoiceModel, 'customNote');
     expect($result)->toBeInt()->toBe($newId);
     expect($invoiceModel->getStatus())->toBe(Invoice::STATUS_REFUNDED);
+    expect($events)->toHaveCount(2)
+        ->and($events[0])->toBeInstanceOf(BeforeAdminInvoiceRefundEvent::class)
+        ->and($events[0]->invoiceId)->toBe($newId)
+        ->and($events[1])->toBeInstanceOf(AfterAdminInvoiceRefundEvent::class)
+        ->and($events[1]->invoiceId)->toBe($newId);
 
     $creditNote = null;
     foreach ($persisted as $entity) {
@@ -1761,8 +1824,19 @@ test('refunds invoice with credit note logic and reserved numbering', function (
 
     $invoiceItemModel = createEntity(InvoiceItem::class, []);
 
-    $eventManagerMock = Mockery::mock('\Box_EventManager');
-    $eventManagerMock->shouldReceive('fire')->atLeast()->once();
+    $events = [];
+    $eventDispatcher = new class($events) {
+        public function __construct(private array &$events)
+        {
+        }
+
+        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        {
+            $this->events[] = $event;
+
+            return $event;
+        }
+    };
 
     $systemService = Mockery::mock(SystemService::class);
     $systemService->shouldReceive('getParamValue')
@@ -1818,11 +1892,16 @@ test('refunds invoice with credit note logic and reserved numbering', function (
         'system' => $systemService,
         'email' => $emailService,
     ]));
-    $di['events_manager'] = $eventManagerMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $serviceMock->setDi($di);
     expect($serviceMock->refundInvoice($invoiceModel))->toBe($newId);
+    expect($events)->toHaveCount(2)
+        ->and($events[0])->toBeInstanceOf(BeforeAdminInvoiceRefundEvent::class)
+        ->and($events[0]->invoiceId)->toBe(9)
+        ->and($events[1])->toBeInstanceOf(AfterAdminInvoiceRefundEvent::class)
+        ->and($events[1]->invoiceId)->toBe(9);
     expect($invoiceModel->getStatus())->toBe(Invoice::STATUS_REFUNDED);
     expect($creditNote)->not->toBeNull();
     expect($creditNote->getSerie())->toBe('CN-');
@@ -1884,8 +1963,19 @@ test('refundInvoice keeps the refund successful when notification delivery fails
         });
     $em->shouldReceive('flush')->atLeast()->once();
 
-    $eventsManager = Mockery::mock('\Box_EventManager');
-    $eventsManager->shouldReceive('fire')->atLeast()->once();
+    $events = [];
+    $eventDispatcher = new class($events) {
+        public function __construct(private array &$events)
+        {
+        }
+
+        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        {
+            $this->events[] = $event;
+
+            return $event;
+        }
+    };
     $logger = new Tests\Helpers\TestLogger();
 
     $di = container();
@@ -1894,12 +1984,17 @@ test('refundInvoice keeps the refund successful when notification delivery fails
         'system' => $systemService,
         'email' => $emailService,
     ]));
-    $di['events_manager'] = $eventsManager;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = $logger;
 
     $serviceMock->setDi($di);
     expect($serviceMock->refundInvoice($invoiceModel))->toBe($newId)
         ->and($invoiceModel->getStatus())->toBe(Invoice::STATUS_REFUNDED);
+    expect($events)->toHaveCount(2)
+        ->and($events[0])->toBeInstanceOf(BeforeAdminInvoiceRefundEvent::class)
+        ->and($events[0]->invoiceId)->toBe(9)
+        ->and($events[1])->toBeInstanceOf(AfterAdminInvoiceRefundEvent::class)
+        ->and($events[1]->invoiceId)->toBe(9);
 
     $emailErrors = array_filter(
         $logger->calls,
@@ -1946,7 +2041,6 @@ test('refundInvoice refuses invoices that are not paid', function (): void {
 });
 
 test('updates an invoice', function (): void {
-    $service = new Service();
     $data = [
         'gateway_id' => '',
         'taxname' => '',
@@ -1984,9 +2078,16 @@ test('updates an invoice', function (): void {
 
     $invoiceItemModel = createEntity(InvoiceItem::class, []);
 
-    $eventManagerMock = Mockery::mock('\Box_EventManager');
-    $eventManagerMock->shouldReceive('fire')
-        ->atLeast()->once();
+    $eventDispatcher = new class {
+        public array $events = [];
+
+        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        {
+            $this->events[] = $event;
+
+            return $event;
+        }
+    };
 
     $itemInvoiceServiceMock = Mockery::mock(ServiceInvoiceItem::class);
     $itemInvoiceServiceMock->shouldReceive('addNew')
@@ -2006,18 +2107,20 @@ test('updates an invoice', function (): void {
     $di = container();
     $di['em'] = $em;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $itemInvoiceServiceMock);
-    $di['events_manager'] = $eventManagerMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
-    $serviceMock->shouldReceive('toApiArray')
-        ->atLeast()->once()
-        ->andReturn(['id' => 1]);
-
     $serviceMock->setDi($di);
 
     $result = $serviceMock->updateInvoice($invoiceModel, $data);
-    expect($result)->toBeTrue();
+    expect($result)->toBeTrue()
+        ->and($eventDispatcher->events)->toHaveCount(2)
+        ->and($eventDispatcher->events[0])->toBeInstanceOf(BeforeAdminInvoiceUpdateEvent::class)
+        ->and($eventDispatcher->events[0]->invoiceId)->toBe((int) $invoiceModel->getId())
+        ->and($eventDispatcher->events[0]->changedFields)->toContain('buyer_email', 'notes')
+        ->and($eventDispatcher->events[1])->toBeInstanceOf(AfterAdminInvoiceUpdateEvent::class)
+        ->and($eventDispatcher->events[1]->invoiceId)->toBe((int) $invoiceModel->getId());
 });
 
 test('removes an invoice', function (): void {
@@ -3643,9 +3746,19 @@ test('markAsPaid transitions a deposit invoice to paid status', function (): voi
     $invoiceItemService->shouldReceive('getTotal')
         ->andReturn(30.0);
 
-    $eventsManager = Mockery::mock('\Box_EventManager');
-    $eventsManager->shouldReceive('fire')
-        ->atLeast()->once();
+    $events = [];
+    $eventDispatcher = new class($events) {
+        public function __construct(private array &$events)
+        {
+        }
+
+        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        {
+            $this->events[] = $event;
+
+            return $event;
+        }
+    };
 
     $di = container();
     $di['em'] = $em;
@@ -3658,7 +3771,7 @@ test('markAsPaid transitions a deposit invoice to paid status', function (): voi
         ['Product', ''], ['product', ''] => $productService,
         default => throw new RuntimeException("Unexpected service: {$name}/{$sub}"),
     });
-    $di['events_manager'] = $eventsManager;
+    $di['event_dispatcher'] = $eventDispatcher;
     $service->setDi($di);
 
     $result = $service->markAsPaid($depositInvoice);
@@ -3666,6 +3779,9 @@ test('markAsPaid transitions a deposit invoice to paid status', function (): voi
     expect($result)->toBeTrue();
     expect($depositInvoice->status)->toBe(Invoice::STATUS_PAID);
     expect($depositInvoice->paid_at)->not->toBeNull();
+    expect($events)->toHaveCount(1)
+        ->and($events[0])->toBeInstanceOf(AfterAdminInvoicePaymentReceivedEvent::class)
+        ->and($events[0]->invoiceId)->toBe(89);
 });
 
 test('getInvoicePdfAttachment returns null when the setting is disabled', function (): void {
@@ -4173,8 +4289,19 @@ test('refundInvoice supports partial line refunds and flips to refunded at full'
     $serviceMock->shouldReceive('toApiArray')->andReturn(['id' => 1, 'total' => -40.0]);
     $serviceMock->shouldReceive('extendInvoiceHashLifetime')->twice();
 
-    $eventManagerMock = Mockery::mock('\Box_EventManager');
-    $eventManagerMock->shouldReceive('fire')->atLeast()->once();
+    $events = [];
+    $eventDispatcher = new class($events) {
+        public function __construct(private array &$events)
+        {
+        }
+
+        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        {
+            $this->events[] = $event;
+
+            return $event;
+        }
+    };
 
     $systemService = Mockery::mock(SystemService::class);
     $systemService->shouldReceive('getParamValue')
@@ -4232,17 +4359,27 @@ test('refundInvoice supports partial line refunds and flips to refunded at full'
         'system' => $systemService,
         'email' => $emailService,
     ]));
-    $di['events_manager'] = $eventManagerMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $serviceMock->setDi($di);
 
     expect($serviceMock->refundInvoice($invoiceModel, null, [12 => 1]))->toBeInt();
+    expect($events)->toHaveCount(2)
+        ->and($events[0])->toBeInstanceOf(BeforeAdminInvoiceRefundEvent::class)
+        ->and($events[0]->invoiceId)->toBe(10)
+        ->and($events[1])->toBeInstanceOf(AfterAdminInvoiceRefundEvent::class)
+        ->and($events[1]->invoiceId)->toBe(10);
     expect($invoiceModel->getStatus())->toBe(Invoice::STATUS_PAID);
     expect((float) $invoiceModel->getRefund())->toEqual(40.0);
     expect($newEntities)->toHaveCount(1);
     expect($newEntities[0]->getCreditNoteForInvoiceId())->toBe(10);
 
     expect($serviceMock->refundInvoice($invoiceModel, null, [11 => 1]))->toBeInt();
+    expect($events)->toHaveCount(4)
+        ->and($events[2])->toBeInstanceOf(BeforeAdminInvoiceRefundEvent::class)
+        ->and($events[2]->invoiceId)->toBe(10)
+        ->and($events[3])->toBeInstanceOf(AfterAdminInvoiceRefundEvent::class)
+        ->and($events[3]->invoiceId)->toBe(10);
     expect($invoiceModel->getStatus())->toBe(Invoice::STATUS_REFUNDED);
     expect((float) $invoiceModel->getRefund())->toEqual(100.0);
     expect($newEntities)->toHaveCount(2);
@@ -4264,8 +4401,7 @@ test('refundInvoice validates partial refund input', function (): void {
 
     [$em, $invoiceItemRepo] = invoiceItemEmAndRepo();
     $invoiceItemRepo->shouldReceive('findByInvoiceId')->andReturn([$line, $discount]);
-    $em->shouldReceive('persist')->atLeast()->once();
-    $em->shouldReceive('flush')->atLeast()->once();
+    $em->shouldNotReceive('persist', 'flush');
 
     $invoiceRepo = Mockery::mock(InvoiceRepository::class);
     $invoiceRepo->shouldReceive('lockAndGetStatus')->andReturn(Invoice::STATUS_PAID);
@@ -4294,13 +4430,24 @@ test('refundInvoice validates partial refund input', function (): void {
     $systemService->shouldReceive('getCompany')
         ->andReturn([]);
 
-    $eventManagerMock = Mockery::mock('\Box_EventManager');
-    $eventManagerMock->shouldReceive('fire')->atLeast()->once();
+    $events = [];
+    $eventDispatcher = new class($events) {
+        public function __construct(private array &$events)
+        {
+        }
+
+        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        {
+            $this->events[] = $event;
+
+            return $event;
+        }
+    };
 
     $di = container();
     $di['em'] = $em;
     $di['mod_service'] = $di->protect(moduleService(['system' => $systemService]));
-    $di['events_manager'] = $eventManagerMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $serviceMock->setDi($di);
 
@@ -4312,6 +4459,11 @@ test('refundInvoice validates partial refund input', function (): void {
         ->toThrow(FOSSBilling\InformationException::class, 'exceeds the remaining refundable quantity');
     expect(fn () => $serviceMock->refundInvoice($invoiceModel, null, [11 => 0]))
         ->toThrow(FOSSBilling\InformationException::class, 'No invoice lines selected');
+    expect($events)->toHaveCount(4);
+    foreach ($events as $event) {
+        expect($event)->toBeInstanceOf(BeforeAdminInvoiceRefundEvent::class)
+            ->and($event->invoiceId)->toBe(10);
+    }
 });
 
 test('debitInvoice issues a payable debit note linked to the original', function (): void {
@@ -4326,8 +4478,16 @@ test('debitInvoice issues a payable debit note linked to the original', function
     $serviceMock->shouldReceive('toApiArray')->andReturn(['id' => 1, 'total' => 25.0]);
     $serviceMock->shouldReceive('extendInvoiceHashLifetime')->once();
 
-    $eventManagerMock = Mockery::mock('\Box_EventManager');
-    $eventManagerMock->shouldReceive('fire')->atLeast()->once();
+    $eventDispatcher = new class {
+        public array $events = [];
+
+        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        {
+            $this->events[] = $event;
+
+            return $event;
+        }
+    };
 
     $systemService = Mockery::mock(SystemService::class);
     $systemService->shouldReceive('getParamValue')
@@ -4382,7 +4542,7 @@ test('debitInvoice issues a payable debit note linked to the original', function
         'system' => $systemService,
         'email' => $emailService,
     ]));
-    $di['events_manager'] = $eventManagerMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $serviceMock->setDi($di);
 
@@ -4392,6 +4552,12 @@ test('debitInvoice issues a payable debit note linked to the original', function
     ];
     expect($serviceMock->debitInvoice($invoiceModel, $items, 'customNote'))->toBe(55);
     expect($invoiceModel->getStatus())->toBe(Invoice::STATUS_UNPAID);
+    expect($eventDispatcher->events)->toHaveCount(2)
+        ->and($eventDispatcher->events[0])->toBeInstanceOf(BeforeAdminInvoiceDebitEvent::class)
+        ->and($eventDispatcher->events[0]->invoiceId)->toBe(10)
+        ->and($eventDispatcher->events[1])->toBeInstanceOf(AfterAdminInvoiceDebitEvent::class)
+        ->and($eventDispatcher->events[1]->invoiceId)->toBe(10)
+        ->and($eventDispatcher->events[1]->debitNoteId)->toBe(55);
 
     expect($debitNote)->not->toBeNull();
     expect($debitNote->getStatus())->toBe(Invoice::STATUS_UNPAID);
@@ -4501,8 +4667,16 @@ test('updateInvoice resends an approved invoice after editing it', function (): 
     $itemInvoiceServiceMock->shouldNotReceive('addNew', 'update');
 
     [$em] = invoiceItemEmAndRepo();
-    $eventManagerMock = Mockery::mock('\Box_EventManager');
-    $eventManagerMock->shouldReceive('fire')->atLeast()->once();
+    $eventDispatcher = new class {
+        public array $events = [];
+
+        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        {
+            $this->events[] = $event;
+
+            return $event;
+        }
+    };
 
     $di = container();
     $di['em'] = $em;
@@ -4510,15 +4684,17 @@ test('updateInvoice resends an approved invoice after editing it', function (): 
         'system' => $systemMock,
         'invoice:invoiceitem' => $itemInvoiceServiceMock,
     ]));
-    $di['events_manager'] = $eventManagerMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
-    $serviceMock->shouldReceive('toApiArray')->andReturn(['id' => 10, 'total' => 50.0]);
     $serviceMock->shouldReceive('resendUpdatedInvoice')->once()->with($invoice);
     $serviceMock->setDi($di);
 
-    expect($serviceMock->updateInvoice($invoice, ['notes' => 'Edited']))->toBeTrue();
+    expect($serviceMock->updateInvoice($invoice, ['notes' => 'Edited']))->toBeTrue()
+        ->and($eventDispatcher->events)->toHaveCount(2)
+        ->and($eventDispatcher->events[0]->changedFields)->toBe(['notes'])
+        ->and($eventDispatcher->events[1])->toBeInstanceOf(AfterAdminInvoiceUpdateEvent::class);
 });
 
 test('updateInvoice does not resend a draft invoice', function (): void {
@@ -4530,21 +4706,31 @@ test('updateInvoice does not resend a draft invoice', function (): void {
     $itemInvoiceServiceMock->shouldNotReceive('addNew', 'update');
 
     [$em] = invoiceItemEmAndRepo();
-    $eventManagerMock = Mockery::mock('\Box_EventManager');
-    $eventManagerMock->shouldReceive('fire')->atLeast()->once();
+    $eventDispatcher = new class {
+        public array $events = [];
+
+        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        {
+            $this->events[] = $event;
+
+            return $event;
+        }
+    };
 
     $di = container();
     $di['em'] = $em;
     $di['mod_service'] = $di->protect(moduleService(['invoice:invoiceitem' => $itemInvoiceServiceMock]));
-    $di['events_manager'] = $eventManagerMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
-    $serviceMock->shouldReceive('toApiArray')->andReturn(['id' => 10, 'total' => 50.0]);
     $serviceMock->shouldNotReceive('resendUpdatedInvoice');
     $serviceMock->setDi($di);
 
-    expect($serviceMock->updateInvoice($invoice, ['notes' => 'Edited']))->toBeTrue();
+    expect($serviceMock->updateInvoice($invoice, ['notes' => 'Edited']))->toBeTrue()
+        ->and($eventDispatcher->events)->toHaveCount(2)
+        ->and($eventDispatcher->events[0]->changedFields)->toBe(['notes'])
+        ->and($eventDispatcher->events[1])->toBeInstanceOf(AfterAdminInvoiceUpdateEvent::class);
 });
 
 test('deleteInvoiceByAdmin only deletes unapproved unpaid invoices', function (): void {
@@ -4599,10 +4785,16 @@ test('debitInvoice writes nothing when lines are invalid', function (): void {
     setEntityId($invoiceModel, 10);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
-    $serviceMock->shouldReceive('toApiArray')->andReturn(['id' => 10]);
+    $eventDispatcher = new class {
+        public array $events = [];
 
-    $eventManagerMock = Mockery::mock('\Box_EventManager');
-    $eventManagerMock->shouldReceive('fire')->twice();
+        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        {
+            $this->events[] = $event;
+
+            return $event;
+        }
+    };
 
     // Strict entity manager: any write attempt fails the test.
     $em = Mockery::mock(EntityManagerInterface::class);
@@ -4610,7 +4802,7 @@ test('debitInvoice writes nothing when lines are invalid', function (): void {
 
     $di = container();
     $di['em'] = $em;
-    $di['events_manager'] = $eventManagerMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $serviceMock->setDi($di);
 
@@ -4618,6 +4810,9 @@ test('debitInvoice writes nothing when lines are invalid', function (): void {
         ->toThrow(FOSSBilling\InformationException::class, 'positive amount');
     expect(fn () => $serviceMock->debitInvoice($invoiceModel, [['title' => '', 'price' => 5]]))
         ->toThrow(FOSSBilling\InformationException::class, 'No debit lines given');
+    expect($eventDispatcher->events)->toHaveCount(2)
+        ->and($eventDispatcher->events[0])->toBeInstanceOf(BeforeAdminInvoiceDebitEvent::class)
+        ->and($eventDispatcher->events[1])->toBeInstanceOf(BeforeAdminInvoiceDebitEvent::class);
 });
 
 test('refundInvoice enforces per-line remaining quantities across partials', function (): void {
@@ -4636,8 +4831,19 @@ test('refundInvoice enforces per-line remaining quantities across partials', fun
     $serviceMock->shouldReceive('toApiArray')->andReturn(['id' => 1, 'total' => -40.0]);
     $serviceMock->shouldReceive('extendInvoiceHashLifetime')->once();
 
-    $eventManagerMock = Mockery::mock('\Box_EventManager');
-    $eventManagerMock->shouldReceive('fire')->atLeast()->once();
+    $events = [];
+    $eventDispatcher = new class($events) {
+        public function __construct(private array &$events)
+        {
+        }
+
+        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        {
+            $this->events[] = $event;
+
+            return $event;
+        }
+    };
 
     $systemService = Mockery::mock(SystemService::class);
     $systemService->shouldReceive('getParamValue')
@@ -4682,11 +4888,19 @@ test('refundInvoice enforces per-line remaining quantities across partials', fun
         'system' => $systemService,
         'email' => $emailService,
     ]));
-    $di['events_manager'] = $eventManagerMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $serviceMock->setDi($di);
 
     expect($serviceMock->refundInvoice($invoiceModel, null, [12 => 1]))->toBeInt();
+    expect($events)->toHaveCount(2)
+        ->and($events[0])->toBeInstanceOf(BeforeAdminInvoiceRefundEvent::class)
+        ->and($events[0]->invoiceId)->toBe(10)
+        ->and($events[1])->toBeInstanceOf(AfterAdminInvoiceRefundEvent::class)
+        ->and($events[1]->invoiceId)->toBe(10);
     expect(fn () => $serviceMock->refundInvoice($invoiceModel, null, [12 => 1]))
         ->toThrow(FOSSBilling\InformationException::class, 'remaining');
+    expect($events)->toHaveCount(3)
+        ->and($events[2])->toBeInstanceOf(BeforeAdminInvoiceRefundEvent::class)
+        ->and($events[2]->invoiceId)->toBe(10);
 });

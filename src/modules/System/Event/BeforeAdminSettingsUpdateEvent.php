@@ -14,9 +14,9 @@ use FOSSBilling\Events\Event;
 /** Dispatched before admin system settings are validated and persisted. */
 final class BeforeAdminSettingsUpdateEvent extends Event
 {
-    /** @param array<string, mixed> $data */
+    /** @param list<string> $parameterNames */
     public function __construct(
-        public readonly array $data,
+        public readonly array $parameterNames,
     ) {
     }
 }

@@ -309,16 +309,10 @@ test('updateParams updates system parameters in a single flush', function (): vo
     $data = [
         'company_name' => 'Inc. Test',
         'company_email' => 'work@example.eu',
+        'smtp_password' => 'do-not-expose-this-value',
     ];
 
     $sequence = [];
-    $legacyEvents = [];
-    $eventMock = Mockery::mock('\Box_EventManager');
-    $eventMock->shouldReceive('fire')->twice()->andReturnUsing(function (array $event) use (&$sequence, &$legacyEvents): void {
-        $legacyEvents[] = $event;
-        $sequence[] = $event['event'] === 'onBeforeAdminSettingsUpdate' ? 'legacy-before' : 'legacy-after';
-    });
-
     $eventDispatcher = new class($sequence) {
         /** @var list<FOSSBilling\Events\Event> */
         public array $events = [];
@@ -350,14 +344,14 @@ test('updateParams updates system parameters in a single flush', function (): vo
     $settingRepository = Mockery::mock(Box\Mod\System\Repository\SettingRepository::class);
     $settingRepository->shouldReceive('findOneByParam')->with('company_name')->andReturn($companyName);
     $settingRepository->shouldReceive('findOneByParam')->with('company_email')->andReturn(null);
+    $settingRepository->shouldReceive('findOneByParam')->with('smtp_password')->andReturn(null);
 
     $di = container();
-    $di['events_manager'] = $eventMock;
     $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = $logStub;
     $di['mod_service'] = $di->protect(fn (): object => $staffServiceMock);
     $di['em']->shouldReceive('getRepository')->with(Box\Mod\System\Entity\Setting::class)->andReturn($settingRepository);
-    $di['em']->shouldReceive('persist')->once();
+    $di['em']->shouldReceive('persist')->twice();
     $di['em']->shouldReceive('flush')->once()->andReturnUsing(static function () use (&$sequence): void {
         $sequence[] = 'flush';
     });
@@ -367,22 +361,17 @@ test('updateParams updates system parameters in a single flush', function (): vo
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
     expect($companyName->getValue())->toBe('Inc. Test');
-    expect($sequence)->toBe(['legacy-before', 'typed-before', 'flush', 'legacy-after', 'typed-after']);
-    expect($legacyEvents)->toBe([
-        ['event' => 'onBeforeAdminSettingsUpdate', 'params' => $data],
-        ['event' => 'onAfterAdminSettingsUpdate'],
-    ]);
+    expect($sequence)->toBe(['typed-before', 'flush', 'typed-after']);
     expect($eventDispatcher->events)->toHaveCount(2);
     expect($eventDispatcher->events[0])->toBeInstanceOf(Box\Mod\System\Event\BeforeAdminSettingsUpdateEvent::class);
-    expect($eventDispatcher->events[0]->data)->toBe($data);
+    expect($eventDispatcher->events[0]->parameterNames)->toBe(array_keys($data));
+    expect(property_exists($eventDispatcher->events[0], 'data'))->toBeFalse();
+    expect($eventDispatcher->events[0]->parameterNames)->not->toContain('do-not-expose-this-value');
     expect($eventDispatcher->events[1])->toBeInstanceOf(Box\Mod\System\Event\AfterAdminSettingsUpdateEvent::class);
 });
 
 test('updateParams denies a mixed-case guarded key without the company permission', function (): void {
     $service = new Service();
-
-    $eventMock = Mockery::mock('\Box_EventManager');
-    $eventMock->shouldReceive('fire')->once();
 
     $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class);
     $staffServiceMock->shouldReceive('hasPermission')->once()->with(null, 'system', 'manage_company_details')->andReturn(false);
@@ -391,7 +380,6 @@ test('updateParams denies a mixed-case guarded key without the company permissio
     $settingRepository->shouldReceive('findOneByParam')->never();
 
     $di = container();
-    $di['events_manager'] = $eventMock;
     $di['event_dispatcher'] = new class {
         public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
         {
@@ -411,9 +399,6 @@ test('updateParams denies a mixed-case guarded key without the company permissio
 test('updateParams denies a mixed-case legal key without the legal permission', function (): void {
     $service = new Service();
 
-    $eventMock = Mockery::mock('\Box_EventManager');
-    $eventMock->shouldReceive('fire')->once();
-
     $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class);
     $staffServiceMock->shouldReceive('hasPermission')->once()->with(null, 'system', 'manage_company_legal')->andReturn(false);
 
@@ -421,7 +406,6 @@ test('updateParams denies a mixed-case legal key without the legal permission', 
     $settingRepository->shouldReceive('findOneByParam')->never();
 
     $di = container();
-    $di['events_manager'] = $eventMock;
     $di['event_dispatcher'] = new class {
         public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
         {
@@ -455,9 +439,6 @@ test('setParamValue skips a mixed-case guarded key without the company permissio
 test('updateParams rejects a key with a trailing space', function (): void {
     $service = new Service();
 
-    $eventMock = Mockery::mock('\Box_EventManager');
-    $eventMock->shouldReceive('fire')->once();
-
     $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class);
     $staffServiceMock->shouldReceive('hasPermission')->andReturn(true);
 
@@ -465,7 +446,6 @@ test('updateParams rejects a key with a trailing space', function (): void {
     $settingRepository->shouldReceive('findOneByParam')->never();
 
     $di = container();
-    $di['events_manager'] = $eventMock;
     $di['event_dispatcher'] = new class {
         public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
         {

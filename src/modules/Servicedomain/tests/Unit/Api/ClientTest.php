@@ -14,40 +14,114 @@ use Box\Mod\Order\Entity\Order;
 use Box\Mod\Order\Service as OrderService;
 use Box\Mod\Servicedomain\Api\Client;
 use Box\Mod\Servicedomain\Entity\ServiceDomain;
+use Box\Mod\Servicedomain\Event\AfterClientChangeNameserversEvent;
+use Box\Mod\Servicedomain\Event\BeforeClientChangeNameserversEvent;
 use Box\Mod\Servicedomain\Service;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 
 use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
+use function Tests\Helpers\setEntityId;
 
 test('updates nameservers', function (): void {
-    $clientApi = apiEndpoint(new Client());
-    $api = apiEndpoint(new Client());
-    $model = new ServiceDomain();
+    $model = (new ServiceDomain())->setClientId(17);
+    setEntityId($model, 42);
 
     $clientApiMock = apiEndpoint(Mockery::mock(Client::class)->makePartial()->shouldAllowMockingProtectedMethods());
     $clientApiMock->shouldReceive('_getService')
         ->atLeast()->once()
         ->andReturn($model);
 
+    $timeline = [];
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('updateNameservers')
-        ->atLeast()->once()
-        ->andReturn(true);
+        ->once()
+        ->with($model, [
+            'ns1' => 'ns1.example.test',
+            'ns2' => 'ns2.example.test',
+            'ns3' => null,
+            'ns4' => null,
+            'token' => 'private-token',
+            'config' => ['registrar_password' => 'secret'],
+        ])
+        ->andReturnUsing(function () use (&$timeline): bool {
+            expect($timeline)->toBe(['before']);
+            $timeline[] = 'service';
+
+            return true;
+        });
 
     $clientApiMock->setService($serviceMock);
 
-    $eventMock = Mockery::mock('\Box_EventManager');
-    $eventMock->shouldReceive('fire')
-        ->atLeast()->once();
+    $eventDispatcher = new EventDispatcher();
+    $eventDispatcher->addListener(BeforeClientChangeNameserversEvent::class, static function (BeforeClientChangeNameserversEvent $event) use (&$timeline): void {
+        expect(get_object_vars($event))->toBe([
+            'domainId' => 42,
+            'clientId' => 17,
+            'ns1' => 'ns1.example.test',
+            'ns2' => 'ns2.example.test',
+            'ns3' => null,
+            'ns4' => null,
+        ]);
+        $timeline[] = 'before';
+    });
+    $eventDispatcher->addListener(AfterClientChangeNameserversEvent::class, static function (AfterClientChangeNameserversEvent $event) use (&$timeline): void {
+        expect(get_object_vars($event))->toBe([
+            'domainId' => 42,
+            'clientId' => 17,
+            'ns1' => 'ns1.example.test',
+            'ns2' => 'ns2.example.test',
+            'ns3' => null,
+            'ns4' => null,
+        ]);
+        $timeline[] = 'after';
+    });
 
     $di = container();
-    $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $clientApiMock->setDi($di);
 
-    $data = [];
+    $data = [
+        'ns1' => 'ns1.example.test',
+        'ns2' => 'ns2.example.test',
+        'ns3' => null,
+        'ns4' => null,
+        'token' => 'private-token',
+        'config' => ['registrar_password' => 'secret'],
+    ];
     $result = $clientApiMock->update_nameservers($data);
 
     expect($result)->toBeTrue();
+    expect($timeline)->toBe(['before', 'service', 'after']);
+});
+
+test('does not dispatch after nameserver event when registrar update fails', function (): void {
+    $model = new ServiceDomain();
+    $clientApiMock = apiEndpoint(Mockery::mock(Client::class)->makePartial()->shouldAllowMockingProtectedMethods());
+    $clientApiMock->shouldReceive('_getService')->once()->andReturn($model);
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('updateNameservers')
+        ->once()
+        ->andThrow(new RuntimeException('Registrar update failed'));
+    $clientApiMock->setService($serviceMock);
+
+    $timeline = [];
+    $eventDispatcher = new EventDispatcher();
+    $eventDispatcher->addListener(BeforeClientChangeNameserversEvent::class, static function () use (&$timeline): void {
+        $timeline[] = 'before';
+    });
+    $eventDispatcher->addListener(AfterClientChangeNameserversEvent::class, static function () use (&$timeline): void {
+        $timeline[] = 'after';
+    });
+
+    $di = container();
+    $di['event_dispatcher'] = $eventDispatcher;
+    $clientApiMock->setDi($di);
+
+    expect(fn () => $clientApiMock->update_nameservers(['ns1' => 'ns1.example.test', 'ns2' => 'ns2.example.test']))
+        ->toThrow(RuntimeException::class, 'Registrar update failed');
+    expect($timeline)->toBe(['before']);
 });
 
 test('updates contacts', function (): void {

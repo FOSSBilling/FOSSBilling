@@ -130,9 +130,29 @@ Order lifecycle hooks use before and after classes in `Box\Mod\Order\Event` for 
 
 Invoice subscription creation and deletion dispatch `AfterAdminSubscriptionCreateEvent` and `AfterAdminSubscriptionDeleteEvent` with the subscription ID. Renewal invoice generation dispatches `BeforeAdminGenerateRenewalInvoiceEvent` with the order ID, followed by `AfterAdminGenerateRenewalInvoiceEvent` with the order and invoice IDs. Admin invoice deletion dispatches `BeforeAdminInvoiceDeleteEvent` and `AfterAdminInvoiceDeleteEvent`, each with the invoice ID. These classes are in `Box\Mod\Invoice\Event`; replace the corresponding string-named hooks with typed listeners.
 
+Invoice approval dispatches `BeforeAdminInvoiceApproveEvent` and `AfterAdminInvoiceApproveEvent` with the invoice ID. The after event runs after approval and any attempted credit payment. The built-in approval email is a typed listener; extensions can query the invoice by ID when they need its current details.
+
+Payment completion dispatches `AfterAdminInvoicePaymentReceivedEvent` with the invoice ID after the payment transaction commits and before invoice item tasks run. The built-in paid-invoice email uses this typed event.
+
+Refund attempts dispatch `BeforeAdminInvoiceRefundEvent` and `AfterAdminInvoiceRefundEvent` with the original invoice ID. The after event follows the selected refund flow, including a manual flow that does not create a credit note.
+
+Issuing a debit note dispatches `BeforeAdminInvoiceDebitEvent` with the original invoice ID and `AfterAdminInvoiceDebitEvent` with both the original invoice ID and new debit note ID. The after event runs after the debit email attempt.
+
+Invoice edits dispatch `BeforeAdminInvoiceUpdateEvent` with the invoice ID and sorted names of submitted fields, followed by `AfterAdminInvoiceUpdateEvent` with the invoice ID. The submitted values are omitted from the event payload; extensions can query the invoice before or after persistence as needed.
+
 Transaction creation, update, and processing dispatch before and after classes in `Box\Mod\Invoice\Event`. Update and process events expose the transaction ID. The before-create event provides a readonly allowlist of scalar transaction fields; raw payment notifications, request bodies, and credential fields are excluded. The after-create event provides the new transaction ID. A listener cannot rewrite transaction input by changing the event payload.
 
 Order batch operations (suspension warnings, suspension, cancellation of suspended orders, and cancellation of unpaid orders) dispatch before and after classes in `Box\Mod\Order\Event`. They carry no payload. A disabled batch operation still dispatches its before event but can return without dispatching its after event, preserving the previous hook timing.
+
+Deleting a currency dispatches `BeforeAdminDeleteCurrencyEvent` and `AfterAdminDeleteCurrencyEvent` from `Box\Mod\Currency\Event`. Both expose the currency `code`; the string-named delete hooks are no longer fired.
+
+Extension installation, activation, update, deactivation, and uninstallation dispatch before and after classes in `Box\Mod\Extension\Event`. The operation events expose the extension identity (record ID where one exists, type, and name) rather than an entity or arbitrary request array. `BeforeAdminExtensionConfigSaveEvent` and `AfterAdminExtensionConfigSaveEvent` expose the extension name and the names of submitted configuration keys; configuration values are omitted. Replace the corresponding string-named extension hooks with typed listeners.
+
+System settings updates dispatch `BeforeAdminSettingsUpdateEvent` with submitted parameter names only and `AfterAdminSettingsUpdateEvent` after persistence. Core and manual application updates dispatch before and after classes in `Box\Mod\System\Event` with no payload. Settings values and credentials are not exposed through these events.
+
+Theme settings saves dispatch `BeforeAdminThemeSettingsSaveEvent` with the theme name and submitted setting names; setting values are omitted. Adding a notification dispatches `AfterAdminNotificationAddEvent` with the persisted notification ID. The previous string-named notification hook is no longer fired.
+
+Service-license resets dispatch before and after classes in `Box\Mod\Servicelicense\Event` with the license and client IDs. Client nameserver changes dispatch before and after classes in `Box\Mod\Servicedomain\Event` with the domain and client IDs plus explicit `ns1` through `ns4` values. Arbitrary request fields are excluded from these events.
 
 ## How can I contribute?
 

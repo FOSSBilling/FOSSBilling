@@ -94,20 +94,8 @@ test('sorts notification search query', function (array $filter, string $expecte
     'invalid direction falls back to ascending' => [['sort' => 'created_at', 'direction' => 'sideways'], 'n.createdAt', 'ASC', 'ASC'],
 ]);
 
-test('create dispatches the typed event after the legacy notification hook', function (): void {
-    $calls = (object) ['entries' => []];
-    $eventManager = new class($calls) {
-        public function __construct(private object $calls)
-        {
-        }
-
-        public function fire(array $event): mixed
-        {
-            $this->calls->entries[] = ['legacy', $event];
-
-            return null;
-        }
-    };
+test('create dispatches the typed event after persisting the notification', function (): void {
+    $calls = (object) ['steps' => [], 'events' => []];
     $eventDispatcher = new class($calls) {
         public function __construct(private object $calls)
         {
@@ -115,7 +103,8 @@ test('create dispatches the typed event after the legacy notification hook', fun
 
         public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
         {
-            $this->calls->entries[] = ['typed', $event];
+            $this->calls->steps[] = 'typed';
+            $this->calls->events[] = $event;
 
             return $event;
         }
@@ -124,23 +113,24 @@ test('create dispatches the typed event after the legacy notification hook', fun
     $repository = Mockery::mock(ExtensionMetaRepository::class)->makePartial()->shouldIgnoreMissing();
     $entityManager = Mockery::mock(EntityManagerInterface::class);
     $entityManager->shouldReceive('getRepository')->with(ExtensionMeta::class)->once()->andReturn($repository);
-    $entityManager->shouldReceive('persist')->once()->with(Mockery::type(ExtensionMeta::class))->andReturnUsing(function (ExtensionMeta $meta): void {
+    $entityManager->shouldReceive('persist')->once()->with(Mockery::type(ExtensionMeta::class))->andReturnUsing(function (ExtensionMeta $meta) use ($calls): void {
+        $calls->steps[] = 'persist';
         (new ReflectionProperty(ExtensionMeta::class, 'id'))->setValue($meta, 42);
     });
-    $entityManager->shouldReceive('flush')->once();
+    $entityManager->shouldReceive('flush')->once()->andReturnUsing(function () use ($calls): void {
+        $calls->steps[] = 'flush';
+    });
 
     $di = new Pimple\Container();
     $di['em'] = $entityManager;
-    $di['events_manager'] = $eventManager;
     $di['event_dispatcher'] = $eventDispatcher;
 
     $service = new Box\Mod\Notification\Service();
     $service->setDi($di);
 
     expect($service->create('Maintenance tonight'))->toBe(42)
-        ->and($calls->entries)->toHaveCount(2)
-        ->and($calls->entries[0])->toBe(['legacy', ['event' => 'onAfterAdminNotificationAdd', 'params' => ['id' => 42]]])
-        ->and($calls->entries[1][0])->toBe('typed')
-        ->and($calls->entries[1][1])->toBeInstanceOf(AfterAdminNotificationAddEvent::class)
-        ->and($calls->entries[1][1]->notificationId)->toBe(42);
+        ->and($calls->steps)->toBe(['persist', 'flush', 'typed'])
+        ->and($calls->events)->toHaveCount(1)
+        ->and($calls->events[0])->toBeInstanceOf(AfterAdminNotificationAddEvent::class)
+        ->and($calls->events[0]->notificationId)->toBe(42);
 });

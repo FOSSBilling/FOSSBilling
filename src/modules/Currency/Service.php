@@ -309,14 +309,12 @@ class Service implements InjectionAwareInterface
             throw new InformationException('Cannot remove the default currency.');
         }
 
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminDeleteCurrency', 'params' => ['code' => $currencyCode]]);
         $this->di['event_dispatcher']->dispatch(new BeforeAdminDeleteCurrencyEvent($currencyCode));
 
         $em = $this->di['em'];
         $em->remove($currency);
         $em->flush();
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminDeleteCurrency', 'params' => ['code' => $currencyCode]]);
         $this->di['event_dispatcher']->dispatch(new AfterAdminDeleteCurrencyEvent($currencyCode));
 
         $this->di['logger']->info('Removed currency {currency_code}.', ['currency_code' => $currency->getCode()]);
