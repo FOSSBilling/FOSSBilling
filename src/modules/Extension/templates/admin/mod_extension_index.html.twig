@@ -187,7 +187,7 @@
                                 <thead>
                                 <tr>
                                     <th>{{ 'Extension'|trans }}</th>
-                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Hook'|trans, 'sort_key': 'event', 'url': 'extension', 'hash': '#tab-hooks' }) }}
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Hook'|trans, 'sort_key': 'event', 'url': 'extension', 'hash': '#tab-hooks', 'default_sort': 'id', 'default_direction': 'ASC' }) }}
                                 </tr>
                                 </thead>
                                 <tbody>

@@ -105,8 +105,8 @@
                             <table class="table card-table table-vcenter table-striped text-nowrap">
                                 <thead>
                                     <tr>
-                                        {{ include('partial_sortable_th.html.twig', { 'label': 'Title'|trans, 'sort_key': 'title', 'url': 'invoice/gateways', 'hash': '#tab-index' }) }}
-                                        {{ include('partial_sortable_th.html.twig', { 'label': 'Code'|trans, 'sort_key': 'code', 'url': 'invoice/gateways', 'hash': '#tab-index' }) }}
+                                        {{ include('partial_sortable_th.html.twig', { 'label': 'Title'|trans, 'sort_key': 'title', 'url': 'invoice/gateways', 'hash': '#tab-index', 'default_sort': 'code', 'default_direction': 'ASC' }) }}
+                                        {{ include('partial_sortable_th.html.twig', { 'label': 'Code'|trans, 'sort_key': 'code', 'url': 'invoice/gateways', 'hash': '#tab-index', 'default_sort': 'code', 'default_direction': 'ASC' }) }}
                                         <th>{{ 'Enabled'|trans }}</th>
                                         <th>{{ 'Allow One-Time Payments'|trans }}</th>
                                         <th>{{ 'Allow Subscriptions'|trans }}</th>

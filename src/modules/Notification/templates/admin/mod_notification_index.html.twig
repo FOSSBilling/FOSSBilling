@@ -82,7 +82,7 @@
                     <thead>
                         <tr>
                             <th>{{ 'Message'|trans }}</th>
-                            {{ include('partial_sortable_th.html.twig', { 'label': 'Date'|trans, 'sort_key': 'created_at', 'url': 'notification' }) }}
+                            {{ include('partial_sortable_th.html.twig', { 'label': 'Date'|trans, 'sort_key': 'created_at', 'url': 'notification', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
                             <th class="w-1"></th>
                         </tr>
                     </thead>

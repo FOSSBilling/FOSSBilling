@@ -227,8 +227,8 @@
                             <input class="form-check-input m-0 align-middle batch-delete-master-checkbox" type="checkbox">
                         </th>
                         <th>{{ 'Author'|trans }}</th>
-                        {{ include('partial_sortable_th.html.twig', { 'label': 'Subject'|trans, 'sort_key': 'subject', 'url': 'support' }) }}
-                        {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'support' }) }}
+                        {{ include('partial_sortable_th.html.twig', { 'label': 'Subject'|trans, 'sort_key': 'subject', 'url': 'support', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                        {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'support', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
                         <th>{{ 'Helpdesk'|trans }}</th>
                         <th class="w-1"></th>
                     </tr>

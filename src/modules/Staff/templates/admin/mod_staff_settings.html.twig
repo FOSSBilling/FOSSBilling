@@ -117,11 +117,11 @@
                         <table class="table card-table table-vcenter table-striped text-nowrap">
                             <thead>
                             <tr>
-                                {{ include('partial_sortable_th.html.twig', { 'label': '#'|trans, 'sort_key': 'id', 'url': 'extension/settings/staff', 'hash': '#tab-staff', 'th_class': 'w-1' }) }}
-                                {{ include('partial_sortable_th.html.twig', { 'label': 'Name'|trans, 'sort_key': 'name', 'url': 'extension/settings/staff', 'hash': '#tab-staff' }) }}
-                                {{ include('partial_sortable_th.html.twig', { 'label': 'Email'|trans, 'sort_key': 'email', 'url': 'extension/settings/staff', 'hash': '#tab-staff' }) }}
+                                {{ include('partial_sortable_th.html.twig', { 'label': '#'|trans, 'sort_key': 'id', 'url': 'extension/settings/staff', 'hash': '#tab-staff', 'th_class': 'w-1', 'default_sort': 'id', 'default_direction': 'ASC' }) }}
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'Name'|trans, 'sort_key': 'name', 'url': 'extension/settings/staff', 'hash': '#tab-staff', 'default_sort': 'id', 'default_direction': 'ASC' }) }}
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'Email'|trans, 'sort_key': 'email', 'url': 'extension/settings/staff', 'hash': '#tab-staff', 'default_sort': 'id', 'default_direction': 'ASC' }) }}
                                 <th>{{ 'Groups'|trans }}</th>
-                                {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'extension/settings/staff', 'hash': '#tab-staff' }) }}
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'extension/settings/staff', 'hash': '#tab-staff', 'default_sort': 'id', 'default_direction': 'ASC' }) }}
                                 <th class="w-1"></th>
                             </tr>
                             </thead>

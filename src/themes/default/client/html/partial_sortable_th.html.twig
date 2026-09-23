@@ -3,12 +3,19 @@
 
    Required: label, sort_key, url
    Optional: sort_param|default('sort'), direction_param|default('direction'),
-             page_param|default('page'), hash|default(''), th_class|default('') #}
+             page_param|default('page'), hash|default(''), th_class|default(''),
+             default_sort|default(null), default_direction|default('ASC').
+   default_sort/default_direction mirror the list endpoint's backend default
+   ordering so the header renders active on initial load (no ?sort= in URL).
+   An explicit ?sort=/direction= always wins over the default. #}
 {% set sortParam = sort_param|default('sort') %}
 {% set directionParam = direction_param|default('direction') %}
 {% set pageParam = page_param|default('page') %}
-{% set currentSort = request.(sortParam)|default(null) %}
-{% set currentDirection = request.(directionParam)|default('ASC')|upper %}
+{% set requestedSort = request.(sortParam)|default(null) %}
+{% set requestedDirection = request.(directionParam)|default(null) %}
+{% set currentSort = requestedSort|default(default_sort|default(null)) %}
+{% set rawDirection = (requestedDirection|default(default_direction|default('ASC')))|upper %}
+{% set currentDirection = rawDirection == 'DESC' ? 'DESC' : 'ASC' %}
 {% set isActive = currentSort == sort_key %}
 {% set nextDirection = isActive and currentDirection == 'ASC' ? 'DESC' : 'ASC' %}
 {% set linkQuery = request|merge({ (sortParam): sort_key, (directionParam): nextDirection, (pageParam): 1 }) %}

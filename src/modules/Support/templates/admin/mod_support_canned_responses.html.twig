@@ -101,10 +101,10 @@
                 <table class="table card-table table-vcenter table-striped text-nowrap">
                 <thead>
                     <tr>
-                        {{ include('partial_sortable_th.html.twig', { 'label': 'Title'|trans, 'sort_key': 'title', 'url': 'support/canned-responses', 'hash': '#tab-index' }) }}
-                        {{ include('partial_sortable_th.html.twig', { 'label': 'Category'|trans, 'sort_key': 'category', 'url': 'support/canned-responses', 'hash': '#tab-index', 'th_class': 'text-center' }) }}
-                        {{ include('partial_sortable_th.html.twig', { 'label': 'Created'|trans, 'sort_key': 'created_at', 'url': 'support/canned-responses', 'hash': '#tab-index' }) }}
-                        {{ include('partial_sortable_th.html.twig', { 'label': 'Updated'|trans, 'sort_key': 'updated_at', 'url': 'support/canned-responses', 'hash': '#tab-index' }) }}
+                        {{ include('partial_sortable_th.html.twig', { 'label': 'Title'|trans, 'sort_key': 'title', 'url': 'support/canned-responses', 'hash': '#tab-index', 'default_sort': 'id', 'default_direction': 'ASC' }) }}
+                        {{ include('partial_sortable_th.html.twig', { 'label': 'Category'|trans, 'sort_key': 'category', 'url': 'support/canned-responses', 'hash': '#tab-index', 'th_class': 'text-center', 'default_sort': 'id', 'default_direction': 'ASC' }) }}
+                        {{ include('partial_sortable_th.html.twig', { 'label': 'Created'|trans, 'sort_key': 'created_at', 'url': 'support/canned-responses', 'hash': '#tab-index', 'default_sort': 'id', 'default_direction': 'ASC' }) }}
+                        {{ include('partial_sortable_th.html.twig', { 'label': 'Updated'|trans, 'sort_key': 'updated_at', 'url': 'support/canned-responses', 'hash': '#tab-index', 'default_sort': 'id', 'default_direction': 'ASC' }) }}
                         <th class="w-1"></th>
                     </tr>
                 </thead>

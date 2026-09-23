@@ -197,14 +197,14 @@
                             <th class="w-1">
                                 <input type="checkbox" class="form-check-input m-0 align-middle batch-delete-master-checkbox">
                             </th>
-                            {{ include('partial_sortable_th.html.twig', { 'label': '#'|trans, 'sort_key': 'id', 'url': 'invoice', 'th_class': 'w-1' }) }}
+                            {{ include('partial_sortable_th.html.twig', { 'label': '#'|trans, 'sort_key': 'id', 'url': 'invoice', 'th_class': 'w-1', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
                             <th class="w-1"></th>
                             <th>{{ 'Name'|trans }}</th>
                             <th class="text-center">{{ 'Amount'|trans }}</th>
-                            {{ include('partial_sortable_th.html.twig', { 'label': 'Issued at'|trans, 'sort_key': 'created_at', 'url': 'invoice', 'th_class': 'text-center' }) }}
-                            {{ include('partial_sortable_th.html.twig', { 'label': 'Due Date'|trans, 'sort_key': 'due_at', 'url': 'invoice', 'th_class': 'text-center' }) }}
-                            {{ include('partial_sortable_th.html.twig', { 'label': 'Paid at'|trans, 'sort_key': 'paid_at', 'url': 'invoice', 'th_class': 'text-center' }) }}
-                            {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'invoice' }) }}
+                            {{ include('partial_sortable_th.html.twig', { 'label': 'Issued at'|trans, 'sort_key': 'created_at', 'url': 'invoice', 'th_class': 'text-center', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                            {{ include('partial_sortable_th.html.twig', { 'label': 'Due Date'|trans, 'sort_key': 'due_at', 'url': 'invoice', 'th_class': 'text-center', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                            {{ include('partial_sortable_th.html.twig', { 'label': 'Paid at'|trans, 'sort_key': 'paid_at', 'url': 'invoice', 'th_class': 'text-center', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                            {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'invoice', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
                             <th class="w-1"></th>
                         </tr>
                     </thead>

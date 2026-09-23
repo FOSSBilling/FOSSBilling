@@ -143,10 +143,10 @@
                         <th>{{ 'Client'|trans }}</th>
                         <th>{{ 'Order'|trans }}</th>
                         <th>{{ 'Invoice'|trans }}</th>
-                        {{ include('partial_sortable_th.html.twig', { 'label': 'Phase'|trans, 'sort_key': 'phase', 'url': redemption_pagination_url, 'hash': '#promo-redemptions' }) }}
-                        {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': redemption_pagination_url, 'hash': '#promo-redemptions' }) }}
-                        {{ include('partial_sortable_th.html.twig', { 'label': 'Discount'|trans, 'sort_key': 'discount_amount', 'url': redemption_pagination_url, 'hash': '#promo-redemptions' }) }}
-                        {{ include('partial_sortable_th.html.twig', { 'label': 'Redeemed At'|trans, 'sort_key': 'created_at', 'url': redemption_pagination_url, 'hash': '#promo-redemptions' }) }}
+                        {{ include('partial_sortable_th.html.twig', { 'label': 'Phase'|trans, 'sort_key': 'phase', 'url': redemption_pagination_url, 'hash': '#promo-redemptions', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                        {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': redemption_pagination_url, 'hash': '#promo-redemptions', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                        {{ include('partial_sortable_th.html.twig', { 'label': 'Discount'|trans, 'sort_key': 'discount_amount', 'url': redemption_pagination_url, 'hash': '#promo-redemptions', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                        {{ include('partial_sortable_th.html.twig', { 'label': 'Redeemed At'|trans, 'sort_key': 'created_at', 'url': redemption_pagination_url, 'hash': '#promo-redemptions', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
                     </tr>
                 </thead>
                 <tbody>

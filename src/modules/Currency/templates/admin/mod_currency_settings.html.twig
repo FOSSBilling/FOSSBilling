@@ -92,9 +92,9 @@
                         <table class="table card-table table-vcenter table-striped text-nowrap">
                             <thead>
                                 <tr>
-                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Currency Code'|trans, 'sort_key': 'code', 'url': 'extension/settings/currency', 'hash': '#tab-currencies' }) }}
-                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Currency'|trans, 'sort_key': 'code', 'url': 'extension/settings/currency', 'hash': '#tab-currencies' }) }}
-                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Conversion Rate'|trans, 'sort_key': 'conversion_rate', 'url': 'extension/settings/currency', 'hash': '#tab-currencies' }) }}
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Currency Code'|trans, 'sort_key': 'code', 'url': 'extension/settings/currency', 'hash': '#tab-currencies', 'default_sort': 'code', 'default_direction': 'ASC' }) }}
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Currency'|trans, 'sort_key': 'code', 'url': 'extension/settings/currency', 'hash': '#tab-currencies', 'default_sort': 'code', 'default_direction': 'ASC' }) }}
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Conversion Rate'|trans, 'sort_key': 'conversion_rate', 'url': 'extension/settings/currency', 'hash': '#tab-currencies', 'default_sort': 'code', 'default_direction': 'ASC' }) }}
                                     <th>{{ 'Rate Updates'|trans }}</th>
                                     <th>{{ 'Example Price'|trans }}</th>
                                     <th class="w-1">{{ 'Actions'|trans }}</th>

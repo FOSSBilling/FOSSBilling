@@ -49,10 +49,10 @@
                                         <th class="w-1">
                                             <input class="form-check-input m-0 align-middle batch-delete-master-checkbox" type="checkbox">
                                         </th>
-                                        {{ include('partial_sortable_th.html.twig', { 'label': 'Title'|trans, 'sort_key': 'name', 'url': 'invoice/tax', 'hash': '#tab-index' }) }}
-                                        {{ include('partial_sortable_th.html.twig', { 'label': 'Country'|trans, 'sort_key': 'country', 'url': 'invoice/tax', 'hash': '#tab-index' }) }}
-                                        {{ include('partial_sortable_th.html.twig', { 'label': 'State/Region'|trans, 'sort_key': 'state', 'url': 'invoice/tax', 'hash': '#tab-index' }) }}
-                                        {{ include('partial_sortable_th.html.twig', { 'label': 'Tax Rate'|trans, 'sort_key': 'taxrate', 'url': 'invoice/tax', 'hash': '#tab-index' }) }}
+                                        {{ include('partial_sortable_th.html.twig', { 'label': 'Title'|trans, 'sort_key': 'name', 'url': 'invoice/tax', 'hash': '#tab-index', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                                        {{ include('partial_sortable_th.html.twig', { 'label': 'Country'|trans, 'sort_key': 'country', 'url': 'invoice/tax', 'hash': '#tab-index', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                                        {{ include('partial_sortable_th.html.twig', { 'label': 'State/Region'|trans, 'sort_key': 'state', 'url': 'invoice/tax', 'hash': '#tab-index', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                                        {{ include('partial_sortable_th.html.twig', { 'label': 'Tax Rate'|trans, 'sort_key': 'taxrate', 'url': 'invoice/tax', 'hash': '#tab-index', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
                                         <th class="w-1"></th>
                                     </tr>
                                 </thead>

@@ -226,10 +226,10 @@
                                     <input class="form-check-input m-0 align-middle batch-delete-master-checkbox" type="checkbox">
                                 </th>
                                 {% endif %}
-                                {{ include('partial_sortable_th.html.twig', { 'label': 'Name'|trans, 'sort_key': 'first_name', 'url': 'client', 'hash': '#tab-index' }) }}
-                                {{ include('partial_sortable_th.html.twig', { 'label': 'Company'|trans, 'sort_key': 'company', 'url': 'client', 'hash': '#tab-index' }) }}
-                                {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'client', 'hash': '#tab-index' }) }}
-                                {{ include('partial_sortable_th.html.twig', { 'label': 'Registration Date'|trans, 'sort_key': 'created_at', 'url': 'client', 'hash': '#tab-index' }) }}
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'Name'|trans, 'sort_key': 'first_name', 'url': 'client', 'hash': '#tab-index', 'default_sort': 'created_at', 'default_direction': 'DESC' }) }}
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'Company'|trans, 'sort_key': 'company', 'url': 'client', 'hash': '#tab-index', 'default_sort': 'created_at', 'default_direction': 'DESC' }) }}
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'client', 'hash': '#tab-index', 'default_sort': 'created_at', 'default_direction': 'DESC' }) }}
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'Registration Date'|trans, 'sort_key': 'created_at', 'url': 'client', 'hash': '#tab-index', 'default_sort': 'created_at', 'default_direction': 'DESC' }) }}
                                 <th class="w-1"></th>
                             </tr>
                         </thead>

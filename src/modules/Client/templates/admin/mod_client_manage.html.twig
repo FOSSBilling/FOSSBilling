@@ -514,11 +514,11 @@
                         <table class="table card-table table-vcenter table-striped text-nowrap">
                             <thead>
                                 <tr>
-                                    {{ include('partial_sortable_th.html.twig', { 'label': '#'|trans, 'sort_key': 'id', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-orders', 'sort_param': 'order_sort', 'direction_param': 'order_direction', 'page_param': 'order_page', 'th_class': 'w-1' }) }}
-                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Title'|trans, 'sort_key': 'title', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-orders', 'sort_param': 'order_sort', 'direction_param': 'order_direction', 'page_param': 'order_page' }) }}
+                                    {{ include('partial_sortable_th.html.twig', { 'label': '#'|trans, 'sort_key': 'id', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-orders', 'sort_param': 'order_sort', 'direction_param': 'order_direction', 'page_param': 'order_page', 'default_sort': 'id', 'default_direction': 'DESC', 'th_class': 'w-1' }) }}
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Title'|trans, 'sort_key': 'title', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-orders', 'sort_param': 'order_sort', 'direction_param': 'order_direction', 'page_param': 'order_page', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
                                     <th>{{ 'Amount'|trans }}</th>
                                     <th>{{ 'Period'|trans }}</th>
-                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-orders', 'sort_param': 'order_sort', 'direction_param': 'order_direction', 'page_param': 'order_page' }) }}
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-orders', 'sort_param': 'order_sort', 'direction_param': 'order_direction', 'page_param': 'order_page', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
                                     <th class="w-1"></th>
                                 </tr>
                             </thead>
@@ -582,11 +582,11 @@
                         <table class="table card-table table-vcenter table-striped text-nowrap">
                             <thead>
                                 <tr>
-                                    {{ include('partial_sortable_th.html.twig', { 'label': '#'|trans, 'sort_key': 'nr', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-invoices', 'sort_param': 'invoice_sort', 'direction_param': 'invoice_direction', 'page_param': 'invoice_page', 'th_class': 'w-1' }) }}
+                                    {{ include('partial_sortable_th.html.twig', { 'label': '#'|trans, 'sort_key': 'nr', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-invoices', 'sort_param': 'invoice_sort', 'direction_param': 'invoice_direction', 'page_param': 'invoice_page', 'default_sort': 'id', 'default_direction': 'DESC', 'th_class': 'w-1' }) }}
                                     <th>{{ 'Amount'|trans }}</th>
-                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Issued On'|trans, 'sort_key': 'created_at', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-invoices', 'sort_param': 'invoice_sort', 'direction_param': 'invoice_direction', 'page_param': 'invoice_page' }) }}
-                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Paid On'|trans, 'sort_key': 'paid_at', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-invoices', 'sort_param': 'invoice_sort', 'direction_param': 'invoice_direction', 'page_param': 'invoice_page' }) }}
-                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-invoices', 'sort_param': 'invoice_sort', 'direction_param': 'invoice_direction', 'page_param': 'invoice_page' }) }}
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Issued On'|trans, 'sort_key': 'created_at', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-invoices', 'sort_param': 'invoice_sort', 'direction_param': 'invoice_direction', 'page_param': 'invoice_page', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Paid On'|trans, 'sort_key': 'paid_at', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-invoices', 'sort_param': 'invoice_sort', 'direction_param': 'invoice_direction', 'page_param': 'invoice_page', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-invoices', 'sort_param': 'invoice_sort', 'direction_param': 'invoice_direction', 'page_param': 'invoice_page', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
                                     <th class="w-1"></th>
                                 </tr>
                             </thead>
@@ -650,10 +650,10 @@
                         <table class="table card-table table-vcenter table-striped text-nowrap">
                             <thead>
                                 <tr>
-                                    {{ include('partial_sortable_th.html.twig', { 'label': '#'|trans, 'sort_key': 'id', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-support', 'sort_param': 'ticket_sort', 'direction_param': 'ticket_direction', 'page_param': 'ticket_page', 'th_class': 'w-1' }) }}
+                                    {{ include('partial_sortable_th.html.twig', { 'label': '#'|trans, 'sort_key': 'id', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-support', 'sort_param': 'ticket_sort', 'direction_param': 'ticket_direction', 'page_param': 'ticket_page', 'default_sort': 'id', 'default_direction': 'DESC', 'th_class': 'w-1' }) }}
                                     <th>{{ 'Help desk'|trans }}</th>
-                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Subject'|trans, 'sort_key': 'subject', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-support', 'sort_param': 'ticket_sort', 'direction_param': 'ticket_direction', 'page_param': 'ticket_page' }) }}
-                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-support', 'sort_param': 'ticket_sort', 'direction_param': 'ticket_direction', 'page_param': 'ticket_page' }) }}
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Subject'|trans, 'sort_key': 'subject', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-support', 'sort_param': 'ticket_sort', 'direction_param': 'ticket_direction', 'page_param': 'ticket_page', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-support', 'sort_param': 'ticket_sort', 'direction_param': 'ticket_direction', 'page_param': 'ticket_page', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
                                     <th class="w-1"></th>
                                 </tr>
                             </thead>
@@ -707,9 +707,9 @@
                         <table class="table card-table table-vcenter table-striped text-nowrap">
                             <thead>
                                 <tr>
-                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Amount'|trans, 'sort_key': 'amount', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-balance', 'sort_param': 'balance_sort', 'direction_param': 'balance_direction', 'page_param': 'balance_page' }) }}
-                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Description'|trans, 'sort_key': 'description', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-balance', 'sort_param': 'balance_sort', 'direction_param': 'balance_direction', 'page_param': 'balance_page' }) }}
-                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Date'|trans, 'sort_key': 'created_at', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-balance', 'sort_param': 'balance_sort', 'direction_param': 'balance_direction', 'page_param': 'balance_page' }) }}
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Amount'|trans, 'sort_key': 'amount', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-balance', 'sort_param': 'balance_sort', 'direction_param': 'balance_direction', 'page_param': 'balance_page', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Description'|trans, 'sort_key': 'description', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-balance', 'sort_param': 'balance_sort', 'direction_param': 'balance_direction', 'page_param': 'balance_page', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Date'|trans, 'sort_key': 'created_at', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-balance', 'sort_param': 'balance_sort', 'direction_param': 'balance_direction', 'page_param': 'balance_page', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
                                     <th class="w-1"></th>
                                 </tr>
                             </thead>
@@ -798,9 +798,9 @@
                         <table class="table card-table table-vcenter table-striped text-nowrap">
                             <thead>
                                 <tr>
-                                    {{ include('partial_sortable_th.html.twig', { 'label': 'IP'|trans, 'sort_key': 'ip', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-history', 'sort_param': 'login_sort', 'direction_param': 'login_direction', 'page_param': 'login_page' }) }}
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'IP'|trans, 'sort_key': 'ip', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-history', 'sort_param': 'login_sort', 'direction_param': 'login_direction', 'page_param': 'login_page', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
                                     <th>{{ 'Country'|trans }}</th>
-                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Date'|trans, 'sort_key': 'created_at', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-history', 'sort_param': 'login_sort', 'direction_param': 'login_direction', 'page_param': 'login_page' }) }}
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Date'|trans, 'sort_key': 'created_at', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-history', 'sort_param': 'login_sort', 'direction_param': 'login_direction', 'page_param': 'login_page', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
                                 </tr>
                             </thead>
 
@@ -835,9 +835,9 @@
 
         {% if can_view_email_history %}
         <div class="tab-pane fade" id="tab-emails" role="tabpanel" aria-labelledby="emails-tab">
-            {% set emailsPerPage = request.per_page matches '/^\\d+$/' ? request.per_page : 25 %}
-            {% set emailsPage = request.page matches '/^\\d+$/' ? request.page : 1 %}
-            {% set emails = admin.email_email_get_list({ 'per_page': emailsPerPage, 'page': emailsPage, 'client_id': client.id }) %}
+            {% set emailPage = request.email_page matches '/^\\d+$/' ? request.email_page : 1 %}
+            {% set emailPerPage = request.email_per_page matches '/^\\d+$/' ? request.email_per_page : 25 %}
+            {% set emails = admin.email_email_get_list(request|merge({ 'page': emailPage, 'per_page': emailPerPage, 'client_id': client.id, 'sort': request.email_sort|default(null), 'direction': request.email_direction|default('ASC') })) %}
             {% embed 'partial_admin_related_section.html.twig' with {
                 title: 'Emails Sent to Client'|trans,
                 subtitle: 'Review outbound email history for this client and preview the rendered message content.'|trans,
@@ -848,9 +848,9 @@
                         <table class="table card-table table-vcenter table-striped text-nowrap">
                             <thead>
                                 <tr>
-                                    <th>{{ 'Email Subject'|trans }}</th>
-                                    <th>{{ 'To'|trans }}</th>
-                                    <th>{{ 'Date'|trans }}</th>
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Email Subject'|trans, 'sort_key': 'subject', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-emails', 'sort_param': 'email_sort', 'direction_param': 'email_direction', 'page_param': 'email_page', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'To'|trans, 'sort_key': 'recipient', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-emails', 'sort_param': 'email_sort', 'direction_param': 'email_direction', 'page_param': 'email_page', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Date'|trans, 'sort_key': 'created_at', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-emails', 'sort_param': 'email_sort', 'direction_param': 'email_direction', 'page_param': 'email_page', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
                                     <th class="w-1"></th>
                                 </tr>
                             </thead>
@@ -889,7 +889,7 @@
 
                 {% block section_footer %}
                     <div class="d-flex align-items-center">
-                        {{ include('partial_pagination.html.twig', { 'list': emails, 'url': 'client/manage/' ~ client.id, 'hash': '#tab-emails', 'split_footer_controls': true }) }}
+                        {{ include('partial_pagination.html.twig', { 'list': emails, 'url': 'client/manage/' ~ client.id, 'hash': '#tab-emails', 'page_param': 'email_page', 'per_page_param': 'email_per_page', 'split_footer_controls': true }) }}
                     </div>
                 {% endblock %}
             {% endembed %}
@@ -911,12 +911,12 @@
                         <table class="table card-table table-vcenter table-striped text-nowrap">
                             <thead>
                                 <tr>
-                                    {{ include('partial_sortable_th.html.twig', { 'label': 'ID'|trans, 'sort_key': 'txn_id', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-transactions', 'sort_param': 'txn_sort', 'direction_param': 'txn_direction', 'page_param': 'txn_page' }) }}
-                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Type'|trans, 'sort_key': 'type', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-transactions', 'sort_param': 'txn_sort', 'direction_param': 'txn_direction', 'page_param': 'txn_page' }) }}
-                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Gateway'|trans, 'sort_key': 'gateway', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-transactions', 'sort_param': 'txn_sort', 'direction_param': 'txn_direction', 'page_param': 'txn_page' }) }}
-                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Amount'|trans, 'sort_key': 'amount', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-transactions', 'sort_param': 'txn_sort', 'direction_param': 'txn_direction', 'page_param': 'txn_page' }) }}
-                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-transactions', 'sort_param': 'txn_sort', 'direction_param': 'txn_direction', 'page_param': 'txn_page' }) }}
-                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Date'|trans, 'sort_key': 'created_at', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-transactions', 'sort_param': 'txn_sort', 'direction_param': 'txn_direction', 'page_param': 'txn_page' }) }}
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'ID'|trans, 'sort_key': 'txn_id', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-transactions', 'sort_param': 'txn_sort', 'direction_param': 'txn_direction', 'page_param': 'txn_page', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Type'|trans, 'sort_key': 'type', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-transactions', 'sort_param': 'txn_sort', 'direction_param': 'txn_direction', 'page_param': 'txn_page', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Gateway'|trans, 'sort_key': 'gateway', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-transactions', 'sort_param': 'txn_sort', 'direction_param': 'txn_direction', 'page_param': 'txn_page', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Amount'|trans, 'sort_key': 'amount', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-transactions', 'sort_param': 'txn_sort', 'direction_param': 'txn_direction', 'page_param': 'txn_page', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-transactions', 'sort_param': 'txn_sort', 'direction_param': 'txn_direction', 'page_param': 'txn_page', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Date'|trans, 'sort_key': 'created_at', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-transactions', 'sort_param': 'txn_sort', 'direction_param': 'txn_direction', 'page_param': 'txn_page', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
                                     <th class="w-1"></th>
                                 </tr>
                             </thead>

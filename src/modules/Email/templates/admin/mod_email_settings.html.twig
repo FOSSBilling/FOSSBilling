@@ -183,12 +183,12 @@
                                     <input class="form-check-input m-0 align-middle batch-delete-master-checkbox" type="checkbox">
                                 </th>
                                 {% endif %}
-                                {{ include('partial_sortable_th.html.twig', { 'label': 'Subject'|trans, 'sort_key': 'subject', 'url': 'email/templates', 'hash': '#tab-index', 'th_class': 'w-1' }) }}
-                                {{ include('partial_sortable_th.html.twig', { 'label': 'Module'|trans, 'sort_key': 'category', 'url': 'email/templates', 'hash': '#tab-index' }) }}
-                                {{ include('partial_sortable_th.html.twig', { 'label': 'Code'|trans, 'sort_key': 'code', 'url': 'email/templates', 'hash': '#tab-index' }) }}
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'Subject'|trans, 'sort_key': 'subject', 'url': 'email/templates', 'hash': '#tab-index', 'th_class': 'w-1', 'default_sort': 'category', 'default_direction': 'ASC' }) }}
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'Module'|trans, 'sort_key': 'category', 'url': 'email/templates', 'hash': '#tab-index', 'default_sort': 'category', 'default_direction': 'ASC' }) }}
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'Code'|trans, 'sort_key': 'code', 'url': 'email/templates', 'hash': '#tab-index', 'default_sort': 'category', 'default_direction': 'ASC' }) }}
                                 <th>{{ 'Type'|trans }}</th>
                                 <th>{{ 'Status'|trans }}</th>
-                                {{ include('partial_sortable_th.html.twig', { 'label': 'Enabled'|trans, 'sort_key': 'enabled', 'url': 'email/templates', 'hash': '#tab-index' }) }}
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'Enabled'|trans, 'sort_key': 'enabled', 'url': 'email/templates', 'hash': '#tab-index', 'default_sort': 'category', 'default_direction': 'ASC' }) }}
                                 <th class="w-1"></th>
                             </tr>
                             </thead>
@@ -363,13 +363,13 @@
                         <table class="table card-table table-vcenter table-striped text-nowrap">
                             <thead>
                             <tr>
-                                {{ include('partial_sortable_th.html.twig', { 'label': 'Subject'|trans, 'sort_key': 'subject', 'url': 'email/templates', 'hash': '#tab-queue', 'sort_param': 'queue_sort', 'direction_param': 'queue_direction', 'page_param': 'queue_page', 'th_class': 'w-1' }) }}
-                                {{ include('partial_sortable_th.html.twig', { 'label': 'To'|trans, 'sort_key': 'to_name', 'url': 'email/templates', 'hash': '#tab-queue', 'sort_param': 'queue_sort', 'direction_param': 'queue_direction', 'page_param': 'queue_page' }) }}
-                                {{ include('partial_sortable_th.html.twig', { 'label': 'To (Email)'|trans, 'sort_key': 'recipient', 'url': 'email/templates', 'hash': '#tab-queue', 'sort_param': 'queue_sort', 'direction_param': 'queue_direction', 'page_param': 'queue_page' }) }}
-                                {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'email/templates', 'hash': '#tab-queue', 'sort_param': 'queue_sort', 'direction_param': 'queue_direction', 'page_param': 'queue_page' }) }}
-                                {{ include('partial_sortable_th.html.twig', { 'label': 'Tries'|trans, 'sort_key': 'tries', 'url': 'email/templates', 'hash': '#tab-queue', 'sort_param': 'queue_sort', 'direction_param': 'queue_direction', 'page_param': 'queue_page' }) }}
-                                {{ include('partial_sortable_th.html.twig', { 'label': 'Created At'|trans, 'sort_key': 'created_at', 'url': 'email/templates', 'hash': '#tab-queue', 'sort_param': 'queue_sort', 'direction_param': 'queue_direction', 'page_param': 'queue_page' }) }}
-                                {{ include('partial_sortable_th.html.twig', { 'label': 'Updated At'|trans, 'sort_key': 'updated_at', 'url': 'email/templates', 'hash': '#tab-queue', 'sort_param': 'queue_sort', 'direction_param': 'queue_direction', 'page_param': 'queue_page' }) }}
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'Subject'|trans, 'sort_key': 'subject', 'url': 'email/templates', 'hash': '#tab-queue', 'sort_param': 'queue_sort', 'direction_param': 'queue_direction', 'page_param': 'queue_page', 'default_sort': 'priority', 'default_direction': 'DESC', 'th_class': 'w-1' }) }}
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'To'|trans, 'sort_key': 'to_name', 'url': 'email/templates', 'hash': '#tab-queue', 'sort_param': 'queue_sort', 'direction_param': 'queue_direction', 'page_param': 'queue_page', 'default_sort': 'priority', 'default_direction': 'DESC' }) }}
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'To (Email)'|trans, 'sort_key': 'recipient', 'url': 'email/templates', 'hash': '#tab-queue', 'sort_param': 'queue_sort', 'direction_param': 'queue_direction', 'page_param': 'queue_page', 'default_sort': 'priority', 'default_direction': 'DESC' }) }}
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'email/templates', 'hash': '#tab-queue', 'sort_param': 'queue_sort', 'direction_param': 'queue_direction', 'page_param': 'queue_page', 'default_sort': 'priority', 'default_direction': 'DESC' }) }}
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'Tries'|trans, 'sort_key': 'tries', 'url': 'email/templates', 'hash': '#tab-queue', 'sort_param': 'queue_sort', 'direction_param': 'queue_direction', 'page_param': 'queue_page', 'default_sort': 'priority', 'default_direction': 'DESC' }) }}
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'Created At'|trans, 'sort_key': 'created_at', 'url': 'email/templates', 'hash': '#tab-queue', 'sort_param': 'queue_sort', 'direction_param': 'queue_direction', 'page_param': 'queue_page', 'default_sort': 'priority', 'default_direction': 'DESC' }) }}
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'Updated At'|trans, 'sort_key': 'updated_at', 'url': 'email/templates', 'hash': '#tab-queue', 'sort_param': 'queue_sort', 'direction_param': 'queue_direction', 'page_param': 'queue_page', 'default_sort': 'priority', 'default_direction': 'DESC' }) }}
                                 <th class="w-1"></th>
                             </tr>
                             </thead>

@@ -88,9 +88,9 @@
                             <table class="table card-table table-vcenter table-striped text-nowrap">
                                 <thead>
                                 <tr>
-                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Subject'|trans, 'sort_key': 'subject', 'url': 'massmailer', 'hash': '#tab-index' }) }}
-                                    {{ include('partial_sortable_th.html.twig', { 'label': 'From'|trans, 'sort_key': 'from_name', 'url': 'massmailer', 'hash': '#tab-index' }) }}
-                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'massmailer', 'hash': '#tab-index' }) }}
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Subject'|trans, 'sort_key': 'subject', 'url': 'massmailer', 'hash': '#tab-index', 'default_sort': 'created_at', 'default_direction': 'DESC' }) }}
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'From'|trans, 'sort_key': 'from_name', 'url': 'massmailer', 'hash': '#tab-index', 'default_sort': 'created_at', 'default_direction': 'DESC' }) }}
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'massmailer', 'hash': '#tab-index', 'default_sort': 'created_at', 'default_direction': 'DESC' }) }}
                                     <th></th>
                                 </tr>
                                 </thead>

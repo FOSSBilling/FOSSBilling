@@ -38,6 +38,119 @@ test('sortable th partial renders an inactive header with the muted selector aff
         ->not->toContain('chevron-');
 });
 
+test('sortable th partial renders the default sort as active on initial load', function (): void {
+    $html = (new StrictTemplateRenderer())->renderTemplate(
+        PATH_THEMES . '/default/admin/html/partial_sortable_th.html.twig',
+        [
+            'request' => sortableThRequest(),
+            'label' => 'TLD',
+            'sort_key' => 'tld',
+            'url' => 'servicedomain',
+            'hash' => '#tab-tlds',
+            'default_sort' => 'tld',
+        ],
+        emailMode: false,
+    );
+
+    expect($html)->toContain('aria-sort="ascending"')
+        ->toContain('#chevron-up')
+        ->not->toContain('#selector');
+});
+
+test('sortable th partial renders a descending default sort with the down indicator', function (): void {
+    $html = (new StrictTemplateRenderer())->renderTemplate(
+        PATH_THEMES . '/default/admin/html/partial_sortable_th.html.twig',
+        [
+            'request' => sortableThRequest(),
+            'label' => 'Date',
+            'sort_key' => 'created_at',
+            'url' => 'invoice',
+            'default_sort' => 'created_at',
+            'default_direction' => 'DESC',
+        ],
+        emailMode: false,
+    );
+
+    expect($html)->toContain('aria-sort="descending"')
+        ->toContain('#chevron-down')
+        ->not->toContain('#selector');
+});
+
+test('sortable th partial lets an explicit request sort override the default', function (): void {
+    $html = (new StrictTemplateRenderer())->renderTemplate(
+        PATH_THEMES . '/default/admin/html/partial_sortable_th.html.twig',
+        [
+            'request' => sortableThRequest(['sort' => 'price_registration', 'direction' => 'ASC']),
+            'label' => 'TLD',
+            'sort_key' => 'tld',
+            'url' => 'servicedomain',
+            'default_sort' => 'tld',
+        ],
+        emailMode: false,
+    );
+
+    expect($html)->not->toContain('aria-sort')
+        ->not->toContain('chevron-')
+        ->toContain('#selector');
+});
+
+test('sortable th partial normalizes an invalid direction to ascending', function (): void {
+    $html = (new StrictTemplateRenderer())->renderTemplate(
+        PATH_THEMES . '/default/admin/html/partial_sortable_th.html.twig',
+        [
+            'request' => sortableThRequest(['sort' => 'tld', 'direction' => 'sideways']),
+            'label' => 'TLD',
+            'sort_key' => 'tld',
+            'url' => 'servicedomain',
+        ],
+        emailMode: false,
+    );
+
+    expect($html)->toContain('aria-sort="ascending"')
+        ->toContain('#chevron-up')
+        ->not->toContain('#chevron-down');
+});
+
+test('sortable th partial normalizes an invalid default direction to ascending', function (): void {
+    $html = (new StrictTemplateRenderer())->renderTemplate(
+        PATH_THEMES . '/default/admin/html/partial_sortable_th.html.twig',
+        [
+            'request' => sortableThRequest(),
+            'label' => 'TLD',
+            'sort_key' => 'tld',
+            'url' => 'servicedomain',
+            'default_sort' => 'tld',
+            'default_direction' => 'sideways',
+        ],
+        emailMode: false,
+    );
+
+    expect($html)->toContain('aria-sort="ascending"')
+        ->toContain('#chevron-up');
+});
+
+test('sortable th partial supports defaults with custom parameter names', function (): void {
+    $html = (new StrictTemplateRenderer())->renderTemplate(
+        PATH_THEMES . '/default/admin/html/partial_sortable_th.html.twig',
+        [
+            'request' => sortableThRequest(),
+            'label' => 'Title',
+            'sort_key' => 'title',
+            'url' => 'servicedomain',
+            'hash' => '#tab-registrars',
+            'sort_param' => 'registrar_sort',
+            'direction_param' => 'registrar_direction',
+            'page_param' => 'registrar_page',
+            'default_sort' => 'title',
+        ],
+        emailMode: false,
+    );
+
+    expect($html)->toContain('aria-sort="ascending"')
+        ->toContain('#chevron-up')
+        ->not->toContain('#selector');
+});
+
 test('sortable th partial marks an ascending column with the up indicator', function (): void {
     $html = (new StrictTemplateRenderer())->renderTemplate(
         PATH_THEMES . '/default/admin/html/partial_sortable_th.html.twig',

@@ -71,12 +71,12 @@
                 <table class="table card-table table-vcenter table-striped text-nowrap">
                     <thead>
                         <tr>
-                            {{ include('partial_sortable_th.html.twig', { 'label': 'Code'|trans, 'sort_key': 'code', 'url': 'product/promos' }) }}
-                            {{ include('partial_sortable_th.html.twig', { 'label': 'Discount'|trans, 'sort_key': 'value', 'url': 'product/promos' }) }}
+                            {{ include('partial_sortable_th.html.twig', { 'label': 'Code'|trans, 'sort_key': 'code', 'url': 'product/promos', 'default_sort': 'id', 'default_direction': 'ASC' }) }}
+                            {{ include('partial_sortable_th.html.twig', { 'label': 'Discount'|trans, 'sort_key': 'value', 'url': 'product/promos', 'default_sort': 'id', 'default_direction': 'ASC' }) }}
                             <th>{{ 'Applies To'|trans }}</th>
                             <th>{{ 'Client Groups'|trans }}</th>
-                            {{ include('partial_sortable_th.html.twig', { 'label': 'Validity Period'|trans, 'sort_key': 'start_at', 'url': 'product/promos' }) }}
-                            {{ include('partial_sortable_th.html.twig', { 'label': 'Enabled'|trans, 'sort_key': 'active', 'url': 'product/promos' }) }}
+                            {{ include('partial_sortable_th.html.twig', { 'label': 'Validity Period'|trans, 'sort_key': 'start_at', 'url': 'product/promos', 'default_sort': 'id', 'default_direction': 'ASC' }) }}
+                            {{ include('partial_sortable_th.html.twig', { 'label': 'Enabled'|trans, 'sort_key': 'active', 'url': 'product/promos', 'default_sort': 'id', 'default_direction': 'ASC' }) }}
                             <th>{{ 'Limit Tracking'|trans }}</th>
                             <th class="w-1"></th>
                         </tr>

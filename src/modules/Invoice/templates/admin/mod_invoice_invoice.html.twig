@@ -544,12 +544,12 @@
                 <table class="table card-table table-vcenter table-striped text-nowrap">
                     <thead>
                         <tr>
-                            {{ include('partial_sortable_th.html.twig', { 'label': 'ID'|trans, 'sort_key': 'txn_id', 'url': 'invoice/manage/' ~ invoice.id, 'hash': '#tab-info' }) }}
-                            {{ include('partial_sortable_th.html.twig', { 'label': 'Type'|trans, 'sort_key': 'type', 'url': 'invoice/manage/' ~ invoice.id, 'hash': '#tab-info' }) }}
-                            {{ include('partial_sortable_th.html.twig', { 'label': 'Gateway'|trans, 'sort_key': 'gateway', 'url': 'invoice/manage/' ~ invoice.id, 'hash': '#tab-info' }) }}
-                            {{ include('partial_sortable_th.html.twig', { 'label': 'Amount'|trans, 'sort_key': 'amount', 'url': 'invoice/manage/' ~ invoice.id, 'hash': '#tab-info' }) }}
-                            {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'invoice/manage/' ~ invoice.id, 'hash': '#tab-info' }) }}
-                            {{ include('partial_sortable_th.html.twig', { 'label': 'Date'|trans, 'sort_key': 'created_at', 'url': 'invoice/manage/' ~ invoice.id, 'hash': '#tab-info' }) }}
+                            {{ include('partial_sortable_th.html.twig', { 'label': 'ID'|trans, 'sort_key': 'txn_id', 'url': 'invoice/manage/' ~ invoice.id, 'hash': '#tab-info', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                            {{ include('partial_sortable_th.html.twig', { 'label': 'Type'|trans, 'sort_key': 'type', 'url': 'invoice/manage/' ~ invoice.id, 'hash': '#tab-info', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                            {{ include('partial_sortable_th.html.twig', { 'label': 'Gateway'|trans, 'sort_key': 'gateway', 'url': 'invoice/manage/' ~ invoice.id, 'hash': '#tab-info', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                            {{ include('partial_sortable_th.html.twig', { 'label': 'Amount'|trans, 'sort_key': 'amount', 'url': 'invoice/manage/' ~ invoice.id, 'hash': '#tab-info', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                            {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'invoice/manage/' ~ invoice.id, 'hash': '#tab-info', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                            {{ include('partial_sortable_th.html.twig', { 'label': 'Date'|trans, 'sort_key': 'created_at', 'url': 'invoice/manage/' ~ invoice.id, 'hash': '#tab-info', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
                             <th class="w-1"></th>
                         </tr>
                     </thead>
