@@ -23,6 +23,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * @param array $data
      *
+     * @optional string $sort - sort by one of: id
+     * @optional string $direction - sort direction: ASC or DESC
+     *
      * @return array
      */
     public function get_list($data)

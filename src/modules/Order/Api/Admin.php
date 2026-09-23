@@ -55,6 +55,8 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @optional string $date_from - show only order places after this date
      * @optional string $date_to - show only order places till this date
+     * @optional string $sort - sort by one of: id, status, title, created_at, updated_at
+     * @optional string $direction - sort direction: ASC or DESC
      *
      * @return array
      */
@@ -391,6 +393,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
     /**
      * Get paginated order statuses history list.
+     *
+     * @optional string $sort - sort by one of: id, status, created_at
+     * @optional string $direction - sort direction: ASC or DESC
      *
      * @return array
      */

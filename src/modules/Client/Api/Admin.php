@@ -33,6 +33,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @param array $data filtering options
      *
+     * @optional string $sort - sort column: 'id', 'email', 'first_name', 'last_name', 'company', 'status', 'created_at' or 'updated_at'
+     * @optional string $direction - sort direction: 'ASC' or 'DESC'
+     *
      * @return array list of clients in a paginated manner
      */
     public function get_list($data)
@@ -497,6 +500,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Returns list of client payments.
      *
+     * @optional string $sort - sort column: 'id', 'amount', 'description', 'created_at' or 'updated_at'
+     * @optional string $direction - sort direction: 'ASC' or 'DESC'
+     *
      * @return array
      */
     public function balance_get_list($data)
@@ -584,6 +590,8 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * Get list of clients logins history.
      *
      * @optional int $client_id - filter by client
+     * @optional string $sort - sort by one of: id, ip, created_at
+     * @optional string $direction - sort direction: ASC or DESC
      *
      * @return array
      */

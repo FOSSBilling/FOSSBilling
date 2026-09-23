@@ -51,7 +51,7 @@
                 </li>
             </ul>
             <div class="tab-content border-top">
-                <div class="tab-pane fade show active" id="tab-currencies" role="tabpanel">
+                <div class="tab-pane fade show active" id="tab-currencies" role="tabpanel" data-list-ns="">
                     <div class="card-body">
                         <div class="d-flex flex-column flex-lg-row align-items-lg-start justify-content-between gap-3 mb-3">
                             <div>
@@ -92,9 +92,9 @@
                         <table class="table card-table table-vcenter table-striped text-nowrap">
                             <thead>
                                 <tr>
-                                    <th>{{ 'Currency Code'|trans }}</th>
-                                    <th>{{ 'Currency'|trans }}</th>
-                                    <th>{{ 'Conversion Rate'|trans }}</th>
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Currency Code'|trans, 'sort_key': 'code', 'url': 'extension/settings/currency', 'hash': '#tab-currencies', 'default_sort': 'code', 'default_direction': 'ASC' }) }}
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Currency'|trans, 'sort_key': 'code', 'url': 'extension/settings/currency', 'hash': '#tab-currencies', 'default_sort': 'code', 'default_direction': 'ASC' }) }}
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Conversion Rate'|trans, 'sort_key': 'conversion_rate', 'url': 'extension/settings/currency', 'hash': '#tab-currencies', 'default_sort': 'code', 'default_direction': 'ASC' }) }}
                                     <th>{{ 'Rate Updates'|trans }}</th>
                                     <th>{{ 'Example Price'|trans }}</th>
                                     <th class="w-1">{{ 'Actions'|trans }}</th>
@@ -102,7 +102,8 @@
                             </thead>
                             <tbody>
                             {% set default_currency = guest.currency_get %}
-                            {% for currency in admin.currency_get_list.list %}
+                            {% set currencies = admin.currency_get_list({ 'per_page': 25, 'page': request.page }|merge(request)) %}
+                            {% for currency in currencies.list %}
                                 <tr>
                                     <td>{% if currency.default %}<strong>{{ currency.code }} ({{ currency.code|currency_symbol }})</strong>{% else %}{{ currency.code }} ({{ currency.code|currency_symbol }}){% endif %}</td>
                                     <td>
@@ -156,7 +157,8 @@
                             </tbody>
                         </table>
                     </div>
-                    <div class="card-footer text-center">
+                    <div class="card-footer d-flex align-items-center">
+                        {{ include('partial_pagination.html.twig', { 'list': currencies, 'url': 'extension/settings/currency', 'hash': '#tab-currencies', 'split_footer_controls': true }) }}
                         {% if can_update_currency_rates and provider == "exchangerate-api" and not params.exchangerate_api_key|default('') %}
                             <a href="https://www.exchangerate-api.com" target="_blank"><p class="mt-1 mb-0">{{ 'Currency exchange rates by ExchangeRate-API'|trans }}</p></a>
                         {% endif %}

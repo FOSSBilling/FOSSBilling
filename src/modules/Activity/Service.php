@@ -20,6 +20,7 @@ use Box\Mod\Client\Entity\Client;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Types\Types;
 use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\SortOptions;
 
 class Service implements InjectionAwareInterface
 {
@@ -213,7 +214,14 @@ class Service implements InjectionAwareInterface
             $sql .= ' WHERE ' . implode(' and ', $where);
         }
 
-        $sql .= ' ORDER by m.id desc';
+        $sort = SortOptions::fromArray($data, [
+            'id' => 'm.id',
+            'priority' => 'm.priority',
+            'ip' => 'm.ip',
+            'created_at' => 'm.created_at',
+        ]);
+        $orderBy = $sort->toOrderByClause('m.id') ?? 'm.id desc';
+        $sql .= " ORDER BY {$orderBy}";
 
         return [$sql, $params];
     }

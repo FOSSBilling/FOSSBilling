@@ -61,3 +61,30 @@ test('get search query builder groups search clause when status filter is presen
     ]);
     expect($parameters)->toBe(['status' => 'draft', 'search' => '%newsletter%']);
 });
+
+test('sorts massmailer message search query', function (array $data, string $expectedOrder, string $expectedDirection, ?string $expectedTieBreakerDirection): void {
+    $queryBuilder = Mockery::mock(QueryBuilder::class);
+    $queryBuilder->shouldReceive('orderBy')->with($expectedOrder, $expectedDirection)->once()->andReturn($queryBuilder);
+    if ($expectedTieBreakerDirection !== null) {
+        $queryBuilder->shouldReceive('addOrderBy')->with('m.id', $expectedTieBreakerDirection)->once()->andReturn($queryBuilder);
+    } else {
+        $queryBuilder->shouldReceive('addOrderBy')->never();
+    }
+
+    $repository = Mockery::mock(MassmailerMessageRepository::class)->makePartial();
+    $repository->shouldReceive('createQueryBuilder')->with('m')->once()->andReturn($queryBuilder);
+
+    expect($repository->getSearchQueryBuilder($data))->toBe($queryBuilder);
+})->with([
+    'subject ascending' => [['sort' => 'subject'], 'm.subject', 'ASC', 'ASC'],
+    'subject descending' => [['sort' => 'subject', 'direction' => 'DESC'], 'm.subject', 'DESC', 'DESC'],
+    'status' => [['sort' => 'status', 'direction' => 'desc'], 'm.status', 'DESC', 'DESC'],
+    'from email' => [['sort' => 'from_email'], 'm.fromEmail', 'ASC', 'ASC'],
+    'from name' => [['sort' => 'from_name'], 'm.fromName', 'ASC', 'ASC'],
+    'sent at' => [['sort' => 'sent_at'], 'm.sentAt', 'ASC', 'ASC'],
+    'created at' => [['sort' => 'created_at'], 'm.createdAt', 'ASC', 'ASC'],
+    'updated at' => [['sort' => 'updated_at', 'direction' => 'DESC'], 'm.updatedAt', 'DESC', 'DESC'],
+    'id' => [['sort' => 'id'], 'm.id', 'ASC', null],
+    'invalid sort falls back to default' => [['sort' => 'm.subject; DROP TABLE mod_massmailer'], 'm.createdAt', 'DESC', null],
+    'invalid direction falls back to ascending' => [['sort' => 'subject', 'direction' => 'sideways'], 'm.subject', 'ASC', 'ASC'],
+]);

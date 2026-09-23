@@ -174,6 +174,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Get paginated top level domains list.
      *
+     * @optional string $sort - sort column: 'tld', 'price_registration', 'price_renew', 'price_transfer', 'registrar' or 'id'
+     * @optional string $direction - sort direction: 'ASC' or 'DESC'
+     *
      * @return array
      */
     public function tld_get_list($data)
@@ -320,6 +323,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
     /**
      * Get paginated registrars list.
+     *
+     * @optional string $sort - sort column: 'title' or 'id'
+     * @optional string $direction - sort direction: 'ASC' or 'DESC'
      *
      * @return array
      */

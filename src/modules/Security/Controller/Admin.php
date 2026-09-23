@@ -111,6 +111,10 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
             is_string($ip) && $ip !== '' ? $ip : null,
             is_string($search) && $search !== '' ? $search : null,
         );
+        $counters = $this->di['mod_service']('Security')->sortRateLimitCounters($counters, [
+            'sort' => $request->query->get('sort'),
+            'direction' => $request->query->get('direction'),
+        ]);
 
         $page = filter_var($request->query->get('page', 1), FILTER_VALIDATE_INT, ['options' => ['default' => 1, 'min_range' => 1]]);
         $perPage = filter_var($request->query->get('per_page', 25), FILTER_VALIDATE_INT, ['options' => ['default' => 25, 'min_range' => 1, 'max_range' => 100]]);

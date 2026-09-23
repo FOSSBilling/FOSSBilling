@@ -35,20 +35,20 @@
                     </ul>
                 </div>
                 <div class="tab-content border-top">
-        <div class="tab-pane fade show active" id="tab-index" role="tabpanel" aria-labelledby="index-tab">
+        <div class="tab-pane fade show active" id="tab-index" role="tabpanel" aria-labelledby="index-tab" data-list-ns="">
             {{ include('partial_search.html.twig', { search_toolbar_actions: product_toolbar_actions }) }}
             <div class="table-responsive">
                 <form method="post" action="{{ 'product/update_priority'|api_url }}" {{ fb_api_form({reload: true}) }}>
-                    <table class="table card-table table-vcenter table-striped text-nowrap sortable">
+                    <table class="table card-table table-vcenter table-striped text-nowrap">
                         <thead>
                             <tr>
-                                <th>{{  '#'|trans }}</th>
-                                <th>{{ 'Type'|trans }}</th>
+                                {{ include('partial_sortable_th.html.twig', { 'label': '#'|trans, 'sort_key': 'id', 'url': 'product', 'hash': '#tab-index', 'default_sort': 'priority', 'default_direction': 'ASC' }) }}
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'Type'|trans, 'sort_key': 'type', 'url': 'product', 'hash': '#tab-index', 'default_sort': 'priority', 'default_direction': 'ASC' }) }}
                                 <th>{{ 'Category'|trans }}</th>
-                                <th>{{ 'Title'|trans }}</th>
-                                <th>{{ 'Status'|trans }}</th>
-                                <th class="w-1 text-center">{{ 'Priority'|trans }}</th>
-                                <th class="w-1 no-sort"></th>
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'Title'|trans, 'sort_key': 'title', 'url': 'product', 'hash': '#tab-index', 'default_sort': 'priority', 'default_direction': 'ASC' }) }}
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'product', 'hash': '#tab-index', 'default_sort': 'priority', 'default_direction': 'ASC' }) }}
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'Priority'|trans, 'sort_key': 'priority', 'url': 'product', 'hash': '#tab-index', 'th_class': 'w-1 text-center', 'default_sort': 'priority', 'default_direction': 'ASC' }) }}
+                                <th class="w-1"></th>
                             </tr>
                         </thead>
                         <tbody>

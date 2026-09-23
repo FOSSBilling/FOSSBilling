@@ -121,7 +121,7 @@
                     </ul>
                 </div>
         <div class="tab-content border-top">
-            <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
+            <div class="tab-pane fade show active" id="tab-index" role="tabpanel" data-list-ns="">
                 {{ include('partial_search.html.twig', {
                     search_body_class: filter_panel_open ? 'pb-2 border-bottom-0' : '',
                     search_toolbar_actions: new_client_action|default('')
@@ -218,19 +218,19 @@
                     </form>
                 </section>
                 <div class="table-responsive">
-                    <table class="table card-table table-vcenter table-striped text-nowrap sortable">
+                    <table class="table card-table table-vcenter table-striped text-nowrap">
                         <thead>
                             <tr>
                                 {% if can_bulk_delete_clients %}
-                                <th class="w-1 no-sort">
+                                <th class="w-1">
                                     <input class="form-check-input m-0 align-middle batch-delete-master-checkbox" type="checkbox">
                                 </th>
                                 {% endif %}
-                                <th>{{ 'Name'|trans }}</th>
-                                <th>{{ 'Company'|trans }}</th>
-                                <th>{{ 'Status'|trans }}</th>
-                                <th>{{ 'Registration Date'|trans }}</th>
-                                <th class="w-1 no-sort"></th>
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'Name'|trans, 'sort_key': 'first_name', 'url': 'client', 'hash': '#tab-index', 'default_sort': 'created_at', 'default_direction': 'DESC' }) }}
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'Company'|trans, 'sort_key': 'company', 'url': 'client', 'hash': '#tab-index', 'default_sort': 'created_at', 'default_direction': 'DESC' }) }}
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'client', 'hash': '#tab-index', 'default_sort': 'created_at', 'default_direction': 'DESC' }) }}
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'Registration Date'|trans, 'sort_key': 'created_at', 'url': 'client', 'hash': '#tab-index', 'default_sort': 'created_at', 'default_direction': 'DESC' }) }}
+                                <th class="w-1"></th>
                             </tr>
                         </thead>
 

@@ -73,6 +73,20 @@ test('gets search query', function (): void {
     expect(strpos((string) $result[0], 'SELECT cart.id FROM cart'))->not->toBeFalse();
 });
 
+test('gets search query applies allowlisted sort', function (): void {
+    $service = new Service();
+
+    [$query] = $service->getSearchQuery(['sort' => 'id', 'direction' => 'desc']);
+    expect($query)->toContain('ORDER BY cart.id DESC');
+    expect($query)->not->toContain('cart.id DESC, cart.id DESC');
+
+    [$defaultQuery] = $service->getSearchQuery([]);
+    expect($defaultQuery)->toContain('ORDER BY cart.id ASC');
+
+    [$invalidQuery] = $service->getSearchQuery(['sort' => 'session_id']);
+    expect($invalidQuery)->toContain('ORDER BY cart.id ASC');
+});
+
 test('getSessionCart returns existing cart', function (): void {
     $service = new Service();
 

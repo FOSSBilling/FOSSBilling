@@ -14,6 +14,7 @@ namespace Box\Mod\Notification;
 use Box\Mod\Extension\Entity\ExtensionMeta;
 use Box\Mod\Extension\Repository\ExtensionMetaRepository;
 use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\SortOptions;
 
 class Service implements InjectionAwareInterface
 {
@@ -67,8 +68,7 @@ class Service implements InjectionAwareInterface
         $qb = $this->getExtensionMetaRepository()
             ->createQueryBuilderForExtension('mod_notification', 'n')
             ->andWhere('n.metaKey = :metaKey')
-            ->setParameter('metaKey', 'message')
-            ->orderBy('n.id', 'DESC');
+            ->setParameter('metaKey', 'message');
 
         if (!empty($filter['id'])) {
             $qb->andWhere('n.id = :id')
@@ -88,6 +88,20 @@ class Service implements InjectionAwareInterface
         if (!empty($filter['date_to'])) {
             $qb->andWhere('n.createdAt <= :date_to')
                 ->setParameter('date_to', new \DateTime(date('Y-m-d 23:59:59', strtotime((string) $filter['date_to']))));
+        }
+
+        $sort = SortOptions::fromArray($filter, [
+            'id' => 'n.id',
+            'created_at' => 'n.createdAt',
+            'updated_at' => 'n.updatedAt',
+        ]);
+        if ($sort->isSorted()) {
+            $qb->orderBy($sort->expression, $sort->direction);
+            if ($sort->expression !== 'n.id') {
+                $qb->addOrderBy('n.id', $sort->direction);
+            }
+        } else {
+            $qb->orderBy('n.id', 'DESC');
         }
 
         return $qb;

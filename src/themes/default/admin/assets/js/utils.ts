@@ -186,3 +186,44 @@ export function deepMerge(...objects: Array<Record<string, unknown>>): Record<st
 
   return result;
 }
+
+/**
+ * Query keys owned by one sortable list tab: bare (`sort direction page
+ * per_page`) or namespaced (`{namespace}_sort` and so on).
+ * @param {string} namespace - value of the tab pane's `data-list-ns` attribute, empty for the default namespace
+ * @returns {string[]} the four query keys owned by that namespace
+ */
+export function listParamKeys(namespace: string): string[] {
+  const prefix = namespace ? `${namespace}_` : '';
+
+  return ['sort', 'direction', 'page', 'per_page'].map((key) => `${prefix}${key}`);
+}
+
+/**
+ * Drop list params owned by other tab panes from a query string, so the URL
+ * mirrors the visible tab. Keeps the target pane's keys and everything else
+ * (search terms, filters, ids).
+ * @param {string} query - current query string, e.g. `window.location.search`
+ * @param {string|null} targetNamespace - `data-list-ns` of the tab pane being shown, null when unknown
+ * @param {string[]} otherNamespaces - `data-list-ns` of every other annotated pane on the page
+ * @returns {string} pruned query string, still prefixed with `?` (or an empty string)
+ */
+export function pruneListParamsForTab(query: string, targetNamespace: string | null, otherNamespaces: string[]): string {
+  const params = new URLSearchParams(query);
+  const keep = new Set(targetNamespace === null ? [] : listParamKeys(targetNamespace));
+
+  for (const namespace of otherNamespaces) {
+    if (namespace === targetNamespace) {
+      continue;
+    }
+    for (const key of listParamKeys(namespace)) {
+      if (!keep.has(key)) {
+        params.delete(key);
+      }
+    }
+  }
+
+  const pruned = params.toString();
+
+  return pruned ? `?${pruned}` : '';
+}

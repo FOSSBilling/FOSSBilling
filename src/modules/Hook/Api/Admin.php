@@ -22,6 +22,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Get paginated list of hooks.
      *
+     * @optional string $sort - sort by one of: id, event, created_at, updated_at
+     * @optional string $direction - sort direction: ASC or DESC
+     *
      * @return array
      */
     public function get_list($data)

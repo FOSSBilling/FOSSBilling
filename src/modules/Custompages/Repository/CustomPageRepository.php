@@ -14,6 +14,7 @@ namespace Box\Mod\Custompages\Repository;
 use Box\Mod\Custompages\Entity\CustomPage;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
+use FOSSBilling\SortOptions;
 
 class CustomPageRepository extends EntityRepository
 {
@@ -41,7 +42,20 @@ class CustomPageRepository extends EntityRepository
                 ->setParameter('q', '%' . $data['search'] . '%');
         }
 
-        $qb->orderBy('p.id', 'DESC');
+        $sort = SortOptions::fromArray($data, [
+            'id' => 'p.id',
+            'title' => 'p.title',
+            'slug' => 'p.slug',
+            'created_at' => 'p.createdAt',
+        ]);
+        if ($sort->isSorted()) {
+            $qb->orderBy($sort->expression, $sort->direction);
+            if ($sort->expression !== 'p.id') {
+                $qb->addOrderBy('p.id', $sort->direction);
+            }
+        } else {
+            $qb->orderBy('p.id', 'DESC');
+        }
 
         return $qb;
     }

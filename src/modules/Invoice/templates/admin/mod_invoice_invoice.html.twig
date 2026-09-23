@@ -48,7 +48,7 @@
 
     {% block detail_tab_content %}
         {% import 'macro_functions.html.twig' as mf %}
-        <div class="tab-pane fade show active" id="tab-info" role="tabpanel">
+        <div class="tab-pane fade show active" id="tab-info" role="tabpanel" data-list-ns="">
             <div class="px-3 py-3 d-flex flex-column gap-3">
                 {% embed 'partial_admin_summary_card.html.twig' with {
                     title: 'Invoice Summary'|trans,
@@ -532,8 +532,8 @@
             </div>
             {% endif %}
 
-            {% set transactions = admin.invoice_transaction_get_list({ 'invoice_id': invoice.id, 'per_page': 100 }).list %}
-            {% if transactions|length > 0 %}
+            {% set transactions = admin.invoice_transaction_get_list({ 'invoice_id': invoice.id, 'per_page': 25, 'page': request.page }|merge(request)) %}
+            {% if transactions.total > 0 %}
             {% embed 'partial_admin_related_section.html.twig' with {
                 title: 'Transactions'|trans,
                 subtitle: 'Inspect payment attempts and gateway callbacks linked to this invoice.'|trans,
@@ -544,18 +544,18 @@
                 <table class="table card-table table-vcenter table-striped text-nowrap">
                     <thead>
                         <tr>
-                            <th>{{ 'ID'|trans }}</th>
-                            <th>{{ 'Type'|trans }}</th>
-                            <th>{{ 'Gateway'|trans }}</th>
-                            <th>{{ 'Amount'|trans }}</th>
-                            <th>{{ 'Status'|trans }}</th>
-                            <th>{{ 'Date'|trans }}</th>
+                            {{ include('partial_sortable_th.html.twig', { 'label': 'ID'|trans, 'sort_key': 'txn_id', 'url': 'invoice/manage/' ~ invoice.id, 'hash': '#tab-info', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                            {{ include('partial_sortable_th.html.twig', { 'label': 'Type'|trans, 'sort_key': 'type', 'url': 'invoice/manage/' ~ invoice.id, 'hash': '#tab-info', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                            {{ include('partial_sortable_th.html.twig', { 'label': 'Gateway'|trans, 'sort_key': 'gateway', 'url': 'invoice/manage/' ~ invoice.id, 'hash': '#tab-info', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                            {{ include('partial_sortable_th.html.twig', { 'label': 'Amount'|trans, 'sort_key': 'amount', 'url': 'invoice/manage/' ~ invoice.id, 'hash': '#tab-info', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                            {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'invoice/manage/' ~ invoice.id, 'hash': '#tab-info', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                            {{ include('partial_sortable_th.html.twig', { 'label': 'Date'|trans, 'sort_key': 'created_at', 'url': 'invoice/manage/' ~ invoice.id, 'hash': '#tab-info', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
                             <th class="w-1"></th>
                         </tr>
                     </thead>
 
                     <tbody>
-                        {% for i, tx in transactions %}
+                        {% for i, tx in transactions.list %}
                         <tr>
                             <td>{{ tx.txn_id }}</td>
                             <td>{{ tx.type }}</td>
@@ -574,6 +574,12 @@
                         {% endfor %}
                     </tbody>
                 </table>
+                {% endblock %}
+
+                {% block section_footer %}
+                    <div class="d-flex align-items-center">
+                        {{ include('partial_pagination.html.twig', { 'list': transactions, 'url': 'invoice/manage/' ~ invoice.id, 'hash': '#tab-info', 'split_footer_controls': true }) }}
+                    </div>
                 {% endblock %}
             {% endembed %}
             {% endif %}

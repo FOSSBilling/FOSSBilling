@@ -14,7 +14,7 @@
     "check-types": "tsc --noEmit",
     "pw:tsc": "tsc --noEmit -p tests/E2E/Playwright",
     "check-icons": "node ./frontend/tools/check-icons.mts",
-    "test:js": "node --test 'frontend/core/tests/**/*.test.mts' 'frontend/tools/tests/**/*.test.mts'",
+    "test:js": "node --test 'frontend/core/tests/**/*.test.mts' 'frontend/tools/tests/**/*.test.mts' 'src/themes/default/admin/assets/js/**/*.test.mts'",
     "pw:open": "playwright test --ui",
     "pw:run": "playwright test"
   },

@@ -122,10 +122,10 @@
                     <input class="form-check-input m-0 align-middle batch-delete-master-checkbox" type="checkbox">
                 </th>
                 {% endif %}
-                <th>{{ 'To'|trans }}</th>
-                <th>{{ 'From'|trans }}</th>
-                <th>{{ 'Subject'|trans }}</th>
-                <th>{{ 'Date'|trans }}</th>
+                {{ include('partial_sortable_th.html.twig', { 'label': 'To'|trans, 'sort_key': 'recipient', 'url': 'email/history', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                {{ include('partial_sortable_th.html.twig', { 'label': 'From'|trans, 'sort_key': 'sender', 'url': 'email/history', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                {{ include('partial_sortable_th.html.twig', { 'label': 'Subject'|trans, 'sort_key': 'subject', 'url': 'email/history', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                {{ include('partial_sortable_th.html.twig', { 'label': 'Date'|trans, 'sort_key': 'created_at', 'url': 'email/history', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
                 <th class="w-1"></th>
             </tr>
         </thead>

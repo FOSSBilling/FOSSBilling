@@ -145,7 +145,7 @@
                     </form>
                 </div>
 
-                <div class="tab-pane fade" id="tab-helpdesks">
+                <div class="tab-pane fade" id="tab-helpdesks" data-list-ns="">
                     {{ include('partial_search.html.twig', {
                         search_toolbar_actions: '<button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#mod-support-new-helpdesk"><svg class="icon"><use href="#plus" /></svg><span>' ~ ('New Helpdesk'|trans) ~ '</span></button>'
                     }) }}
@@ -153,17 +153,18 @@
                         <table class="table card-table table-vcenter table-striped text-nowrap">
                             <thead>
                             <tr>
-                                <th class="w-1">#</th>
-                                <th>{{ 'Title'|trans }}</th>
-                                <th>{{ 'Email'|trans }}</th>
+                                {{ include('partial_sortable_th.html.twig', { 'label': '#'|trans, 'sort_key': 'id', 'url': 'extension/settings/support', 'hash': '#tab-helpdesks', 'th_class': 'w-1', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'Title'|trans, 'sort_key': 'name', 'url': 'extension/settings/support', 'hash': '#tab-helpdesks', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'Email'|trans, 'sort_key': 'email', 'url': 'extension/settings/support', 'hash': '#tab-helpdesks', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
                                 <th>{{ 'Close Tickets After'|trans }}</th>
                                 <th class="w-1"></th>
                             </tr>
                             </thead>
                             <tbody>
-                            {% for helpdesk in admin.support_helpdesk_get_list({ 'per_page': 50, 'page': request.page }|merge(request)).list %}
+                            {% set helpdesks = admin.support_helpdesk_get_list({ 'per_page': 25, 'page': request.page }|merge(request)) %}
+                            {% for helpdesk in helpdesks.list %}
                                 <tr>
-                                    <td>{{ loop.index }}</td>
+                                    <td>{{ helpdesk.id }}</td>
                                     <td>
                                         <a href='{{ "support/helpdesk/#{helpdesk.id}"|url }}'>{{ helpdesk.name }}</a>
                                     </td>
@@ -191,6 +192,9 @@
                             {% endfor %}
                             </tbody>
                         </table>
+                    </div>
+                    <div class="card-footer d-flex align-items-center">
+                        {{ include('partial_pagination.html.twig', { 'list': helpdesks, 'url': 'extension/settings/support', 'hash': '#tab-helpdesks', 'split_footer_controls': true }) }}
                     </div>
                 </div>
             </div>

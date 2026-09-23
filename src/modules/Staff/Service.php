@@ -26,6 +26,7 @@ use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use FOSSBilling\i18n;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\PaginationOptions;
+use FOSSBilling\SortOptions;
 use FOSSBilling\Tools;
 
 class Service implements InjectionAwareInterface
@@ -483,7 +484,17 @@ class Service implements InjectionAwareInterface
         if (!empty($where)) {
             $query = $query . ' WHERE ' . implode(' AND ', $where);
         }
-        $query .= ' ORDER BY id ASC';
+
+        $sort = SortOptions::fromArray($data, [
+            'id' => 'id',
+            'email' => 'email',
+            'name' => 'name',
+            'status' => 'status',
+            'created_at' => 'created_at',
+            'updated_at' => 'updated_at',
+        ]);
+        $orderBy = $sort->toOrderByClause('id') ?? 'id ASC';
+        $query .= " ORDER BY {$orderBy}";
 
         return [$query, $bindings];
     }
@@ -973,7 +984,14 @@ class Service implements InjectionAwareInterface
         if (!empty($where)) {
             $sql .= ' WHERE ' . implode(' AND ', $where);
         }
-        $sql .= ' ORDER BY m.id DESC';
+
+        $sort = SortOptions::fromArray($data, [
+            'id' => 'm.id',
+            'ip' => 'm.ip',
+            'created_at' => 'm.created_at',
+        ]);
+        $orderBy = $sort->toOrderByClause('m.id') ?? 'm.id DESC';
+        $sql .= " ORDER BY {$orderBy}";
 
         return [$sql, $params];
     }

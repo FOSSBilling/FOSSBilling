@@ -53,6 +53,25 @@ test('get search query', function (array $filterKey, string $search, bool $expec
     expect(str_contains((string) $result[0], $search))->toEqual($expected);
 })->with('searchFilters');
 
+test('get search query applies allowlisted sort', function (): void {
+    $di = container();
+    $service = new Box\Mod\Activity\Service();
+    $service->setDi($di);
+
+    [$query] = $service->getSearchQuery(['sort' => 'priority', 'direction' => 'desc']);
+    expect($query)->toContain('ORDER BY m.priority DESC, m.id DESC');
+
+    [$pkQuery] = $service->getSearchQuery(['sort' => 'id', 'direction' => 'desc']);
+    expect($pkQuery)->toContain('ORDER BY m.id DESC');
+    expect($pkQuery)->not->toContain('m.id DESC, m.id DESC');
+
+    [$defaultQuery] = $service->getSearchQuery([]);
+    expect($defaultQuery)->toContain('ORDER BY m.id desc');
+
+    [$invalidQuery] = $service->getSearchQuery(['sort' => 'message']);
+    expect($invalidQuery)->toContain('ORDER BY m.id desc');
+});
+
 test('log event persists a system activity entity', function (): void {
     $persisted = null;
     $entityManager = Mockery::mock(EntityManagerInterface::class);

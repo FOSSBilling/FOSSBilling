@@ -14,6 +14,7 @@ namespace Box\Mod\Invoice\Repository;
 use Box\Mod\Invoice\Entity\Subscription;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
+use FOSSBilling\SortOptions;
 
 class SubscriptionRepository extends EntityRepository
 {
@@ -43,7 +44,8 @@ class SubscriptionRepository extends EntityRepository
      * Build a QueryBuilder for subscription searches/listings.
      *
      * @param array $data optional filters: search, id, sid, status, gateway_id,
-     *                    client_id, currency, invoice_id, date_from, date_to
+     *                    client_id, currency, invoice_id, date_from, date_to,
+     *                    sort, direction
      */
     public function getSearchQueryBuilder(array $data = []): QueryBuilder
     {
@@ -105,7 +107,24 @@ class SubscriptionRepository extends EntityRepository
             $qb->andWhere('s.sid = :sid')->setParameter('sid', $sid);
         }
 
-        $qb->orderBy('s.id', 'DESC');
+        $sort = SortOptions::fromArray($data, [
+            'id' => 's.id',
+            'sid' => 's.sid',
+            'status' => 's.status',
+            'currency' => 's.currency',
+            'period' => 's.period',
+            'amount' => 's.amount',
+            'created_at' => 's.createdAt',
+            'updated_at' => 's.updatedAt',
+        ]);
+        if ($sort->isSorted()) {
+            $qb->orderBy($sort->expression, $sort->direction);
+            if ($sort->expression !== 's.id') {
+                $qb->addOrderBy('s.id', $sort->direction);
+            }
+        } else {
+            $qb->orderBy('s.id', 'DESC');
+        }
 
         return $qb;
     }

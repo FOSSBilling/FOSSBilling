@@ -17,6 +17,7 @@ use Doctrine\DBAL\Platforms\SQLitePlatform;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
 use FOSSBilling\Doctrine\RowLock;
+use FOSSBilling\SortOptions;
 
 class PromoRedemptionRepository extends EntityRepository
 {
@@ -93,7 +94,24 @@ class PromoRedemptionRepository extends EntityRepository
                 ->setParameter('status', $data['status']);
         }
 
-        $qb->orderBy('pr.id', 'DESC');
+        $sort = SortOptions::fromArray($data, [
+            'id' => 'pr.id',
+            'phase' => 'pr.phase',
+            'status' => 'pr.status',
+            'discount_amount' => 'pr.discountAmount',
+            'committed_at' => 'pr.committedAt',
+            'released_at' => 'pr.releasedAt',
+            'created_at' => 'pr.createdAt',
+            'updated_at' => 'pr.updatedAt',
+        ]);
+        if ($sort->isSorted()) {
+            $qb->orderBy($sort->expression, $sort->direction);
+            if ($sort->expression !== 'pr.id') {
+                $qb->addOrderBy('pr.id', $sort->direction);
+            }
+        } else {
+            $qb->orderBy('pr.id', 'DESC');
+        }
 
         return $qb;
     }

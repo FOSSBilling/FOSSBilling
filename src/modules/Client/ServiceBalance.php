@@ -9,6 +9,7 @@ use Box\Mod\Client\Entity\ClientBalance;
 use Box\Mod\Client\Repository\ClientBalanceRepository;
 use Doctrine\ORM\QueryBuilder;
 use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\SortOptions;
 
 class ServiceBalance implements InjectionAwareInterface
 {
@@ -109,7 +110,23 @@ class ServiceBalance implements InjectionAwareInterface
                 ->setParameter('date_to', new \DateTimeImmutable(date('Y-m-d H:i:s', strtotime((string) $dateTo))));
         }
 
-        return $queryBuilder->orderBy('m.id', 'DESC');
+        $sort = SortOptions::fromArray($data, [
+            'id' => 'm.id',
+            'amount' => 'm.amount',
+            'description' => 'm.description',
+            'created_at' => 'm.createdAt',
+            'updated_at' => 'm.updatedAt',
+        ]);
+        if ($sort->isSorted()) {
+            $queryBuilder->orderBy($sort->expression, $sort->direction);
+            if ($sort->expression !== 'm.id') {
+                $queryBuilder->addOrderBy('m.id', $sort->direction);
+            }
+        } else {
+            $queryBuilder->orderBy('m.id', 'DESC');
+        }
+
+        return $queryBuilder;
     }
 
     public function getSearchQuery($data): array
@@ -149,7 +166,16 @@ class ServiceBalance implements InjectionAwareInterface
         if (!empty($where)) {
             $q .= ' WHERE ' . implode(' AND ', $where);
         }
-        $q .= ' ORDER by m.id DESC';
+
+        $sort = SortOptions::fromArray($data, [
+            'id' => 'm.id',
+            'amount' => 'm.amount',
+            'description' => 'm.description',
+            'created_at' => 'm.created_at',
+            'updated_at' => 'm.updated_at',
+        ]);
+        $orderBy = $sort->toOrderByClause('m.id') ?? 'm.id DESC';
+        $q .= " ORDER BY {$orderBy}";
 
         return [$q, $params];
     }

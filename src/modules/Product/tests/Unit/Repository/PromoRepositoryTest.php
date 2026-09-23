@@ -61,3 +61,28 @@ test('decrementUsage subtracts normally when it would not go negative', function
 
     expect($reloaded->getUsed())->toBe(7);
 });
+
+test('getSearchQueryBuilder sorts by allowlisted columns', function (array $data, string $expectedOrderBy, bool $expectsTieBreak): void {
+    $dql = promoEntityManager()->getRepository(Promo::class)->getSearchQueryBuilder($data)->getDQL();
+
+    expect($dql)->toContain($expectedOrderBy);
+    if ($expectsTieBreak) {
+        expect($dql)->toContain(', p.id');
+    } else {
+        expect($dql)->not->toContain(', p.id');
+    }
+})->with([
+    'id ascending' => [['sort' => 'id'], 'ORDER BY p.id ASC', false],
+    'id descending' => [['sort' => 'id', 'direction' => 'DESC'], 'ORDER BY p.id DESC', false],
+    'code' => [['sort' => 'code'], 'ORDER BY p.code ASC, p.id ASC', true],
+    'type' => [['sort' => 'type'], 'ORDER BY p.type ASC, p.id ASC', true],
+    'value' => [['sort' => 'value', 'direction' => 'desc'], 'ORDER BY p.value DESC, p.id DESC', true],
+    'active' => [['sort' => 'active'], 'ORDER BY p.active ASC, p.id ASC', true],
+    'priority' => [['sort' => 'priority'], 'ORDER BY p.priority ASC, p.id ASC', true],
+    'start_at' => [['sort' => 'start_at'], 'ORDER BY p.startAt ASC, p.id ASC', true],
+    'end_at' => [['sort' => 'end_at'], 'ORDER BY p.endAt ASC, p.id ASC', true],
+    'created_at' => [['sort' => 'created_at'], 'ORDER BY p.createdAt ASC, p.id ASC', true],
+    'updated_at' => [['sort' => 'updated_at'], 'ORDER BY p.updatedAt ASC, p.id ASC', true],
+    'invalid sort falls back to default' => [['sort' => 'p.id; DROP TABLE promo'], 'ORDER BY p.id ASC', false],
+    'invalid direction falls back to ascending' => [['sort' => 'code', 'direction' => 'sideways'], 'ORDER BY p.code ASC, p.id ASC', true],
+]);
