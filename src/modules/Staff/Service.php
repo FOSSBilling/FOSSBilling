@@ -16,6 +16,7 @@ use Box\Mod\Staff\Entity\Admin;
 use Box\Mod\Staff\Entity\AdminGroup;
 use Box\Mod\Staff\Entity\AdminGroupMember;
 use Box\Mod\Staff\Entity\AdminPasswordReset;
+use Box\Mod\Staff\Event\AfterAdminLoginEvent;
 use Box\Mod\Staff\Repository\AdminGroupMemberRepository;
 use Box\Mod\Staff\Repository\AdminGroupRepository;
 use Box\Mod\Staff\Repository\AdminPasswordResetRepository;
@@ -124,15 +125,10 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\InformationException('Check your login details', null, 403);
         }
 
-        // Event listeners (e.g. this login being recorded in the login history) are normally
-        // connected by the cron job's hook_batch_connect task. Before cron has run for the
-        // first time, no listeners are connected and the event fired below would silently do
-        // nothing, so an admin's very first logins would go unrecorded. Connect them now so
-        // that gap does not exist. batchConnect() returns false if another process was still
-        // rebuilding the set when it gave up waiting; retry once rather than firing the event
-        // below against a set we know is incomplete. If both attempts fail, log it and let the
-        // login proceed anyway - failing the login itself over this housekeeping step would
-        // turn a rare missed audit entry into every admin being locked out while it's stuck.
+        // Legacy extension hooks are normally connected by cron. Connect them before the
+        // first login event so hooks can run even when cron has not run yet. If another
+        // process holds the rebuild lock, retry once and let login proceed on failure.
+        // Typed listeners (including the activity history listener) are registered separately.
         $hookService = $this->di['mod_service']('hook');
         if (!$hookService->hasConnectedListeners()) {
             $connected = $hookService->batchConnect();
@@ -140,11 +136,12 @@ class Service implements InjectionAwareInterface
                 $connected = $hookService->batchConnect();
             }
             if (!$connected) {
-                $this->di['logger']->warning('Could not connect event listeners after two attempts; this login (and other events) may not be recorded.');
+                $this->di['logger']->warning('Could not connect legacy hook listeners after two attempts; extension hooks for this login and other events may not run.');
             }
         }
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminLogin', 'params' => ['id' => $model->getId(), 'ip' => $ip]]);
+        $this->di['event_dispatcher']->dispatch(new AfterAdminLoginEvent((int) $model->getId(), $ip));
 
         $result = [
             'id' => $model->getId(),

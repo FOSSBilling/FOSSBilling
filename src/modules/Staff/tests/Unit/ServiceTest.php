@@ -23,6 +23,7 @@ use Box\Mod\Staff\Service;
 use Box\Mod\Support\Entity\Helpdesk;
 use Box\Mod\Support\Repository\HelpdeskRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use FOSSBilling\Events\EventDispatcher;
 
 use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
@@ -171,6 +172,7 @@ test('login returns admin details on successful login', function (): void {
 
     $di = container();
     $di['events_manager'] = $emMock;
+    $di['event_dispatcher'] = new EventDispatcher(static fn (): array => [], static fn (string $module): object => new stdClass());
     $di['em']->shouldReceive('getRepository')->with(Admin::class)->andReturn($adminRepository);
     $di['session'] = $sessionMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
@@ -224,6 +226,7 @@ test('login retries connecting event listeners once before firing the login even
 
     $di = container();
     $di['events_manager'] = $emMock;
+    $di['event_dispatcher'] = new EventDispatcher(static fn (): array => [], static fn (string $module): object => new stdClass());
     $di['em']->shouldReceive('getRepository')->with(Admin::class)->andReturn($adminRepository);
     $di['session'] = $sessionMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
@@ -280,6 +283,7 @@ test('login still succeeds, and logs a warning, when both attempts to connect ev
 
     $di = container();
     $di['events_manager'] = $emMock;
+    $di['event_dispatcher'] = new EventDispatcher(static fn (): array => [], static fn (string $module): object => new stdClass());
     $di['em']->shouldReceive('getRepository')->with(Admin::class)->andReturn($adminRepository);
     $di['session'] = $sessionMock;
     $di['logger'] = $loggerMock;
@@ -298,7 +302,7 @@ test('login still succeeds, and logs a warning, when both attempts to connect ev
     ])
         ->and($loggerMock->calls)->toContain([
             'method' => 'warning',
-            'params' => ['Could not connect event listeners after two attempts; this login (and other events) may not be recorded.'],
+            'params' => ['Could not connect legacy hook listeners after two attempts; extension hooks for this login and other events may not run.'],
         ]);
 });
 

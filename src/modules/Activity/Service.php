@@ -17,10 +17,12 @@ use Box\Mod\Activity\Entity\ActivitySystem;
 use Box\Mod\Activity\Repository\ActivityClientHistoryRepository;
 use Box\Mod\Activity\Repository\ActivitySystemRepository;
 use Box\Mod\Client\Entity\Client;
+use Box\Mod\Staff\Event\AfterAdminLoginEvent;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Types\Types;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\SortOptions;
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 
 class Service implements InjectionAwareInterface
 {
@@ -97,20 +99,18 @@ class Service implements InjectionAwareInterface
         $di['em']->flush();
     }
 
-    public static function onAfterAdminLogin(\Box_Event $event): void
+    #[AsEventListener]
+    public function recordAdminLogin(AfterAdminLoginEvent $event): void
     {
-        $params = $event->getParameters();
-        $di = $event->getDi();
-
-        $extensionService = $di['mod_service']('extension');
-        $ip = $extensionService->isExtensionActive('mod', 'demo') ? null : $params['ip'];
+        $extensionService = $this->di['mod_service']('extension');
+        $ip = $extensionService->isExtensionActive('mod', 'demo') ? null : $event->ip;
 
         $history = (new ActivityAdminHistory())
-            ->setAdminId((int) $params['id'])
+            ->setAdminId($event->adminId)
             ->setIp($ip);
 
-        $di['em']->persist($history);
-        $di['em']->flush();
+        $this->di['em']->persist($history);
+        $this->di['em']->flush();
     }
 
     public static function onBeforeAdminCronRun(\Box_Event $event): void
