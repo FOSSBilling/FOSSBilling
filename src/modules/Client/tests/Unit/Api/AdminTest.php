@@ -142,14 +142,10 @@ test('create returns int', function (): void {
     $serviceMock->shouldReceive('emailAlreadyRegistered')->atLeast()->once()->andReturn(false);
     $serviceMock->shouldReceive('adminCreateClient')->atLeast()->once()->andReturn(1);
 
-    $eventMock = Mockery::mock('\Box_EventManager');
-    $eventMock->shouldReceive('fire')->atLeast()->once();
-
     $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
     $toolsMock->shouldReceive('validateAndSanitizeEmail')->atLeast()->once();
 
     $di = container();
-    $di['events_manager'] = $eventMock;
     $di['tools'] = $toolsMock;
 
     $adminClient->setDi($di);
@@ -187,16 +183,6 @@ test('delete returns true', function (): void {
     $data = ['id' => 1];
 
     $calls = new ArrayObject();
-    $eventMock = new class($calls) {
-        public function __construct(private ArrayObject $calls)
-        {
-        }
-
-        public function fire(array|string $event): void
-        {
-            $this->calls->append($event);
-        }
-    };
     $dispatcher = new class($calls) {
         public function __construct(private ArrayObject $calls)
         {
@@ -216,7 +202,6 @@ test('delete returns true', function (): void {
     });
 
     $di = container();
-    $di['events_manager'] = $eventMock;
     $di['event_dispatcher'] = $dispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $validatorStub = $this->createStub(FOSSBilling\Validate::class);
@@ -228,10 +213,8 @@ test('delete returns true', function (): void {
 
     expect($result)->toBeTrue();
     expect($calls->getArrayCopy())->toEqual([
-        ['event' => 'onBeforeAdminClientDelete', 'params' => ['id' => 1]],
         new Box\Mod\Client\Event\BeforeAdminClientDeleteEvent(1),
         'remove',
-        ['event' => 'onAfterAdminClientDelete', 'params' => ['id' => 1]],
         new Box\Mod\Client\Event\AfterAdminClientDeleteEvent(1),
     ]);
 });
@@ -281,21 +264,34 @@ test('update returns true', function (): void {
     $serviceMock->shouldReceive('emailAlreadyRegistered')->atLeast()->once()->andReturn(false);
     $serviceMock->shouldReceive('canChangeCurrency')->atLeast()->once()->andReturn(true);
 
-    $eventMock = Mockery::mock('\Box_EventManager');
-    $eventMock->shouldReceive('fire')->atLeast()->once();
+    $dispatcher = new class {
+        public array $events = [];
+
+        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        {
+            $this->events[] = $event;
+
+            return $event;
+        }
+    };
 
     $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
     $toolsMock->shouldReceive('validateAndSanitizeEmail')->atLeast()->once();
 
     $di = container();
     $di['mod_service'] = $di->protect(moduleService(['client' => $serviceMock]));
-    $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $dispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['tools'] = $toolsMock;
 
     $adminClient->setDi($di);
     $result = $adminClient->update($data);
     expect($result)->toBeTrue();
+    expect($dispatcher->events)->toHaveCount(2);
+    expect($dispatcher->events[0])->toBeInstanceOf(Box\Mod\Client\Event\BeforeAdminClientUpdateEvent::class);
+    expect($dispatcher->events[0]->clientId)->toBe(1);
+    expect($dispatcher->events[0]->input)->not->toHaveKey('password');
+    expect($dispatcher->events[1])->toEqual(new Box\Mod\Client\Event\AfterAdminClientUpdateEvent(1));
 });
 
 test('update validates and assigns client_group_id through the group repository', function (): void {
@@ -450,8 +446,16 @@ test('changePassword returns true', function (): void {
         'password_confirm' => 'strongPass',
     ];
 
-    $eventMock = Mockery::mock('\Box_EventManager');
-    $eventMock->shouldReceive('fire')->atLeast()->once();
+    $dispatcher = new class {
+        public array $events = [];
+
+        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        {
+            $this->events[] = $event;
+
+            return $event;
+        }
+    };
 
     $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
     $passwordMock->shouldReceive('hashIt')->atLeast()->once()->with($data['password']);
@@ -460,7 +464,7 @@ test('changePassword returns true', function (): void {
     $profileService->shouldReceive('invalidateSessions')->atLeast()->once();
 
     $di = container();
-    $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $dispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['password'] = $passwordMock;
     $validatorStub = $this->createStub(FOSSBilling\Validate::class);
@@ -471,6 +475,10 @@ test('changePassword returns true', function (): void {
 
     $result = $adminClient->change_password($data);
     expect($result)->toBeTrue();
+    expect($dispatcher->events)->toEqual([
+        new Box\Mod\Client\Event\BeforeAdminClientPasswordChangeEvent(1),
+        new Box\Mod\Client\Event\AfterAdminClientPasswordChangeEvent(1),
+    ]);
 });
 
 test('changePassword throws exception when passwords do not match', function (): void {

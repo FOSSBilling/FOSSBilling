@@ -75,7 +75,7 @@ public function customizeGuestTicket(BeforeGuestTicketCreateEvent $event): void
 }
 ```
 
-Listeners on core and active modules are registered when the typed dispatcher is first used. Activating or deactivating a module refreshes registrations within the same request. Symfony listener priorities are supported. Some string-named hooks continue to run during migration, but cron and support ticket hooks use typed events only. Typed event classes should expose setters only for fields listeners are allowed to change. Other event data can be readonly.
+Listeners on core and active modules are registered when the typed dispatcher is first used. Activating or deactivating a module refreshes registrations within the same request. Symfony listener priorities are supported. Some string-named hooks continue to run during migration, but cron, support ticket, client signup, client administration, and profile lifecycle hooks use typed events only. Typed event classes should expose setters only for fields listeners are allowed to change. Other event data can be readonly.
 
 When converting a module's existing `on...` hook handler to a typed listener, remove or rename the old discoverable method. While both hook systems run at an extension point, leaving both handlers registered would run the same work twice. Hook names removed for the next major release require third-party extensions to replace their old handlers with typed listeners; check the event class's constructor and public methods for the new contract.
 
@@ -103,6 +103,12 @@ The event objects carry no payload. The method name is unrestricted; the event t
 Support ticket hooks now use event classes in `Box\Mod\Support\Event`. The ticket lifecycle events `AfterTicketOpenedEvent`, `AfterTicketRepliedEvent`, and `AfterTicketClosedEvent` expose a `ticketId` and a `TicketActorRole` (`ADMIN`, `CLIENT`, or `GUEST`). A listener can branch on the actor instead of registering separate admin and client hook methods.
 
 Before creation, admin and client flows dispatch `BeforeTicketCreateEvent` with the actor, target `clientId`, and readonly input. The guest flow dispatches `BeforeGuestTicketCreateEvent`, whose `input` includes the request details. To change the guest ticket, call `setStatus()`, `setSubject()`, or `setMessage()` on that event; returning an array from a legacy hook no longer changes the ticket. Existing `onBeforeClientOpenTicket`, `onBeforeAdminOpenTicket`, and after-open/reply/close ticket hook methods should be replaced by listeners for these classes.
+
+### Migrating client and profile hooks
+
+Client signup dispatches `BeforeClientSignUpEvent` with readonly `input` and `AfterClientSignUpEvent` with the new `clientId`. The before event includes the request IP but excludes password fields. Admin client creation dispatches `BeforeAdminClientCreateEvent` and `AfterAdminClientCreateEvent` from the client service. The admin client API also dispatches typed before and after events for update, password change, and delete. These classes are in `Box\Mod\Client\Event`; password-change and delete events expose only `clientId`.
+
+Profile changes dispatch classes in `Box\Mod\Profile\Event` for admin password, API key, and profile changes and for client profile and password changes. Before profile-update events provide the account ID and readonly input data; after events provide the account ID. Replace static legacy handlers with public instance listeners using `#[AsEventListener]`, and read the documented event properties instead of legacy array keys. Credential values are not exposed in the typed lifecycle events.
 
 ## How can I contribute?
 

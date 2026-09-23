@@ -19,7 +19,11 @@ use Box\Mod\Client\Entity\Client;
 use Box\Mod\Client\Entity\ClientBalance;
 use Box\Mod\Client\Entity\ClientGroup;
 use Box\Mod\Client\Event\AfterAdminClientDeleteEvent;
+use Box\Mod\Client\Event\AfterAdminClientPasswordChangeEvent;
+use Box\Mod\Client\Event\AfterAdminClientUpdateEvent;
 use Box\Mod\Client\Event\BeforeAdminClientDeleteEvent;
+use Box\Mod\Client\Event\BeforeAdminClientPasswordChangeEvent;
+use Box\Mod\Client\Event\BeforeAdminClientUpdateEvent;
 use FOSSBilling\InformationException;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\Tools;
@@ -219,9 +223,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             $validator->isPasswordStrong($data['password']);
         }
 
-        $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminClientCreate', 'params' => $data]);
         $id = $service->adminCreateClient($data);
-        $this->getDi()['events_manager']->fire(['event' => 'onAfterAdminClientCreate', 'params' => $data]);
 
         return $id;
     }
@@ -238,11 +240,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $clientId = (int) $model->getId();
 
-        $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminClientDelete', 'params' => ['id' => $clientId]]);
         $this->getDi()['event_dispatcher']->dispatch(new BeforeAdminClientDeleteEvent($clientId));
 
         $this->getService()->remove($model);
-        $this->getDi()['events_manager']->fire(['event' => 'onAfterAdminClientDelete', 'params' => ['id' => $clientId]]);
         $this->getDi()['event_dispatcher']->dispatch(new AfterAdminClientDeleteEvent($clientId));
 
         $this->getDi()['logger']->info('Removed client #{client_id}', ['client_id' => $clientId]);
@@ -333,7 +333,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             $client->setCurrency($currency);
         }
 
-        $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminClientUpdate', 'params' => $data]);
+        $eventInput = $data;
+        unset($eventInput['password'], $eventInput['password_confirm']);
+        $this->getDi()['event_dispatcher']->dispatch(new BeforeAdminClientUpdateEvent((int) $client->getId(), $eventInput));
 
         // Special handling for the phone country codes
         $phoneCountryCode = $data['phone_cc'] ?? $client->getPhoneCc();
@@ -464,7 +466,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             $profileService->invalidateSessions('client', (int) $client->getId());
         }
 
-        $this->getDi()['events_manager']->fire(['event' => 'onAfterAdminClientUpdate', 'params' => ['id' => $client->getId()]]);
+        $this->getDi()['event_dispatcher']->dispatch(new AfterAdminClientUpdateEvent((int) $client->getId()));
 
         $this->getDi()['logger']->info('Updated client #{client_id} profile', ['client_id' => $client->getId()]);
 
@@ -485,7 +487,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $client = $this->getDi()['em']->getRepository(Client::class)->find($data['id']) ?? throw new InformationException('Client not found');
 
-        $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminClientPasswordChange', 'params' => ['id' => $client->getId()]]);
+        $this->getDi()['event_dispatcher']->dispatch(new BeforeAdminClientPasswordChangeEvent((int) $client->getId()));
 
         $client->setPass($this->getDi()['password']->hashIt($data['password']));
         $this->getDi()['em']->persist($client);
@@ -494,7 +496,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $profileService = $this->getDi()['mod_service']('profile');
         $profileService->invalidateSessions('client', (int) $data['id']);
 
-        $this->getDi()['events_manager']->fire(['event' => 'onAfterAdminClientPasswordChange', 'params' => ['id' => $client->getId()]]);
+        $this->getDi()['event_dispatcher']->dispatch(new AfterAdminClientPasswordChangeEvent((int) $client->getId()));
 
         $this->getDi()['logger']->info('Changed client #{client_id} password', ['client_id' => $client->getId()]);
 

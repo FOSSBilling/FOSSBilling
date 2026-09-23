@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Box\Mod\Staff;
 
 use Box\Mod\Activity\Entity\ActivityAdminHistory;
+use Box\Mod\Client\Event\AfterClientSignUpEvent;
 use Box\Mod\Staff\Entity\Admin;
 use Box\Mod\Staff\Entity\AdminGroup;
 use Box\Mod\Staff\Entity\AdminGroupMember;
@@ -430,10 +431,10 @@ class Service implements InjectionAwareInterface
         return $ticket;
     }
 
-    public static function onAfterClientSignUp(\Box_Event $event): bool
+    #[AsEventListener]
+    public function onAfterClientSignUp(AfterClientSignUpEvent $event): void
     {
-        $params = $event->getParameters();
-        $di = $event->getDi();
+        $di = $this->di ?? throw new \LogicException('Staff service must be initialized before handling events.');
 
         try {
             $clientService = $di['mod_service']('client');
@@ -441,15 +442,13 @@ class Service implements InjectionAwareInterface
             $email = [];
             $email['to_staff'] = true;
             $email['code'] = 'mod_staff_client_signup';
-            $client = $clientService->get(['id' => $params['id']]);
+            $client = $clientService->get(['id' => $event->clientId]);
             $email['c'] = $clientService->toApiArray($client);
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
             $di['logger']->withChannel('email')->error('Failed to send staff client signup notification email', ['exception' => $exc]);
         }
-
-        return true;
     }
 
     public function getList($data)

@@ -10,6 +10,9 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Client\Event\BeforeAdminClientUpdateEvent;
+use Box\Mod\Client\Event\BeforeClientSignUpEvent;
+use Box\Mod\Profile\Event\BeforeClientProfileUpdateEvent;
 use Box\Mod\Support\Event\BeforeGuestTicketCreateEvent;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -23,26 +26,68 @@ test('dependency injection', function (): void {
     expect($getDi)->toEqual($di);
 });
 
-test('on before client sign up', function (): void {
-    $service = new Box\Mod\Antispam\Service();
+test('before client signup checks spam and disposable email without re-verifying captcha', function (): void {
+    $input = [
+        'ip' => '1.2.3.4',
+        'email' => 'test@example.com',
+        'bio' => '',
+        'g-recaptcha-response' => 'already-verified-token',
+    ];
     $spamCheckerService = Mockery::mock(Box\Mod\Antispam\Service::class);
-    $spamCheckerService->shouldReceive('isBlockedIp')
-        ->atLeast()->once();
-    $spamCheckerService->shouldReceive('isSpam')
-        ->atLeast()->once();
-    $spamCheckerService->shouldReceive('isTemp')
-        ->atLeast()->once();
-    $spamCheckerService->shouldReceive('checkHoneypot')
-        ->atLeast()->once();
+    $spamCheckerService->shouldReceive('isInStopForumSpamDatabase')
+        ->once()
+        ->with(['ip' => $input['ip'], 'email' => $input['email']])
+        ->ordered()
+        ->andReturnFalse();
+    $spamCheckerService->shouldReceive('isATempEmail')
+        ->once()
+        ->with($input['email'], true)
+        ->ordered()
+        ->andReturnFalse();
 
+    $service = Mockery::mock(Box\Mod\Antispam\Service::class)->makePartial();
+    $service->shouldReceive('checkCaptcha')->never();
     $di = container();
+    $di['mod_config'] = $di->protect(fn (): array => [
+        'block_ips' => false,
+        'sfs' => true,
+        'check_temp_emails' => true,
+        'honeypot_enabled' => true,
+        'captcha_enabled' => true,
+    ]);
+    $di['request'] = Request::create('http://localhost', server: ['REMOTE_ADDR' => $input['ip']]);
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $spamCheckerService);
-    $boxEventMock = Mockery::mock('\Box_Event');
-    $boxEventMock->shouldReceive('getDi')
-        ->atLeast()->once()
-        ->andReturn($di);
+    $service->setDi($di);
 
-    $service->onBeforeClientSignUp($boxEventMock);
+    $service->onBeforeClientSignUp(new BeforeClientSignUpEvent($input));
+});
+
+test('before client profile update rejects a blocked IP', function (): void {
+    $service = new Box\Mod\Antispam\Service();
+    $di = container();
+    $di['mod_config'] = $di->protect(fn (): array => [
+        'block_ips' => true,
+        'blocked_ips' => '1.2.3.4',
+    ]);
+    $di['request'] = Request::create('http://localhost', server: ['REMOTE_ADDR' => '1.2.3.4']);
+    $service->setDi($di);
+
+    expect(fn () => $service->onBeforeClientProfileUpdate(new BeforeClientProfileUpdateEvent(42, [])))
+        ->toThrow(FOSSBilling\InformationException::class, 'Your IP address (1.2.3.4) is blocked');
+});
+
+test('before admin client update rejects a blocked IP', function (): void {
+    $service = new Box\Mod\Antispam\Service();
+    $di = container();
+    $di['mod_config'] = $di->protect(fn (): array => [
+        'block_ips' => true,
+        'blocked_ips' => '1.2.3.4',
+    ]);
+    $di['request'] = Request::create('http://localhost', server: ['REMOTE_ADDR' => '1.2.3.4']);
+    $service->setDi($di);
+
+    expect(fn () => $service->onBeforeAdminClientUpdate(new BeforeAdminClientUpdateEvent(42, [])))
+        ->toThrow(FOSSBilling\InformationException::class, 'Your IP address (1.2.3.4) is blocked');
 });
 
 test('before guest ticket creation checks blocked IP, captcha, spam, and disposable email', function (): void {
@@ -122,27 +167,6 @@ test('before guest ticket creation propagates blocked IP exceptions', function (
         'subject',
         'message',
     )))->toThrow(FOSSBilling\InformationException::class, 'Your IP address (1.2.3.4) is blocked');
-});
-
-test('is spam does not re-verify the captcha during signup', function (): void {
-    // The signup API already verifies the CAPTCHA before this event fires;
-    // isSpam() re-checking it would fail every signup since CAPTCHA tokens
-    // are single-use.
-    $service = Mockery::mock(Box\Mod\Antispam\Service::class)->makePartial();
-    $service->shouldReceive('checkCaptcha')->never();
-
-    $di = container();
-    $di['mod_config'] = $di->protect(fn (): array => ['sfs' => false]);
-
-    $boxEventMock = Mockery::mock('\Box_Event');
-    $boxEventMock->shouldReceive('getDi')
-        ->atLeast()->once()
-        ->andReturn($di);
-    $boxEventMock->shouldReceive('getParameters')
-        ->atLeast()->once()
-        ->andReturn(['ip' => '1.2.3.4', 'email' => 'test@example.com']);
-
-    $service->isSpam($boxEventMock);
 });
 
 test('is blocked ip ip not blocked', function (): void {

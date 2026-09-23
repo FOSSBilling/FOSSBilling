@@ -15,6 +15,10 @@ use Box\Mod\Client\Entity\Client;
 use Box\Mod\Client\Entity\ClientBalance;
 use Box\Mod\Client\Entity\ClientGroup;
 use Box\Mod\Client\Entity\ClientPasswordReset;
+use Box\Mod\Client\Event\AfterAdminClientCreateEvent;
+use Box\Mod\Client\Event\AfterClientSignUpEvent;
+use Box\Mod\Client\Event\BeforeAdminClientCreateEvent;
+use Box\Mod\Client\Event\BeforeClientSignUpEvent;
 use Box\Mod\Client\Repository\ClientBalanceRepository;
 use Box\Mod\Client\Repository\ClientGroupRepository;
 use Box\Mod\Client\Repository\ClientPasswordResetRepository;
@@ -185,30 +189,28 @@ class Service implements InjectionAwareInterface
         return $this->di['tools']->url('/client/confirm-email/' . $hash);
     }
 
-    public static function onAfterClientSignUp(\Box_Event $event): bool
+    #[AsEventListener]
+    public function sendSignupEmail(AfterClientSignUpEvent $event): void
     {
-        $di = $event->getDi();
-        $params = $event->getParameters();
+        $di = $this->di ?? throw new \LogicException('Client service must be initialized before handling events.');
         $config = $di['mod_config']('client');
         $emailService = $di['mod_service']('email');
 
         try {
             $email = [];
-            $email['to_client'] = $params['id'];
+            $email['to_client'] = $event->clientId;
             $email['code'] = 'mod_client_signup';
             $email['require_email_confirmation'] = false;
             if (isset($config['require_email_confirmation']) && $config['require_email_confirmation']) {
                 $clientService = $di['mod_service']('client');
                 $email['require_email_confirmation'] = true;
-                $email['email_confirmation_link'] = $clientService->generateEmailConfirmationLink($params['id']);
+                $email['email_confirmation_link'] = $clientService->generateEmailConfirmationLink($event->clientId);
             }
 
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
             $di['logger']->withChannel('email')->error('Failed to send client signup email', ['exception' => $exc]);
         }
-
-        return true;
     }
 
     public function getSearchQuery($data, $selectStmt = null): array
@@ -723,12 +725,12 @@ class Service implements InjectionAwareInterface
     {
         $eventParams = $data;
         unset($eventParams['password'], $eventParams['password_confirm']);
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminCreateClient', 'params' => $eventParams]);
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminClientCreateEvent($eventParams));
         $client = $this->createClient($data);
         if (Tools::normalizeBoolean($data['send_welcome_email'] ?? true, true)) {
             $this->sendAdminCreatedWelcomeEmailForClient($client);
         }
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminCreateClient', 'params' => ['id' => $client->getId()]]);
+        $this->di['event_dispatcher']->dispatch(new AfterAdminClientCreateEvent((int) $client->getId()));
         $this->di['logger']->info('Created new client #{client_id}', ['client_id' => $client->getId()]);
 
         return (int) $client->getId();
@@ -739,7 +741,7 @@ class Service implements InjectionAwareInterface
         $event_params = $data;
         $event_params['ip'] = $this->di['request']->getClientIp();
         unset($event_params['password'], $event_params['password_confirm']);
-        $this->di['events_manager']->fire(['event' => 'onBeforeClientSignUp', 'params' => $event_params]);
+        $this->di['event_dispatcher']->dispatch(new BeforeClientSignUpEvent($event_params));
 
         $allowedFields = [
             'email', 'first_name', 'last_name', 'password',
@@ -765,14 +767,7 @@ class Service implements InjectionAwareInterface
 
         $client = $this->createClient($safeData);
 
-        $event_params = [
-            'id' => $client->getId(),
-            'email' => $client->getEmail(),
-            'first_name' => $client->getFirstName(),
-            'last_name' => $client->getLastName(),
-            'ip' => $safeData['ip'],
-        ];
-        $this->di['events_manager']->fire(['event' => 'onAfterClientSignUp', 'params' => $event_params]);
+        $this->di['event_dispatcher']->dispatch(new AfterClientSignUpEvent((int) $client->getId()));
         $this->di['logger']->info('Client #{client_id} signed up', ['client_id' => $client->getId()]);
 
         return $client;

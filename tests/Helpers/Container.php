@@ -133,6 +133,10 @@ function container(): Container
             $this->events[] = $event;
         }
     };
+    $di['event_dispatcher'] = fn (): \FOSSBilling\Events\EventDispatcher => new \FOSSBilling\Events\EventDispatcher(
+        static fn (): array => [],
+        static fn (string $module): object => throw new \LogicException('No module listeners are configured in the test container.'),
+    );
     $di['auth'] = fn (): object => \Mockery::mock()->shouldIgnoreMissing();
     $di['pager'] = fn (): object => new class {
         public function getDefaultPerPage(): int

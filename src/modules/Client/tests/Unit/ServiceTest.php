@@ -10,6 +10,10 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Client\Event\AfterAdminClientCreateEvent;
+use Box\Mod\Client\Event\AfterClientSignUpEvent;
+use Box\Mod\Client\Event\BeforeAdminClientCreateEvent;
+use Box\Mod\Client\Event\BeforeClientSignUpEvent;
 use Box\Mod\Cron\Event\BeforeAdminCronRunEvent;
 
 use function Tests\Helpers\container;
@@ -94,109 +98,64 @@ test('generateEmailConfirmationLink returns string', function (): void {
     expect(str_contains((string) $result, '/client/confirm-email/'))->toBeTrue();
 });
 
-test('onAfterClientSignUp returns true', function (): void {
+test('sendSignupEmail sends the client signup email', function (): void {
     $service = new Box\Mod\Client\Service();
-    $eventParams = [
-        'password' => 'testPassword',
-        'id' => 1,
-    ];
-
-    $eventMock = Mockery::mock('\Box_Event');
-    $eventMock->shouldReceive('getParameters')
-        ->atLeast()->once()
-        ->andReturn($eventParams);
 
     $emailService = Mockery::mock(Box\Mod\Email\Service::class);
     $emailService->shouldReceive('sendTemplate')
-        ->atLeast()->once()
-        ->andReturn(true);
+        ->once()
+        ->with([
+            'to_client' => 1,
+            'code' => 'mod_client_signup',
+            'require_email_confirmation' => false,
+        ]);
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $emailService);
     $di['mod_config'] = $di->protect(fn ($name): array => ['require_email_confirmation' => false]);
 
-    $eventMock->shouldReceive('getDi')
-        ->atLeast()->once()
-        ->andReturn($di);
-
     $service->setDi($di);
-    $result = $service->onAfterClientSignUp($eventMock);
-
-    expect($result)->toBeTrue();
+    $service->sendSignupEmail(new AfterClientSignUpEvent(1));
 });
 
-test('onAfterClientSignUp with email confirmation required returns true', function (): void {
-    $service = new Box\Mod\Client\Service();
-    $eventMock = Mockery::mock('\Box_Event');
-    $eventParams = [
-        'password' => 'testPassword',
-        'id' => 1,
-        'require_email_confirmation' => true,
-    ];
-
-    $eventMock->shouldReceive('getParameters')
-        ->atLeast()->once()
-        ->andReturn($eventParams);
+test('sendSignupEmail includes a confirmation link when required', function (): void {
+    $service = Mockery::mock(Box\Mod\Client\Service::class)->makePartial();
+    $service->shouldReceive('generateEmailConfirmationLink')->once()->with(1)->andReturn('Link_string');
 
     $emailService = Mockery::mock(Box\Mod\Email\Service::class);
     $emailService->shouldReceive('sendTemplate')
-        ->atLeast()->once()
-        ->andReturn(true);
-
-    $clientServiceMock = Mockery::mock(Box\Mod\Client\Service::class)->makePartial();
-    $clientServiceMock->shouldReceive('generateEmailConfirmationLink')
-        ->atLeast()->once()
-        ->andReturn('Link_string');
+        ->once()
+        ->with([
+            'to_client' => 1,
+            'code' => 'mod_client_signup',
+            'require_email_confirmation' => true,
+            'email_confirmation_link' => 'Link_string',
+        ]);
 
     $di = container();
-    $di['mod_service'] = $di->protect(function ($serviceName) use ($emailService, $clientServiceMock) {
-        if ($serviceName == 'email') {
-            return $emailService;
-        }
-        if ($serviceName == 'client') {
-            return $clientServiceMock;
-        }
+    $di['mod_service'] = $di->protect(function ($serviceName) use ($emailService, $service) {
+        return $serviceName === 'email' ? $emailService : $service;
     });
     $di['mod_config'] = $di->protect(fn ($name): array => ['require_email_confirmation' => true]);
-    $eventMock->shouldReceive('getDi')
-        ->atLeast()->once()
-        ->andReturn($di);
 
-    $result = $service->onAfterClientSignUp($eventMock);
-
-    expect($result)->toBeTrue();
+    $service->setDi($di);
+    $service->sendSignupEmail(new AfterClientSignUpEvent(1));
 });
 
-test('onAfterClientSignUp handles exception gracefully', function (): void {
+test('sendSignupEmail handles email exceptions gracefully', function (): void {
     $service = new Box\Mod\Client\Service();
-    $eventParams = [
-        'password' => 'testPassword',
-        'id' => 1,
-    ];
-
-    $eventMock = Mockery::mock('\Box_Event');
-    $eventMock->shouldReceive('getParameters')
-        ->atLeast()->once()
-        ->andReturn($eventParams);
 
     $emailService = Mockery::mock(Box\Mod\Email\Service::class);
     $emailService->shouldReceive('sendTemplate')
-        ->atLeast()->once()
+        ->once()
         ->andThrow(new Exception('exception created in unit test'));
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $emailService);
-    $di['mod_config'] = $di->protect(function ($name): void {
-        ['require_email_confirmation' => false];
-    });
-    $eventMock->shouldReceive('getDi')
-        ->atLeast()->once()
-        ->andReturn($di);
+    $di['mod_config'] = $di->protect(fn ($name): array => ['require_email_confirmation' => false]);
 
     $service->setDi($di);
-    $result = $service->onAfterClientSignUp($eventMock);
-
-    expect($result)->toBeTrue();
+    $service->sendSignupEmail(new AfterClientSignUpEvent(1));
 });
 
 dataset('searchQueryData', [
@@ -866,11 +825,23 @@ test('adminCreateClient returns int', function (): void {
         'email' => 'test@unit.vm',
         'first_name' => 'test',
         'aid' => 'LEGACY-1001',
+        'password_confirm' => 'do-not-expose',
+        'send_welcome_email' => false,
     ];
 
-    $eventManagerMock = Mockery::mock('\Box_EventManager');
-    $eventManagerMock->shouldReceive('fire')
-        ->twice();
+    $dispatched = [];
+    $eventDispatcher = new class($dispatched) {
+        public function __construct(private array &$dispatched)
+        {
+        }
+
+        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        {
+            $this->dispatched[] = $event;
+
+            return $event;
+        }
+    };
 
     $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
     $passwordMock->shouldReceive('hashIt')
@@ -883,15 +854,88 @@ test('adminCreateClient returns int', function (): void {
         ->andReturn([]);
 
     $di = container();
-    $di['events_manager'] = $eventManagerMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod'] = $di->protect(fn (): Mockery\MockInterface => $modMock);
     $di['password'] = $passwordMock;
+    $entityManager = $di['em'];
+    $entityManager->shouldReceive('persist')->atLeast()->once()->andReturnUsing(static function (object $entity): void {
+        if ($entity instanceof Box\Mod\Client\Entity\Client) {
+            (new ReflectionProperty(Box\Mod\Client\Entity\Client::class, 'id'))->setValue($entity, 42);
+        }
+    });
 
     $service->setDi($di);
 
     $result = $service->adminCreateClient($data);
     expect($result)->toBeInt();
+    expect($dispatched)->toHaveCount(2);
+    expect($dispatched[0])->toBeInstanceOf(BeforeAdminClientCreateEvent::class);
+    expect($dispatched[0]->input)->toBe([
+        'email' => 'test@unit.vm',
+        'first_name' => 'test',
+        'aid' => 'LEGACY-1001',
+        'send_welcome_email' => false,
+    ]);
+    expect($dispatched[1])->toEqual(new AfterAdminClientCreateEvent(42));
+});
+
+test('guestCreateClient dispatches sanitized signup input and the persisted client ID', function (): void {
+    $service = new Box\Mod\Client\Service();
+    $data = [
+        'email' => 'test@unit.vm',
+        'first_name' => 'test',
+        'password' => 'StrongPass123',
+        'password_confirm' => 'StrongPass123',
+        'g-recaptcha-response' => 'captcha-token',
+        'bio' => 'honeypot',
+    ];
+    $dispatched = [];
+    $eventDispatcher = new class($dispatched) {
+        public function __construct(private array &$dispatched)
+        {
+        }
+
+        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        {
+            $this->dispatched[] = $event;
+
+            return $event;
+        }
+    };
+
+    $di = container();
+    $di['request'] = Symfony\Component\HttpFoundation\Request::create('http://localhost/', 'POST', server: ['REMOTE_ADDR' => '203.0.113.4']);
+    $di['event_dispatcher'] = $eventDispatcher;
+    $di['mod'] = $di->protect(static function (string $name): object {
+        $system = Mockery::mock(Box\Mod\System\Service::class);
+        $system->shouldReceive('getConfig')->once()->andReturn([]);
+
+        return $system;
+    });
+    $password = Mockery::mock(FOSSBilling\PasswordManager::class);
+    $password->shouldReceive('hashIt')->once()->with('StrongPass123')->andReturn('hashed');
+    $di['password'] = $password;
+    $entityManager = $di['em'];
+    $entityManager->shouldReceive('persist')->once()->andReturnUsing(static function (object $entity): void {
+        expect($entity)->toBeInstanceOf(Box\Mod\Client\Entity\Client::class);
+        (new ReflectionProperty(Box\Mod\Client\Entity\Client::class, 'id'))->setValue($entity, 43);
+    });
+
+    $service->setDi($di);
+    $client = $service->guestCreateClient($data);
+
+    expect($client->getId())->toBe(43);
+    expect($dispatched)->toHaveCount(2);
+    expect($dispatched[0])->toBeInstanceOf(BeforeClientSignUpEvent::class);
+    expect($dispatched[0]->input)->toBe([
+        'email' => 'test@unit.vm',
+        'first_name' => 'test',
+        'g-recaptcha-response' => 'captcha-token',
+        'bio' => 'honeypot',
+        'ip' => '203.0.113.4',
+    ]);
+    expect($dispatched[1])->toEqual(new AfterClientSignUpEvent(43));
 });
 
 test('deleteGroup returns true', function (): void {

@@ -11,6 +11,7 @@
 declare(strict_types=1);
 
 use Box\Mod\Activity\Entity\ActivityAdminHistory;
+use Box\Mod\Client\Event\AfterClientSignUpEvent;
 use Box\Mod\Staff\Entity\Admin;
 use Box\Mod\Staff\Entity\AdminGroup;
 use Box\Mod\Staff\Entity\AdminGroupMember;
@@ -833,7 +834,6 @@ test('typed ticket replied event handles guest email exception', function (): vo
 });
 
 test('onAfterClientSignUp sends sanitized client details in the email variables', function (): void {
-    $eventMock = Mockery::mock('\Box_Event');
     $clientId = 42;
     $client = createEntity(Box\Mod\Client\Entity\Client::class);
     $clientDetails = [
@@ -859,9 +859,6 @@ test('onAfterClientSignUp sends sanitized client details in the email variables'
             'c' => $clientDetails,
         ]);
 
-    $eventMock->shouldReceive('getParameters')->once()
-        ->andReturn(['id' => $clientId]);
-
     $service = new Service();
 
     $di = container();
@@ -874,14 +871,11 @@ test('onAfterClientSignUp sends sanitized client details in the email variables'
         }
     });
 
-    $eventMock->shouldReceive('getDi')->atLeast()->once()
-        ->andReturn($di);
     $service->setDi($di);
-    $service->onAfterClientSignUp($eventMock);
+    $service->onAfterClientSignUp(new AfterClientSignUpEvent($clientId));
 });
 
 test('onAfterClientSignUp handles email exception', function (): void {
-    $eventMock = Mockery::mock('\Box_Event');
     $clientId = 42;
     $client = createEntity(Box\Mod\Client\Entity\Client::class);
 
@@ -897,9 +891,6 @@ test('onAfterClientSignUp handles email exception', function (): void {
     $emailServiceMock->shouldReceive('sendTemplate')->once()
         ->andThrow(new Exception('PHPunit controlled Exception'));
 
-    $eventMock->shouldReceive('getParameters')->once()
-        ->andReturn(['id' => $clientId]);
-
     $service = new Service();
 
     $di = container();
@@ -912,10 +903,8 @@ test('onAfterClientSignUp handles email exception', function (): void {
         }
     });
 
-    $eventMock->shouldReceive('getDi')->atLeast()->once()
-        ->andReturn($di);
     $service->setDi($di);
-    $service->onAfterClientSignUp($eventMock);
+    $service->onAfterClientSignUp(new AfterClientSignUpEvent($clientId));
 });
 
 test('typed ticket closed event handles guest email exception', function (): void {
