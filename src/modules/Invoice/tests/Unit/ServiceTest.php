@@ -4847,15 +4847,29 @@ test('reissueInvoice cancels the original and moves its lines to a numbered repl
     $customLine->setTitle('E2E discount');
     setEntityId($customLine, 21);
 
+    $orphanDiscount = createEntity(InvoiceItem::class, ['price' => -5.0, 'quantity' => 1, 'taxed' => false]);
+    $orphanDiscount->setType(InvoiceItem::TYPE_CUSTOM);
+    $orphanDiscount->setTask(InvoiceItem::TASK_VOID);
+    $orphanDiscount->setTitle('Discount: orphan');
+    $orphanDiscount->setUnit('discount');
+    $orphanDiscount->setRelId('43');
+    setEntityId($orphanDiscount, 22);
+
     $order = createEntity(Order::class, ['clientId' => 5, 'currency' => 'USD']);
     $order->setStatus(Order::STATUS_PENDING_SETUP);
     setEntityId($order, 42);
 
-    // Points at the original without a line: its promo hold is freed and it
-    // is unpointed so it invoices normally again.
+    // Points at the original without a line, but its discount line below
+    // was copied: the backing redemption moves with the discount.
     $straggler = createEntity(Order::class, ['clientId' => 5, 'currency' => 'USD']);
     $straggler->setStatus(Order::STATUS_PENDING_SETUP);
     setEntityId($straggler, 43);
+
+    // Points at the original with no copied discount: its promo hold is
+    // freed and it is unpointed so it invoices normally again.
+    $naked = createEntity(Order::class, ['clientId' => 5, 'currency' => 'USD']);
+    $naked->setStatus(Order::STATUS_PENDING_SETUP);
+    setEntityId($naked, 44);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('toApiArray')->andReturn(['id' => 10, 'total' => 90.0]);
@@ -4871,8 +4885,8 @@ test('reissueInvoice cancels the original and moves its lines to a numbered repl
     $systemService->shouldReceive('getParamValue')->with('invoice_hash_lifetime_days', '90')->andReturn(90);
 
     $productService = Mockery::mock(ProductService::class);
-    $productService->shouldReceive('transferReservedPromoRedemptionsForOrders')->once()->with([42], Mockery::type(Invoice::class));
-    $productService->shouldReceive('releaseReservedPromoRedemptionsForOrder')->once()->with($straggler, 'invoice_reissued');
+    $productService->shouldReceive('transferReservedPromoRedemptionsForOrders')->once()->with([42, 43], Mockery::type(Invoice::class));
+    $productService->shouldReceive('releaseReservedPromoRedemptionsForOrder')->once()->with($naked, 'invoice_reissued');
 
     $orderService = Mockery::mock(OrderService::class);
     $replacement = null;
@@ -4883,14 +4897,14 @@ test('reissueInvoice cancels the original and moves its lines to a numbered repl
             return $o === $order && $inv instanceof Invoice;
         }
     );
-    $orderService->shouldReceive('unsetUnpaidInvoice')->once()->with($straggler);
+    $orderService->shouldReceive('unsetUnpaidInvoice')->twice();
 
     $invoiceItemRepo = Mockery::mock(InvoiceItemRepository::class);
-    $invoiceItemRepo->shouldReceive('findByInvoiceId')->with(10)->andReturn([$orderLine, $customLine]);
+    $invoiceItemRepo->shouldReceive('findByInvoiceId')->with(10)->andReturn([$orderLine, $customLine, $orphanDiscount]);
 
     $orderRepo = Mockery::mock(OrderRepository::class);
     $orderRepo->shouldReceive('find')->with(42)->andReturn($order);
-    $orderRepo->shouldReceive('findByUnpaidInvoiceId')->with(10)->andReturn([$straggler]);
+    $orderRepo->shouldReceive('findByUnpaidInvoiceId')->with(10)->andReturn([$straggler, $naked]);
     $orderService->shouldReceive('getOrderRepository')->andReturn($orderRepo);
 
     $em = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();

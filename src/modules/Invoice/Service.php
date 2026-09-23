@@ -1976,6 +1976,7 @@ class Service implements InjectionAwareInterface
             $orderService = $this->di['mod_service']('Order');
             $entityManager = $this->di['em'];
             $movedOrderIds = [];
+            $discountOrderIds = [];
             foreach ($this->getInvoiceItemRepository()->findByInvoiceId((int) $original->getId()) as $item) {
                 $orderToLink = null;
                 if ($item->getType() === InvoiceItem::TYPE_ORDER) {
@@ -1986,6 +1987,10 @@ class Service implements InjectionAwareInterface
                     if ((int) $orderToLink->getClientId() !== (int) $new->getClientId()) {
                         throw new InformationException('Order #:id does not belong to this invoice\'s client', [':id' => $orderToLink->getId()]);
                     }
+                } elseif ($item->getUnit() === 'discount' && is_numeric($item->getRelId() ?? '')) {
+                    // Same shape findOrderDiscountLine() matches on: a promo
+                    // discount naming its order.
+                    $discountOrderIds[(int) $item->getRelId()] = true;
                 }
 
                 $copy = new InvoiceItem();
@@ -2010,18 +2015,24 @@ class Service implements InjectionAwareInterface
             }
             $entityManager->flush();
 
-            $productService->transferReservedPromoRedemptionsForOrders($movedOrderIds, $new);
-
             // Orders still pointing at the original have no moved line (e.g.
             // their line was deleted earlier) and must not keep pointing at a
-            // canceled invoice; unpointed they invoice normally again. Their
-            // promo hold is freed — the discount was never invoiced, and a
-            // stranded RESERVED redemption would block reusing the code —
-            // while reserved stock stays on the still-pending order.
+            // canceled invoice; unpointed they invoice normally again. When
+            // such an order's discount line was copied above, its backing
+            // redemption moves with the discount so payment still commits it
+            // and renewals keep it; otherwise the hold is freed, since a
+            // stranded RESERVED redemption would block reusing the code.
+            // Reserved stock stays on the still-pending order either way.
             foreach ($orderService->getOrderRepository()->findByUnpaidInvoiceId((int) $original->getId()) as $straggler) {
-                $productService->releaseReservedPromoRedemptionsForOrder($straggler, 'invoice_reissued');
+                if (isset($discountOrderIds[(int) $straggler->getId()])) {
+                    $movedOrderIds[] = (int) $straggler->getId();
+                } else {
+                    $productService->releaseReservedPromoRedemptionsForOrder($straggler, 'invoice_reissued');
+                }
                 $orderService->unsetUnpaidInvoice($straggler);
             }
+
+            $productService->transferReservedPromoRedemptionsForOrders($movedOrderIds, $new);
 
             $original->setReplacedByInvoiceId($new->getId());
             $entityManager->persist($original);
