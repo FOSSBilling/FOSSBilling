@@ -413,6 +413,7 @@ test('login returns array', function (): void {
 
     $di = container();
     $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = new FOSSBilling\Events\EventDispatcher(static fn (): array => [], static fn (string $module): object => new stdClass());
     $di['session'] = $sessionMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['tools'] = $toolsStub;

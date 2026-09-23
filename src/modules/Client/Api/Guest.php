@@ -17,6 +17,7 @@ namespace Box\Mod\Client\Api;
 
 use Box\Mod\Client\Entity\Client;
 use Box\Mod\Client\Entity\ClientPasswordReset;
+use Box\Mod\Client\Event\AfterClientLoginEvent;
 use Box\Mod\Client\Service;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
@@ -247,6 +248,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             }
 
             $this->getDi()['events_manager']->fire(['event' => 'onAfterClientLogin', 'params' => ['id' => $client->getId(), 'ip' => $this->ip]]);
+            $this->getDi()['event_dispatcher']->dispatch(new AfterClientLoginEvent((int) $client->getId(), $this->ip));
 
             $oldSession = $this->getDi()['session']->getId();
             $this->getDi()['session']->regenerateId();
