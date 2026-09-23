@@ -301,6 +301,43 @@ test('staff_basket_add_item converts the override to the base currency', functio
     expect($adminApi->staff_basket_add_item(['client_id' => 9, 'id' => 5, 'price' => 15]))->toBeTrue();
 });
 
+test('staff_basket_add_item rejects an override without a usable currency rate', function (): void {
+    $adminApi = apiEndpoint(new Box\Mod\Cart\Api\Admin());
+
+    $product = new Box\Mod\Product\Entity\Product();
+    $product->setIsAddon(false);
+
+    $productServiceMock = Mockery::mock(Box\Mod\Product\Service::class);
+    $productServiceMock->shouldReceive('findProductById')->once()->with(5)->andReturn($product);
+
+    $basket = new Cart();
+    $basketReflection = new ReflectionProperty($basket, 'id');
+    $basketReflection->setValue($basket, 3);
+    $basket->setCurrencyId(2);
+
+    $currencyRepoMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $currencyRepoMock->shouldReceive('find')->once()->with(2)->andReturn(null);
+
+    $serviceMock = Mockery::mock(Box\Mod\Cart\Service::class)->makePartial();
+    $serviceMock->shouldReceive('getStaffBasket')->andReturn($basket);
+    $serviceMock->shouldReceive('addItem')->never();
+
+    $di = container();
+    $di['em'] = cartApiClientAndCurrencyRepoEm(9, $currencyRepoMock);
+    $di['loggedin_admin'] = cartApiLoggedInAdmin(4);
+    $di['mod_service'] = $di->protect(fn (string $name) => match ($name) {
+        'staff' => cartApiStaffServiceAllowingAll(),
+        'product' => $productServiceMock,
+        default => Mockery::mock()->shouldIgnoreMissing(),
+    });
+
+    $adminApi->setDi($di);
+    $adminApi->setService($serviceMock);
+
+    expect(fn () => $adminApi->staff_basket_add_item(['client_id' => 9, 'id' => 5, 'price' => 15]))
+        ->toThrow(FOSSBilling\InformationException::class, 'Basket currency has no valid conversion rate');
+});
+
 function cartApiClientAndCurrencyRepoEm(int $clientId, Mockery\MockInterface $currencyRepoMock): Mockery\MockInterface
 {
     $clientRepoMock = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);

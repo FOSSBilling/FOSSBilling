@@ -132,7 +132,10 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             // otherwise the checkout conversion would apply twice.
             $basketCurrency = $this->di['em']->getRepository(Currency::class)->find($basket->getCurrencyId());
             $rate = $basketCurrency instanceof Currency ? $basketCurrency->getConversionRate() : 0.0;
-            $priceOverride = $rate > 0 ? (float) $data['price'] / $rate : (float) $data['price'];
+            if ($rate <= 0) {
+                throw new InformationException('Basket currency has no valid conversion rate');
+            }
+            $priceOverride = (float) $data['price'] / $rate;
         }
 
         unset($data['client_id'], $data['price']);
