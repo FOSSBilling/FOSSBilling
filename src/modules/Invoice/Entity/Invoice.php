@@ -23,6 +23,8 @@ use FOSSBilling\Interfaces\TimestampInterface;
 #[ORM\UniqueConstraint(name: 'hash', columns: ['hash'])]
 #[ORM\Index(name: 'invoice_credit_note_for_idx', columns: ['credit_note_for_invoice_id'])]
 #[ORM\Index(name: 'invoice_debit_note_for_idx', columns: ['debit_note_for_invoice_id'])]
+#[ORM\Index(name: 'invoice_replaces_invoice_idx', columns: ['replaces_invoice_id'])]
+#[ORM\Index(name: 'invoice_replaced_by_invoice_idx', columns: ['replaced_by_invoice_id'])]
 #[ORM\HasLifecycleCallbacks]
 class Invoice implements TimestampInterface
 {
@@ -86,6 +88,12 @@ class Invoice implements TimestampInterface
 
     #[ORM\Column(name: 'debit_note_for_invoice_id', type: Types::BIGINT, nullable: true)]
     private ?int $debitNoteForInvoiceId = null;
+
+    #[ORM\Column(name: 'replaces_invoice_id', type: Types::BIGINT, nullable: true)]
+    private ?int $replacesInvoiceId = null;
+
+    #[ORM\Column(name: 'replaced_by_invoice_id', type: Types::BIGINT, nullable: true)]
+    private ?int $replacedByInvoiceId = null;
 
     #[ORM\Column(name: 'seller_company', type: Types::STRING, length: 255, nullable: true)]
     private ?string $sellerCompany = null;
@@ -362,6 +370,30 @@ class Invoice implements TimestampInterface
     public function setDebitNoteForInvoiceId(?int $debitNoteForInvoiceId): self
     {
         $this->debitNoteForInvoiceId = $debitNoteForInvoiceId;
+
+        return $this;
+    }
+
+    public function getReplacesInvoiceId(): ?int
+    {
+        return $this->replacesInvoiceId;
+    }
+
+    public function setReplacesInvoiceId(?int $replacesInvoiceId): self
+    {
+        $this->replacesInvoiceId = $replacesInvoiceId;
+
+        return $this;
+    }
+
+    public function getReplacedByInvoiceId(): ?int
+    {
+        return $this->replacedByInvoiceId;
+    }
+
+    public function setReplacedByInvoiceId(?int $replacedByInvoiceId): self
+    {
+        $this->replacedByInvoiceId = $replacedByInvoiceId;
 
         return $this;
     }

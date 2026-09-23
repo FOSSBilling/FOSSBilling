@@ -157,6 +157,18 @@
                             {{ 'This invoice is locked. Approved invoices cannot be edited once issued; correct them with a credit note or a replacement invoice.'|trans }}
                         </div>
                         {% endif %}
+                        {% if invoice.replaced_by_invoice_id %}
+                        <div class="alert alert-info w-100 mb-2" role="alert">
+                            {{ 'This invoice was canceled and reissued as invoice #%id%.'|trans({'%id%': invoice.replaced_by_invoice_id}) }}
+                            <a href='{{ "invoice/manage/#{invoice.replaced_by_invoice_id}"|url }}'>{{ 'View replacement'|trans }}</a>
+                        </div>
+                        {% endif %}
+                        {% if invoice.replaces_invoice_id %}
+                        <div class="alert alert-info w-100 mb-2" role="alert">
+                            {{ 'This invoice replaces canceled invoice #%id%.'|trans({'%id%': invoice.replaces_invoice_id}) }}
+                            <a href='{{ "invoice/manage/#{invoice.replaces_invoice_id}"|url }}'>{{ 'View original'|trans }}</a>
+                        </div>
+                        {% endif %}
                         <a href='{{ "invoice/#{invoice.hash}"|url(area: 'client') }}' class="btn btn-primary" target="_blank">
                             <svg class="icon" width="24" height="24">
                                 <use href="#eye" />
@@ -306,6 +318,66 @@
                             </form>
                         </div>
                         </div>
+                        {% endif %}
+                        {% if invoice.approved and invoice.status == 'unpaid' and not invoice.credit_note_for_invoice_id and not invoice.debit_note_for_invoice_id and not invoice.replaced_by_invoice_id %}
+                        <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#reissueModal">
+                            <svg class="icon" width="24" height="24">
+                                <use href="#refresh" />
+                            </svg>
+                            <span>{{ 'Reissue'|trans }}</span>
+                        </a>
+                        <div class="modal fade" id="reissueModal" tabindex="-1" aria-labelledby="reissueModalLabel" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <form class="modal-content" method="post" action="{{ 'invoice/reissue'|api_url }}" {{ fb_api_form({callback: 'onAfterInvoiceReissued'}) }}>
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="reissueModalLabel">{{ 'Reissue invoice'|trans }}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
+                            </div>
+                            <div class="modal-body">
+                                <input type="hidden" name="id" value="{{ invoice.id }}">
+                                <p class="text-secondary">
+                                    {{ 'Cancel this invoice and issue a replacement carrying its lines forward. The replacement takes the next invoice number; the original number stays with the canceled record.'|trans }}
+                                </p>
+                                <div class="mb-3">
+                                    <label class="form-label" for="reissue-reason">{{ 'Reason'|trans }}</label>
+                                    <input class="form-control" type="text" name="reason" id="reissue-reason" placeholder="{{ 'e.g. client asked to add another product'|trans }}">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label" for="reissue-product">{{ 'Also attach product (optional)'|trans }}</label>
+                                    <select class="form-select" name="product_id" id="reissue-product">
+                                        <option value="">{{ 'None'|trans }}</option>
+                                        {% for id, label in admin.product_get_pairs %}
+                                        <option value="{{ id }}">{{ label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="row g-2">
+                                    <div class="col-4">
+                                        <label class="form-label" for="reissue-quantity">{{ 'Quantity'|trans }}</label>
+                                        <input class="form-control text-center" type="number" name="quantity" id="reissue-quantity" value="1" min="1" max="1000">
+                                    </div>
+                                    <div class="col-4">
+                                        <label class="form-label" for="reissue-price">{{ 'Price'|trans }}</label>
+                                        <input class="form-control" type="text" name="price" id="reissue-price" placeholder="{{ 'Catalog'|trans }}">
+                                    </div>
+                                    <div class="col-4">
+                                        <label class="form-label" for="reissue-period">{{ 'Period'|trans }}</label>
+                                        <input class="form-control" type="text" name="period" id="reissue-period" placeholder="{{ '1M'|trans }}">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <a href="#" class="btn btn-link link-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</a>
+                                <input type="submit" class="btn btn-primary" value="{{ 'Reissue'|trans }}">
+                            </div>
+                            </form>
+                        </div>
+                        </div>
+                        <script>
+                            function onAfterInvoiceReissued(id) {
+                                window.location = "{{ 'invoice/manage/'|url }}/" + id;
+                            }
+                        </script>
                         {% endif %}
                         <a href='{{ "invoice/pdf/#{invoice.hash}"|url(area: 'client') }}' class="btn btn-primary" target="_blank">
                             <svg class="icon" width="24" height="24">
@@ -459,6 +531,91 @@
                 {% endif %}
                 {% endblock %}
             {% endembed %}
+
+            {% if invoice.editable and has_permission('order', 'manage') %}
+            <div class="card mt-4">
+                <div class="card-header">
+                    <div>
+                        <h3 class="card-title">{{ 'Attach product'|trans }}</h3>
+                        <p class="card-subtitle">{{ 'Create an order for this client and add it as an order line, so paying the invoice provisions the service. The updated invoice is re-sent to the client.'|trans }}</p>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form method="get" action="{{ ('invoice/manage/' ~ invoice.id)|url }}" class="row g-3 align-items-end mb-4">
+                        <div class="col-lg-9">
+                            <label class="form-label" for="attach-product-picker">{{ 'Product'|trans }}</label>
+                            <select class="form-select" name="attach_product_id" id="attach-product-picker" onchange="this.form.submit()">
+                                <option value="">{{ 'Select a product to configure…'|trans }}</option>
+                                {% for id, label in admin.product_get_pairs %}
+                                <option value="{{ id }}"{% if attach_product and attach_product.id == id %} selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-lg-3">
+                            <noscript><button type="submit" class="btn btn-secondary">{{ 'Configure'|trans }}</button></noscript>
+                        </div>
+                    </form>
+                    {% if attach_product %}
+                    {% set product_order = 'mod_service' ~ attach_product.type ~ '_order.html.twig' %}
+                    <form method="post" action="{{ 'invoice/attach_order'|api_url }}" {{ fb_api_form({reload: true}) }}>
+                        <input type="hidden" name="id" value="{{ invoice.id }}">
+                        <input type="hidden" name="product_id" value="{{ attach_product.id }}">
+                        <h5 class="mb-3">{{ attach_product.title }}</h5>
+                        <div class="row g-3 mb-3">
+                            <div class="col-lg-4">
+                                <label class="form-label" for="attach-quantity">{{ 'Quantity'|trans }}</label>
+                                <input class="form-control text-center" type="number" name="quantity" id="attach-quantity" value="1" min="1" max="1000">
+                            </div>
+                            <div class="col-lg-4">
+                                <label class="form-label" for="attach-price">{{ 'Price override'|trans }}</label>
+                                <div class="input-group">
+                                    <input class="form-control" type="text" name="price" id="attach-price" placeholder="{{ 'Catalog'|trans }}">
+                                    <span class="input-group-text">{{ invoice.currency|currency_symbol }}</span>
+                                </div>
+                                <small class="form-hint">{{ 'Leave blank for the catalog price. Zero is allowed.'|trans }}</small>
+                            </div>
+                            {% if attach_product.pricing.type is defined and attach_product.pricing.type == 'recurrent' %}
+                            <div class="col-lg-4">
+                                <label class="form-label" for="attach-period">{{ 'Period'|trans }}</label>
+                                <select class="form-select" name="period" id="attach-period" required>
+                                    {% for val, pricing in attach_product.pricing.recurrent %}
+                                    <option value="{{ val }}">{{ pricing.title|e }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            {% endif %}
+                            <div class="col-lg-4">
+                                <label class="form-label" for="attach-group">{{ 'Parent order group'|trans }}</label>
+                                <input class="form-control" type="text" name="group_id" id="attach-group" autocomplete="off">
+                                <small class="form-hint">{{ 'Only for addons: the group of the parent order.'|trans }}</small>
+                            </div>
+                        </div>
+                        {% if admin.system_template_exists({ 'file': product_order }) %}
+                        <div class="mb-3">
+                            {{ include(product_order, { product: attach_product }) }}
+                        </div>
+                        {% endif %}
+                        <div class="d-flex justify-content-end">
+                            <input type="submit" value="{{ 'Attach to invoice'|trans }}" class="btn btn-primary">
+                        </div>
+                    </form>
+                    {% endif %}
+                    <form method="post" action="{{ 'invoice/attach_order'|api_url }}" {{ fb_api_form({reload: true}) }}>
+                        <input type="hidden" name="id" value="{{ invoice.id }}">
+                        <div class="row g-3 align-items-end">
+                            <div class="col-lg-9">
+                                <label class="form-label" for="attach-order-id">{{ 'Or attach an existing pending order'|trans }}</label>
+                                <input class="form-control" type="number" name="order_id" id="attach-order-id" min="1" placeholder="{{ 'Order ID'|trans }}" required>
+                                <small class="form-hint">{{ 'The order must belong to this client and not be on another invoice.'|trans }}</small>
+                            </div>
+                            <div class="col-lg-3">
+                                <button type="submit" class="btn btn-secondary">{{ 'Attach order'|trans }}</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
 
             {% if invoice.status == 'unpaid' and has_permission('product', 'manage_promos') %}
             <div class="card mt-4">

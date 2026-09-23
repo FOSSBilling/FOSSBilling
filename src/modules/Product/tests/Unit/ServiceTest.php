@@ -3547,3 +3547,45 @@ test('renewal treats a recorded zero primary discount as available', function ()
 
     expect($result)->toBe([]);
 });
+
+test('transferReservedPromoRedemptionsForOrders moves reservations to the new invoice', function (): void {
+    $replacement = createEntity(Invoice::class, ['id' => 11]);
+
+    $carried = new PromoRedemption();
+    $carried->setClientOrderId(42)
+        ->setInvoiceId(10)
+        ->setStatus(PromoRedemption::STATUS_RESERVED);
+
+    $redemptionRepo = Mockery::mock(PromoRedemptionRepository::class);
+    $redemptionRepo->shouldReceive('findBy')
+        ->once()
+        ->with([
+            'clientOrderId' => [42],
+            'status' => PromoRedemption::STATUS_RESERVED,
+        ])
+        ->andReturn([$carried]);
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('flush')->once();
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('getPromoRedemptionRepository')->andReturn($redemptionRepo);
+
+    $di = container();
+    $di['em'] = $emMock;
+    $serviceMock->setDi($di);
+
+    expect($serviceMock->transferReservedPromoRedemptionsForOrders([42, 42], $replacement))->toBe(1);
+    expect($carried->getInvoiceId())->toBe(11);
+});
+
+test('transferReservedPromoRedemptionsForOrders does nothing without orders', function (): void {
+    $replacement = createEntity(Invoice::class, ['id' => 11]);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldNotReceive('getPromoRedemptionRepository');
+
+    $serviceMock->setDi(container());
+
+    expect($serviceMock->transferReservedPromoRedemptionsForOrders([], $replacement))->toBe(0);
+});
