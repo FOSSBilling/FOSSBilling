@@ -24,6 +24,9 @@ class Client extends \FOSSBilling\Api\AbstractApi
     /**
      * Get list of orders.
      *
+     * @optional string $sort - sort by one of: id, status, title, created_at, updated_at
+     * @optional string $direction - sort direction: ASC or DESC
+     *
      * @return array
      */
     public function get_list($data)

@@ -22,6 +22,8 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @optional string $status - filter list by status
      * @optional string $search - search query to search for mail messages
+     * @optional string $sort - sort column: 'id', 'subject', 'status', 'from_email', 'from_name', 'sent_at', 'created_at' or 'updated_at'
+     * @optional string $direction - sort direction: 'ASC' or 'DESC'
      */
     public function get_list(array $data): array
     {

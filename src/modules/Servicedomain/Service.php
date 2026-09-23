@@ -21,6 +21,7 @@ use Box\Mod\Servicedomain\Repository\DomainRepository;
 use Box\Mod\Servicedomain\Repository\TldRegistrarRepository;
 use Box\Mod\Servicedomain\Repository\TldRepository;
 use Doctrine\ORM\QueryBuilder;
+use FOSSBilling\SortOptions;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
@@ -999,7 +1000,28 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 ->setParameter('allowTransfer', (bool) $allow_transfer);
         }
 
-        return $query->orderBy('t.id', 'ASC');
+        $sort = SortOptions::fromArray($data, [
+            'tld' => 't.tld',
+            'price_registration' => 't.priceRegistration',
+            'price_renew' => 't.priceRenew',
+            'price_transfer' => 't.priceTransfer',
+            'registrar' => 'r.name',
+            'id' => 't.id',
+        ]);
+        if ($sort->isSorted()) {
+            if ($sort->expression === 'r.name') {
+                $query->leftJoin('t.registrar', 'r');
+            }
+            $query->orderBy($sort->expression, $sort->direction);
+            if ($sort->expression !== 't.id') {
+                $query->addOrderBy('t.id', $sort->direction);
+            }
+        } else {
+            $query->orderBy('t.tld', 'ASC');
+            $query->addOrderBy('t.id', 'ASC');
+        }
+
+        return $query;
     }
 
     /**
@@ -1110,12 +1132,24 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function registrarGetSearchQuery($data): QueryBuilder
     {
-        // Registrar listings currently have no filters.
-        unset($data);
+        $query = $this->getTldRegistrarRepository()
+            ->createQueryBuilder('tr');
 
-        return $this->getTldRegistrarRepository()
-            ->createQueryBuilder('tr')
-            ->orderBy('tr.name', 'ASC');
+        $sort = SortOptions::fromArray($data, [
+            'title' => 'tr.name',
+            'id' => 'tr.id',
+        ]);
+        if ($sort->isSorted()) {
+            $query->orderBy($sort->expression, $sort->direction);
+            if ($sort->expression !== 'tr.id') {
+                $query->addOrderBy('tr.id', $sort->direction);
+            }
+        } else {
+            $query->orderBy('tr.name', 'ASC');
+            $query->addOrderBy('tr.id', 'ASC');
+        }
+
+        return $query;
     }
 
     /**

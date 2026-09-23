@@ -103,7 +103,7 @@
                     </ul>
             <div class="tab-content border-top">
                 {% if can_access_templates %}
-                <div class="tab-pane fade{% if active_tab == 'templates' %} show active{% endif %}" id="tab-index" role="tabpanel">
+                <div class="tab-pane fade{% if active_tab == 'templates' %} show active{% endif %}" id="tab-index" role="tabpanel" data-list-ns="">
                     {% set template_filter_panel_id = 'email-template-search-filters' %}
                     {% set template_filter_panel_open = request_has_filters %}
 
@@ -175,7 +175,7 @@
                         </form>
                     </section>
                     <div class="table-responsive">
-                        <table class="table card-table table-vcenter table-striped sortable">
+                        <table class="table card-table table-vcenter table-striped">
                             <thead>
                             <tr>
                                 {% if can_manage_templates %}
@@ -183,18 +183,18 @@
                                     <input class="form-check-input m-0 align-middle batch-delete-master-checkbox" type="checkbox">
                                 </th>
                                 {% endif %}
-                                <th class="w-1">{{ 'Subject'|trans }}</th>
-                                <th>{{ 'Module'|trans }}</th>
-                                <th>{{ 'Code'|trans }}</th>
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'Subject'|trans, 'sort_key': 'subject', 'url': 'email/templates', 'hash': '#tab-index', 'th_class': 'w-1', 'default_sort': 'category', 'default_direction': 'ASC' }) }}
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'Module'|trans, 'sort_key': 'category', 'url': 'email/templates', 'hash': '#tab-index', 'default_sort': 'category', 'default_direction': 'ASC' }) }}
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'Code'|trans, 'sort_key': 'code', 'url': 'email/templates', 'hash': '#tab-index', 'default_sort': 'category', 'default_direction': 'ASC' }) }}
                                 <th>{{ 'Type'|trans }}</th>
                                 <th>{{ 'Status'|trans }}</th>
-                                <th>{{ 'Enabled'|trans }}</th>
-                                <th class="w-1 no-sort"></th>
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'Enabled'|trans, 'sort_key': 'enabled', 'url': 'email/templates', 'hash': '#tab-index', 'default_sort': 'category', 'default_direction': 'ASC' }) }}
+                                <th class="w-1"></th>
                             </tr>
                             </thead>
 
                             <tbody>
-                            {% set templates = admin.email_template_get_list({ 'per_page': 100, 'page': request.page }|merge(request)) %}
+                            {% set templates = admin.email_template_get_list({ 'per_page': 25, 'page': request.page }|merge(request)) %}
                             {% for i, template in templates.list %}
                                 {% set type_label = template.is_custom ? 'Custom'|trans : 'Built-in'|trans %}
                                 {% set type_class = template.is_custom ? 'bg-blue-lt' : 'bg-secondary-lt' %}
@@ -259,13 +259,18 @@
                     {% if can_manage_templates %}
                     <div class="card-footer d-flex align-items-center justify-content-between">
                         {% include "partial_batch_delete.html.twig" with { 'action': 'email/batch_template_delete' } %}
+                        {{ include('partial_pagination.html.twig', { 'list': templates, 'url': 'email/templates', 'hash': '#tab-index', 'split_footer_controls': true }) }}
+                    </div>
+                    {% else %}
+                    <div class="card-footer d-flex align-items-center">
+                        {{ include('partial_pagination.html.twig', { 'list': templates, 'url': 'email/templates', 'hash': '#tab-index', 'split_footer_controls': true }) }}
                     </div>
                     {% endif %}
                 </div>
                 {% endif %}
 
                 {% if can_view_email_history %}
-                <div class="tab-pane fade{% if active_tab == 'queue' %} show active{% endif %}" id="tab-queue" role="tabpanel">
+                <div class="tab-pane fade{% if active_tab == 'queue' %} show active{% endif %}" id="tab-queue" role="tabpanel" data-list-ns="queue">
                     {% set queue_filter_panel_id = 'email-queue-search-filters' %}
                     {% set queue_filter_panel_open = active_tab == 'queue' and request_has_filters %}
                     {{ include('partial_search.html.twig', {
@@ -355,21 +360,23 @@
                         <p>{{ 'Emails that have been sent or that failed to be sent will not be listed here.'|trans }}</p>
                     </div>
                     <div class="table-responsive">
-                        <table class="table card-table table-vcenter table-striped text-nowrap sortable">
+                        <table class="table card-table table-vcenter table-striped text-nowrap">
                             <thead>
                             <tr>
-                                <th class="w-1">{{ 'Subject'|trans }}</th>
-                                <th>{{ 'To'|trans }}</th>
-                                <th>{{ 'To (Email)'|trans }}</th>
-                                <th>{{ 'Status'|trans }}</th>
-                                <th>{{ 'Tries'|trans }}</th>
-                                <th>{{ 'Created At'|trans }}</th>
-                                <th>{{ 'Updated At'|trans }}</th>
-                                <th class="w-1 no-sort"></th>
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'Subject'|trans, 'sort_key': 'subject', 'url': 'email/templates', 'hash': '#tab-queue', 'sort_param': 'queue_sort', 'direction_param': 'queue_direction', 'page_param': 'queue_page', 'default_sort': 'priority', 'default_direction': 'DESC', 'th_class': 'w-1' }) }}
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'To'|trans, 'sort_key': 'to_name', 'url': 'email/templates', 'hash': '#tab-queue', 'sort_param': 'queue_sort', 'direction_param': 'queue_direction', 'page_param': 'queue_page', 'default_sort': 'priority', 'default_direction': 'DESC' }) }}
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'To (Email)'|trans, 'sort_key': 'recipient', 'url': 'email/templates', 'hash': '#tab-queue', 'sort_param': 'queue_sort', 'direction_param': 'queue_direction', 'page_param': 'queue_page', 'default_sort': 'priority', 'default_direction': 'DESC' }) }}
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'email/templates', 'hash': '#tab-queue', 'sort_param': 'queue_sort', 'direction_param': 'queue_direction', 'page_param': 'queue_page', 'default_sort': 'priority', 'default_direction': 'DESC' }) }}
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'Tries'|trans, 'sort_key': 'tries', 'url': 'email/templates', 'hash': '#tab-queue', 'sort_param': 'queue_sort', 'direction_param': 'queue_direction', 'page_param': 'queue_page', 'default_sort': 'priority', 'default_direction': 'DESC' }) }}
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'Created At'|trans, 'sort_key': 'created_at', 'url': 'email/templates', 'hash': '#tab-queue', 'sort_param': 'queue_sort', 'direction_param': 'queue_direction', 'page_param': 'queue_page', 'default_sort': 'priority', 'default_direction': 'DESC' }) }}
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'Updated At'|trans, 'sort_key': 'updated_at', 'url': 'email/templates', 'hash': '#tab-queue', 'sort_param': 'queue_sort', 'direction_param': 'queue_direction', 'page_param': 'queue_page', 'default_sort': 'priority', 'default_direction': 'DESC' }) }}
+                                <th class="w-1"></th>
                             </tr>
                             </thead>
                             <tbody>
-                            {% set queue = admin.email_get_queue({ 'per_page': 100, 'page': request.page }|merge(request)) %}
+                            {% set queuePage = request.queue_page matches '/^\\d+$/' ? request.queue_page : 1 %}
+                            {% set queuePerPage = request.queue_per_page matches '/^\\d+$/' ? request.queue_per_page : 25 %}
+                            {% set queue = admin.email_get_queue(request|merge({ 'page': queuePage, 'per_page': queuePerPage, 'sort': request.queue_sort|default(null), 'direction': request.queue_direction|default('ASC') })) %}
                             {% for i, queuedEmail in queue.list %}
                                 <tr>
                                     <td>
@@ -409,6 +416,9 @@
                             {% endfor %}
                             </tbody>
                         </table>
+                    </div>
+                    <div class="card-footer d-flex align-items-center">
+                        {{ include('partial_pagination.html.twig', { 'list': queue, 'url': 'email/templates', 'hash': '#tab-queue', 'page_param': 'queue_page', 'per_page_param': 'queue_per_page', 'split_footer_controls': true }) }}
                     </div>
                 </div>
                 {% endif %}

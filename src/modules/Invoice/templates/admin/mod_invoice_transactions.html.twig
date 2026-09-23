@@ -175,11 +175,11 @@
                     <input class="form-check-input m-0 align-middle batch-delete-master-checkbox" type="checkbox">
                 </th>
                 <th>{{ 'Invoice'|trans }}</th>
-                <th>{{ 'Type'|trans }}</th>
-                <th>{{ 'Status'|trans }}</th>
-                <th>{{ 'Gateway'|trans }}</th>
-                <th>{{ 'Amount'|trans }}</th>
-                <th>{{ 'Date'|trans }}</th>
+                {{ include('partial_sortable_th.html.twig', { 'label': 'Type'|trans, 'sort_key': 'type', 'url': 'invoice/transactions', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'invoice/transactions', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                {{ include('partial_sortable_th.html.twig', { 'label': 'Gateway'|trans, 'sort_key': 'gateway', 'url': 'invoice/transactions', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                {{ include('partial_sortable_th.html.twig', { 'label': 'Amount'|trans, 'sort_key': 'amount', 'url': 'invoice/transactions', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                {{ include('partial_sortable_th.html.twig', { 'label': 'Date'|trans, 'sort_key': 'created_at', 'url': 'invoice/transactions', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
                 <th class="w-1"></th>
             </tr>
         </thead>

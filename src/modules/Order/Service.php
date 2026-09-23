@@ -26,6 +26,7 @@ use FOSSBilling\Doctrine\RowLock;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Logger;
+use FOSSBilling\SortOptions;
 use FOSSBilling\Validation\NonNegativeIntegerValidator;
 use FOSSBilling\Validation\PriceValidator;
 use Symfony\Component\HttpFoundation\Response;
@@ -773,7 +774,16 @@ class Service implements InjectionAwareInterface
         if (!empty($where)) {
             $query = $query . ' WHERE ' . implode(' AND ', $where);
         }
-        $query .= ' ORDER BY co.id DESC';
+
+        $sort = SortOptions::fromArray($data, [
+            'id' => 'co.id',
+            'status' => 'co.status',
+            'title' => 'co.title',
+            'created_at' => 'co.created_at',
+            'updated_at' => 'co.updated_at',
+        ]);
+        $orderBy = $sort->toOrderByClause('co.id') ?? 'co.id DESC';
+        $query .= " ORDER BY {$orderBy}";
 
         return [$query, $bindings];
     }
@@ -2076,7 +2086,13 @@ class Service implements InjectionAwareInterface
             $query = $query . ' WHERE ' . implode(' AND ', $where);
         }
 
-        $query .= ' ORDER BY id DESC';
+        $sort = SortOptions::fromArray($data, [
+            'id' => 'id',
+            'status' => 'status',
+            'created_at' => 'created_at',
+        ]);
+        $orderBy = $sort->toOrderByClause('id') ?? 'id DESC';
+        $query .= " ORDER BY {$orderBy}";
 
         return [$query, $bindings];
     }

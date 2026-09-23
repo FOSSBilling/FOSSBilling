@@ -55,6 +55,36 @@ test('builds a Doctrine query for balance searches', function (): void {
     ]))->toBe($queryBuilder);
 });
 
+test('sorts balance search query', function (array $data, string $expectedOrder, string $expectedDirection, ?string $expectedTieBreakerDirection): void {
+    $queryBuilder = Mockery::mock(Doctrine\ORM\QueryBuilder::class);
+    $queryBuilder->shouldReceive('orderBy')->once()->with($expectedOrder, $expectedDirection)->andReturnSelf();
+    if ($expectedTieBreakerDirection !== null) {
+        $queryBuilder->shouldReceive('addOrderBy')->once()->with('m.id', $expectedTieBreakerDirection)->andReturnSelf();
+    } else {
+        $queryBuilder->shouldReceive('addOrderBy')->never();
+    }
+
+    $balanceRepository = Mockery::mock(Box\Mod\Client\Repository\ClientBalanceRepository::class);
+    $balanceRepository->shouldReceive('createQueryBuilder')->once()->with('m')->andReturn($queryBuilder);
+
+    $service = new Box\Mod\Client\ServiceBalance();
+    $di = container();
+    $di['em']->shouldReceive('getRepository')
+        ->with(Box\Mod\Client\Entity\ClientBalance::class)
+        ->andReturn($balanceRepository);
+    $service->setDi($di);
+
+    expect($service->getSearchQueryBuilder($data))->toBe($queryBuilder);
+})->with([
+    'amount descending' => [['sort' => 'amount', 'direction' => 'DESC'], 'm.amount', 'DESC', 'DESC'],
+    'description' => [['sort' => 'description'], 'm.description', 'ASC', 'ASC'],
+    'created at' => [['sort' => 'created_at'], 'm.createdAt', 'ASC', 'ASC'],
+    'updated at' => [['sort' => 'updated_at', 'direction' => 'desc'], 'm.updatedAt', 'DESC', 'DESC'],
+    'id' => [['sort' => 'id'], 'm.id', 'ASC', null],
+    'invalid sort falls back to default' => [['sort' => 'm.id; DROP TABLE client_balance'], 'm.id', 'DESC', null],
+    'invalid direction falls back to ascending' => [['sort' => 'amount', 'direction' => 'sideways'], 'm.amount', 'ASC', 'ASC'],
+]);
+
 test('toApiArray uses a supplied client without reloading it', function (): void {
     $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 3, 'currency' => 'USD']);
     $balance = createEntity(Box\Mod\Client\Entity\ClientBalance::class, [

@@ -15,6 +15,7 @@ use Box\Mod\Product\Entity\Product;
 use Box\Mod\Product\Entity\ProductCategory;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
+use FOSSBilling\SortOptions;
 
 class ProductRepository extends EntityRepository
 {
@@ -108,7 +109,26 @@ class ProductRepository extends EntityRepository
                 ->setParameter('search', '%' . $data['search'] . '%');
         }
 
-        return $qb->orderBy('p.priority', 'ASC');
+        $sort = SortOptions::fromArray($data, [
+            'id' => 'p.id',
+            'title' => 'p.title',
+            'slug' => 'p.slug',
+            'status' => 'p.status',
+            'type' => 'p.type',
+            'priority' => 'p.priority',
+            'created_at' => 'p.createdAt',
+            'updated_at' => 'p.updatedAt',
+        ]);
+        if ($sort->isSorted()) {
+            $qb->orderBy($sort->expression, $sort->direction);
+            if ($sort->expression !== 'p.id') {
+                $qb->addOrderBy('p.id', $sort->direction);
+            }
+        } else {
+            $qb->orderBy('p.priority', 'ASC');
+        }
+
+        return $qb;
     }
 
     public function findActiveById(int $id): ?Product

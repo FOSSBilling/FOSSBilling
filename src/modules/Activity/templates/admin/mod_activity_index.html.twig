@@ -169,17 +169,17 @@
         </form>
     </section>
     <div class="table-responsive">
-        <table class="table card-table table-vcenter table-striped sortable activity-log-table">
+        <table class="table card-table table-vcenter table-striped activity-log-table">
             <thead>
                 <tr>
-                    <th class="text-nowrap">{{ '#'|trans }}</th>
-                    <th class="w-1 no-sort d-none d-lg-table-cell"></th>
+                    {{ include('partial_sortable_th.html.twig', { 'label': '#'|trans, 'sort_key': 'id', 'url': 'activity', 'th_class': 'text-nowrap', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                    <th class="w-1 d-none d-lg-table-cell"></th>
                     <th>{{ 'User'|trans }}</th>
-                    <th class="text-nowrap">{{ 'Priority'|trans }}</th>
+                    {{ include('partial_sortable_th.html.twig', { 'label': 'Priority'|trans, 'sort_key': 'priority', 'url': 'activity', 'th_class': 'text-nowrap', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
                     <th>{{ 'Message'|trans }}</th>
-                    <th>{{ 'IP'|trans }}</th>
+                    {{ include('partial_sortable_th.html.twig', { 'label': 'IP'|trans, 'sort_key': 'ip', 'url': 'activity', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
                     <th class="d-none d-xl-table-cell">{{ 'Country'|trans }}</th>
-                    <th>{{ 'Date'|trans }}</th>
+                    {{ include('partial_sortable_th.html.twig', { 'label': 'Date'|trans, 'sort_key': 'created_at', 'url': 'activity', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
                 </tr>
             </thead>
             <tbody>

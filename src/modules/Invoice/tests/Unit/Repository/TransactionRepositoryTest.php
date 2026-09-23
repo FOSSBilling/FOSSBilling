@@ -209,3 +209,27 @@ test('paginateMappedQuery yields gateway-aware mixed rows', function (): void {
     $gatewayRow = $result['list'][1];
     expect($gatewayRow)->toBe([Transaction::class, 'Stripe']);
 });
+
+test('getSearchQueryBuilder sorts by allowlisted columns', function (array $data, string $expectedOrderBy, bool $expectsTieBreak): void {
+    $dql = transactionSearchQuery($data)->getDQL();
+
+    expect($dql)->toContain($expectedOrderBy);
+    if ($expectsTieBreak) {
+        expect($dql)->toContain(', t.id');
+    } else {
+        expect($dql)->not->toContain(', t.id');
+    }
+})->with([
+    'id ascending' => [['sort' => 'id'], 'ORDER BY t.id ASC', false],
+    'id descending' => [['sort' => 'id', 'direction' => 'DESC'], 'ORDER BY t.id DESC', false],
+    'status' => [['sort' => 'status'], 'ORDER BY t.status ASC, t.id ASC', true],
+    'currency' => [['sort' => 'currency'], 'ORDER BY t.currency ASC, t.id ASC', true],
+    'type' => [['sort' => 'type', 'direction' => 'desc'], 'ORDER BY t.type DESC, t.id DESC', true],
+    'txn_id' => [['sort' => 'txn_id'], 'ORDER BY t.txnId ASC, t.id ASC', true],
+    'amount' => [['sort' => 'amount'], 'ORDER BY t.amount ASC, t.id ASC', true],
+    'gateway' => [['sort' => 'gateway'], 'ORDER BY pg.name ASC, t.id ASC', true],
+    'created_at' => [['sort' => 'created_at'], 'ORDER BY t.createdAt ASC, t.id ASC', true],
+    'updated_at' => [['sort' => 'updated_at', 'direction' => 'DESC'], 'ORDER BY t.updatedAt DESC, t.id DESC', true],
+    'invalid sort falls back to default' => [['sort' => 't.id; DROP TABLE transaction'], 'ORDER BY t.id DESC', false],
+    'invalid direction falls back to ascending' => [['sort' => 'status', 'direction' => 'sideways'], 'ORDER BY t.status ASC, t.id ASC', true],
+]);

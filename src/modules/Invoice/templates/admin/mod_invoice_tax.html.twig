@@ -36,28 +36,29 @@
                     </ul>
                 </div>
                 <div class="tab-content border-top">
-                    <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
+                    <div class="tab-pane fade show active" id="tab-index" role="tabpanel" data-list-ns="">
                         <div class="card-body border-bottom py-3">
                             <div class="d-flex justify-content-end">
                                 {{ new_tax_rule_action|raw }}
                             </div>
                         </div>
                         <div class="table-responsive">
-                            <table class="table card-table table-vcenter table-striped text-nowrap sortable">
+                            <table class="table card-table table-vcenter table-striped text-nowrap">
                                 <thead>
                                     <tr>
                                         <th class="w-1">
                                             <input class="form-check-input m-0 align-middle batch-delete-master-checkbox" type="checkbox">
                                         </th>
-                                        <th>{{ 'Title'|trans }}</th>
-                                        <th>{{ 'Country'|trans }}</th>
-                                        <th>{{ 'State/Region'|trans }}</th>
-                                        <th>{{ 'Tax Rate'|trans }}</th>
-                                        <th class="w-1 no-sort"></th>
+                                        {{ include('partial_sortable_th.html.twig', { 'label': 'Title'|trans, 'sort_key': 'name', 'url': 'invoice/tax', 'hash': '#tab-index', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                                        {{ include('partial_sortable_th.html.twig', { 'label': 'Country'|trans, 'sort_key': 'country', 'url': 'invoice/tax', 'hash': '#tab-index', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                                        {{ include('partial_sortable_th.html.twig', { 'label': 'State/Region'|trans, 'sort_key': 'state', 'url': 'invoice/tax', 'hash': '#tab-index', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                                        {{ include('partial_sortable_th.html.twig', { 'label': 'Tax Rate'|trans, 'sort_key': 'taxrate', 'url': 'invoice/tax', 'hash': '#tab-index', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                                        <th class="w-1"></th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {% for tax in admin.invoice_tax_get_list({ 'per_page': 100 }).list %}
+                                    {% set taxes = admin.invoice_tax_get_list({ 'per_page': 25, 'page': request.page }|merge(request)) %}
+                                    {% for tax in taxes.list %}
                                     <tr>
                                         <td>
                                             <input class="form-check-input m-0 align-middle batch-delete-checkbox" type="checkbox" data-item-id="{{ tax.id }}">
@@ -103,8 +104,9 @@
                             </table>
                         </div>
 
-                        <div class="card-footer d-flex align-items-center">
+                        <div class="card-footer d-flex align-items-center justify-content-between">
                             {% include "partial_batch_delete.html.twig" with { 'action': 'invoice/batch_delete_tax' } %}
+                            {{ include('partial_pagination.html.twig', { 'list': taxes, 'url': 'invoice/tax', 'hash': '#tab-index' }) }}
                         </div>
                     </div>
 

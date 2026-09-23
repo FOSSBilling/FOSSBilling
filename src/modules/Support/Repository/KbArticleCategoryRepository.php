@@ -15,14 +15,14 @@ use Box\Mod\Support\Entity\KbArticleCategory;
 use Box\Mod\Support\KbSearch;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
+use FOSSBilling\SortOptions;
 
 class KbArticleCategoryRepository extends EntityRepository
 {
     public function getSearchQueryBuilder(array $data): QueryBuilder
     {
         $qb = $this->createQueryBuilder('c')
-            ->distinct()
-            ->orderBy('c.title', 'ASC');
+            ->distinct();
 
         // Use a WITH condition on the JOIN so the status filter does not turn the
         // LEFT JOIN into an implicit INNER JOIN. Categories with no active articles
@@ -47,6 +47,22 @@ class KbArticleCategoryRepository extends EntityRepository
                 ))
                     ->setParameter('searchTerm' . $index, '%' . $term . '%');
             }
+        }
+
+        $sort = SortOptions::fromArray($data, [
+            'id' => 'c.id',
+            'title' => 'c.title',
+            'slug' => 'c.slug',
+            'created_at' => 'c.createdAt',
+            'updated_at' => 'c.updatedAt',
+        ]);
+        if ($sort->isSorted()) {
+            $qb->orderBy($sort->expression, $sort->direction);
+            if ($sort->expression !== 'c.id') {
+                $qb->addOrderBy('c.id', $sort->direction);
+            }
+        } else {
+            $qb->orderBy('c.title', 'ASC');
         }
 
         return $qb;

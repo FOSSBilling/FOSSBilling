@@ -1247,6 +1247,27 @@ test('getSearchQuery returns correct query and params', function (array $data, s
     expect(array_diff_key($result[1], $expectedParams))->toBe([]);
 })->with('searchFilters');
 
+test('getSearchQuery applies allowlisted sort', function (): void {
+    $di = container();
+
+    $service = new Service();
+    $service->setDi($di);
+
+    [$query] = $service->getSearchQuery(['sort' => 'name', 'direction' => 'desc']);
+    expect($query)->toContain('ORDER BY name DESC, id DESC');
+
+    [$pkQuery] = $service->getSearchQuery(['sort' => 'id', 'direction' => 'desc']);
+    expect($pkQuery)->toContain('ORDER BY id DESC');
+    expect($pkQuery)->not->toContain('id DESC, id DESC');
+
+    [$defaultQuery] = $service->getSearchQuery([]);
+    expect($defaultQuery)->toContain('ORDER BY id ASC');
+
+    [$invalidQuery] = $service->getSearchQuery(['sort' => 'pass', 'direction' => 'desc']);
+    expect($invalidQuery)->toContain('ORDER BY id ASC');
+    expect($invalidQuery)->not->toContain('pass DESC');
+});
+
 test('getCronAdmin returns existing cron admin', function (): void {
     $adminModel = \Tests\Helpers\admin();
 
@@ -2200,6 +2221,26 @@ test('getActivityAdminHistorySearchQuery returns correct query and params', func
     expect(str_contains((string) $result[0], $expectedStr))->toBeTrue($result[0]);
     expect(array_diff_key($result[1], $expectedParams))->toBe([]);
 })->with('ActivityAdminHistorySearchFilters');
+
+test('getActivityAdminHistorySearchQuery applies allowlisted sort', function (): void {
+    $di = container();
+
+    $service = new Service();
+    $service->setDi($di);
+
+    [$query] = $service->getActivityAdminHistorySearchQuery(['sort' => 'created_at', 'direction' => 'desc']);
+    expect($query)->toContain('ORDER BY m.created_at DESC, m.id DESC');
+
+    [$pkQuery] = $service->getActivityAdminHistorySearchQuery(['sort' => 'id', 'direction' => 'desc']);
+    expect($pkQuery)->toContain('ORDER BY m.id DESC');
+    expect($pkQuery)->not->toContain('m.id DESC, m.id DESC');
+
+    [$defaultQuery] = $service->getActivityAdminHistorySearchQuery([]);
+    expect($defaultQuery)->toContain('ORDER BY m.id DESC');
+
+    [$invalidQuery] = $service->getActivityAdminHistorySearchQuery(['sort' => 'admin_id']);
+    expect($invalidQuery)->toContain('ORDER BY m.id DESC');
+});
 
 test('toActivityAdminHistoryRowApiArray returns paginated history data without additional lookups', function (): void {
     $service = new Service();

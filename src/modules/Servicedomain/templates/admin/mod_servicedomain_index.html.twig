@@ -47,7 +47,7 @@
                     </ul>
                 </div>
                 <div class="tab-content border-top">
-                    <div class="tab-pane fade show active" id="tab-tlds" role="tabpanel">
+                    <div class="tab-pane fade show active" id="tab-tlds" role="tabpanel" data-list-ns="">
                         <div class="card-body border-bottom py-3">
                             <div class="d-flex justify-content-end">
                                 {{ new_tld_action|raw }}
@@ -58,21 +58,22 @@
                             <p class="text-muted">{{ 'Set domain pricing, control allowed operations, and assign a registrar for each top level domain.'|trans }}</p>
                         </div>
                         <div class="table-responsive">
-                            <table class="table card-table table-vcenter table-striped text-nowrap sortable">
+                            <table class="table card-table table-vcenter table-striped text-nowrap">
                                 <thead>
                                     <tr>
-                                        <th>{{ 'TLD'|trans }}</th>
-                                        <th>{{ 'Registration'|trans }}</th>
-                                        <th>{{ 'Renew'|trans }}</th>
-                                        <th>{{ 'Transfer'|trans }}</th>
+                                        {{ include('partial_sortable_th.html.twig', { 'label': 'TLD'|trans, 'sort_key': 'tld', 'url': 'servicedomain', 'hash': '#tab-tlds', 'default_sort': 'tld', 'default_direction': 'ASC' }) }}
+                                        {{ include('partial_sortable_th.html.twig', { 'label': 'Registration'|trans, 'sort_key': 'price_registration', 'url': 'servicedomain', 'hash': '#tab-tlds', 'default_sort': 'tld', 'default_direction': 'ASC' }) }}
+                                        {{ include('partial_sortable_th.html.twig', { 'label': 'Renew'|trans, 'sort_key': 'price_renew', 'url': 'servicedomain', 'hash': '#tab-tlds', 'default_sort': 'tld', 'default_direction': 'ASC' }) }}
+                                        {{ include('partial_sortable_th.html.twig', { 'label': 'Transfer'|trans, 'sort_key': 'price_transfer', 'url': 'servicedomain', 'hash': '#tab-tlds', 'default_sort': 'tld', 'default_direction': 'ASC' }) }}
                                         <th>{{ 'Operations'|trans }}</th>
-                                        <th>{{ 'Registrar'|trans }}</th>
-                                        <th class="w-1 no-sort"></th>
+                                        {{ include('partial_sortable_th.html.twig', { 'label': 'Registrar'|trans, 'sort_key': 'registrar', 'url': 'servicedomain', 'hash': '#tab-tlds', 'default_sort': 'tld', 'default_direction': 'ASC' }) }}
+                                        <th class="w-1"></th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {% set currency = guest.currency_get %}
-                                    {% for tld in admin.servicedomain_tld_get_list({ 'per_page': 99 }).list %}
+                                    {% set tlds = admin.servicedomain_tld_get_list({ 'per_page': 25, 'page': request.page }|merge(request)) %}
+                                    {% for tld in tlds.list %}
                                     <tr>
                                         <td>
                                             <a href='{{ "servicedomain/id/#{tld.id}"|url }}'>{{ tld.tld }}</a>
@@ -115,9 +116,12 @@
                                 </tbody>
                             </table>
                         </div>
+                        <div class="card-footer d-flex align-items-center">
+                            {{ include('partial_pagination.html.twig', { 'list': tlds, 'url': 'servicedomain', 'hash': '#tab-tlds', 'split_footer_controls': true }) }}
+                        </div>
                     </div>
 
-                    <div class="tab-pane fade" id="tab-registrars" role="tabpanel">
+                    <div class="tab-pane fade" id="tab-registrars" role="tabpanel" data-list-ns="registrar">
                         <div class="card-body border-bottom py-3">
                             <div class="d-flex justify-content-end">
                                 {{ new_registrar_action|raw }}
@@ -131,12 +135,15 @@
                             <table class="table card-table table-vcenter table-striped text-nowrap">
                                 <thead>
                                     <tr>
-                                        <th>{{ 'Title'|trans }}</th>
+                                        {{ include('partial_sortable_th.html.twig', { 'label': 'Title'|trans, 'sort_key': 'title', 'url': 'servicedomain', 'hash': '#tab-registrars', 'sort_param': 'registrar_sort', 'direction_param': 'registrar_direction', 'page_param': 'registrar_page', 'default_sort': 'title', 'default_direction': 'ASC' }) }}
                                         <th class="w-1"></th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {% for registrar in admin.servicedomain_registrar_get_list.list %}
+                                    {% set registrarPage = request.registrar_page matches '/^\\d+$/' ? request.registrar_page : 1 %}
+                                    {% set registrarPerPage = request.registrar_per_page matches '/^\\d+$/' ? request.registrar_per_page : 25 %}
+                                    {% set registrars = admin.servicedomain_registrar_get_list(request|merge({ 'page': registrarPage, 'per_page': registrarPerPage, 'sort': request.registrar_sort|default(null), 'direction': request.registrar_direction|default('ASC') })) %}
+                                    {% for registrar in registrars.list %}
                                     <tr>
                                         <td>
                                             <a href='{{ "servicedomain/registrar/#{registrar.id}"|url }}'>{{ registrar.title }}</a>
@@ -167,6 +174,9 @@
                                     {% endfor %}
                                 </tbody>
                             </table>
+                        </div>
+                        <div class="card-footer d-flex align-items-center">
+                            {{ include('partial_pagination.html.twig', { 'list': registrars, 'url': 'servicedomain', 'hash': '#tab-registrars', 'page_param': 'registrar_page', 'per_page_param': 'registrar_per_page', 'split_footer_controls': true }) }}
                         </div>
                     </div>
 
