@@ -42,3 +42,30 @@ test('entity definitions hash covers the real entity tree deterministically', fu
     expect($first)->toBe(EntityManagerFactory::entityDefinitionsHash())
         ->and($first)->toMatch('/^[0-9a-f]{32}$/');
 });
+
+test('metadata cache namespace flips on content changes that preserve size and mtime', function (): void {
+    // getCacheNamespaceSeed() keys on mtime and size, so a same-size edit deployed without a
+    // mtime bump would keep the old namespace and let Doctrine serve stale mappings to the
+    // ambient schema sync. The mixed-in content hash must flip regardless.
+    $root = Path::join(sys_get_temp_dir(), 'fossbilling-namespace-' . bin2hex(random_bytes(8)));
+    $dir = Path::join($root, 'Entity');
+
+    $filesystem = new Filesystem();
+    $filesystem->mkdir($dir);
+    $file = Path::join($dir, 'Invoice.php');
+
+    try {
+        $filesystem->dumpFile($file, "<?php\n// aaaa\n");
+        $mtime = filemtime($file);
+        $before = EntityManagerFactory::metadataCacheNamespace([$dir]);
+
+        $filesystem->dumpFile($file, "<?php\n// bbbb\n");
+        touch($file, $mtime);
+
+        expect(filesize($file))->toBe(14)
+            ->and(filemtime($file))->toBe($mtime)
+            ->and(EntityManagerFactory::metadataCacheNamespace([$dir]))->not->toBe($before);
+    } finally {
+        $filesystem->remove($root);
+    }
+});

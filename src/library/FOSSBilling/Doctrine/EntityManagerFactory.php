@@ -85,7 +85,13 @@ class EntityManagerFactory
      */
     public static function metadataCacheNamespace(?array $moduleEntityPaths = null): string
     {
-        return CacheFactory::NAMESPACE_DOCTRINE . '_' . hash('xxh128', self::getCacheNamespaceSeed($moduleEntityPaths ?? self::moduleEntityPaths()));
+        $moduleEntityPaths ??= self::moduleEntityPaths();
+
+        // Seed covers paths/mtimes/sizes, content hash covers same-size edits that leave mtime
+        // untouched (coarse-granularity or mtime-preserving deploys): without it Doctrine could
+        // serve stale mappings to the ambient schema sync, which would then record a hash the
+        // live schema never actually matched.
+        return CacheFactory::NAMESPACE_DOCTRINE . '_' . hash('xxh128', self::getCacheNamespaceSeed($moduleEntityPaths) . '|' . self::entityDefinitionsHash($moduleEntityPaths));
     }
 
     /**
