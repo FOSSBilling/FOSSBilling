@@ -194,14 +194,45 @@ globalThis.FOSSBilling = Object.assign(globalThis.FOSSBilling || {}, {
    const hashTabId = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : '';
    showTabById(hashTabId);
 
-   tabTriggers.forEach((tabTrigger) => {
-     tabTrigger.addEventListener('shown.bs.tab', function() {
-       const targetSelector = getTabTargetSelector(this);
-       if (targetSelector) {
-         syncTabUrl(targetSelector.slice(1));
-       }
-     });
-   });
+    tabTriggers.forEach((tabTrigger) => {
+      tabTrigger.addEventListener('shown.bs.tab', function() {
+        const targetSelector = getTabTargetSelector(this);
+        if (targetSelector) {
+          syncTabUrl(targetSelector.slice(1));
+        }
+      });
+
+      // Re-clicking the active tab resets its list (sort/page params back to
+      // defaults). Only list panes opt in via data-list-ns; anything else
+      // keeps the default no-op. Reloads, like the sort links themselves.
+      tabTrigger.addEventListener('click', function(event) {
+        const targetSelector = getTabTargetSelector(this);
+        if (!targetSelector) {
+          return;
+        }
+
+        const pane = document.getElementById(targetSelector.slice(1));
+        if (!pane || !pane.classList.contains('active')) {
+          return;
+        }
+
+        const namespace = pane.getAttribute('data-list-ns');
+        if (namespace === null) {
+          return;
+        }
+
+        const url = new URL(window.location.href);
+        const pruned = pruneListParamsForTab(url.search, null, [namespace]);
+        if (pruned === url.search && url.hash === targetSelector) {
+          return;
+        }
+
+        event.preventDefault();
+        url.search = pruned;
+        url.hash = targetSelector;
+        window.location.assign(url);
+      });
+    });
 
    window.addEventListener('hashchange', () => {
      const nextTabId = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : '';

@@ -52,4 +52,11 @@ describe('pruneListParamsForTab', () => {
       ''
     );
   });
+
+  test('resets one tab while keeping other tabs’ keys (re-click active tab)', () => {
+    assert.equal(
+      pruneListParamsForTab('?sort=tld&page=2&registrar_sort=title&search=x', null, ['']),
+      '?registrar_sort=title&search=x'
+    );
+  });
 });
