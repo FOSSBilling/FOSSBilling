@@ -50,19 +50,19 @@
                             </div>
                         </div>
                         <div class="table-responsive">
-                            <table class="table card-table table-vcenter table-striped text-nowrap sortable">
+                            <table class="table card-table table-vcenter table-striped text-nowrap">
                                 <thead>
                                     <tr>
-                                        <th>{{ '#'|trans }}</th>
-                                        <th>{{ 'Title'|trans }}</th>
-                                        <th>{{ 'IP'|trans }}</th>
+                                        {{ include('partial_sortable_th.html.twig', { 'label': '#'|trans, 'sort_key': 'id', 'url': 'servicehosting', 'hash': '#tab-servers' }) }}
+                                        {{ include('partial_sortable_th.html.twig', { 'label': 'Title'|trans, 'sort_key': 'name', 'url': 'servicehosting', 'hash': '#tab-servers' }) }}
+                                        {{ include('partial_sortable_th.html.twig', { 'label': 'IP'|trans, 'sort_key': 'ip', 'url': 'servicehosting', 'hash': '#tab-servers' }) }}
                                         <th>{{ 'Server Manager'|trans }}</th>
                                         <th>{{ 'Active'|trans }}</th>
-                                        <th class="w-1 no-sort"></th>
+                                        <th class="w-1"></th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {% set servers = admin.servicehosting_server_get_list({ 'per_page': 100 }) %}
+                                    {% set servers = admin.servicehosting_server_get_list({ 'per_page': 25, 'page': request.page }|merge(request)) %}
                                     {% for server in servers.list %}
                                     <tr>
                                         <td>{{ server.id }}</td>
@@ -105,6 +105,9 @@
                                 </tbody>
                             </table>
                         </div>
+                        <div class="card-footer d-flex align-items-center">
+                            {{ include('partial_pagination.html.twig', { 'list': servers, 'url': 'servicehosting', 'hash': '#tab-servers', 'split_footer_controls': true }) }}
+                        </div>
                     </div>
 
                     <div class="tab-pane fade" id="tab-plans" role="tabpanel">
@@ -114,19 +117,21 @@
                             </div>
                         </div>
                         <div class="table-responsive">
-                            <table class="table card-table table-vcenter table-striped text-nowrap sortable">
+                            <table class="table card-table table-vcenter table-striped text-nowrap">
                                 <thead>
                                     <tr>
-                                        <th>{{ '#'|trans }}</th>
-                                        <th>{{ 'Title'|trans }}</th>
+                                        {{ include('partial_sortable_th.html.twig', { 'label': '#'|trans, 'sort_key': 'id', 'url': 'servicehosting', 'hash': '#tab-plans', 'sort_param': 'plan_sort', 'direction_param': 'plan_direction', 'page_param': 'plan_page' }) }}
+                                        {{ include('partial_sortable_th.html.twig', { 'label': 'Title'|trans, 'sort_key': 'name', 'url': 'servicehosting', 'hash': '#tab-plans', 'sort_param': 'plan_sort', 'direction_param': 'plan_direction', 'page_param': 'plan_page' }) }}
                                         <th>{{ 'Addon Domains'|trans }}</th>
                                         <th>{{ 'Disk Quota'|trans }}</th>
                                         <th>{{ 'Bandwidth'|trans }}</th>
-                                        <th class="w-1 no-sort"></th>
+                                        <th class="w-1"></th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {% set hps = admin.servicehosting_hp_get_list({ 'per_page': 100 }) %}
+                                    {% set planPage = request.plan_page matches '/^\\d+$/' ? request.plan_page : 1 %}
+                                    {% set planPerPage = request.plan_per_page matches '/^\\d+$/' ? request.plan_per_page : 25 %}
+                                    {% set hps = admin.servicehosting_hp_get_list(request|merge({ 'page': planPage, 'per_page': planPerPage, 'sort': request.plan_sort|default(null), 'direction': request.plan_direction|default('ASC') })) %}
                                     {% for hp in hps.list %}
                                     <tr>
                                         <td>{{ hp.id }}</td>
@@ -158,6 +163,9 @@
                                     {% endfor %}
                                 </tbody>
                             </table>
+                        </div>
+                        <div class="card-footer d-flex align-items-center">
+                            {{ include('partial_pagination.html.twig', { 'list': hps, 'url': 'servicehosting', 'hash': '#tab-plans', 'page_param': 'plan_page', 'per_page_param': 'plan_per_page', 'split_footer_controls': true }) }}
                         </div>
                     </div>
                 </div>

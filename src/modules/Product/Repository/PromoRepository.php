@@ -15,6 +15,7 @@ use Box\Mod\Product\Entity\Promo;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
 use FOSSBilling\Doctrine\SqlExpr;
+use FOSSBilling\SortOptions;
 
 class PromoRepository extends EntityRepository
 {
@@ -63,7 +64,23 @@ class PromoRepository extends EntityRepository
                 break;
         }
 
-        $qb->orderBy('p.id', 'ASC');
+        $sort = SortOptions::fromArray($data, [
+            'id' => 'p.id',
+            'code' => 'p.code',
+            'type' => 'p.type',
+            'value' => 'p.value',
+            'active' => 'p.active',
+            'priority' => 'p.priority',
+            'start_at' => 'p.startAt',
+            'end_at' => 'p.endAt',
+            'created_at' => 'p.createdAt',
+            'updated_at' => 'p.updatedAt',
+        ]);
+        if ($sort->isSorted()) {
+            $qb->orderBy($sort->expression, $sort->direction);
+        } else {
+            $qb->orderBy('p.id', 'ASC');
+        }
 
         return $qb;
     }

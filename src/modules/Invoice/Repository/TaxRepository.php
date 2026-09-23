@@ -14,6 +14,7 @@ namespace Box\Mod\Invoice\Repository;
 use Box\Mod\Invoice\Entity\Tax;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
+use FOSSBilling\SortOptions;
 
 class TaxRepository extends EntityRepository
 {
@@ -68,11 +69,28 @@ class TaxRepository extends EntityRepository
     /**
      * Build a QueryBuilder for the tax rule search/listing.
      *
-     * @param array $data filter and pagination parameters (unused for now)
+     * @param array $data filter and pagination parameters (unused for now,
+     *                    except for sort and direction)
      */
     public function getSearchQueryBuilder(array $data = []): QueryBuilder
     {
-        return $this->createQueryBuilder('t')
-            ->orderBy('t.id', 'DESC');
+        $qb = $this->createQueryBuilder('t');
+
+        $sort = SortOptions::fromArray($data, [
+            'id' => 't.id',
+            'name' => 't.name',
+            'country' => 't.country',
+            'state' => 't.state',
+            'taxrate' => 't.taxrate',
+            'created_at' => 't.createdAt',
+            'updated_at' => 't.updatedAt',
+        ]);
+        if ($sort->isSorted()) {
+            $qb->orderBy($sort->expression, $sort->direction);
+        } else {
+            $qb->orderBy('t.id', 'DESC');
+        }
+
+        return $qb;
     }
 }

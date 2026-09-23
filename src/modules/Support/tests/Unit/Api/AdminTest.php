@@ -972,7 +972,7 @@ test('kb article get list', function (): void {
     $repo = Mockery::mock(KbArticleRepository::class);
     $repo->shouldReceive('getSearchQueryBuilder')
         ->once()
-        ->with(['status' => 'status', 'search' => 'search', 'kb_article_category_id' => 'category'])
+        ->with(['status' => 'status', 'search' => 'search', 'kb_article_category_id' => 'category', 'sort' => null, 'direction' => null])
         ->andReturn($qb);
 
     $pager = Mockery::mock(FOSSBilling\Pagination::class);

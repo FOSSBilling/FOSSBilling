@@ -31,6 +31,19 @@ test('gets search query', function (): void {
         ->and($params)->toBe([]);
 });
 
+test('gets search query applies allowlisted sort', function (): void {
+    $service = new Box\Mod\Hook\Service();
+
+    [$sql] = $service->getSearchQuery([]);
+    expect($sql)->toContain('ORDER BY id ASC');
+
+    [$sortedSql] = $service->getSearchQuery(['sort' => 'event', 'direction' => 'desc']);
+    expect($sortedSql)->toContain('ORDER BY meta_value DESC');
+
+    [$invalidSql] = $service->getSearchQuery(['sort' => 'rel_id']);
+    expect($invalidSql)->toContain('ORDER BY id ASC');
+});
+
 test('converts to api array', function (): void {
     $service = new Box\Mod\Hook\Service();
     $arrMock = ['testing' => 'okay'];

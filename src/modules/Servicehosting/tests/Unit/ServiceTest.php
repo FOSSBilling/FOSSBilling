@@ -822,6 +822,36 @@ test('get server search query', function (): void {
     expect($result[1])->toEqual([]);
 });
 
+test('get server search query applies allowlisted sort', function (): void {
+    $service = new Service();
+
+    [$query] = $service->getServersSearchQuery(['sort' => 'name', 'direction' => 'desc']);
+    expect($query)->toContain('ORDER BY name DESC');
+
+    [$defaultQuery] = $service->getServersSearchQuery([]);
+    expect($defaultQuery)->toContain('ORDER BY id ASC');
+
+    [$invalidQuery] = $service->getServersSearchQuery(['sort' => 'password']);
+    expect($invalidQuery)->toContain('ORDER BY id ASC');
+    expect($invalidQuery)->not->toContain('password');
+});
+
+test('get accounts search query applies allowlisted sort', function (): void {
+    $service = new Service();
+
+    [$query, $params] = $service->getAccountsSearchQuery(['server_id' => 3, 'sort' => 'username']);
+    expect($query)->toContain('WHERE service_hosting_server_id = :server_id');
+    expect($params)->toEqual(['server_id' => 3]);
+    expect($query)->toContain('ORDER BY username ASC');
+
+    [$defaultQuery] = $service->getAccountsSearchQuery([]);
+    expect($defaultQuery)->toContain('ORDER BY id ASC');
+
+    [$invalidQuery] = $service->getAccountsSearchQuery(['sort' => 'pass']);
+    expect($invalidQuery)->toContain('ORDER BY id ASC');
+    expect($invalidQuery)->not->toContain('pass');
+});
+
 test('create server', function (): void {
     $service = new Service();
     $newId = 1;
@@ -1000,6 +1030,19 @@ test('get hp search query', function (): void {
     expect($result[0])->toBeString();
     expect($result[1])->toBeArray();
     expect($result[1])->toEqual([]);
+});
+
+test('get hp search query applies allowlisted sort', function (): void {
+    $service = new Service();
+
+    [$query] = $service->getHpSearchQuery(['sort' => 'name', 'direction' => 'desc']);
+    expect($query)->toContain('ORDER BY name DESC');
+
+    [$defaultQuery] = $service->getHpSearchQuery([]);
+    expect($defaultQuery)->toContain('ORDER BY id asc');
+
+    [$invalidQuery] = $service->getHpSearchQuery(['sort' => 'config']);
+    expect($invalidQuery)->toContain('ORDER BY id asc');
 });
 
 test('delete hp', function (): void {

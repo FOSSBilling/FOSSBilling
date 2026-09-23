@@ -14,6 +14,7 @@ namespace Box\Mod\Email\Repository;
 use Box\Mod\Email\Entity\ActivityClientEmail;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
+use FOSSBilling\SortOptions;
 
 class ActivityClientEmailRepository extends EntityRepository
 {
@@ -36,8 +37,7 @@ class ActivityClientEmailRepository extends EntityRepository
         // (derived from attachmentName), and hydrating every PDF for a page of results
         // would pull megabytes into memory just to render a list.
         $qb = $this->createQueryBuilder('e')
-            ->select('partial e.{id, clientId, sender, recipients, subject, contentHtml, contentText, attachmentName, attachmentMime, createdAt, updatedAt}')
-            ->orderBy('e.id', 'DESC');
+            ->select('partial e.{id, clientId, sender, recipients, subject, contentHtml, contentText, attachmentName, attachmentMime, createdAt, updatedAt}');
 
         if (!empty($data['id'])) {
             $qb->andWhere('e.id = :id')
@@ -77,6 +77,20 @@ class ActivityClientEmailRepository extends EntityRepository
         if (!empty($data['date_to'])) {
             $qb->andWhere('e.createdAt <= :date_to')
                 ->setParameter('date_to', new \DateTime($data['date_to'] . ' 23:59:59'));
+        }
+
+        $sort = SortOptions::fromArray($data, [
+            'id' => 'e.id',
+            'sender' => 'e.sender',
+            'recipient' => 'e.recipients',
+            'subject' => 'e.subject',
+            'created_at' => 'e.createdAt',
+            'updated_at' => 'e.updatedAt',
+        ]);
+        if ($sort->isSorted()) {
+            $qb->orderBy($sort->expression, $sort->direction);
+        } else {
+            $qb->orderBy('e.id', 'DESC');
         }
 
         return $qb;

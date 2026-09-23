@@ -61,3 +61,23 @@ test('decrementUsage subtracts normally when it would not go negative', function
 
     expect($reloaded->getUsed())->toBe(7);
 });
+
+test('getSearchQueryBuilder sorts by allowlisted columns', function (array $data, string $expectedOrder, string $expectedDirection): void {
+    $dql = promoEntityManager()->getRepository(Promo::class)->getSearchQueryBuilder($data)->getDQL();
+
+    expect($dql)->toContain("ORDER BY {$expectedOrder} {$expectedDirection}");
+})->with([
+    'id ascending' => [['sort' => 'id'], 'p.id', 'ASC'],
+    'id descending' => [['sort' => 'id', 'direction' => 'DESC'], 'p.id', 'DESC'],
+    'code' => [['sort' => 'code'], 'p.code', 'ASC'],
+    'type' => [['sort' => 'type'], 'p.type', 'ASC'],
+    'value' => [['sort' => 'value', 'direction' => 'desc'], 'p.value', 'DESC'],
+    'active' => [['sort' => 'active'], 'p.active', 'ASC'],
+    'priority' => [['sort' => 'priority'], 'p.priority', 'ASC'],
+    'start_at' => [['sort' => 'start_at'], 'p.startAt', 'ASC'],
+    'end_at' => [['sort' => 'end_at'], 'p.endAt', 'ASC'],
+    'created_at' => [['sort' => 'created_at'], 'p.createdAt', 'ASC'],
+    'updated_at' => [['sort' => 'updated_at'], 'p.updatedAt', 'ASC'],
+    'invalid sort falls back to default' => [['sort' => 'p.id; DROP TABLE promo'], 'p.id', 'ASC'],
+    'invalid direction falls back to ascending' => [['sort' => 'code', 'direction' => 'sideways'], 'p.code', 'ASC'],
+]);

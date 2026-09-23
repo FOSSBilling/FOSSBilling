@@ -24,6 +24,7 @@ use Box\Mod\Product\Entity\Promo;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use FOSSBilling\Doctrine\EntityManagerFactory;
 use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\SortOptions;
 
 class Service implements InjectionAwareInterface
 {
@@ -98,6 +99,12 @@ class Service implements InjectionAwareInterface
             SELECT cart.id FROM cart
             LEFT JOIN currency ON cart.currency_id = currency.id
             LEFT JOIN promo ON cart.promo_id = promo.id';
+
+        $sort = SortOptions::fromArray(is_array($data) ? $data : [], [
+            'id' => 'cart.id',
+        ]);
+        $orderBy = $sort->toOrderByClause() ?? 'cart.id ASC';
+        $sql .= " ORDER BY {$orderBy}";
 
         return [$sql, []];
     }

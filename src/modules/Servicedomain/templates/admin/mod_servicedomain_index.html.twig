@@ -58,16 +58,16 @@
                             <p class="text-muted">{{ 'Set domain pricing, control allowed operations, and assign a registrar for each top level domain.'|trans }}</p>
                         </div>
                         <div class="table-responsive">
-                            <table class="table card-table table-vcenter table-striped text-nowrap sortable">
+                            <table class="table card-table table-vcenter table-striped text-nowrap">
                                 <thead>
                                     <tr>
-                                        <th>{{ 'TLD'|trans }}</th>
-                                        <th>{{ 'Registration'|trans }}</th>
-                                        <th>{{ 'Renew'|trans }}</th>
-                                        <th>{{ 'Transfer'|trans }}</th>
-                                        <th class="no-sort">{{ 'Operations'|trans }}</th>
-                                        <th>{{ 'Registrar'|trans }}</th>
-                                        <th class="w-1 no-sort"></th>
+                                        {{ include('partial_sortable_th.html.twig', { 'label': 'TLD'|trans, 'sort_key': 'tld', 'url': 'servicedomain', 'hash': '#tab-tlds' }) }}
+                                        {{ include('partial_sortable_th.html.twig', { 'label': 'Registration'|trans, 'sort_key': 'price_registration', 'url': 'servicedomain', 'hash': '#tab-tlds' }) }}
+                                        {{ include('partial_sortable_th.html.twig', { 'label': 'Renew'|trans, 'sort_key': 'price_renew', 'url': 'servicedomain', 'hash': '#tab-tlds' }) }}
+                                        {{ include('partial_sortable_th.html.twig', { 'label': 'Transfer'|trans, 'sort_key': 'price_transfer', 'url': 'servicedomain', 'hash': '#tab-tlds' }) }}
+                                        <th>{{ 'Operations'|trans }}</th>
+                                        {{ include('partial_sortable_th.html.twig', { 'label': 'Registrar'|trans, 'sort_key': 'registrar', 'url': 'servicedomain', 'hash': '#tab-tlds' }) }}
+                                        <th class="w-1"></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -132,17 +132,17 @@
                             <p class="text-muted">{{ 'Manage installed registrars and configure the providers available for domain operations.'|trans }}</p>
                         </div>
                         <div class="table-responsive">
-                            <table class="table card-table table-vcenter table-striped text-nowrap sortable">
+                            <table class="table card-table table-vcenter table-striped text-nowrap">
                                 <thead>
                                     <tr>
-                                        <th>{{ 'Title'|trans }}</th>
-                                        <th class="w-1 no-sort"></th>
+                                        {{ include('partial_sortable_th.html.twig', { 'label': 'Title'|trans, 'sort_key': 'title', 'url': 'servicedomain', 'hash': '#tab-registrars', 'sort_param': 'registrar_sort', 'direction_param': 'registrar_direction', 'page_param': 'registrar_page' }) }}
+                                        <th class="w-1"></th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {% set registrarPage = request.registrar_page matches '/^\\d+$/' ? request.registrar_page : 1 %}
                                     {% set registrarPerPage = request.registrar_per_page matches '/^\\d+$/' ? request.registrar_per_page : 25 %}
-                                    {% set registrars = admin.servicedomain_registrar_get_list(request|merge({ 'page': registrarPage, 'per_page': registrarPerPage })) %}
+                                    {% set registrars = admin.servicedomain_registrar_get_list(request|merge({ 'page': registrarPage, 'per_page': registrarPerPage, 'sort': request.registrar_sort|default(null), 'direction': request.registrar_direction|default('ASC') })) %}
                                     {% for registrar in registrars.list %}
                                     <tr>
                                         <td>

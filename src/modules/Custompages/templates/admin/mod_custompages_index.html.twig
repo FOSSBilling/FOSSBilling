@@ -66,9 +66,9 @@
                         <th class="w-1">
                             <input type="checkbox" class="form-check-input m-0 align-middle batch-delete-master-checkbox">
                         </th>
-                        <th class="w-1">{{ 'ID'|trans }}</th>
-                        <th>{{ 'Title'|trans }}</th>
-                        <th>{{ 'Slug'|trans }}</th>
+                        {{ include('partial_sortable_th.html.twig', { 'label': 'ID'|trans, 'sort_key': 'id', 'url': 'custompages', 'th_class': 'w-1' }) }}
+                        {{ include('partial_sortable_th.html.twig', { 'label': 'Title'|trans, 'sort_key': 'title', 'url': 'custompages' }) }}
+                        {{ include('partial_sortable_th.html.twig', { 'label': 'Slug'|trans, 'sort_key': 'slug', 'url': 'custompages' }) }}
                         <th></th>
                     </tr>
                     </thead>

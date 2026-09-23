@@ -83,3 +83,16 @@ test('boolean filters normalize truthy representations to true', function (): vo
         }
     }
 });
+
+test('getSearchQueryBuilder sorts by allowlisted columns', function (array $data, string $expectedOrder, string $expectedDirection): void {
+    $dql = payGatewayEntityManager()->getRepository(PayGateway::class)->getSearchQueryBuilder($data)->getDQL();
+
+    expect($dql)->toContain("ORDER BY {$expectedOrder} {$expectedDirection}");
+})->with([
+    'id ascending' => [['sort' => 'id'], 'pg.id', 'ASC'],
+    'id descending' => [['sort' => 'id', 'direction' => 'DESC'], 'pg.id', 'DESC'],
+    'title' => [['sort' => 'title'], 'pg.name', 'ASC'],
+    'code' => [['sort' => 'code', 'direction' => 'desc'], 'pg.gateway', 'DESC'],
+    'invalid sort falls back to default' => [['sort' => 'pg.gateway; DROP TABLE pay_gateway'], 'pg.gateway', 'ASC'],
+    'invalid direction falls back to ascending' => [['sort' => 'title', 'direction' => 'sideways'], 'pg.name', 'ASC'],
+]);

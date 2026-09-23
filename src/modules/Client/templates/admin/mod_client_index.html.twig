@@ -218,19 +218,19 @@
                     </form>
                 </section>
                 <div class="table-responsive">
-                    <table class="table card-table table-vcenter table-striped text-nowrap sortable">
+                    <table class="table card-table table-vcenter table-striped text-nowrap">
                         <thead>
                             <tr>
                                 {% if can_bulk_delete_clients %}
-                                <th class="w-1 no-sort">
+                                <th class="w-1">
                                     <input class="form-check-input m-0 align-middle batch-delete-master-checkbox" type="checkbox">
                                 </th>
                                 {% endif %}
-                                <th>{{ 'Name'|trans }}</th>
-                                <th>{{ 'Company'|trans }}</th>
-                                <th>{{ 'Status'|trans }}</th>
-                                <th>{{ 'Registration Date'|trans }}</th>
-                                <th class="w-1 no-sort"></th>
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'Name'|trans, 'sort_key': 'first_name', 'url': 'client', 'hash': '#tab-index' }) }}
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'Company'|trans, 'sort_key': 'company', 'url': 'client', 'hash': '#tab-index' }) }}
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'client', 'hash': '#tab-index' }) }}
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'Registration Date'|trans, 'sort_key': 'created_at', 'url': 'client', 'hash': '#tab-index' }) }}
+                                <th class="w-1"></th>
                             </tr>
                         </thead>
 

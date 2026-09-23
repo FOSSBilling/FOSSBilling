@@ -16,6 +16,7 @@ use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Transaction;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
+use FOSSBilling\SortOptions;
 
 class TransactionRepository extends EntityRepository
 {
@@ -52,7 +53,7 @@ class TransactionRepository extends EntityRepository
      *
      * @param array $data optional filters: id, search, invoice_hash, invoice_id,
      *                    gateway_id, client_id, status, currency, type, txn_id,
-     *                    date_from, date_to
+     *                    date_from, date_to, sort, direction
      */
     public function getSearchQueryBuilder(array $data = []): QueryBuilder
     {
@@ -128,7 +129,22 @@ class TransactionRepository extends EntityRepository
                 ->setParameter('ipn', "%$search%");
         }
 
-        $qb->orderBy('t.id', 'DESC');
+        $sort = SortOptions::fromArray($data, [
+            'id' => 't.id',
+            'status' => 't.status',
+            'currency' => 't.currency',
+            'type' => 't.type',
+            'txn_id' => 't.txnId',
+            'amount' => 't.amount',
+            'gateway' => 'pg.name',
+            'created_at' => 't.createdAt',
+            'updated_at' => 't.updatedAt',
+        ]);
+        if ($sort->isSorted()) {
+            $qb->orderBy($sort->expression, $sort->direction);
+        } else {
+            $qb->orderBy('t.id', 'DESC');
+        }
 
         return $qb;
     }

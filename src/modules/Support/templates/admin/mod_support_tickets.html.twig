@@ -220,17 +220,17 @@
                 </form>
             </section>
             <div class="table-responsive">
-            <table class="table card-table table-vcenter table-striped text-nowrap sortable">
+            <table class="table card-table table-vcenter table-striped text-nowrap">
                 <thead>
                     <tr>
-                        <th class="w-1 no-sort">
+                        <th class="w-1">
                             <input class="form-check-input m-0 align-middle batch-delete-master-checkbox" type="checkbox">
                         </th>
                         <th>{{ 'Author'|trans }}</th>
-                        <th>{{ 'Subject'|trans }}</th>
-                        <th>{{ 'Status'|trans }}</th>
+                        {{ include('partial_sortable_th.html.twig', { 'label': 'Subject'|trans, 'sort_key': 'subject', 'url': 'support' }) }}
+                        {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'support' }) }}
                         <th>{{ 'Helpdesk'|trans }}</th>
-                        <th class="w-1 no-sort"></th>
+                        <th class="w-1"></th>
                     </tr>
                 </thead>
                 <tbody>

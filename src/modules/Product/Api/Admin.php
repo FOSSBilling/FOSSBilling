@@ -24,6 +24,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Get paginated list of products.
      *
+     * @optional string $sort - sort column: 'id', 'title', 'slug', 'status', 'type', 'priority', 'created_at' or 'updated_at'
+     * @optional string $direction - sort direction: 'ASC' or 'DESC'
+     *
      * @return array
      */
     public function get_list($data)
@@ -405,6 +408,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Get product promo codes list.
      *
+     * @optional string $sort - sort column: 'id', 'code', 'type', 'value', 'active', 'priority', 'start_at', 'end_at', 'created_at' or 'updated_at'
+     * @optional string $direction - sort direction: 'ASC' or 'DESC'
+     *
      * @return array
      */
     public function promo_get_list($data)
@@ -507,6 +513,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
     /**
      * Get promo redemption history.
+     *
+     * @optional string $sort - sort column: 'id', 'phase', 'status', 'discount_amount', 'committed_at', 'released_at', 'created_at' or 'updated_at'
+     * @optional string $direction - sort direction: 'ASC' or 'DESC'
      *
      * @return array
      *

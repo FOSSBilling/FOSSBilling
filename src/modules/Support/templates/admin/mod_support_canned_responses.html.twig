@@ -98,14 +98,14 @@
                 </form>
             </section>
             <div class="table-responsive">
-                <table class="table card-table table-vcenter table-striped text-nowrap sortable">
+                <table class="table card-table table-vcenter table-striped text-nowrap">
                 <thead>
                     <tr>
-                        <th>{{ 'Title'|trans }}</th>
-                        <th class="text-center">{{ 'Category'|trans }}</th>
-                        <th>{{ 'Created'|trans }}</th>
-                        <th>{{ 'Updated'|trans }}</th>
-                        <th class="w-1 no-sort"></th>
+                        {{ include('partial_sortable_th.html.twig', { 'label': 'Title'|trans, 'sort_key': 'title', 'url': 'support/canned-responses', 'hash': '#tab-index' }) }}
+                        {{ include('partial_sortable_th.html.twig', { 'label': 'Category'|trans, 'sort_key': 'category', 'url': 'support/canned-responses', 'hash': '#tab-index', 'th_class': 'text-center' }) }}
+                        {{ include('partial_sortable_th.html.twig', { 'label': 'Created'|trans, 'sort_key': 'created_at', 'url': 'support/canned-responses', 'hash': '#tab-index' }) }}
+                        {{ include('partial_sortable_th.html.twig', { 'label': 'Updated'|trans, 'sort_key': 'updated_at', 'url': 'support/canned-responses', 'hash': '#tab-index' }) }}
+                        <th class="w-1"></th>
                     </tr>
                 </thead>
                 <tbody>

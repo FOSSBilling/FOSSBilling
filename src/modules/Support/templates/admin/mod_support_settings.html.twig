@@ -153,15 +153,16 @@
                         <table class="table card-table table-vcenter table-striped text-nowrap">
                             <thead>
                             <tr>
-                                <th class="w-1">#</th>
-                                <th>{{ 'Title'|trans }}</th>
-                                <th>{{ 'Email'|trans }}</th>
+                                {{ include('partial_sortable_th.html.twig', { 'label': '#'|trans, 'sort_key': 'id', 'url': 'extension/settings/support', 'hash': '#tab-helpdesks', 'th_class': 'w-1' }) }}
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'Title'|trans, 'sort_key': 'name', 'url': 'extension/settings/support', 'hash': '#tab-helpdesks' }) }}
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'Email'|trans, 'sort_key': 'email', 'url': 'extension/settings/support', 'hash': '#tab-helpdesks' }) }}
                                 <th>{{ 'Close Tickets After'|trans }}</th>
                                 <th class="w-1"></th>
                             </tr>
                             </thead>
                             <tbody>
-                            {% for helpdesk in admin.support_helpdesk_get_list({ 'per_page': 50, 'page': request.page }|merge(request)).list %}
+                            {% set helpdesks = admin.support_helpdesk_get_list({ 'per_page': 25, 'page': request.page }|merge(request)) %}
+                            {% for helpdesk in helpdesks.list %}
                                 <tr>
                                     <td>{{ loop.index }}</td>
                                     <td>
@@ -191,6 +192,9 @@
                             {% endfor %}
                             </tbody>
                         </table>
+                    </div>
+                    <div class="card-footer d-flex align-items-center">
+                        {{ include('partial_pagination.html.twig', { 'list': helpdesks, 'url': 'extension/settings/support', 'hash': '#tab-helpdesks', 'split_footer_controls': true }) }}
                     </div>
                 </div>
             </div>

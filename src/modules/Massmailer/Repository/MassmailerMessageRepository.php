@@ -14,6 +14,7 @@ namespace Box\Mod\Massmailer\Repository;
 
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
+use FOSSBilling\SortOptions;
 
 class MassmailerMessageRepository extends EntityRepository
 {
@@ -39,7 +40,21 @@ class MassmailerMessageRepository extends EntityRepository
                 ->setParameter('search', '%' . $search . '%');
         }
 
-        $qb->orderBy('m.createdAt', 'DESC');
+        $sort = SortOptions::fromArray($data, [
+            'id' => 'm.id',
+            'subject' => 'm.subject',
+            'status' => 'm.status',
+            'from_email' => 'm.fromEmail',
+            'from_name' => 'm.fromName',
+            'sent_at' => 'm.sentAt',
+            'created_at' => 'm.createdAt',
+            'updated_at' => 'm.updatedAt',
+        ]);
+        if ($sort->isSorted()) {
+            $qb->orderBy($sort->expression, $sort->direction);
+        } else {
+            $qb->orderBy('m.createdAt', 'DESC');
+        }
 
         return $qb;
     }

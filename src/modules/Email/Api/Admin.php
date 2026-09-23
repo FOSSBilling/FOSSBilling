@@ -24,6 +24,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Get list of sent emails.
      *
+     * @optional string $sort - sort column: 'id', 'sender', 'recipient', 'subject', 'created_at' or 'updated_at'
+     * @optional string $direction - sort direction: 'ASC' or 'DESC'
+     *
      * @return array
      */
     public function email_get_list($data)
@@ -125,6 +128,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
     /**
      * Return list of email templates.
+     *
+     * @optional string $sort - sort column: 'code', 'category', 'subject', 'enabled' or 'id'
+     * @optional string $direction - sort direction: 'ASC' or 'DESC'
      *
      * @return array
      */
@@ -487,6 +493,12 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         return true;
     }
 
+    /**
+     * Get paginated email queue list.
+     *
+     * @optional string $sort - sort column: 'subject', 'recipient', 'sender', 'to_name', 'status', 'priority', 'tries', 'created_at', 'updated_at' or 'id'
+     * @optional string $direction - sort direction: 'ASC' or 'DESC'
+     */
     public function get_queue(array $data)
     {
         $this->checkPermissions('email', 'view_email_history');

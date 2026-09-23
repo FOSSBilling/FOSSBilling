@@ -1786,6 +1786,40 @@ test('getSearchQuery keeps client scope when action required filter is used', fu
     expect($bindings['client_id'])->toBe(42);
 });
 
+test('getSearchQuery applies allowlisted sort', function (): void {
+    $di = container();
+
+    $svc = new Service();
+    $svc->setDi($di);
+
+    [$query] = $svc->getSearchQuery(['sort' => 'title', 'direction' => 'desc']);
+    expect($query)->toContain('ORDER BY co.title DESC');
+
+    [$defaultQuery] = $svc->getSearchQuery([]);
+    expect($defaultQuery)->toContain('ORDER BY co.id DESC');
+
+    [$invalidQuery] = $svc->getSearchQuery(['sort' => 'config; DROP TABLE client_order', 'direction' => 'desc']);
+    expect($invalidQuery)->toContain('ORDER BY co.id DESC');
+    expect($invalidQuery)->not->toContain('DROP TABLE');
+});
+
+test('getOrderStatusSearchQuery applies allowlisted sort', function (): void {
+    $di = container();
+
+    $svc = new Service();
+    $svc->setDi($di);
+
+    [$query] = $svc->getOrderStatusSearchQuery(['sort' => 'created_at']);
+    expect($query)->toContain('ORDER BY created_at ASC');
+
+    [$defaultQuery] = $svc->getOrderStatusSearchQuery([]);
+    expect($defaultQuery)->toContain('ORDER BY id DESC');
+
+    [$invalidQuery] = $svc->getOrderStatusSearchQuery(['sort' => 'notes; DELETE FROM client_order_status']);
+    expect($invalidQuery)->toContain('ORDER BY id DESC');
+    expect($invalidQuery)->not->toContain('DELETE FROM');
+});
+
 test('createOrder throws when no order currency is set', function (): void {
     $modelClient = createEntity(Box\Mod\Client\Entity\Client::class);
 

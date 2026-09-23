@@ -149,6 +149,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Get a paginated list of servers.
      *
+     * @optional string $sort - sort by one of: id, name, ip, hostname
+     * @optional string $direction - sort direction: ASC or DESC
+     *
      * @return array
      */
     public function server_get_list($data)
@@ -181,6 +184,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * Get a paginated list of hosting accounts, along with the "order" and "client" information.
      *
      * @param $data array Accepts the optional "server_id" property
+     *
+     * @optional string $sort - sort by one of: id, username, sld, tld, ip, created_at
+     * @optional string $direction - sort direction: ASC or DESC
      *
      * @return array
      */
@@ -355,6 +361,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
     /**
      * Get hosting plans paginated list.
+     *
+     * @optional string $sort - sort by one of: id, name
+     * @optional string $direction - sort direction: ASC or DESC
      *
      * @return array
      */

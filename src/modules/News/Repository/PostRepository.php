@@ -14,6 +14,7 @@ namespace Box\Mod\News\Repository;
 use Box\Mod\News\Entity\Post;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
+use FOSSBilling\SortOptions;
 
 class PostRepository extends EntityRepository
 {
@@ -62,7 +63,21 @@ class PostRepository extends EntityRepository
                ->setParameter('section', '%' . $data['section'] . '%');
         }
 
-        $qb->orderBy('p.createdAt', 'DESC');
+        $sort = SortOptions::fromArray($data, [
+            'id' => 'p.id',
+            'title' => 'p.title',
+            'slug' => 'p.slug',
+            'status' => 'p.status',
+            'section' => 'p.section',
+            'created_at' => 'p.createdAt',
+            'updated_at' => 'p.updatedAt',
+            'published_at' => 'p.publishedAt',
+        ]);
+        if ($sort->isSorted()) {
+            $qb->orderBy($sort->expression, $sort->direction);
+        } else {
+            $qb->orderBy('p.createdAt', 'DESC');
+        }
 
         return $qb;
     }

@@ -117,16 +117,16 @@
                         <table class="table card-table table-vcenter table-striped text-nowrap">
                             <thead>
                             <tr>
-                                <th class="w-1">#</th>
-                                <th>{{ 'Name'|trans }}</th>
-                                <th>{{ 'Email'|trans }}</th>
+                                {{ include('partial_sortable_th.html.twig', { 'label': '#'|trans, 'sort_key': 'id', 'url': 'extension/settings/staff', 'hash': '#tab-staff', 'th_class': 'w-1' }) }}
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'Name'|trans, 'sort_key': 'name', 'url': 'extension/settings/staff', 'hash': '#tab-staff' }) }}
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'Email'|trans, 'sort_key': 'email', 'url': 'extension/settings/staff', 'hash': '#tab-staff' }) }}
                                 <th>{{ 'Groups'|trans }}</th>
-                                <th>{{ 'Status'|trans }}</th>
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'extension/settings/staff', 'hash': '#tab-staff' }) }}
                                 <th class="w-1"></th>
                             </tr>
                             </thead>
                             <tbody>
-                            {% set members = admin.staff_get_list({ 'per_page': 100, 'page': request.page, 'no_cron': '1' }|merge(request)) %}
+                            {% set members = admin.staff_get_list({ 'per_page': 25, 'page': request.page, 'no_cron': '1' }|merge(request)) %}
                             {% for i, member in members.list %}
                                 <tr>
                                     <td>{{ member.id }}</td>
@@ -168,6 +168,9 @@
                             {% endfor %}
                             </tbody>
                         </table>
+                    </div>
+                    <div class="card-footer d-flex align-items-center">
+                        {{ include('partial_pagination.html.twig', { 'list': members, 'url': 'extension/settings/staff', 'hash': '#tab-staff', 'split_footer_controls': true }) }}
                     </div>
                 </div>
 

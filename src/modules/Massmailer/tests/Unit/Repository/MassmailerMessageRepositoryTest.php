@@ -61,3 +61,25 @@ test('get search query builder groups search clause when status filter is presen
     ]);
     expect($parameters)->toBe(['status' => 'draft', 'search' => '%newsletter%']);
 });
+
+test('sorts massmailer message search query', function (array $data, string $expectedOrder, string $expectedDirection): void {
+    $queryBuilder = Mockery::mock(QueryBuilder::class);
+    $queryBuilder->shouldReceive('orderBy')->with($expectedOrder, $expectedDirection)->once()->andReturn($queryBuilder);
+
+    $repository = Mockery::mock(MassmailerMessageRepository::class)->makePartial();
+    $repository->shouldReceive('createQueryBuilder')->with('m')->once()->andReturn($queryBuilder);
+
+    expect($repository->getSearchQueryBuilder($data))->toBe($queryBuilder);
+})->with([
+    'subject ascending' => [['sort' => 'subject'], 'm.subject', 'ASC'],
+    'subject descending' => [['sort' => 'subject', 'direction' => 'DESC'], 'm.subject', 'DESC'],
+    'status' => [['sort' => 'status', 'direction' => 'desc'], 'm.status', 'DESC'],
+    'from email' => [['sort' => 'from_email'], 'm.fromEmail', 'ASC'],
+    'from name' => [['sort' => 'from_name'], 'm.fromName', 'ASC'],
+    'sent at' => [['sort' => 'sent_at'], 'm.sentAt', 'ASC'],
+    'created at' => [['sort' => 'created_at'], 'm.createdAt', 'ASC'],
+    'updated at' => [['sort' => 'updated_at', 'direction' => 'DESC'], 'm.updatedAt', 'DESC'],
+    'id' => [['sort' => 'id'], 'm.id', 'ASC'],
+    'invalid sort falls back to default' => [['sort' => 'm.subject; DROP TABLE mod_massmailer'], 'm.createdAt', 'DESC'],
+    'invalid direction falls back to ascending' => [['sort' => 'subject', 'direction' => 'sideways'], 'm.subject', 'ASC'],
+]);

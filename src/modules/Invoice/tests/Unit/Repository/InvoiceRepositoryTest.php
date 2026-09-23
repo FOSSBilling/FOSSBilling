@@ -368,3 +368,21 @@ test('lockAndGetStatus rejects being called outside of a transaction', function 
     expect(fn () => $entityManager->getRepository(Invoice::class)->lockAndGetStatus(1))
         ->toThrow(FOSSBilling\Exception::class, 'Invoice status cannot be locked outside of a transaction.');
 });
+
+test('getSearchQueryBuilder sorts by allowlisted columns', function (array $data, string $expectedOrder, string $expectedDirection): void {
+    $dql = invoiceSearchDql($data);
+
+    expect($dql)->toContain("ORDER BY {$expectedOrder} {$expectedDirection}");
+})->with([
+    'id ascending' => [['sort' => 'id'], 'i.id', 'ASC'],
+    'id descending' => [['sort' => 'id', 'direction' => 'DESC'], 'i.id', 'DESC'],
+    'nr' => [['sort' => 'nr'], 'i.nr', 'ASC'],
+    'status' => [['sort' => 'status', 'direction' => 'desc'], 'i.status', 'DESC'],
+    'currency' => [['sort' => 'currency'], 'i.currency', 'ASC'],
+    'created_at' => [['sort' => 'created_at'], 'i.createdAt', 'ASC'],
+    'updated_at' => [['sort' => 'updated_at', 'direction' => 'DESC'], 'i.updatedAt', 'DESC'],
+    'paid_at' => [['sort' => 'paid_at'], 'i.paidAt', 'ASC'],
+    'due_at' => [['sort' => 'due_at'], 'i.dueAt', 'ASC'],
+    'invalid sort falls back to default' => [['sort' => 'i.id; DROP TABLE invoice'], 'i.id', 'DESC'],
+    'invalid direction falls back to ascending' => [['sort' => 'status', 'direction' => 'sideways'], 'i.status', 'ASC'],
+]);

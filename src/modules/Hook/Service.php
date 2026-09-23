@@ -16,6 +16,7 @@ use Box\Mod\Extension\Entity\ExtensionMeta;
 use Box\Mod\Extension\Repository\ExtensionRepository;
 use FOSSBilling\Doctrine\NamedLock;
 use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\SortOptions;
 
 class Service implements InjectionAwareInterface
 {
@@ -62,6 +63,15 @@ class Service implements InjectionAwareInterface
             AND rel_type = 'mod'
             AND meta_key = 'listener'
         ";
+
+        $sort = SortOptions::fromArray(is_array($filter) ? $filter : [], [
+            'id' => 'id',
+            'event' => 'meta_value',
+            'created_at' => 'created_at',
+            'updated_at' => 'updated_at',
+        ]);
+        $orderBy = $sort->toOrderByClause() ?? 'id ASC';
+        $q .= " ORDER BY {$orderBy}";
 
         return [$q, []];
     }

@@ -92,12 +92,12 @@
         <table class="table card-table table-vcenter table-striped text-nowrap">
             <thead>
                 <tr>
-                    <th>{{ '#'|trans }}</th>
-                    <th class="w-1 no-sort"></th>
+                    {{ include('partial_sortable_th.html.twig', { 'label': '#'|trans, 'sort_key': 'id', 'url': 'client/logins' }) }}
+                    <th class="w-1"></th>
                     <th>{{ 'User'|trans }}</th>
-                    <th>{{ 'IP'|trans }}</th>
+                    {{ include('partial_sortable_th.html.twig', { 'label': 'IP'|trans, 'sort_key': 'ip', 'url': 'client/logins' }) }}
                     <th>{{ 'Country'|trans }}</th>
-                    <th>{{ 'Date'|trans }}</th>
+                    {{ include('partial_sortable_th.html.twig', { 'label': 'Date'|trans, 'sort_key': 'created_at', 'url': 'client/logins' }) }}
                 </tr>
             </thead>
 

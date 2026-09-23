@@ -1464,7 +1464,8 @@ test('gets tld search query', function (array $data, array $expectedConditions):
         $query->shouldReceive('andWhere')->once()->with($condition)->andReturnSelf();
         $query->shouldReceive('setParameter')->once()->with($parameter, $value)->andReturnSelf();
     }
-    $query->shouldReceive('orderBy')->once()->with('t.id', 'ASC')->andReturnSelf();
+    $query->shouldReceive('orderBy')->once()->with('t.tld', 'ASC')->andReturnSelf();
+    $query->shouldReceive('addOrderBy')->once()->with('t.id', 'ASC')->andReturnSelf();
 
     $tldRepo = Mockery::mock(TldRepository::class);
     $tldRepo->shouldReceive('createQueryBuilder')->once()->with('t')->andReturn($query);
@@ -1512,6 +1513,54 @@ test('gets tld search query', function (array $data, array $expectedConditions):
         ],
     ],
 ]);
+
+function tldServiceWithMockedQuery(Mockery\MockInterface $query): Service
+{
+    $tldRepo = Mockery::mock(TldRepository::class);
+    $tldRepo->shouldReceive('createQueryBuilder')->once()->with('t')->andReturn($query);
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->once()->with(Tld::class)->andReturn($tldRepo);
+
+    $di = container();
+    $di['em'] = $emMock;
+
+    $service = new Service();
+    $service->setDi($di);
+
+    return $service;
+}
+
+test('sorts tld search query', function (array $data, string $expectedOrder, string $expectedDirection): void {
+    $query = Mockery::mock(QueryBuilder::class);
+    $query->shouldReceive('leftJoin')->never();
+    $query->shouldReceive('orderBy')->once()->with($expectedOrder, $expectedDirection)->andReturnSelf();
+    $query->shouldReceive('addOrderBy')->once()->with('t.id', 'ASC')->andReturnSelf();
+
+    $service = tldServiceWithMockedQuery($query);
+
+    expect($service->tldGetSearchQuery($data))->toBe($query);
+})->with([
+    'tld ascending' => [['sort' => 'tld'], 't.tld', 'ASC'],
+    'tld descending' => [['sort' => 'tld', 'direction' => 'DESC'], 't.tld', 'DESC'],
+    'registration price' => [['sort' => 'price_registration', 'direction' => 'desc'], 't.priceRegistration', 'DESC'],
+    'renewal price' => [['sort' => 'price_renew'], 't.priceRenew', 'ASC'],
+    'transfer price' => [['sort' => 'price_transfer', 'direction' => 'DESC'], 't.priceTransfer', 'DESC'],
+    'id' => [['sort' => 'id'], 't.id', 'ASC'],
+    'invalid sort falls back to default' => [['sort' => 't.tld; DROP TABLE tld'], 't.tld', 'ASC'],
+    'invalid direction falls back to ascending' => [['sort' => 'tld', 'direction' => 'sideways'], 't.tld', 'ASC'],
+]);
+
+test('sorts tld search query by registrar name with a join', function (): void {
+    $query = Mockery::mock(QueryBuilder::class);
+    $query->shouldReceive('leftJoin')->once()->with('t.registrar', 'r')->andReturnSelf();
+    $query->shouldReceive('orderBy')->once()->with('r.name', 'ASC')->andReturnSelf();
+    $query->shouldReceive('addOrderBy')->once()->with('t.id', 'ASC')->andReturnSelf();
+
+    $service = tldServiceWithMockedQuery($query);
+
+    expect($service->tldGetSearchQuery(['sort' => 'registrar']))->toBe($query);
+});
 
 test('finds all active tlds', function (): void {
     $service = new Service();
@@ -1776,6 +1825,7 @@ test('gets registrar search query', function (): void {
     $service = new Service();
     $query = Mockery::mock(QueryBuilder::class);
     $query->shouldReceive('orderBy')->once()->with('tr.name', 'ASC')->andReturnSelf();
+    $query->shouldReceive('addOrderBy')->once()->with('tr.id', 'ASC')->andReturnSelf();
 
     $registrarRepo = Mockery::mock(TldRegistrarRepository::class);
     $registrarRepo->shouldReceive('createQueryBuilder')->once()->with('tr')->andReturn($query);
@@ -1789,6 +1839,29 @@ test('gets registrar search query', function (): void {
 
     expect($service->registrarGetSearchQuery([]))->toBe($query);
 });
+
+test('sorts registrar search query', function (array $data, string $expectedOrder, string $expectedDirection): void {
+    $service = new Service();
+    $query = Mockery::mock(QueryBuilder::class);
+    $query->shouldReceive('orderBy')->once()->with($expectedOrder, $expectedDirection)->andReturnSelf();
+    $query->shouldReceive('addOrderBy')->once()->with('tr.id', 'ASC')->andReturnSelf();
+
+    $registrarRepo = Mockery::mock(TldRegistrarRepository::class);
+    $registrarRepo->shouldReceive('createQueryBuilder')->once()->with('tr')->andReturn($query);
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->once()->with(TldRegistrar::class)->andReturn($registrarRepo);
+
+    $di = container();
+    $di['em'] = $emMock;
+    $service->setDi($di);
+
+    expect($service->registrarGetSearchQuery($data))->toBe($query);
+})->with([
+    'title descending' => [['sort' => 'title', 'direction' => 'DESC'], 'tr.name', 'DESC'],
+    'id' => [['sort' => 'id'], 'tr.id', 'ASC'],
+    'invalid sort falls back to default' => [['sort' => 'name'], 'tr.name', 'ASC'],
+]);
 
 test('gets available registrars', function (): void {
     $service = new Service();

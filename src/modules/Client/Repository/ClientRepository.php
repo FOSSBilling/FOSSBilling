@@ -15,6 +15,7 @@ use Box\Mod\Client\Entity\Client;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
+use FOSSBilling\SortOptions;
 
 class ClientRepository extends EntityRepository
 {
@@ -145,7 +146,23 @@ class ClientRepository extends EntityRepository
             }
         }
 
-        return $qb->orderBy('c.createdAt', 'DESC');
+        $sort = SortOptions::fromArray($data, [
+            'id' => 'c.id',
+            'email' => 'c.email',
+            'first_name' => 'c.firstName',
+            'last_name' => 'c.lastName',
+            'company' => 'c.company',
+            'status' => 'c.status',
+            'created_at' => 'c.createdAt',
+            'updated_at' => 'c.updatedAt',
+        ]);
+        if ($sort->isSorted()) {
+            $qb->orderBy($sort->expression, $sort->direction);
+        } else {
+            $qb->orderBy('c.createdAt', 'DESC');
+        }
+
+        return $qb;
     }
 
     /**

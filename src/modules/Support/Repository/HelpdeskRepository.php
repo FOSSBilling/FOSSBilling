@@ -14,18 +14,31 @@ namespace Box\Mod\Support\Repository;
 use Box\Mod\Support\Entity\Helpdesk;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
+use FOSSBilling\SortOptions;
 
 class HelpdeskRepository extends EntityRepository
 {
     public function getSearchQueryBuilder(array $data): QueryBuilder
     {
-        $qb = $this->createQueryBuilder('h')
-            ->orderBy('h.id', 'DESC');
+        $qb = $this->createQueryBuilder('h');
 
         if (isset($data['search']) && trim((string) $data['search']) !== '') {
             $search = '%' . mb_strtolower(trim((string) $data['search'])) . '%';
             $qb->andWhere('(LOWER(h.name) LIKE :search OR LOWER(h.email) LIKE :search OR LOWER(h.signature) LIKE :search)')
                 ->setParameter('search', $search);
+        }
+
+        $sort = SortOptions::fromArray($data, [
+            'id' => 'h.id',
+            'name' => 'h.name',
+            'email' => 'h.email',
+            'created_at' => 'h.createdAt',
+            'updated_at' => 'h.updatedAt',
+        ]);
+        if ($sort->isSorted()) {
+            $qb->orderBy($sort->expression, $sort->direction);
+        } else {
+            $qb->orderBy('h.id', 'DESC');
         }
 
         return $qb;

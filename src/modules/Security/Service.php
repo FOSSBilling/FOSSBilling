@@ -15,6 +15,7 @@ use FOSSBilling\GeoIP\IncompleteRecord;
 use FOSSBilling\GeoIP\Reader;
 use FOSSBilling\InformationException;
 use FOSSBilling\Interfaces\SecurityCheckInterface;
+use FOSSBilling\SortOptions;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
 
@@ -193,6 +194,38 @@ class Service
             $counters,
             static fn (array $counter): bool => str_contains(strtolower((string) $counter['ip']), $search) || str_contains(strtolower((string) $counter['policy']), $search),
         ));
+    }
+
+    /**
+     * Sort rate limiter counters by an allowlisted key (ip, policy,
+     * retry_after, last_seen). Unknown sort keys keep the default
+     * ip/policy ordering produced by the rate limiter.
+     */
+    public function sortRateLimitCounters(array $counters, array $data): array
+    {
+        $sort = SortOptions::fromArray($data, [
+            'ip' => 'ip',
+            'policy' => 'policy',
+            'retry_after' => 'retry_after',
+            'last_seen' => 'last_seen',
+        ]);
+
+        if (!$sort->isSorted()) {
+            return $counters;
+        }
+
+        $key = $sort->expression;
+        $direction = $sort->direction;
+        usort($counters, static function (array $a, array $b) use ($key, $direction): int {
+            $comparison = ((string) ($a[$key] ?? '')) <=> ((string) ($b[$key] ?? ''));
+            if ($comparison === 0) {
+                $comparison = [$a['ip'] ?? '', $a['policy'] ?? ''] <=> [$b['ip'] ?? '', $b['policy'] ?? ''];
+            }
+
+            return $direction === 'DESC' ? -$comparison : $comparison;
+        });
+
+        return $counters;
     }
 
     public function resetRateLimitIp(string $ip, ?string $policy = null): array

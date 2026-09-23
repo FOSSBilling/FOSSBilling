@@ -139,10 +139,10 @@
                         </th>
                         <th class="w-1"></th>
                         <th>{{ 'Name'|trans }}</th>
-                        <th class="w-1">{{ 'ID'|trans }}</th>
-                        <th>{{ 'Amount'|trans }}</th>
+                        {{ include('partial_sortable_th.html.twig', { 'label': 'ID'|trans, 'sort_key': 'sid', 'url': 'invoice/subscriptions', 'th_class': 'w-1' }) }}
+                        {{ include('partial_sortable_th.html.twig', { 'label': 'Amount'|trans, 'sort_key': 'amount', 'url': 'invoice/subscriptions' }) }}
                         <th>{{ 'Gateway'|trans }}</th>
-                        <th>{{ 'Status'|trans }}</th>
+                        {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'invoice/subscriptions' }) }}
                         <th class="w-1"></th>
                     </tr>
                 </thead>

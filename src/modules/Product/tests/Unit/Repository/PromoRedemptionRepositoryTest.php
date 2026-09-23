@@ -281,3 +281,21 @@ test('find invoice summary selects stored serie and nr columns', function (): vo
 
     expect($repository->findInvoiceSummary(999))->toBeNull();
 });
+
+test('getSearchQueryBuilder sorts by allowlisted columns', function (array $data, string $expectedOrder, string $expectedDirection): void {
+    $dql = promoRedemptionEntityManager()->getRepository(PromoRedemption::class)->getSearchQueryBuilder($data)->getDQL();
+
+    expect($dql)->toContain("ORDER BY {$expectedOrder} {$expectedDirection}");
+})->with([
+    'id ascending' => [['sort' => 'id'], 'pr.id', 'ASC'],
+    'id descending' => [['sort' => 'id', 'direction' => 'DESC'], 'pr.id', 'DESC'],
+    'phase' => [['sort' => 'phase'], 'pr.phase', 'ASC'],
+    'status' => [['sort' => 'status', 'direction' => 'desc'], 'pr.status', 'DESC'],
+    'discount_amount' => [['sort' => 'discount_amount'], 'pr.discountAmount', 'ASC'],
+    'committed_at' => [['sort' => 'committed_at'], 'pr.committedAt', 'ASC'],
+    'released_at' => [['sort' => 'released_at'], 'pr.releasedAt', 'ASC'],
+    'created_at' => [['sort' => 'created_at'], 'pr.createdAt', 'ASC'],
+    'updated_at' => [['sort' => 'updated_at'], 'pr.updatedAt', 'ASC'],
+    'invalid sort falls back to default' => [['sort' => 'pr.id; DROP TABLE promo_redemption'], 'pr.id', 'DESC'],
+    'invalid direction falls back to ascending' => [['sort' => 'phase', 'direction' => 'sideways'], 'pr.phase', 'ASC'],
+]);

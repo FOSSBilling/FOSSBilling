@@ -18,6 +18,7 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
 use FOSSBilling\Doctrine\RowLock;
+use FOSSBilling\SortOptions;
 use FOSSBilling\Tools;
 
 class InvoiceRepository extends EntityRepository
@@ -54,7 +55,7 @@ class InvoiceRepository extends EntityRepository
      *
      * @param array $data optional filters: search, id, nr, client_id, client,
      *                    status, approved, currency, created_at, date_from,
-     *                    date_to, paid_at, order_id
+     *                    date_to, paid_at, order_id, sort, direction
      */
     public function getSearchQueryBuilder(array $data = []): QueryBuilder
     {
@@ -143,7 +144,21 @@ class InvoiceRepository extends EntityRepository
                 ->setParameter('search', $search);
         }
 
-        $qb->orderBy('i.id', 'DESC');
+        $sort = SortOptions::fromArray($data, [
+            'id' => 'i.id',
+            'nr' => 'i.nr',
+            'status' => 'i.status',
+            'currency' => 'i.currency',
+            'created_at' => 'i.createdAt',
+            'updated_at' => 'i.updatedAt',
+            'paid_at' => 'i.paidAt',
+            'due_at' => 'i.dueAt',
+        ]);
+        if ($sort->isSorted()) {
+            $qb->orderBy($sort->expression, $sort->direction);
+        } else {
+            $qb->orderBy('i.id', 'DESC');
+        }
 
         return $qb;
     }

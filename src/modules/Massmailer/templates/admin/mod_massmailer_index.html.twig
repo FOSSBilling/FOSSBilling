@@ -88,20 +88,17 @@
                             <table class="table card-table table-vcenter table-striped text-nowrap">
                                 <thead>
                                 <tr>
-                                    <th>{{ 'Subject'|trans }}</th>
-                                    <th>{{ 'From'|trans }}</th>
-                                    <th>{{ 'Status'|trans }}</th>
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Subject'|trans, 'sort_key': 'subject', 'url': 'massmailer', 'hash': '#tab-index' }) }}
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'From'|trans, 'sort_key': 'from_name', 'url': 'massmailer', 'hash': '#tab-index' }) }}
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'massmailer', 'hash': '#tab-index' }) }}
                                     <th></th>
                                 </tr>
                                 </thead>
                                 <tbody>
                                 {% set msgs = admin.massmailer_get_list({
                                     "per_page": 25,
-                                    "page": request.page,
-                                    "id": request.id,
-                                    "status": request.status,
-                                    "search": request.search
-                                }) %}
+                                    "page": request.page
+                                }|merge(request)) %}
                                 {% for i, msg in msgs.list %}
                                     <tr>
                                         <td>{{ msg.subject }}</td>

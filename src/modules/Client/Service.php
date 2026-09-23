@@ -23,6 +23,7 @@ use Box\Mod\Staff\Entity\Admin;
 use FOSSBilling\i18n;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\SortOptions;
 use FOSSBilling\Tools;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Intl\Countries;
@@ -303,7 +304,18 @@ class Service implements InjectionAwareInterface
         if (!empty($where)) {
             $sql .= ' WHERE ' . implode(' AND ', $where);
         }
-        $sql .= ' ORDER BY c.created_at desc';
+
+        $sort = SortOptions::fromArray($data, [
+            'id' => 'c.id',
+            'email' => 'c.email',
+            'first_name' => 'c.first_name',
+            'last_name' => 'c.last_name',
+            'company' => 'c.company',
+            'status' => 'c.status',
+            'created_at' => 'c.created_at',
+        ]);
+        $orderBy = $sort->toOrderByClause() ?? 'c.created_at desc';
+        $sql .= " ORDER BY {$orderBy}";
 
         return [$sql, $params];
     }
@@ -449,7 +461,13 @@ class Service implements InjectionAwareInterface
             $q .= ' WHERE ' . implode(' AND ', $where);
         }
 
-        $q .= ' ORDER BY ach.id desc';
+        $sort = SortOptions::fromArray($data, [
+            'id' => 'ach.id',
+            'ip' => 'ach.ip',
+            'created_at' => 'ach.created_at',
+        ]);
+        $orderBy = $sort->toOrderByClause() ?? 'ach.id desc';
+        $q .= " ORDER BY {$orderBy}";
 
         return [$q, $params];
     }

@@ -14,6 +14,7 @@ namespace Box\Mod\Currency\Repository;
 use Box\Mod\Currency\Entity\Currency;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
+use FOSSBilling\SortOptions;
 use Symfony\Component\Intl\Currencies;
 
 class CurrencyRepository extends EntityRepository
@@ -42,7 +43,18 @@ class CurrencyRepository extends EntityRepository
                ->setParameter('search', '%' . $data['search'] . '%');
         }
 
-        $qb->orderBy('c.code', 'ASC');
+        $sort = SortOptions::fromArray($data, [
+            'code' => 'c.code',
+            'conversion_rate' => 'c.conversionRate',
+            'id' => 'c.id',
+            'created_at' => 'c.createdAt',
+            'updated_at' => 'c.updatedAt',
+        ]);
+        if ($sort->isSorted()) {
+            $qb->orderBy($sort->expression, $sort->direction);
+        } else {
+            $qb->orderBy('c.code', 'ASC');
+        }
 
         return $qb;
     }

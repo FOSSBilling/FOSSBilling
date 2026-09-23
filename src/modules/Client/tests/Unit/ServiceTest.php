@@ -273,6 +273,20 @@ test('getSearchQuery never selects sensitive client columns', function (): void 
     }
 });
 
+test('getSearchQuery applies allowlisted sort', function (): void {
+    $service = new Box\Mod\Client\Service();
+
+    [$query] = $service->getSearchQuery(['sort' => 'email', 'direction' => 'asc']);
+    expect($query)->toContain('ORDER BY c.email ASC');
+
+    [$defaultQuery] = $service->getSearchQuery([]);
+    expect($defaultQuery)->toContain('ORDER BY c.created_at desc');
+
+    [$invalidQuery] = $service->getSearchQuery(['sort' => 'pass', 'direction' => 'desc']);
+    expect($invalidQuery)->toContain('ORDER BY c.created_at desc');
+    expect($invalidQuery)->not->toContain('c.pass');
+});
+
 test('getPairs returns array', function (): void {
     $service = new Box\Mod\Client\Service();
     $data = [];
@@ -431,6 +445,23 @@ test('getBalanceSearchQuery returns correct query and params', function ($data, 
     expect(array_diff_key($params, $expectedParams))->toEqual([]);
 })->with('searchBalanceQueryData');
 
+test('getBalanceSearchQuery applies allowlisted sort', function (): void {
+    $di = container();
+
+    $clientBalanceService = new Box\Mod\Client\ServiceBalance();
+    $clientBalanceService->setDi($di);
+
+    [$sql] = $clientBalanceService->getSearchQuery(['sort' => 'amount', 'direction' => 'desc']);
+    expect($sql)->toContain('ORDER BY m.amount DESC');
+
+    [$defaultSql] = $clientBalanceService->getSearchQuery([]);
+    expect($defaultSql)->toContain('ORDER BY m.id DESC');
+
+    [$invalidSql] = $clientBalanceService->getSearchQuery(['sort' => 'client_id; DROP TABLE client_balance']);
+    expect($invalidSql)->toContain('ORDER BY m.id DESC');
+    expect($invalidSql)->not->toContain('DROP TABLE');
+});
+
 test('addFunds returns true', function (): void {
     $service = new Box\Mod\Client\Service();
     $modelClient = createEntity(Box\Mod\Client\Entity\Client::class, ['currency' => 'USD']);
@@ -520,6 +551,22 @@ test('getHistorySearchQuery returns correct query and params', function ($data, 
     expect(str_contains((string) $sql, (string) $expectedStr))->toBeTrue($sql);
     expect(array_diff_key($params, $expectedParams))->toEqual([]);
 })->with('searchHistoryQueryData');
+
+test('getHistorySearchQuery applies allowlisted sort', function (): void {
+    $service = new Box\Mod\Client\Service();
+    $di = container();
+
+    $service->setDi($di);
+
+    [$sql] = $service->getHistorySearchQuery(['sort' => 'created_at', 'direction' => 'desc']);
+    expect($sql)->toContain('ORDER BY ach.created_at DESC');
+
+    [$defaultSql] = $service->getHistorySearchQuery([]);
+    expect($defaultSql)->toContain('ORDER BY ach.id desc');
+
+    [$invalidSql] = $service->getHistorySearchQuery(['sort' => 'client_id']);
+    expect($invalidSql)->toContain('ORDER BY ach.id desc');
+});
 
 test('counter returns array', function (): void {
     $service = new Box\Mod\Client\Service();

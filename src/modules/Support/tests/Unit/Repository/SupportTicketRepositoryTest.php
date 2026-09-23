@@ -55,3 +55,28 @@ test('hasPendingTaskForClient checks pending task criteria', function (): void {
 
     expect($repo->hasPendingTaskForClient(1, 7, SupportTicket::REL_TYPE_ORDER, SupportTicket::REL_TASK_UPGRADE))->toBeTrue();
 });
+
+function supportTicketSortEntityManager(): Doctrine\ORM\EntityManager
+{
+    $config = Doctrine\ORM\ORMSetup::createAttributeMetadataConfig([__DIR__ . '/../../../Entity'], true);
+    $config->setProxyDir(sys_get_temp_dir());
+    $config->setProxyNamespace('FOSSBilling\\Tests\\DoctrineProxies');
+
+    return new Doctrine\ORM\EntityManager(Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]), $config);
+}
+
+test('getSearchQueryBuilder sorts by allowlisted columns', function (array $data, string $expectedOrder, string $expectedDirection): void {
+    $dql = supportTicketSortEntityManager()->getRepository(SupportTicket::class)->getSearchQueryBuilder($data)->getDQL();
+
+    expect($dql)->toContain("ORDER BY {$expectedOrder} {$expectedDirection}");
+})->with([
+    'id ascending' => [['sort' => 'id'], 't.id', 'ASC'],
+    'id descending' => [['sort' => 'id', 'direction' => 'DESC'], 't.id', 'DESC'],
+    'status' => [['sort' => 'status'], 't.status', 'ASC'],
+    'priority' => [['sort' => 'priority', 'direction' => 'desc'], 't.priority', 'DESC'],
+    'subject' => [['sort' => 'subject'], 't.subject', 'ASC'],
+    'created_at' => [['sort' => 'created_at'], 't.createdAt', 'ASC'],
+    'updated_at' => [['sort' => 'updated_at'], 't.updatedAt', 'ASC'],
+    'invalid sort falls back to default' => [['sort' => 't.id; DROP TABLE support_ticket'], 't.id', 'DESC'],
+    'invalid direction falls back to ascending' => [['sort' => 'status', 'direction' => 'sideways'], 't.status', 'ASC'],
+]);

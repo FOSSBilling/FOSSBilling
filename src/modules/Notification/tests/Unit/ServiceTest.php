@@ -59,3 +59,31 @@ test('get search query builder applies supported filters', function (): void {
     expect($parameters['date_from']->format('Y-m-d H:i:s'))->toBe('2026-02-10 00:00:00');
     expect($parameters['date_to']->format('Y-m-d H:i:s'))->toBe('2026-02-11 23:59:59');
 });
+
+test('sorts notification search query', function (array $filter, string $expectedOrder, string $expectedDirection): void {
+    $queryBuilder = Mockery::mock(QueryBuilder::class);
+    $queryBuilder->shouldReceive('andWhere')->once()->with('n.metaKey = :metaKey')->andReturn($queryBuilder);
+    $queryBuilder->shouldReceive('setParameter')->once()->with('metaKey', 'message')->andReturn($queryBuilder);
+    $queryBuilder->shouldReceive('orderBy')->with($expectedOrder, $expectedDirection)->once()->andReturn($queryBuilder);
+
+    $repository = Mockery::mock(ExtensionMetaRepository::class)->makePartial()->shouldIgnoreMissing();
+    $repository->shouldReceive('createQueryBuilderForExtension')->with('mod_notification', 'n')->once()->andReturn($queryBuilder);
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(ExtensionMeta::class)->once()->andReturn($repository);
+
+    $di = new Pimple\Container();
+    $di['em'] = $em;
+
+    $service = new Box\Mod\Notification\Service();
+    $service->setDi($di);
+
+    expect($service->getSearchQueryBuilder($filter))->toBe($queryBuilder);
+})->with([
+    'created at ascending' => [['sort' => 'created_at'], 'n.createdAt', 'ASC'],
+    'created at descending' => [['sort' => 'created_at', 'direction' => 'DESC'], 'n.createdAt', 'DESC'],
+    'updated at' => [['sort' => 'updated_at', 'direction' => 'desc'], 'n.updatedAt', 'DESC'],
+    'id' => [['sort' => 'id'], 'n.id', 'ASC'],
+    'invalid sort falls back to default' => [['sort' => 'n.metaValue; DROP TABLE extension_meta'], 'n.id', 'DESC'],
+    'invalid direction falls back to ascending' => [['sort' => 'created_at', 'direction' => 'sideways'], 'n.createdAt', 'ASC'],
+]);

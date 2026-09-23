@@ -58,6 +58,24 @@ test('get search query builder builds all supported filters', function (): void 
     ]);
 });
 
+test('sorts custom page search query', function (array $data, string $expectedOrder, string $expectedDirection): void {
+    $queryBuilder = Mockery::mock(QueryBuilder::class);
+    $queryBuilder->shouldReceive('orderBy')->with($expectedOrder, $expectedDirection)->once()->andReturn($queryBuilder);
+
+    $repository = Mockery::mock(CustomPageRepository::class)->makePartial();
+    $repository->shouldReceive('createQueryBuilder')->with('p')->once()->andReturn($queryBuilder);
+
+    expect($repository->getSearchQueryBuilder($data))->toBe($queryBuilder);
+})->with([
+    'title ascending' => [['sort' => 'title'], 'p.title', 'ASC'],
+    'title descending' => [['sort' => 'title', 'direction' => 'DESC'], 'p.title', 'DESC'],
+    'slug' => [['sort' => 'slug'], 'p.slug', 'ASC'],
+    'created at' => [['sort' => 'created_at', 'direction' => 'desc'], 'p.createdAt', 'DESC'],
+    'id' => [['sort' => 'id'], 'p.id', 'ASC'],
+    'invalid sort falls back to default' => [['sort' => 'p.title; DROP TABLE custom_pages'], 'p.id', 'DESC'],
+    'invalid direction falls back to ascending' => [['sort' => 'title', 'direction' => 'sideways'], 'p.title', 'ASC'],
+]);
+
 test('find one by slug excluding id builds slug and id predicates', function (): void {
     $queryBuilder = Mockery::mock(QueryBuilder::class);
     $queryBuilder->shouldReceive('andWhere')->once()->with('p.slug = :slug')->andReturn($queryBuilder);

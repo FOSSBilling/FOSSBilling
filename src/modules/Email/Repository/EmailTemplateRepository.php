@@ -14,14 +14,13 @@ namespace Box\Mod\Email\Repository;
 use Box\Mod\Email\Entity\EmailTemplate;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
+use FOSSBilling\SortOptions;
 
 class EmailTemplateRepository extends EntityRepository
 {
     public function getSearchQueryBuilder(array $data): QueryBuilder
     {
-        $qb = $this->createQueryBuilder('t')
-            ->orderBy('t.category', 'ASC')
-            ->addOrderBy('t.actionCode', 'ASC');
+        $qb = $this->createQueryBuilder('t');
 
         if (!empty($data['id'])) {
             $qb->andWhere('t.id = :id')
@@ -59,7 +58,20 @@ class EmailTemplateRepository extends EntityRepository
             )->setParameter('search', $search);
         }
 
-        return $qb;
+        $sort = SortOptions::fromArray($data, [
+            'code' => 't.actionCode',
+            'category' => 't.category',
+            'subject' => 't.subject',
+            'enabled' => 't.enabled',
+            'id' => 't.id',
+        ]);
+        if ($sort->isSorted()) {
+            $qb->orderBy($sort->expression, $sort->direction);
+        } else {
+            $qb->orderBy('t.category', 'ASC');
+        }
+
+        return $qb->addOrderBy('t.actionCode', 'ASC');
     }
 
     public function findOneByActionCode(string $code): ?EmailTemplate

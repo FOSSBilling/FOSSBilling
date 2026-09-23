@@ -32,6 +32,8 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * Returns paginated list of invoices.
      *
      * @optional bool $summary - return only fields needed by invoice list views, without expanding related records
+     * @optional string $sort - sort column: 'id', 'nr', 'status', 'currency', 'created_at', 'updated_at', 'paid_at' or 'due_at'
+     * @optional string $direction - sort direction: 'ASC' or 'DESC'
      *
      * @return array
      */
@@ -584,6 +586,8 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * Get paginated list of transactions.
      *
      * @optional string $txn_id - search for transactions by transaction id on payment gateway
+     * @optional string $sort - sort column: 'id', 'status', 'currency', 'type', 'txn_id', 'amount', 'gateway', 'created_at' or 'updated_at'
+     * @optional string $direction - sort direction: 'ASC' or 'DESC'
      *
      * @return array
      */
@@ -698,6 +702,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
     /**
      * Get available gateways.
+     *
+     * @optional string $sort - sort column: 'id', 'title' or 'code'
+     * @optional string $direction - sort direction: 'ASC' or 'DESC'
      *
      * @return array
      */
@@ -849,6 +856,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
     /**
      * Get list of subscriptions.
+     *
+     * @optional string $sort - sort column: 'id', 'sid', 'status', 'currency', 'period', 'amount', 'created_at' or 'updated_at'
+     * @optional string $direction - sort direction: 'ASC' or 'DESC'
      *
      * @return array
      */
@@ -1068,6 +1078,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
     /**
      * Get list of taxes.
+     *
+     * @optional string $sort - sort column: 'id', 'name', 'country', 'state', 'taxrate', 'created_at' or 'updated_at'
+     * @optional string $direction - sort direction: 'ASC' or 'DESC'
      *
      * @return array
      */

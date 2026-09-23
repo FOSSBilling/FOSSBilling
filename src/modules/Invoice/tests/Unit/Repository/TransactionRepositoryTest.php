@@ -209,3 +209,22 @@ test('paginateMappedQuery yields gateway-aware mixed rows', function (): void {
     $gatewayRow = $result['list'][1];
     expect($gatewayRow)->toBe([Transaction::class, 'Stripe']);
 });
+
+test('getSearchQueryBuilder sorts by allowlisted columns', function (array $data, string $expectedOrder, string $expectedDirection): void {
+    $dql = transactionSearchQuery($data)->getDQL();
+
+    expect($dql)->toContain("ORDER BY {$expectedOrder} {$expectedDirection}");
+})->with([
+    'id ascending' => [['sort' => 'id'], 't.id', 'ASC'],
+    'id descending' => [['sort' => 'id', 'direction' => 'DESC'], 't.id', 'DESC'],
+    'status' => [['sort' => 'status'], 't.status', 'ASC'],
+    'currency' => [['sort' => 'currency'], 't.currency', 'ASC'],
+    'type' => [['sort' => 'type', 'direction' => 'desc'], 't.type', 'DESC'],
+    'txn_id' => [['sort' => 'txn_id'], 't.txnId', 'ASC'],
+    'amount' => [['sort' => 'amount'], 't.amount', 'ASC'],
+    'gateway' => [['sort' => 'gateway'], 'pg.name', 'ASC'],
+    'created_at' => [['sort' => 'created_at'], 't.createdAt', 'ASC'],
+    'updated_at' => [['sort' => 'updated_at', 'direction' => 'DESC'], 't.updatedAt', 'DESC'],
+    'invalid sort falls back to default' => [['sort' => 't.id; DROP TABLE transaction'], 't.id', 'DESC'],
+    'invalid direction falls back to ascending' => [['sort' => 'status', 'direction' => 'sideways'], 't.status', 'ASC'],
+]);

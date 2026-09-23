@@ -46,3 +46,25 @@ test('get search query builder builds all supported filters', function (): void 
         'section' => '%billing%',
     ]);
 });
+
+test('sorts post search query', function (array $data, string $expectedOrder, string $expectedDirection): void {
+    $queryBuilder = Mockery::mock(QueryBuilder::class);
+    $queryBuilder->shouldReceive('orderBy')->with($expectedOrder, $expectedDirection)->once()->andReturn($queryBuilder);
+
+    $repository = Mockery::mock(PostRepository::class)->makePartial();
+    $repository->shouldReceive('createQueryBuilder')->with('p')->once()->andReturn($queryBuilder);
+
+    expect($repository->getSearchQueryBuilder($data))->toBe($queryBuilder);
+})->with([
+    'title ascending' => [['sort' => 'title'], 'p.title', 'ASC'],
+    'title descending' => [['sort' => 'title', 'direction' => 'DESC'], 'p.title', 'DESC'],
+    'slug' => [['sort' => 'slug'], 'p.slug', 'ASC'],
+    'status' => [['sort' => 'status', 'direction' => 'desc'], 'p.status', 'DESC'],
+    'section' => [['sort' => 'section'], 'p.section', 'ASC'],
+    'created at' => [['sort' => 'created_at'], 'p.createdAt', 'ASC'],
+    'updated at' => [['sort' => 'updated_at', 'direction' => 'DESC'], 'p.updatedAt', 'DESC'],
+    'published at' => [['sort' => 'published_at'], 'p.publishedAt', 'ASC'],
+    'id' => [['sort' => 'id'], 'p.id', 'ASC'],
+    'invalid sort falls back to default' => [['sort' => 'p.title; DROP TABLE post'], 'p.createdAt', 'DESC'],
+    'invalid direction falls back to ascending' => [['sort' => 'title', 'direction' => 'sideways'], 'p.title', 'ASC'],
+]);

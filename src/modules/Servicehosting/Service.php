@@ -23,6 +23,7 @@ use Box\Mod\Servicehosting\Repository\ServiceHostingServerRepository;
 use FOSSBilling\Exception;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\SortOptions;
 use FOSSBilling\Tools;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -974,9 +975,16 @@ class Service implements InjectionAwareInterface
 
     public function getServersSearchQuery($data): array
     {
-        $sql = 'SELECT *
+        $sort = SortOptions::fromArray(is_array($data) ? $data : [], [
+            'id' => 'id',
+            'name' => 'name',
+            'ip' => 'ip',
+            'hostname' => 'hostname',
+        ]);
+        $orderBy = $sort->toOrderByClause() ?? 'id ASC';
+        $sql = "SELECT *
                 FROM service_hosting_server
-                ORDER BY id ASC';
+                ORDER BY {$orderBy}";
 
         return [$sql, []];
     }
@@ -993,7 +1001,16 @@ class Service implements InjectionAwareInterface
             $params['server_id'] = $serverID;
         }
 
-        $sql = $sql . ' ORDER BY id ASC';
+        $sort = SortOptions::fromArray(is_array($data) ? $data : [], [
+            'id' => 'id',
+            'username' => 'username',
+            'sld' => 'sld',
+            'tld' => 'tld',
+            'ip' => 'ip',
+            'created_at' => 'created_at',
+        ]);
+        $orderBy = $sort->toOrderByClause() ?? 'id ASC';
+        $sql = $sql . " ORDER BY {$orderBy}";
 
         return [$sql, $params];
     }
@@ -1212,9 +1229,14 @@ class Service implements InjectionAwareInterface
 
     public function getHpSearchQuery($data): array
     {
-        $sql = 'SELECT *
+        $sort = SortOptions::fromArray(is_array($data) ? $data : [], [
+            'id' => 'id',
+            'name' => 'name',
+        ]);
+        $orderBy = $sort->toOrderByClause() ?? 'id asc';
+        $sql = "SELECT *
                 FROM service_hosting_hp
-                ORDER BY id asc';
+                ORDER BY {$orderBy}";
 
         return [$sql, []];
     }
