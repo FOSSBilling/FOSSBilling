@@ -12,6 +12,8 @@ declare(strict_types=1);
 namespace Box\Mod\Currency;
 
 use Box\Mod\Currency\Entity\Currency;
+use Box\Mod\Currency\Event\AfterAdminDeleteCurrencyEvent;
+use Box\Mod\Currency\Event\BeforeAdminDeleteCurrencyEvent;
 use Box\Mod\Currency\Repository\CurrencyRepository;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
@@ -306,12 +308,14 @@ class Service implements InjectionAwareInterface
         }
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminDeleteCurrency', 'params' => ['code' => $currencyCode]]);
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminDeleteCurrencyEvent($currencyCode));
 
         $em = $this->di['em'];
         $em->remove($currency);
         $em->flush();
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminDeleteCurrency', 'params' => ['code' => $currencyCode]]);
+        $this->di['event_dispatcher']->dispatch(new AfterAdminDeleteCurrencyEvent($currencyCode));
 
         $this->di['logger']->info('Removed currency {currency_code}.', ['currency_code' => $currency->getCode()]);
 

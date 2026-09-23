@@ -399,11 +399,16 @@ test('removeCurrency removes currency', function (): void {
 
     $eventsManager = Mockery::mock(Box_EventManager::class);
     $eventsManager->shouldReceive('fire')
-        ->twice();
+        ->once()
+        ->with(['event' => 'onBeforeAdminDeleteCurrency', 'params' => ['code' => 'EUR']]);
+    $eventsManager->shouldReceive('fire')
+        ->once()
+        ->with(['event' => 'onAfterAdminDeleteCurrency', 'params' => ['code' => 'EUR']]);
 
     $di = new Pimple\Container();
     $di['em'] = $emMock;
     $di['events_manager'] = $eventsManager;
+    $di['event_dispatcher'] = new FOSSBilling\Events\EventDispatcher(static fn (): array => [], static fn (string $module): object => new stdClass());
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $service = new Box\Mod\Currency\Service();
@@ -804,6 +809,7 @@ test('removeCurrency deletes currency by code', function (): void {
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['em'] = $emMock;
     $di['events_manager'] = $manager;
+    $di['event_dispatcher'] = new FOSSBilling\Events\EventDispatcher(static fn (): array => [], static fn (string $module): object => new stdClass());
 
     $service = new Box\Mod\Currency\Service();
     $service->setDi($di);

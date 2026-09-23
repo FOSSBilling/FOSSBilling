@@ -11,6 +11,7 @@
 declare(strict_types=1);
 
 use Box\Mod\Cron\Service;
+use FOSSBilling\Events\Event;
 
 use function Tests\Helpers\container;
 
@@ -110,10 +111,22 @@ test('runCrons isolates failures in core batch tasks', function (string $failedT
 
     $api = new CronServiceApiDouble();
     $api->throwOn = $failedTask;
+    $eventDispatcher = new class {
+        /** @var list<Event> */
+        public array $events = [];
+
+        public function dispatch(Event $event): Event
+        {
+            $this->events[] = $event;
+
+            return $event;
+        }
+    };
     $di = container();
     $di['api_system'] = $api;
     $di['em']->shouldReceive('getConnection')->andReturn($connection);
     $di['events_manager'] = $eventsManager;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $systemService);
     $di['update_finalization'] = $updateFinalization;
@@ -131,7 +144,12 @@ test('runCrons isolates failures in core batch tasks', function (string $failedT
         ->toBeLessThan($positions['invoice_batch_send_reminders'])
         ->and($positions['invoice_batch_send_reminders'])
         ->toBeLessThan($positions['invoice_batch_invoke_due_event'])
-        ->and($api->methods)->toContain('email_batch_sendmail');
+        ->and($api->methods)->toContain('email_batch_sendmail')
+        ->and(array_map(static fn (Event $event): string => $event::class, $eventDispatcher->events))
+        ->toBe([
+            Box\Mod\Cron\Event\BeforeAdminCronRunEvent::class,
+            Box\Mod\Cron\Event\AfterAdminCronRunEvent::class,
+        ]);
 })->with([
     'invoice generation' => 'invoice_batch_generate',
     'invoice reminders' => 'invoice_batch_send_reminders',
