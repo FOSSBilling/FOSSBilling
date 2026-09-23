@@ -3548,7 +3548,6 @@ test('renewal treats a recorded zero primary discount as available', function ()
     expect($result)->toBe([]);
 });
 
-
 test('transferReservedPromoRedemptionsForOrders moves reservations to the new invoice', function (): void {
     $replacement = createEntity(Invoice::class, ['id' => 11]);
 
