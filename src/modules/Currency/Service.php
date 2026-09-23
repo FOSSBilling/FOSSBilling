@@ -11,12 +11,14 @@ declare(strict_types=1);
 
 namespace Box\Mod\Currency;
 
+use Box\Mod\Cron\Event\BeforeAdminCronRunEvent;
 use Box\Mod\Currency\Entity\Currency;
 use Box\Mod\Currency\Event\AfterAdminDeleteCurrencyEvent;
 use Box\Mod\Currency\Event\BeforeAdminDeleteCurrencyEvent;
 use Box\Mod\Currency\Repository\CurrencyRepository;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\Intl\Currencies;
 use Symfony\Contracts\Cache\ItemInterface;
 use Twig\Extra\Intl\IntlExtension;
@@ -751,19 +753,15 @@ class Service implements InjectionAwareInterface
     /**
      * If enabled, automatically call _getRate to fetch exchange rates whenever CRON jobs are run.
      */
-    public static function onBeforeAdminCronRun(\Box_Event $event): bool
+    #[AsEventListener]
+    public function updateRatesBeforeAdminCronRun(BeforeAdminCronRunEvent $event): void
     {
-        $di = $event->getDi();
-        $currencyService = $di['mod_service']('currency');
-
         try {
-            if ($currencyService->isCronEnabled()) {
-                $currencyService->updateCurrencyRates();
+            if ($this->isCronEnabled()) {
+                $this->updateCurrencyRates();
             }
         } catch (\Exception $e) {
-            $di['logger']->error($e->getMessage());
+            $this->di['logger']->error($e->getMessage());
         }
-
-        return true;
     }
 }

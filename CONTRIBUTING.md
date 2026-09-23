@@ -75,9 +75,28 @@ public function customizeGuestTicket(BeforeGuestTicketCreateEvent $event): void
 }
 ```
 
-Listeners on core and active modules are registered when the typed dispatcher is first used. Activating or deactivating a module refreshes registrations within the same request. Symfony listener priorities are supported. Existing string-named hooks continue to run during migration; for guest ticket creation, they run before the typed event, and the typed event receives their result. Typed event classes should expose setters only for fields listeners are allowed to change. Other event data can be readonly.
+Listeners on core and active modules are registered when the typed dispatcher is first used. Activating or deactivating a module refreshes registrations within the same request. Symfony listener priorities are supported. Some string-named hooks continue to run during migration; for guest ticket creation, they run before the typed event, and the typed event receives their result. Typed event classes should expose setters only for fields listeners are allowed to change. Other event data can be readonly.
+
+When converting a module's existing `on...` hook handler to a typed listener, remove or rename the old discoverable method. While both hook systems run at an extension point, leaving both handlers registered would run the same work twice. Hook names removed for the next major release require third-party extensions to replace their old handlers with typed listeners; check the event class's constructor and public methods for the new contract.
 
 Available typed event classes live under each module's `Event/` directory. Their constructors and public methods define the extension contract; use those classes instead of relying on a legacy hook's array keys.
+
+### Migrating cron hook listeners
+
+The string-named `onBeforeAdminCronRun` and `onAfterAdminCronRun` hooks are replaced by `Box\Mod\Cron\Event\BeforeAdminCronRunEvent` and `Box\Mod\Cron\Event\AfterAdminCronRunEvent`. Third-party modules should replace their static `on...` methods with public instance methods on their `Service` class:
+
+```php
+use Box\Mod\Cron\Event\BeforeAdminCronRunEvent;
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
+
+#[AsEventListener]
+public function runCronTask(BeforeAdminCronRunEvent $event): void
+{
+    // Use $this->di for services needed by the task.
+}
+```
+
+The event objects carry no payload. The method name is unrestricted; the event type in its first parameter selects the event. Remove the old `onBeforeAdminCronRun` or `onAfterAdminCronRun` method when migrating, since it is no longer called.
 
 ## How can I contribute?
 

@@ -1074,3 +1074,10 @@ test('setConfig denies inactive module configuration without touching storage wh
     expect(fn () => $serviceMock->setConfig(['ext' => 'mod_support']))
         ->toThrow(new FOSSBilling\InformationException('You need the "extension.manage_extensions" permission to perform this action', [], 403));
 });
+
+test('the typed cron listener refreshes the extension list', function (): void {
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('getExtensionsList')->once()->with([])->andReturn([]);
+
+    $service->refreshExtensionsOnCron(new Box\Mod\Cron\Event\BeforeAdminCronRunEvent());
+});

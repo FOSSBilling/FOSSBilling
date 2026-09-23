@@ -98,9 +98,6 @@ test('runCrons isolates failures in core batch tasks', function (string $failedT
     $updateFinalization = Mockery::mock();
     $updateFinalization->shouldReceive('isRequired')->once()->andReturnFalse();
 
-    $eventsManager = Mockery::mock('\\Box_EventManager');
-    $eventsManager->shouldReceive('fire')->twice();
-
     $systemService = Mockery::mock(Box\Mod\System\Service::class);
     $systemService->shouldReceive('setParamValue')
         ->once()
@@ -125,7 +122,6 @@ test('runCrons isolates failures in core batch tasks', function (string $failedT
     $di = container();
     $di['api_system'] = $api;
     $di['em']->shouldReceive('getConnection')->andReturn($connection);
-    $di['events_manager'] = $eventsManager;
     $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $systemService);

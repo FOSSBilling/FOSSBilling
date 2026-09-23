@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Extension;
 
+use Box\Mod\Cron\Event\BeforeAdminCronRunEvent;
 use Box\Mod\Extension\Entity\Extension;
 use Box\Mod\Extension\Entity\ExtensionMeta;
 use Box\Mod\Extension\Event\AfterExtensionActivatedEvent;
@@ -19,6 +20,7 @@ use Box\Mod\Extension\Repository\ExtensionMetaRepository;
 use Box\Mod\Extension\Repository\ExtensionRepository;
 use FOSSBilling\Config;
 use FOSSBilling\InjectionAwareInterface;
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -97,18 +99,14 @@ class Service implements InjectionAwareInterface
         return $this->getExtensionRepository()->existsActiveByTypeAndName($type, $id);
     }
 
-    public static function onBeforeAdminCronRun(\Box_Event $event): bool
+    #[AsEventListener]
+    public function refreshExtensionsOnCron(BeforeAdminCronRunEvent $event): void
     {
-        $di = $event->getDi();
-        $extensionService = $di['mod_service']('extension');
-
         try {
-            $extensionService->getExtensionsList([]);
+            $this->getExtensionsList([]);
         } catch (\Exception $e) {
-            $di['logger']->error($e->getMessage());
+            $this->di['logger']->error($e->getMessage());
         }
-
-        return true;
     }
 
     public function removeNotExistingModules(): int

@@ -1345,23 +1345,17 @@ test('converts admin domain to api array without a registrar', function (): void
     expect($result['registrar'])->toBeNull();
 });
 
-test('handles on before admin cron run event', function (): void {
-    $service = new Service();
-    $di = container();
-    $serviceMock = Mockery::mock(Service::class);
+test('syncs domain expiration dates before admin cron through a typed event listener', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('batchSyncExpirationDates')
-        ->atLeast()->once()
+        ->once()
         ->andReturn(true);
-    $di['mod_service'] = $di->protect(fn ($serviceName): Mockery\MockInterface => $serviceMock);
+    $dispatcher = new FOSSBilling\Events\EventDispatcher(
+        static fn (): array => ['servicedomain'],
+        static fn (string $module): object => $serviceMock,
+    );
 
-    $boxEventMock = Mockery::mock('\Box_Event');
-    $boxEventMock->shouldReceive('getDi')
-        ->atLeast()->once()
-        ->andReturn($di);
-
-    $result = $service->onBeforeAdminCronRun($boxEventMock);
-
-    expect($result)->toBeTrue();
+    $dispatcher->dispatch(new Box\Mod\Cron\Event\BeforeAdminCronRunEvent());
 });
 
 test('batch syncs expiration dates', function (): void {

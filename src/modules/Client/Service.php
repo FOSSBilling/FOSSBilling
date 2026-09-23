@@ -19,12 +19,14 @@ use Box\Mod\Client\Repository\ClientBalanceRepository;
 use Box\Mod\Client\Repository\ClientGroupRepository;
 use Box\Mod\Client\Repository\ClientPasswordResetRepository;
 use Box\Mod\Client\Repository\ClientRepository;
+use Box\Mod\Cron\Event\BeforeAdminCronRunEvent;
 use Box\Mod\Staff\Entity\Admin;
 use FOSSBilling\i18n;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\SortOptions;
 use FOSSBilling\Tools;
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Intl\Countries;
 use Symfony\Component\Intl\Locales;
@@ -1044,13 +1046,14 @@ class Service implements InjectionAwareInterface
      *
      * @return void
      */
-    public static function onBeforeAdminCronRun(\Box_Event $event): void
+    #[AsEventListener]
+    public function removeExpiredPasswordResetRequests(BeforeAdminCronRunEvent $event): void
     {
-        $di = $event->getDi();
+        $di = $this->di ?? throw new \LogicException('The Client service dependency injection container has not been set.');
 
         try {
             $cutoff = new \DateTime('-900 seconds');
-            $di['em']->getRepository(ClientPasswordReset::class)
+            $this->clientPasswordResetRepository
                 ->createQueryBuilder('r')
                 ->delete()
                 ->where('r.createdAt < :cutoff')

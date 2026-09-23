@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 use Box\Mod\Client\Entity\ClientBalance;
 use Box\Mod\Client\Service as ClientService;
+use Box\Mod\Cron\Event\AfterAdminCronRunEvent;
 use Box\Mod\Currency\Entity\Currency as CurrencyEntity;
 use Box\Mod\Currency\Repository\CurrencyRepository;
 use Box\Mod\Currency\Service as CurrencyService;
@@ -472,9 +473,7 @@ test('handles after admin invoice reminder sent event', function (): void {
     $service->onAfterAdminInvoiceReminderSent($eventMock);
 });
 
-test('handles after admin cron run event', function (): void {
-    $eventMock = Mockery::mock('\Box_Event');
-
+test('removes expired unpaid invoices on typed after cron event', function (): void {
     $remove_after_days = 64;
     $systemServiceMock = Mockery::mock(SystemService::class);
     $systemServiceMock->shouldReceive('getParamValue')
@@ -502,11 +501,7 @@ test('handles after admin cron run event', function (): void {
     });
 
     $invoiceServiceMock->setDi($di);
-    $eventMock->shouldReceive('getDi')
-        ->atLeast()->once()
-        ->andReturn($di);
-
-    Service::onAfterAdminCronRun($eventMock);
+    $invoiceServiceMock->removeExpiredUnpaidInvoices(new AfterAdminCronRunEvent());
 });
 
 test('uses the client billing email for invoice notifications', function (): void {

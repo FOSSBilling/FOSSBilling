@@ -775,6 +775,18 @@ test('updateCurrencyRates preserves manual overrides', function (): void {
     expect($service->updateCurrencyRates())->toBeTrue();
 });
 
+test('updates currency rates before admin cron through a typed event listener', function (): void {
+    $service = Mockery::mock(Box\Mod\Currency\Service::class)->makePartial();
+    $service->shouldReceive('isCronEnabled')->once()->andReturn(true);
+    $service->shouldReceive('updateCurrencyRates')->once()->andReturn(true);
+    $dispatcher = new FOSSBilling\Events\EventDispatcher(
+        static fn (): array => ['currency'],
+        static fn (string $module): object => $service,
+    );
+
+    $dispatcher->dispatch(new Box\Mod\Cron\Event\BeforeAdminCronRunEvent());
+});
+
 test('removeCurrency deletes currency by code', function (): void {
     $model = Mockery::mock(Box\Mod\Currency\Entity\Currency::class);
     $model->shouldReceive('getCode')

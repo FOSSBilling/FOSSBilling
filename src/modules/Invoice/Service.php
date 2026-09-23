@@ -13,6 +13,7 @@ namespace Box\Mod\Invoice;
 
 use Box\Mod\Client\Entity\Client;
 use Box\Mod\Client\Entity\ClientBalance;
+use Box\Mod\Cron\Event\AfterAdminCronRunEvent;
 use Box\Mod\Currency\Entity\Currency;
 use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\InvoiceItem;
@@ -35,6 +36,7 @@ use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Tools;
 use FOSSBilling\Validation\PriceValidator;
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpFoundation\HeaderUtils;
@@ -725,9 +727,10 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public static function onAfterAdminCronRun(\Box_Event $event): void
+    #[AsEventListener]
+    public function removeExpiredUnpaidInvoices(AfterAdminCronRunEvent $event): void
     {
-        $di = $event->getDi();
+        $di = $this->di ?? throw new \LogicException('The Invoice service dependency injection container has not been set.');
         $systemService = $di['mod_service']('System');
         $remove_after_days = $systemService->getParamValue('remove_after_days');
         if (isset($remove_after_days) && $remove_after_days) {

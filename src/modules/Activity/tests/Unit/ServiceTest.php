@@ -17,6 +17,7 @@ use Box\Mod\Activity\Repository\ActivityClientHistoryRepository;
 use Box\Mod\Activity\Repository\ActivitySystemRepository;
 use Box\Mod\Client\Entity\Client;
 use Box\Mod\Client\Event\AfterClientLoginEvent;
+use Box\Mod\Cron\Event\BeforeAdminCronRunEvent;
 use Box\Mod\Staff\Event\AfterAdminLoginEvent;
 use Doctrine\ORM\EntityManagerInterface;
 
@@ -177,10 +178,9 @@ test('logs retention failures through the application logger', function (): void
     $di['logger'] = $logger;
     $di['mod_service'] = $di->protect(fn (string $name): object => $extensionService);
 
-    $event = new Box_Event(null, 'onBeforeAdminCronRun');
-    $event->setDi($di);
-
-    Box\Mod\Activity\Service::onBeforeAdminCronRun($event);
+    $service = new Box\Mod\Activity\Service();
+    $service->setDi($di);
+    $service->cleanupOldActivity(new BeforeAdminCronRunEvent());
 
     expect($logger->calls)->toContain([
         'method' => 'error',

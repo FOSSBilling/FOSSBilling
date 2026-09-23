@@ -76,7 +76,6 @@ class Service
 
             // @core tasks
             $this->_exec($api, 'hook_batch_connect');
-            $this->di['events_manager']->fire(['event' => 'onBeforeAdminCronRun']);
             $this->di['event_dispatcher']->dispatch(new BeforeAdminCronRunEvent());
 
             $this->_exec($api, 'invoice_batch_pay_with_credits');
@@ -121,7 +120,6 @@ class Service
             $count = $this->clearOldSessions() ?? 0;
             $this->di['logger']->withChannel('cron')->info("Cleared {$count} outdated sessions from the database.");
 
-            $this->di['events_manager']->fire(['event' => 'onAfterAdminCronRun']);
             $this->di['event_dispatcher']->dispatch(new AfterAdminCronRunEvent());
 
             if ($failedTasks !== []) {

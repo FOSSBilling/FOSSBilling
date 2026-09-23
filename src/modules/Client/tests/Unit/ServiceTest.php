@@ -10,6 +10,8 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Cron\Event\BeforeAdminCronRunEvent;
+
 use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
 use function Tests\Helpers\moduleService;
@@ -20,6 +22,25 @@ test('getDi returns dependency injection container', function (): void {
     $service->setDi($di);
     $getDi = $service->getDi();
     expect($getDi)->toEqual($di);
+});
+
+test('removes expired password reset requests on typed before cron event', function (): void {
+    $query = Mockery::mock(Doctrine\ORM\Query::class)->shouldIgnoreMissing();
+    $query->shouldReceive('execute')->once()->andReturn(1);
+
+    $queryBuilder = Mockery::mock(Doctrine\ORM\QueryBuilder::class)->shouldIgnoreMissing();
+    $queryBuilder->shouldReceive('delete')->once()->andReturnSelf();
+    $queryBuilder->shouldReceive('where')->once()->with('r.createdAt < :cutoff')->andReturnSelf();
+    $queryBuilder->shouldReceive('setParameter')->once()->with('cutoff', Mockery::type(DateTime::class))->andReturnSelf();
+    $queryBuilder->shouldReceive('getQuery')->once()->andReturn($query);
+
+    $di = container();
+    $passwordResetRepository = $di['em']->getRepository(Box\Mod\Client\Entity\ClientPasswordReset::class);
+    $passwordResetRepository->shouldReceive('createQueryBuilder')->once()->with('r')->andReturn($queryBuilder);
+
+    $service = new Box\Mod\Client\Service();
+    $service->setDi($di);
+    $service->removeExpiredPasswordResetRequests(new BeforeAdminCronRunEvent());
 });
 
 test('approveClientEmailByHash returns true', function (): void {
