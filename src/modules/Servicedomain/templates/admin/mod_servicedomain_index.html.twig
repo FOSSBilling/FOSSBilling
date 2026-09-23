@@ -72,7 +72,8 @@
                                 </thead>
                                 <tbody>
                                     {% set currency = guest.currency_get %}
-                                    {% for tld in admin.servicedomain_tld_get_list({ 'per_page': 99 }).list %}
+                                    {% set tlds = admin.servicedomain_tld_get_list({ 'per_page': 25, 'page': request.page }|merge(request)) %}
+                                    {% for tld in tlds.list %}
                                     <tr>
                                         <td>
                                             <a href='{{ "servicedomain/id/#{tld.id}"|url }}'>{{ tld.tld }}</a>
@@ -115,6 +116,9 @@
                                 </tbody>
                             </table>
                         </div>
+                        <div class="card-footer d-flex align-items-center">
+                            {{ include('partial_pagination.html.twig', { 'list': tlds, 'url': 'servicedomain', 'hash': '#tab-tlds', 'split_footer_controls': true }) }}
+                        </div>
                     </div>
 
                     <div class="tab-pane fade" id="tab-registrars" role="tabpanel">
@@ -136,7 +140,10 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {% for registrar in admin.servicedomain_registrar_get_list.list %}
+                                    {% set registrarPage = request.registrar_page matches '/^\\d+$/' ? request.registrar_page : 1 %}
+                                    {% set registrarPerPage = request.registrar_per_page matches '/^\\d+$/' ? request.registrar_per_page : 25 %}
+                                    {% set registrars = admin.servicedomain_registrar_get_list(request|merge({ 'page': registrarPage, 'per_page': registrarPerPage })) %}
+                                    {% for registrar in registrars.list %}
                                     <tr>
                                         <td>
                                             <a href='{{ "servicedomain/registrar/#{registrar.id}"|url }}'>{{ registrar.title }}</a>
@@ -167,6 +174,9 @@
                                     {% endfor %}
                                 </tbody>
                             </table>
+                        </div>
+                        <div class="card-footer d-flex align-items-center">
+                            {{ include('partial_pagination.html.twig', { 'list': registrars, 'url': 'servicedomain', 'hash': '#tab-registrars', 'page_param': 'registrar_page', 'per_page_param': 'registrar_per_page', 'split_footer_controls': true }) }}
                         </div>
                     </div>
 
