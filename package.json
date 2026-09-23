@@ -31,7 +31,7 @@
   ],
   "devDependencies": {
     "@playwright/test": "1.63.0",
-    "@types/node": "24.13.5",
+    "@types/node": "24.13.6",
     "autoprefixer": "10.6.1",
     "ckeditor5": "48.5.1",
     "esbuild": "0.28.2",
