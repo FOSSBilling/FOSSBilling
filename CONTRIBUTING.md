@@ -62,101 +62,45 @@ Other modules extend the whole FOSSBilling API with any functionality needed. Ch
 
 ### Typed module events
 
-New extension points can use event classes extending `FOSSBilling\Events\Event`. Dispatch them through `$di['event_dispatcher']->dispatch($event)`. A module's `Service` class can listen with Symfony's `#[AsEventListener]` attribute on a public instance method. The first parameter must name the event class; the method name can be anything.
+FOSSBilling modules use typed events for extension points. Event classes extend `FOSSBilling\Events\Event`, and each module keeps its event classes in `src/modules/<Module>/Event/`. The shared base event is in `src/library/FOSSBilling/Events/Event.php`.
+
+Define an event in the owning module's `Event/` directory and dispatch it from the code that owns the operation:
 
 ```php
-use Box\Mod\Support\Event\BeforeGuestTicketCreateEvent;
-use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
+namespace Box\Mod\Example\Event;
 
-#[AsEventListener]
-public function customizeGuestTicket(BeforeGuestTicketCreateEvent $event): void
+use FOSSBilling\Events\Event;
+
+final class BeforeExampleOperationEvent extends Event
 {
-    $event->setSubject('Support request: ' . $event->getSubject());
+    public function __construct(public readonly int $entityId)
+    {
+    }
 }
 ```
 
-Listeners on core and active modules are registered when the typed dispatcher is first used. Activating or deactivating a module refreshes registrations within the same request. Symfony listener priorities are supported. Typed event classes should expose setters only for fields listeners are allowed to change. Other event data can be readonly.
+```php
+use Box\Mod\Example\Event\BeforeExampleOperationEvent;
 
-Third-party extensions must replace static `on...` hook handlers with public instance listeners for typed event classes. The legacy Hook module, its `hook_call` API, and `onEveryEvent` catch-all listener are retired in the next major release. Subscribe to explicit event classes; for extension-specific operations, define a typed event or call an operation API directly. A listener's return value is ignored. Use an event's declared setters only where the contract permits changes.
+$this->di['event_dispatcher']->dispatch(new BeforeExampleOperationEvent($entityId));
+```
 
-The upgrade removes obsolete hook-package records and listener registrations from the database. Existing custom files under `src/library/Hook/` are not loaded by the typed dispatcher; move any needed behavior into an active module's `Service` listener and remove those files after migration.
-
-Available typed event classes live under each module's `Event/` directory. Their constructors and public methods define the extension contract; use those classes instead of relying on a legacy hook's array keys.
-
-### Migrating cron hook listeners
-
-The string-named `onBeforeAdminCronRun` and `onAfterAdminCronRun` hooks are replaced by `Box\Mod\Cron\Event\BeforeAdminCronRunEvent` and `Box\Mod\Cron\Event\AfterAdminCronRunEvent`. Third-party modules should replace their static `on...` methods with public instance methods on their `Service` class:
+A module can listen from a public instance method on its `Service` class. Add Symfony's `#[AsEventListener]` attribute and type the first parameter as the event class. Listeners on active modules are registered when the dispatcher initializes.
 
 ```php
-use Box\Mod\Cron\Event\BeforeAdminCronRunEvent;
+use Box\Mod\Support\Event\AfterTicketOpenedEvent;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 
-#[AsEventListener]
-public function runCronTask(BeforeAdminCronRunEvent $event): void
+#[AsEventListener(priority: 10)]
+public function notifyTicketOpened(AfterTicketOpenedEvent $event): void
 {
-    // Use $this->di for services needed by the task.
+    // Handle the opened ticket using the event's documented data.
 }
 ```
 
-The event objects carry no payload. The method name is unrestricted; the event type in its first parameter selects the event. Remove the old `onBeforeAdminCronRun` or `onAfterAdminCronRun` method when migrating, since it is no longer called.
+Higher priority listeners run first. Event propagation follows Symfony's event behavior, including `stopPropagation()`. Listeners run synchronously as part of dispatch.
 
-### Migrating support ticket hooks
-
-Support ticket hooks now use event classes in `Box\Mod\Support\Event`. The ticket lifecycle events `AfterTicketOpenedEvent`, `AfterTicketRepliedEvent`, and `AfterTicketClosedEvent` expose a `ticketId` and a `TicketActorRole` (`ADMIN`, `CLIENT`, or `GUEST`). A listener can branch on the actor instead of registering separate admin and client hook methods.
-
-Before creation, admin and client flows dispatch `BeforeTicketCreateEvent` with the actor, target `clientId`, and readonly input. The guest flow dispatches `BeforeGuestTicketCreateEvent`, whose `input` includes the request details. To change the guest ticket, call `setStatus()`, `setSubject()`, or `setMessage()` on that event; returning an array from a legacy hook no longer changes the ticket. Existing `onBeforeClientOpenTicket`, `onBeforeAdminOpenTicket`, and after-open/reply/close ticket hook methods should be replaced by listeners for these classes.
-
-### Migrating client and profile hooks
-
-Client signup dispatches `BeforeClientSignUpEvent` with readonly `input` and `AfterClientSignUpEvent` with the new `clientId`. The before event includes the request IP but excludes password fields. Admin client creation dispatches `BeforeAdminClientCreateEvent` and `AfterAdminClientCreateEvent` from the client service. The admin client API also dispatches typed before and after events for update, password change, and delete. These classes are in `Box\Mod\Client\Event`; password-change and delete events expose only `clientId`.
-
-Profile changes dispatch classes in `Box\Mod\Profile\Event` for admin password, API key, and profile changes and for client profile and password changes. Before profile-update events provide the account ID and readonly input data; after events provide the account ID. Replace static legacy handlers with public instance listeners using `#[AsEventListener]`, and read the documented event properties instead of legacy array keys. Credential values are not exposed in the typed lifecycle events.
-
-### Migrating authentication hooks
-
-Client and admin login hooks use typed events in `Box\Mod\Client\Event` and `Box\Mod\Staff\Event`. Before-login and failed-login events expose only the request IP; successful-login events expose the account ID and IP. Login passwords and submitted email addresses are not event payloads. Use `BeforeClientLoginEvent` or `BeforeAdminLoginEvent` for checks such as IP blocking, and the corresponding after-login event for activity recording.
-
-Client password-reset hooks use event classes in `Box\Mod\Client\Event`. Before events distinguish reset request, confirmation, and validation steps; the completion event exposes the client ID. Reset hashes and new passwords are not included in event payloads. Extensions that used the old array parameters should move to typed listeners and use the event's documented fields.
-
-### Migrating staff and checkout hooks
-
-Staff account creation, update, deletion, and password changes dispatch before and after classes from `Box\Mod\Staff\Event`. The events expose the staff account ID, except the before-create event, which exposes only noncredential input fields. The previous string-named staff account hooks are no longer dispatched.
-
-Staff password reset requests and confirmations dispatch `BeforeStaffPasswordResetRequestEvent` and `BeforeStaffPasswordResetConfirmationEvent` with the request IP. A completed reset dispatches `AfterStaffPasswordResetEvent` with the staff account ID. Reset codes, passwords, and email addresses are not event payloads.
-
-Cart checkout dispatches `Box\Mod\Cart\Event\BeforeClientCheckoutEvent` with the cart ID, client ID, and request IP. Once an order is created, `Box\Mod\Order\Event\AfterClientOrderCreateEvent` provides its order ID, client ID, and request IP. Use a typed listener for staff notifications and other checkout integrations.
-
-Adding a product to a cart dispatches `BeforeProductAddedToCartEvent` and `AfterProductAddedToCartEvent` from `Box\Mod\Cart\Event`. Both provide the cart and product IDs. Submitted product configuration is not included; extensions that need stored cart item details can query them after the add event.
-
-Order lifecycle hooks use before and after classes in `Box\Mod\Order\Event` for creation, activation, update, renewal, suspension, unsuspension, cancellation, reversal of cancellation, and deletion. Most events expose an `orderId`; creation also exposes the client, product, and service type. Before-create and before-update events provide readonly allowlisted input without provisioning configuration or metadata. An activation event may provide service-returned template parameters for the activation email. Gateway-finalized subscription cancellations dispatch `AfterAdminOrderCancelEvent` after the canceled order is persisted. Replace legacy `onBeforeAdminOrder...` and `onAfterAdminOrder...` handlers with typed listeners for the corresponding operation.
-
-Invoice subscription creation and deletion dispatch `AfterAdminSubscriptionCreateEvent` and `AfterAdminSubscriptionDeleteEvent` with the subscription ID. Renewal invoice generation dispatches `BeforeAdminGenerateRenewalInvoiceEvent` with the order ID, followed by `AfterAdminGenerateRenewalInvoiceEvent` with the order and invoice IDs. Admin invoice deletion dispatches `BeforeAdminInvoiceDeleteEvent` and `AfterAdminInvoiceDeleteEvent`, each with the invoice ID. These classes are in `Box\Mod\Invoice\Event`; replace the corresponding string-named hooks with typed listeners.
-
-Invoice approval dispatches `BeforeAdminInvoiceApproveEvent` and `AfterAdminInvoiceApproveEvent` with the invoice ID. The after event runs after approval and any attempted credit payment. The built-in approval email is a typed listener; extensions can query the invoice by ID when they need its current details.
-
-Payment completion dispatches `AfterAdminInvoicePaymentReceivedEvent` with the invoice ID after the payment transaction commits and before invoice item tasks run. The built-in paid-invoice email uses this typed event.
-
-Invoice reminder batches dispatch `BeforeAdminInvoiceSendRemindersEvent` before throttling and `BeforeInvoiceIsDueEvent` or `AfterInvoiceIsDueEvent` for each matching unpaid, approved invoice. Due events expose the invoice ID, days before or after the due date, and configured reminder intervals. Recording a reminder dispatches `BeforeAdminInvoiceSendReminderEvent` and `AfterAdminInvoiceReminderRecordedEvent` with the invoice ID. The recorded event fires after `reminded_at` is persisted and the built-in email has been attempted. Extensions can use it for additional notifications; exceptions from those observers are logged without retrying the already recorded reminder.
-
-Refund attempts dispatch `BeforeAdminInvoiceRefundEvent` and `AfterAdminInvoiceRefundEvent` with the original invoice ID. The after event follows the selected refund flow, including a manual flow that does not create a credit note.
-
-Issuing a debit note dispatches `BeforeAdminInvoiceDebitEvent` with the original invoice ID and `AfterAdminInvoiceDebitEvent` with both the original invoice ID and new debit note ID. The after event runs after the debit email attempt.
-
-Invoice edits dispatch `BeforeAdminInvoiceUpdateEvent` with the invoice ID and sorted names of submitted fields, followed by `AfterAdminInvoiceUpdateEvent` with the invoice ID. The submitted values are omitted from the event payload; extensions can query the invoice before or after persistence as needed.
-
-Transaction creation, update, and processing dispatch before and after classes in `Box\Mod\Invoice\Event`. Update and process events expose the transaction ID. The before-create event provides a readonly allowlist of scalar transaction fields; raw payment notifications, request bodies, and credential fields are excluded. The after-create event provides the new transaction ID. A listener cannot rewrite transaction input by changing the event payload.
-
-Order batch operations (suspension warnings, suspension, cancellation of suspended orders, and cancellation of unpaid orders) dispatch before and after classes in `Box\Mod\Order\Event`. They carry no payload. A disabled batch operation still dispatches its before event but can return without dispatching its after event, preserving the previous hook timing.
-
-Deleting a currency dispatches `BeforeAdminDeleteCurrencyEvent` and `AfterAdminDeleteCurrencyEvent` from `Box\Mod\Currency\Event`. Both expose the currency `code`; the string-named delete hooks are no longer fired.
-
-Extension installation, activation, update, deactivation, and uninstallation dispatch before and after classes in `Box\Mod\Extension\Event`. The operation events expose the extension identity (record ID where one exists, type, and name) rather than an entity or arbitrary request array. `BeforeAdminExtensionConfigSaveEvent` and `AfterAdminExtensionConfigSaveEvent` expose the extension name and the names of submitted configuration keys; configuration values are omitted. Replace the corresponding string-named extension hooks with typed listeners.
-
-System settings updates dispatch `BeforeAdminSettingsUpdateEvent` with submitted parameter names only and `AfterAdminSettingsUpdateEvent` after persistence. Core and manual application updates dispatch before and after classes in `Box\Mod\System\Event` with no payload. Settings values and credentials are not exposed through these events.
-
-Theme settings saves dispatch `BeforeAdminThemeSettingsSaveEvent` with the theme name and submitted setting names; setting values are omitted. Adding a notification dispatches `AfterAdminNotificationAddEvent` with the persisted notification ID. The previous string-named notification hook is no longer fired.
-
-Service-license resets dispatch before and after classes in `Box\Mod\Servicelicense\Event` with the license and client IDs. Client nameserver changes dispatch before and after classes in `Box\Mod\Servicedomain\Event` with the domain and client IDs plus explicit `ns1` through `ns4` values. Arbitrary request fields are excluded from these events.
+Treat each event class as the contract for its extension point. Prefer readonly constructor properties for context listeners may inspect. Keep mutable data private and expose only the getters and setters listeners are meant to use. Do not include credentials or unrelated request data in an event payload. Name event classes for the operation and timing, such as `Before...Event` or `After...Event`.
 
 ## How can I contribute?
 
