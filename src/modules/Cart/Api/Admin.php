@@ -13,6 +13,7 @@ namespace Box\Mod\Cart\Api;
 
 use Box\Mod\Cart\Entity\Cart;
 use Box\Mod\Client\Entity\Client;
+use Box\Mod\Currency\Entity\Currency;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Product\Entity\Promo;
 use FOSSBilling\InformationException;
@@ -126,7 +127,12 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             if (!is_numeric($data['price']) || (float) $data['price'] < 0) {
                 throw new InformationException('Price override must be a non-negative number');
             }
-            $priceOverride = (float) $data['price'];
+            // Overrides are entered in the basket currency while line
+            // pricing resolves in the base currency, so convert first -
+            // otherwise the checkout conversion would apply twice.
+            $basketCurrency = $this->di['em']->getRepository(Currency::class)->find($basket->getCurrencyId());
+            $rate = $basketCurrency instanceof Currency ? $basketCurrency->getConversionRate() : 0.0;
+            $priceOverride = $rate > 0 ? (float) $data['price'] / $rate : (float) $data['price'];
         }
 
         unset($data['client_id'], $data['price']);

@@ -99,7 +99,9 @@
                                         <label class="form-label" for="basket-period">{{ 'Period'|trans }}</label>
                                         <select class="form-select" name="period" id="basket-period" required>
                                             {% for val, pricing in basket_product.pricing.recurrent %}
-                                                <option value="{{ val }}">{{ pricing.title|e }}</option>
+                                                {% if pricing.enabled %}
+                                                    <option value="{{ val }}">{{ pricing.title|e }}</option>
+                                                {% endif %}
                                             {% endfor %}
                                         </select>
                                     </div>

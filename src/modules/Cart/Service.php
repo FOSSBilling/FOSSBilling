@@ -334,7 +334,10 @@ class Service implements InjectionAwareInterface
             // neither strip it nor be bypassed with a forged value.
             $productFromListConfig[self::CART_FAMILY_KEY] = $familyToken;
             // Staff price overrides apply to the main product row only;
-            // bundled domains and addons stay on catalog pricing.
+            // bundled domains and addons stay on catalog pricing. Strip a
+            // forged value from every row first: addon configs pass through
+            // unfiltered for services without a client key allowlist.
+            unset($productFromListConfig[ProductService::PRICE_OVERRIDE_KEY]);
             if ($isMainRow && $priceOverride !== null) {
                 $productFromListConfig[ProductService::PRICE_OVERRIDE_KEY] = $priceOverride;
             }
@@ -990,7 +993,7 @@ class Service implements InjectionAwareInterface
         $allowDisabledProducts = $options['allow_disabled'] ?? false;
         $activate = $options['activate'] ?? true;
 
-        $ca = $this->toApiArray($cart);
+        $ca = $this->toApiArray($cart, false, null, $client);
         if (\FOSSBilling\Tools::safeCount($ca['items']) == 0) {
             throw new \FOSSBilling\InformationException('Cannot checkout an empty cart');
         }

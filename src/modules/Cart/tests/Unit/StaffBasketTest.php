@@ -172,7 +172,7 @@ test('addItem stamps a staff price override on the main row only', function (): 
     $productServiceMock->shouldReceive('prepareCartProductConfig')->atLeast()->once()->andReturnUsing(fn (Product $product, array $config): array => $config);
     $productServiceMock->shouldReceive('getSelectedAddonsForCart')
         ->once()
-        ->andReturn([['product' => $addonModel, 'config' => ['selected' => true]]]);
+        ->andReturn([['product' => $addonModel, 'config' => ['selected' => true, ProductService::PRICE_OVERRIDE_KEY => 0.01]]]);
 
     $storedConfigs = [];
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
@@ -196,6 +196,8 @@ test('addItem stamps a staff price override on the main row only', function (): 
     expect($serviceMock->addItem($cartModel, $parentModel, ['addons' => ['9' => ['selected' => true]]], 7.5))->toBeTrue();
     expect($storedConfigs)->toHaveCount(2);
     expect($storedConfigs[0][ProductService::PRICE_OVERRIDE_KEY] ?? null)->toBe(7.5);
+    // A forged override smuggled in through the addon config must not
+    // survive on any row but the stamped main one.
     expect($storedConfigs[1])->not->toHaveKey(ProductService::PRICE_OVERRIDE_KEY);
     expect($storedConfigs[1][Service::CART_FAMILY_KEY] ?? null)->toBe($storedConfigs[0][Service::CART_FAMILY_KEY] ?? null);
 });
@@ -391,7 +393,7 @@ test('createOrdersFromCart allows disabled products for staff and strips the ove
     $emMock->shouldReceive('flush')->atLeast()->once();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
-    $serviceMock->shouldReceive('toApiArray')->once()->with($cart)->andReturn([
+    $serviceMock->shouldReceive('toApiArray')->once()->with($cart, false, null, $client)->andReturn([
         'items' => [['id' => 1]],
         'total' => 0,
     ]);

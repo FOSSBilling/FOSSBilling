@@ -259,14 +259,65 @@ test('batchExpire skips staff baskets', function (): void {
     expect($adminApi->batch_expire([]))->toBeTrue();
 });
 
-function cartApiStaffServiceAllowingAll(): Mockery\MockInterface
-{
-    $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class);
-    $staffServiceMock->shouldReceive('hasPermission')->byDefault()->andReturn(true);
-    $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')->byDefault()->andReturn(true);
+test('staff_basket_add_item converts the override to the base currency', function (): void {
+    $adminApi = apiEndpoint(new Box\Mod\Cart\Api\Admin());
 
-    return $staffServiceMock;
+    $product = new Box\Mod\Product\Entity\Product();
+    $product->setIsAddon(false);
+
+    $productServiceMock = Mockery::mock(Box\Mod\Product\Service::class);
+    $productServiceMock->shouldReceive('findProductById')->once()->with(5)->andReturn($product);
+
+    $basket = new Cart();
+    $basketReflection = new ReflectionProperty($basket, 'id');
+    $basketReflection->setValue($basket, 3);
+    $basket->setCurrencyId(2);
+
+    $currency = Mockery::mock(Box\Mod\Currency\Entity\Currency::class)->makePartial();
+    $currency->shouldReceive('getConversionRate')->andReturn(0.9);
+
+    $currencyRepoMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $currencyRepoMock->shouldReceive('find')->once()->with(2)->andReturn($currency);
+
+    $serviceMock = Mockery::mock(Box\Mod\Cart\Service::class)->makePartial();
+    $serviceMock->shouldReceive('getStaffBasket')->andReturn($basket);
+    $serviceMock->shouldReceive('addItem')
+        ->once()
+        ->with($basket, $product, Mockery::type('array'), Mockery::on(fn (mixed $override): bool => is_float($override) && abs($override - 15.0 / 0.9) < 1e-9))
+        ->andReturn(true);
+
+    $di = container();
+    $di['em'] = cartApiClientAndCurrencyRepoEm(9, $currencyRepoMock);
+    $di['loggedin_admin'] = cartApiLoggedInAdmin(4);
+    $di['mod_service'] = $di->protect(fn (string $name) => match ($name) {
+        'staff' => cartApiStaffServiceAllowingAll(),
+        'product' => $productServiceMock,
+        default => Mockery::mock()->shouldIgnoreMissing(),
+    });
+
+    $adminApi->setDi($di);
+    $adminApi->setService($serviceMock);
+
+    expect($adminApi->staff_basket_add_item(['client_id' => 9, 'id' => 5, 'price' => 15]))->toBeTrue();
+});
+
+function cartApiClientAndCurrencyRepoEm(int $clientId, Mockery\MockInterface $currencyRepoMock): Mockery\MockInterface
+{
+    $clientRepoMock = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
+    $clientRepoMock->shouldReceive('find')->with($clientId)->andReturn(new Box\Mod\Client\Entity\Client());
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(Box\Mod\Client\Entity\Client::class)->andReturn($clientRepoMock);
+    $emMock->shouldReceive('getRepository')->with(Box\Mod\Currency\Entity\Currency::class)->andReturn($currencyRepoMock);
+
+    return $emMock;
 }
+
+$staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class);
+$staffServiceMock->shouldReceive('hasPermission')->byDefault()->andReturn(true);
+$staffServiceMock->shouldReceive('checkPermissionsAndThrowException')->byDefault()->andReturn(true);
+
+return $staffServiceMock;
 
 function cartApiLoggedInAdmin(int $id): Box\Mod\Staff\Entity\Admin
 {
