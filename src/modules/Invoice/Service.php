@@ -929,7 +929,7 @@ class Service implements InjectionAwareInterface
         }
 
         if ($payGateway->getGateway() === 'Custom' && $payGateway->isEnabled()) {
-            return $this->di['em']->wrapInTransaction(function () use ($invoice, $execute, $payGateway, $transactionId): bool {
+            $paid = $this->di['em']->wrapInTransaction(function () use ($invoice, $payGateway, $transactionId): bool {
                 // Re-validate under the invoice lock: the invoice may have
                 // been canceled or replaced after the preflight check above.
                 // Creating the transaction record in this transaction means a
@@ -969,7 +969,7 @@ class Service implements InjectionAwareInterface
                     throw new InformationException('Transaction ID is already associated with another invoice.');
                 }
 
-                $result = $this->markAsPaid($invoice, false, $execute);
+                $result = $this->markAsPaid($invoice, false, false, true);
                 if ($result) {
                     $transaction->setAmount((string) $invoiceTotal);
                     $transaction->setCurrency($invoice->getCurrency());
@@ -982,6 +982,20 @@ class Service implements InjectionAwareInterface
 
                 return $result;
             });
+
+            // Events and tasks run after the commit above, so neither
+            // notifications nor provisioning precede the recorded payment.
+            if ($paid) {
+                $this->firePaymentReceivedEvent($invoice);
+                if ($execute) {
+                    $this->executeInvoiceItemTasks(
+                        $this->getInvoiceItemRepository()->findByInvoiceId((int) $invoice->getId()),
+                        $this->di['mod_service']('Invoice', 'InvoiceItem')
+                    );
+                }
+            }
+
+            return $paid;
         }
 
         return $this->markAsPaid($invoice, false, $execute);

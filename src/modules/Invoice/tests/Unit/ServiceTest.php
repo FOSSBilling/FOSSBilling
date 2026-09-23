@@ -1107,7 +1107,7 @@ test('admin mark as paid with custom gateway records transaction and marks invoi
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('markAsPaid')
         ->once()
-        ->with(Mockery::type(Invoice::class), false, true)
+        ->with(Mockery::type(Invoice::class), false, false, true)
         ->andReturn(true);
     $serviceMock->shouldReceive('getTotalWithTax')
         ->once()
@@ -1149,13 +1149,24 @@ test('admin mark as paid with custom gateway records transaction and marks invoi
     $gatewayRepo->shouldReceive('find')->once()->with(5)->andReturn($gatewayModel);
     $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($transactionRepo = Mockery::mock(TransactionRepository::class));
     $transactionRepo->shouldReceive('find')->once()->with(20)->andReturn($transactionModel);
+    $em->shouldReceive('getRepository')->with(InvoiceItem::class)->andReturn($invoiceItemRepo = Mockery::mock(InvoiceItemRepository::class));
+    $invoiceItemRepo->shouldReceive('findByInvoiceId')->once()->with(10)->andReturn([$invoiceItemModel = createEntity(InvoiceItem::class)]);
     $em->shouldReceive('flush')->once();
+
+    $eventManagerMock = Mockery::mock('\Box_EventManager');
+    $eventManagerMock->shouldReceive('fire')->once()->with(['event' => 'onAfterAdminInvoicePaymentReceived', 'params' => ['id' => 10]]);
+
+    $invoiceItemServiceMock = Mockery::mock(ServiceInvoiceItem::class);
+    $invoiceItemServiceMock->shouldReceive('executeTask')->once()->with($invoiceItemModel);
 
     $di = container();
     $di['em'] = $em;
     $di['mod_service'] = $di->protect(moduleService([
         'invoice:transaction' => $transactionServiceMock,
+        'invoice:invoiceitem' => $invoiceItemServiceMock,
     ]));
+    $di['events_manager'] = $eventManagerMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
 
     $serviceMock->setDi($di);
 
