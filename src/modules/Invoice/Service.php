@@ -872,6 +872,9 @@ class Service implements InjectionAwareInterface
         if ($state['status'] === Invoice::STATUS_PAID) {
             return false;
         }
+        if ($state['status'] === Invoice::STATUS_CANCELED || $invoice->getReplacedByInvoiceId() !== null) {
+            throw new InformationException('This invoice was canceled and cannot be marked as paid');
+        }
 
         $invoiceItems = $this->getInvoiceItemRepository()->findByInvoiceId((int) $invoice->getId());
         $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
@@ -910,6 +913,9 @@ class Service implements InjectionAwareInterface
     {
         if ($invoice->getStatus() === Invoice::STATUS_PAID) {
             return true;
+        }
+        if ($invoice->getStatus() === Invoice::STATUS_CANCELED || $invoice->getReplacedByInvoiceId() !== null) {
+            throw new InformationException('This invoice was canceled and cannot be marked as paid');
         }
 
         $execute = Tools::normalizeBoolean($data['execute'] ?? false);

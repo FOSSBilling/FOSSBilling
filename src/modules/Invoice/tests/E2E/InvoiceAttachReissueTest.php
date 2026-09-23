@@ -211,6 +211,26 @@ test('reissuing cancels the original and moves its lines to a numbered replaceme
         expect($twice->wasSuccessful())->toBeFalse();
         expect($twice->getErrorMessage())->toContain('Only approved unpaid');
 
+        // The canceled original can no longer be paid either.
+        $gateways = Tests\Helpers\ApiClient::request('admin/invoice/gateway_get_pairs');
+        assertApiSuccess($gateways);
+        $gatewayId = null;
+        foreach ($gateways->getResult() as $id => $title) {
+            if ($title === 'Custom') {
+                $gatewayId = (int) $id;
+            }
+        }
+        if ($gatewayId === null) {
+            throw new RuntimeException('Custom payment gateway not found');
+        }
+        $payCanceled = Tests\Helpers\ApiClient::request('admin/invoice/mark_as_paid', [
+            'id' => $invoiceId,
+            'gateway_id' => $gatewayId,
+            'transactionId' => 'txn' . uniqid(),
+        ]);
+        expect($payCanceled->wasSuccessful())->toBeFalse();
+        expect($payCanceled->getErrorMessage())->toContain('canceled and cannot be marked as paid');
+
         // Paying the replacement settles only itself.
         attachReissueMarkInvoicePaid($replacementId);
         expect(attachReissueGetInvoice($replacementId)['status'])->toBe('paid');

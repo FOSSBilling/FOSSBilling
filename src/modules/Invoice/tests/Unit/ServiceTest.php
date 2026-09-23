@@ -1056,6 +1056,53 @@ test('marks invoice as paid', function (): void {
     expect($result)->toBeBool()->toBeTrue();
 });
 
+test('markAsPaidByAdmin refuses canceled and replaced invoices before any write', function (): void {
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldNotReceive('wrapInTransaction', 'persist', 'flush');
+
+    $di = container();
+    $di['em'] = $em;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $canceled = createEntity(Invoice::class, ['clientId' => 5]);
+    $canceled->setStatus(Invoice::STATUS_CANCELED);
+    setEntityId($canceled, 10);
+
+    $replaced = createEntity(Invoice::class, ['clientId' => 5]);
+    $replaced->setStatus(Invoice::STATUS_UNPAID);
+    $replaced->setReplacedByInvoiceId(11);
+    setEntityId($replaced, 10);
+
+    foreach ([$canceled, $replaced] as $invoice) {
+        $service = new Service();
+        $service->setDi($di);
+
+        expect(fn () => $service->markAsPaidByAdmin($invoice, []))
+            ->toThrow(FOSSBilling\InformationException::class, 'canceled and cannot be marked as paid');
+    }
+});
+
+test('markAsPaid refuses invoices canceled while waiting on the lock', function (): void {
+    $invoice = createEntity(Invoice::class, ['clientId' => 5]);
+    $invoice->setStatus(Invoice::STATUS_UNPAID);
+    setEntityId($invoice, 10);
+
+    $em = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
+    $em->shouldReceive('wrapInTransaction')->andReturnUsing(fn (callable $callback): mixed => $callback());
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn(invoiceLockingRepository(['status' => Invoice::STATUS_CANCELED, 'approved' => true]));
+    $em->shouldReceive('refresh')->byDefault();
+
+    $di = container();
+    $di['em'] = $em;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $service = new Service();
+    $service->setDi($di);
+
+    expect(fn () => $service->markAsPaid($invoice))
+        ->toThrow(FOSSBilling\InformationException::class, 'canceled and cannot be marked as paid');
+});
+
 test('admin mark as paid with custom gateway records transaction and marks invoice paid', function (): void {
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('markAsPaid')
