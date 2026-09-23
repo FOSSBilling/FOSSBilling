@@ -10,6 +10,7 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Support\Event\BeforeGuestTicketCreateEvent;
 use Symfony\Component\HttpFoundation\Request;
 
 use function Tests\Helpers\container;
@@ -44,47 +45,83 @@ test('on before client sign up', function (): void {
     $service->onBeforeClientSignUp($boxEventMock);
 });
 
-test('on before client open ticket checks guest submissions', function (): void {
-    $service = new Box\Mod\Antispam\Service();
-    $spamCheckerService = Mockery::mock(Box\Mod\Antispam\Service::class);
-    $spamCheckerService->shouldReceive('isBlockedIp')
-        ->atLeast()->once();
-    $spamCheckerService->shouldReceive('checkCaptcha')
-        ->once();
-    $spamCheckerService->shouldReceive('isSpam')
-        ->atLeast()->once();
-    $spamCheckerService->shouldReceive('isTemp')
-        ->atLeast()->once();
+test('before guest ticket creation checks blocked IP, captcha, spam, and disposable email', function (): void {
+    $input = [
+        'author_role' => 'guest',
+        'email' => 'guest@example.com',
+        'ip' => '1.2.3.4',
+        'g-recaptcha-response' => 'token',
+    ];
+    $service = Mockery::mock(Box\Mod\Antispam\Service::class)->makePartial();
+    $service->shouldReceive('checkCaptcha')->once()->with($input);
+    $service->shouldReceive('isInStopForumSpamDatabase')
+        ->once()
+        ->with(['ip' => '1.2.3.4', 'email' => 'guest@example.com'])
+        ->andReturnTrue();
+    $service->shouldReceive('isATempEmail')
+        ->once()
+        ->with('guest@example.com', true)
+        ->andReturnFalse();
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $spamCheckerService);
-    $boxEventMock = Mockery::mock('\Box_Event');
-    $boxEventMock->shouldReceive('getDi')
-        ->atLeast()->once()
-        ->andReturn($di);
-    $boxEventMock->shouldReceive('getParameters')
-        ->atLeast()->once()
-        ->andReturn(['author_role' => 'guest', 'email' => 'guest@example.com']);
+    $di['mod_config'] = $di->protect(fn (): array => [
+        'block_ips' => false,
+        'sfs' => true,
+        'check_temp_emails' => true,
+    ]);
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $service);
+    $service->setDi($di);
 
-    $service->onBeforeClientOpenTicket($boxEventMock);
+    $event = new BeforeGuestTicketCreateEvent($input, 'open', 'subject', 'message');
+    $service->onBeforeGuestTicketCreate($event);
+
+    expect($event->getStatus())->toBe('open')
+        ->and($event->getSubject())->toBe('subject')
+        ->and($event->getMessage())->toBe('message');
 });
 
-test('on before client open ticket skips client submissions', function (): void {
-    $service = new Box\Mod\Antispam\Service();
-    $spamCheckerService = Mockery::mock(Box\Mod\Antispam\Service::class);
-    $spamCheckerService->shouldReceive('isBlockedIp')->never();
-    $spamCheckerService->shouldReceive('checkCaptcha')->never();
-    $spamCheckerService->shouldReceive('isSpam')->never();
-    $spamCheckerService->shouldReceive('isTemp')->never();
+test('before guest ticket creation skips non-guest submissions', function (): void {
+    $service = Mockery::mock(Box\Mod\Antispam\Service::class)->makePartial();
+    $service->shouldReceive('checkCaptcha')->never();
+    $service->shouldReceive('isInStopForumSpamDatabase')->never();
+    $service->shouldReceive('isATempEmail')->never();
 
     $di = container();
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $spamCheckerService);
-    $boxEventMock = Mockery::mock('\Box_Event');
-    $boxEventMock->shouldReceive('getParameters')
-        ->atLeast()->once()
-        ->andReturn(['author_role' => 'client', 'client_id' => 1]);
+    $di['mod_config'] = $di->protect(fn (): array => [
+        'block_ips' => true,
+        'blocked_ips' => '1.2.3.4',
+        'sfs' => true,
+        'check_temp_emails' => true,
+    ]);
+    $di['request'] = Request::create('http://localhost', server: ['REMOTE_ADDR' => '1.2.3.4']);
+    $service->setDi($di);
 
-    $service->onBeforeClientOpenTicket($boxEventMock);
+    $service->onBeforeGuestTicketCreate(new BeforeGuestTicketCreateEvent(
+        ['author_role' => 'client', 'client_id' => 1],
+        'open',
+        'subject',
+        'message',
+    ));
+});
+
+test('before guest ticket creation propagates blocked IP exceptions', function (): void {
+    $service = Mockery::mock(Box\Mod\Antispam\Service::class)->makePartial();
+    $service->shouldReceive('checkCaptcha')->never();
+
+    $di = container();
+    $di['mod_config'] = $di->protect(fn (): array => [
+        'block_ips' => true,
+        'blocked_ips' => '1.2.3.4',
+    ]);
+    $di['request'] = Request::create('http://localhost', server: ['REMOTE_ADDR' => '1.2.3.4']);
+    $service->setDi($di);
+
+    expect(fn () => $service->onBeforeGuestTicketCreate(new BeforeGuestTicketCreateEvent(
+        ['author_role' => 'guest', 'email' => 'guest@example.com'],
+        'open',
+        'subject',
+        'message',
+    )))->toThrow(FOSSBilling\InformationException::class, 'Your IP address (1.2.3.4) is blocked');
 });
 
 test('is spam does not re-verify the captcha during signup', function (): void {

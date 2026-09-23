@@ -21,6 +21,10 @@ use Box\Mod\Staff\Repository\AdminPasswordResetRepository;
 use Box\Mod\Staff\Repository\AdminRepository;
 use Box\Mod\Staff\Service;
 use Box\Mod\Support\Entity\Helpdesk;
+use Box\Mod\Support\Event\AfterTicketClosedEvent;
+use Box\Mod\Support\Event\AfterTicketOpenedEvent;
+use Box\Mod\Support\Event\AfterTicketRepliedEvent;
+use Box\Mod\Support\Event\TicketActorRole;
 use Box\Mod\Support\Repository\HelpdeskRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use FOSSBilling\Events\EventDispatcher;
@@ -73,6 +77,26 @@ function staffServiceWithGroupPermissions(array $groups = [], bool $isSuperAdmin
     $service->setDi($di);
 
     return $service;
+}
+
+function dispatchStaffTicketEvent(Service $service, Pimple\Container $di, string $action, TicketActorRole $actor = TicketActorRole::CLIENT, int $ticketId = 42): void
+{
+    if ($service->getDi() !== $di) {
+        $service->setDi($di);
+    }
+
+    $dispatcher = new EventDispatcher(
+        static fn (): array => ['staff'],
+        static fn (string $module): Service => $service,
+    );
+    $event = match ($action) {
+        'opened' => new AfterTicketOpenedEvent($ticketId, $actor),
+        'replied' => new AfterTicketRepliedEvent($ticketId, $actor),
+        'closed' => new AfterTicketClosedEvent($ticketId, $actor),
+        default => throw new InvalidArgumentException(sprintf('Unknown support ticket action "%s".', $action)),
+    };
+
+    $dispatcher->dispatch($event);
 }
 
 function staffSetEntityId(object $entity, int $id): void
@@ -470,8 +494,7 @@ test('onAfterAdminOrderSuspend sends a staff notification', function (): void {
     Service::onAfterAdminOrderSuspend($event);
 });
 
-test('onAfterClientReplyTicket limits client details in the email notification', function (): void {
-    $eventMock = Mockery::mock('\Box_Event');
+test('typed ticket replied event limits client details in the email notification', function (): void {
     $ticketId = 42;
     $clientId = 7;
     $ticketModel = (new Box\Mod\Support\Entity\SupportTicket())
@@ -524,9 +547,6 @@ test('onAfterClientReplyTicket limits client details in the email notification',
             ],
         ]);
 
-    $eventMock->shouldReceive('getParameters')->once()
-        ->andReturn(['id' => $ticketId]);
-
     $service = new Service();
 
     $di = container();
@@ -541,15 +561,11 @@ test('onAfterClientReplyTicket limits client details in the email notification',
             return $emailServiceMock;
         }
     });
-
-    $eventMock->shouldReceive('getDi')->atLeast()->once()
-        ->andReturn($di);
     $service->setDi($di);
-    $service->onAfterClientReplyTicket($eventMock);
+    dispatchStaffTicketEvent($service, $di, 'replied');
 });
 
-test('onAfterClientReplyTicket still sends when its client no longer exists', function (): void {
-    $eventMock = Mockery::mock('\\Box_Event');
+test('typed ticket replied event still sends when its client no longer exists', function (): void {
     $ticketId = 42;
     $clientId = 7;
     $ticketModel = (new Box\Mod\Support\Entity\SupportTicket())
@@ -587,15 +603,11 @@ test('onAfterClientReplyTicket still sends when its client no longer exists', fu
         'email' => $emailServiceMock,
     });
 
-    $eventMock->shouldReceive('getParameters')->once()->andReturn(['id' => $ticketId]);
-    $eventMock->shouldReceive('getDi')->once()->andReturn($di);
-
-    Service::onAfterClientReplyTicket($eventMock);
+    $service = new Service();
+    dispatchStaffTicketEvent($service, $di, 'replied');
 });
 
-test('onAfterClientReplyTicket handles email exception', function (): void {
-    $eventMock = Mockery::mock('\Box_Event');
-
+test('typed ticket replied event handles email exception', function (): void {
     $supportServiceMock = Mockery::mock(Box\Mod\Support\Service::class);
     $supportServiceMock->shouldReceive('getTicketById')->atLeast()->once()
         ->andReturn(new Box\Mod\Support\Entity\SupportTicket());
@@ -605,9 +617,6 @@ test('onAfterClientReplyTicket handles email exception', function (): void {
     $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);
     $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once()
         ->andThrow(new Exception('PHPunit controlled Exception'));
-
-    $eventMock->shouldReceive('getparameters')->atLeast()->once()
-        ->andReturn(['id' => random_int(1, 100)]);
 
     $service = new Service();
 
@@ -620,15 +629,11 @@ test('onAfterClientReplyTicket handles email exception', function (): void {
             return $emailServiceMock;
         }
     });
-
-    $eventMock->shouldReceive('getDi')->atLeast()->once()
-        ->andReturn($di);
     $service->setDi($di);
-    $service->onAfterClientReplyTicket($eventMock);
+    dispatchStaffTicketEvent($service, $di, 'replied');
 });
 
-test('onAfterClientCloseTicket sends email notification', function (): void {
-    $eventMock = Mockery::mock('\Box_Event');
+test('typed ticket closed event sends email notification', function (): void {
     $ticketId = 42;
     $clientId = 7;
     $ticketModel = (new Box\Mod\Support\Entity\SupportTicket())
@@ -679,9 +684,6 @@ test('onAfterClientCloseTicket sends email notification', function (): void {
             ],
         ]);
 
-    $eventMock->shouldReceive('getparameters')->atLeast()->once()
-        ->andReturn(['id' => $ticketId]);
-
     $service = new Service();
 
     $di = container();
@@ -696,16 +698,11 @@ test('onAfterClientCloseTicket sends email notification', function (): void {
             return $emailServiceMock;
         }
     });
-
-    $eventMock->shouldReceive('getDi')->atLeast()->once()
-        ->andReturn($di);
     $service->setDi($di);
-    $service->onAfterClientCloseTicket($eventMock);
+    dispatchStaffTicketEvent($service, $di, 'closed');
 });
 
-test('onAfterClientCloseTicket handles email exception', function (): void {
-    $eventMock = Mockery::mock('\Box_Event');
-
+test('typed ticket closed event handles email exception', function (): void {
     $supportServiceMock = Mockery::mock(Box\Mod\Support\Service::class);
     $supportServiceMock->shouldReceive('getTicketById')->atLeast()->once()
         ->andReturn(new Box\Mod\Support\Entity\SupportTicket());
@@ -715,9 +712,6 @@ test('onAfterClientCloseTicket handles email exception', function (): void {
     $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);
     $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once()
         ->andThrow(new Exception('PHPunit controlled Exception'));
-
-    $eventMock->shouldReceive('getparameters')->atLeast()->once()
-        ->andReturn(['id' => random_int(1, 100)]);
 
     $service = new Service();
 
@@ -730,16 +724,11 @@ test('onAfterClientCloseTicket handles email exception', function (): void {
             return $emailServiceMock;
         }
     });
-
-    $eventMock->shouldReceive('getDi')->atLeast()->once()
-        ->andReturn($di);
     $service->setDi($di);
-    $service->onAfterClientCloseTicket($eventMock);
+    dispatchStaffTicketEvent($service, $di, 'closed');
 });
 
-test('onAfterClientOpenTicket sends guest email notification', function (): void {
-    $eventMock = Mockery::mock('\Box_Event');
-
+test('typed ticket opened event sends guest email notification', function (): void {
     $supportServiceMock = Mockery::mock(Box\Mod\Support\Service::class);
     $supportServiceMock->shouldReceive('getTicketById')->atLeast()->once()
         ->andReturn(new Box\Mod\Support\Entity\SupportTicket());
@@ -750,9 +739,6 @@ test('onAfterClientOpenTicket sends guest email notification', function (): void
     $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once()
         ->with(Mockery::on(fn ($email): bool => $email['code'] === 'mod_staff_ticket_open'));
 
-    $eventMock->shouldReceive('getparameters')->atLeast()->once()
-        ->andReturn(['id' => random_int(1, 100)]);
-
     $service = new Service();
 
     $di = container();
@@ -764,16 +750,11 @@ test('onAfterClientOpenTicket sends guest email notification', function (): void
             return $emailServiceMock;
         }
     });
-
-    $eventMock->shouldReceive('getDi')->atLeast()->once()
-        ->andReturn($di);
     $service->setDi($di);
-    $service->onAfterClientOpenTicket($eventMock);
+    dispatchStaffTicketEvent($service, $di, 'opened', TicketActorRole::GUEST);
 });
 
-test('onAfterClientOpenTicket handles guest email exception', function (): void {
-    $eventMock = Mockery::mock('\Box_Event');
-
+test('typed ticket opened event handles guest email exception', function (): void {
     $supportServiceMock = Mockery::mock(Box\Mod\Support\Service::class);
     $supportServiceMock->shouldReceive('getTicketById')->atLeast()->once()
         ->andReturn(new Box\Mod\Support\Entity\SupportTicket());
@@ -784,9 +765,6 @@ test('onAfterClientOpenTicket handles guest email exception', function (): void 
     $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once()
         ->andThrow(new Exception('PHPunit controlled Exception'));
 
-    $eventMock->shouldReceive('getparameters')->atLeast()->once()
-        ->andReturn(['id' => random_int(1, 100)]);
-
     $service = new Service();
 
     $di = container();
@@ -798,16 +776,11 @@ test('onAfterClientOpenTicket handles guest email exception', function (): void 
             return $emailServiceMock;
         }
     });
-
-    $eventMock->shouldReceive('getDi')->atLeast()->once()
-        ->andReturn($di);
     $service->setDi($di);
-    $service->onAfterClientOpenTicket($eventMock);
+    dispatchStaffTicketEvent($service, $di, 'opened', TicketActorRole::GUEST);
 });
 
-test('onAfterClientReplyTicket sends guest email notification', function (): void {
-    $eventMock = Mockery::mock('\Box_Event');
-
+test('typed ticket replied event sends guest email notification', function (): void {
     $supportServiceMock = Mockery::mock(Box\Mod\Support\Service::class);
     $supportServiceMock->shouldReceive('getTicketById')->atLeast()->once()
         ->andReturn(new Box\Mod\Support\Entity\SupportTicket());
@@ -818,9 +791,6 @@ test('onAfterClientReplyTicket sends guest email notification', function (): voi
     $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once()
         ->with(Mockery::on(fn ($email): bool => $email['code'] === 'mod_staff_ticket_reply'));
 
-    $eventMock->shouldReceive('getparameters')->atLeast()->once()
-        ->andReturn(['id' => random_int(1, 100)]);
-
     $service = new Service();
 
     $di = container();
@@ -832,16 +802,11 @@ test('onAfterClientReplyTicket sends guest email notification', function (): voi
             return $emailServiceMock;
         }
     });
-
-    $eventMock->shouldReceive('getDi')->atLeast()->once()
-        ->andReturn($di);
     $service->setDi($di);
-    $service->onAfterClientReplyTicket($eventMock);
+    dispatchStaffTicketEvent($service, $di, 'replied', TicketActorRole::GUEST);
 });
 
-test('onAfterClientReplyTicket handles guest email exception', function (): void {
-    $eventMock = Mockery::mock('\Box_Event');
-
+test('typed ticket replied event handles guest email exception', function (): void {
     $supportServiceMock = Mockery::mock(Box\Mod\Support\Service::class);
     $supportServiceMock->shouldReceive('getTicketById')->atLeast()->once()
         ->andReturn(new Box\Mod\Support\Entity\SupportTicket());
@@ -852,9 +817,6 @@ test('onAfterClientReplyTicket handles guest email exception', function (): void
     $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once()
         ->andThrow(new Exception('PHPunit controlled Exception'));
 
-    $eventMock->shouldReceive('getparameters')->atLeast()->once()
-        ->andReturn(['id' => random_int(1, 100)]);
-
     $service = new Service();
 
     $di = container();
@@ -866,11 +828,8 @@ test('onAfterClientReplyTicket handles guest email exception', function (): void
             return $emailServiceMock;
         }
     });
-
-    $eventMock->shouldReceive('getDi')->atLeast()->once()
-        ->andReturn($di);
     $service->setDi($di);
-    $service->onAfterClientReplyTicket($eventMock);
+    dispatchStaffTicketEvent($service, $di, 'replied', TicketActorRole::GUEST);
 });
 
 test('onAfterClientSignUp sends sanitized client details in the email variables', function (): void {
@@ -959,9 +918,7 @@ test('onAfterClientSignUp handles email exception', function (): void {
     $service->onAfterClientSignUp($eventMock);
 });
 
-test('onAfterClientCloseTicket handles guest email exception', function (): void {
-    $eventMock = Mockery::mock('\Box_Event');
-
+test('typed ticket closed event handles guest email exception', function (): void {
     $supportServiceMock = Mockery::mock(Box\Mod\Support\Service::class);
     $supportServiceMock->shouldReceive('getTicketById')->atLeast()->once()
         ->andReturn(new Box\Mod\Support\Entity\SupportTicket());
@@ -971,9 +928,6 @@ test('onAfterClientCloseTicket handles guest email exception', function (): void
     $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);
     $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once()
         ->andThrow(new Exception('PHPunit controlled Exception'));
-
-    $eventMock->shouldReceive('getparameters')->atLeast()->once()
-        ->andReturn(['id' => random_int(1, 100)]);
 
     $service = new Service();
 
@@ -986,20 +940,35 @@ test('onAfterClientCloseTicket handles guest email exception', function (): void
             return $emailServiceMock;
         }
     });
-    $eventMock->shouldReceive('getDi')->atLeast()->once()
-        ->andReturn($di);
     $service->setDi($di);
-    $service->onAfterClientCloseTicket($eventMock);
+    dispatchStaffTicketEvent($service, $di, 'closed', TicketActorRole::GUEST);
 });
 
-test('onAfterClientOpenTicket sends mod_staff_ticket_open email', function (): void {
+test('staff ignores ticket lifecycle events caused by an admin', function (): void {
+    $di = container();
+    $moduleServiceRequests = [];
+    $di['mod_service'] = $di->protect(static function (string $name) use (&$moduleServiceRequests): object {
+        $moduleServiceRequests[] = $name;
+
+        throw new LogicException(sprintf('Unexpected module service request: %s', $name));
+    });
+
+    $service = new Service();
+    foreach (['opened', 'replied', 'closed'] as $action) {
+        dispatchStaffTicketEvent($service, $di, $action, TicketActorRole::ADMIN);
+    }
+
+    expect($moduleServiceRequests)->toBeEmpty();
+});
+
+test('typed ticket opened event sends mod_staff_ticket_open email', function (): void {
     $di = container();
 
     $clientId = 7;
     $ticketModel = new Box\Mod\Support\Entity\SupportTicket();
-    \Tests\Helpers\setEntityId($ticketModel, 1);
+    staffSetEntityId($ticketModel, 1);
     $helpdesk = new Helpdesk();
-    \Tests\Helpers\setEntityId($helpdesk, 1);
+    staffSetEntityId($helpdesk, 1);
     $ticketModel->setSupportHelpdesk($helpdesk);
     $ticketModel->setClientId($clientId);
     $clientModel = createEntity(Box\Mod\Client\Entity\Client::class);
@@ -1067,6 +1036,9 @@ test('onAfterClientOpenTicket sends mod_staff_ticket_open email', function (): v
     $repoMock->shouldReceive('find')->atLeast()->once()
         ->andReturn(null);
     $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(AdminGroup::class)->andReturn(Mockery::mock(AdminGroupRepository::class)->shouldIgnoreMissing());
+    $emMock->shouldReceive('getRepository')->with(AdminGroupMember::class)->andReturn(Mockery::mock(AdminGroupMemberRepository::class)->shouldIgnoreMissing());
+    $emMock->shouldReceive('getRepository')->with(AdminPasswordReset::class)->andReturn(Mockery::mock(AdminPasswordResetRepository::class)->shouldIgnoreMissing());
     $emMock->shouldReceive('getRepository')
         ->with(Helpdesk::class)
         ->atLeast()->once()
@@ -1075,25 +1047,18 @@ test('onAfterClientOpenTicket sends mod_staff_ticket_open email', function (): v
     $admin = \Tests\Helpers\admin();
     $di['loggedin_admin'] = $admin;
 
-    $eventMock = Mockery::mock('\Box_Event');
-    $eventMock->shouldReceive('getDi')->atLeast()->once()
-        ->andReturn($di);
-
-    $eventMock->shouldReceive('getparameters')->atLeast()->once()
-        ->andReturn(['id' => random_int(1, 100)]);
-
     $service = new Service();
-    $service->onAfterClientOpenTicket($eventMock);
+    dispatchStaffTicketEvent($service, $di, 'opened');
 });
 
-test('onAfterClientOpenTicket sends mod_support_helpdesk_ticket_open email', function (): void {
+test('typed ticket opened event sends mod_support_helpdesk_ticket_open email', function (): void {
     $di = container();
 
     $clientId = 7;
     $ticketModel = new Box\Mod\Support\Entity\SupportTicket();
-    \Tests\Helpers\setEntityId($ticketModel, 1);
+    staffSetEntityId($ticketModel, 1);
     $helpdesk = new Helpdesk();
-    \Tests\Helpers\setEntityId($helpdesk, 1);
+    staffSetEntityId($helpdesk, 1);
     $ticketModel->setSupportHelpdesk($helpdesk);
     $ticketModel->setClientId($clientId);
     $clientModel = createEntity(Box\Mod\Client\Entity\Client::class);
@@ -1162,6 +1127,9 @@ test('onAfterClientOpenTicket sends mod_support_helpdesk_ticket_open email', fun
     $repoMock->shouldReceive('find')->atLeast()->once()
         ->andReturn($helpdeskModel);
     $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(AdminGroup::class)->andReturn(Mockery::mock(AdminGroupRepository::class)->shouldIgnoreMissing());
+    $emMock->shouldReceive('getRepository')->with(AdminGroupMember::class)->andReturn(Mockery::mock(AdminGroupMemberRepository::class)->shouldIgnoreMissing());
+    $emMock->shouldReceive('getRepository')->with(AdminPasswordReset::class)->andReturn(Mockery::mock(AdminPasswordResetRepository::class)->shouldIgnoreMissing());
     $emMock->shouldReceive('getRepository')
         ->with(Helpdesk::class)
         ->atLeast()->once()
@@ -1170,15 +1138,8 @@ test('onAfterClientOpenTicket sends mod_support_helpdesk_ticket_open email', fun
     $admin = \Tests\Helpers\admin();
     $di['loggedin_admin'] = $admin;
 
-    $eventMock = Mockery::mock('\Box_Event');
-    $eventMock->shouldReceive('getDi')->atLeast()->once()
-        ->andReturn($di);
-
-    $eventMock->shouldReceive('getparameters')->atLeast()->once()
-        ->andReturn(['id' => random_int(1, 100)]);
-
     $service = new Service();
-    $service->onAfterClientOpenTicket($eventMock);
+    dispatchStaffTicketEvent($service, $di, 'opened');
 });
 
 test('getList returns paginated result', function (): void {

@@ -12,7 +12,7 @@ namespace Box\Mod\Support\Event;
 use FOSSBilling\Events\Event;
 
 /**
- * Mutable ticket fields for guest ticket creation, after legacy hooks have run.
+ * Mutable ticket fields for guest ticket creation.
  */
 final class BeforeGuestTicketCreateEvent extends Event
 {

@@ -11,9 +11,11 @@ declare(strict_types=1);
 
 namespace Box\Mod\Antispam;
 
+use Box\Mod\Support\Event\BeforeGuestTicketCreateEvent;
 use EmailChecker\Adapter;
 use EmailChecker\Utilities;
 use FOSSBilling\InjectionAwareInterface;
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Contracts\Cache\ItemInterface;
@@ -72,18 +74,19 @@ class Service implements InjectionAwareInterface
         $antispamService->checkHoneypot($event);
     }
 
-    public static function onBeforeClientOpenTicket(\Box_Event $event): void
+    #[AsEventListener]
+    public function onBeforeGuestTicketCreate(BeforeGuestTicketCreateEvent $event): void
     {
-        if ($event->getParameters()['author_role'] !== 'guest') {
+        if (($event->input['author_role'] ?? null) !== 'guest') {
             return;
         }
 
-        $di = $event->getDi();
-        $antispamService = $di['mod_service']('Antispam');
-        $antispamService->isBlockedIp($event);
-        $antispamService->checkCaptcha($event->getParameters());
-        $antispamService->isSpam($event);
-        $antispamService->isTemp($event);
+        $di = $this->di ?? throw new \LogicException('Antispam service must be initialized before handling events.');
+
+        $this->checkBlockedIp($di);
+        $this->checkCaptcha($event->input);
+        $this->checkSpam($di, $event->input);
+        $this->checkTempEmail($di, $event->input);
     }
 
     public static function onBeforeClientProfileUpdate(\Box_Event $event): void
@@ -123,7 +126,11 @@ class Service implements InjectionAwareInterface
 
     public function isBlockedIp(\Box_Event $event): void
     {
-        $di = $event->getDi();
+        $this->checkBlockedIp($event->getDi());
+    }
+
+    private function checkBlockedIp(\Pimple\Container $di): void
+    {
         $config = $di['mod_config']('Antispam');
         if (isset($config['block_ips']) && $config['block_ips'] && isset($config['blocked_ips'])) {
             $blocked_ips = explode(PHP_EOL, $config['blocked_ips']);
@@ -136,9 +143,12 @@ class Service implements InjectionAwareInterface
 
     public function isSpam(\Box_Event $event): void
     {
-        $di = $event->getDi();
-        $params = $event->getParameters();
+        $this->checkSpam($event->getDi(), $event->getParameters());
+    }
 
+    /** @param array<string, mixed> $params */
+    private function checkSpam(\Pimple\Container $di, array $params): void
+    {
         $data = [
             'ip' => $params['ip'] ?? null,
             'email' => $params['email'] ?? null,
@@ -254,15 +264,19 @@ class Service implements InjectionAwareInterface
 
     public function isTemp(\Box_Event $event): void
     {
-        $di = $event->getDi();
+        $this->checkTempEmail($event->getDi(), $event->getParameters());
+    }
+
+    /** @param array<string, mixed> $params */
+    private function checkTempEmail(\Pimple\Container $di, array $params): void
+    {
         $config = $di['mod_config']('Antispam');
 
         $check = $config['check_temp_emails'] ?? true;
         if ($check) {
-            $antispamService = $di['mod_service']('Antispam');
-            $params = $event->getParameters();
             $email = $params['email'] ?? '';
 
+            $antispamService = $di['mod_service']('Antispam');
             $antispamService->isATempEmail($email, true);
         }
     }

@@ -23,12 +23,17 @@ use Box\Mod\Staff\Repository\AdminPasswordResetRepository;
 use Box\Mod\Staff\Repository\AdminRepository;
 use Box\Mod\Support\Entity\Helpdesk;
 use Box\Mod\Support\Entity\SupportTicket;
+use Box\Mod\Support\Event\AfterTicketClosedEvent;
+use Box\Mod\Support\Event\AfterTicketOpenedEvent;
+use Box\Mod\Support\Event\AfterTicketRepliedEvent;
+use Box\Mod\Support\Event\TicketActorRole;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use FOSSBilling\i18n;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\SortOptions;
 use FOSSBilling\Tools;
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 
 class Service implements InjectionAwareInterface
 {
@@ -311,14 +316,18 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public static function onAfterClientOpenTicket(\Box_Event $event): void
+    #[AsEventListener]
+    public function notifyStaffAfterTicketOpened(AfterTicketOpenedEvent $event): void
     {
-        $di = $event->getDi();
-        $params = $event->getParameters();
+        if ($event->actor === TicketActorRole::ADMIN) {
+            return;
+        }
+
+        $di = $this->di ?? throw new \LogicException('The Staff service dependency injection container has not been set.');
 
         try {
             $supportTicketService = $di['mod_service']('support');
-            $ticketModel = $supportTicketService->getTicketById((int) $params['id']);
+            $ticketModel = $supportTicketService->getTicketById($event->ticketId);
             $ticket = self::getTicketEmailVars($di, $ticketModel);
 
             $helpdeskId = $ticketModel->getSupportHelpdeskId();
@@ -344,14 +353,18 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public static function onAfterClientReplyTicket(\Box_Event $event): void
+    #[AsEventListener]
+    public function notifyStaffAfterTicketReplied(AfterTicketRepliedEvent $event): void
     {
-        $params = $event->getParameters();
-        $di = $event->getDi();
+        if ($event->actor === TicketActorRole::ADMIN) {
+            return;
+        }
+
+        $di = $this->di ?? throw new \LogicException('The Staff service dependency injection container has not been set.');
 
         try {
             $supportTicketService = $di['mod_service']('support');
-            $ticketModel = $supportTicketService->getTicketById((int) $params['id']);
+            $ticketModel = $supportTicketService->getTicketById($event->ticketId);
             $ticket = self::getTicketEmailVars($di, $ticketModel);
 
             $email = [];
@@ -366,14 +379,18 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public static function onAfterClientCloseTicket(\Box_Event $event): void
+    #[AsEventListener]
+    public function notifyStaffAfterTicketClosed(AfterTicketClosedEvent $event): void
     {
-        $params = $event->getParameters();
-        $di = $event->getDi();
+        if ($event->actor === TicketActorRole::ADMIN) {
+            return;
+        }
+
+        $di = $this->di ?? throw new \LogicException('The Staff service dependency injection container has not been set.');
 
         try {
             $supportTicketService = $di['mod_service']('support');
-            $ticketModel = $supportTicketService->getTicketById((int) $params['id']);
+            $ticketModel = $supportTicketService->getTicketById($event->ticketId);
             $ticket = self::getTicketEmailVars($di, $ticketModel);
             $email = [];
             $email['to_staff'] = true;
