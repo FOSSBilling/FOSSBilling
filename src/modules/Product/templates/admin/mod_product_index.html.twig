@@ -35,7 +35,7 @@
                     </ul>
                 </div>
                 <div class="tab-content border-top">
-        <div class="tab-pane fade show active" id="tab-index" role="tabpanel" aria-labelledby="index-tab">
+        <div class="tab-pane fade show active" id="tab-index" role="tabpanel" aria-labelledby="index-tab" data-list-ns="">
             {{ include('partial_search.html.twig', { search_toolbar_actions: product_toolbar_actions }) }}
             <div class="table-responsive">
                 <form method="post" action="{{ 'product/update_priority'|api_url }}" {{ fb_api_form({reload: true}) }}>

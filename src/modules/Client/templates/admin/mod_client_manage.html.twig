@@ -493,7 +493,7 @@
         </div>
         {% endif %}
 
-        <div class="tab-pane fade" id="tab-orders" role="tabpanel">
+        <div class="tab-pane fade" id="tab-orders" role="tabpanel" data-list-ns="order">
             {% embed 'partial_admin_related_section.html.twig' with {
                 title: 'Client Orders'|trans,
                 subtitle: 'Review the client’s active and historical orders, or create a new order directly for this client.'|trans,
@@ -561,7 +561,7 @@
             {% endembed %}
         </div>
 
-        <div class="tab-pane fade" id="tab-invoices" role="tabpanel">
+        <div class="tab-pane fade" id="tab-invoices" role="tabpanel" data-list-ns="invoice">
             {% embed 'partial_admin_related_section.html.twig' with {
                 title: 'Client Invoices'|trans,
                 subtitle: 'Review invoices issued to this client or prepare a new invoice directly from the account view.'|trans,
@@ -629,7 +629,7 @@
             {% endembed %}
         </div>
 
-        <div class="tab-pane fade" id="tab-support" role="tabpanel" aria-labelledby="support-tab">
+        <div class="tab-pane fade" id="tab-support" role="tabpanel" aria-labelledby="support-tab" data-list-ns="ticket">
             {% embed 'partial_admin_related_section.html.twig' with {
                 title: 'Help Desk'|trans,
                 subtitle: 'Track the client’s support tickets and open a new ticket without leaving the client profile.'|trans,
@@ -696,7 +696,7 @@
         </div>
 
         {% if can_manage_balance %}
-        <div class="tab-pane fade" id="tab-balance" role="tabpanel" aria-labelledby="balance-tab">
+        <div class="tab-pane fade" id="tab-balance" role="tabpanel" aria-labelledby="balance-tab" data-list-ns="balance">
             {% embed 'partial_admin_related_section.html.twig' with {
                 title: 'Client Payments History'|trans,
                 subtitle: 'Review balance adjustments and record a manual credit for this client when needed.'|trans,
@@ -786,7 +786,7 @@
         {% endif %}
 
         {% if can_view_client_login_history %}
-        <div class="tab-pane fade" id="tab-history" role="tabpanel" aria-labelledby="history-tab">
+        <div class="tab-pane fade" id="tab-history" role="tabpanel" aria-labelledby="history-tab" data-list-ns="login">
             {% embed 'partial_admin_related_section.html.twig' with {
                 title: 'Login History'|trans,
                 subtitle: 'See recent client login activity, including originating IP address and detected country.'|trans,
@@ -834,7 +834,7 @@
         {% endif %}
 
         {% if can_view_email_history %}
-        <div class="tab-pane fade" id="tab-emails" role="tabpanel" aria-labelledby="emails-tab">
+        <div class="tab-pane fade" id="tab-emails" role="tabpanel" aria-labelledby="emails-tab" data-list-ns="email">
             {% set emailPage = request.email_page matches '/^\\d+$/' ? request.email_page : 1 %}
             {% set emailPerPage = request.email_per_page matches '/^\\d+$/' ? request.email_per_page : 25 %}
             {% set emails = admin.email_email_get_list(request|merge({ 'page': emailPage, 'per_page': emailPerPage, 'client_id': client.id, 'sort': request.email_sort|default(null), 'direction': request.email_direction|default('ASC') })) %}
@@ -896,7 +896,7 @@
         </div>
         {% endif %}
 
-        <div class="tab-pane fade" id="tab-transactions" role="tabpanel" aria-labelledby="transactions-tab">
+        <div class="tab-pane fade" id="tab-transactions" role="tabpanel" aria-labelledby="transactions-tab" data-list-ns="txn">
             {% embed 'partial_admin_related_section.html.twig' with {
                 title: 'Transactions Received'|trans,
                 subtitle: 'Review payment transactions recorded against this client across all gateways.'|trans,

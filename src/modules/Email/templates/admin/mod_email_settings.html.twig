@@ -103,7 +103,7 @@
                     </ul>
             <div class="tab-content border-top">
                 {% if can_access_templates %}
-                <div class="tab-pane fade{% if active_tab == 'templates' %} show active{% endif %}" id="tab-index" role="tabpanel">
+                <div class="tab-pane fade{% if active_tab == 'templates' %} show active{% endif %}" id="tab-index" role="tabpanel" data-list-ns="">
                     {% set template_filter_panel_id = 'email-template-search-filters' %}
                     {% set template_filter_panel_open = request_has_filters %}
 
@@ -270,7 +270,7 @@
                 {% endif %}
 
                 {% if can_view_email_history %}
-                <div class="tab-pane fade{% if active_tab == 'queue' %} show active{% endif %}" id="tab-queue" role="tabpanel">
+                <div class="tab-pane fade{% if active_tab == 'queue' %} show active{% endif %}" id="tab-queue" role="tabpanel" data-list-ns="queue">
                     {% set queue_filter_panel_id = 'email-queue-search-filters' %}
                     {% set queue_filter_panel_open = active_tab == 'queue' and request_has_filters %}
                     {{ include('partial_search.html.twig', {

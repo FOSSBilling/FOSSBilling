@@ -47,7 +47,7 @@
                     </ul>
                 </div>
                 <div class="tab-content border-top">
-                    <div class="tab-pane fade show active" id="tab-tlds" role="tabpanel">
+                    <div class="tab-pane fade show active" id="tab-tlds" role="tabpanel" data-list-ns="">
                         <div class="card-body border-bottom py-3">
                             <div class="d-flex justify-content-end">
                                 {{ new_tld_action|raw }}
@@ -121,7 +121,7 @@
                         </div>
                     </div>
 
-                    <div class="tab-pane fade" id="tab-registrars" role="tabpanel">
+                    <div class="tab-pane fade" id="tab-registrars" role="tabpanel" data-list-ns="registrar">
                         <div class="card-body border-bottom py-3">
                             <div class="d-flex justify-content-end">
                                 {{ new_registrar_action|raw }}

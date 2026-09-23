@@ -48,7 +48,7 @@
 
     {% block detail_tab_content %}
         {% import 'macro_functions.html.twig' as mf %}
-        <div class="tab-pane fade show active" id="tab-info" role="tabpanel">
+        <div class="tab-pane fade show active" id="tab-info" role="tabpanel" data-list-ns="">
             <div class="px-3 py-3 d-flex flex-column gap-3">
                 {% embed 'partial_admin_summary_card.html.twig' with {
                     title: 'Invoice Summary'|trans,

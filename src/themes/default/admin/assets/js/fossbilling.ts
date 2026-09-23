@@ -1,5 +1,6 @@
 // @ts-nocheck -- Runtime DOM/widget integration; converted to TS without changing behavior.
 import backToTop from "./ui/backToTop.ts";
+import { pruneListParamsForTab } from "./utils.ts";
 
 function renderTimeSeriesSparkline(...args) {
   return import("./ui/charts.ts").then(({ renderTimeSeriesSparkline: renderChart }) => renderChart(...args));
@@ -173,16 +174,22 @@ globalThis.FOSSBilling = Object.assign(globalThis.FOSSBilling || {}, {
      return true;
    };
 
-   const syncTabUrl = (tabId) => {
-     if (!tabId) {
-       return;
-     }
+    const syncTabUrl = (tabId) => {
+      if (!tabId) {
+        return;
+      }
 
-     const url = new URL(window.location.href);
-     url.hash = tabId;
-     url.searchParams.delete('tab');
-     window.history.replaceState({}, '', url);
-   };
+      const url = new URL(window.location.href);
+      const pane = document.getElementById(tabId);
+      const targetNamespace = pane ? pane.getAttribute('data-list-ns') : null;
+      const otherNamespaces = Array.from(document.querySelectorAll('.tab-pane[data-list-ns]'))
+        .filter((other) => other.id !== tabId)
+        .map((other) => other.getAttribute('data-list-ns') ?? '');
+      url.search = pruneListParamsForTab(url.search, targetNamespace, otherNamespaces);
+      url.hash = tabId;
+      url.searchParams.delete('tab');
+      window.history.replaceState({}, '', url);
+    };
 
    const hashTabId = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : '';
    showTabById(hashTabId);
