@@ -13,6 +13,7 @@ namespace FOSSBilling;
 
 use Box\Mod\Extension\Entity\Extension;
 use FOSSBilling\Doctrine\DriverManagerFactory;
+use FOSSBilling\Doctrine\EntityManagerFactory;
 use FOSSBilling\Doctrine\ModuleEntityScope;
 use FOSSBilling\Doctrine\SchemaSynchronizer;
 use Symfony\Component\Filesystem\Exception\IOException;
@@ -23,6 +24,10 @@ use Symfony\Component\Uid\Uuid;
 
 class UpdatePatcher implements InjectionAwareInterface
 {
+    private const string SCHEMA_METADATA_HASH_PARAM = 'schema_metadata_hash';
+    private const string SCHEMA_METADATA_HASH_FAILED_PARAM = 'schema_metadata_hash_failed';
+    private const int SCHEMA_SYNC_RETRY_COOLDOWN = 3600;
+
     private ?\Pimple\Container $di = null;
     private Filesystem $filesystem;
     private array $downloadableStorageMigrationMap = [];
@@ -201,6 +206,11 @@ class UpdatePatcher implements InjectionAwareInterface
         // forever.
         $this->migrateThemePackageLayout();
 
+        // Same treatment for the debit-note settings rows content.sql seeds for fresh installs:
+        // plain check-then-insert SQL, idempotent, so every platform gets them even though no
+        // MySQL-only patch can run there.
+        $this->seedInvoiceNoteSettings();
+
         // Additive structural sync runs on every platform, MySQL/MariaDB included: it picks up any
         // column/table/index that's on entity metadata but not yet applied, without needing a
         // hand-written patch for it - the only mechanism at all on PostgreSQL/SQLite, and on
@@ -224,6 +234,216 @@ class UpdatePatcher implements InjectionAwareInterface
     }
 
     /**
+     * Brings the live schema up to date with current Doctrine entity metadata when the metadata
+     * changed since the last sync - independent of the version-gated finalization flow, so a
+     * code-only deploy (e.g. `git pull` to a commit that adds an entity column without bumping
+     * Version::VERSION) still gets its schema updated instead of crashing on the next query.
+     *
+     * The gate is EntityManagerFactory::entityDefinitionsHash(), a content hash every node running
+     * the same code computes identically - the last-synced value is kept in a plain setting row
+     * (SCHEMA_METADATA_HASH_PARAM), so a match costs file reads plus a single SELECT and runs
+     * outside the finalization lock (see UpdateFinalization::finalizePendingUpdate()).
+     *
+     * @return bool whether a sync attempt ran (even if it applied nothing)
+     */
+    public function ensureSchemaInSync(): bool
+    {
+        if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('em')) {
+            return false;
+        }
+
+        $currentHash = null;
+
+        try {
+            $currentHash = EntityManagerFactory::entityDefinitionsHash();
+            if ($this->fetchStoredSchemaHash() === $currentHash || $this->isSyncCoolingDown($currentHash)) {
+                return false;
+            }
+
+            // Same unconditional settings seeding applyCorePatches() performs, so the
+            // same-version path it never runs on doesn't leave them missing either.
+            $this->seedInvoiceNoteSettings();
+
+            if ($this->syncPortableSchema() === null) {
+                $this->recordFailedSyncAttempt($currentHash);
+
+                return false;
+            }
+
+            return true;
+        } catch (\Throwable $e) {
+            $this->logUpdate('error', 'Ambient schema sync failed: ' . $e->getMessage());
+            $this->recordFailedSyncAttempt($currentHash);
+
+            return false;
+        }
+    }
+
+    /**
+     * Whether the live schema may have drifted from current entity metadata - the hash-comparison
+     * half of ensureSchemaInSync(), safe to call without holding the finalization lock. Never
+     * throws: an unreadable database simply reports "in sync" and the next request checks again.
+     * Also honors the sync retry cooldown, so a persistently failing sync doesn't take the
+     * finalization lock on every request just to back off again inside it.
+     */
+    public function isSchemaOutOfSync(): bool
+    {
+        if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('em')) {
+            return false;
+        }
+
+        try {
+            $currentHash = EntityManagerFactory::entityDefinitionsHash();
+
+            return $this->fetchStoredSchemaHash() !== $currentHash
+                && !$this->isSyncCoolingDown($currentHash);
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    /**
+     * @throws \Exception when the database cannot be read
+     */
+    private function fetchStoredSchemaHash(): mixed
+    {
+        return $this->fetchOne('SELECT value FROM setting WHERE param = :param', [
+            'param' => self::SCHEMA_METADATA_HASH_PARAM,
+        ]);
+    }
+
+    /**
+     * Whether a sync for this exact metadata hash already failed within the retry cooldown.
+     * Read failures fail open (no cooldown), leaving the outcome to the sync attempt itself.
+     */
+    private function isSyncCoolingDown(string $currentHash): bool
+    {
+        try {
+            $rows = $this->fetchAll('SELECT value, updated_at FROM setting WHERE param = :param', [
+                'param' => self::SCHEMA_METADATA_HASH_FAILED_PARAM,
+            ]);
+        } catch (\Throwable) {
+            return false;
+        }
+
+        $failed = $rows[0] ?? null;
+        if (!is_array($failed) || ($failed['value'] ?? null) !== $currentHash) {
+            return false;
+        }
+
+        $attemptedAt = strtotime((string) ($failed['updated_at'] ?? ''));
+        if ($attemptedAt === false) {
+            return false;
+        }
+
+        return $attemptedAt + self::SCHEMA_SYNC_RETRY_COOLDOWN > time();
+    }
+
+    /**
+     * Remembers a failed sync attempt for the cooldown above. Never throws - failures here must
+     * not mask the original error.
+     */
+    private function recordFailedSyncAttempt(?string $currentHash): void
+    {
+        if ($currentHash === null) {
+            return;
+        }
+
+        try {
+            $existing = $this->fetchOne('SELECT value FROM setting WHERE param = :param', [
+                'param' => self::SCHEMA_METADATA_HASH_FAILED_PARAM,
+            ]);
+
+            if ($existing === false) {
+                $now = date('Y-m-d H:i:s');
+                $this->executeSql(
+                    'INSERT INTO setting (param, value, public, created_at, updated_at) VALUES (:param, :value, 0, :created_at, :updated_at)',
+                    [
+                        'param' => self::SCHEMA_METADATA_HASH_FAILED_PARAM,
+                        'value' => $currentHash,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ]
+                );
+            } else {
+                $this->executeSql('UPDATE setting SET value = :value, updated_at = :updated_at WHERE param = :param', [
+                    'value' => $currentHash,
+                    'updated_at' => date('Y-m-d H:i:s'),
+                    'param' => self::SCHEMA_METADATA_HASH_FAILED_PARAM,
+                ]);
+            }
+        } catch (\Throwable) {
+            // Best effort only - the next request retries the bookkeeping too.
+        }
+    }
+
+    /**
+     * Seeds the debit-note settings rows content.sql gives fresh installs - existing installs
+     * upgrading through the credit/debit-note releases never get those rows otherwise.
+     * Plain check-then-insert SQL with no MySQL-specific syntax, so it runs unconditionally on
+     * every platform; never overwrites a customized value.
+     */
+    private function seedInvoiceNoteSettings(): void
+    {
+        $defaults = [
+            'invoice_dn_series' => 'DN-',
+            'invoice_dn_starting_number' => '1',
+        ];
+
+        foreach ($defaults as $param => $value) {
+            $existing = $this->fetchOne('SELECT value FROM setting WHERE param = :param', [
+                'param' => $param,
+            ]);
+
+            if ($existing !== false) {
+                continue;
+            }
+
+            $now = date('Y-m-d H:i:s');
+            $this->executeSql(
+                'INSERT INTO setting (param, value, public, created_at, updated_at) VALUES (:param, :value, 0, :created_at, :updated_at)',
+                [
+                    'param' => $param,
+                    'value' => $value,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]
+            );
+        }
+    }
+
+    /**
+     * Records the metadata identity the schema was last synced against, in the same plain
+     * setting row ensureSchemaInSync() compares. Portable check-then-write, no
+     * ON DUPLICATE KEY UPDATE, so it works on every driver.
+     */
+    private function storeSchemaMetadataHash(string $hash): void
+    {
+        $existing = $this->fetchOne('SELECT value FROM setting WHERE param = :param', [
+            'param' => self::SCHEMA_METADATA_HASH_PARAM,
+        ]);
+
+        if ($existing === false) {
+            $now = date('Y-m-d H:i:s');
+            $this->executeSql(
+                'INSERT INTO setting (param, value, public, created_at, updated_at) VALUES (:param, :value, 0, :created_at, :updated_at)',
+                [
+                    'param' => self::SCHEMA_METADATA_HASH_PARAM,
+                    'value' => $hash,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]
+            );
+        } elseif ($existing !== $hash) {
+            $this->executeSql('UPDATE setting SET value = :value, updated_at = :updated_at WHERE param = :param', [
+                'value' => $hash,
+                'updated_at' => date('Y-m-d H:i:s'),
+                'param' => self::SCHEMA_METADATA_HASH_PARAM,
+            ]);
+        }
+    }
+
+    /**
      * Brings the live schema up to date with current Doctrine entity metadata - see
      * {@see SchemaSynchronizer} for exactly what this does and does not cover (additive structural
      * changes only, never a substitute for the legacy patches' data transformations).
@@ -239,11 +459,14 @@ class UpdatePatcher implements InjectionAwareInterface
      * Errors are logged, not thrown: this runs on every request via UpdateFinalization, and a
      * database this can't reach (or a metadata error) should degrade to "nothing changed", the same
      * outcome as before this method existed, rather than breaking the request.
+     *
+     * @return array{applied: list<string>, skipped: list<string>}|null the sync result, or null
+     *                                                                  when the sync could not run
      */
-    private function syncPortableSchema(): void
+    private function syncPortableSchema(): ?array
     {
         if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('em')) {
-            return;
+            return null;
         }
 
         $entityManager = $this->di['em'];
@@ -274,14 +497,15 @@ class UpdatePatcher implements InjectionAwareInterface
             ));
 
             if ($eagerEntityClasses === []) {
-                return;
+                return null;
             }
 
             $result = SchemaSynchronizer::syncEntities($entityManager, $eagerEntityClasses);
+            $this->storeSchemaMetadataHash(EntityManagerFactory::entityDefinitionsHash());
         } catch (\Throwable $e) {
             $this->logUpdate('error', 'Schema sync against the configured database failed: ' . $e->getMessage());
 
-            return;
+            return null;
         }
 
         if ($result['applied'] !== []) {
@@ -301,6 +525,8 @@ class UpdatePatcher implements InjectionAwareInterface
                 ['skipped' => $result['skipped']],
             );
         }
+
+        return $result;
     }
 
     /**
@@ -693,6 +919,7 @@ class UpdatePatcher implements InjectionAwareInterface
             116 => 'patch116',
             117 => 'patch117',
             118 => 'patch118',
+            119 => 'patch119',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -3733,6 +3960,35 @@ class UpdatePatcher implements InjectionAwareInterface
         // never synced it and fresh installs are unaffected.
         if ($this->tableHasIndex('invoice', 'invoice_credit_note_for_unique')) {
             $this->executeSql('ALTER TABLE `invoice` DROP INDEX `invoice_credit_note_for_unique`');
+        }
+    }
+
+    private function patch119(): void
+    {
+        // The credit/debit-note releases added three entity columns without a MySQL patch,
+        // relying on the ambient schema sync - which only runs inside version-gated
+        // finalization, so code-only deploys (e.g. `git pull` with no Version::VERSION bump)
+        // crash with "Unknown column 'credit_note_for_invoice_id'" instead. Create them
+        // explicitly here; the portable sync covers non-MySQL drivers and same-version
+        // deploys via ensureSchemaInSync(). All guards make reruns (and installs that
+        // already synced these) no-ops.
+        // @see https://github.com/FOSSBilling/FOSSBilling/issues/4392
+        if (!$this->tableHasColumn('invoice', 'credit_note_for_invoice_id')) {
+            $this->executeSql('ALTER TABLE `invoice` ADD COLUMN `credit_note_for_invoice_id` bigint(20) DEFAULT NULL AFTER `status`');
+        }
+        if (!$this->tableHasIndex('invoice', 'invoice_credit_note_for_idx')) {
+            $this->executeSql('ALTER TABLE `invoice` ADD INDEX `invoice_credit_note_for_idx` (`credit_note_for_invoice_id`)');
+        }
+
+        if (!$this->tableHasColumn('invoice', 'debit_note_for_invoice_id')) {
+            $this->executeSql('ALTER TABLE `invoice` ADD COLUMN `debit_note_for_invoice_id` bigint(20) DEFAULT NULL AFTER `credit_note_for_invoice_id`');
+        }
+        if (!$this->tableHasIndex('invoice', 'invoice_debit_note_for_idx')) {
+            $this->executeSql('ALTER TABLE `invoice` ADD INDEX `invoice_debit_note_for_idx` (`debit_note_for_invoice_id`)');
+        }
+
+        if (!$this->tableHasColumn('invoice_item', 'refunded_item_id')) {
+            $this->executeSql('ALTER TABLE `invoice_item` ADD COLUMN `refunded_item_id` bigint(20) DEFAULT NULL AFTER `rel_id`');
         }
     }
 

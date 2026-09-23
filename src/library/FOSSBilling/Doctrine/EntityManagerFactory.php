@@ -85,7 +85,13 @@ class EntityManagerFactory
      */
     public static function metadataCacheNamespace(?array $moduleEntityPaths = null): string
     {
-        return CacheFactory::NAMESPACE_DOCTRINE . '_' . hash('xxh128', self::getCacheNamespaceSeed($moduleEntityPaths ?? self::moduleEntityPaths()));
+        $moduleEntityPaths ??= self::moduleEntityPaths();
+
+        // Seed covers paths/mtimes/sizes, content hash covers same-size edits that leave mtime
+        // untouched (coarse-granularity or mtime-preserving deploys): without it Doctrine could
+        // serve stale mappings to the ambient schema sync, which would then record a hash the
+        // live schema never actually matched.
+        return CacheFactory::NAMESPACE_DOCTRINE . '_' . hash('xxh128', self::getCacheNamespaceSeed($moduleEntityPaths) . '|' . self::entityDefinitionsHash($moduleEntityPaths));
     }
 
     /**
@@ -106,6 +112,36 @@ class EntityManagerFactory
             static fn (\SplFileInfo $directory): string => $directory->getPathname(),
             iterator_to_array($finder)
         ));
+    }
+
+    /**
+     * Content-based identity of the current entity definitions, for gating the ambient schema
+     * sync ({@see \FOSSBilling\UpdatePatcher::ensureSchemaInSync()}) - unlike
+     * {@see self::metadataCacheNamespace()}, independent of absolute paths and file mtimes, so
+     * every node running the same code agrees. Hashes the file contents order-independently:
+     * renames and comment-only edits flip nothing, and any sync it triggers is additive-only
+     * and idempotent.
+     *
+     * @param list<string>|null $moduleEntityPaths pass the already-computed list from create() to
+     *                                             avoid re-running the Finder; omit to compute it fresh
+     */
+    public static function entityDefinitionsHash(?array $moduleEntityPaths = null): string
+    {
+        $entityDirectories = $moduleEntityPaths ?? self::moduleEntityPaths();
+        if ($entityDirectories === []) {
+            return hash('xxh128', '');
+        }
+
+        $finder = new Finder();
+        $finder->files()->in($entityDirectories)->name('*.php');
+
+        $hashes = [];
+        foreach ($finder as $file) {
+            $hashes[] = hash_file('xxh128', $file->getPathname()) ?: '';
+        }
+        sort($hashes);
+
+        return hash('xxh128', implode('|', $hashes));
     }
 
     /**
