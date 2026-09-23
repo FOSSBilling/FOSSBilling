@@ -439,15 +439,6 @@ class Service implements InjectionAwareInterface
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'manage_extensions');
 
         switch ($ext->getType()) {
-            case \FOSSBilling\ExtensionManager::TYPE_HOOK:
-                $file = Path::changeExtension(ucfirst((string) $ext->getName()), '.php');
-                $destination = Path::join(PATH_LIBRARY, 'Hook', $file);
-                if ($this->filesystem->exists($destination)) {
-                    $this->filesystem->remove($destination);
-                }
-
-                break;
-
             case \FOSSBilling\ExtensionManager::TYPE_MOD:
                 $mod = $ext->getName();
                 if ($this->isCoreModule($mod)) {

@@ -75,9 +75,9 @@ public function customizeGuestTicket(BeforeGuestTicketCreateEvent $event): void
 }
 ```
 
-Listeners on core and active modules are registered when the typed dispatcher is first used. Activating or deactivating a module refreshes registrations within the same request. Symfony listener priorities are supported. Some string-named hooks continue to run during migration, but cron, support ticket, client signup, client administration, and profile lifecycle hooks use typed events only. Typed event classes should expose setters only for fields listeners are allowed to change. Other event data can be readonly.
+Listeners on core and active modules are registered when the typed dispatcher is first used. Activating or deactivating a module refreshes registrations within the same request. Symfony listener priorities are supported. Typed event classes should expose setters only for fields listeners are allowed to change. Other event data can be readonly.
 
-When converting a module's existing `on...` hook handler to a typed listener, remove or rename the old discoverable method. While both hook systems run at an extension point, leaving both handlers registered would run the same work twice. Hook names removed for the next major release require third-party extensions to replace their old handlers with typed listeners; check the event class's constructor and public methods for the new contract.
+Third-party extensions must replace static `on...` hook handlers with public instance listeners for typed event classes. The legacy Hook module, its `hook_call` API, and `onEveryEvent` catch-all listener are retired in the next major release. Subscribe to explicit event classes; for extension-specific operations, define a typed event or call an operation API directly. A listener's return value is ignored. Use an event's declared setters only where the contract permits changes.
 
 Available typed event classes live under each module's `Event/` directory. Their constructors and public methods define the extension contract; use those classes instead of relying on a legacy hook's array keys.
 
@@ -133,6 +133,8 @@ Invoice subscription creation and deletion dispatch `AfterAdminSubscriptionCreat
 Invoice approval dispatches `BeforeAdminInvoiceApproveEvent` and `AfterAdminInvoiceApproveEvent` with the invoice ID. The after event runs after approval and any attempted credit payment. The built-in approval email is a typed listener; extensions can query the invoice by ID when they need its current details.
 
 Payment completion dispatches `AfterAdminInvoicePaymentReceivedEvent` with the invoice ID after the payment transaction commits and before invoice item tasks run. The built-in paid-invoice email uses this typed event.
+
+Invoice reminder batches dispatch `BeforeAdminInvoiceSendRemindersEvent` before throttling and `BeforeInvoiceIsDueEvent` or `AfterInvoiceIsDueEvent` for each matching unpaid, approved invoice. Due events expose the invoice ID, days before or after the due date, and configured reminder intervals. Sending one reminder dispatches `BeforeAdminInvoiceSendReminderEvent` and `AfterAdminInvoiceReminderSentEvent` with the invoice ID. The built-in email handler listens to the after event; extensions can use the same event for additional notifications.
 
 Refund attempts dispatch `BeforeAdminInvoiceRefundEvent` and `AfterAdminInvoiceRefundEvent` with the original invoice ID. The after event follows the selected refund flow, including a manual flow that does not create a credit note.
 

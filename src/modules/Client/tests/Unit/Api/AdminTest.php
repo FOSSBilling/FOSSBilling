@@ -404,12 +404,8 @@ test('update throws exception when email is already registered', function (): vo
     $serviceMock = Mockery::mock(Box\Mod\Client\Service::class);
     $serviceMock->shouldReceive('emailAlreadyRegistered')->atLeast()->once()->andReturn(true);
 
-    $eventMock = Mockery::mock('\Box_EventManager');
-    $eventMock->shouldReceive('fire');
-
     $di = container();
     $di['mod_service'] = $di->protect(moduleService(['client' => $serviceMock]));
-    $di['events_manager'] = $eventMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['validator'] = new FOSSBilling\Validate();
 

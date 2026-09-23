@@ -193,10 +193,6 @@ class UpdatePatcher implements InjectionAwareInterface
                 call_user_func($patch);
                 $this->setPatchLevel($patchLevel);
             }
-
-            if ($patches !== [] && $this->di !== null && $this->di->offsetExists('events_manager')) {
-                $this->di['events_manager']->clearListenerCache();
-            }
         }
 
         // Portable (plain UPDATE ... WHERE, no MySQL-specific syntax) and idempotent, so it
@@ -1528,9 +1524,6 @@ class UpdatePatcher implements InjectionAwareInterface
             }
 
             $this->executeSql("DELETE FROM extension_meta WHERE extension = 'mod_hook' AND rel_type = 'mod' AND rel_id = 'spamchecker' AND meta_key = 'listener'");
-
-            $hookService = $this->di['mod_service']('hook');
-            $hookService->batchConnect('antispam');
 
             $this->executeSql("DELETE FROM extension_meta WHERE extension = 'mod_spamchecker' AND meta_key = 'config'");
 

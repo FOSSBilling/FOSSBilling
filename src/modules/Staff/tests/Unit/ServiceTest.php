@@ -234,8 +234,6 @@ test('login returns admin details on successful login', function (): void {
 
     $admin = \Tests\Helpers\admin(['id' => 1, 'email' => $email, 'name' => 'Admin', 'pass' => 'hashedPassword']);
 
-    $emMock = Mockery::mock('\Box_EventManager');
-    $emMock->shouldNotReceive('fire');
     [$eventDispatcher, $dispatchedEvents] = staffLoginEventDispatcher();
 
     $adminRepository = Mockery::mock(AdminRepository::class);
@@ -255,7 +253,6 @@ test('login returns admin details on successful login', function (): void {
         ->andReturn(false);
 
     $di = container();
-    $di['events_manager'] = $emMock;
     $di['event_dispatcher'] = $eventDispatcher;
     $di['em']->shouldReceive('getRepository')->with(Admin::class)->andReturn($adminRepository);
     $di['session'] = $sessionMock;
@@ -280,135 +277,11 @@ test('login returns admin details on successful login', function (): void {
         ]);
 });
 
-test('login retries connecting legacy hooks once before dispatching the success event', function (): void {
-    $email = 'email@domain.com';
-    $password = 'pass';
-    $ip = '127.0.0.1';
-
-    $admin = \Tests\Helpers\admin(['id' => 1, 'email' => $email, 'name' => 'Admin', 'pass' => 'hashedPassword']);
-
-    $emMock = Mockery::mock('\Box_EventManager');
-    $emMock->shouldNotReceive('fire');
-    [$eventDispatcher, $dispatchedEvents] = staffLoginEventDispatcher();
-
-    $adminRepository = Mockery::mock(AdminRepository::class);
-    $adminRepository->shouldReceive('findOneByEmailAndActive')->atLeast()->once()
-        ->with($email)
-        ->andReturn($admin);
-
-    $sessionMock = Mockery::mock(FOSSBilling\Session::class);
-    $sessionMock->shouldReceive('regenerateId')->atLeast()->once();
-    $sessionMock->shouldReceive('set')->atLeast()->once();
-
-    $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
-    $passwordMock->shouldReceive('verify')->atLeast()->once()
-        ->with($password, $admin->getPass())
-        ->andReturn(true);
-    $passwordMock->shouldReceive('needsRehash')->atLeast()->once()
-        ->andReturn(false);
-
-    // First attempt fails, as if another process held the rebuild lock past its timeout.
-    $hookServiceMock = Mockery::mock(Box\Mod\Hook\Service::class);
-    $hookServiceMock->shouldReceive('hasConnectedListeners')->atLeast()->once()->andReturn(false);
-    $hookServiceMock->shouldReceive('batchConnect')->twice()->andReturn(false, true);
-
-    $di = container();
-    $di['events_manager'] = $emMock;
-    $di['event_dispatcher'] = $eventDispatcher;
-    $di['em']->shouldReceive('getRepository')->with(Admin::class)->andReturn($adminRepository);
-    $di['session'] = $sessionMock;
-    $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['password'] = $passwordMock;
-    $di['mod_service'] = $di->protect(fn (string $name = ''): object => strtolower($name) === 'hook' ? $hookServiceMock : Mockery::mock()->shouldIgnoreMissing());
-
-    $service = new Service();
-    $service->setDi($di);
-
-    $result = $service->login($email, $password, $ip);
-
-    expect($result)->toBe([
-        'id' => 1,
-        'email' => $email,
-        'name' => 'Admin',
-    ])
-        ->and(staffLoginEventSummaries($dispatchedEvents))->toBe([
-            [BeforeAdminLoginEvent::class, ['ip' => $ip]],
-            [AfterAdminLoginEvent::class, ['adminId' => 1, 'ip' => $ip]],
-        ]);
-});
-
-test('login still succeeds, and logs a warning, when both attempts to connect event listeners fail', function (): void {
-    $email = 'email@domain.com';
-    $password = 'pass';
-    $ip = '127.0.0.1';
-
-    $admin = \Tests\Helpers\admin(['id' => 1, 'email' => $email, 'name' => 'Admin', 'pass' => 'hashedPassword']);
-
-    $emMock = Mockery::mock('\Box_EventManager');
-    $emMock->shouldNotReceive('fire');
-    [$eventDispatcher, $dispatchedEvents] = staffLoginEventDispatcher();
-
-    $adminRepository = Mockery::mock(AdminRepository::class);
-    $adminRepository->shouldReceive('findOneByEmailAndActive')->atLeast()->once()
-        ->with($email)
-        ->andReturn($admin);
-
-    $sessionMock = Mockery::mock(FOSSBilling\Session::class);
-    $sessionMock->shouldReceive('regenerateId')->atLeast()->once();
-    $sessionMock->shouldReceive('set')->atLeast()->once();
-
-    $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
-    $passwordMock->shouldReceive('verify')->atLeast()->once()
-        ->with($password, $admin->getPass())
-        ->andReturn(true);
-    $passwordMock->shouldReceive('needsRehash')->atLeast()->once()
-        ->andReturn(false);
-
-    // Both attempts fail to connect listeners, e.g. another process holding the rebuild lock
-    // for longer than either attempt's timeout. Login must still succeed - it must not become
-    // unavailable because of this housekeeping step.
-    $hookServiceMock = Mockery::mock(Box\Mod\Hook\Service::class);
-    $hookServiceMock->shouldReceive('hasConnectedListeners')->atLeast()->once()->andReturn(false);
-    $hookServiceMock->shouldReceive('batchConnect')->twice()->andReturn(false, false);
-
-    $loggerMock = new Tests\Helpers\TestLogger();
-
-    $di = container();
-    $di['events_manager'] = $emMock;
-    $di['event_dispatcher'] = $eventDispatcher;
-    $di['em']->shouldReceive('getRepository')->with(Admin::class)->andReturn($adminRepository);
-    $di['session'] = $sessionMock;
-    $di['logger'] = $loggerMock;
-    $di['password'] = $passwordMock;
-    $di['mod_service'] = $di->protect(fn (string $name = ''): object => strtolower($name) === 'hook' ? $hookServiceMock : Mockery::mock()->shouldIgnoreMissing());
-
-    $service = new Service();
-    $service->setDi($di);
-
-    $result = $service->login($email, $password, $ip);
-
-    expect($result)->toBe([
-        'id' => 1,
-        'email' => $email,
-        'name' => 'Admin',
-    ])
-        ->and($loggerMock->calls)->toContain([
-            'method' => 'warning',
-            'params' => ['Could not connect remaining legacy hook listeners after two attempts; some legacy extension hooks may not run.'],
-        ])
-        ->and(staffLoginEventSummaries($dispatchedEvents))->toBe([
-            [BeforeAdminLoginEvent::class, ['ip' => $ip]],
-            [AfterAdminLoginEvent::class, ['adminId' => 1, 'ip' => $ip]],
-        ]);
-});
-
 test('login throws exception when credentials are invalid', function (): void {
     $email = 'email@domain.com';
     $password = 'pass';
     $ip = '127.0.0.1';
 
-    $emMock = Mockery::mock('\Box_EventManager');
-    $emMock->shouldNotReceive('fire');
     [$eventDispatcher, $dispatchedEvents] = staffLoginEventDispatcher();
 
     $adminRepository = Mockery::mock(AdminRepository::class);
@@ -421,7 +294,6 @@ test('login throws exception when credentials are invalid', function (): void {
         ->with($password);
 
     $di = container();
-    $di['events_manager'] = $emMock;
     $di['event_dispatcher'] = $eventDispatcher;
     $di['em']->shouldReceive('getRepository')->with(Admin::class)->andReturn($adminRepository);
     $di['password'] = $passwordMock;

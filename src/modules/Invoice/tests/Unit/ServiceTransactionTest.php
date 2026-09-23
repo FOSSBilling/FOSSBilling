@@ -566,12 +566,8 @@ test('_subscribe creates and persists a subscription from an approved transactio
     });
     $em->shouldReceive('flush')->atLeast()->once();
 
-    $eventsMock = Mockery::mock('\Box_EventManager');
-    $eventsMock->shouldReceive('fire');
-
     $di = container();
     $di['em'] = $em;
-    $di['events_manager'] = $eventsMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod_service'] = $di->protect(fn ($module, $sub = '') => $subscriptionService);
 
@@ -622,12 +618,8 @@ test('_unsubscribe looks up the subscription by sid and delegates to the subscri
     $em->shouldReceive('getRepository')->with(Subscription::class)->andReturn($subscriptionRepo);
     $em->shouldReceive('flush')->atLeast()->once();
 
-    $eventsMock = Mockery::mock('\Box_EventManager');
-    $eventsMock->shouldReceive('fire');
-
     $di = container();
     $di['em'] = $em;
-    $di['events_manager'] = $eventsMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod_service'] = $di->protect(fn ($module, $sub = '') => $subscriptionService);
 

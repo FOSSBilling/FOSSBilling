@@ -139,19 +139,6 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\InformationException('Check your login details', null, 403);
         }
 
-        // Connect remaining legacy extension hooks at login in case cron has not run yet.
-        // If another process holds the rebuild lock, retry once and let login proceed on failure.
-        $hookService = $this->di['mod_service']('hook');
-        if (!$hookService->hasConnectedListeners()) {
-            $connected = $hookService->batchConnect();
-            if (!$connected) {
-                $connected = $hookService->batchConnect();
-            }
-            if (!$connected) {
-                $this->di['logger']->warning('Could not connect remaining legacy hook listeners after two attempts; some legacy extension hooks may not run.');
-            }
-        }
-
         $this->di['event_dispatcher']->dispatch(new AfterAdminLoginEvent((int) $model->getId(), $ip));
 
         $result = [

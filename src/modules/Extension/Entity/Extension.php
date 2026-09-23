@@ -18,10 +18,10 @@ use FOSSBilling\Interfaces\ApiArrayInterface;
 /**
  * Installed extension record.
  *
- * The `extension` table tracks which extensions (modules, themes, payment
- * gateways, hooks, ...) are installed in this FOSSBilling instance, along
- * with their current status and version. The actual extension code lives
- * on disk; this row is only the metadata used by the extension manager.
+ * The `extension` table tracks which extensions are installed in this
+ * FOSSBilling instance, along with their type, status, and version. The actual
+ * extension code lives on disk; this row is only the metadata used by the
+ * extension manager.
  */
 #[ORM\Entity(repositoryClass: \Box\Mod\Extension\Repository\ExtensionRepository::class)]
 #[ORM\Table(name: 'extension')]
@@ -36,7 +36,6 @@ class Extension implements ApiArrayInterface
     final public const string TYPE_THEME = 'theme';
     final public const string TYPE_PG = 'pg';
     final public const string TYPE_TRANSLATION = 'translation';
-    final public const string TYPE_HOOK = 'hook';
 
     final public const string STATUS_INSTALLED = 'installed';
     final public const string STATUS_DEACTIVATED = 'deactivated';

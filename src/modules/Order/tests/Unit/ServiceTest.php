@@ -4028,10 +4028,7 @@ test('deleteFromOrder removes client_order_meta rows before removing the order',
     $productService->shouldReceive('releaseReservedPromoRedemptionsForOrder')->once()->with($order, 'order_deleted');
     $productService->shouldReceive('releaseReservedStockForOrder')->once()->with($order, 'order_deleted');
 
-    $eventsManager = Mockery::mock('\Box_EventManager')->shouldIgnoreMissing();
-
     $di = container();
-    $di['events_manager'] = $eventsManager;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod_service'] = $di->protect(fn (string $name): object => $productService);
 
@@ -4040,7 +4037,7 @@ test('deleteFromOrder removes client_order_meta rows before removing the order',
     expect($serviceMock->deleteFromOrder($order))->toBeTrue();
 });
 
-test('batchCancelUnpaid removes each stale unpaid order and fires events', function (): void {
+test('batchCancelUnpaid removes each stale unpaid order and dispatches typed events', function (): void {
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
 
     $orderA = createEntity(Order::class, ['id' => 1, 'status' => Order::STATUS_PENDING_SETUP]);
@@ -4094,7 +4091,6 @@ test('batchCancelUnpaid falls back to the 7 day default when the configured valu
 
     $di = container();
     $di['em'] = $emMock;
-    $di['events_manager'] = Mockery::mock('\Box_EventManager')->shouldIgnoreMissing();
     $di['mod'] = $di->protect(fn (string $name): object => new class {
         public function getConfig(): array
         {
@@ -4141,7 +4137,6 @@ test('batchCancelUnpaid removes the linked unpaid invoice before deleting the or
 
     $di = container();
     $di['em'] = $emMock;
-    $di['events_manager'] = Mockery::mock('\Box_EventManager')->shouldIgnoreMissing();
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod'] = $di->protect(fn (string $name): object => new class {
         public function getConfig(): array
@@ -4187,7 +4182,6 @@ test('batchCancelUnpaid resolves a shared invoice once and still removes every s
 
     $di = container();
     $di['em'] = $emMock;
-    $di['events_manager'] = Mockery::mock('\Box_EventManager')->shouldIgnoreMissing();
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod'] = $di->protect(fn (string $name): object => new class {
         public function getConfig(): array
@@ -4243,7 +4237,6 @@ test('batchCancelUnpaid does not delete a sibling order when removing the shared
 
     $di = container();
     $di['em'] = $emMock;
-    $di['events_manager'] = Mockery::mock('\Box_EventManager')->shouldIgnoreMissing();
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod'] = $di->protect(fn (string $name): object => new class {
         public function getConfig(): array
@@ -4289,7 +4282,6 @@ test('batchCancelUnpaid leaves the order alone when its invoice was paid since s
 
     $di = container();
     $di['em'] = $emMock;
-    $di['events_manager'] = Mockery::mock('\Box_EventManager')->shouldIgnoreMissing();
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod'] = $di->protect(fn (string $name): object => new class {
         public function getConfig(): array
@@ -4334,7 +4326,6 @@ test('batchCancelUnpaid removes the order without touching the invoice when it w
 
     $di = container();
     $di['em'] = $emMock;
-    $di['events_manager'] = Mockery::mock('\Box_EventManager')->shouldIgnoreMissing();
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod'] = $di->protect(fn (string $name): object => new class {
         public function getConfig(): array
@@ -4368,7 +4359,6 @@ test('batchCancelUnpaid logs and continues when removing one stale order fails',
 
     $di = container();
     $di['em'] = $emMock;
-    $di['events_manager'] = Mockery::mock('\Box_EventManager')->shouldIgnoreMissing();
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod'] = $di->protect(fn (string $name): object => new class {
         public function getConfig(): array
@@ -4411,7 +4401,6 @@ test('batchCancelUnpaid skips an order that changed status while the batch was r
 
     $di = container();
     $di['em'] = $emMock;
-    $di['events_manager'] = Mockery::mock('\Box_EventManager')->shouldIgnoreMissing();
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod'] = $di->protect(fn (string $name): object => new class {
         public function getConfig(): array

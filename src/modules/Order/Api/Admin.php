@@ -194,7 +194,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * Suspend order.
      *
      * @optional string $reason - Suspension reason message
-     * @optional bool $skip_event - Skip calling event hooks
+     * @optional bool $skip_event - Skip dispatching lifecycle events
      *
      * @return bool
      */
@@ -230,7 +230,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Cancel order.
      *
-     * @optional bool $skip_event - Skip calling event hooks
+     * @optional bool $skip_event - Skip dispatching lifecycle events
      * @optional bool $cancel_at_period_end - Keep the order active until its gateway subscription ends
      *
      * @return bool

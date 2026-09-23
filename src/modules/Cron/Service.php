@@ -75,7 +75,6 @@ class Service
             $this->di['logger']->withChannel('cron')->info('Started executing cron jobs.');
 
             // @core tasks
-            $this->_exec($api, 'hook_batch_connect');
             $this->di['event_dispatcher']->dispatch(new BeforeAdminCronRunEvent());
 
             $this->_exec($api, 'invoice_batch_pay_with_credits');

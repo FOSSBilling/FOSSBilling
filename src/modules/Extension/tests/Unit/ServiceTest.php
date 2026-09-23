@@ -508,15 +508,15 @@ test('deactivate throws exception for core modules', function (): void {
         ->toThrow(FOSSBilling\Exception::class, 'Core modules are an integral part of the FOSSBilling system and cannot be deactivated.');
 });
 
-test('deactivate deactivates hook extension', function (): void {
+test('deactivate removes a legacy hook extension without hook-file cleanup', function (): void {
     $ext = extensionCreateEntity(1, 'hook', 'extensionTest', 'installed');
 
     $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
     $staffService->shouldReceive('checkPermissionsAndThrowException')->atLeast()->once();
 
     $filesystemMock = Mockery::mock(Symfony\Component\Filesystem\Filesystem::class);
-    $filesystemMock->shouldReceive('exists')->atLeast()->once()->andReturn(true);
-    $filesystemMock->shouldReceive('remove')->atLeast()->once();
+    $filesystemMock->shouldNotReceive('exists');
+    $filesystemMock->shouldNotReceive('remove');
 
     $service = new Service($filesystemMock);
 

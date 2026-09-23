@@ -412,10 +412,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
     /**
      * Calls due events on unpaid and approved invoices.
-     * Attach custom event hooks events:.
-     *
-     * onEventBeforeInvoiceIsDue - event receives params: id and days_left
-     * onEventAfterInvoiceIsDue - event receives params: id and days_passed
+     * Extensions can listen to BeforeInvoiceIsDueEvent and AfterInvoiceIsDueEvent.
      *
      * @optional bool $once_per_day - default true. Pass false if you want to execute this action more than once per day
      *
@@ -430,7 +427,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
     /**
      * Send payment reminder notification for client.
-     * Calls event hook, so you can attach your custom notification code.
+     * Dispatches typed reminder events for custom notification code.
      *
      * @return bool
      */
