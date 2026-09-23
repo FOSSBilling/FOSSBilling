@@ -39,7 +39,7 @@ test('typed listeners can mutate declared fields and refresh after activation', 
 
     expect($dispatcher->dispatch($newEvent())->getSubject())->toBe('Original');
 
-    $modules = ['typedEventTest'];
+    $modules = ['typedEventTest', 'typedEventTest'];
     $dispatcher->refresh();
     expect($dispatcher->dispatch($newEvent())->getSubject())->toBe('Updated by listener');
     expect($service->calls)->toBe(1);

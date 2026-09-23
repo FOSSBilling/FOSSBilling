@@ -61,7 +61,7 @@ final class EventDispatcher
 
         try {
             $services = [];
-            foreach (($this->activeModules)() as $moduleName) {
+            foreach (array_unique(($this->activeModules)()) as $moduleName) {
                 $className = 'Box\\Mod\\' . ucfirst($moduleName) . '\\Service';
                 if (!class_exists($className)) {
                     continue;
