@@ -14,16 +14,9 @@ namespace FOSSBilling;
 /**
  * Server-side sorting options for paginated list endpoints.
  *
- * Works like {@see PaginationOptions}: templates merge the request into the
- * API call (`{...}|merge(request)`), so `sort`/`direction` query parameters
- * flow into `$data` automatically. Each list query builder declares its own
- * allowlist mapping public sort keys to real ORDER BY expressions — request
- * input is never used as an ORDER BY expression directly.
- *
- * Unknown sort keys and invalid directions fall back to defaults instead of
- * throwing, so unrelated query parameters never break list endpoints. When no
- * usable sort is requested, {@see $expression} is null and the caller keeps
- * its legacy default ordering.
+ * Each list query builder declares its own allowlist mapping public sort keys
+ * to real ORDER BY expressions — request input is never used as an ORDER BY
+ * expression directly. Unknown keys fall back to the caller's default ordering.
  */
 final readonly class SortOptions
 {

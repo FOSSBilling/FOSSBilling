@@ -1,13 +1,5 @@
-{# Sortable table header cell with a server-side sorting link.
-   Replaces client-side `.sortable` table sorting so ordering applies across pages.
-
-   Required: label, sort_key, url
-   Optional: sort_param|default('sort'), direction_param|default('direction'),
-             page_param|default('page'), hash|default(''), th_class|default(''),
-             default_sort|default(null), default_direction|default('ASC').
-   default_sort/default_direction mirror the list endpoint's backend default
-   ordering so the header renders active on initial load (no ?sort= in URL).
-   An explicit ?sort=/direction= always wins over the default. #}
+{# Sortable table header cell: server-side sorting link, so ordering applies across pages.
+   default_sort/default_direction mirror the endpoint's backend default ordering. #}
 {% set sortParam = sort_param|default('sort') %}
 {% set directionParam = direction_param|default('direction') %}
 {% set pageParam = page_param|default('page') %}
