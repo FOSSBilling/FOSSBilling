@@ -12,7 +12,7 @@ namespace Box\Mod\Invoice\Event;
 use FOSSBilling\Events\Event;
 
 /** Dispatched after an invoice reminder has been recorded. */
-final class AfterAdminInvoiceReminderSentEvent extends Event
+final class AfterAdminInvoiceReminderRecordedEvent extends Event
 {
     public function __construct(public readonly int $invoiceId)
     {

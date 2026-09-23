@@ -25,7 +25,7 @@ use Box\Mod\Invoice\Event\AfterAdminInvoiceDebitEvent;
 use Box\Mod\Invoice\Event\AfterAdminInvoiceDeleteEvent;
 use Box\Mod\Invoice\Event\AfterAdminInvoicePaymentReceivedEvent;
 use Box\Mod\Invoice\Event\AfterAdminInvoiceRefundEvent;
-use Box\Mod\Invoice\Event\AfterAdminInvoiceReminderSentEvent;
+use Box\Mod\Invoice\Event\AfterAdminInvoiceReminderRecordedEvent;
 use Box\Mod\Invoice\Event\AfterAdminInvoiceUpdateEvent;
 use Box\Mod\Invoice\Event\AfterInvoiceIsDueEvent;
 use Box\Mod\Invoice\Event\BeforeAdminGenerateRenewalInvoiceEvent;
@@ -636,8 +636,7 @@ class Service implements InjectionAwareInterface
         $this->extendInvoiceHashLifetime($creditNote);
     }
 
-    #[AsEventListener]
-    public function onAfterAdminInvoiceReminderSent(AfterAdminInvoiceReminderSentEvent $event): void
+    public function sendInvoiceReminderEmail(AfterAdminInvoiceReminderRecordedEvent $event): void
     {
         $di = $this->di ?? throw new \LogicException('The Invoice service dependency injection container has not been set.');
 
@@ -663,7 +662,7 @@ class Service implements InjectionAwareInterface
             // Sending a payment reminder also re-extends the hash lifetime
             // since the recipient is being re-engaged via the same link.
             $this->extendInvoiceHashLifetime($invoiceModel);
-        } catch (\Exception $exc) {
+        } catch (\Throwable $exc) {
             $di['logger']->withChannel('email')->error('Failed to send invoice reminder email', ['exception' => $exc]);
         }
     }
@@ -702,10 +701,8 @@ class Service implements InjectionAwareInterface
             }
         } catch (\Exception $exc) {
             if ($claimed) {
-                // sendInvoiceReminder()'s downstream send handler (onAfterAdminInvoiceReminderSent)
-                // catches its own failures internally, so any exception reaching here means the
-                // email was never queued. Release the claim so a later cron run retries it instead
-                // of the reminder being silently lost for the day.
+                // sendInvoiceReminder() handles errors after recording separately. An exception
+                // reaching here occurred before the reminder was recorded, so release the claim.
                 $di['em']->getConnection()->executeStatement('UPDATE invoice SET reminded_at = NULL WHERE id = :id', ['id' => $event->invoiceId]);
             }
             $di['logger']->withChannel('email')->error('Failed to send invoice reminder email', ['id' => $event->invoiceId, 'exception' => $exc]);
@@ -2662,9 +2659,18 @@ class Service implements InjectionAwareInterface
         $this->di['em']->persist($invoice);
         $this->di['em']->flush();
 
-        $this->di['event_dispatcher']->dispatch(new AfterAdminInvoiceReminderSentEvent((int) $invoice->getId()));
+        $recordedEvent = new AfterAdminInvoiceReminderRecordedEvent((int) $invoice->getId());
+        $this->sendInvoiceReminderEmail($recordedEvent);
 
-        $this->di['logger']->info('Invoice payment reminder sent');
+        try {
+            $this->di['event_dispatcher']->dispatch($recordedEvent);
+        } catch (\Throwable $error) {
+            // The reminder was already recorded and the built-in email was attempted. A failing
+            // observer must not release the daily claim and cause a duplicate email on retry.
+            $this->di['logger']->withChannel('email')->error('Invoice reminder event listener failed', ['exception' => $error]);
+        }
+
+        $this->di['logger']->info('Invoice payment reminder recorded');
 
         return true;
     }

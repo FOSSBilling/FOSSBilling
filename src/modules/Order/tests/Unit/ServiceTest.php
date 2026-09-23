@@ -3055,6 +3055,48 @@ test('cancelFromOrder cancels linked subscriptions', function (): void {
         ->and($eventDispatcher->events[1]->orderId)->toBe(10);
 });
 
+test('gateway finalized cancellation dispatches both lifecycle events', function (): void {
+    $order = createEntity(Order::class, [
+        'id' => 10,
+        'status' => Order::STATUS_ACTIVE,
+    ]);
+
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('executeStatement')
+        ->once()
+        ->with(
+            'DELETE FROM client_order_meta WHERE client_order_id = :order_id AND name = :name',
+            ['order_id' => 10, 'name' => Service::META_CANCEL_AT_PERIOD_END],
+        );
+
+    $productService = Mockery::mock(Box\Mod\Product\Service::class);
+    $productService->shouldReceive('releaseReservedPromoRedemptionsForOrder')
+        ->once()->with($order, 'order_canceled');
+    $productService->shouldReceive('releaseReservedStockForOrder')
+        ->once()->with($order, 'order_canceled');
+
+    $di = container();
+    $di['em'] = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
+    $di['dbal'] = $connection;
+    $di['mod_service'] = $di->protect(static fn (string $module): object => $productService);
+    $events = new OrderServiceTestEventRecorder();
+    $di['event_dispatcher'] = $events;
+
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldAllowMockingProtectedMethods();
+    $service->shouldReceive('_callOnService')->once();
+    $service->shouldReceive('saveStatusChange')->once()->with($order, 'Canceled order for Subscription ended');
+    $service->setDi($di);
+
+    expect($service->finalizeCancellationFromGateway($order, 'Subscription ended'))->toBeTrue()
+        ->and($order->getStatus())->toBe(Order::STATUS_CANCELED)
+        ->and($events->events)->toHaveCount(2)
+        ->and($events->events[0])->toBeInstanceOf(Box\Mod\Order\Event\BeforeAdminOrderCancelEvent::class)
+        ->and($events->events[0]->orderId)->toBe(10)
+        ->and($events->events[1])->toBeInstanceOf(Box\Mod\Order\Event\AfterAdminOrderCancelEvent::class)
+        ->and($events->events[1]->orderId)->toBe(10);
+});
+
 test('scheduleCancellationFromOrder keeps the service active', function (): void {
     $order = createEntity(Order::class, [
         'id' => 10,

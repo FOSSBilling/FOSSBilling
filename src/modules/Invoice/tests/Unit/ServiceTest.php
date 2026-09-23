@@ -28,7 +28,7 @@ use Box\Mod\Invoice\Event\AfterAdminInvoiceDebitEvent;
 use Box\Mod\Invoice\Event\AfterAdminInvoiceDeleteEvent;
 use Box\Mod\Invoice\Event\AfterAdminInvoicePaymentReceivedEvent;
 use Box\Mod\Invoice\Event\AfterAdminInvoiceRefundEvent;
-use Box\Mod\Invoice\Event\AfterAdminInvoiceReminderSentEvent;
+use Box\Mod\Invoice\Event\AfterAdminInvoiceReminderRecordedEvent;
 use Box\Mod\Invoice\Event\AfterAdminInvoiceUpdateEvent;
 use Box\Mod\Invoice\Event\AfterInvoiceIsDueEvent;
 use Box\Mod\Invoice\Event\BeforeAdminGenerateRenewalInvoiceEvent;
@@ -416,7 +416,7 @@ test('handles after admin invoice payment received event', function (): void {
     $service->sendPaidInvoiceEmail(new AfterAdminInvoicePaymentReceivedEvent(18));
 });
 
-test('handles after admin invoice reminder sent event', function (): void {
+test('handles after admin invoice reminder recorded event', function (): void {
     $service = new Service();
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $arr = [
@@ -432,7 +432,7 @@ test('handles after admin invoice reminder sent event', function (): void {
         ->atLeast()->once()
         ->andReturn(null);
 
-    $eventMock = new AfterAdminInvoiceReminderSentEvent(1);
+    $eventMock = new AfterAdminInvoiceReminderRecordedEvent(1);
 
     $emailService = Mockery::mock(EmailService::class);
     $emailService->shouldReceive('sendTemplate')
@@ -464,7 +464,7 @@ test('handles after admin invoice reminder sent event', function (): void {
     $service->setDi($di);
     $serviceMock->setDi($di);
 
-    $serviceMock->onAfterAdminInvoiceReminderSent($eventMock);
+    $serviceMock->sendInvoiceReminderEmail($eventMock);
 });
 
 test('removes expired unpaid invoices on typed after cron event', function (): void {
@@ -2865,7 +2865,7 @@ test('parses invoice reminder intervals', function (): void {
         ->toBe([1, 7, 14]);
 });
 
-test('sends invoice reminder', function (): void {
+test('records an invoice reminder and dispatches typed events', function (): void {
     $service = new Service();
     $invoiceModel = createEntity(Invoice::class, ['id' => 9]);
 
@@ -2874,7 +2874,7 @@ test('sends invoice reminder', function (): void {
     $eventDispatcher->addListener(BeforeAdminInvoiceSendReminderEvent::class, static function (BeforeAdminInvoiceSendReminderEvent $event) use (&$dispatchedEvents): void {
         $dispatchedEvents[] = $event;
     });
-    $eventDispatcher->addListener(AfterAdminInvoiceReminderSentEvent::class, static function (AfterAdminInvoiceReminderSentEvent $event) use (&$dispatchedEvents): void {
+    $eventDispatcher->addListener(AfterAdminInvoiceReminderRecordedEvent::class, static function (AfterAdminInvoiceReminderRecordedEvent $event) use (&$dispatchedEvents): void {
         $dispatchedEvents[] = $event;
     });
 
@@ -2888,7 +2888,38 @@ test('sends invoice reminder', function (): void {
     expect($service->sendInvoiceReminder($invoiceModel))->toBeTrue()
         ->and($dispatchedEvents)->toHaveCount(2)
         ->and($dispatchedEvents[0])->toEqual(new BeforeAdminInvoiceSendReminderEvent(9))
-        ->and($dispatchedEvents[1])->toEqual(new AfterAdminInvoiceReminderSentEvent(9));
+        ->and($dispatchedEvents[1])->toEqual(new AfterAdminInvoiceReminderRecordedEvent(9));
+});
+
+test('a failing reminder observer cannot prevent the built-in email attempt or retry a recorded reminder', function (): void {
+    $invoice = createEntity(Invoice::class, ['id' => 9]);
+    $calls = [];
+
+    $events = new EventDispatcher();
+    $events->addListener(AfterAdminInvoiceReminderRecordedEvent::class, static function () use (&$calls): void {
+        $calls[] = 'observer';
+
+        throw new RuntimeException('Extension listener failed');
+    }, 100);
+
+    $di = container();
+    $di['em']->shouldReceive('persist')->once()->with($invoice);
+    $di['em']->shouldReceive('flush')->once();
+    $di['event_dispatcher'] = $events;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('sendInvoiceReminderEmail')
+        ->once()
+        ->with(Mockery::on(static fn (AfterAdminInvoiceReminderRecordedEvent $event): bool => $event->invoiceId === 9))
+        ->andReturnUsing(static function () use (&$calls): void {
+            $calls[] = 'email';
+        });
+    $service->setDi($di);
+
+    expect($service->sendInvoiceReminder($invoice))->toBeTrue()
+        ->and($calls)->toBe(['email', 'observer'])
+        ->and($invoice->getRemindedAt())->toBeInstanceOf(DateTimeInterface::class);
 });
 
 test('counts invoices', function (): void {

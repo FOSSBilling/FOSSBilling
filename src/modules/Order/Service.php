@@ -1659,10 +1659,20 @@ class Service implements InjectionAwareInterface
 
     public function finalizeCancellationFromGateway(Order $order, $reason = null): bool
     {
+        $orderId = $this->orderId($order);
         $this->assertOrderCanBeCanceled($order);
         $this->beginCancellation($order, false);
 
         $this->completeCancellation($order, $reason, false);
+
+        $productService = $this->di['mod_service']('Product');
+        $productService->releaseReservedPromoRedemptionsForOrder($order, 'order_canceled');
+        $productService->releaseReservedStockForOrder($order, 'order_canceled');
+
+        $note = ($reason === null) ? 'Order canceled' : 'Canceled order for ' . $reason;
+        $this->saveStatusChange($order, $note);
+
+        $this->di['event_dispatcher']->dispatch(new AfterAdminOrderCancelEvent($orderId));
 
         return true;
     }
