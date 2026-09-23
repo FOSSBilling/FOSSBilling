@@ -53,6 +53,16 @@ class Service implements InjectionAwareInterface
     final public const string STACKING_STACK_ALL = 'stack_all_eligible';
     final public const string STACKING_PRIORITY_FIRST = 'priority_first';
 
+    /**
+     * Internal cart-item config key carrying a staff-set unit price override.
+     * Stamped server-side after prepareCartProductConfig() (like the cart
+     * family token) so it can never be smuggled in through a client request;
+     * addItem() strips any incoming value first. Honored for every product
+     * type except domains, which are always re-priced from the TLD table -
+     * matching the admin single-order flow.
+     */
+    final public const string PRICE_OVERRIDE_KEY = '__price_override';
+
     protected ?\Pimple\Container $di = null;
     protected ?ProductRepository $productRepository = null;
     protected ?ProductCategoryRepository $productCategoryRepository = null;
@@ -2278,9 +2288,15 @@ class Service implements InjectionAwareInterface
         }
 
         $quantity = max(1, (int) ($config['quantity'] ?? 1));
+        $price = (float) $this->getProductPrice($product, $config);
+
+        $override = ($config ?? [])[self::PRICE_OVERRIDE_KEY] ?? null;
+        if (is_numeric($override) && (float) $override >= 0) {
+            $price = (float) $override;
+        }
 
         return [
-            'price' => (float) $this->getProductPrice($product, $config),
+            'price' => $price,
             'quantity' => $quantity,
             'setup_price' => $this->getProductSetupPrice($product, $config),
         ];

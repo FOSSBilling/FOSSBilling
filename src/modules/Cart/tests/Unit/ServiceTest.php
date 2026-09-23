@@ -774,7 +774,7 @@ test('createFromCart uses database transaction', function (): void {
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('getSessionCart')->once()->andReturn($cart);
-    $serviceMock->shouldReceive('toApiArray')->once()->with($cart)->andReturn([
+    $serviceMock->shouldReceive('toApiArray')->once()->with($cart, false, null, $client)->andReturn([
         'items' => [['id' => 1]],
         'total' => 0,
     ]);
@@ -863,7 +863,7 @@ test('createFromCart with promo entity uses product promo service', function ():
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('getSessionCart')->once()->andReturn($cart);
-    $serviceMock->shouldReceive('toApiArray')->once()->with($cart)->andReturn([
+    $serviceMock->shouldReceive('toApiArray')->once()->with($cart, false, null, $client)->andReturn([
         'items' => [['id' => 1]],
         'total' => 0,
     ]);
@@ -945,7 +945,7 @@ test('createFromCart aborts inside the transaction when the once-per-client guar
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('getSessionCart')->once()->andReturn($cart);
-    $serviceMock->shouldReceive('toApiArray')->once()->with($cart)->andReturn([
+    $serviceMock->shouldReceive('toApiArray')->once()->with($cart, false, null, $client)->andReturn([
         'items' => [['id' => 1]],
         'total' => 0,
     ]);
@@ -1033,7 +1033,7 @@ test('createFromCart sets the unpaid invoice id on orders when checkout produces
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('getSessionCart')->once()->andReturn($cart);
-    $serviceMock->shouldReceive('toApiArray')->once()->with($cart)->andReturn([
+    $serviceMock->shouldReceive('toApiArray')->once()->with($cart, false, null, $client)->andReturn([
         'items' => [['id' => 1]],
         'total' => 100,
     ]);
@@ -1172,7 +1172,7 @@ test('createFromCart keeps every non-addon order visible in legacy multi-item ca
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('getSessionCart')->once()->andReturn($cart);
-    $serviceMock->shouldReceive('toApiArray')->once()->with($cart)->andReturn([
+    $serviceMock->shouldReceive('toApiArray')->once()->with($cart, false, null, $client)->andReturn([
         'items' => [['id' => 1], ['id' => 2], ['id' => 3]],
         'total' => 0,
     ]);
@@ -1307,7 +1307,7 @@ test('createFromCart groups stamped cart families under shared group ids', funct
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('getSessionCart')->once()->andReturn($cart);
-    $serviceMock->shouldReceive('toApiArray')->once()->with($cart)->andReturn([
+    $serviceMock->shouldReceive('toApiArray')->once()->with($cart, false, null, $client)->andReturn([
         'items' => [['id' => 1], ['id' => 2], ['id' => 3]],
         'total' => 0,
     ]);
@@ -1409,7 +1409,7 @@ test('createFromCart compensates promo usage on transaction failure', function (
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('getSessionCart')->once()->andReturn($cart);
-    $serviceMock->shouldReceive('toApiArray')->once()->with($cart)->andReturn([
+    $serviceMock->shouldReceive('toApiArray')->once()->with($cart, false, null, $client)->andReturn([
         'items' => [['id' => 1]],
         'total' => 0,
     ]);
@@ -1512,7 +1512,7 @@ test('createFromCart releases reserved stock on transaction failure', function (
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('getSessionCart')->once()->andReturn($cart);
-    $serviceMock->shouldReceive('toApiArray')->once()->with($cart)->andReturn([
+    $serviceMock->shouldReceive('toApiArray')->once()->with($cart, false, null, $client)->andReturn([
         'items' => [['id' => 1]],
         'total' => 0,
     ]);
@@ -1609,7 +1609,7 @@ test('createFromCart does not roll back order creation when synchronous activati
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('getSessionCart')->once()->andReturn($cart);
-    $serviceMock->shouldReceive('toApiArray')->once()->with($cart)->andReturn([
+    $serviceMock->shouldReceive('toApiArray')->once()->with($cart, false, null, $client)->andReturn([
         'items' => [['id' => 1]],
         'total' => 0,
     ]);
@@ -2318,7 +2318,7 @@ test('getProductDiscount does not waive setup fee for a product the promo is not
 
 test('isPromoAvailableForClientGroup returns expected result', function (Promo $promo, ?Client $client, bool $expectedResult): void {
     $productService = Mockery::mock(ProductService::class);
-    $productService->shouldReceive('isPromoAvailableForClientGroup')->once()->with($promo)->andReturn($expectedResult);
+    $productService->shouldReceive('isPromoAvailableForClientGroup')->once()->with($promo, null)->andReturn($expectedResult);
 
     $di = container();
     $di['loggedin_client'] = $client;

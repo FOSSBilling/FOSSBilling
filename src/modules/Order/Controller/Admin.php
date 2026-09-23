@@ -53,6 +53,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         $app->get('/order/', 'get_index', [], static::class);
         $app->get('/order/index', 'get_index', [], static::class);
         $app->get('/order/manage/:id', 'get_order', ['id' => '[0-9]+'], static::class);
+        $app->get('/order/basket', 'get_basket', [], static::class);
         $app->post('/order/new', 'get_new', [], static::class);
     }
 
@@ -72,6 +73,31 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         $client = $api->client_get(['id' => $request->request->get('client_id')]);
 
         return $app->render('mod_order_new', ['product' => $product, 'client' => $client]);
+    }
+
+    public function get_basket(\Box_App $app): string
+    {
+        $api = $this->di['api_admin'];
+
+        $request = $app->getRequest();
+        $set = [];
+
+        $clientId = $request->query->get('client_id');
+        if ($clientId) {
+            $set['client'] = $api->client_get(['id' => $clientId]);
+            $set['basket'] = $api->cart_staff_basket_get(['client_id' => $clientId]);
+
+            $productId = $request->query->get('basket_product_id');
+            if ($productId) {
+                try {
+                    $set['basket_product'] = $api->product_get(['id' => (int) $productId]);
+                } catch (\Exception) {
+                    $set['basket_product'] = null;
+                }
+            }
+        }
+
+        return $app->render('mod_order_basket', $set);
     }
 
     public function get_order(\Box_App $app, $id): string

@@ -7,6 +7,12 @@
 {% set filter_panel_id = 'page-search-filters' %}
 {% set filter_panel_open = request_has_filters %}
 {% set new_order_action %}
+    <a class="btn btn-outline-primary" href="{{ 'order/basket'|url }}">
+        <svg class="icon">
+            <use href="#package" />
+        </svg>
+        {{ 'Basket Order'|trans }}
+    </a>
     <button class="btn btn-primary" type="button" data-bs-toggle="modal" data-bs-target="#newOrderModal">
         <svg class="icon">
             <use href="#plus" />

@@ -810,6 +810,42 @@ test('get product renewal line config uses generic pricing implementation', func
     expect($line)->toBe(['price' => 20.0, 'quantity' => 2, 'setup_price' => 5.0]);
 });
 
+test('get product order line config honors a staff price override', function (): void {
+    $service = new Service();
+    $productPayment = productTestCreateProductPaymentEntity(15)
+        ->setType(ProductPayment::RECURRENT);
+    productTestAddPeriod($productPayment, '1Y', 20.0, 5.0, true);
+
+    $product = productTestCreateProductEntity(9)
+        ->setType(Service::CUSTOM)
+        ->setProductPayment($productPayment);
+
+    $service->setDi(container());
+
+    $line = $service->getProductOrderLineConfig($product, ['period' => '1Y', 'quantity' => 2, Service::PRICE_OVERRIDE_KEY => 7.5]);
+
+    expect($line)->toBe(['price' => 7.5, 'quantity' => 2, 'setup_price' => 5.0]);
+});
+
+test('get product order line config ignores invalid price overrides', function (): void {
+    $service = new Service();
+    $productPayment = productTestCreateProductPaymentEntity(15)
+        ->setType(ProductPayment::RECURRENT);
+    productTestAddPeriod($productPayment, '1Y', 20.0, 5.0, true);
+
+    $product = productTestCreateProductEntity(9)
+        ->setType(Service::CUSTOM)
+        ->setProductPayment($productPayment);
+
+    $service->setDi(container());
+
+    foreach (['free', -3.0, null] as $override) {
+        $line = $service->getProductOrderLineConfig($product, ['period' => '1Y', Service::PRICE_OVERRIDE_KEY => $override]);
+
+        expect($line['price'])->toBe(20.0);
+    }
+});
+
 test('get related product discount uses domain pricing implementation', function (): void {
     $service = new Service();
     $tld = productTestCreateTldModel([
