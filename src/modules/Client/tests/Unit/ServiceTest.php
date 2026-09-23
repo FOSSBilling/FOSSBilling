@@ -167,9 +167,7 @@ test('sendSignupEmail includes a confirmation link when required', function (): 
         ]);
 
     $di = container();
-    $di['mod_service'] = $di->protect(function ($serviceName) use ($emailService, $service) {
-        return $serviceName === 'email' ? $emailService : $service;
-    });
+    $di['mod_service'] = $di->protect(fn ($serviceName) => $serviceName === 'email' ? $emailService : $service);
     $di['mod_config'] = $di->protect(fn ($name): array => ['require_email_confirmation' => true]);
 
     $service->setDi($di);

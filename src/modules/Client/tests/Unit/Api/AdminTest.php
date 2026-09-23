@@ -183,7 +183,7 @@ test('delete returns true', function (): void {
     $data = ['id' => 1];
 
     $calls = new ArrayObject();
-    $dispatcher = new class($calls) {
+    $dispatcher = new readonly class($calls) {
         public function __construct(private ArrayObject $calls)
         {
         }

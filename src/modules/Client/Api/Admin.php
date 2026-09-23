@@ -223,9 +223,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             $validator->isPasswordStrong($data['password']);
         }
 
-        $id = $service->adminCreateClient($data);
-
-        return $id;
+        return $service->adminCreateClient($data);
     }
 
     /**

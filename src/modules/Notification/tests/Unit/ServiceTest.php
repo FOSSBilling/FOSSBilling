@@ -96,7 +96,7 @@ test('sorts notification search query', function (array $filter, string $expecte
 
 test('create dispatches the typed event after persisting the notification', function (): void {
     $calls = (object) ['steps' => [], 'events' => []];
-    $eventDispatcher = new class($calls) {
+    $eventDispatcher = new readonly class($calls) {
         public function __construct(private object $calls)
         {
         }

@@ -696,7 +696,7 @@ test('checkoutCart returns array with expected keys', function (): void {
     $serviceMock->shouldReceive('isPromoAvailableForClientGroup')->atLeast()->once()->andReturn(true);
 
     $events = new ArrayObject();
-    $dispatcher = new class($events) {
+    $dispatcher = new readonly class($events) {
         public function __construct(private ArrayObject $events)
         {
         }

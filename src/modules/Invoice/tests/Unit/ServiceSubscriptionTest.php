@@ -70,7 +70,7 @@ test('creates a subscription and dispatches its typed event', function (): void 
     });
     $em->shouldReceive('flush')->once();
 
-    $eventDispatcher = new class($calls) {
+    $eventDispatcher = new readonly class($calls) {
         public function __construct(private object $calls)
         {
         }
@@ -395,7 +395,7 @@ test('deletes a subscription and dispatches its typed event', function (): void 
     $em->shouldReceive('remove')->once();
     $em->shouldReceive('flush')->once();
 
-    $eventDispatcher = new class($calls) {
+    $eventDispatcher = new readonly class($calls) {
         public function __construct(private object $calls)
         {
         }
