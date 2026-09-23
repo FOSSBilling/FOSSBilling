@@ -198,6 +198,59 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
+     * Attach a product to an editable invoice. Creates the order and adds it
+     * as an order line, so paying the invoice provisions the service.
+     *
+     * @optional int $order_id - attach an existing pending order instead of creating one
+     * @optional int $product_id - product to order and attach
+     * @optional int $quantity - quantity to order. Default 1
+     * @optional float $price - overridden unit price, zero allowed. Default is the product price.
+     * @optional string $period - billing period for recurrent products
+     * @optional array $config - product custom order form values
+     * @optional string $group_id - attach as an addon of this order group
+     * @optional string $title - order title. Default is the product title
+     *
+     * @return int $id - attached order ID
+     */
+    #[RequiredParams(['id' => 'Invoice ID is missing'])]
+    public function attach_order($data)
+    {
+        $this->checkPermissions('invoice', 'manage_invoices');
+        $this->checkPermissions('order', 'manage');
+
+        $model = $this->_getInvoice($data);
+
+        return $this->getService()->attachOrderToInvoice($model, $data);
+    }
+
+    /**
+     * Cancel an approved unpaid invoice and issue a replacement carrying its
+     * lines forward. The replacement takes the next invoice number; the
+     * original number stays with the canceled record.
+     *
+     * @optional string $reason - reason recorded on the replacement invoice
+     * @optional int $order_id - attach an existing pending order to the replacement
+     * @optional int $product_id - product to order and attach to the replacement
+     * @optional int $quantity - quantity to order. Default 1
+     * @optional float $price - overridden unit price, zero allowed
+     * @optional string $period - billing period for recurrent products
+     * @optional array $config - product custom order form values
+     * @optional string $group_id - attach as an addon of this order group
+     * @optional string $title - order title
+     *
+     * @return int $id - replacement invoice ID
+     */
+    #[RequiredParams(['id' => 'Invoice ID is missing'])]
+    public function reissue($data)
+    {
+        $this->checkPermissions('invoice', 'manage_invoices');
+
+        $model = $this->_getInvoice($data);
+
+        return $this->getService()->reissueInvoice($model, $data);
+    }
+
+    /**
      * Update invoice details.
      *
      * @optional string $paid_at - Invoice payment date (Y-m-d) or empty to remove

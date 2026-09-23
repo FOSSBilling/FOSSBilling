@@ -264,6 +264,8 @@ class Service implements InjectionAwareInterface
             'approved' => $invoice->isApproved(),
             'credit_note_for_invoice_id' => $invoice->getCreditNoteForInvoiceId(),
             'debit_note_for_invoice_id' => $invoice->getDebitNoteForInvoiceId(),
+            'replaces_invoice_id' => $invoice->getReplacesInvoiceId(),
+            'replaced_by_invoice_id' => $invoice->getReplacedByInvoiceId(),
             'taxname' => $invoice->getTaxname(),
             'taxrate' => $invoice->getTaxrate(),
             'due_at' => $invoice->getDueAt()?->format('Y-m-d H:i:s'),
@@ -396,6 +398,8 @@ class Service implements InjectionAwareInterface
         $result['editable'] = $this->isInvoiceEditable($invoice);
         $result['credit_note_for_invoice_id'] = $row['credit_note_for_invoice_id'] ?? null;
         $result['debit_note_for_invoice_id'] = $row['debit_note_for_invoice_id'] ?? null;
+        $result['replaces_invoice_id'] = $row['replaces_invoice_id'] ?? null;
+        $result['replaced_by_invoice_id'] = $row['replaced_by_invoice_id'] ?? null;
         $result['refunded_by_invoice_ids'] = [];
         $result['refunded_total'] = round((float) ($row['refund'] ?? 0), 2);
         $result['remaining_refundable'] = round(max(0, $result['total'] - $result['refunded_total']), 2);
@@ -1817,6 +1821,339 @@ class Service implements InjectionAwareInterface
             ['original_invoice' => $this->toApiArray($original)]
         );
         $this->extendInvoiceHashLifetime($debitNote);
+    }
+
+    /**
+     * Attach a product to an editable invoice by creating its order and adding
+     * it as an order line, so paying the invoice provisions the service.
+     *
+     * Accepts either `order_id` (attach an existing pending order) or
+     * `product_id` with `quantity`, `price` (optional override, zero allowed),
+     * `period`, `config` (product custom order form values), `group_id`
+     * (attach as an addon of that order group) and `title`.
+     *
+     * @return int the attached order id
+     */
+    public function attachOrderToInvoice(Invoice $invoice, array $data): int
+    {
+        $this->di['events_manager']->fire(['event' => 'onBeforeAdminInvoiceAttachOrder', 'params' => $this->toApiArray($invoice)]);
+
+        if (!$this->isInvoiceEditable($invoice)) {
+            throw new InformationException('This invoice can no longer be edited. Approved invoices are locked once issued; correct them with a credit note or a replacement invoice.');
+        }
+
+        $payload = $this->resolveAttachOrderPayload($data);
+
+        $order = $this->di['em']->wrapInTransaction(function () use ($invoice, $payload): Order {
+            $this->lockAndRefreshInvoice($invoice);
+            if (!$this->isInvoiceEditable($invoice)) {
+                throw new InformationException('This invoice can no longer be edited. Approved invoices are locked once issued; correct them with a credit note or a replacement invoice.');
+            }
+
+            return $this->createAndAttachOrder($invoice, $payload);
+        });
+
+        $this->resendUpdatedInvoice($invoice);
+
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoiceAttachOrder', 'params' => ['id' => $invoice->getId(), 'order_id' => $order->getId()]]);
+
+        $this->di['logger']->info("Attached order {$order->getId()} to invoice {$invoice->getId()}.");
+
+        return (int) $order->getId();
+    }
+
+    /**
+     * Cancel an approved unpaid invoice and issue a replacement carrying its
+     * lines forward, so the correction keeps a clean audit trail while the
+     * client pays a single invoice. The replacement takes the next invoice
+     * number; the original number stays with the canceled record.
+     *
+     * Accepts an optional `reason` note plus the same product payload as
+     * attachOrderToInvoice to add one order to the replacement in the same step.
+     *
+     * @return int the replacement invoice id
+     */
+    public function reissueInvoice(Invoice $original, array $data = []): int
+    {
+        $this->di['events_manager']->fire(['event' => 'onBeforeAdminInvoiceReissue', 'params' => $this->toApiArray($original)]);
+
+        if (!$original->isApproved() || $original->getStatus() !== Invoice::STATUS_UNPAID) {
+            throw new InformationException('Only approved unpaid invoices can be reissued');
+        }
+        if ($original->getCreditNoteForInvoiceId() !== null || $original->getDebitNoteForInvoiceId() !== null) {
+            throw new InformationException('Credit and debit notes cannot be reissued');
+        }
+        if ($original->getReplacedByInvoiceId() !== null) {
+            throw new InformationException('This invoice has already been reissued as invoice #:id', [':id' => $original->getReplacedByInvoiceId()]);
+        }
+
+        $attachPayload = (!empty($data['order_id']) || !empty($data['product_id']))
+            ? $this->resolveAttachOrderPayload($data)
+            : null;
+        $reason = trim((string) ($data['reason'] ?? ''));
+        $systemService = $this->di['mod_service']('system');
+
+        $new = $this->di['em']->wrapInTransaction(function () use ($original, $attachPayload, $reason, $systemService): Invoice {
+            // Reserve the number before any invoice reads. SQLite must acquire its write
+            // lock before the locking read; the outer transaction rolls this back on failure.
+            $next_nr = $this->getNextInvoiceNumber();
+            if ($next_nr === null) {
+                throw new \FOSSBilling\Exception('Unable to determine the next invoice number');
+            }
+
+            $state = $this->lockAndRefreshInvoice($original);
+            if (!$state['approved'] || $state['status'] !== Invoice::STATUS_UNPAID) {
+                throw new InformationException('Only approved unpaid invoices can be reissued');
+            }
+            // Re-read through the repository: the entity getter above was
+            // already narrowed by the pre-lock check, while the row may have
+            // changed under us.
+            $locked = $this->di['em']->getRepository(Invoice::class)->find($original->getId());
+            if ($locked instanceof Invoice && $locked->getReplacedByInvoiceId() !== null) {
+                throw new InformationException('This invoice has already been reissued as invoice #:id', [':id' => $locked->getReplacedByInvoiceId()]);
+            }
+
+            $original->setStatus(Invoice::STATUS_CANCELED);
+            $this->di['em']->persist($original);
+
+            $productService = $this->di['mod_service']('Product');
+            $productService->releaseReservedPromoRedemptionsForInvoice($original, 'invoice_canceled');
+            $productService->releaseReservedStockForInvoice($original, 'invoice_canceled');
+
+            $new = new Invoice();
+            $new->setClientId($original->getClientId());
+            $new->setReplacesInvoiceId($original->getId());
+            $new->setHash(bin2hex(random_bytes(random_int(15, 30))));
+            $new->setHashExpiresAt($this->computeHashExpiration());
+            $new->setStatus(Invoice::STATUS_UNPAID);
+            $new->setCurrency($original->getCurrency());
+            $new->setApproved(true);
+            $new->setTaxname($original->getTaxname());
+            $new->setTaxrate($original->getTaxrate());
+            $new->setGateway($original->getGateway());
+            $new->setDueAt($original->getDueAt());
+
+            $new->setSellerCompany($original->getSellerCompany());
+            $new->setSellerCompanyVat($original->getSellerCompanyVat());
+            $new->setSellerCompanyNumber($original->getSellerCompanyNumber());
+            $new->setSellerAddress($original->getSellerAddress());
+            $new->setSellerPhone($original->getSellerPhone());
+            $new->setSellerEmail($original->getSellerEmail());
+
+            $new->setBuyerFirstName($original->getBuyerFirstName());
+            $new->setBuyerLastName($original->getBuyerLastName());
+            $new->setBuyerCompany($original->getBuyerCompany());
+            $new->setBuyerCompanyVat($original->getBuyerCompanyVat());
+            $new->setBuyerCompanyNumber($original->getBuyerCompanyNumber());
+            $new->setBuyerAddress($original->getBuyerAddress());
+            $new->setBuyerCity($original->getBuyerCity());
+            $new->setBuyerState($original->getBuyerState());
+            $new->setBuyerCountry($original->getBuyerCountry());
+            $new->setBuyerPhone($original->getBuyerPhone());
+            $new->setBuyerPhoneCc($original->getBuyerPhoneCc());
+            $new->setBuyerEmail($original->getBuyerEmail());
+            $new->setBuyerZip($original->getBuyerZip());
+            $new->setText1($original->getText1());
+            $new->setText2($original->getText2());
+            $new->setSerie($systemService->getParamValue('invoice_series'));
+            $new->setNr($next_nr);
+            $this->di['em']->persist($new);
+            $this->di['em']->flush();
+
+            $orderService = $this->di['mod_service']('Order');
+            $entityManager = $this->di['em'];
+            foreach ($this->getInvoiceItemRepository()->findByInvoiceId((int) $original->getId()) as $item) {
+                $orderToLink = null;
+                if ($item->getType() === InvoiceItem::TYPE_ORDER) {
+                    $orderToLink = $entityManager->getRepository(Order::class)->find((int) $item->getRelId());
+                    if (!$orderToLink instanceof Order) {
+                        throw new InformationException('Order #:id attached to this invoice could not be found', [':id' => $item->getRelId()]);
+                    }
+                    if ((int) $orderToLink->getClientId() !== (int) $new->getClientId()) {
+                        throw new InformationException('Order #:id does not belong to this invoice\'s client', [':id' => $orderToLink->getId()]);
+                    }
+                }
+
+                $copy = new InvoiceItem();
+                $copy->setInvoice($new);
+                $copy->setType($item->getType());
+                $copy->setRelId($item->getRelId());
+                $copy->setTask($item->getTask());
+                $copy->setStatus(InvoiceItem::STATUS_PENDING_PAYMENT);
+                $copy->setTitle($item->getTitle());
+                $copy->setPeriod($item->getPeriod());
+                $copy->setQuantity($item->getQuantity() ?? 1);
+                $copy->setUnit($item->getUnit());
+                $copy->setCharged(0);
+                $copy->setPrice($item->getPrice() ?? 0);
+                $copy->setTaxed($item->getTaxed());
+                $entityManager->persist($copy);
+
+                if ($orderToLink instanceof Order) {
+                    $orderService->setUnpaidInvoice($orderToLink, $new);
+                }
+            }
+            $entityManager->flush();
+
+            $original->setReplacedByInvoiceId($new->getId());
+            $entityManager->persist($original);
+            $entityManager->flush();
+
+            if ($attachPayload !== null) {
+                $this->createAndAttachOrder($new, $attachPayload);
+            }
+
+            $this->addNote($original, "Reissued as invoice #{$new->getId()}.");
+            $this->addNote($new, "Replacement for invoice #{$original->getId()}.");
+            if ($reason !== '') {
+                $this->addNote($new, $reason);
+            }
+
+            return $new;
+        });
+        $result = (int) $new->getId();
+
+        try {
+            $this->resendUpdatedInvoice($new);
+        } catch (\Throwable $exception) {
+            $this->di['logger']->withChannel('email')->error('Failed to send replacement invoice email', [
+                'invoice_id' => $original->getId(),
+                'replacement_id' => $new->getId(),
+                'exception' => $exception,
+            ]);
+        }
+
+        $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoiceReissue', 'params' => ['id' => $original->getId(), 'replacement_id' => $result]]);
+
+        $this->di['logger']->info("Reissued invoice #{$original->getId()} as #{$result}.");
+
+        return $result;
+    }
+
+    /**
+     * Validate the attach payload shape before anything is written, so a bad
+     * product reference can never leave a half-created order behind.
+     *
+     * @return array{order_id: int}|array{product_id: int, quantity: int, price: float|null, period: string|null, config: array, group_id: string|null, title: string|null}
+     */
+    private function resolveAttachOrderPayload(array $data): array
+    {
+        if (!empty($data['order_id'])) {
+            if (!empty($data['product_id'])) {
+                throw new InformationException('Provide either an order or product details, not both');
+            }
+
+            return ['order_id' => (int) $data['order_id']];
+        }
+
+        if (empty($data['product_id'])) {
+            throw new InformationException('Product was not passed');
+        }
+
+        $config = $data['config'] ?? [];
+        if (!is_array($config)) {
+            throw new InformationException('Product configuration is invalid');
+        }
+
+        $period = $data['period'] ?? null;
+        if ($period !== null && trim((string) $period) === '') {
+            $period = null;
+        }
+
+        $groupId = $data['group_id'] ?? null;
+        if ($groupId !== null && trim((string) $groupId) === '') {
+            $groupId = null;
+        }
+
+        $title = $data['title'] ?? null;
+        if ($title !== null && trim((string) $title) === '') {
+            $title = null;
+        }
+
+        return [
+            'product_id' => (int) $data['product_id'],
+            'quantity' => PriceValidator::validateQuantity($data['quantity'] ?? 1),
+            'price' => array_key_exists('price', $data) && $data['price'] !== null && (string) $data['price'] !== ''
+                ? PriceValidator::validateAmount($data['price'], 'Price')
+                : null,
+            'period' => $period !== null ? (string) $period : null,
+            'config' => $config,
+            'group_id' => $groupId !== null ? (string) $groupId : null,
+            'title' => $title !== null ? (string) $title : null,
+        ];
+    }
+
+    /**
+     * Create the order (no invoice of its own) and attach it to the invoice as
+     * an order line. The caller must hold the invoice row lock; the order and
+     * the line are created in the caller's transaction.
+     */
+    private function createAndAttachOrder(Invoice $invoice, array $payload): Order
+    {
+        $orderService = $this->di['mod_service']('Order');
+
+        if (isset($payload['order_id'])) {
+            $order = $this->di['em']->getRepository(Order::class)->find($payload['order_id']);
+            if (!$order instanceof Order) {
+                throw new InformationException('Order not found');
+            }
+        } else {
+            $client = $this->di['em']->getRepository(Client::class)->find($invoice->getClientId());
+            if (!$client instanceof Client) {
+                throw new InformationException('Client not found');
+            }
+            $product = $this->di['mod_service']('Product')->findProductById($payload['product_id']);
+
+            $orderData = [
+                'quantity' => $payload['quantity'],
+                'invoice_option' => 'no-invoice',
+                'activate' => false,
+                'config' => $payload['config'],
+            ];
+            if ($payload['price'] !== null) {
+                $orderData['price'] = $payload['price'];
+            }
+            if ($payload['period'] !== null) {
+                $orderData['period'] = $payload['period'];
+            }
+            if ($payload['group_id'] !== null) {
+                $orderData['group_id'] = $payload['group_id'];
+            }
+            if ($payload['title'] !== null) {
+                $orderData['title'] = $payload['title'];
+            }
+
+            $orderId = $orderService->createOrder($client, $product, $orderData);
+            $order = $this->di['em']->getRepository(Order::class)->find($orderId);
+            if (!$order instanceof Order) {
+                throw new \FOSSBilling\Exception('Order could not be created');
+            }
+        }
+
+        if ((int) $order->getClientId() !== (int) $invoice->getClientId()) {
+            throw new InformationException('Order does not belong to this invoice\'s client');
+        }
+        if ($order->getUnpaidInvoiceId() !== null) {
+            throw new InformationException('Order is already attached to invoice #:id', [':id' => $order->getUnpaidInvoiceId()]);
+        }
+        if ($order->getStatus() !== Order::STATUS_PENDING_SETUP) {
+            throw new InformationException('Only pending orders can be attached to an invoice');
+        }
+        if ($order->getCurrency() !== $invoice->getCurrency()) {
+            throw new InformationException('Order currency does not match the invoice currency');
+        }
+
+        $this->di['mod_service']('Invoice', 'InvoiceItem')->generateFromOrder(
+            $invoice,
+            $order,
+            InvoiceItem::TASK_ACTIVATE,
+            $order->getPrice(),
+            ['quantity' => $order->getQuantity()],
+            false
+        );
+        $this->addNote($invoice, "Order #{$order->getId()} attached.");
+
+        return $order;
     }
 
     /**
