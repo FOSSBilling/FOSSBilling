@@ -18,7 +18,15 @@ use Box\Mod\Staff\Entity\AdminGroupMember;
 use Box\Mod\Staff\Entity\AdminPasswordReset;
 use Box\Mod\Staff\Event\AdminLoginFailedEvent;
 use Box\Mod\Staff\Event\AfterAdminLoginEvent;
+use Box\Mod\Staff\Event\AfterAdminStaffCreateEvent;
+use Box\Mod\Staff\Event\AfterAdminStaffDeleteEvent;
+use Box\Mod\Staff\Event\AfterAdminStaffPasswordChangeEvent;
+use Box\Mod\Staff\Event\AfterAdminStaffUpdateEvent;
 use Box\Mod\Staff\Event\BeforeAdminLoginEvent;
+use Box\Mod\Staff\Event\BeforeAdminStaffCreateEvent;
+use Box\Mod\Staff\Event\BeforeAdminStaffDeleteEvent;
+use Box\Mod\Staff\Event\BeforeAdminStaffPasswordChangeEvent;
+use Box\Mod\Staff\Event\BeforeAdminStaffUpdateEvent;
 use Box\Mod\Staff\Repository\AdminGroupMemberRepository;
 use Box\Mod\Staff\Repository\AdminGroupRepository;
 use Box\Mod\Staff\Repository\AdminPasswordResetRepository;
@@ -111,6 +119,30 @@ function staffLoginEventDispatcher(): array
     $dispatcher = new SymfonyEventDispatcher();
 
     foreach ([BeforeAdminLoginEvent::class, AdminLoginFailedEvent::class, AfterAdminLoginEvent::class] as $eventClass) {
+        $dispatcher->addListener($eventClass, static function (object $event) use ($events): void {
+            $events->append($event);
+        });
+    }
+
+    return [$dispatcher, $events];
+}
+
+/** @return array{SymfonyEventDispatcher, ArrayObject} */
+function staffAccountCrudEventDispatcher(): array
+{
+    $events = new ArrayObject();
+    $dispatcher = new SymfonyEventDispatcher();
+
+    foreach ([
+        BeforeAdminStaffCreateEvent::class,
+        AfterAdminStaffCreateEvent::class,
+        BeforeAdminStaffUpdateEvent::class,
+        AfterAdminStaffUpdateEvent::class,
+        BeforeAdminStaffDeleteEvent::class,
+        AfterAdminStaffDeleteEvent::class,
+        BeforeAdminStaffPasswordChangeEvent::class,
+        AfterAdminStaffPasswordChangeEvent::class,
+    ] as $eventClass) {
         $dispatcher->addListener($eventClass, static function (object $event) use ($events): void {
             $events->append($event);
         });
@@ -510,6 +542,9 @@ test('onAfterAdminOrderSuspend sends a staff notification', function (): void {
     $orderRepository->shouldReceive('find')->once()->with(42)->andReturn($order);
 
     $entityManager = Mockery::mock(EntityManagerInterface::class);
+    $entityManager->shouldReceive('getRepository')->with(AdminGroup::class)->andReturn(Mockery::mock(AdminGroupRepository::class));
+    $entityManager->shouldReceive('getRepository')->with(AdminGroupMember::class)->andReturn(Mockery::mock(AdminGroupMemberRepository::class));
+    $entityManager->shouldReceive('getRepository')->with(AdminPasswordReset::class)->andReturn(Mockery::mock(AdminPasswordResetRepository::class));
     $entityManager->shouldReceive('getRepository')
         ->once()
         ->with(Box\Mod\Order\Entity\Order::class)
@@ -533,11 +568,46 @@ test('onAfterAdminOrderSuspend sends a staff notification', function (): void {
         'email' => $emailService,
     });
 
-    $event = Mockery::mock(Box_Event::class);
-    $event->shouldReceive('getDi')->once()->andReturn($di);
-    $event->shouldReceive('getParameters')->once()->andReturn(['id' => 42]);
+    $service = new Service();
+    $service->setDi($di);
+    $service->notifyStaffAfterOrderSuspend(new Box\Mod\Order\Event\AfterAdminOrderSuspendEvent(42));
+});
 
-    Service::onAfterAdminOrderSuspend($event);
+test('typed client order creation sends a staff notification', function (): void {
+    $order = Tests\Helpers\createEntity(Box\Mod\Order\Entity\Order::class, ['id' => 42]);
+    $orderRepository = Mockery::mock(Box\Mod\Order\Repository\OrderRepository::class);
+    $orderRepository->shouldReceive('find')->once()->with(42)->andReturn($order);
+
+    $entityManager = Mockery::mock(EntityManagerInterface::class);
+    $entityManager->shouldReceive('getRepository')->with(AdminGroup::class)->andReturn(Mockery::mock(AdminGroupRepository::class));
+    $entityManager->shouldReceive('getRepository')->with(AdminGroupMember::class)->andReturn(Mockery::mock(AdminGroupMemberRepository::class));
+    $entityManager->shouldReceive('getRepository')->with(AdminPasswordReset::class)->andReturn(Mockery::mock(AdminPasswordResetRepository::class));
+    $entityManager->shouldReceive('getRepository')
+        ->once()
+        ->with(Box\Mod\Order\Entity\Order::class)
+        ->andReturn($orderRepository);
+
+    $orderData = ['id' => 42, 'title' => 'Hosting'];
+    $orderService = Mockery::mock(Box\Mod\Order\Service::class);
+    $orderService->shouldReceive('toApiArray')->once()->with($order, true)->andReturn($orderData);
+
+    $emailService = Mockery::mock(Box\Mod\Email\Service::class);
+    $emailService->shouldReceive('sendTemplate')->once()->with([
+        'to_staff' => true,
+        'code' => 'mod_staff_client_order',
+        'order' => $orderData,
+    ]);
+
+    $di = container();
+    $di['em'] = $entityManager;
+    $di['mod_service'] = $di->protect(fn (string $name): object => match ($name) {
+        'order' => $orderService,
+        'email' => $emailService,
+    });
+
+    $service = new Service();
+    $service->setDi($di);
+    $service->notifyStaffAfterClientOrderCreate(new Box\Mod\Order\Event\AfterClientOrderCreateEvent(42, 7, '192.0.2.7'));
 });
 
 test('typed ticket replied event limits client details in the email notification', function (): void {
@@ -1391,10 +1461,8 @@ test('update updates admin details', function (): void {
         'signature' => '1345',
     ];
 
-    $adminModel = \Tests\Helpers\admin();
-
-    $eventsMock = Mockery::mock('\Box_EventManager');
-    $eventsMock->shouldReceive('fire')->atLeast()->once();
+    $adminModel = \Tests\Helpers\admin(['id' => 5]);
+    [$eventDispatcher, $events] = staffAccountCrudEventDispatcher();
 
     $logStub = $this->createStub(FOSSBilling\Logger::class);
 
@@ -1403,7 +1471,7 @@ test('update updates admin details', function (): void {
     $serviceMock->shouldReceive('hasPermission')->atLeast()->once()->andReturn(true);
 
     $di = container();
-    $di['events_manager'] = $eventsMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = $logStub;
     $di['em']->shouldReceive('persist')->atLeast()->once();
     $di['em']->shouldReceive('flush')->atLeast()->once();
@@ -1413,6 +1481,10 @@ test('update updates admin details', function (): void {
 
     $result = $serviceMock->update($adminModel, $data);
     expect($result)->toBeTrue();
+    expect(array_map(static fn (object $event): string => $event::class, $events->getArrayCopy()))
+        ->toBe([BeforeAdminStaffUpdateEvent::class, AfterAdminStaffUpdateEvent::class]);
+    expect($events[0]->adminId)->toBe(5);
+    expect($events[1]->adminId)->toBe(5);
 });
 
 test('update rejects deactivating last active super administrator', function (): void {
@@ -1423,46 +1495,47 @@ test('update rejects deactivating last active super administrator', function ():
     $groupMemberRepository->shouldReceive('adminBelongsToSystemGroup')->once()->with(3, AdminGroup::SYSTEM_SUPER_ADMIN)->andReturn(true);
     $groupMemberRepository->shouldReceive('countActiveMembersInSystemGroup')->once()->with(AdminGroup::SYSTEM_SUPER_ADMIN)->andReturn(1);
 
-    $eventsMock = Mockery::mock('\Box_EventManager');
-    $eventsMock->shouldReceive('fire')->atLeast()->once();
+    [$eventDispatcher, $events] = staffAccountCrudEventDispatcher();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('hasPermission')->atLeast()->once()->andReturn(true);
 
     $di = container();
     $di['em'] = staffEntityManager($groupRepository, $groupMemberRepository);
-    $di['events_manager'] = $eventsMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['loggedin_admin'] = staffHierarchyBypassAdmin();
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->update($adminModel, ['status' => Admin::STATUS_INACTIVE]))
         ->toThrow(FOSSBilling\InformationException::class, 'Cannot remove the last active super administrator');
+    expect($events->getArrayCopy())->toHaveCount(1);
+    expect($events[0])->toBeInstanceOf(BeforeAdminStaffUpdateEvent::class);
 });
 
 test('update rejects deactivating own staff account', function (): void {
     $adminModel = \Tests\Helpers\admin(['id' => 10, 'status' => Admin::STATUS_ACTIVE]);
 
-    $eventsMock = Mockery::mock('\Box_EventManager');
-    $eventsMock->shouldReceive('fire')->atLeast()->once();
+    [$eventDispatcher, $events] = staffAccountCrudEventDispatcher();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('hasPermission')->once()->andReturn(true);
 
     $di = container();
     $di['em'] = staffEntityManager(Mockery::mock(AdminGroupRepository::class), Mockery::mock(AdminGroupMemberRepository::class));
-    $di['events_manager'] = $eventsMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['loggedin_admin'] = staffRegularAdmin();
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->update($adminModel, ['status' => Admin::STATUS_INACTIVE]))
         ->toThrow(FOSSBilling\InformationException::class, 'You cannot deactivate your own staff account');
+    expect($events->getArrayCopy())->toHaveCount(1);
+    expect($events[0])->toBeInstanceOf(BeforeAdminStaffUpdateEvent::class);
 });
 
 test('delete removes admin account', function (): void {
     $adminModel = \Tests\Helpers\admin(['id' => 5]);
 
-    $eventsMock = Mockery::mock('\Box_EventManager');
-    $eventsMock->shouldReceive('fire')->atLeast()->once();
+    [$eventDispatcher, $events] = staffAccountCrudEventDispatcher();
 
     $logStub = $this->createStub(FOSSBilling\Logger::class);
 
@@ -1483,7 +1556,7 @@ test('delete removes admin account', function (): void {
 
     $di = container();
     $di['em'] = staffEntityManager(Mockery::mock(AdminGroupRepository::class), $groupMemberRepository, null, $passwordResetRepository);
-    $di['events_manager'] = $eventsMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = $logStub;
     $di['loggedin_admin'] = staffHierarchyBypassAdmin();
 
@@ -1491,6 +1564,10 @@ test('delete removes admin account', function (): void {
 
     $result = $serviceMock->delete($adminModel);
     expect($result)->toBeTrue();
+    expect(array_map(static fn (object $event): string => $event::class, $events->getArrayCopy()))
+        ->toBe([BeforeAdminStaffDeleteEvent::class, AfterAdminStaffDeleteEvent::class]);
+    expect($events[0]->adminId)->toBe(5);
+    expect($events[1]->adminId)->toBe(5);
 });
 
 test('delete rejects removing last active super administrator', function (): void {
@@ -1524,10 +1601,9 @@ test('delete rejects cron account', function (): void {
 
 test('changePassword updates admin password', function (): void {
     $plainTextPassword = 'password';
-    $adminModel = \Tests\Helpers\admin();
+    $adminModel = \Tests\Helpers\admin(['id' => 5]);
 
-    $eventsMock = Mockery::mock('\Box_EventManager');
-    $eventsMock->shouldReceive('fire')->atLeast()->once();
+    [$eventDispatcher, $events] = staffAccountCrudEventDispatcher();
 
     $logStub = $this->createStub(FOSSBilling\Logger::class);
 
@@ -1542,7 +1618,7 @@ test('changePassword updates admin password', function (): void {
     $serviceMock->shouldReceive('hasPermission')->atLeast()->once()->andReturn(true);
 
     $di = container();
-    $di['events_manager'] = $eventsMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = $logStub;
     $di['em']->shouldReceive('persist')->atLeast()->once();
     $di['em']->shouldReceive('flush')->atLeast()->once();
@@ -1554,6 +1630,10 @@ test('changePassword updates admin password', function (): void {
 
     $result = $serviceMock->changePassword($adminModel, $plainTextPassword);
     expect($result)->toBeTrue();
+    expect(array_map(static fn (object $event): string => $event::class, $events->getArrayCopy()))
+        ->toBe([BeforeAdminStaffPasswordChangeEvent::class, AfterAdminStaffPasswordChangeEvent::class]);
+    expect($events[0]->adminId)->toBe(5);
+    expect($events[1]->adminId)->toBe(5);
 });
 
 test('create creates new admin account', function (): void {
@@ -1563,14 +1643,15 @@ test('create creates new admin account', function (): void {
         'status' => 'active',
         'password' => '1345',
         'group_id' => 2,
+        'api_token' => 'token-must-not-be-exposed',
+        'password_confirm' => 'confirmation-must-not-be-exposed',
     ];
 
     $newId = 1;
     $group = new AdminGroup();
     staffSetEntityId($group, 2);
 
-    $eventsMock = Mockery::mock('\Box_EventManager');
-    $eventsMock->shouldReceive('fire')->atLeast()->once();
+    [$eventDispatcher, $events] = staffAccountCrudEventDispatcher();
 
     $logStub = $this->createStub(FOSSBilling\Logger::class);
 
@@ -1583,7 +1664,7 @@ test('create creates new admin account', function (): void {
     $serviceMock->shouldReceive('hasPermission')->atLeast()->once()->andReturn(true);
 
     $di = container();
-    $di['events_manager'] = $eventsMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = $logStub;
     $di['em'] = staffEntityManager(Mockery::mock(AdminGroupRepository::class)->shouldReceive('findById')->once()->with(2)->andReturn($group)->getMock());
     $di['loggedin_admin'] = staffHierarchyBypassAdmin();
@@ -1595,6 +1676,15 @@ test('create creates new admin account', function (): void {
     expect($result)->toBeInt();
     expect($result)->toBe($newId);
     expect($di['em']->persisted[1])->toBeInstanceOf(AdminGroupMember::class);
+    expect(array_map(static fn (object $event): string => $event::class, $events->getArrayCopy()))
+        ->toBe([BeforeAdminStaffCreateEvent::class, AfterAdminStaffCreateEvent::class]);
+    expect($events[0]->input)->toBe([
+        'email' => 'test@example.com',
+        'name' => 'testJohn',
+        'status' => 'active',
+        'group_id' => 2,
+    ]);
+    expect($events[1]->adminId)->toBe(1);
 });
 
 test('create rejects missing initial group', function (): void {
@@ -1626,8 +1716,7 @@ test('create throws exception for duplicate email', function (): void {
     $group = new AdminGroup();
     staffSetEntityId($group, 2);
 
-    $eventsMock = Mockery::mock('\Box_EventManager');
-    $eventsMock->shouldReceive('fire')->atLeast()->once();
+    [$eventDispatcher, $events] = staffAccountCrudEventDispatcher();
 
     $groupRepository = Mockery::mock(AdminGroupRepository::class)->shouldReceive('findById')->once()->with(2)->andReturn($group)->getMock();
     $emMock = Mockery::mock(EntityManagerInterface::class);
@@ -1657,7 +1746,7 @@ test('create throws exception for duplicate email', function (): void {
     $serviceMock->shouldReceive('hasPermission')->atLeast()->once()->andReturn(true);
 
     $di = container();
-    $di['events_manager'] = $eventsMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = $logStub;
     $di['em'] = $emMock;
     $di['loggedin_admin'] = staffHierarchyBypassAdmin();
@@ -1667,6 +1756,8 @@ test('create throws exception for duplicate email', function (): void {
 
     expect(fn () => $serviceMock->create($data))
         ->toThrow(FOSSBilling\Exception::class, "Staff member with email {$data['email']} is already registered.");
+    expect($events->getArrayCopy())->toHaveCount(1);
+    expect($events[0])->toBeInstanceOf(BeforeAdminStaffCreateEvent::class);
 });
 
 test('createGroup creates new admin group', function (): void {

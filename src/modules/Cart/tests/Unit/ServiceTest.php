@@ -677,8 +677,19 @@ test('checkoutCart returns array with expected keys', function (): void {
     $serviceMock->shouldReceive('rm')->atLeast()->once()->andReturn(true);
     $serviceMock->shouldReceive('isPromoAvailableForClientGroup')->atLeast()->once()->andReturn(true);
 
-    $eventMock = Mockery::mock(Box_EventManager::class)->shouldIgnoreMissing();
-    $eventMock->shouldReceive('fire')->atLeast()->once();
+    $events = new ArrayObject();
+    $dispatcher = new class($events) {
+        public function __construct(private ArrayObject $events)
+        {
+        }
+
+        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        {
+            $this->events->append($event);
+
+            return $event;
+        }
+    };
 
     $invoice = createEntity(Invoice::class);
 
@@ -692,9 +703,9 @@ test('checkoutCart returns array with expected keys', function (): void {
     $productService->shouldReceive('findPromoById')->once()->with(1)->andReturn($promo);
 
     $di = container();
-    $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $dispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['request'] = new Request();
+    $di['request'] = Request::create('http://localhost', server: ['REMOTE_ADDR' => '192.0.2.1']);
     $di['mod_service'] = $di->protect(fn () => $productService);
 
     $serviceMock->setDi($di);
@@ -705,6 +716,10 @@ test('checkoutCart returns array with expected keys', function (): void {
     expect($result)->toHaveKey('invoice_hash');
     expect($result)->toHaveKey('order_id');
     expect($result)->toHaveKey('orders');
+    expect($events->getArrayCopy())->toEqual([
+        new Box\Mod\Cart\Event\BeforeClientCheckoutEvent((int) $cart->getId(), (int) $client->getId(), '192.0.2.1'),
+        new Box\Mod\Order\Event\AfterClientOrderCreateEvent(99, (int) $client->getId(), '192.0.2.1'),
+    ]);
 });
 
 test('checkoutCart throws exception when client is not able to use promo', function (): void {

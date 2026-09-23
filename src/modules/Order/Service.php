@@ -17,6 +17,24 @@ use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Order\Entity\Order;
 use Box\Mod\Order\Entity\OrderMeta;
 use Box\Mod\Order\Entity\OrderStatus;
+use Box\Mod\Order\Event\AfterAdminOrderActivateEvent;
+use Box\Mod\Order\Event\AfterAdminOrderCancelEvent;
+use Box\Mod\Order\Event\AfterAdminOrderCreateEvent;
+use Box\Mod\Order\Event\AfterAdminOrderDeleteEvent;
+use Box\Mod\Order\Event\AfterAdminOrderRenewEvent;
+use Box\Mod\Order\Event\AfterAdminOrderSuspendEvent;
+use Box\Mod\Order\Event\AfterAdminOrderUncancelEvent;
+use Box\Mod\Order\Event\AfterAdminOrderUnsuspendEvent;
+use Box\Mod\Order\Event\AfterAdminOrderUpdateEvent;
+use Box\Mod\Order\Event\BeforeAdminOrderActivateEvent;
+use Box\Mod\Order\Event\BeforeAdminOrderCancelEvent;
+use Box\Mod\Order\Event\BeforeAdminOrderCreateEvent;
+use Box\Mod\Order\Event\BeforeAdminOrderDeleteEvent;
+use Box\Mod\Order\Event\BeforeAdminOrderRenewEvent;
+use Box\Mod\Order\Event\BeforeAdminOrderSuspendEvent;
+use Box\Mod\Order\Event\BeforeAdminOrderUncancelEvent;
+use Box\Mod\Order\Event\BeforeAdminOrderUnsuspendEvent;
+use Box\Mod\Order\Event\BeforeAdminOrderUpdateEvent;
 use Box\Mod\Order\Repository\OrderMetaRepository;
 use Box\Mod\Order\Repository\OrderRepository;
 use Box\Mod\Order\Repository\OrderStatusRepository;
@@ -29,6 +47,7 @@ use FOSSBilling\Logger;
 use FOSSBilling\SortOptions;
 use FOSSBilling\Validation\NonNegativeIntegerValidator;
 use FOSSBilling\Validation\PriceValidator;
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpFoundation\Response;
 
 class Service implements InjectionAwareInterface
@@ -50,6 +69,18 @@ class Service implements InjectionAwareInterface
     private const array DEFAULT_EXPORT_COLUMNS = [
         'id', 'client_id', 'product_id', 'title', 'currency', 'service_type',
         'period', 'quantity', 'price', 'discount', 'status', 'reason', 'notes',
+    ];
+
+    /** Fields safe to expose in a typed create event. Provisioning config and payment details are excluded. */
+    private const array CREATE_EVENT_INPUT_FIELDS = [
+        'quantity', 'price', 'currency', 'period', 'group_id', 'title', 'activate',
+        'invoice_option', 'mark_invoice_paid', 'created_at', 'updated_at', 'promo_id', 'notes',
+    ];
+
+    /** Fields safe to expose in a typed update event. Metadata may contain secrets and is excluded. */
+    private const array UPDATE_EVENT_INPUT_FIELDS = [
+        'period', 'created_at', 'activated_at', 'expires_at', 'invoice_option', 'title',
+        'price', 'status', 'notes', 'reason', 'suspension_grace_days',
     ];
 
     public const META_CANCEL_AT_PERIOD_END = 'cancel_at_period_end';
@@ -108,6 +139,16 @@ class Service implements InjectionAwareInterface
         return (int) $order->getId();
     }
 
+    /**
+     * @param list<string> $allowedFields
+     *
+     * @return array<string, mixed>
+     */
+    private function filterOrderEventInput(array $input, array $allowedFields): array
+    {
+        return array_intersect_key($input, array_flip($allowedFields));
+    }
+
     private function persistOrder(Order $order): void
     {
         $this->di['em']->persist($order);
@@ -158,40 +199,36 @@ class Service implements InjectionAwareInterface
         ];
     }
 
-    public static function onAfterAdminOrderActivate(\Box_Event $event): void
+    #[AsEventListener]
+    public function sendOrderActivationEmail(AfterAdminOrderActivateEvent $event): void
     {
-        $params = $event->getParameters();
-        $order_id = $params['id'];
-        $di = $event->getDi();
-        $service = $di['mod_service']('order');
+        $di = $this->di ?? throw new \LogicException('Order service must be initialized before handling events.');
+        $orderId = $event->orderId;
 
         try {
-            $order = $di['em']->getRepository(Order::class)->find($order_id);
+            $order = $di['em']->getRepository(Order::class)->find($orderId);
             if (!$order instanceof Order) {
                 throw new \FOSSBilling\Exception('Order not found');
             }
-            $s = $service->getOrderServiceData($order);
-            $orderArr = $service->toApiArray($order, true);
+            $service = $this->getOrderServiceData($order);
+            $orderArr = $this->toApiArray($order, true);
 
-            $email = $params;
+            $email = ['id' => $orderId, ...$event->resultParameters];
             $email['to_client'] = $order->getClientId();
             $email['code'] = sprintf('mod_service%s_activated', $orderArr['service_type']);
-            $email['service'] = $s;
+            $email['service'] = $service;
             $email['order'] = $orderArr;
 
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
-            $di['logger']->withChannel('email')->error('Failed to send order activation email', ['exception' => $exc, 'order_id' => $order_id]);
+            $di['logger']->withChannel('email')->error('Failed to send order activation email', ['exception' => $exc, 'order_id' => $orderId]);
         }
     }
 
-    private static function sendOrderLifecycleEmail(\Box_Event $event, string $templateSuffix, string $logAction, bool $includeService = true): void
+    private function sendOrderLifecycleEmail(int $orderId, string $templateSuffix, string $logAction, bool $includeService = true): void
     {
-        $params = $event->getParameters();
-        $orderId = $params['id'];
-        $di = $event->getDi();
-        $orderService = $di['mod_service']('order');
+        $di = $this->di ?? throw new \LogicException('Order service must be initialized before handling events.');
 
         try {
             $order = $di['em']->getRepository(Order::class)->find($orderId);
@@ -199,8 +236,8 @@ class Service implements InjectionAwareInterface
                 throw new \FOSSBilling\Exception('Order not found');
             }
 
-            $service = $includeService ? $orderService->getOrderServiceData($order) : null;
-            $orderArr = $orderService->toApiArray($order, true);
+            $service = $includeService ? $this->getOrderServiceData($order) : null;
+            $orderArr = $this->toApiArray($order, true);
 
             $email = [
                 'to_client' => $orderArr['client']['id'],
@@ -218,29 +255,34 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public static function onAfterAdminOrderRenew(\Box_Event $event): void
+    #[AsEventListener]
+    public function sendOrderRenewalEmail(AfterAdminOrderRenewEvent $event): void
     {
-        self::sendOrderLifecycleEmail($event, 'renewed', 'renewal');
+        $this->sendOrderLifecycleEmail($event->orderId, 'renewed', 'renewal');
     }
 
-    public static function onAfterAdminOrderSuspend(\Box_Event $event): void
+    #[AsEventListener]
+    public function sendOrderSuspensionEmail(AfterAdminOrderSuspendEvent $event): void
     {
-        self::sendOrderLifecycleEmail($event, 'suspended', 'suspension');
+        $this->sendOrderLifecycleEmail($event->orderId, 'suspended', 'suspension');
     }
 
-    public static function onAfterAdminOrderUnsuspend(\Box_Event $event): void
+    #[AsEventListener]
+    public function sendOrderUnsuspensionEmail(AfterAdminOrderUnsuspendEvent $event): void
     {
-        self::sendOrderLifecycleEmail($event, 'unsuspended', 'unsuspension');
+        $this->sendOrderLifecycleEmail($event->orderId, 'unsuspended', 'unsuspension');
     }
 
-    public static function onAfterAdminOrderCancel(\Box_Event $event): void
+    #[AsEventListener]
+    public function sendOrderCancellationEmail(AfterAdminOrderCancelEvent $event): void
     {
-        self::sendOrderLifecycleEmail($event, 'canceled', 'cancellation', false);
+        $this->sendOrderLifecycleEmail($event->orderId, 'canceled', 'cancellation', false);
     }
 
-    public static function onAfterAdminOrderUncancel(\Box_Event $event): void
+    #[AsEventListener]
+    public function sendOrderUncancelEmail(AfterAdminOrderUncancelEvent $event): void
     {
-        self::sendOrderLifecycleEmail($event, 'renewed', 'uncancel');
+        $this->sendOrderLifecycleEmail($event->orderId, 'renewed', 'uncancel');
     }
 
     /**
@@ -808,7 +850,12 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('Currency could not be determined for order');
         }
 
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderCreate', 'params' => $data, 'subject' => $this->getProductType($product)]);
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminOrderCreateEvent(
+            (int) $client->getId(),
+            $this->getProductId($product),
+            $this->getProductType($product),
+            $this->filterOrderEventInput($data, self::CREATE_EVENT_INPUT_FIELDS),
+        ));
 
         $period = (isset($data['period']) && !empty($data['period'])) ? $data['period'] : null;
         $config = (isset($data['config']) && is_array($data['config'])) ? $data['config'] : [];
@@ -1083,7 +1130,12 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('Order not found');
         }
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderCreate', 'params' => ['id' => $order->getId()], 'subject' => $this->getProductType($product)]);
+        $this->di['event_dispatcher']->dispatch(new AfterAdminOrderCreateEvent(
+            $this->orderId($order),
+            (int) $client->getId(),
+            $this->getProductId($product),
+            $this->getProductType($product),
+        ));
 
         $this->di['logger']->info('Created order #{id}', ['id' => $id]);
 
@@ -1121,9 +1173,9 @@ class Service implements InjectionAwareInterface
             $addonId = $this->orderId($addon);
 
             try {
-                $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderActivate', 'params' => ['id' => $addonId]]);
+                $this->di['event_dispatcher']->dispatch(new BeforeAdminOrderActivateEvent($addonId));
                 $this->createFromOrder($addon);
-                $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderActivate', 'params' => ['id' => $addonId]]);
+                $this->di['event_dispatcher']->dispatch(new AfterAdminOrderActivateEvent($addonId));
             } catch (\Exception $e) {
                 $this->di['logger']->info($e->getMessage());
             }
@@ -1154,13 +1206,9 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('Only pending setup or failed orders can be activated');
         }
 
-        $event_params = ['id' => $orderId];
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderActivate', 'params' => $event_params]);
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminOrderActivateEvent($orderId));
         $result = $this->createFromOrder($order);
-        if (is_array($result)) {
-            $event_params = [...$event_params, ...$result];
-        }
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderActivate', 'params' => $event_params]);
+        $this->di['event_dispatcher']->dispatch(new AfterAdminOrderActivateEvent($orderId, is_array($result) ? $result : []));
 
         $this->activateOrderAddons($order);
 
@@ -1351,7 +1399,10 @@ class Service implements InjectionAwareInterface
     public function updateOrder(Order $order, array $data): bool
     {
         $orderId = $this->orderId($order);
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderUpdate', 'params' => $data]);
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminOrderUpdateEvent(
+            $orderId,
+            $this->filterOrderEventInput($data, self::UPDATE_EVENT_INPUT_FIELDS),
+        ));
         $this->updatePeriod($order, $data['period'] ?? null);
 
         $created_at = $data['created_at'] ?? '';
@@ -1411,7 +1462,7 @@ class Service implements InjectionAwareInterface
         $order->setUpdatedAt(new \DateTime());
         $this->persistOrder($order);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderUpdate', 'params' => ['id' => $orderId]]);
+        $this->di['event_dispatcher']->dispatch(new AfterAdminOrderUpdateEvent($orderId));
 
         $this->di['logger']->info('Update order #{order_id}', ['order_id' => $orderId]);
 
@@ -1421,7 +1472,7 @@ class Service implements InjectionAwareInterface
     public function renewOrder(Order $order): bool
     {
         $orderId = $this->orderId($order);
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderRenew', 'params' => ['id' => $orderId]]);
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminOrderRenewEvent($orderId));
 
         $this->renewFromOrder($order);
 
@@ -1438,7 +1489,7 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderRenew', 'params' => ['id' => $orderId]]);
+        $this->di['event_dispatcher']->dispatch(new AfterAdminOrderRenewEvent($orderId));
         $this->di['logger']->info('Renewed order #{order_id}', ['order_id' => $orderId]);
 
         return true;
@@ -1496,7 +1547,7 @@ class Service implements InjectionAwareInterface
         $orderStatus = $order->getStatus();
 
         if (!$skipEvent) {
-            $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderSuspend', 'params' => ['id' => $orderId]]);
+            $this->di['event_dispatcher']->dispatch(new BeforeAdminOrderSuspendEvent($orderId));
         }
 
         if ($orderStatus != Order::STATUS_ACTIVE) {
@@ -1516,7 +1567,7 @@ class Service implements InjectionAwareInterface
         $this->saveStatusChange($order, $note);
 
         if (!$skipEvent) {
-            $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderSuspend', 'params' => ['id' => $orderId]]);
+            $this->di['event_dispatcher']->dispatch(new AfterAdminOrderSuspendEvent($orderId));
         }
 
         $this->di['logger']->info('Suspended order #{order_id}', ['order_id' => $orderId]);
@@ -1527,7 +1578,7 @@ class Service implements InjectionAwareInterface
     public function unsuspendFromOrder(Order $order): bool
     {
         $orderId = $this->orderId($order);
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderUnsuspend', 'params' => ['id' => $orderId]]);
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminOrderUnsuspendEvent($orderId));
 
         $this->_callOnService($order, Order::ACTION_UNSUSPEND);
 
@@ -1540,7 +1591,7 @@ class Service implements InjectionAwareInterface
 
         $this->saveStatusChange($order, 'Order unsuspended');
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderUnsuspend', 'params' => ['id' => $orderId]]);
+        $this->di['event_dispatcher']->dispatch(new AfterAdminOrderUnsuspendEvent($orderId));
 
         $this->di['logger']->info('Unsuspended order #{order_id}', ['order_id' => $orderId]);
 
@@ -1566,7 +1617,7 @@ class Service implements InjectionAwareInterface
         $this->saveStatusChange($order, $note);
 
         if (!$skipEvent) {
-            $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderCancel', 'params' => ['id' => $orderId]]);
+            $this->di['event_dispatcher']->dispatch(new AfterAdminOrderCancelEvent($orderId));
         }
 
         $this->di['logger']->info('Canceled order #{order_id}', ['order_id' => $orderId]);
@@ -1622,7 +1673,7 @@ class Service implements InjectionAwareInterface
     {
         $orderId = $this->orderId($order);
         if (!$skipEvent) {
-            $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderCancel', 'params' => ['id' => $orderId]]);
+            $this->di['event_dispatcher']->dispatch(new BeforeAdminOrderCancelEvent($orderId));
         }
 
         $this->_callOnService($order, Order::ACTION_CANCEL);
@@ -1648,7 +1699,7 @@ class Service implements InjectionAwareInterface
     public function uncancelFromOrder(Order $order): bool
     {
         $orderId = $this->orderId($order);
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderUncancel', 'params' => ['id' => $orderId]]);
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminOrderUncancelEvent($orderId));
 
         $this->_callOnService($order, Order::ACTION_UNCANCEL);
 
@@ -1671,7 +1722,7 @@ class Service implements InjectionAwareInterface
 
         $this->saveStatusChange($order, 'Activated canceled order');
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderUncancel', 'params' => ['id' => $orderId]]);
+        $this->di['event_dispatcher']->dispatch(new AfterAdminOrderUncancelEvent($orderId));
 
         $this->di['logger']->info('Uncanceled order #{order_id}', ['order_id' => $orderId]);
 
@@ -1717,7 +1768,7 @@ class Service implements InjectionAwareInterface
     public function deleteFromOrder(Order $order, bool $forceDelete = false): bool
     {
         $orderId = $this->orderId($order);
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminOrderDelete', 'params' => ['id' => $orderId]]);
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminOrderDeleteEvent($orderId));
 
         $orderStatus = $order->getStatus();
         if ($orderStatus == Order::STATUS_PENDING_SETUP) {
@@ -1740,7 +1791,7 @@ class Service implements InjectionAwareInterface
         $this->getOrderMetaRepository()->deleteByOrderId($orderId);
         $this->rmOrder($order);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminOrderDelete', 'params' => ['id' => $orderId]]);
+        $this->di['event_dispatcher']->dispatch(new AfterAdminOrderDeleteEvent($orderId));
         $this->di['logger']->info('Deleted order #{order_id}', ['order_id' => $orderId]);
 
         return true;

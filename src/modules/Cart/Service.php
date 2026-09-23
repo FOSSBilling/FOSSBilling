@@ -13,12 +13,14 @@ namespace Box\Mod\Cart;
 
 use Box\Mod\Cart\Entity\Cart;
 use Box\Mod\Cart\Entity\CartProduct;
+use Box\Mod\Cart\Event\BeforeClientCheckoutEvent;
 use Box\Mod\Cart\Repository\CartProductRepository;
 use Box\Mod\Cart\Repository\CartRepository;
 use Box\Mod\Client\Entity\Client;
 use Box\Mod\Currency\Entity\Currency;
 use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Order\Entity\Order;
+use Box\Mod\Order\Event\AfterClientOrderCreateEvent;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Product\Entity\Promo;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
@@ -764,16 +766,11 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        $this->di['events_manager']->fire(
-            [
-                'event' => 'onBeforeClientCheckout',
-                'params' => [
-                    'ip' => $this->di['request']->getClientIp(),
-                    'client_id' => (int) $client->getId(),
-                    'cart_id' => $cart->getId(),
-                ],
-            ]
-        );
+        $this->di['event_dispatcher']->dispatch(new BeforeClientCheckoutEvent(
+            (int) $cart->getId(),
+            (int) $client->getId(),
+            $this->di['request']->getClientIp(),
+        ));
 
         [$order, $invoice, $orders] = $this->createFromCart($client, $gateway_id);
 
@@ -781,16 +778,11 @@ class Service implements InjectionAwareInterface
 
         $this->di['logger']->info('Checked out shopping cart');
 
-        $this->di['events_manager']->fire(
-            [
-                'event' => 'onAfterClientOrderCreate',
-                'params' => [
-                    'ip' => $this->di['request']->getClientIp(),
-                    'client_id' => (int) $client->getId(),
-                    'id' => $order->getId(),
-                ],
-            ]
-        );
+        $this->di['event_dispatcher']->dispatch(new AfterClientOrderCreateEvent(
+            (int) $order->getId(),
+            (int) $client->getId(),
+            $this->di['request']->getClientIp(),
+        ));
 
         $result = [
             'gateway_id' => $gateway_id,

@@ -116,6 +116,14 @@ Client and admin login hooks use typed events in `Box\Mod\Client\Event` and `Box
 
 Client password-reset hooks use event classes in `Box\Mod\Client\Event`. Before events distinguish reset request, confirmation, and validation steps; the completion event exposes the client ID. Reset hashes and new passwords are not included in event payloads. Extensions that used the old array parameters should move to typed listeners and use the event's documented fields.
 
+### Migrating staff and checkout hooks
+
+Staff account creation, update, deletion, and password changes dispatch before and after classes from `Box\Mod\Staff\Event`. The events expose the staff account ID, except the before-create event, which exposes only noncredential input fields. The previous string-named staff account hooks are no longer dispatched.
+
+Cart checkout dispatches `Box\Mod\Cart\Event\BeforeClientCheckoutEvent` with the cart ID, client ID, and request IP. Once an order is created, `Box\Mod\Order\Event\AfterClientOrderCreateEvent` provides its order ID, client ID, and request IP. Use a typed listener for staff notifications and other checkout integrations.
+
+Order lifecycle hooks use before and after classes in `Box\Mod\Order\Event` for creation, activation, update, renewal, suspension, unsuspension, cancellation, reversal of cancellation, and deletion. Most events expose an `orderId`; creation also exposes the client, product, and service type. Before-create and before-update events provide readonly allowlisted input without provisioning configuration or metadata. An activation event may provide service-returned template parameters for the activation email. Replace legacy `onBeforeAdminOrder...` and `onAfterAdminOrder...` handlers with typed listeners for the corresponding operation.
+
 ## How can I contribute?
 
 There are a lot of different ways that you can get involved in the FOSSBilling project. Let's take a look at some of the main ones:

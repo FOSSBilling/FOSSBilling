@@ -160,7 +160,7 @@ test('handles on after admin deactivate extension', function (): void {
 
 test('batch connects', function (): void {
     $service = new Box\Mod\Hook\Service();
-    $mod = 'staff';
+    $mod = 'invoice';
 
     $data['mods'] = [$mod];
 
@@ -196,7 +196,7 @@ test('batch connects', function (): void {
     $expectation2->atLeast()->once();
     $expectation2->andReturn($returnArr);
 
-    $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class);
+    $invoiceServiceMock = Mockery::mock(Box\Mod\Invoice\Service::class);
 
     $boxModMock = Mockery::mock(FOSSBilling\Module::class);
     /** @var Mockery\Expectation $expectation3 */
@@ -205,10 +205,10 @@ test('batch connects', function (): void {
     $expectation3->andReturn(true);
     /** @var Mockery\Expectation $expectation4 */
     $expectation4 = $boxModMock->shouldReceive('getService');
-    $expectation4->andReturn($staffServiceMock);
+    $expectation4->andReturn($invoiceServiceMock);
     /** @var Mockery\Expectation $expectation5 */
     $expectation5 = $boxModMock->shouldReceive('getName');
-    $expectation5->andReturn('staff');
+    $expectation5->andReturn('invoice');
 
     $extensionServiceMock = Mockery::mock(Box\Mod\Extension\Service::class);
 
