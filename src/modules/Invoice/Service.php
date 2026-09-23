@@ -19,6 +19,10 @@ use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\InvoiceItem;
 use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Transaction;
+use Box\Mod\Invoice\Event\AfterAdminGenerateRenewalInvoiceEvent;
+use Box\Mod\Invoice\Event\AfterAdminInvoiceDeleteEvent;
+use Box\Mod\Invoice\Event\BeforeAdminGenerateRenewalInvoiceEvent;
+use Box\Mod\Invoice\Event\BeforeAdminInvoiceDeleteEvent;
 use Box\Mod\Invoice\Repository\InvoiceItemRepository;
 use Box\Mod\Invoice\Repository\InvoiceRepository;
 use Box\Mod\Order\Entity\Order;
@@ -2349,12 +2353,12 @@ class Service implements InjectionAwareInterface
             throw new InformationException('Only unapproved, unpaid invoices can be deleted. Revoke an approved invoice instead.');
         }
 
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminInvoiceDelete', 'params' => ['id' => $model->getId()]]);
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminInvoiceDeleteEvent((int) $model->getId()));
 
         $id = $model->getId();
         $this->rmInvoice($model, true);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoiceDelete', 'params' => ['id' => $id]]);
+        $this->di['event_dispatcher']->dispatch(new AfterAdminInvoiceDeleteEvent((int) $id));
 
         $this->di['logger']->info('Removed invoice #{id}', ['id' => $id]);
 
@@ -2363,13 +2367,13 @@ class Service implements InjectionAwareInterface
 
     public function renewInvoice(Order $model, array $data): ?int
     {
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminGenerateRenewalInvoice', 'params' => ['order_id' => $model->getId()]]);
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminGenerateRenewalInvoiceEvent((int) $model->getId()));
 
         $due_days = isset($data['due_days']) ? (int) $data['due_days'] : null;
         $invoice = $this->generateForOrder($model, $due_days);
         $this->approveInvoice($invoice, ['id' => $invoice->getId(), 'use_credits' => true]);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminGenerateRenewalInvoice', 'params' => ['order_id' => $model->getId(), 'id' => $invoice->getId()]]);
+        $this->di['event_dispatcher']->dispatch(new AfterAdminGenerateRenewalInvoiceEvent((int) $model->getId(), (int) $invoice->getId()));
 
         $this->di['logger']->info("Generated renewal invoice #{$invoice->getId()}.");
 

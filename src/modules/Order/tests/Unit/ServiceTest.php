@@ -3938,9 +3938,10 @@ test('getExpiredOrders delegates grace-aware selection to the repository', funct
 
 test('batchCancelUnpaid returns false and does not query orders when auto removal is disabled', function (): void {
     $service = new Service();
+    $eventDispatcher = new OrderServiceTestEventRecorder();
 
     $di = container();
-    $di['events_manager'] = Mockery::mock('\Box_EventManager')->shouldIgnoreMissing();
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['mod'] = $di->protect(fn (string $name): object => new class {
         public function getConfig(): array
         {
@@ -3950,7 +3951,59 @@ test('batchCancelUnpaid returns false and does not query orders when auto remova
 
     $service->setDi($di);
 
-    expect($service->batchCancelUnpaid())->toBeFalse();
+    expect($service->batchCancelUnpaid())->toBeFalse()
+        ->and($eventDispatcher->events)->toHaveCount(1)
+        ->and($eventDispatcher->events[0])->toBeInstanceOf(Box\Mod\Order\Event\BeforeAdminBatchCancelUnpaidOrdersEvent::class);
+});
+
+test('batchSuspendExpired dispatches typed lifecycle events when there are no expired orders', function (): void {
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('getExpiredOrders')->once()->andReturn([]);
+    $eventDispatcher = new OrderServiceTestEventRecorder();
+
+    $di = container();
+    $di['event_dispatcher'] = $eventDispatcher;
+    $di['logger'] = new FOSSBilling\Logger();
+    $di['mod'] = $di->protect(fn (string $name): object => new class {
+        public function getConfig(): array
+        {
+            return [];
+        }
+    });
+    $service->setDi($di);
+
+    expect($service->batchSuspendExpired())->toBeTrue()
+        ->and($eventDispatcher->events)->toHaveCount(2)
+        ->and($eventDispatcher->events[0])->toBeInstanceOf(Box\Mod\Order\Event\BeforeAdminBatchSuspendOrdersEvent::class)
+        ->and($eventDispatcher->events[1])->toBeInstanceOf(Box\Mod\Order\Event\AfterAdminBatchSuspendOrdersEvent::class);
+});
+
+test('batchCancelSuspended dispatches typed lifecycle events when there are no eligible orders', function (): void {
+    $eventDispatcher = new OrderServiceTestEventRecorder();
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('fetchAllAssociative')->once()->andReturn([]);
+
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->once()->andReturn($connection);
+
+    $di = container();
+    $di['event_dispatcher'] = $eventDispatcher;
+    $di['em'] = $em;
+    $di['logger'] = new FOSSBilling\Logger();
+    $di['mod'] = $di->protect(fn (string $name): object => new class {
+        public function getConfig(): array
+        {
+            return ['batch_cancel_suspended' => '1', 'batch_cancel_suspended_after_days' => 1];
+        }
+    });
+
+    $service = new Service();
+    $service->setDi($di);
+
+    expect($service->batchCancelSuspended())->toBeTrue()
+        ->and($eventDispatcher->events)->toHaveCount(2)
+        ->and($eventDispatcher->events[0])->toBeInstanceOf(Box\Mod\Order\Event\BeforeAdminBatchCancelSuspendedOrdersEvent::class)
+        ->and($eventDispatcher->events[1])->toBeInstanceOf(Box\Mod\Order\Event\AfterAdminBatchCancelSuspendedOrdersEvent::class);
 });
 
 test('deleteFromOrder removes client_order_meta rows before removing the order', function (): void {
@@ -4003,13 +4056,11 @@ test('batchCancelUnpaid removes each stale unpaid order and fires events', funct
     $emMock->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepository);
     $emMock->shouldReceive('refresh')->twice();
 
-    $eventsManager = Mockery::mock('\Box_EventManager');
-    $eventsManager->shouldReceive('fire')->once()->with(['event' => 'onBeforeAdminBatchCancelUnpaidOrders']);
-    $eventsManager->shouldReceive('fire')->once()->with(['event' => 'onAfterAdminBatchCancelUnpaidOrders']);
+    $eventDispatcher = new OrderServiceTestEventRecorder();
 
     $di = container();
     $di['em'] = $emMock;
-    $di['events_manager'] = $eventsManager;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod'] = $di->protect(fn (string $name): object => new class {
         public function getConfig(): array
@@ -4023,7 +4074,10 @@ test('batchCancelUnpaid removes each stale unpaid order and fires events', funct
 
     $serviceMock->setDi($di);
 
-    expect($serviceMock->batchCancelUnpaid())->toBeTrue();
+    expect($serviceMock->batchCancelUnpaid())->toBeTrue()
+        ->and($eventDispatcher->events)->toHaveCount(2)
+        ->and($eventDispatcher->events[0])->toBeInstanceOf(Box\Mod\Order\Event\BeforeAdminBatchCancelUnpaidOrdersEvent::class)
+        ->and($eventDispatcher->events[1])->toBeInstanceOf(Box\Mod\Order\Event\AfterAdminBatchCancelUnpaidOrdersEvent::class);
 });
 
 test('batchCancelUnpaid falls back to the 7 day default when the configured value is blank', function (): void {
@@ -4410,21 +4464,25 @@ test('batchSendSuspensionWarnings claims and queues each warning once', function
             && $email['order']['suspension_at'] === '2026-08-01 12:00:00'
     ))->andReturn(true);
 
-    $events = Mockery::mock(Box_EventManager::class);
-    $events->shouldReceive('fire')->times(4);
+    $eventDispatcher = new OrderServiceTestEventRecorder();
 
     $service = Mockery::mock(Service::class)->makePartial();
     $service->shouldReceive('toApiArray')->once()->with($order, false)->andReturn(['id' => 8]);
 
     $di = container();
     $di['em'] = $em;
-    $di['events_manager'] = $events;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = new FOSSBilling\Logger();
     $di['mod_service'] = $di->protect(fn (string $name): Box\Mod\Email\Service => $emailService);
     $service->setDi($di);
 
     expect($service->batchSendSuspensionWarnings())->toBeTrue()
-        ->and($service->batchSendSuspensionWarnings())->toBeTrue();
+        ->and($service->batchSendSuspensionWarnings())->toBeTrue()
+        ->and($eventDispatcher->events)->toHaveCount(4)
+        ->and($eventDispatcher->events[0])->toBeInstanceOf(Box\Mod\Order\Event\BeforeAdminBatchSendSuspensionWarningsEvent::class)
+        ->and($eventDispatcher->events[1])->toBeInstanceOf(Box\Mod\Order\Event\AfterAdminBatchSendSuspensionWarningsEvent::class)
+        ->and($eventDispatcher->events[2])->toBeInstanceOf(Box\Mod\Order\Event\BeforeAdminBatchSendSuspensionWarningsEvent::class)
+        ->and($eventDispatcher->events[3])->toBeInstanceOf(Box\Mod\Order\Event\AfterAdminBatchSendSuspensionWarningsEvent::class);
 });
 
 test('batchSendSuspensionWarnings releases a failed claim so the warning can be retried', function (): void {
@@ -4461,22 +4519,26 @@ test('batchSendSuspensionWarnings releases a failed claim so the warning can be 
         return true;
     });
 
-    $events = Mockery::mock(Box_EventManager::class);
-    $events->shouldReceive('fire')->times(4);
+    $eventDispatcher = new OrderServiceTestEventRecorder();
 
     $service = Mockery::mock(Service::class)->makePartial();
     $service->shouldReceive('toApiArray')->twice()->with($order, false)->andReturn(['id' => 8]);
 
     $di = container();
     $di['em'] = $em;
-    $di['events_manager'] = $events;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = new FOSSBilling\Logger();
     $di['mod_service'] = $di->protect(fn (string $name): Box\Mod\Email\Service => $emailService);
     $service->setDi($di);
 
     expect($service->batchSendSuspensionWarnings())->toBeTrue()
         ->and($service->batchSendSuspensionWarnings())->toBeTrue()
-        ->and($attempts)->toBe(2);
+        ->and($attempts)->toBe(2)
+        ->and($eventDispatcher->events)->toHaveCount(4)
+        ->and($eventDispatcher->events[0])->toBeInstanceOf(Box\Mod\Order\Event\BeforeAdminBatchSendSuspensionWarningsEvent::class)
+        ->and($eventDispatcher->events[1])->toBeInstanceOf(Box\Mod\Order\Event\AfterAdminBatchSendSuspensionWarningsEvent::class)
+        ->and($eventDispatcher->events[2])->toBeInstanceOf(Box\Mod\Order\Event\BeforeAdminBatchSendSuspensionWarningsEvent::class)
+        ->and($eventDispatcher->events[3])->toBeInstanceOf(Box\Mod\Order\Event\AfterAdminBatchSendSuspensionWarningsEvent::class);
 });
 
 test('exportCSV strips config from numeric-array headers', function (): void {

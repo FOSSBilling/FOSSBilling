@@ -17,6 +17,10 @@ use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Order\Entity\Order;
 use Box\Mod\Order\Entity\OrderMeta;
 use Box\Mod\Order\Entity\OrderStatus;
+use Box\Mod\Order\Event\AfterAdminBatchCancelSuspendedOrdersEvent;
+use Box\Mod\Order\Event\AfterAdminBatchCancelUnpaidOrdersEvent;
+use Box\Mod\Order\Event\AfterAdminBatchSendSuspensionWarningsEvent;
+use Box\Mod\Order\Event\AfterAdminBatchSuspendOrdersEvent;
 use Box\Mod\Order\Event\AfterAdminOrderActivateEvent;
 use Box\Mod\Order\Event\AfterAdminOrderCancelEvent;
 use Box\Mod\Order\Event\AfterAdminOrderCreateEvent;
@@ -26,6 +30,10 @@ use Box\Mod\Order\Event\AfterAdminOrderSuspendEvent;
 use Box\Mod\Order\Event\AfterAdminOrderUncancelEvent;
 use Box\Mod\Order\Event\AfterAdminOrderUnsuspendEvent;
 use Box\Mod\Order\Event\AfterAdminOrderUpdateEvent;
+use Box\Mod\Order\Event\BeforeAdminBatchCancelSuspendedOrdersEvent;
+use Box\Mod\Order\Event\BeforeAdminBatchCancelUnpaidOrdersEvent;
+use Box\Mod\Order\Event\BeforeAdminBatchSendSuspensionWarningsEvent;
+use Box\Mod\Order\Event\BeforeAdminBatchSuspendOrdersEvent;
 use Box\Mod\Order\Event\BeforeAdminOrderActivateEvent;
 use Box\Mod\Order\Event\BeforeAdminOrderCancelEvent;
 use Box\Mod\Order\Event\BeforeAdminOrderCreateEvent;
@@ -1804,7 +1812,7 @@ class Service implements InjectionAwareInterface
 
     public function batchSendSuspensionWarnings(): bool
     {
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminBatchSendSuspensionWarnings']);
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminBatchSendSuspensionWarningsEvent());
 
         $emailService = $this->di['mod_service']('email');
         foreach ($this->getOrderRepository()->getDueSuspensionWarnings() as $candidate) {
@@ -1830,7 +1838,7 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminBatchSendSuspensionWarnings']);
+        $this->di['event_dispatcher']->dispatch(new AfterAdminBatchSendSuspensionWarningsEvent());
         $this->di['logger']->info('Executed action to send order suspension warnings');
 
         return true;
@@ -1881,7 +1889,7 @@ class Service implements InjectionAwareInterface
 
     public function batchSuspendExpired(): bool
     {
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminBatchSuspendOrders']);
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminBatchSuspendOrdersEvent());
 
         $mod = $this->di['mod']('order');
         $c = $mod->getConfig();
@@ -1899,7 +1907,7 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminBatchSuspendOrders']);
+        $this->di['event_dispatcher']->dispatch(new AfterAdminBatchSuspendOrdersEvent());
 
         $this->di['logger']->info('Executed action to suspend expired orders');
 
@@ -1908,7 +1916,7 @@ class Service implements InjectionAwareInterface
 
     public function batchCancelSuspended(): bool
     {
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminBatchCancelSuspendedOrders']);
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminBatchCancelSuspendedOrdersEvent());
 
         $mod = $this->di['mod']('order');
         $config = $mod->getConfig();
@@ -1946,7 +1954,7 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminBatchCancelSuspendedOrders']);
+        $this->di['event_dispatcher']->dispatch(new AfterAdminBatchCancelSuspendedOrdersEvent());
 
         $this->di['logger']->info('Executed action to cancel suspended orders');
 
@@ -1955,7 +1963,7 @@ class Service implements InjectionAwareInterface
 
     public function batchCancelUnpaid(): bool
     {
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminBatchCancelUnpaidOrders']);
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminBatchCancelUnpaidOrdersEvent());
 
         $mod = $this->di['mod']('order');
         $config = $mod->getConfig();
@@ -2036,7 +2044,7 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminBatchCancelUnpaidOrders']);
+        $this->di['event_dispatcher']->dispatch(new AfterAdminBatchCancelUnpaidOrdersEvent());
 
         $this->di['logger']->info('Executed action to remove stale unpaid orders');
 

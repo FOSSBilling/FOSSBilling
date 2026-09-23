@@ -120,9 +120,19 @@ Client password-reset hooks use event classes in `Box\Mod\Client\Event`. Before 
 
 Staff account creation, update, deletion, and password changes dispatch before and after classes from `Box\Mod\Staff\Event`. The events expose the staff account ID, except the before-create event, which exposes only noncredential input fields. The previous string-named staff account hooks are no longer dispatched.
 
+Staff password reset requests and confirmations dispatch `BeforeStaffPasswordResetRequestEvent` and `BeforeStaffPasswordResetConfirmationEvent` with the request IP. A completed reset dispatches `AfterStaffPasswordResetEvent` with the staff account ID. Reset codes, passwords, and email addresses are not event payloads.
+
 Cart checkout dispatches `Box\Mod\Cart\Event\BeforeClientCheckoutEvent` with the cart ID, client ID, and request IP. Once an order is created, `Box\Mod\Order\Event\AfterClientOrderCreateEvent` provides its order ID, client ID, and request IP. Use a typed listener for staff notifications and other checkout integrations.
 
+Adding a product to a cart dispatches `BeforeProductAddedToCartEvent` and `AfterProductAddedToCartEvent` from `Box\Mod\Cart\Event`. Both provide the cart and product IDs. Submitted product configuration is not included; extensions that need stored cart item details can query them after the add event.
+
 Order lifecycle hooks use before and after classes in `Box\Mod\Order\Event` for creation, activation, update, renewal, suspension, unsuspension, cancellation, reversal of cancellation, and deletion. Most events expose an `orderId`; creation also exposes the client, product, and service type. Before-create and before-update events provide readonly allowlisted input without provisioning configuration or metadata. An activation event may provide service-returned template parameters for the activation email. Replace legacy `onBeforeAdminOrder...` and `onAfterAdminOrder...` handlers with typed listeners for the corresponding operation.
+
+Invoice subscription creation and deletion dispatch `AfterAdminSubscriptionCreateEvent` and `AfterAdminSubscriptionDeleteEvent` with the subscription ID. Renewal invoice generation dispatches `BeforeAdminGenerateRenewalInvoiceEvent` with the order ID, followed by `AfterAdminGenerateRenewalInvoiceEvent` with the order and invoice IDs. Admin invoice deletion dispatches `BeforeAdminInvoiceDeleteEvent` and `AfterAdminInvoiceDeleteEvent`, each with the invoice ID. These classes are in `Box\Mod\Invoice\Event`; replace the corresponding string-named hooks with typed listeners.
+
+Transaction creation, update, and processing dispatch before and after classes in `Box\Mod\Invoice\Event`. Update and process events expose the transaction ID. The before-create event provides a readonly allowlist of scalar transaction fields; raw payment notifications, request bodies, and credential fields are excluded. The after-create event provides the new transaction ID. A listener cannot rewrite transaction input by changing the event payload.
+
+Order batch operations (suspension warnings, suspension, cancellation of suspended orders, and cancellation of unpaid orders) dispatch before and after classes in `Box\Mod\Order\Event`. They carry no payload. A disabled batch operation still dispatches its before event but can return without dispatching its after event, preserving the previous hook timing.
 
 ## How can I contribute?
 

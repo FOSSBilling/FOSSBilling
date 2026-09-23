@@ -20,6 +20,7 @@ use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Subscription;
 use Box\Mod\Invoice\Entity\Tax;
 use Box\Mod\Invoice\Entity\Transaction;
+use Box\Mod\Invoice\Event\BeforeAdminTransactionProcessEvent;
 use Box\Mod\Order\Entity\Order;
 use FOSSBilling\InformationException;
 use FOSSBilling\PaginationOptions;
@@ -482,7 +483,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             throw new \FOSSBilling\Exception('Transaction not found');
         }
 
-        $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminTransactionProcess', 'params' => ['id' => $model->getId()]]);
+        $this->getDi()['event_dispatcher']->dispatch(new BeforeAdminTransactionProcessEvent((int) $model->getId()));
 
         $transactionService = $this->getDi()['mod_service']('Invoice', 'Transaction');
 

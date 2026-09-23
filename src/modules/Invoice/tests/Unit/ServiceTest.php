@@ -22,6 +22,10 @@ use Box\Mod\Invoice\Entity\InvoiceItem;
 use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Subscription;
 use Box\Mod\Invoice\Entity\Transaction;
+use Box\Mod\Invoice\Event\AfterAdminGenerateRenewalInvoiceEvent;
+use Box\Mod\Invoice\Event\AfterAdminInvoiceDeleteEvent;
+use Box\Mod\Invoice\Event\BeforeAdminGenerateRenewalInvoiceEvent;
+use Box\Mod\Invoice\Event\BeforeAdminInvoiceDeleteEvent;
 use Box\Mod\Invoice\Repository\InvoiceItemRepository;
 use Box\Mod\Invoice\Repository\InvoiceRepository;
 use Box\Mod\Invoice\Repository\PayGatewayRepository;
@@ -2053,29 +2057,39 @@ test('removes an invoice', function (): void {
 });
 
 test('deletes invoice by admin', function (): void {
-    $service = new Service();
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('rmInvoice')
         ->once();
 
     $invoiceModel = createEntity(Invoice::class);
 
-    $eventManagerMock = Mockery::mock('\Box_EventManager');
-    $eventManagerMock->shouldReceive('fire')
-        ->atLeast()->once();
+    $eventDispatcher = new class {
+        public array $events = [];
+
+        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        {
+            $this->events[] = $event;
+
+            return $event;
+        }
+    };
 
     $di = container();
-    $di['events_manager'] = $eventManagerMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $serviceMock->setDi($di);
 
     $result = $serviceMock->deleteInvoiceByAdmin($invoiceModel);
-    expect($result)->toBeTrue();
+    expect($result)->toBeTrue()
+        ->and($eventDispatcher->events)->toHaveCount(2)
+        ->and($eventDispatcher->events[0])->toBeInstanceOf(BeforeAdminInvoiceDeleteEvent::class)
+        ->and($eventDispatcher->events[0]->invoiceId)->toBe((int) $invoiceModel->getId())
+        ->and($eventDispatcher->events[1])->toBeInstanceOf(AfterAdminInvoiceDeleteEvent::class)
+        ->and($eventDispatcher->events[1]->invoiceId)->toBe((int) $invoiceModel->getId());
 });
 
 test('renews an invoice', function (): void {
-    $service = new Service();
     $newId = 2;
     $invoiceModel = createEntity(Invoice::class);
 
@@ -2090,17 +2104,30 @@ test('renews an invoice', function (): void {
         ->once()
         ->andReturn($invoiceModel);
 
-    $eventManagerMock = Mockery::mock('\Box_EventManager');
-    $eventManagerMock->shouldReceive('fire')
-        ->atLeast()->once();
+    $eventDispatcher = new class {
+        public array $events = [];
+
+        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        {
+            $this->events[] = $event;
+
+            return $event;
+        }
+    };
 
     $di = container();
-    $di['events_manager'] = $eventManagerMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $serviceMock->setDi($di);
     $result = $serviceMock->renewInvoice($clientOrder, []);
-    expect($result)->toBeInt()->toBe($newId);
+    expect($result)->toBeInt()->toBe($newId)
+        ->and($eventDispatcher->events)->toHaveCount(2)
+        ->and($eventDispatcher->events[0])->toBeInstanceOf(BeforeAdminGenerateRenewalInvoiceEvent::class)
+        ->and($eventDispatcher->events[0]->orderId)->toBe((int) $clientOrder->getId())
+        ->and($eventDispatcher->events[1])->toBeInstanceOf(AfterAdminGenerateRenewalInvoiceEvent::class)
+        ->and($eventDispatcher->events[1]->orderId)->toBe((int) $clientOrder->getId())
+        ->and($eventDispatcher->events[1]->invoiceId)->toBe($newId);
 });
 
 test('processes batch pay with credits', function (): void {
@@ -4542,16 +4569,27 @@ test('deleteInvoiceByAdmin only deletes unapproved unpaid invoices', function ()
     $invoice->setApproved(false);
     $invoice->setStatus(Invoice::STATUS_UNPAID);
 
-    $eventManagerMock = Mockery::mock('\Box_EventManager');
-    $eventManagerMock->shouldReceive('fire')->twice();
+    $eventDispatcher = new class {
+        public array $events = [];
+
+        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        {
+            $this->events[] = $event;
+
+            return $event;
+        }
+    };
 
     $di = container();
-    $di['events_manager'] = $eventManagerMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $serviceMock->setDi($di);
     $serviceMock->shouldReceive('rmInvoice')->once()->with($invoice, true)->andReturn(true);
 
-    expect($serviceMock->deleteInvoiceByAdmin($invoice))->toBeTrue();
+    expect($serviceMock->deleteInvoiceByAdmin($invoice))->toBeTrue()
+        ->and($eventDispatcher->events)->toHaveCount(2)
+        ->and($eventDispatcher->events[0])->toBeInstanceOf(BeforeAdminInvoiceDeleteEvent::class)
+        ->and($eventDispatcher->events[1])->toBeInstanceOf(AfterAdminInvoiceDeleteEvent::class);
 });
 
 test('debitInvoice writes nothing when lines are invalid', function (): void {

@@ -13,7 +13,9 @@ namespace Box\Mod\Cart;
 
 use Box\Mod\Cart\Entity\Cart;
 use Box\Mod\Cart\Entity\CartProduct;
+use Box\Mod\Cart\Event\AfterProductAddedToCartEvent;
 use Box\Mod\Cart\Event\BeforeClientCheckoutEvent;
+use Box\Mod\Cart\Event\BeforeProductAddedToCartEvent;
 use Box\Mod\Cart\Repository\CartProductRepository;
 use Box\Mod\Cart\Repository\CartRepository;
 use Box\Mod\Client\Entity\Client;
@@ -168,8 +170,9 @@ class Service implements InjectionAwareInterface
 
     public function addItem(Cart $cart, Product $product, array $data): bool
     {
-        $event_params = [...$data, 'cart_id' => $cart->getId(), 'product_id' => $this->getProductId($product)];
-        $this->di['events_manager']->fire(['event' => 'onBeforeProductAddedToCart', 'params' => $event_params]);
+        $cartId = (int) $cart->getId();
+        $productId = $this->getProductId($product);
+        $this->di['event_dispatcher']->dispatch(new BeforeProductAddedToCartEvent($cartId, $productId));
 
         $productService = $this->getProductService()->getProductModuleService($product);
 
@@ -278,7 +281,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['logger']->info('Added "{product_title}" to shopping cart', ['product_title' => $this->getProductTitle($product)]);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterProductAddedToCart', 'params' => $event_params]);
+        $this->di['event_dispatcher']->dispatch(new AfterProductAddedToCartEvent($cartId, $productId));
 
         return true;
     }

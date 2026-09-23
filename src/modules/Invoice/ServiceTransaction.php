@@ -17,6 +17,11 @@ use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Subscription;
 use Box\Mod\Invoice\Entity\Transaction;
+use Box\Mod\Invoice\Event\AfterAdminTransactionCreateEvent;
+use Box\Mod\Invoice\Event\AfterAdminTransactionProcessEvent;
+use Box\Mod\Invoice\Event\AfterAdminTransactionUpdateEvent;
+use Box\Mod\Invoice\Event\BeforeAdminTransactionCreateEvent;
+use Box\Mod\Invoice\Event\BeforeAdminTransactionUpdateEvent;
 use Box\Mod\Invoice\Repository\TransactionRepository;
 use FOSSBilling\Environment;
 use FOSSBilling\InjectionAwareInterface;
@@ -25,6 +30,11 @@ use FOSSBilling\Tools;
 class ServiceTransaction implements InjectionAwareInterface
 {
     private const int PROCESSING_RECOVERY_TIMEOUT = 300;
+
+    /** @var list<string> */
+    private const array CREATE_EVENT_INPUT_FIELDS = [
+        'amount', 'currency', 'gateway_id', 'invoice_id', 'skip_validation', 'source', 'txn_id', 'txn_status', 'type',
+    ];
 
     protected ?\Pimple\Container $di = null;
     private ?bool $transactionIpnHashColumnExists = null;
@@ -71,7 +81,8 @@ class ServiceTransaction implements InjectionAwareInterface
 
     public function update(Transaction $model, array $data): bool
     {
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminTransactionUpdate', 'params' => ['id' => $model->getId()]]);
+        $transactionId = (int) $model->getId();
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminTransactionUpdateEvent($transactionId));
 
         if (!empty($data['invoice_id'])) {
             $invoice = $this->di['em']->getRepository(Invoice::class)->find((int) $data['invoice_id']);
@@ -101,7 +112,7 @@ class ServiceTransaction implements InjectionAwareInterface
         $model->setValidateIpn(isset($data['validate_ipn']) ? (bool) $data['validate_ipn'] : $model->isValidateIpn());
         $model->setUpdatedAt(new \DateTime());
         $this->di['em']->flush();
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminTransactionUpdate', 'params' => ['id' => $model->getId()]]);
+        $this->di['event_dispatcher']->dispatch(new AfterAdminTransactionUpdateEvent($transactionId));
 
         $this->di['logger']->info('Updated transaction #{model_id}', ['model_id' => $model->getId()]);
 
@@ -162,7 +173,7 @@ class ServiceTransaction implements InjectionAwareInterface
 
     public function create(array $data): ?int
     {
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminTransactionCreate', 'params' => $data]);
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminTransactionCreateEvent($this->getSafeCreateEventInput($data)));
 
         $skip_validation = Tools::normalizeBoolean($data['skip_validation'] ?? false);
         if (!empty($data['gateway_id'])) {
@@ -254,7 +265,7 @@ class ServiceTransaction implements InjectionAwareInterface
 
         $this->di['logger']->info('Received transaction {transaction_id} from payment gateway {gateway_id}', ['transaction_id' => $newId, 'gateway_id' => $transaction->getGateway()?->getId()]);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminTransactionCreate', 'params' => ['id' => $newId]]);
+        $this->di['event_dispatcher']->dispatch(new AfterAdminTransactionCreateEvent($newId));
 
         return $newId;
     }
@@ -282,6 +293,23 @@ class ServiceTransaction implements InjectionAwareInterface
         $this->transactionIpnHashColumnExists = $supported;
 
         return $this->transactionIpnHashColumnExists;
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     *
+     * @return array<string, bool|float|int|string|null>
+     */
+    private function getSafeCreateEventInput(array $data): array
+    {
+        $input = [];
+        foreach (self::CREATE_EVENT_INPUT_FIELDS as $field) {
+            if (array_key_exists($field, $data) && ($data[$field] === null || is_scalar($data[$field]))) {
+                $input[$field] = $data[$field];
+            }
+        }
+
+        return $input;
     }
 
     public function delete(Transaction $model): bool
@@ -482,7 +510,7 @@ class ServiceTransaction implements InjectionAwareInterface
         // gateway adapter itself returns (some return void).
         $this->processTransactionWithErrorHandling((int) $model->getId());
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminTransactionProcess', 'params' => ['id' => $model->getId()]]);
+        $this->di['event_dispatcher']->dispatch(new AfterAdminTransactionProcessEvent((int) $model->getId()));
         $this->di['logger']->info('Processed transaction #{model_id}', ['model_id' => $model->getId()]);
 
         return true;
