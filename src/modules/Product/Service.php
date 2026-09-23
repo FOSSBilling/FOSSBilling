@@ -1252,7 +1252,7 @@ class Service implements InjectionAwareInterface
         return $this->getPromoRepository()->getSearchQueryBuilder($data);
     }
 
-    public function createPromo($code, $type, $value, $products, $periods, $clientGroups, $data): int
+    public function createPromo($code, $type, $value, $products, $periods, $clientGroups, $requiresProducts, $data): int
     {
         if ($this->getPromoRepository()->findOneBy(['code' => $code]) instanceof Promo) {
             throw new \FOSSBilling\InformationException('This promotion code already exists.');
@@ -1267,6 +1267,7 @@ class Service implements InjectionAwareInterface
             'products' => $products,
             'periods' => $periods,
             'client_groups' => $clientGroups,
+            'requires_products' => $requiresProducts,
         ]);
 
         $this->di['em']->persist($promo);
@@ -1298,6 +1299,7 @@ class Service implements InjectionAwareInterface
             ->setProducts($model->getProducts())
             ->setPeriods($model->getPeriods())
             ->setClientGroups($model->getClientGroups())
+            ->setRequiresProducts($model->getRequiresProducts())
             ->setStartAt($model->getStartAt() !== null ? clone $model->getStartAt() : null)
             ->setEndAt($model->getEndAt() !== null ? clone $model->getEndAt() : null);
 
@@ -1636,6 +1638,10 @@ class Service implements InjectionAwareInterface
             }
 
             if (!$this->canClientUsePromo($client, $promo)) {
+                continue;
+            }
+
+            if (!$this->isPromoCartConditionMet($promo, $lines)) {
                 continue;
             }
 
@@ -2027,13 +2033,16 @@ class Service implements InjectionAwareInterface
     public function enrichPromoApiArray(array $result, $deep = false, $identity = null): array
     {
         $products = !empty($result['products']) ? $this->getProductTitlesByIds($this->decodePromoSelection($result['products'])) : null;
+        $requiredProducts = !empty($result['requires_products']) ? $this->getProductTitlesByIds($this->decodePromoSelection($result['requires_products'])) : null;
         $clientGroups = !empty($result['client_groups']) ? $this->di['tools']->getPairsForTableByIds('client_group', $this->decodePromoSelection($result['client_groups'])) : null;
         $usageStats = $deep ? $this->getPromoUsageStatsByValues((int) $result['id'], (int) ($result['used'] ?? 0), isset($result['maxuses']) ? (int) $result['maxuses'] : null) : null;
         $redemptionCount = $usageStats['recorded_applications'] ?? $this->getPromoRedemptionCountById((int) $result['id']);
 
         $result['applies_to'] = $products;
+        $result['requires'] = $requiredProducts;
         $result['cgroups'] = $clientGroups;
         $result['products'] = $this->decodePromoSelection($result['products'] ?? null);
+        $result['requires_products'] = $this->decodePromoSelection($result['requires_products'] ?? null);
         $result['periods'] = $this->decodePromoSelection($result['periods'] ?? null);
         $result['client_groups'] = $this->decodePromoSelection($result['client_groups'] ?? null);
         $result['redemption_count'] = $redemptionCount;
@@ -2567,6 +2576,55 @@ class Service implements InjectionAwareInterface
         return $this->isPromoApplicableToProduct($promo, $this->findProductById($productId), $config);
     }
 
+    /**
+     * Product ids that must all be present in the cart for the promo's
+     * bundle condition to hold. Empty means no condition.
+     *
+     * @return list<int>
+     */
+    public function getPromoRequiredProducts(Promo $promo): array
+    {
+        return $this->normalizeProductIds($this->decodePromoSelection($this->getPromoSourceArray($promo)['requires_products'] ?? null));
+    }
+
+    /**
+     * Required product ids missing from the given cart product ids.
+     *
+     * @param list<int> $productIds
+     *
+     * @return list<int>
+     */
+    public function findMissingRequiredProductIds(Promo $promo, array $productIds): array
+    {
+        $required = $this->getPromoRequiredProducts($promo);
+        if ($required === []) {
+            return [];
+        }
+
+        $present = array_map(intval(...), $productIds);
+
+        return array_values(array_diff($required, $present));
+    }
+
+    /**
+     * Whether the cart lines satisfy the promo's bundle condition.
+     *
+     * @param list<array{product?: Product, config?: array}> $lines
+     */
+    public function isPromoCartConditionMet(Promo $promo, array $lines): bool
+    {
+        $productIds = [];
+        foreach ($lines as $line) {
+            $product = $line['product'] ?? null;
+            $id = $product instanceof Product ? $product->getId() : null;
+            if ($id !== null) {
+                $productIds[] = $id;
+            }
+        }
+
+        return $this->findMissingRequiredProductIds($promo, $productIds) === [];
+    }
+
     public function getProductDiscount(Product $product, Promo $promo, ?array $config = null)
     {
         if (!$this->isPromoApplicableToProduct($promo, $product, $config)) {
@@ -3025,6 +3083,7 @@ class Service implements InjectionAwareInterface
             ->setProducts($this->encodePromoSelection($data['products'] ?? $this->decodePromoSelection($promo->getProducts())))
             ->setPeriods($this->encodePromoSelection($data['periods'] ?? $this->decodePromoSelection($promo->getPeriods())))
             ->setClientGroups($this->encodePromoSelection($data['client_groups'] ?? $this->decodePromoSelection($promo->getClientGroups())))
+            ->setRequiresProducts($this->encodePromoSelection($this->normalizeProductIds((array) ($data['requires_products'] ?? $this->decodePromoSelection($promo->getRequiresProducts())))))
             ->setStartAt($this->normalizePromoDateTimeObject($data['start_at'] ?? $promo->getStartAt()))
             ->setEndAt($this->normalizePromoDateTimeObject($data['end_at'] ?? $promo->getEndAt()));
     }

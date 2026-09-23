@@ -82,6 +82,9 @@ class Promo implements ApiArrayInterface, TimestampInterface
     #[ORM\Column(name: 'client_groups', type: \Doctrine\DBAL\Types\Types::TEXT, nullable: true)]
     private ?string $clientGroups = null;
 
+    #[ORM\Column(name: 'requires_products', type: \Doctrine\DBAL\Types\Types::TEXT, nullable: true)]
+    private ?string $requiresProducts = null;
+
     #[ORM\Column(name: 'start_at', type: \Doctrine\DBAL\Types\Types::DATETIME_MUTABLE, nullable: true)]
     private ?\DateTime $startAt = null;
 
@@ -117,6 +120,7 @@ class Promo implements ApiArrayInterface, TimestampInterface
             'products' => $this->products,
             'periods' => $this->periods,
             'client_groups' => $this->clientGroups,
+            'requires_products' => $this->requiresProducts,
             'start_at' => $this->startAt?->format('Y-m-d H:i:s'),
             'end_at' => $this->endAt?->format('Y-m-d H:i:s'),
             'auto_apply' => $this->autoApply ?? false,
@@ -284,6 +288,18 @@ class Promo implements ApiArrayInterface, TimestampInterface
     public function setClientGroups(?string $clientGroups): self
     {
         $this->clientGroups = $clientGroups;
+
+        return $this;
+    }
+
+    public function getRequiresProducts(): ?string
+    {
+        return $this->requiresProducts;
+    }
+
+    public function setRequiresProducts(?string $requiresProducts): self
+    {
+        $this->requiresProducts = $requiresProducts;
 
         return $this;
     }

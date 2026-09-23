@@ -433,6 +433,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @optional array $products - list of product ids for which this promo code applies
      * @optional array $periods - list of period codes
+     * @optional array $requires_products - list of product ids that must all be in the cart (bundle condition)
      * @optional bool $active - flag to enable/disable promo code
      * @optional bool $freesetup - flag to enable/disable free setup price
      * @optional bool $once_per_client - flag to enable/disable promo code usage once per client
@@ -470,9 +471,14 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         if (isset($data['client_groups']) && is_array($data['client_groups'])) {
             $clientGroups = $data['client_groups'];
         }
+
+        $requiresProducts = [];
+        if (isset($data['requires_products']) && is_array($data['requires_products'])) {
+            $requiresProducts = $data['requires_products'];
+        }
         $service = $this->getService();
 
-        return (int) $service->createPromo($data['code'], $data['type'], $data['value'], $products, $periods, $clientGroups, $data);
+        return (int) $service->createPromo($data['code'], $data['type'], $data['value'], $products, $periods, $clientGroups, $requiresProducts, $data);
     }
 
     /**
@@ -550,6 +556,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional string $value - promo code value. Percents or discount amount in currency
      * @optional array $products - list of product ids for which this promo code applies
      * @optional array $periods - list of period codes
+     * @optional array $requires_products - list of product ids that must all be in the cart (bundle condition)
      * @optional bool $active - flag to enable/disable promo code
      * @optional bool $freesetup - flag to enable/disable free setup price
      * @optional bool $once_per_client - flag to enable/disable promo code usage once per client
