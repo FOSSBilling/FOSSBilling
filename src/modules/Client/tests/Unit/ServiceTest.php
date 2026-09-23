@@ -13,6 +13,7 @@ declare(strict_types=1);
 use Box\Mod\Client\Event\AfterAdminClientCreateEvent;
 use Box\Mod\Client\Event\AfterClientSignUpEvent;
 use Box\Mod\Client\Event\BeforeAdminClientCreateEvent;
+use Box\Mod\Client\Event\BeforeClientPasswordResetEvent;
 use Box\Mod\Client\Event\BeforeClientSignUpEvent;
 use Box\Mod\Cron\Event\BeforeAdminCronRunEvent;
 
@@ -45,6 +46,39 @@ test('removes expired password reset requests on typed before cron event', funct
     $service = new Box\Mod\Client\Service();
     $service->setDi($di);
     $service->removeExpiredPasswordResetRequests(new BeforeAdminCronRunEvent());
+});
+
+test('password_reset_valid dispatches a safe event without exposing the reset hash', function (): void {
+    $service = new Box\Mod\Client\Service();
+    $di = container();
+    $repository = $di['em']->getRepository(Box\Mod\Client\Entity\ClientPasswordReset::class);
+    $repository->shouldReceive('findOneByHash')->once()->with('private-reset-hash')->andReturn(null);
+
+    $events = [];
+    $eventDispatcher = new class($events) {
+        /** @param list<FOSSBilling\Events\Event> $events */
+        public function __construct(private array &$events)
+        {
+        }
+
+        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        {
+            $this->events[] = $event;
+
+            return $event;
+        }
+    };
+
+    $di['request'] = Symfony\Component\HttpFoundation\Request::create('http://localhost/', server: ['REMOTE_ADDR' => '192.0.2.7']);
+    $di['event_dispatcher'] = $eventDispatcher;
+    $service->setDi($di);
+
+    expect(fn () => $service->password_reset_valid(['hash' => 'private-reset-hash']))
+        ->toThrow(FOSSBilling\InformationException::class, 'The link has expired or you have already reset your password.');
+
+    expect($events)->toHaveCount(1);
+    expect($events[0])->toEqual(new BeforeClientPasswordResetEvent('192.0.2.7'));
+    expect(get_object_vars($events[0]))->toBe(['ip' => '192.0.2.7']);
 });
 
 test('approveClientEmailByHash returns true', function (): void {

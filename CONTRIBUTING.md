@@ -110,6 +110,12 @@ Client signup dispatches `BeforeClientSignUpEvent` with readonly `input` and `Af
 
 Profile changes dispatch classes in `Box\Mod\Profile\Event` for admin password, API key, and profile changes and for client profile and password changes. Before profile-update events provide the account ID and readonly input data; after events provide the account ID. Replace static legacy handlers with public instance listeners using `#[AsEventListener]`, and read the documented event properties instead of legacy array keys. Credential values are not exposed in the typed lifecycle events.
 
+### Migrating authentication hooks
+
+Client and admin login hooks use typed events in `Box\Mod\Client\Event` and `Box\Mod\Staff\Event`. Before-login and failed-login events expose only the request IP; successful-login events expose the account ID and IP. Login passwords and submitted email addresses are not event payloads. Use `BeforeClientLoginEvent` or `BeforeAdminLoginEvent` for checks such as IP blocking, and the corresponding after-login event for activity recording.
+
+Client password-reset hooks use event classes in `Box\Mod\Client\Event`. Before events distinguish reset request, confirmation, and validation steps; the completion event exposes the client ID. Reset hashes and new passwords are not included in event payloads. Extensions that used the old array parameters should move to typed listeners and use the event's documented fields.
+
 ## How can I contribute?
 
 There are a lot of different ways that you can get involved in the FOSSBilling project. Let's take a look at some of the main ones:

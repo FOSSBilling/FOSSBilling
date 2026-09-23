@@ -17,7 +17,9 @@ use Box\Mod\Staff\Entity\Admin;
 use Box\Mod\Staff\Entity\AdminGroup;
 use Box\Mod\Staff\Entity\AdminGroupMember;
 use Box\Mod\Staff\Entity\AdminPasswordReset;
+use Box\Mod\Staff\Event\AdminLoginFailedEvent;
 use Box\Mod\Staff\Event\AfterAdminLoginEvent;
+use Box\Mod\Staff\Event\BeforeAdminLoginEvent;
 use Box\Mod\Staff\Repository\AdminGroupMemberRepository;
 use Box\Mod\Staff\Repository\AdminGroupRepository;
 use Box\Mod\Staff\Repository\AdminPasswordResetRepository;
@@ -118,23 +120,17 @@ class Service implements InjectionAwareInterface
 
     public function login($email, $password, $ip): array
     {
-        $event_params = [];
-        $event_params['email'] = $email;
-        $event_params['ip'] = $ip;
-
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminLogin', 'params' => $event_params]);
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminLoginEvent($ip));
 
         $model = $this->authorizeAdmin($email, $password);
         if (!$model instanceof Admin) {
-            $this->di['events_manager']->fire(['event' => 'onEventAdminLoginFailed', 'params' => $event_params]);
+            $this->di['event_dispatcher']->dispatch(new AdminLoginFailedEvent($ip));
 
             throw new \FOSSBilling\InformationException('Check your login details', null, 403);
         }
 
-        // Legacy extension hooks are normally connected by cron. Connect them before the
-        // first login event so hooks can run even when cron has not run yet. If another
-        // process holds the rebuild lock, retry once and let login proceed on failure.
-        // Typed listeners (including the activity history listener) are registered separately.
+        // Connect remaining legacy extension hooks at login in case cron has not run yet.
+        // If another process holds the rebuild lock, retry once and let login proceed on failure.
         $hookService = $this->di['mod_service']('hook');
         if (!$hookService->hasConnectedListeners()) {
             $connected = $hookService->batchConnect();
@@ -142,11 +138,10 @@ class Service implements InjectionAwareInterface
                 $connected = $hookService->batchConnect();
             }
             if (!$connected) {
-                $this->di['logger']->warning('Could not connect legacy hook listeners after two attempts; extension hooks for this login and other events may not run.');
+                $this->di['logger']->warning('Could not connect remaining legacy hook listeners after two attempts; some legacy extension hooks may not run.');
             }
         }
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminLogin', 'params' => ['id' => $model->getId(), 'ip' => $ip]]);
         $this->di['event_dispatcher']->dispatch(new AfterAdminLoginEvent((int) $model->getId(), $ip));
 
         $result = [

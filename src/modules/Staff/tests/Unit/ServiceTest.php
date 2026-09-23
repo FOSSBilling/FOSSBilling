@@ -16,6 +16,9 @@ use Box\Mod\Staff\Entity\Admin;
 use Box\Mod\Staff\Entity\AdminGroup;
 use Box\Mod\Staff\Entity\AdminGroupMember;
 use Box\Mod\Staff\Entity\AdminPasswordReset;
+use Box\Mod\Staff\Event\AdminLoginFailedEvent;
+use Box\Mod\Staff\Event\AfterAdminLoginEvent;
+use Box\Mod\Staff\Event\BeforeAdminLoginEvent;
 use Box\Mod\Staff\Repository\AdminGroupMemberRepository;
 use Box\Mod\Staff\Repository\AdminGroupRepository;
 use Box\Mod\Staff\Repository\AdminPasswordResetRepository;
@@ -29,6 +32,7 @@ use Box\Mod\Support\Event\TicketActorRole;
 use Box\Mod\Support\Repository\HelpdeskRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use FOSSBilling\Events\EventDispatcher;
+use Symfony\Component\EventDispatcher\EventDispatcher as SymfonyEventDispatcher;
 
 use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
@@ -98,6 +102,29 @@ function dispatchStaffTicketEvent(Service $service, Pimple\Container $di, string
     };
 
     $dispatcher->dispatch($event);
+}
+
+/** @return array{SymfonyEventDispatcher, ArrayObject} */
+function staffLoginEventDispatcher(): array
+{
+    $events = new ArrayObject();
+    $dispatcher = new SymfonyEventDispatcher();
+
+    foreach ([BeforeAdminLoginEvent::class, AdminLoginFailedEvent::class, AfterAdminLoginEvent::class] as $eventClass) {
+        $dispatcher->addListener($eventClass, static function (object $event) use ($events): void {
+            $events->append($event);
+        });
+    }
+
+    return [$dispatcher, $events];
+}
+
+function staffLoginEventSummaries(ArrayObject $events): array
+{
+    return array_map(
+        static fn (object $event): array => [$event::class, get_object_vars($event)],
+        iterator_to_array($events),
+    );
 }
 
 function staffSetEntityId(object $entity, int $id): void
@@ -176,8 +203,8 @@ test('login returns admin details on successful login', function (): void {
     $admin = \Tests\Helpers\admin(['id' => 1, 'email' => $email, 'name' => 'Admin', 'pass' => 'hashedPassword']);
 
     $emMock = Mockery::mock('\Box_EventManager');
-    $emMock->shouldReceive('fire')->atLeast()->once()
-        ->andReturn(true);
+    $emMock->shouldNotReceive('fire');
+    [$eventDispatcher, $dispatchedEvents] = staffLoginEventDispatcher();
 
     $adminRepository = Mockery::mock(AdminRepository::class);
     $adminRepository->shouldReceive('findOneByEmailAndActive')->atLeast()->once()
@@ -197,7 +224,7 @@ test('login returns admin details on successful login', function (): void {
 
     $di = container();
     $di['events_manager'] = $emMock;
-    $di['event_dispatcher'] = new EventDispatcher(static fn (): array => [], static fn (string $module): object => new stdClass());
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['em']->shouldReceive('getRepository')->with(Admin::class)->andReturn($adminRepository);
     $di['session'] = $sessionMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
@@ -214,10 +241,14 @@ test('login returns admin details on successful login', function (): void {
         'name' => 'Admin',
     ];
 
-    expect($result)->toBe($expected);
+    expect($result)->toBe($expected)
+        ->and(staffLoginEventSummaries($dispatchedEvents))->toBe([
+            [BeforeAdminLoginEvent::class, ['ip' => $ip]],
+            [AfterAdminLoginEvent::class, ['adminId' => 1, 'ip' => $ip]],
+        ]);
 });
 
-test('login retries connecting event listeners once before firing the login event', function (): void {
+test('login retries connecting legacy hooks once before dispatching the success event', function (): void {
     $email = 'email@domain.com';
     $password = 'pass';
     $ip = '127.0.0.1';
@@ -225,8 +256,8 @@ test('login retries connecting event listeners once before firing the login even
     $admin = \Tests\Helpers\admin(['id' => 1, 'email' => $email, 'name' => 'Admin', 'pass' => 'hashedPassword']);
 
     $emMock = Mockery::mock('\Box_EventManager');
-    $emMock->shouldReceive('fire')->atLeast()->once()
-        ->andReturn(true);
+    $emMock->shouldNotReceive('fire');
+    [$eventDispatcher, $dispatchedEvents] = staffLoginEventDispatcher();
 
     $adminRepository = Mockery::mock(AdminRepository::class);
     $adminRepository->shouldReceive('findOneByEmailAndActive')->atLeast()->once()
@@ -251,7 +282,7 @@ test('login retries connecting event listeners once before firing the login even
 
     $di = container();
     $di['events_manager'] = $emMock;
-    $di['event_dispatcher'] = new EventDispatcher(static fn (): array => [], static fn (string $module): object => new stdClass());
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['em']->shouldReceive('getRepository')->with(Admin::class)->andReturn($adminRepository);
     $di['session'] = $sessionMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
@@ -267,7 +298,11 @@ test('login retries connecting event listeners once before firing the login even
         'id' => 1,
         'email' => $email,
         'name' => 'Admin',
-    ]);
+    ])
+        ->and(staffLoginEventSummaries($dispatchedEvents))->toBe([
+            [BeforeAdminLoginEvent::class, ['ip' => $ip]],
+            [AfterAdminLoginEvent::class, ['adminId' => 1, 'ip' => $ip]],
+        ]);
 });
 
 test('login still succeeds, and logs a warning, when both attempts to connect event listeners fail', function (): void {
@@ -278,8 +313,8 @@ test('login still succeeds, and logs a warning, when both attempts to connect ev
     $admin = \Tests\Helpers\admin(['id' => 1, 'email' => $email, 'name' => 'Admin', 'pass' => 'hashedPassword']);
 
     $emMock = Mockery::mock('\Box_EventManager');
-    $emMock->shouldReceive('fire')->atLeast()->once()
-        ->andReturn(true);
+    $emMock->shouldNotReceive('fire');
+    [$eventDispatcher, $dispatchedEvents] = staffLoginEventDispatcher();
 
     $adminRepository = Mockery::mock(AdminRepository::class);
     $adminRepository->shouldReceive('findOneByEmailAndActive')->atLeast()->once()
@@ -308,7 +343,7 @@ test('login still succeeds, and logs a warning, when both attempts to connect ev
 
     $di = container();
     $di['events_manager'] = $emMock;
-    $di['event_dispatcher'] = new EventDispatcher(static fn (): array => [], static fn (string $module): object => new stdClass());
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['em']->shouldReceive('getRepository')->with(Admin::class)->andReturn($adminRepository);
     $di['session'] = $sessionMock;
     $di['logger'] = $loggerMock;
@@ -327,7 +362,11 @@ test('login still succeeds, and logs a warning, when both attempts to connect ev
     ])
         ->and($loggerMock->calls)->toContain([
             'method' => 'warning',
-            'params' => ['Could not connect legacy hook listeners after two attempts; extension hooks for this login and other events may not run.'],
+            'params' => ['Could not connect remaining legacy hook listeners after two attempts; some legacy extension hooks may not run.'],
+        ])
+        ->and(staffLoginEventSummaries($dispatchedEvents))->toBe([
+            [BeforeAdminLoginEvent::class, ['ip' => $ip]],
+            [AfterAdminLoginEvent::class, ['adminId' => 1, 'ip' => $ip]],
         ]);
 });
 
@@ -337,8 +376,8 @@ test('login throws exception when credentials are invalid', function (): void {
     $ip = '127.0.0.1';
 
     $emMock = Mockery::mock('\Box_EventManager');
-    $emMock->shouldReceive('fire')->atLeast()->once()
-        ->andReturn(true);
+    $emMock->shouldNotReceive('fire');
+    [$eventDispatcher, $dispatchedEvents] = staffLoginEventDispatcher();
 
     $adminRepository = Mockery::mock(AdminRepository::class);
     $adminRepository->shouldReceive('findOneByEmailAndActive')->atLeast()->once()
@@ -351,6 +390,7 @@ test('login throws exception when credentials are invalid', function (): void {
 
     $di = container();
     $di['events_manager'] = $emMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['em']->shouldReceive('getRepository')->with(Admin::class)->andReturn($adminRepository);
     $di['password'] = $passwordMock;
 
@@ -359,6 +399,11 @@ test('login throws exception when credentials are invalid', function (): void {
 
     expect(fn (): array => $service->login($email, $password, $ip))
         ->toThrow(FOSSBilling\Exception::class, 'Check your login details');
+
+    expect(staffLoginEventSummaries($dispatchedEvents))->toBe([
+        [BeforeAdminLoginEvent::class, ['ip' => $ip]],
+        [AdminLoginFailedEvent::class, ['ip' => $ip]],
+    ]);
 });
 
 test('hasPermission returns true for super administrator group member', function (): void {

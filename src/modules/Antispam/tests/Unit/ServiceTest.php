@@ -11,8 +11,10 @@
 declare(strict_types=1);
 
 use Box\Mod\Client\Event\BeforeAdminClientUpdateEvent;
+use Box\Mod\Client\Event\BeforeClientLoginEvent;
 use Box\Mod\Client\Event\BeforeClientSignUpEvent;
 use Box\Mod\Profile\Event\BeforeClientProfileUpdateEvent;
+use Box\Mod\Staff\Event\BeforeAdminLoginEvent;
 use Box\Mod\Support\Event\BeforeGuestTicketCreateEvent;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -169,50 +171,61 @@ test('before guest ticket creation propagates blocked IP exceptions', function (
     )))->toThrow(FOSSBilling\InformationException::class, 'Your IP address (1.2.3.4) is blocked');
 });
 
-test('is blocked ip ip not blocked', function (): void {
+test('client login allows an IP absent from the block list', function (): void {
     $service = new Box\Mod\Antispam\Service();
-    $clientIp = '214.1.4.99';
     $modConfig = [
         'block_ips' => true,
         'blocked_ips' => '1.1.1.1' . PHP_EOL . '2.2.2.2',
     ];
 
     $di = container();
-    $di['request'] = Request::createFromGlobals();
+    $di['request'] = Request::create('http://localhost', server: ['REMOTE_ADDR' => '214.1.4.99']);
     $di['mod_config'] = $di->protect(function ($modName) use ($modConfig) {
         if ($modName == 'Antispam') {
             return $modConfig;
         }
     });
+    $service->setDi($di);
 
-    $boxEventMock = Mockery::mock('\Box_Event');
-    $boxEventMock->shouldReceive('getDi')
-        ->atLeast()->once()
-        ->andReturn($di);
-
-    $service->isBlockedIp($boxEventMock);
+    expect(fn () => $service->onBeforeClientLogin(new BeforeClientLoginEvent('214.1.4.99')))
+        ->not->toThrow(Throwable::class);
 });
 
-test('is blocked ip block ips not enabled', function (): void {
+test('admin login allows an IP when blocking is disabled', function (): void {
     $service = new Box\Mod\Antispam\Service();
     $modConfig = [
         'block_ips' => false,
     ];
 
     $di = container();
+    $di['request'] = Request::create('http://localhost', server: ['REMOTE_ADDR' => '1.2.3.4']);
     $di['mod_config'] = $di->protect(function ($modName) use ($modConfig) {
         if ($modName == 'Antispam') {
             return $modConfig;
         }
     });
+    $service->setDi($di);
 
-    $boxEventMock = Mockery::mock('\Box_Event');
-    $boxEventMock->shouldReceive('getDi')
-        ->atLeast()->once()
-        ->andReturn($di);
-
-    $service->isBlockedIp($boxEventMock);
+    expect(fn () => $service->onBeforeAdminLogin(new BeforeAdminLoginEvent('1.2.3.4')))
+        ->not->toThrow(Throwable::class);
 });
+
+test('login listeners reject a blocked IP', function (string $listener, string $eventClass): void {
+    $service = new Box\Mod\Antispam\Service();
+    $di = container();
+    $di['request'] = Request::create('http://localhost', server: ['REMOTE_ADDR' => '1.2.3.4']);
+    $di['mod_config'] = $di->protect(fn (): array => [
+        'block_ips' => true,
+        'blocked_ips' => '1.2.3.4',
+    ]);
+    $service->setDi($di);
+
+    expect(fn () => $service->{$listener}(new $eventClass('1.2.3.4')))
+        ->toThrow(FOSSBilling\InformationException::class, 'Your IP address (1.2.3.4) is blocked');
+})->with([
+    ['onBeforeClientLogin', BeforeClientLoginEvent::class],
+    ['onBeforeAdminLogin', BeforeAdminLoginEvent::class],
+]);
 
 dataset('spam responses', fn (): array => [
     [

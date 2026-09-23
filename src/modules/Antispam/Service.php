@@ -12,8 +12,10 @@ declare(strict_types=1);
 namespace Box\Mod\Antispam;
 
 use Box\Mod\Client\Event\BeforeAdminClientUpdateEvent;
+use Box\Mod\Client\Event\BeforeClientLoginEvent;
 use Box\Mod\Client\Event\BeforeClientSignUpEvent;
 use Box\Mod\Profile\Event\BeforeClientProfileUpdateEvent;
+use Box\Mod\Staff\Event\BeforeAdminLoginEvent;
 use Box\Mod\Support\Event\BeforeGuestTicketCreateEvent;
 use EmailChecker\Adapter;
 use EmailChecker\Utilities;
@@ -105,30 +107,18 @@ class Service implements InjectionAwareInterface
         $this->checkBlockedIp($di);
     }
 
-    public static function onBeforeClientUpdate(\Box_Event $event): void
+    #[AsEventListener]
+    public function onBeforeClientLogin(BeforeClientLoginEvent $event): void
     {
-        $di = $event->getDi();
-        $antispamService = $di['mod_service']('Antispam');
-        $antispamService->isBlockedIp($event);
+        $di = $this->di ?? throw new \LogicException('Antispam service must be initialized before handling events.');
+        $this->checkBlockedIp($di);
     }
 
-    public static function onBeforeClientLogin(\Box_Event $event): void
+    #[AsEventListener]
+    public function onBeforeAdminLogin(BeforeAdminLoginEvent $event): void
     {
-        $di = $event->getDi();
-        $antispamService = $di['mod_service']('Antispam');
-        $antispamService->isBlockedIp($event);
-    }
-
-    public static function onBeforeAdminLogin(\Box_Event $event): void
-    {
-        $di = $event->getDi();
-        $antispamService = $di['mod_service']('Antispam');
-        $antispamService->isBlockedIp($event);
-    }
-
-    public function isBlockedIp(\Box_Event $event): void
-    {
-        $this->checkBlockedIp($event->getDi());
+        $di = $this->di ?? throw new \LogicException('Antispam service must be initialized before handling events.');
+        $this->checkBlockedIp($di);
     }
 
     private function checkBlockedIp(\Pimple\Container $di): void

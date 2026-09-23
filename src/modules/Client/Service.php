@@ -18,6 +18,7 @@ use Box\Mod\Client\Entity\ClientPasswordReset;
 use Box\Mod\Client\Event\AfterAdminClientCreateEvent;
 use Box\Mod\Client\Event\AfterClientSignUpEvent;
 use Box\Mod\Client\Event\BeforeAdminClientCreateEvent;
+use Box\Mod\Client\Event\BeforeClientPasswordResetEvent;
 use Box\Mod\Client\Event\BeforeClientSignUpEvent;
 use Box\Mod\Client\Repository\ClientBalanceRepository;
 use Box\Mod\Client\Repository\ClientGroupRepository;
@@ -31,6 +32,7 @@ use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\SortOptions;
 use FOSSBilling\Tools;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Intl\Countries;
 use Symfony\Component\Intl\Locales;
@@ -1016,7 +1018,9 @@ class Service implements InjectionAwareInterface
         $required = [
             'hash' => 'Hash required',
         ];
-        $this->di['events_manager']->fire(['event' => 'onBeforePasswordResetClient']);
+        $request = $this->di['request'] ?? null;
+        $ip = $request instanceof Request ? $request->getClientIp() : null;
+        $this->di['event_dispatcher']->dispatch(new BeforeClientPasswordResetEvent($ip));
         $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
         $reset = $this->clientPasswordResetRepository->findOneByHash($data['hash']);
