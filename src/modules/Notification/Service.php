@@ -97,6 +97,9 @@ class Service implements InjectionAwareInterface
         ]);
         if ($sort->isSorted()) {
             $qb->orderBy($sort->expression, $sort->direction);
+            if ($sort->expression !== 'n.id') {
+                $qb->addOrderBy('n.id', $sort->direction);
+            }
         } else {
             $qb->orderBy('n.id', 'DESC');
         }

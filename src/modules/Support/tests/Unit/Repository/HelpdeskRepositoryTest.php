@@ -31,17 +31,22 @@ test('getSearchQueryBuilder orders by id descending with no filters', function (
     expect($dql)->toBe('SELECT h FROM ' . Helpdesk::class . ' h ORDER BY h.id DESC');
 });
 
-test('getSearchQueryBuilder sorts by allowlisted columns', function (array $data, string $expectedOrder, string $expectedDirection): void {
+test('getSearchQueryBuilder sorts by allowlisted columns', function (array $data, string $expectedOrderBy, bool $expectsTieBreak): void {
     $dql = helpdeskSearchEntityManager()->getRepository(Helpdesk::class)->getSearchQueryBuilder($data)->getDQL();
 
-    expect($dql)->toContain("ORDER BY {$expectedOrder} {$expectedDirection}");
+    expect($dql)->toContain($expectedOrderBy);
+    if ($expectsTieBreak) {
+        expect($dql)->toContain(', h.id');
+    } else {
+        expect($dql)->not->toContain(', h.id');
+    }
 })->with([
-    'id ascending' => [['sort' => 'id'], 'h.id', 'ASC'],
-    'id descending' => [['sort' => 'id', 'direction' => 'DESC'], 'h.id', 'DESC'],
-    'name' => [['sort' => 'name'], 'h.name', 'ASC'],
-    'email' => [['sort' => 'email', 'direction' => 'desc'], 'h.email', 'DESC'],
-    'created_at' => [['sort' => 'created_at'], 'h.createdAt', 'ASC'],
-    'updated_at' => [['sort' => 'updated_at'], 'h.updatedAt', 'ASC'],
-    'invalid sort falls back to default' => [['sort' => 'h.id; DROP TABLE support_helpdesk'], 'h.id', 'DESC'],
-    'invalid direction falls back to ascending' => [['sort' => 'name', 'direction' => 'sideways'], 'h.name', 'ASC'],
+    'id ascending' => [['sort' => 'id'], 'ORDER BY h.id ASC', false],
+    'id descending' => [['sort' => 'id', 'direction' => 'DESC'], 'ORDER BY h.id DESC', false],
+    'name' => [['sort' => 'name'], 'ORDER BY h.name ASC, h.id ASC', true],
+    'email' => [['sort' => 'email', 'direction' => 'desc'], 'ORDER BY h.email DESC, h.id DESC', true],
+    'created_at' => [['sort' => 'created_at'], 'ORDER BY h.createdAt ASC, h.id ASC', true],
+    'updated_at' => [['sort' => 'updated_at'], 'ORDER BY h.updatedAt ASC, h.id ASC', true],
+    'invalid sort falls back to default' => [['sort' => 'h.id; DROP TABLE support_helpdesk'], 'ORDER BY h.id DESC', false],
+    'invalid direction falls back to ascending' => [['sort' => 'name', 'direction' => 'sideways'], 'ORDER BY h.name ASC, h.id ASC', true],
 ]);

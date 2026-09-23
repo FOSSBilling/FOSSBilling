@@ -71,14 +71,23 @@ final readonly class SortOptions
     /**
      * Render a raw SQL ORDER BY clause, e.g. "tld ASC". Returns null when no
      * valid sort was requested so callers keep their default ordering.
+     *
+     * The optional tie-breaker (usually the table's primary key) is appended
+     * in the same direction unless it duplicates the primary expression, so
+     * tied rows keep a stable order across paginated requests.
      */
-    public function toOrderByClause(): ?string
+    public function toOrderByClause(?string $tieBreaker = null): ?string
     {
         if ($this->expression === null) {
             return null;
         }
 
-        return $this->expression . ' ' . $this->direction;
+        $clause = $this->expression . ' ' . $this->direction;
+        if ($tieBreaker !== null && $tieBreaker !== $this->expression) {
+            $clause .= ', ' . $tieBreaker . ' ' . $this->direction;
+        }
+
+        return $clause;
     }
 
     /**

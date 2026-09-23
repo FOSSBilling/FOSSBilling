@@ -67,11 +67,15 @@ class EmailTemplateRepository extends EntityRepository
         ]);
         if ($sort->isSorted()) {
             $qb->orderBy($sort->expression, $sort->direction);
+            if ($sort->expression !== 't.id') {
+                $qb->addOrderBy('t.id', $sort->direction);
+            }
         } else {
             $qb->orderBy('t.category', 'ASC');
+            $qb->addOrderBy('t.actionCode', 'ASC');
         }
 
-        return $qb->addOrderBy('t.actionCode', 'ASC');
+        return $qb;
     }
 
     public function findOneByActionCode(string $code): ?EmailTemplate

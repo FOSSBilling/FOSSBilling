@@ -171,7 +171,7 @@
                         </div>
                     </div>
 
-                    <div class="tab-pane fade" id="tab-categories" role="tabpanel" data-list-ns="">
+                    <div class="tab-pane fade" id="tab-categories" role="tabpanel" data-list-ns="category">
                         <div class="card-body border-bottom py-3">
                             <div class="d-flex justify-content-end">
                                 {{ new_kb_category_action|raw }}
@@ -181,12 +181,14 @@
                             <table class="table card-table table-vcenter table-striped text-nowrap">
                                 <thead>
                                     <tr>
-                                        {{ include('partial_sortable_th.html.twig', { 'label': 'Title'|trans, 'sort_key': 'title', 'url': 'support/kb', 'hash': '#tab-categories', 'default_sort': 'title', 'default_direction': 'ASC' }) }}
+                                        {{ include('partial_sortable_th.html.twig', { 'label': 'Title'|trans, 'sort_key': 'title', 'url': 'support/kb', 'hash': '#tab-categories', 'sort_param': 'category_sort', 'direction_param': 'category_direction', 'page_param': 'category_page', 'default_sort': 'title', 'default_direction': 'ASC' }) }}
                                         <th class="w-1"></th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {% set categories = admin.support_kb_category_get_list({ 'per_page': 25, 'page': request.page }|merge(request)) %}
+                                    {% set categoryPage = request.category_page matches '/^\\d+$/' ? request.category_page : 1 %}
+                                    {% set categoryPerPage = request.category_per_page matches '/^\\d+$/' ? request.category_per_page : 25 %}
+                                    {% set categories = admin.support_kb_category_get_list(request|merge({ 'page': categoryPage, 'per_page': categoryPerPage, 'sort': request.category_sort|default(null), 'direction': request.category_direction|default('ASC') })) %}
                                     {% for category in categories.list %}
                                         {% set active_count = category.articles|filter(article => article.status == 'active')|length %}
                                         {% set draft_count = category.articles|filter(article => article.status == 'draft')|length %}
@@ -218,7 +220,7 @@
                             </table>
                         </div>
                         <div class="card-footer d-flex align-items-center">
-                            {{ include('partial_pagination.html.twig', { 'list': categories, 'url': 'support/kb', 'hash': '#tab-categories', 'split_footer_controls': true }) }}
+                            {{ include('partial_pagination.html.twig', { 'list': categories, 'url': 'support/kb', 'hash': '#tab-categories', 'page_param': 'category_page', 'per_page_param': 'category_per_page', 'split_footer_controls': true }) }}
                         </div>
                     </div>
                 </div>

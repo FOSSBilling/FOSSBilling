@@ -369,20 +369,25 @@ test('lockAndGetStatus rejects being called outside of a transaction', function 
         ->toThrow(FOSSBilling\Exception::class, 'Invoice status cannot be locked outside of a transaction.');
 });
 
-test('getSearchQueryBuilder sorts by allowlisted columns', function (array $data, string $expectedOrder, string $expectedDirection): void {
+test('getSearchQueryBuilder sorts by allowlisted columns', function (array $data, string $expectedOrderBy, bool $expectsTieBreak): void {
     $dql = invoiceSearchDql($data);
 
-    expect($dql)->toContain("ORDER BY {$expectedOrder} {$expectedDirection}");
+    expect($dql)->toContain($expectedOrderBy);
+    if ($expectsTieBreak) {
+        expect($dql)->toContain(', i.id');
+    } else {
+        expect($dql)->not->toContain(', i.id');
+    }
 })->with([
-    'id ascending' => [['sort' => 'id'], 'i.id', 'ASC'],
-    'id descending' => [['sort' => 'id', 'direction' => 'DESC'], 'i.id', 'DESC'],
-    'nr' => [['sort' => 'nr'], 'i.nr', 'ASC'],
-    'status' => [['sort' => 'status', 'direction' => 'desc'], 'i.status', 'DESC'],
-    'currency' => [['sort' => 'currency'], 'i.currency', 'ASC'],
-    'created_at' => [['sort' => 'created_at'], 'i.createdAt', 'ASC'],
-    'updated_at' => [['sort' => 'updated_at', 'direction' => 'DESC'], 'i.updatedAt', 'DESC'],
-    'paid_at' => [['sort' => 'paid_at'], 'i.paidAt', 'ASC'],
-    'due_at' => [['sort' => 'due_at'], 'i.dueAt', 'ASC'],
-    'invalid sort falls back to default' => [['sort' => 'i.id; DROP TABLE invoice'], 'i.id', 'DESC'],
-    'invalid direction falls back to ascending' => [['sort' => 'status', 'direction' => 'sideways'], 'i.status', 'ASC'],
+    'id ascending' => [['sort' => 'id'], 'ORDER BY i.id ASC', false],
+    'id descending' => [['sort' => 'id', 'direction' => 'DESC'], 'ORDER BY i.id DESC', false],
+    'nr' => [['sort' => 'nr'], 'ORDER BY i.nr ASC, i.id ASC', true],
+    'status' => [['sort' => 'status', 'direction' => 'desc'], 'ORDER BY i.status DESC, i.id DESC', true],
+    'currency' => [['sort' => 'currency'], 'ORDER BY i.currency ASC, i.id ASC', true],
+    'created_at' => [['sort' => 'created_at'], 'ORDER BY i.createdAt ASC, i.id ASC', true],
+    'updated_at' => [['sort' => 'updated_at', 'direction' => 'DESC'], 'ORDER BY i.updatedAt DESC, i.id DESC', true],
+    'paid_at' => [['sort' => 'paid_at'], 'ORDER BY i.paidAt ASC, i.id ASC', true],
+    'due_at' => [['sort' => 'due_at'], 'ORDER BY i.dueAt ASC, i.id ASC', true],
+    'invalid sort falls back to default' => [['sort' => 'i.id; DROP TABLE invoice'], 'ORDER BY i.id DESC', false],
+    'invalid direction falls back to ascending' => [['sort' => 'status', 'direction' => 'sideways'], 'ORDER BY i.status ASC, i.id ASC', true],
 ]);

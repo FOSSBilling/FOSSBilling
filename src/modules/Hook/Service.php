@@ -70,7 +70,7 @@ class Service implements InjectionAwareInterface
             'created_at' => 'created_at',
             'updated_at' => 'updated_at',
         ]);
-        $orderBy = $sort->toOrderByClause() ?? 'id ASC';
+        $orderBy = $sort->toOrderByClause('id') ?? 'id ASC';
         $q .= " ORDER BY {$orderBy}";
 
         return [$q, []];

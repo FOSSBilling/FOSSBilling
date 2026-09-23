@@ -220,7 +220,7 @@ class Service implements InjectionAwareInterface
             'ip' => 'm.ip',
             'created_at' => 'm.created_at',
         ]);
-        $orderBy = $sort->toOrderByClause() ?? 'm.id desc';
+        $orderBy = $sort->toOrderByClause('m.id') ?? 'm.id desc';
         $sql .= " ORDER BY {$orderBy}";
 
         return [$sql, $params];

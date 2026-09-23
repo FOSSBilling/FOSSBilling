@@ -1013,11 +1013,15 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 $query->leftJoin('t.registrar', 'r');
             }
             $query->orderBy($sort->expression, $sort->direction);
+            if ($sort->expression !== 't.id') {
+                $query->addOrderBy('t.id', $sort->direction);
+            }
         } else {
             $query->orderBy('t.tld', 'ASC');
+            $query->addOrderBy('t.id', 'ASC');
         }
 
-        return $query->addOrderBy('t.id', 'ASC');
+        return $query;
     }
 
     /**
@@ -1137,11 +1141,15 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         ]);
         if ($sort->isSorted()) {
             $query->orderBy($sort->expression, $sort->direction);
+            if ($sort->expression !== 'tr.id') {
+                $query->addOrderBy('tr.id', $sort->direction);
+            }
         } else {
             $query->orderBy('tr.name', 'ASC');
+            $query->addOrderBy('tr.id', 'ASC');
         }
 
-        return $query->addOrderBy('tr.id', 'ASC');
+        return $query;
     }
 
     /**

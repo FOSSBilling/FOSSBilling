@@ -50,6 +50,9 @@ class CustomPageRepository extends EntityRepository
         ]);
         if ($sort->isSorted()) {
             $qb->orderBy($sort->expression, $sort->direction);
+            if ($sort->expression !== 'p.id') {
+                $qb->addOrderBy('p.id', $sort->direction);
+            }
         } else {
             $qb->orderBy('p.id', 'DESC');
         }

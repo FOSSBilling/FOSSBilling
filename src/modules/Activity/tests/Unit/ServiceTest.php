@@ -59,7 +59,11 @@ test('get search query applies allowlisted sort', function (): void {
     $service->setDi($di);
 
     [$query] = $service->getSearchQuery(['sort' => 'priority', 'direction' => 'desc']);
-    expect($query)->toContain('ORDER BY m.priority DESC');
+    expect($query)->toContain('ORDER BY m.priority DESC, m.id DESC');
+
+    [$pkQuery] = $service->getSearchQuery(['sort' => 'id', 'direction' => 'desc']);
+    expect($pkQuery)->toContain('ORDER BY m.id DESC');
+    expect($pkQuery)->not->toContain('m.id DESC, m.id DESC');
 
     [$defaultQuery] = $service->getSearchQuery([]);
     expect($defaultQuery)->toContain('ORDER BY m.id desc');

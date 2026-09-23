@@ -89,6 +89,9 @@ class ActivityClientEmailRepository extends EntityRepository
         ]);
         if ($sort->isSorted()) {
             $qb->orderBy($sort->expression, $sort->direction);
+            if ($sort->expression !== 'e.id') {
+                $qb->addOrderBy('e.id', $sort->direction);
+            }
         } else {
             $qb->orderBy('e.id', 'DESC');
         }

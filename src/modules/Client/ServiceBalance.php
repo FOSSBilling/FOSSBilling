@@ -119,6 +119,9 @@ class ServiceBalance implements InjectionAwareInterface
         ]);
         if ($sort->isSorted()) {
             $queryBuilder->orderBy($sort->expression, $sort->direction);
+            if ($sort->expression !== 'm.id') {
+                $queryBuilder->addOrderBy('m.id', $sort->direction);
+            }
         } else {
             $queryBuilder->orderBy('m.id', 'DESC');
         }
@@ -171,7 +174,7 @@ class ServiceBalance implements InjectionAwareInterface
             'created_at' => 'm.created_at',
             'updated_at' => 'm.updated_at',
         ]);
-        $orderBy = $sort->toOrderByClause() ?? 'm.id DESC';
+        $orderBy = $sort->toOrderByClause('m.id') ?? 'm.id DESC';
         $q .= " ORDER BY {$orderBy}";
 
         return [$q, $params];

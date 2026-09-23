@@ -103,7 +103,7 @@ class Service implements InjectionAwareInterface
         $sort = SortOptions::fromArray(is_array($data) ? $data : [], [
             'id' => 'cart.id',
         ]);
-        $orderBy = $sort->toOrderByClause() ?? 'cart.id ASC';
+        $orderBy = $sort->toOrderByClause('cart.id') ?? 'cart.id ASC';
         $sql .= " ORDER BY {$orderBy}";
 
         return [$sql, []];

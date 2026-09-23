@@ -60,11 +60,16 @@ test('get search query builder applies supported filters', function (): void {
     expect($parameters['date_to']->format('Y-m-d H:i:s'))->toBe('2026-02-11 23:59:59');
 });
 
-test('sorts notification search query', function (array $filter, string $expectedOrder, string $expectedDirection): void {
+test('sorts notification search query', function (array $filter, string $expectedOrder, string $expectedDirection, ?string $expectedTieBreakerDirection): void {
     $queryBuilder = Mockery::mock(QueryBuilder::class);
     $queryBuilder->shouldReceive('andWhere')->once()->with('n.metaKey = :metaKey')->andReturn($queryBuilder);
     $queryBuilder->shouldReceive('setParameter')->once()->with('metaKey', 'message')->andReturn($queryBuilder);
     $queryBuilder->shouldReceive('orderBy')->with($expectedOrder, $expectedDirection)->once()->andReturn($queryBuilder);
+    if ($expectedTieBreakerDirection !== null) {
+        $queryBuilder->shouldReceive('addOrderBy')->with('n.id', $expectedTieBreakerDirection)->once()->andReturn($queryBuilder);
+    } else {
+        $queryBuilder->shouldReceive('addOrderBy')->never();
+    }
 
     $repository = Mockery::mock(ExtensionMetaRepository::class)->makePartial()->shouldIgnoreMissing();
     $repository->shouldReceive('createQueryBuilderForExtension')->with('mod_notification', 'n')->once()->andReturn($queryBuilder);
@@ -80,10 +85,10 @@ test('sorts notification search query', function (array $filter, string $expecte
 
     expect($service->getSearchQueryBuilder($filter))->toBe($queryBuilder);
 })->with([
-    'created at ascending' => [['sort' => 'created_at'], 'n.createdAt', 'ASC'],
-    'created at descending' => [['sort' => 'created_at', 'direction' => 'DESC'], 'n.createdAt', 'DESC'],
-    'updated at' => [['sort' => 'updated_at', 'direction' => 'desc'], 'n.updatedAt', 'DESC'],
-    'id' => [['sort' => 'id'], 'n.id', 'ASC'],
-    'invalid sort falls back to default' => [['sort' => 'n.metaValue; DROP TABLE extension_meta'], 'n.id', 'DESC'],
-    'invalid direction falls back to ascending' => [['sort' => 'created_at', 'direction' => 'sideways'], 'n.createdAt', 'ASC'],
+    'created at ascending' => [['sort' => 'created_at'], 'n.createdAt', 'ASC', 'ASC'],
+    'created at descending' => [['sort' => 'created_at', 'direction' => 'DESC'], 'n.createdAt', 'DESC', 'DESC'],
+    'updated at' => [['sort' => 'updated_at', 'direction' => 'desc'], 'n.updatedAt', 'DESC', 'DESC'],
+    'id' => [['sort' => 'id'], 'n.id', 'ASC', null],
+    'invalid sort falls back to default' => [['sort' => 'n.metaValue; DROP TABLE extension_meta'], 'n.id', 'DESC', null],
+    'invalid direction falls back to ascending' => [['sort' => 'created_at', 'direction' => 'sideways'], 'n.createdAt', 'ASC', 'ASC'],
 ]);

@@ -282,20 +282,25 @@ test('find invoice summary selects stored serie and nr columns', function (): vo
     expect($repository->findInvoiceSummary(999))->toBeNull();
 });
 
-test('getSearchQueryBuilder sorts by allowlisted columns', function (array $data, string $expectedOrder, string $expectedDirection): void {
+test('getSearchQueryBuilder sorts by allowlisted columns', function (array $data, string $expectedOrderBy, bool $expectsTieBreak): void {
     $dql = promoRedemptionEntityManager()->getRepository(PromoRedemption::class)->getSearchQueryBuilder($data)->getDQL();
 
-    expect($dql)->toContain("ORDER BY {$expectedOrder} {$expectedDirection}");
+    expect($dql)->toContain($expectedOrderBy);
+    if ($expectsTieBreak) {
+        expect($dql)->toContain(', pr.id');
+    } else {
+        expect($dql)->not->toContain(', pr.id');
+    }
 })->with([
-    'id ascending' => [['sort' => 'id'], 'pr.id', 'ASC'],
-    'id descending' => [['sort' => 'id', 'direction' => 'DESC'], 'pr.id', 'DESC'],
-    'phase' => [['sort' => 'phase'], 'pr.phase', 'ASC'],
-    'status' => [['sort' => 'status', 'direction' => 'desc'], 'pr.status', 'DESC'],
-    'discount_amount' => [['sort' => 'discount_amount'], 'pr.discountAmount', 'ASC'],
-    'committed_at' => [['sort' => 'committed_at'], 'pr.committedAt', 'ASC'],
-    'released_at' => [['sort' => 'released_at'], 'pr.releasedAt', 'ASC'],
-    'created_at' => [['sort' => 'created_at'], 'pr.createdAt', 'ASC'],
-    'updated_at' => [['sort' => 'updated_at'], 'pr.updatedAt', 'ASC'],
-    'invalid sort falls back to default' => [['sort' => 'pr.id; DROP TABLE promo_redemption'], 'pr.id', 'DESC'],
-    'invalid direction falls back to ascending' => [['sort' => 'phase', 'direction' => 'sideways'], 'pr.phase', 'ASC'],
+    'id ascending' => [['sort' => 'id'], 'ORDER BY pr.id ASC', false],
+    'id descending' => [['sort' => 'id', 'direction' => 'DESC'], 'ORDER BY pr.id DESC', false],
+    'phase' => [['sort' => 'phase'], 'ORDER BY pr.phase ASC, pr.id ASC', true],
+    'status' => [['sort' => 'status', 'direction' => 'desc'], 'ORDER BY pr.status DESC, pr.id DESC', true],
+    'discount_amount' => [['sort' => 'discount_amount'], 'ORDER BY pr.discountAmount ASC, pr.id ASC', true],
+    'committed_at' => [['sort' => 'committed_at'], 'ORDER BY pr.committedAt ASC, pr.id ASC', true],
+    'released_at' => [['sort' => 'released_at'], 'ORDER BY pr.releasedAt ASC, pr.id ASC', true],
+    'created_at' => [['sort' => 'created_at'], 'ORDER BY pr.createdAt ASC, pr.id ASC', true],
+    'updated_at' => [['sort' => 'updated_at'], 'ORDER BY pr.updatedAt ASC, pr.id ASC', true],
+    'invalid sort falls back to default' => [['sort' => 'pr.id; DROP TABLE promo_redemption'], 'ORDER BY pr.id DESC', false],
+    'invalid direction falls back to ascending' => [['sort' => 'phase', 'direction' => 'sideways'], 'ORDER BY pr.phase ASC, pr.id ASC', true],
 ]);

@@ -981,7 +981,7 @@ class Service implements InjectionAwareInterface
             'ip' => 'ip',
             'hostname' => 'hostname',
         ]);
-        $orderBy = $sort->toOrderByClause() ?? 'id ASC';
+        $orderBy = $sort->toOrderByClause('id') ?? 'id ASC';
         $sql = "SELECT *
                 FROM service_hosting_server
                 ORDER BY {$orderBy}";
@@ -1009,7 +1009,7 @@ class Service implements InjectionAwareInterface
             'ip' => 'ip',
             'created_at' => 'created_at',
         ]);
-        $orderBy = $sort->toOrderByClause() ?? 'id ASC';
+        $orderBy = $sort->toOrderByClause('id') ?? 'id ASC';
         $sql = $sql . " ORDER BY {$orderBy}";
 
         return [$sql, $params];
@@ -1233,7 +1233,7 @@ class Service implements InjectionAwareInterface
             'id' => 'id',
             'name' => 'name',
         ]);
-        $orderBy = $sort->toOrderByClause() ?? 'id asc';
+        $orderBy = $sort->toOrderByClause('id') ?? 'id asc';
         $sql = "SELECT *
                 FROM service_hosting_hp
                 ORDER BY {$orderBy}";

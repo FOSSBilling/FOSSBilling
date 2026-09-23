@@ -37,6 +37,9 @@ class HelpdeskRepository extends EntityRepository
         ]);
         if ($sort->isSorted()) {
             $qb->orderBy($sort->expression, $sort->direction);
+            if ($sort->expression !== 'h.id') {
+                $qb->addOrderBy('h.id', $sort->direction);
+            }
         } else {
             $qb->orderBy('h.id', 'DESC');
         }

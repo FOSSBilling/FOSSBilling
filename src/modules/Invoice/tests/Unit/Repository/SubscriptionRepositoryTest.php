@@ -31,20 +31,25 @@ test('getSearchQueryBuilder orders by id descending with no filters', function (
     expect($dql)->toBe('SELECT s FROM ' . Subscription::class . ' s ORDER BY s.id DESC');
 });
 
-test('getSearchQueryBuilder sorts by allowlisted columns', function (array $data, string $expectedOrder, string $expectedDirection): void {
+test('getSearchQueryBuilder sorts by allowlisted columns', function (array $data, string $expectedOrderBy, bool $expectsTieBreak): void {
     $dql = subscriptionSearchEntityManager()->getRepository(Subscription::class)->getSearchQueryBuilder($data)->getDQL();
 
-    expect($dql)->toContain("ORDER BY {$expectedOrder} {$expectedDirection}");
+    expect($dql)->toContain($expectedOrderBy);
+    if ($expectsTieBreak) {
+        expect($dql)->toContain(', s.id');
+    } else {
+        expect($dql)->not->toContain(', s.id');
+    }
 })->with([
-    'id ascending' => [['sort' => 'id'], 's.id', 'ASC'],
-    'id descending' => [['sort' => 'id', 'direction' => 'DESC'], 's.id', 'DESC'],
-    'sid' => [['sort' => 'sid'], 's.sid', 'ASC'],
-    'status' => [['sort' => 'status', 'direction' => 'desc'], 's.status', 'DESC'],
-    'currency' => [['sort' => 'currency'], 's.currency', 'ASC'],
-    'period' => [['sort' => 'period'], 's.period', 'ASC'],
-    'amount' => [['sort' => 'amount'], 's.amount', 'ASC'],
-    'created_at' => [['sort' => 'created_at'], 's.createdAt', 'ASC'],
-    'updated_at' => [['sort' => 'updated_at'], 's.updatedAt', 'ASC'],
-    'invalid sort falls back to default' => [['sort' => 's.id; DROP TABLE subscription'], 's.id', 'DESC'],
-    'invalid direction falls back to ascending' => [['sort' => 'sid', 'direction' => 'sideways'], 's.sid', 'ASC'],
+    'id ascending' => [['sort' => 'id'], 'ORDER BY s.id ASC', false],
+    'id descending' => [['sort' => 'id', 'direction' => 'DESC'], 'ORDER BY s.id DESC', false],
+    'sid' => [['sort' => 'sid'], 'ORDER BY s.sid ASC, s.id ASC', true],
+    'status' => [['sort' => 'status', 'direction' => 'desc'], 'ORDER BY s.status DESC, s.id DESC', true],
+    'currency' => [['sort' => 'currency'], 'ORDER BY s.currency ASC, s.id ASC', true],
+    'period' => [['sort' => 'period'], 'ORDER BY s.period ASC, s.id ASC', true],
+    'amount' => [['sort' => 'amount'], 'ORDER BY s.amount ASC, s.id ASC', true],
+    'created_at' => [['sort' => 'created_at'], 'ORDER BY s.createdAt ASC, s.id ASC', true],
+    'updated_at' => [['sort' => 'updated_at'], 'ORDER BY s.updatedAt ASC, s.id ASC', true],
+    'invalid sort falls back to default' => [['sort' => 's.id; DROP TABLE subscription'], 'ORDER BY s.id DESC', false],
+    'invalid direction falls back to ascending' => [['sort' => 'sid', 'direction' => 'sideways'], 'ORDER BY s.sid ASC, s.id ASC', true],
 ]);

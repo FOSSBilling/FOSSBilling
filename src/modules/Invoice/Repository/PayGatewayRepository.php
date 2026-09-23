@@ -84,6 +84,9 @@ class PayGatewayRepository extends EntityRepository
         ]);
         if ($sort->isSorted()) {
             $qb->orderBy($sort->expression, $sort->direction);
+            if ($sort->expression !== 'pg.id') {
+                $qb->addOrderBy('pg.id', $sort->direction);
+            }
         } else {
             $qb->orderBy('pg.gateway', 'ASC');
         }

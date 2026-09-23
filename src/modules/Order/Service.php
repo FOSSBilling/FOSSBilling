@@ -782,7 +782,7 @@ class Service implements InjectionAwareInterface
             'created_at' => 'co.created_at',
             'updated_at' => 'co.updated_at',
         ]);
-        $orderBy = $sort->toOrderByClause() ?? 'co.id DESC';
+        $orderBy = $sort->toOrderByClause('co.id') ?? 'co.id DESC';
         $query .= " ORDER BY {$orderBy}";
 
         return [$query, $bindings];
@@ -2091,7 +2091,7 @@ class Service implements InjectionAwareInterface
             'status' => 'status',
             'created_at' => 'created_at',
         ]);
-        $orderBy = $sort->toOrderByClause() ?? 'id DESC';
+        $orderBy = $sort->toOrderByClause('id') ?? 'id DESC';
         $query .= " ORDER BY {$orderBy}";
 
         return [$query, $bindings];

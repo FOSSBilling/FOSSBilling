@@ -48,6 +48,9 @@ class CannedResponseRepository extends EntityRepository
         ]);
         if ($sort->isSorted()) {
             $qb->orderBy($sort->expression, $sort->direction);
+            if ($sort->expression !== 'r.id') {
+                $qb->addOrderBy('r.id', $sort->direction);
+            }
         } else {
             $qb->orderBy('c.id', 'ASC')
                 ->addOrderBy('r.title', 'ASC');

@@ -84,15 +84,20 @@ test('boolean filters normalize truthy representations to true', function (): vo
     }
 });
 
-test('getSearchQueryBuilder sorts by allowlisted columns', function (array $data, string $expectedOrder, string $expectedDirection): void {
+test('getSearchQueryBuilder sorts by allowlisted columns', function (array $data, string $expectedOrderBy, bool $expectsTieBreak): void {
     $dql = payGatewayEntityManager()->getRepository(PayGateway::class)->getSearchQueryBuilder($data)->getDQL();
 
-    expect($dql)->toContain("ORDER BY {$expectedOrder} {$expectedDirection}");
+    expect($dql)->toContain($expectedOrderBy);
+    if ($expectsTieBreak) {
+        expect($dql)->toContain(', pg.id');
+    } else {
+        expect($dql)->not->toContain(', pg.id');
+    }
 })->with([
-    'id ascending' => [['sort' => 'id'], 'pg.id', 'ASC'],
-    'id descending' => [['sort' => 'id', 'direction' => 'DESC'], 'pg.id', 'DESC'],
-    'title' => [['sort' => 'title'], 'pg.name', 'ASC'],
-    'code' => [['sort' => 'code', 'direction' => 'desc'], 'pg.gateway', 'DESC'],
-    'invalid sort falls back to default' => [['sort' => 'pg.gateway; DROP TABLE pay_gateway'], 'pg.gateway', 'ASC'],
-    'invalid direction falls back to ascending' => [['sort' => 'title', 'direction' => 'sideways'], 'pg.name', 'ASC'],
+    'id ascending' => [['sort' => 'id'], 'ORDER BY pg.id ASC', false],
+    'id descending' => [['sort' => 'id', 'direction' => 'DESC'], 'ORDER BY pg.id DESC', false],
+    'title' => [['sort' => 'title'], 'ORDER BY pg.name ASC, pg.id ASC', true],
+    'code' => [['sort' => 'code', 'direction' => 'desc'], 'ORDER BY pg.gateway DESC, pg.id DESC', true],
+    'invalid sort falls back to default' => [['sort' => 'pg.gateway; DROP TABLE pay_gateway'], 'ORDER BY pg.gateway ASC', false],
+    'invalid direction falls back to ascending' => [['sort' => 'title', 'direction' => 'sideways'], 'ORDER BY pg.name ASC, pg.id ASC', true],
 ]);

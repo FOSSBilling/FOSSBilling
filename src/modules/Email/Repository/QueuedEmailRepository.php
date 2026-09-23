@@ -49,11 +49,15 @@ class QueuedEmailRepository extends EntityRepository
         ]);
         if ($sort->isSorted()) {
             $qb->orderBy($sort->expression, $sort->direction);
+            if ($sort->expression !== 'q.id') {
+                $qb->addOrderBy('q.id', $sort->direction);
+            }
         } else {
             $qb->orderBy('q.priority', 'DESC');
+            $qb->addOrderBy('q.id', 'ASC');
         }
 
-        return $qb->addOrderBy('q.id', 'ASC');
+        return $qb;
     }
 
     /**

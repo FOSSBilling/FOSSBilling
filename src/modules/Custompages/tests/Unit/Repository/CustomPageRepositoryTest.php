@@ -58,22 +58,27 @@ test('get search query builder builds all supported filters', function (): void 
     ]);
 });
 
-test('sorts custom page search query', function (array $data, string $expectedOrder, string $expectedDirection): void {
+test('sorts custom page search query', function (array $data, string $expectedOrder, string $expectedDirection, ?string $expectedTieBreakerDirection): void {
     $queryBuilder = Mockery::mock(QueryBuilder::class);
     $queryBuilder->shouldReceive('orderBy')->with($expectedOrder, $expectedDirection)->once()->andReturn($queryBuilder);
+    if ($expectedTieBreakerDirection !== null) {
+        $queryBuilder->shouldReceive('addOrderBy')->with('p.id', $expectedTieBreakerDirection)->once()->andReturn($queryBuilder);
+    } else {
+        $queryBuilder->shouldReceive('addOrderBy')->never();
+    }
 
     $repository = Mockery::mock(CustomPageRepository::class)->makePartial();
     $repository->shouldReceive('createQueryBuilder')->with('p')->once()->andReturn($queryBuilder);
 
     expect($repository->getSearchQueryBuilder($data))->toBe($queryBuilder);
 })->with([
-    'title ascending' => [['sort' => 'title'], 'p.title', 'ASC'],
-    'title descending' => [['sort' => 'title', 'direction' => 'DESC'], 'p.title', 'DESC'],
-    'slug' => [['sort' => 'slug'], 'p.slug', 'ASC'],
-    'created at' => [['sort' => 'created_at', 'direction' => 'desc'], 'p.createdAt', 'DESC'],
-    'id' => [['sort' => 'id'], 'p.id', 'ASC'],
-    'invalid sort falls back to default' => [['sort' => 'p.title; DROP TABLE custom_pages'], 'p.id', 'DESC'],
-    'invalid direction falls back to ascending' => [['sort' => 'title', 'direction' => 'sideways'], 'p.title', 'ASC'],
+    'title ascending' => [['sort' => 'title'], 'p.title', 'ASC', 'ASC'],
+    'title descending' => [['sort' => 'title', 'direction' => 'DESC'], 'p.title', 'DESC', 'DESC'],
+    'slug' => [['sort' => 'slug'], 'p.slug', 'ASC', 'ASC'],
+    'created at' => [['sort' => 'created_at', 'direction' => 'desc'], 'p.createdAt', 'DESC', 'DESC'],
+    'id' => [['sort' => 'id'], 'p.id', 'ASC', null],
+    'invalid sort falls back to default' => [['sort' => 'p.title; DROP TABLE custom_pages'], 'p.id', 'DESC', null],
+    'invalid direction falls back to ascending' => [['sort' => 'title', 'direction' => 'sideways'], 'p.title', 'ASC', 'ASC'],
 ]);
 
 test('find one by slug excluding id builds slug and id predicates', function (): void {

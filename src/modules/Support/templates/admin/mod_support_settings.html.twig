@@ -164,7 +164,7 @@
                             {% set helpdesks = admin.support_helpdesk_get_list({ 'per_page': 25, 'page': request.page }|merge(request)) %}
                             {% for helpdesk in helpdesks.list %}
                                 <tr>
-                                    <td>{{ loop.index }}</td>
+                                    <td>{{ helpdesk.id }}</td>
                                     <td>
                                         <a href='{{ "support/helpdesk/#{helpdesk.id}"|url }}'>{{ helpdesk.name }}</a>
                                     </td>

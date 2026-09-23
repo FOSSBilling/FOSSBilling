@@ -106,6 +106,9 @@ class PromoRedemptionRepository extends EntityRepository
         ]);
         if ($sort->isSorted()) {
             $qb->orderBy($sort->expression, $sort->direction);
+            if ($sort->expression !== 'pr.id') {
+                $qb->addOrderBy('pr.id', $sort->direction);
+            }
         } else {
             $qb->orderBy('pr.id', 'DESC');
         }

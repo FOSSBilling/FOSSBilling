@@ -1793,7 +1793,11 @@ test('getSearchQuery applies allowlisted sort', function (): void {
     $svc->setDi($di);
 
     [$query] = $svc->getSearchQuery(['sort' => 'title', 'direction' => 'desc']);
-    expect($query)->toContain('ORDER BY co.title DESC');
+    expect($query)->toContain('ORDER BY co.title DESC, co.id DESC');
+
+    [$pkQuery] = $svc->getSearchQuery(['sort' => 'id', 'direction' => 'desc']);
+    expect($pkQuery)->toContain('ORDER BY co.id DESC');
+    expect($pkQuery)->not->toContain('co.id DESC, co.id DESC');
 
     [$defaultQuery] = $svc->getSearchQuery([]);
     expect($defaultQuery)->toContain('ORDER BY co.id DESC');
@@ -1810,7 +1814,11 @@ test('getOrderStatusSearchQuery applies allowlisted sort', function (): void {
     $svc->setDi($di);
 
     [$query] = $svc->getOrderStatusSearchQuery(['sort' => 'created_at']);
-    expect($query)->toContain('ORDER BY created_at ASC');
+    expect($query)->toContain('ORDER BY created_at ASC, id ASC');
+
+    [$pkQuery] = $svc->getOrderStatusSearchQuery(['sort' => 'id', 'direction' => 'desc']);
+    expect($pkQuery)->toContain('ORDER BY id DESC');
+    expect($pkQuery)->not->toContain('id DESC, id DESC');
 
     [$defaultQuery] = $svc->getOrderStatusSearchQuery([]);
     expect($defaultQuery)->toContain('ORDER BY id DESC');

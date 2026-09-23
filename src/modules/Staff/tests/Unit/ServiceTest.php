@@ -1254,7 +1254,11 @@ test('getSearchQuery applies allowlisted sort', function (): void {
     $service->setDi($di);
 
     [$query] = $service->getSearchQuery(['sort' => 'name', 'direction' => 'desc']);
-    expect($query)->toContain('ORDER BY name DESC');
+    expect($query)->toContain('ORDER BY name DESC, id DESC');
+
+    [$pkQuery] = $service->getSearchQuery(['sort' => 'id', 'direction' => 'desc']);
+    expect($pkQuery)->toContain('ORDER BY id DESC');
+    expect($pkQuery)->not->toContain('id DESC, id DESC');
 
     [$defaultQuery] = $service->getSearchQuery([]);
     expect($defaultQuery)->toContain('ORDER BY id ASC');
@@ -2225,7 +2229,11 @@ test('getActivityAdminHistorySearchQuery applies allowlisted sort', function ():
     $service->setDi($di);
 
     [$query] = $service->getActivityAdminHistorySearchQuery(['sort' => 'created_at', 'direction' => 'desc']);
-    expect($query)->toContain('ORDER BY m.created_at DESC');
+    expect($query)->toContain('ORDER BY m.created_at DESC, m.id DESC');
+
+    [$pkQuery] = $service->getActivityAdminHistorySearchQuery(['sort' => 'id', 'direction' => 'desc']);
+    expect($pkQuery)->toContain('ORDER BY m.id DESC');
+    expect($pkQuery)->not->toContain('m.id DESC, m.id DESC');
 
     [$defaultQuery] = $service->getActivityAdminHistorySearchQuery([]);
     expect($defaultQuery)->toContain('ORDER BY m.id DESC');

@@ -1531,36 +1531,43 @@ function tldServiceWithMockedQuery(Mockery\MockInterface $query): Service
     return $service;
 }
 
-test('sorts tld search query', function (array $data, string $expectedOrder, string $expectedDirection): void {
+test('sorts tld search query', function (array $data, string $expectedOrder, string $expectedDirection, ?string $expectedTieBreakerDirection): void {
     $query = Mockery::mock(QueryBuilder::class);
     $query->shouldReceive('leftJoin')->never();
     $query->shouldReceive('orderBy')->once()->with($expectedOrder, $expectedDirection)->andReturnSelf();
-    $query->shouldReceive('addOrderBy')->once()->with('t.id', 'ASC')->andReturnSelf();
+    if ($expectedTieBreakerDirection !== null) {
+        $query->shouldReceive('addOrderBy')->once()->with('t.id', $expectedTieBreakerDirection)->andReturnSelf();
+    } else {
+        $query->shouldReceive('addOrderBy')->never();
+    }
 
     $service = tldServiceWithMockedQuery($query);
 
     expect($service->tldGetSearchQuery($data))->toBe($query);
 })->with([
-    'tld ascending' => [['sort' => 'tld'], 't.tld', 'ASC'],
-    'tld descending' => [['sort' => 'tld', 'direction' => 'DESC'], 't.tld', 'DESC'],
-    'registration price' => [['sort' => 'price_registration', 'direction' => 'desc'], 't.priceRegistration', 'DESC'],
-    'renewal price' => [['sort' => 'price_renew'], 't.priceRenew', 'ASC'],
-    'transfer price' => [['sort' => 'price_transfer', 'direction' => 'DESC'], 't.priceTransfer', 'DESC'],
-    'id' => [['sort' => 'id'], 't.id', 'ASC'],
-    'invalid sort falls back to default' => [['sort' => 't.tld; DROP TABLE tld'], 't.tld', 'ASC'],
-    'invalid direction falls back to ascending' => [['sort' => 'tld', 'direction' => 'sideways'], 't.tld', 'ASC'],
+    'tld ascending' => [['sort' => 'tld'], 't.tld', 'ASC', 'ASC'],
+    'tld descending' => [['sort' => 'tld', 'direction' => 'DESC'], 't.tld', 'DESC', 'DESC'],
+    'registration price' => [['sort' => 'price_registration', 'direction' => 'desc'], 't.priceRegistration', 'DESC', 'DESC'],
+    'renewal price' => [['sort' => 'price_renew'], 't.priceRenew', 'ASC', 'ASC'],
+    'transfer price' => [['sort' => 'price_transfer', 'direction' => 'DESC'], 't.priceTransfer', 'DESC', 'DESC'],
+    'id' => [['sort' => 'id'], 't.id', 'ASC', null],
+    'invalid sort falls back to default' => [['sort' => 't.tld; DROP TABLE tld'], 't.tld', 'ASC', 'ASC'],
+    'invalid direction falls back to ascending' => [['sort' => 'tld', 'direction' => 'sideways'], 't.tld', 'ASC', 'ASC'],
 ]);
 
-test('sorts tld search query by registrar name with a join', function (): void {
+test('sorts tld search query by registrar name with a join', function (array $data, string $expectedDirection, string $expectedTieBreakerDirection): void {
     $query = Mockery::mock(QueryBuilder::class);
     $query->shouldReceive('leftJoin')->once()->with('t.registrar', 'r')->andReturnSelf();
-    $query->shouldReceive('orderBy')->once()->with('r.name', 'ASC')->andReturnSelf();
-    $query->shouldReceive('addOrderBy')->once()->with('t.id', 'ASC')->andReturnSelf();
+    $query->shouldReceive('orderBy')->once()->with('r.name', $expectedDirection)->andReturnSelf();
+    $query->shouldReceive('addOrderBy')->once()->with('t.id', $expectedTieBreakerDirection)->andReturnSelf();
 
     $service = tldServiceWithMockedQuery($query);
 
-    expect($service->tldGetSearchQuery(['sort' => 'registrar']))->toBe($query);
-});
+    expect($service->tldGetSearchQuery($data))->toBe($query);
+})->with([
+    'registrar ascending' => [['sort' => 'registrar'], 'ASC', 'ASC'],
+    'registrar descending' => [['sort' => 'registrar', 'direction' => 'DESC'], 'DESC', 'DESC'],
+]);
 
 test('finds all active tlds', function (): void {
     $service = new Service();
@@ -1840,11 +1847,15 @@ test('gets registrar search query', function (): void {
     expect($service->registrarGetSearchQuery([]))->toBe($query);
 });
 
-test('sorts registrar search query', function (array $data, string $expectedOrder, string $expectedDirection): void {
+test('sorts registrar search query', function (array $data, string $expectedOrder, string $expectedDirection, ?string $expectedTieBreakerDirection): void {
     $service = new Service();
     $query = Mockery::mock(QueryBuilder::class);
     $query->shouldReceive('orderBy')->once()->with($expectedOrder, $expectedDirection)->andReturnSelf();
-    $query->shouldReceive('addOrderBy')->once()->with('tr.id', 'ASC')->andReturnSelf();
+    if ($expectedTieBreakerDirection !== null) {
+        $query->shouldReceive('addOrderBy')->once()->with('tr.id', $expectedTieBreakerDirection)->andReturnSelf();
+    } else {
+        $query->shouldReceive('addOrderBy')->never();
+    }
 
     $registrarRepo = Mockery::mock(TldRegistrarRepository::class);
     $registrarRepo->shouldReceive('createQueryBuilder')->once()->with('tr')->andReturn($query);
@@ -1858,9 +1869,11 @@ test('sorts registrar search query', function (array $data, string $expectedOrde
 
     expect($service->registrarGetSearchQuery($data))->toBe($query);
 })->with([
-    'title descending' => [['sort' => 'title', 'direction' => 'DESC'], 'tr.name', 'DESC'],
-    'id' => [['sort' => 'id'], 'tr.id', 'ASC'],
-    'invalid sort falls back to default' => [['sort' => 'name'], 'tr.name', 'ASC'],
+    'title ascending' => [['sort' => 'title'], 'tr.name', 'ASC', 'ASC'],
+    'title descending' => [['sort' => 'title', 'direction' => 'DESC'], 'tr.name', 'DESC', 'DESC'],
+    'id' => [['sort' => 'id'], 'tr.id', 'ASC', null],
+    'id descending' => [['sort' => 'id', 'direction' => 'DESC'], 'tr.id', 'DESC', null],
+    'invalid sort falls back to default' => [['sort' => 'name'], 'tr.name', 'ASC', 'ASC'],
 ]);
 
 test('gets available registrars', function (): void {

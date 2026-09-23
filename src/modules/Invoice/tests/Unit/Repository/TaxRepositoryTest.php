@@ -60,17 +60,24 @@ function taxSearchDql(array $data = []): string
     return $entityManager->getRepository(Tax::class)->getSearchQueryBuilder($data)->getDQL();
 }
 
-test('getSearchQueryBuilder sorts by allowlisted columns', function (array $data, string $expectedOrder, string $expectedDirection): void {
-    expect(taxSearchDql($data))->toContain("ORDER BY {$expectedOrder} {$expectedDirection}");
+test('getSearchQueryBuilder sorts by allowlisted columns', function (array $data, string $expectedOrderBy, bool $expectsTieBreak): void {
+    $dql = taxSearchDql($data);
+
+    expect($dql)->toContain($expectedOrderBy);
+    if ($expectsTieBreak) {
+        expect($dql)->toContain(', t.id');
+    } else {
+        expect($dql)->not->toContain(', t.id');
+    }
 })->with([
-    'id ascending' => [['sort' => 'id'], 't.id', 'ASC'],
-    'id descending' => [['sort' => 'id', 'direction' => 'DESC'], 't.id', 'DESC'],
-    'name' => [['sort' => 'name'], 't.name', 'ASC'],
-    'country' => [['sort' => 'country', 'direction' => 'desc'], 't.country', 'DESC'],
-    'state' => [['sort' => 'state'], 't.state', 'ASC'],
-    'taxrate' => [['sort' => 'taxrate'], 't.taxrate', 'ASC'],
-    'created_at' => [['sort' => 'created_at'], 't.createdAt', 'ASC'],
-    'updated_at' => [['sort' => 'updated_at'], 't.updatedAt', 'ASC'],
-    'invalid sort falls back to default' => [['sort' => 't.id; DROP TABLE tax'], 't.id', 'DESC'],
-    'invalid direction falls back to ascending' => [['sort' => 'name', 'direction' => 'sideways'], 't.name', 'ASC'],
+    'id ascending' => [['sort' => 'id'], 'ORDER BY t.id ASC', false],
+    'id descending' => [['sort' => 'id', 'direction' => 'DESC'], 'ORDER BY t.id DESC', false],
+    'name' => [['sort' => 'name'], 'ORDER BY t.name ASC, t.id ASC', true],
+    'country' => [['sort' => 'country', 'direction' => 'desc'], 'ORDER BY t.country DESC, t.id DESC', true],
+    'state' => [['sort' => 'state'], 'ORDER BY t.state ASC, t.id ASC', true],
+    'taxrate' => [['sort' => 'taxrate'], 'ORDER BY t.taxrate ASC, t.id ASC', true],
+    'created_at' => [['sort' => 'created_at'], 'ORDER BY t.createdAt ASC, t.id ASC', true],
+    'updated_at' => [['sort' => 'updated_at'], 'ORDER BY t.updatedAt ASC, t.id ASC', true],
+    'invalid sort falls back to default' => [['sort' => 't.id; DROP TABLE tax'], 'ORDER BY t.id DESC', false],
+    'invalid direction falls back to ascending' => [['sort' => 'name', 'direction' => 'sideways'], 'ORDER BY t.name ASC, t.id ASC', true],
 ]);

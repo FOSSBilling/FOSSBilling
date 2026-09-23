@@ -119,6 +119,9 @@ class SubscriptionRepository extends EntityRepository
         ]);
         if ($sort->isSorted()) {
             $qb->orderBy($sort->expression, $sort->direction);
+            if ($sort->expression !== 's.id') {
+                $qb->addOrderBy('s.id', $sort->direction);
+            }
         } else {
             $qb->orderBy('s.id', 'DESC');
         }

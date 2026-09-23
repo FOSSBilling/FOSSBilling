@@ -156,6 +156,9 @@ class InvoiceRepository extends EntityRepository
         ]);
         if ($sort->isSorted()) {
             $qb->orderBy($sort->expression, $sort->direction);
+            if ($sort->expression !== 'i.id') {
+                $qb->addOrderBy('i.id', $sort->direction);
+            }
         } else {
             $qb->orderBy('i.id', 'DESC');
         }

@@ -31,20 +31,25 @@ test('getSearchQueryBuilder orders by title ascending with no filters', function
     expect($dql)->toContain('ORDER BY a.title ASC');
 });
 
-test('getSearchQueryBuilder sorts by allowlisted columns', function (array $data, string $expectedOrder, string $expectedDirection): void {
+test('getSearchQueryBuilder sorts by allowlisted columns', function (array $data, string $expectedOrderBy, bool $expectsTieBreak): void {
     $dql = kbArticleSearchEntityManager()->getRepository(KbArticle::class)->getSearchQueryBuilder($data)->getDQL();
 
-    expect($dql)->toContain("ORDER BY {$expectedOrder} {$expectedDirection}");
+    expect($dql)->toContain($expectedOrderBy);
+    if ($expectsTieBreak) {
+        expect($dql)->toContain(', a.id');
+    } else {
+        expect($dql)->not->toContain(', a.id');
+    }
 })->with([
-    'id ascending' => [['sort' => 'id'], 'a.id', 'ASC'],
-    'id descending' => [['sort' => 'id', 'direction' => 'DESC'], 'a.id', 'DESC'],
-    'title' => [['sort' => 'title'], 'a.title', 'ASC'],
-    'slug' => [['sort' => 'slug'], 'a.slug', 'ASC'],
-    'status' => [['sort' => 'status', 'direction' => 'desc'], 'a.status', 'DESC'],
-    'views' => [['sort' => 'views'], 'a.views', 'ASC'],
-    'category' => [['sort' => 'category'], 'c.title', 'ASC'],
-    'created_at' => [['sort' => 'created_at'], 'a.createdAt', 'ASC'],
-    'updated_at' => [['sort' => 'updated_at'], 'a.updatedAt', 'ASC'],
-    'invalid sort falls back to default' => [['sort' => 'a.id; DROP TABLE kb_article'], 'a.title', 'ASC'],
-    'invalid direction falls back to ascending' => [['sort' => 'views', 'direction' => 'sideways'], 'a.views', 'ASC'],
+    'id ascending' => [['sort' => 'id'], 'ORDER BY a.id ASC', false],
+    'id descending' => [['sort' => 'id', 'direction' => 'DESC'], 'ORDER BY a.id DESC', false],
+    'title' => [['sort' => 'title'], 'ORDER BY a.title ASC, a.id ASC', true],
+    'slug' => [['sort' => 'slug'], 'ORDER BY a.slug ASC, a.id ASC', true],
+    'status' => [['sort' => 'status', 'direction' => 'desc'], 'ORDER BY a.status DESC, a.id DESC', true],
+    'views' => [['sort' => 'views'], 'ORDER BY a.views ASC, a.id ASC', true],
+    'category' => [['sort' => 'category'], 'ORDER BY c.title ASC, a.id ASC', true],
+    'created_at' => [['sort' => 'created_at'], 'ORDER BY a.createdAt ASC, a.id ASC', true],
+    'updated_at' => [['sort' => 'updated_at'], 'ORDER BY a.updatedAt ASC, a.id ASC', true],
+    'invalid sort falls back to default' => [['sort' => 'a.id; DROP TABLE kb_article'], 'ORDER BY a.title ASC', false],
+    'invalid direction falls back to ascending' => [['sort' => 'views', 'direction' => 'sideways'], 'ORDER BY a.views ASC, a.id ASC', true],
 ]);

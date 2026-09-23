@@ -31,17 +31,22 @@ test('getSearchQueryBuilder orders by title ascending with no filters', function
     expect($dql)->toContain('ORDER BY c.title ASC');
 });
 
-test('getSearchQueryBuilder sorts by allowlisted columns', function (array $data, string $expectedOrder, string $expectedDirection): void {
+test('getSearchQueryBuilder sorts by allowlisted columns', function (array $data, string $expectedOrderBy, bool $expectsTieBreak): void {
     $dql = kbArticleCategorySearchEntityManager()->getRepository(KbArticleCategory::class)->getSearchQueryBuilder($data)->getDQL();
 
-    expect($dql)->toContain("ORDER BY {$expectedOrder} {$expectedDirection}");
+    expect($dql)->toContain($expectedOrderBy);
+    if ($expectsTieBreak) {
+        expect($dql)->toContain(', c.id');
+    } else {
+        expect($dql)->not->toContain(', c.id');
+    }
 })->with([
-    'id ascending' => [['sort' => 'id'], 'c.id', 'ASC'],
-    'id descending' => [['sort' => 'id', 'direction' => 'DESC'], 'c.id', 'DESC'],
-    'title' => [['sort' => 'title'], 'c.title', 'ASC'],
-    'slug' => [['sort' => 'slug', 'direction' => 'desc'], 'c.slug', 'DESC'],
-    'created_at' => [['sort' => 'created_at'], 'c.createdAt', 'ASC'],
-    'updated_at' => [['sort' => 'updated_at'], 'c.updatedAt', 'ASC'],
-    'invalid sort falls back to default' => [['sort' => 'c.id; DROP TABLE kb_article_category'], 'c.title', 'ASC'],
-    'invalid direction falls back to ascending' => [['sort' => 'slug', 'direction' => 'sideways'], 'c.slug', 'ASC'],
+    'id ascending' => [['sort' => 'id'], 'ORDER BY c.id ASC', false],
+    'id descending' => [['sort' => 'id', 'direction' => 'DESC'], 'ORDER BY c.id DESC', false],
+    'title' => [['sort' => 'title'], 'ORDER BY c.title ASC, c.id ASC', true],
+    'slug' => [['sort' => 'slug', 'direction' => 'desc'], 'ORDER BY c.slug DESC, c.id DESC', true],
+    'created_at' => [['sort' => 'created_at'], 'ORDER BY c.createdAt ASC, c.id ASC', true],
+    'updated_at' => [['sort' => 'updated_at'], 'ORDER BY c.updatedAt ASC, c.id ASC', true],
+    'invalid sort falls back to default' => [['sort' => 'c.id; DROP TABLE kb_article_category'], 'ORDER BY c.title ASC', false],
+    'invalid direction falls back to ascending' => [['sort' => 'slug', 'direction' => 'sideways'], 'ORDER BY c.slug ASC, c.id ASC', true],
 ]);

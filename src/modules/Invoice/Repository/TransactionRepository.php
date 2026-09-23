@@ -142,6 +142,9 @@ class TransactionRepository extends EntityRepository
         ]);
         if ($sort->isSorted()) {
             $qb->orderBy($sort->expression, $sort->direction);
+            if ($sort->expression !== 't.id') {
+                $qb->addOrderBy('t.id', $sort->direction);
+            }
         } else {
             $qb->orderBy('t.id', 'DESC');
         }

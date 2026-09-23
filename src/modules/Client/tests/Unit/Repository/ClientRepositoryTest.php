@@ -86,26 +86,31 @@ test('builds filtered client name pairs from entities', function (): void {
     ]);
 });
 
-test('sorts client search query', function (array $data, string $expectedOrder, string $expectedDirection): void {
+test('sorts client search query', function (array $data, string $expectedOrder, string $expectedDirection, ?string $expectedTieBreakerDirection): void {
     $queryBuilder = Mockery::mock(QueryBuilder::class);
     $queryBuilder->shouldReceive('orderBy')->once()->with($expectedOrder, $expectedDirection)->andReturn($queryBuilder);
+    if ($expectedTieBreakerDirection !== null) {
+        $queryBuilder->shouldReceive('addOrderBy')->once()->with('c.id', $expectedTieBreakerDirection)->andReturn($queryBuilder);
+    } else {
+        $queryBuilder->shouldReceive('addOrderBy')->never();
+    }
 
     $repository = Mockery::mock(ClientRepository::class)->makePartial();
     $repository->shouldReceive('createQueryBuilder')->once()->with('c')->andReturn($queryBuilder);
 
     expect($repository->getSearchQueryBuilder($data))->toBe($queryBuilder);
 })->with([
-    'email ascending' => [['sort' => 'email'], 'c.email', 'ASC'],
-    'email descending' => [['sort' => 'email', 'direction' => 'DESC'], 'c.email', 'DESC'],
-    'first name' => [['sort' => 'first_name', 'direction' => 'desc'], 'c.firstName', 'DESC'],
-    'last name' => [['sort' => 'last_name'], 'c.lastName', 'ASC'],
-    'company' => [['sort' => 'company'], 'c.company', 'ASC'],
-    'status' => [['sort' => 'status'], 'c.status', 'ASC'],
-    'created at' => [['sort' => 'created_at'], 'c.createdAt', 'ASC'],
-    'updated at' => [['sort' => 'updated_at', 'direction' => 'DESC'], 'c.updatedAt', 'DESC'],
-    'id' => [['sort' => 'id'], 'c.id', 'ASC'],
-    'invalid sort falls back to default' => [['sort' => 'c.email; DROP TABLE client'], 'c.createdAt', 'DESC'],
-    'invalid direction falls back to ascending' => [['sort' => 'email', 'direction' => 'sideways'], 'c.email', 'ASC'],
+    'email ascending' => [['sort' => 'email'], 'c.email', 'ASC', 'ASC'],
+    'email descending' => [['sort' => 'email', 'direction' => 'DESC'], 'c.email', 'DESC', 'DESC'],
+    'first name' => [['sort' => 'first_name', 'direction' => 'desc'], 'c.firstName', 'DESC', 'DESC'],
+    'last name' => [['sort' => 'last_name'], 'c.lastName', 'ASC', 'ASC'],
+    'company' => [['sort' => 'company'], 'c.company', 'ASC', 'ASC'],
+    'status' => [['sort' => 'status'], 'c.status', 'ASC', 'ASC'],
+    'created at' => [['sort' => 'created_at'], 'c.createdAt', 'ASC', 'ASC'],
+    'updated at' => [['sort' => 'updated_at', 'direction' => 'DESC'], 'c.updatedAt', 'DESC', 'DESC'],
+    'id' => [['sort' => 'id'], 'c.id', 'ASC', null],
+    'invalid sort falls back to default' => [['sort' => 'c.email; DROP TABLE client'], 'c.createdAt', 'DESC', null],
+    'invalid direction falls back to ascending' => [['sort' => 'email', 'direction' => 'sideways'], 'c.email', 'ASC', 'ASC'],
 ]);
 
 test('loads list balances and group titles in one batch', function (): void {

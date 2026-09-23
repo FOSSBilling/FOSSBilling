@@ -826,7 +826,11 @@ test('get server search query applies allowlisted sort', function (): void {
     $service = new Service();
 
     [$query] = $service->getServersSearchQuery(['sort' => 'name', 'direction' => 'desc']);
-    expect($query)->toContain('ORDER BY name DESC');
+    expect($query)->toContain('ORDER BY name DESC, id DESC');
+
+    [$pkQuery] = $service->getServersSearchQuery(['sort' => 'id', 'direction' => 'desc']);
+    expect($pkQuery)->toContain('ORDER BY id DESC');
+    expect($pkQuery)->not->toContain('id DESC, id DESC');
 
     [$defaultQuery] = $service->getServersSearchQuery([]);
     expect($defaultQuery)->toContain('ORDER BY id ASC');
@@ -842,7 +846,11 @@ test('get accounts search query applies allowlisted sort', function (): void {
     [$query, $params] = $service->getAccountsSearchQuery(['server_id' => 3, 'sort' => 'username']);
     expect($query)->toContain('WHERE service_hosting_server_id = :server_id');
     expect($params)->toEqual(['server_id' => 3]);
-    expect($query)->toContain('ORDER BY username ASC');
+    expect($query)->toContain('ORDER BY username ASC, id ASC');
+
+    [$pkQuery] = $service->getAccountsSearchQuery(['sort' => 'id', 'direction' => 'desc']);
+    expect($pkQuery)->toContain('ORDER BY id DESC');
+    expect($pkQuery)->not->toContain('id DESC, id DESC');
 
     [$defaultQuery] = $service->getAccountsSearchQuery([]);
     expect($defaultQuery)->toContain('ORDER BY id ASC');
@@ -1036,7 +1044,11 @@ test('get hp search query applies allowlisted sort', function (): void {
     $service = new Service();
 
     [$query] = $service->getHpSearchQuery(['sort' => 'name', 'direction' => 'desc']);
-    expect($query)->toContain('ORDER BY name DESC');
+    expect($query)->toContain('ORDER BY name DESC, id DESC');
+
+    [$pkQuery] = $service->getHpSearchQuery(['sort' => 'id', 'direction' => 'desc']);
+    expect($pkQuery)->toContain('ORDER BY id DESC');
+    expect($pkQuery)->not->toContain('id DESC, id DESC');
 
     [$defaultQuery] = $service->getHpSearchQuery([]);
     expect($defaultQuery)->toContain('ORDER BY id asc');

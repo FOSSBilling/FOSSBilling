@@ -277,7 +277,11 @@ test('getSearchQuery applies allowlisted sort', function (): void {
     $service = new Box\Mod\Client\Service();
 
     [$query] = $service->getSearchQuery(['sort' => 'email', 'direction' => 'asc']);
-    expect($query)->toContain('ORDER BY c.email ASC');
+    expect($query)->toContain('ORDER BY c.email ASC, c.id ASC');
+
+    [$pkQuery] = $service->getSearchQuery(['sort' => 'id', 'direction' => 'asc']);
+    expect($pkQuery)->toContain('ORDER BY c.id ASC');
+    expect($pkQuery)->not->toContain('c.id ASC, c.id ASC');
 
     [$defaultQuery] = $service->getSearchQuery([]);
     expect($defaultQuery)->toContain('ORDER BY c.created_at desc');
@@ -452,7 +456,11 @@ test('getBalanceSearchQuery applies allowlisted sort', function (): void {
     $clientBalanceService->setDi($di);
 
     [$sql] = $clientBalanceService->getSearchQuery(['sort' => 'amount', 'direction' => 'desc']);
-    expect($sql)->toContain('ORDER BY m.amount DESC');
+    expect($sql)->toContain('ORDER BY m.amount DESC, m.id DESC');
+
+    [$pkSql] = $clientBalanceService->getSearchQuery(['sort' => 'id', 'direction' => 'desc']);
+    expect($pkSql)->toContain('ORDER BY m.id DESC');
+    expect($pkSql)->not->toContain('m.id DESC, m.id DESC');
 
     [$defaultSql] = $clientBalanceService->getSearchQuery([]);
     expect($defaultSql)->toContain('ORDER BY m.id DESC');
@@ -559,7 +567,11 @@ test('getHistorySearchQuery applies allowlisted sort', function (): void {
     $service->setDi($di);
 
     [$sql] = $service->getHistorySearchQuery(['sort' => 'created_at', 'direction' => 'desc']);
-    expect($sql)->toContain('ORDER BY ach.created_at DESC');
+    expect($sql)->toContain('ORDER BY ach.created_at DESC, ach.id DESC');
+
+    [$pkSql] = $service->getHistorySearchQuery(['sort' => 'id', 'direction' => 'desc']);
+    expect($pkSql)->toContain('ORDER BY ach.id DESC');
+    expect($pkSql)->not->toContain('ach.id DESC, ach.id DESC');
 
     [$defaultSql] = $service->getHistorySearchQuery([]);
     expect($defaultSql)->toContain('ORDER BY ach.id desc');

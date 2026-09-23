@@ -75,3 +75,24 @@ test('supports custom parameter names', function (): void {
         ->and($sort->sortParam)->toBe('registrar_sort')
         ->and($sort->directionParam)->toBe('registrar_direction');
 });
+
+test('appends the tie-breaker in the same direction', function (): void {
+    $sort = FOSSBilling\SortOptions::fromArray(
+        ['sort' => 'status', 'direction' => 'DESC'],
+        ['id' => 'm.id', 'status' => 'm.status']
+    );
+
+    expect($sort->toOrderByClause('m.id'))->toBe('m.status DESC, m.id DESC');
+});
+
+test('skips the tie-breaker when it duplicates the primary expression', function (): void {
+    $sort = FOSSBilling\SortOptions::fromArray(['sort' => 'id'], ['id' => 'm.id']);
+
+    expect($sort->toOrderByClause('m.id'))->toBe('m.id ASC');
+});
+
+test('tie-breaker is null-safe when nothing was requested', function (): void {
+    $sort = FOSSBilling\SortOptions::fromArray(['sort' => 'bogus'], ['id' => 'm.id']);
+
+    expect($sort->toOrderByClause('m.id'))->toBeNull();
+});

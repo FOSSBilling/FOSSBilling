@@ -78,6 +78,7 @@ test('gets search query applies allowlisted sort', function (): void {
 
     [$query] = $service->getSearchQuery(['sort' => 'id', 'direction' => 'desc']);
     expect($query)->toContain('ORDER BY cart.id DESC');
+    expect($query)->not->toContain('cart.id DESC, cart.id DESC');
 
     [$defaultQuery] = $service->getSearchQuery([]);
     expect($defaultQuery)->toContain('ORDER BY cart.id ASC');

@@ -151,6 +151,25 @@ test('sortable th partial supports defaults with custom parameter names', functi
         ->not->toContain('#selector');
 });
 
+test('sortable th partial ignores the default direction when the request names a sort key', function (): void {
+    $html = (new StrictTemplateRenderer())->renderTemplate(
+        PATH_THEMES . '/default/admin/html/partial_sortable_th.html.twig',
+        [
+            'request' => sortableThRequest(['sort' => 'tld']),
+            'label' => 'TLD',
+            'sort_key' => 'tld',
+            'url' => 'servicedomain',
+            'default_sort' => 'created_at',
+            'default_direction' => 'DESC',
+        ],
+        emailMode: false,
+    );
+
+    expect($html)->toContain('aria-sort="ascending"')
+        ->toContain('#chevron-up')
+        ->not->toContain('#chevron-down');
+});
+
 test('sortable th partial marks an ascending column with the up indicator', function (): void {
     $html = (new StrictTemplateRenderer())->renderTemplate(
         PATH_THEMES . '/default/admin/html/partial_sortable_th.html.twig',
