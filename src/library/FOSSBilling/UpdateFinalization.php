@@ -133,6 +133,11 @@ class UpdateFinalization implements InjectionAwareInterface
             $state = $this->ensureCurrentVersionFinalization();
             if (($state['status'] ?? null) === self::STATUS_PENDING) {
                 $this->finalizeUpdateLocked($state);
+            } else {
+                // No version change (e.g. a code-only deploy with new entity columns), so no
+                // finalization runs - the hash-gated ambient sync covers that drift instead.
+                // @see https://github.com/FOSSBilling/FOSSBilling/issues/4392
+                $this->createPatcher()->ensureSchemaInSync();
             }
         });
     }

@@ -1242,15 +1242,24 @@ function withDbDriverConfig(array $dbConfig, Closure $callback): void
  * theme-migration calls' specific SQL/params - only that they don't blow up an otherwise
  * unrelated PDO mock, since migrateThemePackageLayout() now runs unconditionally regardless of
  * driver (see the dedicated tests above asserting its exact SQL/params).
+ *
+ * Also tolerates seedInvoiceNoteSettings() and storeSchemaMetadataHash() bookkeeping: both run
+ * unconditionally on every platform (portable check-then-write SQL, no MySQL-only syntax), so
+ * any applyCorePatches() test would trip over them otherwise. fetchColumn() reports "missing"
+ * so the seed path exercises its INSERT branch.
  */
 function mockPdoAllowingThemeMigrationCalls(): Mockery\MockInterface
 {
     $statement = Mockery::mock(PDOStatement::class);
     $statement->shouldReceive('execute')->andReturnTrue();
+    $statement->shouldReceive('fetchColumn')->andReturn(false);
 
     $pdo = Mockery::mock(PDO::class);
     $pdo->shouldReceive('prepare')
         ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'UPDATE setting') || str_starts_with($sql, 'UPDATE extension_meta')))
+        ->andReturn($statement);
+    $pdo->shouldReceive('prepare')
+        ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'SELECT value FROM setting') || str_starts_with($sql, 'INSERT INTO setting')))
         ->andReturn($statement);
 
     return $pdo;
@@ -1380,6 +1389,15 @@ test('applyCorePatches migrates the theme setting values on a non-MySQL driver, 
             ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'UPDATE extension_meta')))
             ->andReturn($extensionMetaStatement);
 
+        // seedInvoiceNoteSettings() also runs unconditionally from applyCorePatches() - allow
+        // its check-then-insert bookkeeping without asserting on it here.
+        $seedStatement = Mockery::mock(PDOStatement::class);
+        $seedStatement->shouldReceive('execute')->andReturnTrue();
+        $seedStatement->shouldReceive('fetchColumn')->andReturn(false);
+        $pdo->shouldReceive('prepare')
+            ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'SELECT value FROM setting') || str_starts_with($sql, 'INSERT INTO setting')))
+            ->andReturn($seedStatement);
+
         $di = new Pimple\Container();
         $di['pdo'] = $pdo;
         $di['logger'] = new Tests\Helpers\TestLogger();
@@ -1418,6 +1436,15 @@ test('applyCorePatches migrates saved theme settings/presets in extension_meta o
         $pdo->shouldReceive('prepare')
             ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'UPDATE setting')))
             ->andReturn($otherStatement);
+
+        // seedInvoiceNoteSettings() also runs unconditionally from applyCorePatches() - allow
+        // its check-then-insert bookkeeping without asserting on it here.
+        $seedStatement = Mockery::mock(PDOStatement::class);
+        $seedStatement->shouldReceive('execute')->andReturnTrue();
+        $seedStatement->shouldReceive('fetchColumn')->andReturn(false);
+        $pdo->shouldReceive('prepare')
+            ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'SELECT value FROM setting') || str_starts_with($sql, 'INSERT INTO setting')))
+            ->andReturn($seedStatement);
 
         $di = new Pimple\Container();
         $di['pdo'] = $pdo;
@@ -1468,13 +1495,17 @@ test('applyCorePatches also runs a portable schema sync after legacy patches on 
         // The legacy patch loop still needs a patch level to compare against - report the latest
         // one so getPatches() finds nothing pending and the loop body never runs. That isolates
         // this test to proving the sync step runs afterward, not re-testing the patches themselves.
+        // A bare mock (not mockPdoAllowingThemeMigrationCalls(), whose matchers would shadow it)
+        // answers every prepare with the same stub: fetchColumn() always reports the patch level
+        // (truthy), so the unconditional seedInvoiceNoteSettings() skips its inserts and
+        // storeSchemaMetadataHash() takes its UPDATE branch - all harmless here.
         $latestPatchLevel = (new UpdatePatcher())->latestPatchLevel();
         $statement = Mockery::mock(PDOStatement::class);
-        $statement->shouldReceive('execute')->once()->andReturn(true);
-        $statement->shouldReceive('fetchColumn')->once()->andReturn((string) $latestPatchLevel);
+        $statement->shouldReceive('execute')->andReturn(true);
+        $statement->shouldReceive('fetchColumn')->andReturn((string) $latestPatchLevel);
 
-        $pdo = mockPdoAllowingThemeMigrationCalls();
-        $pdo->shouldReceive('prepare')->once()->andReturn($statement);
+        $pdo = Mockery::mock(PDO::class);
+        $pdo->shouldReceive('prepare')->andReturn($statement);
 
         $di = new Pimple\Container();
         $di['pdo'] = $pdo;
@@ -1752,4 +1783,244 @@ test('news post description patch is a no-op when the column already exists', fu
     $patcher = new UpdatePatcher();
     $patcher->setDi($di);
     (new ReflectionMethod($patcher, 'patch117'))->invoke($patcher);
+});
+
+test('credit and debit note patch follows the news post description patch', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 118);
+
+    expect($patches)->toHaveKey(119)
+        ->and($patches[119][1])->toBe('patch119');
+});
+
+test('credit and debit note patch adds the missing columns and indexes for existing installs', function (): void {
+    // Regression test for https://github.com/FOSSBilling/FOSSBilling/issues/4392: the
+    // credit/debit-note releases added entity columns with no MySQL patch, so installs that
+    // never ran the ambient schema sync crash on invoice listings with "Unknown column
+    // 'credit_note_for_invoice_id'".
+    $invoiceColumnsA = Mockery::mock(PDOStatement::class);
+    $invoiceColumnsA->expects('execute')->with([])->andReturnTrue();
+    $invoiceColumnsA->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([]);
+
+    $invoiceColumnsB = Mockery::mock(PDOStatement::class);
+    $invoiceColumnsB->expects('execute')->with([])->andReturnTrue();
+    $invoiceColumnsB->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([]);
+
+    $invoiceIndexesA = Mockery::mock(PDOStatement::class);
+    $invoiceIndexesA->expects('execute')->with([])->andReturnTrue();
+    $invoiceIndexesA->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([]);
+
+    $invoiceIndexesB = Mockery::mock(PDOStatement::class);
+    $invoiceIndexesB->expects('execute')->with([])->andReturnTrue();
+    $invoiceIndexesB->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([]);
+
+    $itemColumns = Mockery::mock(PDOStatement::class);
+    $itemColumns->expects('execute')->with([])->andReturnTrue();
+    $itemColumns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([]);
+
+    $addCreditColumn = Mockery::mock(PDOStatement::class);
+    $addCreditColumn->expects('execute')->with([])->andReturnTrue();
+    $addCreditIndex = Mockery::mock(PDOStatement::class);
+    $addCreditIndex->expects('execute')->with([])->andReturnTrue();
+    $addDebitColumn = Mockery::mock(PDOStatement::class);
+    $addDebitColumn->expects('execute')->with([])->andReturnTrue();
+    $addDebitIndex = Mockery::mock(PDOStatement::class);
+    $addDebitIndex->expects('execute')->with([])->andReturnTrue();
+    $addRefundedItemColumn = Mockery::mock(PDOStatement::class);
+    $addRefundedItemColumn->expects('execute')->with([])->andReturnTrue();
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `invoice`')->twice()->andReturn($invoiceColumnsA, $invoiceColumnsB);
+    $pdo->expects('prepare')->with('SHOW INDEX FROM `invoice`')->twice()->andReturn($invoiceIndexesA, $invoiceIndexesB);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `invoice_item`')->once()->andReturn($itemColumns);
+    $pdo->expects('prepare')
+        ->with('ALTER TABLE `invoice` ADD COLUMN `credit_note_for_invoice_id` bigint(20) DEFAULT NULL AFTER `status`')
+        ->andReturn($addCreditColumn);
+    $pdo->expects('prepare')
+        ->with('ALTER TABLE `invoice` ADD INDEX `invoice_credit_note_for_idx` (`credit_note_for_invoice_id`)')
+        ->andReturn($addCreditIndex);
+    $pdo->expects('prepare')
+        ->with('ALTER TABLE `invoice` ADD COLUMN `debit_note_for_invoice_id` bigint(20) DEFAULT NULL AFTER `credit_note_for_invoice_id`')
+        ->andReturn($addDebitColumn);
+    $pdo->expects('prepare')
+        ->with('ALTER TABLE `invoice` ADD INDEX `invoice_debit_note_for_idx` (`debit_note_for_invoice_id`)')
+        ->andReturn($addDebitIndex);
+    $pdo->expects('prepare')
+        ->with('ALTER TABLE `invoice_item` ADD COLUMN `refunded_item_id` bigint(20) DEFAULT NULL AFTER `rel_id`')
+        ->andReturn($addRefundedItemColumn);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch119'))->invoke($patcher);
+});
+
+test('credit and debit note patch is a no-op when the columns and indexes already exist', function (): void {
+    $invoiceColumnsA = Mockery::mock(PDOStatement::class);
+    $invoiceColumnsA->expects('execute')->with([])->andReturnTrue();
+    $invoiceColumnsA->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['Field' => 'credit_note_for_invoice_id'],
+        ['Field' => 'debit_note_for_invoice_id'],
+    ]);
+
+    $invoiceColumnsB = Mockery::mock(PDOStatement::class);
+    $invoiceColumnsB->expects('execute')->with([])->andReturnTrue();
+    $invoiceColumnsB->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['Field' => 'credit_note_for_invoice_id'],
+        ['Field' => 'debit_note_for_invoice_id'],
+    ]);
+
+    $invoiceIndexesA = Mockery::mock(PDOStatement::class);
+    $invoiceIndexesA->expects('execute')->with([])->andReturnTrue();
+    $invoiceIndexesA->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['Key_name' => 'invoice_credit_note_for_idx'],
+        ['Key_name' => 'invoice_debit_note_for_idx'],
+    ]);
+
+    $invoiceIndexesB = Mockery::mock(PDOStatement::class);
+    $invoiceIndexesB->expects('execute')->with([])->andReturnTrue();
+    $invoiceIndexesB->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['Key_name' => 'invoice_credit_note_for_idx'],
+        ['Key_name' => 'invoice_debit_note_for_idx'],
+    ]);
+
+    $itemColumns = Mockery::mock(PDOStatement::class);
+    $itemColumns->expects('execute')->with([])->andReturnTrue();
+    $itemColumns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([['Field' => 'refunded_item_id']]);
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `invoice`')->twice()->andReturn($invoiceColumnsA, $invoiceColumnsB);
+    $pdo->expects('prepare')->with('SHOW INDEX FROM `invoice`')->twice()->andReturn($invoiceIndexesA, $invoiceIndexesB);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `invoice_item`')->once()->andReturn($itemColumns);
+    $pdo->shouldNotReceive('prepare')->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'ALTER TABLE')));
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch119'))->invoke($patcher);
+});
+
+test('invoice note settings seeding inserts missing rows without touching customized values', function (): void {
+    $selectSeries = Mockery::mock(PDOStatement::class);
+    $selectSeries->expects('execute')->with(['param' => 'invoice_dn_series'])->andReturnTrue();
+    $selectSeries->expects('fetchColumn')->andReturn(false);
+
+    $selectNumber = Mockery::mock(PDOStatement::class);
+    $selectNumber->expects('execute')->with(['param' => 'invoice_dn_starting_number'])->andReturnTrue();
+    $selectNumber->expects('fetchColumn')->andReturn('5');
+
+    $insert = Mockery::mock(PDOStatement::class);
+    $insert->expects('execute')->with(Mockery::on(function (array $params): bool {
+        expect($params['param'])->toBe('invoice_dn_series')
+            ->and($params['value'])->toBe('DN-');
+
+        return true;
+    }))->andReturnTrue();
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')
+        ->with('SELECT value FROM setting WHERE param = :param')
+        ->twice()
+        ->andReturn($selectSeries, $selectNumber);
+    $pdo->expects('prepare')
+        ->with('INSERT INTO setting (param, value, public, created_at, updated_at) VALUES (:param, :value, 0, :created_at, :updated_at)')
+        ->once()
+        ->andReturn($insert);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'seedInvoiceNoteSettings'))->invoke($patcher);
+});
+
+test('ensureSchemaInSync does nothing without an entity manager', function (): void {
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->shouldNotReceive('prepare');
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+
+    expect($patcher->ensureSchemaInSync())->toBeFalse();
+});
+
+test('ensureSchemaInSync logs, rather than throws, when the database is unreachable', function (): void {
+    $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $entityManager = FOSSBilling\Doctrine\EntityManagerFactory::create($connection);
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->shouldReceive('prepare')->andThrow(new RuntimeException('connection refused'));
+
+    $logger = new Tests\Helpers\TestLogger();
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+    $di['em'] = $entityManager;
+    $di['logger'] = $logger;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+
+    expect($patcher->ensureSchemaInSync())->toBeFalse();
+
+    $errorCalls = array_values(array_filter($logger->calls, static fn (array $call): bool => $call['method'] === 'error'));
+    expect($errorCalls)->not->toBe([])
+        ->and($errorCalls[0]['params'][0])->toContain('Ambient schema sync failed');
+});
+
+test('ensureSchemaInSync restores note columns missing from an older schema, then goes quiet', function (): void {
+    // End-to-end upgrade path for https://github.com/FOSSBilling/FOSSBilling/issues/4392:
+    // current entity metadata against a live schema predating the credit/debit-note releases.
+    // A file-backed SQLite database is shared between the legacy PDO service (hash + settings
+    // bookkeeping) and the Doctrine connection (schema sync), like production shares MySQL.
+    $dbFile = Path::join(sys_get_temp_dir(), 'fossbilling-schema-sync-' . bin2hex(random_bytes(8)) . '.sqlite');
+
+    try {
+        $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $dbFile]);
+        $entityManager = FOSSBilling\Doctrine\EntityManagerFactory::create($connection);
+        FOSSBilling\Doctrine\SchemaInstaller::createSchema($entityManager);
+
+        $connection->executeStatement('DROP INDEX invoice_credit_note_for_idx');
+        $connection->executeStatement('DROP INDEX invoice_debit_note_for_idx');
+        $connection->executeStatement('ALTER TABLE invoice DROP COLUMN credit_note_for_invoice_id');
+        $connection->executeStatement('ALTER TABLE invoice DROP COLUMN debit_note_for_invoice_id');
+        $connection->executeStatement('ALTER TABLE invoice_item DROP COLUMN refunded_item_id');
+
+        $columnNames = static fn (string $table): array => array_column(
+            $connection->fetchAllAssociative("PRAGMA table_info({$table})"),
+            'name'
+        );
+        expect($columnNames('invoice'))->not->toContain('credit_note_for_invoice_id');
+
+        $pdo = new PDO('sqlite:' . $dbFile);
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+        $di = new Pimple\Container();
+        $di['pdo'] = $pdo;
+        $di['em'] = $entityManager;
+        $di['logger'] = new Tests\Helpers\TestLogger();
+
+        $patcher = new UpdatePatcher();
+        $patcher->setDi($di);
+
+        expect($patcher->ensureSchemaInSync())->toBeTrue()
+            ->and($columnNames('invoice'))->toContain('credit_note_for_invoice_id', 'debit_note_for_invoice_id')
+            ->and($columnNames('invoice_item'))->toContain('refunded_item_id');
+
+        // Debit-note settings rows an upgrade would otherwise never receive.
+        expect($pdo->query("SELECT value FROM setting WHERE param = 'invoice_dn_series'")->fetchColumn())->toBe('DN-')
+            ->and($pdo->query("SELECT value FROM setting WHERE param = 'invoice_dn_starting_number'")->fetchColumn())->toBe('1');
+
+        // The recorded hash now matches, so the next request is a single-SELECT no-op.
+        expect($patcher->ensureSchemaInSync())->toBeFalse();
+    } finally {
+        (new Filesystem())->remove($dbFile);
+    }
 });
