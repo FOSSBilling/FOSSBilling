@@ -127,9 +127,8 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         $api = $this->di['api_admin'];
         $invoice = $api->invoice_get(['id' => $id]);
 
-        // Product picked for the attach-product card. Loaded here (rather than
-        // in Twig) so an unknown id degrades to no selection instead of
-        // breaking the whole invoice page.
+        // Loaded here rather than in Twig so an unknown id degrades to no
+        // selection instead of breaking the whole invoice page.
         $attachProduct = null;
         $attachProductId = $app->getRequest()->query->get('attach_product_id');
         if ($attachProductId !== null && (string) $attachProductId !== '') {

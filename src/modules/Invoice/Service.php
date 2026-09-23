@@ -1905,9 +1905,8 @@ class Service implements InjectionAwareInterface
             if (!$state['approved'] || $state['status'] !== Invoice::STATUS_UNPAID) {
                 throw new InformationException('Only approved unpaid invoices can be reissued');
             }
-            // Re-read through the repository: the entity getter above was
-            // already narrowed by the pre-lock check, while the row may have
-            // changed under us.
+            // Re-check against the locked row, which may have changed while
+            // waiting on the lock.
             $locked = $this->di['em']->getRepository(Invoice::class)->find($original->getId());
             if ($locked instanceof Invoice && $locked->getReplacedByInvoiceId() !== null) {
                 throw new InformationException('This invoice has already been reissued as invoice #:id', [':id' => $locked->getReplacedByInvoiceId()]);

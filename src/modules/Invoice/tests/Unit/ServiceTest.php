@@ -4858,7 +4858,6 @@ test('reissueInvoice cancels the original and moves its lines to a numbered repl
 
     $di = container();
     $di['em'] = $em;
-    $di['invoiceItemRepo'] = $invoiceItemRepo;
     $di['mod_service'] = $di->protect(moduleService([
         'system' => $systemService,
         'product' => $productService,
