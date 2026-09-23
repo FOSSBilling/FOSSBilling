@@ -1936,11 +1936,9 @@ class Service implements InjectionAwareInterface
             // Stacked orders store their combined discount on the order, but
             // each promo's own checkout share is recorded separately.
             $discountAmount = $this->getRecurringPromoDiscountForOrder($order, $promo);
-            if ($discountAmount === null) {
-                // Preserve renewal behavior for orders created before
-                // per-promo redemption amounts were recorded.
-                $discountAmount = max(0.0, (float) ($order->getDiscount() ?? 0) - $stackedDiscount);
-            }
+            // Preserve renewal behavior for orders created before
+            // per-promo redemption amounts were recorded.
+            $discountAmount ??= max(0.0, (float) ($order->getDiscount() ?? 0) - $stackedDiscount);
         } else {
             $configValue = $order->getConfig();
             $config = json_decode($configValue ?? '', true) ?? [];
