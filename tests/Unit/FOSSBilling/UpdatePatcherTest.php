@@ -2035,16 +2035,19 @@ test('ensureSchemaInSync backs off after a failed attempt until the cooldown end
         expect($patcher->isSchemaOutOfSync())->toBeTrue();
 
         // A failed attempt for the current hash suppresses retries: no sync runs, so the column
-        // stays missing instead of redoing full introspection on every request.
+        // stays missing instead of redoing full introspection on every request. The out-of-lock
+        // check reports "in sync" too, so the finalization lock isn't taken for no work.
         $currentHash = FOSSBilling\Doctrine\EntityManagerFactory::entityDefinitionsHash();
         (new ReflectionMethod($patcher, 'recordFailedSyncAttempt'))->invoke($patcher, $currentHash);
 
+        expect($patcher->isSchemaOutOfSync())->toBeFalse();
         expect($patcher->ensureSchemaInSync())->toBeFalse()
             ->and($columnNames())->not->toContain('credit_note_for_invoice_id');
 
         // Once the cooldown expires the same hash retries and the sync completes.
         $pdo->exec("UPDATE setting SET updated_at = '2000-01-01 00:00:00' WHERE param = 'schema_metadata_hash_failed'");
 
+        expect($patcher->isSchemaOutOfSync())->toBeTrue();
         expect($patcher->ensureSchemaInSync())->toBeTrue()
             ->and($columnNames())->toContain('credit_note_for_invoice_id');
     } finally {

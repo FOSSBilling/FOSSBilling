@@ -283,6 +283,8 @@ class UpdatePatcher implements InjectionAwareInterface
      * Whether the live schema may have drifted from current entity metadata - the hash-comparison
      * half of ensureSchemaInSync(), safe to call without holding the finalization lock. Never
      * throws: an unreadable database simply reports "in sync" and the next request checks again.
+     * Also honors the sync retry cooldown, so a persistently failing sync doesn't take the
+     * finalization lock on every request just to back off again inside it.
      */
     public function isSchemaOutOfSync(): bool
     {
@@ -291,7 +293,10 @@ class UpdatePatcher implements InjectionAwareInterface
         }
 
         try {
-            return $this->fetchStoredSchemaHash() !== EntityManagerFactory::entityDefinitionsHash();
+            $currentHash = EntityManagerFactory::entityDefinitionsHash();
+
+            return $this->fetchStoredSchemaHash() !== $currentHash
+                && !$this->isSyncCoolingDown($currentHash);
         } catch (\Throwable) {
             return false;
         }
