@@ -331,10 +331,10 @@
                                 <div class="fb-modal-section-heading-row">
                                     <h4 class="fb-modal-section-title">{{ 'Applicability'|trans }}</h4>
                                 </div>
-                                <p class="fb-modal-section-description">{{ 'Restrict the promotion to specific products, billing periods, or client groups, or leave each list empty to apply globally.'|trans }}</p>
+                                <p class="fb-modal-section-description">{{ 'Restrict the promotion to specific products, billing periods, or client groups, require a set of products in the cart, or leave each list empty to apply globally.'|trans }}</p>
                             </div>
                             <div class="row g-3">
-                                <div class="col-xl-4">
+                                <div class="col-xl-3">
                                     <label class="form-label">{{ 'Applicable Products'|trans }}</label>
                                     <input type="hidden" name="products[]" value="">
                                     <div class="table-responsive border rounded-3" style="max-height: 16rem;">
@@ -348,7 +348,7 @@
                                         </table>
                                     </div>
                                 </div>
-                                <div class="col-xl-4">
+                                <div class="col-xl-3">
                                     <label class="form-label">{{ 'Applicable Periods'|trans }}</label>
                                     <input type="hidden" name="periods[]" value="">
                                     <div class="table-responsive border rounded-3" style="max-height: 16rem;">
@@ -362,7 +362,7 @@
                                         </table>
                                     </div>
                                 </div>
-                                <div class="col-xl-4">
+                                <div class="col-xl-3">
                                     <label class="form-label">{{ 'Applicable Client Groups'|trans }}</label>
                                     <input type="hidden" name="client_groups[]" value="">
                                     <div class="table-responsive border rounded-3" style="max-height: 16rem;">
@@ -375,6 +375,21 @@
                                             </tbody>
                                         </table>
                                     </div>
+                                </div>
+                                <div class="col-xl-3">
+                                    <label class="form-label">{{ 'Required Products'|trans }}</label>
+                                    <input type="hidden" name="requires_products[]" value="">
+                                    <div class="table-responsive border rounded-3" style="max-height: 16rem;">
+                                        <table class="table card-table table-vcenter table-striped text-nowrap mb-0">
+                                            <tbody>
+                                                {% set required_products = admin.product_get_pairs %}
+                                                {% for id, required_product in required_products %}
+                                                <tr><td class="w-1"><input type="checkbox" name="requires_products[]" value="{{ id }}"></td><td>{{ required_product }}</td></tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <small class="form-hint">{{ 'The promotion only applies when every selected product is in the cart.'|trans }}</small>
                                 </div>
                             </div>
                         </section>

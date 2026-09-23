@@ -541,12 +541,52 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\InformationException('Add products to your cart before applying promo code');
         }
 
+        $this->assertPromoCartConditionMet($cart, $promo);
+
         $cart->setPromoId($promoId);
         $this->persistCart($cart);
 
         $this->di['logger']->info('Applied promo code {promo_code} to shopping cart', ['promo_code' => $promoCode]);
 
         return true;
+    }
+
+    /**
+     * Throw when the promo's bundle condition is not met by the cart,
+     * naming the missing products.
+     */
+    private function assertPromoCartConditionMet(Cart $cart, Promo $promo, ?array $cartProducts = null): void
+    {
+        $productService = $this->getProductService();
+        $missing = $productService->findMissingRequiredProductIds($promo, $this->getCartProductIds($cart, $cartProducts));
+        if ($missing === []) {
+            return;
+        }
+
+        $titles = [];
+        foreach ($productService->getProductSnapshotMap($missing) as $id => $snapshot) {
+            $titles[] = $snapshot['title'] ?? '#' . $id;
+        }
+        if ($titles === []) {
+            $titles = array_map(static fn (int $id): string => '#' . $id, $missing);
+        }
+
+        throw new \FOSSBilling\InformationException('This promo code requires the following products in the cart: :products', [':products' => implode(', ', $titles)]);
+    }
+
+    /**
+     * Raw product ids on the cart rows, without resolving products.
+     *
+     * @return list<int>
+     */
+    private function getCartProductIds(Cart $cart, ?array $cartProducts = null): array
+    {
+        $ids = [];
+        foreach ($cartProducts ?? $this->getCartProducts($cart) as $cartProduct) {
+            $ids[] = (int) $cartProduct->getProductId();
+        }
+
+        return $ids;
     }
 
     protected function isEmptyCart(Cart $cart): bool
@@ -647,7 +687,10 @@ class Service implements InjectionAwareInterface
 
     /**
      * Promos in effect for a cart: the manual code when one is set, otherwise
-     * the eligible automatic promos for the (logged-in) client.
+     * the eligible automatic promos for the (logged-in) client. A manual code
+     * whose bundle condition the current lines no longer satisfy contributes
+     * no discount; checkout rejects it outright (fail-fast), so the cart can
+     * never drift into a discounted order.
      *
      * @return array{source: 'manual'|'auto'|null, promos: list<Promo>}
      */
@@ -655,9 +698,12 @@ class Service implements InjectionAwareInterface
     {
         $promoId = $cart->getPromoId();
         if ($promoId) {
+            $promo = $this->getProductService()->findPromoById((int) $promoId);
+            $conditionMet = $this->getProductService()->findMissingRequiredProductIds($promo, $this->getCartProductIds($cart, $cartProducts)) === [];
+
             return [
                 'source' => 'manual',
-                'promos' => [$this->getProductService()->findPromoById((int) $promoId)],
+                'promos' => $conditionMet ? [$promo] : [],
             ];
         }
 
@@ -837,6 +883,8 @@ class Service implements InjectionAwareInterface
             if (!$this->isPromoAvailableForClientGroup($promo)) {
                 throw new \FOSSBilling\InformationException('Promo code cannot be applied to your account');
             }
+
+            $this->assertPromoCartConditionMet($cart, $promo);
         }
 
         $this->di['events_manager']->fire(
@@ -919,6 +967,8 @@ class Service implements InjectionAwareInterface
             if (!$this->isPromoAvailableForClientGroup($promo, $client)) {
                 throw new \FOSSBilling\InformationException('Promo code cannot be applied to this client account');
             }
+
+            $this->assertPromoCartConditionMet($basket, $promo);
         }
 
         $this->di['events_manager']->fire(
@@ -1034,6 +1084,12 @@ class Service implements InjectionAwareInterface
                 }
 
                 $cartProducts = $this->getCartProducts($cart);
+
+                if ($effectivePromos !== []) {
+                    // The cart may have changed since the code was applied;
+                    // re-check the bundle condition inside the transaction.
+                    $this->assertPromoCartConditionMet($cart, $effectivePromos[0], $cartProducts);
+                }
 
                 if ($effectivePromos === []) {
                     // A manual code suppresses automatic promos; resolve here
