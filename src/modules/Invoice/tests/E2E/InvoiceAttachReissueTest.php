@@ -37,6 +37,30 @@ test('attaching a product adds a provisioning order line to an editable invoice'
         assertApiSuccess($created);
         $orderId = (int) $created->getResult();
 
+        // Drafts accept attaches without the opt-in setting and stay drafts;
+        // sending is left to the approval path.
+        $draftOrder = Tests\Helpers\ApiClient::request('admin/order/create', [
+            'client_id' => $clientId,
+            'product_id' => $productId,
+            'invoice_option' => 'no-invoice',
+        ]);
+        assertApiSuccess($draftOrder);
+        $draftOrderId = (int) $draftOrder->getResult();
+
+        $draftPrepared = Tests\Helpers\ApiClient::request('admin/invoice/prepare', ['client_id' => $clientId]);
+        assertApiSuccess($draftPrepared);
+        $draftInvoiceId = (int) $draftPrepared->getResult();
+
+        $draftAttach = Tests\Helpers\ApiClient::request('admin/invoice/attach_order', [
+            'id' => $draftInvoiceId,
+            'order_id' => $draftOrderId,
+        ]);
+        assertApiSuccess($draftAttach);
+
+        $draft = attachReissueGetInvoice($draftInvoiceId);
+        expect($draft['approved'])->toBeFalse();
+        expect(attachReissueHasOrderLine($draft, $draftOrderId))->toBeTrue();
+
         $order = attachReissueGetOrder($orderId);
         $invoiceId = (int) $order['unpaid_invoice_id'];
 

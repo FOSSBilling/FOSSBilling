@@ -2177,6 +2177,44 @@ class Service implements InjectionAwareInterface
         $this->releasePromoRedemptions($redemptions, $reason);
     }
 
+    /**
+     * Move reserved promo redemptions to another invoice when their orders
+     * move with it (e.g. invoice reissue), so paying the new invoice commits
+     * them instead of leaving them stranded on a canceled one.
+     *
+     * @param int[] $orderIds
+     *
+     * @return int number of transferred redemptions
+     */
+    public function transferReservedPromoRedemptionsForOrders(array $orderIds, Invoice $invoice): int
+    {
+        $orderIds = array_values(array_unique(array_map(intval(...), $orderIds)));
+        if ($orderIds === []) {
+            return 0;
+        }
+
+        $redemptions = $this->getPromoRedemptionRepository()->findBy([
+            'clientOrderId' => $orderIds,
+            'status' => PromoRedemption::STATUS_RESERVED,
+        ]);
+
+        $transferred = 0;
+        foreach ($redemptions as $redemption) {
+            if (!$redemption instanceof PromoRedemption) {
+                continue;
+            }
+
+            $redemption->setInvoiceId((int) $invoice->getId());
+            ++$transferred;
+        }
+
+        if ($transferred > 0) {
+            $this->di['em']->flush();
+        }
+
+        return $transferred;
+    }
+
     public function updatePromo(Promo $model, array $data = []): bool
     {
         $promo = $model;

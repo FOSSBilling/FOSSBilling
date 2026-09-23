@@ -4704,6 +4704,50 @@ test('attachOrderToInvoice attaches an existing pending order as an order line',
     expect($serviceMock->attachOrderToInvoice($invoiceModel, ['order_id' => 42]))->toBe(42);
 });
 
+test('attachOrderToInvoice does not resend a draft invoice', function (): void {
+    $invoiceModel = createEntity(Invoice::class, ['clientId' => 5, 'currency' => 'USD']);
+    $invoiceModel->setApproved(false);
+    $invoiceModel->setStatus(Invoice::STATUS_UNPAID);
+    setEntityId($invoiceModel, 11);
+
+    $order = createEntity(Order::class, ['clientId' => 5, 'currency' => 'USD']);
+    $order->setStatus(Order::STATUS_PENDING_SETUP);
+    setEntityId($order, 42);
+
+    // Drafts are always editable without the opt-in setting, and sending is
+    // left to the approval path.
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('toApiArray')->andReturn(['id' => 11, 'total' => 50.0]);
+    $serviceMock->shouldNotReceive('resendUpdatedInvoice');
+    $serviceMock->shouldReceive('addNote')->once()->with($invoiceModel, 'Order #42 attached.');
+
+    $eventManagerMock = Mockery::mock('\Box_EventManager');
+    $eventManagerMock->shouldReceive('fire')->atLeast()->once();
+
+    $invoiceItemServiceMock = Mockery::mock(ServiceInvoiceItem::class);
+    $invoiceItemServiceMock->shouldReceive('generateFromOrder')->once()->andReturnNull();
+
+    $orderRepo = Mockery::mock(OrderRepository::class);
+    $orderRepo->shouldReceive('find')->with(42)->andReturn($order);
+
+    $em = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
+    $em->shouldReceive('wrapInTransaction')->andReturnUsing(fn (callable $callback): mixed => $callback());
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn(invoiceLockingRepository(['status' => Invoice::STATUS_UNPAID, 'approved' => false]));
+    $em->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepo);
+    $em->shouldReceive('refresh')->byDefault();
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(moduleService([
+        'invoice:invoiceitem' => $invoiceItemServiceMock,
+    ]));
+    $di['events_manager'] = $eventManagerMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $serviceMock->setDi($di);
+
+    expect($serviceMock->attachOrderToInvoice($invoiceModel, ['order_id' => 42]))->toBe(42);
+});
+
 test('attachOrderToInvoice refuses locked invoices and invalid orders', function (): void {
     // Locked invoice is rejected before any write.
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
@@ -4821,8 +4865,7 @@ test('reissueInvoice cancels the original and moves its lines to a numbered repl
     $systemService->shouldReceive('getParamValue')->with('invoice_hash_lifetime_days', '90')->andReturn(90);
 
     $productService = Mockery::mock(ProductService::class);
-    $productService->shouldReceive('releaseReservedPromoRedemptionsForInvoice')->once()->with($original, 'invoice_canceled');
-    $productService->shouldReceive('releaseReservedStockForInvoice')->once()->with($original, 'invoice_canceled');
+    $productService->shouldReceive('transferReservedPromoRedemptionsForOrders')->once()->with([42], Mockery::type(Invoice::class));
 
     $orderService = Mockery::mock(OrderService::class);
     $replacement = null;
@@ -4833,12 +4876,15 @@ test('reissueInvoice cancels the original and moves its lines to a numbered repl
             return $o === $order && $inv instanceof Invoice;
         }
     );
+    $orderService->shouldNotReceive('unsetUnpaidInvoice');
 
     $invoiceItemRepo = Mockery::mock(InvoiceItemRepository::class);
     $invoiceItemRepo->shouldReceive('findByInvoiceId')->with(10)->andReturn([$orderLine, $customLine]);
 
     $orderRepo = Mockery::mock(OrderRepository::class);
     $orderRepo->shouldReceive('find')->with(42)->andReturn($order);
+    $orderRepo->shouldReceive('findByUnpaidInvoiceId')->with(10)->andReturn([]);
+    $orderService->shouldReceive('getOrderRepository')->andReturn($orderRepo);
 
     $em = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
     $em->shouldReceive('wrapInTransaction')->andReturnUsing(fn (callable $callback): mixed => $callback());

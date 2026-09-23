@@ -244,6 +244,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     public function reissue($data)
     {
         $this->checkPermissions('invoice', 'manage_invoices');
+        if (!empty($data['order_id']) || !empty($data['product_id'])) {
+            $this->checkPermissions('order', 'manage');
+        }
 
         $model = $this->_getInvoice($data);
 

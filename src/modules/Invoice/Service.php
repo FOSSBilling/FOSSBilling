@@ -1853,7 +1853,20 @@ class Service implements InjectionAwareInterface
             return $this->createAndAttachOrder($invoice, $payload);
         });
 
-        $this->resendUpdatedInvoice($invoice);
+        // Drafts are sent by the approval path; only re-send issued invoices.
+        // The send is failure-tolerant: the order and line are already
+        // committed, and a retry must not create a second order.
+        if ($invoice->isApproved()) {
+            try {
+                $this->resendUpdatedInvoice($invoice);
+            } catch (\Throwable $exception) {
+                $this->di['logger']->withChannel('email')->error('Failed to send updated invoice email', [
+                    'invoice_id' => $invoice->getId(),
+                    'order_id' => $order->getId(),
+                    'exception' => $exception,
+                ]);
+            }
+        }
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminInvoiceAttachOrder', 'params' => ['id' => $invoice->getId(), 'order_id' => $order->getId()]]);
 
@@ -1915,9 +1928,10 @@ class Service implements InjectionAwareInterface
             $original->setStatus(Invoice::STATUS_CANCELED);
             $this->di['em']->persist($original);
 
+            // No reservation release: every line moves to the replacement
+            // below, so reserved stock (order-level meta) stays valid and
+            // promo redemptions are transferred instead of released.
             $productService = $this->di['mod_service']('Product');
-            $productService->releaseReservedPromoRedemptionsForInvoice($original, 'invoice_canceled');
-            $productService->releaseReservedStockForInvoice($original, 'invoice_canceled');
 
             $new = new Invoice();
             $new->setClientId($original->getClientId());
@@ -1961,6 +1975,7 @@ class Service implements InjectionAwareInterface
 
             $orderService = $this->di['mod_service']('Order');
             $entityManager = $this->di['em'];
+            $movedOrderIds = [];
             foreach ($this->getInvoiceItemRepository()->findByInvoiceId((int) $original->getId()) as $item) {
                 $orderToLink = null;
                 if ($item->getType() === InvoiceItem::TYPE_ORDER) {
@@ -1990,9 +2005,19 @@ class Service implements InjectionAwareInterface
 
                 if ($orderToLink instanceof Order) {
                     $orderService->setUnpaidInvoice($orderToLink, $new);
+                    $movedOrderIds[] = (int) $orderToLink->getId();
                 }
             }
             $entityManager->flush();
+
+            $productService->transferReservedPromoRedemptionsForOrders($movedOrderIds, $new);
+
+            // Orders still pointing at the original have no moved line (e.g.
+            // their line was deleted earlier) and must not keep pointing at a
+            // canceled invoice; unpointed they invoice normally again.
+            foreach ($orderService->getOrderRepository()->findByUnpaidInvoiceId((int) $original->getId()) as $straggler) {
+                $orderService->unsetUnpaidInvoice($straggler);
+            }
 
             $original->setReplacedByInvoiceId($new->getId());
             $entityManager->persist($original);
