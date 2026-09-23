@@ -13,6 +13,8 @@ namespace Box\Mod\Extension;
 
 use Box\Mod\Extension\Entity\Extension;
 use Box\Mod\Extension\Entity\ExtensionMeta;
+use Box\Mod\Extension\Event\AfterExtensionActivatedEvent;
+use Box\Mod\Extension\Event\AfterExtensionDeactivatedEvent;
 use Box\Mod\Extension\Repository\ExtensionMetaRepository;
 use Box\Mod\Extension\Repository\ExtensionRepository;
 use FOSSBilling\Config;
@@ -415,8 +417,11 @@ class Service implements InjectionAwareInterface
         $ext->setStatus(Extension::STATUS_INSTALLED);
         $this->di['em']->flush();
 
-        if ($ext->getType() === \FOSSBilling\ExtensionManager::TYPE_MOD && $this->di->offsetExists('event_dispatcher')) {
-            $this->di['event_dispatcher']->refresh();
+        if ($this->di->offsetExists('event_dispatcher')) {
+            if ($ext->getType() === \FOSSBilling\ExtensionManager::TYPE_MOD) {
+                $this->di['event_dispatcher']->refresh();
+            }
+            $this->di['event_dispatcher']->dispatch(new AfterExtensionActivatedEvent($ext->getId(), $ext->getType(), $ext->getName()));
         }
 
         return $result;
@@ -456,8 +461,11 @@ class Service implements InjectionAwareInterface
         $this->di['em']->remove($ext);
         $this->di['em']->flush();
 
-        if ($ext->getType() === \FOSSBilling\ExtensionManager::TYPE_MOD && $this->di->offsetExists('event_dispatcher')) {
-            $this->di['event_dispatcher']->refresh();
+        if ($this->di->offsetExists('event_dispatcher')) {
+            if ($ext->getType() === \FOSSBilling\ExtensionManager::TYPE_MOD) {
+                $this->di['event_dispatcher']->refresh();
+            }
+            $this->di['event_dispatcher']->dispatch(new AfterExtensionDeactivatedEvent($ext->getId(), $ext->getType(), $ext->getName()));
         }
 
         return true;

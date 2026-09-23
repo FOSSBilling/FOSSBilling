@@ -77,6 +77,8 @@ public function customizeGuestTicket(BeforeGuestTicketCreateEvent $event): void
 
 Listeners on core and active modules are registered when the typed dispatcher is first used. Activating or deactivating a module refreshes registrations within the same request. Symfony listener priorities are supported. Existing string-named hooks continue to run during migration; for guest ticket creation, they run before the typed event, and the typed event receives their result. Typed event classes should expose setters only for fields listeners are allowed to change. Other event data can be readonly.
 
+Available typed event classes live under each module's `Event/` directory. Their constructors and public methods define the extension contract; use those classes instead of relying on a legacy hook's array keys.
+
 ## How can I contribute?
 
 There are a lot of different ways that you can get involved in the FOSSBilling project. Let's take a look at some of the main ones:

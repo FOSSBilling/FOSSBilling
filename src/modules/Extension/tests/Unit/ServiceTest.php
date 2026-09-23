@@ -15,6 +15,8 @@ use Box\Mod\Extension\Entity\ExtensionMeta;
 use Box\Mod\Extension\Repository\ExtensionMetaRepository;
 use Box\Mod\Extension\Repository\ExtensionRepository;
 use Box\Mod\Extension\Service;
+use Box\Mod\Widgets\Service as WidgetsService;
+use FOSSBilling\Events\EventDispatcher;
 
 use function Tests\Helpers\container;
 use function Tests\Helpers\setEntityId;
@@ -381,6 +383,20 @@ test('activate activates an extension', function (): void {
     $di['em'] = $em;
     $di['mod'] = $di->protect(fn ($name): Mockery\MockInterface => $modMock);
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $staffService);
+    $cache = new class {
+        public array $deleted = [];
+
+        public function delete(string $key): bool
+        {
+            $this->deleted[] = $key;
+
+            return true;
+        }
+    };
+    $di['cache'] = $cache;
+    $widgets = new WidgetsService();
+    $widgets->setDi($di);
+    $di['event_dispatcher'] = new EventDispatcher(static fn (): array => ['widgets'], static fn (string $module): object => $widgets);
 
     $service->setDi($di);
     $result = $service->activate($ext);
@@ -389,6 +405,7 @@ test('activate activates an extension', function (): void {
     expect($result['type'])->toBe('mod');
     expect($result['redirect'])->toBeTrue();
     expect($result['has_settings'])->toBeTrue();
+    expect($cache->deleted)->toBe([WidgetsService::CACHE_KEY]);
 });
 
 test('deactivate deactivates an extension', function (): void {
@@ -412,11 +429,26 @@ test('deactivate deactivates an extension', function (): void {
     $di['em'] = $em;
     $di['mod'] = $di->protect(fn ($name): Mockery\MockInterface => $modMock);
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $staffService);
+    $cache = new class {
+        public array $deleted = [];
+
+        public function delete(string $key): bool
+        {
+            $this->deleted[] = $key;
+
+            return true;
+        }
+    };
+    $di['cache'] = $cache;
+    $widgets = new WidgetsService();
+    $widgets->setDi($di);
+    $di['event_dispatcher'] = new EventDispatcher(static fn (): array => ['widgets'], static fn (string $module): object => $widgets);
 
     $service->setDi($di);
 
     $result = $service->deactivate($ext);
     expect($result)->toBeTrue();
+    expect($cache->deleted)->toBe([WidgetsService::CACHE_KEY]);
 });
 
 test('deactivate throws exception for core modules', function (): void {
