@@ -2318,7 +2318,7 @@ test('getProductDiscount does not waive setup fee for a product the promo is not
 
 test('isPromoAvailableForClientGroup returns expected result', function (Promo $promo, ?Client $client, bool $expectedResult): void {
     $productService = Mockery::mock(ProductService::class);
-    $productService->shouldReceive('isPromoAvailableForClientGroup')->once()->with($promo)->andReturn($expectedResult);
+    $productService->shouldReceive('isPromoAvailableForClientGroup')->once()->with($promo, null)->andReturn($expectedResult);
 
     $di = container();
     $di['loggedin_client'] = $client;

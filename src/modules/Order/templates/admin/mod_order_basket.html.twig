@@ -1,0 +1,365 @@
+{% extends request.ajax ? 'layout_blank.html.twig' : 'layout_default.html.twig' %}
+
+{% set active_menu = 'order' %}
+
+{% import "macro_functions.html.twig" as mf %}
+
+{% block breadcrumbs %}
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <a href="{{ '/'|url }}">
+                <svg class="icon">
+                    <use href="#home" />
+                </svg>
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ 'order'|url }}">{{ 'Orders'|trans }}</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">{{ 'New Basket Order'|trans }}</li>
+    </ol>
+{% endblock %}
+
+{% block meta_title %}{{ 'New Basket Order'|trans }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-body">
+        <div class="d-flex flex-column gap-1 mb-4">
+            <h3 class="mb-0">{{ 'New Basket Order'|trans }}</h3>
+            <p class="text-secondary mb-0">{{ 'Build up several products for one client and check them out onto a single invoice.'|trans }}</p>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-body">
+                {% if client is defined and client %}
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                        <div>
+                            <h5 class="card-title mb-0">{{ client.first_name }} {{ client.last_name }}</h5>
+                            <p class="text-secondary mb-0">{{ client.email }} · {{ 'Basket currency'|trans }}: {{ basket.currency.code }}</p>
+                        </div>
+                        <a class="btn btn-outline-secondary" href="{{ 'order/basket'|url }}">{{ 'Change client'|trans }}</a>
+                    </div>
+                {% else %}
+                    <form method="get" action="{{ 'order/basket'|url }}" class="row g-3 align-items-end">
+                        <div class="col-xl-8">
+                            <label class="form-label" for="basket-client-id">{{ 'Client'|trans }}</label>
+                            <select class="form-control autocomplete-selector"
+                                    placeholder="{{ 'Start typing the client name or ID'|trans }}"
+                                    id="basket-client-id"
+                                    name="client_id"
+                                    data-resturl="/api/admin/client/get_pairs"
+                                    required aria-required="true">
+                            </select>
+                        </div>
+                        <div class="col-xl-4">
+                            <button type="submit" class="btn btn-primary">{{ 'Load basket'|trans }}</button>
+                        </div>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if client is defined and client %}
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="d-flex flex-column gap-1 mb-4">
+                        <h5 class="card-title mb-0">{{ 'Add Product'|trans }}</h5>
+                        <p class="text-secondary mb-0">{{ 'Pick a product to configure it. Each addition becomes its own order at checkout.'|trans }}</p>
+                    </div>
+                    <form method="get" action="{{ 'order/basket'|url }}" class="row g-3 align-items-end mb-4">
+                        <input type="hidden" name="client_id" value="{{ client.id }}">
+                        <div class="col-xl-8">
+                            <label class="form-label" for="basket-product-id">{{ 'Product'|trans }}</label>
+                            <select class="form-select" id="basket-product-id" name="basket_product_id" onchange="this.form.submit()">
+                                <option value="">{{ 'Select product'|trans }}</option>
+                                {% for id, title in admin.product_get_pairs %}
+                                    <option value="{{ id }}" {% if basket_product is defined and basket_product and basket_product.id == id %}selected="selected"{% endif %}>{{ title }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-xl-4">
+                            <noscript><button type="submit" class="btn btn-secondary">{{ 'Configure'|trans }}</button></noscript>
+                        </div>
+                    </form>
+
+                    {% if basket_product is defined and basket_product %}
+                        <form method="post" action="{{ 'cart/staff_basket_add_item'|api_url }}" {{ fb_api_form({reload: true}) }}>
+                            <input type="hidden" name="client_id" value="{{ client.id }}">
+                            <input type="hidden" name="id" value="{{ basket_product.id }}">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <h6 class="mb-0">{{ basket_product.title }}</h6>
+                                    {% if basket_product.status != 'enabled' %}
+                                        <small class="form-hint">{{ 'Product is disabled in configuration'|trans }}</small>
+                                    {% endif %}
+                                </div>
+                                {% if basket_product.pricing.type is defined and basket_product.pricing.type == 'recurrent' %}
+                                    <div class="col-xl-6">
+                                        <label class="form-label" for="basket-period">{{ 'Period'|trans }}</label>
+                                        <select class="form-select" name="period" id="basket-period" required>
+                                            {% for val, pricing in basket_product.pricing.recurrent %}
+                                                <option value="{{ val }}">{{ pricing.title|e }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                {% endif %}
+                                <div class="col-xl-3">
+                                    <label class="form-label" for="basket-quantity">{{ 'Quantity'|trans }}</label>
+                                    <input class="form-control" type="number" name="quantity" id="basket-quantity" value="1" min="1">
+                                </div>
+                                <div class="col-xl-3">
+                                    <label class="form-label" for="basket-price">{{ 'Price override'|trans }} ({{ basket.currency.code }})</label>
+                                    <input class="form-control" type="text" name="price" id="basket-price" placeholder="{{ 'Catalog'|trans }}" autocomplete="off">
+                                </div>
+                            </div>
+
+                            {% if basket_product.addons|length > 0 %}
+                                <h6 class="mt-4 mb-2">{{ 'Addons & Extras'|trans }}</h6>
+                                {% for addon in basket_product.addons %}
+                                    <div class="row g-3 align-items-end mb-2">
+                                        <div class="col-xl-6">
+                                            <label class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="addons[{{ addon.id }}][selected]" value="1">
+                                                <span class="form-check-label">{{ addon.title }}</span>
+                                            </label>
+                                        </div>
+                                        {% if addon.pricing.type is defined and addon.pricing.type == 'recurrent' %}
+                                            <div class="col-xl-4">
+                                                <select class="form-select" name="addons[{{ addon.id }}][period]">
+                                                    {% for code, prices in addon.pricing.recurrent %}
+                                                        {% if prices.enabled %}
+                                                            <option value="{{ code }}">{{ prices.title|e }}</option>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                        {% endif %}
+                                        {% if addon.allow_quantity_select %}
+                                            <div class="col-xl-2">
+                                                <input class="form-control" type="number" name="addons[{{ addon.id }}][quantity]" value="1" min="1" aria-label="{{ 'Addon quantity'|trans }}">
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+
+                            {% set product_order = 'mod_service' ~ basket_product.type ~ '_order.html.twig' %}
+                            {% if admin.system_template_exists({ 'file': product_order }) %}
+                                {{ include(product_order, { product: basket_product }) }}
+                            {% endif %}
+
+                            {% if basket_product.form_id and guest.extension_is_on({ 'mod': 'formbuilder' }) %}
+                                {{ include('mod_formbuilder_build.html.twig', { product: basket_product }) }}
+                            {% endif %}
+
+                            <div class="d-flex justify-content-end mt-3">
+                                <input type="submit" value="{{ 'Add to basket'|trans }}" class="btn btn-secondary">
+                            </div>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-3">
+                        <div class="d-flex flex-column gap-1">
+                            <h5 class="card-title mb-0">{{ 'Basket'|trans }}</h5>
+                            <p class="text-secondary mb-0">{{ 'Lines share one invoice at checkout. Prices in'|trans }} {{ basket.currency.code }}.</p>
+                        </div>
+                        {% if basket.items|length > 0 %}
+                            <a class="btn btn-outline-danger" href="{{ 'cart/staff_basket_discard'|api_url({client_id: client.id}) }}" {{ fb_api_link({reload: true}) }}>{{ 'Discard basket'|trans }}</a>
+                        {% endif %}
+                    </div>
+
+                    {% if basket.items|length > 0 %}
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>{{ 'Product'|trans }}</th>
+                                        <th>{{ 'Quantity'|trans }}</th>
+                                        <th>{{ 'Unit price'|trans }}</th>
+                                        <th>{{ 'Setup'|trans }}</th>
+                                        <th>{{ 'Discount'|trans }}</th>
+                                        <th class="text-end">{{ 'Line total'|trans }}</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in basket.items %}
+                                        <tr>
+                                            <td>{{ item.title }}</td>
+                                            <td>{{ item.quantity }}</td>
+                                            <td>{{ (item.price * basket.currency.conversion_rate)|format_currency(basket.currency.code) }}</td>
+                                            <td>{{ (item.setup_price * basket.currency.conversion_rate)|format_currency(basket.currency.code) }}</td>
+                                            <td>{{ (item.discount * basket.currency.conversion_rate)|format_currency(basket.currency.code) }}</td>
+                                            <td class="text-end">{{ ((item.total + item.setup_price - item.discount) * basket.currency.conversion_rate)|format_currency(basket.currency.code) }}</td>
+                                            <td class="text-end">
+                                                <a class="btn btn-sm btn-icon btn-outline-danger" href="{{ 'cart/staff_basket_remove_item'|api_url({client_id: client.id, id: item.id}) }}" {{ fb_api_link({reload: true}) }} title="{{ 'Remove'|trans }}">
+                                                    <svg class="icon"><use href="#x" /></svg>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="row g-3 mt-1">
+                            <div class="col-xl-6">
+                                {% if has_permission('product', 'manage_promos') %}
+                                    {% if basket.promocode %}
+                                        <p class="mb-0">{{ 'Promo code'|trans }}: <strong>{{ basket.promocode }}</strong>
+                                            <a class="btn btn-sm btn-link" href="{{ 'cart/staff_basket_remove_promo'|api_url({client_id: client.id}) }}" {{ fb_api_link({reload: true}) }}>{{ 'Remove'|trans }}</a>
+                                        </p>
+                                    {% else %}
+                                        <form method="post" action="{{ 'cart/staff_basket_apply_promo'|api_url }}" {{ fb_api_form({reload: true}) }} class="row g-2 align-items-end">
+                                            <input type="hidden" name="client_id" value="{{ client.id }}">
+                                            <div class="col">
+                                                <label class="form-label" for="basket-promocode">{{ 'Promo Code'|trans }}</label>
+                                                <input class="form-control" type="text" name="promocode" id="basket-promocode" autocomplete="off">
+                                            </div>
+                                            <div class="col-auto">
+                                                <input type="submit" value="{{ 'Apply'|trans }}" class="btn btn-secondary">
+                                            </div>
+                                        </form>
+                                    {% endif %}
+                                {% endif %}
+                                {% if basket.auto_promos|length > 0 %}
+                                    <p class="text-secondary mt-2 mb-0">{{ 'Automatic promotions applied'|trans }}:
+                                        {% for auto in basket.auto_promos %}{{ auto.code }}{% if not loop.last %}, {% endif %}{% endfor %}
+                                    </p>
+                                {% endif %}
+                            </div>
+                            <div class="col-xl-6">
+                                <table class="table table-sm mb-0">
+                                    <tbody>
+                                        <tr>
+                                            <td>{{ 'Subtotal'|trans }}</td>
+                                            <td class="text-end">{{ (basket.subtotal * basket.currency.conversion_rate)|format_currency(basket.currency.code) }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>{{ 'Discount'|trans }}</td>
+                                            <td class="text-end">{{ (basket.discount * basket.currency.conversion_rate)|format_currency(basket.currency.code) }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>{{ 'Total'|trans }}</strong></td>
+                                            <td class="text-end"><strong>{{ (basket.total * basket.currency.conversion_rate)|format_currency(basket.currency.code) }}</strong></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    {% else %}
+                        <p class="text-secondary mb-0">{{ 'The basket is empty. Add a product above to get started.'|trans }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if basket.items|length > 0 %}
+                <form method="post" action="{{ 'cart/staff_basket_checkout'|api_url }}" {{ fb_api_form({callback: 'onAfterBasketCheckout'}) }}>
+                    <input type="hidden" name="client_id" value="{{ client.id }}">
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <div class="d-flex flex-column gap-1 mb-4">
+                                <h5 class="card-title mb-0">{{ 'Checkout'|trans }}</h5>
+                                <p class="text-secondary mb-0">{{ 'Creates one order per basket line and a single invoice covering all of them.'|trans }}</p>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-xl-6">
+                                    <label class="form-label">{{ 'Payment Gateway'|trans }}</label>
+                                    {{ mf.selectbox('gateway_id', admin.invoice_gateway_get_pairs, request.gateway_id, 0, 'Select Payment Gateway'|trans) }}
+                                </div>
+                                <div class="col-xl-6">
+                                    <label class="form-label d-block">{{ 'Activate Orders'|trans }}</label>
+                                    <div class="d-flex flex-wrap gap-3">
+                                        <label class="form-check">
+                                            <input class="form-check-input" type="radio" name="activate" value="1" checked>
+                                            <span class="form-check-label">{{ 'Yes'|trans }}</span>
+                                        </label>
+                                        <label class="form-check">
+                                            <input class="form-check-input" type="radio" name="activate" value="0">
+                                            <span class="form-check-label">{{ 'No'|trans }}</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if has_permission('invoice') %}
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <div class="d-flex flex-column gap-1 mb-4">
+                                    <h5 class="card-title mb-0">{{ 'Initial Invoice Handling'|trans }}</h5>
+                                    <p class="text-secondary mb-0">{{ 'Use this only when the client has already completed payment outside the standard order flow.'|trans }}</p>
+                                </div>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="basket-mark-invoice-paid" name="mark_invoice_paid" value="1">
+                                    <label class="form-check-label" for="basket-mark-invoice-paid">{{ 'Confirm that the invoice has already been paid by the client'|trans }}.</label>
+                                </div>
+                                <div id="basket-mark-invoice-paid-fields" class="d-none">
+                                    <div class="row g-3">
+                                        <div class="col-xl-6">
+                                            <label class="form-label" for="basket-transaction-id">{{ 'Transaction ID'|trans }}</label>
+                                            <input class="form-control" type="text" name="transactionId" id="basket-transaction-id" value="{{ request.transactionId }}">
+                                            <small class="form-hint">{{ 'Required when using the Custom payment gateway.'|trans }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    <div class="d-flex justify-content-end">
+                        <input type="submit" value="{{ 'Checkout Basket'|trans }}" class="btn btn-primary">
+                    </div>
+                </form>
+            {% endif %}
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+<script>
+    function onAfterBasketCheckout(result) {
+        if (result && result.invoice_id) {
+            window.location = "{{ 'invoice/manage/'|url }}/" + result.invoice_id;
+        } else if (result && result.order_id) {
+            window.location = "{{ 'order/manage/'|url }}/" + result.order_id;
+        } else {
+            window.location.reload();
+        }
+    }
+
+    (function syncBasketMarkPaidControls() {
+        const markPaidEl = document.getElementById('basket-mark-invoice-paid');
+        if (!markPaidEl) {
+            return;
+        }
+
+        const fieldsEl = document.getElementById('basket-mark-invoice-paid-fields');
+        const gatewayEl = document.querySelector('[name="gateway_id"]');
+        const transactionIdEl = document.getElementById('basket-transaction-id');
+
+        function sync() {
+            const markPaid = markPaidEl.checked;
+            if (fieldsEl) {
+                fieldsEl.classList.toggle('d-none', !markPaid);
+            }
+            if (gatewayEl) {
+                gatewayEl.required = markPaid;
+            }
+            if (transactionIdEl) {
+                transactionIdEl.disabled = !markPaid;
+            }
+        }
+
+        markPaidEl.addEventListener('change', sync);
+        sync();
+    })();
+</script>
+{% endblock %}
