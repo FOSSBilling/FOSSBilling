@@ -14,7 +14,7 @@ describe('listParamKeys', () => {
 });
 
 describe('pruneListParamsForTab', () => {
-  test('drops other tabs’ list params and keeps the target tab’s', () => {
+  test("drops other tabs' list params and keeps the target tab's", () => {
     assert.equal(
       pruneListParamsForTab('?sort=tld&direction=ASC&page=1&registrar_sort=title', 'registrar', ['']),
       '?registrar_sort=title'
@@ -53,7 +53,7 @@ describe('pruneListParamsForTab', () => {
     );
   });
 
-  test('resets one tab while keeping other tabs’ keys (re-click active tab)', () => {
+  test("resets one tab while keeping other tabs' keys (re-click active tab)", () => {
     assert.equal(
       pruneListParamsForTab('?sort=tld&page=2&registrar_sort=title&search=x', null, ['']),
       '?registrar_sort=title&search=x'

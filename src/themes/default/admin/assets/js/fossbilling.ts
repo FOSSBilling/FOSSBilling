@@ -174,65 +174,63 @@ globalThis.FOSSBilling = Object.assign(globalThis.FOSSBilling || {}, {
      return true;
    };
 
-    const syncTabUrl = (tabId) => {
-      if (!tabId) {
-        return;
-      }
+   const syncTabUrl = (tabId) => {
+     if (!tabId) {
+       return;
+     }
 
-      const url = new URL(window.location.href);
-      const pane = document.getElementById(tabId);
-      const targetNamespace = pane ? pane.getAttribute('data-list-ns') : null;
-      const otherNamespaces = Array.from(document.querySelectorAll('.tab-pane[data-list-ns]'))
-        .filter((other) => other.id !== tabId)
-        .map((other) => other.getAttribute('data-list-ns') ?? '');
-      url.search = pruneListParamsForTab(url.search, targetNamespace, otherNamespaces);
-      url.hash = tabId;
-      url.searchParams.delete('tab');
-      window.history.replaceState({}, '', url);
-    };
+     const url = new URL(window.location.href);
+     const pane = document.getElementById(tabId);
+     const targetNamespace = pane ? pane.getAttribute('data-list-ns') : null;
+     const otherNamespaces = Array.from(document.querySelectorAll('.tab-pane[data-list-ns]'))
+       .filter((other) => other.id !== tabId)
+       .map((other) => other.getAttribute('data-list-ns') ?? '');
+     url.search = pruneListParamsForTab(url.search, targetNamespace, otherNamespaces);
+     url.hash = tabId;
+     url.searchParams.delete('tab');
+     window.history.replaceState({}, '', url);
+   };
 
    const hashTabId = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : '';
    showTabById(hashTabId);
 
-    tabTriggers.forEach((tabTrigger) => {
-      tabTrigger.addEventListener('shown.bs.tab', function() {
-        const targetSelector = getTabTargetSelector(this);
-        if (targetSelector) {
-          syncTabUrl(targetSelector.slice(1));
-        }
-      });
+   tabTriggers.forEach((tabTrigger) => {
+     tabTrigger.addEventListener('shown.bs.tab', function() {
+       const targetSelector = getTabTargetSelector(this);
+       if (targetSelector) {
+         syncTabUrl(targetSelector.slice(1));
+       }
+     });
 
-      // Re-clicking the active tab resets its list (sort/page params back to
-      // defaults). Only list panes opt in via data-list-ns; anything else
-      // keeps the default no-op. Reloads, like the sort links themselves.
-      tabTrigger.addEventListener('click', function(event) {
-        const targetSelector = getTabTargetSelector(this);
-        if (!targetSelector) {
-          return;
-        }
+     // Re-clicking the active tab resets its list; other panes keep the default no-op.
+     tabTrigger.addEventListener('click', function(event) {
+       const targetSelector = getTabTargetSelector(this);
+       if (!targetSelector) {
+         return;
+       }
 
-        const pane = document.getElementById(targetSelector.slice(1));
-        if (!pane || !pane.classList.contains('active')) {
-          return;
-        }
+       const pane = document.getElementById(targetSelector.slice(1));
+       if (!pane || !pane.classList.contains('active')) {
+         return;
+       }
 
-        const namespace = pane.getAttribute('data-list-ns');
-        if (namespace === null) {
-          return;
-        }
+       const namespace = pane.getAttribute('data-list-ns');
+       if (namespace === null) {
+         return;
+       }
 
-        const url = new URL(window.location.href);
-        const pruned = pruneListParamsForTab(url.search, null, [namespace]);
-        if (pruned === url.search && url.hash === targetSelector) {
-          return;
-        }
+       const url = new URL(window.location.href);
+       const pruned = pruneListParamsForTab(url.search, null, [namespace]);
+       if (pruned === url.search && url.hash === targetSelector) {
+         return;
+       }
 
-        event.preventDefault();
-        url.search = pruned;
-        url.hash = targetSelector;
-        window.location.assign(url);
-      });
-    });
+       event.preventDefault();
+       url.search = pruned;
+       url.hash = targetSelector;
+       window.location.assign(url);
+     });
+   });
 
    window.addEventListener('hashchange', () => {
      const nextTabId = window.location.hash.startsWith('#') ? window.location.hash.slice(1) : '';
