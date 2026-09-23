@@ -4851,6 +4851,12 @@ test('reissueInvoice cancels the original and moves its lines to a numbered repl
     $order->setStatus(Order::STATUS_PENDING_SETUP);
     setEntityId($order, 42);
 
+    // Points at the original without a line: its promo hold is freed and it
+    // is unpointed so it invoices normally again.
+    $straggler = createEntity(Order::class, ['clientId' => 5, 'currency' => 'USD']);
+    $straggler->setStatus(Order::STATUS_PENDING_SETUP);
+    setEntityId($straggler, 43);
+
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('toApiArray')->andReturn(['id' => 10, 'total' => 90.0]);
     $serviceMock->shouldReceive('resendUpdatedInvoice')->once();
@@ -4866,6 +4872,7 @@ test('reissueInvoice cancels the original and moves its lines to a numbered repl
 
     $productService = Mockery::mock(ProductService::class);
     $productService->shouldReceive('transferReservedPromoRedemptionsForOrders')->once()->with([42], Mockery::type(Invoice::class));
+    $productService->shouldReceive('releaseReservedPromoRedemptionsForOrder')->once()->with($straggler, 'invoice_reissued');
 
     $orderService = Mockery::mock(OrderService::class);
     $replacement = null;
@@ -4876,14 +4883,14 @@ test('reissueInvoice cancels the original and moves its lines to a numbered repl
             return $o === $order && $inv instanceof Invoice;
         }
     );
-    $orderService->shouldNotReceive('unsetUnpaidInvoice');
+    $orderService->shouldReceive('unsetUnpaidInvoice')->once()->with($straggler);
 
     $invoiceItemRepo = Mockery::mock(InvoiceItemRepository::class);
     $invoiceItemRepo->shouldReceive('findByInvoiceId')->with(10)->andReturn([$orderLine, $customLine]);
 
     $orderRepo = Mockery::mock(OrderRepository::class);
     $orderRepo->shouldReceive('find')->with(42)->andReturn($order);
-    $orderRepo->shouldReceive('findByUnpaidInvoiceId')->with(10)->andReturn([]);
+    $orderRepo->shouldReceive('findByUnpaidInvoiceId')->with(10)->andReturn([$straggler]);
     $orderService->shouldReceive('getOrderRepository')->andReturn($orderRepo);
 
     $em = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();

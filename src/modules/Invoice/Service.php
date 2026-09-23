@@ -2014,8 +2014,12 @@ class Service implements InjectionAwareInterface
 
             // Orders still pointing at the original have no moved line (e.g.
             // their line was deleted earlier) and must not keep pointing at a
-            // canceled invoice; unpointed they invoice normally again.
+            // canceled invoice; unpointed they invoice normally again. Their
+            // promo hold is freed — the discount was never invoiced, and a
+            // stranded RESERVED redemption would block reusing the code —
+            // while reserved stock stays on the still-pending order.
             foreach ($orderService->getOrderRepository()->findByUnpaidInvoiceId((int) $original->getId()) as $straggler) {
+                $productService->releaseReservedPromoRedemptionsForOrder($straggler, 'invoice_reissued');
                 $orderService->unsetUnpaidInvoice($straggler);
             }
 
