@@ -2006,7 +2006,7 @@ class Service implements InjectionAwareInterface
             $discountAmount += (float) ($redemption->getDiscountAmount() ?? 0);
         }
 
-        return $discountAmount > 0 ? $discountAmount : null;
+        return $redemptions === [] ? null : $discountAmount;
     }
 
     public function toPromoApiArray(Promo $model, $deep = false, $identity = null)

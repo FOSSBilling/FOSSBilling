@@ -3499,3 +3499,56 @@ test('renewal excludes a stacked one-time discount from a recurring primary', fu
     expect($result[0]['promo'])->toBe($primaryPromo);
     expect($result[0]['discount_amount'])->toEqual(60.0);
 });
+
+test('renewal treats a recorded zero primary discount as available', function (): void {
+    $order = createEntity(Order::class, [
+        'id' => 24,
+        'promo_id' => 15,
+        'promo_recurring' => true,
+        'product_id' => 17,
+        'discount' => 40.0,
+        'currency' => 'USD',
+    ]);
+    $product = productTestCreateProductEntity(17)->setType('service');
+    $primaryPromo = productTestCreatePromoEntity(15)->setCode('RECURRING')->setRecurring(true);
+    $primaryRedemption = new PromoRedemption();
+    $primaryRedemption->setPromo($primaryPromo)
+        ->setPhase(PromoRedemption::PHASE_CHECKOUT)
+        ->setStatus(PromoRedemption::STATUS_COMMITTED)
+        ->setDiscountAmount(0.0);
+
+    $oneTimePromo = productTestCreatePromoEntity(16)->setCode('ONETIME')->setRecurring(false);
+    $oneTimeRedemption = new PromoRedemption();
+    $oneTimeRedemption->setPromo($oneTimePromo)
+        ->setPhase(PromoRedemption::PHASE_CHECKOUT)
+        ->setStatus(PromoRedemption::STATUS_COMMITTED)
+        ->setDiscountAmount(40.0);
+
+    $redemptionRepo = Mockery::mock(PromoRedemptionRepository::class);
+    $redemptionRepo->shouldReceive('findBy')
+        ->once()
+        ->with([
+            'clientOrderId' => 24,
+            'phase' => PromoRedemption::PHASE_CHECKOUT,
+            'status' => PromoRedemption::STATUS_COMMITTED,
+        ])
+        ->andReturn([$primaryRedemption, $oneTimeRedemption]);
+    $redemptionRepo->shouldReceive('findBy')
+        ->once()
+        ->with([
+            'clientOrderId' => 24,
+            'promo' => $primaryPromo,
+            'phase' => PromoRedemption::PHASE_CHECKOUT,
+            'status' => PromoRedemption::STATUS_COMMITTED,
+        ])
+        ->andReturn([$primaryRedemption]);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('findProductById')->andReturn($product);
+    $serviceMock->shouldReceive('findPromoById')->once()->with(15)->andReturn($primaryPromo);
+    $serviceMock->shouldReceive('getPromoRedemptionRepository')->andReturn($redemptionRepo);
+
+    $result = $serviceMock->getRenewalPromoAdjustments($order, 100.0, 1.0);
+
+    expect($result)->toBe([]);
+});
