@@ -79,6 +79,8 @@ Listeners on core and active modules are registered when the typed dispatcher is
 
 Third-party extensions must replace static `on...` hook handlers with public instance listeners for typed event classes. The legacy Hook module, its `hook_call` API, and `onEveryEvent` catch-all listener are retired in the next major release. Subscribe to explicit event classes; for extension-specific operations, define a typed event or call an operation API directly. A listener's return value is ignored. Use an event's declared setters only where the contract permits changes.
 
+The upgrade removes obsolete hook-package records and listener registrations from the database. Existing custom files under `src/library/Hook/` are not loaded by the typed dispatcher; move any needed behavior into an active module's `Service` listener and remove those files after migration.
+
 Available typed event classes live under each module's `Event/` directory. Their constructors and public methods define the extension contract; use those classes instead of relying on a legacy hook's array keys.
 
 ### Migrating cron hook listeners

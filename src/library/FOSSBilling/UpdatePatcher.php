@@ -202,6 +202,10 @@ class UpdatePatcher implements InjectionAwareInterface
         // forever.
         $this->migrateThemePackageLayout();
 
+        // Retired hook packages and listener registrations have no runtime consumer. Remove
+        // their records on every driver so old installs do not retain invisible extensions.
+        $this->removeRetiredHookData();
+
         // Same treatment for the debit-note settings rows content.sql seeds for fresh installs:
         // plain check-then-insert SQL, idempotent, so every platform gets them even though no
         // MySQL-only patch can run there.
@@ -3180,6 +3184,13 @@ class UpdatePatcher implements InjectionAwareInterface
         }
 
         return ['invoices' => $repairedInvoices, 'notifications' => $repairedNotes];
+    }
+
+    /** Remove obsolete listener registrations and standalone hook-package records. */
+    private function removeRetiredHookData(): void
+    {
+        $this->executeSql("DELETE FROM extension_meta WHERE extension = 'mod_hook' AND meta_key = 'listener'");
+        $this->executeSql("DELETE FROM extension WHERE type = 'hook'");
     }
 
     /**

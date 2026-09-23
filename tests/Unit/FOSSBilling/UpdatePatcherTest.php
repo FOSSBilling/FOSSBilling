@@ -1256,7 +1256,10 @@ function mockPdoAllowingThemeMigrationCalls(): Mockery\MockInterface
 
     $pdo = Mockery::mock(PDO::class);
     $pdo->shouldReceive('prepare')
-        ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'UPDATE setting') || str_starts_with($sql, 'UPDATE extension_meta')))
+        ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'UPDATE setting')
+            || str_starts_with($sql, 'UPDATE extension_meta')
+            || $sql === "DELETE FROM extension_meta WHERE extension = 'mod_hook' AND meta_key = 'listener'"
+            || $sql === "DELETE FROM extension WHERE type = 'hook'"))
         ->andReturn($statement);
     $pdo->shouldReceive('prepare')
         ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'SELECT value FROM setting') || str_starts_with($sql, 'INSERT INTO setting')))
@@ -1265,11 +1268,28 @@ function mockPdoAllowingThemeMigrationCalls(): Mockery\MockInterface
     return $pdo;
 }
 
+/**
+ * Allow the portable retired-hook cleanup statements in otherwise strict applyCorePatches()
+ * PDO mocks. The SQLite and strict-mock tests below cover the cleanup's behavior and SQL.
+ */
+function allowRetiredHookCleanupCalls(Mockery\MockInterface $pdo): void
+{
+    $statement = Mockery::mock(PDOStatement::class);
+    $statement->shouldReceive('execute')->with([])->andReturnTrue();
+
+    $pdo->shouldReceive('prepare')
+        ->with("DELETE FROM extension_meta WHERE extension = 'mod_hook' AND meta_key = 'listener'")
+        ->andReturn($statement);
+    $pdo->shouldReceive('prepare')
+        ->with("DELETE FROM extension WHERE type = 'hook'")
+        ->andReturn($statement);
+}
+
 test('applyCorePatches never runs a legacy MySQL patch on a non-MySQL driver, even if the patch level looks stale', function (): void {
     withNonMysqlDbDriver(function (): void {
-        // mockPdoAllowingThemeMigrationCalls() only accepts 'UPDATE setting'/'UPDATE extension_meta'
-        // prepare() calls; anything else (backtick-quoted identifiers, ALTER TABLE, SHOW COLUMNS,
-        // ...) would mean a legacy MySQL-only patch ran, which this test exists to catch.
+        // mockPdoAllowingThemeMigrationCalls() accepts the portable migrations and retired-hook
+        // cleanup; anything else (backtick-quoted identifiers, ALTER TABLE, SHOW COLUMNS, ...) would
+        // mean a legacy MySQL-only patch ran, which this test exists to catch.
         $pdo = mockPdoAllowingThemeMigrationCalls();
         $pdo->shouldNotReceive('query');
 
@@ -1286,6 +1306,64 @@ test('applyCorePatches never runs a legacy MySQL patch on a non-MySQL driver, ev
         // the portable schema sync to run against, so this is a full no-op end to end beyond the
         // portable theme-migration calls asserted above.
         $patcher->applyCorePatches(force: true);
+    });
+});
+
+test('applyCorePatches removes retired hook data on non-MySQL drivers and remains idempotent', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        $pdo = new PDO('sqlite::memory:');
+        $pdo->exec('CREATE TABLE setting (param TEXT PRIMARY KEY, value TEXT, public INTEGER, created_at TEXT, updated_at TEXT)');
+        $pdo->exec('CREATE TABLE extension_meta (id INTEGER PRIMARY KEY, extension TEXT, rel_type TEXT, rel_id TEXT, meta_key TEXT, meta_value TEXT)');
+        $pdo->exec('CREATE TABLE extension (id INTEGER PRIMARY KEY, type TEXT, name TEXT, status TEXT, version TEXT)');
+        $pdo->exec("INSERT INTO extension_meta (extension, rel_type, rel_id, meta_key, meta_value) VALUES
+            ('mod_hook', 'listener', 'legacy-listener', 'listener', '{}'),
+            ('mod_hook', 'config', '', 'config', '{}'),
+            ('mod_invoice', 'listener', 'unrelated-listener', 'listener', '{}')");
+        $pdo->exec("INSERT INTO extension (type, name, status, version) VALUES
+            ('hook', 'legacy-hook-package', 'installed', '1.0.0'),
+            ('mod', 'invoice', 'installed', '1.0.0')");
+
+        $di = new Pimple\Container();
+        $di['pdo'] = $pdo;
+        $di['logger'] = new Tests\Helpers\TestLogger();
+
+        $patcher = new UpdatePatcher();
+        $patcher->setDi($di);
+
+        // The portable cleanup runs from applyCorePatches on every driver. Running the
+        // upgrade twice also proves the deletes are safe when no retired rows remain.
+        $patcher->applyCorePatches(force: true);
+        $patcher->applyCorePatches(force: true);
+
+        expect((int) $pdo->query("SELECT COUNT(*) FROM extension_meta WHERE extension = 'mod_hook' AND meta_key = 'listener'")->fetchColumn())->toBe(0)
+            ->and((int) $pdo->query("SELECT COUNT(*) FROM extension WHERE type = 'hook'")->fetchColumn())->toBe(0)
+            ->and((int) $pdo->query("SELECT COUNT(*) FROM extension_meta WHERE extension = 'mod_hook' AND meta_key = 'config'")->fetchColumn())->toBe(1)
+            ->and((int) $pdo->query("SELECT COUNT(*) FROM extension_meta WHERE extension = 'mod_invoice' AND meta_key = 'listener'")->fetchColumn())->toBe(1)
+            ->and((int) $pdo->query("SELECT COUNT(*) FROM extension WHERE type = 'mod' AND name = 'invoice'")->fetchColumn())->toBe(1);
+    });
+});
+
+test('retired hook cleanup uses both parameterless portable delete statements', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        $listenerStatement = Mockery::mock(PDOStatement::class);
+        $listenerStatement->expects('execute')->with([])->andReturnTrue();
+        $packageStatement = Mockery::mock(PDOStatement::class);
+        $packageStatement->expects('execute')->with([])->andReturnTrue();
+
+        $pdo = Mockery::mock(PDO::class);
+        $pdo->expects('prepare')
+            ->with("DELETE FROM extension_meta WHERE extension = 'mod_hook' AND meta_key = 'listener'")
+            ->andReturn($listenerStatement);
+        $pdo->expects('prepare')
+            ->with("DELETE FROM extension WHERE type = 'hook'")
+            ->andReturn($packageStatement);
+
+        $di = new Pimple\Container();
+        $di['pdo'] = $pdo;
+
+        $patcher = new UpdatePatcher();
+        $patcher->setDi($di);
+        (new ReflectionMethod($patcher, 'removeRetiredHookData'))->invoke($patcher);
     });
 });
 
@@ -1397,6 +1475,7 @@ test('applyCorePatches migrates the theme setting values on a non-MySQL driver, 
         $pdo->shouldReceive('prepare')
             ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'SELECT value FROM setting') || str_starts_with($sql, 'INSERT INTO setting')))
             ->andReturn($seedStatement);
+        allowRetiredHookCleanupCalls($pdo);
 
         $di = new Pimple\Container();
         $di['pdo'] = $pdo;
@@ -1445,6 +1524,7 @@ test('applyCorePatches migrates saved theme settings/presets in extension_meta o
         $pdo->shouldReceive('prepare')
             ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'SELECT value FROM setting') || str_starts_with($sql, 'INSERT INTO setting')))
             ->andReturn($seedStatement);
+        allowRetiredHookCleanupCalls($pdo);
 
         $di = new Pimple\Container();
         $di['pdo'] = $pdo;
