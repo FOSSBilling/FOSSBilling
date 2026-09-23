@@ -112,8 +112,9 @@ class EntityManagerFactory
      * Content-based identity of the current entity definitions, for gating the ambient schema
      * sync ({@see \FOSSBilling\UpdatePatcher::ensureSchemaInSync()}) - unlike
      * {@see self::metadataCacheNamespace()}, independent of absolute paths and file mtimes, so
-     * every node running the same code agrees. Hashes the multiset of file contents: renames and
-     * comment-only edits flip nothing, and any sync it triggers is additive-only and idempotent.
+     * every node running the same code agrees. Hashes the file contents order-independently:
+     * renames and comment-only edits flip nothing, and any sync it triggers is additive-only
+     * and idempotent.
      *
      * @param list<string>|null $moduleEntityPaths pass the already-computed list from create() to
      *                                             avoid re-running the Finder; omit to compute it fresh
