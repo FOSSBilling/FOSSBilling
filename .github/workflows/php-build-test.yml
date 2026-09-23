@@ -83,7 +83,7 @@ jobs:
           docker run --rm \
             --env APP_ENV=test \
             fossbilling:test-${{ matrix.php }} \
-            ./src/vendor/bin/pest --test-directory ../tests --configuration phpunit.xml.dist --ci
+            ./src/vendor/bin/pest --test-directory ../tests --configuration phpunit.xml.dist
 
       - name: 'Export Test Image Artifact'
         # Shared with live-tests/cypress-tests so they don't each rebuild the same image.
