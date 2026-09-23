@@ -18,6 +18,8 @@ namespace Box\Mod\Client\Api;
 use Box\Mod\Client\Entity\Client;
 use Box\Mod\Client\Entity\ClientBalance;
 use Box\Mod\Client\Entity\ClientGroup;
+use Box\Mod\Client\Event\AfterAdminClientDeleteEvent;
+use Box\Mod\Client\Event\BeforeAdminClientDeleteEvent;
 use FOSSBilling\InformationException;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\Tools;
@@ -234,12 +236,14 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $this->getDi()['em']->getRepository(Client::class)->find($data['id']) ?? throw new InformationException('Client not found');
 
-        $clientId = $model->getId();
+        $clientId = (int) $model->getId();
 
         $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminClientDelete', 'params' => ['id' => $clientId]]);
+        $this->getDi()['event_dispatcher']->dispatch(new BeforeAdminClientDeleteEvent($clientId));
 
         $this->getService()->remove($model);
         $this->getDi()['events_manager']->fire(['event' => 'onAfterAdminClientDelete', 'params' => ['id' => $clientId]]);
+        $this->getDi()['event_dispatcher']->dispatch(new AfterAdminClientDeleteEvent($clientId));
 
         $this->getDi()['logger']->info('Removed client #{client_id}', ['client_id' => $clientId]);
 

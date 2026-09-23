@@ -12,6 +12,8 @@ declare(strict_types=1);
 namespace Box\Mod\System;
 
 use Box\Mod\System\Entity\Setting;
+use Box\Mod\System\Event\AfterAdminSettingsUpdateEvent;
+use Box\Mod\System\Event\BeforeAdminSettingsUpdateEvent;
 use Box\Mod\System\Repository\SettingRepository;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception\DeadlockException;
@@ -283,6 +285,7 @@ class Service
     public function updateParams($data): bool
     {
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminSettingsUpdate', 'params' => $data]);
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminSettingsUpdateEvent($data));
 
         foreach ($data as $key => $val) {
             if (!$this->canUpdateParam($key)) {
@@ -298,6 +301,7 @@ class Service
         $this->di['em']->flush();
 
         $this->di['events_manager']->fire(['event' => 'onAfterAdminSettingsUpdate']);
+        $this->di['event_dispatcher']->dispatch(new AfterAdminSettingsUpdateEvent());
 
         $this->di['logger']->info('Updated system general settings');
 

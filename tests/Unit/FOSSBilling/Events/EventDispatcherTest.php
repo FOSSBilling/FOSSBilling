@@ -25,6 +25,27 @@ final class TypedEventTestService
 
 class_alias(TypedEventTestService::class, 'Box\\Mod\\TypedEventTest\\Service');
 
+final class TypedEventPriorityTestService
+{
+    /** @var list<string> */
+    public array $calls = [];
+
+    #[AsEventListener(priority: -10)]
+    public function later(BeforeGuestTicketCreateEvent $event): void
+    {
+        $this->calls[] = 'later';
+    }
+
+    #[AsEventListener(event: BeforeGuestTicketCreateEvent::class, priority: 10)]
+    public function earlier(BeforeGuestTicketCreateEvent $event): void
+    {
+        $this->calls[] = 'earlier';
+        $event->stopPropagation();
+    }
+}
+
+class_alias(TypedEventPriorityTestService::class, 'Box\\Mod\\TypedEventPriorityTest\\Service');
+
 test('typed listeners can mutate declared fields and refresh after activation', function (): void {
     $modules = [];
     $service = new TypedEventTestService();
@@ -48,4 +69,17 @@ test('typed listeners can mutate declared fields and refresh after activation', 
     $dispatcher->refresh();
     expect($dispatcher->dispatch($newEvent())->getSubject())->toBe('Original');
     expect($service->calls)->toBe(1);
+});
+
+test('typed listeners honor Symfony priorities and stop propagation', function (): void {
+    $service = new TypedEventPriorityTestService();
+    $dispatcher = new EventDispatcher(
+        static fn (): array => ['typedEventPriorityTest'],
+        static fn (string $module): object => $service,
+    );
+
+    $event = new BeforeGuestTicketCreateEvent([], 'open', 'Subject', 'Message');
+    expect($dispatcher->dispatch($event))->toBe($event)
+        ->and($service->calls)->toBe(['earlier'])
+        ->and($event->isPropagationStopped())->toBeTrue();
 });

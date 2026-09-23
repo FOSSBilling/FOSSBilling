@@ -311,8 +311,35 @@ test('updateParams updates system parameters in a single flush', function (): vo
         'company_email' => 'work@example.eu',
     ];
 
+    $sequence = [];
+    $legacyEvents = [];
     $eventMock = Mockery::mock('\Box_EventManager');
-    $eventMock->shouldReceive('fire')->atLeast()->once();
+    $eventMock->shouldReceive('fire')->twice()->andReturnUsing(function (array $event) use (&$sequence, &$legacyEvents): void {
+        $legacyEvents[] = $event;
+        $sequence[] = $event['event'] === 'onBeforeAdminSettingsUpdate' ? 'legacy-before' : 'legacy-after';
+    });
+
+    $eventDispatcher = new class($sequence) {
+        /** @var list<FOSSBilling\Events\Event> */
+        public array $events = [];
+
+        /** @var list<string> */
+        private array $sequence;
+
+        /** @param list<string> $sequence */
+        public function __construct(array &$sequence)
+        {
+            $this->sequence = &$sequence;
+        }
+
+        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        {
+            $this->events[] = $event;
+            $this->sequence[] = $event instanceof Box\Mod\System\Event\BeforeAdminSettingsUpdateEvent ? 'typed-before' : 'typed-after';
+
+            return $event;
+        }
+    };
 
     $logStub = $this->createStub(FOSSBilling\Logger::class);
 
@@ -326,17 +353,29 @@ test('updateParams updates system parameters in a single flush', function (): vo
 
     $di = container();
     $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = $logStub;
     $di['mod_service'] = $di->protect(fn (): object => $staffServiceMock);
     $di['em']->shouldReceive('getRepository')->with(Box\Mod\System\Entity\Setting::class)->andReturn($settingRepository);
     $di['em']->shouldReceive('persist')->once();
-    $di['em']->shouldReceive('flush')->once();
+    $di['em']->shouldReceive('flush')->once()->andReturnUsing(static function () use (&$sequence): void {
+        $sequence[] = 'flush';
+    });
     $service->setDi($di);
 
     $result = $service->updateParams($data);
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
     expect($companyName->getValue())->toBe('Inc. Test');
+    expect($sequence)->toBe(['legacy-before', 'typed-before', 'flush', 'legacy-after', 'typed-after']);
+    expect($legacyEvents)->toBe([
+        ['event' => 'onBeforeAdminSettingsUpdate', 'params' => $data],
+        ['event' => 'onAfterAdminSettingsUpdate'],
+    ]);
+    expect($eventDispatcher->events)->toHaveCount(2);
+    expect($eventDispatcher->events[0])->toBeInstanceOf(Box\Mod\System\Event\BeforeAdminSettingsUpdateEvent::class);
+    expect($eventDispatcher->events[0]->data)->toBe($data);
+    expect($eventDispatcher->events[1])->toBeInstanceOf(Box\Mod\System\Event\AfterAdminSettingsUpdateEvent::class);
 });
 
 test('updateParams denies a mixed-case guarded key without the company permission', function (): void {
@@ -353,6 +392,12 @@ test('updateParams denies a mixed-case guarded key without the company permissio
 
     $di = container();
     $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = new class {
+        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        {
+            return $event;
+        }
+    };
     $di['mod_service'] = $di->protect(fn (): object => $staffServiceMock);
     $di['em']->shouldReceive('getRepository')->with(Box\Mod\System\Entity\Setting::class)->andReturn($settingRepository);
     $service->setDi($di);
@@ -377,6 +422,12 @@ test('updateParams denies a mixed-case legal key without the legal permission', 
 
     $di = container();
     $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = new class {
+        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        {
+            return $event;
+        }
+    };
     $di['mod_service'] = $di->protect(fn (): object => $staffServiceMock);
     $di['em']->shouldReceive('getRepository')->with(Box\Mod\System\Entity\Setting::class)->andReturn($settingRepository);
     $service->setDi($di);
@@ -415,6 +466,12 @@ test('updateParams rejects a key with a trailing space', function (): void {
 
     $di = container();
     $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = new class {
+        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        {
+            return $event;
+        }
+    };
     $di['mod_service'] = $di->protect(fn (): object => $staffServiceMock);
     $di['em']->shouldReceive('getRepository')->with(Box\Mod\System\Entity\Setting::class)->andReturn($settingRepository);
     $service->setDi($di);

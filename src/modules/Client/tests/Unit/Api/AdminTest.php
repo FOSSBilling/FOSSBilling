@@ -186,14 +186,38 @@ test('delete returns true', function (): void {
     $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
     $data = ['id' => 1];
 
-    $eventMock = Mockery::mock('\Box_EventManager');
-    $eventMock->shouldReceive('fire')->atLeast()->once();
+    $calls = new ArrayObject();
+    $eventMock = new class($calls) {
+        public function __construct(private ArrayObject $calls)
+        {
+        }
+
+        public function fire(array|string $event): void
+        {
+            $this->calls->append($event);
+        }
+    };
+    $dispatcher = new class($calls) {
+        public function __construct(private ArrayObject $calls)
+        {
+        }
+
+        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        {
+            $this->calls->append($event);
+
+            return $event;
+        }
+    };
 
     $serviceMock = Mockery::mock(Box\Mod\Client\Service::class)->makePartial();
-    $serviceMock->shouldReceive('remove')->atLeast()->once();
+    $serviceMock->shouldReceive('remove')->once()->andReturnUsing(static function () use ($calls): void {
+        $calls->append('remove');
+    });
 
     $di = container();
     $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $dispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $validatorStub = $this->createStub(FOSSBilling\Validate::class);
     $di['validator'] = $validatorStub;
@@ -201,7 +225,15 @@ test('delete returns true', function (): void {
     $adminClient->setDi($di);
     $adminClient->setService($serviceMock);
     $result = $adminClient->delete($data);
+
     expect($result)->toBeTrue();
+    expect($calls->getArrayCopy())->toEqual([
+        ['event' => 'onBeforeAdminClientDelete', 'params' => ['id' => 1]],
+        new Box\Mod\Client\Event\BeforeAdminClientDeleteEvent(1),
+        'remove',
+        ['event' => 'onAfterAdminClientDelete', 'params' => ['id' => 1]],
+        new Box\Mod\Client\Event\AfterAdminClientDeleteEvent(1),
+    ]);
 });
 
 test('update returns true', function (): void {
