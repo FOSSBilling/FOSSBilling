@@ -145,9 +145,7 @@ class UpdateFinalization implements InjectionAwareInterface
         }
 
         // No version change (e.g. a code-only deploy with new entity columns), so no
-        // finalization runs - but the schema may still have drifted. Check the metadata hash
-        // outside the lock and take it only when a sync is actually needed; the sync rechecks
-        // the hash inside, so a request that lost the race just no-ops.
+        // finalization runs - check for schema drift outside the lock, sync inside it.
         // @see https://github.com/FOSSBilling/FOSSBilling/issues/4392
         $patcher = $this->createPatcher();
         if ($patcher->isSchemaOutOfSync()) {

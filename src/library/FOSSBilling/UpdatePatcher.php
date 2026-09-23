@@ -26,12 +26,6 @@ class UpdatePatcher implements InjectionAwareInterface
 {
     private const string SCHEMA_METADATA_HASH_PARAM = 'schema_metadata_hash';
     private const string SCHEMA_METADATA_HASH_FAILED_PARAM = 'schema_metadata_hash_failed';
-
-    /**
-     * How long a failed ambient sync suppresses retries for the same metadata hash - a persistently
-     * failing sync (e.g. a DB user without ALTER privileges) would otherwise redo full schema
-     * introspection and log errors on every request. Explicit finalization still syncs regardless.
-     */
     private const int SCHEMA_SYNC_RETRY_COOLDOWN = 3600;
 
     private ?\Pimple\Container $di = null;
@@ -258,6 +252,8 @@ class UpdatePatcher implements InjectionAwareInterface
             return false;
         }
 
+        $currentHash = null;
+
         try {
             $currentHash = EntityManagerFactory::entityDefinitionsHash();
             if ($this->fetchStoredSchemaHash() === $currentHash || $this->isSyncCoolingDown($currentHash)) {
@@ -277,7 +273,7 @@ class UpdatePatcher implements InjectionAwareInterface
             return true;
         } catch (\Throwable $e) {
             $this->logUpdate('error', 'Ambient schema sync failed: ' . $e->getMessage());
-            $this->recordFailedSyncAttempt($currentHash ?? null);
+            $this->recordFailedSyncAttempt($currentHash);
 
             return false;
         }
@@ -312,9 +308,8 @@ class UpdatePatcher implements InjectionAwareInterface
     }
 
     /**
-     * Whether a sync for this exact metadata hash already failed within the retry cooldown -
-     * see SCHEMA_SYNC_RETRY_COOLDOWN. Read failures fail open (no cooldown), leaving the outcome
-     * to the sync attempt itself rather than guessing from a half-read state.
+     * Whether a sync for this exact metadata hash already failed within the retry cooldown.
+     * Read failures fail open (no cooldown), leaving the outcome to the sync attempt itself.
      */
     private function isSyncCoolingDown(string $currentHash): bool
     {
@@ -340,9 +335,8 @@ class UpdatePatcher implements InjectionAwareInterface
     }
 
     /**
-     * Remembers a failed sync attempt for the cooldown above. Never throws - called from failure
-     * paths where a second exception would mask the original error or escape a log-and-continue
-     * contract.
+     * Remembers a failed sync attempt for the cooldown above. Never throws - failures here must
+     * not mask the original error.
      */
     private function recordFailedSyncAttempt(?string $currentHash): void
     {
