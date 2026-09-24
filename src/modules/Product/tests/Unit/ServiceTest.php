@@ -2002,12 +2002,17 @@ test('get product discount uses product order line config', function (): void {
     $product = productTestCreateProductEntity(5)->setIsAddon(false);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
-    $serviceMock->shouldReceive('getProductOrderLineConfig')->once()->with($product, ['period' => '1Y'])->andReturn([
-        'price' => 100.0,
-        'quantity' => 2,
-    ]);
+    $serviceMock->shouldReceive('getProductOrderLineConfig')
+        ->once()
+        ->with($product, ['period' => '1Y'], false)
+        ->andReturn(['price' => 100.0, 'quantity' => 2]);
+    $serviceMock->shouldReceive('getProductOrderLineConfig')
+        ->once()
+        ->with($product, ['period' => '1Y'], true)
+        ->andReturn(['price' => 40.0, 'quantity' => 2]);
 
     expect($serviceMock->getProductDiscount($product, $promo, ['period' => '1Y']))->toBe(20.0);
+    expect($serviceMock->getProductDiscount($product, $promo, ['period' => '1Y'], true))->toBe(8.0);
 });
 
 test('get renewal product discount uses product renewal line config', function (): void {
@@ -3200,9 +3205,9 @@ test('findEligibleAutoPromos returns matching promos with total discounts', func
     $serviceMock->shouldReceive('isPromoAvailableForClientGroup')->once()->with($promo, $client)->andReturn(true);
     $serviceMock->shouldReceive('canClientUsePromo')->once()->with($client, $promo)->andReturn(true);
     $serviceMock->shouldReceive('isPromoApplicableToProduct')->once()->andReturn(true);
-    $serviceMock->shouldReceive('getProductDiscount')->once()->andReturn(12.5);
+    $serviceMock->shouldReceive('getProductDiscount')->once()->with($product, $promo, [], true)->andReturn(12.5);
 
-    $result = $serviceMock->findEligibleAutoPromos($client, [['product' => $product, 'config' => []]]);
+    $result = $serviceMock->findEligibleAutoPromos($client, [['product' => $product, 'config' => []]], true);
 
     expect($result)->toHaveCount(1);
     expect($result[0]['promo'])->toBe($promo);
