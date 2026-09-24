@@ -51,7 +51,7 @@ class Service
     public function install(): bool
     {
         // Raw MySQL-only DDL here (backticks, ENGINE=InnoDB) would fail outright on
-        // PostgreSQL/SQLite. custom_pages isn't in structure.sql at all - this module creates
+        // PostgreSQL/SQLite. custom_pages isn't in the pre-cutover schema at all - this module creates
         // its own table on activation - so unlike the core install path, this genuinely runs on
         // every platform. SchemaSynchronizer::syncEntities() creates (or catches up) just this
         // module's own table from current metadata, additively and safely - scoped so

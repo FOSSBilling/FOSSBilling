@@ -460,7 +460,7 @@ test('create page reserves room for the suffix when truncating a conflicting lon
 
 test('install creates the custom_pages table portably instead of via raw MySQL DDL', function (): void {
     // Regression test: install() used to run raw MySQL-only DDL (backticks, ENGINE=InnoDB)
-    // directly, which fails outright on PostgreSQL/SQLite. custom_pages isn't in structure.sql
+    // directly, which fails outright on PostgreSQL/SQLite. custom_pages isn't in the pre-cutover schema
     // at all, so this hook is the only thing that ever creates the table - unlike most modules,
     // it genuinely runs on every platform, confirmed here against a real SQLite connection.
     $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);

@@ -2010,7 +2010,7 @@ class UpdatePatcher implements InjectionAwareInterface
     private function patch71(): void
     {
         // Ensure the invoice table has the gateway_id, text_1, and text_2
-        // columns. These have been part of structure.sql for a long time, but
+        // columns. These long predate the Doctrine schema cutover, but
         // databases upgraded from very old installations (e.g. BoxBilling era)
         // may be missing them, which produces PHP "Undefined array key"
         // warnings in Invoice\Service::toApiArray().
@@ -3008,7 +3008,7 @@ class UpdatePatcher implements InjectionAwareInterface
 
     private function patch110(): void
     {
-        // These columns were declared int(11) in structure.sql while the primary key
+        // These columns were int(11) in the pre-cutover schema while the primary key
         // column they reference is bigint(20), a width mismatch that predates this
         // patch. Widen them to match so large ids don't overflow the FK column.
         $narrowForeignKeys = [
@@ -3032,7 +3032,7 @@ class UpdatePatcher implements InjectionAwareInterface
     private function patch111(): void
     {
         // The Serviceapikey module (PR #4055) added the ServiceApiKey Doctrine entity but
-        // never gave it a structure.sql counterpart, so the service_apikey table was never
+        // never added it to the pre-cutover schema definition, so the service_apikey table was never
         // created on any MySQL install — fresh or upgraded.
         if (!$this->tableExists('service_apikey')) {
             $this->executeSql(
@@ -3267,7 +3267,7 @@ class UpdatePatcher implements InjectionAwareInterface
     {
         // Enforce unique session_id on cart at the DB level (matches the Cart entity
         // UniqueConstraint and CartRepository::findBySessionId()'s existing assumption of at
-        // most one cart per session). structure.sql has only ever had a plain index here.
+        // most one cart per session). The pre-cutover schema only ever had a plain index here.
         //
         // Reconcile any duplicate session_ids before adding the unique index: keep the
         // highest-id (most recently created) row per duplicated session_id - the one a
@@ -3790,7 +3790,7 @@ class UpdatePatcher implements InjectionAwareInterface
         }
 
         // mod_massmailer: legacy module installs created the datetime columns as
-        // varchar(35); align them with the DATETIME entity mapping and structure.sql.
+        // varchar(35); align them with the DATETIME entity mapping.
         if ($this->tableExists('mod_massmailer')) {
             foreach (['sent_at', 'created_at', 'updated_at'] as $column) {
                 if ($this->tableHasColumn('mod_massmailer', $column)) {
