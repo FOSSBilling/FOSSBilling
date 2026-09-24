@@ -13,12 +13,18 @@ namespace Box\Mod\Cart;
 
 use Box\Mod\Cart\Entity\Cart;
 use Box\Mod\Cart\Entity\CartProduct;
+use Box\Mod\Cart\Event\AfterProductAddedToCartEvent;
+use Box\Mod\Cart\Event\AfterStaffOrderCreateEvent;
+use Box\Mod\Cart\Event\BeforeClientCheckoutEvent;
+use Box\Mod\Cart\Event\BeforeProductAddedToCartEvent;
+use Box\Mod\Cart\Event\BeforeStaffCheckoutEvent;
 use Box\Mod\Cart\Repository\CartProductRepository;
 use Box\Mod\Cart\Repository\CartRepository;
 use Box\Mod\Client\Entity\Client;
 use Box\Mod\Currency\Entity\Currency;
 use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Order\Entity\Order;
+use Box\Mod\Order\Event\AfterClientOrderCreateEvent;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Product\Entity\Promo;
 use Box\Mod\Product\Service as ProductService;
@@ -223,8 +229,9 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\InformationException('Price override cannot be negative');
         }
 
-        $event_params = [...$data, 'cart_id' => $cart->getId(), 'product_id' => $this->getProductId($product)];
-        $this->di['events_manager']->fire(['event' => 'onBeforeProductAddedToCart', 'params' => $event_params]);
+        $cartId = (int) $cart->getId();
+        $productId = $this->getProductId($product);
+        $this->di['event_dispatcher']->dispatch(new BeforeProductAddedToCartEvent($cartId, $productId));
 
         $productService = $this->getProductService()->getProductModuleService($product);
 
@@ -347,7 +354,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['logger']->info('Added "{product_title}" to shopping cart', ['product_title' => $this->getProductTitle($product)]);
 
-        $this->di['events_manager']->fire(['event' => 'onAfterProductAddedToCart', 'params' => $event_params]);
+        $this->di['event_dispatcher']->dispatch(new AfterProductAddedToCartEvent($cartId, $productId));
 
         return true;
     }
@@ -887,16 +894,11 @@ class Service implements InjectionAwareInterface
             $this->assertPromoCartConditionMet($cart, $promo);
         }
 
-        $this->di['events_manager']->fire(
-            [
-                'event' => 'onBeforeClientCheckout',
-                'params' => [
-                    'ip' => $this->di['request']->getClientIp(),
-                    'client_id' => (int) $client->getId(),
-                    'cart_id' => $cart->getId(),
-                ],
-            ]
-        );
+        $this->di['event_dispatcher']->dispatch(new BeforeClientCheckoutEvent(
+            (int) $cart->getId(),
+            (int) $client->getId(),
+            $this->di['request']->getClientIp(),
+        ));
 
         [$order, $invoice, $orders] = $this->createFromCart($client, $gateway_id);
 
@@ -904,16 +906,11 @@ class Service implements InjectionAwareInterface
 
         $this->di['logger']->info('Checked out shopping cart');
 
-        $this->di['events_manager']->fire(
-            [
-                'event' => 'onAfterClientOrderCreate',
-                'params' => [
-                    'ip' => $this->di['request']->getClientIp(),
-                    'client_id' => (int) $client->getId(),
-                    'id' => $order->getId(),
-                ],
-            ]
-        );
+        $this->di['event_dispatcher']->dispatch(new AfterClientOrderCreateEvent(
+            (int) $order->getId(),
+            (int) $client->getId(),
+            $this->di['request']->getClientIp(),
+        ));
 
         $result = [
             'gateway_id' => $gateway_id,
@@ -971,16 +968,11 @@ class Service implements InjectionAwareInterface
             $this->assertPromoCartConditionMet($basket, $promo);
         }
 
-        $this->di['events_manager']->fire(
-            [
-                'event' => 'onBeforeStaffCheckout',
-                'params' => [
-                    'admin_id' => $adminId,
-                    'client_id' => (int) $client->getId(),
-                    'cart_id' => $basket->getId(),
-                ],
-            ]
-        );
+        $this->di['event_dispatcher']->dispatch(new BeforeStaffCheckoutEvent(
+            $adminId,
+            (int) $client->getId(),
+            (int) $basket->getId(),
+        ));
 
         [$order, $invoice, $orders] = $this->createOrdersFromCart($basket, $client, [
             'gateway_id' => $options['gateway_id'] ?? null,
@@ -992,16 +984,11 @@ class Service implements InjectionAwareInterface
 
         $this->di['logger']->info('Checked out staff basket for client #{client_id}', ['client_id' => $client->getId()]);
 
-        $this->di['events_manager']->fire(
-            [
-                'event' => 'onAfterStaffOrderCreate',
-                'params' => [
-                    'admin_id' => $adminId,
-                    'client_id' => (int) $client->getId(),
-                    'id' => $order->getId(),
-                ],
-            ]
-        );
+        $this->di['event_dispatcher']->dispatch(new AfterStaffOrderCreateEvent(
+            $adminId,
+            (int) $client->getId(),
+            (int) $order->getId(),
+        ));
 
         $result = [
             'gateway_id' => $options['gateway_id'] ?? null,

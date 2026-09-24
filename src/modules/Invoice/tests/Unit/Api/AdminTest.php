@@ -17,6 +17,7 @@ use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Subscription;
 use Box\Mod\Invoice\Entity\Tax;
 use Box\Mod\Invoice\Entity\Transaction;
+use Box\Mod\Invoice\Event\BeforeAdminTransactionProcessEvent;
 use Box\Mod\Invoice\Repository\InvoiceItemRepository;
 use Box\Mod\Invoice\Repository\InvoiceRepository;
 use Box\Mod\Invoice\Repository\PayGatewayRepository;
@@ -31,6 +32,7 @@ use Box\Mod\Invoice\ServiceTransaction;
 use Box\Mod\Order\Entity\Order;
 use Box\Mod\Order\Repository\OrderRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\EventDispatcher\EventDispatcher as SymfonyEventDispatcher;
 
 use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
@@ -699,10 +701,15 @@ test('processes a transaction', function (): void {
         'id' => 1,
     ];
 
+    $steps = [];
     $transactionService = Mockery::mock(ServiceTransaction::class);
     $transactionService->shouldReceive('preProcessTransaction')
         ->atLeast()->once()
-        ->andReturn(true);
+        ->andReturnUsing(function () use (&$steps): bool {
+            $steps[] = 'process';
+
+            return true;
+        });
 
     $model = createEntity(Transaction::class, ['id' => 1]);
     $transactionRepo = Mockery::mock(TransactionRepository::class);
@@ -710,20 +717,25 @@ test('processes a transaction', function (): void {
     $em = Mockery::mock(EntityManagerInterface::class);
     $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($transactionRepo);
 
-    $eventsMock = Mockery::mock('\Box_EventManager');
-    $eventsMock->shouldReceive('fire')
-        ->atLeast()->once();
+    $dispatcher = new SymfonyEventDispatcher();
+    $dispatcher->addListener(BeforeAdminTransactionProcessEvent::class, static function (BeforeAdminTransactionProcessEvent $event) use (&$steps): void {
+        $steps[] = $event;
+    });
 
     $di = container();
     $di['em'] = $em;
-    $di['events_manager'] = $eventsMock;
+    $di['event_dispatcher'] = $dispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod_service'] = $di->protect(moduleService(['invoice:transaction' => $transactionService]));
 
     $api->setDi($di);
 
     $result = $api->transaction_process($data);
-    expect($result)->toBeBool()->toBeTrue();
+    expect($result)->toBeBool()->toBeTrue()
+        ->and($steps)->toHaveCount(2)
+        ->and($steps[0])->toBeInstanceOf(BeforeAdminTransactionProcessEvent::class)
+        ->and($steps[0]->transactionId)->toBe(1)
+        ->and($steps[1])->toBe('process');
 });
 
 test('updates a transaction', function (): void {

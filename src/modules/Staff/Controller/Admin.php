@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Box\Mod\Staff\Controller;
 
 use Box\Mod\Staff\Entity\AdminPasswordReset;
+use Box\Mod\Staff\Event\BeforeStaffPasswordResetConfirmationEvent;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Security\RandomizedTimeFloor;
 use Symfony\Component\HttpFoundation\Response;
@@ -120,7 +121,7 @@ class Admin implements InjectionAwareInterface
         }
 
         $data = [];
-        $this->di['events_manager']->fire(['event' => 'onBeforePasswordResetStaff']);
+        $this->di['event_dispatcher']->dispatch(new BeforeStaffPasswordResetConfirmationEvent($this->di['request']->getClientIp()));
 
         $mod = $this->di['mod']('staff');
         $config = $mod->getConfig();

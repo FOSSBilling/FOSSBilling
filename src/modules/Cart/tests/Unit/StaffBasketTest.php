@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 use Box\Mod\Cart\Entity\Cart;
 use Box\Mod\Cart\Entity\CartProduct;
+use Box\Mod\Cart\Event\AfterStaffOrderCreateEvent;
+use Box\Mod\Cart\Event\BeforeStaffCheckoutEvent;
 use Box\Mod\Cart\Repository\CartProductRepository;
 use Box\Mod\Cart\Repository\CartRepository;
 use Box\Mod\Cart\Service;
@@ -23,6 +25,7 @@ use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Order\Entity\Order;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Product\Service as ProductService;
+use Symfony\Component\EventDispatcher\EventDispatcher as SymfonyEventDispatcher;
 
 use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
@@ -160,8 +163,7 @@ test('addItem strips a forged price override from client input', function (): vo
 
     $productModel = createProductEntity(id: 5, type: 'custom');
 
-    $eventMock = Mockery::mock(Box_EventManager::class)->shouldIgnoreMissing();
-    $eventMock->shouldReceive('fire')->atLeast()->once();
+    $eventDispatcher = new SymfonyEventDispatcher();
 
     $cartProductRepo = Mockery::mock(CartProductRepository::class);
     $cartProductRepo->shouldReceive('findByCartId')->atLeast()->once()->andReturn([]);
@@ -188,7 +190,7 @@ test('addItem strips a forged price override from client input', function (): vo
 
     $di = container();
     $di['em'] = $emMock;
-    $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['mod_service'] = $di->protect(fn ($name) => $name === 'Product' ? $productServiceMock : new stdClass());
     $di['logger'] = new FOSSBilling\Logger();
     $serviceMock->setDi($di);
@@ -206,8 +208,7 @@ test('addItem stamps a staff price override on the main row only', function (): 
     $parentModel = createProductEntity(id: 5, type: 'custom');
     $addonModel = createProductEntity(id: 9, type: 'custom');
 
-    $eventMock = Mockery::mock(Box_EventManager::class)->shouldIgnoreMissing();
-    $eventMock->shouldReceive('fire')->atLeast()->once();
+    $eventDispatcher = new SymfonyEventDispatcher();
 
     $cartProductRepo = Mockery::mock(CartProductRepository::class);
     $cartProductRepo->shouldReceive('findByCartId')->atLeast()->once()->andReturn([]);
@@ -236,7 +237,7 @@ test('addItem stamps a staff price override on the main row only', function (): 
 
     $di = container();
     $di['em'] = $emMock;
-    $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['mod_service'] = $di->protect(fn ($name) => $name === 'Product' ? $productServiceMock : new stdClass());
     $di['logger'] = new FOSSBilling\Logger();
     $serviceMock->setDi($di);
@@ -306,12 +307,12 @@ test('checkoutStaffBasket checks out and destroys the basket', function (): void
     $productServiceMock = Mockery::mock(ProductService::class);
 
     $events = [];
-    $eventMock = Mockery::mock(Box_EventManager::class)->shouldIgnoreMissing();
-    $eventMock->shouldReceive('fire')->andReturnUsing(function (array $event) use (&$events): bool {
-        $events[] = $event;
-
-        return true;
-    });
+    $eventDispatcher = new SymfonyEventDispatcher();
+    foreach ([BeforeStaffCheckoutEvent::class, AfterStaffOrderCreateEvent::class] as $eventClass) {
+        $eventDispatcher->addListener($eventClass, static function (object $event) use (&$events): void {
+            $events[] = $event;
+        });
+    }
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('createOrdersFromCart')
@@ -321,7 +322,7 @@ test('checkoutStaffBasket checks out and destroys the basket', function (): void
     $serviceMock->shouldReceive('rm')->once()->with($basket)->andReturn(true);
 
     $di = container();
-    $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = new FOSSBilling\Logger();
     $di['mod_service'] = $di->protect(fn ($name) => $name === 'Product' ? $productServiceMock : new stdClass());
     $serviceMock->setDi($di);
@@ -333,7 +334,9 @@ test('checkoutStaffBasket checks out and destroys the basket', function (): void
     expect($result['invoice_hash'])->toBe('basket-hash');
     expect($result['order_id'])->toBe(21);
     expect($result['orders'])->toBe([21, 22]);
-    expect(array_column($events, 'event'))->toBe(['onBeforeStaffCheckout', 'onAfterStaffOrderCreate']);
+    expect(array_map(static fn (object $event): string => $event::class, $events))->toBe([BeforeStaffCheckoutEvent::class, AfterStaffOrderCreateEvent::class]);
+    expect($events[0]->cartId)->toBe(3);
+    expect($events[1]->orderId)->toBe(21);
 });
 
 test('checkoutStaffBasket marks the invoice paid when requested', function (): void {
@@ -361,14 +364,14 @@ test('checkoutStaffBasket marks the invoice paid when requested', function (): v
         ->with($invoice, ['gateway_id' => 5, 'transactionId' => 'txn-1'])
         ->andReturn(true);
 
-    $eventMock = Mockery::mock(Box_EventManager::class)->shouldIgnoreMissing();
+    $eventDispatcher = new SymfonyEventDispatcher();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('createOrdersFromCart')->once()->andReturn([$masterOrder, $invoice, [21]]);
     $serviceMock->shouldReceive('rm')->once()->andReturn(true);
 
     $di = container();
-    $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = new FOSSBilling\Logger();
     $di['mod_service'] = $di->protect(fn ($name) => match ($name) {
         'Product' => $productServiceMock,

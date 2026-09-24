@@ -11,7 +11,10 @@ declare(strict_types=1);
 
 namespace Box\Mod\System;
 
+use Box\Mod\Cron\Event\BeforeAdminCronRunEvent;
 use Box\Mod\System\Entity\Setting;
+use Box\Mod\System\Event\AfterAdminSettingsUpdateEvent;
+use Box\Mod\System\Event\BeforeAdminSettingsUpdateEvent;
 use Box\Mod\System\Repository\SettingRepository;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception\DeadlockException;
@@ -30,6 +33,7 @@ use FOSSBilling\SentryHelper;
 use FOSSBilling\Twig\SandboxedStringRenderer;
 use FOSSBilling\Version;
 use Pimple\Container;
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Contracts\Cache\ItemInterface;
@@ -282,7 +286,8 @@ class Service
 
     public function updateParams($data): bool
     {
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminSettingsUpdate', 'params' => $data]);
+        $parameterNames = array_map(static fn (int|string $key): string => (string) $key, array_keys($data));
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminSettingsUpdateEvent($parameterNames));
 
         foreach ($data as $key => $val) {
             if (!$this->canUpdateParam($key)) {
@@ -297,7 +302,7 @@ class Service
         // Flush the batch once; a unique-constraint collision surfaces to the caller.
         $this->di['em']->flush();
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminSettingsUpdate']);
+        $this->di['event_dispatcher']->dispatch(new AfterAdminSettingsUpdateEvent());
 
         $this->di['logger']->info('Updated system general settings');
 
@@ -741,23 +746,23 @@ class Service
         return true;
     }
 
-    public static function onBeforeAdminCronRun(\Box_Event $event): void
+    #[AsEventListener]
+    public function refreshGeoIpAndPruneCache(BeforeAdminCronRunEvent $event): void
     {
-        $di = $event->getDi();
         /** @var Reader $geoipReader */
         $geoipReader = (new \ReflectionClass(Reader::class))->newInstanceWithoutConstructor();
-        $geoipReader->setDi($di);
+        $geoipReader->setDi($this->di);
         $geoipReader->updateDefaultDatabases();
 
         try {
             // Prune the cache. Only filesystem-backed pools support this; Redis/Memcached
             // expire entries on their own and don't implement PruneableInterface.
-            $cache = $di['cache'];
+            $cache = $this->di['cache'];
             if ($cache instanceof \Symfony\Component\Cache\PruneableInterface && $cache->prune()) {
-                $di['logger']->withChannel('cron')->info('Pruned the filesystem cache');
+                $this->di['logger']->withChannel('cron')->info('Pruned the filesystem cache');
             }
         } catch (\Exception $e) {
-            $di['logger']->error($e->getMessage());
+            $this->di['logger']->error($e->getMessage());
         }
     }
 

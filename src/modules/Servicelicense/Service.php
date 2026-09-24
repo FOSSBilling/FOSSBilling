@@ -15,6 +15,8 @@ use Box\Mod\Client\Entity\Client;
 use Box\Mod\Order\Entity\Order;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Servicelicense\Entity\ServiceLicense;
+use Box\Mod\Servicelicense\Event\AfterServiceLicenseResetEvent;
+use Box\Mod\Servicelicense\Event\BeforeServiceLicenseResetEvent;
 use Box\Mod\Servicelicense\Repository\ServiceLicenseRepository;
 use FOSSBilling\InjectionAwareInterface;
 use Symfony\Component\Filesystem\Path;
@@ -197,15 +199,7 @@ class Service implements InjectionAwareInterface
 
     public function reset(ServiceLicense $model): bool
     {
-        $data = [
-            'id' => $model->getId(),
-            'ips' => $model->getIps(),
-            'hosts' => $model->getHosts(),
-            'paths' => $model->getPaths(),
-            'versions' => $model->getVersions(),
-            'client_id' => $model->getClientId(),
-        ];
-        $this->di['events_manager']->fire(['event' => 'onBeforeServicelicenseReset', 'params' => $data]);
+        $this->di['event_dispatcher']->dispatch(new BeforeServiceLicenseResetEvent($model->getId(), $model->getClientId()));
 
         $model->setIps(json_encode([]));
         $model->setHosts(json_encode([]));
@@ -214,12 +208,7 @@ class Service implements InjectionAwareInterface
         $this->di['em']->flush();
         $this->di['logger']->info('Reset license {model_id} information', ['model_id' => $model->getId()]);
 
-        $data = [
-            'id' => $model->getId(),
-            'client_id' => $model->getClientId(),
-            'updated_at' => $model->getUpdatedAt()?->format('Y-m-d H:i:s'),
-        ];
-        $this->di['events_manager']->fire(['event' => 'onAfterServicelicenseReset', 'params' => $data]);
+        $this->di['event_dispatcher']->dispatch(new AfterServiceLicenseResetEvent($model->getId(), $model->getClientId()));
 
         return true;
     }

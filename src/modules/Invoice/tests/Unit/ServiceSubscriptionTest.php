@@ -62,18 +62,30 @@ test('gets dependency injection container', function (): void {
         ->and($service->getSubscriptionRepository())->toBe($repo);
 });
 
-test('creates a subscription', function (): void {
+test('creates a subscription and dispatches its typed event', function (): void {
+    $calls = (object) ['entries' => []];
     $em = Mockery::mock(EntityManagerInterface::class);
-    $em->shouldReceive('persist')->atLeast()->once();
-    $em->shouldReceive('flush')->atLeast()->once();
+    $em->shouldReceive('persist')->once()->with(Mockery::type(Subscription::class))->andReturnUsing(function (Subscription $subscription): void {
+        (new ReflectionProperty(Subscription::class, 'id'))->setValue($subscription, 42);
+    });
+    $em->shouldReceive('flush')->once();
 
-    $eventsMock = Mockery::mock('\Box_EventManager');
-    $eventsMock->shouldReceive('fire')
-        ->atLeast()->once();
+    $eventDispatcher = new readonly class($calls) {
+        public function __construct(private object $calls)
+        {
+        }
+
+        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        {
+            $this->calls->entries[] = ['typed', $event];
+
+            return $event;
+        }
+    };
 
     $service = subscriptionService(em: $em);
     $service->getDi()['logger'] = new Tests\Helpers\TestLogger();
-    $service->getDi()['events_manager'] = $eventsMock;
+    $service->getDi()['event_dispatcher'] = $eventDispatcher;
 
     $data = [
         'client_id' => 1,
@@ -84,7 +96,11 @@ test('creates a subscription', function (): void {
     $pg = createEntity(PayGateway::class, ['id' => 2]);
 
     $result = $service->create($client, $pg, $data);
-    expect($result)->toBeInt();
+    expect($result)->toBe(42)
+        ->and($calls->entries)->toHaveCount(1)
+        ->and($calls->entries[0][0])->toBe('typed')
+        ->and($calls->entries[0][1])->toBeInstanceOf(Box\Mod\Invoice\Event\AfterAdminSubscriptionCreateEvent::class)
+        ->and($calls->entries[0][1]->subscriptionId)->toBe(42);
 });
 
 test('updates a subscription', function (): void {
@@ -373,23 +389,37 @@ test('converts to api array', function (): void {
     expect($result['gateway'])->toBeArray();
 });
 
-test('deletes a subscription', function (): void {
+test('deletes a subscription and dispatches its typed event', function (): void {
+    $calls = (object) ['entries' => []];
     $em = Mockery::mock(EntityManagerInterface::class);
-    $em->shouldReceive('remove')->atLeast()->once();
-    $em->shouldReceive('flush')->atLeast()->once();
+    $em->shouldReceive('remove')->once();
+    $em->shouldReceive('flush')->once();
 
-    $eventsMock = Mockery::mock('\Box_EventManager');
-    $eventsMock->shouldReceive('fire')
-        ->atLeast()->once();
+    $eventDispatcher = new readonly class($calls) {
+        public function __construct(private object $calls)
+        {
+        }
+
+        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        {
+            $this->calls->entries[] = ['typed', $event];
+
+            return $event;
+        }
+    };
 
     $service = subscriptionService(em: $em);
     $service->getDi()['logger'] = new Tests\Helpers\TestLogger();
-    $service->getDi()['events_manager'] = $eventsMock;
+    $service->getDi()['event_dispatcher'] = $eventDispatcher;
 
     $subscriptionModel = createEntity(Subscription::class, ['id' => 1]);
 
     $result = $service->delete($subscriptionModel);
-    expect($result)->toBeTrue();
+    expect($result)->toBeTrue()
+        ->and($calls->entries)->toHaveCount(1)
+        ->and($calls->entries[0][0])->toBe('typed')
+        ->and($calls->entries[0][1])->toBeInstanceOf(Box\Mod\Invoice\Event\AfterAdminSubscriptionDeleteEvent::class)
+        ->and($calls->entries[0][1]->subscriptionId)->toBe(1);
 });
 
 test('returns false when invoice is not subscribable', function (): void {

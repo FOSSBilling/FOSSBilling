@@ -204,7 +204,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
     /**
      * Create new email template. Creating new email template can be
-     * combined with custom event hook.
+     * combined with a typed event listener.
      *
      * @return int - newly created template id
      *
