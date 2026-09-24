@@ -13,6 +13,7 @@ namespace Box\Mod\Notification;
 
 use Box\Mod\Extension\Entity\ExtensionMeta;
 use Box\Mod\Extension\Repository\ExtensionMetaRepository;
+use Box\Mod\Notification\Event\AfterAdminNotificationAddEvent;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\SortOptions;
 
@@ -138,7 +139,7 @@ class Service implements InjectionAwareInterface
         if ($id === null) {
             throw new \FOSSBilling\Exception('Failed to create notification message: missing ID after persistence.');
         }
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminNotificationAdd', 'params' => ['id' => $id]]);
+        $this->di['event_dispatcher']->dispatch(new AfterAdminNotificationAddEvent($id));
 
         return $id;
     }

@@ -193,10 +193,6 @@ class UpdatePatcher implements InjectionAwareInterface
                 call_user_func($patch);
                 $this->setPatchLevel($patchLevel);
             }
-
-            if ($patches !== [] && $this->di !== null && $this->di->offsetExists('events_manager')) {
-                $this->di['events_manager']->clearListenerCache();
-            }
         }
 
         // Portable (plain UPDATE ... WHERE, no MySQL-specific syntax) and idempotent, so it
@@ -205,6 +201,10 @@ class UpdatePatcher implements InjectionAwareInterface
         // would otherwise be left with a theme that never got renamed and orphaned saved settings
         // forever.
         $this->migrateThemePackageLayout();
+
+        // Retired hook packages and listener registrations have no runtime consumer. Remove
+        // their records on every driver so old installs do not retain invisible extensions.
+        $this->removeRetiredHookData();
 
         // Same treatment for the debit-note settings rows content.sql seeds for fresh installs:
         // plain check-then-insert SQL, idempotent, so every platform gets them even though no
@@ -1528,9 +1528,6 @@ class UpdatePatcher implements InjectionAwareInterface
             }
 
             $this->executeSql("DELETE FROM extension_meta WHERE extension = 'mod_hook' AND rel_type = 'mod' AND rel_id = 'spamchecker' AND meta_key = 'listener'");
-
-            $hookService = $this->di['mod_service']('hook');
-            $hookService->batchConnect('antispam');
 
             $this->executeSql("DELETE FROM extension_meta WHERE extension = 'mod_spamchecker' AND meta_key = 'config'");
 
@@ -3187,6 +3184,13 @@ class UpdatePatcher implements InjectionAwareInterface
         }
 
         return ['invoices' => $repairedInvoices, 'notifications' => $repairedNotes];
+    }
+
+    /** Remove obsolete listener registrations and standalone hook-package records. */
+    private function removeRetiredHookData(): void
+    {
+        $this->executeSql("DELETE FROM extension_meta WHERE extension = 'mod_hook' AND meta_key = 'listener'");
+        $this->executeSql("DELETE FROM extension WHERE type = 'hook'");
     }
 
     /**

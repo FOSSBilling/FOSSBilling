@@ -15,6 +15,11 @@ use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Subscription;
 use Box\Mod\Invoice\Entity\Transaction;
+use Box\Mod\Invoice\Event\AfterAdminTransactionCreateEvent;
+use Box\Mod\Invoice\Event\AfterAdminTransactionProcessEvent;
+use Box\Mod\Invoice\Event\AfterAdminTransactionUpdateEvent;
+use Box\Mod\Invoice\Event\BeforeAdminTransactionCreateEvent;
+use Box\Mod\Invoice\Event\BeforeAdminTransactionUpdateEvent;
 use Box\Mod\Invoice\Repository\InvoiceRepository;
 use Box\Mod\Invoice\Repository\PayGatewayRepository;
 use Box\Mod\Invoice\Repository\SubscriptionRepository;
@@ -22,6 +27,7 @@ use Box\Mod\Invoice\Repository\TransactionRepository;
 use Box\Mod\Invoice\ServiceSubscription;
 use Box\Mod\Invoice\ServiceTransaction;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\EventDispatcher\EventDispatcher as SymfonyEventDispatcher;
 
 use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
@@ -51,12 +57,11 @@ test('gets dependency injection container', function (): void {
 });
 
 test('updates a transaction', function (): void {
-    $eventsMock = Mockery::mock('\Box_EventManager');
-    $eventsMock->shouldReceive('fire')
-        ->atLeast()->once();
-
     $em = Mockery::mock(EntityManagerInterface::class);
-    $em->shouldReceive('flush')->atLeast()->once();
+    $flushed = false;
+    $em->shouldReceive('flush')->once()->andReturnUsing(function () use (&$flushed): void {
+        $flushed = true;
+    });
 
     $invoice = createEntity(Invoice::class, ['id' => 1]);
     $gateway = createEntity(PayGateway::class, ['id' => 1]);
@@ -68,11 +73,19 @@ test('updates a transaction', function (): void {
 
     $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepository);
 
-    $service = transactionService(payGatewayRepo: $payGatewayRepository, em: $em);
-    $service->getDi()['events_manager'] = $eventsMock;
-    $service->getDi()['logger'] = new Tests\Helpers\TestLogger();
-
     $transactionModel = createEntity(Transaction::class, ['id' => 1]);
+    $events = [];
+    $dispatcher = new SymfonyEventDispatcher();
+    $dispatcher->addListener(BeforeAdminTransactionUpdateEvent::class, static function (BeforeAdminTransactionUpdateEvent $event) use (&$events, $transactionModel): void {
+        $events[] = [$event, $transactionModel->getTxnId(), false];
+    });
+    $dispatcher->addListener(AfterAdminTransactionUpdateEvent::class, static function (AfterAdminTransactionUpdateEvent $event) use (&$events, $transactionModel, &$flushed): void {
+        $events[] = [$event, $transactionModel->getTxnId(), $flushed];
+    });
+
+    $service = transactionService(payGatewayRepo: $payGatewayRepository, em: $em);
+    $service->getDi()['event_dispatcher'] = $dispatcher;
+    $service->getDi()['logger'] = new Tests\Helpers\TestLogger();
 
     $data = [
         'invoice_id' => 1,
@@ -87,7 +100,16 @@ test('updates a transaction', function (): void {
         'validate_ipn' => '',
     ];
     $result = $service->update($transactionModel, $data);
-    expect($result)->toBeTrue();
+    expect($result)->toBeTrue()
+        ->and($events)->toHaveCount(2)
+        ->and($events[0][0])->toBeInstanceOf(BeforeAdminTransactionUpdateEvent::class)
+        ->and($events[0][0]->transactionId)->toBe(1)
+        ->and($events[0][1])->toBeNull()
+        ->and($events[0][2])->toBeFalse()
+        ->and($events[1][0])->toBeInstanceOf(AfterAdminTransactionUpdateEvent::class)
+        ->and($events[1][0]->transactionId)->toBe(1)
+        ->and($events[1][1])->toBe('2')
+        ->and($events[1][2])->toBeTrue();
 });
 
 test('updates a transaction subscription link', function (): void {
@@ -108,28 +130,26 @@ test('updates a transaction subscription link', function (): void {
 });
 
 test('throws exception when creating transaction with missing invoice id', function (): void {
-    $eventsMock = Mockery::mock('\Box_EventManager');
-    $eventsMock->shouldReceive('fire')
-        ->atLeast()->once();
-
     $service = transactionService();
-    $service->getDi()['events_manager'] = $eventsMock;
+    $events = [];
+    $dispatcher = new SymfonyEventDispatcher();
+    $dispatcher->addListener(BeforeAdminTransactionCreateEvent::class, static function (BeforeAdminTransactionCreateEvent $event) use (&$events): void {
+        $events[] = $event;
+    });
+    $service->getDi()['event_dispatcher'] = $dispatcher;
 
     $data = [
         'skip_validation' => false,
     ];
 
     expect(fn (): ?int => $service->create($data))
-        ->toThrow(FOSSBilling\Exception::class, 'Transaction invoice ID is missing');
+        ->toThrow(FOSSBilling\Exception::class, 'Transaction invoice ID is missing')
+        ->and($events)->toHaveCount(1)
+        ->and($events[0]->input)->toBe(['skip_validation' => false]);
 });
 
 test('throws exception when creating transaction with missing gateway id', function (): void {
-    $eventsMock = Mockery::mock('\Box_EventManager');
-    $eventsMock->shouldReceive('fire')
-        ->atLeast()->once();
-
     $service = transactionService();
-    $service->getDi()['events_manager'] = $eventsMock;
 
     $data = [
         'skip_validation' => false,
@@ -138,6 +158,58 @@ test('throws exception when creating transaction with missing gateway id', funct
 
     expect(fn (): ?int => $service->create($data))
         ->toThrow(FOSSBilling\Exception::class, 'Payment gateway ID is missing');
+});
+
+test('creates a transaction with safe lifecycle events and excludes raw IPN and credential input', function (): void {
+    $transactionRepository = Mockery::mock(TransactionRepository::class);
+    $payGatewayRepository = Mockery::mock(PayGatewayRepository::class);
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $flushed = false;
+    $em->shouldReceive('persist')->once()->with(Mockery::on(static function (Transaction $transaction): bool {
+        setEntityId($transaction, 27);
+
+        return true;
+    }));
+    $em->shouldReceive('flush')->once()->andReturnUsing(function () use (&$flushed): void {
+        $flushed = true;
+    });
+
+    $events = [];
+    $dispatcher = new SymfonyEventDispatcher();
+    $dispatcher->addListener(BeforeAdminTransactionCreateEvent::class, static function (BeforeAdminTransactionCreateEvent $event) use (&$events, &$flushed): void {
+        $events[] = [$event, $flushed];
+    });
+    $dispatcher->addListener(AfterAdminTransactionCreateEvent::class, static function (AfterAdminTransactionCreateEvent $event) use (&$events, &$flushed): void {
+        $events[] = [$event, $flushed];
+    });
+
+    $service = transactionService($transactionRepository, $payGatewayRepository, $em);
+    $service->getDi()['event_dispatcher'] = $dispatcher;
+
+    $input = [
+        'skip_validation' => true,
+        'source' => 'admin',
+        'txn_id' => 'tx_safe_ref',
+        'post' => ['token' => 'secret-post-token'],
+        'get' => ['api_key' => 'secret-query-key'],
+        'server' => ['REMOTE_ADDR' => '192.0.2.1'],
+        'http_raw_post_data' => 'raw-secret-payload',
+        'password' => 'secret-password',
+        'config' => ['secret' => 'gateway-credential'],
+    ];
+
+    expect($service->create($input))->toBe(27)
+        ->and($events)->toHaveCount(2)
+        ->and($events[0][0])->toBeInstanceOf(BeforeAdminTransactionCreateEvent::class)
+        ->and($events[0][0]->input)->toBe([
+            'skip_validation' => true,
+            'source' => 'admin',
+            'txn_id' => 'tx_safe_ref',
+        ])
+        ->and($events[0][1])->toBeFalse()
+        ->and($events[1][0])->toBeInstanceOf(AfterAdminTransactionCreateEvent::class)
+        ->and($events[1][0]->transactionId)->toBe(27)
+        ->and($events[1][1])->toBeTrue();
 });
 
 test('deletes a transaction', function (): void {
@@ -295,32 +367,39 @@ test('createAndProcess skips processing when transaction is already processed', 
 test('preProcessTransaction returns a boolean result', function (): void {
     $transactionModel = createEntity(Transaction::class, ['id' => 5]);
 
-    $eventsMock = Mockery::mock('\Box_EventManager');
-    $eventsMock->shouldReceive('fire')->atLeast()->once();
+    $events = [];
+    $dispatcher = new SymfonyEventDispatcher();
+    $dispatcher->addListener(AfterAdminTransactionProcessEvent::class, static function (AfterAdminTransactionProcessEvent $event) use (&$events): void {
+        $events[] = $event;
+    });
 
     $di = container();
-    $di['events_manager'] = $eventsMock;
+    $di['event_dispatcher'] = $dispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $service = Mockery::mock(ServiceTransaction::class)->makePartial();
     $service->shouldReceive('processTransaction')
         ->with(5)
         ->once()
-        ->andReturn(1);
+        ->andReturnUsing(function () use (&$events): int {
+            $events[] = 'processed';
+
+            return 1;
+        });
     $service->setDi($di);
 
     $result = $service->preProcessTransaction($transactionModel);
-    expect($result)->toBeTrue();
+    expect($result)->toBeTrue()
+        ->and($events)->toHaveCount(2)
+        ->and($events[0])->toBe('processed')
+        ->and($events[1])->toBeInstanceOf(AfterAdminTransactionProcessEvent::class)
+        ->and($events[1]->transactionId)->toBe(5);
 });
 
 test('preProcessTransaction returns true when the adapter returns nothing', function (): void {
     $transactionModel = createEntity(Transaction::class, ['id' => 5]);
 
-    $eventsMock = Mockery::mock('\Box_EventManager');
-    $eventsMock->shouldReceive('fire')->atLeast()->once();
-
     $di = container();
-    $di['events_manager'] = $eventsMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $service = Mockery::mock(ServiceTransaction::class)->makePartial();
@@ -347,12 +426,15 @@ test('preProcessTransaction marks error on a generic exception', function (): vo
     $em->shouldReceive('flush')->once();
     $em->shouldReceive('refresh')->with($transactionModel)->once();
 
-    $eventsMock = Mockery::mock('\Box_EventManager');
-    $eventsMock->shouldNotReceive('fire');
+    $events = [];
+    $dispatcher = new SymfonyEventDispatcher();
+    $dispatcher->addListener(AfterAdminTransactionProcessEvent::class, static function (AfterAdminTransactionProcessEvent $event) use (&$events): void {
+        $events[] = $event;
+    });
 
     $di = container();
     $di['em'] = $em;
-    $di['events_manager'] = $eventsMock;
+    $di['event_dispatcher'] = $dispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $service = Mockery::mock(ServiceTransaction::class)->makePartial();
@@ -372,7 +454,8 @@ test('preProcessTransaction marks error on a generic exception', function (): vo
 
     expect($thrown)->toBeInstanceOf(RuntimeException::class)
         ->and($transactionModel->getStatus())->toBe(Transaction::STATUS_ERROR)
-        ->and($transactionModel->getError())->toBe('Unexpected DB error');
+        ->and($transactionModel->getError())->toBe('Unexpected DB error')
+        ->and($events)->toBeEmpty();
 });
 
 test('processes the rest of a received transaction batch after a failure', function (): void {
@@ -483,12 +566,8 @@ test('_subscribe creates and persists a subscription from an approved transactio
     });
     $em->shouldReceive('flush')->atLeast()->once();
 
-    $eventsMock = Mockery::mock('\Box_EventManager');
-    $eventsMock->shouldReceive('fire');
-
     $di = container();
     $di['em'] = $em;
-    $di['events_manager'] = $eventsMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod_service'] = $di->protect(fn ($module, $sub = '') => $subscriptionService);
 
@@ -539,12 +618,8 @@ test('_unsubscribe looks up the subscription by sid and delegates to the subscri
     $em->shouldReceive('getRepository')->with(Subscription::class)->andReturn($subscriptionRepo);
     $em->shouldReceive('flush')->atLeast()->once();
 
-    $eventsMock = Mockery::mock('\Box_EventManager');
-    $eventsMock->shouldReceive('fire');
-
     $di = container();
     $di['em'] = $em;
-    $di['events_manager'] = $eventsMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod_service'] = $di->protect(fn ($module, $sub = '') => $subscriptionService);
 

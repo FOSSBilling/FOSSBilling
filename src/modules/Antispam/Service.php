@@ -11,9 +11,16 @@ declare(strict_types=1);
 
 namespace Box\Mod\Antispam;
 
+use Box\Mod\Client\Event\BeforeAdminClientUpdateEvent;
+use Box\Mod\Client\Event\BeforeClientLoginEvent;
+use Box\Mod\Client\Event\BeforeClientSignUpEvent;
+use Box\Mod\Profile\Event\BeforeClientProfileUpdateEvent;
+use Box\Mod\Staff\Event\BeforeAdminLoginEvent;
+use Box\Mod\Support\Event\BeforeGuestTicketCreateEvent;
 use EmailChecker\Adapter;
 use EmailChecker\Utilities;
 use FOSSBilling\InjectionAwareInterface;
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Contracts\Cache\ItemInterface;
@@ -58,72 +65,64 @@ class Service implements InjectionAwareInterface
         ];
     }
 
-    public static function onBeforeClientSignUp(\Box_Event $event): void
+    #[AsEventListener]
+    public function onBeforeClientSignUp(BeforeClientSignUpEvent $event): void
     {
         // Client\Api\Guest::create() already verifies the CAPTCHA before firing
-        // this event, so isSpam() below must not check it again: CAPTCHA
-        // tokens are single-use, and a second siteverify call would fail and
-        // reject every genuine signup.
-        $di = $event->getDi();
-        $antispamService = $di['mod_service']('Antispam');
-        $antispamService->isBlockedIp($event);
-        $antispamService->isSpam($event);
-        $antispamService->isTemp($event);
-        $antispamService->checkHoneypot($event);
+        // this event. CAPTCHA tokens are single-use, so checking it again here
+        // would reject every genuine signup.
+        $di = $this->di ?? throw new \LogicException('Antispam service must be initialized before handling events.');
+        $this->checkBlockedIp($di);
+        $this->checkSpam($di, $event->input);
+        $this->checkTempEmail($di, $event->input);
+        $this->checkHoneypot($di, $event->input);
     }
 
-    public static function onBeforeClientOpenTicket(\Box_Event $event): void
+    #[AsEventListener]
+    public function onBeforeGuestTicketCreate(BeforeGuestTicketCreateEvent $event): void
     {
-        if ($event->getParameters()['author_role'] !== 'guest') {
+        if (($event->input['author_role'] ?? null) !== 'guest') {
             return;
         }
 
-        $di = $event->getDi();
-        $antispamService = $di['mod_service']('Antispam');
-        $antispamService->isBlockedIp($event);
-        $antispamService->checkCaptcha($event->getParameters());
-        $antispamService->isSpam($event);
-        $antispamService->isTemp($event);
+        $di = $this->di ?? throw new \LogicException('Antispam service must be initialized before handling events.');
+
+        $this->checkBlockedIp($di);
+        $this->checkCaptcha($event->input);
+        $this->checkSpam($di, $event->input);
+        $this->checkTempEmail($di, $event->input);
     }
 
-    public static function onBeforeClientProfileUpdate(\Box_Event $event): void
+    #[AsEventListener]
+    public function onBeforeClientProfileUpdate(BeforeClientProfileUpdateEvent $event): void
     {
-        $di = $event->getDi();
-        $antispamService = $di['mod_service']('Antispam');
-        $antispamService->isBlockedIp($event);
+        $di = $this->di ?? throw new \LogicException('Antispam service must be initialized before handling events.');
+        $this->checkBlockedIp($di);
     }
 
-    public static function onBeforeAdminClientUpdate(\Box_Event $event): void
+    #[AsEventListener]
+    public function onBeforeAdminClientUpdate(BeforeAdminClientUpdateEvent $event): void
     {
-        $di = $event->getDi();
-        $antispamService = $di['mod_service']('Antispam');
-        $antispamService->isBlockedIp($event);
+        $di = $this->di ?? throw new \LogicException('Antispam service must be initialized before handling events.');
+        $this->checkBlockedIp($di);
     }
 
-    public static function onBeforeClientUpdate(\Box_Event $event): void
+    #[AsEventListener]
+    public function onBeforeClientLogin(BeforeClientLoginEvent $event): void
     {
-        $di = $event->getDi();
-        $antispamService = $di['mod_service']('Antispam');
-        $antispamService->isBlockedIp($event);
+        $di = $this->di ?? throw new \LogicException('Antispam service must be initialized before handling events.');
+        $this->checkBlockedIp($di);
     }
 
-    public static function onBeforeClientLogin(\Box_Event $event): void
+    #[AsEventListener]
+    public function onBeforeAdminLogin(BeforeAdminLoginEvent $event): void
     {
-        $di = $event->getDi();
-        $antispamService = $di['mod_service']('Antispam');
-        $antispamService->isBlockedIp($event);
+        $di = $this->di ?? throw new \LogicException('Antispam service must be initialized before handling events.');
+        $this->checkBlockedIp($di);
     }
 
-    public static function onBeforeAdminLogin(\Box_Event $event): void
+    private function checkBlockedIp(\Pimple\Container $di): void
     {
-        $di = $event->getDi();
-        $antispamService = $di['mod_service']('Antispam');
-        $antispamService->isBlockedIp($event);
-    }
-
-    public function isBlockedIp(\Box_Event $event): void
-    {
-        $di = $event->getDi();
         $config = $di['mod_config']('Antispam');
         if (isset($config['block_ips']) && $config['block_ips'] && isset($config['blocked_ips'])) {
             $blocked_ips = explode(PHP_EOL, $config['blocked_ips']);
@@ -134,11 +133,9 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public function isSpam(\Box_Event $event): void
+    /** @param array<string, mixed> $params */
+    private function checkSpam(\Pimple\Container $di, array $params): void
     {
-        $di = $event->getDi();
-        $params = $event->getParameters();
-
         $data = [
             'ip' => $params['ip'] ?? null,
             'email' => $params['email'] ?? null,
@@ -252,33 +249,31 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public function isTemp(\Box_Event $event): void
+    /** @param array<string, mixed> $params */
+    private function checkTempEmail(\Pimple\Container $di, array $params): void
     {
-        $di = $event->getDi();
         $config = $di['mod_config']('Antispam');
 
         $check = $config['check_temp_emails'] ?? true;
         if ($check) {
-            $antispamService = $di['mod_service']('Antispam');
-            $params = $event->getParameters();
             $email = $params['email'] ?? '';
 
+            $antispamService = $di['mod_service']('Antispam');
             $antispamService->isATempEmail($email, true);
         }
     }
 
-    public function checkHoneypot(\Box_Event $event): void
+    /** @param array<string, mixed> $params */
+    private function checkHoneypot(\Pimple\Container $di, array $params): void
     {
-        $di = $event->getDi();
         $config = $di['mod_config']('Antispam');
 
         $enabled = $config['honeypot_enabled'] ?? true;
         if ($enabled) {
-            $params = $event->getParameters();
             $honeypotField = $config['honeypot_field'] ?? 'bio';
 
             if (!empty($params[$honeypotField])) {
-                $this->di['logger']->info('Potential spam registration blocked. Reason: honeypot field was not empty.');
+                $di['logger']->info('Potential spam registration blocked. Reason: honeypot field was not empty.');
 
                 throw new \FOSSBilling\InformationException('Registration failed.');
             }

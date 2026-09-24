@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 use Box\Mod\Cart\Entity\Cart;
 use Box\Mod\Cart\Entity\CartProduct;
+use Box\Mod\Cart\Event\AfterProductAddedToCartEvent;
+use Box\Mod\Cart\Event\BeforeProductAddedToCartEvent;
 use Box\Mod\Cart\Repository\CartProductRepository;
 use Box\Mod\Cart\Repository\CartRepository;
 use Box\Mod\Cart\Service;
@@ -25,6 +27,7 @@ use Box\Mod\Product\Entity\Product;
 use Box\Mod\Product\Entity\Promo;
 use Box\Mod\Product\Entity\PromoRedemption;
 use Box\Mod\Product\Service as ProductService;
+use Symfony\Component\EventDispatcher\EventDispatcher as SymfonyEventDispatcher;
 use Symfony\Component\HttpFoundation\Request;
 
 use function Tests\Helpers\container;
@@ -55,6 +58,21 @@ function createPromoEntity(int $id): Promo
     $reflection->setValue($promo, $id);
 
     return $promo;
+}
+
+/** @return array{SymfonyEventDispatcher, ArrayObject} */
+function cartAddItemEventDispatcher(): array
+{
+    $events = new ArrayObject();
+    $dispatcher = new SymfonyEventDispatcher();
+
+    foreach ([BeforeProductAddedToCartEvent::class, AfterProductAddedToCartEvent::class] as $eventClass) {
+        $dispatcher->addListener($eventClass, static function (object $event) use ($events): void {
+            $events->append($event);
+        });
+    }
+
+    return [$dispatcher, $events];
 }
 
 test('gets dependency injection container', function (): void {
@@ -715,8 +733,19 @@ test('checkoutCart returns array with expected keys', function (): void {
     $serviceMock->shouldReceive('isPromoAvailableForClientGroup')->atLeast()->once()->andReturn(true);
     $serviceMock->shouldReceive('getCartProducts')->once()->with($cart)->andReturn([]);
 
-    $eventMock = Mockery::mock(Box_EventManager::class)->shouldIgnoreMissing();
-    $eventMock->shouldReceive('fire')->atLeast()->once();
+    $events = new ArrayObject();
+    $dispatcher = new readonly class($events) {
+        public function __construct(private ArrayObject $events)
+        {
+        }
+
+        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        {
+            $this->events->append($event);
+
+            return $event;
+        }
+    };
 
     $invoice = createEntity(Invoice::class);
 
@@ -731,9 +760,9 @@ test('checkoutCart returns array with expected keys', function (): void {
     $productService->shouldReceive('findMissingRequiredProductIds')->once()->with($promo, [])->andReturn([]);
 
     $di = container();
-    $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $dispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['request'] = new Request();
+    $di['request'] = Request::create('http://localhost', server: ['REMOTE_ADDR' => '192.0.2.1']);
     $di['mod_service'] = $di->protect(fn () => $productService);
 
     $serviceMock->setDi($di);
@@ -744,6 +773,10 @@ test('checkoutCart returns array with expected keys', function (): void {
     expect($result)->toHaveKey('invoice_hash');
     expect($result)->toHaveKey('order_id');
     expect($result)->toHaveKey('orders');
+    expect($events->getArrayCopy())->toEqual([
+        new Box\Mod\Cart\Event\BeforeClientCheckoutEvent((int) $cart->getId(), (int) $client->getId(), '192.0.2.1'),
+        new Box\Mod\Order\Event\AfterClientOrderCreateEvent(99, (int) $client->getId(), '192.0.2.1'),
+    ]);
 });
 
 test('checkoutCart throws exception when client is not able to use promo', function (): void {
@@ -1732,8 +1765,7 @@ test('addItem throws exception when recurring payment period param missing', fun
 
     $data = [];
 
-    $eventMock = Mockery::mock(Box_EventManager::class)->shouldIgnoreMissing();
-    $eventMock->shouldReceive('fire')->atLeast()->once();
+    $eventDispatcher = new SymfonyEventDispatcher();
     $serviceHostingServiceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class)->shouldIgnoreMissing();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
@@ -1741,7 +1773,7 @@ test('addItem throws exception when recurring payment period param missing', fun
 
     $productService = new ProductService();
     $di = container();
-    $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['mod_service'] = $di->protect(function ($name) use ($serviceHostingServiceMock, $productService) {
         if ($name === 'Product') {
             return $productService;
@@ -1766,8 +1798,7 @@ test('addItem throws exception when recurring payment period is not enabled', fu
 
     $data = ['period' => '1W'];
 
-    $eventMock = Mockery::mock(Box_EventManager::class)->shouldIgnoreMissing();
-    $eventMock->shouldReceive('fire')->atLeast()->once();
+    $eventDispatcher = new SymfonyEventDispatcher();
 
     $serviceHostingServiceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class)->shouldIgnoreMissing();
 
@@ -1777,7 +1808,7 @@ test('addItem throws exception when recurring payment period is not enabled', fu
 
     $productService = new ProductService();
     $di = container();
-    $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['mod_service'] = $di->protect(function ($name) use ($serviceHostingServiceMock, $productService) {
         if ($name === 'Product') {
             return $productService;
@@ -1803,8 +1834,7 @@ test('addItem throws exception when out of stock', function (): void {
 
     $data = [];
 
-    $eventMock = Mockery::mock(Box_EventManager::class)->shouldIgnoreMissing();
-    $eventMock->shouldReceive('fire')->atLeast()->once();
+    $eventDispatcher = new SymfonyEventDispatcher();
 
     $serviceHostingServiceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class)->shouldIgnoreMissing();
 
@@ -1821,7 +1851,7 @@ test('addItem throws exception when out of stock', function (): void {
     $productService = new ProductService();
     $di = container();
     $di['em'] = $emMock;
-    $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['mod_service'] = $di->protect(function ($name) use ($serviceHostingServiceMock, $productService) {
         if ($name === 'Product') {
             return $productService;
@@ -1850,8 +1880,7 @@ test('addItem rejects cumulative stock overflow', function (): void {
     $existingCartProduct->product_id = 7;
     $existingCartProduct->config = json_encode(['quantity' => 1]);
 
-    $eventMock = Mockery::mock(Box_EventManager::class)->shouldIgnoreMissing();
-    $eventMock->shouldReceive('fire')->atLeast()->once();
+    $eventDispatcher = new SymfonyEventDispatcher();
 
     $serviceHostingServiceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class)->shouldIgnoreMissing();
     $productServiceMock = Mockery::mock(ProductService::class)->shouldIgnoreMissing();
@@ -1868,7 +1897,7 @@ test('addItem rejects cumulative stock overflow', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['mod_service'] = $di->protect(function ($name) use ($serviceHostingServiceMock, $productServiceMock) {
         if ($name === 'Product') {
             return $productServiceMock;
@@ -1900,8 +1929,7 @@ test('addItem rejects duplicate domain register', function (): void {
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')->with(CartProduct::class)->andReturn($cartProductRepo);
 
-    $eventMock = Mockery::mock(Box_EventManager::class)->shouldIgnoreMissing();
-    $eventMock->shouldReceive('fire')->atLeast()->once();
+    $eventDispatcher = new SymfonyEventDispatcher();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('isRecurrentPricing')->atLeast()->once()->andReturn(false);
@@ -1911,7 +1939,7 @@ test('addItem rejects duplicate domain register', function (): void {
     $productService = new ProductService();
     $di = container();
     $di['em'] = $emMock;
-    $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['mod_service'] = $di->protect(function ($name) use ($serviceHostingServiceMock, $productService) {
         if ($name === 'Product') {
             return $productService;
@@ -1943,8 +1971,7 @@ test('addItem rejects duplicate domain transfer', function (): void {
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')->with(CartProduct::class)->andReturn($cartProductRepo);
 
-    $eventMock = Mockery::mock(Box_EventManager::class)->shouldIgnoreMissing();
-    $eventMock->shouldReceive('fire')->atLeast()->once();
+    $eventDispatcher = new SymfonyEventDispatcher();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('isRecurrentPricing')->atLeast()->once()->andReturn(false);
@@ -1954,7 +1981,7 @@ test('addItem rejects duplicate domain transfer', function (): void {
     $productService = new ProductService();
     $di = container();
     $di['em'] = $emMock;
-    $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['mod_service'] = $di->protect(function ($name) use ($serviceHostingServiceMock, $productService) {
         if ($name === 'Product') {
             return $productService;
@@ -1988,8 +2015,7 @@ test('addItem rejects duplicate domain nested', function (): void {
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $emMock->shouldReceive('getRepository')->with(CartProduct::class)->andReturn($cartProductRepo);
 
-    $eventMock = Mockery::mock(Box_EventManager::class)->shouldIgnoreMissing();
-    $eventMock->shouldReceive('fire')->atLeast()->once();
+    $eventDispatcher = new SymfonyEventDispatcher();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('isRecurrentPricing')->atLeast()->once()->andReturn(false);
@@ -1999,7 +2025,7 @@ test('addItem rejects duplicate domain nested', function (): void {
     $productService = new ProductService();
     $di = container();
     $di['em'] = $emMock;
-    $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['mod_service'] = $di->protect(function ($name) use ($serviceHostingServiceMock, $productService) {
         if ($name === 'Product') {
             return $productService;
@@ -2024,8 +2050,7 @@ test('addItem for hosting type returns true', function (): void {
 
     $data = [];
 
-    $eventMock = Mockery::mock(Box_EventManager::class)->shouldIgnoreMissing();
-    $eventMock->shouldReceive('fire')->atLeast()->once();
+    $eventDispatcher = new SymfonyEventDispatcher();
 
     $productDomainModel = createProductEntity(type: 'domain');
     $domainProduct = ['config' => [], 'product' => $productDomainModel];
@@ -2048,7 +2073,7 @@ test('addItem for hosting type returns true', function (): void {
     $productService = new ProductService();
     $di = container();
     $di['em'] = $emMock;
-    $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['mod_service'] = $di->protect(function ($name) use ($serviceHostingServiceMock, $productService) {
         if ($name === 'Product') {
             return $productService;
@@ -2073,8 +2098,7 @@ test('addItem for license type returns true', function (): void {
 
     $data = [];
 
-    $eventMock = Mockery::mock(Box_EventManager::class)->shouldIgnoreMissing();
-    $eventMock->shouldReceive('fire')->atLeast()->once();
+    $eventDispatcher = new SymfonyEventDispatcher();
 
     $serviceLicenseServiceMock = Mockery::mock(Box\Mod\Servicelicense\Service::class)->shouldIgnoreMissing();
     $serviceLicenseServiceMock->shouldReceive('attachOrderConfig')->atLeast()->once()->andReturn([]);
@@ -2094,7 +2118,7 @@ test('addItem for license type returns true', function (): void {
     $productService = new ProductService();
     $di = container();
     $di['em'] = $emMock;
-    $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['mod_service'] = $di->protect(function ($name) use ($serviceLicenseServiceMock, $productService) {
         if ($name === 'Product') {
             return $productService;
@@ -2119,8 +2143,7 @@ test('addItem for custom type returns true', function (): void {
 
     $data = [];
 
-    $eventMock = Mockery::mock(Box_EventManager::class)->shouldIgnoreMissing();
-    $eventMock->shouldReceive('fire')->atLeast()->once();
+    $eventDispatcher = new SymfonyEventDispatcher();
 
     $serviceCustomServiceMock = Mockery::mock(Box\Mod\Servicecustom\Service::class);
     $serviceCustomServiceMock->shouldReceive('validateCustomForm')->atLeast()->once();
@@ -2140,7 +2163,7 @@ test('addItem for custom type returns true', function (): void {
     $productService = new ProductService();
     $di = container();
     $di['em'] = $emMock;
-    $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['mod_service'] = $di->protect(function ($name) use ($serviceCustomServiceMock, $productService) {
         if ($name === 'Product') {
             return $productService;
@@ -2415,8 +2438,7 @@ test('addItem strips client-injected hosting_plan_id', function (): void {
         'multiple' => 1,
     ];
 
-    $eventMock = Mockery::mock(Box_EventManager::class)->shouldIgnoreMissing();
-    $eventMock->shouldReceive('fire')->atLeast()->once();
+    $eventDispatcher = new SymfonyEventDispatcher();
 
     $productDomainModel = createProductEntity(type: 'domain');
     $domainProduct = ['config' => [], 'product' => $productDomainModel];
@@ -2452,7 +2474,7 @@ test('addItem strips client-injected hosting_plan_id', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['mod_service'] = $di->protect(function ($name) use ($serviceHostingServiceMock, $productService) {
         if ($name === 'Product') {
             return $productService;
@@ -2510,8 +2532,7 @@ test('addItem stamps one shared cart family across parent and addons', function 
     $parentModel = createProductEntity(id: 5, type: 'custom');
     $addonModel = createProductEntity(id: 9, type: 'custom');
 
-    $eventMock = Mockery::mock(Box_EventManager::class)->shouldIgnoreMissing();
-    $eventMock->shouldReceive('fire')->atLeast()->once();
+    [$eventDispatcher, $events] = cartAddItemEventDispatcher();
 
     $cartProductRepo = Mockery::mock(CartProductRepository::class);
     $cartProductRepo->shouldReceive('findByCartId')->atLeast()->once()->andReturn([]);
@@ -2542,12 +2563,24 @@ test('addItem stamps one shared cart family across parent and addons', function 
 
     $di = container();
     $di['em'] = $emMock;
-    $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['mod_service'] = $di->protect(fn ($name) => $name === 'Product' ? $productServiceMock : new stdClass());
     $di['logger'] = new FOSSBilling\Logger();
     $serviceMock->setDi($di);
 
-    expect($serviceMock->addItem($cartModel, $parentModel, ['addons' => ['9' => ['selected' => true]]]))->toBeTrue();
+    $addData = [
+        'addons' => ['9' => ['selected' => true]],
+        'domain' => [
+            'action' => 'transfer',
+            'transfer_sld' => 'example',
+            'transfer_tld' => '.com',
+            'transfer_code' => 'secret-epp-code',
+        ],
+        'hosting_password' => 'secret-hosting-password',
+        'custom_field' => 'public-value',
+    ];
+
+    expect($serviceMock->addItem($cartModel, $parentModel, $addData))->toBeTrue();
     expect($storedConfigs)->toHaveCount(2);
 
     $firstFamily = $storedConfigs[0][Service::CART_FAMILY_KEY] ?? null;
@@ -2562,6 +2595,24 @@ test('addItem stamps one shared cart family across parent and addons', function 
     expect($secondFamily)->toBeString();
     expect($secondFamily)->not->toBe('');
     expect($secondFamily)->not->toBe($firstFamily);
+
+    expect(array_map(static fn (object $event): string => $event::class, $events->getArrayCopy()))
+        ->toBe([
+            BeforeProductAddedToCartEvent::class,
+            AfterProductAddedToCartEvent::class,
+            BeforeProductAddedToCartEvent::class,
+            AfterProductAddedToCartEvent::class,
+        ]);
+    expect($events[0]->cartId)->toBe(1);
+    expect($events[0]->productId)->toBe(5);
+    expect(array_keys(get_object_vars($events[0])))->toBe(['cartId', 'productId']);
+    expect($events[1]->cartId)->toBe(1);
+    expect($events[1]->productId)->toBe(5);
+    expect(array_keys(get_object_vars($events[1])))->toBe(['cartId', 'productId']);
+    expect($events[2]->cartId)->toBe(1);
+    expect($events[2]->productId)->toBe(5);
+    expect($events[3]->cartId)->toBe(1);
+    expect($events[3]->productId)->toBe(5);
 });
 
 test('getEffectiveCartPromos returns the manual promo when a code is set', function (): void {

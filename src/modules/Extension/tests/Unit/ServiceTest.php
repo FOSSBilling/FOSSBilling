@@ -12,9 +12,18 @@ declare(strict_types=1);
 
 use Box\Mod\Extension\Entity\Extension;
 use Box\Mod\Extension\Entity\ExtensionMeta;
+use Box\Mod\Extension\Event\AfterAdminActivateExtensionEvent;
+use Box\Mod\Extension\Event\AfterAdminExtensionConfigSaveEvent;
+use Box\Mod\Extension\Event\AfterExtensionActivatedEvent;
+use Box\Mod\Extension\Event\AfterExtensionDeactivatedEvent;
+use Box\Mod\Extension\Event\BeforeAdminActivateExtensionEvent;
+use Box\Mod\Extension\Event\BeforeAdminExtensionConfigSaveEvent;
 use Box\Mod\Extension\Repository\ExtensionMetaRepository;
 use Box\Mod\Extension\Repository\ExtensionRepository;
 use Box\Mod\Extension\Service;
+use Box\Mod\Widgets\Service as WidgetsService;
+use FOSSBilling\Events\EventDispatcher;
+use Symfony\Component\EventDispatcher\EventDispatcher as SymfonyEventDispatcher;
 
 use function Tests\Helpers\container;
 use function Tests\Helpers\setEntityId;
@@ -374,13 +383,41 @@ test('activate activates an extension', function (): void {
         ->atLeast()
         ->once();
 
+    $activeModules = [];
+    $flushes = 0;
     $em = extensionBuildEm();
-    $em->shouldReceive('flush')->atLeast()->once();
+    $em->shouldReceive('flush')->twice()->andReturnUsing(function () use (&$activeModules, &$flushes): void {
+        ++$flushes;
+        if ($flushes === 2) {
+            $activeModules = ['widgets'];
+        }
+    });
 
     $di = container();
     $di['em'] = $em;
     $di['mod'] = $di->protect(fn ($name): Mockery\MockInterface => $modMock);
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $staffService);
+    $cache = new class {
+        public array $deleted = [];
+
+        public function delete(string $key): bool
+        {
+            $this->deleted[] = $key;
+
+            return true;
+        }
+    };
+    $di['cache'] = $cache;
+    $widgets = new WidgetsService();
+    $widgets->setDi($di);
+    $dispatcher = new EventDispatcher(
+        static function () use (&$activeModules): array {
+            return $activeModules;
+        },
+        static fn (string $module): object => $widgets,
+    );
+    $dispatcher->dispatch(new AfterExtensionActivatedEvent(0, 'theme', 'warmup'));
+    $di['event_dispatcher'] = $dispatcher;
 
     $service->setDi($di);
     $result = $service->activate($ext);
@@ -389,11 +426,12 @@ test('activate activates an extension', function (): void {
     expect($result['type'])->toBe('mod');
     expect($result['redirect'])->toBeTrue();
     expect($result['has_settings'])->toBeTrue();
+    expect($cache->deleted)->toBe([WidgetsService::CACHE_KEY]);
 });
 
 test('deactivate deactivates an extension', function (): void {
     $service = new Service();
-    $ext = extensionCreateEntity(1, 'mod', 'extensionTest', 'installed');
+    $ext = extensionCreateEntity(1, 'mod', 'widgets', 'installed');
 
     $modMock = Mockery::mock(FOSSBilling\Module::class);
     $modMock->shouldReceive('getCoreModules')
@@ -404,19 +442,44 @@ test('deactivate deactivates an extension', function (): void {
     $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
     $staffService->shouldReceive('checkPermissionsAndThrowException')->atLeast()->once();
 
+    $activeModules = ['widgets'];
     $em = extensionBuildEm();
     $em->shouldReceive('remove')->atLeast()->once();
-    $em->shouldReceive('flush')->atLeast()->once();
+    $em->shouldReceive('flush')->once()->andReturnUsing(function () use (&$activeModules): void {
+        $activeModules = [];
+    });
 
     $di = container();
     $di['em'] = $em;
     $di['mod'] = $di->protect(fn ($name): Mockery\MockInterface => $modMock);
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $staffService);
+    $cache = new class {
+        public array $deleted = [];
+
+        public function delete(string $key): bool
+        {
+            $this->deleted[] = $key;
+
+            return true;
+        }
+    };
+    $di['cache'] = $cache;
+    $widgets = new WidgetsService();
+    $widgets->setDi($di);
+    $dispatcher = new EventDispatcher(
+        static function () use (&$activeModules): array {
+            return $activeModules;
+        },
+        static fn (string $module): object => $widgets,
+    );
+    $dispatcher->dispatch(new AfterExtensionDeactivatedEvent(0, 'theme', 'warmup'));
+    $di['event_dispatcher'] = $dispatcher;
 
     $service->setDi($di);
 
     $result = $service->deactivate($ext);
     expect($result)->toBeTrue();
+    expect($cache->deleted)->toBeEmpty();
 });
 
 test('deactivate throws exception for core modules', function (): void {
@@ -443,31 +506,6 @@ test('deactivate throws exception for core modules', function (): void {
 
     expect(fn (): bool => $service->deactivate($ext))
         ->toThrow(FOSSBilling\Exception::class, 'Core modules are an integral part of the FOSSBilling system and cannot be deactivated.');
-});
-
-test('deactivate deactivates hook extension', function (): void {
-    $ext = extensionCreateEntity(1, 'hook', 'extensionTest', 'installed');
-
-    $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
-    $staffService->shouldReceive('checkPermissionsAndThrowException')->atLeast()->once();
-
-    $filesystemMock = Mockery::mock(Symfony\Component\Filesystem\Filesystem::class);
-    $filesystemMock->shouldReceive('exists')->atLeast()->once()->andReturn(true);
-    $filesystemMock->shouldReceive('remove')->atLeast()->once();
-
-    $service = new Service($filesystemMock);
-
-    $em = extensionBuildEm();
-    $em->shouldReceive('remove')->atLeast()->once();
-    $em->shouldReceive('flush')->atLeast()->once();
-
-    $di = container();
-    $di['em'] = $em;
-    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $staffService);
-
-    $service->setDi($di);
-    $result = $service->deactivate($ext);
-    expect($result)->toBeTrue();
 });
 
 test('deactivate deactivates module', function (): void {
@@ -621,35 +659,51 @@ test('activateExistingExtension activates existing extension', function (): void
         'type' => 'extensionType',
     ];
 
+    $steps = [];
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('activate')
-        ->atLeast()
         ->once()
-        ->andReturn([]);
+        ->andReturnUsing(function () use (&$steps): array {
+            $steps[] = 'activate';
 
+            return [];
+        });
+
+    $extension = extensionCreateEntity(42, 'mod', 'extensionId', Extension::STATUS_DEACTIVATED);
     $extensionRepository = Mockery::mock(ExtensionRepository::class);
     $extensionRepository->shouldReceive('findOneByTypeAndName')
-        ->atLeast()
         ->once()
-        ->andReturn(null);
+        ->with('extensionType', 'extensionId')
+        ->andReturn($extension);
 
     $em = extensionBuildEm($extensionRepository);
-    $em->shouldReceive('persist')->atLeast()->once();
-    $em->shouldReceive('flush')->atLeast()->once();
 
-    $eventMock = Mockery::mock(Box_EventManager::class);
-    $eventMock->shouldReceive('fire')->atLeast()->once();
+    $dispatcher = new SymfonyEventDispatcher();
+    $dispatcher->addListener(BeforeAdminActivateExtensionEvent::class, static function (BeforeAdminActivateExtensionEvent $event) use (&$steps): void {
+        $steps[] = $event;
+    });
+    $dispatcher->addListener(AfterAdminActivateExtensionEvent::class, static function (AfterAdminActivateExtensionEvent $event) use (&$steps): void {
+        $steps[] = $event;
+    });
 
     $di = container();
     $di['em'] = $em;
-    $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $dispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $serviceMock->setDi($di);
 
     $result = $serviceMock->activateExistingExtension($data);
-    expect($result)->toBeArray();
+    expect($result)->toBeArray()
+        ->and($steps)->toHaveCount(3)
+        ->and($steps[0])->toBeInstanceOf(BeforeAdminActivateExtensionEvent::class)
+        ->and($steps[0]->extensionRecordId)->toBe(42)
+        ->and($steps[0]->extensionType)->toBe('mod')
+        ->and($steps[0]->extensionName)->toBe('extensionId')
+        ->and($steps[1])->toBe('activate')
+        ->and($steps[2])->toBeInstanceOf(AfterAdminActivateExtensionEvent::class)
+        ->and($steps[2]->extensionRecordId)->toBe(42);
 });
 
 test('activateExistingExtension requires type and id', function (): void {
@@ -685,12 +739,8 @@ test('activateExistingExtension accepts zero-like identifiers', function (): voi
         ->once()
         ->andReturn([]);
 
-    $eventMock = Mockery::mock(Box_EventManager::class);
-    $eventMock->shouldReceive('fire')->atLeast()->once();
-
     $di = container();
     $di['em'] = $em;
-    $di['events_manager'] = $eventMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $serviceMock->setDi($di);
@@ -719,19 +769,28 @@ test('activateExistingExtension throws exception on activation failure', functio
         ->once()
         ->andReturn($model);
 
-    $eventMock = Mockery::mock(Box_EventManager::class);
-    $eventMock->shouldReceive('fire')->atLeast()->once();
+    $events = [];
+    $dispatcher = new SymfonyEventDispatcher();
+    $dispatcher->addListener(BeforeAdminActivateExtensionEvent::class, static function (BeforeAdminActivateExtensionEvent $event) use (&$events): void {
+        $events[] = $event;
+    });
+    $dispatcher->addListener(AfterAdminActivateExtensionEvent::class, static function (AfterAdminActivateExtensionEvent $event) use (&$events): void {
+        $events[] = $event;
+    });
 
     $em = extensionBuildEm($extensionRepository);
 
     $di = container();
     $di['em'] = $em;
-    $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $dispatcher;
 
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->activateExistingExtension($data))
-        ->toThrow(Exception::class);
+        ->toThrow(Exception::class)
+        ->and($events)->toHaveCount(1)
+        ->and($events[0])->toBeInstanceOf(BeforeAdminActivateExtensionEvent::class)
+        ->and($events[0]->extensionRecordId)->toBe(1);
 });
 
 test('getConfig returns extension config', function (): void {
@@ -794,6 +853,10 @@ test('getConfig creates new ExtensionMeta when not found', function (): void {
 test('setConfig sets extension config', function (): void {
     $data = [
         'ext' => 'extensionName',
+        'username' => 'admin',
+        'api_key' => 'secret-api-key',
+        'password' => 'secret-password',
+        'nested' => ['credential' => 'nested-secret'],
     ];
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
@@ -811,10 +874,15 @@ test('setConfig sets extension config', function (): void {
     $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
 
     $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
+    $encryptedConfig = null;
     $cryptMock->shouldReceive('encrypt')
-        ->atLeast()
         ->once()
-        ->andReturn('encryptedConfig');
+        ->with(json_encode($data), Mockery::type('string'))
+        ->andReturnUsing(function (string $config, string $salt) use (&$encryptedConfig): string {
+            $encryptedConfig = $config;
+
+            return 'encryptedConfig';
+        });
 
     $metaRepo = Mockery::mock(ExtensionMetaRepository::class);
     $metaRepo->shouldReceive('findOneByExtensionAndScope')
@@ -824,23 +892,40 @@ test('setConfig sets extension config', function (): void {
 
     $em = extensionBuildEm(null, $metaRepo);
     $em->shouldReceive('persist')->atLeast()->once();
-    $em->shouldReceive('flush')->atLeast()->once();
-
-    $eventMock = Mockery::mock(Box_EventManager::class);
-    $eventMock->shouldReceive('fire')->atLeast()->once();
+    $flushed = false;
+    $em->shouldReceive('flush')->once()->andReturnUsing(function () use (&$flushed): void {
+        $flushed = true;
+    });
+    $events = [];
+    $dispatcher = new SymfonyEventDispatcher();
+    $dispatcher->addListener(BeforeAdminExtensionConfigSaveEvent::class, static function (BeforeAdminExtensionConfigSaveEvent $event) use (&$events): void {
+        $events[] = [$event, false];
+    });
+    $dispatcher->addListener(AfterAdminExtensionConfigSaveEvent::class, static function (AfterAdminExtensionConfigSaveEvent $event) use (&$events, &$flushed): void {
+        $events[] = [$event, $flushed];
+    });
 
     $di = container();
     $di['em'] = $em;
     $di['tools'] = $toolsMock;
     $di['crypt'] = $cryptMock;
-    $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $dispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['cache'] = new Symfony\Component\Cache\Adapter\ArrayAdapter();
 
     $serviceMock->setDi($di);
     $result = $serviceMock->setConfig($data);
 
-    expect($result)->toBeTrue();
+    expect($result)->toBeTrue()
+        ->and($encryptedConfig)->toBe(json_encode($data))
+        ->and($events)->toHaveCount(2)
+        ->and($events[0][0])->toBeInstanceOf(BeforeAdminExtensionConfigSaveEvent::class)
+        ->and($events[0][0]->extensionName)->toBe('extensionName')
+        ->and($events[0][0]->configurationKeys)->toBe(['api_key', 'nested', 'password', 'username'])
+        ->and($events[0][1])->toBeFalse()
+        ->and($events[1][0])->toBeInstanceOf(AfterAdminExtensionConfigSaveEvent::class)
+        ->and($events[1][0]->configurationKeys)->toBe(['api_key', 'nested', 'password', 'username'])
+        ->and($events[1][1])->toBeTrue();
 });
 
 test('hasManagePermission denies access when module does not declare manage_settings', function (): void {
@@ -1041,4 +1126,11 @@ test('setConfig denies inactive module configuration without touching storage wh
 
     expect(fn () => $serviceMock->setConfig(['ext' => 'mod_support']))
         ->toThrow(new FOSSBilling\InformationException('You need the "extension.manage_extensions" permission to perform this action', [], 403));
+});
+
+test('the typed cron listener refreshes the extension list', function (): void {
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('getExtensionsList')->once()->with([])->andReturn([]);
+
+    $service->refreshExtensionsOnCron(new Box\Mod\Cron\Event\BeforeAdminCronRunEvent());
 });

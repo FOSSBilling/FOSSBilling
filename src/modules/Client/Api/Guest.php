@@ -17,6 +17,13 @@ namespace Box\Mod\Client\Api;
 
 use Box\Mod\Client\Entity\Client;
 use Box\Mod\Client\Entity\ClientPasswordReset;
+use Box\Mod\Client\Event\AfterClientLoginEvent;
+use Box\Mod\Client\Event\AfterClientPasswordResetEvent;
+use Box\Mod\Client\Event\BeforeClientLoginEvent;
+use Box\Mod\Client\Event\BeforeClientPasswordResetConfirmationEvent;
+use Box\Mod\Client\Event\BeforeClientPasswordResetEvent;
+use Box\Mod\Client\Event\BeforeClientPasswordResetRequestEvent;
+use Box\Mod\Client\Event\ClientLoginFailedEvent;
 use Box\Mod\Client\Service;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
@@ -233,20 +240,18 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         try {
             $this->getDi()['tools']->validateAndSanitizeEmail($data['email'], true, false);
 
-            $event_params = $data;
-            $event_params['ip'] = $this->ip;
-            $this->getDi()['events_manager']->fire(['event' => 'onBeforeClientLogin', 'params' => $event_params]);
+            $this->getDi()['event_dispatcher']->dispatch(new BeforeClientLoginEvent($this->ip));
 
             $service = $this->getService();
             $client = $service->authorizeClient($data['email'], $data['password']);
 
             if (!$client instanceof Client) {
-                $this->getDi()['events_manager']->fire(['event' => 'onEventClientLoginFailed', 'params' => $event_params]);
+                $this->getDi()['event_dispatcher']->dispatch(new ClientLoginFailedEvent($this->ip));
 
                 throw new \FOSSBilling\InformationException('Please check your login details.', [], 401);
             }
 
-            $this->getDi()['events_manager']->fire(['event' => 'onAfterClientLogin', 'params' => ['id' => $client->getId(), 'ip' => $this->ip]]);
+            $this->getDi()['event_dispatcher']->dispatch(new AfterClientLoginEvent((int) $client->getId(), $this->ip));
 
             $oldSession = $this->getDi()['session']->getId();
             $this->getDi()['session']->regenerateId();
@@ -279,7 +284,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         $startedAt = microtime(true);
 
         try {
-            $this->getDi()['events_manager']->fire(['event' => 'onBeforePasswordResetClient']);
+            $this->getDi()['event_dispatcher']->dispatch(new BeforeClientPasswordResetEvent($this->getIp()));
             $service = $this->getDi()['mod_service']('client');
 
             // Sanitize email
@@ -301,7 +306,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
 
             $this->checkCaptchaIfEnabled($data);
 
-            $this->getDi()['events_manager']->fire(['event' => 'onBeforeGuestPasswordResetRequest', 'params' => $data]);
+            $this->getDi()['event_dispatcher']->dispatch(new BeforeClientPasswordResetRequestEvent($this->getIp()));
 
             $em = $this->getDi()['em'];
             $client = $em->getRepository(Client::class)->findOneByEmailAndActive($data['email']);
@@ -336,7 +341,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         try {
             $this->getDi()['rate_limiter']->consumeOrThrow('client_password_reset_confirm_post_ip', (string) $this->getIp());
 
-            $this->getDi()['events_manager']->fire(['event' => 'onBeforeClientProfilePasswordReset', 'params' => $data['hash']]);
+            $this->getDi()['event_dispatcher']->dispatch(new BeforeClientPasswordResetConfirmationEvent($this->getIp()));
 
             $this->getDi()['validator']->passwordsMatch($data);
             $this->getDi()['validator']->isPasswordStrong($data['password']);
@@ -382,7 +387,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             $email['code'] = 'mod_client_password_reset_information';
             $emailService = $this->getDi()['mod_service']('email');
             $emailService->sendTemplate($email);
-            $this->getDi()['events_manager']->fire(['event' => 'onAfterClientProfilePasswordReset', 'params' => ['id' => $client->getId()]]);
+            $this->getDi()['event_dispatcher']->dispatch(new AfterClientPasswordResetEvent((int) $client->getId()));
 
             return true;
         } finally {
