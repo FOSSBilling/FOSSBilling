@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Client\Entity\ClientBalance;
+use Box\Mod\Order\Entity\Order;
+use Box\Mod\System\Entity\Session;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use FOSSBilling\UpdatePatcher;
@@ -112,39 +115,39 @@ test('fresh installs start at the latest patch level', function (): void {
 });
 
 test('fresh installs index order suspension candidates', function (): void {
-    expect(updatePatcherEntityIndexes(Box\Mod\Order\Entity\Order::class))
-        ->toHaveKey('client_order_status_expires_at_idx')
-        ->and(updatePatcherEntityIndexes(Box\Mod\Order\Entity\Order::class)['client_order_status_expires_at_idx'])
-        ->toBe(['status', 'expires_at']);
+    $indexes = updatePatcherEntityIndexes(Order::class);
+
+    expect($indexes)->toHaveKey('client_order_status_expires_at_idx')
+        ->and($indexes['client_order_status_expires_at_idx'])->toBe(['status', 'expires_at']);
 });
 
 test('fresh installs index unpaid invoice lookups', function (): void {
-    expect(updatePatcherEntityIndexes(Box\Mod\Order\Entity\Order::class))
-        ->toHaveKey('client_order_unpaid_invoice_id_idx')
-        ->and(updatePatcherEntityIndexes(Box\Mod\Order\Entity\Order::class)['client_order_unpaid_invoice_id_idx'])
-        ->toBe(['unpaid_invoice_id']);
+    $indexes = updatePatcherEntityIndexes(Order::class);
+
+    expect($indexes)->toHaveKey('client_order_unpaid_invoice_id_idx')
+        ->and($indexes['client_order_unpaid_invoice_id_idx'])->toBe(['unpaid_invoice_id']);
 });
 
 test('fresh installs constrain client balance to one credit per invoice item', function (): void {
     $columns = [];
-    foreach ((new ReflectionClass(Box\Mod\Client\Entity\ClientBalance::class))->getAttributes(ORM\UniqueConstraint::class) as $attribute) {
+    foreach ((new ReflectionClass(ClientBalance::class))->getAttributes(ORM\UniqueConstraint::class) as $attribute) {
         $constraint = $attribute->newInstance();
         $columns[$constraint->name] = $constraint->columns ?? [];
     }
 
     expect($columns)->toHaveKey('uniq_invoice_item_credit');
     expect($columns['uniq_invoice_item_credit'])->toBe(['invoice_item_id']);
-    expect(updatePatcherEntityColumnType(Box\Mod\Client\Entity\ClientBalance::class, 'invoiceItemId'))->toBe(Types::BIGINT);
+    expect(updatePatcherEntityColumnType(ClientBalance::class, 'invoiceItemId'))->toBe(Types::BIGINT);
 });
 
 test('fresh installs use Symfony session storage', function (): void {
-    expect(updatePatcherEntityIndexes(Box\Mod\System\Entity\Session::class))
-        ->toHaveKey('session_lifetime_idx')
-        ->and(updatePatcherEntityIndexes(Box\Mod\System\Entity\Session::class)['session_lifetime_idx'])
-        ->toBe(['lifetime']);
-    expect(updatePatcherEntityColumnType(Box\Mod\System\Entity\Session::class, 'id'))->toBe(Types::BINARY);
-    expect(updatePatcherEntityColumnType(Box\Mod\System\Entity\Session::class, 'content'))->toBe(Types::BLOB);
-    expect(updatePatcherEntityColumnType(Box\Mod\System\Entity\Session::class, 'lifetime'))->toBe(Types::INTEGER);
+    $indexes = updatePatcherEntityIndexes(Session::class);
+
+    expect($indexes)->toHaveKey('session_lifetime_idx')
+        ->and($indexes['session_lifetime_idx'])->toBe(['lifetime']);
+    expect(updatePatcherEntityColumnType(Session::class, 'id'))->toBe(Types::BINARY);
+    expect(updatePatcherEntityColumnType(Session::class, 'content'))->toBe(Types::BLOB);
+    expect(updatePatcherEntityColumnType(Session::class, 'lifetime'))->toBe(Types::INTEGER);
 });
 
 /**
