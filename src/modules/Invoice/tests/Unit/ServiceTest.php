@@ -4058,7 +4058,7 @@ test('promoAddToInvoice applies a promo to an order on an unpaid invoice', funct
     $clientService->shouldReceive('isClientTaxable')->once()->with($client)->andReturn(false);
 
     $invoiceItemRepo = Mockery::mock(InvoiceItemRepository::class);
-    $invoiceItemRepo->shouldReceive('findByInvoiceId')->once()->with(10)->andReturn([]);
+    $invoiceItemRepo->shouldReceive('findByInvoiceId')->twice()->with(10)->andReturn([]);
 
     $em = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
     $em->shouldReceive('wrapInTransaction')->once()->andReturnUsing(fn (callable $callback): mixed => $callback());
@@ -4092,6 +4092,116 @@ test('promoAddToInvoice applies a promo to an order on an unpaid invoice', funct
 
     expect($amount)->toEqual(25.0);
     expect((float) $order->getDiscount())->toEqual(25.0);
+    expect($order->getPromoId())->toBe(7);
+    expect($order->isPromoRecurring())->toBeTrue();
+});
+
+test('promoAddToInvoice values a percentage promo from the invoice order line', function (): void {
+    $service = new Service();
+
+    $invoice = createEntity(Invoice::class, ['id' => 10, 'client_id' => 3, 'currency' => 'USD']);
+    $invoice->setStatus(Invoice::STATUS_UNPAID);
+
+    $order = createEntity(Order::class, [
+        'id' => 20,
+        'client_id' => 3,
+        'product_id' => 5,
+        'price' => 100.0,
+        'quantity' => 1,
+        'discount' => 0.0,
+        'currency' => 'USD',
+        'config' => json_encode(['period' => '1Y']),
+        'unpaid_invoice_id' => 10,
+    ]);
+
+    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 3]);
+
+    $promo = new Box\Mod\Product\Entity\Promo();
+    $promoReflection = new ReflectionProperty($promo, 'id');
+    $promoReflection->setValue($promo, 7);
+    $promo->setCode('ADMIN10')->setRecurring(true)->setType(Box\Mod\Product\Entity\Promo::PERCENTAGE)->setValue(10);
+
+    $product = new Product();
+    $productReflection = new ReflectionProperty($product, 'id');
+    $productReflection->setValue($product, 5);
+
+    // The invoice repriced the order (e.g. renewal): the 10% promo must come
+    // off the 60.0 line total, not the 100.0 order record.
+    $orderLine = createEntity(InvoiceItem::class, [
+        'id' => 31,
+        'type' => InvoiceItem::TYPE_ORDER,
+        'rel_id' => '20',
+        'price' => 60.0,
+        'quantity' => 1,
+        'unit' => 'service',
+    ]);
+
+    $productService = Mockery::mock(ProductService::class);
+    $productService->shouldReceive('promoCanBeApplied')->once()->with($promo)->andReturn(true);
+    $productService->shouldReceive('isPromoAvailableForClientGroup')->once()->with($promo, $client)->andReturn(true);
+    $productService->shouldReceive('canClientUsePromo')->once()->with($client, $promo)->andReturn(true);
+    $productService->shouldReceive('findProductById')->once()->with(5)->andReturn($product);
+    $productService->shouldReceive('isPromoApplicableToProduct')->once()->andReturn(true);
+    $productService->shouldNotReceive('getProductDiscount');
+    $productService->shouldReceive('clientHasActivePromoApplicationForUpdate')->once()->with($client, $promo)->andReturn(false);
+    $productService->shouldReceive('usePromo')->once()->with($promo);
+    $productService->shouldReceive('createPromoRedemption')
+        ->once()
+        ->with(
+            $promo,
+            $client,
+            $order,
+            $invoice,
+            Box\Mod\Product\Entity\PromoRedemption::PHASE_CHECKOUT,
+            6.0,
+            'USD',
+            Mockery::any(),
+            Box\Mod\Product\Entity\PromoRedemption::STATUS_RESERVED
+        )
+        ->andReturn(1);
+
+    $currencyRepository = Mockery::mock(CurrencyRepository::class);
+    $currencyRepository->shouldReceive('getRateByCode')->once()->with('USD')->andReturn(1.0);
+    $currencyService = Mockery::mock(CurrencyService::class);
+    $currencyService->shouldReceive('getCurrencyRepository')->once()->andReturn($currencyRepository);
+
+    $clientService = Mockery::mock(ClientService::class);
+    $clientService->shouldReceive('isClientTaxable')->once()->with($client)->andReturn(false);
+
+    $invoiceItemRepo = Mockery::mock(InvoiceItemRepository::class);
+    $invoiceItemRepo->shouldReceive('findByInvoiceId')->atLeast()->once()->with(10)->andReturn([$orderLine]);
+
+    $em = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
+    $em->shouldReceive('wrapInTransaction')->once()->andReturnUsing(fn (callable $callback): mixed => $callback());
+    $em->shouldReceive('persist')->atLeast()->once();
+    $em->shouldReceive('flush')->atLeast()->once();
+
+    $clientRepo = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
+    $clientRepo->shouldReceive('find')->once()->with(3)->andReturn($client);
+    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('lockAndGetStatus')->once()->with(10)->andReturn(Invoice::STATUS_UNPAID);
+    $em->shouldReceive('getRepository')->andReturnUsing(
+        fn (string $class) => match ($class) {
+            Box\Mod\Client\Entity\Client::class => $clientRepo,
+            Invoice::class => $invoiceRepo,
+            default => $invoiceItemRepo,
+        }
+    );
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(moduleService([
+        'product' => $productService,
+        'currency' => $currencyService,
+        'client' => $clientService,
+    ]));
+    $di['logger'] = new FOSSBilling\Logger();
+    $service->setDi($di);
+
+    $amount = $service->promoAddToInvoice($invoice, $promo, $order);
+
+    expect($amount)->toEqual(6.0);
+    expect((float) $order->getDiscount())->toEqual(6.0);
     expect($order->getPromoId())->toBe(7);
     expect($order->isPromoRecurring())->toBeTrue();
 });

@@ -2439,12 +2439,13 @@ class Service implements InjectionAwareInterface
         }
 
         if ($promo->getType() === \Box\Mod\Product\Entity\Promo::PERCENTAGE) {
-            // Percentage comes off the persisted order total (already in the
-            // order currency, e.g. a staff price override), not catalog
-            // pricing. Absolute promos stay on the catalog-based path below
-            // so their base-currency value keeps the existing rate conversion.
-            $orderTotal = (float) $order->getPrice() * (float) $order->getQuantity();
-            $discountBase = round($orderTotal * (float) $promo->getValue() / 100, 2);
+            // Percentage comes off what the invoice actually charges for the
+            // order (matching order line, already in the invoice currency),
+            // not the order record or catalog pricing: the two differ for
+            // repriced renewals, edited lines, or staff price overrides.
+            // Absolute promos stay on the catalog-based path below so their
+            // base-currency value keeps the existing rate conversion.
+            $discountBase = round($this->getOrderLineTotal($invoice, $order) * (float) $promo->getValue() / 100, 2);
         } else {
             $rawDiscount = (float) $productService->getProductDiscount($product, $promo, $promoConfig);
             $discountBase = $rawDiscount * $rate;
@@ -2475,7 +2476,10 @@ class Service implements InjectionAwareInterface
 
             $productService->usePromo($promo);
 
-            $remaining = (float) $order->getPrice() * (float) $order->getQuantity() - (float) ($order->getDiscount() ?? 0);
+            // Cap against the same invoice line total so the discount cannot
+            // exceed what this invoice charges for the order. Re-resolved
+            // under the lock so concurrent line edits are honored.
+            $remaining = $this->getOrderLineTotal($invoice, $order) - (float) ($order->getDiscount() ?? 0);
             $amount = min($discountBase, $remaining);
             if ($amount <= 0) {
                 throw new InformationException('This promo code gives no discount on the selected order');
@@ -2716,6 +2720,22 @@ class Service implements InjectionAwareInterface
         }
 
         return null;
+    }
+
+    /**
+     * Total the invoice charges for the order (line price × quantity).
+     * Falls back to the order record when the invoice has no matching order
+     * line yet; the two are equal for freshly generated invoices.
+     */
+    private function getOrderLineTotal(Invoice $invoice, Order $order): float
+    {
+        foreach ($this->getInvoiceItemRepository()->findByInvoiceId((int) $invoice->getId()) as $item) {
+            if ($item->getType() === InvoiceItem::TYPE_ORDER && (string) $item->getRelId() === (string) $order->getId()) {
+                return (float) $item->getPrice() * (float) ($item->getQuantity() ?? 1);
+            }
+        }
+
+        return (float) $order->getPrice() * (float) $order->getQuantity();
     }
 
     public function rmInvoice(Invoice $model, bool $requireUnapprovedUnpaid = false): bool
