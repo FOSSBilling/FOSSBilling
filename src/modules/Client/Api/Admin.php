@@ -18,6 +18,7 @@ namespace Box\Mod\Client\Api;
 use Box\Mod\Client\Entity\Client;
 use Box\Mod\Client\Entity\ClientBalance;
 use Box\Mod\Client\Entity\ClientGroup;
+use Box\Mod\Client\Entity\ClientGroupMembership;
 use Box\Mod\Client\Event\AfterAdminClientDeleteEvent;
 use Box\Mod\Client\Event\AfterAdminClientPasswordChangeEvent;
 use Box\Mod\Client\Event\AfterAdminClientUpdateEvent;
@@ -409,23 +410,18 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             }
         }
 
-        $groupField = array_key_exists('group_id', $data)
-            ? 'group_id'
-            : (array_key_exists('client_group_id', $data) ? 'client_group_id' : null);
-        if ($groupField !== null) {
-            $groupValue = $data[$groupField];
-            if (empty($groupValue)) {
-                $client->setClientGroup(null);
-            } else {
-                $groupId = filter_var($groupValue, FILTER_VALIDATE_INT);
-                if ($groupId === false || $groupId <= 0) {
-                    throw new InformationException('Invalid client group ID: :id', [':id' => $groupValue]);
+        if (array_key_exists('group_ids', $data)) {
+            $groupIds = array_values(array_filter(
+                (array) ($data['group_ids'] ?? []),
+                static fn (mixed $groupId): bool => $groupId !== '' && $groupId !== null
+            ));
+            foreach ($groupIds as $groupId) {
+                if (filter_var($groupId, FILTER_VALIDATE_INT) === false || (int) $groupId <= 0) {
+                    throw new InformationException('Invalid client group ID: :id', [':id' => $groupId]);
                 }
-
-                $group = $this->getDi()['em']->getRepository(ClientGroup::class)->find($groupId)
-                    ?? throw new InformationException('Client group not found');
-                $client->setClientGroup($group);
             }
+
+            $this->getService()->setClientGroupIds($client, $groupIds);
         }
 
         if (array_key_exists('email_approved', $data)) {
@@ -695,9 +691,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $this->getDi()['em']->getRepository(ClientGroup::class)->find($data['id']) ?? throw new InformationException('Group not found');
 
-        $clients = $this->getDi()['em']->getRepository(Client::class)->findBy(['clientGroup' => $model]);
+        $memberships = $this->getDi()['em']->getRepository(ClientGroupMembership::class)->findBy(['clientGroup' => $model]);
 
-        if (Tools::safeCount($clients) > 0) {
+        if (Tools::safeCount($memberships) > 0) {
             throw new InformationException('Group has clients assigned. Please reassign them first.');
         }
 

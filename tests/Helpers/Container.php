@@ -202,6 +202,10 @@ function container(): Container
         $clientGroupRepository->shouldReceive('find')->byDefault()->andReturnUsing(static fn (int $id): ?object => createEntity(\Box\Mod\Client\Entity\ClientGroup::class, ['id' => $id]));
         $clientGroupRepository->shouldReceive('getIdTitlePairs')->byDefault()->andReturn([]);
 
+        $clientGroupMembershipRepository = \Mockery::mock(\Box\Mod\Client\Repository\ClientGroupMembershipRepository::class)->shouldIgnoreMissing();
+        $clientGroupMembershipRepository->shouldReceive('findOneBy')->byDefault()->andReturn(null);
+        $clientGroupMembershipRepository->shouldReceive('findBy')->byDefault()->andReturn([]);
+
         $clientPasswordResetRepository = \Mockery::mock(\Box\Mod\Client\Repository\ClientPasswordResetRepository::class)->shouldIgnoreMissing();
         $clientPasswordResetRepository->shouldReceive('find')->byDefault()->andReturn(null);
         $clientPasswordResetRepository->shouldReceive('findBy')->byDefault()->andReturn([]);
@@ -301,6 +305,7 @@ function container(): Container
             \Box\Mod\Client\Entity\Client::class => $clientRepository,
             \Box\Mod\Client\Entity\ClientBalance::class => $clientBalanceRepository,
             \Box\Mod\Client\Entity\ClientGroup::class => $clientGroupRepository,
+            \Box\Mod\Client\Entity\ClientGroupMembership::class => $clientGroupMembershipRepository,
             \Box\Mod\Client\Entity\ClientPasswordReset::class => $clientPasswordResetRepository,
             \Box\Mod\Staff\Entity\AdminGroup::class => $adminGroupRepository,
             \Box\Mod\Staff\Entity\AdminGroupMember::class => $adminGroupMemberRepository,

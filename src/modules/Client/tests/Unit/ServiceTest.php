@@ -219,7 +219,7 @@ dataset('searchQueryData', [
     ],
     [
         ['group_id' => '1'],
-        'c.client_group_id = :group_id',
+        'EXISTS (SELECT 1 FROM client_group_members cgm WHERE cgm.client_id = c.id AND cgm.client_group_id = :group_id)',
         ['group_id' => '1'],
     ],
     [
@@ -778,9 +778,15 @@ test('remove rolls back and rethrows cleanup failures', function (): void {
 
 test('toApiArray returns array', function (): void {
     $service = new Box\Mod\Client\Service();
-    $clientGroup = createEntity(Box\Mod\Client\Entity\ClientGroup::class, ['id' => 1, 'title' => 'Group Title']);
     $model = createEntity(Box\Mod\Client\Entity\Client::class, [
-        'clientGroup' => $clientGroup,
+        'groupMemberships' => new Doctrine\Common\Collections\ArrayCollection([
+            createEntity(Box\Mod\Client\Entity\ClientGroupMembership::class, [
+                'clientGroup' => createEntity(Box\Mod\Client\Entity\ClientGroup::class, ['id' => 1, 'title' => 'Group Title']),
+            ]),
+            createEntity(Box\Mod\Client\Entity\ClientGroupMembership::class, [
+                'clientGroup' => createEntity(Box\Mod\Client\Entity\ClientGroup::class, ['id' => 2, 'title' => 'Second Group']),
+            ]),
+        ]),
         'custom_1' => 'custom field',
         'billing_email' => 'billing@example.com',
     ]);
@@ -791,8 +797,11 @@ test('toApiArray returns array', function (): void {
     $result = $service->toApiArray($model, true, createEntity(Box\Mod\Staff\Entity\Admin::class));
     expect($result)->toBeArray();
     expect($result['billing_email'])->toBe('billing@example.com');
-    expect($result['group'])->toBe('Group Title');
-    expect($result['client_group'])->toMatchArray(['id' => 1, 'title' => 'Group Title']);
+    expect($result['group'])->toBe('Group Title, Second Group');
+    expect($result['client_groups'])->toMatchArray([
+        ['id' => 1, 'title' => 'Group Title'],
+        ['id' => 2, 'title' => 'Second Group'],
+    ]);
 
     $publicResult = $service->toApiArray($model);
     expect($publicResult)->not->toHaveKey('billing_email');
@@ -983,20 +992,63 @@ test('deleteGroup returns true', function (): void {
     expect($result)->toBeTrue();
 });
 
-test('deleteGroup throws exception when group has clients', function (): void {
+test('setClientGroupIds replaces memberships with the given groups', function (): void {
     $service = new Box\Mod\Client\Service();
-    $clientEntity = new Box\Mod\Client\Entity\Client();
-    $model = createEntity(Box\Mod\Client\Entity\ClientGroup::class, ['id' => 1]);
 
-    $clientRepoMock = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
-    $clientRepoMock->shouldReceive('findOneBy')
-        ->with(['clientGroup' => $model])
-        ->andReturn($clientEntity);
+    $di = container();
+    $service->setDi($di);
+
+    $client = new Box\Mod\Client\Entity\Client();
+    $service->setClientGroupIds($client, [3, 1, 3, 'invalid', 0, -2]);
+
+    expect($client->getGroupIds())->toBe([3, 1]);
+});
+
+test('setClientGroupIds clears memberships when given no groups', function (): void {
+    $service = new Box\Mod\Client\Service();
+
+    $di = container();
+    $service->setDi($di);
+
+    $client = new Box\Mod\Client\Entity\Client();
+    $service->setClientGroupIds($client, [1]);
+    $service->setClientGroupIds($client, []);
+
+    expect($client->getGroupIds())->toBe([]);
+});
+
+test('setClientGroupIds throws for an unknown group', function (): void {
+    $service = new Box\Mod\Client\Service();
+
+    $groupRepository = Mockery::mock(Box\Mod\Client\Repository\ClientGroupRepository::class);
+    $groupRepository->shouldReceive('find')->once()->with(99)->andReturn(null);
 
     $di = container();
     $di['em']->shouldReceive('getRepository')
-        ->with(Box\Mod\Client\Entity\Client::class)
-        ->andReturn($clientRepoMock);
+        ->with(Box\Mod\Client\Entity\ClientGroup::class)
+        ->andReturn($groupRepository);
+    $service->setDi($di);
+
+    $client = new Box\Mod\Client\Entity\Client();
+
+    expect(fn () => $service->setClientGroupIds($client, [99]))
+        ->toThrow(FOSSBilling\InformationException::class, 'Client group not found');
+});
+
+test('deleteGroup throws exception when group has clients', function (): void {
+    $service = new Box\Mod\Client\Service();
+    $model = createEntity(Box\Mod\Client\Entity\ClientGroup::class, ['id' => 1]);
+    $membership = createEntity(Box\Mod\Client\Entity\ClientGroupMembership::class);
+
+    $membershipRepoMock = Mockery::mock(Box\Mod\Client\Repository\ClientGroupMembershipRepository::class);
+    $membershipRepoMock->shouldReceive('findOneBy')
+        ->with(['clientGroup' => $model])
+        ->andReturn($membership);
+
+    $di = container();
+    $di['em']->shouldReceive('getRepository')
+        ->with(Box\Mod\Client\Entity\ClientGroupMembership::class)
+        ->andReturn($membershipRepoMock);
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $service->setDi($di);

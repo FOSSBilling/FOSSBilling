@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Client\Entity;
 
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use FOSSBilling\Doctrine\TimestampTrait;
@@ -20,7 +22,6 @@ use FOSSBilling\Interfaces\TimestampInterface;
 #[ORM\Entity(repositoryClass: \Box\Mod\Client\Repository\ClientRepository::class)]
 #[ORM\Table(name: 'client')]
 #[ORM\Index(name: 'alternative_id_idx', columns: ['aid'])]
-#[ORM\Index(name: 'client_group_id_idx', columns: ['client_group_id'])]
 #[ORM\HasLifecycleCallbacks]
 class Client implements ApiArrayInterface, TimestampInterface
 {
@@ -49,9 +50,11 @@ class Client implements ApiArrayInterface, TimestampInterface
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
     private ?string $aid = null;
 
-    #[ORM\ManyToOne(targetEntity: ClientGroup::class)]
-    #[ORM\JoinColumn(name: 'client_group_id', referencedColumnName: 'id', nullable: true)]
-    private ?ClientGroup $clientGroup = null;
+    /**
+     * @var Collection<int, ClientGroupMembership>
+     */
+    #[ORM\OneToMany(mappedBy: 'client', targetEntity: ClientGroupMembership::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
+    private Collection $groupMemberships;
 
     #[ORM\Column(type: Types::STRING, length: 30, options: ['default' => 'client'])]
     private string $role = 'client';
@@ -209,6 +212,11 @@ class Client implements ApiArrayInterface, TimestampInterface
     #[ORM\Column(name: 'custom_20', type: Types::TEXT, nullable: true)]
     private ?string $custom20 = null;
 
+    public function __construct()
+    {
+        $this->groupMemberships = new ArrayCollection();
+    }
+
     public function getId(): ?int
     {
         return $this->id;
@@ -226,16 +234,47 @@ class Client implements ApiArrayInterface, TimestampInterface
         return $this;
     }
 
-    public function getClientGroup(): ?ClientGroup
+    /**
+     * @return Collection<int, ClientGroupMembership>
+     */
+    public function getGroupMemberships(): Collection
     {
-        return $this->clientGroup;
+        // ??= also covers instantiation paths that skip the constructor
+        // (Doctrine hydration, test proxies).
+        /* @phpstan-ignore nullCoalesce.initializedProperty (Doctrine's newInstanceWithoutConstructor and test proxies skip the constructor) */
+        return $this->groupMemberships ??= new ArrayCollection();
     }
 
-    public function setClientGroup(?ClientGroup $clientGroup): self
+    /**
+     * @return array<int>
+     */
+    public function getGroupIds(): array
     {
-        $this->clientGroup = $clientGroup;
+        $ids = [];
+        foreach ($this->getGroupMemberships() as $membership) {
+            $groupId = $membership->getClientGroup()?->getId();
+            if ($groupId !== null) {
+                $ids[] = $groupId;
+            }
+        }
 
-        return $this;
+        return array_values(array_unique($ids));
+    }
+
+    /**
+     * @return array<int, ClientGroup>
+     */
+    public function getClientGroups(): array
+    {
+        $groups = [];
+        foreach ($this->getGroupMemberships() as $membership) {
+            $group = $membership->getClientGroup();
+            if ($group instanceof ClientGroup && $group->getId() !== null) {
+                $groups[$group->getId()] = $group;
+            }
+        }
+
+        return $groups;
     }
 
     public function getRole(): string
@@ -919,7 +958,7 @@ class Client implements ApiArrayInterface, TimestampInterface
 
         $details += [
             'aid' => $this->aid,
-            'group_id' => $this->clientGroup?->getId(),
+            'group_ids' => $this->getGroupIds(),
             'role' => $this->role ?? 'client', /* @phpstan-ignore nullCoalesce.property (Doctrine's newInstanceWithoutConstructor skips default init) */
             'auth_type' => $this->authType,
             'status' => $this->status ?? self::ACTIVE,

@@ -150,7 +150,7 @@ test('batch order serialization does not expose admin-only client details', func
     // the general (non-admin) representation: UI fields present, admin-only
     // fields absent.
     expect($result[0]['client'])->toBe($generalClient);
-    foreach (['aid', 'status', 'notes', 'ip', 'billing_email', 'group', 'client_group', 'api_token'] as $adminOnlyKey) {
+    foreach (['aid', 'status', 'notes', 'ip', 'billing_email', 'group', 'client_groups', 'api_token'] as $adminOnlyKey) {
         expect($result[0]['client'])->not->toHaveKey($adminOnlyKey);
     }
 });

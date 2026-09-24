@@ -2396,9 +2396,9 @@ test('isPromoAvailableForClientGroup returns expected result', function (Promo $
     expect($result)->toEqual($expectedResult);
 })->with(fn (): array => [
     [createPromoEntity(1)->setClientGroups(json_encode([])), createEntity(Client::class), true],
-    [createPromoEntity(2)->setClientGroups(json_encode([1, 2])), createEntity(Client::class, ['clientGroup' => null]), false],
-    [createPromoEntity(3)->setClientGroups(json_encode([1, 2])), createEntity(Client::class, ['clientGroup' => null]), false],
-    [createPromoEntity(4)->setClientGroups(json_encode([1, 2])), createEntity(Client::class, ['clientGroup' => null]), true],
+    [createPromoEntity(2)->setClientGroups(json_encode([1, 2])), createEntity(Client::class), false],
+    [createPromoEntity(3)->setClientGroups(json_encode([1, 2])), createEntity(Client::class), false],
+    [createPromoEntity(4)->setClientGroups(json_encode([1, 2])), createEntity(Client::class), true],
     [createPromoEntity(5)->setClientGroups(json_encode([])), null, true],
     [createPromoEntity(6)->setClientGroups(json_encode([1, 2])), null, false],
 ]);

@@ -30,12 +30,14 @@ function seedReceiverTables(Connection $dbal): void
 {
     $dbal->executeStatement('CREATE TABLE client_group (id INTEGER PRIMARY KEY)');
     $dbal->executeStatement('CREATE TABLE product (id INTEGER PRIMARY KEY)');
-    $dbal->executeStatement('CREATE TABLE client (id INTEGER PRIMARY KEY, status TEXT, client_group_id INTEGER, email TEXT)');
+    $dbal->executeStatement('CREATE TABLE client (id INTEGER PRIMARY KEY, status TEXT, email TEXT)');
+    $dbal->executeStatement('CREATE TABLE client_group_members (id INTEGER PRIMARY KEY, client_id INTEGER, client_group_id INTEGER)');
     $dbal->executeStatement('CREATE TABLE client_order (id INTEGER PRIMARY KEY, client_id INTEGER, product_id INTEGER, status TEXT)');
 
     $dbal->executeStatement('INSERT INTO client_group (id) VALUES (1), (2)');
     $dbal->executeStatement('INSERT INTO product (id) VALUES (10), (11)');
-    $dbal->executeStatement("INSERT INTO client (id, status, client_group_id, email) VALUES (1, 'active', 1, 'client@example.com'), (2, 'canceled', 1, 'other@example.com'), (3, 'active', 2, ' third@example.com '), (4, 'active', 1, NULL), (5, 'active', 1, '   '), (6, 'active', 1, '0'), (7, 'active', 1, 'not-an-email'), (8, 'active', 1, '')");
+    $dbal->executeStatement("INSERT INTO client (id, status, email) VALUES (1, 'active', 'client@example.com'), (2, 'canceled', 'other@example.com'), (3, 'active', ' third@example.com '), (4, 'active', NULL), (5, 'active', '   '), (6, 'active', '0'), (7, 'active', 'not-an-email'), (8, 'active', '')");
+    $dbal->executeStatement('INSERT INTO client_group_members (client_id, client_group_id) VALUES (1, 1), (2, 1), (3, 1), (3, 2), (4, 1), (5, 1), (6, 1), (7, 1), (8, 1)');
     $dbal->executeStatement("INSERT INTO client_order (id, client_id, product_id, status) VALUES (1, 1, 10, 'active'), (2, 2, 10, 'suspended'), (3, 3, 11, 'active'), (4, 4, 10, 'active'), (5, 5, 10, 'active'), (6, 6, 10, 'active'), (7, 7, 10, 'active'), (8, 8, 10, 'active')");
 }
 
@@ -140,7 +142,10 @@ test('get message receivers excludes clients without a valid email', function ()
     $service = new Box\Mod\Massmailer\Service();
     $service->setDi(createMassmailerDi($dbal));
 
-    expect($service->getMessageReceivers($model))->toBe([['id' => 1]]);
+    // Client 3 holds membership in groups 1 and 2, so a group-1 filter
+    // matches it alongside client 1; the other group-1 members are dropped
+    // for having no usable email address.
+    expect($service->getMessageReceivers($model))->toBe([['id' => 3], ['id' => 1]]);
 });
 
 test('get message receivers accepts a valid email with surrounding whitespace', function (): void {
