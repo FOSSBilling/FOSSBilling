@@ -2015,6 +2015,21 @@ test('get product discount uses product order line config', function (): void {
     expect($serviceMock->getProductDiscount($product, $promo, ['period' => '1Y'], true))->toBe(8.0);
 });
 
+test('get product discount by id forwards the price override flag', function (): void {
+    $product = productTestCreateProductEntity(5);
+    $promo = productTestCreatePromoEntity(7);
+    $config = ['period' => '1Y', Service::PRICE_OVERRIDE_KEY => 40.0];
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('findProductById')->once()->with(5)->andReturn($product);
+    $serviceMock->shouldReceive('getProductDiscount')
+        ->once()
+        ->with($product, $promo, $config, true)
+        ->andReturn(8.0);
+
+    expect($serviceMock->getProductDiscountById(5, $promo, $config, true))->toBe(8.0);
+});
+
 test('get renewal product discount uses product renewal line config', function (): void {
     $service = new Service();
     $promo = new Promo();
