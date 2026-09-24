@@ -2439,12 +2439,10 @@ class Service implements InjectionAwareInterface
         }
 
         if ($promo->getType() === \Box\Mod\Product\Entity\Promo::PERCENTAGE) {
-            // Percentage comes off what the invoice actually charges for the
-            // order (matching order line, already in the invoice currency),
-            // not the order record or catalog pricing: the two differ for
-            // repriced renewals, edited lines, or staff price overrides.
-            // Absolute promos stay on the catalog-based path below so their
-            // base-currency value keeps the existing rate conversion.
+            // Percentage comes off the invoice order line (already in the
+            // invoice currency), which repriced renewals and edited lines
+            // diverge from the order record. Absolute promos stay on the
+            // catalog-based path so their base value keeps the conversion.
             $discountBase = round($this->getOrderLineTotal($invoice, $order) * (float) $promo->getValue() / 100, 2);
         } else {
             $rawDiscount = (float) $productService->getProductDiscount($product, $promo, $promoConfig);
@@ -2476,9 +2474,8 @@ class Service implements InjectionAwareInterface
 
             $productService->usePromo($promo);
 
-            // Cap against the same invoice line total so the discount cannot
-            // exceed what this invoice charges for the order. Re-resolved
-            // under the lock so concurrent line edits are honored.
+            // Cap against the same line total, re-resolved under the lock so
+            // concurrent line edits are honored.
             $remaining = $this->getOrderLineTotal($invoice, $order) - (float) ($order->getDiscount() ?? 0);
             $amount = min($discountBase, $remaining);
             if ($amount <= 0) {
@@ -2722,11 +2719,6 @@ class Service implements InjectionAwareInterface
         return null;
     }
 
-    /**
-     * Total the invoice charges for the order (line price × quantity).
-     * Falls back to the order record when the invoice has no matching order
-     * line yet; the two are equal for freshly generated invoices.
-     */
     private function getOrderLineTotal(Invoice $invoice, Order $order): float
     {
         foreach ($this->getInvoiceItemRepository()->findByInvoiceId((int) $invoice->getId()) as $item) {

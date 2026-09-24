@@ -4125,8 +4125,7 @@ test('promoAddToInvoice values a percentage promo from the invoice order line', 
     $productReflection = new ReflectionProperty($product, 'id');
     $productReflection->setValue($product, 5);
 
-    // The invoice repriced the order (e.g. renewal): the 10% promo must come
-    // off the 60.0 line total, not the 100.0 order record.
+    // Repriced line (e.g. renewal): the 10% promo comes off 60.0, not the 100.0 order record.
     $orderLine = createEntity(InvoiceItem::class, [
         'id' => 31,
         'type' => InvoiceItem::TYPE_ORDER,
