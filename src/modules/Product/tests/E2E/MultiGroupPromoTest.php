@@ -37,7 +37,7 @@ test('group-targeted promos follow any membership of a multi-group client', func
         $product = multiGroupCreateProduct(100.0);
 
         // 10% standing discount for the Charity group, applied automatically.
-        $autoPromo = multiGroupCreatePromo('E2EMGA' . strtoupper(uniqid()), 'percentage', 10, [
+        $autoPromo = multiGroupCreatePromo('E2EMultiA' . strtoupper(uniqid()), 'percentage', 10, [
             'active' => 1,
             'recurring' => 1,
             'auto_apply' => 1,
@@ -158,7 +158,7 @@ function multiGroupDeactivatePromo(?int $promoId): void
 
 function multiGroupCreateClient(array $groupIds): array
 {
-    $email = 'multigroup_' . uniqid() . '@example.com';
+    $email = 'multi_group_' . uniqid() . '@example.com';
     $password = 'A1a' . bin2hex(random_bytes(6));
     $created = Tests\Helpers\ApiClient::request('admin/client/create', [
         'email' => $email,
