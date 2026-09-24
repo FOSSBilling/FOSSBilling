@@ -43,8 +43,8 @@ use Doctrine\ORM\Tools\SchemaTool;
  * One narrower exception to "additive is always safe": a foreign key constraint being added to an
  * *existing* table is never applied, even though it's technically additive. Unlike a new column or
  * index, MySQL/PostgreSQL both validate a new FK constraint against every existing row - and
- * FOSSBilling's schema has never had real FK constraints (`structure.sql` has none at all; it's
- * always been app-level referential integrity), so there's no guarantee years of production data
+ * FOSSBilling's schema has never had real FK constraints (neither the pre-cutover schema
+ * dump nor current metadata declares any; it's always been app-level referential integrity), so there's no guarantee years of production data
  * satisfy one. A brand-new table's own FK constraints are unaffected by this - those apply at
  * creation time, against zero rows, same as any fresh install.
  *
@@ -219,9 +219,9 @@ final class SchemaSynchronizer
 
             // Foreign keys being ADDED to an already-existing table are never applied here, name
             // collision or not. Unlike a new column or index, a new FK constraint is checked against
-            // every existing row: years-old data with no constraint enforcing it (structure.sql has
-            // never had a single FOREIGN KEY clause - the whole schema has always been app-level
-            // referential integrity only) can easily contain orphaned references, and even where it
+            // every existing row: years-old data with no constraint enforcing it (neither the
+            // pre-cutover schema dump nor current metadata has ever had a single FOREIGN KEY
+            // clause - the whole schema has always been app-level referential integrity only) can easily contain orphaned references, and even where it
             // doesn't, retrofitting a constraint changes DELETE/UPDATE behavior the application was
             // never built expecting. A brand-new table's own FK constraints (via createdTables,
             // below) stay untouched - those are the safe case, same as any fresh install.

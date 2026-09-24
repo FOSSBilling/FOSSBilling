@@ -504,10 +504,11 @@ final class FOSSBilling_Installer
      * through a portable rewrite of that same file (see {@see FOSSBilling\Doctrine\InstallSeeder})
      * rather than a second, duplicated copy of the data.
      *
-     * MySQL/MariaDB installs used to run install/sql/structure.sql and content.sql almost
-     * verbatim via raw PDO instead - `install/sql/structure.sql` is no longer used by a fresh
-     * install of any platform; it remains only as the frozen definition existing, pre-cutover
-     * MySQL installs are upgraded from via {@see FOSSBilling\UpdatePatcher}'s legacy patches.
+     * MySQL/MariaDB installs used to run a hand-maintained install/sql/structure.sql and
+     * content.sql almost verbatim via raw PDO instead; the schema dump is gone (its content
+     * at the cutover commit is preserved in git history as the reference the legacy
+     * {@see FOSSBilling\UpdatePatcher} patches below were written against), and only
+     * content.sql's seed rows survive, replayed portably as described above.
      */
     private function installPortable(): void
     {

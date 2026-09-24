@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use Doctrine\DBAL\Types\Types;
+use Doctrine\ORM\Mapping as ORM;
 use FOSSBilling\UpdatePatcher;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -110,39 +112,75 @@ test('fresh installs start at the latest patch level', function (): void {
 });
 
 test('fresh installs index order suspension candidates', function (): void {
-    $filesystem = new Filesystem();
-    $structure = $filesystem->readFile(Path::join(PATH_ROOT, 'install', 'sql', 'structure.sql'));
-
-    expect($structure)->toContain('KEY `client_order_status_expires_at_idx` (`status`, `expires_at`)');
+    expect(updatePatcherEntityIndexes(Box\Mod\Order\Entity\Order::class))
+        ->toHaveKey('client_order_status_expires_at_idx')
+        ->and(updatePatcherEntityIndexes(Box\Mod\Order\Entity\Order::class)['client_order_status_expires_at_idx'])
+        ->toBe(['status', 'expires_at']);
 });
 
 test('fresh installs index unpaid invoice lookups', function (): void {
-    $filesystem = new Filesystem();
-    $structure = $filesystem->readFile(Path::join(PATH_ROOT, 'install', 'sql', 'structure.sql'));
-
-    expect($structure)->toContain('KEY `client_order_unpaid_invoice_id_idx` (`unpaid_invoice_id`)');
+    expect(updatePatcherEntityIndexes(Box\Mod\Order\Entity\Order::class))
+        ->toHaveKey('client_order_unpaid_invoice_id_idx')
+        ->and(updatePatcherEntityIndexes(Box\Mod\Order\Entity\Order::class)['client_order_unpaid_invoice_id_idx'])
+        ->toBe(['unpaid_invoice_id']);
 });
 
 test('fresh installs constrain client balance to one credit per invoice item', function (): void {
-    $filesystem = new Filesystem();
-    $structure = $filesystem->readFile(Path::join(PATH_ROOT, 'install', 'sql', 'structure.sql'));
+    $columns = [];
+    foreach ((new ReflectionClass(Box\Mod\Client\Entity\ClientBalance::class))->getAttributes(ORM\UniqueConstraint::class) as $attribute) {
+        $constraint = $attribute->newInstance();
+        $columns[$constraint->name] = $constraint->columns ?? [];
+    }
 
-    expect($structure)->toContain('`invoice_item_id` bigint(20) DEFAULT NULL')
-        ->and($structure)->toContain('UNIQUE KEY `uniq_invoice_item_credit` (`invoice_item_id`)');
+    expect($columns)->toHaveKey('uniq_invoice_item_credit');
+    expect($columns['uniq_invoice_item_credit'])->toBe(['invoice_item_id']);
+    expect(updatePatcherEntityColumnType(Box\Mod\Client\Entity\ClientBalance::class, 'invoiceItemId'))->toBe(Types::BIGINT);
 });
 
 test('fresh installs use Symfony session storage', function (): void {
-    $filesystem = new Filesystem();
-    $structure = $filesystem->readFile(Path::join(PATH_ROOT, 'install', 'sql', 'structure.sql'));
-    preg_match('/CREATE TABLE `session` \((.*?)\) ENGINE=/s', $structure, $matches);
-    $sessionDefinition = $matches[1] ?? '';
-
-    expect($sessionDefinition)->toContain('`id` varbinary(128) NOT NULL')
-        ->and($sessionDefinition)->toContain('`content` blob NOT NULL')
-        ->and($sessionDefinition)->toContain('`lifetime` int(11) unsigned NOT NULL')
-        ->and($sessionDefinition)->toContain('PRIMARY KEY (`id`)')
-        ->and($sessionDefinition)->toContain('KEY `session_lifetime_idx` (`lifetime`)');
+    expect(updatePatcherEntityIndexes(Box\Mod\System\Entity\Session::class))
+        ->toHaveKey('session_lifetime_idx')
+        ->and(updatePatcherEntityIndexes(Box\Mod\System\Entity\Session::class)['session_lifetime_idx'])
+        ->toBe(['lifetime']);
+    expect(updatePatcherEntityColumnType(Box\Mod\System\Entity\Session::class, 'id'))->toBe(Types::BINARY);
+    expect(updatePatcherEntityColumnType(Box\Mod\System\Entity\Session::class, 'content'))->toBe(Types::BLOB);
+    expect(updatePatcherEntityColumnType(Box\Mod\System\Entity\Session::class, 'lifetime'))->toBe(Types::INTEGER);
 });
+
+/**
+ * Index name => columns declared on an entity class. Fresh-install schema
+ * is generated from this metadata, so these assertions test what new
+ * installs actually get.
+ *
+ * @param class-string $class
+ *
+ * @return array<string, list<string>>
+ */
+function updatePatcherEntityIndexes(string $class): array
+{
+    $indexes = [];
+    foreach ((new ReflectionClass($class))->getAttributes(ORM\Index::class) as $attribute) {
+        $index = $attribute->newInstance();
+        $indexes[$index->name] = $index->columns ?? [];
+    }
+
+    return $indexes;
+}
+
+/**
+ * Doctrine column type declared on an entity property.
+ *
+ * @param class-string $class
+ */
+function updatePatcherEntityColumnType(string $class, string $property): ?string
+{
+    $attributes = (new ReflectionClass($class))->getProperty($property)->getAttributes(ORM\Column::class);
+    if ($attributes === []) {
+        return null;
+    }
+
+    return $attributes[0]->newInstance()->type;
+}
 
 test('session storage migration follows the obsolete core file cleanup', function (): void {
     $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 104);
@@ -858,7 +896,7 @@ test('foreign key width patch is numbered 110', function (): void {
 });
 
 test('foreign key width patch widens narrow gateway_id columns but leaves already-wide columns alone', function (): void {
-    // invoice.gateway_id and transaction.gateway_id were declared int(11) in structure.sql
+    // invoice.gateway_id and transaction.gateway_id were int(11) in the pre-cutover schema
     // while pay_gateway.id (which they reference) is bigint(20). email_queue.client_id and
     // email_queue.admin_id have the same mismatch against client.id/admin.id. This patch
     // widens any column still typed int and is a no-op for columns already bigint.
@@ -978,7 +1016,7 @@ test('service apikey table patch is numbered 111', function (): void {
 
 test('service apikey table patch is a no-op when the table already exists', function (): void {
     // The Serviceapikey module (PR #4055) added the ServiceApiKey Doctrine entity but never
-    // gave it a structure.sql counterpart, so service_apikey was never created on any MySQL
+    // added it to the pre-cutover schema definition, so service_apikey was never created on any MySQL
     // install. This patch backfills it for existing installs, guarded so it never overwrites
     // a table that's somehow already there (e.g. an install that already ran this patch).
     $tableExists = Mockery::mock(PDOStatement::class);

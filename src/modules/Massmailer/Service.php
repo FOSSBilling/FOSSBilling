@@ -105,7 +105,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $extensionService = $this->di['mod_service']('extension');
 
         // Raw MySQL-only DDL here (backticks, ENGINE=InnoDB) would fail outright on
-        // PostgreSQL/SQLite. mod_massmailer already exists in structure.sql, so this hook is
+        // PostgreSQL/SQLite. mod_massmailer already exists in the pre-cutover schema, so this hook is
         // already redundant on MySQL fresh installs - it's only load-bearing on PG/SQLite,
         // where nothing else creates the table. SchemaSynchronizer::syncEntities() creates (or
         // catches up) just this module's own table from current metadata, additively and
