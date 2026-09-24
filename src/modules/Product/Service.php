@@ -1173,13 +1173,13 @@ class Service implements InjectionAwareInterface
      *   config: array
      * }
      */
-    public function getCartProductViewData(CartProduct $item): array
+    public function getCartProductViewData(CartProduct $item, bool $allowPriceOverride = false): array
     {
         $productId = $item->getProductId();
         $configValue = $item->getConfig();
         $product = $this->findProductById((int) $productId);
         $config = json_decode($configValue ?? '', true) ?? [];
-        $line = $this->getProductOrderLineConfig($product, $config);
+        $line = $this->getProductOrderLineConfig($product, $config, $allowPriceOverride);
 
         return [
             'product_id' => (int) $product->getId(),
@@ -2290,7 +2290,7 @@ class Service implements InjectionAwareInterface
      *
      * @return array{price: float|int|string, quantity: int|float|string, setup_price?: float|int|string}
      */
-    public function getProductOrderLineConfig(Product $product, ?array $config = null): array
+    public function getProductOrderLineConfig(Product $product, ?array $config = null, bool $allowPriceOverride = false): array
     {
         if ($product->getType() === self::DOMAIN) {
             return $this->getDomainOrderLineConfig($config ?? []);
@@ -2300,7 +2300,7 @@ class Service implements InjectionAwareInterface
         $price = (float) $this->getProductPrice($product, $config);
 
         $override = ($config ?? [])[self::PRICE_OVERRIDE_KEY] ?? null;
-        if (is_numeric($override) && (float) $override >= 0) {
+        if ($allowPriceOverride && is_numeric($override) && (float) $override >= 0) {
             $price = (float) $override;
         }
 

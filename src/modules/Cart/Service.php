@@ -1423,7 +1423,9 @@ class Service implements InjectionAwareInterface
         ?array $cartProducts = null,
         ?array $promosOverride = null,
     ): array {
-        $productView = $this->getProductService()->getCartProductViewData($model);
+        $cart ??= $model->getCart();
+        $allowPriceOverride = $cart instanceof Cart && $this->isStaffBasket($cart);
+        $productView = $this->getProductService()->getCartProductViewData($model, $allowPriceOverride);
         $config = $productView['config'];
         $setup = $productView['setup_price'];
         $price = $productView['price'];
@@ -1534,7 +1536,7 @@ class Service implements InjectionAwareInterface
             return array_map(static fn (): float => 0.0, $raw);
         }
 
-        $productView = $this->getProductService()->getCartProductViewData($cartProduct);
+        $productView = $this->getProductService()->getCartProductViewData($cartProduct, $this->isStaffBasket($cart));
         $subtotal = (float) $productView['price'] * (float) $productView['quantity'];
         $cappedTotal = min($rawTotal, $subtotal);
 
