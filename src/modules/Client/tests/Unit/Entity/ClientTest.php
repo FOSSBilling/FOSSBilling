@@ -5,7 +5,9 @@ declare(strict_types=1);
 use Box\Mod\Client\Entity\Client;
 use Box\Mod\Client\Entity\ClientBalance;
 use Box\Mod\Client\Entity\ClientGroup;
+use Box\Mod\Client\Entity\ClientGroupMembership;
 use Box\Mod\Client\Entity\ClientPasswordReset;
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\DBAL\DriverManager;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\ORMSetup;
@@ -19,6 +21,7 @@ test('maps client tables without changing their columns', function (): void {
     $client = $entityManager->getClassMetadata(Client::class);
     $balance = $entityManager->getClassMetadata(ClientBalance::class);
     $group = $entityManager->getClassMetadata(ClientGroup::class);
+    $membership = $entityManager->getClassMetadata(ClientGroupMembership::class);
     $passwordReset = $entityManager->getClassMetadata(ClientPasswordReset::class);
 
     expect($client->getTableName())->toBe('client')
@@ -44,6 +47,10 @@ test('maps client tables without changing their columns', function (): void {
         ->and($balance->getFieldMapping('amount')['nullable'])->toBeTrue()
         ->and($group->getTableName())->toBe('client_group')
         ->and($group->getColumnNames())->toBe(['id', 'title', 'created_at', 'updated_at'])
+        ->and($membership->getTableName())->toBe('client_group_members')
+        ->and($membership->getColumnNames())->toBe(['id', 'created_at', 'updated_at'])
+        ->and($membership->getAssociationMapping('client')['joinColumns'][0]['name'])->toBe('client_id')
+        ->and($membership->getAssociationMapping('clientGroup')['joinColumns'][0]['name'])->toBe('client_group_id')
         ->and($passwordReset->getTableName())->toBe('client_password_reset')
         ->and($passwordReset->getColumnNames())->toBe([
             'id', 'hash', 'ip', 'created_at', 'updated_at',
@@ -60,7 +67,11 @@ test('converts an admin client list entity to the legacy API shape', function ()
         'first_name' => 'Ada',
         'last_name' => 'Lovelace',
         'billing_email' => 'billing@example.com',
-        'clientGroup' => \Tests\Helpers\createEntity(ClientGroup::class, ['id' => 3]),
+        'groupMemberships' => new ArrayCollection([
+            \Tests\Helpers\createEntity(ClientGroupMembership::class, [
+                'clientGroup' => \Tests\Helpers\createEntity(ClientGroup::class, ['id' => 3]),
+            ]),
+        ]),
         'status' => 'active',
         'tax_exempt' => 0,
         'custom_15' => 'VIP',
@@ -78,7 +89,7 @@ test('converts an admin client list entity to the legacy API shape', function ()
         'id' => 42,
         'email' => 'ada@example.com',
         'email_approved' => 1,
-        'group_id' => 3,
+        'group_ids' => [3],
         'status' => 'active',
         'tax_exempt' => 0,
         'custom_15' => 'VIP',
@@ -95,7 +106,7 @@ test('does not expose admin-only client fields without an admin identity', funct
     expect($result)->toHaveKey('email');
     expect($result)->not->toHaveKey('notes');
     expect($result)->not->toHaveKey('status');
-    expect($result)->not->toHaveKey('group_id');
+    expect($result)->not->toHaveKey('group_ids');
     expect($result)->not->toHaveKey('billing_email');
 });
 

@@ -143,8 +143,11 @@
                             </select>
                         </div>
                         <div class="col-sm-6">
-                            <label class="form-label" for="group_id">{{ 'Group'|trans }}</label>
-                            {{ mf.selectbox('group_id', admin.client_group_get_pairs, request.group_id, 0, 'Select Group'|trans) }}
+                            <label class="form-label">{{ 'Groups'|trans }}</label>
+                            <input type="hidden" name="group_ids[]" value=""/>
+                            <table class="table card-table table-vcenter table-striped text-nowrap">
+                                <tbody>{% set group_pairs = admin.client_group_get_pairs %}{% for id, title in group_pairs %}<tr><td class="w-1"><input type="checkbox" name="group_ids[]" value="{{ id }}" /></td><td>{{ title }}</td></tr>{% endfor %}</tbody>
+                            </table>
                         </div>
                         <div class="col-sm-6">
                             <label class="form-label" for="currency">{{ 'Currency'|trans }}</label>

@@ -137,7 +137,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             ->setParameter('empty_email', '', ParameterType::STRING);
 
         $this->appendInCondition($query, 'c.status', 'client_status', $filter[self::FILTER_CLIENT_STATUS] ?? [], ArrayParameterType::STRING);
-        $this->appendInCondition($query, 'c.client_group_id', 'client_groups', $filter[self::FILTER_CLIENT_GROUPS] ?? [], ArrayParameterType::INTEGER);
+        $this->appendClientGroupCondition($query, $filter[self::FILTER_CLIENT_GROUPS] ?? []);
         $this->appendInCondition($query, 'co.product_id', 'has_order', $filter[self::FILTER_HAS_ORDER] ?? [], ArrayParameterType::INTEGER);
         $this->appendInCondition($query, 'co.status', 'has_order_with_status', $filter[self::FILTER_HAS_ORDER_WITH_STATUS] ?? [], ArrayParameterType::STRING);
 
@@ -389,6 +389,17 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $query
             ->andWhere(sprintf('%s IN (:%s)', $column, $parameterName))
             ->setParameter($parameterName, $filterValues, $parameterType);
+    }
+
+    private function appendClientGroupCondition(\Doctrine\DBAL\Query\QueryBuilder $query, array $filterValues): void
+    {
+        if ($filterValues === []) {
+            return;
+        }
+
+        $query
+            ->andWhere('EXISTS (SELECT 1 FROM client_group_members cgm WHERE cgm.client_id = c.id AND cgm.client_group_id IN (:client_groups))')
+            ->setParameter('client_groups', $filterValues, ArrayParameterType::INTEGER);
     }
 
     private function handleInvalidFilter(string $field, bool $strict): array
