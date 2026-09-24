@@ -2673,7 +2673,7 @@ test('getEffectiveCartPromos resolves automatic promos for a logged-in client', 
     $productService->shouldReceive('findProductById')->once()->andReturn($product);
     $productService->shouldReceive('resolveAutoPromosForLines')
         ->once()
-        ->with($client, Mockery::type('array'))
+        ->with($client, Mockery::type('array'), false)
         ->andReturn([$promo]);
 
     $di = container();

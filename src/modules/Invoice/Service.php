@@ -2438,8 +2438,16 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Exception("Currency rate for '{$order->getCurrency()}' is not configured");
         }
 
-        $rawDiscount = (float) $productService->getProductDiscount($product, $promo, $promoConfig);
-        $discountBase = $rawDiscount * $rate;
+        if ($promo->getType() === \Box\Mod\Product\Entity\Promo::PERCENTAGE) {
+            // Percentage comes off the invoice order line (already in the
+            // invoice currency), which repriced renewals and edited lines
+            // diverge from the order record. Absolute promos stay on the
+            // catalog-based path so their base value keeps the conversion.
+            $discountBase = round($this->getOrderLineTotal($invoice, $order) * (float) $promo->getValue() / 100, 2);
+        } else {
+            $rawDiscount = (float) $productService->getProductDiscount($product, $promo, $promoConfig);
+            $discountBase = $rawDiscount * $rate;
+        }
         if ($discountBase <= 0) {
             throw new InformationException('This promo code gives no discount on the selected order');
         }
@@ -2466,7 +2474,9 @@ class Service implements InjectionAwareInterface
 
             $productService->usePromo($promo);
 
-            $remaining = (float) $order->getPrice() * (float) $order->getQuantity() - (float) ($order->getDiscount() ?? 0);
+            // Cap against the same line total, re-resolved under the lock so
+            // concurrent line edits are honored.
+            $remaining = $this->getOrderLineTotal($invoice, $order) - (float) ($order->getDiscount() ?? 0);
             $amount = min($discountBase, $remaining);
             if ($amount <= 0) {
                 throw new InformationException('This promo code gives no discount on the selected order');
@@ -2707,6 +2717,17 @@ class Service implements InjectionAwareInterface
         }
 
         return null;
+    }
+
+    private function getOrderLineTotal(Invoice $invoice, Order $order): float
+    {
+        foreach ($this->getInvoiceItemRepository()->findByInvoiceId((int) $invoice->getId()) as $item) {
+            if ($item->getType() === InvoiceItem::TYPE_ORDER && (string) $item->getRelId() === (string) $order->getId()) {
+                return (float) $item->getPrice() * (float) ($item->getQuantity() ?? 1);
+            }
+        }
+
+        return (float) $order->getPrice() * (float) $order->getQuantity();
     }
 
     public function rmInvoice(Invoice $model, bool $requireUnapprovedUnpaid = false): bool

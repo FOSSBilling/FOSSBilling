@@ -725,7 +725,7 @@ class Service implements InjectionAwareInterface
         }
 
         try {
-            $promos = $this->getProductService()->resolveAutoPromosForLines($client, $lines);
+            $promos = $this->getProductService()->resolveAutoPromosForLines($client, $lines, $this->isStaffBasket($cart));
         } catch (\Throwable $e) {
             $this->di['logger']->warning('Automatic promo resolution failed: {exception}', ['exception' => $e]);
 
@@ -1377,11 +1377,11 @@ class Service implements InjectionAwareInterface
         return $this->getProductService()->getRelatedProductDiscountByProductId((int) $model->getProductId(), $list, $config);
     }
 
-    protected function getItemPromoDiscount(CartProduct $model, Promo $promo)
+    protected function getItemPromoDiscount(CartProduct $model, Promo $promo, bool $allowPriceOverride = false)
     {
         $config = $this->getItemConfig($model);
 
-        return $this->getProductService()->getProductDiscountById((int) $model->getProductId(), $promo, $config);
+        return $this->getProductService()->getProductDiscountById((int) $model->getProductId(), $promo, $config, $allowPriceOverride);
     }
 
     public function getItemConfig(CartProduct $model): array
@@ -1410,7 +1410,9 @@ class Service implements InjectionAwareInterface
         ?array $cartProducts = null,
         ?array $promosOverride = null,
     ): array {
-        $productView = $this->getProductService()->getCartProductViewData($model);
+        $cart ??= $model->getCart();
+        $allowPriceOverride = $cart instanceof Cart && $this->isStaffBasket($cart);
+        $productView = $this->getProductService()->getCartProductViewData($model, $allowPriceOverride);
         $config = $productView['config'];
         $setup = $productView['setup_price'];
         $price = $productView['price'];
@@ -1511,9 +1513,10 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('Cart not found');
         }
 
+        $allowPriceOverride = $this->isStaffBasket($cart);
         $raw = [];
         foreach ($promos as $promo) {
-            $raw[(int) $promo->getId()] = (float) $this->getItemPromoDiscount($cartProduct, $promo);
+            $raw[(int) $promo->getId()] = (float) $this->getItemPromoDiscount($cartProduct, $promo, $allowPriceOverride);
         }
 
         $rawTotal = array_sum($raw);
@@ -1521,7 +1524,7 @@ class Service implements InjectionAwareInterface
             return array_map(static fn (): float => 0.0, $raw);
         }
 
-        $productView = $this->getProductService()->getCartProductViewData($cartProduct);
+        $productView = $this->getProductService()->getCartProductViewData($cartProduct, $allowPriceOverride);
         $subtotal = (float) $productView['price'] * (float) $productView['quantity'];
         $cappedTotal = min($rawTotal, $subtotal);
 

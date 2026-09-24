@@ -24,6 +24,7 @@ use Box\Mod\Currency\Service as CurrencyService;
 use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Order\Entity\Order;
 use Box\Mod\Product\Entity\Product;
+use Box\Mod\Product\Entity\Promo;
 use Box\Mod\Product\Service as ProductService;
 use Symfony\Component\EventDispatcher\EventDispatcher as SymfonyEventDispatcher;
 
@@ -46,6 +47,82 @@ test('isStaffBasket only matches staff keys', function (): void {
     $session = new Cart();
     $session->setSessionId('rrcpqo7tkjh14d2vmf0car64k7');
     expect($service->isStaffBasket($session))->toBeFalse();
+});
+
+test('cart pricing only trusts overrides from staff baskets', function (): void {
+    $cartProduct = createEntity(CartProduct::class);
+    $cartProduct->id = 10;
+
+    $productService = Mockery::mock(ProductService::class);
+    $productService->shouldReceive('getCartProductViewData')
+        ->once()
+        ->with($cartProduct, false)
+        ->andReturn([
+            'product_id' => 5,
+            'form_id' => null,
+            'type' => 'custom',
+            'quantity' => 1,
+            'unit' => 'service',
+            'price' => 20.0,
+            'setup_price' => 0.0,
+            'title' => 'Custom product',
+            'config' => [ProductService::PRICE_OVERRIDE_KEY => 0],
+        ]);
+    $productService->shouldReceive('getCartProductViewData')
+        ->once()
+        ->with($cartProduct, true)
+        ->andReturn([
+            'product_id' => 5,
+            'form_id' => null,
+            'type' => 'custom',
+            'quantity' => 1,
+            'unit' => 'service',
+            'price' => 7.5,
+            'setup_price' => 0.0,
+            'title' => 'Custom product',
+            'config' => [ProductService::PRICE_OVERRIDE_KEY => 7.5],
+        ]);
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn () => $productService);
+
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('getProductDiscount')->twice()->andReturn([0.0, 0.0]);
+    $service->setDi($di);
+
+    $clientCart = (new Cart())->setSessionId('client-session');
+    $staffCart = (new Cart())->setSessionId('staff:4:9');
+
+    expect($service->cartProductToApiArray($cartProduct, $clientCart)['price'])->toBe(20.0);
+    expect($service->cartProductToApiArray($cartProduct, $staffCart)['price'])->toBe(7.5);
+});
+
+test('staff basket promo discounts use the overridden price', function (): void {
+    $cart = (new Cart())->setSessionId('staff:4:9');
+    $cartProduct = (new CartProduct())
+        ->setCart($cart)
+        ->setProductId(5)
+        ->setConfig(json_encode([ProductService::PRICE_OVERRIDE_KEY => 10]));
+    $promo = createEntity(Promo::class);
+    $promo->id = 7;
+
+    $productService = Mockery::mock(ProductService::class);
+    $productService->shouldReceive('getProductDiscountById')
+        ->once()
+        ->with(5, $promo, [ProductService::PRICE_OVERRIDE_KEY => 10], true)
+        ->andReturn(2.0);
+    $productService->shouldReceive('getCartProductViewData')
+        ->once()
+        ->with($cartProduct, true)
+        ->andReturn(['price' => 10.0, 'quantity' => 1]);
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn () => $productService);
+
+    $service = new Service();
+    $service->setDi($di);
+
+    expect($service->getItemPromoDiscountShares($cartProduct, [$promo], $cart))->toBe([7 => 2.0]);
 });
 
 test('getStaffBasket returns the existing basket for the admin and client', function (): void {

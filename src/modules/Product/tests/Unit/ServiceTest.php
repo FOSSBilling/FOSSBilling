@@ -810,7 +810,7 @@ test('get product renewal line config uses generic pricing implementation', func
     expect($line)->toBe(['price' => 20.0, 'quantity' => 2, 'setup_price' => 5.0]);
 });
 
-test('get product order line config honors a staff price override', function (): void {
+test('get product order line config only honors an explicitly trusted staff price override', function (): void {
     $service = new Service();
     $productPayment = productTestCreateProductPaymentEntity(15)
         ->setType(ProductPayment::RECURRENT);
@@ -822,9 +822,12 @@ test('get product order line config honors a staff price override', function ():
 
     $service->setDi(container());
 
-    $line = $service->getProductOrderLineConfig($product, ['period' => '1Y', 'quantity' => 2, Service::PRICE_OVERRIDE_KEY => 7.5]);
+    $config = ['period' => '1Y', 'quantity' => 2, Service::PRICE_OVERRIDE_KEY => 7.5];
 
-    expect($line)->toBe(['price' => 7.5, 'quantity' => 2, 'setup_price' => 5.0]);
+    expect($service->getProductOrderLineConfig($product, $config))
+        ->toBe(['price' => 20.0, 'quantity' => 2, 'setup_price' => 5.0]);
+    expect($service->getProductOrderLineConfig($product, $config, true))
+        ->toBe(['price' => 7.5, 'quantity' => 2, 'setup_price' => 5.0]);
 });
 
 test('get product order line config ignores invalid price overrides', function (): void {
@@ -840,7 +843,7 @@ test('get product order line config ignores invalid price overrides', function (
     $service->setDi(container());
 
     foreach (['free', -3.0, null] as $override) {
-        $line = $service->getProductOrderLineConfig($product, ['period' => '1Y', Service::PRICE_OVERRIDE_KEY => $override]);
+        $line = $service->getProductOrderLineConfig($product, ['period' => '1Y', Service::PRICE_OVERRIDE_KEY => $override], true);
 
         expect($line['price'])->toBe(20.0);
     }
@@ -1999,12 +2002,32 @@ test('get product discount uses product order line config', function (): void {
     $product = productTestCreateProductEntity(5)->setIsAddon(false);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
-    $serviceMock->shouldReceive('getProductOrderLineConfig')->once()->with($product, ['period' => '1Y'])->andReturn([
-        'price' => 100.0,
-        'quantity' => 2,
-    ]);
+    $serviceMock->shouldReceive('getProductOrderLineConfig')
+        ->once()
+        ->with($product, ['period' => '1Y'], false)
+        ->andReturn(['price' => 100.0, 'quantity' => 2]);
+    $serviceMock->shouldReceive('getProductOrderLineConfig')
+        ->once()
+        ->with($product, ['period' => '1Y'], true)
+        ->andReturn(['price' => 40.0, 'quantity' => 2]);
 
     expect($serviceMock->getProductDiscount($product, $promo, ['period' => '1Y']))->toBe(20.0);
+    expect($serviceMock->getProductDiscount($product, $promo, ['period' => '1Y'], true))->toBe(8.0);
+});
+
+test('get product discount by id forwards the price override flag', function (): void {
+    $product = productTestCreateProductEntity(5);
+    $promo = productTestCreatePromoEntity(7);
+    $config = ['period' => '1Y', Service::PRICE_OVERRIDE_KEY => 40.0];
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('findProductById')->once()->with(5)->andReturn($product);
+    $serviceMock->shouldReceive('getProductDiscount')
+        ->once()
+        ->with($product, $promo, $config, true)
+        ->andReturn(8.0);
+
+    expect($serviceMock->getProductDiscountById(5, $promo, $config, true))->toBe(8.0);
 });
 
 test('get renewal product discount uses product renewal line config', function (): void {
@@ -3197,9 +3220,9 @@ test('findEligibleAutoPromos returns matching promos with total discounts', func
     $serviceMock->shouldReceive('isPromoAvailableForClientGroup')->once()->with($promo, $client)->andReturn(true);
     $serviceMock->shouldReceive('canClientUsePromo')->once()->with($client, $promo)->andReturn(true);
     $serviceMock->shouldReceive('isPromoApplicableToProduct')->once()->andReturn(true);
-    $serviceMock->shouldReceive('getProductDiscount')->once()->andReturn(12.5);
+    $serviceMock->shouldReceive('getProductDiscount')->once()->with($product, $promo, [], true)->andReturn(12.5);
 
-    $result = $serviceMock->findEligibleAutoPromos($client, [['product' => $product, 'config' => []]]);
+    $result = $serviceMock->findEligibleAutoPromos($client, [['product' => $product, 'config' => []]], true);
 
     expect($result)->toHaveCount(1);
     expect($result[0]['promo'])->toBe($promo);

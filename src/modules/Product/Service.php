@@ -1155,9 +1155,9 @@ class Service implements InjectionAwareInterface
         return $this->getCartProductTitle($this->findProductById($productId), $config);
     }
 
-    public function getProductDiscountById(int $productId, Promo $promo, ?array $config = null)
+    public function getProductDiscountById(int $productId, Promo $promo, ?array $config = null, bool $allowPriceOverride = false)
     {
-        return $this->getProductDiscount($this->findProductById($productId), $promo, $config);
+        return $this->getProductDiscount($this->findProductById($productId), $promo, $config, $allowPriceOverride);
     }
 
     /**
@@ -1173,13 +1173,13 @@ class Service implements InjectionAwareInterface
      *   config: array
      * }
      */
-    public function getCartProductViewData(CartProduct $item): array
+    public function getCartProductViewData(CartProduct $item, bool $allowPriceOverride = false): array
     {
         $productId = $item->getProductId();
         $configValue = $item->getConfig();
         $product = $this->findProductById((int) $productId);
         $config = json_decode($configValue ?? '', true) ?? [];
-        $line = $this->getProductOrderLineConfig($product, $config);
+        $line = $this->getProductOrderLineConfig($product, $config, $allowPriceOverride);
 
         return [
             'product_id' => (int) $product->getId(),
@@ -1621,7 +1621,7 @@ class Service implements InjectionAwareInterface
      * @return list<array{promo: Promo, discount: float}> eligible promos with their total discount
      *                                                    across all applicable lines (base currency)
      */
-    public function findEligibleAutoPromos(Client $client, array $lines): array
+    public function findEligibleAutoPromos(Client $client, array $lines, bool $allowPriceOverride = false): array
     {
         if ($lines === []) {
             return [];
@@ -1653,7 +1653,7 @@ class Service implements InjectionAwareInterface
                     continue;
                 }
 
-                $discount += (float) $this->getProductDiscount($product, $promo, $config);
+                $discount += (float) $this->getProductDiscount($product, $promo, $config, $allowPriceOverride);
             }
 
             if ($discount <= 0) {
@@ -1738,9 +1738,9 @@ class Service implements InjectionAwareInterface
      *
      * @return list<Promo>
      */
-    public function resolveAutoPromosForLines(Client $client, array $lines): array
+    public function resolveAutoPromosForLines(Client $client, array $lines, bool $allowPriceOverride = false): array
     {
-        return $this->resolvePromosToApply($this->findEligibleAutoPromos($client, $lines));
+        return $this->resolvePromosToApply($this->findEligibleAutoPromos($client, $lines, $allowPriceOverride));
     }
 
     /**
@@ -2290,7 +2290,7 @@ class Service implements InjectionAwareInterface
      *
      * @return array{price: float|int|string, quantity: int|float|string, setup_price?: float|int|string}
      */
-    public function getProductOrderLineConfig(Product $product, ?array $config = null): array
+    public function getProductOrderLineConfig(Product $product, ?array $config = null, bool $allowPriceOverride = false): array
     {
         if ($product->getType() === self::DOMAIN) {
             return $this->getDomainOrderLineConfig($config ?? []);
@@ -2300,7 +2300,7 @@ class Service implements InjectionAwareInterface
         $price = (float) $this->getProductPrice($product, $config);
 
         $override = ($config ?? [])[self::PRICE_OVERRIDE_KEY] ?? null;
-        if (is_numeric($override) && (float) $override >= 0) {
+        if ($allowPriceOverride && is_numeric($override) && (float) $override >= 0) {
             $price = (float) $override;
         }
 
@@ -2625,13 +2625,13 @@ class Service implements InjectionAwareInterface
         return $this->findMissingRequiredProductIds($promo, $productIds) === [];
     }
 
-    public function getProductDiscount(Product $product, Promo $promo, ?array $config = null)
+    public function getProductDiscount(Product $product, Promo $promo, ?array $config = null, bool $allowPriceOverride = false)
     {
         if (!$this->isPromoApplicableToProduct($promo, $product, $config)) {
             return 0;
         }
 
-        $line = $this->getProductOrderLineConfig($product, $config);
+        $line = $this->getProductOrderLineConfig($product, $config, $allowPriceOverride);
         $price = $line['price'] * $line['quantity'];
 
         if ($price == 0) {

@@ -45,7 +45,7 @@ test('cartProductToApiArray uses resolved initial domain term pricing', function
     $emMock->shouldReceive('getRepository')->with(CartProduct::class)->andReturn($cartProductRepo);
 
     $productService = Mockery::mock(ProductService::class);
-    $productService->shouldReceive('getCartProductViewData')->once()->with($cartProduct)->andReturn([
+    $productService->shouldReceive('getCartProductViewData')->once()->with($cartProduct, false)->andReturn([
         'product_id' => 1,
         'form_id' => 2,
         'type' => 'domain',
