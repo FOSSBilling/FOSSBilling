@@ -1343,7 +1343,7 @@ test('applyCorePatches removes retired hook data on non-MySQL drivers and remain
     });
 });
 
-test('retired hook cleanup uses both parameterless portable delete statements', function (): void {
+test('retired hook cleanup uses both portable delete statements without parameters', function (): void {
     withNonMysqlDbDriver(function (): void {
         $listenerStatement = Mockery::mock(PDOStatement::class);
         $listenerStatement->expects('execute')->with([])->andReturnTrue();
