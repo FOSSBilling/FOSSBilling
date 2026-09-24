@@ -185,18 +185,11 @@ $di['mod_config'] = $di->protect(fn ($name) => $di['mod']($name)->getConfig());
 
 $di['cookie_queue'] = fn (): FOSSBilling\Http\CookieQueue => new FOSSBilling\Http\CookieQueue();
 
-/*
- *
- * @param void
- *
- * @return \Box_EventManager
- */
-$di['events_manager'] = function () use ($di) {
-    $service = new Box_EventManager();
-    $service->setDi($di);
-
-    return $service;
-};
+$di['event_dispatcher'] = fn (): FOSSBilling\Events\EventDispatcher => new FOSSBilling\Events\EventDispatcher(
+    fn (): array => $di['mod_service']('extension')->getCoreAndActiveModules(),
+    fn (string $module): object => $di['mod_service']($module),
+    $di['logger']->withChannel('event'),
+);
 
 /*
  * Creates a new session, applying specified security rules depending on the config.php settings.

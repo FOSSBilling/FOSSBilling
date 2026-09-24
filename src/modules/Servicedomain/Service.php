@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Box\Mod\Servicedomain;
 
 use Box\Mod\Client\Entity\Client;
+use Box\Mod\Cron\Event\BeforeAdminCronRunEvent;
 use Box\Mod\Order\Entity\Order;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Servicedomain\Entity\ServiceDomain;
@@ -22,6 +23,7 @@ use Box\Mod\Servicedomain\Repository\TldRegistrarRepository;
 use Box\Mod\Servicedomain\Repository\TldRepository;
 use Doctrine\ORM\QueryBuilder;
 use FOSSBilling\SortOptions;
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
@@ -817,17 +819,14 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return [$d, $adapter];
     }
 
-    public static function onBeforeAdminCronRun(\Box_Event $event): bool
+    #[AsEventListener]
+    public function syncExpirationDatesBeforeAdminCronRun(BeforeAdminCronRunEvent $event): void
     {
         try {
-            $di = $event->getDi();
-            $domainService = $di['mod_service']('servicedomain');
-            $domainService->batchSyncExpirationDates();
+            $this->batchSyncExpirationDates();
         } catch (\Exception $e) {
-            $di['logger']->error($e->getMessage());
+            $this->di['logger']->error($e->getMessage());
         }
-
-        return true;
     }
 
     public function batchSyncExpirationDates(): bool

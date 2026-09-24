@@ -23,6 +23,12 @@ use Box\Mod\Support\Entity\SupportTicket;
 use Box\Mod\Support\Entity\SupportTicketMessage;
 use Box\Mod\Support\Entity\SupportTicketMessageHistory;
 use Box\Mod\Support\Entity\SupportTicketNote;
+use Box\Mod\Support\Event\AfterTicketClosedEvent;
+use Box\Mod\Support\Event\AfterTicketOpenedEvent;
+use Box\Mod\Support\Event\AfterTicketRepliedEvent;
+use Box\Mod\Support\Event\BeforeGuestTicketCreateEvent;
+use Box\Mod\Support\Event\BeforeTicketCreateEvent;
+use Box\Mod\Support\Event\TicketActorRole;
 use Box\Mod\Support\Repository\CannedResponseCategoryRepository;
 use Box\Mod\Support\Repository\CannedResponseRepository;
 use Box\Mod\Support\Repository\HelpdeskRepository;
@@ -34,6 +40,7 @@ use Box\Mod\Support\Repository\SupportTicketNoteRepository;
 use Box\Mod\Support\Repository\SupportTicketRepository;
 use Box\Mod\Support\Service;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 
 use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
@@ -179,7 +186,7 @@ test('gets and sets dependency injection container', function (): void {
  * Event Handler Tests
  */
 
-test('handles after client open ticket event', function (): void {
+test('notifies the client after a typed ticket opened event', function (): void {
     $service = new Service();
     $toApiArrayReturn = [
         'client' => [
@@ -190,7 +197,8 @@ test('handles after client open ticket event', function (): void {
     $supportTicketModel = new SupportTicket();
     setEntityId($supportTicketModel, 1);
     $serviceMock->shouldReceive('getTicketById')
-        ->atLeast()->once()
+        ->once()
+        ->with(1)
         ->andReturn($supportTicketModel);
     $serviceMock->shouldReceive('toApiArray')
         ->atLeast()->once()
@@ -214,19 +222,11 @@ test('handles after client open ticket event', function (): void {
     $di['loggedin_client'] = createEntity(Client::class);
     $serviceMock->setDi($di);
 
-    $eventMock = Mockery::mock('\Box_Event');
-    $eventMock->shouldReceive('getDi')
-        ->atLeast()->once()
-        ->andReturn($di);
-    $eventMock->shouldReceive('getParameters')
-        ->atLeast()->once()
-        ->andReturn(['id' => random_int(1, 100)]);
-
-    $result = $serviceMock->onAfterClientOpenTicket($eventMock);
+    $result = $serviceMock->notifyTicketOpened(new AfterTicketOpenedEvent(1, TicketActorRole::CLIENT));
     expect($result)->toBeNull();
 });
 
-test('handles after admin open ticket event', function (): void {
+test('notifies staff after an admin opens a ticket', function (): void {
     $service = new Service();
     $toApiArrayReturn = [
         'client' => [
@@ -237,7 +237,8 @@ test('handles after admin open ticket event', function (): void {
     $supportTicketModel = new SupportTicket();
     setEntityId($supportTicketModel, 1);
     $serviceMock->shouldReceive('getTicketById')
-        ->atLeast()->once()
+        ->once()
+        ->with(1)
         ->andReturn($supportTicketModel);
     $serviceMock->shouldReceive('toApiArray')
         ->atLeast()->once()
@@ -261,19 +262,11 @@ test('handles after admin open ticket event', function (): void {
     $di['loggedin_admin'] = \Tests\Helpers\admin();
     $serviceMock->setDi($di);
 
-    $eventMock = Mockery::mock('\Box_Event');
-    $eventMock->shouldReceive('getDi')
-        ->atLeast()->once()
-        ->andReturn($di);
-    $eventMock->shouldReceive('getParameters')
-        ->atLeast()->once()
-        ->andReturn(['id' => random_int(1, 100)]);
-
-    $result = $serviceMock->onAfterAdminOpenTicket($eventMock);
+    $result = $serviceMock->notifyTicketOpened(new AfterTicketOpenedEvent(1, TicketActorRole::ADMIN));
     expect($result)->toBeNull();
 });
 
-test('handles after admin close ticket event', function (): void {
+test('notifies staff after an admin closes a ticket', function (): void {
     $service = new Service();
     $toApiArrayReturn = [
         'client' => [
@@ -284,7 +277,8 @@ test('handles after admin close ticket event', function (): void {
     $supportTicketModel = new SupportTicket();
     setEntityId($supportTicketModel, 1);
     $serviceMock->shouldReceive('getTicketById')
-        ->atLeast()->once()
+        ->once()
+        ->with(1)
         ->andReturn($supportTicketModel);
     $serviceMock->shouldReceive('toApiArray')
         ->atLeast()->once()
@@ -308,19 +302,11 @@ test('handles after admin close ticket event', function (): void {
     $di['loggedin_admin'] = \Tests\Helpers\admin();
     $serviceMock->setDi($di);
 
-    $eventMock = Mockery::mock('\Box_Event');
-    $eventMock->shouldReceive('getDi')
-        ->atLeast()->once()
-        ->andReturn($di);
-    $eventMock->shouldReceive('getParameters')
-        ->atLeast()->once()
-        ->andReturn(['id' => random_int(1, 100)]);
-
-    $result = $serviceMock->onAfterAdminCloseTicket($eventMock);
+    $result = $serviceMock->notifyTicketClosed(new AfterTicketClosedEvent(1, TicketActorRole::ADMIN));
     expect($result)->toBeNull();
 });
 
-test('handles after admin reply ticket event', function (): void {
+test('notifies staff after an admin replies to a ticket', function (): void {
     $service = new Service();
     $toApiArrayReturn = [
         'client' => [
@@ -331,7 +317,8 @@ test('handles after admin reply ticket event', function (): void {
     $supportTicketModel = new SupportTicket();
     setEntityId($supportTicketModel, 1);
     $serviceMock->shouldReceive('getTicketById')
-        ->atLeast()->once()
+        ->once()
+        ->with(1)
         ->andReturn($supportTicketModel);
     $serviceMock->shouldReceive('toApiArray')
         ->atLeast()->once()
@@ -355,19 +342,11 @@ test('handles after admin reply ticket event', function (): void {
     $di['loggedin_admin'] = \Tests\Helpers\admin();
     $serviceMock->setDi($di);
 
-    $eventMock = Mockery::mock('\Box_Event');
-    $eventMock->shouldReceive('getDi')
-        ->atLeast()->once()
-        ->andReturn($di);
-    $eventMock->shouldReceive('getParameters')
-        ->atLeast()->once()
-        ->andReturn(['id' => random_int(1, 100)]);
-
-    $result = $serviceMock->onAfterAdminReplyTicket($eventMock);
+    $result = $serviceMock->notifyTicketReplied(new AfterTicketRepliedEvent(1, TicketActorRole::ADMIN));
     expect($result)->toBeNull();
 });
 
-test('handles guest ticket with regular client open event', function (): void {
+test('notifies guests after a typed ticket opened event', function (): void {
     $service = new Service();
     $toApiArrayReturn = [
         'author_email' => 'email@example.com',
@@ -381,7 +360,8 @@ test('handles guest ticket with regular client open event', function (): void {
     $supportPTicketModel->setAuthorEmail('email@example.com');
     $supportPTicketModel->setAuthorName('Name');
     $serviceMock->shouldReceive('getTicketById')
-        ->atLeast()->once()
+        ->once()
+        ->with(1)
         ->andReturn($supportPTicketModel);
     $serviceMock->shouldReceive('toApiArray')
         ->atLeast()->once()
@@ -407,15 +387,7 @@ test('handles guest ticket with regular client open event', function (): void {
     };
     $serviceMock->setDi($di);
 
-    $eventMock = Mockery::mock('\Box_Event');
-    $eventMock->shouldReceive('getDi')
-        ->atLeast()->once()
-        ->andReturn($di);
-    $eventMock->shouldReceive('getParameters')
-        ->atLeast()->once()
-        ->andReturn(['id' => random_int(1, 100)]);
-
-    $result = $serviceMock->onAfterClientOpenTicket($eventMock);
+    $result = $serviceMock->notifyTicketOpened(new AfterTicketOpenedEvent(1, TicketActorRole::GUEST));
     expect($result)->toBeNull();
 });
 
@@ -637,21 +609,29 @@ test('checks if task already exists returns false', function (): void {
 dataset('closeTicketIdentities', [
     [\Tests\Helpers\admin()],
     [createEntity(Client::class)],
+    [new FOSSBilling\Identity\Guest()],
 ]);
 
-test('closes a ticket', function ($identity): void {
+test('closes a ticket and dispatches its typed event after flush', function ($identity): void {
     $service = new Service();
     $emMock = Mockery::mock(EntityManagerInterface::class);
     supportWireKbRepositories($emMock);
-    $emMock->shouldReceive('flush')->atLeast()->once();
+    $steps = [];
+    $emMock->shouldReceive('flush')->once()->andReturnUsing(function () use (&$steps): void {
+        $steps[] = 'flush';
+    });
 
-    $eventMock = Mockery::mock('\Box_EventManager');
-    $eventMock->shouldReceive('fire');
+    $events = [];
+    $dispatcher = new EventDispatcher();
+    $dispatcher->addListener(AfterTicketClosedEvent::class, function (AfterTicketClosedEvent $event) use (&$events, &$steps): void {
+        $events[] = $event;
+        $steps[] = 'event';
+    });
 
     $di = container();
     $di['em'] = $emMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $dispatcher;
     $service->setDi($di);
 
     $ticket = new SupportTicket();
@@ -660,6 +640,14 @@ test('closes a ticket', function ($identity): void {
     $result = $service->closeTicket($ticket, $identity);
     expect($result)->toBeTrue();
     expect($ticket->getStatus())->toBe(SupportTicket::STATUS_CLOSED);
+    expect($events)->toHaveCount(1);
+    expect($events[0]->ticketId)->toBe(1);
+    expect($events[0]->actor)->toBe(match (true) {
+        $identity instanceof Box\Mod\Staff\Entity\Admin => TicketActorRole::ADMIN,
+        $identity instanceof Client => TicketActorRole::CLIENT,
+        default => TicketActorRole::GUEST,
+    });
+    expect($steps)->toBe(['flush', 'event']);
 })->with('closeTicketIdentities');
 
 test('auto closes a ticket', function (): void {
@@ -1737,14 +1725,12 @@ test('public close ticket', function (Box\Mod\Staff\Entity\Admin|FOSSBilling\Ide
     supportWireKbRepositories($emMock);
     $emMock->shouldReceive('flush')->atLeast()->once();
 
-    $eventMock = Mockery::mock('\Box_EventManager');
-    $eventMock->shouldReceive('fire')
-        ->atLeast()->once();
+    $dispatcher = new EventDispatcher();
 
     $di = container();
     $di['em'] = $emMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $dispatcher;
     $service->setDi($di);
 
     $ticket = new SupportTicket();
@@ -1775,28 +1761,35 @@ test('guest ticket reply', function (): void {
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
     supportWireKbRepositories($emMock);
+    $steps = [];
     $emMock->shouldReceive('persist')->atLeast()->once()
-        ->andReturnUsing(function ($entity): void {
+        ->andReturnUsing(function ($entity) use (&$steps): void {
+            $steps[] = 'persist';
             if ($entity->getId() === null) {
                 \Tests\Helpers\setEntityId($entity, 1);
             }
         });
-    $emMock->shouldReceive('flush')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once()->andReturnUsing(function () use (&$steps): void {
+        $steps[] = 'flush';
+    });
 
     $requestMock = Mockery::mock(FOSSBilling\Request::class);
     $requestMock->shouldReceive('getClientIp')
         ->atLeast()->once()
         ->andReturn('127.0.0.1');
 
-    $eventMock = Mockery::mock('\Box_EventManager');
-    $eventMock->shouldReceive('fire')
-        ->atLeast()->once();
+    $events = [];
+    $dispatcher = new EventDispatcher();
+    $dispatcher->addListener(AfterTicketRepliedEvent::class, function (AfterTicketRepliedEvent $event) use (&$events, &$steps): void {
+        $events[] = $event;
+        $steps[] = 'replied';
+    });
 
     $di = container();
     $di['em'] = $emMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['request'] = $requestMock;
-    $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $dispatcher;
     $service->setDi($di);
 
     $ticket = new SupportTicket();
@@ -1805,6 +1798,10 @@ test('guest ticket reply', function (): void {
 
     $result = $service->ticketReply($ticket, new FOSSBilling\Identity\Guest(), 'Content');
     expect($result)->toBeInt();
+    expect($events)->toHaveCount(1);
+    expect($events[0]->ticketId)->toBe(1);
+    expect($events[0]->actor)->toBe(TicketActorRole::GUEST);
+    expect($steps)->toBe(['persist', 'flush', 'flush', 'replied']);
 });
 
 /*
@@ -1958,17 +1955,24 @@ test('ticket reply', function (Box\Mod\Staff\Entity\Admin|Client $identity): voi
     $randId = 1;
     $emMock = Mockery::mock(EntityManagerInterface::class);
     supportWireKbRepositories($emMock);
+    $steps = [];
     $emMock->shouldReceive('persist')->atLeast()->once()
-        ->andReturnUsing(function ($entity): void {
+        ->andReturnUsing(function ($entity) use (&$steps): void {
+            $steps[] = 'persist';
             if ($entity->getId() === null) {
                 \Tests\Helpers\setEntityId($entity, 1);
             }
         });
-    $emMock->shouldReceive('flush')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once()->andReturnUsing(function () use (&$steps): void {
+        $steps[] = 'flush';
+    });
 
-    $eventMock = Mockery::mock('\Box_EventManager');
-    $eventMock->shouldReceive('fire')
-        ->atLeast()->once();
+    $events = [];
+    $dispatcher = new EventDispatcher();
+    $dispatcher->addListener(AfterTicketRepliedEvent::class, function (AfterTicketRepliedEvent $event) use (&$events, &$steps): void {
+        $events[] = $event;
+        $steps[] = 'replied';
+    });
 
     $requestMock = Mockery::mock(FOSSBilling\Request::class);
     $requestMock->shouldReceive('getClientIp')
@@ -1979,7 +1983,7 @@ test('ticket reply', function (Box\Mod\Staff\Entity\Admin|Client $identity): voi
     $di['em'] = $emMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['request'] = $requestMock;
-    $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $dispatcher;
     $service->setDi($di);
 
     $ticket = new SupportTicket();
@@ -1988,6 +1992,10 @@ test('ticket reply', function (Box\Mod\Staff\Entity\Admin|Client $identity): voi
     $result = $service->ticketReply($ticket, $identity, 'Content');
     expect($result)->toBeInt();
     expect($result)->toEqual($randId);
+    expect($events)->toHaveCount(1);
+    expect($events[0]->ticketId)->toBe(1);
+    expect($events[0]->actor)->toBe($identity instanceof Box\Mod\Staff\Entity\Admin ? TicketActorRole::ADMIN : TicketActorRole::CLIENT);
+    expect($steps)->toBe(['persist', 'flush', 'flush', 'replied']);
 })->with('ticketReplyProvider');
 
 test('ticket create for admin', function (): void {
@@ -1998,17 +2006,28 @@ test('ticket create for admin', function (): void {
     $randId = 1;
     $emMock = Mockery::mock(EntityManagerInterface::class);
     supportWireKbRepositories($emMock);
+    $steps = [];
     $emMock->shouldReceive('persist')->atLeast()->once()
-        ->andReturnUsing(function ($entity): void {
+        ->andReturnUsing(function ($entity) use (&$steps): void {
+            $steps[] = 'persist';
             if ($entity->getId() === null) {
                 \Tests\Helpers\setEntityId($entity, 1);
             }
         });
-    $emMock->shouldReceive('flush')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once()->andReturnUsing(function () use (&$steps): void {
+        $steps[] = 'flush';
+    });
 
-    $eventMock = Mockery::mock('\Box_EventManager');
-    $eventMock->shouldReceive('fire')
-        ->atLeast()->once();
+    $dispatcher = new EventDispatcher();
+    $events = [];
+    $dispatcher->addListener(BeforeTicketCreateEvent::class, function (BeforeTicketCreateEvent $event) use (&$events, &$steps): void {
+        $events[] = $event;
+        $steps[] = 'before';
+    });
+    $dispatcher->addListener(AfterTicketOpenedEvent::class, function (AfterTicketOpenedEvent $event) use (&$events, &$steps): void {
+        $events[] = $event;
+        $steps[] = 'opened';
+    });
 
     $requestMock = Mockery::mock(FOSSBilling\Request::class);
     $requestMock->shouldReceive('getClientIp')
@@ -2019,7 +2038,7 @@ test('ticket create for admin', function (): void {
     $di['em'] = $emMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['request'] = $requestMock;
-    $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $dispatcher;
     $service->setDi($di);
 
     $helpdesk = helpdeskFixture();
@@ -2034,6 +2053,15 @@ test('ticket create for admin', function (): void {
     $result = $service->ticketCreateForAdmin(1, $helpdesk, $data, $admin);
     expect($result)->toBeInt();
     expect($result)->toEqual($randId);
+    expect($events)->toHaveCount(2);
+    expect($events[0])->toBeInstanceOf(BeforeTicketCreateEvent::class);
+    expect($events[0]->actor)->toBe(TicketActorRole::ADMIN);
+    expect($events[0]->clientId)->toBe(1);
+    expect($events[0]->input)->toBe($data);
+    expect($events[1])->toBeInstanceOf(AfterTicketOpenedEvent::class);
+    expect($events[1]->ticketId)->toBe(1);
+    expect($events[1]->actor)->toBe(TicketActorRole::ADMIN);
+    expect($steps)->toBe(['before', 'persist', 'flush', 'persist', 'flush', 'opened']);
 });
 
 test('ticket create for client', function (): void {
@@ -2044,22 +2072,33 @@ test('ticket create for client', function (): void {
     $randId = 1;
     $emMock = Mockery::mock(EntityManagerInterface::class);
     supportWireKbRepositories($emMock);
+    $steps = [];
     $emMock->shouldReceive('persist')->atLeast()->once()
-        ->andReturnUsing(function ($entity): void {
+        ->andReturnUsing(function ($entity) use (&$steps): void {
+            $steps[] = 'persist';
             if ($entity->getId() === null) {
                 \Tests\Helpers\setEntityId($entity, 1);
             }
         });
-    $emMock->shouldReceive('flush')->atLeast()->once();
+    $emMock->shouldReceive('flush')->atLeast()->once()->andReturnUsing(function () use (&$steps): void {
+        $steps[] = 'flush';
+    });
     $cannedRepoMock = Mockery::mock(CannedResponseRepository::class);
     $cannedRepoMock->shouldReceive('find')
         ->atLeast()->once()
         ->andReturn(supportCannedResponseFixture());
     supportWireKbRepositories($emMock, cannedRepo: $cannedRepoMock);
 
-    $eventMock = Mockery::mock('\Box_EventManager');
-    $eventMock->shouldReceive('fire')
-        ->atLeast()->once();
+    $dispatcher = new EventDispatcher();
+    $events = [];
+    $dispatcher->addListener(BeforeTicketCreateEvent::class, function (BeforeTicketCreateEvent $event) use (&$events, &$steps): void {
+        $events[] = $event;
+        $steps[] = 'before';
+    });
+    $dispatcher->addListener(AfterTicketOpenedEvent::class, function (AfterTicketOpenedEvent $event) use (&$events, &$steps): void {
+        $events[] = $event;
+        $steps[] = 'opened';
+    });
 
     $config = [
         'autorespond_enable' => 1,
@@ -2085,7 +2124,7 @@ test('ticket create for client', function (): void {
     $di = container();
     $di['em'] = $emMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $dispatcher;
     $di['mod'] = $di->protect(fn () => $supportModMock);
     $di['mod_service'] = $di->protect(fn () => $staffServiceMock);
 
@@ -2105,6 +2144,97 @@ test('ticket create for client', function (): void {
     $result = $serviceMock->ticketCreateForClient($client, $helpdesk, $data);
     expect($result)->toBeInt();
     expect($result)->toEqual($randId);
+    expect($events)->toHaveCount(2);
+    expect($events[0])->toBeInstanceOf(BeforeTicketCreateEvent::class);
+    expect($events[0]->actor)->toBe(TicketActorRole::CLIENT);
+    expect($events[0]->clientId)->toBe(1);
+    expect($events[0]->input)->toBe([...$data, 'author_role' => 'client', 'client_id' => 1]);
+    expect($events[1])->toBeInstanceOf(AfterTicketOpenedEvent::class);
+    expect($events[1]->ticketId)->toBe(1);
+    expect($events[1]->actor)->toBe(TicketActorRole::CLIENT);
+    expect($steps)->toBe(['before', 'persist', 'flush', 'opened']);
+});
+
+test('guest ticket creation uses values from the typed before event', function (): void {
+    $service = new Service();
+    $helpdesk = helpdeskFixture();
+    $helpdeskRepo = Mockery::mock(HelpdeskRepository::class);
+    $helpdeskRepo->shouldReceive('getDefault')->once()->andReturn($helpdesk);
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock, helpdeskRepo: $helpdeskRepo);
+    $steps = [];
+    $persistedTicket = null;
+    $persistedMessage = null;
+    $emMock->shouldReceive('persist')->twice()->andReturnUsing(function ($entity) use (&$persistedTicket, &$persistedMessage, &$steps): void {
+        if ($entity instanceof SupportTicket) {
+            $persistedTicket = $entity;
+            setEntityId($entity, 31);
+            $steps[] = 'persist-ticket';
+        } else {
+            $persistedMessage = $entity;
+            setEntityId($entity, 32);
+            $steps[] = 'persist-message';
+        }
+    });
+    $emMock->shouldReceive('flush')->twice()->andReturnUsing(function () use (&$steps): void {
+        $steps[] = 'flush';
+    });
+
+    $requestMock = Mockery::mock(FOSSBilling\Request::class);
+    $requestMock->shouldReceive('getClientIp')->twice()->andReturn('198.51.100.20');
+    $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
+    $toolsMock->shouldReceive('validateAndSanitizeEmail')->once()
+        ->with('guest@example.com')
+        ->andReturn('guest@example.com');
+    $extensionService = Mockery::mock();
+    $extensionService->shouldReceive('getConfig')->once()->with('mod_support')->andReturn([]);
+
+    $dispatcher = new EventDispatcher();
+    $beforeEvent = null;
+    $afterEvent = null;
+    $dispatcher->addListener(BeforeGuestTicketCreateEvent::class, function (BeforeGuestTicketCreateEvent $event) use (&$beforeEvent, &$steps): void {
+        $beforeEvent = $event;
+        $steps[] = 'before';
+        $event->setStatus(SupportTicket::STATUS_ONHOLD);
+        $event->setSubject('Subject changed by listener');
+        $event->setMessage('Message changed by listener');
+    });
+    $dispatcher->addListener(AfterTicketOpenedEvent::class, function (AfterTicketOpenedEvent $event) use (&$afterEvent, &$steps): void {
+        $afterEvent = $event;
+        $steps[] = 'opened';
+    });
+
+    $di = container();
+    $di['em'] = $emMock;
+    $di['event_dispatcher'] = $dispatcher;
+    $di['request'] = $requestMock;
+    $di['tools'] = $toolsMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod_service'] = $di->protect(fn (string $name) => $extensionService);
+    $service->setDi($di);
+
+    $data = [
+        'name' => 'Guest',
+        'email' => 'guest@example.com',
+        'subject' => 'Original subject',
+        'content' => 'Original message',
+    ];
+    $accessHash = $service->ticketCreateForGuest($data);
+
+    expect($accessHash)->toBeString()->not->toBeEmpty();
+    expect($beforeEvent)->toBeInstanceOf(BeforeGuestTicketCreateEvent::class);
+    expect($beforeEvent->input)->toBe([...$data, 'author_role' => 'guest', 'ip' => '198.51.100.20']);
+    expect($persistedTicket)->toBeInstanceOf(SupportTicket::class);
+    expect($persistedTicket->getSubject())->toBe('Subject changed by listener');
+    expect($persistedTicket->getStatus())->toBe(SupportTicket::STATUS_ONHOLD);
+    expect($persistedTicket->getAccessHash())->toBe($accessHash);
+    expect($persistedMessage)->toBeInstanceOf(SupportTicketMessage::class);
+    expect($persistedMessage->getContent())->toBe('Message changed by listener');
+    expect($afterEvent)->toBeInstanceOf(AfterTicketOpenedEvent::class);
+    expect($afterEvent->ticketId)->toBe(31);
+    expect($afterEvent->actor)->toBe(TicketActorRole::GUEST);
+    expect($steps)->toBe(['before', 'persist-ticket', 'flush', 'persist-message', 'flush', 'opened']);
 });
 
 test('ticket create for client task already exists exception', function (): void {

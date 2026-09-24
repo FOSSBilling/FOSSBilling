@@ -16,6 +16,9 @@ use Box\Mod\Activity\Entity\ActivitySystem;
 use Box\Mod\Activity\Repository\ActivityClientHistoryRepository;
 use Box\Mod\Activity\Repository\ActivitySystemRepository;
 use Box\Mod\Client\Entity\Client;
+use Box\Mod\Client\Event\AfterClientLoginEvent;
+use Box\Mod\Cron\Event\BeforeAdminCronRunEvent;
+use Box\Mod\Staff\Event\AfterAdminLoginEvent;
 use Doctrine\ORM\EntityManagerInterface;
 
 use function Tests\Helpers\container;
@@ -105,13 +108,13 @@ test('log event persists a system activity entity', function (): void {
         ->and($persisted->getMessage())->toBe('Test event');
 });
 
-test('login events persist history entities', function (string $method, string $entityClass, string $idGetter): void {
+test('typed client login event persists history', function (): void {
     $persisted = null;
     $entityManager = Mockery::mock(EntityManagerInterface::class);
-    $entityManager->shouldReceive('persist')->once()->withArgs(function (object $history) use (&$persisted, $entityClass): bool {
+    $entityManager->shouldReceive('persist')->once()->withArgs(function (ActivityClientHistory $history) use (&$persisted): bool {
         $persisted = $history;
 
-        return $history instanceof $entityClass;
+        return true;
     });
     $entityManager->shouldReceive('flush')->once();
 
@@ -122,18 +125,40 @@ test('login events persist history entities', function (string $method, string $
     $di['em'] = $entityManager;
     $di['mod_service'] = $di->protect(fn (): object => $extensionService);
 
-    $event = new Box_Event(null, $method, ['id' => 7, 'ip' => '192.0.2.1']);
-    $event->setDi($di);
+    $service = new Box\Mod\Activity\Service();
+    $service->setDi($di);
+    $service->recordClientLogin(new AfterClientLoginEvent(7, '192.0.2.1'));
 
-    Box\Mod\Activity\Service::{$method}($event);
-
-    expect($persisted)->toBeInstanceOf($entityClass)
-        ->and($persisted->{$idGetter}())->toBe(7)
+    expect($persisted)->toBeInstanceOf(ActivityClientHistory::class)
+        ->and($persisted->getClientId())->toBe(7)
         ->and($persisted->getIp())->toBe('192.0.2.1');
-})->with([
-    ['onAfterClientLogin', ActivityClientHistory::class, 'getClientId'],
-    ['onAfterAdminLogin', ActivityAdminHistory::class, 'getAdminId'],
-]);
+});
+
+test('typed admin login event persists history', function (): void {
+    $persisted = null;
+    $entityManager = Mockery::mock(EntityManagerInterface::class);
+    $entityManager->shouldReceive('persist')->once()->withArgs(function (ActivityAdminHistory $history) use (&$persisted): bool {
+        $persisted = $history;
+
+        return true;
+    });
+    $entityManager->shouldReceive('flush')->once();
+
+    $extensionService = Mockery::mock(Box\Mod\Extension\Service::class);
+    $extensionService->shouldReceive('isExtensionActive')->once()->with('mod', 'demo')->andReturnFalse();
+
+    $di = container();
+    $di['em'] = $entityManager;
+    $di['mod_service'] = $di->protect(fn (): object => $extensionService);
+
+    $service = new Box\Mod\Activity\Service();
+    $service->setDi($di);
+    $service->recordAdminLogin(new AfterAdminLoginEvent(7, '192.0.2.1'));
+
+    expect($persisted)->toBeInstanceOf(ActivityAdminHistory::class)
+        ->and($persisted->getAdminId())->toBe(7)
+        ->and($persisted->getIp())->toBe('192.0.2.1');
+});
 
 test('logs retention failures through the application logger', function (): void {
     $dbal = Mockery::mock(Doctrine\DBAL\Connection::class);
@@ -153,10 +178,9 @@ test('logs retention failures through the application logger', function (): void
     $di['logger'] = $logger;
     $di['mod_service'] = $di->protect(fn (string $name): object => $extensionService);
 
-    $event = new Box_Event(null, 'onBeforeAdminCronRun');
-    $event->setDi($di);
-
-    Box\Mod\Activity\Service::onBeforeAdminCronRun($event);
+    $service = new Box\Mod\Activity\Service();
+    $service->setDi($di);
+    $service->cleanupOldActivity(new BeforeAdminCronRunEvent());
 
     expect($logger->calls)->toContain([
         'method' => 'error',

@@ -12,22 +12,41 @@ declare(strict_types=1);
 namespace Box\Mod\Staff;
 
 use Box\Mod\Activity\Entity\ActivityAdminHistory;
+use Box\Mod\Client\Event\AfterClientSignUpEvent;
+use Box\Mod\Order\Event\AfterAdminOrderSuspendEvent;
+use Box\Mod\Order\Event\AfterClientOrderCreateEvent;
 use Box\Mod\Staff\Entity\Admin;
 use Box\Mod\Staff\Entity\AdminGroup;
 use Box\Mod\Staff\Entity\AdminGroupMember;
 use Box\Mod\Staff\Entity\AdminPasswordReset;
+use Box\Mod\Staff\Event\AdminLoginFailedEvent;
+use Box\Mod\Staff\Event\AfterAdminLoginEvent;
+use Box\Mod\Staff\Event\AfterAdminStaffCreateEvent;
+use Box\Mod\Staff\Event\AfterAdminStaffDeleteEvent;
+use Box\Mod\Staff\Event\AfterAdminStaffPasswordChangeEvent;
+use Box\Mod\Staff\Event\AfterAdminStaffUpdateEvent;
+use Box\Mod\Staff\Event\BeforeAdminLoginEvent;
+use Box\Mod\Staff\Event\BeforeAdminStaffCreateEvent;
+use Box\Mod\Staff\Event\BeforeAdminStaffDeleteEvent;
+use Box\Mod\Staff\Event\BeforeAdminStaffPasswordChangeEvent;
+use Box\Mod\Staff\Event\BeforeAdminStaffUpdateEvent;
 use Box\Mod\Staff\Repository\AdminGroupMemberRepository;
 use Box\Mod\Staff\Repository\AdminGroupRepository;
 use Box\Mod\Staff\Repository\AdminPasswordResetRepository;
 use Box\Mod\Staff\Repository\AdminRepository;
 use Box\Mod\Support\Entity\Helpdesk;
 use Box\Mod\Support\Entity\SupportTicket;
+use Box\Mod\Support\Event\AfterTicketClosedEvent;
+use Box\Mod\Support\Event\AfterTicketOpenedEvent;
+use Box\Mod\Support\Event\AfterTicketRepliedEvent;
+use Box\Mod\Support\Event\TicketActorRole;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use FOSSBilling\i18n;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\SortOptions;
 use FOSSBilling\Tools;
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 
 class Service implements InjectionAwareInterface
 {
@@ -111,40 +130,16 @@ class Service implements InjectionAwareInterface
 
     public function login($email, $password, $ip): array
     {
-        $event_params = [];
-        $event_params['email'] = $email;
-        $event_params['ip'] = $ip;
-
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminLogin', 'params' => $event_params]);
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminLoginEvent($ip));
 
         $model = $this->authorizeAdmin($email, $password);
         if (!$model instanceof Admin) {
-            $this->di['events_manager']->fire(['event' => 'onEventAdminLoginFailed', 'params' => $event_params]);
+            $this->di['event_dispatcher']->dispatch(new AdminLoginFailedEvent($ip));
 
             throw new \FOSSBilling\InformationException('Check your login details', null, 403);
         }
 
-        // Event listeners (e.g. this login being recorded in the login history) are normally
-        // connected by the cron job's hook_batch_connect task. Before cron has run for the
-        // first time, no listeners are connected and the event fired below would silently do
-        // nothing, so an admin's very first logins would go unrecorded. Connect them now so
-        // that gap does not exist. batchConnect() returns false if another process was still
-        // rebuilding the set when it gave up waiting; retry once rather than firing the event
-        // below against a set we know is incomplete. If both attempts fail, log it and let the
-        // login proceed anyway - failing the login itself over this housekeeping step would
-        // turn a rare missed audit entry into every admin being locked out while it's stuck.
-        $hookService = $this->di['mod_service']('hook');
-        if (!$hookService->hasConnectedListeners()) {
-            $connected = $hookService->batchConnect();
-            if (!$connected) {
-                $connected = $hookService->batchConnect();
-            }
-            if (!$connected) {
-                $this->di['logger']->warning('Could not connect event listeners after two attempts; this login (and other events) may not be recorded.');
-            }
-        }
-
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminLogin', 'params' => ['id' => $model->getId(), 'ip' => $ip]]);
+        $this->di['event_dispatcher']->dispatch(new AfterAdminLoginEvent((int) $model->getId(), $ip));
 
         $result = [
             'id' => $model->getId(),
@@ -265,13 +260,13 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public static function onAfterClientOrderCreate(\Box_Event $event): void
+    #[AsEventListener]
+    public function notifyStaffAfterClientOrderCreate(AfterClientOrderCreateEvent $event): void
     {
-        $di = $event->getDi();
-        $params = $event->getParameters();
+        $di = $this->di ?? throw new \LogicException('Staff service must be initialized before handling events.');
 
         try {
-            $orderModel = $di['em']->getRepository(\Box\Mod\Order\Entity\Order::class)->find($params['id']);
+            $orderModel = $di['em']->getRepository(\Box\Mod\Order\Entity\Order::class)->find($event->orderId);
             if (!$orderModel instanceof \Box\Mod\Order\Entity\Order) {
                 return;
             }
@@ -289,13 +284,13 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public static function onAfterAdminOrderSuspend(\Box_Event $event): void
+    #[AsEventListener]
+    public function notifyStaffAfterOrderSuspend(AfterAdminOrderSuspendEvent $event): void
     {
-        $di = $event->getDi();
-        $params = $event->getParameters();
+        $di = $this->di ?? throw new \LogicException('Staff service must be initialized before handling events.');
 
         try {
-            $order = $di['em']->getRepository(\Box\Mod\Order\Entity\Order::class)->find((int) $params['id']);
+            $order = $di['em']->getRepository(\Box\Mod\Order\Entity\Order::class)->find($event->orderId);
             if (!$order instanceof \Box\Mod\Order\Entity\Order) {
                 throw new \FOSSBilling\Exception('Order not found');
             }
@@ -314,14 +309,18 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public static function onAfterClientOpenTicket(\Box_Event $event): void
+    #[AsEventListener]
+    public function notifyStaffAfterTicketOpened(AfterTicketOpenedEvent $event): void
     {
-        $di = $event->getDi();
-        $params = $event->getParameters();
+        if ($event->actor === TicketActorRole::ADMIN) {
+            return;
+        }
+
+        $di = $this->di ?? throw new \LogicException('The Staff service dependency injection container has not been set.');
 
         try {
             $supportTicketService = $di['mod_service']('support');
-            $ticketModel = $supportTicketService->getTicketById((int) $params['id']);
+            $ticketModel = $supportTicketService->getTicketById($event->ticketId);
             $ticket = self::getTicketEmailVars($di, $ticketModel);
 
             $helpdeskId = $ticketModel->getSupportHelpdeskId();
@@ -347,14 +346,18 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public static function onAfterClientReplyTicket(\Box_Event $event): void
+    #[AsEventListener]
+    public function notifyStaffAfterTicketReplied(AfterTicketRepliedEvent $event): void
     {
-        $params = $event->getParameters();
-        $di = $event->getDi();
+        if ($event->actor === TicketActorRole::ADMIN) {
+            return;
+        }
+
+        $di = $this->di ?? throw new \LogicException('The Staff service dependency injection container has not been set.');
 
         try {
             $supportTicketService = $di['mod_service']('support');
-            $ticketModel = $supportTicketService->getTicketById((int) $params['id']);
+            $ticketModel = $supportTicketService->getTicketById($event->ticketId);
             $ticket = self::getTicketEmailVars($di, $ticketModel);
 
             $email = [];
@@ -369,14 +372,18 @@ class Service implements InjectionAwareInterface
         }
     }
 
-    public static function onAfterClientCloseTicket(\Box_Event $event): void
+    #[AsEventListener]
+    public function notifyStaffAfterTicketClosed(AfterTicketClosedEvent $event): void
     {
-        $params = $event->getParameters();
-        $di = $event->getDi();
+        if ($event->actor === TicketActorRole::ADMIN) {
+            return;
+        }
+
+        $di = $this->di ?? throw new \LogicException('The Staff service dependency injection container has not been set.');
 
         try {
             $supportTicketService = $di['mod_service']('support');
-            $ticketModel = $supportTicketService->getTicketById((int) $params['id']);
+            $ticketModel = $supportTicketService->getTicketById($event->ticketId);
             $ticket = self::getTicketEmailVars($di, $ticketModel);
             $email = [];
             $email['to_staff'] = true;
@@ -416,10 +423,10 @@ class Service implements InjectionAwareInterface
         return $ticket;
     }
 
-    public static function onAfterClientSignUp(\Box_Event $event): bool
+    #[AsEventListener]
+    public function onAfterClientSignUp(AfterClientSignUpEvent $event): void
     {
-        $params = $event->getParameters();
-        $di = $event->getDi();
+        $di = $this->di ?? throw new \LogicException('Staff service must be initialized before handling events.');
 
         try {
             $clientService = $di['mod_service']('client');
@@ -427,15 +434,13 @@ class Service implements InjectionAwareInterface
             $email = [];
             $email['to_staff'] = true;
             $email['code'] = 'mod_staff_client_signup';
-            $client = $clientService->get(['id' => $params['id']]);
+            $client = $clientService->get(['id' => $event->clientId]);
             $email['c'] = $clientService->toApiArray($client);
             $emailService = $di['mod_service']('email');
             $emailService->sendTemplate($email);
         } catch (\Exception $exc) {
             $di['logger']->withChannel('email')->error('Failed to send staff client signup notification email', ['exception' => $exc]);
         }
-
-        return true;
     }
 
     public function getList($data)
@@ -565,7 +570,7 @@ class Service implements InjectionAwareInterface
 
     public function update(Admin $model, $data): bool
     {
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffUpdate', 'params' => ['id' => $model->getId()]]);
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminStaffUpdateEvent((int) $model->getId()));
 
         $this->checkPermissionsAndThrowException('staff', 'create_and_edit_staff');
 
@@ -608,7 +613,7 @@ class Service implements InjectionAwareInterface
             $profileService->invalidateSessions('admin', (int) $model->getId());
         }
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffUpdate', 'params' => ['id' => $model->getId()]]);
+        $this->di['event_dispatcher']->dispatch(new AfterAdminStaffUpdateEvent((int) $model->getId()));
 
         $this->di['logger']->info('Updated staff member #{model_id} "{model_name}" details; status is "{model_status}"', ['model_id' => $model->getId(), 'model_name' => $model->getName(), 'model_status' => $model->getStatus()]);
 
@@ -626,7 +631,7 @@ class Service implements InjectionAwareInterface
 
         $this->assertCanRemoveActiveSuperAdministrator($model);
 
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffDelete', 'params' => ['id' => $model->getId()]]);
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminStaffDeleteEvent((int) $model->getId()));
 
         $id = $model->getId();
         $name = $model->getName();
@@ -637,7 +642,7 @@ class Service implements InjectionAwareInterface
             $this->di['em']->flush();
         });
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffDelete', 'params' => ['id' => $id]]);
+        $this->di['event_dispatcher']->dispatch(new AfterAdminStaffDeleteEvent((int) $id));
 
         $this->di['logger']->info('Deleted staff member #{id} "{name}"', ['id' => $id, 'name' => $name]);
 
@@ -649,7 +654,7 @@ class Service implements InjectionAwareInterface
         $this->checkPermissionsAndThrowException('staff', 'reset_staff_password');
         $this->assertCanManageAdmin($model);
 
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffPasswordChange', 'params' => ['id' => $model->getId()]]);
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminStaffPasswordChangeEvent((int) $model->getId()));
 
         $model->setPass($this->di['password']->hashIt($password));
         $this->di['em']->persist($model);
@@ -658,7 +663,7 @@ class Service implements InjectionAwareInterface
         $profileService = $this->di['mod_service']('profile');
         $profileService->invalidateSessions('admin', (int) $model->getId());
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffPasswordChange', 'params' => ['id' => $model->getId()]]);
+        $this->di['event_dispatcher']->dispatch(new AfterAdminStaffPasswordChangeEvent((int) $model->getId()));
 
         $this->di['logger']->info('Changed password for staff member #{model_id} "{model_name}"', ['model_id' => $model->getId(), 'model_name' => $model->getName()]);
 
@@ -682,7 +687,8 @@ class Service implements InjectionAwareInterface
 
         $this->assertCanManageGroup($group);
 
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffCreate', 'params' => $data]);
+        $eventInput = array_intersect_key($data, array_flip(['email', 'name', 'status', 'signature', 'timezone', 'group_id']));
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminStaffCreateEvent($eventInput));
 
         $model = new Admin();
         $model->setEmail($data['email']);
@@ -705,7 +711,7 @@ class Service implements InjectionAwareInterface
 
         $newId = (int) $model->getId();
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminStaffCreate', 'params' => ['id' => $newId]]);
+        $this->di['event_dispatcher']->dispatch(new AfterAdminStaffCreateEvent($newId));
 
         $this->di['logger']->info('Created staff member #{admin_id} "{model_name}" in group #{group_id} "{group_name}"', ['admin_id' => $newId, 'model_name' => $model->getName(), 'group_id' => $groupId, 'group_name' => $group->getName()]);
 

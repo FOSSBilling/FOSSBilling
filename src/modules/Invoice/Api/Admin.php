@@ -20,6 +20,7 @@ use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Subscription;
 use Box\Mod\Invoice\Entity\Tax;
 use Box\Mod\Invoice\Entity\Transaction;
+use Box\Mod\Invoice\Event\BeforeAdminTransactionProcessEvent;
 use Box\Mod\Order\Entity\Order;
 use FOSSBilling\InformationException;
 use FOSSBilling\PaginationOptions;
@@ -467,10 +468,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
     /**
      * Calls due events on unpaid and approved invoices.
-     * Attach custom event hooks events:.
-     *
-     * onEventBeforeInvoiceIsDue - event receives params: id and days_left
-     * onEventAfterInvoiceIsDue - event receives params: id and days_passed
+     * Extensions can listen to BeforeInvoiceIsDueEvent and AfterInvoiceIsDueEvent.
      *
      * @optional bool $once_per_day - default true. Pass false if you want to execute this action more than once per day
      *
@@ -485,7 +483,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
     /**
      * Send payment reminder notification for client.
-     * Calls event hook, so you can attach your custom notification code.
+     * Dispatches typed reminder events for custom notification code.
      *
      * @return bool
      */
@@ -538,7 +536,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             throw new \FOSSBilling\Exception('Transaction not found');
         }
 
-        $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminTransactionProcess', 'params' => ['id' => $model->getId()]]);
+        $this->getDi()['event_dispatcher']->dispatch(new BeforeAdminTransactionProcessEvent((int) $model->getId()));
 
         $transactionService = $this->getDi()['mod_service']('Invoice', 'Transaction');
 
