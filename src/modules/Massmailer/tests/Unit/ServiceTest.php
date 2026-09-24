@@ -198,7 +198,7 @@ test('send message accepts a client with a valid email', function (): void {
 test('install creates the mod_massmailer table portably instead of via raw MySQL DDL', function (): void {
     // Regression test: install() used to run raw MySQL-only DDL (backticks, ENGINE=InnoDB)
     // directly via $di['dbal'], which fails outright on PostgreSQL/SQLite - confirmed here
-    // against a real SQLite connection. mod_massmailer already exists in structure.sql, so this
+    // against a real SQLite connection. mod_massmailer already exists in the pre-cutover schema, so this
     // hook was already redundant on MySQL; it's only load-bearing on PG/SQLite.
     $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
     $em = FOSSBilling\Doctrine\EntityManagerFactory::create($connection);

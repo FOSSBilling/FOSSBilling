@@ -239,7 +239,7 @@ class Service implements InjectionAwareInterface
     public function install(): bool
     {
         // Raw MySQL-only DDL here (backticks, ENGINE=InnoDB) would fail outright on
-        // PostgreSQL/SQLite. On MySQL, structure.sql doesn't create service_apikey either -
+        // PostgreSQL/SQLite. On MySQL, the pre-cutover schema doesn't create service_apikey either -
         // UpdatePatcher::patch111() does, as a startup-safety-net fix - so this hook is already
         // redundant there and only load-bearing on PG/SQLite fresh installs where nothing else
         // creates the table. SchemaSynchronizer::syncEntities() creates (or catches up) just

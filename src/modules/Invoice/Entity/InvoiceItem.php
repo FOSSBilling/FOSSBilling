@@ -20,10 +20,10 @@ use FOSSBilling\Interfaces\TimestampInterface;
 #[ORM\Entity(repositoryClass: \Box\Mod\Invoice\Repository\InvoiceItemRepository::class)]
 #[ORM\Table(name: 'invoice_item')]
 #[ORM\Index(name: 'invoice_item_invoice_id_idx', columns: ['invoice_id'])]
-// rel_id is mapped TEXT (matches structure.sql exactly - the varchar(20) elsewhere in
-// structure.sql that looks similar belongs to the unrelated client_balance.rel_id column), so
+// rel_id is mapped TEXT (matching the pre-cutover schema exactly - the varchar(20) elsewhere in
+// that schema that looks similar belongs to the unrelated client_balance.rel_id column), so
 // this needs a MySQL-only column-length prefix on rel_id: InnoDB can't index a full TEXT column
-// at all, and structure.sql's own `rel_id(20)` index has always carried the same prefix for the
+// at all, and the pre-cutover `rel_id(20)` index has always carried the same prefix for the
 // same reason - it's an index-key-length workaround, not a real 20-character data limit.
 // SQLite/PostgreSQL ignore the `lengths` option entirely (AbstractPlatform::
 // supportsColumnLengthIndexes() is false there), so the index they create is the full,
