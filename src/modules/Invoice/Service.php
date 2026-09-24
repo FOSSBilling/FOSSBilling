@@ -2438,8 +2438,17 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Exception("Currency rate for '{$order->getCurrency()}' is not configured");
         }
 
-        $rawDiscount = (float) $productService->getProductDiscount($product, $promo, $promoConfig);
-        $discountBase = $rawDiscount * $rate;
+        if ($promo->getType() === \Box\Mod\Product\Entity\Promo::PERCENTAGE) {
+            // Percentage comes off the persisted order total (already in the
+            // order currency, e.g. a staff price override), not catalog
+            // pricing. Absolute promos stay on the catalog-based path below
+            // so their base-currency value keeps the existing rate conversion.
+            $orderTotal = (float) $order->getPrice() * (float) $order->getQuantity();
+            $discountBase = round($orderTotal * (float) $promo->getValue() / 100, 2);
+        } else {
+            $rawDiscount = (float) $productService->getProductDiscount($product, $promo, $promoConfig);
+            $discountBase = $rawDiscount * $rate;
+        }
         if ($discountBase <= 0) {
             throw new InformationException('This promo code gives no discount on the selected order');
         }

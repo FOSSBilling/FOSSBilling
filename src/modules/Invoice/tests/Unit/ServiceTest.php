@@ -4019,7 +4019,7 @@ test('promoAddToInvoice applies a promo to an order on an unpaid invoice', funct
     $promo = new Box\Mod\Product\Entity\Promo();
     $promoReflection = new ReflectionProperty($promo, 'id');
     $promoReflection->setValue($promo, 7);
-    $promo->setCode('ADMIN10')->setRecurring(true);
+    $promo->setCode('ADMIN10')->setRecurring(true)->setType(Box\Mod\Product\Entity\Promo::ABSOLUTE)->setValue(25);
 
     $product = new Product();
     $productReflection = new ReflectionProperty($product, 'id');
@@ -4225,6 +4225,7 @@ test('promoAddToInvoice aborts when the invoice is paid concurrently', function 
         'unpaid_invoice_id' => 10,
     ]);
     $promo = new Box\Mod\Product\Entity\Promo();
+    $promo->setType(Box\Mod\Product\Entity\Promo::ABSOLUTE)->setValue(25);
 
     $productService = Mockery::mock(ProductService::class);
     $productService->shouldReceive('promoCanBeApplied')->once()->andReturn(true);
