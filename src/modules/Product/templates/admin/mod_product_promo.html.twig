@@ -320,26 +320,34 @@
 
                 <hr class="my-4">
                 <div class="row g-4">
-                    <div class="col-lg-4">
+                    <div class="col-lg-3">
                         <label class="form-label">{{ 'Applicable Products (Select None to Apply to All)'|trans }}</label>
                         <input type="hidden" name="products[]" value=""/>
                         <table class="table card-table table-vcenter table-striped text-nowrap">
                             <tbody>{% set products = admin.product_get_pairs %}{% for id,product in products %}<tr><td class="w-1"><input type="checkbox" name="products[]" value="{{ id }}" {% if id in promo.products %} checked{% endif %} /></td><td>{{ product }}</td></tr>{% endfor %}</tbody>
                         </table>
                     </div>
-                    <div class="col-lg-4">
+                    <div class="col-lg-3">
                         <label class="form-label">{{ 'Applicable Periods (Select None to Apply to All)'|trans }}</label>
                         <input type="hidden" name="periods[]" value=""/>
                         <table class="table card-table table-vcenter table-striped text-nowrap">
                             <tbody>{% set periods = guest.system_periods %}{% for id, period in periods %}<tr><td class="w-1"><input type="checkbox" name="periods[]" value="{{ id }}" {% if id in promo.periods %} checked{% endif %} /></td><td>{{ period }}</td></tr>{% endfor %}</tbody>
                         </table>
                     </div>
-                    <div class="col-lg-4">
+                    <div class="col-lg-3">
                         <label class="form-label">{{ 'Applicable Client Groups (Select None to Apply to All)'|trans }}</label>
                         <input type="hidden" name="client_groups[]" value=""/>
                         <table class="table card-table table-vcenter table-striped text-nowrap">
                             <tbody>{% set client_groups = admin.client_group_get_pairs %}{% for id, client_group in client_groups %}<tr><td class="w-1"><input type="checkbox" name="client_groups[]" value="{{ id }}" {% if id in promo.client_groups %} checked{% endif %} /></td><td>{{ client_group }}</td></tr>{% endfor %}</tbody>
                         </table>
+                    </div>
+                    <div class="col-lg-3">
+                        <label class="form-label">{{ 'Required Products (Select None for No Condition)'|trans }}</label>
+                        <input type="hidden" name="requires_products[]" value=""/>
+                        <table class="table card-table table-vcenter table-striped text-nowrap">
+                            <tbody>{% set required_products = admin.product_get_pairs %}{% for id, required_product in required_products %}<tr><td class="w-1"><input type="checkbox" name="requires_products[]" value="{{ id }}" {% if id in promo.requires_products %} checked{% endif %} /></td><td>{{ required_product }}</td></tr>{% endfor %}</tbody>
+                        </table>
+                        <small class="form-hint">{{ 'The promotion only applies when every selected product is in the cart.'|trans }}</small>
                     </div>
                 </div>
                 <input type="hidden" name="id" value="{{ promo.id }}">

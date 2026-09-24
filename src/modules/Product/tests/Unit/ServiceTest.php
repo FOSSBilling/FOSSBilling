@@ -1361,7 +1361,7 @@ test('create promo', function (): void {
     $di['em'] = $emMock;
 
     $service->setDi($di);
-    $result = $service->createPromo('code', 'percentage', 50, [], [], [], []);
+    $result = $service->createPromo('code', 'percentage', 50, [], [], [], [], []);
     expect($result)->toBeInt();
     expect($result)->toEqual(1);
 });
@@ -1383,6 +1383,7 @@ test('duplicate promo', function (): void {
         ->setProducts('[1]')
         ->setPeriods('["1M"]')
         ->setClientGroups('[2]')
+        ->setRequiresProducts('[5]')
         ->setStartAt(new DateTime('2012-01-01'))
         ->setEndAt(new DateTime('2012-01-02'));
 
@@ -1434,6 +1435,7 @@ test('duplicate promo', function (): void {
     expect($emMock->captured->getProducts())->toBe('[1]');
     expect($emMock->captured->getPeriods())->toBe('["1M"]');
     expect($emMock->captured->getClientGroups())->toBe('[2]');
+    expect($emMock->captured->getRequiresProducts())->toBe('[5]');
 });
 
 test('duplicate promo generates alternate code when copy code already exists', function (): void {
@@ -3218,6 +3220,54 @@ test('findEligibleAutoPromos skips promos with no applicable lines', function ()
     $serviceMock->shouldReceive('isPromoAvailableForClientGroup')->once()->andReturn(true);
     $serviceMock->shouldReceive('canClientUsePromo')->once()->andReturn(true);
     $serviceMock->shouldReceive('isPromoApplicableToProduct')->once()->andReturn(false);
+    $serviceMock->shouldNotReceive('getProductDiscount');
+
+    expect($serviceMock->findEligibleAutoPromos($client, [['product' => $product, 'config' => []]]))->toBe([]);
+});
+
+test('getPromoRequiredProducts decodes and normalizes the bundle condition', function (): void {
+    $service = new Service();
+
+    expect($service->getPromoRequiredProducts(productTestCreatePromoEntity(1)))->toBe([]);
+    expect($service->getPromoRequiredProducts(productTestCreatePromoEntity(2)->setRequiresProducts('[5,"7",0,-2,5]')))->toBe([5, 7]);
+});
+
+test('findMissingRequiredProductIds reports only the absent products', function (): void {
+    $service = new Service();
+    $promo = productTestCreatePromoEntity(7)->setRequiresProducts('[5,9]');
+
+    expect($service->findMissingRequiredProductIds($promo, [5, 9, 12]))->toBe([]);
+    expect($service->findMissingRequiredProductIds($promo, [5]))->toBe([9]);
+    expect($service->findMissingRequiredProductIds(productTestCreatePromoEntity(8), [5]))->toBe([]);
+});
+
+test('isPromoCartConditionMet checks line products against the bundle condition', function (): void {
+    $service = new Service();
+    $promo = productTestCreatePromoEntity(7)->setRequiresProducts('[5,9]');
+
+    $lines = [
+        ['product' => productTestCreateProductEntity(5), 'config' => []],
+        ['product' => productTestCreateProductEntity(9), 'config' => []],
+    ];
+
+    expect($service->isPromoCartConditionMet($promo, $lines))->toBeTrue();
+    expect($service->isPromoCartConditionMet($promo, [$lines[0]]))->toBeFalse();
+    expect($service->isPromoCartConditionMet(productTestCreatePromoEntity(8), []))->toBeTrue();
+});
+
+test('findEligibleAutoPromos skips promos whose bundle condition is unmet', function (): void {
+    $client = createEntity(Client::class, ['id' => 9]);
+    $product = productTestCreateProductEntity(5);
+    $promo = productTestCreatePromoEntity(7)->setAutoApply(true)->setRequiresProducts('[5,9]');
+
+    $promoRepo = Mockery::mock(PromoRepository::class);
+    $promoRepo->shouldReceive('findAutoApplyPromos')->once()->andReturn([$promo]);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('getPromoRepository')->once()->andReturn($promoRepo);
+    $serviceMock->shouldReceive('promoCanBeApplied')->once()->andReturn(true);
+    $serviceMock->shouldReceive('isPromoAvailableForClientGroup')->once()->andReturn(true);
+    $serviceMock->shouldReceive('canClientUsePromo')->once()->andReturn(true);
     $serviceMock->shouldNotReceive('getProductDiscount');
 
     expect($serviceMock->findEligibleAutoPromos($client, [['product' => $product, 'config' => []]]))->toBe([]);
