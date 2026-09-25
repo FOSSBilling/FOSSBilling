@@ -97,6 +97,7 @@ test('exec passes empty array when cron task has no params', function (): void {
 test('runCrons isolates failures in core batch tasks', function (string $failedTask): void {
     $updateFinalization = Mockery::mock();
     $updateFinalization->shouldReceive('isRequired')->once()->andReturnFalse();
+    $updateFinalization->shouldReceive('healSchemaDrift')->once()->andReturnNull();
 
     $systemService = Mockery::mock(Box\Mod\System\Service::class);
     $systemService->shouldReceive('setParamValue')
@@ -177,4 +178,51 @@ test('runCrons restores the previous cron context when update finalization inter
     }
 
     expect(isset($di['is_cron']))->toBeFalse();
+});
+
+test('runCrons still executes tasks when schema drift healing fails', function (): void {
+    // Healing must never be fatal: a lock or database failure degrades to
+    // running against the live schema, exactly as before the healing existed.
+    // @see https://github.com/FOSSBilling/FOSSBilling/issues/4392
+    $updateFinalization = Mockery::mock();
+    $updateFinalization->shouldReceive('isRequired')->once()->andReturnFalse();
+    $updateFinalization->shouldReceive('healSchemaDrift')->once()->andThrow(new RuntimeException('lock unavailable'));
+
+    $systemService = Mockery::mock(Box\Mod\System\Service::class);
+    $systemService->shouldReceive('setParamValue')
+        ->once()
+        ->with('last_cron_exec', Mockery::type('string'), true);
+
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('executeStatement')->once()->andReturn(0);
+
+    $api = new CronServiceApiDouble();
+    $eventDispatcher = new class {
+        public function dispatch(Event $event): Event
+        {
+            return $event;
+        }
+    };
+    $logger = new Tests\Helpers\TestLogger();
+    $di = container();
+    $di['api_system'] = $api;
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
+    $di['event_dispatcher'] = $eventDispatcher;
+    $di['logger'] = $logger;
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $systemService);
+    $di['update_finalization'] = $updateFinalization;
+
+    $service = new Service();
+    $service->setDi($di);
+
+    ob_start();
+    $result = $service->runCrons();
+    ob_end_clean();
+
+    expect($result)->toBeTrue()
+        ->and($api->methods)->toContain('invoice_batch_generate', 'email_batch_sendmail');
+
+    $warnings = array_values(array_filter($logger->calls, static fn (array $call): bool => $call['method'] === 'warning'));
+    expect($warnings)->not->toBe([])
+        ->and($warnings[0]['params'][0])->toContain('Schema drift healing failed');
 });

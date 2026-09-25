@@ -920,6 +920,7 @@ class UpdatePatcher implements InjectionAwareInterface
             117 => 'patch117',
             118 => 'patch118',
             119 => 'patch119',
+            120 => 'patch120',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -3993,6 +3994,30 @@ class UpdatePatcher implements InjectionAwareInterface
 
         if (!$this->tableHasColumn('invoice_item', 'refunded_item_id')) {
             $this->executeSql('ALTER TABLE `invoice_item` ADD COLUMN `refunded_item_id` bigint(20) DEFAULT NULL AFTER `rel_id`');
+        }
+    }
+
+    private function patch120(): void
+    {
+        // The invoice reissue release added two entity columns without a MySQL patch,
+        // repeating the credit/debit-note pattern from patch119: installs that never
+        // ran the ambient schema sync crash with "Unknown column 'replaces_invoice_id'"
+        // instead. Create them explicitly here; the portable sync covers non-MySQL
+        // drivers and same-version deploys via ensureSchemaInSync(). All guards make
+        // reruns (and installs that already synced these) no-ops.
+        // @see https://github.com/FOSSBilling/FOSSBilling/issues/4392
+        if (!$this->tableHasColumn('invoice', 'replaces_invoice_id')) {
+            $this->executeSql('ALTER TABLE `invoice` ADD COLUMN `replaces_invoice_id` bigint(20) DEFAULT NULL AFTER `debit_note_for_invoice_id`');
+        }
+        if (!$this->tableHasIndex('invoice', 'invoice_replaces_invoice_idx')) {
+            $this->executeSql('ALTER TABLE `invoice` ADD INDEX `invoice_replaces_invoice_idx` (`replaces_invoice_id`)');
+        }
+
+        if (!$this->tableHasColumn('invoice', 'replaced_by_invoice_id')) {
+            $this->executeSql('ALTER TABLE `invoice` ADD COLUMN `replaced_by_invoice_id` bigint(20) DEFAULT NULL AFTER `replaces_invoice_id`');
+        }
+        if (!$this->tableHasIndex('invoice', 'invoice_replaced_by_invoice_idx')) {
+            $this->executeSql('ALTER TABLE `invoice` ADD INDEX `invoice_replaced_by_invoice_idx` (`replaced_by_invoice_id`)');
         }
     }
 
