@@ -431,6 +431,7 @@
         "ordermodel",
         "homoglyph",
         "TINYINT",
+        "ENCAPSED",
         "homoglyph",
         "oldconfig",
         "ordermodel",

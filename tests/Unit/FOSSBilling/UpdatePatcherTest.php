@@ -2225,3 +2225,148 @@ test('ensureSchemaInSync restores note columns missing from an older schema, the
         (new Filesystem())->remove($dbFile);
     }
 });
+
+test('invoice reissue patch follows the credit and debit note patch', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 119);
+
+    expect($patches)->toHaveKey(120)
+        ->and($patches[120][1])->toBe('patch120');
+});
+
+test('invoice reissue patch adds the missing replacement columns and indexes for existing installs', function (): void {
+    // Regression test for https://github.com/FOSSBilling/FOSSBilling/issues/4392: the
+    // invoice reissue release added entity columns with no MySQL patch, so installs
+    // that never ran the ambient schema sync crash on invoice listings with
+    // "Unknown column 'replaces_invoice_id'".
+    $invoiceColumnsA = Mockery::mock(PDOStatement::class);
+    $invoiceColumnsA->expects('execute')->with([])->andReturnTrue();
+    $invoiceColumnsA->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([]);
+
+    $invoiceColumnsB = Mockery::mock(PDOStatement::class);
+    $invoiceColumnsB->expects('execute')->with([])->andReturnTrue();
+    $invoiceColumnsB->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([]);
+
+    $invoiceIndexesA = Mockery::mock(PDOStatement::class);
+    $invoiceIndexesA->expects('execute')->with([])->andReturnTrue();
+    $invoiceIndexesA->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([]);
+
+    $invoiceIndexesB = Mockery::mock(PDOStatement::class);
+    $invoiceIndexesB->expects('execute')->with([])->andReturnTrue();
+    $invoiceIndexesB->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([]);
+
+    $addReplacesColumn = Mockery::mock(PDOStatement::class);
+    $addReplacesColumn->expects('execute')->with([])->andReturnTrue();
+    $addReplacesIndex = Mockery::mock(PDOStatement::class);
+    $addReplacesIndex->expects('execute')->with([])->andReturnTrue();
+    $addReplacedByColumn = Mockery::mock(PDOStatement::class);
+    $addReplacedByColumn->expects('execute')->with([])->andReturnTrue();
+    $addReplacedByIndex = Mockery::mock(PDOStatement::class);
+    $addReplacedByIndex->expects('execute')->with([])->andReturnTrue();
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `invoice`')->twice()->andReturn($invoiceColumnsA, $invoiceColumnsB);
+    $pdo->expects('prepare')->with('SHOW INDEX FROM `invoice`')->twice()->andReturn($invoiceIndexesA, $invoiceIndexesB);
+    $pdo->expects('prepare')
+        ->with('ALTER TABLE `invoice` ADD COLUMN `replaces_invoice_id` bigint(20) DEFAULT NULL AFTER `debit_note_for_invoice_id`')
+        ->andReturn($addReplacesColumn);
+    $pdo->expects('prepare')
+        ->with('ALTER TABLE `invoice` ADD INDEX `invoice_replaces_invoice_idx` (`replaces_invoice_id`)')
+        ->andReturn($addReplacesIndex);
+    $pdo->expects('prepare')
+        ->with('ALTER TABLE `invoice` ADD COLUMN `replaced_by_invoice_id` bigint(20) DEFAULT NULL AFTER `replaces_invoice_id`')
+        ->andReturn($addReplacedByColumn);
+    $pdo->expects('prepare')
+        ->with('ALTER TABLE `invoice` ADD INDEX `invoice_replaced_by_invoice_idx` (`replaced_by_invoice_id`)')
+        ->andReturn($addReplacedByIndex);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch120'))->invoke($patcher);
+});
+
+test('invoice reissue patch is a no-op when the replacement columns and indexes already exist', function (): void {
+    $invoiceColumnsA = Mockery::mock(PDOStatement::class);
+    $invoiceColumnsA->expects('execute')->with([])->andReturnTrue();
+    $invoiceColumnsA->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['Field' => 'replaces_invoice_id'],
+        ['Field' => 'replaced_by_invoice_id'],
+    ]);
+
+    $invoiceColumnsB = Mockery::mock(PDOStatement::class);
+    $invoiceColumnsB->expects('execute')->with([])->andReturnTrue();
+    $invoiceColumnsB->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['Field' => 'replaces_invoice_id'],
+        ['Field' => 'replaced_by_invoice_id'],
+    ]);
+
+    $invoiceIndexesA = Mockery::mock(PDOStatement::class);
+    $invoiceIndexesA->expects('execute')->with([])->andReturnTrue();
+    $invoiceIndexesA->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['Key_name' => 'invoice_replaces_invoice_idx'],
+        ['Key_name' => 'invoice_replaced_by_invoice_idx'],
+    ]);
+
+    $invoiceIndexesB = Mockery::mock(PDOStatement::class);
+    $invoiceIndexesB->expects('execute')->with([])->andReturnTrue();
+    $invoiceIndexesB->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['Key_name' => 'invoice_replaces_invoice_idx'],
+        ['Key_name' => 'invoice_replaced_by_invoice_idx'],
+    ]);
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `invoice`')->twice()->andReturn($invoiceColumnsA, $invoiceColumnsB);
+    $pdo->expects('prepare')->with('SHOW INDEX FROM `invoice`')->twice()->andReturn($invoiceIndexesA, $invoiceIndexesB);
+    $pdo->shouldNotReceive('prepare')->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'ALTER TABLE')));
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch120'))->invoke($patcher);
+});
+
+test('ensureSchemaInSync restores reissue columns missing from an older schema, then goes quiet', function (): void {
+    // Same upgrade path as the note-columns test above, for the invoice reissue
+    // release: https://github.com/FOSSBilling/FOSSBilling/issues/4392
+    $dbFile = Path::join(sys_get_temp_dir(), 'fossbilling-schema-sync-reissue-' . bin2hex(random_bytes(8)) . '.sqlite');
+
+    try {
+        $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $dbFile]);
+        $entityManager = FOSSBilling\Doctrine\EntityManagerFactory::create($connection);
+        FOSSBilling\Doctrine\SchemaInstaller::createSchema($entityManager);
+
+        $connection->executeStatement('DROP INDEX invoice_replaces_invoice_idx');
+        $connection->executeStatement('DROP INDEX invoice_replaced_by_invoice_idx');
+        $connection->executeStatement('ALTER TABLE invoice DROP COLUMN replaces_invoice_id');
+        $connection->executeStatement('ALTER TABLE invoice DROP COLUMN replaced_by_invoice_id');
+
+        $columnNames = static fn (): array => array_column(
+            $connection->fetchAllAssociative('PRAGMA table_info(invoice)'),
+            'name'
+        );
+        expect($columnNames())->not->toContain('replaces_invoice_id', 'replaced_by_invoice_id');
+
+        $pdo = new PDO('sqlite:' . $dbFile);
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+        $di = new Pimple\Container();
+        $di['pdo'] = $pdo;
+        $di['em'] = $entityManager;
+        $di['logger'] = new Tests\Helpers\TestLogger();
+
+        $patcher = new UpdatePatcher();
+        $patcher->setDi($di);
+
+        expect($patcher->ensureSchemaInSync())->toBeTrue()
+            ->and($columnNames())->toContain('replaces_invoice_id', 'replaced_by_invoice_id');
+
+        // The recorded hash now matches, so the next request is a single-SELECT no-op.
+        expect($patcher->ensureSchemaInSync())->toBeFalse();
+    } finally {
+        (new Filesystem())->remove($dbFile);
+    }
+});
