@@ -60,34 +60,36 @@ function entityMigrationCoverageCurrentColumns(): array
 
 function entityMigrationCoverageHasTableColumnMigration(string $patcher, string $table, string $column): bool
 {
-    $source = '';
+    $sqlLiterals = [];
     foreach (token_get_all($patcher) as $token) {
-        if (is_array($token) && in_array($token[0], [T_COMMENT, T_DOC_COMMENT], true)) {
+        if (!is_array($token) || $token[0] !== T_CONSTANT_ENCAPSED_STRING) {
             continue;
         }
 
-        $source .= is_array($token) ? $token[1] : $token;
+        $sqlLiterals[] = substr($token[1], 1, -1);
     }
 
     $tablePattern = '`?' . preg_quote($table, '/') . '`?';
-    preg_match_all('/\bALTER\s+TABLE\s+' . $tablePattern . '\s+(.*?)(?:;|$)/is', $source, $statements);
-
     $columnPattern = '`?' . preg_quote($column, '/') . '`?(?=[^\w]|$)';
-    foreach ($statements[1] as $statement) {
-        if (preg_match('/\bADD\s+(?:COLUMN\s+)?' . $columnPattern . '/i', $statement)) {
-            return true;
-        }
-    }
-
-    preg_match_all(
-        '/\bCREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?' . $tablePattern . '\s*\((.*?);/is',
-        $source,
-        $createStatements
-    );
     $columnDefinitionPattern = '(?:^|[,\s(])' . $columnPattern . '\s+[a-z]+\b';
-    foreach ($createStatements[1] as $statement) {
-        if (preg_match('/' . $columnDefinitionPattern . '/i', $statement)) {
-            return true;
+
+    foreach ($sqlLiterals as $sql) {
+        preg_match_all('/\bALTER\s+TABLE\s+' . $tablePattern . '\s+(.*?)(?:;|$)/is', $sql, $alterStatements);
+        foreach ($alterStatements[1] as $statement) {
+            if (preg_match('/\bADD\s+(?:COLUMN\s+)?' . $columnPattern . '/i', $statement)) {
+                return true;
+            }
+        }
+
+        preg_match_all(
+            '/\bCREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?' . $tablePattern . '\s*\((.*?)(?:;|$)/is',
+            $sql,
+            $createStatements
+        );
+        foreach ($createStatements[1] as $statement) {
+            if (preg_match('/' . $columnDefinitionPattern . '/i', $statement)) {
+                return true;
+            }
         }
     }
 
