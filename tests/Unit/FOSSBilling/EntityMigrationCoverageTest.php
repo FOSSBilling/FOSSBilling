@@ -7,10 +7,10 @@ declare(strict_types=1);
  * an entity column merged without a MySQL migration, so existing installs crash
  * with "Unknown column ..." until the ambient schema sync happens to heal them.
  *
- * For any column added since the snapshot, the test requires an explicit reference
- * in UpdatePatcher (i.e. a hand-written MySQL patch like patch119/patch120): the
- * portable schema sync covers PostgreSQL/SQLite on its own, but MySQL upgrades
- * must not depend on sync timing.
+ * For any column added since the snapshot, the test requires a table-specific
+ * CREATE TABLE or ADD COLUMN operation in UpdatePatcher (i.e. a hand-written
+ * MySQL patch like patch119/patch120): the portable schema sync covers
+ * PostgreSQL/SQLite on its own, but MySQL upgrades must not depend on sync timing.
  *
  * After adding the migration, regenerate the snapshot:
  * UPDATE_SNAPSHOT=1 ./src/vendor/bin/pest --test-directory ../tests --configuration phpunit.xml.dist tests/Unit/FOSSBilling/EntityMigrationCoverageTest.php
@@ -58,19 +58,48 @@ function entityMigrationCoverageCurrentColumns(): array
     return $columns;
 }
 
+function entityMigrationCoverageHasTableColumnMigration(string $patcher, string $table, string $column): bool
+{
+    $source = '';
+    foreach (token_get_all($patcher) as $token) {
+        if (is_array($token) && in_array($token[0], [T_COMMENT, T_DOC_COMMENT], true)) {
+            continue;
+        }
+
+        $source .= is_array($token) ? $token[1] : $token;
+    }
+
+    $tablePattern = '`?' . preg_quote($table, '/') . '`?';
+    preg_match_all('/\bALTER\s+TABLE\s+' . $tablePattern . '\s+(.*?)(?:;|$)/is', $source, $statements);
+
+    $columnPattern = '`?' . preg_quote($column, '/') . '`?(?=[^\w]|$)';
+    foreach ($statements[1] as $statement) {
+        if (preg_match('/\bADD\s+(?:COLUMN\s+)?' . $columnPattern . '/i', $statement)) {
+            return true;
+        }
+    }
+
+    preg_match_all(
+        '/\bCREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?' . $tablePattern . '\s*\((.*?);/is',
+        $source,
+        $createStatements
+    );
+    $columnDefinitionPattern = '(?:^|[,\s(])' . $columnPattern . '\s+[a-z]+\b';
+    foreach ($createStatements[1] as $statement) {
+        if (preg_match('/' . $columnDefinitionPattern . '/i', $statement)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 test('new entity columns ship with a MySQL migration', function (): void {
     $current = entityMigrationCoverageCurrentColumns();
     expect($current)->not->toBe([]);
 
     $snapshotPath = entityMigrationCoverageSnapshotPath();
-    if (getenv('UPDATE_SNAPSHOT')) {
-        file_put_contents($snapshotPath, json_encode($current, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . PHP_EOL);
-        expect(true)->toBeTrue();
-
-        return;
-    }
-
-    expect(file_exists($snapshotPath))->toBeTrue('Entity column snapshot is missing - regenerate it with UPDATE_SNAPSHOT=1.');
+    expect(file_exists($snapshotPath))->toBeTrue('Entity column snapshot is missing - restore a reviewed baseline before regenerating it.');
 
     $previous = json_decode((string) file_get_contents($snapshotPath), true);
     expect($previous)->toBeArray();
@@ -81,9 +110,9 @@ test('new entity columns ship with a MySQL migration', function (): void {
         $uncovered = array_values(array_filter(
             $added,
             static function (string $tableColumn) use ($patcher): bool {
-                [, $column] = explode('.', $tableColumn, 2);
+                [$table, $column] = explode('.', $tableColumn, 2);
 
-                return !str_contains($patcher, $column);
+                return !entityMigrationCoverageHasTableColumnMigration($patcher, $table, $column);
             }
         ));
 
@@ -94,10 +123,25 @@ test('new entity columns ship with a MySQL migration', function (): void {
         );
     }
 
+    if (getenv('UPDATE_SNAPSHOT')) {
+        file_put_contents($snapshotPath, json_encode($current, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . PHP_EOL);
+        expect(true)->toBeTrue();
+
+        return;
+    }
+
     $removed = array_values(array_diff($previous, $current));
     expect($current)->toBe(
         $previous,
         'Entity columns changed (added: ' . implode(', ', $added) . '; removed: ' . implode(', ', $removed)
         . ') - regenerate the snapshot with UPDATE_SNAPSHOT=1 after covering additions with a migration.'
     );
+});
+
+test('entity migration coverage only accepts schema operations for the matching table', function (): void {
+    $fixture = (string) file_get_contents(Path::join(PATH_TESTS, 'Fixtures', 'entity-migration-patcher-cross-table.php'));
+
+    expect(entityMigrationCoverageHasTableColumnMigration($fixture, 'invoice', 'replacement_id'))->toBeFalse()
+        ->and(entityMigrationCoverageHasTableColumnMigration($fixture, 'credit_note', 'replacement_id'))->toBeTrue()
+        ->and(entityMigrationCoverageHasTableColumnMigration($fixture, 'new_entity', 'replacement_id'))->toBeTrue();
 });
