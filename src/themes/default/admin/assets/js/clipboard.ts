@@ -1,6 +1,6 @@
 import { Clipboard } from '@tabler/core';
 
-const CLIPBOARD_CONTROL_SELECTOR = '.clipboard-copy, [data-bs-toggle="clipboard"]';
+const CLIPBOARD_CONTROL_SELECTOR = '.clipboard-copy, [data-bs-toggle="clipboard"], [data-tblr-toggle="clipboard"]';
 const LEGACY_TARGET_SELECTOR = /^#[A-Za-z0-9_-]+$/;
 
 // Tabler uses the Clipboard API; retain the fallback for HTTP and denied access.

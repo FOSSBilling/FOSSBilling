@@ -120,6 +120,7 @@ for (const mode of ['success', 'unavailable', 'denied'] as const) {
   for (const control of [
     'class="clipboard-copy" data-clipboard-target="#snippet"',
     'data-bs-toggle="clipboard" data-bs-target="#snippet"',
+    'data-tblr-toggle="clipboard" data-tblr-target="#snippet"',
     'data-bs-toggle="clipboard" data-clipboard-target="#snippet" data-test-initialized',
   ]) {
     test(`clipboard supports ${mode} access with ${control}`, async ({ page }) => {
