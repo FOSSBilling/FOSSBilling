@@ -494,6 +494,9 @@
         {% endif %}
 
         <div class="tab-pane fade" id="tab-orders" role="tabpanel" data-list-ns="order">
+            {% set orderPage = request.order_page matches '/^\\d+$/' ? request.order_page : 1 %}
+            {% set orderPerPage = request.order_per_page matches '/^\\d+$/' ? request.order_per_page : 25 %}
+            {% set orders = admin.order_get_list(request|merge({ 'page': orderPage, 'per_page': orderPerPage, 'client_id': client.id, 'sort': request.order_sort|default(null), 'direction': request.order_direction|default('ASC') })) %}
             {% embed 'partial_admin_related_section.html.twig' with {
                 title: 'Client Orders'|trans,
                 subtitle: 'Review the client’s active and historical orders, or create a new order directly for this client.'|trans,
@@ -523,9 +526,6 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% set orderPage = request.order_page matches '/^\\d+$/' ? request.order_page : 1 %}
-                                {% set orderPerPage = request.order_per_page matches '/^\\d+$/' ? request.order_per_page : 25 %}
-                                {% set orders = admin.order_get_list(request|merge({ 'page': orderPage, 'per_page': orderPerPage, 'client_id': client.id, 'sort': request.order_sort|default(null), 'direction': request.order_direction|default('ASC') })) %}
                                 {% for order in orders.list %}
                                 <tr>
                                     <td>{{ order.id }}</td>
@@ -562,6 +562,9 @@
         </div>
 
         <div class="tab-pane fade" id="tab-invoices" role="tabpanel" data-list-ns="invoice">
+            {% set invoicePage = request.invoice_page matches '/^\\d+$/' ? request.invoice_page : 1 %}
+            {% set invoicePerPage = request.invoice_per_page matches '/^\\d+$/' ? request.invoice_per_page : 25 %}
+            {% set invoices = admin.invoice_get_list(request|merge({ 'page': invoicePage, 'per_page': invoicePerPage, 'client_id': client.id, 'summary': 1, 'sort': request.invoice_sort|default(null), 'direction': request.invoice_direction|default('ASC') })) %}
             {% embed 'partial_admin_related_section.html.twig' with {
                 title: 'Client Invoices'|trans,
                 subtitle: 'Review invoices issued to this client or prepare a new invoice directly from the account view.'|trans,
@@ -591,9 +594,6 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% set invoicePage = request.invoice_page matches '/^\\d+$/' ? request.invoice_page : 1 %}
-                                {% set invoicePerPage = request.invoice_per_page matches '/^\\d+$/' ? request.invoice_per_page : 25 %}
-                                {% set invoices = admin.invoice_get_list(request|merge({ 'page': invoicePage, 'per_page': invoicePerPage, 'client_id': client.id, 'summary': 1, 'sort': request.invoice_sort|default(null), 'direction': request.invoice_direction|default('ASC') })) %}
                                 {% for invoice in invoices.list %}
                                 <tr>
                                     <td>
@@ -630,6 +630,9 @@
         </div>
 
         <div class="tab-pane fade" id="tab-support" role="tabpanel" aria-labelledby="support-tab" data-list-ns="ticket">
+            {% set ticketPage = request.ticket_page matches '/^\\d+$/' ? request.ticket_page : 1 %}
+            {% set ticketPerPage = request.ticket_per_page matches '/^\\d+$/' ? request.ticket_per_page : 25 %}
+            {% set tickets = admin.support_ticket_get_list(request|merge({ 'page': ticketPage, 'per_page': ticketPerPage, 'client_id': client.id, 'deep': 0, 'include_first': 0, 'sort': request.ticket_sort|default(null), 'direction': request.ticket_direction|default('DESC') })) %}
             {% embed 'partial_admin_related_section.html.twig' with {
                 title: 'Help Desk'|trans,
                 subtitle: 'Track the client’s support tickets and open a new ticket without leaving the client profile.'|trans,
@@ -658,9 +661,6 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% set ticketPage = request.ticket_page matches '/^\\d+$/' ? request.ticket_page : 1 %}
-                                {% set ticketPerPage = request.ticket_per_page matches '/^\\d+$/' ? request.ticket_per_page : 25 %}
-                                {% set tickets = admin.support_ticket_get_list(request|merge({ 'page': ticketPage, 'per_page': ticketPerPage, 'client_id': client.id, 'deep': 0, 'include_first': 0, 'sort': request.ticket_sort|default(null), 'direction': request.ticket_direction|default('DESC') })) %}
                                 {% for ticket in tickets.list %}
                                 <tr>
                                     <td>{{ ticket.id }}</td>
@@ -697,6 +697,9 @@
 
         {% if can_manage_balance %}
         <div class="tab-pane fade" id="tab-balance" role="tabpanel" aria-labelledby="balance-tab" data-list-ns="balance">
+            {% set balancePage = request.balance_page matches '/^\\d+$/' ? request.balance_page : 1 %}
+            {% set balancePerPage = request.balance_per_page matches '/^\\d+$/' ? request.balance_per_page : 25 %}
+            {% set payments = admin.client_balance_get_list(request|merge({ 'page': balancePage, 'per_page': balancePerPage, 'client_id': client.id, 'sort': request.balance_sort|default(null), 'direction': request.balance_direction|default('DESC') })) %}
             {% embed 'partial_admin_related_section.html.twig' with {
                 title: 'Client Payments History'|trans,
                 subtitle: 'Review balance adjustments and record a manual credit for this client when needed.'|trans,
@@ -714,9 +717,6 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% set balancePage = request.balance_page matches '/^\\d+$/' ? request.balance_page : 1 %}
-                                {% set balancePerPage = request.balance_per_page matches '/^\\d+$/' ? request.balance_per_page : 25 %}
-                                {% set payments = admin.client_balance_get_list(request|merge({ 'page': balancePage, 'per_page': balancePerPage, 'client_id': client.id, 'sort': request.balance_sort|default(null), 'direction': request.balance_direction|default('DESC') })) %}
                                 {% for i, tx in payments.list %}
                                 <tr>
                                     <td>{{ (tx.amount ?? 0)|format_currency(tx.currency ?? default_currency) }}</td>
@@ -787,6 +787,9 @@
 
         {% if can_view_client_login_history %}
         <div class="tab-pane fade" id="tab-history" role="tabpanel" aria-labelledby="history-tab" data-list-ns="login">
+            {% set loginPage = request.login_page matches '/^\\d+$/' ? request.login_page : 1 %}
+            {% set loginPerPage = request.login_per_page matches '/^\\d+$/' ? request.login_per_page : 25 %}
+            {% set logins = admin.client_login_history_get_list(request|merge({ 'page': loginPage, 'per_page': loginPerPage, 'client_id': client.id, 'sort': request.login_sort|default(null), 'direction': request.login_direction|default('DESC') })) %}
             {% embed 'partial_admin_related_section.html.twig' with {
                 title: 'Login History'|trans,
                 subtitle: 'See recent client login activity, including originating IP address and detected country.'|trans,
@@ -805,9 +808,6 @@
                             </thead>
 
                             <tbody>
-                                {% set loginPage = request.login_page matches '/^\\d+$/' ? request.login_page : 1 %}
-                                {% set loginPerPage = request.login_per_page matches '/^\\d+$/' ? request.login_per_page : 25 %}
-                                {% set logins = admin.client_login_history_get_list(request|merge({ 'page': loginPage, 'per_page': loginPerPage, 'client_id': client.id, 'sort': request.login_sort|default(null), 'direction': request.login_direction|default('DESC') })) %}
                                 {% for i, login in logins.list %}
                                 <tr>
                                     <td>{{ mf.ip_lookup_link(login.ip) }}</td>
@@ -897,6 +897,9 @@
         {% endif %}
 
         <div class="tab-pane fade" id="tab-transactions" role="tabpanel" aria-labelledby="transactions-tab" data-list-ns="txn">
+            {% set txnPage = request.txn_page matches '/^\\d+$/' ? request.txn_page : 1 %}
+            {% set txnPerPage = request.txn_per_page matches '/^\\d+$/' ? request.txn_per_page : 25 %}
+            {% set transactions = admin.invoice_transaction_get_list(request|merge({ 'page': txnPage, 'per_page': txnPerPage, 'client_id': client.id, 'sort': request.txn_sort|default(null), 'direction': request.txn_direction|default('ASC') })) %}
             {% embed 'partial_admin_related_section.html.twig' with {
                 title: 'Transactions Received'|trans,
                 subtitle: 'Review payment transactions recorded against this client across all gateways.'|trans,
@@ -904,9 +907,6 @@
             } %}
                 {% block section_content %}
                     {% import 'macro_functions.html.twig' as mf %}
-                    {% set txnPage = request.txn_page matches '/^\\d+$/' ? request.txn_page : 1 %}
-                    {% set txnPerPage = request.txn_per_page matches '/^\\d+$/' ? request.txn_per_page : 25 %}
-                    {% set transactions = admin.invoice_transaction_get_list(request|merge({ 'page': txnPage, 'per_page': txnPerPage, 'client_id': client.id, 'sort': request.txn_sort|default(null), 'direction': request.txn_direction|default('ASC') })) %}
                     <div class="table-responsive">
                         <table class="table card-table table-vcenter table-striped text-nowrap">
                             <thead>

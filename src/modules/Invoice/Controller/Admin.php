@@ -226,7 +226,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         }
 
         $response = new Response(
-            (string) json_encode($journal, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
+            json_encode($journal, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
             Response::HTTP_OK,
             ['Content-Type' => 'application/json']
         );

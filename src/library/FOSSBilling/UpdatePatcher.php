@@ -683,7 +683,9 @@ class UpdatePatcher implements InjectionAwareInterface
                     'invoice_id' => (int) $row['id'],
                     'type' => $type,
                     'client_id' => $row['client_id'] !== null ? (int) $row['client_id'] : null,
-                    'snapshot' => json_encode($snapshot),
+                    // Substitute rather than throw on unencodable legacy bytes:
+                    // a single bad row must not wedge the whole patch run.
+                    'snapshot' => json_encode($snapshot, JSON_INVALID_UTF8_SUBSTITUTE),
                     'created_at' => $snapshot['created_at'] ?? date('Y-m-d H:i:s'),
                 ]
             );

@@ -458,6 +458,43 @@ test('security iplookup renders with no record (initial page load)', function ()
     expect($html)->toBeString();
 });
 
+test('client manage page renders related-section footers with tab-level lists', function (): void {
+    // Regression test: the orders/invoices/tickets/balance/history/transactions
+    // lists were assigned inside their embed content blocks, invisible to the
+    // footer blocks under strict_variables ("Variable ... does not exist").
+    // They are assigned at tab level now, so the whole page renders.
+    $emptyList = ['list' => [], 'pages' => 1, 'per_page' => 25, 'page' => 1, 'total' => 0];
+
+    $html = (new StrictTemplateRenderer())->renderTemplate(
+        PATH_MODS . '/Client/templates/admin/mod_client_manage.html.twig',
+        [
+            'app_area' => 'admin',
+            'request' => edgeCaseRequest([
+                'order_page' => 1, 'order_per_page' => 25,
+                'invoice_page' => 1, 'invoice_per_page' => 25,
+                'ticket_page' => 1, 'ticket_per_page' => 25,
+                'balance_page' => 1, 'balance_per_page' => 25,
+                'login_page' => 1, 'login_per_page' => 25,
+                'email_page' => 1, 'email_per_page' => 25,
+                'txn_page' => 1, 'txn_per_page' => 25,
+            ]),
+            'admin' => edgeCaseAdmin([
+                'order_get_list' => $emptyList,
+                'invoice_get_list' => $emptyList,
+                'support_ticket_get_list' => $emptyList,
+                'client_balance_get_list' => $emptyList,
+                'client_login_history_get_list' => $emptyList,
+                'email_email_get_list' => $emptyList,
+                'invoice_transaction_get_list' => $emptyList,
+            ]),
+            'client' => new Tests\Support\PermissiveStub(['id' => 169]),
+        ],
+    );
+
+    expect($html)->toContain('Client Orders')
+        ->and($html)->toContain('Client Invoices');
+});
+
 test('support admin ticket renders with no notes and no rel', function (): void {
     $html = (new StrictTemplateRenderer())->renderTemplate(
         PATH_MODS . '/Support/templates/admin/mod_support_ticket.html.twig',
