@@ -2,12 +2,34 @@
 @use "theme_settings";
 @use "../../../../../../frontend/styles/shared-theme";
 
-.sticky-nav .nav-link {
-  color: var(--tblr-body-color) !important;
-} /* Override to fix top nav bar text colour in dark mode. Can be removed if tabler fix issue */
+// Keep the keyboard skip link above Tabler's fixed sidebar.
+.admin-skip-link {
+    z-index: 1100;
+}
 
-body {
-    font-family: Verdana, sans-serif;
+// Keep navigation readable in both the expanded sidebar and the folded rail.
+.admin-sidebar .navbar-nav {
+    --tblr-nav-link-font-size: 1rem;
+
+    .nav-link-icon {
+        --tblr-nav-link-icon-height: 1.5rem;
+    }
+
+    .nav-link-icon .icon {
+        --tblr-icon-size: 1.5rem;
+    }
+
+    .dropdown-menu {
+        --tblr-dropdown-font-size: 1rem;
+    }
+}
+
+// Bound the expanded mobile menu while keeping long extension lists reachable.
+@media (max-width: 991.98px) {
+    .admin-sidebar #navbar-menu {
+        max-height: 70vh;
+        overflow-y: auto;
+    }
 }
 
 .modal-dialog {
@@ -16,7 +38,22 @@ body {
 }
 
 .page {
-    min-height: calc(100vh - 2px);
+    min-height: calc(100vh - var(--admin-debugbar-top, 0px) - var(--admin-debugbar-bottom, 0px) + var(--admin-debugbar-launcher-bottom, 0px) - 2px);
+    margin-top: var(--admin-debugbar-launcher-top, 0px);
+    padding-bottom: var(--admin-debugbar-launcher-bottom, 0px);
+}
+
+// Keep the closed debugger in its own full-width dock, like the open toolbar.
+body div.phpdebugbar.phpdebugbar-closed {
+    width: 100%;
+    border-inline: 0;
+}
+
+@media (min-width: 992px) {
+    .admin-sidebar.navbar-vertical.navbar-expand-lg {
+        top: var(--admin-debugbar-top, 0px);
+        bottom: var(--admin-debugbar-bottom, 0px);
+    }
 }
 
 .ck.ck-content:not(.ck-comment__input *) {

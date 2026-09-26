@@ -9,6 +9,7 @@
 <head>
     <title>{% block meta_title %}{% endblock %} - {{ company.name }}</title>
     <meta charset="UTF-8">
+    {{ include('partial_admin_theme_init.html.twig') }}
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -27,13 +28,6 @@
 </head>
 
 <body>
-    <script>
-        if (localStorage.getItem('theme') === 'dark') {
-            document.documentElement.setAttribute("data-bs-theme", localStorage.getItem('theme'));
-        } else {
-            document.documentElement.removeAttribute("data-bs-theme");
-        }
-    </script>
 
     {% if not admin %}
     <script>
@@ -47,176 +41,19 @@
     {% if hide_menu is defined and hide_menu %}
     {% block content_wide %}{% endblock %}
     {% else %}
+    <a href="{{ guest.system_current_url|split('#')|first }}#main-content" class="visually-hidden-focusable position-fixed top-0 start-0 p-3 bg-body admin-skip-link">{{ 'Skip to content'|trans }}</a>
     <div class="page">
+        {{ include('partial_admin_sidebar.html.twig') }}
         {% block nav %}{% endblock %}
         <div class="page-wrapper">
             {% block before_content %}{% endblock %}
-            <header class="navbar navbar-expand-lg navbar-light d-print-none">
-               <div class="container-xl">
-                   <div class="d-flex gap-3 align-items-center">
-                       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-menu" aria-controls="navbar-menu" aria-expanded="false" aria-label="{{ 'Toggle navigation'|trans }}">
-                           <span class="navbar-toggler-icon"></span>
-                       </button>
-                       <h1 class="d-none d-sm-flex navbar-brand d-none-navbar-horizontal pe-0 pe-md-3">
-                           {{ include('partial_company_logo.html.twig', {
-                               company: company,
-                               logo_url: company.logo_url,
-                               dark_logo_url: company.logo_url_dark,
-                               image_class: 'navbar-brand-image'
-                           }) }}
-                       </h1>
-                   </div>
-                  <div class="navbar-nav flex-row order-md-last gap-2">
-                    {% set languages = guest.extension_languages(true) %}
-                    {% if languages|length > 1 %}
-                    <div class="nav-item">
-                        <select name="lang" class="form-select js-locale-selector">
-                            {% for lang in languages %}
-                                <option value="{{ lang.locale }}" data-custom-properties="&lt;span class=&quot;flag flag-country-{{ lang.locale|split('_')[1]|lower }} &quot;&gt;&lt;/span&gt;"{% if lang.locale == guest.system_locale %} selected{% endif %}>{{ lang.title }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    {% endif %}
-                     <div class="nav-item d-none d-sm-flex">
-                        <div class="btn-list gap-2">
-                           <a href="https://github.com/FOSSBilling/FOSSBilling" class="btn px-3" target="_blank" rel="noreferrer" title="GitHub">
-                              <svg class="icon m-0">
-                                 <use href="#brand-github" />
-                              </svg>
-                           </a>
-                           <a href="https://fossbilling.org/discord"
-                              class="btn px-3"
-                              id="discord-community-btn"
-                              target="_blank"
-                              rel="noreferrer"
-                              title="{{ 'Discord'|trans }}"
-                              data-bs-toggle="popover"
-                              data-bs-trigger="manual"
-                              data-bs-placement="bottom"
-                              data-bs-content="{{ 'Join our Discord community for support and discussion!'|trans }}">
-                              <svg class="icon m-0">
-                                 <use href="#brand-discord" />
-                              </svg>
-                           </a>
-                           <a href="https://github.com/sponsors/FOSSBilling" class="btn px-3" target="_blank" rel="noreferrer" title="{{ 'Sponsor'|trans }}">
-                              <svg class="icon m-0 text-pink">
-                                 <use href="#heart" />
-                              </svg>
-                           </a>
-                        </div>
-                     </div>
-                      <div class="nav-item">
-                        <a class="nav-link px-0 hide-theme-dark js-theme-toggler"
-                           href="?theme=dark"
-                           data-bs-toggle="tooltip"
-                           data-bs-placement="bottom"
-                           data-bs-original-title="{{ 'Enable dark mode'|trans }}">
-                           <svg class="icon text-dark">
-                              <use href="#moon" />
-                           </svg>
-                        </a>
-                        <a class="nav-link px-0 hide-theme-light js-theme-toggler"
-                           href="?theme=light"
-                           data-bs-toggle="tooltip"
-                           data-bs-placement="bottom"
-                           data-bs-original-title="{{ 'Enable light mode'|trans }}">
-                           <svg class="icon text-white">
-                              <use href="#sun" />
-                           </svg>
-                        </a>
-                     </div>
-                     <div class="nav-item dropdown">
-                        <a class="nav-link d-flex lh-1 text-reset p-0"
-                           href="{{ 'staff/profile'|url }}"
-                            data-bs-toggle="dropdown"
-                            aria-label="{{ 'Open user menu'|trans }}"
-                            aria-expanded="false">
-                            {{ avatar(profile.email, 32, 'avatar avatar-sm') }}
-                            <div class="d-none d-xl-block ps-2">
-                              <div>{{ profile.name }}</div>
-                              <div class="mt-1 small text-muted">{{ profile.email }}</div>
-                           </div>
-                        </a>
-                        <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
-                           <a class="dropdown-item" href="{{ 'staff/profile'|url }}">{{ 'Profile'|trans }}</a>
-                           <a class="dropdown-item" href="{{ 'system'|url }}">{{ 'Settings'|trans }}</a>
-                           <div class="dropdown-divider"></div>
-                           <a class="dropdown-item" href="{{ 'profile/logout'|api_url }}"
-                               {{ fb_api_link({ redirect: 'staff/login'|url }) }}>
-                               {{ 'Logout'|trans }}
-                            </a>
-                        </div>
-                     </div>
-                  </div>
-               </div>
-            </header>
-            <nav class="navbar-expand-lg sticky-nav">
-                <div class="collapse navbar-collapse" id="navbar-menu">
-                    <div class="navbar navbar-light">
-                        <div class="container-xl">
-                             {% set navigation = admin.extension_get_navigation({ 'url': guest.system_current_url }) %}
-                             <ul class="navbar-nav">
-                                <li class="nav-item{% if current_active_menu == 'dashboard' %} active{% endif %}">
-                                    <a class="nav-link{% if current_active_menu == 'dashboard' %} active{% endif %}" href="{{ '/'|url }}"{% if current_active_menu == 'dashboard' %} aria-current="page"{% endif %}>
-                                        <span class="d-none d-xxl-block me-1">
-                                            <svg class="icon">
-                                                <use href="#home" />
-                                            </svg>
-                                        </span>
-                                        <span>{{ 'Dashboard'|trans }}</span>
-                                    </a>
-                                  </li>
-                             {% for location, group in navigation %}
-                             {% if group.subpages %}
-                                <li class="nav-item dropdown{% if current_active_menu == location %} active{% endif %}">
-                                    <a class="nav-link dropdown-toggle{% if current_active_menu == location %} active{% endif %}" href="{{ group.uri ?: '#' }}" data-bs-toggle="dropdown" data-bs-auto-close="outside" role="button" aria-expanded="false"{% if current_active_menu == location %} aria-current="page"{% endif %}>
-                                        <svg class="icon d-none d-xxl-block me-1">
-                                            <use href="#{{ group.class }}" />
-                                         </svg>
-                                        <span class="nav-link-title">{{ group.label|trans }}</span>
-                                    </a>
-                                    <div class="dropdown-menu">
-                                        <div class="dropdown-menu-columns">
-                                            <div class="dropdown-menu-column">
-                                                {% for subpage in group.subpages %}
-                                                <a class="dropdown-item" href="{{ subpage.uri }}">{{ subpage.label|trans }}</a>
-                                                {% endfor %}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </li>
-                            {% endif %}
-                            {% endfor %}
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#navbar-base" data-bs-toggle="dropdown" data-bs-auto-close="outside" role="button" aria-expanded="false" >
-                                    <svg class="icon d-none d-xxl-block me-1">
-                                         <use href="#help" />
-                                      </svg>
-                                    <span class="nav-link-title">{{ 'Help'|trans }}</span>
-                                  </a>
-                                  <div class="dropdown-menu">
-                                    <div class="dropdown-menu-columns">
-                                        <div class="dropdown-menu-column">
-                                            <a class="dropdown-item" href="https://docs.fossbilling.org/" target="_blank" rel="noopener">{{ 'Documentation'|trans }}</a>
-                                            <a class="dropdown-item" href="https://github.com/FOSSBilling/FOSSBilling" target="_blank" rel="noopener">GitHub</a>
-                                            <a class="dropdown-item" href="https://github.com/FOSSBilling/FOSSBilling/issues" target="_blank" rel="noopener">{{ 'Report a Bug'|trans }}</a>
-                                            <a class="dropdown-item" href="https://fossbilling.org/discord" target="_blank" rel="noopener">{{ 'Discord'|trans }}</a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </li>
-                        </ul>
-                        </div>
-                    </div>
-                  </div>
-            </nav>
-            <main class="page-body">
-                <div class="container-xl">
+            <main class="page-body" id="main-content" tabindex="-1">
+                <div class="container-fluid px-lg-4">
                     <nav class="mb-3" aria-label="breadcrumb">
                         {% block breadcrumbs %}
                         <ol class="breadcrumb">
                             <li class="breadcrumb-item">
-                                <a href="{{ '/'|url }}">
+                                <a href="{{ '/'|url }}" aria-label="{{ 'Dashboard'|trans }}">
                                     <svg class="icon">
                                         <use href="#home" />
                                     </svg>
@@ -234,7 +71,7 @@
             </main>
 
             <footer class="footer footer-transparent d-print-none">
-                <div class="container-xl">
+                <div class="container-fluid px-lg-4">
                     {{ render_widgets('admin.theme.footer.start') }}
                     <p>&copy; {{ 'now'|date('Y') }} <a href="https://github.com/FOSSBilling">FOSSBilling contributors</a>.
                     Licensed under <a href="https://www.apache.org/licenses/LICENSE-2.0">Apache 2.0</a>.
