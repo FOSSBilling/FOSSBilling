@@ -115,33 +115,38 @@ test('autosize grows plain-text notes when content changes', async ({ page }) =>
 });
 
 for (const mode of ['success', 'unavailable', 'denied'] as const) {
-  test(`clipboard supports ${mode} Clipboard API access with accessible feedback`, async ({ page }) => {
-    await page.evaluate((mode) => {
-      (window as any).copiedText = '';
-      Object.defineProperty(navigator, 'clipboard', {
-        configurable: true,
-        value: mode === 'unavailable' ? undefined : {
-          writeText: async (text: string) => {
-            if (mode === 'denied') throw new Error('Permission denied');
-            (window as any).copiedText = text;
+  for (const control of [
+    'class="clipboard-copy" data-clipboard-target="#snippet"',
+    'data-bs-toggle="clipboard" data-bs-target="#snippet"',
+  ]) {
+    test(`clipboard supports ${mode} access with ${control}`, async ({ page }) => {
+      await mount(page, `<textarea id="snippet">Example snippet</textarea><button type="button" ${control}><span class="clipboard-label">Copy</span><span class="clipboard-feedback" hidden>Copied</span></button>`);
+      await page.evaluate((mode) => {
+        (window as any).copiedText = '';
+        Object.defineProperty(navigator, 'clipboard', {
+          configurable: true,
+          value: mode === 'unavailable' ? undefined : {
+            writeText: async (text: string) => {
+              if (mode === 'denied') throw new Error('Permission denied');
+              (window as any).copiedText = text;
+            },
           },
-        },
-      });
-      document.execCommand = (command) => {
-        if (command !== 'copy') return false;
-        (window as any).copiedText = (document.activeElement as HTMLTextAreaElement).value;
-        return true;
-      };
-    }, mode);
-    await mount(page, `<textarea id="snippet">Example snippet</textarea><button type="button" class="clipboard-copy" data-bs-toggle="clipboard" data-bs-target="#snippet"><span class="clipboard-label">Copy</span><span class="clipboard-feedback" hidden>Copied</span></button>`);
-    const button = page.getByRole('button', { name: 'Copy', exact: true });
-    await button.focus();
-    await button.press('Enter');
-    await expect(page.locator('.clipboard-feedback')).toBeVisible();
-    expect(await page.evaluate(() => (window as any).copiedText)).toBe('Example snippet');
-    await expect(page.locator('.clipboard-copy')).toBeFocused();
-    await expect(page.locator('.clipboard-label')).toBeVisible({ timeout: 4000 });
-  });
+        });
+        document.execCommand = (command) => {
+          if (command !== 'copy') return false;
+          (window as any).copiedText = (document.activeElement as HTMLTextAreaElement).value;
+          return true;
+        };
+      }, mode);
+      const button = page.getByRole('button', { name: 'Copy', exact: true });
+      await button.focus();
+      await button.press('Enter');
+      await expect(page.locator('.clipboard-feedback')).toBeVisible();
+      expect(await page.evaluate(() => (window as any).copiedText)).toBe('Example snippet');
+      await expect(page.locator('button')).toBeFocused();
+      await expect(page.locator('.clipboard-label')).toBeVisible({ timeout: 4000 });
+    });
+  }
 }
 
 test('a same-day range preserves both endpoints', async ({ page }) => {
@@ -173,4 +178,23 @@ test('Tom Select follows Tabler input sizing and keeps keyboard focus visible', 
   expect(Math.abs(nativeHeight - selectHeight)).toBeLessThanOrEqual(3);
   await page.locator('.ts-control input').focus();
   await expect(page.locator('.ts-control')).toHaveCSS('outline-style', 'solid');
+});
+
+test('typed ranges reach form submission without blur and clear stale validation', async ({ page }) => {
+  await mount(page, range('2026-09-01 to 2026-09-03'));
+  await page.locator('form').evaluate((form: HTMLFormElement) => {
+    form.addEventListener('submit', event => {
+      event.preventDefault();
+      form.dataset.submitted = JSON.stringify(Object.fromEntries(new FormData(form)));
+    });
+  });
+  const input = page.locator('.datepicker');
+  await input.fill('2026-02-30');
+  expect(await input.evaluate((el: HTMLInputElement) => el.checkValidity())).toBe(false);
+  await input.fill('2026-09-15 to 2026-09-17');
+  await expect(input).toBeFocused();
+  await page.locator('form').evaluate((form: HTMLFormElement) => form.requestSubmit());
+  await expect(page.locator('form')).toHaveAttribute('data-submitted', JSON.stringify({
+    date_to: '2026-09-17', date_from: '2026-09-15',
+  }));
 });

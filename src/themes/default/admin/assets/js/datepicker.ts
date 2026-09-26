@@ -93,12 +93,7 @@ export default function initDatepickers() {
       publish(dates);
     });
     input.addEventListener('change', syncInput);
-    input.addEventListener('input', () => {
-      if (calendarChange) return;
-      if (!input.value.trim()) {
-        syncInput();
-      }
-    });
+    input.addEventListener('input', syncInput);
     input.addEventListener('focus', () => void picker.show());
 
     const clear = document.createElement('button');

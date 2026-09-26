@@ -50,7 +50,7 @@ export default function initClipboard(): void {
 
   document.addEventListener('error.bs.clipboard', event => {
     const button = event.target;
-    if (!(button instanceof HTMLElement) || !button.matches('.clipboard-copy')) {
+    if (!(button instanceof HTMLElement) || !button.matches(CLIPBOARD_CONTROL_SELECTOR)) {
       return;
     }
 
