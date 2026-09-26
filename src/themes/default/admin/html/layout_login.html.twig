@@ -3,6 +3,7 @@
 <head>
     <title>{% block meta_title %}{% endblock %}</title>
     <meta charset="UTF-8">
+    {{ include('partial_admin_theme_init.html.twig') }}
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -18,13 +19,6 @@
 </head>
 
 <body class="border-top-wide border-primary d-flex flex-column">
-    <script>
-        if (localStorage.getItem('theme') === 'dark') {
-            document.documentElement.setAttribute("data-bs-theme", localStorage.getItem('theme'));
-        } else {
-            document.documentElement.removeAttribute("data-bs-theme");
-        }
-    </script>
 
     {% block content %}{% endblock %}
     {% block js %}{% endblock %}
