@@ -17,13 +17,16 @@
         </div>
         <div class="navbar-footer">
             <ul class="navbar-nav">
-                <li class="nav-item dropup">
-                    <a class="nav-link text-reset" href="{{ 'staff/profile'|url }}" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-label="{{ 'Open user menu'|trans }}" aria-expanded="false">
+                <li class="nav-item dropup flex-row align-items-center">
+                    <a class="nav-link text-reset flex-grow-1 overflow-hidden" href="{{ 'staff/profile'|url }}" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-label="{{ 'Open user menu'|trans }}" aria-expanded="false">
                         {{ avatar(profile.email, 32, 'avatar avatar-sm') }}
                         <span class="nav-link-title overflow-hidden">
                             <span class="d-block text-truncate">{{ profile.name }}</span>
                             <span class="d-block small text-secondary text-truncate">{{ profile.email }}</span>
                         </span>
+                    </a>
+                    <a class="btn btn-icon btn-ghost-secondary admin-sidebar-logout" href="{{ 'profile/logout'|api_url }}" {{ fb_api_link({ redirect: 'staff/login'|url }) }} aria-label="{{ 'Logout'|trans }}" data-bs-toggle="tooltip" title="{{ 'Logout'|trans }}">
+                        <svg class="icon" aria-hidden="true"><use href="#logout" /></svg>
                     </a>
                     <div class="dropdown-menu dropdown-menu-end dropdown-menu-lg-start">
                         <a class="dropdown-item" href="{{ 'staff/profile'|url }}">{{ 'Profile'|trans }}</a>
@@ -70,7 +73,7 @@
                     </li>
                     {% for location, group in navigation %}
                         {% if group.subpages %}
-                            {% set expanded = current_active_menu == location %}
+                            {% set expanded = current_active_menu == location or group.active %}
                             <li class="nav-item dropdown{% if expanded %} active{% endif %}">
                                 <button class="nav-link dropdown-toggle text-start" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-controls="admin-nav-{{ loop.index }}" aria-expanded="{{ expanded ? 'true' : 'false' }}">
                                     <span class="nav-link-icon"><svg class="icon" aria-hidden="true"><use href="#{{ group.class }}" /></svg></span>
@@ -78,8 +81,7 @@
                                 </button>
                                 <ul class="dropdown-menu{% if expanded %} show{% endif %}" id="admin-nav-{{ loop.index }}">
                                     {% for subpage in group.subpages %}
-                                        {% set is_current = subpage.uri == guest.system_current_url %}
-                                        <li><a class="dropdown-item text-wrap{% if is_current %} active{% endif %}" href="{{ subpage.uri }}"{% if is_current %} aria-current="page"{% endif %}>{{ subpage.label|trans }}</a></li>
+                                        <li><a class="dropdown-item text-wrap{% if subpage.active %} active{% endif %}" href="{{ subpage.uri }}"{% if subpage.active %} aria-current="page"{% endif %}>{{ subpage.label|trans }}</a></li>
                                     {% endfor %}
                                 </ul>
                             </li>
