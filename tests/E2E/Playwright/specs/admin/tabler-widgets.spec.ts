@@ -17,10 +17,12 @@ test.beforeAll(async () => {
         import initDatepickers from './src/themes/default/admin/assets/js/datepicker.ts';
         import initClipboard from './src/themes/default/admin/assets/js/clipboard.ts';
         import TomSelect from 'tom-select';
+        import { Clipboard } from '@tabler/core';
 
         document.querySelectorAll('.test-select').forEach(el => new TomSelect(el));
         window.initDatepickers = initDatepickers;
         initDatepickers();
+        document.querySelectorAll('[data-test-initialized]').forEach(el => Clipboard.getOrCreateInstance(el));
         initClipboard();
       `,
       resolveDir: root,
@@ -118,6 +120,7 @@ for (const mode of ['success', 'unavailable', 'denied'] as const) {
   for (const control of [
     'class="clipboard-copy" data-clipboard-target="#snippet"',
     'data-bs-toggle="clipboard" data-bs-target="#snippet"',
+    'data-bs-toggle="clipboard" data-clipboard-target="#snippet" data-test-initialized',
   ]) {
     test(`clipboard supports ${mode} access with ${control}`, async ({ page }) => {
       await mount(page, `<textarea id="snippet">Example snippet</textarea><button type="button" ${control}><span class="clipboard-label">Copy</span><span class="clipboard-feedback" hidden>Copied</span></button>`);

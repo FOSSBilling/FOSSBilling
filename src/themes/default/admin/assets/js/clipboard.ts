@@ -27,6 +27,8 @@ function initializeClipboard(button: HTMLElement): void {
   const legacyTarget = button.dataset.clipboardTarget;
   if (!button.hasAttribute('data-bs-target') && legacyTarget && LEGACY_TARGET_SELECTOR.test(legacyTarget)) {
     button.dataset.bsTarget = legacyTarget;
+    // Existing instances retain the target read before the legacy attribute was mapped.
+    Clipboard.getInstance(button)?.dispose();
   }
 
   Clipboard.getOrCreateInstance(button);
