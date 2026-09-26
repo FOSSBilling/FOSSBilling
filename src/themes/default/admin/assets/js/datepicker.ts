@@ -110,10 +110,12 @@ export default function initDatepickers() {
     const wrapper = input.closest('.input-icon');
     if (wrapper) {
       wrapper.classList.add('datepicker-wrapper');
-      wrapper.append(clear);
-    } else {
-      input.after(clear);
     }
+    // Place the button directly after the input so a trailing
+    // .input-icon-addon keeps Tabler's :last-child right-edge position.
+    // Appending it last would flip the calendar icon to the left,
+    // overlapping the field value.
+    input.after(clear);
     input.form?.addEventListener('reset', () => {
       // The browser restores defaultValue after dispatching the reset event.
       setTimeout(syncInput, 0);

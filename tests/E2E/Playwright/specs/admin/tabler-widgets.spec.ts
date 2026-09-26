@@ -98,6 +98,21 @@ test('single dates use ISO values, retain calendar CSS and follow live theme cha
   await expect(page.getByRole('button', { name: 'Clear date' })).toHaveCount(1);
 });
 
+test('datepicker keeps the calendar icon clear of the field value', async ({ page }) => {
+  await mount(page, '<form><div class="input-icon" style="width: 320px"><input class="form-control datepicker" name="date" value="2026-09-26"><span class="input-icon-addon"><svg class="icon"></svg></span></div></form>');
+  // The addon must stay the wrapper's last child: Tabler positions a
+  // trailing .input-icon-addon at the field's right edge, while any other
+  // position flips it left, overlapping the value.
+  await expect(page.locator('.input-icon')).toHaveJSProperty('lastElementChild.className', 'input-icon-addon');
+  const wrapper = page.locator('.input-icon');
+  const addon = page.locator('.input-icon-addon');
+  const wrapperBox = (await wrapper.boundingBox())!;
+  const addonBox = (await addon.boundingBox())!;
+  expect(wrapperBox.x + wrapperBox.width - (addonBox.x + addonBox.width)).toBeLessThanOrEqual(2);
+  const inputBox = (await page.locator('.datepicker').boundingBox())!;
+  expect(addonBox.x).toBeGreaterThanOrEqual(inputBox.x + inputBox.width / 2);
+});
+
 test('supports dates before 1970 and month/year navigation', async ({ page }) => {
   await mount(page, '<div class="input-icon"><input class="form-control datepicker" value="1950-06-15"></div>');
   await page.locator('.datepicker').focus();
