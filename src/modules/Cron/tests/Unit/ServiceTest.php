@@ -48,7 +48,7 @@ test('getDi returns dependency injection container', function (): void {
 });
 
 test('getCronInfo returns cron information array', function (): void {
-    $systemServiceMock = Mockery::mock(SystemService::class);
+    $systemServiceMock = Mockery::mock(Box\Mod\System\Service::class);
     $systemServiceMock->shouldReceive('getParamValue')
         ->atLeast()->once();
 
@@ -62,7 +62,7 @@ test('getCronInfo returns cron information array', function (): void {
 });
 
 test('getLastExecutionTime returns string timestamp', function (): void {
-    $systemServiceMock = Mockery::mock(SystemService::class);
+    $systemServiceMock = Mockery::mock(Box\Mod\System\Service::class);
     $systemServiceMock->shouldReceive('getParamValue')
         ->atLeast()->once()
         ->andReturn('2012-12-12 12:12:12');
@@ -177,7 +177,7 @@ test('runCrons isolates failures in core batch tasks', function (string $failedT
     $updateFinalization->shouldReceive('isRequired')->once()->andReturnFalse();
     $updateFinalization->shouldReceive('healSchemaDrift')->once()->andReturnNull();
 
-    $systemService = Mockery::mock(SystemService::class);
+    $systemService = Mockery::mock(Box\Mod\System\Service::class);
     $systemService->shouldReceive('setParamValue')
         ->once()
         ->with('last_cron_exec', Mockery::type('string'), true);
@@ -266,7 +266,7 @@ test('runCrons still executes tasks when schema drift healing fails', function (
     $updateFinalization->shouldReceive('isRequired')->once()->andReturnFalse();
     $updateFinalization->shouldReceive('healSchemaDrift')->once()->andThrow(new RuntimeException('lock unavailable'));
 
-    $systemService = Mockery::mock(SystemService::class);
+    $systemService = Mockery::mock(Box\Mod\System\Service::class);
     $systemService->shouldReceive('setParamValue')
         ->once()
         ->with('last_cron_exec', Mockery::type('string'), true);
