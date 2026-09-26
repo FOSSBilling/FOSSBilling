@@ -96,6 +96,13 @@ class Service implements InjectionAwareInterface
         'due_at', 'reminded_at', 'paid_at',
     ];
 
+    /** Keys of $data that updateInvoice() actually consumes; routing keys (id, issue) and anything else are ignored. */
+    private const array UPDATEABLE_FIELDS = [
+        'gateway_id', 'text_1', 'text_2', 'paid_at', 'due_at', 'serie', 'nr',
+        'status', 'taxrate', 'taxname', 'issued', 'notes', 'created_at',
+        'new_item', 'items',
+    ];
+
     protected ?\Pimple\Container $di = null;
     private Filesystem $filesystem;
     private ?int $invoiceNumberPadding = null;
@@ -998,7 +1005,7 @@ class Service implements InjectionAwareInterface
             $this->executeInvoiceItemTasks($invoiceItems, $this->di['mod_service']('Invoice', 'InvoiceItem'));
         }
 
-        $this->di['logger']->info("Marked invoice {$invoice->getId()} as paid.");
+        $this->di['logger']->info('Marked invoice #{invoice_id} as paid', ['invoice_id' => $invoice->getId()]);
 
         $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_PAID);
 
@@ -1296,14 +1303,14 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        $this->di['logger']->info("Prepared new invoice {$invoiceId}.");
+        $this->di['logger']->info('Prepared new invoice #{invoice_id}', ['invoice_id' => $invoiceId]);
 
         $this->recordJournalEvent($model, InvoiceEvent::TYPE_CREATED);
 
         if (isset($data['issue']) && $data['issue']) {
             try {
                 $this->issueInvoice($model, ['id' => $invoiceId]);
-                $this->di['logger']->info("Issued invoice {$invoiceId} instantly.");
+                $this->di['logger']->info('Issued invoice #{invoice_id} instantly', ['invoice_id' => $invoiceId]);
             } catch (\Exception $e) {
                 $this->di['logger']->warning($e->getMessage());
             }
@@ -1423,7 +1430,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['event_dispatcher']->dispatch(new AfterAdminInvoiceIssueEvent((int) $invoice->getId()));
 
-        $this->di['logger']->info("Issued invoice {$invoice->getId()}.");
+        $this->di['logger']->info('Issued invoice #{invoice_id}', ['invoice_id' => $invoice->getId()]);
 
         $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_ISSUED);
 
@@ -1725,7 +1732,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['event_dispatcher']->dispatch(new AfterAdminInvoiceRefundEvent((int) $invoice->getId()));
 
-        $this->di['logger']->info("Refunded invoice #{$invoice->getId()}.");
+        $this->di['logger']->info('Refunded invoice #{invoice_id}', ['invoice_id' => $invoice->getId()]);
 
         $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_REFUNDED);
 
@@ -1999,7 +2006,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['event_dispatcher']->dispatch(new AfterAdminInvoiceDebitEvent((int) $invoice->getId(), $result));
 
-        $this->di['logger']->info("Debited invoice #{$invoice->getId()}.");
+        $this->di['logger']->info('Debited invoice #{invoice_id}', ['invoice_id' => $invoice->getId()]);
 
         $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_DEBITED);
 
@@ -2117,7 +2124,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['event_dispatcher']->dispatch(new AfterAdminInvoiceAttachOrderEvent((int) $invoice->getId(), (int) $order->getId()));
 
-        $this->di['logger']->info("Attached order {$order->getId()} to invoice {$invoice->getId()}.");
+        $this->di['logger']->info('Attached order #{order_id} to invoice #{invoice_id}', ['order_id' => $order->getId(), 'invoice_id' => $invoice->getId()]);
 
         $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_ORDER_ATTACHED, ['order_id' => (int) $order->getId()]);
 
@@ -2184,7 +2191,7 @@ class Service implements InjectionAwareInterface
             ]);
         }
 
-        $this->di['logger']->info("Canceled invoice #{$original->getId()} without replacement.");
+        $this->di['logger']->info('Canceled invoice #{invoice_id} without replacement', ['invoice_id' => $original->getId()]);
 
         $this->recordJournalEvent($original, InvoiceEvent::TYPE_CANCELED, ['reason' => $reason]);
 
@@ -2388,7 +2395,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['event_dispatcher']->dispatch(new AfterAdminInvoiceReissueEvent((int) $original->getId(), $result));
 
-        $this->di['logger']->info("Reissued invoice #{$original->getId()} as #{$result}.");
+        $this->di['logger']->info('Reissued invoice #{invoice_id} as #{replacement_id}', ['invoice_id' => $original->getId(), 'replacement_id' => $result]);
 
         $this->recordJournalEvent($original, InvoiceEvent::TYPE_REISSUED, ['replacement_id' => $result]);
 
@@ -2552,7 +2559,7 @@ class Service implements InjectionAwareInterface
         $previousStatus = null;
         $wasIssued = false;
 
-        $changedFields = array_values(array_filter(array_keys($data), is_string(...)));
+        $changedFields = array_values(array_intersect(array_filter(array_keys($data), is_string(...)), self::UPDATEABLE_FIELDS));
         sort($changedFields);
         $this->di['event_dispatcher']->dispatch(new BeforeAdminInvoiceUpdateEvent((int) $model->getId(), $changedFields));
 
@@ -2647,7 +2654,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['event_dispatcher']->dispatch(new AfterAdminInvoiceUpdateEvent((int) $model->getId()));
 
-        $this->di['logger']->info("Updated invoice {$model->getId()}.");
+        $this->di['logger']->info('Updated invoice #{invoice_id}', ['invoice_id' => $model->getId()]);
 
         $this->recordJournalEvent($model, InvoiceEvent::TYPE_UPDATED, ['changed_fields' => $changedFields]);
 
@@ -3110,7 +3117,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['event_dispatcher']->dispatch(new AfterAdminGenerateRenewalInvoiceEvent((int) $model->getId(), (int) $invoice->getId()));
 
-        $this->di['logger']->info("Generated renewal invoice #{$invoice->getId()}.");
+        $this->di['logger']->info('Generated renewal invoice #{invoice_id}', ['invoice_id' => $invoice->getId()]);
 
         return $invoice->getId();
     }

@@ -950,6 +950,18 @@
         <div class="tab-pane fade" id="tab-history" role="tabpanel">
             <div class="card-body">
                 {% set journal = admin.invoice_journal({'id': invoice.id}) %}
+                {% set journal_labels = {
+                    'created': 'Created'|trans,
+                    'issued': 'Issued'|trans,
+                    'updated': 'Updated'|trans,
+                    'paid': 'Paid'|trans,
+                    'refunded': 'Refunded'|trans,
+                    'debited': 'Debited'|trans,
+                    'canceled': 'Canceled'|trans,
+                    'reissued': 'Reissued'|trans,
+                    'order_attached': 'Order attached'|trans,
+                    'reminder': 'Reminder'|trans,
+                } %}
                 <p class="text-secondary mb-3">{{ 'Every lifecycle transition is recorded here with a snapshot of the invoice at that time, including past buyer and seller details.'|trans }}</p>
                 <table class="table card-table table-vcenter table-striped text-nowrap">
                     <thead>
@@ -963,7 +975,7 @@
                     <tbody>
                         {% for entry in journal %}
                         <tr>
-                            <td>{{ mf.text_badge(entry.type|replace({'_': ' '})|title, 'text-bg-secondary') }}</td>
+                            <td>{{ mf.text_badge(journal_labels[entry.type]|default(entry.type|replace({'_': ' '})|title), 'text-bg-secondary') }}</td>
                             <td>
                                 {% if entry.admin_id %}
                                 <a href='{{ "staff/manage/#{entry.admin_id}"|url }}'>{{ 'Admin'|trans }} #{{ entry.admin_id }}</a>
@@ -991,7 +1003,7 @@
                     <div class="modal-dialog modal-lg">
                         <div class="modal-content">
                             <div class="modal-header">
-                                <h5 class="modal-title">{{ entry.type|replace({'_': ' '})|title }} - {{ entry.created_at|format_datetime }}</h5>
+                                <h5 class="modal-title">{{ journal_labels[entry.type]|default(entry.type|replace({'_': ' '})|title) }} - {{ entry.created_at|format_datetime }}</h5>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
                             </div>
                             <div class="modal-body">

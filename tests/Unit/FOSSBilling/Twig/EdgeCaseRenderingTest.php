@@ -495,6 +495,28 @@ test('client manage page renders related-section footers with tab-level lists', 
         ->and($html)->toContain('Client Invoices');
 });
 
+test('invoice history tab renders translatable labels for every journal type', function (): void {
+    $types = ['created', 'issued', 'updated', 'paid', 'refunded', 'debited', 'canceled', 'reissued', 'order_attached', 'reminder'];
+    $journal = [];
+    foreach ($types as $i => $type) {
+        $journal[] = ['id' => $i + 1, 'type' => $type, 'admin_id' => null, 'client_id' => null, 'snapshot' => null, 'created_at' => '2026-01-01 00:00:00'];
+    }
+
+    $html = (new StrictTemplateRenderer())->renderTemplate(
+        PATH_MODS . '/Invoice/templates/admin/mod_invoice_invoice.html.twig',
+        [
+            'app_area' => 'admin',
+            'request' => edgeCaseRequest(['id' => 1]),
+            'admin' => edgeCaseAdmin(['invoice_journal' => $journal]),
+            'invoice' => new Tests\Support\PermissiveStub(['id' => 1]),
+        ],
+    );
+
+    expect($html)->toContain('Order attached')
+        ->and($html)->toContain('Reissued')
+        ->and($html)->not->toContain('order_attached');
+});
+
 test('support admin ticket renders with no notes and no rel', function (): void {
     $html = (new StrictTemplateRenderer())->renderTemplate(
         PATH_MODS . '/Support/templates/admin/mod_support_ticket.html.twig',

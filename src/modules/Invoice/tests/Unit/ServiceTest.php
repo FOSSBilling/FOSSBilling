@@ -1004,7 +1004,8 @@ test('marks invoice as paid', function (): void {
     });
     $di['em'] = $em;
     $di['event_dispatcher'] = $eventDispatcher;
-    $di['logger'] = new Tests\Helpers\TestLogger();
+    $logger = new Tests\Helpers\TestLogger();
+    $di['logger'] = $logger;
 
     $serviceMock->setDi($di);
     // The journal write itself is covered by the recorder tests; here only
@@ -1017,7 +1018,12 @@ test('marks invoice as paid', function (): void {
         ->and($invoiceModel->serie)->toBe('FOSS')
         ->and($events)->toHaveCount(1)
         ->and($events[0])->toBeInstanceOf(AfterAdminInvoicePaymentReceivedEvent::class)
-        ->and($events[0]->invoiceId)->toBe((int) $invoiceModel->getId());
+        ->and($events[0]->invoiceId)->toBe((int) $invoiceModel->getId())
+        // Staff activity feed entry (via the logger bridge).
+        ->and($logger->calls)->toContain([
+            'method' => 'info',
+            'params' => ['Marked invoice #{invoice_id} as paid', ['invoice_id' => $invoiceModel->getId()]],
+        ]);
 });
 
 test('markAsPaidByAdmin refuses canceled and replaced invoices before any write', function (): void {
@@ -1477,7 +1483,8 @@ test('issues an invoice', function (): void {
     $di['em']->shouldReceive('persist')->atLeast()->once();
     $di['em']->shouldReceive('flush')->atLeast()->once();
     $di['event_dispatcher'] = $eventDispatcher;
-    $di['logger'] = new Tests\Helpers\TestLogger();
+    $logger = new Tests\Helpers\TestLogger();
+    $di['logger'] = $logger;
 
     $systemService = Mockery::mock(SystemService::class);
     $systemService->shouldReceive('getParamValue')
@@ -1515,7 +1522,12 @@ test('issues an invoice', function (): void {
         ->and($steps[0]->invoiceId)->toBe((int) $invoiceModel->getId())
         ->and($steps[1])->toBe('credits')
         ->and($steps[2])->toBeInstanceOf(AfterAdminInvoiceIssueEvent::class)
-        ->and($steps[2]->invoiceId)->toBe((int) $invoiceModel->getId());
+        ->and($steps[2]->invoiceId)->toBe((int) $invoiceModel->getId())
+        // Staff activity feed entry (via the logger bridge).
+        ->and($logger->calls)->toContain([
+            'method' => 'info',
+            'params' => ['Issued invoice #{invoice_id}', ['invoice_id' => $invoiceModel->getId()]],
+        ]);
 });
 
 test('typed invoice issue listener emails an unpaid invoice and extends its link', function (): void {
@@ -2265,7 +2277,9 @@ test('updates an invoice', function (): void {
         ->and($eventDispatcher->events)->toHaveCount(2)
         ->and($eventDispatcher->events[0])->toBeInstanceOf(BeforeAdminInvoiceUpdateEvent::class)
         ->and($eventDispatcher->events[0]->invoiceId)->toBe((int) $invoiceModel->getId())
-        ->and($eventDispatcher->events[0]->changedFields)->toContain('buyer_email', 'notes')
+        ->and($eventDispatcher->events[0]->changedFields)->toBe(['due_at', 'gateway_id', 'issued', 'items', 'new_item', 'notes', 'paid_at', 'status', 'taxname', 'taxrate', 'text_1', 'text_2'])
+        // Stale buyer/seller keys are ignored, so they must not appear as changed.
+        ->and($eventDispatcher->events[0]->changedFields)->not->toContain('buyer_email', 'seller_email')
         ->and($eventDispatcher->events[1])->toBeInstanceOf(AfterAdminInvoiceUpdateEvent::class)
         ->and($eventDispatcher->events[1]->invoiceId)->toBe((int) $invoiceModel->getId());
 });
@@ -5733,7 +5747,8 @@ test('cancelInvoice voids an issued unpaid invoice without replacement', functio
     $di['em'] = $em;
     $di['mod_service'] = $di->protect(moduleService(['product' => $productService]));
     $di['event_dispatcher'] = $eventDispatcher;
-    $di['logger'] = new Tests\Helpers\TestLogger();
+    $logger = new Tests\Helpers\TestLogger();
+    $di['logger'] = $logger;
     $serviceMock->setDi($di);
     $serviceMock->shouldReceive('recordJournalEvent')
         ->once()
@@ -5745,7 +5760,12 @@ test('cancelInvoice voids an issued unpaid invoice without replacement', functio
         ->and($eventDispatcher->events[0])->toBeInstanceOf(BeforeAdminInvoiceCancelEvent::class)
         ->and($eventDispatcher->events[0]->invoiceId)->toBe(10)
         ->and($eventDispatcher->events[1])->toBeInstanceOf(AfterAdminInvoiceCancelEvent::class)
-        ->and($eventDispatcher->events[1]->invoiceId)->toBe(10);
+        ->and($eventDispatcher->events[1]->invoiceId)->toBe(10)
+        // Staff activity feed entry (via the logger bridge).
+        ->and($logger->calls)->toContain([
+            'method' => 'info',
+            'params' => ['Canceled invoice #{invoice_id} without replacement', ['invoice_id' => 10]],
+        ]);
 });
 
 test('cancelInvoice emails the client when void notifications are opted in', function (): void {
