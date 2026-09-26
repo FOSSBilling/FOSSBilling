@@ -255,6 +255,26 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
+     * Cancel (void) an approved unpaid invoice without issuing a replacement.
+     * The invoice keeps its number with a canceled status so the audit trail
+     * survives. Linked orders keep pointing at it for history; transactions
+     * are detached but kept.
+     *
+     * @optional string $reason - reason recorded in the invoice notes
+     *
+     * @return bool
+     */
+    #[RequiredParams(['id' => 'Invoice ID is missing'])]
+    public function cancel($data)
+    {
+        $this->checkPermissions('invoice', 'manage_invoices');
+
+        $model = $this->_getInvoice($data);
+
+        return $this->getService()->cancelInvoice($model, $data);
+    }
+
+    /**
      * Update invoice details.
      *
      * @optional string $paid_at - Invoice payment date (Y-m-d) or empty to remove
@@ -358,6 +378,11 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
     /**
      * Delete invoice.
+     *
+     * Unapproved unpaid drafts are always deletable. Approved unpaid and
+     * canceled invoices additionally require relaxed invoice immutability.
+     * Paid, refunded, and note/reissue-linked invoices cannot be deleted;
+     * cancel, reissue, or refund them instead.
      *
      * @return bool
      */

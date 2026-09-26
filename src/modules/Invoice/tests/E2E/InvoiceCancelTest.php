@@ -19,13 +19,13 @@ use function Tests\Helpers\assertApiResultIsArray;
 use function Tests\Helpers\assertApiResultIsInt;
 use function Tests\Helpers\assertApiSuccess;
 
-test('approved invoices are locked for editing unless the setting permits it', function (): void {
+test('approved unpaid invoices can be canceled, and deleted when relaxed', function (): void {
     Tests\Helpers\ApiClient::resetCookies();
     $productId = null;
 
     try {
-        $productId = lockEditCreateProduct(100.0);
-        ['id' => $clientId] = lockEditCreateClient();
+        $productId = cancelCreateProduct(50.0);
+        ['id' => $clientId] = cancelCreateClient();
 
         $created = Tests\Helpers\ApiClient::request('admin/order/create', [
             'client_id' => $clientId,
@@ -36,26 +36,40 @@ test('approved invoices are locked for editing unless the setting permits it', f
         assertApiResultIsInt($created);
         $orderId = (int) $created->getResult();
 
-        $order = lockEditGetOrder($orderId);
+        $order = cancelGetOrder($orderId);
         $invoiceId = (int) $order['unpaid_invoice_id'];
 
-        $invoice = lockEditGetInvoice($invoiceId);
+        $invoice = cancelGetInvoice($invoiceId);
         expect($invoice['approved'])->toBeTrue();
-        expect($invoice['editable'])->toBeFalse();
+        expect($invoice['cancellable'])->toBeTrue();
 
-        // Locked: adding a line is refused.
-        $blocked = Tests\Helpers\ApiClient::request('admin/invoice/update', [
-            'id' => $invoiceId,
-            'new_item' => ['title' => 'E2E late fee', 'price' => 5, 'quantity' => 1],
-        ]);
-        expect($blocked->wasSuccessful())->toBeFalse();
-        expect($blocked->getErrorMessage())->toContain('can no longer be edited');
-
-        // Locked: deleting the issued invoice is refused.
+        // Issued invoices cannot be hard-deleted by default.
         $deleteBlocked = Tests\Helpers\ApiClient::request('admin/invoice/delete', ['id' => $invoiceId]);
         expect($deleteBlocked->wasSuccessful())->toBeFalse();
 
-        // Opt in to quote-like editing of approved unpaid invoices.
+        // Cancel (void) without replacement.
+        $canceled = Tests\Helpers\ApiClient::request('admin/invoice/cancel', [
+            'id' => $invoiceId,
+            'reason' => 'E2E voided',
+        ]);
+        assertApiSuccess($canceled);
+
+        $invoice = cancelGetInvoice($invoiceId);
+        expect($invoice['status'])->toBe('canceled');
+
+        // Order links are kept for history.
+        $order = cancelGetOrder($orderId);
+        expect((int) $order['unpaid_invoice_id'])->toBe($invoiceId);
+
+        // Canceled invoices still cannot be deleted while the setting is off.
+        $deleteStillBlocked = Tests\Helpers\ApiClient::request('admin/invoice/delete', ['id' => $invoiceId]);
+        expect($deleteStillBlocked->wasSuccessful())->toBeFalse();
+
+        // Cancel is idempotent-safe: a second cancel is refused.
+        $cancelAgain = Tests\Helpers\ApiClient::request('admin/invoice/cancel', ['id' => $invoiceId]);
+        expect($cancelAgain->wasSuccessful())->toBeFalse();
+
+        // Opt in to deleting issued invoices for cleanup.
         $params = Tests\Helpers\ApiClient::request('admin/system/get_params');
         assertApiSuccess($params);
         $originalSetting = $params->getResult()['invoice_immutability'] ?? 'strict';
@@ -65,15 +79,8 @@ test('approved invoices are locked for editing unless the setting permits it', f
         assertApiSuccess($enabled);
 
         try {
-            $updated = Tests\Helpers\ApiClient::request('admin/invoice/update', [
-                'id' => $invoiceId,
-                'new_item' => ['title' => 'E2E discount line', 'price' => -10, 'quantity' => 1],
-            ]);
-            assertApiSuccess($updated);
-
-            $invoice = lockEditGetInvoice($invoiceId);
-            expect($invoice['editable'])->toBeTrue();
-            expect(lockEditHasLine($invoice, 'E2E discount line', -10.0))->toBeTrue();
+            $deleted = Tests\Helpers\ApiClient::request('admin/invoice/delete', ['id' => $invoiceId]);
+            assertApiSuccess($deleted);
         } finally {
             $restore = Tests\Helpers\ApiClient::request('admin/system/update_params', [
                 'invoice_immutability' => $originalSetting,
@@ -81,24 +88,33 @@ test('approved invoices are locked for editing unless the setting permits it', f
             assertApiSuccess($restore);
         }
 
-        // Paid invoices stay locked regardless of the setting.
-        lockEditMarkInvoicePaid($invoiceId);
-        $paidBlocked = Tests\Helpers\ApiClient::request('admin/invoice/update', [
-            'id' => $invoiceId,
-            'new_item' => ['title' => 'E2E after payment', 'price' => 5, 'quantity' => 1],
+        // Paid invoices can neither be canceled nor deleted.
+        $created2 = Tests\Helpers\ApiClient::request('admin/order/create', [
+            'client_id' => $clientId,
+            'product_id' => $productId,
+            'invoice_option' => 'issue-invoice',
         ]);
-        expect($paidBlocked->wasSuccessful())->toBeFalse();
-        expect($paidBlocked->getErrorMessage())->toContain('can no longer be edited');
+        assertApiSuccess($created2);
+        $orderId2 = (int) $created2->getResult();
+        $order2 = cancelGetOrder($orderId2);
+        $invoiceId2 = (int) $order2['unpaid_invoice_id'];
+        cancelMarkInvoicePaid($invoiceId2);
+
+        $cancelPaid = Tests\Helpers\ApiClient::request('admin/invoice/cancel', ['id' => $invoiceId2]);
+        expect($cancelPaid->wasSuccessful())->toBeFalse();
+
+        $deletePaid = Tests\Helpers\ApiClient::request('admin/invoice/delete', ['id' => $invoiceId2]);
+        expect($deletePaid->wasSuccessful())->toBeFalse();
     } finally {
-        lockEditCleanupClient();
-        lockEditDeleteProduct($productId);
+        cancelCleanupClient();
+        cancelDeleteProduct($productId);
     }
 });
 
-function lockEditCreateProduct(float $price): int
+function cancelCreateProduct(float $price): int
 {
     $result = Tests\Helpers\ApiClient::request('admin/product/prepare', [
-        'title' => 'E2E Edit Lock Product ' . uniqid(),
+        'title' => 'E2E Cancel Product ' . uniqid(),
         'type' => 'custom',
         'product_category_id' => 1,
     ]);
@@ -116,9 +132,9 @@ function lockEditCreateProduct(float $price): int
     return $productId;
 }
 
-function lockEditCreateClient(): array
+function cancelCreateClient(): array
 {
-    $email = 'invoice_lock_' . uniqid() . '@example.com';
+    $email = 'invoice_cancel_' . uniqid() . '@example.com';
     $created = Tests\Helpers\ApiClient::request('admin/client/create', [
         'email' => $email,
         'first_name' => 'Test',
@@ -126,12 +142,12 @@ function lockEditCreateClient(): array
         'send_welcome_email' => 0,
     ]);
     assertApiSuccess($created);
-    $GLOBALS['lockEditClientId'] = (int) $created->getResult();
+    $GLOBALS['cancelClientId'] = (int) $created->getResult();
 
-    return ['id' => $GLOBALS['lockEditClientId']];
+    return ['id' => $GLOBALS['cancelClientId']];
 }
 
-function lockEditGetOrder(int $orderId): array
+function cancelGetOrder(int $orderId): array
 {
     $result = Tests\Helpers\ApiClient::request('admin/order/get', ['id' => $orderId]);
     assertApiSuccess($result);
@@ -140,7 +156,7 @@ function lockEditGetOrder(int $orderId): array
     return $result->getResult();
 }
 
-function lockEditGetInvoice(int $invoiceId): array
+function cancelGetInvoice(int $invoiceId): array
 {
     $result = Tests\Helpers\ApiClient::request('admin/invoice/get', ['id' => $invoiceId]);
     assertApiSuccess($result);
@@ -149,18 +165,7 @@ function lockEditGetInvoice(int $invoiceId): array
     return $result->getResult();
 }
 
-function lockEditHasLine(array $invoice, string $title, float $price): bool
-{
-    foreach ($invoice['lines'] ?? [] as $line) {
-        if (($line['title'] ?? null) === $title && (float) ($line['price'] ?? 0) === $price) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-function lockEditMarkInvoicePaid(int $invoiceId): void
+function cancelMarkInvoicePaid(int $invoiceId): void
 {
     $gateways = Tests\Helpers\ApiClient::request('admin/invoice/gateway_get_pairs');
     assertApiSuccess($gateways);
@@ -182,18 +187,18 @@ function lockEditMarkInvoicePaid(int $invoiceId): void
     assertApiSuccess($result);
 }
 
-function lockEditCleanupClient(): void
+function cancelCleanupClient(): void
 {
-    if (!isset($GLOBALS['lockEditClientId'])) {
+    if (!isset($GLOBALS['cancelClientId'])) {
         return;
     }
 
-    $deleted = Tests\Helpers\ApiClient::request('admin/client/delete', ['id' => $GLOBALS['lockEditClientId']]);
+    $deleted = Tests\Helpers\ApiClient::request('admin/client/delete', ['id' => $GLOBALS['cancelClientId']]);
     assertApiSuccess($deleted);
-    unset($GLOBALS['lockEditClientId']);
+    unset($GLOBALS['cancelClientId']);
 }
 
-function lockEditDeleteProduct(?int $productId): void
+function cancelDeleteProduct(?int $productId): void
 {
     if ($productId === null) {
         return;

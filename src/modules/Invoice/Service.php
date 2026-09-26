@@ -22,6 +22,7 @@ use Box\Mod\Invoice\Entity\Transaction;
 use Box\Mod\Invoice\Event\AfterAdminGenerateRenewalInvoiceEvent;
 use Box\Mod\Invoice\Event\AfterAdminInvoiceApproveEvent;
 use Box\Mod\Invoice\Event\AfterAdminInvoiceAttachOrderEvent;
+use Box\Mod\Invoice\Event\AfterAdminInvoiceCancelEvent;
 use Box\Mod\Invoice\Event\AfterAdminInvoiceDebitEvent;
 use Box\Mod\Invoice\Event\AfterAdminInvoiceDeleteEvent;
 use Box\Mod\Invoice\Event\AfterAdminInvoicePaymentReceivedEvent;
@@ -33,6 +34,7 @@ use Box\Mod\Invoice\Event\AfterInvoiceIsDueEvent;
 use Box\Mod\Invoice\Event\BeforeAdminGenerateRenewalInvoiceEvent;
 use Box\Mod\Invoice\Event\BeforeAdminInvoiceApproveEvent;
 use Box\Mod\Invoice\Event\BeforeAdminInvoiceAttachOrderEvent;
+use Box\Mod\Invoice\Event\BeforeAdminInvoiceCancelEvent;
 use Box\Mod\Invoice\Event\BeforeAdminInvoiceDebitEvent;
 use Box\Mod\Invoice\Event\BeforeAdminInvoiceDeleteEvent;
 use Box\Mod\Invoice\Event\BeforeAdminInvoiceRefundEvent;
@@ -228,6 +230,11 @@ class Service implements InjectionAwareInterface
                 'email' => $invoice->getBuyerEmail(),
             ],
             'approved' => $invoice->isApproved(),
+            'cancellable' => $invoice->isApproved()
+                && $invoice->getStatus() === Invoice::STATUS_UNPAID
+                && $invoice->getCreditNoteForInvoiceId() === null
+                && $invoice->getDebitNoteForInvoiceId() === null
+                && $invoice->getReplacedByInvoiceId() === null,
         ];
     }
 
@@ -420,6 +427,8 @@ class Service implements InjectionAwareInterface
         $result['reminded_at'] = $row['reminded_at'] ?? null;
         $result['approved'] = (bool) $row['approved'];
         $result['editable'] = $this->isInvoiceEditable($invoice);
+        $result['cancellable'] = $this->isInvoiceCancellable($invoice);
+        $result['deletable'] = $this->isDeletableByAdmin($invoice);
         $result['credit_note_for_invoice_id'] = $row['credit_note_for_invoice_id'] ?? null;
         $result['debit_note_for_invoice_id'] = $row['debit_note_for_invoice_id'] ?? null;
         $result['replaces_invoice_id'] = $row['replaces_invoice_id'] ?? null;
@@ -724,15 +733,40 @@ class Service implements InjectionAwareInterface
         $systemService = $di['mod_service']('System');
         $remove_after_days = $systemService->getParamValue('remove_after_days');
         if (isset($remove_after_days) && $remove_after_days) {
-            // removing old unpaid invoices, through rmInvoice() so related
-            // orders, invoice items, and reserved resources stay consistent
+            // Expire stale unpaid invoices. Drafts (never issued) are hard-deleted
+            // through rmInvoice(); issued invoices are voided instead so their
+            // numbers stay in the audit trail.
             $days = (int) $remove_after_days;
             $service = $di['mod_service']('invoice');
             $invoices = $service->getInvoiceRepository()->findUnpaidOlderThan($days);
             foreach ($invoices as $invoiceModel) {
                 $id = $invoiceModel->getId();
-                $service->rmInvoice($invoiceModel);
-                $di['logger']->info('Removed expired unpaid invoice #{id}', ['id' => $id]);
+
+                try {
+                    if ($service->isInvoiceCancellable($invoiceModel)) {
+                        $service->cancelInvoice($invoiceModel, ['reason' => "Expired unpaid — automatically voided after {$days} days."]);
+                        $di['logger']->info('Voided expired unpaid invoice #{id}', ['id' => $id]);
+                    } elseif (!$invoiceModel->isApproved()
+                        && $invoiceModel->getStatus() === Invoice::STATUS_UNPAID
+                        && $invoiceModel->getCreditNoteForInvoiceId() === null
+                        && $invoiceModel->getDebitNoteForInvoiceId() === null
+                        && $invoiceModel->getReplacesInvoiceId() === null
+                        && $invoiceModel->getReplacedByInvoiceId() === null
+                    ) {
+                        $service->rmInvoice($invoiceModel);
+                        $di['logger']->info('Removed expired unpaid invoice #{id}', ['id' => $id]);
+                    } else {
+                        // Issued notes (e.g. unpaid debit notes) are legal
+                        // documents with links from their originals: neither
+                        // voiding nor deleting applies, leave them for manual
+                        // handling (refund/reissue of the original).
+                        $di['logger']->info('Skipped expired unpaid invoice #{id}: issued notes are never removed automatically', ['id' => $id]);
+                    }
+                } catch (\Throwable $e) {
+                    // One expired invoice (e.g. one changed concurrently) must
+                    // not abort cleanup of the rest.
+                    $di['logger']->warning('Could not expire unpaid invoice #{id}: {message}', ['id' => $id, 'message' => $e->getMessage()]);
+                }
             }
         }
     }
@@ -1903,6 +1937,62 @@ class Service implements InjectionAwareInterface
     }
 
     /**
+     * Cancel (void) an approved unpaid invoice without issuing a replacement.
+     *
+     * Unlike reissueInvoice(), no replacement is created: the invoice keeps
+     * its number with a canceled status so the audit trail survives, while
+     * linked orders keep pointing at it for history (generateForOrder() heals
+     * such links automatically when the next invoice is needed) and
+     * transactions are detached but kept as payment-attempt records.
+     */
+    public function cancelInvoice(Invoice $original, array $data = []): bool
+    {
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminInvoiceCancelEvent((int) $original->getId()));
+
+        if (!$this->isInvoiceCancellable($original)) {
+            throw new InformationException('Only approved unpaid invoices can be canceled. Delete drafts, or refund paid invoices instead.');
+        }
+
+        $reason = trim((string) ($data['reason'] ?? ''));
+
+        $this->di['em']->wrapInTransaction(function () use ($original, $reason): void {
+            $this->lockAndRefreshInvoice($original);
+            if (!$this->isInvoiceCancellable($original)) {
+                throw new InformationException('Only approved unpaid invoices can be canceled. Delete drafts, or refund paid invoices instead.');
+            }
+            // Re-check against the locked row, which may have changed while
+            // waiting on the lock.
+            $locked = $this->di['em']->getRepository(Invoice::class)->find($original->getId());
+            if ($locked instanceof Invoice && $locked->getReplacedByInvoiceId() !== null) {
+                throw new InformationException('This invoice has already been reissued as invoice #:id', [':id' => $locked->getReplacedByInvoiceId()]);
+            }
+
+            $original->setStatus(Invoice::STATUS_CANCELED);
+            $this->di['em']->persist($original);
+            $this->di['em']->flush();
+
+            $productService = $this->di['mod_service']('Product');
+            $productService->releaseReservedPromoRedemptionsForInvoice($original, 'invoice_canceled');
+            $productService->releaseReservedStockForInvoice($original, 'invoice_canceled');
+
+            // Detach (not delete) transactions: a transaction is a real record
+            // of a payment attempt/event that must survive the void.
+            $this->di['em']->getRepository(Transaction::class)->detachFromInvoice((int) $original->getId());
+
+            $this->addNote($original, 'Invoice canceled (voided) without replacement.');
+            if ($reason !== '') {
+                $this->addNote($original, $reason);
+            }
+        });
+
+        $this->di['event_dispatcher']->dispatch(new AfterAdminInvoiceCancelEvent((int) $original->getId()));
+
+        $this->di['logger']->info("Canceled invoice #{$original->getId()} without replacement.");
+
+        return true;
+    }
+
+    /**
      * Cancel an approved unpaid invoice and issue a replacement carrying its
      * lines forward, so the correction keeps a clean audit trail while the
      * client pays a single invoice. The replacement takes the next invoice
@@ -2247,6 +2337,7 @@ class Service implements InjectionAwareInterface
         if (!$this->isInvoiceEditable($model)) {
             throw new InformationException('This invoice can no longer be edited. Approved invoices are locked once issued; correct them with a credit note or a replacement invoice.');
         }
+        $this->assertIssuedIdentityUnchanged($model, $data);
 
         $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
         $previousStatus = null;
@@ -2261,6 +2352,7 @@ class Service implements InjectionAwareInterface
             if (!$this->isInvoiceEditable($model)) {
                 throw new InformationException('This invoice can no longer be edited. Approved invoices are locked once issued; correct them with a credit note or a replacement invoice.');
             }
+            $this->assertIssuedIdentityUnchanged($model, $data);
 
             $previousStatus = $model->getStatus();
             $wasApproved = $model->isApproved();
@@ -2403,6 +2495,9 @@ class Service implements InjectionAwareInterface
         if ($invoice->getStatus() !== Invoice::STATUS_UNPAID) {
             throw new InformationException('Promotions can only be applied to unpaid invoices');
         }
+        if (!$this->isInvoiceEditable($invoice)) {
+            throw new InformationException('This invoice can no longer be edited. Approved invoices are locked once issued; correct them with a credit note or a replacement invoice.');
+        }
 
         $order = $this->findPromoTargetOrder($invoice, $order);
         $client = $this->di['em']->getRepository(Client::class)->find($invoice->getClientId())
@@ -2459,6 +2554,13 @@ class Service implements InjectionAwareInterface
             // concurrent promo edits on this invoice.
             if ($this->getInvoiceRepository()->lockAndGetStatus((int) $invoice->getId()) !== Invoice::STATUS_UNPAID) {
                 throw new InformationException('Promotions can only be applied to unpaid invoices');
+            }
+
+            // Refresh under the held lock so the editability check below sees
+            // the current approval state rather than a stale snapshot.
+            $this->di['em']->refresh($invoice);
+            if (!$this->isInvoiceEditable($invoice)) {
+                throw new InformationException('This invoice can no longer be edited. Approved invoices are locked once issued; correct them with a credit note or a replacement invoice.');
             }
 
             // Refresh against changes committed while waiting for the lock,
@@ -2553,6 +2655,9 @@ class Service implements InjectionAwareInterface
         if ($invoice->getStatus() !== Invoice::STATUS_UNPAID) {
             throw new InformationException('Promotions can only be removed from unpaid invoices');
         }
+        if (!$this->isInvoiceEditable($invoice)) {
+            throw new InformationException('This invoice can no longer be edited. Approved invoices are locked once issued; correct them with a credit note or a replacement invoice.');
+        }
 
         $order = $this->findPromoTargetOrder($invoice, $order);
 
@@ -2566,6 +2671,13 @@ class Service implements InjectionAwareInterface
             // between the pre-check and these writes.
             if ($this->getInvoiceRepository()->lockAndGetStatus((int) $invoice->getId()) !== Invoice::STATUS_UNPAID) {
                 throw new InformationException('Promotions can only be removed from unpaid invoices');
+            }
+
+            // Refresh under the held lock so the editability check below sees
+            // the current approval state rather than a stale snapshot.
+            $this->di['em']->refresh($invoice);
+            if (!$this->isInvoiceEditable($invoice)) {
+                throw new InformationException('This invoice can no longer be edited. Approved invoices are locked once issued; correct them with a credit note or a replacement invoice.');
             }
 
             $redemptions = $productService->getPromoRedemptionRepository()->findBy([
@@ -2736,8 +2848,8 @@ class Service implements InjectionAwareInterface
         $entityManager->wrapInTransaction(function () use ($model, $entityManager, $requireUnapprovedUnpaid): void {
             $this->lockAndRefreshInvoice($model);
 
-            if ($requireUnapprovedUnpaid && ($model->isApproved() || $model->getStatus() !== Invoice::STATUS_UNPAID)) {
-                throw new InformationException('Only unapproved, unpaid invoices can be deleted. Revoke an approved invoice instead.');
+            if ($requireUnapprovedUnpaid && !$this->isDeletableByAdmin($model)) {
+                throw new InformationException('Only unapproved, unpaid invoices can be deleted. Cancel (void) an approved unpaid invoice, or reissue/refund it instead. Relax invoice immutability to delete issued invoices for cleanup.');
             }
 
             $productService = $this->di['mod_service']('Product');
@@ -2774,8 +2886,8 @@ class Service implements InjectionAwareInterface
     {
         // Fast rejection for the common case; rmInvoice rechecks the fresh state under its row
         // lock before detaching or deleting anything.
-        if ($model->isApproved() || $model->getStatus() !== Invoice::STATUS_UNPAID) {
-            throw new InformationException('Only unapproved, unpaid invoices can be deleted. Revoke an approved invoice instead.');
+        if (!$this->isDeletableByAdmin($model)) {
+            throw new InformationException('Only unapproved, unpaid invoices can be deleted. Cancel (void) an approved unpaid invoice, or reissue/refund it instead. Relax invoice immutability to delete issued invoices for cleanup.');
         }
 
         $this->di['event_dispatcher']->dispatch(new BeforeAdminInvoiceDeleteEvent((int) $model->getId()));
@@ -3477,22 +3589,80 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * Whether an approved but still unpaid invoice may be edited.
+     * Whether the invoice immutability escape hatch is enabled.
      *
-     * In many jurisdictions an issued (approved) invoice is immutable and
-     * corrections must go through a credit note or a replacement invoice,
-     * so this defaults to off. Enabling it treats approved unpaid invoices
-     * as editable quotes: lines and details can change and the invoice is
-     * re-sent to the client afterwards.
+     * Strict (default) keeps every issued (approved) invoice immutable: no
+     * content edits and no hard deletes. Relaxed restores the pre-immutability
+     * behavior for unpaid invoices only (content edits and cleanup deletes).
+     * Paid, refunded, canceled, note, and reissue-linked invoices stay
+     * immutable in both modes.
+     *
+     * This is a transitional setting and will be removed in a future release,
+     * at which point strict becomes the only behavior.
      */
-    public function allowUnpaidInvoiceEdits(): bool
+    public function isImmutabilityRelaxed(): bool
     {
-        /**
-         * @var \Box\Mod\System\Service $systemService
-         */
+        if ($this->di === null || !isset($this->di['mod_service'])) {
+            return false;
+        }
+
+        /** @var \Box\Mod\System\Service $systemService */
         $systemService = $this->di['mod_service']('system');
 
-        return (bool) $systemService->getParamValue('invoice_allow_edit_unpaid', false);
+        $mode = $systemService->getParamValue('invoice_immutability', null);
+        if ($mode === null || $mode === '') {
+            // Pre-migration fallback: honor the retired per-action keys until
+            // the update patcher migrates them (see UpdatePatcher).
+            return (bool) $systemService->getParamValue('invoice_allow_edit_unpaid', false)
+                || (bool) $systemService->getParamValue('invoice_allow_delete_approved', false);
+        }
+
+        return $mode === 'relaxed';
+    }
+
+    /**
+     * Whether the invoice can be canceled (voided) without a replacement.
+     *
+     * Only approved unpaid invoices qualify. Drafts should be deleted, paid
+     * invoices refunded, and credit/debit notes or already-reissued invoices
+     * are never cancellable.
+     */
+    public function isInvoiceCancellable(Invoice $invoice): bool
+    {
+        return $invoice->isApproved()
+            && $invoice->getStatus() === Invoice::STATUS_UNPAID
+            && $invoice->getCreditNoteForInvoiceId() === null
+            && $invoice->getDebitNoteForInvoiceId() === null
+            && $invoice->getReplacedByInvoiceId() === null;
+    }
+
+    /**
+     * Whether the invoice can be hard-deleted by an admin.
+     *
+     * Unapproved unpaid drafts (without note/reissue links) are always
+     * deletable. Approved unpaid and canceled invoices additionally require
+     * relaxed invoice immutability. Paid, refunded, note, and reissue-linked
+     * invoices are never deletable so the audit trail survives.
+     */
+    public function isDeletableByAdmin(Invoice $invoice): bool
+    {
+        if ($invoice->getCreditNoteForInvoiceId() !== null
+            || $invoice->getDebitNoteForInvoiceId() !== null
+            || $invoice->getReplacesInvoiceId() !== null
+            || $invoice->getReplacedByInvoiceId() !== null
+        ) {
+            return false;
+        }
+
+        if (!$invoice->isApproved() && $invoice->getStatus() === Invoice::STATUS_UNPAID) {
+            return true;
+        }
+
+        if (!in_array($invoice->getStatus(), [Invoice::STATUS_UNPAID, Invoice::STATUS_CANCELED], true)) {
+            return false;
+        }
+
+        return $this->isImmutabilityRelaxed();
     }
 
     /**
@@ -3500,8 +3670,9 @@ class Service implements InjectionAwareInterface
      *
      * Unapproved invoices are drafts and always editable. Approved invoices
      * are immutable once paid, refunded, or canceled; an approved unpaid
-     * invoice is only editable when the `invoice_allow_edit_unpaid` setting
-     * permits it.
+     * invoice is only editable when invoice immutability is relaxed, which
+     * treats it as an editable quote (edited invoices are re-sent to the
+     * client afterwards).
      */
     public function isInvoiceEditable(Invoice $invoice): bool
     {
@@ -3518,7 +3689,34 @@ class Service implements InjectionAwareInterface
             return true;
         }
 
-        return $this->allowUnpaidInvoiceEdits();
+        return $this->isImmutabilityRelaxed();
+    }
+
+    /**
+     * Reject attempts to rewrite an issued invoice's identity (numbering
+     * series/number, lifecycle status, approval state), even when relaxed
+     * editing is enabled. Identity fields define the legal document; changing
+     * them edits history rather than correcting it. Issued invoices are
+     * corrected through payment, credit notes, reissue, or cancel (void).
+     */
+    private function assertIssuedIdentityUnchanged(Invoice $model, array $data): void
+    {
+        if (!$model->isApproved()) {
+            return;
+        }
+
+        $approved = array_key_exists('approved', $data) ? (bool) $data['approved'] : $model->isApproved();
+        $status = array_key_exists('status', $data) ? (string) $data['status'] : $model->getStatus();
+        $serie = array_key_exists('serie', $data) ? (string) $data['serie'] : (string) $model->getSerie();
+        $nr = array_key_exists('nr', $data) ? (string) $data['nr'] : (string) $model->getNr();
+
+        if ($approved !== $model->isApproved()
+            || $status !== $model->getStatus()
+            || $serie !== (string) $model->getSerie()
+            || $nr !== (string) $model->getNr()
+        ) {
+            throw new InformationException('Invoice number, status, and approval state are locked once issued. Correct issued invoices with a payment, credit note, reissue, or cancel (void) instead.');
+        }
     }
 
     /**

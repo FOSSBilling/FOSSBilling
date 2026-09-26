@@ -78,9 +78,9 @@ test('attaching a product adds a provisioning order line to an editable invoice'
 
         $params = Tests\Helpers\ApiClient::request('admin/system/get_params');
         assertApiSuccess($params);
-        $originalSetting = $params->getResult()['invoice_allow_edit_unpaid'] ?? '0';
+        $originalSetting = $params->getResult()['invoice_immutability'] ?? 'strict';
         $enabled = Tests\Helpers\ApiClient::request('admin/system/update_params', [
-            'invoice_allow_edit_unpaid' => '1',
+            'invoice_immutability' => 'relaxed',
         ]);
         assertApiSuccess($enabled);
 
@@ -137,7 +137,7 @@ test('attaching a product adds a provisioning order line to an editable invoice'
             expect($crossClient->getErrorMessage())->toContain('does not belong');
         } finally {
             $restore = Tests\Helpers\ApiClient::request('admin/system/update_params', [
-                'invoice_allow_edit_unpaid' => $originalSetting,
+                'invoice_immutability' => $originalSetting,
             ]);
             assertApiSuccess($restore);
         }

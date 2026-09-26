@@ -211,6 +211,10 @@ class UpdatePatcher implements InjectionAwareInterface
         // MySQL-only patch can run there.
         $this->seedInvoiceNoteSettings();
 
+        // Retired per-action invoice toggles fold into the single setting below:
+        // same portable, idempotent treatment as the debit-note seed above.
+        $this->migrateInvoiceImmutabilitySetting();
+
         // Additive structural sync runs on every platform, MySQL/MariaDB included: it picks up any
         // column/table/index that's on entity metadata but not yet applied, without needing a
         // hand-written patch for it - the only mechanism at all on PostgreSQL/SQLite, and on
@@ -410,6 +414,42 @@ class UpdatePatcher implements InjectionAwareInterface
                 ]
             );
         }
+    }
+
+    /**
+     * Folds the retired per-action invoice toggles (invoice_allow_edit_unpaid,
+     * invoice_allow_delete_approved) into the single invoice_immutability
+     * setting, then removes the legacy rows. Either legacy opt-in maps to
+     * 'relaxed', preserving behavior; otherwise the install converges to
+     * 'strict'. Plain portable SQL and idempotent like seedInvoiceNoteSettings(),
+     * so it runs unconditionally from applyCorePatches() on every platform.
+     */
+    private function migrateInvoiceImmutabilitySetting(): void
+    {
+        $fetch = fn (string $param): mixed => $this->fetchOne('SELECT value FROM setting WHERE param = :param', [
+            'param' => $param,
+        ]);
+
+        $migrated = $fetch('invoice_immutability');
+        if ($migrated === false) {
+            $edit = $fetch('invoice_allow_edit_unpaid');
+            $delete = $fetch('invoice_allow_delete_approved');
+            if ($edit !== false || $delete !== false) {
+                $now = date('Y-m-d H:i:s');
+                $this->executeSql(
+                    'INSERT INTO setting (param, value, public, created_at, updated_at) VALUES (:param, :value, 0, :created_at, :updated_at)',
+                    [
+                        'param' => 'invoice_immutability',
+                        'value' => ($edit === '1' || $delete === '1') ? 'relaxed' : 'strict',
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ]
+                );
+            }
+        }
+
+        $this->executeSql('DELETE FROM setting WHERE param = :param', ['param' => 'invoice_allow_edit_unpaid']);
+        $this->executeSql('DELETE FROM setting WHERE param = :param', ['param' => 'invoice_allow_delete_approved']);
     }
 
     /**

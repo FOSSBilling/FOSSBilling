@@ -1284,10 +1284,11 @@ function withDbDriverConfig(array $dbConfig, Closure $callback): void
  * unrelated PDO mock, since migrateThemePackageLayout() now runs unconditionally regardless of
  * driver (see the dedicated tests above asserting its exact SQL/params).
  *
- * Also tolerates seedInvoiceNoteSettings() and storeSchemaMetadataHash() bookkeeping: both run
- * unconditionally on every platform (portable check-then-write SQL, no MySQL-only syntax), so
- * any applyCorePatches() test would trip over them otherwise. fetchColumn() reports "missing"
- * so the seed path exercises its INSERT branch.
+ * Also tolerates seedInvoiceNoteSettings(), migrateInvoiceImmutabilitySetting(), and
+ * storeSchemaMetadataHash() bookkeeping: all run unconditionally on every platform (portable
+ * check-then-write SQL, no MySQL-only syntax), so any applyCorePatches() test would trip over
+ * them otherwise. fetchColumn() reports "missing" so the seed/migration paths exercise their
+ * INSERT branches and the legacy-key deletes run as no-ops.
  */
 function mockPdoAllowingThemeMigrationCalls(): Mockery\MockInterface
 {
@@ -1298,6 +1299,7 @@ function mockPdoAllowingThemeMigrationCalls(): Mockery\MockInterface
     $pdo = Mockery::mock(PDO::class);
     $pdo->shouldReceive('prepare')
         ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'UPDATE setting')
+            || str_starts_with($sql, 'DELETE FROM setting')
             || str_starts_with($sql, 'UPDATE extension_meta')
             || $sql === "DELETE FROM extension_meta WHERE extension = 'mod_hook' AND meta_key = 'listener'"
             || $sql === "DELETE FROM extension WHERE type = 'hook'"))
@@ -1381,6 +1383,43 @@ test('applyCorePatches removes retired hook data on non-MySQL drivers and remain
             ->and((int) $pdo->query("SELECT COUNT(*) FROM extension_meta WHERE extension = 'mod_hook' AND meta_key = 'config'")->fetchColumn())->toBe(1)
             ->and((int) $pdo->query("SELECT COUNT(*) FROM extension_meta WHERE extension = 'mod_invoice' AND meta_key = 'listener'")->fetchColumn())->toBe(1)
             ->and((int) $pdo->query("SELECT COUNT(*) FROM extension WHERE type = 'mod' AND name = 'invoice'")->fetchColumn())->toBe(1);
+    });
+});
+
+test('migrateInvoiceImmutabilitySetting folds legacy toggles into the single setting', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        $pdo = new PDO('sqlite::memory:');
+        $pdo->exec('CREATE TABLE setting (param TEXT PRIMARY KEY, value TEXT, public INTEGER, created_at TEXT, updated_at TEXT)');
+        $pdo->exec("INSERT INTO setting (param, value, public, created_at, updated_at) VALUES ('invoice_allow_edit_unpaid', '1', 0, '2026-01-01 00:00:00', '2026-01-01 00:00:00')");
+
+        $di = new Pimple\Container();
+        $di['pdo'] = $pdo;
+        $di['logger'] = new Tests\Helpers\TestLogger();
+
+        $patcher = new UpdatePatcher();
+        $patcher->setDi($di);
+        $migrate = fn (): mixed => (new ReflectionMethod($patcher, 'migrateInvoiceImmutabilitySetting'))->invoke($patcher);
+
+        // Either legacy opt-in maps to relaxed, and the legacy rows are removed.
+        $migrate();
+        expect($pdo->query("SELECT value FROM setting WHERE param = 'invoice_immutability'")->fetchColumn())->toBe('relaxed')
+            ->and((int) $pdo->query("SELECT COUNT(*) FROM setting WHERE param IN ('invoice_allow_edit_unpaid', 'invoice_allow_delete_approved')")->fetchColumn())->toBe(0);
+
+        // Idempotent: a second run keeps the migrated value.
+        $migrate();
+        expect($pdo->query("SELECT value FROM setting WHERE param = 'invoice_immutability'")->fetchColumn())->toBe('relaxed');
+
+        // Legacy rows left at off converge to strict.
+        $pdo->exec("INSERT INTO setting (param, value, public, created_at, updated_at) VALUES ('invoice_allow_delete_approved', '0', 0, '2026-01-01 00:00:00', '2026-01-01 00:00:00')");
+        $pdo->exec("DELETE FROM setting WHERE param = 'invoice_immutability'");
+        $migrate();
+        expect($pdo->query("SELECT value FROM setting WHERE param = 'invoice_immutability'")->fetchColumn())->toBe('strict')
+            ->and((int) $pdo->query("SELECT COUNT(*) FROM setting WHERE param IN ('invoice_allow_edit_unpaid', 'invoice_allow_delete_approved')")->fetchColumn())->toBe(0);
+
+        // Fresh installs without any legacy rows get nothing (strict is the code default).
+        $pdo->exec("DELETE FROM setting WHERE param = 'invoice_immutability'");
+        $migrate();
+        expect((int) $pdo->query("SELECT COUNT(*) FROM setting WHERE param = 'invoice_immutability'")->fetchColumn())->toBe(0);
     });
 });
 
@@ -1508,13 +1547,16 @@ test('applyCorePatches migrates the theme setting values on a non-MySQL driver, 
             ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'UPDATE extension_meta')))
             ->andReturn($extensionMetaStatement);
 
-        // seedInvoiceNoteSettings() also runs unconditionally from applyCorePatches() - allow
-        // its check-then-insert bookkeeping without asserting on it here.
+        // seedInvoiceNoteSettings() and migrateInvoiceImmutabilitySetting() also run
+        // unconditionally from applyCorePatches() - allow their check-then-write
+        // bookkeeping without asserting on it here. fetchColumn() reports "missing"
+        // so the migration takes its skip-INSERT path and the legacy-key deletes
+        // run as no-ops.
         $seedStatement = Mockery::mock(PDOStatement::class);
         $seedStatement->shouldReceive('execute')->andReturnTrue();
         $seedStatement->shouldReceive('fetchColumn')->andReturn(false);
         $pdo->shouldReceive('prepare')
-            ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'SELECT value FROM setting') || str_starts_with($sql, 'INSERT INTO setting')))
+            ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'SELECT value FROM setting') || str_starts_with($sql, 'INSERT INTO setting') || str_starts_with($sql, 'DELETE FROM setting')))
             ->andReturn($seedStatement);
         allowRetiredHookCleanupCalls($pdo);
 
@@ -1557,13 +1599,14 @@ test('applyCorePatches migrates saved theme settings/presets in extension_meta o
             ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'UPDATE setting')))
             ->andReturn($otherStatement);
 
-        // seedInvoiceNoteSettings() also runs unconditionally from applyCorePatches() - allow
-        // its check-then-insert bookkeeping without asserting on it here.
+        // seedInvoiceNoteSettings() and migrateInvoiceImmutabilitySetting() also run
+        // unconditionally from applyCorePatches() - allow their check-then-write
+        // bookkeeping without asserting on it here.
         $seedStatement = Mockery::mock(PDOStatement::class);
         $seedStatement->shouldReceive('execute')->andReturnTrue();
         $seedStatement->shouldReceive('fetchColumn')->andReturn(false);
         $pdo->shouldReceive('prepare')
-            ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'SELECT value FROM setting') || str_starts_with($sql, 'INSERT INTO setting')))
+            ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'SELECT value FROM setting') || str_starts_with($sql, 'INSERT INTO setting') || str_starts_with($sql, 'DELETE FROM setting')))
             ->andReturn($seedStatement);
         allowRetiredHookCleanupCalls($pdo);
 

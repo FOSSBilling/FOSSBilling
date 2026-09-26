@@ -385,6 +385,30 @@ test('reissues an invoice', function (): void {
     expect($api->reissue($data))->toBe(11);
 });
 
+test('cancels an invoice', function (): void {
+    $api = apiEndpoint(new Admin());
+    $data = [
+        'id' => 1,
+        'reason' => 'Duplicate invoice',
+    ];
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('cancelInvoice')
+        ->once()
+        ->with(Mockery::type(Invoice::class), $data)
+        ->andReturn(true);
+
+    $model = createEntity(Invoice::class);
+
+    $di = container();
+    $di['em']->getRepository(Invoice::class)->shouldReceive('find')->atLeast()->once()->andReturn($model);
+
+    $api->setDi($di);
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($di['em']->getRepository(Invoice::class));
+    $api->setService($serviceMock);
+
+    expect($api->cancel($data))->toBeTrue();
+});
+
 test('updates an invoice', function (): void {
     $api = apiEndpoint(new Admin());
     $data = [

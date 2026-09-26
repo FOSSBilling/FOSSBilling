@@ -175,13 +175,22 @@
                             </svg>
                             <span>{{ 'View as Client'|trans }}</span>
                         </a>
-                        {% if invoice.status == 'unpaid' and not invoice.approved %}
+                        {% if invoice.deletable %}
                         <a class="btn btn-danger"
                             {{ fb_api_link({href: 'invoice/delete'|api_url(query: {id: invoice.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'invoice'|url}) }}>
                             <svg class="icon" width="24" height="24">
                                 <use href="#trash" />
                             </svg>
                             <span>{{ 'Delete'|trans }}</span>
+                        </a>
+                        {% endif %}
+                        {% if invoice.cancellable %}
+                        <a class="btn btn-warning"
+                            {{ fb_api_link({href: 'invoice/cancel'|api_url(query: {id: invoice.id}), modal: {type: 'confirm', title: 'Cancel this invoice without a replacement?'|trans}, reload: true}) }}>
+                            <svg class="icon" width="24" height="24">
+                                <use href="#x" />
+                            </svg>
+                            <span>{{ 'Cancel'|trans }}</span>
                         </a>
                         {% endif %}
                         {% if invoice.status == 'unpaid' %}
@@ -617,7 +626,7 @@
             </div>
             {% endif %}
 
-            {% if invoice.status == 'unpaid' and has_permission('product', 'manage_promos') %}
+            {% if invoice.editable and has_permission('product', 'manage_promos') %}
             <div class="card mt-4">
                 <div class="card-header">
                     <div>
@@ -754,24 +763,29 @@
                     } %}
                         {% import 'macro_functions.html.twig' as mf %}
                         {% block form_content %}
+                            {% if invoice.approved %}
+                            <div class="alert alert-info" role="alert">
+                                {{ 'This invoice is issued: its number, status, and approval state are locked. Correct it with a payment, credit note, reissue, or cancel (void) instead.'|trans }}
+                            </div>
+                            {% endif %}
                             <div class="row g-3">
                                 <div class="col-12">
                                     <label class="form-label d-block">{{ 'Status'|trans }}</label>
                                     <div class="d-flex flex-wrap gap-3">
                                         <label class="form-check">
-                                            <input class="form-check-input" id="radioStatusPaid" type="radio" name="status" value="paid"{% if invoice.status == 'paid' %} checked{% endif %}>
+                                            <input class="form-check-input" id="radioStatusPaid" type="radio" name="status" value="paid"{% if invoice.status == 'paid' %} checked{% endif %}{% if invoice.approved %} disabled{% endif %}>
                                             <span class="form-check-label">{{ 'Paid'|trans }}</span>
                                         </label>
                                         <label class="form-check">
-                                            <input class="form-check-input" id="radioStatusUnpaid" type="radio" name="status" value="unpaid"{% if invoice.status == 'unpaid' %} checked{% endif %}>
+                                            <input class="form-check-input" id="radioStatusUnpaid" type="radio" name="status" value="unpaid"{% if invoice.status == 'unpaid' %} checked{% endif %}{% if invoice.approved %} disabled{% endif %}>
                                             <span class="form-check-label">{{ 'Unpaid'|trans }}</span>
                                         </label>
                                         <label class="form-check">
-                                            <input class="form-check-input" id="radioStatusRefunded" type="radio" name="status" value="refunded"{% if invoice.status == 'refunded' %} checked{% endif %}>
+                                            <input class="form-check-input" id="radioStatusRefunded" type="radio" name="status" value="refunded"{% if invoice.status == 'refunded' %} checked{% endif %}{% if invoice.approved %} disabled{% endif %}>
                                             <span class="form-check-label">{{ 'Refunded'|trans }}</span>
                                         </label>
                                         <label class="form-check">
-                                            <input class="form-check-input" id="radioStatusCanceled" type="radio" name="status" value="canceled"{% if invoice.status == 'canceled' %} checked{% endif %}>
+                                            <input class="form-check-input" id="radioStatusCanceled" type="radio" name="status" value="canceled"{% if invoice.status == 'canceled' %} checked{% endif %}{% if invoice.approved %} disabled{% endif %}>
                                             <span class="form-check-label">{{ 'Canceled'|trans }}</span>
                                         </label>
                                     </div>
@@ -780,22 +794,22 @@
                                     <label class="form-label d-block">{{ 'Approved'|trans }}</label>
                                     <div class="d-flex flex-wrap gap-3">
                                         <label class="form-check">
-                                            <input class="form-check-input" id="radioApprovedYes" type="radio" name="approved" value="1"{% if invoice.approved  %} checked{% endif %}>
+                                            <input class="form-check-input" id="radioApprovedYes" type="radio" name="approved" value="1"{% if invoice.approved  %} checked{% endif %}{% if invoice.approved %} disabled{% endif %}>
                                             <span class="form-check-label">{{ 'Yes'|trans }}</span>
                                         </label>
                                         <label class="form-check">
-                                            <input class="form-check-input" id="radioApprovedNo" type="radio" name="approved" value="0"{% if not invoice.approved %} checked{% endif %}>
+                                            <input class="form-check-input" id="radioApprovedNo" type="radio" name="approved" value="0"{% if not invoice.approved %} checked{% endif %}{% if invoice.approved %} disabled{% endif %}>
                                             <span class="form-check-label">{{ 'No'|trans }}</span>
                                         </label>
                                     </div>
                                 </div>
                                 <div class="col-lg-6">
                                     <label class="form-label" for="invoice_serie">{{ 'Serie'|trans }}</label>
-                                    <input class="form-control" id="invoice_serie" type="text" name="serie" value="{{ invoice.serie }}">
+                                    <input class="form-control" id="invoice_serie" type="text" name="serie" value="{{ invoice.serie }}"{% if invoice.approved %} disabled{% endif %}>
                                 </div>
                                 <div class="col-lg-6">
                                     <label class="form-label" for="invoice_number">{{ 'Number'|trans }}</label>
-                                    <input class="form-control" id="invoice_number" type="text" name="nr" value="{{ invoice.nr }}">
+                                    <input class="form-control" id="invoice_number" type="text" name="nr" value="{{ invoice.nr }}"{% if invoice.approved %} disabled{% endif %}>
                                 </div>
                             </div>
                         {% endblock %}

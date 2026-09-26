@@ -25,6 +25,7 @@ use Box\Mod\Invoice\Entity\Transaction;
 use Box\Mod\Invoice\Event\AfterAdminGenerateRenewalInvoiceEvent;
 use Box\Mod\Invoice\Event\AfterAdminInvoiceApproveEvent;
 use Box\Mod\Invoice\Event\AfterAdminInvoiceAttachOrderEvent;
+use Box\Mod\Invoice\Event\AfterAdminInvoiceCancelEvent;
 use Box\Mod\Invoice\Event\AfterAdminInvoiceDebitEvent;
 use Box\Mod\Invoice\Event\AfterAdminInvoiceDeleteEvent;
 use Box\Mod\Invoice\Event\AfterAdminInvoicePaymentReceivedEvent;
@@ -36,6 +37,7 @@ use Box\Mod\Invoice\Event\AfterInvoiceIsDueEvent;
 use Box\Mod\Invoice\Event\BeforeAdminGenerateRenewalInvoiceEvent;
 use Box\Mod\Invoice\Event\BeforeAdminInvoiceApproveEvent;
 use Box\Mod\Invoice\Event\BeforeAdminInvoiceAttachOrderEvent;
+use Box\Mod\Invoice\Event\BeforeAdminInvoiceCancelEvent;
 use Box\Mod\Invoice\Event\BeforeAdminInvoiceDebitEvent;
 use Box\Mod\Invoice\Event\BeforeAdminInvoiceDeleteEvent;
 use Box\Mod\Invoice\Event\BeforeAdminInvoiceRefundEvent;
@@ -4793,26 +4795,26 @@ test('debitInvoice refuses ineligible invoices and lines', function (): void {
 });
 
 test('isInvoiceEditable gates issued invoices by setting', function (): void {
-    // [approved, status, setting, expected]
+    // [approved, status, mode, expected]
     $cases = [
-        [false, Invoice::STATUS_UNPAID, false, true],
-        [false, Invoice::STATUS_UNPAID, true, true],
-        [true, Invoice::STATUS_UNPAID, false, false],
-        [true, Invoice::STATUS_UNPAID, true, true],
-        [true, Invoice::STATUS_PAID, true, false],
-        [false, Invoice::STATUS_PAID, true, false],
-        [true, Invoice::STATUS_REFUNDED, true, false],
-        [true, Invoice::STATUS_CANCELED, true, false],
+        [false, Invoice::STATUS_UNPAID, 'strict', true],
+        [false, Invoice::STATUS_UNPAID, 'relaxed', true],
+        [true, Invoice::STATUS_UNPAID, 'strict', false],
+        [true, Invoice::STATUS_UNPAID, 'relaxed', true],
+        [true, Invoice::STATUS_PAID, 'relaxed', false],
+        [false, Invoice::STATUS_PAID, 'relaxed', false],
+        [true, Invoice::STATUS_REFUNDED, 'relaxed', false],
+        [true, Invoice::STATUS_CANCELED, 'relaxed', false],
     ];
 
-    foreach ($cases as [$approved, $status, $allow, $expected]) {
+    foreach ($cases as [$approved, $status, $mode, $expected]) {
         $service = new Service();
         $invoice = createEntity(Invoice::class);
         $invoice->setApproved($approved);
         $invoice->setStatus($status);
 
         $systemMock = Mockery::mock(SystemService::class);
-        $systemMock->shouldReceive('getParamValue')->with('invoice_allow_edit_unpaid', false)->andReturn($allow);
+        $systemMock->shouldReceive('getParamValue')->with('invoice_immutability', null)->andReturn($mode);
 
         $di = container();
         $di['mod_service'] = $di->protect(moduleService(['system' => $systemMock]));
@@ -4820,6 +4822,31 @@ test('isInvoiceEditable gates issued invoices by setting', function (): void {
 
         expect($service->isInvoiceEditable($invoice))->toBe($expected);
     }
+});
+
+test('isImmutabilityRelaxed falls back to legacy keys before migration', function (): void {
+    $service = new Service();
+    $systemMock = Mockery::mock(SystemService::class);
+    $systemMock->shouldReceive('getParamValue')->with('invoice_immutability', null)->andReturn(null);
+    $systemMock->shouldReceive('getParamValue')->with('invoice_allow_edit_unpaid', false)->andReturn('1');
+    $systemMock->shouldReceive('getParamValue')->with('invoice_allow_delete_approved', false)->andReturn('0');
+
+    $di = container();
+    $di['mod_service'] = $di->protect(moduleService(['system' => $systemMock]));
+    $service->setDi($di);
+
+    expect($service->isImmutabilityRelaxed())->toBeTrue();
+
+    $migratedMock = Mockery::mock(SystemService::class);
+    $migratedMock->shouldReceive('getParamValue')->with('invoice_immutability', null)->andReturn('strict');
+    $migratedMock->shouldNotReceive('getParamValue')->with('invoice_allow_edit_unpaid', Mockery::any());
+    $migratedMock->shouldNotReceive('getParamValue')->with('invoice_allow_delete_approved', Mockery::any());
+
+    $migratedDi = container();
+    $migratedDi['mod_service'] = $migratedDi->protect(moduleService(['system' => $migratedMock]));
+    $service->setDi($migratedDi);
+
+    expect($service->isImmutabilityRelaxed())->toBeFalse();
 });
 
 test('updateInvoice refuses to edit a locked invoice', function (): void {
@@ -4847,7 +4874,7 @@ test('updateInvoice resends an approved invoice after editing it', function (): 
     $invoice->setStatus(Invoice::STATUS_UNPAID);
 
     $systemMock = Mockery::mock(SystemService::class);
-    $systemMock->shouldReceive('getParamValue')->with('invoice_allow_edit_unpaid', false)->andReturn(true);
+    $systemMock->shouldReceive('getParamValue')->with('invoice_immutability', null)->andReturn('relaxed');
 
     $itemInvoiceServiceMock = Mockery::mock(ServiceInvoiceItem::class);
     $itemInvoiceServiceMock->shouldNotReceive('addNew', 'update');
@@ -5117,7 +5144,7 @@ test('attachOrderToInvoice attaches an existing pending order as an order line',
     };
 
     $systemService = Mockery::mock(SystemService::class);
-    $systemService->shouldReceive('getParamValue')->with('invoice_allow_edit_unpaid', false)->andReturn(true);
+    $systemService->shouldReceive('getParamValue')->with('invoice_immutability', null)->andReturn('relaxed');
 
     $invoiceItemServiceMock = Mockery::mock(ServiceInvoiceItem::class);
     $invoiceItemServiceMock->shouldReceive('generateFromOrder')->once()->andReturnNull();
@@ -5225,7 +5252,7 @@ test('attachOrderToInvoice refuses locked invoices and invalid orders', function
     };
 
     $systemService = Mockery::mock(SystemService::class);
-    $systemService->shouldReceive('getParamValue')->with('invoice_allow_edit_unpaid', false)->andReturn(false);
+    $systemService->shouldReceive('getParamValue')->with('invoice_immutability', null)->andReturn('strict');
 
     $em = Mockery::mock(EntityManagerInterface::class);
     $em->shouldNotReceive('wrapInTransaction', 'persist', 'flush');
@@ -5494,4 +5521,327 @@ test('reissueInvoice refuses drafts, paid invoices, notes, and double reissue', 
         expect($event)->toBeInstanceOf(BeforeAdminInvoiceReissueEvent::class)
             ->and($event->invoiceId)->toBe(10);
     }
+});
+
+test('cancelInvoice voids an approved unpaid invoice without replacement', function (): void {
+    $original = createEntity(Invoice::class, ['clientId' => 5, 'currency' => 'USD']);
+    $original->setApproved(true);
+    $original->setStatus(Invoice::STATUS_UNPAID);
+    setEntityId($original, 10);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+
+    $eventDispatcher = new class {
+        public array $events = [];
+
+        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        {
+            $this->events[] = $event;
+
+            return $event;
+        }
+    };
+
+    $productService = Mockery::mock(ProductService::class);
+    $productService->shouldReceive('releaseReservedPromoRedemptionsForInvoice')->once()->with($original, 'invoice_canceled');
+    $productService->shouldReceive('releaseReservedStockForInvoice')->once()->with($original, 'invoice_canceled');
+
+    $txRepo = Mockery::mock(TransactionRepository::class);
+    $txRepo->shouldReceive('detachFromInvoice')->once()->with(10);
+
+    $invoiceRepo = invoiceLockingRepository(['status' => Invoice::STATUS_UNPAID, 'approved' => true]);
+    $invoiceRepo->shouldReceive('find')->with(10)->andReturn($original);
+
+    $em = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
+    $em->shouldReceive('wrapInTransaction')->andReturnUsing(fn (callable $callback): mixed => $callback());
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
+    $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($txRepo);
+    $em->shouldReceive('refresh')->byDefault();
+    $em->shouldReceive('persist')->atLeast()->once();
+    $em->shouldReceive('flush')->atLeast()->once();
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(moduleService(['product' => $productService]));
+    $di['event_dispatcher'] = $eventDispatcher;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $serviceMock->setDi($di);
+
+    expect($serviceMock->cancelInvoice($original, ['reason' => 'Client gone']))->toBeTrue()
+        ->and($original->getStatus())->toBe(Invoice::STATUS_CANCELED)
+        ->and($eventDispatcher->events)->toHaveCount(2)
+        ->and($eventDispatcher->events[0])->toBeInstanceOf(BeforeAdminInvoiceCancelEvent::class)
+        ->and($eventDispatcher->events[0]->invoiceId)->toBe(10)
+        ->and($eventDispatcher->events[1])->toBeInstanceOf(AfterAdminInvoiceCancelEvent::class)
+        ->and($eventDispatcher->events[1]->invoiceId)->toBe(10);
+});
+
+test('cancelInvoice refuses drafts, paid invoices, notes, and reissued invoices', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+
+    $eventDispatcher = new class {
+        public array $events = [];
+
+        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        {
+            $this->events[] = $event;
+
+            return $event;
+        }
+    };
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldNotReceive('wrapInTransaction', 'persist', 'flush');
+
+    $di = container();
+    $di['em'] = $em;
+    $di['event_dispatcher'] = $eventDispatcher;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $serviceMock->setDi($di);
+
+    $draft = createEntity(Invoice::class, ['clientId' => 5]);
+    $draft->setApproved(false);
+    $draft->setStatus(Invoice::STATUS_UNPAID);
+    setEntityId($draft, 10);
+    expect(fn () => $serviceMock->cancelInvoice($draft))
+        ->toThrow(FOSSBilling\InformationException::class, 'Only approved unpaid invoices can be canceled');
+
+    $paid = createEntity(Invoice::class, ['clientId' => 5]);
+    $paid->setApproved(true);
+    $paid->setStatus(Invoice::STATUS_PAID);
+    setEntityId($paid, 10);
+    expect(fn () => $serviceMock->cancelInvoice($paid))
+        ->toThrow(FOSSBilling\InformationException::class, 'Only approved unpaid invoices can be canceled');
+
+    $note = createEntity(Invoice::class, ['clientId' => 5]);
+    $note->setApproved(true);
+    $note->setStatus(Invoice::STATUS_UNPAID);
+    $note->setCreditNoteForInvoiceId(7);
+    setEntityId($note, 10);
+    expect(fn () => $serviceMock->cancelInvoice($note))
+        ->toThrow(FOSSBilling\InformationException::class, 'Only approved unpaid invoices can be canceled');
+
+    $already = createEntity(Invoice::class, ['clientId' => 5]);
+    $already->setApproved(true);
+    $already->setStatus(Invoice::STATUS_UNPAID);
+    $already->setReplacedByInvoiceId(11);
+    setEntityId($already, 10);
+    expect(fn () => $serviceMock->cancelInvoice($already))
+        ->toThrow(FOSSBilling\InformationException::class, 'Only approved unpaid invoices can be canceled');
+
+    expect($eventDispatcher->events)->toHaveCount(4);
+    foreach ($eventDispatcher->events as $event) {
+        expect($event)->toBeInstanceOf(BeforeAdminInvoiceCancelEvent::class)
+            ->and($event->invoiceId)->toBe(10);
+    }
+});
+
+test('isInvoiceCancellable and isDeletableByAdmin gate cancel and delete', function (): void {
+    $systemService = Mockery::mock(SystemService::class);
+    $systemService->shouldReceive('getParamValue')->with('invoice_immutability', null)->andReturn('strict');
+
+    $service = new Service();
+    $di = container();
+    $di['mod_service'] = $di->protect(moduleService(['system' => $systemService]));
+    $service->setDi($di);
+
+    $draft = createEntity(Invoice::class, ['clientId' => 5]);
+    $draft->setApproved(false);
+    $draft->setStatus(Invoice::STATUS_UNPAID);
+    expect($service->isInvoiceCancellable($draft))->toBeFalse();
+    expect($service->isDeletableByAdmin($draft))->toBeTrue();
+
+    $issued = createEntity(Invoice::class, ['clientId' => 5]);
+    $issued->setApproved(true);
+    $issued->setStatus(Invoice::STATUS_UNPAID);
+    expect($service->isInvoiceCancellable($issued))->toBeTrue();
+    expect($service->isDeletableByAdmin($issued))->toBeFalse();
+
+    $paid = createEntity(Invoice::class, ['clientId' => 5]);
+    $paid->setApproved(true);
+    $paid->setStatus(Invoice::STATUS_PAID);
+    expect($service->isInvoiceCancellable($paid))->toBeFalse();
+    expect($service->isDeletableByAdmin($paid))->toBeFalse();
+
+    $canceled = createEntity(Invoice::class, ['clientId' => 5]);
+    $canceled->setApproved(true);
+    $canceled->setStatus(Invoice::STATUS_CANCELED);
+    expect($service->isInvoiceCancellable($canceled))->toBeFalse();
+    expect($service->isDeletableByAdmin($canceled))->toBeFalse();
+
+    $note = createEntity(Invoice::class, ['clientId' => 5]);
+    $note->setApproved(true);
+    $note->setStatus(Invoice::STATUS_UNPAID);
+    $note->setCreditNoteForInvoiceId(7);
+    expect($service->isInvoiceCancellable($note))->toBeFalse();
+    expect($service->isDeletableByAdmin($note))->toBeFalse();
+});
+
+test('deleteInvoiceByAdmin honors invoice immutability', function (): void {
+    $makeService = function (string $mode): array {
+        $serviceMock = Mockery::mock(Service::class)->makePartial();
+
+        $eventDispatcher = new class {
+            public array $events = [];
+
+            public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+            {
+                $this->events[] = $event;
+
+                return $event;
+            }
+        };
+
+        $systemService = Mockery::mock(SystemService::class);
+        $systemService->shouldReceive('getParamValue')->with('invoice_immutability', null)->andReturn($mode);
+
+        $di = container();
+        $di['mod_service'] = $di->protect(moduleService(['system' => $systemService]));
+        $di['event_dispatcher'] = $eventDispatcher;
+        $di['logger'] = new Tests\Helpers\TestLogger();
+        $serviceMock->setDi($di);
+
+        return [$serviceMock, $eventDispatcher];
+    };
+
+    // Approved unpaid invoice: refused when strict …
+    [$offService, $offEvents] = $makeService('strict');
+    $issued = createEntity(Invoice::class, ['clientId' => 5]);
+    $issued->setApproved(true);
+    $issued->setStatus(Invoice::STATUS_UNPAID);
+    setEntityId($issued, 10);
+    expect(fn () => $offService->deleteInvoiceByAdmin($issued))
+        ->toThrow(FOSSBilling\InformationException::class, 'Only unapproved, unpaid invoices can be deleted');
+    expect($offEvents->events)->toHaveCount(0);
+
+    // … but deleted when relaxed.
+    [$onService, $onEvents] = $makeService('relaxed');
+    $issuedOn = createEntity(Invoice::class, ['clientId' => 5]);
+    $issuedOn->setApproved(true);
+    $issuedOn->setStatus(Invoice::STATUS_UNPAID);
+    setEntityId($issuedOn, 10);
+    $onService->shouldReceive('rmInvoice')->once()->with($issuedOn, true)->andReturn(true);
+    expect($onService->deleteInvoiceByAdmin($issuedOn))->toBeTrue()
+        ->and($onEvents->events)->toHaveCount(2)
+        ->and($onEvents->events[0])->toBeInstanceOf(BeforeAdminInvoiceDeleteEvent::class)
+        ->and($onEvents->events[1])->toBeInstanceOf(AfterAdminInvoiceDeleteEvent::class);
+
+    // Canceled invoices need relaxed mode too.
+    [$canceledService, $canceledEvents] = $makeService('relaxed');
+    $canceled = createEntity(Invoice::class, ['clientId' => 5]);
+    $canceled->setApproved(true);
+    $canceled->setStatus(Invoice::STATUS_CANCELED);
+    setEntityId($canceled, 11);
+    $canceledService->shouldReceive('rmInvoice')->once()->with($canceled, true)->andReturn(true);
+    expect($canceledService->deleteInvoiceByAdmin($canceled))->toBeTrue()
+        ->and($canceledEvents->events)->toHaveCount(2);
+
+    // Paid invoices are never deletable, even when relaxed.
+    [$paidService, $paidEvents] = $makeService('relaxed');
+    $paid = createEntity(Invoice::class, ['clientId' => 5]);
+    $paid->setApproved(true);
+    $paid->setStatus(Invoice::STATUS_PAID);
+    setEntityId($paid, 12);
+    expect(fn () => $paidService->deleteInvoiceByAdmin($paid))
+        ->toThrow(FOSSBilling\InformationException::class, 'Only unapproved, unpaid invoices can be deleted');
+    expect($paidEvents->events)->toHaveCount(0);
+});
+
+test('updateInvoice refuses identity changes on issued invoices even when relaxed', function (): void {
+    $service = new Service();
+    $invoice = createEntity(Invoice::class, ['id' => 10, 'serie' => 'FB-', 'nr' => '42']);
+    $invoice->setApproved(true);
+    $invoice->setStatus(Invoice::STATUS_UNPAID);
+
+    $systemMock = Mockery::mock(SystemService::class);
+    $systemMock->shouldReceive('getParamValue')->with('invoice_immutability', null)->andReturn('relaxed');
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldNotReceive('wrapInTransaction', 'persist', 'flush');
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(moduleService(['system' => $systemMock]));
+    $di['event_dispatcher'] = Mockery::mock(EventDispatcher::class)->shouldIgnoreMissing();
+    $service->setDi($di);
+
+    // Rewriting the number, series, status, or approval of an issued invoice
+    // is refused even though relaxed content edits are allowed.
+    expect(fn () => $service->updateInvoice($invoice, ['nr' => '43']))
+        ->toThrow(FOSSBilling\InformationException::class, 'locked once issued');
+    expect(fn () => $service->updateInvoice($invoice, ['serie' => 'XX-']))
+        ->toThrow(FOSSBilling\InformationException::class, 'locked once issued');
+    expect(fn () => $service->updateInvoice($invoice, ['status' => Invoice::STATUS_PAID]))
+        ->toThrow(FOSSBilling\InformationException::class, 'locked once issued');
+    expect(fn () => $service->updateInvoice($invoice, ['approved' => false]))
+        ->toThrow(FOSSBilling\InformationException::class, 'locked once issued');
+});
+
+test('promoAddToInvoice and promoRemoveFromInvoice refuse locked issued invoices', function (): void {
+    $service = new Service();
+
+    $systemMock = Mockery::mock(SystemService::class);
+    $systemMock->shouldReceive('getParamValue')->with('invoice_immutability', null)->andReturn('strict');
+
+    $di = container();
+    $di['mod_service'] = $di->protect(moduleService(['system' => $systemMock]));
+    $service->setDi($di);
+
+    $invoice = createEntity(Invoice::class, ['id' => 10]);
+    $invoice->setApproved(true);
+    $invoice->setStatus(Invoice::STATUS_UNPAID);
+    $promo = new Box\Mod\Product\Entity\Promo();
+
+    expect(fn () => $service->promoAddToInvoice($invoice, $promo))
+        ->toThrow(FOSSBilling\InformationException::class, 'can no longer be edited');
+    expect(fn () => $service->promoRemoveFromInvoice($invoice, $promo))
+        ->toThrow(FOSSBilling\InformationException::class, 'can no longer be edited');
+});
+
+test('removeExpiredUnpaidInvoices voids issued invoices, deletes drafts, and skips notes', function (): void {
+    $systemServiceMock = Mockery::mock(SystemService::class);
+    $systemServiceMock->shouldReceive('getParamValue')
+        ->with('remove_after_days')
+        ->atLeast()->once()
+        ->andReturn(30);
+
+    $issued = createEntity(Invoice::class, ['id' => 10]);
+    $issued->setApproved(true);
+    $issued->setStatus(Invoice::STATUS_UNPAID);
+
+    $draft = createEntity(Invoice::class, ['id' => 11]);
+    $draft->setApproved(false);
+    $draft->setStatus(Invoice::STATUS_UNPAID);
+
+    $note = createEntity(Invoice::class, ['id' => 12]);
+    $note->setApproved(true);
+    $note->setStatus(Invoice::STATUS_UNPAID);
+    $note->setDebitNoteForInvoiceId(7);
+
+    $invoiceServiceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $invoiceServiceMock->shouldReceive('cancelInvoice')
+        ->once()
+        ->with($issued, Mockery::type('array'))
+        ->andReturn(true);
+    $invoiceServiceMock->shouldReceive('rmInvoice')
+        ->once()
+        ->with($draft)
+        ->andReturn(true);
+    $invoiceServiceMock->shouldNotReceive('cancelInvoice')->with($note, Mockery::any());
+    $invoiceServiceMock->shouldNotReceive('rmInvoice')->with($note);
+
+    $di = container();
+    $di['em']->getRepository(Invoice::class)->shouldReceive('findUnpaidOlderThan')
+        ->with(30)
+        ->once()
+        ->andReturn([$issued, $draft, $note]);
+    $di['mod_service'] = $di->protect(fn (string $name = ''): object => match (strtolower($name)) {
+        'system' => $systemServiceMock,
+        'invoice' => $invoiceServiceMock,
+        default => Mockery::mock()->shouldIgnoreMissing(),
+    });
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $invoiceServiceMock->setDi($di);
+    $invoiceServiceMock->removeExpiredUnpaidInvoices(new AfterAdminCronRunEvent());
 });
