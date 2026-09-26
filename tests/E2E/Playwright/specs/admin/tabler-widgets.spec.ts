@@ -1,3 +1,4 @@
+// cspell:words Faible Moyen valuetext
 import { test, expect, type Page } from '@playwright/test';
 import { build } from 'esbuild';
 import { resolve } from 'node:path';
