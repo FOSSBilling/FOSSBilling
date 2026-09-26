@@ -16,6 +16,7 @@ use Box\Mod\Client\Entity\ClientBalance;
 use Box\Mod\Cron\Event\AfterAdminCronRunEvent;
 use Box\Mod\Currency\Entity\Currency;
 use Box\Mod\Invoice\Entity\Invoice;
+use Box\Mod\Invoice\Entity\InvoiceEvent;
 use Box\Mod\Invoice\Entity\InvoiceItem;
 use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Transaction;
@@ -706,6 +707,72 @@ class Service implements InjectionAwareInterface
         );
     }
 
+    /**
+     * Append an entry to the invoice journal: a trimmed snapshot of the
+     * invoice taken after the transition, so the full history (including
+     * past buyer/seller details) stays queryable after the fact. Journal
+     * writes never break the business operation: failures are logged and
+     * swallowed, mirroring the mail sends.
+     */
+    public function recordJournalEvent(Invoice $invoice, string $type, ?array $extra = null): void
+    {
+        try {
+            $data = $this->toApiArray($invoice);
+            $snapshot = [
+                'serie_nr' => $data['serie_nr'] ?? null,
+                'status' => $data['status'] ?? null,
+                'issued' => $data['issued'] ?? null,
+                'subtotal' => $data['subtotal'] ?? null,
+                'tax' => $data['tax'] ?? null,
+                'total' => $data['total'] ?? null,
+                'buyer' => $data['buyer'] ?? null,
+                'seller' => $data['seller'] ?? null,
+                'paid_at' => $data['paid_at'] ?? null,
+                'due_at' => $data['due_at'] ?? null,
+                'created_at' => $data['created_at'] ?? null,
+            ];
+            if ($extra !== null) {
+                $snapshot += $extra;
+            }
+
+            $adminId = null;
+            if (isset($this->di['auth']) && $this->di['auth']->isAdminLoggedIn() && isset($this->di['loggedin_admin'])) {
+                $adminId = (int) $this->di['loggedin_admin']->getId();
+            }
+
+            $journal = new InvoiceEvent();
+            $journal->setInvoiceId($invoice->getId());
+            $journal->setType($type);
+            $journal->setAdminId($adminId);
+            $journal->setClientId($invoice->getClientId());
+            $journal->setSnapshot($snapshot);
+            $this->di['em']->persist($journal);
+            $this->di['em']->flush();
+        } catch (\Throwable $exception) {
+            $this->di['logger']->error('Failed to record invoice journal event', [
+                'invoice_id' => $invoice->getId(),
+                'exception' => $exception,
+            ]);
+        }
+    }
+
+    /**
+     * @return list<array>
+     */
+    public function getJournalForInvoice(int $invoiceId): array
+    {
+        $events = $this->di['em']->getRepository(InvoiceEvent::class)->findByInvoiceId($invoiceId);
+
+        return array_map(fn (InvoiceEvent $event): array => [
+            'id' => $event->getId(),
+            'type' => $event->getType(),
+            'admin_id' => $event->getAdminId(),
+            'client_id' => $event->getClientId(),
+            'snapshot' => $event->getSnapshot(),
+            'created_at' => $event->getCreatedAt()?->format('Y-m-d H:i:s'),
+        ], $events);
+    }
+
     public function sendInvoiceReminderEmail(AfterAdminInvoiceReminderRecordedEvent $event): void
     {
         $di = $this->di ?? throw new \LogicException('The Invoice service dependency injection container has not been set.');
@@ -932,6 +999,8 @@ class Service implements InjectionAwareInterface
         }
 
         $this->di['logger']->info("Marked invoice {$invoice->getId()} as paid.");
+
+        $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_PAID);
 
         return true;
     }
@@ -1229,6 +1298,8 @@ class Service implements InjectionAwareInterface
 
         $this->di['logger']->info("Prepared new invoice {$invoiceId}.");
 
+        $this->recordJournalEvent($model, InvoiceEvent::TYPE_CREATED);
+
         if (isset($data['issue']) && $data['issue']) {
             try {
                 $this->issueInvoice($model, ['id' => $invoiceId]);
@@ -1353,6 +1424,8 @@ class Service implements InjectionAwareInterface
         $this->di['event_dispatcher']->dispatch(new AfterAdminInvoiceIssueEvent((int) $invoice->getId()));
 
         $this->di['logger']->info("Issued invoice {$invoice->getId()}.");
+
+        $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_ISSUED);
 
         return true;
     }
@@ -1654,6 +1727,8 @@ class Service implements InjectionAwareInterface
 
         $this->di['logger']->info("Refunded invoice #{$invoice->getId()}.");
 
+        $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_REFUNDED);
+
         return $result;
     }
 
@@ -1926,6 +2001,8 @@ class Service implements InjectionAwareInterface
 
         $this->di['logger']->info("Debited invoice #{$invoice->getId()}.");
 
+        $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_DEBITED);
+
         return $result;
     }
 
@@ -2042,6 +2119,8 @@ class Service implements InjectionAwareInterface
 
         $this->di['logger']->info("Attached order {$order->getId()} to invoice {$invoice->getId()}.");
 
+        $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_ORDER_ATTACHED, ['order_id' => (int) $order->getId()]);
+
         return (int) $order->getId();
     }
 
@@ -2106,6 +2185,8 @@ class Service implements InjectionAwareInterface
         }
 
         $this->di['logger']->info("Canceled invoice #{$original->getId()} without replacement.");
+
+        $this->recordJournalEvent($original, InvoiceEvent::TYPE_CANCELED, ['reason' => $reason]);
 
         return true;
     }
@@ -2308,6 +2389,8 @@ class Service implements InjectionAwareInterface
         $this->di['event_dispatcher']->dispatch(new AfterAdminInvoiceReissueEvent((int) $original->getId(), $result));
 
         $this->di['logger']->info("Reissued invoice #{$original->getId()} as #{$result}.");
+
+        $this->recordJournalEvent($original, InvoiceEvent::TYPE_REISSUED, ['replacement_id' => $result]);
 
         return $result;
     }
@@ -2565,6 +2648,8 @@ class Service implements InjectionAwareInterface
         $this->di['event_dispatcher']->dispatch(new AfterAdminInvoiceUpdateEvent((int) $model->getId()));
 
         $this->di['logger']->info("Updated invoice {$model->getId()}.");
+
+        $this->recordJournalEvent($model, InvoiceEvent::TYPE_UPDATED, ['changed_fields' => $changedFields]);
 
         // An edit to an already-issued invoice changes what the client was
         // sent, so re-send it (the issue path sends on its own).
@@ -2985,6 +3070,9 @@ class Service implements InjectionAwareInterface
                 $entityManager->remove($item);
             }
             $entityManager->flush();
+            // The journal goes with the invoice: only drafts are deletable,
+            // so there is no audit trail to preserve here.
+            $entityManager->getRepository(InvoiceEvent::class)->deleteByInvoiceId((int) $model->getId());
             $entityManager->remove($model);
             $entityManager->flush();
         });
@@ -3148,6 +3236,8 @@ class Service implements InjectionAwareInterface
                 $this->di['em']->flush();
             }
         }
+
+        $this->recordJournalEvent($proforma, InvoiceEvent::TYPE_CREATED);
 
         return $proforma;
     }
@@ -3340,6 +3430,8 @@ class Service implements InjectionAwareInterface
 
         $this->di['logger']->info('Invoice payment reminder recorded');
 
+        $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_REMINDER);
+
         return true;
     }
 
@@ -3405,6 +3497,8 @@ class Service implements InjectionAwareInterface
 
         $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
         $invoiceItemService->generateForAddFunds($proforma, $amount);
+
+        $this->recordJournalEvent($proforma, InvoiceEvent::TYPE_CREATED);
 
         return $proforma;
     }

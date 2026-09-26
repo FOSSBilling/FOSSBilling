@@ -214,6 +214,10 @@ class UpdatePatcher implements InjectionAwareInterface
         // Portable invoice settings/rename steps, shared with the drift healer.
         $this->applyPortableInvoiceMigrations();
 
+        // Baseline the invoice journal on every driver. Deliberately outside
+        // the drift healer above: a large backlog must not stall page loads.
+        $this->backfillInvoiceJournal();
+
         // Additive structural sync runs on every platform, MySQL/MariaDB included: it picks up any
         // column/table/index that's on entity metadata but not yet applied, without needing a
         // hand-written patch for it - the only mechanism at all on PostgreSQL/SQLite, and on
@@ -598,6 +602,104 @@ class UpdatePatcher implements InjectionAwareInterface
         $this->executeSql($this->isMysqlDriver()
             ? 'ALTER TABLE `invoice` DROP COLUMN `buyer_phone_cc`'
             : 'ALTER TABLE invoice DROP COLUMN buyer_phone_cc');
+    }
+
+    /**
+     * Writes one baseline journal entry per invoice that has none, typed by
+     * its actual current state (drafts as created, the rest by status). No
+     * history is fabricated: installs upgrading to the journal get a truthful
+     * starting point, and every later transition appends live entries.
+     * Portable across drivers; idempotent since journaled invoices are
+     * skipped. Runs from applyCorePatches() only, never from the drift
+     * healer, so a large backlog can't stall page loads.
+     */
+    private function backfillInvoiceJournal(): void
+    {
+        if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('dbal')) {
+            return;
+        }
+
+        $dbal = $this->di['dbal'];
+        if (!$dbal->createSchemaManager()->tablesExist(['invoice_event'])) {
+            return;
+        }
+
+        $padding = $dbal->fetchOne("SELECT value FROM setting WHERE param = 'invoice_number_padding'");
+        $padding = is_numeric($padding) && (int) $padding > 0 ? (int) $padding : 5;
+
+        $rows = $dbal->fetchAllAssociative(
+            'SELECT i.* FROM invoice i LEFT JOIN invoice_event e ON e.invoice_id = i.id WHERE e.id IS NULL'
+        );
+
+        foreach ($rows as $row) {
+            $nr = is_numeric($row['nr'] ?? null) ? (int) $row['nr'] : (int) $row['id'];
+            $snapshot = [
+                'serie_nr' => ($row['serie'] ?? '') . sprintf('%0' . $padding . 's', $nr),
+                'status' => $row['status'] ?? null,
+                'issued' => !empty($row['issued']),
+                'subtotal' => null,
+                'tax' => null,
+                'total' => null,
+                'buyer' => [
+                    'first_name' => $row['buyer_first_name'] ?? null,
+                    'last_name' => $row['buyer_last_name'] ?? null,
+                    'company' => $row['buyer_company'] ?? null,
+                    'company_vat' => $row['buyer_company_vat'] ?? null,
+                    'company_number' => $row['buyer_company_number'] ?? null,
+                    'address' => $row['buyer_address'] ?? null,
+                    'city' => $row['buyer_city'] ?? null,
+                    'state' => $row['buyer_state'] ?? null,
+                    'country' => $row['buyer_country'] ?? null,
+                    'phone' => $row['buyer_phone'] ?? null,
+                    'email' => $row['buyer_email'] ?? null,
+                    'zip' => $row['buyer_zip'] ?? null,
+                ],
+                'seller' => [
+                    'company' => $row['seller_company'] ?? null,
+                    'company_vat' => $row['seller_company_vat'] ?? null,
+                    'company_number' => $row['seller_company_number'] ?? null,
+                    'address' => $row['seller_address'] ?? null,
+                    'phone' => $row['seller_phone'] ?? null,
+                    'email' => $row['seller_email'] ?? null,
+                ],
+                'paid_at' => $this->normalizeBackfillDate($row['paid_at'] ?? null),
+                'due_at' => $this->normalizeBackfillDate($row['due_at'] ?? null),
+                'created_at' => $this->normalizeBackfillDate($row['created_at'] ?? null),
+            ];
+
+            $type = 'created';
+            if (!empty($row['issued'])) {
+                $type = match ($row['status'] ?? null) {
+                    'paid' => 'paid',
+                    'canceled' => 'canceled',
+                    'refunded' => 'refunded',
+                    default => 'issued',
+                };
+            }
+
+            $dbal->executeStatement(
+                'INSERT INTO invoice_event (invoice_id, type, client_id, snapshot, created_at) VALUES (:invoice_id, :type, :client_id, :snapshot, :created_at)',
+                [
+                    'invoice_id' => (int) $row['id'],
+                    'type' => $type,
+                    'client_id' => $row['client_id'] !== null ? (int) $row['client_id'] : null,
+                    'snapshot' => json_encode($snapshot),
+                    'created_at' => $snapshot['created_at'] ?? date('Y-m-d H:i:s'),
+                ]
+            );
+        }
+    }
+
+    private function normalizeBackfillDate(mixed $value): ?string
+    {
+        if ($value instanceof \DateTimeInterface) {
+            return $value->format('Y-m-d H:i:s');
+        }
+        if (is_string($value) && $value !== '') {
+            return $value;
+        }
+
+        return null;
     }
 
     /**
@@ -1111,6 +1213,8 @@ class UpdatePatcher implements InjectionAwareInterface
             120 => 'patch120',
             121 => 'patch121',
             122 => 'patch122',
+            123 => 'patch123',
+            124 => 'patch124',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -4234,6 +4338,30 @@ class UpdatePatcher implements InjectionAwareInterface
         if ($this->tableHasColumn('invoice', 'buyer_phone_cc')) {
             $this->executeSql('ALTER TABLE `invoice` DROP COLUMN `buyer_phone_cc`');
         }
+    }
+
+    private function patch123(): void
+    {
+        // The invoice journal keeps a per-invoice audit trail (see
+        // Service::recordJournalEvent()): one row per lifecycle transition
+        // with a trimmed snapshot. Fresh installs get the table from entity
+        // metadata and the portable sync covers non-MySQL drivers, so this
+        // MySQL-only CREATE is just for existing installs. The guard makes
+        // reruns a no-op.
+        if ($this->tableExists('invoice_event')) {
+            return;
+        }
+
+        $this->executeSql('CREATE TABLE `invoice_event` (`id` bigint(20) NOT NULL AUTO_INCREMENT, `invoice_id` bigint(20) DEFAULT NULL, `type` varchar(50) NOT NULL DEFAULT \'updated\', `admin_id` bigint(20) DEFAULT NULL, `client_id` bigint(20) DEFAULT NULL, `snapshot` JSON DEFAULT NULL, `created_at` datetime DEFAULT NULL, PRIMARY KEY (`id`), KEY `invoice_event_invoice_id_idx` (`invoice_id`))');
+    }
+
+    private function patch124(): void
+    {
+        // Baseline the invoice journal for installs predating it: one entry
+        // per unjournaled invoice, typed by its current state. The portable
+        // backfill covers non-MySQL drivers; both skip invoices that already
+        // have journal rows, so reruns are no-ops.
+        $this->backfillInvoiceJournal();
     }
 
     /**

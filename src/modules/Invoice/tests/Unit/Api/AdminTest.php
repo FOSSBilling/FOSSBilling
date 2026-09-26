@@ -145,6 +145,28 @@ test('gets an invoice', function (): void {
     expect($result)->toBeArray();
 });
 
+test('gets an invoice journal', function (): void {
+    $api = apiEndpoint(new Admin());
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('getJournalForInvoice')
+        ->once()
+        ->with(1)
+        ->andReturn([['id' => 7, 'type' => 'issued']]);
+
+    $model = createEntity(Invoice::class);
+    \Tests\Helpers\setEntityId($model, 1);
+
+    $di = container();
+    $di['em']->getRepository(Invoice::class)->shouldReceive('find')->atLeast()->once()->andReturn($model);
+
+    $api->setDi($di);
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($di['em']->getRepository(Invoice::class));
+    $api->setService($serviceMock);
+    $api->setIdentity(\Tests\Helpers\admin());
+
+    expect($api->journal(['id' => 1]))->toBe([['id' => 7, 'type' => 'issued']]);
+});
+
 test('gets an invoice with promo applications', function (): void {
     $api = apiEndpoint(new Admin());
     $serviceMock = Mockery::mock(Service::class);

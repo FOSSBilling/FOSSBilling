@@ -93,6 +93,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         $app->get('/invoice/gateways', 'get_gateways', [], static::class);
         $app->get('/invoice/gateway/:id', 'get_gateway', ['id' => '[0-9]+'], static::class);
         $app->get('/invoice/manage/:id', 'get_invoice', ['id' => '[0-9]+'], static::class);
+        $app->get('/invoice/manage/:id/journal-download', 'get_journal_download', ['id' => '[0-9]+'], static::class);
         $app->get('/invoice/transaction/:id', 'get_transaction', ['id' => '[0-9]+'], static::class);
         $app->get('/invoice/subscription/:id', 'get_subscription', ['id' => '[0-9]+'], static::class);
         $app->get('/invoice/tax', 'get_taxes', [], static::class);
@@ -205,6 +206,31 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         if (!$response instanceof Response) {
             throw new \FOSSBilling\Exception('Invoice PDF response could not be generated');
         }
+
+        return $response;
+    }
+
+    public function get_journal_download(\Box_App $app, $id): Response
+    {
+        $this->di['is_admin_logged'];
+
+        $api = $this->di['api_admin'];
+        $journal = $api->invoice_journal(['id' => $id]);
+
+        $eventId = $app->getRequest()->query->getInt('event', 0);
+        if ($eventId > 0) {
+            $journal = array_values(array_filter(
+                $journal,
+                static fn (array $entry): bool => (int) ($entry['id'] ?? 0) === $eventId
+            ));
+        }
+
+        $response = new Response(
+            (string) json_encode($journal, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
+            Response::HTTP_OK,
+            ['Content-Type' => 'application/json']
+        );
+        $response->headers->set('Content-Disposition', 'attachment; filename="invoice-' . ((int) $id) . '-journal.json"');
 
         return $response;
     }

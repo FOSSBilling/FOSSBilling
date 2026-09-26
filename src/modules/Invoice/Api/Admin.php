@@ -93,6 +93,22 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
+     * Get the audit journal of an invoice: one entry per lifecycle
+     * transition with a trimmed snapshot of the invoice at that time.
+     *
+     * @return array
+     */
+    #[RequiredParams(['id' => 'Invoice ID is missing'])]
+    public function journal($data)
+    {
+        $this->checkPermissions('invoice', 'view');
+
+        $model = $this->_getInvoice($data);
+
+        return $this->getService()->getJournalForInvoice((int) $model->getId());
+    }
+
+    /**
      * Sets invoice status to paid. This method differs from invoice update method
      * in a way that it sends notification to Events system, so emails are sent.
      *

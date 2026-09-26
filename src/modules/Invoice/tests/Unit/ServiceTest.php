@@ -18,6 +18,7 @@ use Box\Mod\Currency\Repository\CurrencyRepository;
 use Box\Mod\Currency\Service as CurrencyService;
 use Box\Mod\Email\Service as EmailService;
 use Box\Mod\Invoice\Entity\Invoice;
+use Box\Mod\Invoice\Entity\InvoiceEvent;
 use Box\Mod\Invoice\Entity\InvoiceItem;
 use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Subscription;
@@ -46,6 +47,7 @@ use Box\Mod\Invoice\Event\BeforeAdminInvoiceSendReminderEvent;
 use Box\Mod\Invoice\Event\BeforeAdminInvoiceSendRemindersEvent;
 use Box\Mod\Invoice\Event\BeforeAdminInvoiceUpdateEvent;
 use Box\Mod\Invoice\Event\BeforeInvoiceIsDueEvent;
+use Box\Mod\Invoice\Repository\InvoiceEventRepository;
 use Box\Mod\Invoice\Repository\InvoiceItemRepository;
 use Box\Mod\Invoice\Repository\InvoiceRepository;
 use Box\Mod\Invoice\Repository\PayGatewayRepository;
@@ -1005,6 +1007,11 @@ test('marks invoice as paid', function (): void {
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $serviceMock->setDi($di);
+    // The journal write itself is covered by the recorder tests; here only
+    // the hook firing matters.
+    $serviceMock->shouldReceive('recordJournalEvent')
+        ->once()
+        ->with($invoiceModel, InvoiceEvent::TYPE_PAID);
     $result = $serviceMock->markAsPaid($invoiceModel, true, true);
     expect($result)->toBeBool()->toBeTrue()
         ->and($invoiceModel->serie)->toBe('FOSS')
@@ -1492,6 +1499,10 @@ test('issues an invoice', function (): void {
     $di['mod_service'] = $di->protect(fn (): object => $systemService);
 
     $serviceMock->setDi($di);
+
+    $serviceMock->shouldReceive('recordJournalEvent')
+        ->once()
+        ->with($invoiceModel, InvoiceEvent::TYPE_ISSUED);
 
     $result = $serviceMock->issueInvoice($invoiceModel, $data);
     expect($result)->toBeTrue()
@@ -2240,6 +2251,11 @@ test('updates an invoice', function (): void {
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->setDi($di);
 
+    $serviceMock->shouldReceive('recordJournalEvent')
+        ->once()
+        ->withArgs(fn ($model, string $type, ?array $extra): bool => $type === InvoiceEvent::TYPE_UPDATED
+            && is_array($extra['changed_fields'] ?? null));
+
     $result = $serviceMock->updateInvoice($invoiceModel, $data);
     expect($result)->toBeTrue()
         // Snapshot params are ignored: parties freeze at issuance, and drafts
@@ -2279,6 +2295,10 @@ test('removes an invoice', function (): void {
     $transactionRepo = Mockery::mock(TransactionRepository::class);
     $transactionRepo->shouldReceive('detachFromInvoice')->once()->with((int) $invoiceModel->getId());
     $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($transactionRepo);
+
+    $journalRepo = Mockery::mock(InvoiceEventRepository::class);
+    $journalRepo->shouldReceive('deleteByInvoiceId')->once()->with((int) $invoiceModel->getId())->andReturn(0);
+    $em->shouldReceive('getRepository')->with(InvoiceEvent::class)->andReturn($journalRepo);
 
     $di = container();
     $di['em'] = $em;
@@ -3137,8 +3157,9 @@ test('records an invoice reminder and dispatches typed events', function (): voi
     });
 
     $di = container();
-    $di['em']->shouldReceive('persist')->once()->with($invoiceModel);
-    $di['em']->shouldReceive('flush')->once();
+    // Reminder claim, hash-lifetime extension, and journal row persist separately.
+    $di['em']->shouldReceive('persist')->atLeast()->twice();
+    $di['em']->shouldReceive('flush')->atLeast()->twice();
     $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $service->setDi($di);
@@ -3173,6 +3194,9 @@ test('a failing reminder observer cannot prevent the built-in email attempt or r
         ->andReturnUsing(static function () use (&$calls): void {
             $calls[] = 'email';
         });
+    $service->shouldReceive('recordJournalEvent')
+        ->once()
+        ->with($invoice, InvoiceEvent::TYPE_REMINDER);
     $service->setDi($di);
 
     expect($service->sendInvoiceReminder($invoice))->toBeTrue()
@@ -5584,6 +5608,9 @@ test('reissueInvoice cancels the original and moves its lines to a numbered repl
     $di['logger'] = new Tests\Helpers\TestLogger();
     $serviceMock->setDi($di);
     $serviceMock->shouldReceive('getInvoiceItemRepository')->andReturn($invoiceItemRepo);
+    $serviceMock->shouldReceive('recordJournalEvent')
+        ->once()
+        ->with($original, InvoiceEvent::TYPE_REISSUED, Mockery::type('array'));
 
     expect($serviceMock->reissueInvoice($original, []))->toBe(11)
         ->and($eventDispatcher->events)->toHaveCount(2)
@@ -5708,6 +5735,9 @@ test('cancelInvoice voids an issued unpaid invoice without replacement', functio
     $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $serviceMock->setDi($di);
+    $serviceMock->shouldReceive('recordJournalEvent')
+        ->once()
+        ->with($original, InvoiceEvent::TYPE_CANCELED, ['reason' => 'Client gone']);
 
     expect($serviceMock->cancelInvoice($original, ['reason' => 'Client gone']))->toBeTrue()
         ->and($original->getStatus())->toBe(Invoice::STATUS_CANCELED)
@@ -6250,4 +6280,111 @@ test('removeExpiredUnpaidInvoices voids issued invoices, deletes drafts, and ski
 
     $invoiceServiceMock->setDi($di);
     $invoiceServiceMock->removeExpiredUnpaidInvoices(new AfterAdminCronRunEvent());
+});
+
+test('recordJournalEvent stores a trimmed snapshot of the invoice', function (): void {
+    $invoice = createEntity(Invoice::class, ['id' => 10, 'client_id' => 5]);
+
+    $apiArray = [
+        'serie_nr' => 'FOSS00010',
+        'status' => Invoice::STATUS_UNPAID,
+        'issued' => true,
+        'subtotal' => 20.0,
+        'tax' => 5.0,
+        'total' => 25.0,
+        'buyer' => ['first_name' => 'Ada'],
+        'seller' => ['company' => 'Acme'],
+        'paid_at' => null,
+        'due_at' => '2026-09-01 00:00:00',
+        'created_at' => '2026-08-01 00:00:00',
+        'hash' => 'secret-hash',
+        'gateway_id' => 3,
+        'lines' => [['title' => 'Widget']],
+    ];
+
+    $persisted = [];
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('persist')
+        ->once()
+        ->andReturnUsing(function (object $entity) use (&$persisted): void {
+            $persisted[] = $entity;
+        });
+    $em->shouldReceive('flush')->once();
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('toApiArray')->once()->with($invoice)->andReturn($apiArray);
+
+    $di = container();
+    $di['em'] = $em;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $serviceMock->setDi($di);
+
+    $serviceMock->recordJournalEvent($invoice, InvoiceEvent::TYPE_ISSUED, ['reason' => 'Manual']);
+
+    expect($persisted)->toHaveCount(1)
+        ->and($persisted[0])->toBeInstanceOf(InvoiceEvent::class)
+        ->and($persisted[0]->getInvoiceId())->toBe(10)
+        ->and($persisted[0]->getType())->toBe(InvoiceEvent::TYPE_ISSUED)
+        ->and($persisted[0]->getClientId())->toBe(5)
+        ->and($persisted[0]->getSnapshot())->toBe([
+            'serie_nr' => 'FOSS00010',
+            'status' => Invoice::STATUS_UNPAID,
+            'issued' => true,
+            'subtotal' => 20.0,
+            'tax' => 5.0,
+            'total' => 25.0,
+            'buyer' => ['first_name' => 'Ada'],
+            'seller' => ['company' => 'Acme'],
+            'paid_at' => null,
+            'due_at' => '2026-09-01 00:00:00',
+            'created_at' => '2026-08-01 00:00:00',
+            'reason' => 'Manual',
+        ]);
+});
+
+test('recordJournalEvent failure does not break the business operation', function (): void {
+    $invoice = createEntity(Invoice::class, ['id' => 10]);
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('persist')->andThrow(new RuntimeException('DB down'));
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('toApiArray')->andReturn([]);
+
+    $logger = new Tests\Helpers\TestLogger();
+    $di = container();
+    $di['em'] = $em;
+    $di['logger'] = $logger;
+    $serviceMock->setDi($di);
+
+    $serviceMock->recordJournalEvent($invoice, InvoiceEvent::TYPE_PAID);
+
+    expect($logger->calls)->toHaveCount(1)
+        ->and($logger->calls[0]['method'])->toBe('error');
+});
+
+test('getJournalForInvoice returns mapped entries oldest first', function (): void {
+    $first = (new InvoiceEvent())->setInvoiceId(10)->setType(InvoiceEvent::TYPE_CREATED);
+    $second = (new InvoiceEvent())->setInvoiceId(10)->setType(InvoiceEvent::TYPE_ISSUED)
+        ->setAdminId(2)->setSnapshot(['total' => 25.0]);
+
+    $repo = Mockery::mock(InvoiceEventRepository::class);
+    $repo->shouldReceive('findByInvoiceId')->once()->with(10)->andReturn([$first, $second]);
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->once()->with(InvoiceEvent::class)->andReturn($repo);
+
+    $service = new Service();
+    $di = container();
+    $di['em'] = $em;
+    $service->setDi($di);
+
+    $result = $service->getJournalForInvoice(10);
+
+    expect($result)->toHaveCount(2)
+        ->and($result[0]['type'])->toBe(InvoiceEvent::TYPE_CREATED)
+        ->and($result[0]['snapshot'])->toBeNull()
+        ->and($result[1]['type'])->toBe(InvoiceEvent::TYPE_ISSUED)
+        ->and($result[1]['admin_id'])->toBe(2)
+        ->and($result[1]['snapshot'])->toBe(['total' => 25.0]);
 });

@@ -2525,6 +2525,112 @@ test('invoice buyer-phone-cc removal patch is a no-op once the column is gone', 
     (new ReflectionMethod($patcher, 'patch122'))->invoke($patcher);
 });
 
+test('invoice journal patch follows the buyer-phone-cc removal patch', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 122);
+
+    expect($patches)->toHaveKey(123)
+        ->and($patches[123][1])->toBe('patch123');
+});
+
+test('invoice journal patch creates the journal table for existing installs', function (): void {
+    $tableCheck = Mockery::mock(PDOStatement::class);
+    $tableCheck->expects('execute')->with(['table' => 'invoice_event'])->andReturnTrue();
+    $tableCheck->expects('fetchColumn')->with()->andReturn(false);
+
+    $createTable = Mockery::mock(PDOStatement::class);
+    $createTable->expects('execute')->with([])->andReturnTrue();
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')
+        ->with('SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table LIMIT 1')
+        ->andReturn($tableCheck);
+    $pdo->expects('prepare')
+        ->with("CREATE TABLE `invoice_event` (`id` bigint(20) NOT NULL AUTO_INCREMENT, `invoice_id` bigint(20) DEFAULT NULL, `type` varchar(50) NOT NULL DEFAULT 'updated', `admin_id` bigint(20) DEFAULT NULL, `client_id` bigint(20) DEFAULT NULL, `snapshot` JSON DEFAULT NULL, `created_at` datetime DEFAULT NULL, PRIMARY KEY (`id`), KEY `invoice_event_invoice_id_idx` (`invoice_id`))")
+        ->andReturn($createTable);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch123'))->invoke($patcher);
+});
+
+test('invoice journal patch is a no-op once the table exists', function (): void {
+    $tableCheck = Mockery::mock(PDOStatement::class);
+    $tableCheck->expects('execute')->with(['table' => 'invoice_event'])->andReturnTrue();
+    $tableCheck->expects('fetchColumn')->with()->andReturn(1);
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')
+        ->with('SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table LIMIT 1')
+        ->andReturn($tableCheck);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch123'))->invoke($patcher);
+});
+
+test('invoice journal backfill patch follows the journal table patch', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 123);
+
+    expect($patches)->toHaveKey(124)
+        ->and($patches[124][1])->toBe('patch124');
+});
+
+test('invoice journal backfill writes one baseline entry per unjournaled invoice', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        $dbFile = Path::join(sys_get_temp_dir(), 'fossbilling-journal-backfill-' . bin2hex(random_bytes(8)) . '.sqlite');
+
+        try {
+            $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $dbFile]);
+            $entityManager = FOSSBilling\Doctrine\EntityManagerFactory::create($connection);
+            FOSSBilling\Doctrine\SchemaInstaller::createSchema($entityManager);
+
+            $now = date('Y-m-d H:i:s');
+            $connection->executeStatement(
+                "INSERT INTO invoice (status, issued, serie, nr, client_id, buyer_first_name, created_at) VALUES
+                    ('unpaid', 0, 'FOSS', NULL, 5, NULL, :now),
+                    ('paid', 1, 'FOSS', '7', 5, 'Ada', :now),
+                    ('canceled', 1, 'FOSS', '8', NULL, NULL, :now)",
+                ['now' => $now]
+            );
+
+            $pdo = new PDO('sqlite:' . $dbFile);
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+            $di = new Pimple\Container();
+            $di['pdo'] = $pdo;
+            $di['dbal'] = $connection;
+            $di['logger'] = new Tests\Helpers\TestLogger();
+
+            $patcher = new UpdatePatcher();
+            $patcher->setDi($di);
+            (new ReflectionMethod($patcher, 'backfillInvoiceJournal'))->invoke($patcher);
+
+            $entries = $connection->fetchAllAssociative('SELECT invoice_id, type, client_id, snapshot FROM invoice_event ORDER BY invoice_id');
+            expect($entries)->toHaveCount(3)
+                ->and($entries[0]['type'])->toBe('created')
+                ->and($entries[1]['type'])->toBe('paid')
+                ->and($entries[2]['type'])->toBe('canceled');
+
+            $paidSnapshot = json_decode((string) $entries[1]['snapshot'], true);
+            expect($paidSnapshot['serie_nr'])->toBe('FOSS00007')
+                ->and($paidSnapshot['buyer']['first_name'])->toBe('Ada')
+                ->and($paidSnapshot['total'])->toBeNull();
+
+            // Idempotent: a second run writes nothing more.
+            (new ReflectionMethod($patcher, 'backfillInvoiceJournal'))->invoke($patcher);
+            expect($connection->fetchOne('SELECT COUNT(*) FROM invoice_event'))->toBe(3);
+        } finally {
+            (new Filesystem())->remove($dbFile);
+        }
+    });
+});
+
 test('invoice issued-rename patch copies values and drops the legacy column', function (): void {
     $invoiceColumns = Mockery::mock(PDOStatement::class);
     $invoiceColumns->expects('execute')->with([])->twice()->andReturnTrue();

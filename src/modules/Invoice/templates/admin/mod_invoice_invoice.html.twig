@@ -41,7 +41,7 @@
                         <a class="nav-link" href="#tab-texts" data-bs-toggle="tab" role="tab">{{ 'Texts'|trans }}</a>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <a class="nav-link" href="#tab-billing-parties" data-bs-toggle="tab" role="tab">{{ 'Billing parties'|trans }}</a>
+                        <a class="nav-link" href="#tab-history" data-bs-toggle="tab" role="tab">{{ 'History'|trans }}</a>
                     </li>
     {% endblock %}
 
@@ -947,93 +947,146 @@
             </div>
         </div>
 
-        <div class="tab-pane fade" id="tab-billing-parties" role="tabpanel">
+        <div class="tab-pane fade" id="tab-history" role="tabpanel">
             <div class="card-body">
-                {% set seller = invoice.seller %}
-                {% set buyer = invoice.buyer %}
-                <p class="text-secondary mb-3">
-                    {% if invoice.issued %}
-                        {{ 'These details were frozen onto the invoice when it was issued. Company address, phone, and email always reflect current company settings.'|trans }}
-                    {% else %}
-                        {{ 'Shown are the current client and company details. They will be frozen onto the invoice when it is issued.'|trans }}
-                    {% endif %}
-                </p>
-                <div class="row g-3">
-                    <div class="col-lg-6">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="mb-3">{{ 'Buyer'|trans }}</h5>
+                {% set journal = admin.invoice_journal({'id': invoice.id}) %}
+                <p class="text-secondary mb-3">{{ 'Every lifecycle transition is recorded here with a snapshot of the invoice at that time, including past buyer and seller details.'|trans }}</p>
+                <table class="table card-table table-vcenter table-striped text-nowrap">
+                    <thead>
+                        <tr>
+                            <th>{{ 'Event'|trans }}</th>
+                            <th>{{ 'Actor'|trans }}</th>
+                            <th>{{ 'Date'|trans }}</th>
+                            <th class="w-1"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in journal %}
+                        <tr>
+                            <td>{{ mf.text_badge(entry.type|replace({'_': ' '})|title, 'text-bg-secondary') }}</td>
+                            <td>
+                                {% if entry.admin_id %}
+                                <a href='{{ "staff/manage/#{entry.admin_id}"|url }}'>{{ 'Admin'|trans }} #{{ entry.admin_id }}</a>
+                                {% elseif entry.client_id %}
+                                <a href='{{ "client/manage/#{entry.client_id}"|url }}'>{{ 'Client'|trans }} #{{ entry.client_id }}</a>
+                                {% else %}
+                                {{ 'System'|trans }}
+                                {% endif %}
+                            </td>
+                            <td>{{ entry.created_at|format_datetime }}</td>
+                            <td class="d-flex gap-2">
+                                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#journalModal{{ entry.id }}">{{ 'View'|trans }}</button>
+                                <a href="{{ 'invoice/manage'|url }}/{{ invoice.id }}/journal-download?event={{ entry.id }}" class="btn btn-sm btn-outline-secondary">{{ 'JSON'|trans }}</a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-muted text-center">{{ 'No history recorded yet.'|trans }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% for entry in journal %}
+                <div class="modal fade" id="journalModal{{ entry.id }}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">{{ entry.type|replace({'_': ' '})|title }} - {{ entry.created_at|format_datetime }}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
+                            </div>
+                            <div class="modal-body">
+                                {% set snapshot = entry.snapshot ?? {} %}
+                                <dl class="row small mb-0">
+                                    {% if snapshot.serie_nr is defined and snapshot.serie_nr %}
+                                    <dt class="col-sm-4 text-muted">{{ 'Number'|trans }}</dt>
+                                    <dd class="col-sm-8">{{ snapshot.serie_nr }}</dd>
+                                    {% endif %}
+                                    {% if snapshot.status is defined and snapshot.status %}
+                                    <dt class="col-sm-4 text-muted">{{ 'Status'|trans }}</dt>
+                                    <dd class="col-sm-8">{{ snapshot.status }}</dd>
+                                    {% endif %}
+                                    {% if snapshot.total is defined and snapshot.total %}
+                                    <dt class="col-sm-4 text-muted">{{ 'Total'|trans }}</dt>
+                                    <dd class="col-sm-8">{{ snapshot.total|format_currency(invoice.currency ?? default_currency) }}</dd>
+                                    {% endif %}
+                                    {% if snapshot.changed_fields is defined and snapshot.changed_fields %}
+                                    <dt class="col-sm-4 text-muted">{{ 'Changed fields'|trans }}</dt>
+                                    <dd class="col-sm-8">{{ snapshot.changed_fields|join(', ') }}</dd>
+                                    {% endif %}
+                                    {% if snapshot.reason is defined and snapshot.reason %}
+                                    <dt class="col-sm-4 text-muted">{{ 'Reason'|trans }}</dt>
+                                    <dd class="col-sm-8">{{ snapshot.reason }}</dd>
+                                    {% endif %}
+                                    {% if snapshot.replacement_id is defined and snapshot.replacement_id %}
+                                    <dt class="col-sm-4 text-muted">{{ 'Replacement invoice'|trans }}</dt>
+                                    <dd class="col-sm-8"><a href='{{ "invoice/manage/#{snapshot.replacement_id}"|url }}'>#{{ snapshot.replacement_id }}</a></dd>
+                                    {% endif %}
+                                    {% if snapshot.order_id is defined and snapshot.order_id %}
+                                    <dt class="col-sm-4 text-muted">{{ 'Order'|trans }}</dt>
+                                    <dd class="col-sm-8">#{{ snapshot.order_id }}</dd>
+                                    {% endif %}
+                                </dl>
+                                {% if snapshot.buyer is defined and snapshot.buyer %}
+                                {% set party = snapshot.buyer %}
+                                <h6 class="mt-3">{{ 'Buyer'|trans }}</h6>
                                 <dl class="row small mb-0">
                                     <dt class="col-sm-4 text-muted">{{ 'Name'|trans }}</dt>
-                                    <dd class="col-sm-8">{{ buyer.first_name }} {{ buyer.last_name }}</dd>
-                                    {% if buyer.company|trim %}
+                                    <dd class="col-sm-8">{{ party.first_name }} {{ party.last_name }}</dd>
+                                    {% if party.company|default('')|trim %}
                                     <dt class="col-sm-4 text-muted">{{ 'Company'|trans }}</dt>
-                                    <dd class="col-sm-8">{{ buyer.company }}</dd>
+                                    <dd class="col-sm-8">{{ party.company }}</dd>
                                     {% endif %}
-                                    {% if buyer.company_vat|trim %}
+                                    {% if party.company_vat|default('')|trim %}
                                     <dt class="col-sm-4 text-muted">{{ 'Company VAT'|trans }}</dt>
-                                    <dd class="col-sm-8">{{ buyer.company_vat }}</dd>
+                                    <dd class="col-sm-8">{{ party.company_vat }}</dd>
                                     {% endif %}
-                                    {% if buyer.company_number|trim %}
-                                    <dt class="col-sm-4 text-muted">{{ 'Company Number'|trans }}</dt>
-                                    <dd class="col-sm-8">{{ buyer.company_number }}</dd>
-                                    {% endif %}
-                                    {% if buyer.address|trim %}
+                                    {% if party.address|default('')|trim %}
                                     <dt class="col-sm-4 text-muted">{{ 'Address'|trans }}</dt>
-                                    <dd class="col-sm-8">{{ buyer.address }}</dd>
+                                    <dd class="col-sm-8">{{ party.address }}{% if party.city|default('')|trim %}, {{ party.city }}{% endif %}{% if party.zip|default('')|trim %} {{ party.zip }}{% endif %}{% if party.country|default('')|trim %}, {{ party.country }}{% endif %}</dd>
                                     {% endif %}
-                                    {% if buyer.city|trim or buyer.state|trim or buyer.zip|trim %}
-                                    <dt class="col-sm-4 text-muted">{{ 'City'|trans }}</dt>
-                                    <dd class="col-sm-8">{{ buyer.city }} {{ buyer.state }} {{ buyer.zip }}</dd>
-                                    {% endif %}
-                                    {% if buyer.country|trim %}
-                                    <dt class="col-sm-4 text-muted">{{ 'Country'|trans }}</dt>
-                                    <dd class="col-sm-8">{{ buyer.country|country_name }}</dd>
-                                    {% endif %}
-                                    {% if buyer.phone|trim %}
+                                    {% if party.phone|default('')|trim %}
                                     <dt class="col-sm-4 text-muted">{{ 'Phone'|trans }}</dt>
-                                    <dd class="col-sm-8">{{ buyer.phone }}</dd>
+                                    <dd class="col-sm-8">{{ party.phone }}</dd>
                                     {% endif %}
-                                    {% if buyer.email|trim %}
+                                    {% if party.email|default('')|trim %}
                                     <dt class="col-sm-4 text-muted">{{ 'Email'|trans }}</dt>
-                                    <dd class="col-sm-8">{{ buyer.email }}</dd>
+                                    <dd class="col-sm-8">{{ party.email }}</dd>
                                     {% endif %}
                                 </dl>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-6">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="mb-3">{{ 'Seller'|trans }}</h5>
+                                {% endif %}
+                                {% if snapshot.seller is defined and snapshot.seller %}
+                                {% set party = snapshot.seller %}
+                                <h6 class="mt-3">{{ 'Seller'|trans }}</h6>
                                 <dl class="row small mb-0">
                                     <dt class="col-sm-4 text-muted">{{ 'Company Name'|trans }}</dt>
-                                    <dd class="col-sm-8">{{ seller.company }}</dd>
-                                    {% if seller.company_vat|trim %}
+                                    <dd class="col-sm-8">{{ party.company }}</dd>
+                                    {% if party.company_vat|default('')|trim %}
                                     <dt class="col-sm-4 text-muted">{{ 'Company VAT'|trans }}</dt>
-                                    <dd class="col-sm-8">{{ seller.company_vat }}</dd>
+                                    <dd class="col-sm-8">{{ party.company_vat }}</dd>
                                     {% endif %}
-                                    {% if seller.company_number|trim %}
-                                    <dt class="col-sm-4 text-muted">{{ 'Company Number'|trans }}</dt>
-                                    <dd class="col-sm-8">{{ seller.company_number }}</dd>
-                                    {% endif %}
-                                    {% if seller.address|trim %}
+                                    {% if party.address|default('')|trim %}
                                     <dt class="col-sm-4 text-muted">{{ 'Address'|trans }}</dt>
-                                    <dd class="col-sm-8">{{ seller.address }}</dd>
+                                    <dd class="col-sm-8">{{ party.address }}</dd>
                                     {% endif %}
-                                    {% if seller.phone|trim %}
+                                    {% if party.phone|default('')|trim %}
                                     <dt class="col-sm-4 text-muted">{{ 'Phone'|trans }}</dt>
-                                    <dd class="col-sm-8">{{ seller.phone }}</dd>
+                                    <dd class="col-sm-8">{{ party.phone }}</dd>
                                     {% endif %}
-                                    {% if seller.email|trim %}
+                                    {% if party.email|default('')|trim %}
                                     <dt class="col-sm-4 text-muted">{{ 'Email'|trans }}</dt>
-                                    <dd class="col-sm-8">{{ seller.email }}</dd>
+                                    <dd class="col-sm-8">{{ party.email }}</dd>
                                     {% endif %}
                                 </dl>
+                                {% endif %}
+                            </div>
+                            <div class="modal-footer">
+                                <a href="{{ 'invoice/manage'|url }}/{{ invoice.id }}/journal-download?event={{ entry.id }}" class="btn btn-outline-secondary">{{ 'Download JSON'|trans }}</a>
+                                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">{{ 'Close'|trans }}</button>
                             </div>
                         </div>
                     </div>
                 </div>
+                {% endfor %}
             </div>
         </div>
     </div>
