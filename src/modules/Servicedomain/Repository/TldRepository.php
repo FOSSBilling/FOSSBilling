@@ -12,14 +12,86 @@ declare(strict_types=1);
 namespace Box\Mod\Servicedomain\Repository;
 
 use Box\Mod\Servicedomain\Entity\Tld;
+use Box\Mod\Servicedomain\Entity\TldRegistrar;
+use Doctrine\DBAL\Connection;
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
+use Doctrine\ORM\Event\OnClearEventArgs;
+use Doctrine\ORM\Event\OnFlushEventArgs;
+use Doctrine\ORM\Event\PostFlushEventArgs;
+use Doctrine\ORM\Mapping\ClassMetadata;
 
 class TldRepository extends EntityRepository
 {
+    private readonly Connection $connection;
+    /** @var list<Tld>|null */
+    private ?array $activeTlds = null;
+    private bool $invalidateAfterFlush = false;
+
+    /** @param ClassMetadata<Tld> $class */
+    public function __construct(EntityManagerInterface $em, ClassMetadata $class)
+    {
+        parent::__construct($em, $class);
+        $this->connection = $em->getConnection();
+        $em->getEventManager()->addEventListener(['onClear', 'onFlush', 'postFlush'], $this);
+    }
+
     /**
      * @return Tld[]
      */
     public function findAllActive(): array
+    {
+        if ($this->connection->isTransactionActive()) {
+            $this->activeTlds = null;
+
+            return $this->queryAllActive();
+        }
+
+        return $this->activeTlds ??= $this->queryAllActive();
+    }
+
+    public function onClear(OnClearEventArgs $event): void
+    {
+        if ($event->getObjectManager() === $this->getEntityManager()) {
+            $this->activeTlds = null;
+            $this->invalidateAfterFlush = false;
+        }
+    }
+
+    public function onFlush(OnFlushEventArgs $event): void
+    {
+        if ($event->getObjectManager() !== $this->getEntityManager()) {
+            return;
+        }
+
+        $unitOfWork = $this->getEntityManager()->getUnitOfWork();
+
+        foreach ([
+            $unitOfWork->getScheduledEntityInsertions(),
+            $unitOfWork->getScheduledEntityUpdates(),
+            $unitOfWork->getScheduledEntityDeletions(),
+        ] as $entities) {
+            foreach ($entities as $entity) {
+                if ($entity instanceof Tld || $entity instanceof TldRegistrar) {
+                    $this->activeTlds = null;
+                    $this->invalidateAfterFlush = true;
+
+                    break 2;
+                }
+            }
+        }
+    }
+
+    public function postFlush(PostFlushEventArgs $event): void
+    {
+        if ($event->getObjectManager() === $this->getEntityManager() && $this->invalidateAfterFlush) {
+            $this->activeTlds = null;
+            $this->invalidateAfterFlush = false;
+        }
+    }
+
+    /** @return list<Tld> */
+    private function queryAllActive(): array
     {
         return $this->createQueryBuilder('t')
             ->leftJoin('t.registrar', 'tr')

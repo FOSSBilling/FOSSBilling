@@ -1,6 +1,8 @@
 // @ts-nocheck -- Runtime DOM/widget integration; converted to TS without changing behavior.
 import './js/ui/modals.ts';
 import initClipboard from './js/clipboard.ts';
+import initThemePreference from './js/ui/theme.ts';
+import initDebugBarLayout from './js/ui/debugBar.ts';
 import * as tabler from '@tabler/core';
 import './js/fossbilling.ts';
 
@@ -15,6 +17,7 @@ function loadAdminFeature(loader, name) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  initDebugBarLayout();
   if (document.querySelector('.datepicker')) {
     loadAdminFeature(async () => {
       const { default: initDatepickers } = await import('./js/datepicker.ts');
@@ -42,31 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 'theme settings');
   }
 
-  document.querySelectorAll('.js-theme-toggler').forEach(element => {
-    element.addEventListener('click', event => {
-      event.preventDefault();
-      // Intentionally use getAttribute('href') to read the raw attribute value
-      // instead of element.href, since we only parse a simple theme token here.
-      const href = element.getAttribute('href') || '';
-      let theme = null;
-
-      // Try to extract theme value safely from href
-      if (href.includes('=')) {
-        const parts = href.split('=');
-        if (parts.length > 1 && parts[1]) {
-          theme = parts[1];
-        }
-      }
-
-      if (!theme) {
-        return;
-      }
-
-      localStorage.setItem('theme', theme);
-      document.documentElement.setAttribute('data-bs-theme', theme);
-    });
-  });
-
+  initThemePreference();
 
   /**
    * Enable Bootstrap Tooltip

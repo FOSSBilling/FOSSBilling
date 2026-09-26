@@ -89,6 +89,8 @@ class ProductRepository extends EntityRepository
             ->where('p.isAddon = :isAddon')
             ->setParameter('isAddon', false);
 
+        $this->addPricingJoins($qb);
+
         if (!empty($data['type'])) {
             $qb->andWhere('p.type = :type')
                 ->setParameter('type', $data['type']);
@@ -176,14 +178,20 @@ class ProductRepository extends EntityRepository
      */
     public function findEnabledVisibleByCategoryId(int $categoryId): array
     {
-        return $this->findBy([
-            'isAddon' => false,
-            'status' => 'enabled',
-            'hidden' => false,
-            'productCategory' => $this->getEntityManager()->getReference(ProductCategory::class, $categoryId),
-        ], [
-            'priority' => 'ASC',
-        ]);
+        $qb = $this->createQueryBuilder('p')
+            ->where('p.isAddon = :isAddon')
+            ->andWhere('p.status = :status')
+            ->andWhere('p.hidden = :hidden')
+            ->andWhere('p.productCategory = :category')
+            ->setParameter('isAddon', false)
+            ->setParameter('status', 'enabled')
+            ->setParameter('hidden', false)
+            ->setParameter('category', $this->getEntityManager()->getReference(ProductCategory::class, $categoryId))
+            ->orderBy('p.priority', 'ASC');
+
+        $this->addPricingJoins($qb);
+
+        return $qb->getQuery()->getResult();
     }
 
     /**
@@ -222,6 +230,8 @@ class ProductRepository extends EntityRepository
             ->setParameter('ids', $ids)
             ->orderBy('p.id', 'ASC');
 
+        $this->addPricingJoins($qb);
+
         if (!$includeUnavailable) {
             $qb->andWhere('p.active = :active')
                 ->andWhere('p.status = :status')
@@ -235,6 +245,15 @@ class ProductRepository extends EntityRepository
         }
 
         return $qb->getQuery()->getResult();
+    }
+
+    private function addPricingJoins(QueryBuilder $queryBuilder): void
+    {
+        $queryBuilder
+            ->leftJoin('p.productPayment', 'payment')
+            ->addSelect('payment')
+            ->leftJoin('payment.periods', 'paymentPeriod')
+            ->addSelect('paymentPeriod');
     }
 
     public function decrementStockIfAvailable(int $productId, int $quantity, \DateTimeInterface $updatedAt): int

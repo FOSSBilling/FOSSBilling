@@ -12,7 +12,10 @@ declare(strict_types=1);
 
 use Box\Mod\Extension\Entity\ExtensionMeta;
 use Box\Mod\Extension\Repository\ExtensionMetaRepository;
+use Doctrine\DBAL\DriverManager;
 use Doctrine\ORM\QueryBuilder;
+use Doctrine\ORM\Tools\SchemaTool;
+use FOSSBilling\Doctrine\EntityManagerFactory;
 
 function extensionMetaRepoCreateRepository(): ExtensionMetaRepository
 {
@@ -65,4 +68,19 @@ test('findOneByExtensionAndScope returns null on empty result', function (): voi
         ->andReturn([]);
 
     expect($repo->findOneByExtensionAndScope('mod_email', 'config'))->toBeNull();
+});
+
+test('scoped lookups observe direct SQL inserts and deletes without ORM events', function (): void {
+    $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $entityManager = EntityManagerFactory::create($connection);
+    (new SchemaTool($entityManager))->createSchema([$entityManager->getClassMetadata(ExtensionMeta::class)]);
+    $repository = $entityManager->getRepository(ExtensionMeta::class);
+
+    expect($repository->findOneByExtensionAndScope('mod_cron', 'config'))->toBeNull();
+
+    $connection->insert('extension_meta', ['extension' => 'mod_cron', 'meta_key' => 'config', 'meta_value' => '{}']);
+    expect($repository->findOneByExtensionAndScope('mod_cron', 'config')?->getMetaValue())->toBe('{}');
+
+    $connection->delete('extension_meta', ['extension' => 'mod_cron', 'meta_key' => 'config']);
+    expect($repository->findOneByExtensionAndScope('mod_cron', 'config'))->toBeNull();
 });

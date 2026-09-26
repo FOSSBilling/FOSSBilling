@@ -495,6 +495,8 @@ class Service implements InjectionAwareInterface
                 $mod->uninstall();
             } catch (\Exception $e) {
                 throw new \FOSSBilling\Exception('An exception was thrown by the :name module: :err', [':name' => $id, ':err' => $e->getMessage()]);
+            } finally {
+                $this->getExtensionRepository()->clearInstalledNamesCache();
             }
         }
 

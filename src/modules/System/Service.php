@@ -828,7 +828,11 @@ class Service
         /** @var Connection $connection */
         $connection = $this->di['dbal'];
 
-        return $connection->transactional(fn (Connection $connection): ?int => $this->doReserveNumericParamValue($connection, $param, $seed));
+        try {
+            return $connection->transactional(fn (Connection $connection): ?int => $this->doReserveNumericParamValue($connection, $param, $seed));
+        } finally {
+            $this->settingRepository->clearRequestCache();
+        }
     }
 
     private function doReserveNumericParamValue(Connection $connection, string $param, ?int $seed): ?int
