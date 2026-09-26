@@ -328,6 +328,7 @@
                         <div class="col-lg-6">
                             <label class="form-label" for="new-staff-password">{{ 'Password'|trans }}</label>
                             <input class="form-control" id="new-staff-password" type="password" name="password" required>
+                            {{ include('partial_password_strength.html.twig', { input_id: 'new-staff-password' }) }}
                         </div>
                         <div class="col-lg-6">
                             <label class="form-label" for="new-staff-group">{{ 'Initial group'|trans }}</label>

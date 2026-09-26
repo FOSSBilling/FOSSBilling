@@ -43,28 +43,13 @@ body {
 
     .ts-dropdown {
         .active {
-            background-color: rgba(var(--tblr-muted-rgb), .06);
+            background-color: color-mix(in oklab, var(--tblr-secondary) 6%, transparent);
             color: inherit;
         }
 
         .selected {
-            background-color: rgba(var(--tblr-muted-rgb), .1);
+            background-color: color-mix(in oklab, var(--tblr-secondary) 10%, transparent);
         }
-    }
-}
-
-.ts-wrapper.autocomplete-selector-wrapper {
-    min-height: 40px !important;
-    height: 40px;
-    align-items: stretch;
-
-    .ts-control,
-    &.single.input-active .ts-control {
-        min-height: 38px !important;
-        line-height: 20px;
-        align-items: center;
-        padding-top: 8px !important;
-        padding-bottom: 8px !important;
     }
 }
 
@@ -98,7 +83,7 @@ body {
 .ts-dropdown.locale-selector-dropdown .dropdown-item:hover,
 .ts-dropdown.locale-selector-dropdown .dropdown-item.active,
 .ts-dropdown.locale-selector-dropdown .dropdown-item.selected {
-    background-color: rgba(var(--tblr-primary-rgb), .1);
+    background-color: color-mix(in oklab, var(--tblr-primary) 10%, transparent);
     color: var(--tblr-primary);
 }
 
@@ -117,7 +102,8 @@ body {
 .ts-wrapper.js-locale-selector.focus .ts-control.locale {
     border-color: var(--tblr-border-color) !important;
     box-shadow: none !important;
-    outline: none !important;
+    outline: var(--tblr-focus-ring-width) solid var(--tblr-focus-ring-color);
+    outline-offset: 2px;
 }
 
 .ts-wrapper.js-locale-selector .ts-control.locale {
@@ -201,7 +187,6 @@ body {
     &:focus-visible,
     &:active {
         box-shadow: none;
-        outline: 0;
     }
 }
 
@@ -266,7 +251,6 @@ body {
         background: transparent;
         color: var(--tblr-body-color);
         box-shadow: none;
-        outline: 0;
     }
 
     .icon {
@@ -336,4 +320,29 @@ body {
     .activity-log-filters .form-label {
         margin-bottom: 0;
     }
+}
+
+.search-filter-toggle:focus-visible,
+.search-submit-toggle:focus-visible,
+.fb-modal-section-toggle:focus-visible {
+    outline: var(--tblr-focus-ring-width) solid var(--tblr-focus-ring-color);
+    outline-offset: 2px;
+}
+
+.datepicker-wrapper {
+    .datepicker {
+        padding-right: 4.5rem;
+    }
+
+    .datepicker-clear {
+        position: absolute;
+        right: 2rem;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 3;
+    }
+}
+
+textarea[data-bs-toggle="autosize"] {
+    max-height: 24rem;
 }

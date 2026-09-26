@@ -149,7 +149,7 @@
                                     <input class="form-check-input" id="hide_company_public" type="checkbox" name="hide_company_public" value="1" {% if params.hide_company_public|default('') == '1' %}checked{% endif %}>
                                     <span class="form-check-label">{{ 'Hide Some Company Information in the Guest API'|trans }}</span>
                                 </label>
-                                <small class="form-hint">{{ 'Enabling this hides some information from the company guest API endpoint, including address, phone number, email, VAT number, and more.'|trans }}</small>
+                                <small class="form-text">{{ 'Enabling this hides some information from the company guest API endpoint, including address, phone number, email, VAT number, and more.'|trans }}</small>
                             </div>
                         </div>
                         <div class="card-body border-top">
@@ -204,7 +204,7 @@
                                         {% endfor %}
                                     </select>
                                     <input type="hidden" name="current_locale" value="{{ localization.locale }}">
-                                    <div class="form-hint">{{ 'Used when browser language detection is disabled or no suitable browser language match is found.'|trans }}</div>
+                                    <div class="form-text">{{ 'Used when browser language detection is disabled or no suitable browser language match is found.'|trans }}</div>
                                 </div>
                             </div>
                             <div class="mt-3">
@@ -213,7 +213,7 @@
                                     <input class="form-check-input" type="checkbox" name="auto_detect_locale" id="auto_detect_locale_yes" value="1" {% if localization.auto_detect_locale %}checked{% endif %}>
                                     <span class="form-check-label">{{ 'Automatic Browser Language Detection'|trans }}</span>
                                 </label>
-                                <small class="form-hint">{{ 'When enabled, guests without a saved language preference start in the best match from their browser. When disabled, FOSSBilling uses the configured default locale until the user explicitly selects a language.'|trans }}</small>
+                                <small class="form-text">{{ 'When enabled, guests without a saved language preference start in the best match from their browser. When disabled, FOSSBilling uses the configured default locale until the user explicitly selects a language.'|trans }}</small>
                             </div>
                         </div>
                         <div class="card-footer text-end">
@@ -292,7 +292,7 @@
                                     <div class="col-lg-6">
                                         <label class="form-label" for="redis_password">{{ 'Password'|trans }}</label>
                                         <input class="form-control" id="redis_password" type="password" name="redis_password" placeholder="{% if cache_settings.redis_password_set %}{{ '(unchanged)'|trans }}{% endif %}">
-                                        <div class="form-hint">{{ 'Leave blank to keep the current password.'|trans }}</div>
+                                        <div class="form-text">{{ 'Leave blank to keep the current password.'|trans }}</div>
                                         {% if cache_settings.redis_password_set %}
                                             <label class="form-check mt-1">
                                                 <input type="hidden" name="redis_password_clear" value="0">
@@ -306,7 +306,7 @@
                                         <input class="form-control" id="redis_database" type="text" name="redis_database" value="{{ cache_settings.redis_database }}" placeholder="0">
                                     </div>
                                 </div>
-                                <div class="form-hint mt-2">{{ 'Requires the PHP redis (or relay) extension.'|trans }}</div>
+                                <div class="form-text mt-2">{{ 'Requires the PHP redis (or relay) extension.'|trans }}</div>
 
                                 <hr>
 
@@ -335,7 +335,7 @@
                                     <div class="col-lg-6">
                                         <label class="form-label" for="redis_tls_cafile">{{ 'CA Bundle Path'|trans }}</label>
                                         <input class="form-control" id="redis_tls_cafile" type="text" name="redis_tls_cafile" value="{{ cache_settings.redis_tls_cafile }}" placeholder="{{ '(system default)'|trans }}">
-                                        <div class="form-hint">{{ 'Only needed if the Redis server\'s certificate isn\'t signed by a CA your system already trusts.'|trans }}</div>
+                                        <div class="form-text">{{ 'Only needed if the Redis server\'s certificate isn\'t signed by a CA your system already trusts.'|trans }}</div>
                                     </div>
                                     <div class="col-lg-6">
                                         <label class="form-check form-switch mt-4 mt-lg-0">
@@ -343,7 +343,7 @@
                                             <input class="form-check-input" type="checkbox" name="redis_tls_allow_self_signed" value="1"{% if cache_settings.redis_tls_allow_self_signed %} checked{% endif %}>
                                             <span class="form-check-label">{{ 'Allow self-signed certificate'|trans }}</span>
                                         </label>
-                                        <div class="form-hint">{{ 'Development/testing only - never enable this in production.'|trans }}</div>
+                                        <div class="form-text">{{ 'Development/testing only - never enable this in production.'|trans }}</div>
                                     </div>
                                 </div>
                             </fieldset>
@@ -360,7 +360,7 @@
                                         <input class="form-control" id="memcached_port" type="text" name="memcached_port" value="{{ cache_settings.memcached_port }}" placeholder="11211">
                                     </div>
                                 </div>
-                                <div class="form-hint mt-2">{{ 'Requires the PHP memcached extension.'|trans }}</div>
+                                <div class="form-text mt-2">{{ 'Requires the PHP memcached extension.'|trans }}</div>
                             </fieldset>
 
                             <div class="mt-3">

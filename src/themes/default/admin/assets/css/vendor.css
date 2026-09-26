@@ -1,7 +1,8 @@
-/* Shared vendor dependencies (also used by huraga theme) */
+/* Admin vendor dependencies */
 @import "@tabler/core/dist/css/tabler.css";
-@import "@tabler/core/dist/css/tabler-vendors.css";
+/* Load plugin defaults before Tabler's integration overrides. */
 @import "tom-select/dist/css/tom-select.bootstrap5.css";
+@import "@tabler/core/dist/css/tabler-vendors.css";
 
 /* Admin theme-specific vendor dependencies */
 @import "sortable-tablesort/dist/sortable-base.css";

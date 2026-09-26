@@ -231,7 +231,7 @@
                                     <input class="form-control" type="text" name="exchangerate_api_key" id="exchangerate_api" value="{{ params.exchangerate_api_key|default('') }}" hidden>
                                     <input class="form-control" type="text" name="currencydata_key" id="currencydata" value="{{ params.currencydata_key|default('') }}" hidden>
                                     <input class="form-control" type="text" name="currencylayer_key" id="currencylayer" value="{{ params.currencylayer_key|default('') }}" hidden>
-                                    <small class="form-hint" id="exchangerate_api_help_text" hidden>{{ 'Leave blank to use ExchangeRate-API (Open Access).'|trans }}</small>
+                                    <small class="form-text" id="exchangerate_api_help_text" hidden>{{ 'Leave blank to use ExchangeRate-API (Open Access).'|trans }}</small>
                                 </div>
                                 <div class="col-lg-6">
                                     <label class="form-label" for="sync_rate">{{ 'Automatic Sync Rate'|trans }}</label>
@@ -244,8 +244,8 @@
                                         <option value="5m" {{ sync_rate == '5m' ? 'selected' : '' }}>{{ 'Every 5 Minutes'|trans }}</option>
                                        <option value="1m" id="1m-sync" {{ sync_rate == '1m' ? 'selected' : '' }}>{{ 'Every Minute'|trans }}</option>
                                     </select>
-                                    <small class="form-hint d-block mt-2">{{ '"Auto" is only available for ExchangeRate-API and will only request new data when the provider indicates fresh rates are available.'|trans }}</small>
-                                    <small class="form-hint d-block">{{ 'Exchange rate syncing runs via cron and is therefore still limited by your cron schedule frequency.'|trans }}</small>
+                                    <small class="form-text d-block mt-2">{{ '"Auto" is only available for ExchangeRate-API and will only request new data when the provider indicates fresh rates are available.'|trans }}</small>
+                                    <small class="form-text d-block">{{ 'Exchange rate syncing runs via cron and is therefore still limited by your cron schedule frequency.'|trans }}</small>
                                 </div>
                             </div>
                         </div>
@@ -300,13 +300,13 @@
                         <div>
                             <label class="form-label" for="new-currency-rate">{{ 'Conversion Rate'|trans }}</label>
                             <input class="form-control" id="new-currency-rate" type="text" name="conversion_rate" value="" placeholder="{{ 'Leave blank to automatically set'|trans }}">
-                            <div class="form-hint">{{ 'Enter the value of one unit of the default currency in this currency.'|trans }}</div>
+                            <div class="form-text">{{ 'Enter the value of one unit of the default currency in this currency.'|trans }}</div>
                         </div>
                         <div class="form-check mt-3">
                             <input type="hidden" name="is_rate_manual" value="0">
                             <input class="form-check-input" id="new-currency-manual-rate" type="checkbox" name="is_rate_manual" value="1">
                             <label class="form-check-label" for="new-currency-manual-rate">{{ 'Keep this as a manual override'|trans }}</label>
-                            <div class="form-hint">{{ 'Manual rates are preserved when scheduled or on-demand rate synchronization runs.'|trans }}</div>
+                            <div class="form-text">{{ 'Manual rates are preserved when scheduled or on-demand rate synchronization runs.'|trans }}</div>
                         </div>
                     </div>
                     <div class="modal-footer">

@@ -232,7 +232,7 @@
                                     <div id="mark-paid-transaction-row">
                                         <label class="form-label" for="transaction-id">{{ 'Transaction ID'|trans }}</label>
                                         <input class="form-control" type="text" name="transactionId" id="transaction-id">
-                                        <small class="form-hint">{{ 'Required for the Custom gateway, e.g. the reference you use to reconcile your bank statement.'|trans }}</small>
+                                        <small class="form-text">{{ 'Required for the Custom gateway, e.g. the reference you use to reconcile your bank statement.'|trans }}</small>
                                     </div>
                                     <div>
                                         <label class="form-label" for="mark-paid-date">{{ 'Payment Date'|trans }}</label>
@@ -602,7 +602,7 @@
                                     <input class="form-control" type="text" name="price" id="attach-price" placeholder="{{ 'Catalog'|trans }}">
                                     <span class="input-group-text">{{ invoice.currency|currency_symbol }}</span>
                                 </div>
-                                <small class="form-hint">{{ 'Leave blank for the catalog price. Zero is allowed.'|trans }}</small>
+                                <small class="form-text">{{ 'Leave blank for the catalog price. Zero is allowed.'|trans }}</small>
                             </div>
                             {% if attach_product.pricing.type is defined and attach_product.pricing.type == 'recurrent' %}
                             <div class="col-lg-4">
@@ -617,7 +617,7 @@
                             <div class="col-lg-4">
                                 <label class="form-label" for="attach-group">{{ 'Parent order group'|trans }}</label>
                                 <input class="form-control" type="text" name="group_id" id="attach-group" autocomplete="off">
-                                <small class="form-hint">{{ 'Only for addons: the group of the parent order.'|trans }}</small>
+                                <small class="form-text">{{ 'Only for addons: the group of the parent order.'|trans }}</small>
                             </div>
                         </div>
                         {% if admin.system_template_exists({ 'file': product_order }) %}
@@ -636,7 +636,7 @@
                             <div class="col-lg-9">
                                 <label class="form-label" for="attach-order-id">{{ 'Or attach an existing pending order'|trans }}</label>
                                 <input class="form-control" type="number" name="order_id" id="attach-order-id" min="1" placeholder="{{ 'Order ID'|trans }}" required>
-                                <small class="form-hint">{{ 'The order must belong to this client and not be on another invoice.'|trans }}</small>
+                                <small class="form-text">{{ 'The order must belong to this client and not be on another invoice.'|trans }}</small>
                             </div>
                             <div class="col-lg-3">
                                 <button type="submit" class="btn btn-secondary">{{ 'Attach order'|trans }}</button>
@@ -861,7 +861,7 @@
                                 <div class="col-lg-6">
                                     <label class="form-label" for="created_at">{{ 'Date Created'|trans }}</label>
                                     <div class="input-icon">
-                                        <input class="form-control datepicker" id="created_at" value="{{ invoice.created_at|date('Y-m-d') }}" name="created_at">
+                                        <input class="form-control datepicker" data-clear-label="{{ 'Clear date'|trans }}" data-invalid-date-label="{{ 'Enter a valid date in YYYY-MM-DD format.'|trans }}" id="created_at" value="{{ invoice.created_at|date('Y-m-d') }}" name="created_at">
                                         <span class="input-icon-addon">
                                             <svg class="icon">
                                                 <use href="#calendar" />
@@ -872,7 +872,7 @@
                                 <div class="col-lg-6">
                                     <label class="form-label" for="due_at">{{ 'Date Due'|trans }}</label>
                                     <div class="input-icon">
-                                        <input class="form-control datepicker" id="due_at" value="{% if invoice.due_at %}{{ invoice.due_at|date('Y-m-d') }}{% endif %}" name="due_at">
+                                        <input class="form-control datepicker" data-clear-label="{{ 'Clear date'|trans }}" data-invalid-date-label="{{ 'Enter a valid date in YYYY-MM-DD format.'|trans }}" id="due_at" value="{% if invoice.due_at %}{{ invoice.due_at|date('Y-m-d') }}{% endif %}" name="due_at">
                                         <span class="input-icon-addon">
                                             <svg class="icon">
                                                 <use href="#calendar" />
@@ -883,7 +883,7 @@
                                 <div class="col-lg-6">
                                     <label class="form-label" for="paid_at">{{ 'Date Paid'|trans }}</label>
                                     <div class="input-icon">
-                                        <input class="form-control datepicker" id="paid_at" value="{% if invoice.paid_at %}{{ invoice.paid_at|date('Y-m-d') }}{% endif %}" name="paid_at">
+                                        <input class="form-control datepicker" data-clear-label="{{ 'Clear date'|trans }}" data-invalid-date-label="{{ 'Enter a valid date in YYYY-MM-DD format.'|trans }}" id="paid_at" value="{% if invoice.paid_at %}{{ invoice.paid_at|date('Y-m-d') }}{% endif %}" name="paid_at">
                                         <span class="input-icon-addon">
                                             <svg class="icon">
                                                 <use href="#calendar" />
@@ -902,7 +902,7 @@
                         {% import 'macro_functions.html.twig' as mf %}
                         {% block form_content %}
                             <label class="form-label" for="invoice_notes">{{ 'Notes'|trans }}</label>
-                            <textarea class="form-control" id="invoice_notes" name="notes" rows="6">{{ invoice.notes }}</textarea>
+                            <textarea data-bs-toggle="autosize" class="form-control" id="invoice_notes" name="notes" rows="6">{{ invoice.notes }}</textarea>
                         {% endblock %}
 
                         {% block form_actions %}
