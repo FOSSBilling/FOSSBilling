@@ -2167,7 +2167,7 @@ test('createOrder returns success when invoice follow up fails', function (): vo
         ->once()
         ->with(Mockery::any(), null, false)
         ->andReturn($invoiceModel);
-    $invoiceServiceMock->shouldReceive('approveInvoice')
+    $invoiceServiceMock->shouldReceive('issueInvoice')
         ->once()
         ->with($invoiceModel, ['id' => $invoiceModel->id, 'use_credits' => true])
         ->andReturn(true);
@@ -3767,7 +3767,7 @@ test('createOrder generates an invoice for a zero-price order with issue-invoice
         ->once()
         ->with(Mockery::any(), null, false)
         ->andReturn($invoiceModel);
-    $invoiceServiceMock->shouldReceive('approveInvoice')
+    $invoiceServiceMock->shouldReceive('issueInvoice')
         ->once()
         ->with($invoiceModel, ['id' => $invoiceModel->id, 'use_credits' => true])
         ->andReturn(true);
@@ -3883,7 +3883,7 @@ test('createOrder does not roll back when invoice generation fails for a negativ
         ->once()
         ->with(Mockery::any(), null, false)
         ->andThrow(new FOSSBilling\InformationException('Invoices are not generated for negative amount orders.'));
-    $invoiceServiceMock->shouldReceive('approveInvoice')->never();
+    $invoiceServiceMock->shouldReceive('issueInvoice')->never();
 
     $persistedEntities = [];
     $nextOrderId = 1;
@@ -4682,7 +4682,7 @@ test('createOrder applies a promo code and records the discount', function (): v
         ->once()
         ->with(Mockery::type(Order::class), null, false)
         ->andReturn($invoiceModel);
-    $invoiceServiceMock->shouldReceive('approveInvoice')->once()->andReturn(true);
+    $invoiceServiceMock->shouldReceive('issueInvoice')->once()->andReturn(true);
 
     $clientServiceMock = Mockery::mock(Box\Mod\Client\Service::class);
     $clientServiceMock->shouldReceive('isClientTaxable')->once()->with($modelClient)->andReturn(false);

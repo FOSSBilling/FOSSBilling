@@ -308,7 +308,7 @@ test('adds new item casts a numeric rel_id to string', function (): void {
 
 test('addNew refuses locked invoices unless bypassed for internal flows', function (): void {
     $invoiceModel = createEntity(Invoice::class);
-    $invoiceModel->setApproved(true);
+    $invoiceModel->setIssued(true);
     $invoiceModel->setStatus(Invoice::STATUS_UNPAID);
 
     $invoiceServiceMock = Mockery::mock(InvoiceService::class);
@@ -339,7 +339,7 @@ test('addNew refuses locked invoices unless bypassed for internal flows', functi
 
 test('update and remove refuse locked invoices', function (): void {
     $invoiceModel = createEntity(Invoice::class);
-    $invoiceModel->setApproved(true);
+    $invoiceModel->setIssued(true);
     $invoiceModel->setStatus(Invoice::STATUS_PAID);
 
     $invoiceServiceMock = Mockery::mock(InvoiceService::class);
@@ -423,7 +423,7 @@ test('generates invoice items from order with a recurring promo and casts rel_id
     $invoiceServiceMock = Mockery::mock(InvoiceService::class);
     $invoiceServiceMock->shouldReceive('isInvoiceEditable')->andReturn(true);
     $invoiceServiceMock->shouldReceive('lockInvoiceState')
-        ->andReturn(['status' => Invoice::STATUS_UNPAID, 'approved' => false]);
+        ->andReturn(['status' => Invoice::STATUS_UNPAID, 'issued' => false]);
     $invoiceServiceMock->shouldReceive('isInvoiceStateEditable')->andReturn(true);
     $di = container();
     $di['em'] = $em;

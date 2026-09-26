@@ -29,7 +29,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
     public function get_list($data)
     {
         $data['client_id'] = $this->getIdentity()->getId();
-        $data['approved'] = true;
+        $data['issued'] = true;
 
         $service = $this->getService();
         $qb = $service->getInvoiceRepository()->getSearchQueryBuilder($data);
@@ -82,7 +82,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
         }
         $service = $this->getService();
         $invoice = $service->generateForOrder($model);
-        $service->approveInvoice($invoice, ['id' => $invoice->getId(), 'use_credits' => true]);
+        $service->issueInvoice($invoice, ['id' => $invoice->getId(), 'use_credits' => true]);
         $this->getDi()['logger']->info('Generated new renewal invoice #{invoice_id}', ['invoice_id' => $invoice->getId()]);
 
         return $invoice->getHash();
@@ -103,7 +103,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
 
         $service = $this->getService();
         $invoice = $service->generateFundsInvoice($this->getIdentity(), $data['amount']);
-        $service->approveInvoice($invoice, ['id' => $invoice->getId()]);
+        $service->issueInvoice($invoice, ['id' => $invoice->getId()]);
         $this->getDi()['logger']->info('Generated add funds invoice #{invoice_id}', ['invoice_id' => $invoice->getId()]);
 
         return $invoice->getHash();

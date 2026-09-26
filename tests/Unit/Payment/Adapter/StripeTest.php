@@ -733,7 +733,7 @@ describe('handleInvoicePaymentSucceeded invoice linking', function (): void {
 
         $invoiceModel->id = 77;
         $invoiceModel->status = Invoice::STATUS_UNPAID;
-        $invoiceModel->approved = 0;
+        $invoiceModel->issued = 0;
         $invoiceModel->currency = 'EUR';
 
         $transactionService = Mockery::mock();
@@ -744,7 +744,7 @@ describe('handleInvoicePaymentSucceeded invoice linking', function (): void {
         $invoiceService->shouldReceive('isInvoiceTypeDeposit')
             ->with($invoiceModel)
             ->andReturn(false);
-        $invoiceService->shouldReceive('approveInvoice')
+        $invoiceService->shouldReceive('issueInvoice')
             ->with($invoiceModel, ['use_credits' => false])
             ->andReturn(true);
         $invoiceService->shouldReceive('payInvoiceWithCredits')
@@ -783,7 +783,7 @@ describe('handleInvoicePaymentSucceeded invoice linking', function (): void {
             1,
         ]);
 
-        // The unpaid original invoice should be approved and paid via the fallback
+        // The unpaid original invoice should be issued and paid via the fallback
         expect($tx->getInvoice()?->getId())->toBe(77);
     });
 });
@@ -954,7 +954,7 @@ describe('handleInvoicePaymentSucceeded with invoice_payment event (API 2026-06-
 
         $invoiceModel->id = 42;
         $invoiceModel->status = Invoice::STATUS_UNPAID;
-        $invoiceModel->approved = 0;
+        $invoiceModel->issued = 0;
 
         $transactionService = Mockery::mock();
         $transactionService->shouldReceive('claimForProcessing')
@@ -963,7 +963,7 @@ describe('handleInvoicePaymentSucceeded with invoice_payment event (API 2026-06-
         $invoiceService = Mockery::mock();
         $invoiceService->shouldReceive('isInvoiceTypeDeposit')
             ->andReturn(false);
-        $invoiceService->shouldReceive('approveInvoice')
+        $invoiceService->shouldReceive('issueInvoice')
             ->andReturn(true);
         $invoiceService->shouldReceive('payInvoiceWithCredits')
             ->andReturn(true);
@@ -1066,7 +1066,7 @@ describe('handlePaymentIntentSucceededWebhook', function (): void {
         $invoiceModel = createEntity(Invoice::class);
 
         $invoiceModel->id = 15;
-        $invoiceModel->approved = 1;
+        $invoiceModel->issued = 1;
         $invoiceModel->client_id = 7;
 
         $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
@@ -1129,7 +1129,7 @@ describe('processPaymentIntent', function (): void {
         $invoice = createEntity(Invoice::class, [
             'id' => 15,
             'client_id' => 7,
-            'approved' => true,
+            'issued' => true,
         ]);
 
         $tx = buildTransaction();

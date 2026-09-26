@@ -55,9 +55,10 @@
                 </div>
                 <div class="mt-3">
                     <label class="form-check form-switch form-switch-2">
-                        <input class="form-check-input" name="invoice_auto_approval" type="checkbox" value="1" {% if params.invoice_auto_approval|default('') == '1' %}checked{% endif %}>
-                        <span class="form-check-label">{{ 'Enable Auto Invoice Approval'|trans }}</span>
+                        <input class="form-check-input" name="invoice_auto_issue" type="checkbox" value="1" {% if params.invoice_auto_issue|default('') == '1' %}checked{% endif %}>
+                        <span class="form-check-label">{{ 'Auto-Issue Wallet Top-Up Invoices'|trans }}</span>
                     </label>
+                    <small class="form-hint">{{ 'When enabled, client wallet top-up invoices skip the draft stage. All other invoices are always saved as drafts first.'|trans }}</small>
                 </div>
                 <div class="mt-3">
                     <label class="form-label d-block">{{ 'Invoice Immutability'|trans }}</label>
@@ -105,16 +106,12 @@
                         <label class="form-label" for="invoice_number_padding">{{ 'Invoice Number Padding Length'|trans }}</label>
                         <input class="form-control" id="invoice_number_padding" type="number" name="invoice_number_padding" value="{{ params.invoice_number_padding|default(5) }}" min="0" max="20">
                     </div>
-                    <div class="col-lg-4">
+                    <div class="col-lg-6">
                         <label class="form-label" for="invoice_series">{{ 'Invoice Prefix / Series'|trans }}</label>
                         <input class="form-control" id="invoice_series" type="text" name="invoice_series" value="{{ params.invoice_series|default('') }}">
                     </div>
-                    <div class="col-lg-4">
-                        <label class="form-label" for="invoice_series_paid">{{ 'Paid Invoice Prefix / Series'|trans }}</label>
-                        <input class="form-control" id="invoice_series_paid" type="text" name="invoice_series_paid" value="{{ params.invoice_series_paid|default('') }}">
-                    </div>
-                    <div class="col-lg-4">
-                        <label class="form-label" for="invoice_starting_number">{{ 'Next Paid Invoice Number'|trans }}</label>
+                    <div class="col-lg-6">
+                        <label class="form-label" for="invoice_starting_number">{{ 'Next Invoice Number'|trans }}</label>
                         <input class="form-control" id="invoice_starting_number" type="text" name="invoice_starting_number" value="{{ params.invoice_starting_number|default('') }}">
                     </div>
                 </div>

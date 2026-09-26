@@ -19,7 +19,7 @@ use FOSSBilling\Interfaces\TimestampInterface;
 #[ORM\Entity(repositoryClass: \Box\Mod\Invoice\Repository\InvoiceRepository::class)]
 #[ORM\Table(name: 'invoice')]
 #[ORM\Index(name: 'invoice_client_id_idx', columns: ['client_id'])]
-#[ORM\Index(name: 'invoice_status_approved_due_at_idx', columns: ['status', 'approved', 'due_at'])]
+#[ORM\Index(name: 'invoice_status_issued_due_at_idx', columns: ['status', 'issued', 'due_at'])]
 #[ORM\UniqueConstraint(name: 'hash', columns: ['hash'])]
 #[ORM\Index(name: 'invoice_credit_note_for_idx', columns: ['credit_note_for_invoice_id'])]
 #[ORM\Index(name: 'invoice_debit_note_for_idx', columns: ['debit_note_for_invoice_id'])]
@@ -157,7 +157,7 @@ class Invoice implements TimestampInterface
     private ?PayGateway $gateway = null;
 
     #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
-    private bool $approved = false;
+    private bool $issued = false;
 
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
     private ?string $taxname = null;
@@ -638,14 +638,14 @@ class Invoice implements TimestampInterface
         return $this;
     }
 
-    public function isApproved(): bool
+    public function isIssued(): bool
     {
-        return $this->approved;
+        return $this->issued;
     }
 
-    public function setApproved(bool $approved): self
+    public function setIssued(bool $issued): self
     {
-        $this->approved = $approved;
+        $this->issued = $issued;
 
         return $this;
     }

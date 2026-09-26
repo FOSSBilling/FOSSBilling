@@ -38,7 +38,7 @@ test('attaching a product adds a provisioning order line to an editable invoice'
         $orderId = (int) $created->getResult();
 
         // Drafts accept attaches without the opt-in setting and stay drafts;
-        // sending is left to the approval path.
+        // sending is left to the issue path.
         $draftOrder = Tests\Helpers\ApiClient::request('admin/order/create', [
             'client_id' => $clientId,
             'product_id' => $productId,
@@ -58,14 +58,14 @@ test('attaching a product adds a provisioning order line to an editable invoice'
         assertApiSuccess($draftAttach);
 
         $draft = attachReissueGetInvoice($draftInvoiceId);
-        expect($draft['approved'])->toBeFalse();
+        expect($draft['issued'])->toBeFalse();
         expect(attachReissueHasOrderLine($draft, $draftOrderId))->toBeTrue();
 
         $order = attachReissueGetOrder($orderId);
         $invoiceId = (int) $order['unpaid_invoice_id'];
 
         $invoice = attachReissueGetInvoice($invoiceId);
-        expect($invoice['approved'])->toBeTrue();
+        expect($invoice['issued'])->toBeTrue();
         expect($invoice['editable'])->toBeFalse();
 
         // Locked: attaching is refused like any other edit.
@@ -180,7 +180,7 @@ test('reissuing cancels the original and moves its lines to a numbered replaceme
         $draftId = (int) $draftPrepared->getResult();
         $draftReissue = Tests\Helpers\ApiClient::request('admin/invoice/reissue', ['id' => $draftId]);
         expect($draftReissue->wasSuccessful())->toBeFalse();
-        expect($draftReissue->getErrorMessage())->toContain('Only approved unpaid');
+        expect($draftReissue->getErrorMessage())->toContain('Only issued unpaid');
 
         $reissued = Tests\Helpers\ApiClient::request('admin/invoice/reissue', [
             'id' => $invoiceId,
@@ -197,7 +197,7 @@ test('reissuing cancels the original and moves its lines to a numbered replaceme
 
         $replacement = attachReissueGetInvoice($replacementId);
         expect($replacement['status'])->toBe('unpaid');
-        expect($replacement['approved'])->toBeTrue();
+        expect($replacement['issued'])->toBeTrue();
         expect((int) $replacement['replaces_invoice_id'])->toBe($invoiceId);
         expect($replacement['serie_nr'])->not->toBe($original['serie_nr']);
         expect($replacement['lines'])->toHaveCount($originalLineCount);
@@ -209,7 +209,7 @@ test('reissuing cancels the original and moves its lines to a numbered replaceme
         // A canceled invoice cannot be reissued twice.
         $twice = Tests\Helpers\ApiClient::request('admin/invoice/reissue', ['id' => $invoiceId]);
         expect($twice->wasSuccessful())->toBeFalse();
-        expect($twice->getErrorMessage())->toContain('Only approved unpaid');
+        expect($twice->getErrorMessage())->toContain('Only issued unpaid');
 
         // The canceled original can no longer be paid either.
         $gateways = Tests\Helpers\ApiClient::request('admin/invoice/gateway_get_pairs');

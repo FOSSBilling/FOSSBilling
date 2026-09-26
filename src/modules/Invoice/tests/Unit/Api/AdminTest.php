@@ -243,14 +243,14 @@ test('prepares an invoice', function (): void {
     expect($result)->toBeInt()->toBe($newInvoiceId);
 });
 
-test('approves an invoice', function (): void {
+test('issues an invoice', function (): void {
     $api = apiEndpoint(new Admin());
     $data = [
         'id' => 1,
     ];
 
     $serviceMock = Mockery::mock(Service::class);
-    $serviceMock->shouldReceive('approveInvoice')
+    $serviceMock->shouldReceive('issueInvoice')
         ->atLeast()->once()
         ->andReturn(true);
 
@@ -263,7 +263,7 @@ test('approves an invoice', function (): void {
     $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($di['em']->getRepository(Invoice::class));
     $api->setService($serviceMock);
 
-    $result = $api->approve($data);
+    $result = $api->issue($data);
     expect($result)->toBeBool()->toBeTrue();
 });
 
@@ -433,11 +433,11 @@ test('updates an invoice', function (): void {
     expect($result)->toBeBool()->toBeTrue();
 });
 
-test('updates an invoice before approving it', function (): void {
+test('updates an invoice before issuing it', function (): void {
     $api = apiEndpoint(new Admin());
     $data = [
         'id' => 1,
-        'approve' => 1,
+        'issue' => 1,
         'new_item' => [
             'title' => 'Hosting',
             'quantity' => 1,
@@ -452,7 +452,7 @@ test('updates an invoice before approving it', function (): void {
         ->ordered()
         ->with($model, $data)
         ->andReturn(true);
-    $serviceMock->shouldReceive('approveInvoice')
+    $serviceMock->shouldReceive('issueInvoice')
         ->once()
         ->ordered()
         ->with($model, $data)
@@ -1580,7 +1580,7 @@ test('requires an invoice id on invoice endpoints', function ($method): void {
 })->with([
     'get',
     'mark_as_paid',
-    'approve',
+    'issue',
     'refund',
     'update',
     'delete',

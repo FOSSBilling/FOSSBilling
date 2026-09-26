@@ -351,7 +351,7 @@ describe('PayPal subscription IPN handling', function (): void {
         $invoiceModel = Mockery::mock(Box\Mod\Invoice\Entity\Invoice::class);
         $invoiceModel->shouldReceive('getId')->byDefault()->andReturn(16);
         $invoiceModel->shouldReceive('getStatus')->byDefault()->andReturn(Box\Mod\Invoice\Entity\Invoice::STATUS_UNPAID);
-        $invoiceModel->shouldReceive('isApproved')->byDefault()->andReturn(true);
+        $invoiceModel->shouldReceive('isIssued')->byDefault()->andReturn(true);
 
         $em = paypalEmMocks($invoiceModel);
         $di = container();
@@ -403,7 +403,7 @@ describe('PayPal subscription IPN handling', function (): void {
         $paidInvoice->shouldReceive('getStatus')->byDefault()->andReturn(Box\Mod\Invoice\Entity\Invoice::STATUS_PAID);
         $renewal = Mockery::mock(Box\Mod\Invoice\Entity\Invoice::class);
         $renewal->shouldReceive('getId')->byDefault()->andReturn(99);
-        $renewal->shouldReceive('isApproved')->byDefault()->andReturn(true);
+        $renewal->shouldReceive('isIssued')->byDefault()->andReturn(true);
 
         $invoiceService = Mockery::mock();
         $invoiceService->shouldReceive('generateRenewalInvoiceForSubscriptionPayment')->once()->with('I-ABC123', 9)->andReturn($renewal);
@@ -675,7 +675,7 @@ describe('PayPal subscription IPN handling', function (): void {
         $invoiceModel = Mockery::mock(Box\Mod\Invoice\Entity\Invoice::class);
         $invoiceModel->shouldReceive('getId')->byDefault()->andReturn(16);
         $invoiceModel->shouldReceive('getStatus')->byDefault()->andReturn(Box\Mod\Invoice\Entity\Invoice::STATUS_UNPAID);
-        $invoiceModel->shouldReceive('isApproved')->byDefault()->andReturn(true);
+        $invoiceModel->shouldReceive('isIssued')->byDefault()->andReturn(true);
 
         $invoiceService = Mockery::mock();
         $invoiceService->shouldReceive('getTotalWithTax')->once()->andReturn(120.00);
@@ -1149,7 +1149,7 @@ describe('PayPal subscription IPN handling', function (): void {
         $invoiceModel = Mockery::mock(Box\Mod\Invoice\Entity\Invoice::class);
         $invoiceModel->shouldReceive('getId')->byDefault()->andReturn(16);
         $invoiceModel->shouldReceive('getStatus')->byDefault()->andReturn(Box\Mod\Invoice\Entity\Invoice::STATUS_UNPAID);
-        $invoiceModel->shouldReceive('isApproved')->byDefault()->andReturn(true);
+        $invoiceModel->shouldReceive('isIssued')->byDefault()->andReturn(true);
 
         $stored = Mockery::mock(Box\Mod\Invoice\Entity\Subscription::class);
         $stored->shouldReceive('getRelType')->byDefault()->andReturn('invoice');

@@ -59,7 +59,7 @@
                                 <tbody>
                                 {% for i, invoice in unpaid_invoices.list %}
                                     <tr>
-                                        <td>{% if invoice.debit_note_for_invoice_id %}{{ 'Debit Note'|trans }}{% else %}{{ 'Invoice'|trans }}{% endif %} #{{ invoice.serie ~ "%05s"|format(invoice.nr) }}</td>
+                                        <td>{% if invoice.debit_note_for_invoice_id %}{{ 'Debit Note'|trans }}{% else %}{{ 'Invoice'|trans }}{% endif %} #{{ invoice.serie_nr }}</td>
                                         <td>{{ invoice.created_at|format_date }}</td>
                                         <td>{{ invoice.due_at|format_date }}</td>
                                         <td>{{ invoice.total|format_currency(invoice.currency ?? default_currency) }}</td>
@@ -90,7 +90,7 @@
                                 <tbody>
                                 {% for i, invoice in paid_invoices.list %}
                                     <tr>
-                                        <td>{% if invoice.debit_note_for_invoice_id %}{{ 'Debit Note'|trans }}{% else %}{{ 'Invoice'|trans }}{% endif %} #{{ invoice.serie ~ "%05s"|format(invoice.nr) }}</td>
+                                        <td>{% if invoice.debit_note_for_invoice_id %}{{ 'Debit Note'|trans }}{% else %}{{ 'Invoice'|trans }}{% endif %} #{{ invoice.serie_nr }}</td>
                                         <td>{{ invoice.created_at|format_date }}</td>
                                         <td>{{ invoice.paid_at|format_date }}</td>
                                         <td>{{ invoice.total|format_currency(invoice.currency ?? default_currency) }}</td>
@@ -119,7 +119,7 @@
                                 <tbody>
                                 {% for i, invoice in refunded_invoices.list %}
                                     <tr>
-                                        <td>{% if invoice.credit_note_for_invoice_id %}{{ 'Credit Note'|trans }}{% elseif invoice.debit_note_for_invoice_id %}{{ 'Debit Note'|trans }}{% else %}{{ 'Invoice'|trans }}{% endif %} #{{ invoice.serie ~ "%05s"|format(invoice.nr) }}</td>
+                                        <td>{% if invoice.credit_note_for_invoice_id %}{{ 'Credit Note'|trans }}{% elseif invoice.debit_note_for_invoice_id %}{{ 'Debit Note'|trans }}{% else %}{{ 'Invoice'|trans }}{% endif %} #{{ invoice.serie_nr }}</td>
                                         <td>{{ invoice.created_at|format_date }}</td>
                                         <td>{{ invoice.total|format_currency(invoice.currency ?? default_currency) }}</td>
                                         <td><a href='{{ "invoice/#{invoice.hash}"|url }}' class="btn btn-outline-secondary btn-sm">{{ 'View'|trans }}</a></td>

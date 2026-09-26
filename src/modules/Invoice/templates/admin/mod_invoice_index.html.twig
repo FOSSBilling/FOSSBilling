@@ -13,7 +13,7 @@
         <svg class="icon">
             <use href="#plus" />
         </svg>
-        {{ 'New Invoice'|trans }}
+        {{ 'New Draft'|trans }}
     </button>
 {% endset %}
 
@@ -210,7 +210,7 @@
                     </thead>
                     <tbody>
                         {% set invoices = admin.invoice_get_list({ 'per_page': 25, 'page': request.page }|merge(request)|merge({ 'summary': 1 })) %}
-                        {% set invoice_immutability = admin.system_get_params.invoice_immutability|default('strict') %}
+                        {% set params = admin.system_get_params %}
                         {% for invoice in invoices.list %}
                         <tr>
                             <td>
@@ -246,7 +246,7 @@
                                     </svg>
                                 </a>
                                 {% endif %}
-                                {% if (invoice.status == 'unpaid' and not invoice.approved) or (invoice_immutability == 'relaxed' and invoice.status == 'canceled') %}
+                                {% if (invoice.status == 'unpaid' and not invoice.issued) or (params.invoice_immutability|default('strict') == 'relaxed' and invoice.status == 'canceled') %}
                                 <a class="btn btn-icon" href="{{ 'invoice/delete'|api_url(query: { 'id': invoice.id }) }}"
                                     {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
                                     <svg class="icon">
@@ -285,7 +285,7 @@
                 <div class="modal-dialog modal-dialog-centered modal-lg">
                     <form class="modal-content" method="post" action="{{ 'invoice/prepare'|api_url }}" {{ fb_api_form({callback: 'onAfterInvoicePrepared'}) }}>
                         <div class="modal-header">
-                            <h3 class="modal-title" id="newInvoiceModalLabel">{{ 'Create New Invoice'|trans }}</h3>
+                            <h3 class="modal-title" id="newInvoiceModalLabel">{{ 'New Draft Invoice'|trans }}</h3>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
                         </div>
                         <div class="modal-body">
@@ -312,11 +312,12 @@
                                         name="product_id"
                                         data-resturl="/api/admin/product/get_pairs">
                                 </select>
+                                <small class="form-hint">{{ 'This saves a draft you can edit on the next page. Nothing is sent to the client until you issue it.'|trans }}</small>
                             </div>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</button>
-                            <button type="submit" class="btn btn-primary">{{ 'Prepare'|trans }}</button>
+                            <button type="submit" class="btn btn-primary">{{ 'Save Draft'|trans }}</button>
                         </div>
                     </form>
                 </div>

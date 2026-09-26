@@ -1,5 +1,5 @@
 {% import 'macro_functions.html.twig' as mf %}
-{% set nr = invoice.serie ~ "%05s"|format(invoice.nr) %}
+{% set nr = invoice.serie_nr %}
 {% set seller = invoice.seller %}
 {% set buyer = invoice.buyer %}
 {% set company = guest.system_company %}

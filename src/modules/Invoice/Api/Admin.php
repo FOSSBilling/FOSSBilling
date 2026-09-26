@@ -99,6 +99,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional bool $execute - execute related tasks on invoice items. Default false.
      * @optional int $gateway_id - Payment gateway to associate with the invoice
      * @optional string $transactionId - Custom transaction ID to use when the selected gateway is Custom
+     * @optional string $paid_at - payment date to record instead of now, e.g. "2026-09-01 14:00:00"
      *
      * @return bool
      */
@@ -117,7 +118,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * Uses clients details, such as currency assigned to client.
      * If client currency is not defined, sets default currency for client.
      *
-     * @optional bool $approve - set true to approve invoice after preparation. Defaults to false
+     * @optional bool $issue - set true to issue invoice after preparation. Defaults to false
      * @optional int $gateway_id - Selected payment gateway id
      * @optional array $items - list of invoice lines. One line is array of line parameters
      * @optional string $text_1 - text to be displayed before invoice items table
@@ -138,18 +139,18 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
-     * Approve invoice.
+     * Issue invoice.
      *
      * @return bool
      */
     #[RequiredParams(['id' => 'Invoice ID is missing'])]
-    public function approve($data)
+    public function issue($data)
     {
         $this->checkPermissions('invoice', 'manage_invoices');
 
         $model = $this->_getInvoice($data);
 
-        return $this->getService()->approveInvoice($model, $data);
+        return $this->getService()->issueInvoice($model, $data);
     }
 
     /**
@@ -225,7 +226,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
-     * Cancel an approved unpaid invoice and issue a replacement carrying its
+     * Cancel an issued unpaid invoice and issue a replacement carrying its
      * lines forward. The replacement takes the next invoice number; the
      * original number stays with the canceled record.
      *
@@ -255,7 +256,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
-     * Cancel (void) an approved unpaid invoice without issuing a replacement.
+     * Cancel (void) an issued unpaid invoice without issuing a replacement.
      * The invoice keeps its number with a canceled status so the audit trail
      * survives. Linked orders keep pointing at it for history; transactions
      * are detached but kept.
@@ -285,7 +286,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional string $status - Invoice status: paid|unpaid
      * @optional string $taxrate - Invoice tax rate
      * @optional string $taxname - Invoice tax name
-     * @optional bool $approved - flag to set invoice as approved. Approved invoices are visible to clients
+     * @optional bool $issued - flag to set invoice as issued. Issued invoices are visible to clients
      * @optional string $notes - notes
      * @optional int $gateway_id - selected payment method - gateway id
      * @optional array $new_item - [title] [price]
@@ -309,7 +310,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional string $buyer_zip - Buyer zip
      * @optional string $buyer_phone - Buyer phone
      * @optional string $buyer_email - Buyer email
-     * @optional bool $approve - approve the invoice after saving the supplied changes
+     * @optional bool $issue - issue the invoice after saving the supplied changes
      *
      * @return bool
      */
@@ -321,8 +322,8 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $model = $this->_getInvoice($data);
         $result = $this->getService()->updateInvoice($model, $data);
 
-        if ($result && !empty($data['approve'])) {
-            return $this->getService()->approveInvoice($model, $data);
+        if ($result && !empty($data['issue'])) {
+            return $this->getService()->issueInvoice($model, $data);
         }
 
         return $result;
@@ -379,7 +380,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Delete invoice.
      *
-     * Unapproved unpaid drafts are always deletable. Approved unpaid and
+     * Unissued unpaid drafts are always deletable. Issued unpaid and
      * canceled invoices additionally require relaxed invoice immutability.
      * Paid, refunded, and note/reissue-linked invoices cannot be deleted;
      * cancel, reissue, or refund them instead.
@@ -492,7 +493,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
-     * Calls due events on unpaid and approved invoices.
+     * Calls due events on unpaid and issued invoices.
      * Extensions can listen to BeforeInvoiceIsDueEvent and AfterInvoiceIsDueEvent.
      *
      * @optional bool $once_per_day - default true. Pass false if you want to execute this action more than once per day

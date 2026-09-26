@@ -156,7 +156,7 @@ class Service implements InjectionAwareInterface
         $dbal = $this->di['dbal'];
         $boundaries = $this->getDayBoundaries();
 
-        $base = "SELECT (COALESCE(SUM(base_income), 0) - COALESCE(SUM(base_refund), 0)) AS income FROM invoice WHERE approved = true AND (status = 'paid' OR status = 'refunded')";
+        $base = "SELECT (COALESCE(SUM(base_income), 0) - COALESCE(SUM(base_refund), 0)) AS income FROM invoice WHERE issued = true AND (status = 'paid' OR status = 'refunded')";
         $total_query = $base;
         $yeste_query = $base . ' AND paid_at >= :yesterday_start AND paid_at < :today_start';
         $today_query = $base . ' AND paid_at >= :today_start AND paid_at < :tomorrow_start';
@@ -235,7 +235,7 @@ class Service implements InjectionAwareInterface
 
         $query = 'SELECT COALESCE(SUM(base_refund), 0) AS refund, COALESCE(SUM(base_income), 0) AS income
                 FROM invoice
-                WHERE approved = true
+                WHERE issued = true
                 AND (status = :status1 OR status = :status2)
                 ';
 
@@ -270,7 +270,7 @@ class Service implements InjectionAwareInterface
         $query = "SELECT {$date} AS date, COALESCE(SUM(base_refund), 0) AS refund
                 FROM invoice
                 WHERE created_at BETWEEN :date_from AND :date_to
-                AND approved = true
+                AND issued = true
                 AND (status = :refunded OR (status = :paid AND base_refund > 0))
                 GROUP BY date";
 
@@ -307,7 +307,7 @@ class Service implements InjectionAwareInterface
         $query = "SELECT {$date} AS date, (COALESCE(SUM(base_income), 0) - COALESCE(SUM(base_refund), 0)) AS income
                 FROM invoice
                 WHERE paid_at BETWEEN :date_from AND :date_to
-                AND approved = true
+                AND issued = true
                 AND (status = :paid OR status = :refunded)
                 GROUP BY date";
 

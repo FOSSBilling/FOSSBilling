@@ -54,7 +54,7 @@ class InvoiceRepository extends EntityRepository
      * raw-SQL path required.
      *
      * @param array $data optional filters: search, id, nr, client_id, client,
-     *                    status, approved, currency, created_at, date_from,
+     *                    status, issued, currency, created_at, date_from,
      *                    date_to, paid_at, order_id, sort, direction
      */
     public function getSearchQueryBuilder(array $data = []): QueryBuilder
@@ -78,9 +78,9 @@ class InvoiceRepository extends EntityRepository
             $qb->andWhere('(i.id = :id_nr OR i.nr = :id_nr)')->setParameter('id_nr', $idNr);
         }
 
-        $approved = $data['approved'] ?? null;
-        if ($approved !== null && $approved !== '') {
-            $qb->andWhere('i.approved = :approved')->setParameter('approved', Tools::normalizeBoolean($approved));
+        $issued = $data['issued'] ?? null;
+        if ($issued !== null && $issued !== '') {
+            $qb->andWhere('i.issued = :issued')->setParameter('issued', Tools::normalizeBoolean($issued));
         }
 
         $status = $data['status'] ?? null;
@@ -219,7 +219,7 @@ class InvoiceRepository extends EntityRepository
     /**
      * Must be called within a transaction, held for as long as the state is acted on.
      *
-     * @return array{status: string, approved: bool}|null
+     * @return array{status: string, issued: bool}|null
      */
     public function lockAndGetState(int $invoiceId): ?array
     {
@@ -230,7 +230,7 @@ class InvoiceRepository extends EntityRepository
         }
 
         $row = $connection->fetchAssociative(
-            'SELECT status, approved FROM invoice WHERE id = :id' . RowLock::suffix($connection),
+            'SELECT status, issued FROM invoice WHERE id = :id' . RowLock::suffix($connection),
             ['id' => $invoiceId],
         );
 
@@ -240,7 +240,7 @@ class InvoiceRepository extends EntityRepository
 
         return [
             'status' => (string) $row['status'],
-            'approved' => $connection->convertToPHPValue($row['approved'], Types::BOOLEAN) ?? false,
+            'issued' => $connection->convertToPHPValue($row['issued'], Types::BOOLEAN) ?? false,
         ];
     }
 
@@ -261,19 +261,19 @@ class InvoiceRepository extends EntityRepository
     }
 
     /**
-     * Approved, unpaid invoices that have not been reminded and were
+     * Issued, unpaid invoices that have not been reminded and were
      * created before the given cutoff timestamp.
      *
      * @return Invoice[]
      */
-    public function findUnpaidApprovedNotRemindedBefore(int $cutoffTimestamp): array
+    public function findUnpaidIssuedNotRemindedBefore(int $cutoffTimestamp): array
     {
         $cutoff = new \DateTime();
         $cutoff->setTimestamp($cutoffTimestamp);
 
         return $this->createQueryBuilder('i')
             ->andWhere('i.status = :status')
-            ->andWhere('i.approved = true')
+            ->andWhere('i.issued = true')
             ->andWhere('i.remindedAt IS NULL')
             ->andWhere('i.createdAt < :cutoff')
             ->setParameter('status', Invoice::STATUS_UNPAID)

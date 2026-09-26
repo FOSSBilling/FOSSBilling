@@ -28,26 +28,26 @@ function statsConnectionWithRows(): Doctrine\DBAL\Connection
     $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
 
     foreach (['client', 'client_order', 'invoice', 'support_ticket'] as $table) {
-        $connection->executeStatement("CREATE TABLE {$table} (id INTEGER PRIMARY KEY, created_at TEXT, paid_at TEXT, approved INTEGER DEFAULT 0, status TEXT, base_income REAL DEFAULT 0, base_refund REAL DEFAULT 0)");
+        $connection->executeStatement("CREATE TABLE {$table} (id INTEGER PRIMARY KEY, created_at TEXT, paid_at TEXT, issued INTEGER DEFAULT 0, status TEXT, base_income REAL DEFAULT 0, base_refund REAL DEFAULT 0)");
     }
 
     $today = new DateTimeImmutable('today');
     $rows = [
-        // table, created_at, [paid_at, approved, status, base_income, base_refund]
+        // table, created_at, [paid_at, issued, status, base_income, base_refund]
         // 3 months back is never inside "last month"'s single-month window, on any run date.
         ['client', $today->modify('-3 months'), []],
         // Exactly a day before midnight today - unconditionally "yesterday", on any run date.
         ['client', $today->modify('-1 day 12:00:00'), []],
         ['client', $today->modify('10:00:00'), []],        // today
         ['client', $today->modify('23:59:59'), []],        // today, end of day
-        ['invoice', $today->modify('10:00:00'), ['paid_at' => $today->modify('10:00:00'), 'approved' => 1, 'status' => 'paid', 'base_income' => 100.0]],
+        ['invoice', $today->modify('10:00:00'), ['paid_at' => $today->modify('10:00:00'), 'issued' => 1, 'status' => 'paid', 'base_income' => 100.0]],
     ];
 
     foreach ($rows as [$table, $createdAt, $extra]) {
         $connection->insert($table, [
             'created_at' => $createdAt->format('Y-m-d H:i:s'),
             'paid_at' => isset($extra['paid_at']) ? $extra['paid_at']->format('Y-m-d H:i:s') : null,
-            'approved' => $extra['approved'] ?? 0,
+            'issued' => $extra['issued'] ?? 0,
             'status' => $extra['status'] ?? null,
             'base_income' => $extra['base_income'] ?? 0,
             'base_refund' => $extra['base_refund'] ?? 0,

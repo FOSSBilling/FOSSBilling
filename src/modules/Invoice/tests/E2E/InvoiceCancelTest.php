@@ -19,7 +19,7 @@ use function Tests\Helpers\assertApiResultIsArray;
 use function Tests\Helpers\assertApiResultIsInt;
 use function Tests\Helpers\assertApiSuccess;
 
-test('approved unpaid invoices can be canceled, and deleted when relaxed', function (): void {
+test('issued unpaid invoices can be canceled, and deleted when relaxed', function (): void {
     Tests\Helpers\ApiClient::resetCookies();
     $productId = null;
 
@@ -40,7 +40,7 @@ test('approved unpaid invoices can be canceled, and deleted when relaxed', funct
         $invoiceId = (int) $order['unpaid_invoice_id'];
 
         $invoice = cancelGetInvoice($invoiceId);
-        expect($invoice['approved'])->toBeTrue();
+        expect($invoice['issued'])->toBeTrue();
         expect($invoice['cancellable'])->toBeTrue();
 
         // Issued invoices cannot be hard-deleted by default.

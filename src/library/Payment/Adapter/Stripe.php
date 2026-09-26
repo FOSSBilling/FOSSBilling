@@ -475,8 +475,8 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             $clientService->addFunds($client, $bd['amount'], $bd['description'], $bd);
 
             if ($tx->getInvoice() instanceof Invoice && $invoice instanceof Invoice && !$invoiceService->isInvoiceTypeDeposit($invoice)) {
-                if (!$invoice->isApproved()) {
-                    $invoiceService->approveInvoice($invoice, ['use_credits' => false]);
+                if (!$invoice->isIssued()) {
+                    $invoiceService->issueInvoice($invoice, ['use_credits' => false]);
                 }
                 $invoiceService->payInvoiceWithCredits($invoice);
             } elseif ($tx->getInvoice() instanceof Invoice && $invoice instanceof Invoice && $invoiceService->isInvoiceTypeDeposit($invoice)) {
@@ -637,8 +637,8 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
         $invoiceService = $this->di['mod_service']('Invoice');
         if (!$invoiceService->isInvoiceTypeDeposit($invoice)) {
-            if (!$invoice->isApproved()) {
-                $invoiceService->approveInvoice($invoice, ['use_credits' => false]);
+            if (!$invoice->isIssued()) {
+                $invoiceService->issueInvoice($invoice, ['use_credits' => false]);
             }
             $invoiceService->payInvoiceWithCredits($invoice);
         }
@@ -964,8 +964,8 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             $invoiceModel = $this->di['em']->getRepository(Invoice::class)->find((int) $invoiceId);
 
             if ($invoiceModel instanceof Invoice && !$invoiceService->isInvoiceTypeDeposit($invoiceModel)) {
-                if (!$invoiceModel->isApproved()) {
-                    $invoiceService->approveInvoice($invoiceModel, ['use_credits' => false]);
+                if (!$invoiceModel->isIssued()) {
+                    $invoiceService->issueInvoice($invoiceModel, ['use_credits' => false]);
                 }
                 $invoiceService->payInvoiceWithCredits($invoiceModel);
             }
@@ -1307,8 +1307,8 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         $clientService->addFunds($client, $bd['amount'], $bd['description'], $bd);
 
         if ($tx->getInvoice() instanceof Invoice && $invoice instanceof Invoice && !$invoiceService->isInvoiceTypeDeposit($invoice)) {
-            if (!$invoice->isApproved()) {
-                $invoiceService->approveInvoice($invoice, ['use_credits' => false]);
+            if (!$invoice->isIssued()) {
+                $invoiceService->issueInvoice($invoice, ['use_credits' => false]);
             }
             $invoiceService->payInvoiceWithCredits($invoice);
         } elseif ($tx->getInvoice() instanceof Invoice && $invoice instanceof Invoice && $invoiceService->isInvoiceTypeDeposit($invoice)) {

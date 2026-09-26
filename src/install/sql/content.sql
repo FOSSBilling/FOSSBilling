@@ -304,7 +304,7 @@ LOCK TABLES `setting` WRITE;
 
 INSERT INTO `setting` (`id`, `param`, `value`, `public`, `category`, `hash`, `created_at`, `updated_at`)
 VALUES
-	(1,'last_patch','120',0,NULL,NULL,NOW(),NOW()),
+	(1,'last_patch','121',0,NULL,NULL,NOW(),NOW()),
 	(2,'company_name','Company Name',0,NULL,NULL,NOW(),NOW()),
 	(3,'company_email','support@yourcompany.com',0,NULL,NULL,NOW(),NOW()),
 	(4,'company_signature','FOSSBilling.org - Client Management, Invoicing and Support Software',0,NULL,NULL,NOW(),NOW()),
@@ -319,7 +319,7 @@ VALUES
 	(13,'company_note','This is a placeholder for your About Us page. It will be available in /about-us.\nReplace this with information about your company, such as:\n- Your company history and mission\n- Services offered\n- Values and vision\n- Contact or support information\n- Any other details you want your clients to know about your business',0,NULL,NULL,NOW(),NOW()),
 	(14,'invoice_series','FOSS',0,NULL,NULL,NOW(),NOW()),
 	(15,'invoice_due_days','5',0,NULL,NULL,NOW(),NOW()),
-	(16,'invoice_auto_approval','1',0,NULL,NULL,NOW(),NOW()),
+	(16,'invoice_auto_issue','1',0,NULL,NULL,NOW(),NOW()),
 	(17,'invoice_issue_days_before_expire','14',0,NULL,NULL,NOW(),NOW()),
 	(18,'theme','default/client',0,NULL,NULL,NOW(),NOW()),
 	(19,'issue_invoice_days_before_expire','7',0,NULL,NULL,NOW(),NOW()),

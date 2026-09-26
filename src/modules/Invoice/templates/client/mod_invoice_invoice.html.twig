@@ -3,7 +3,7 @@
 
 {% import "macro_functions.html.twig" as mf %}
 
-{% set nr = invoice.serie ~ "%05s"|format(invoice.nr) %}
+{% set nr = invoice.serie_nr %}
 {% if invoice.credit_note_for_invoice_id %}
     {% set doc_label = 'Credit Note'|trans %}
 {% elseif invoice.debit_note_for_invoice_id %}

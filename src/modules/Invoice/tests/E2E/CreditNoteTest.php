@@ -222,8 +222,8 @@ test('partial refunds accumulate on the original until fully refunded', function
             assertApiSuccess($added);
         }
 
-        $approved = Tests\Helpers\ApiClient::request('admin/invoice/approve', ['id' => $invoiceId]);
-        assertApiSuccess($approved);
+        $issued = Tests\Helpers\ApiClient::request('admin/invoice/issue', ['id' => $invoiceId]);
+        assertApiSuccess($issued);
         creditNoteMarkInvoicePaid($invoiceId);
 
         $params = Tests\Helpers\ApiClient::request('admin/system/get_params');

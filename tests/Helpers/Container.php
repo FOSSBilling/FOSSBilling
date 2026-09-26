@@ -269,7 +269,7 @@ function container(): Container
         $invoiceRepository->shouldReceive('findLatestWithNr')->byDefault()->andReturn(null);
         $invoiceRepository->shouldReceive('findPaid')->byDefault()->andReturn([]);
         $invoiceRepository->shouldReceive('findByClientId')->byDefault()->andReturn([]);
-        $invoiceRepository->shouldReceive('findUnpaidApprovedNotRemindedBefore')->byDefault()->andReturn([]);
+        $invoiceRepository->shouldReceive('findUnpaidIssuedNotRemindedBefore')->byDefault()->andReturn([]);
         $invoiceRepository->shouldReceive('findUnpaidOlderThan')->byDefault()->andReturn([]);
         $invoiceRepository->shouldReceive('findPaidByRelId')->byDefault()->andReturn([]);
 

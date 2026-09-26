@@ -11,7 +11,7 @@ namespace Box\Mod\Invoice\Event;
 
 use FOSSBilling\Events\Event;
 
-/** Dispatched for every unpaid, approved invoice overdue or due today. */
+/** Dispatched for every unpaid, issued invoice overdue or due today. */
 final class AfterInvoiceIsDueEvent extends Event
 {
     /** @param list<int> $reminderIntervals */
