@@ -199,6 +199,7 @@ test('orderbutton checkout renders one-time items without a period under strict_
                 'subscribable' => false,
                 'currency' => [
                     'code' => 'USD',
+                    'conversion_rate' => 1,
                 ],
             ],
             'cart_get_currency' => [

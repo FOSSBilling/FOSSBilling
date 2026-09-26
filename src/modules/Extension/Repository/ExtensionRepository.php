@@ -12,11 +12,40 @@ declare(strict_types=1);
 namespace Box\Mod\Extension\Repository;
 
 use Box\Mod\Extension\Entity\Extension;
+use Doctrine\DBAL\Connection;
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
+use Doctrine\ORM\Event\OnClearEventArgs;
+use Doctrine\ORM\Event\OnFlushEventArgs;
+use Doctrine\ORM\Event\PostFlushEventArgs;
+use Doctrine\ORM\Events;
+use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\QueryBuilder;
 
 class ExtensionRepository extends EntityRepository
 {
+    /** @var array<string, string[]> */
+    private array $installedNamesByTypeCache = [];
+
+    /** @var array<string, array<string, bool>> */
+    private array $activeByTypeAndNameCache = [];
+
+    private bool $extensionWritesScheduled = false;
+
+    private ?Connection $connection = null;
+
+    /** @param ClassMetadata<Extension> $class */
+    public function __construct(EntityManagerInterface $em, ClassMetadata $class)
+    {
+        parent::__construct($em, $class);
+        $this->connection = $em->getConnection();
+
+        $em->getEventManager()->addEventListener(
+            [Events::onFlush, Events::postFlush, Events::onClear],
+            $this,
+        );
+    }
+
     /**
      * Build a QueryBuilder for filtering installed extensions.
      *
@@ -82,10 +111,20 @@ class ExtensionRepository extends EntityRepository
      */
     public function findInstalledNamesByType(string $type): array
     {
-        return array_map(
+        $useCache = $this->canUseRequestCache();
+        if ($useCache && isset($this->installedNamesByTypeCache[$type])) {
+            return $this->installedNamesByTypeCache[$type];
+        }
+
+        $names = array_map(
             static fn (Extension $extension): string => (string) $extension->getName(),
             $this->findInstalledByType($type),
         );
+        if ($useCache) {
+            $this->installedNamesByTypeCache[$type] = $names;
+        }
+
+        return $names;
     }
 
     /**
@@ -94,10 +133,79 @@ class ExtensionRepository extends EntityRepository
      */
     public function existsActiveByTypeAndName(string $type, string $name): bool
     {
-        return $this->findOneBy([
+        $useCache = $this->canUseRequestCache();
+        if ($useCache && array_key_exists($name, $this->activeByTypeAndNameCache[$type] ?? [])) {
+            return $this->activeByTypeAndNameCache[$type][$name];
+        }
+
+        if ($useCache && $name !== '' && in_array($name, $this->findInstalledNamesByType($type), true)) {
+            return true;
+        }
+
+        // Let the database resolve case-insensitive matches absent from the cached list.
+        $active = $this->findOneBy([
             'type' => $type,
             'name' => $name,
             'status' => Extension::STATUS_INSTALLED,
         ]) !== null;
+        if ($useCache) {
+            $this->activeByTypeAndNameCache[$type][$name] = $active;
+        }
+
+        return $active;
+    }
+
+    public function clearInstalledNamesCache(): void
+    {
+        $this->installedNamesByTypeCache = [];
+        $this->activeByTypeAndNameCache = [];
+    }
+
+    private function canUseRequestCache(): bool
+    {
+        if ($this->connection?->isTransactionActive()) {
+            // An outer transaction can roll back without an ORM invalidation event.
+            $this->clearInstalledNamesCache();
+
+            return false;
+        }
+
+        return true;
+    }
+
+    public function onFlush(OnFlushEventArgs $args): void
+    {
+        $unitOfWork = $args->getObjectManager()->getUnitOfWork();
+
+        foreach ([
+            $unitOfWork->getScheduledEntityInsertions(),
+            $unitOfWork->getScheduledEntityUpdates(),
+            $unitOfWork->getScheduledEntityDeletions(),
+        ] as $entities) {
+            foreach ($entities as $entity) {
+                if ($entity instanceof Extension) {
+                    $this->clearInstalledNamesCache();
+                    $this->extensionWritesScheduled = true;
+
+                    return;
+                }
+            }
+        }
+    }
+
+    public function postFlush(PostFlushEventArgs $args): void
+    {
+        if (!$this->extensionWritesScheduled) {
+            return;
+        }
+
+        $this->clearInstalledNamesCache();
+        $this->extensionWritesScheduled = false;
+    }
+
+    public function onClear(OnClearEventArgs $args): void
+    {
+        $this->clearInstalledNamesCache();
+        $this->extensionWritesScheduled = false;
     }
 }

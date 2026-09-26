@@ -11,6 +11,9 @@
 declare(strict_types=1);
 
 use Box\Mod\System\Service;
+use Doctrine\DBAL\DriverManager;
+use Doctrine\ORM\Tools\SchemaTool;
+use FOSSBilling\Doctrine\EntityManagerFactory;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 
@@ -764,6 +767,23 @@ test('reserveNextNumericParamValue seeds a missing counter and reserves from it'
     $service->setDi($di);
 
     expect($service->reserveNextNumericParamValue('invoice_starting_number', 101))->toBe(101);
+});
+
+test('reserveNextNumericParamValue invalidates a cached missing setting after seeding it', function (): void {
+    $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $entityManager = EntityManagerFactory::create($connection);
+    (new SchemaTool($entityManager))->createSchema([$entityManager->getClassMetadata(Box\Mod\System\Entity\Setting::class)]);
+
+    $di = container();
+    $di['em'] = $entityManager;
+    $di['dbal'] = $connection;
+
+    $service = new Service();
+    $service->setDi($di);
+
+    expect($service->getParamValue('invoice_starting_number'))->toBeNull()
+        ->and($service->reserveNextNumericParamValue('invoice_starting_number', 101))->toBe(101)
+        ->and($service->getParamValue('invoice_starting_number'))->toBe('102');
 });
 
 test('reserveNextNumericParamValue ignores the seed when the counter became valid under the lock', function (): void {

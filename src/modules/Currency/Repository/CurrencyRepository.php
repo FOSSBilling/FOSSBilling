@@ -12,13 +12,34 @@ declare(strict_types=1);
 namespace Box\Mod\Currency\Repository;
 
 use Box\Mod\Currency\Entity\Currency;
+use Doctrine\DBAL\Connection;
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
+use Doctrine\ORM\Event\OnClearEventArgs;
+use Doctrine\ORM\Event\OnFlushEventArgs;
+use Doctrine\ORM\Event\PostFlushEventArgs;
+use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\QueryBuilder;
 use FOSSBilling\SortOptions;
 use Symfony\Component\Intl\Currencies;
 
 class CurrencyRepository extends EntityRepository
 {
+    private ?Connection $connection = null;
+    private bool $defaultCurrencyLoaded = false;
+    private ?Currency $defaultCurrency = null;
+    /** @var array<string, Currency|null> */
+    private array $currenciesByCode = [];
+    private bool $invalidateAfterFlush = false;
+
+    /** @param ClassMetadata<Currency> $class */
+    public function __construct(EntityManagerInterface $em, ClassMetadata $class)
+    {
+        parent::__construct($em, $class);
+        $this->connection = $em->getConnection();
+        $em->getEventManager()->addEventListener(['onClear', 'onFlush', 'postFlush'], $this);
+    }
+
     public function getClientCurrencyCode(int $clientId): ?string
     {
         $currencyCode = $this->getEntityManager()->getConnection()->fetchOne(
@@ -67,7 +88,64 @@ class CurrencyRepository extends EntityRepository
      */
     public function findOneByCode(string $code): ?Currency
     {
-        return $this->findOneBy(['code' => $code]);
+        if ($this->connection?->isTransactionActive()) {
+            $this->clearLookupCache();
+
+            return $this->findOneBy(['code' => $code]);
+        }
+
+        if (!array_key_exists($code, $this->currenciesByCode)) {
+            $this->currenciesByCode[$code] = $this->findOneBy(['code' => $code]);
+        }
+
+        return $this->currenciesByCode[$code];
+    }
+
+    public function onClear(OnClearEventArgs $event): void
+    {
+        if ($event->getObjectManager() === $this->getEntityManager()) {
+            $this->clearLookupCache();
+            $this->invalidateAfterFlush = false;
+        }
+    }
+
+    public function onFlush(OnFlushEventArgs $event): void
+    {
+        if ($event->getObjectManager() !== $this->getEntityManager()) {
+            return;
+        }
+
+        $unitOfWork = $this->getEntityManager()->getUnitOfWork();
+
+        foreach ([
+            $unitOfWork->getScheduledEntityInsertions(),
+            $unitOfWork->getScheduledEntityUpdates(),
+            $unitOfWork->getScheduledEntityDeletions(),
+        ] as $entities) {
+            foreach ($entities as $entity) {
+                if ($entity instanceof Currency) {
+                    $this->clearLookupCache();
+                    $this->invalidateAfterFlush = true;
+
+                    break 2;
+                }
+            }
+        }
+    }
+
+    public function postFlush(PostFlushEventArgs $event): void
+    {
+        if ($event->getObjectManager() === $this->getEntityManager() && $this->invalidateAfterFlush) {
+            $this->clearLookupCache();
+            $this->invalidateAfterFlush = false;
+        }
+    }
+
+    private function clearLookupCache(): void
+    {
+        $this->defaultCurrency = null;
+        $this->defaultCurrencyLoaded = false;
+        $this->currenciesByCode = [];
     }
 
     /**
@@ -76,13 +154,26 @@ class CurrencyRepository extends EntityRepository
      * Returns null if no currency is marked as default. Callers should handle
      * this case appropriately (e.g., by throwing an exception or using a fallback).
      *
-     * Note: Doctrine's identity map provides automatic caching within a request.
-     * If the default currency is changed via `Service::setAsDefault()`, that method
-     * clears the identity map to ensure subsequent calls return fresh data.
+     * Reused across module services sharing this EntityManager.
      */
     public function findDefault(): ?Currency
     {
-        return $this->findOneBy(['isDefault' => true]);
+        if ($this->connection?->isTransactionActive()) {
+            $this->clearLookupCache();
+
+            return $this->findOneBy(['isDefault' => true]);
+        }
+
+        if (!$this->defaultCurrencyLoaded) {
+            $this->defaultCurrency = $this->findOneBy(['isDefault' => true]);
+            $this->defaultCurrencyLoaded = true;
+
+            if ($this->defaultCurrency instanceof Currency) {
+                $this->currenciesByCode[$this->defaultCurrency->getCode()] = $this->defaultCurrency;
+            }
+        }
+
+        return $this->defaultCurrency;
     }
 
     public function getPairs(): array
@@ -133,6 +224,8 @@ class CurrencyRepository extends EntityRepository
      */
     public function clearDefaultFlags(): int
     {
+        $this->clearLookupCache();
+
         return $this->createQueryBuilder('c')
             ->update()
             ->set('c.isDefault', ':isDefault')
