@@ -280,7 +280,7 @@
                     <div class="col-lg-4">
                         <label class="form-label" for="validity">{{ 'Validity Period (Blank for Indefinite)'|trans }}</label>
                         <div class="input-icon w-100">
-                            <input class="form-control datepicker"
+                            <input class="form-control datepicker" data-clear-label="{{ 'Clear date'|trans }}" data-invalid-date-label="{{ 'Enter a valid date in YYYY-MM-DD format.'|trans }}"
                                    id="validity"
                                    value="{% if promo.start_at %}{{ promo.start_at|date('Y-m-d') }}{% endif %}{% if promo.end_at %} to {{ promo.end_at|date('Y-m-d') }}{% endif %}"
                                    data-name-from="start_at"
@@ -301,12 +301,12 @@
                             <label class="form-check"><input class="form-check-input" id="radioAutoApplyYes" type="radio" name="auto_apply" value="1"{% if promo.auto_apply %} checked{% endif %}><span class="form-check-label">{{ 'Yes'|trans }}</span></label>
                             <label class="form-check"><input class="form-check-input" id="radioAutoApplyNo" type="radio" name="auto_apply" value="0"{% if not promo.auto_apply %} checked{% endif %}><span class="form-check-label">{{ 'No'|trans }}</span></label>
                         </div>
-                        <small class="form-hint">{{ 'When enabled, this promotion applies itself at checkout whenever its targeting matches, with no code needed.'|trans }}</small>
+                        <small class="form-text">{{ 'When enabled, this promotion applies itself at checkout whenever its targeting matches, with no code needed.'|trans }}</small>
                     </div>
                     <div class="col-lg-4">
                         <label class="form-label" for="promo-priority">{{ 'Priority'|trans }}</label>
                         <input class="form-control" id="promo-priority" type="number" min="0" name="priority" value="{{ promo.priority|default(0) }}">
-                        <small class="form-hint">{{ 'Higher priority wins when several automatic promotions match. Ties fall back to the configured stacking mode.'|trans }}</small>
+                        <small class="form-text">{{ 'Higher priority wins when several automatic promotions match. Ties fall back to the configured stacking mode.'|trans }}</small>
                     </div>
                     <div class="col-lg-4">
                         <label class="form-label d-block">{{ 'Stackable'|trans }}</label>
@@ -314,7 +314,7 @@
                             <label class="form-check"><input class="form-check-input" id="radioStackableYes" type="radio" name="stackable" value="1"{% if promo.stackable %} checked{% endif %}><span class="form-check-label">{{ 'Yes'|trans }}</span></label>
                             <label class="form-check"><input class="form-check-input" id="radioStackableNo" type="radio" name="stackable" value="0"{% if not promo.stackable %} checked{% endif %}><span class="form-check-label">{{ 'No'|trans }}</span></label>
                         </div>
-                        <small class="form-hint">{{ 'Stackable promotions combine with each other when the stacking mode allows it.'|trans }}</small>
+                        <small class="form-text">{{ 'Stackable promotions combine with each other when the stacking mode allows it.'|trans }}</small>
                     </div>
                 </div>
 
@@ -347,7 +347,7 @@
                         <table class="table card-table table-vcenter table-striped text-nowrap">
                             <tbody>{% set required_products = admin.product_get_pairs %}{% for id, required_product in required_products %}<tr><td class="w-1"><input type="checkbox" name="requires_products[]" value="{{ id }}" {% if id in promo.requires_products %} checked{% endif %} /></td><td>{{ required_product }}</td></tr>{% endfor %}</tbody>
                         </table>
-                        <small class="form-hint">{{ 'The promotion only applies when every selected product is in the cart.'|trans }}</small>
+                        <small class="form-text">{{ 'The promotion only applies when every selected product is in the cart.'|trans }}</small>
                     </div>
                 </div>
                 <input type="hidden" name="id" value="{{ promo.id }}">

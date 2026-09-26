@@ -29,4 +29,24 @@ describe('purgeCssFile', () => {
     assert.match(purged, /\.tab-content>\.tab-pane/);
     assert.doesNotMatch(purged, /never-referenced/);
   });
+
+  test('keeps runtime calendar attribute states with a theme-specific safelist', async () => {
+    const themePath = await mkdtemp(join(tmpdir(), 'fb-calendar-'));
+    await mkdir(join(themePath, 'html'), { recursive: true });
+    await writeFile(join(themePath, 'html', 'layout.twig'), '<input class="datepicker">');
+    const cssPath = join(themePath, 'vendor.css');
+    await writeFile(cssPath, '[data-vc="calendar"][data-vc-calendar-hidden]{display:none}.unused{color:red}');
+
+    await purgeCssFile(cssPath, {
+      themePath,
+      enabled: true,
+      area: 'admin',
+      additionalGreedySafelist: [/data-vc/],
+    });
+
+    const purged = await readFile(cssPath, 'utf8');
+    assert.match(purged, /data-vc-calendar-hidden/);
+    assert.doesNotMatch(purged, /\.unused/);
+  });
+
 });

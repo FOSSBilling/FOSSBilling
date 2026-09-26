@@ -37,6 +37,7 @@
                         <div class="col-12">
                             <label class="form-label" for="new-client-password">{{ 'Password'|trans }}</label>
                             <input id="new-client-password" type="password" name="password" class="form-control" placeholder="{{ 'Optional initial password'|trans }}">
+                            {{ include('partial_password_strength.html.twig', { input_id: 'new-client-password' }) }}
                             <div class="form-text">{{ 'Leave blank to let the client set a password from the welcome email.'|trans }}</div>
                         </div>
                         <div class="col-12">

@@ -249,7 +249,7 @@
                         {% import 'macro_functions.html.twig' as mf %}
                         {% block form_content %}
                             <label class="form-label" for="transaction_note">{{ 'Content'|trans }}</label>
-                            <textarea class="form-control" id="transaction_note" name="note" rows="10">{{ transaction.note }}</textarea>
+                            <textarea data-bs-toggle="autosize" class="form-control" id="transaction_note" name="note" rows="10">{{ transaction.note }}</textarea>
                         {% endblock %}
 
                         {% block form_actions %}

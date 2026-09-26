@@ -160,6 +160,7 @@
 									<div class="col-lg-6">
 										<label class="form-label" for="inputPassword">{{ 'Password'|trans }}</label>
 										<input class="form-control" id="inputPassword" type="password" name="password" required>
+										{{ include('partial_password_strength.html.twig', { input_id: 'inputPassword' }) }}
 									</div>
 									<div class="col-lg-6">
 										<label class="form-label" for="inputPasswordConfirm">{{ 'Password confirmation'|trans }}</label>
