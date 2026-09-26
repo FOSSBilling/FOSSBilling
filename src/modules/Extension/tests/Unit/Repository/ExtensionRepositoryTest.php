@@ -42,6 +42,10 @@ function extensionRepoCreateRepository(): ExtensionRepository
     return new ExtensionRepository($em, $classMeta);
 }
 
+beforeEach(function (): void {
+    $this->entityManager = EntityManagerFactory::create(DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]));
+});
+
 test('getSearchQueryBuilder applies status, type and search filters', function (): void {
     $repo = extensionRepoCreateRepository();
     $qb = $repo->getSearchQueryBuilder([
@@ -65,7 +69,7 @@ test('getSearchQueryBuilder orders by type, status, id', function (): void {
 });
 
 test('findOneByTypeAndName delegates to findOneBy', function (): void {
-    $repo = Mockery::mock(ExtensionRepository::class)->makePartial();
+    $repo = Mockery::mock(ExtensionRepository::class, [$this->entityManager, $this->entityManager->getClassMetadata(Extension::class)])->makePartial();
     $repo->shouldReceive('findOneBy')
         ->once()
         ->with(['type' => 'mod', 'name' => 'sample'])
@@ -75,7 +79,7 @@ test('findOneByTypeAndName delegates to findOneBy', function (): void {
 });
 
 test('findByType delegates to findBy', function (): void {
-    $repo = Mockery::mock(ExtensionRepository::class)->makePartial();
+    $repo = Mockery::mock(ExtensionRepository::class, [$this->entityManager, $this->entityManager->getClassMetadata(Extension::class)])->makePartial();
     $repo->shouldReceive('findBy')
         ->once()
         ->with(['type' => 'mod'])
@@ -85,7 +89,7 @@ test('findByType delegates to findBy', function (): void {
 });
 
 test('findInstalledByType returns installed extensions', function (): void {
-    $repo = Mockery::mock(ExtensionRepository::class)->makePartial();
+    $repo = Mockery::mock(ExtensionRepository::class, [$this->entityManager, $this->entityManager->getClassMetadata(Extension::class)])->makePartial();
     $repo->shouldReceive('findBy')
         ->once()
         ->with(['type' => 'mod', 'status' => Extension::STATUS_INSTALLED])
@@ -98,7 +102,7 @@ test('findInstalledNamesByType returns names for installed extensions', function
     $extension = new Extension();
     $extension->setName('sample');
 
-    $repo = Mockery::mock(ExtensionRepository::class)->makePartial();
+    $repo = Mockery::mock(ExtensionRepository::class, [$this->entityManager, $this->entityManager->getClassMetadata(Extension::class)])->makePartial();
     $repo->shouldReceive('findInstalledByType')
         ->once()
         ->with('mod')
@@ -111,7 +115,7 @@ test('active checks and installed-module lists share one cached lookup per type'
     $extension = new Extension();
     $extension->setName('sample');
 
-    $repo = Mockery::mock(ExtensionRepository::class)->makePartial();
+    $repo = Mockery::mock(ExtensionRepository::class, [$this->entityManager, $this->entityManager->getClassMetadata(Extension::class)])->makePartial();
     $repo->shouldReceive('findInstalledByType')
         ->once()
         ->with('mod')
@@ -130,7 +134,7 @@ test('active checks preserve database name matching and cache fallback results',
     $extension = new Extension();
     $extension->setName('CookieConsent');
 
-    $repo = Mockery::mock(ExtensionRepository::class)->makePartial();
+    $repo = Mockery::mock(ExtensionRepository::class, [$this->entityManager, $this->entityManager->getClassMetadata(Extension::class)])->makePartial();
     $repo->shouldReceive('findInstalledByType')
         ->once()
         ->with('mod')

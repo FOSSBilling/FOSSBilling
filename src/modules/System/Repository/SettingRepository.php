@@ -34,7 +34,7 @@ class SettingRepository extends EntityRepository
 
     private bool $clearCacheAfterFlush = false;
 
-    private ?Connection $connection = null;
+    private readonly Connection $connection;
 
     /** @param ClassMetadata<Setting> $class */
     public function __construct(EntityManagerInterface $entityManager, ClassMetadata $class)
@@ -136,7 +136,7 @@ class SettingRepository extends EntityRepository
 
     private function canUseRequestCache(): bool
     {
-        if ($this->connection?->isTransactionActive()) {
+        if ($this->connection->isTransactionActive()) {
             // An outer transaction can roll back without an ORM invalidation event.
             $this->clearRequestCache();
 

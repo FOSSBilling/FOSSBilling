@@ -25,7 +25,7 @@ use Symfony\Component\Intl\Currencies;
 
 class CurrencyRepository extends EntityRepository
 {
-    private ?Connection $connection = null;
+    private readonly Connection $connection;
     private bool $defaultCurrencyLoaded = false;
     private ?Currency $defaultCurrency = null;
     /** @var array<string, Currency|null> */
@@ -88,7 +88,7 @@ class CurrencyRepository extends EntityRepository
      */
     public function findOneByCode(string $code): ?Currency
     {
-        if ($this->connection?->isTransactionActive()) {
+        if ($this->connection->isTransactionActive()) {
             $this->clearLookupCache();
 
             return $this->findOneBy(['code' => $code]);
@@ -158,7 +158,7 @@ class CurrencyRepository extends EntityRepository
      */
     public function findDefault(): ?Currency
     {
-        if ($this->connection?->isTransactionActive()) {
+        if ($this->connection->isTransactionActive()) {
             $this->clearLookupCache();
 
             return $this->findOneBy(['isDefault' => true]);

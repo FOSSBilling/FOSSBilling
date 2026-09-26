@@ -23,7 +23,7 @@ use Doctrine\ORM\Mapping\ClassMetadata;
 
 class TldRepository extends EntityRepository
 {
-    private ?Connection $connection = null;
+    private readonly Connection $connection;
     /** @var list<Tld>|null */
     private ?array $activeTlds = null;
     private bool $invalidateAfterFlush = false;
@@ -41,7 +41,7 @@ class TldRepository extends EntityRepository
      */
     public function findAllActive(): array
     {
-        if ($this->connection?->isTransactionActive()) {
+        if ($this->connection->isTransactionActive()) {
             $this->activeTlds = null;
 
             return $this->queryAllActive();

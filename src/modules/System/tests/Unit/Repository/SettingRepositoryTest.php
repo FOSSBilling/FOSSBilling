@@ -8,9 +8,13 @@ use Doctrine\DBAL\DriverManager;
 use Doctrine\ORM\Tools\SchemaTool;
 use FOSSBilling\Doctrine\EntityManagerFactory;
 
+beforeEach(function (): void {
+    $this->entityManager = EntityManagerFactory::create(DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]));
+});
+
 test('finds a setting by parameter', function (): void {
     $setting = new Setting();
-    $repository = Mockery::mock(SettingRepository::class)->makePartial();
+    $repository = Mockery::mock(SettingRepository::class, [$this->entityManager, $this->entityManager->getClassMetadata(Setting::class)])->makePartial();
     $repository->shouldReceive('findOneBy')
         ->once()
         ->with(['param' => 'company_name'])
@@ -20,7 +24,7 @@ test('finds a setting by parameter', function (): void {
 });
 
 test('returns null when a setting parameter does not exist', function (): void {
-    $repository = Mockery::mock(SettingRepository::class)->makePartial();
+    $repository = Mockery::mock(SettingRepository::class, [$this->entityManager, $this->entityManager->getClassMetadata(Setting::class)])->makePartial();
     $repository->shouldReceive('findOneBy')
         ->once()
         ->with(['param' => 'missing'])
@@ -31,7 +35,7 @@ test('returns null when a setting parameter does not exist', function (): void {
 
 test('finds a public setting by parameter', function (): void {
     $setting = new Setting();
-    $repository = Mockery::mock(SettingRepository::class)->makePartial();
+    $repository = Mockery::mock(SettingRepository::class, [$this->entityManager, $this->entityManager->getClassMetadata(Setting::class)])->makePartial();
     $repository->shouldReceive('findOneBy')
         ->once()
         ->with(['param' => 'company_name', 'public' => true])
@@ -41,7 +45,7 @@ test('finds a public setting by parameter', function (): void {
 });
 
 test('returns null when a setting is missing or not public', function (): void {
-    $repository = Mockery::mock(SettingRepository::class)->makePartial();
+    $repository = Mockery::mock(SettingRepository::class, [$this->entityManager, $this->entityManager->getClassMetadata(Setting::class)])->makePartial();
     $repository->shouldReceive('findOneBy')
         ->once()
         ->with(['param' => 'hidden_param', 'public' => true])
@@ -52,7 +56,7 @@ test('returns null when a setting is missing or not public', function (): void {
 
 test('finds settings by a list of parameters', function (): void {
     $settings = [new Setting(), new Setting()];
-    $repository = Mockery::mock(SettingRepository::class)->makePartial();
+    $repository = Mockery::mock(SettingRepository::class, [$this->entityManager, $this->entityManager->getClassMetadata(Setting::class)])->makePartial();
     $repository->shouldReceive('findBy')
         ->once()
         ->with(['param' => ['company_name', 'company_email']])

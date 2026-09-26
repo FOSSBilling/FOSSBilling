@@ -40,6 +40,10 @@ function extensionMetaRepoCreateRepository(): ExtensionMetaRepository
     return new ExtensionMetaRepository($em, $classMeta);
 }
 
+beforeEach(function (): void {
+    $this->entityManager = EntityManagerFactory::create(DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]));
+});
+
 test('createQueryBuilderForExtension sets the extension parameter', function (): void {
     $repo = extensionMetaRepoCreateRepository();
     $qb = $repo->createQueryBuilderForExtension('mod_email');
@@ -49,7 +53,7 @@ test('createQueryBuilderForExtension sets the extension parameter', function ():
 });
 
 test('findOneByExtensionAndId delegates to findOneBy', function (): void {
-    $repo = Mockery::mock(ExtensionMetaRepository::class)->makePartial();
+    $repo = Mockery::mock(ExtensionMetaRepository::class, [$this->entityManager, $this->entityManager->getClassMetadata(ExtensionMeta::class)])->makePartial();
     $repo->shouldReceive('findOneBy')
         ->once()
         ->with(['extension' => 'mod_email', 'id' => 5])
@@ -60,7 +64,7 @@ test('findOneByExtensionAndId delegates to findOneBy', function (): void {
 
 test('findOneByExtensionAndScope returns the first match', function (): void {
     $meta = new ExtensionMeta();
-    $repo = Mockery::mock(ExtensionMetaRepository::class)->makePartial();
+    $repo = Mockery::mock(ExtensionMetaRepository::class, [$this->entityManager, $this->entityManager->getClassMetadata(ExtensionMeta::class)])->makePartial();
     $repo->shouldReceive('findByExtensionAndScope')
         ->once()
         ->with('mod_email', 'config', null, null, ['id' => 'ASC'], 1)
@@ -70,7 +74,7 @@ test('findOneByExtensionAndScope returns the first match', function (): void {
 });
 
 test('findOneByExtensionAndScope returns null on empty result', function (): void {
-    $repo = Mockery::mock(ExtensionMetaRepository::class)->makePartial();
+    $repo = Mockery::mock(ExtensionMetaRepository::class, [$this->entityManager, $this->entityManager->getClassMetadata(ExtensionMeta::class)])->makePartial();
     $repo->shouldReceive('findByExtensionAndScope')
         ->once()
         ->with('mod_email', 'config', null, null, ['id' => 'ASC'], 1)

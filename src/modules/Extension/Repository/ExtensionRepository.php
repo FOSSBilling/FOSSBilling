@@ -32,7 +32,7 @@ class ExtensionRepository extends EntityRepository
 
     private bool $extensionWritesScheduled = false;
 
-    private ?Connection $connection = null;
+    private readonly Connection $connection;
 
     /** @param ClassMetadata<Extension> $class */
     public function __construct(EntityManagerInterface $em, ClassMetadata $class)
@@ -163,7 +163,7 @@ class ExtensionRepository extends EntityRepository
 
     private function canUseRequestCache(): bool
     {
-        if ($this->connection?->isTransactionActive()) {
+        if ($this->connection->isTransactionActive()) {
             // An outer transaction can roll back without an ORM invalidation event.
             $this->clearInstalledNamesCache();
 

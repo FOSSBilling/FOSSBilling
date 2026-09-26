@@ -29,7 +29,7 @@ class ExtensionMetaRepository extends EntityRepository
 
     private bool $extensionMetaWritesScheduled = false;
 
-    private ?Connection $connection = null;
+    private readonly Connection $connection;
 
     /** @param ClassMetadata<ExtensionMeta> $class */
     public function __construct(EntityManagerInterface $entityManager, ClassMetadata $class)
@@ -151,7 +151,7 @@ class ExtensionMetaRepository extends EntityRepository
 
     private function canUseLookupCache(): bool
     {
-        if ($this->connection?->isTransactionActive()) {
+        if ($this->connection->isTransactionActive()) {
             // An outer transaction can roll back without an ORM invalidation event.
             $this->clearQueryCache();
 
