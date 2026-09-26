@@ -167,7 +167,7 @@
                                     <label class="form-label text-muted small mb-1" for="reg_date">{{ 'Registration Date'|trans }}</label>
                                     <div class="input-group">
                                         <div class="input-icon w-100">
-                                            <input class="form-control datepicker"
+                                            <input class="form-control datepicker" data-clear-label="{{ 'Clear date'|trans }}" data-invalid-date-label="{{ 'Enter a valid date in YYYY-MM-DD format.'|trans }}"
                                                    id="reg_date"
                                                    placeholder="{{ 'Select Date Range'|trans }}"
                                                    value="{% if request.date_from %}{{ request.date_from|date('Y-m-d') }}{% endif %}{% if request.date_to %} to {{ request.date_to|date('Y-m-d') }}{% endif %}"

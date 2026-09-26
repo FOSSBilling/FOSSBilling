@@ -328,7 +328,7 @@
                                         <label class="form-label text-muted small mb-1" for="queue-date-range">{{ 'Created At'|trans }}</label>
                                         <div class="input-group">
                                             <div class="input-icon w-100">
-                                                <input class="form-control datepicker"
+                                                <input class="form-control datepicker" data-clear-label="{{ 'Clear date'|trans }}" data-invalid-date-label="{{ 'Enter a valid date in YYYY-MM-DD format.'|trans }}"
                                                        id="queue-date-range"
                                                        placeholder="{{ 'Select Date Range'|trans }}"
                                                        value="{% if request.date_from %}{{ request.date_from|date('Y-m-d') }}{% endif %}{% if request.date_to %} to {{ request.date_to|date('Y-m-d') }}{% endif %}"
@@ -437,27 +437,27 @@
                                 <div class="col-lg-6">
                                     <label class="form-label" for="email-from-name">{{ 'From Name'|trans }}</label>
                                     <input class="form-control" id="email-from-name" type="text" name="from_name" value="{{ params.from_name|default('') }}" placeholder="{{ company.name }}">
-                                    <small class="form-hint">{{ 'Leave blank to use company public name'|trans }}</small>
+                                    <small class="form-text">{{ 'Leave blank to use company public name'|trans }}</small>
                                 </div>
                                 <div class="col-lg-6">
                                     <label class="form-label" for="email-from-address">{{ 'From Email'|trans }}</label>
                                     <input class="form-control" id="email-from-address" type="email" name="from_email" value="{{ params.from_email|default('') }}" placeholder="{{ company.email }}">
-                                    <small class="form-hint">{{ 'Leave blank to use company public email'|trans }}</small>
+                                    <small class="form-text">{{ 'Leave blank to use company public email'|trans }}</small>
                                 </div>
                                 <div class="col-lg-6">
                                     <label class="form-label" for="email-reply-to">{{ 'Reply-To Email'|trans }}</label>
                                     <input class="form-control" id="email-reply-to" type="email" name="reply_to" value="{{ params.reply_to|default('') }}" placeholder="{{ company.email }}">
-                                    <small class="form-hint">{{ 'Leave blank to omit the Reply-To header.'|trans }}</small>
+                                    <small class="form-text">{{ 'Leave blank to omit the Reply-To header.'|trans }}</small>
                                 </div>
                                 <div class="col-lg-6">
                                     <label class="form-label" for="email-bcc">{{ 'Bcc Email'|trans }}</label>
                                     <input class="form-control" id="email-bcc" type="text" name="bcc_email" value="{{ params.bcc_email|default('') }}" placeholder="billing@example.com">
-                                    <small class="form-hint">{{ 'Send a hidden copy of every outgoing email to this address, e.g. an accounts or billing mailbox. Comma-separate multiple addresses. Leave blank to disable.'|trans }}</small>
+                                    <small class="form-text">{{ 'Send a hidden copy of every outgoing email to this address, e.g. an accounts or billing mailbox. Comma-separate multiple addresses. Leave blank to disable.'|trans }}</small>
                                 </div>
                                 <div class="col-12">
                                     <label class="form-label" for="email-signature">{{ 'Email Signature'|trans }}</label>
                                     <textarea class="form-control" id="email-signature" name="signature" rows="4" placeholder="{{ company.signature }}">{{ params.signature|default('') }}</textarea>
-                                    <small class="form-hint">{{ 'Used by email templates. Safe HTML is allowed. Leave blank to use the company signature.'|trans }}</small>
+                                    <small class="form-text">{{ 'Used by email templates. Safe HTML is allowed. Leave blank to use the company signature.'|trans }}</small>
                                 </div>
                             </div>
                         </div>
@@ -469,17 +469,17 @@
                                 <div class="col-lg-4">
                                     <label class="form-label" for="queue-once">{{ 'Send Emails Per Cron Run'|trans }}</label>
                                     <input class="form-control" id="queue-once" type="number" min="0" name="queue_once" placeholder="0" value="{{ params.queue_once|default(0) }}">
-                                    <small class="form-hint">{{ 'Use 0 for unlimited.'|trans }}</small>
+                                    <small class="form-text">{{ 'Use 0 for unlimited.'|trans }}</small>
                                 </div>
                                 <div class="col-lg-4">
                                     <label class="form-label" for="queue-time-limit">{{ 'Max Sending Time in Minutes'|trans }}</label>
                                     <input class="form-control" id="queue-time-limit" type="number" min="0" name="time_limit" placeholder="5" value="{{ params.time_limit|default(5) }}">
-                                    <small class="form-hint">{{ 'Use 0 for unlimited. The default is 5 minutes.'|trans }}</small>
+                                    <small class="form-text">{{ 'Use 0 for unlimited. The default is 5 minutes.'|trans }}</small>
                                 </div>
                                 <div class="col-lg-4">
                                     <label class="form-label" for="queue-cancel-after">{{ 'Cancel After Unsuccessful Tries'|trans }}</label>
                                     <input class="form-control" id="queue-cancel-after" type="number" min="0" name="cancel_after" placeholder="5" value="{{ params.cancel_after|default(5) }}">
-                                    <small class="form-hint">{{ 'Use 0 to keep retrying indefinitely.'|trans }}</small>
+                                    <small class="form-text">{{ 'Use 0 to keep retrying indefinitely.'|trans }}</small>
                                 </div>
                             </div>
                         </div>

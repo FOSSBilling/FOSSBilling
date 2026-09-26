@@ -91,7 +91,7 @@
                                 <div class="col-12">
                                     <h6 class="mb-0">{{ basket_product.title }}</h6>
                                     {% if basket_product.status != 'enabled' %}
-                                        <small class="form-hint">{{ 'Product is disabled in configuration'|trans }}</small>
+                                        <small class="form-text">{{ 'Product is disabled in configuration'|trans }}</small>
                                     {% endif %}
                                 </div>
                                 {% if basket_product.pricing.type is defined and basket_product.pricing.type == 'recurrent' %}
@@ -307,7 +307,7 @@
                                         <div class="col-xl-6">
                                             <label class="form-label" for="basket-transaction-id">{{ 'Transaction ID'|trans }}</label>
                                             <input class="form-control" type="text" name="transactionId" id="basket-transaction-id" value="{{ request.transactionId }}">
-                                            <small class="form-hint">{{ 'Required when using the Custom payment gateway.'|trans }}</small>
+                                            <small class="form-text">{{ 'Required when using the Custom payment gateway.'|trans }}</small>
                                         </div>
                                     </div>
                                 </div>

@@ -22,6 +22,7 @@ interface PurgeOptions {
   enabled?: boolean;
   area?: 'admin' | 'client';
   additionalStandardSafelist?: RegExp[];
+  additionalGreedySafelist?: RegExp[];
 }
 
 interface CssBuildOptions {
@@ -146,6 +147,7 @@ export async function purgeCssFile(cssFilePath: string, options: PurgeOptions) {
     enabled = false,
     area = 'admin',
     additionalStandardSafelist = [],
+    additionalGreedySafelist = [],
   } = options;
 
   if (!enabled) {
@@ -206,7 +208,7 @@ export async function purgeCssFile(cssFilePath: string, options: PurgeOptions) {
           ...additionalStandardSafelist,
         ],
         deep: [/tom-select/, /ts-/],
-        greedy: [/^theme-/],
+        greedy: [/^theme-/, ...additionalGreedySafelist],
       },
       defaultExtractor: content => content.match(/[A-Za-z0-9-_:/]+/g) || [],
     });

@@ -63,14 +63,14 @@
                                 <option value="{{ val }}" label="{{ pricing.title|e }}" data-price="{{ pricing.price }}" data-status="{{ pricing.enabled }}" {% if request.period == val %}selected="selected"{% endif %}>{{ pricing.title|e }}</option>
                                 {% endfor %}
                             </select>
-                            <div id="period-info" class="form-hint mt-2"></div>
+                            <div id="period-info" class="form-text mt-2"></div>
                         </div>
                         {% endif %}
                         {% if has_permission('product', 'manage_promos') %}
                         <div class="col-xl-6">
                             <label class="form-label" for="promo-code">{{ 'Promo Code'|trans }}</label>
                             <input class="form-control" type="text" name="promo_code" id="promo-code" value="{{ request.promo_code }}" autocomplete="off">
-                            <small class="form-hint">{{ 'Optional. Applies an existing promotion to this order so it is recorded and carries to renewals when recurring.'|trans }}</small>
+                            <small class="form-text">{{ 'Optional. Applies an existing promotion to this order so it is recorded and carries to renewals when recurring.'|trans }}</small>
                         </div>
                         {% endif %}
                     </div>
@@ -98,12 +98,12 @@
                             <div class="col-xl-6">
                                 <label class="form-label">{{ 'Payment Gateway'|trans }}</label>
                                 {{ mf.selectbox('gateway_id', admin.invoice_gateway_get_pairs, request.gateway_id, 0, 'Select Payment Gateway'|trans) }}
-                                <small class="form-hint">{{ 'Required when marking the invoice as paid during order creation.'|trans }}</small>
+                                <small class="form-text">{{ 'Required when marking the invoice as paid during order creation.'|trans }}</small>
                             </div>
                             <div class="col-xl-6">
                                 <label class="form-label" for="transaction-id">{{ 'Transaction ID'|trans }}</label>
                                 <input class="form-control" type="text" name="transactionId" id="transaction-id" value="{{ request.transactionId }}">
-                                <small class="form-hint">{{ 'Required when using the Custom payment gateway.'|trans }}</small>
+                                <small class="form-text">{{ 'Required when using the Custom payment gateway.'|trans }}</small>
                             </div>
                         </div>
                     </div>
