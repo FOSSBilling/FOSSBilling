@@ -278,6 +278,8 @@ class Service implements InjectionAwareInterface
 
     public function getAdminNavigation($admin, $url = null)
     {
+        $currentPath = is_string($url) ? parse_url($url, PHP_URL_PATH) : null;
+        $currentPath = is_string($currentPath) ? rtrim($currentPath, '/') : null;
         $staff_service = $this->di['mod_service']('staff');
         $nav = [];
         $subpages = [];
@@ -331,6 +333,9 @@ class Service implements InjectionAwareInterface
             $l = $page['location'];
             unset($page['location']);
             $page['uri'] = $this->normalizeNavigationUri($page['uri'] ?? null);
+            $page['active'] = $currentPath !== null && $page['uri'] !== null
+                && rtrim((string) parse_url($page['uri'], PHP_URL_PATH), '/') === $currentPath;
+            $nav[$l]['active'] = $nav[$l]['active'] || $page['active'];
             $nav[$l]['subpages'][] = $page;
         }
 

@@ -38,6 +38,7 @@
     { "name": "lock", "dynamic": true },
     "lock-open",
     "login",
+    "logout",
     "mail",
     "device-desktop",
     "layout-sidebar-left-collapse",
