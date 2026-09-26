@@ -13,6 +13,7 @@ namespace Box\Mod\Cron;
 
 use Box\Mod\Cron\Event\AfterAdminCronRunEvent;
 use Box\Mod\Cron\Event\BeforeAdminCronRunEvent;
+use Box\Mod\System\Entity\Setting;
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
 use Symfony\Component\Filesystem\Path;
@@ -157,6 +158,7 @@ class Service
      */
     protected function _exec($api, $method, array $params = []): void
     {
+        $this->di['em']->getRepository(Setting::class)->clearRequestCache();
         $api->{$method}($params);
 
         if (Environment::isCLI()) {
