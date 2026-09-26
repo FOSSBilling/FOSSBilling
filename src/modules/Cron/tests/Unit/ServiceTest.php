@@ -11,7 +11,13 @@
 declare(strict_types=1);
 
 use Box\Mod\Cron\Service;
+use Box\Mod\System\Entity\Setting;
+use Doctrine\DBAL\DriverManager;
+use Doctrine\ORM\Tools\SchemaTool;
+use FOSSBilling\Doctrine\EntityManagerFactory;
 use FOSSBilling\Events\Event;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Filesystem\Path;
 
 use function Tests\Helpers\container;
 
@@ -42,7 +48,7 @@ test('getDi returns dependency injection container', function (): void {
 });
 
 test('getCronInfo returns cron information array', function (): void {
-    $systemServiceMock = Mockery::mock(Box\Mod\System\Service::class);
+    $systemServiceMock = Mockery::mock(SystemService::class);
     $systemServiceMock->shouldReceive('getParamValue')
         ->atLeast()->once();
 
@@ -56,7 +62,7 @@ test('getCronInfo returns cron information array', function (): void {
 });
 
 test('getLastExecutionTime returns string timestamp', function (): void {
-    $systemServiceMock = Mockery::mock(Box\Mod\System\Service::class);
+    $systemServiceMock = Mockery::mock(SystemService::class);
     $systemServiceMock->shouldReceive('getParamValue')
         ->atLeast()->once()
         ->andReturn('2012-12-12 12:12:12');
@@ -84,6 +90,11 @@ test('isLate returns boolean indicating if cron execution is late', function ():
 test('exec passes empty array when cron task has no params', function (): void {
     $service = new Service();
     $api = new CronServiceApiDouble();
+    $repository = Mockery::mock(Box\Mod\System\Repository\SettingRepository::class);
+    $repository->shouldReceive('clearRequestCache')->once();
+    $di = container();
+    $di['em']->shouldReceive('getRepository')->once()->with(Setting::class)->andReturn($repository);
+    $service->setDi($di);
 
     $method = new ReflectionMethod(Service::class, '_exec');
     ob_start();
@@ -94,12 +105,79 @@ test('exec passes empty array when cron task has no params', function (): void {
     expect($api->params)->toBe([]);
 });
 
+test('runCrons clears cached setting misses between tasks', function (): void {
+    $filesystem = new Filesystem();
+    $databasePath = Path::join(sys_get_temp_dir(), 'fossbilling-cron-settings-' . bin2hex(random_bytes(8)) . '.sqlite');
+    $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $databasePath]);
+    $externalConnection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $databasePath]);
+
+    try {
+        $entityManager = EntityManagerFactory::create($connection);
+        (new SchemaTool($entityManager))->createSchema([$entityManager->getClassMetadata(Setting::class)]);
+        $connection->executeStatement('CREATE TABLE session (lifetime INTEGER, created_at INTEGER)');
+
+        $di = container();
+        $di['em'] = $entityManager;
+        $di['dbal'] = $connection;
+        $systemService = new Box\Mod\System\Service();
+        $systemService->setDi($di);
+
+        $api = new class($systemService, $externalConnection) {
+            public mixed $firstTaskValue = null;
+            public mixed $secondTaskValue = null;
+
+            public function __construct(
+                private readonly Box\Mod\System\Service $systemService,
+                private readonly Doctrine\DBAL\Connection $externalConnection,
+            ) {
+            }
+
+            public function invoice_batch_pay_with_credits(array $params): void
+            {
+                $this->firstTaskValue = $this->systemService->getParamValue('cron_task_setting');
+                $this->externalConnection->insert('setting', ['param' => 'cron_task_setting', 'value' => 'visible']);
+            }
+
+            public function invoice_batch_activate_paid(array $params): void
+            {
+                $this->secondTaskValue = $this->systemService->getParamValue('cron_task_setting');
+            }
+
+            public function __call(string $method, array $arguments): void
+            {
+            }
+        };
+
+        $updateFinalization = Mockery::mock();
+        $updateFinalization->shouldReceive('isRequired')->once()->andReturnFalse();
+        $updateFinalization->shouldReceive('healSchemaDrift')->once()->andReturnNull();
+        $di['api_system'] = $api;
+        $di['logger'] = new Tests\Helpers\TestLogger();
+        $di['update_finalization'] = $updateFinalization;
+        $di['mod_service'] = $di->protect(fn (): Box\Mod\System\Service => $systemService);
+
+        $service = new Service();
+        $service->setDi($di);
+        ob_start();
+        $result = $service->runCrons();
+        ob_end_clean();
+
+        expect($result)->toBeTrue()
+            ->and($api->firstTaskValue)->toBeNull()
+            ->and($api->secondTaskValue)->toBe('visible');
+    } finally {
+        $connection->close();
+        $externalConnection->close();
+        $filesystem->remove($databasePath);
+    }
+});
+
 test('runCrons isolates failures in core batch tasks', function (string $failedTask): void {
     $updateFinalization = Mockery::mock();
     $updateFinalization->shouldReceive('isRequired')->once()->andReturnFalse();
     $updateFinalization->shouldReceive('healSchemaDrift')->once()->andReturnNull();
 
-    $systemService = Mockery::mock(Box\Mod\System\Service::class);
+    $systemService = Mockery::mock(SystemService::class);
     $systemService->shouldReceive('setParamValue')
         ->once()
         ->with('last_cron_exec', Mockery::type('string'), true);
@@ -188,7 +266,7 @@ test('runCrons still executes tasks when schema drift healing fails', function (
     $updateFinalization->shouldReceive('isRequired')->once()->andReturnFalse();
     $updateFinalization->shouldReceive('healSchemaDrift')->once()->andThrow(new RuntimeException('lock unavailable'));
 
-    $systemService = Mockery::mock(Box\Mod\System\Service::class);
+    $systemService = Mockery::mock(SystemService::class);
     $systemService->shouldReceive('setParamValue')
         ->once()
         ->with('last_cron_exec', Mockery::type('string'), true);
