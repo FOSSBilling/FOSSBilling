@@ -80,7 +80,7 @@ class Service implements InjectionAwareInterface
         'seller_company_number', 'seller_address', 'seller_phone', 'seller_email',
         'buyer_first_name', 'buyer_last_name', 'buyer_company', 'buyer_company_vat',
         'buyer_company_number', 'buyer_address', 'buyer_city', 'buyer_state',
-        'buyer_country', 'buyer_zip', 'buyer_phone', 'buyer_phone_cc',
+        'buyer_country', 'buyer_zip', 'buyer_phone',
         'buyer_email', 'gateway_id', 'issued', 'taxname', 'taxrate',
         'due_at', 'reminded_at', 'paid_at', 'created_at', 'updated_at',
     ];
@@ -91,7 +91,7 @@ class Service implements InjectionAwareInterface
         'refund', 'notes', 'status', 'buyer_first_name', 'buyer_last_name',
         'buyer_company', 'buyer_company_vat', 'buyer_company_number', 'buyer_address',
         'buyer_city', 'buyer_state', 'buyer_country', 'buyer_zip', 'buyer_phone',
-        'buyer_phone_cc', 'buyer_email', 'issued', 'taxname', 'taxrate',
+        'buyer_email', 'issued', 'taxname', 'taxrate',
         'due_at', 'reminded_at', 'paid_at',
     ];
 
@@ -289,7 +289,6 @@ class Service implements InjectionAwareInterface
             'buyer_country' => $invoice->getBuyerCountry(),
             'buyer_zip' => $invoice->getBuyerZip(),
             'buyer_phone' => $invoice->getBuyerPhone(),
-            'buyer_phone_cc' => $invoice->getBuyerPhoneCc(),
             'buyer_email' => $invoice->getBuyerEmail(),
             'gateway_id' => $invoice->getGateway()?->getId(),
             'issued' => $invoice->isIssued(),
@@ -389,23 +388,28 @@ class Service implements InjectionAwareInterface
             'state' => $row['buyer_state'],
             'country' => $row['buyer_country'],
             'phone' => $row['buyer_phone'],
-            'phone_cc' => $row['buyer_phone_cc'] ?? '',
             'email' => $row['buyer_email'],
             'zip' => $row['buyer_zip'],
         ];
 
         $systemService = $this->di['mod_service']('system');
         $c = $systemService->getCompany();
+        $isDraft = !$invoice->isIssued();
         $result['seller'] = [
             'company' => !empty($row['seller_company']) ? $row['seller_company'] : ($c['name'] ?? ''),
-            'company_vat' => $row['seller_company_vat'] ?? '',
-            'company_number' => $row['seller_company_number'] ?? '',
-            'address' => !empty($row['seller_address']) ? $row['seller_address'] : trim(($c['address_1'] ?? '') . ' ' . ($c['address_2'] ?? '') . ' ' . ($c['address_3'] ?? '')),
+            // Drafts have no snapshot yet, so identity comes from live
+            // settings too; issued invoices keep their frozen copy.
+            'company_vat' => $isDraft ? ($c['vat_number'] ?? '') : ($row['seller_company_vat'] ?? ''),
+            'company_number' => $isDraft ? ($c['number'] ?? '') : ($row['seller_company_number'] ?? ''),
+            // Address, phone, and email always come from live company settings:
+            // the stored snapshot copies are legacy and ignored, so the PDF
+            // and the HTML views can never disagree about them.
+            'address' => trim(($c['address_1'] ?? '') . ' ' . ($c['address_2'] ?? '') . ' ' . ($c['address_3'] ?? '')),
             'address_1' => $c['address_1'] ?? '',
             'address_2' => $c['address_2'] ?? '',
             'address_3' => $c['address_3'] ?? '',
-            'phone' => !empty($row['seller_phone']) ? $row['seller_phone'] : ($c['tel'] ?? ''),
-            'email' => !empty($row['seller_email']) ? $row['seller_email'] : ($c['email'] ?? ''),
+            'phone' => $c['tel'] ?? '',
+            'email' => $c['email'] ?? '',
             'account_number' => $c['account_number'] ?? null,
             'bank_name' => $c['bank_name'] ?? null,
             'bic' => $c['bic'] ?? null,
@@ -420,6 +424,25 @@ class Service implements InjectionAwareInterface
             $result['client'] = $clientService->toApiArray($client);
             if ($includeClientBillingEmail) {
                 $result['client']['billing_email'] = $client->getBillingEmail();
+            }
+            // Drafts carry no buyer snapshot (it is taken at issuance), so
+            // display the live client record until the invoice is issued.
+            if ($isDraft && empty($row['buyer_first_name']) && empty($row['buyer_last_name']) && empty($row['buyer_company'])) {
+                $result['buyer'] = [
+                    'first_name' => $client->getFirstName(),
+                    'last_name' => $client->getLastName(),
+                    'company' => $client->getCompany(),
+                    'company_vat' => $client->getCompanyVat(),
+                    'company_number' => $client->getCompanyNumber(),
+                    'address' => trim(($client->getAddress1() ?? '') . ' ' . ($client->getAddress2() ?? '')),
+                    'city' => $client->getCity(),
+                    'state' => $client->getState(),
+                    'country' => $client->getCountry(),
+                    'phone' => trim(($client->getPhoneCc() ?? '') . ' ' . ($client->getPhone() ?? '')),
+                    'phone_cc' => $client->getPhoneCc() ?? '',
+                    'email' => $client->getEmail(),
+                    'zip' => $client->getPostcode(),
+                ];
             }
         } else {
             $result['client'] = null;
@@ -651,6 +674,36 @@ class Service implements InjectionAwareInterface
             ['original_invoice' => $this->toApiArray($original)]
         );
         $this->extendInvoiceHashLifetime($creditNote);
+    }
+
+    /**
+     * Notify the client that their unpaid invoice was voided, when the
+     * invoice_send_cancel_email setting opts in. Guest (client-less)
+     * invoices have no recipient, so they stay silent.
+     */
+    private function sendCancelEmail(Invoice $original, string $reason = '', ?Invoice $replacement = null): void
+    {
+        if ($original->getClientId() === null) {
+            return;
+        }
+
+        $systemService = $this->di['mod_service']('system');
+        if ($systemService->getParamValue('invoice_send_cancel_email', '0') !== '1') {
+            return;
+        }
+
+        $extraVars = ['reason' => $reason];
+        if ($replacement instanceof Invoice) {
+            $extraVars['replacement_invoice'] = $this->toApiArray($replacement);
+        }
+
+        $this->sendInvoiceEmail(
+            $original,
+            $this->toApiArray($original),
+            'mod_invoice_canceled',
+            null,
+            $extraVars
+        );
     }
 
     public function sendInvoiceReminderEmail(AfterAdminInvoiceReminderRecordedEvent $event): void
@@ -1190,39 +1243,16 @@ class Service implements InjectionAwareInterface
 
     public function setInvoiceDefaults(Invoice $model): void
     {
-        $clientService = $this->di['mod_service']('Client');
         $systemService = $this->di['mod_service']('system');
         $client = $this->di['em']->getRepository(Client::class)->find($model->getClientId());
-        $seller = $systemService->getCompany();
 
-        $buyer = $client instanceof Client
-            ? $clientService->toApiArray($client)
-            : array_fill_keys([
-                'first_name', 'last_name', 'company', 'company_vat', 'company_number',
-                'address_1', 'address_2', 'city', 'state', 'country',
-                'phone_cc', 'phone', 'email', 'postcode',
-            ], null);
-
-        $model->setSellerCompany($seller['name']);
-        $model->setSellerCompanyVat($seller['vat_number']);
-        $model->setSellerCompanyNumber($seller['number']);
-        $model->setSellerAddress(trim("{$seller['address_1']} {$seller['address_2']} {$seller['address_3']}"));
-        $model->setSellerPhone($seller['tel']);
-        $model->setSellerEmail($seller['email']);
-
-        $model->setBuyerFirstName($buyer['first_name']);
-        $model->setBuyerLastName($buyer['last_name']);
-        $model->setBuyerCompany($buyer['company']);
-        $model->setBuyerCompanyVat($buyer['company_vat']);
-        $model->setBuyerCompanyNumber($buyer['company_number']);
-        $model->setBuyerAddress("{$buyer['address_1']} {$buyer['address_2']}");
-        $model->setBuyerCity($buyer['city']);
-        $model->setBuyerState($buyer['state']);
-        $model->setBuyerCountry($buyer['country']);
-        $model->setBuyerPhone("{$buyer['phone_cc']} {$buyer['phone']}");
-        $model->setBuyerEmail($buyer['email']);
-        $model->setBuyerZip($buyer['postcode']);
-
+        // No buyer/seller snapshot yet: drafts carry no party details. The
+        // snapshot is taken from the live client and company records by
+        // snapshotPartiesFromLiveRecords() when the invoice is issued, so the
+        // frozen copy always reflects reality at issuance, not at drafting.
+        // No number yet either: issueInvoice() claims one from the counter,
+        // so deleting a draft never burns a number. Display layers fall back
+        // to the invoice id while nr is null.
         $invoice_due_days = $systemService->getParamValue('invoice_due_days');
         if (!is_numeric($invoice_due_days)) {
             $invoice_due_days = 1;
@@ -1232,7 +1262,6 @@ class Service implements InjectionAwareInterface
 
         $serie = $systemService->getParamValue('invoice_series');
         $model->setSerie($serie !== null ? (string) $serie : null);
-        $model->setNr($this->getNextInvoiceNumber());
         $model->setHash(bin2hex(random_bytes(random_int(15, 30))));
         $model->setHashExpiresAt($this->computeHashExpiration());
 
@@ -1249,12 +1278,69 @@ class Service implements InjectionAwareInterface
         $this->di['em']->flush();
     }
 
+    /**
+     * Freeze the buyer/seller details from the live client and company
+     * records onto the invoice. Runs once, at issuance: drafts carry no party
+     * snapshot, so the frozen copy always reflects reality at the moment the
+     * document becomes legally meaningful. Already-issued invoices are left
+     * untouched, and a deleted client leaves any existing snapshot in place
+     * rather than wiping it to nulls.
+     */
+    private function snapshotPartiesFromLiveRecords(Invoice $model): void
+    {
+        if ($model->isIssued()) {
+            return;
+        }
+
+        $systemService = $this->di['mod_service']('system');
+        $seller = $systemService->getCompany();
+        $model->setSellerCompany($seller['name']);
+        $model->setSellerCompanyVat($seller['vat_number']);
+        $model->setSellerCompanyNumber($seller['number']);
+        $model->setSellerAddress(trim("{$seller['address_1']} {$seller['address_2']} {$seller['address_3']}"));
+        $model->setSellerPhone($seller['tel']);
+        $model->setSellerEmail($seller['email']);
+
+        $client = $model->getClientId() !== null
+            ? $this->di['em']->getRepository(Client::class)->find($model->getClientId())
+            : null;
+        if (!$client instanceof Client) {
+            return;
+        }
+
+        $clientService = $this->di['mod_service']('Client');
+        $buyer = $clientService->toApiArray($client);
+        $model->setBuyerFirstName($buyer['first_name']);
+        $model->setBuyerLastName($buyer['last_name']);
+        $model->setBuyerCompany($buyer['company']);
+        $model->setBuyerCompanyVat($buyer['company_vat']);
+        $model->setBuyerCompanyNumber($buyer['company_number']);
+        $model->setBuyerAddress("{$buyer['address_1']} {$buyer['address_2']}");
+        $model->setBuyerCity($buyer['city']);
+        $model->setBuyerState($buyer['state']);
+        $model->setBuyerCountry($buyer['country']);
+        $model->setBuyerPhone("{$buyer['phone_cc']} {$buyer['phone']}");
+        $model->setBuyerEmail($buyer['email']);
+        $model->setBuyerZip($buyer['postcode']);
+    }
+
     public function issueInvoice(Invoice $invoice, array $data): bool
     {
         $this->di['event_dispatcher']->dispatch(new BeforeAdminInvoiceIssueEvent((int) $invoice->getId()));
 
         $this->di['em']->wrapInTransaction(function () use ($invoice): void {
             $this->lockAndRefreshInvoice($invoice);
+
+            // Freeze the parties from the live records and claim the number
+            // inside the issuance lock. Already-issued invoices skip both;
+            // legacy drafts keep their number when present.
+            $this->snapshotPartiesFromLiveRecords($invoice);
+            if (!is_numeric($invoice->getNr() ?? null)) {
+                $serie = $this->di['mod_service']('system')->getParamValue('invoice_series');
+                $invoice->setSerie($serie !== null ? (string) $serie : null);
+                $invoice->setNr($this->getNextInvoiceNumber());
+            }
+
             $invoice->setIssued(true);
             $this->di['em']->persist($invoice);
             $this->di['em']->flush();
@@ -1486,7 +1572,6 @@ class Service implements InjectionAwareInterface
                     $new->setBuyerState($invoice->getBuyerState());
                     $new->setBuyerCountry($invoice->getBuyerCountry());
                     $new->setBuyerPhone($invoice->getBuyerPhone());
-                    $new->setBuyerPhoneCc($invoice->getBuyerPhoneCc());
                     $new->setBuyerEmail($invoice->getBuyerEmail());
                     $new->setBuyerZip($invoice->getBuyerZip());
                     $new->setText1($invoice->getText1());
@@ -1783,7 +1868,6 @@ class Service implements InjectionAwareInterface
             $new->setBuyerState($invoice->getBuyerState());
             $new->setBuyerCountry($invoice->getBuyerCountry());
             $new->setBuyerPhone($invoice->getBuyerPhone());
-            $new->setBuyerPhoneCc($invoice->getBuyerPhoneCc());
             $new->setBuyerEmail($invoice->getBuyerEmail());
             $new->setBuyerZip($invoice->getBuyerZip());
             $new->setText1($invoice->getText1());
@@ -2012,6 +2096,15 @@ class Service implements InjectionAwareInterface
 
         $this->di['event_dispatcher']->dispatch(new AfterAdminInvoiceCancelEvent((int) $original->getId()));
 
+        try {
+            $this->sendCancelEmail($original, $reason);
+        } catch (\Throwable $exception) {
+            $this->di['logger']->withChannel('email')->error('Failed to send cancel email', [
+                'invoice_id' => $original->getId(),
+                'exception' => $exception,
+            ]);
+        }
+
         $this->di['logger']->info("Canceled invoice #{$original->getId()} without replacement.");
 
         return true;
@@ -2105,7 +2198,6 @@ class Service implements InjectionAwareInterface
             $new->setBuyerState($original->getBuyerState());
             $new->setBuyerCountry($original->getBuyerCountry());
             $new->setBuyerPhone($original->getBuyerPhone());
-            $new->setBuyerPhoneCc($original->getBuyerPhoneCc());
             $new->setBuyerEmail($original->getBuyerEmail());
             $new->setBuyerZip($original->getBuyerZip());
             $new->setText1($original->getText1());
@@ -2200,6 +2292,15 @@ class Service implements InjectionAwareInterface
             $this->di['logger']->withChannel('email')->error('Failed to send replacement invoice email', [
                 'invoice_id' => $original->getId(),
                 'replacement_id' => $new->getId(),
+                'exception' => $exception,
+            ]);
+        }
+
+        try {
+            $this->sendCancelEmail($original, $reason, $new);
+        } catch (\Throwable $exception) {
+            $this->di['logger']->withChannel('email')->error('Failed to send cancel email', [
+                'invoice_id' => $original->getId(),
                 'exception' => $exception,
             ]);
         }
@@ -2396,24 +2497,8 @@ class Service implements InjectionAwareInterface
             }
             $model->setText1($data['text_1'] ?? $model->getText1());
             $model->setText2($data['text_2'] ?? $model->getText2());
-            $model->setSellerCompany($data['seller_company'] ?? $model->getSellerCompany());
-            $model->setSellerCompanyVat($data['seller_company_vat'] ?? $model->getSellerCompanyVat());
-            $model->setSellerCompanyNumber($data['seller_company_number'] ?? $model->getSellerCompanyNumber());
-            $model->setSellerAddress($data['seller_address'] ?? $model->getSellerAddress());
-            $model->setSellerPhone($data['seller_phone'] ?? $model->getSellerPhone());
-            $model->setSellerEmail($data['seller_email'] ?? $model->getSellerEmail());
-            $model->setBuyerFirstName($data['buyer_first_name'] ?? $model->getBuyerFirstName());
-            $model->setBuyerLastName($data['buyer_last_name'] ?? $model->getBuyerLastName());
-            $model->setBuyerCompany($data['buyer_company'] ?? $model->getBuyerCompany());
-            $model->setBuyerCompanyVat($data['buyer_company_vat'] ?? $model->getBuyerCompanyVat());
-            $model->setBuyerCompanyNumber($data['buyer_company_number'] ?? $model->getBuyerCompanyNumber());
-            $model->setBuyerAddress($data['buyer_address'] ?? $model->getBuyerAddress());
-            $model->setBuyerCity($data['buyer_city'] ?? $model->getBuyerCity());
-            $model->setBuyerState($data['buyer_state'] ?? $model->getBuyerState());
-            $model->setBuyerCountry($data['buyer_country'] ?? $model->getBuyerCountry());
-            $model->setBuyerZip($data['buyer_zip'] ?? $model->getBuyerZip());
-            $model->setBuyerPhone($data['buyer_phone'] ?? $model->getBuyerPhone());
-            $model->setBuyerEmail($data['buyer_email'] ?? $model->getBuyerEmail());
+            // No buyer/seller writes: drafts carry no snapshot, issued
+            // invoices keep theirs - parties freeze at issuance.
 
             $paid_at = $data['paid_at'] ?? ($model->getPaidAt() ? $model->getPaidAt()->format('Y-m-d H:i:s') : null);
             if (empty($paid_at)) {
@@ -3337,7 +3422,7 @@ class Service implements InjectionAwareInterface
         $this->checkInvoiceAuth($invoice, InvoiceOperation::PAYMENT);
 
         if ($invoice->getStatus() === Invoice::STATUS_CANCELED || $invoice->getReplacedByInvoiceId() !== null) {
-            throw new InformationException('This invoice was canceled and cannot be paid');
+            throw new InformationException('This invoice was canceled and cannot be paid', [], 403);
         }
 
         $gtw = $this->di['em']->getRepository(PayGateway::class)->find((int) $data['gateway_id']);
@@ -3880,7 +3965,7 @@ class Service implements InjectionAwareInterface
 
     public function getBuyer(Invoice $invoice): array
     {
-        return [
+        $buyer = [
             'first_name' => $invoice->getBuyerFirstName(),
             'last_name' => $invoice->getBuyerLastName(),
             'company' => $invoice->getBuyerCompany(),
@@ -3889,10 +3974,21 @@ class Service implements InjectionAwareInterface
             'state' => $invoice->getBuyerState(),
             'country' => $invoice->getBuyerCountry(),
             'phone' => $invoice->getBuyerPhone(),
-            'phone_cc' => $invoice->getBuyerPhoneCc() ?? '',
             'email' => $invoice->getBuyerEmail(),
             'zip' => $invoice->getBuyerZip(),
         ];
+
+        // The invoice snapshot no longer stores a country code, but payment
+        // gateways still take one: source it from the live client record.
+        $buyer['phone_cc'] = '';
+        if ($invoice->getClientId() !== null) {
+            $client = $this->di['em']->getRepository(Client::class)->find($invoice->getClientId());
+            if ($client instanceof Client) {
+                $buyer['phone_cc'] = $client->getPhoneCc() ?? '';
+            }
+        }
+
+        return $buyer;
     }
 
     public function rmByClient(Client $client): void

@@ -288,7 +288,6 @@
     "invoice.buyer_first_name",
     "invoice.buyer_last_name",
     "invoice.buyer_phone",
-    "invoice.buyer_phone_cc",
     "invoice.buyer_state",
     "invoice.buyer_zip",
     "invoice.client_id",

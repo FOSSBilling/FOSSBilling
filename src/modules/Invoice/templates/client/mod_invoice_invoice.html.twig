@@ -11,6 +11,13 @@
 {% else %}
     {% set doc_label = 'Invoice'|trans %}
 {% endif %}
+{% if invoice.status == 'canceled' %}
+    {% set doc_label = 'Canceled Invoice'|trans %}
+{% endif %}
+{% if not invoice.issued %}
+    {% set doc_label = 'Draft Invoice'|trans %}
+    {% set nr = invoice.id %}
+{% endif %}
 
 {% block meta_title %}{{ doc_label }} #{{ nr }}{% endblock %}
 
@@ -56,6 +63,19 @@
             {% endif %}
         </div>
     </div>
+    {% if invoice.status == 'canceled' %}
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <div class="alert alert-secondary mb-0" role="alert">
+                {{ 'This invoice was canceled and can no longer be paid.'|trans }}
+                {% if invoice.replaced_by_invoice_id %}
+                    {{ 'A replacement invoice has been issued. You can find it in your invoices list.'|trans }}
+                    <a href="{{ 'invoice'|url }}" class="alert-link">{{ 'View invoices'|trans }}</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
     <div class="row">
         <div class="col-md-12">
             <div class="card mb-4">

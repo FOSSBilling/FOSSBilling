@@ -13,6 +13,7 @@
     {% set unpaid_invoices = client.invoice_get_list({"status":"unpaid", "per_page":10, "page":request.page}) %}
     {% set paid_invoices = client.invoice_get_list({"per_page":10, "page":request.page, "status":"paid"}) %}
     {% set refunded_invoices = client.invoice_get_list({"per_page":10, "page":request.page, "status":"refunded"}) %}
+    {% set canceled_invoices = client.invoice_get_list({"per_page":10, "page":request.page, "status":"canceled"}) %}
     <div class="row">
         <div class="col-md-12">
             <div class="card mb-4">
@@ -21,7 +22,7 @@
                         <div>
                             <h1 class="mb-1">{{ 'Invoices'|trans }}</h1>
                             <span class="small text-muted">
-                                {{ 'All of your invoices can be found here. You can choose to see unpaid, paid, or refunded invoices by clicking the corresponding button.'|trans }}
+                                {{ 'All of your invoices can be found here. You can choose to see unpaid, paid, refunded, or canceled invoices by clicking the corresponding button.'|trans }}
                             </span>
                         </div>
                     </div>
@@ -41,6 +42,10 @@
                                     type="button" role="tab" aria-controls="nav-refunded"
                                     aria-selected="false">{{ 'Refunded'|trans }}{% if refunded_invoices.total %}&nbsp;<span
                                     class="badge text-bg-info">{{ refunded_invoices.total }}</span>{% endif %}</button>
+                            <button class="nav-link" id="canceled-tab" data-bs-toggle="tab" data-bs-target="#nav-canceled"
+                                    type="button" role="tab" aria-controls="nav-canceled"
+                                    aria-selected="false">{{ 'Canceled'|trans }}{% if canceled_invoices.total %}&nbsp;<span
+                                    class="badge text-bg-secondary">{{ canceled_invoices.total }}</span>{% endif %}</button>
                         </div>
                     </nav>
                     <div class="tab-content" id="nav-tabContent">
@@ -132,6 +137,34 @@
                                 </tbody>
                             </table>
                             {{ include('partial_pagination.html.twig', { 'list': refunded_invoices, 'url': 'invoice', 'hash': '#nav-refunded' }) }}
+                        </div>
+                        <div class="tab-pane fade table-responsive" id="nav-canceled" role="tabpanel" aria-labelledby="nav-canceled-tab"
+                             tabindex="0">
+                            <table class="table table-bordered table-hover">
+                                <thead>
+                                <tr>
+                                    <th>{{ 'Title'|trans }}</th>
+                                    <th>{{ 'Invoice Date'|trans }}</th>
+                                    <th>{{ 'Total'|trans }}</th>
+                                    <th>{{ 'Actions'|trans }}</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {% for i, invoice in canceled_invoices.list %}
+                                    <tr>
+                                        <td>{% if invoice.credit_note_for_invoice_id %}{{ 'Credit Note'|trans }}{% elseif invoice.debit_note_for_invoice_id %}{{ 'Debit Note'|trans }}{% else %}{{ 'Invoice'|trans }}{% endif %} #{{ invoice.serie_nr }}</td>
+                                        <td>{{ invoice.created_at|format_date }}</td>
+                                        <td>{{ invoice.total|format_currency(invoice.currency ?? default_currency) }}</td>
+                                        <td><a href='{{ "invoice/#{invoice.hash}"|url }}' class="btn btn-outline-secondary btn-sm">{{ 'View'|trans }}</a></td>
+                                    </tr>
+                                {% else %}
+                                    <tr>
+                                        <td colspan="4">{{ 'The list is empty'|trans }}</td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                            {{ include('partial_pagination.html.twig', { 'list': canceled_invoices, 'url': 'invoice', 'hash': '#nav-canceled' }) }}
                         </div>
                     </div>
                 </div>

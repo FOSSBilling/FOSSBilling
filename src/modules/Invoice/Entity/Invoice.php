@@ -146,9 +146,6 @@ class Invoice implements TimestampInterface
     #[ORM\Column(name: 'buyer_phone', type: Types::STRING, length: 255, nullable: true)]
     private ?string $buyerPhone = null;
 
-    #[ORM\Column(name: 'buyer_phone_cc', type: Types::STRING, length: 255, nullable: true)]
-    private ?string $buyerPhoneCc = null;
-
     #[ORM\Column(name: 'buyer_email', type: Types::STRING, length: 255, nullable: true)]
     private ?string $buyerEmail = null;
 
@@ -598,18 +595,6 @@ class Invoice implements TimestampInterface
     public function setBuyerPhone(?string $buyerPhone): self
     {
         $this->buyerPhone = $buyerPhone;
-
-        return $this;
-    }
-
-    public function getBuyerPhoneCc(): ?string
-    {
-        return $this->buyerPhoneCc;
-    }
-
-    public function setBuyerPhoneCc(?string $buyerPhoneCc): self
-    {
-        $this->buyerPhoneCc = $buyerPhoneCc;
 
         return $this;
     }

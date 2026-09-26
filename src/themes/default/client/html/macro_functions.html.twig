@@ -62,6 +62,7 @@
     {% if status == 'paid' %}{% set badge_class = 'bg-success' %}
     {% elseif status == 'unpaid' %}{% set badge_class = 'bg-warning' %}
     {% elseif status == 'refunded' %}{% set badge_class = 'bg-info' %}
+    {% elseif status == 'canceled' %}{% set badge_class = 'bg-secondary' %}
     {% else %}{% set badge_class = 'bg-primary' %}
     {% endif %}
 {% elseif type == 'client' %}

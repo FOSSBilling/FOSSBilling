@@ -100,7 +100,7 @@
                             <input class="form-control" id="remove_after_days" type="number" min="0" name="remove_after_days" value="{{ params.remove_after_days|default(0) }}">
                             <span class="input-group-text">{{ 'days'|trans }}</span>
                         </div>
-                        <small class="form-hint">{{ 'Set 0 to keep invoices forever.'|trans }}</small>
+                        <small class="form-hint">{{ 'Set 0 to keep invoices forever. Applies to invoices past their due date: drafts are deleted, issued invoices are voided but keep their number, and credit or debit notes are never touched.'|trans }}</small>
                     </div>
                     <div class="col-lg-6">
                         <label class="form-label" for="invoice_number_padding">{{ 'Invoice Number Padding Length'|trans }}</label>
@@ -151,6 +151,15 @@
                                 <span class="form-check-label">{{ 'Attach PDF Copy to Invoice Emails'|trans }}</span>
                             </label>
                             <small class="form-hint">{{ 'Attaches a PDF copy of the invoice to the created, paid, reminder, and overdue emails, so clients who pay by bank transfer can view it without logging in.'|trans }}</small>
+                        </div>
+
+                        <div class="mt-3">
+                            <input type="hidden" name="invoice_send_cancel_email" value="0">
+                            <label class="form-check form-switch form-switch-2">
+                                <input class="form-check-input" type="checkbox" name="invoice_send_cancel_email" value="1" {% if params.invoice_send_cancel_email|default('0') == '1' %}checked{% endif %}>
+                                <span class="form-check-label">{{ 'Send Email When an Invoice Is Voided'|trans }}</span>
+                            </label>
+                            <small class="form-hint">{{ 'Emails the client when an unpaid invoice is voided, manually or automatically. Applies to reissued invoices as well.'|trans }}</small>
                         </div>
                     </div>
                 </div>

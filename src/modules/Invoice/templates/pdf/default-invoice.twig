@@ -46,7 +46,7 @@
 			<p>{% if invoice.credit_note_for_invoice_id %}{{ 'Credit Note Number'|trans }}{% elseif invoice.debit_note_for_invoice_id %}{{ 'Debit Note Number'|trans }}{% else %}{{ 'Invoice Number'|trans }}{% endif %}: {{ invoice.serie_nr }}</p>
 			<p>{{ 'Invoice Date'|trans }}: {{ invoice.created_at|format_date }}</p>
 			<p>{{ 'Due Date'|trans }}: {{ invoice.due_at|format_date }}</p>
-			<p>{{ 'Invoice Status'|trans }}: {{ invoice.status|capitalize }}</p>
+			<p>{{ 'Invoice Status'|trans }}: {{ invoice.status|trans|capitalize }}</p>
 			{% if invoice.credit_note_for_invoice_id %}<p>{{ 'Refers to invoice'|trans }}: #{{ invoice.credit_note_for_invoice_id }}</p>{% endif %}
 			{% if invoice.debit_note_for_invoice_id %}<p>{{ 'Refers to invoice'|trans }}: #{{ invoice.debit_note_for_invoice_id }}</p>{% endif %}
 		</div>

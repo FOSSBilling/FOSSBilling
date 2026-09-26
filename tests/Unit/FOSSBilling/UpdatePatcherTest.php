@@ -2422,6 +2422,50 @@ test('ensureSchemaInSync renames the issue flag on a code-only deploy instead of
     });
 });
 
+test('ensureSchemaInSync drops the dead buyer country-code column on a code-only deploy', function (): void {
+    // A code-only deploy never runs the version-gated patch122, so the drift
+    // healer must drop buyer_phone_cc itself - the additive sync only ever
+    // adds, so without this the unmapped column lingers forever.
+    withNonMysqlDbDriver(function (): void {
+        $dbFile = Path::join(sys_get_temp_dir(), 'fossbilling-schema-sync-drop-cc-' . bin2hex(random_bytes(8)) . '.sqlite');
+
+        try {
+            $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $dbFile]);
+            $entityManager = FOSSBilling\Doctrine\EntityManagerFactory::create($connection);
+            FOSSBilling\Doctrine\SchemaInstaller::createSchema($entityManager);
+
+            // Re-add the removed column as it exists on pre-cleanup installs.
+            $connection->executeStatement('ALTER TABLE invoice ADD COLUMN buyer_phone_cc VARCHAR(255) DEFAULT NULL');
+
+            $columnNames = static fn (): array => array_column(
+                $connection->fetchAllAssociative('PRAGMA table_info(invoice)'),
+                'name'
+            );
+            expect($columnNames())->toContain('buyer_phone_cc');
+
+            $pdo = new PDO('sqlite:' . $dbFile);
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+            $di = new Pimple\Container();
+            $di['pdo'] = $pdo;
+            $di['em'] = $entityManager;
+            $di['dbal'] = $connection;
+            $di['logger'] = new Tests\Helpers\TestLogger();
+
+            $patcher = new UpdatePatcher();
+            $patcher->setDi($di);
+
+            expect($patcher->ensureSchemaInSync())->toBeTrue();
+            expect($columnNames())->not->toContain('buyer_phone_cc');
+
+            // The recorded hash now matches, so the next request is a single-SELECT no-op.
+            expect($patcher->ensureSchemaInSync())->toBeFalse();
+        } finally {
+            (new Filesystem())->remove($dbFile);
+        }
+    });
+});
+
 test('invoice reissue patch follows the credit and debit note patch', function (): void {
     $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 119);
 
@@ -2434,6 +2478,51 @@ test('invoice issued-rename patch follows the reissue patch', function (): void 
 
     expect($patches)->toHaveKey(121)
         ->and($patches[121][1])->toBe('patch121');
+});
+
+test('invoice buyer-phone-cc removal patch follows the issued-rename patch', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 121);
+
+    expect($patches)->toHaveKey(122)
+        ->and($patches[122][1])->toBe('patch122');
+});
+
+test('invoice buyer-phone-cc removal patch drops the dead column', function (): void {
+    $invoiceColumns = Mockery::mock(PDOStatement::class);
+    $invoiceColumns->expects('execute')->with([])->andReturnTrue();
+    $invoiceColumns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([['Field' => 'buyer_phone_cc']]);
+
+    $dropColumn = Mockery::mock(PDOStatement::class);
+    $dropColumn->expects('execute')->with([])->andReturnTrue();
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `invoice`')->andReturn($invoiceColumns);
+    $pdo->expects('prepare')
+        ->with('ALTER TABLE `invoice` DROP COLUMN `buyer_phone_cc`')
+        ->andReturn($dropColumn);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch122'))->invoke($patcher);
+});
+
+test('invoice buyer-phone-cc removal patch is a no-op once the column is gone', function (): void {
+    $invoiceColumns = Mockery::mock(PDOStatement::class);
+    $invoiceColumns->expects('execute')->with([])->andReturnTrue();
+    $invoiceColumns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([['Field' => 'buyer_phone']]);
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `invoice`')->andReturn($invoiceColumns);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch122'))->invoke($patcher);
 });
 
 test('invoice issued-rename patch copies values and drops the legacy column', function (): void {

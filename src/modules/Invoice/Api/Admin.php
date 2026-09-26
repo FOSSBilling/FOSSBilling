@@ -292,25 +292,10 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional array $new_item - [title] [price]
      * @optional string $text_1 - Custom invoice text 1
      * @optional string $text_2 - Custom invoice text 2
-     * @optional string $seller_company - Seller company name
-     * @optional string $seller_company_vat - Seller company VAT number
-     * @optional string $seller_company_number - Seller company number
-     * @optional string $seller_address - Seller address
-     * @optional string $seller_phone - Seller phone
-     * @optional string $seller_email - Seller email
-     * @optional string $buyer_first_name - Buyer first name
-     * @optional string $buyer_last_name - Buyer last name
-     * @optional string $buyer_company - Buyer company name
-     * @optional string $buyer_company_vat - Buyer company VAT number
-     * @optional string $buyer_company_number - Buyer company number
-     * @optional string $buyer_address - Buyer address
-     * @optional string $buyer_city - Buyer city
-     * @optional string $buyer_state - Buyer state
-     * @optional string $buyer_country - Buyer country
-     * @optional string $buyer_zip - Buyer zip
-     * @optional string $buyer_phone - Buyer phone
-     * @optional string $buyer_email - Buyer email
      * @optional bool $issue - issue the invoice after saving the supplied changes
+     *
+     * Buyer and seller details are not accepted here: they are frozen from the
+     * live client and company records when the invoice is issued.
      *
      * @return bool
      */

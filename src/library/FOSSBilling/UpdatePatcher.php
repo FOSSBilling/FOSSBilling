@@ -450,6 +450,11 @@ class UpdatePatcher implements InjectionAwareInterface
         // the structural sync only ever adds - so without this the old name
         // lingers as a duplicate forever.
         $this->renameInvoiceStatusIndex();
+
+        // The dead buyer_phone_cc column is gone from entity metadata, and the
+        // structural sync only ever adds - so without this the column lingers
+        // on existing installs forever.
+        $this->dropInvoiceBuyerPhoneCcColumn();
     }
 
     /**
@@ -572,6 +577,27 @@ class UpdatePatcher implements InjectionAwareInterface
         if (!$schemaManager->introspectTable('invoice')->hasIndex($new)) {
             $this->executeSql('CREATE INDEX ' . $new . ' ON invoice (status, issued, due_at)');
         }
+    }
+
+    /**
+     * Drops the dead invoice.buyer_phone_cc column, which the entity no
+     * longer maps. Portable across drivers via the DBAL schema manager for
+     * the existence check; every supported driver accepts DROP COLUMN.
+     * Idempotent: fresh installs never have it, migrated ones no longer do.
+     */
+    private function dropInvoiceBuyerPhoneCcColumn(): void
+    {
+        if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('dbal')) {
+            return;
+        }
+
+        if (!$this->di['dbal']->createSchemaManager()->introspectTable('invoice')->hasColumn('buyer_phone_cc')) {
+            return;
+        }
+
+        $this->executeSql($this->isMysqlDriver()
+            ? 'ALTER TABLE `invoice` DROP COLUMN `buyer_phone_cc`'
+            : 'ALTER TABLE invoice DROP COLUMN buyer_phone_cc');
     }
 
     /**
@@ -1084,6 +1110,7 @@ class UpdatePatcher implements InjectionAwareInterface
             119 => 'patch119',
             120 => 'patch120',
             121 => 'patch121',
+            122 => 'patch122',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -4195,6 +4222,17 @@ class UpdatePatcher implements InjectionAwareInterface
             $this->executeSql('ALTER TABLE `invoice` ADD COLUMN `issued` TINYINT(1) NOT NULL DEFAULT 0 AFTER `approved`');
             $this->executeSql('UPDATE `invoice` SET `issued` = `approved`');
             $this->executeSql('ALTER TABLE `invoice` DROP COLUMN `approved`');
+        }
+    }
+
+    private function patch122(): void
+    {
+        // invoice.buyer_phone_cc was write-only dead data: nothing ever wrote
+        // it except null-to-null copies, and nothing rendered it. The entity
+        // no longer maps it, so drop the column; the portable drop below
+        // covers non-MySQL drivers. The guard makes reruns a no-op.
+        if ($this->tableHasColumn('invoice', 'buyer_phone_cc')) {
+            $this->executeSql('ALTER TABLE `invoice` DROP COLUMN `buyer_phone_cc`');
         }
     }
 

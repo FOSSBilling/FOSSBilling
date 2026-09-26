@@ -2,7 +2,9 @@
 
 {% import 'macro_functions.html.twig' as mf %}
 
-{% block meta_title %}{{ 'Invoice'|trans }} {{ invoice.serie_nr }}{% endblock %}
+{% set number_label = invoice.issued ? invoice.serie_nr : ('Draft'|trans ~ ' #' ~ invoice.id) %}
+
+{% block meta_title %}{{ 'Invoice'|trans }} {{ number_label }}{% endblock %}
 
 {% set active_menu = 'invoice' %}
 
@@ -18,13 +20,13 @@
         <li class="breadcrumb-item">
             <a href="{{ 'invoice'|url }}">{{ 'Invoices'|trans }}</a>
         </li>
-        <li class="breadcrumb-item active" aria-current="page">{{ invoice.serie_nr }}</li>
+        <li class="breadcrumb-item active" aria-current="page">{{ number_label }}</li>
     </ol>
 {% endblock %}
 
 {% block content %}
 {% embed 'partial_admin_detail_tabs.html.twig' with {
-    title: 'Invoice'|trans ~ ' ' ~ invoice.serie_nr,
+    title: 'Invoice'|trans ~ ' ' ~ number_label,
     subtitle: 'Review billing details, update invoice content, and adjust stored purchase records.'|trans,
     outer_card_class: 'mb-3'
 } %}
@@ -39,10 +41,7 @@
                         <a class="nav-link" href="#tab-texts" data-bs-toggle="tab" role="tab">{{ 'Texts'|trans }}</a>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <a class="nav-link" href="#tab-buyer-credentials" data-bs-toggle="tab" role="tab">{{ 'Client Credentials'|trans }}</a>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <a class="nav-link" href="#tab-seller-credentials" data-bs-toggle="tab" role="tab">{{ 'Company Credentials'|trans }}</a>
+                        <a class="nav-link" href="#tab-billing-parties" data-bs-toggle="tab" role="tab">{{ 'Billing parties'|trans }}</a>
                     </li>
     {% endblock %}
 
@@ -65,7 +64,7 @@
                                 </tr>
                                 <tr>
                                     <td class="text-end">{{ 'Number'|trans }}:</td>
-                                    <td>{{ invoice.serie_nr }}</td>
+                                    <td>{{ number_label }}{% if not invoice.issued %} {{ mf.text_badge('Draft'|trans, 'text-bg-secondary') }}{% endif %}</td>
                                 </tr>
                                     <tr>
                                         <td class="text-end">{{ 'Client'|trans }}:</td>
@@ -79,7 +78,7 @@
                                     </tr>
                                 <tr>
                                     <td class="text-end">{{ 'Status'|trans }}:</td>
-                                    <td>{{ mf.status_badge(invoice.status, 'invoice') }}</td>
+                                    <td>{{ mf.status_badge(invoice.status, 'invoice') }}{% if not invoice.issued %} {{ mf.text_badge('Draft'|trans, 'text-bg-secondary') }}{% endif %}</td>
                                 </tr>
                                 {% if invoice.credit_note_for_invoice_id %}
                                 <tr>
@@ -155,6 +154,11 @@
                         {% if not invoice.editable %}
                         <div class="alert alert-warning w-100 mb-2" role="alert">
                             {{ 'This invoice is locked. Issued invoices cannot be edited; correct them with a credit note or a replacement invoice.'|trans }}
+                        </div>
+                        {% endif %}
+                        {% if not invoice.issued %}
+                        <div class="alert alert-info w-100 mb-2" role="alert">
+                            {{ 'This is a draft. It has no invoice number yet - issuing assigns the next number in the sequence.'|trans }}
                         </div>
                         {% endif %}
                         {% if invoice.replaced_by_invoice_id %}
@@ -943,125 +947,93 @@
             </div>
         </div>
 
-        <div class="tab-pane fade" id="tab-seller-credentials" role="tabpanel">
+        <div class="tab-pane fade" id="tab-billing-parties" role="tabpanel">
             <div class="card-body">
                 {% set seller = invoice.seller %}
-                <form method="post" action="{{ 'invoice/update'|api_url }}" {{ fb_api_form({message: 'Invoice Updated'|trans}) }}>
-                    <fieldset {% if not invoice.editable %}disabled{% endif %}>
-                    {% embed 'partial_admin_form_card.html.twig' with {
-                        title: 'Company Details at Time of Purchase'|trans,
-                        subtitle: 'Review and correct the seller details stored on this invoice.'|trans
-                    } %}
-                        {% import 'macro_functions.html.twig' as mf %}
-                        {% block form_content %}
-                            <div class="row g-3">
-                                <div class="col-lg-6">
-                                    <label class="form-label" for="seller_company">{{ 'Company Name'|trans }}</label>
-                                    <input class="form-control" id="seller_company" type="text" name="seller_company" value="{{ seller.company }}">
-                                </div>
-                                <div class="col-lg-6">
-                                    <label class="form-label" for="seller_company_vat">{{ 'Company VAT'|trans }}</label>
-                                    <input class="form-control" id="seller_company_vat" type="text" name="seller_company_vat" value="{{ seller.company_vat }}">
-                                </div>
-                                <div class="col-lg-6">
-                                    <label class="form-label" for="seller_company_number">{{ 'Company Number'|trans }}</label>
-                                    <input class="form-control" id="seller_company_number" type="text" name="seller_company_number" value="{{ seller.company_number }}">
-                                </div>
-                                <div class="col-lg-6">
-                                    <label class="form-label" for="seller_phone">{{ 'Phone'|trans }}</label>
-                                    <input class="form-control" id="seller_phone" type="text" name="seller_phone" value="{{ seller.phone }}">
-                                </div>
-                                <div class="col-12">
-                                    <label class="form-label" for="seller_address">{{ 'Address'|trans }}</label>
-                                    <input class="form-control" id="seller_address" type="text" name="seller_address" value="{{ seller.address }}">
-                                </div>
-                                <div class="col-lg-6">
-                                    <label class="form-label" for="seller_email">{{ 'Email'|trans }}</label>
-                                    <input class="form-control" id="seller_email" type="text" name="seller_email" value="{{ seller.email }}">
-                                </div>
-                            </div>
-                        {% endblock %}
-
-                        {% block form_actions %}
-                            <button type="submit" class="btn btn-primary">{{ 'Update Company Details'|trans }}</button>
-                        {% endblock %}
-                    {% endembed %}
-                    <input type="hidden" name="id" value="{{ invoice.id }}">
-                    </fieldset>
-                </form>
-            </div>
-        </div>
-
-        <div class="tab-pane fade" id="tab-buyer-credentials" role="tabpanel">
-            <div class="card-body">
                 {% set buyer = invoice.buyer %}
-                <form method="post" action="{{ 'invoice/update'|api_url }}" {{ fb_api_form({message: 'Invoice Updated'|trans}) }}>
-                    <fieldset {% if not invoice.editable %}disabled{% endif %}>
-                    {% embed 'partial_admin_form_card.html.twig' with {
-                        title: 'Client Details at Time of Purchase'|trans,
-                        subtitle: 'Review and correct the stored buyer details for this invoice.'|trans
-                    } %}
-                        {% import 'macro_functions.html.twig' as mf %}
-                        {% block form_content %}
-                            <div class="row g-3">
-                                <div class="col-lg-6">
-                                    <label class="form-label" for="buyer_first_name">{{ 'First Name'|trans }}</label>
-                                    <input class="form-control" id="buyer_first_name" type="text" name="buyer_first_name" value="{{ buyer.first_name }}">
-                                </div>
-                                <div class="col-lg-6">
-                                    <label class="form-label" for="buyer_last_name">{{ 'Last Name'|trans }}</label>
-                                    <input class="form-control" id="buyer_last_name" type="text" name="buyer_last_name" value="{{ buyer.last_name }}">
-                                </div>
-                                <div class="col-lg-6">
-                                    <label class="form-label" for="buyer_company">{{ 'Company Name'|trans }}</label>
-                                    <input class="form-control" id="buyer_company" type="text" name="buyer_company" value="{{ buyer.company }}">
-                                </div>
-                                <div class="col-lg-6">
-                                    <label class="form-label" for="buyer_company_vat">{{ 'Company VAT'|trans }}</label>
-                                    <input class="form-control" id="buyer_company_vat" type="text" name="buyer_company_vat" value="{{ buyer.company_vat }}">
-                                </div>
-                                <div class="col-lg-6">
-                                    <label class="form-label" for="buyer_company_number">{{ 'Company Number'|trans }}</label>
-                                    <input class="form-control" id="buyer_company_number" type="text" name="buyer_company_number" value="{{ buyer.company_number }}">
-                                </div>
-                                <div class="col-lg-6">
-                                    <label class="form-label" for="buyer_phone">{{ 'Phone'|trans }}</label>
-                                    <input class="form-control" id="buyer_phone" type="text" name="buyer_phone" value="{{ buyer.phone }}">
-                                </div>
-                                <div class="col-12">
-                                    <label class="form-label" for="buyer_address">{{ 'Address'|trans }}</label>
-                                    <input class="form-control" id="buyer_address" type="text" name="buyer_address" value="{{ buyer.address }}">
-                                </div>
-                                <div class="col-lg-4">
-                                    <label class="form-label" for="buyer_city">{{ 'City'|trans }}</label>
-                                    <input class="form-control" id="buyer_city" type="text" name="buyer_city" value="{{ buyer.city }}">
-                                </div>
-                                <div class="col-lg-4">
-                                    <label class="form-label" for="buyer_state">{{ 'State'|trans }}</label>
-                                    <input class="form-control" id="buyer_state" type="text" name="buyer_state" value="{{ buyer.state }}">
-                                </div>
-                                <div class="col-lg-4">
-                                    <label class="form-label" for="buyer_zip">{{ 'Zip'|trans }}</label>
-                                    <input class="form-control" id="buyer_zip" type="text" name="buyer_zip" value="{{ buyer.zip }}">
-                                </div>
-                                <div class="col-lg-6">
-                                    <label class="form-label">{{ 'Country'|trans }}</label>
-                                    {{ mf.selectbox('buyer_country', country_names(), buyer.country, 0, 'Country'|trans) }}
-                                </div>
-                                <div class="col-lg-6">
-                                    <label class="form-label" for="buyer_email">{{ 'Email'|trans }}</label>
-                                    <input class="form-control" id="buyer_email" type="text" name="buyer_email" value="{{ buyer.email }}">
-                                </div>
+                <p class="text-secondary mb-3">
+                    {% if invoice.issued %}
+                        {{ 'These details were frozen onto the invoice when it was issued. Company address, phone, and email always reflect current company settings.'|trans }}
+                    {% else %}
+                        {{ 'Shown are the current client and company details. They will be frozen onto the invoice when it is issued.'|trans }}
+                    {% endif %}
+                </p>
+                <div class="row g-3">
+                    <div class="col-lg-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="mb-3">{{ 'Buyer'|trans }}</h5>
+                                <dl class="row small mb-0">
+                                    <dt class="col-sm-4 text-muted">{{ 'Name'|trans }}</dt>
+                                    <dd class="col-sm-8">{{ buyer.first_name }} {{ buyer.last_name }}</dd>
+                                    {% if buyer.company|trim %}
+                                    <dt class="col-sm-4 text-muted">{{ 'Company'|trans }}</dt>
+                                    <dd class="col-sm-8">{{ buyer.company }}</dd>
+                                    {% endif %}
+                                    {% if buyer.company_vat|trim %}
+                                    <dt class="col-sm-4 text-muted">{{ 'Company VAT'|trans }}</dt>
+                                    <dd class="col-sm-8">{{ buyer.company_vat }}</dd>
+                                    {% endif %}
+                                    {% if buyer.company_number|trim %}
+                                    <dt class="col-sm-4 text-muted">{{ 'Company Number'|trans }}</dt>
+                                    <dd class="col-sm-8">{{ buyer.company_number }}</dd>
+                                    {% endif %}
+                                    {% if buyer.address|trim %}
+                                    <dt class="col-sm-4 text-muted">{{ 'Address'|trans }}</dt>
+                                    <dd class="col-sm-8">{{ buyer.address }}</dd>
+                                    {% endif %}
+                                    {% if buyer.city|trim or buyer.state|trim or buyer.zip|trim %}
+                                    <dt class="col-sm-4 text-muted">{{ 'City'|trans }}</dt>
+                                    <dd class="col-sm-8">{{ buyer.city }} {{ buyer.state }} {{ buyer.zip }}</dd>
+                                    {% endif %}
+                                    {% if buyer.country|trim %}
+                                    <dt class="col-sm-4 text-muted">{{ 'Country'|trans }}</dt>
+                                    <dd class="col-sm-8">{{ buyer.country|country_name }}</dd>
+                                    {% endif %}
+                                    {% if buyer.phone|trim %}
+                                    <dt class="col-sm-4 text-muted">{{ 'Phone'|trans }}</dt>
+                                    <dd class="col-sm-8">{{ buyer.phone }}</dd>
+                                    {% endif %}
+                                    {% if buyer.email|trim %}
+                                    <dt class="col-sm-4 text-muted">{{ 'Email'|trans }}</dt>
+                                    <dd class="col-sm-8">{{ buyer.email }}</dd>
+                                    {% endif %}
+                                </dl>
                             </div>
-                        {% endblock %}
-
-                        {% block form_actions %}
-                            <button type="submit" class="btn btn-primary">{{ 'Update Client Details'|trans }}</button>
-                        {% endblock %}
-                    {% endembed %}
-                    <input type="hidden" name="id" value="{{ invoice.id }}">
-                    </fieldset>
-                </form>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="mb-3">{{ 'Seller'|trans }}</h5>
+                                <dl class="row small mb-0">
+                                    <dt class="col-sm-4 text-muted">{{ 'Company Name'|trans }}</dt>
+                                    <dd class="col-sm-8">{{ seller.company }}</dd>
+                                    {% if seller.company_vat|trim %}
+                                    <dt class="col-sm-4 text-muted">{{ 'Company VAT'|trans }}</dt>
+                                    <dd class="col-sm-8">{{ seller.company_vat }}</dd>
+                                    {% endif %}
+                                    {% if seller.company_number|trim %}
+                                    <dt class="col-sm-4 text-muted">{{ 'Company Number'|trans }}</dt>
+                                    <dd class="col-sm-8">{{ seller.company_number }}</dd>
+                                    {% endif %}
+                                    {% if seller.address|trim %}
+                                    <dt class="col-sm-4 text-muted">{{ 'Address'|trans }}</dt>
+                                    <dd class="col-sm-8">{{ seller.address }}</dd>
+                                    {% endif %}
+                                    {% if seller.phone|trim %}
+                                    <dt class="col-sm-4 text-muted">{{ 'Phone'|trans }}</dt>
+                                    <dd class="col-sm-8">{{ seller.phone }}</dd>
+                                    {% endif %}
+                                    {% if seller.email|trim %}
+                                    <dt class="col-sm-4 text-muted">{{ 'Email'|trans }}</dt>
+                                    <dd class="col-sm-8">{{ seller.email }}</dd>
+                                    {% endif %}
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
