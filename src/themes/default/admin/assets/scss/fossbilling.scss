@@ -2,6 +2,27 @@
 @use "theme_settings";
 @use "../../../../../../frontend/styles/shared-theme";
 
+// Let responsive tables use the available width before falling back to scrolling.
+// Individual cells can retain text-nowrap for values that must stay together.
+.table-responsive > .table > :is(thead, tbody, tfoot) > tr > :is(th, td):not(.text-nowrap) {
+    white-space: normal;
+    overflow-wrap: break-word;
+}
+
+.table-responsive > .table > tbody > tr > td:has(> .btn-icon) {
+    white-space: nowrap;
+}
+
+.table-responsive {
+    container-type: inline-size;
+}
+
+@container (max-width: 60rem) {
+    .table-responsive > .table > :is(thead, tbody, tfoot) > tr > :is(th, td) {
+        padding-inline: 0.5rem;
+    }
+}
+
 // Keep the keyboard skip link above Tabler's fixed sidebar.
 .admin-skip-link {
     z-index: 1100;
@@ -21,6 +42,23 @@
 
     .dropdown-menu {
         --tblr-dropdown-font-size: 1rem;
+    }
+}
+
+.admin-sidebar-logout {
+    display: none;
+}
+
+@media (min-width: 992px) {
+    // Follow the sidebar's actual width, including its folded and hover states.
+    .admin-sidebar .navbar-footer {
+        container-type: inline-size;
+    }
+
+    @container (min-width: 12rem) {
+        .admin-sidebar-logout {
+            display: inline-flex;
+        }
     }
 }
 
