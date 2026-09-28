@@ -252,13 +252,18 @@ final class SchemaSynchronizer
             // existing rows, so it doesn't need the same caution as everything else this method
             // deliberately leaves untouched. Left unapplied, it's not just a cosmetic mismatch -
             // Doctrine's own comparator represents the rename as a drop+add pair internally
-            // (getRenamedIndexes(), not getAddedIndexes()/getDroppedIndexes()), so omitting it
-            // here means the new name is never created at all, silently, on every sync.
+            // (index renames, not added/dropped indexes), so omitting it here means the new
+            // name is never created at all, silently, on every sync.
+            $renamedIndexes = [];
+            foreach ($tableDiff->getIndexRenames() as $rename) {
+                $renamedIndexes[$rename->getOldName()->getIdentifier()->getValue()] = $rename->getNewIndex();
+            }
+
             $safeTableDiff = new TableDiff(
                 oldTable: $tableDiff->getOldTable(),
                 addedColumns: $safeAddedColumns,
                 addedIndexes: $safeAddedIndexes,
-                renamedIndexes: $tableDiff->getRenamedIndexes(),
+                renamedIndexes: $renamedIndexes,
             );
 
             if (!$safeTableDiff->isEmpty()) {
