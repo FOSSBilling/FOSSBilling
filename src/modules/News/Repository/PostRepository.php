@@ -79,7 +79,7 @@ class PostRepository extends EntityRepository
                 $qb->addOrderBy('p.id', $sort->direction);
             }
         } else {
-            $qb->orderBy('p.createdAt', 'DESC');
+            $qb->orderBy('p.createdAt', \SortDirection::Descending);
         }
 
         return $qb;

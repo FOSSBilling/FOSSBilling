@@ -55,7 +55,7 @@ test('findOneByExtensionAndScope returns the first match', function (): void {
     $repo = Mockery::mock(ExtensionMetaRepository::class)->makePartial();
     $repo->shouldReceive('findByExtensionAndScope')
         ->once()
-        ->with('mod_email', 'config', null, null, ['id' => 'ASC'], 1)
+        ->with('mod_email', 'config', null, null, ['id' => SortDirection::Ascending], 1)
         ->andReturn([$meta]);
 
     expect($repo->findOneByExtensionAndScope('mod_email', 'config'))->toBe($meta);

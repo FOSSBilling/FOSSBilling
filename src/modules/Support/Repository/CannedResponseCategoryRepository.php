@@ -22,7 +22,7 @@ class CannedResponseCategoryRepository extends EntityRepository
     {
         $rows = $this->createQueryBuilder('c')
             ->select('c.id, c.title')
-            ->orderBy('c.id', 'ASC')
+            ->orderBy('c.id', \SortDirection::Ascending)
             ->getQuery()
             ->getArrayResult();
 

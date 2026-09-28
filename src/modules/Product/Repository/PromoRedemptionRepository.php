@@ -110,7 +110,7 @@ class PromoRedemptionRepository extends EntityRepository
                 $qb->addOrderBy('pr.id', $sort->direction);
             }
         } else {
-            $qb->orderBy('pr.id', 'DESC');
+            $qb->orderBy('pr.id', \SortDirection::Descending);
         }
 
         return $qb;

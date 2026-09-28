@@ -98,7 +98,7 @@ class TldRepository extends EntityRepository
             ->addSelect('tr')
             ->where('t.active = :active')
             ->setParameter('active', true)
-            ->orderBy('t.id', 'ASC')
+            ->orderBy('t.id', \SortDirection::Ascending)
             ->getQuery()
             ->getResult();
     }
@@ -173,7 +173,7 @@ class TldRepository extends EntityRepository
             ->select('t.id, t.tld')
             ->where('t.active = :active')
             ->setParameter('active', true)
-            ->orderBy('t.id', 'ASC')
+            ->orderBy('t.id', \SortDirection::Ascending)
             ->getQuery()
             ->getArrayResult();
 

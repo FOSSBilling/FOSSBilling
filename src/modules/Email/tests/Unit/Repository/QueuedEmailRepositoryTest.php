@@ -15,8 +15,8 @@ use Doctrine\ORM\QueryBuilder;
 
 test('get search query builder orders by priority by default', function (): void {
     $queryBuilder = Mockery::mock(QueryBuilder::class);
-    $queryBuilder->shouldReceive('orderBy')->once()->with('q.priority', 'DESC')->andReturn($queryBuilder);
-    $queryBuilder->shouldReceive('addOrderBy')->once()->with('q.id', 'ASC')->andReturn($queryBuilder);
+    $queryBuilder->shouldReceive('orderBy')->once()->with('q.priority', SortDirection::Descending)->andReturn($queryBuilder);
+    $queryBuilder->shouldReceive('addOrderBy')->once()->with('q.id', SortDirection::Ascending)->andReturn($queryBuilder);
 
     $repository = Mockery::mock(QueuedEmailRepository::class)->makePartial();
     $repository->shouldReceive('createQueryBuilder')->with('q')->once()->andReturn($queryBuilder);
@@ -24,7 +24,7 @@ test('get search query builder orders by priority by default', function (): void
     expect($repository->getSearchQueryBuilder([]))->toBe($queryBuilder);
 });
 
-test('sorts email queue search query', function (array $data, string $expectedOrder, string $expectedDirection, ?array $expectedTieBreaker): void {
+test('sorts email queue search query', function (array $data, string $expectedOrder, SortDirection $expectedDirection, ?array $expectedTieBreaker): void {
     $queryBuilder = Mockery::mock(QueryBuilder::class);
     $queryBuilder->shouldReceive('orderBy')->once()->with($expectedOrder, $expectedDirection)->andReturn($queryBuilder);
     if ($expectedTieBreaker !== null) {
@@ -38,13 +38,13 @@ test('sorts email queue search query', function (array $data, string $expectedOr
 
     expect($repository->getSearchQueryBuilder($data))->toBe($queryBuilder);
 })->with([
-    'subject ascending' => [['sort' => 'subject'], 'q.subject', 'ASC', ['q.id', 'ASC']],
-    'recipient descending' => [['sort' => 'recipient', 'direction' => 'DESC'], 'q.recipient', 'DESC', ['q.id', 'DESC']],
-    'status' => [['sort' => 'status'], 'q.status', 'ASC', ['q.id', 'ASC']],
-    'tries' => [['sort' => 'tries', 'direction' => 'desc'], 'q.tries', 'DESC', ['q.id', 'DESC']],
-    'priority' => [['sort' => 'priority'], 'q.priority', 'ASC', ['q.id', 'ASC']],
-    'created at' => [['sort' => 'created_at'], 'q.createdAt', 'ASC', ['q.id', 'ASC']],
-    'id' => [['sort' => 'id'], 'q.id', 'ASC', null],
-    'invalid sort falls back to default' => [['sort' => 'q.subject; DROP TABLE mod_email_queue'], 'q.priority', 'DESC', ['q.id', 'ASC']],
-    'invalid direction falls back to ascending' => [['sort' => 'subject', 'direction' => 'sideways'], 'q.subject', 'ASC', ['q.id', 'ASC']],
+    'subject ascending' => [['sort' => 'subject'], 'q.subject', SortDirection::Ascending, ['q.id', SortDirection::Ascending]],
+    'recipient descending' => [['sort' => 'recipient', 'direction' => 'DESC'], 'q.recipient', SortDirection::Descending, ['q.id', SortDirection::Descending]],
+    'status' => [['sort' => 'status'], 'q.status', SortDirection::Ascending, ['q.id', SortDirection::Ascending]],
+    'tries' => [['sort' => 'tries', 'direction' => 'desc'], 'q.tries', SortDirection::Descending, ['q.id', SortDirection::Descending]],
+    'priority' => [['sort' => 'priority'], 'q.priority', SortDirection::Ascending, ['q.id', SortDirection::Ascending]],
+    'created at' => [['sort' => 'created_at'], 'q.createdAt', SortDirection::Ascending, ['q.id', SortDirection::Ascending]],
+    'id' => [['sort' => 'id'], 'q.id', SortDirection::Ascending, null],
+    'invalid sort falls back to default' => [['sort' => 'q.subject; DROP TABLE mod_email_queue'], 'q.priority', SortDirection::Descending, ['q.id', SortDirection::Ascending]],
+    'invalid direction falls back to ascending' => [['sort' => 'subject', 'direction' => 'sideways'], 'q.subject', SortDirection::Ascending, ['q.id', SortDirection::Ascending]],
 ]);

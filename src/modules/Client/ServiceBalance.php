@@ -123,7 +123,7 @@ class ServiceBalance implements InjectionAwareInterface
                 $queryBuilder->addOrderBy('m.id', $sort->direction);
             }
         } else {
-            $queryBuilder->orderBy('m.id', 'DESC');
+            $queryBuilder->orderBy('m.id', \SortDirection::Descending);
         }
 
         return $queryBuilder;
