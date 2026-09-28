@@ -639,7 +639,7 @@ class Service implements InjectionAwareInterface
 
         // Manual promo codes always win; automatic promos only resolve when no
         // code was entered, so clients are never surprised by stacked savings.
-        $effective = $this->getEffectiveCartPromos($model, $client);
+        $effective = $this->getEffectiveCartPromos($model, $client, $products);
         $promos = $effective['promos'];
 
         $items = [];

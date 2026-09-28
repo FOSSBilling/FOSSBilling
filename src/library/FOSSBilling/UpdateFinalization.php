@@ -144,9 +144,23 @@ class UpdateFinalization implements InjectionAwareInterface
             return;
         }
 
+        $this->healSchemaDrift();
+    }
+
+    /**
+     * Brings the live schema up to date when entity metadata drifted without a
+     * version change (e.g. a code-only deploy adding an entity column).
+     *
+     * Safe to call from any entry point, including CLI/cron: the drift check
+     * runs outside the finalization lock, the sync runs inside it, and both
+     * halves never throw - an unreadable database simply reports "in sync".
+     *
+     * @see https://github.com/FOSSBilling/FOSSBilling/issues/4392
+     */
+    public function healSchemaDrift(): void
+    {
         // No version change (e.g. a code-only deploy with new entity columns), so no
         // finalization runs - check for schema drift outside the lock, sync inside it.
-        // @see https://github.com/FOSSBilling/FOSSBilling/issues/4392
         $patcher = $this->createPatcher();
         if ($patcher->isSchemaOutOfSync()) {
             $this->withFinalizationLock(static fn (): bool => $patcher->ensureSchemaInSync());

@@ -2,6 +2,9 @@
     "version": "0.2",
     "language": "en",
     "words": [
+        "dropup",
+        "focusable",
+        "NOCASE",
         "FOSS",
         "huraga",
         "FOSSBilling",
@@ -431,6 +434,7 @@
         "ordermodel",
         "homoglyph",
         "TINYINT",
+        "ENCAPSED",
         "homoglyph",
         "oldconfig",
         "ordermodel",

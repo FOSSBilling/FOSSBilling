@@ -318,7 +318,7 @@
                     } %}
                         {% block form_content %}
                             <label class="form-label" for="textareaNote">{{ 'Note'|trans }}</label>
-                            <textarea class="form-control" id="textareaNote" name="note" rows="3" required></textarea>
+                            <textarea data-bs-toggle="autosize" class="form-control" id="textareaNote" name="note" rows="3" required></textarea>
                             <input type="hidden" name="ticket_id" value="{{ ticket.id }}">
                         {% endblock %}
 

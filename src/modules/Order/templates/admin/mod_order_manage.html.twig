@@ -381,7 +381,7 @@
                                 <div class="col-lg-6">
                                     <label class="form-label" for="expires_at">{{ 'Date Expires'|trans }}</label>
                                     <div class="input-icon">
-                                        <input class="form-control datepicker"
+                                        <input class="form-control datepicker" data-clear-label="{{ 'Clear date'|trans }}" data-invalid-date-label="{{ 'Enter a valid date in YYYY-MM-DD format.'|trans }}"
                                                id="expires_at"
                                                value="{% if order.expires_at %}{{ order.expires_at|date('Y-m-d') }}{% endif %}"
                                                name="expires_at"
@@ -430,7 +430,7 @@
                                 </div>
                                 <div class="col-12">
                                     <label class="form-label" for="order_notes">{{ 'Notes'|trans }}</label>
-                                    <textarea class="form-control" id="order_notes" name="notes" rows="3">{{ order.notes }}</textarea>
+                                    <textarea data-bs-toggle="autosize" class="form-control" id="order_notes" name="notes" rows="3">{{ order.notes }}</textarea>
                                 </div>
                             </div>
                         {% endblock %}

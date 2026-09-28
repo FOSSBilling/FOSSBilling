@@ -23,6 +23,9 @@ jobs:
       - name: 'Typecheck Test Suite'
         run: npm ci --no-audit --no-fund && npm run pw:tsc
 
+      - name: 'Build Admin Widget Assets'
+        run: NODE_ENV=production npm run build-admin_default
+
       - name: 'Set up Docker Compose'
         uses: docker/setup-compose-action@54042514f505b273907334ae2b9cdbb9a0213c1a # v2.4.0
 

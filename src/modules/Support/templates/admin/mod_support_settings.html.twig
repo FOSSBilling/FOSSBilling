@@ -73,7 +73,7 @@
                                 <input class="form-check-input" name="delay_enable" type="checkbox" {% if params.delay_enable|default(false) %} checked="checked"{% endif %}>
                                 <span class="form-check-label">{{ 'Enable Delay Message'|trans }}</span>
                             </label>
-                            <small class="form-hint d-block mb-3">{{ 'If enabled, the selected canned response will be added to the default reply message.'|trans }}</small>
+                            <small class="form-text d-block mb-3">{{ 'If enabled, the selected canned response will be added to the default reply message.'|trans }}</small>
                             <div id="delay_enable"{% if not params.delay_enable|default(false) %} style="display:none;"{% endif %}>
                                 <div class="row g-3">
                                     <div class="col-lg-4">
@@ -103,7 +103,7 @@
                                     <input class="form-control" id="wait_hours" type="number" min="0" name="wait_hours" value="{{ params.wait_hours|default('') }}">
                                     <span class="input-group-text">{{ 'hours'|trans }}</span>
                                 </div>
-                                <small class="form-hint">{{ 'If set, users must wait this many hours between consecutive ticket submissions.'|trans }}</small>
+                                <small class="form-text">{{ 'If set, users must wait this many hours between consecutive ticket submissions.'|trans }}</small>
                             </div>
                             <input type="hidden" name="ext" value="mod_support">
                         </div>
