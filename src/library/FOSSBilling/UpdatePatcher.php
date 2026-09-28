@@ -682,7 +682,22 @@ class UpdatePatcher implements InjectionAwareInterface
      */
     private function writeBackfillJournalEntry(\Doctrine\DBAL\Connection $dbal, array $row, int $padding): void
     {
-        $nr = is_numeric($row['nr'] ?? null) ? (int) $row['nr'] : (int) $row['id'];
+        $invoiceId = (int) $row['id'];
+
+        // Claim the baseline first: concurrent healers (overlapping cron runs, or drift
+        // healing racing cron) select the same event-less rows. This conditional UPDATE
+        // is atomic on every driver, so exactly one winner per invoice proceeds while
+        // losers - including runs that arrive after a live event landed - skip instead
+        // of writing a duplicate baseline.
+        $claimed = (bool) $dbal->executeStatement(
+            'UPDATE invoice SET updated_at = updated_at WHERE id = :id AND NOT EXISTS (SELECT 1 FROM invoice_event WHERE invoice_id = :id)',
+            ['id' => $invoiceId]
+        );
+        if (!$claimed) {
+            return;
+        }
+
+        $nr = is_numeric($row['nr'] ?? null) ? (int) $row['nr'] : $invoiceId;
         $snapshot = [
             'serie_nr' => ($row['serie'] ?? '') . sprintf('%0' . $padding . 's', $nr),
             'status' => $row['status'] ?? null,
@@ -730,7 +745,7 @@ class UpdatePatcher implements InjectionAwareInterface
         $dbal->executeStatement(
             'INSERT INTO invoice_event (invoice_id, type, client_id, snapshot, created_at) VALUES (:invoice_id, :type, :client_id, :snapshot, :created_at)',
             [
-                'invoice_id' => (int) $row['id'],
+                'invoice_id' => $invoiceId,
                 'type' => $type,
                 'client_id' => $row['client_id'] !== null ? (int) $row['client_id'] : null,
                 // Substitute rather than throw on legacy bytes that cannot be encoded:

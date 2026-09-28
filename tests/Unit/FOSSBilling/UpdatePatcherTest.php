@@ -2631,6 +2631,49 @@ test('invoice journal backfill writes one baseline entry per invoice missing fro
     });
 });
 
+test('journal baseline writes are claimed per invoice', function (): void {
+    // Two back-to-back writes for the same invoice - what overlapping healers
+    // would attempt - must leave exactly one baseline entry behind.
+    withNonMysqlDbDriver(function (): void {
+        $dbFile = Path::join(sys_get_temp_dir(), 'fossbilling-journal-claim-' . bin2hex(random_bytes(8)) . '.sqlite');
+
+        try {
+            $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $dbFile]);
+            $entityManager = FOSSBilling\Doctrine\EntityManagerFactory::create($connection);
+            FOSSBilling\Doctrine\SchemaInstaller::createSchema($entityManager);
+
+            $now = date('Y-m-d H:i:s');
+            $connection->executeStatement(
+                "INSERT INTO invoice (status, issued, serie, nr, client_id, created_at) VALUES ('unpaid', 0, 'FOSS', NULL, 5, :now)",
+                ['now' => $now]
+            );
+
+            $pdo = new PDO('sqlite:' . $dbFile);
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+            $di = new Pimple\Container();
+            $di['pdo'] = $pdo;
+            $di['dbal'] = $connection;
+            $di['logger'] = new Tests\Helpers\TestLogger();
+
+            $patcher = new UpdatePatcher();
+            $patcher->setDi($di);
+            $writeBaseline = (new ReflectionMethod($patcher, 'writeBackfillJournalEntry'))->getClosure($patcher);
+            $row = [
+                'id' => 1, 'nr' => null, 'serie' => 'FOSS', 'status' => 'unpaid', 'issued' => 0,
+                'client_id' => 5, 'paid_at' => null, 'due_at' => null, 'created_at' => $now,
+            ];
+
+            $writeBaseline($connection, $row, 5);
+            $writeBaseline($connection, $row, 5);
+
+            expect($connection->fetchOne('SELECT COUNT(*) FROM invoice_event'))->toBe(1);
+        } finally {
+            (new Filesystem())->remove($dbFile);
+        }
+    });
+});
+
 test('invoice issued-rename patch copies values and drops the legacy column', function (): void {
     $invoiceColumns = Mockery::mock(PDOStatement::class);
     $invoiceColumns->expects('execute')->with([])->twice()->andReturnTrue();
