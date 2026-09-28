@@ -84,11 +84,19 @@ class ServiceTransaction implements InjectionAwareInterface
         $transactionId = (int) $model->getId();
         $this->di['event_dispatcher']->dispatch(new BeforeAdminTransactionUpdateEvent($transactionId));
 
+        // A processed transaction records money that already moved. Its
+        // history fields are frozen; only operational annotations (note,
+        // error, error code) may still be edited.
+        if ($model->getStatus() === Transaction::STATUS_PROCESSED) {
+            $this->assertNoProcessedHistoryChange($model, $data);
+        }
+
         if (!empty($data['invoice_id'])) {
             $invoice = $this->di['em']->getRepository(Invoice::class)->find((int) $data['invoice_id']);
             if (!$invoice instanceof Invoice) {
                 throw new \FOSSBilling\InformationException('Invoice not found');
             }
+            $this->assertInvoiceAcceptsTransactions($invoice);
             $model->setInvoice($invoice);
         }
         $model->setTxnId(isset($data['txn_id']) ? (string) $data['txn_id'] : $model->getTxnId());
@@ -313,11 +321,80 @@ class ServiceTransaction implements InjectionAwareInterface
     public function delete(Transaction $model): bool
     {
         $id = $model->getId();
+        // A processed transaction records money that already moved (including
+        // any client-balance credit written when it was debited). Deleting it
+        // would rewrite financial history and orphan those rows.
+        if ($model->getStatus() === Transaction::STATUS_PROCESSED) {
+            throw new \FOSSBilling\InformationException('Processed transactions cannot be deleted because they record money that already moved.');
+        }
+        // Unprocessed transactions move no money, but drop any balance rows
+        // that reference them so no orphans remain.
+        $balances = $this->di['em']->getRepository(ClientBalance::class)->findBy(['type' => 'transaction', 'relId' => (string) $id]);
+        foreach ($balances as $balance) {
+            $this->di['em']->remove($balance);
+        }
         $this->di['em']->remove($model);
         $this->di['em']->flush();
         $this->di['logger']->info('Removed transaction #{id}', ['id' => $id]);
 
         return true;
+    }
+
+    /**
+     * Refuse changes to a processed transaction's money/history fields.
+     * Only operational annotations may still be edited.
+     */
+    private function assertNoProcessedHistoryChange(Transaction $model, array $data): void
+    {
+        $changed = [];
+        if (!empty($data['invoice_id']) && (int) $data['invoice_id'] !== (int) $model->getInvoice()?->getId()) {
+            $changed[] = 'invoice_id';
+        }
+        if (array_key_exists('amount', $data) && (string) $data['amount'] !== (string) $model->getAmount()) {
+            $changed[] = 'amount';
+        }
+        if (array_key_exists('currency', $data) && $data['currency'] !== $model->getCurrency()) {
+            $changed[] = 'currency';
+        }
+        if (!empty($data['gateway_id']) && (int) $data['gateway_id'] !== (int) $model->getGateway()?->getId()) {
+            $changed[] = 'gateway_id';
+        }
+        if (array_key_exists('type', $data) && $data['type'] !== $model->getType()) {
+            $changed[] = 'type';
+        }
+        if (array_key_exists('txn_id', $data) && (string) $data['txn_id'] !== (string) $model->getTxnId()) {
+            $changed[] = 'txn_id';
+        }
+        if (array_key_exists('txn_status', $data) && $data['txn_status'] !== $model->getTxnStatus()) {
+            $changed[] = 'txn_status';
+        }
+        if (array_key_exists('s_id', $data) && $data['s_id'] !== $model->getSId()) {
+            $changed[] = 's_id';
+        }
+        if (array_key_exists('s_period', $data) && $data['s_period'] !== $model->getSPeriod()) {
+            $changed[] = 's_period';
+        }
+        if (array_key_exists('status', $data) && $data['status'] !== $model->getStatus()) {
+            $changed[] = 'status';
+        }
+        if ($changed !== []) {
+            throw new \FOSSBilling\InformationException('Processed transactions cannot change :fields because they record money that already moved.', [':fields' => implode(', ', $changed)]);
+        }
+    }
+
+    /**
+     * Refuse to link a transaction to an invoice that can no longer accept
+     * payments. Paid invoices are allowed: a payment arriving for an invoice
+     * that was just paid concurrently is credited to the client balance.
+     */
+    private function assertInvoiceAcceptsTransactions(Invoice $invoice): void
+    {
+        if ($invoice->getStatus() === Invoice::STATUS_CANCELED
+            || $invoice->getStatus() === Invoice::STATUS_REFUNDED
+            || $invoice->getReplacedByInvoiceId() !== null
+        ) {
+            throw new \FOSSBilling\InformationException('Transactions cannot be linked to a canceled, refunded, or replaced invoice.');
+        }
     }
 
     public function toApiArray(Transaction $model, $deep = false, $identity = null): array

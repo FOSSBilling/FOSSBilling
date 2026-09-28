@@ -880,7 +880,10 @@ class Service implements InjectionAwareInterface
                         && $invoiceModel->getReplacesInvoiceId() === null
                         && $invoiceModel->getReplacedByInvoiceId() === null
                     ) {
-                        $service->rmInvoice($invoiceModel);
+                        // Rechecked under the row lock inside rmInvoice(): a
+                        // draft that was issued, paid, or linked after the
+                        // listing read above is refused instead of deleted.
+                        $service->rmInvoice($invoiceModel, true);
                         $di['logger']->info('Removed expired unpaid invoice #{id}', ['id' => $id]);
                     } else {
                         // Issued notes (e.g. unpaid debit notes) are legal
@@ -1752,14 +1755,18 @@ class Service implements InjectionAwareInterface
                 break;
 
             case 'manual':
-                // @phpstan-ignore if.alwaysFalse
-                if (DEBUG) {
-                    $this->di['logger']->warning('Refunds are managed manually. No actions performed.');
-                }
-
-                break;
             default:
+                // Manual mode performs no refund: the operator moves the money
+                // outside FOSSBilling. Fall through with a null result so the
+                // skipped attempt is recorded distinctly below instead of a
+                // "Refunded" entry that would imply money moved.
                 break;
+        }
+
+        if ($result === null) {
+            $this->di['logger']->warning('Refund skipped for invoice #{invoice_id}: refunds are managed manually, no credit note was generated', ['invoice_id' => $invoice->getId()]);
+
+            return null;
         }
 
         $this->di['event_dispatcher']->dispatch(new AfterAdminInvoiceRefundEvent((int) $invoice->getId()));
@@ -3169,27 +3176,44 @@ class Service implements InjectionAwareInterface
         $unpaid = $this->findAllUnpaid($data);
         $invoiceIds = array_map(static fn (array $proforma): int => (int) ($proforma['id'] ?? 0), $unpaid);
         $models = $this->getInvoiceRepository()->findBy(['id' => $invoiceIds]);
+        $covered = 0;
+        $skipped = 0;
+        $failed = 0;
         foreach ($models as $model) {
             try {
-                $this->tryPayWithCredits($model);
-            } catch (\Exception $e) {
-                // @phpstan-ignore if.alwaysFalse
-                if (DEBUG) {
-                    $this->di['logger']->warning($e->getMessage());
+                if ($this->tryPayWithCredits($model)) {
+                    ++$covered;
+                } else {
+                    ++$skipped;
                 }
+            } catch (\Exception $e) {
+                ++$failed;
+                $this->di['logger']->warning('Failed to cover invoice #{id} with client credits: {message}', [
+                    'id' => $model->getId(),
+                    'message' => $e->getMessage(),
+                ]);
             }
         }
-        $this->di['logger']->info('Executed action to try cover unpaid invoices with client credits.');
+        $this->di['logger']->info('Covered {covered} of {total} unpaid invoices with client credits ({skipped} skipped, {failed} failed).', [
+            'covered' => $covered,
+            'total' => count($models),
+            'skipped' => $skipped,
+            'failed' => $failed,
+        ]);
 
         return true;
     }
 
     public function payInvoiceWithCredits(Invoice $model): bool
     {
-        $this->tryPayWithCredits($model);
-        $this->di['logger']->info('Cover invoice with client credits.');
+        $paid = $this->tryPayWithCredits($model);
+        if ($paid) {
+            $this->di['logger']->info('Covered invoice #{id} with client credits.', ['id' => $model->getId()]);
+        } else {
+            $this->di['logger']->warning('Could not cover invoice #{id} with client credits: insufficient balance, or the invoice is unissued or already paid.', ['id' => $model->getId()]);
+        }
 
-        return true;
+        return $paid;
     }
 
     /**
@@ -3574,6 +3598,10 @@ class Service implements InjectionAwareInterface
 
         if ($invoice->getStatus() === Invoice::STATUS_CANCELED || $invoice->getReplacedByInvoiceId() !== null) {
             throw new InformationException('This invoice was canceled and cannot be paid', [], 403);
+        }
+
+        if ($invoice->getStatus() === Invoice::STATUS_PAID) {
+            throw new InformationException('This invoice is already paid', [], 403);
         }
 
         $gtw = $this->di['em']->getRepository(PayGateway::class)->find((int) $data['gateway_id']);
@@ -4142,6 +4170,14 @@ class Service implements InjectionAwareInterface
         return $buyer;
     }
 
+    /**
+     * Delete every invoice of a client being deleted, in any state — paid,
+     * refunded, canceled, and linked notes included, together with their
+     * journal entries. This is intentional erasure (client deletion is the
+     * GDPR-style "forget me" path), not cleanup: it deliberately bypasses
+     * the never-delete guards that protect financial records everywhere
+     * else, so it must only ever be called from client removal.
+     */
     public function rmByClient(Client $client): void
     {
         $invoices = $this->getInvoiceRepository()->findByClientId((int) $client->getId());

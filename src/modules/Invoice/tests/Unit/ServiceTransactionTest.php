@@ -11,6 +11,7 @@
 declare(strict_types=1);
 
 use Box\Mod\Client\Entity\ClientBalance;
+use Box\Mod\Client\Repository\ClientBalanceRepository;
 use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Subscription;
@@ -129,6 +130,81 @@ test('updates a transaction subscription link', function (): void {
         ->and($transactionModel->getSPeriod())->toBe('1M');
 });
 
+test('processed transaction history fields are frozen', function (): void {
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('flush')->once();
+
+    $service = transactionService(em: $em);
+    $service->getDi()['logger'] = new Tests\Helpers\TestLogger();
+
+    $transactionModel = createEntity(Transaction::class, ['id' => 1, 'amount' => '42.50', 'currency' => 'USD']);
+    $transactionModel->setStatus(Transaction::STATUS_PROCESSED);
+
+    // Money and history fields cannot change once the transaction processed.
+    foreach ([['amount' => '99.99'], ['currency' => 'EUR'], ['txn_id' => 'other'], ['invoice_id' => 2]] as $data) {
+        expect(fn () => $service->update($transactionModel, $data))
+            ->toThrow(FOSSBilling\InformationException::class, 'record money that already moved');
+    }
+
+    // Operational annotations may still be edited.
+    expect($service->update($transactionModel, ['note' => 'verified with gateway']))->toBeTrue()
+        ->and($transactionModel->getNote())->toBe('verified with gateway');
+});
+
+test('transaction cannot be re-pointed to a canceled invoice', function (): void {
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldNotReceive('flush');
+
+    $canceled = createEntity(Invoice::class, ['id' => 9]);
+    $canceled->setStatus(Invoice::STATUS_CANCELED);
+    $invoiceRepository = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepository->shouldReceive('find')->with(9)->andReturn($canceled);
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepository);
+
+    $service = transactionService(em: $em);
+    $service->getDi()['logger'] = new Tests\Helpers\TestLogger();
+
+    $transactionModel = createEntity(Transaction::class, ['id' => 1]);
+
+    expect(fn () => $service->update($transactionModel, ['invoice_id' => 9]))
+        ->toThrow(FOSSBilling\InformationException::class, 'canceled, refunded, or replaced');
+});
+
+test('processed transactions cannot be deleted', function (): void {
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldNotReceive('remove', 'flush');
+
+    $service = transactionService(em: $em);
+    $service->getDi()['logger'] = new Tests\Helpers\TestLogger();
+
+    $transactionModel = createEntity(Transaction::class, ['id' => 1]);
+    $transactionModel->setStatus(Transaction::STATUS_PROCESSED);
+
+    expect(fn () => $service->delete($transactionModel))
+        ->toThrow(FOSSBilling\InformationException::class, 'record money that already moved');
+});
+
+test('deleting a transaction removes its orphaned balance rows', function (): void {
+    $balance = createEntity(ClientBalance::class, ['id' => 7]);
+    $balanceRepository = Mockery::mock(ClientBalanceRepository::class);
+    $balanceRepository->shouldReceive('findBy')
+        ->once()
+        ->with(['type' => 'transaction', 'relId' => '1'])
+        ->andReturn([$balance]);
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(ClientBalance::class)->andReturn($balanceRepository);
+    $em->shouldReceive('remove')->twice();
+    $em->shouldReceive('flush')->once();
+
+    $service = transactionService(em: $em);
+    $service->getDi()['logger'] = new Tests\Helpers\TestLogger();
+
+    $transactionModel = createEntity(Transaction::class, ['id' => 1]);
+
+    expect($service->delete($transactionModel))->toBeTrue();
+});
+
 test('throws exception when creating transaction with missing invoice id', function (): void {
     $service = transactionService();
     $events = [];
@@ -214,6 +290,9 @@ test('creates a transaction with safe lifecycle events and excludes raw IPN and 
 
 test('deletes a transaction', function (): void {
     $em = Mockery::mock(EntityManagerInterface::class);
+    $balanceRepository = Mockery::mock(ClientBalanceRepository::class);
+    $balanceRepository->shouldReceive('findBy')->andReturn([]);
+    $em->shouldReceive('getRepository')->with(ClientBalance::class)->andReturn($balanceRepository);
     $em->shouldReceive('remove')->atLeast()->once();
     $em->shouldReceive('flush')->atLeast()->once();
 

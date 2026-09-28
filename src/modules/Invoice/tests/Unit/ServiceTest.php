@@ -564,7 +564,7 @@ test('removes expired unpaid invoices on typed after cron event', function (): v
     $invoiceServiceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $invoiceServiceMock->shouldReceive('rmInvoice')
         ->once()
-        ->with($invoiceModel)
+        ->with($invoiceModel, true)
         ->andReturn(true);
 
     $di = container();
@@ -2204,6 +2204,50 @@ test('refundInvoice keeps the refund successful when notification delivery fails
     expect($emailErrors)->not->toBeEmpty();
 });
 
+test('refundInvoice in manual mode performs no refund and records the skip', function (): void {
+    $service = new Service();
+    $invoice = createEntity(Invoice::class, ['clientId' => 5]);
+    $invoice->setStatus(Invoice::STATUS_PAID);
+    setEntityId($invoice, 9);
+
+    $systemMock = Mockery::mock(SystemService::class);
+    $systemMock->shouldReceive('getParamValue')
+        ->with('invoice_refund_logic', 'manual')
+        ->andReturn('manual');
+
+    $events = [];
+    $eventDispatcher = new class($events) {
+        public function __construct(private array &$events)
+        {
+        }
+
+        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        {
+            $this->events[] = $event;
+
+            return $event;
+        }
+    };
+
+    $logger = new Tests\Helpers\TestLogger();
+
+    $di = container();
+    $di['mod_service'] = $di->protect(moduleService(['system' => $systemMock]));
+    $di['event_dispatcher'] = $eventDispatcher;
+    $di['logger'] = $logger;
+    $service->setDi($di);
+
+    expect($service->refundInvoice($invoice))->toBeNull()
+        // Only the pre-refund event fires; no performed-refund event.
+        ->and($events)->toHaveCount(1)
+        ->and($events[0])->toBeInstanceOf(BeforeAdminInvoiceRefundEvent::class)
+        // The skip is recorded distinctly — never as a performed refund.
+        ->and($logger->calls)->toContain([
+            'method' => 'warning',
+            'params' => ['Refund skipped for invoice #{invoice_id}: refunds are managed manually, no credit note was generated', ['invoice_id' => 9]],
+        ]);
+});
+
 test('refundInvoice refuses invoices that are not paid', function (): void {
     foreach ([Invoice::STATUS_UNPAID, Invoice::STATUS_REFUNDED, Invoice::STATUS_CANCELED] as $status) {
         $service = new Service();
@@ -2375,6 +2419,40 @@ test('removes an invoice', function (): void {
     expect($result)->toBeTrue();
 });
 
+test('rmByClient erases invoices in any state without deletability checks', function (): void {
+    $paid = createEntity(Invoice::class);
+    setEntityId($paid, 20);
+    $paid->setIssued(true);
+    $paid->setStatus(Invoice::STATUS_PAID);
+
+    $draft = createEntity(Invoice::class);
+    setEntityId($draft, 21);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    // Paid invoices are never deletable via the admin path; client erasure
+    // bypasses that guard intentionally.
+    $serviceMock->shouldReceive('rmInvoice')
+        ->once()
+        ->with($paid)
+        ->andReturn(true);
+    $serviceMock->shouldReceive('rmInvoice')
+        ->once()
+        ->with($draft)
+        ->andReturn(true);
+
+    $di = container();
+    $di['em']->getRepository(Invoice::class)->shouldReceive('findByClientId')
+        ->once()
+        ->with(5)
+        ->andReturn([$paid, $draft]);
+
+    $client = createEntity(Box\Mod\Client\Entity\Client::class);
+    setEntityId($client, 5);
+
+    $serviceMock->setDi($di);
+    $serviceMock->rmByClient($client);
+});
+
 test('deletes invoice by admin', function (): void {
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('rmInvoice')
@@ -2452,39 +2530,97 @@ test('renews an invoice', function (): void {
 test('processes batch pay with credits', function (): void {
     $service = new Service();
     $invoiceModel = createEntity(Invoice::class);
+    setEntityId($invoiceModel, 1);
+    $failingModel = createEntity(Invoice::class);
+    setEntityId($failingModel, 2);
+    $skippedModel = createEntity(Invoice::class);
+    setEntityId($skippedModel, 3);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('findAllUnpaid')
         ->atLeast()->once()
-        ->andReturn([['id' => 1]]);
+        ->andReturn([['id' => 1], ['id' => 2], ['id' => 3]]);
     $serviceMock->shouldReceive('tryPayWithCredits')
-        ->atLeast()->once();
+        ->once()
+        ->with($invoiceModel)
+        ->andReturn(true);
+    $serviceMock->shouldReceive('tryPayWithCredits')
+        ->once()
+        ->with($failingModel)
+        ->andThrow(new Exception('balance lock timeout'));
+    $serviceMock->shouldReceive('tryPayWithCredits')
+        ->once()
+        ->with($skippedModel)
+        ->andReturn(false);
 
     $di = container();
     $invoiceRepo = $di['em']->getRepository(Invoice::class);
     $invoiceRepo->shouldReceive('findBy')
-        ->andReturn([$invoiceModel]);
-    $di['logger'] = new Tests\Helpers\TestLogger();
+        ->andReturn([$invoiceModel, $failingModel, $skippedModel]);
+    $logger = new Tests\Helpers\TestLogger();
+    $di['logger'] = $logger;
 
     $serviceMock->setDi($di);
     $result = $serviceMock->doBatchPayWithCredits([]);
-    expect($result)->toBeBool()->toBeTrue();
+    expect($result)->toBeBool()->toBeTrue()
+        // Failures are recorded per invoice instead of swallowed, and the
+        // summary reports the outcome counts.
+        ->and($logger->calls)->toContain([
+            'method' => 'warning',
+            'params' => ['Failed to cover invoice #{id} with client credits: {message}', ['id' => 2, 'message' => 'balance lock timeout']],
+        ])
+        ->and($logger->calls)->toContain([
+            'method' => 'info',
+            'params' => ['Covered {covered} of {total} unpaid invoices with client credits ({skipped} skipped, {failed} failed).', ['covered' => 1, 'total' => 3, 'skipped' => 1, 'failed' => 1]],
+        ]);
 });
 
 test('pays invoice with credits', function (): void {
     $service = new Service();
     $invoiceModel = createEntity(Invoice::class);
+    setEntityId($invoiceModel, 1);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('tryPayWithCredits')
-        ->atLeast()->once();
+        ->once()
+        ->with($invoiceModel)
+        ->andReturn(true);
 
+    $logger = new Tests\Helpers\TestLogger();
     $di = container();
-    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['logger'] = $logger;
 
     $serviceMock->setDi($di);
     $result = $serviceMock->payInvoiceWithCredits($invoiceModel);
-    expect($result)->toBeBool()->toBeTrue();
+    expect($result)->toBeTrue()
+        ->and($logger->calls)->toContain([
+            'method' => 'info',
+            'params' => ['Covered invoice #{id} with client credits.', ['id' => 1]],
+        ]);
+});
+
+test('pay with credits reports failure instead of claiming success', function (): void {
+    $service = new Service();
+    $invoiceModel = createEntity(Invoice::class);
+    setEntityId($invoiceModel, 1);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('tryPayWithCredits')
+        ->once()
+        ->with($invoiceModel)
+        ->andReturn(false);
+
+    $logger = new Tests\Helpers\TestLogger();
+    $di = container();
+    $di['logger'] = $logger;
+
+    $serviceMock->setDi($di);
+    $result = $serviceMock->payInvoiceWithCredits($invoiceModel);
+    expect($result)->toBeFalse()
+        ->and($logger->calls)->toContain([
+            'method' => 'warning',
+            'params' => ['Could not cover invoice #{id} with client credits: insufficient balance, or the invoice is unissued or already paid.', ['id' => 1]],
+        ]);
 });
 
 test('returns existing invoice when generating for order with unpaid invoice', function (): void {
@@ -3552,7 +3688,10 @@ test('throws exception when processing a canceled or replaced invoice', function
     $replaced->setStatus(Invoice::STATUS_UNPAID);
     $replaced->setReplacedByInvoiceId(11);
 
-    foreach ([$canceled, $replaced] as $invoiceModel) {
+    $paid = createEntity(Invoice::class);
+    $paid->setStatus(Invoice::STATUS_PAID);
+
+    foreach ([[$canceled, 'canceled and cannot be paid'], [$replaced, 'canceled and cannot be paid'], [$paid, 'already paid']] as [$invoiceModel, $message]) {
         $service = new Service();
         $data = [
             'hash' => 'hashString',
@@ -3570,7 +3709,7 @@ test('throws exception when processing a canceled or replaced invoice', function
         $service->setDi($di);
 
         expect(fn (): array => $service->processInvoice($data))
-            ->toThrow(FOSSBilling\InformationException::class, 'canceled and cannot be paid');
+            ->toThrow(FOSSBilling\InformationException::class, $message);
     }
 });
 
@@ -6423,7 +6562,7 @@ test('removeExpiredUnpaidInvoices voids issued invoices, deletes drafts, and ski
         ->andReturn(true);
     $invoiceServiceMock->shouldReceive('rmInvoice')
         ->once()
-        ->with($draft)
+        ->with($draft, true)
         ->andReturn(true);
     $invoiceServiceMock->shouldNotReceive('cancelInvoice')->with($note, Mockery::any());
     $invoiceServiceMock->shouldNotReceive('rmInvoice')->with($note);
