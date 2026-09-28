@@ -3109,10 +3109,10 @@ class Service implements InjectionAwareInterface
         return (float) $order->getPrice() * (float) $order->getQuantity();
     }
 
-    public function rmInvoice(Invoice $model, bool $requireUnissuedUnpaid = false): bool
+    public function rmInvoice(Invoice $model, bool $requireUnissuedUnpaid = false, bool $anonymizeTransactions = false): bool
     {
         $entityManager = $this->di['em'];
-        $entityManager->wrapInTransaction(function () use ($model, $entityManager, $requireUnissuedUnpaid): void {
+        $entityManager->wrapInTransaction(function () use ($model, $entityManager, $requireUnissuedUnpaid, $anonymizeTransactions): void {
             $this->lockAndRefreshInvoice($model);
 
             if ($requireUnissuedUnpaid && !$this->isDeletableByAdmin($model)) {
@@ -3131,11 +3131,13 @@ class Service implements InjectionAwareInterface
             $entityManager->getConnection()->executeStatement($sql, ['id' => $model->getId()]);
 
             // Detach (not delete) transactions referencing this invoice - a transaction is a real
-            // record of a payment attempt/event, same reasoning as unpaid_invoice_id above. Runs
-            // inside the same transaction as the flushes below: without that, a later flush
+            // record of a payment attempt/event, same reasoning as unpaid_invoice_id above. On the
+            // client-erasure path the surviving rows are additionally anonymized (see
+            // TransactionRepository::detachFromInvoice): ordinary deletion keeps them intact.
+            // Runs inside the same transaction as the flushes below: without that, a later flush
             // failing (e.g. removing the invoice itself) would leave these transactions
             // permanently detached from an invoice that was never actually deleted.
-            $entityManager->getRepository(Transaction::class)->detachFromInvoice((int) $model->getId());
+            $entityManager->getRepository(Transaction::class)->detachFromInvoice((int) $model->getId(), $anonymizeTransactions);
 
             $invoiceItems = $this->getInvoiceItemRepository()->findByInvoiceId((int) $model->getId());
             foreach ($invoiceItems as $item) {
@@ -4193,12 +4195,15 @@ class Service implements InjectionAwareInterface
      * GDPR-style "forget me" path), not cleanup: it deliberately bypasses
      * the never-delete guards that protect financial records everywhere
      * else, so it must only ever be called from client removal.
+     *
+     * Transactions survive (they are payment records, not invoice data) but
+     * are anonymized in place: personal data goes, the financial record stays.
      */
     public function rmByClient(Client $client): void
     {
         $invoices = $this->getInvoiceRepository()->findByClientId((int) $client->getId());
         foreach ($invoices as $invoice) {
-            $this->rmInvoice($invoice);
+            $this->rmInvoice($invoice, false, true);
         }
     }
 

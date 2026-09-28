@@ -844,6 +844,8 @@ class Service implements InjectionAwareInterface
 
     public function remove(Client $model): void
     {
+        $this->throwIfActiveServicesRemain($model);
+
         $entityManager = $this->di['em'];
         $connection = $entityManager->getConnection();
 
@@ -887,6 +889,35 @@ class Service implements InjectionAwareInterface
             }
 
             throw $exception;
+        }
+    }
+
+    /**
+     * Client deletion must never silently orphan provisioned services (hosting
+     * accounts, domains, licenses, ...) nor terminate them by surprise: refuse
+     * while any service row exists and point the operator at explicit
+     * cancellation first. Cancelled services are removed with their orders
+     * through the normal flow, so a fully wound-down client deletes cleanly.
+     */
+    private function throwIfActiveServicesRemain(Client $model): void
+    {
+        $connection = $this->di['em']->getConnection();
+        $tables = [
+            'service_hosting' => 'hosting',
+            'service_domain' => 'domain',
+            'service_downloadable' => 'downloadable',
+            'service_license' => 'license',
+            'service_custom' => 'custom',
+            'service_apikey' => 'API keys',
+        ];
+        $active = [];
+        foreach ($tables as $table => $label) {
+            if ($connection->fetchOne("SELECT 1 FROM {$table} WHERE client_id = :id LIMIT 1", ['id' => $model->getId()])) {
+                $active[] = $label;
+            }
+        }
+        if ($active !== []) {
+            throw new InformationException('Client cannot be deleted while they have active services (:services). Cancel or delete their services first, then delete the client.', [':services' => implode(', ', $active)]);
         }
     }
 

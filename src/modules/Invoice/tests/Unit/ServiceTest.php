@@ -2777,7 +2777,7 @@ test('removes an invoice', function (): void {
     // would make a real FK constraint reject the delete outright. Confirmed against a live
     // MariaDB container with FK enforcement during the unification scoping audit.
     $transactionRepo = Mockery::mock(TransactionRepository::class);
-    $transactionRepo->shouldReceive('detachFromInvoice')->once()->with((int) $invoiceModel->getId());
+    $transactionRepo->shouldReceive('detachFromInvoice')->once()->with((int) $invoiceModel->getId(), false);
     $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($transactionRepo);
 
     $journalRepo = Mockery::mock(InvoiceEventRepository::class);
@@ -2805,14 +2805,15 @@ test('rmByClient erases invoices in any state without deletability checks', func
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     // Paid invoices are never deletable via the admin path; client erasure
-    // bypasses that guard intentionally.
+    // bypasses that guard intentionally, and anonymizes the surviving
+    // transaction rows instead of leaving personal data behind.
     $serviceMock->shouldReceive('rmInvoice')
         ->once()
-        ->with($paid)
+        ->with($paid, false, true)
         ->andReturn(true);
     $serviceMock->shouldReceive('rmInvoice')
         ->once()
-        ->with($draft)
+        ->with($draft, false, true)
         ->andReturn(true);
 
     $di = container();

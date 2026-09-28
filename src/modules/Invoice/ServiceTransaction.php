@@ -474,9 +474,11 @@ class ServiceTransaction implements InjectionAwareInterface
 
     public function counter(): array
     {
-        $sql = 'SELECT status, count(id) as counter
-            FROM transaction
-            GROUP BY status';
+        // `transaction` is a reserved word (bare use is a syntax error on SQLite): quote it.
+        $table = $this->di['em']->getConnection()->quoteSingleIdentifier('transaction');
+        $sql = "SELECT status, count(id) as counter
+            FROM {$table}
+            GROUP BY status";
         $rows = $this->di['em']->getConnection()->fetchAllAssociative($sql);
         $data = [];
         foreach ($rows as $row) {
@@ -539,11 +541,13 @@ class ServiceTransaction implements InjectionAwareInterface
 
     public function getReceived()
     {
-        $sql = 'SELECT m.*
-                FROM transaction as m
+        // `transaction` is a reserved word (bare use is a syntax error on SQLite): quote it.
+        $table = $this->di['em']->getConnection()->quoteSingleIdentifier('transaction');
+        $sql = "SELECT m.*
+                FROM {$table} as m
                 WHERE m.status = :received_status
                     OR (m.status = :processing_status AND (m.updated_at IS NULL OR m.updated_at <= :processing_retry_after))
-                ORDER BY m.id DESC';
+                ORDER BY m.id DESC";
 
         return $this->di['em']->getConnection()->fetchAllAssociative($sql, [
             'received_status' => Transaction::STATUS_RECEIVED,
