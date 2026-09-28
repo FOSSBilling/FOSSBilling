@@ -1026,6 +1026,100 @@ test('marks invoice as paid', function (): void {
         ]);
 });
 
+test('marks invoice with a non-default currency as paid using its rate', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('countIncome')->atLeast()->once();
+
+    $invoiceModel = createEntity(Invoice::class);
+    $invoiceModel->status = Invoice::STATUS_UNPAID;
+    $invoiceModel->currency = 'EUR';
+
+    $invoiceItemModel = createEntity(InvoiceItem::class, []);
+
+    $itemInvoiceServiceMock = Mockery::mock(ServiceInvoiceItem::class);
+    $itemInvoiceServiceMock->shouldReceive('markAsPaid')->atLeast()->once();
+
+    $currencyRepositoryMock = Mockery::mock(CurrencyRepository::class)->shouldIgnoreMissing();
+    $currencyRepositoryMock->shouldReceive('getRateByCode')->once()->with('EUR')->andReturn(0.85);
+
+    $currencyServiceMock = Mockery::mock(CurrencyService::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $currencyServiceMock->shouldReceive('getCurrencyRepository')->atLeast()->once()->andReturn($currencyRepositoryMock);
+
+    [$em, $invoiceItemRepo] = invoiceItemEmAndRepo();
+    $invoiceItemRepo->shouldReceive('findByInvoiceId')->atLeast()->once()->andReturn([$invoiceItemModel]);
+    $em->shouldReceive('persist')->atLeast()->once();
+    $em->shouldReceive('flush')->atLeast()->once();
+
+    $productServiceMock = Mockery::mock(ProductService::class)->shouldIgnoreMissing();
+
+    $di = container();
+    $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($itemInvoiceServiceMock, $currencyServiceMock, $productServiceMock) {
+        if ($sub == 'InvoiceItem') {
+            return $itemInvoiceServiceMock;
+        }
+        if ($serviceName == 'currency') {
+            return $currencyServiceMock;
+        }
+        if (strtolower($serviceName) == 'product') {
+            return $productServiceMock;
+        }
+    });
+    $di['em'] = $em;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $serviceMock->setDi($di);
+    $serviceMock->shouldReceive('recordJournalEvent')->once()->with($invoiceModel, InvoiceEvent::TYPE_PAID);
+
+    expect($serviceMock->markAsPaid($invoiceModel))->toBeTrue()
+        ->and((float) $invoiceModel->getCurrencyRate())->toBe(0.85)
+        ->and($invoiceModel->getStatus())->toBe(Invoice::STATUS_PAID);
+});
+
+test('markAsPaid throws when the invoice currency rate is not configured', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldNotReceive('countIncome');
+
+    $invoiceModel = createEntity(Invoice::class);
+    $invoiceModel->status = Invoice::STATUS_UNPAID;
+    $invoiceModel->currency = 'CHF';
+
+    $invoiceItemModel = createEntity(InvoiceItem::class, []);
+
+    $itemInvoiceServiceMock = Mockery::mock(ServiceInvoiceItem::class);
+    $itemInvoiceServiceMock->shouldReceive('markAsPaid')->atLeast()->once();
+
+    $currencyRepositoryMock = Mockery::mock(CurrencyRepository::class)->shouldIgnoreMissing();
+    $currencyRepositoryMock->shouldReceive('getRateByCode')->once()->with('CHF')->andReturn(null);
+
+    $currencyServiceMock = Mockery::mock(CurrencyService::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $currencyServiceMock->shouldReceive('getCurrencyRepository')->atLeast()->once()->andReturn($currencyRepositoryMock);
+
+    [$em, $invoiceItemRepo] = invoiceItemEmAndRepo();
+    $invoiceItemRepo->shouldReceive('findByInvoiceId')->atLeast()->once()->andReturn([$invoiceItemModel]);
+
+    $productServiceMock = Mockery::mock(ProductService::class)->shouldIgnoreMissing();
+
+    $di = container();
+    $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($itemInvoiceServiceMock, $currencyServiceMock, $productServiceMock) {
+        if ($sub == 'InvoiceItem') {
+            return $itemInvoiceServiceMock;
+        }
+        if ($serviceName == 'currency') {
+            return $currencyServiceMock;
+        }
+        if (strtolower($serviceName) == 'product') {
+            return $productServiceMock;
+        }
+    });
+    $di['em'] = $em;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $serviceMock->setDi($di);
+
+    expect(fn () => $serviceMock->markAsPaid($invoiceModel))
+        ->toThrow(FOSSBilling\Exception::class, "Currency rate for code 'CHF' is not configured");
+});
+
 test('markAsPaidByAdmin refuses canceled and replaced invoices before any write', function (): void {
     $em = Mockery::mock(EntityManagerInterface::class);
     $em->shouldNotReceive('wrapInTransaction', 'persist', 'flush');
@@ -1498,6 +1592,83 @@ test('sets invoice defaults', function (): void {
         ->and($invoiceModel->getSellerCompany())->toBeNull();
 });
 
+test('getNextInvoiceNumber returns the reserved counter value', function (): void {
+    $systemMock = Mockery::mock(SystemService::class);
+    $systemMock->shouldReceive('reserveNextNumericParamValue')
+        ->once()
+        ->with('invoice_starting_number')
+        ->andReturn(42);
+
+    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepo->shouldNotReceive('findLatestWithNr');
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(moduleService(['system' => $systemMock]));
+
+    $service = new Service();
+    $service->setDi($di);
+
+    expect($service->getNextInvoiceNumber())->toBe(42);
+});
+
+test('getNextInvoiceNumber seeds the counter from the latest invoice when uninitialized', function (): void {
+    $latest = createEntity(Invoice::class);
+    $latest->setNr('100');
+
+    $systemMock = Mockery::mock(SystemService::class);
+    $systemMock->shouldReceive('reserveNextNumericParamValue')
+        ->once()
+        ->with('invoice_starting_number')
+        ->andReturn(null);
+    $systemMock->shouldReceive('reserveNextNumericParamValue')
+        ->once()
+        ->with('invoice_starting_number', 101)
+        ->andReturn(101);
+
+    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('findLatestWithNr')->once()->andReturn($latest);
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(moduleService(['system' => $systemMock]));
+
+    $service = new Service();
+    $service->setDi($di);
+
+    expect($service->getNextInvoiceNumber())->toBe(101);
+});
+
+test('getNextInvoiceNumber throws when no number can be determined', function (): void {
+    $systemMock = Mockery::mock(SystemService::class);
+    $systemMock->shouldReceive('reserveNextNumericParamValue')
+        ->once()
+        ->with('invoice_starting_number')
+        ->andReturn(null);
+
+    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('findLatestWithNr')->once()->andReturn(null);
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(moduleService(['system' => $systemMock]));
+
+    $service = new Service();
+    $service->setDi($di);
+
+    expect(fn (): int => $service->getNextInvoiceNumber())
+        ->toThrow(FOSSBilling\Exception::class, 'Unable to determine the next invoice number');
+});
+
 test('issues an invoice', function (): void {
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $steps = [];
@@ -1579,6 +1750,64 @@ test('issues an invoice', function (): void {
             'method' => 'info',
             'params' => ['Issued invoice #{invoice_id}', ['invoice_id' => $invoiceModel->getId()]],
         ]);
+});
+
+test('zero-total invoices skip payment and issue emails', function (): void {
+    $invoice = createEntity(Invoice::class, ['id' => 20]);
+    $invoice->setStatus(Invoice::STATUS_UNPAID);
+
+    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('find')->with(20)->andReturn($invoice);
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
+
+    $emailService = Mockery::mock(EmailService::class);
+    $emailService->shouldNotReceive('sendTemplate');
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(moduleService(['email' => $emailService]));
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('toApiArray')
+        ->andReturn(['id' => 20, 'total' => 0, 'status' => Invoice::STATUS_UNPAID]);
+    $serviceMock->shouldReceive('extendInvoiceHashLifetime')->atLeast()->once();
+    $serviceMock->setDi($di);
+
+    // Zero-total invoices have nothing to pay and nothing to announce.
+    $serviceMock->sendPaidInvoiceEmail(new AfterAdminInvoicePaymentReceivedEvent(20));
+    $serviceMock->sendIssuedInvoiceEmail(new AfterAdminInvoiceIssueEvent(20));
+});
+
+test('issued invoices that are already paid skip the created email', function (): void {
+    $invoice = createEntity(Invoice::class, ['id' => 21]);
+    $invoice->setStatus(Invoice::STATUS_PAID);
+
+    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('find')->with(21)->andReturn($invoice);
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
+
+    $emailService = Mockery::mock(EmailService::class);
+    $emailService->shouldNotReceive('sendTemplate');
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(moduleService(['email' => $emailService]));
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('toApiArray')
+        ->andReturn(['id' => 21, 'total' => 50.0, 'status' => Invoice::STATUS_PAID, 'client' => ['id' => 3]]);
+    $serviceMock->shouldReceive('extendInvoiceHashLifetime')->once();
+    $serviceMock->setDi($di);
+
+    // The client already paid (e.g. instant credit cover during issuance);
+    // re-announcing the invoice would be a duplicate.
+    $serviceMock->sendIssuedInvoiceEmail(new AfterAdminInvoiceIssueEvent(21));
 });
 
 test('typed invoice issue listener emails an unpaid invoice and extends its link', function (): void {
@@ -2887,6 +3116,58 @@ test('returns true when no expiring orders found', function (): void {
     $service->setDi($di);
     $result = $service->generateInvoicesForExpiringOrders();
     expect($result)->toBeBool()->toBeTrue();
+});
+
+test('batch activation continues past an item failure while the manager stays open', function (): void {
+    $service = new Service();
+    $first = createEntity(InvoiceItem::class, []);
+    $second = createEntity(InvoiceItem::class, []);
+
+    $itemInvoiceServiceMock = Mockery::mock(ServiceInvoiceItem::class);
+    $itemInvoiceServiceMock->shouldReceive('getAllNotExecutePaidItems')
+        ->atLeast()->once()
+        ->andReturn([['id' => 1], ['id' => 2]]);
+    $itemInvoiceServiceMock->shouldReceive('executeTask')
+        ->once()
+        ->with($first)
+        ->andThrow(new Exception('first item failed'));
+    $itemInvoiceServiceMock->shouldReceive('executeTask')
+        ->once()
+        ->with($second);
+
+    [$em, $invoiceItemRepo] = invoiceItemEmAndRepo();
+    $invoiceItemRepo->shouldReceive('find')
+        ->twice()
+        ->andReturn($first, $second);
+
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('getDatabasePlatform')
+        ->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\MySQLPlatform::class));
+    $connection->shouldReceive('transactional')
+        ->twice()
+        ->andReturnUsing(fn (callable $func) => $func($connection));
+    $connection->shouldReceive('fetchOne')
+        ->twice()
+        ->andReturn(InvoiceItem::STATUS_PENDING_SETUP);
+    $em->shouldReceive('getConnection')->andReturn($connection);
+    // The manager stays open: the failure is isolated with a clear and the
+    // batch continues instead of breaking.
+    $em->shouldReceive('isOpen')->once()->andReturn(true);
+    $em->shouldReceive('clear')->once();
+
+    $logger = new Tests\Helpers\TestLogger();
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $itemInvoiceServiceMock);
+    $di['logger'] = $logger;
+
+    $service->setDi($di);
+    expect($service->doBatchPaidInvoiceActivation())->toBeTrue()
+        ->and($logger->calls)->toContain([
+            'method' => 'error',
+            'params' => ['first item failed'],
+        ]);
 });
 
 test('generates invoices for expiring orders', function (): void {
@@ -5803,6 +6084,7 @@ test('reissueInvoice cancels the original and moves its lines to a numbered repl
     $systemService->shouldReceive('reserveNextNumericParamValue')->with('invoice_starting_number')->andReturn(8);
     $systemService->shouldReceive('getParamValue')->with('invoice_series')->andReturn('FB-');
     $systemService->shouldReceive('getParamValue')->with('invoice_hash_lifetime_days', '90')->andReturn(90);
+    $systemService->shouldReceive('getParamValue')->with('invoice_send_cancel_email', '0')->andReturn('1');
 
     $productService = Mockery::mock(ProductService::class);
     $productService->shouldReceive('transferReservedPromoRedemptionsForOrders')->once()->with([42, 43], Mockery::type(Invoice::class));
@@ -5818,6 +6100,12 @@ test('reissueInvoice cancels the original and moves its lines to a numbered repl
         }
     );
     $orderService->shouldReceive('unsetUnpaidInvoice')->twice();
+
+    $emailService = Mockery::mock(EmailService::class);
+    $emailService->shouldReceive('sendTemplate')
+        ->once()
+        ->withArgs(fn (array $email): bool => $email['code'] === 'mod_invoice_canceled'
+            && ($email['replacement_invoice']['id'] ?? null) === 11);
 
     $invoiceItemRepo = Mockery::mock(InvoiceItemRepository::class);
     $invoiceItemRepo->shouldReceive('findByInvoiceId')->with(10)->andReturn([$orderLine, $customLine, $orphanDiscount]);
@@ -5849,11 +6137,19 @@ test('reissueInvoice cancels the original and moves its lines to a numbered repl
         'system' => $systemService,
         'product' => $productService,
         'order' => $orderService,
+        'email' => $emailService,
     ]));
     $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $serviceMock->setDi($di);
     $serviceMock->shouldReceive('getInvoiceItemRepository')->andReturn($invoiceItemRepo);
+    $serviceMock->shouldReceive('toApiArray')
+        ->atLeast()->once()
+        ->andReturnUsing(static fn (Invoice $inv): array => ['id' => $inv->getId()]);
+    $serviceMock->shouldReceive('withBillingRecipient')
+        ->atLeast()->once()
+        ->andReturnUsing(static fn (array $email): array => $email);
+    $serviceMock->shouldReceive('getInvoicePdfAttachment')->atLeast()->once()->andReturnNull();
     $serviceMock->shouldReceive('recordJournalEvent')
         ->once()
         ->with($original, InvoiceEvent::TYPE_REISSUED, Mockery::type('array'));
@@ -6465,6 +6761,48 @@ test('updateInvoice ignores snapshot params since parties freeze at issuance', f
         ->toThrow(FOSSBilling\InformationException::class, 'can no longer be edited');
 });
 
+test('updateInvoice changing the tax rate moves the computed total', function (): void {
+    $invoice = createEntity(Invoice::class, ['id' => 13]);
+    $invoice->setIssued(false);
+    $invoice->setStatus(Invoice::STATUS_UNPAID);
+    $invoice->setTaxrate('20');
+    $invoice->setTaxname('VAT');
+
+    $item = createEntity(InvoiceItem::class, ['price' => '100.00', 'quantity' => 1, 'taxed' => true]);
+
+    $itemServiceMock = Mockery::mock(ServiceInvoiceItem::class);
+    $itemServiceMock->shouldReceive('getTotal')->atLeast()->once()->andReturn(100.0);
+
+    [$em, $invoiceItemRepo] = invoiceItemEmAndRepo();
+    $invoiceItemRepo->shouldReceive('findByInvoiceId')->atLeast()->once()->andReturn([$item]);
+    $em->shouldReceive('persist')->atLeast()->once();
+    $em->shouldReceive('flush')->atLeast()->once();
+
+    $systemMock = Mockery::mock(SystemService::class);
+    $systemMock->shouldReceive('getParamValue')->with('invoice_immutability', null)->andReturn('strict');
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($itemServiceMock, $systemMock) {
+        if ($serviceName == 'system') {
+            return $systemMock;
+        }
+
+        return $itemServiceMock;
+    });
+    $di['event_dispatcher'] = Mockery::mock(EventDispatcher::class)->shouldIgnoreMissing();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('recordJournalEvent')->once();
+    $serviceMock->setDi($di);
+
+    expect($serviceMock->getTotalWithTax($invoice))->toBe(120.0);
+
+    expect($serviceMock->updateInvoice($invoice, ['taxrate' => '10']))->toBeTrue()
+        ->and($serviceMock->getTotalWithTax($invoice))->toBe(110.0);
+});
+
 test('updateInvoice refuses non-lifecycle statuses on drafts', function (): void {
     $service = new Service();
     $invoice = createEntity(Invoice::class, ['id' => 11]);
@@ -6533,6 +6871,75 @@ test('promoAddToInvoice and promoRemoveFromInvoice refuse locked issued invoices
         ->toThrow(FOSSBilling\InformationException::class, 'can no longer be edited');
     expect(fn () => $service->promoRemoveFromInvoice($invoice, $promo))
         ->toThrow(FOSSBilling\InformationException::class, 'can no longer be edited');
+});
+
+test('expired cleanup isolates a concurrently-changed invoice and keeps going', function (): void {
+    $systemServiceMock = Mockery::mock(SystemService::class);
+    $systemServiceMock->shouldReceive('getParamValue')
+        ->with('remove_after_days')
+        ->andReturn(30);
+
+    $draft = createEntity(Invoice::class, ['id' => 11]);
+    $draft->setIssued(false);
+    $draft->setStatus(Invoice::STATUS_UNPAID);
+
+    $changed = createEntity(Invoice::class, ['id' => 12]);
+    $changed->setIssued(false);
+    $changed->setStatus(Invoice::STATUS_UNPAID);
+
+    $invoiceServiceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    // The first invoice changed concurrently (issued after the listing
+    // read); the lock recheck refuses the delete but the batch continues.
+    $invoiceServiceMock->shouldReceive('isInvoiceCancellable')->andReturn(false);
+    $invoiceServiceMock->shouldReceive('rmInvoice')
+        ->once()
+        ->with($changed, true)
+        ->andThrow(new FOSSBilling\InformationException('Only unissued, unpaid invoices (drafts) can be deleted'));
+    $invoiceServiceMock->shouldReceive('rmInvoice')
+        ->once()
+        ->with($draft, true)
+        ->andReturn(true);
+
+    $di = container();
+    $di['em']->getRepository(Invoice::class)->shouldReceive('findUnpaidOlderThan')
+        ->with(30)
+        ->once()
+        ->andReturn([$changed, $draft]);
+    $di['mod_service'] = $di->protect(fn (string $name = ''): object => match (strtolower($name)) {
+        'system' => $systemServiceMock,
+        'invoice' => $invoiceServiceMock,
+        default => Mockery::mock()->shouldIgnoreMissing(),
+    });
+    $logger = new Tests\Helpers\TestLogger();
+    $di['logger'] = $logger;
+
+    $invoiceServiceMock->setDi($di);
+    $invoiceServiceMock->removeExpiredUnpaidInvoices(new AfterAdminCronRunEvent());
+
+    expect($logger->calls)->toContain([
+        'method' => 'warning',
+        'params' => ['Could not expire unpaid invoice #{id}: {message}', ['id' => 12, 'message' => 'Only unissued, unpaid invoices (drafts) can be deleted']],
+    ]);
+});
+
+test('removeExpiredUnpaidInvoices does nothing when retention is not configured', function (): void {
+    $systemServiceMock = Mockery::mock(SystemService::class);
+    $systemServiceMock->shouldReceive('getParamValue')
+        ->with('remove_after_days')
+        ->andReturn(null);
+
+    $invoiceServiceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $invoiceServiceMock->shouldNotReceive('cancelInvoice', 'rmInvoice');
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn (string $name = ''): object => match (strtolower($name)) {
+        'system' => $systemServiceMock,
+        'invoice' => $invoiceServiceMock,
+        default => Mockery::mock()->shouldIgnoreMissing(),
+    });
+
+    $invoiceServiceMock->setDi($di);
+    $invoiceServiceMock->removeExpiredUnpaidInvoices(new AfterAdminCronRunEvent());
 });
 
 test('removeExpiredUnpaidInvoices voids issued invoices, deletes drafts, and skips notes', function (): void {

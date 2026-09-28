@@ -1493,6 +1493,23 @@ test('deletes taxes in batch', function (): void {
     expect($result)->toBeTrue();
 });
 
+test('batch delete aborts on the first failure instead of skipping it', function (): void {
+    $api = apiEndpoint(new Admin());
+    $activityMock = Mockery::mock(Admin::class)->makePartial();
+    // Batch deletes are fail-fast by design: a deletion the operator is not
+    // allowed to perform (or that fails validation) must surface instead of
+    // being silently skipped while the rest of the batch proceeds.
+    $activityMock->shouldReceive('delete')->once()->with(['id' => 1])->andReturn(true);
+    $activityMock->shouldReceive('delete')->once()->with(['id' => 2])->andThrow(new FOSSBilling\InformationException('Only unissued, unpaid invoices (drafts) can be deleted'));
+    $activityMock->shouldNotReceive('delete')->with(['id' => 3]);
+
+    $di = container();
+    $activityMock->setDi($di);
+
+    expect(fn () => $activityMock->batch_delete(['ids' => [1, 2, 3]]))
+        ->toThrow(FOSSBilling\InformationException::class, 'Only unissued, unpaid invoices');
+});
+
 test('gets a tax', function (): void {
     $api = apiEndpoint(new Admin());
 

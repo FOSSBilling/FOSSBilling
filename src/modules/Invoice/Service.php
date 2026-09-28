@@ -1340,7 +1340,7 @@ class Service implements InjectionAwareInterface
                 $this->issueInvoice($model, ['id' => $invoiceId]);
                 $this->di['logger']->info('Issued invoice #{invoice_id} instantly', ['invoice_id' => $invoiceId]);
             } catch (\Exception $e) {
-                $this->di['logger']->warning($e->getMessage());
+                $this->di['logger']->warning('Instant issue of prepared invoice #{invoice_id} failed: {message}', ['invoice_id' => $invoiceId, 'message' => $e->getMessage()]);
             }
         }
 
@@ -1515,7 +1515,7 @@ class Service implements InjectionAwareInterface
             if (round($balance, 2) < round($required, 2)) {
                 // @phpstan-ignore if.alwaysFalse (DEBUG is a runtime constant that may be true during debugging)
                 if (DEBUG) {
-                    $this->di['logger']->withChannel('billing')->info("Invoice {$invoice->getId()} could not be paid with credits. Money in balance {$balance} Required: {$required}.");
+                    $this->di['logger']->withChannel('billing')->info('Invoice #{id} could not be paid with credits. Money in balance {balance}. Required: {required}.', ['id' => $invoice->getId(), 'balance' => $balance, 'required' => $required]);
                 }
 
                 return false;
@@ -1523,7 +1523,7 @@ class Service implements InjectionAwareInterface
 
             // @phpstan-ignore if.alwaysFalse
             if (DEBUG) {
-                $this->di['logger']->withChannel('billing')->info("Setting invoice {$invoice->getId()} as paid with credits for the amount of {$required}.");
+                $this->di['logger']->withChannel('billing')->info('Setting invoice #{id} as paid with credits for the amount of {amount}.', ['id' => $invoice->getId(), 'amount' => $required]);
             }
 
             if ($required > 0.0) {
