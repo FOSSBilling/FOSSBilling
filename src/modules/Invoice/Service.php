@@ -1380,6 +1380,10 @@ class Service implements InjectionAwareInterface
                 $this->di['logger']->info('Issued invoice #{invoice_id} instantly', ['invoice_id' => $invoiceId]);
             } catch (\Exception $e) {
                 $this->di['logger']->warning('Instant issue of prepared invoice #{invoice_id} failed: {message}', ['invoice_id' => $invoiceId, 'message' => $e->getMessage()]);
+
+                // The prepared draft persists, but the caller asked for an issued invoice:
+                // report the failure instead of returning a draft as success.
+                throw new InformationException('The invoice was prepared as a draft but could not be issued: :message', [':message' => $e->getMessage()]);
             }
         }
 

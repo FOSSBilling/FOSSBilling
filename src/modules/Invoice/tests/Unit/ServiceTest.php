@@ -1644,6 +1644,37 @@ test('prepares invoice with undefined currency', function (): void {
     expect($result->getCurrency())->toBe($defaultCurrencyCode);
 });
 
+test('prepareInvoice with instant issue reports issuance failures instead of returning a draft', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('setInvoiceDefaults')->once();
+    $serviceMock->shouldReceive('recordJournalEvent')->once();
+    $serviceMock->shouldReceive('issueInvoice')
+        ->once()
+        ->andThrow(new FOSSBilling\InformationException('Only unpaid draft invoices can be issued.'));
+
+    $clientModel = createEntity(Box\Mod\Client\Entity\Client::class, ['currency' => 'EUR']);
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('persist')->atLeast()->once();
+    $em->shouldReceive('flush')->atLeast()->once();
+
+    $logger = new Tests\Helpers\TestLogger();
+
+    $di = container();
+    $di['em'] = $em;
+    $di['logger'] = $logger;
+    $serviceMock->setDi($di);
+
+    // The prepared draft persists, but the caller asked for an issued invoice:
+    // the failure surfaces instead of a silent draft.
+    expect(fn () => $serviceMock->prepareInvoice($clientModel, ['issue' => true]))
+        ->toThrow(FOSSBilling\InformationException::class, 'could not be issued');
+    expect($logger->calls)->toContain([
+        'method' => 'warning',
+        'params' => ['Instant issue of prepared invoice #{invoice_id} failed: {message}', ['invoice_id' => null, 'message' => 'Only unpaid draft invoices can be issued.']],
+    ]);
+});
+
 test('sets invoice defaults', function (): void {
     $service = new Service();
     $invoiceModel = createEntity(Invoice::class, ['client_id' => 1]);
