@@ -103,12 +103,12 @@ test('datepicker keeps the calendar icon clear of the field value', async ({ pag
   // The addon must stay the wrapper's last child: Tabler positions a
   // trailing .input-icon-addon at the field's right edge, while any other
   // position flips it left, overlapping the value.
-  await expect(page.locator('.input-icon')).toHaveJSProperty('lastElementChild.className', 'input-icon-addon');
+  expect(await page.locator('.input-icon').evaluate(el => el.lastElementChild?.className)).toBe('input-icon-addon');
   const wrapper = page.locator('.input-icon');
   const addon = page.locator('.input-icon-addon');
   const wrapperBox = (await wrapper.boundingBox())!;
   const addonBox = (await addon.boundingBox())!;
-  expect(wrapperBox.x + wrapperBox.width - (addonBox.x + addonBox.width)).toBeLessThanOrEqual(2);
+  expect(Math.abs(wrapperBox.x + wrapperBox.width - (addonBox.x + addonBox.width))).toBeLessThanOrEqual(2);
   const inputBox = (await page.locator('.datepicker').boundingBox())!;
   expect(addonBox.x).toBeGreaterThanOrEqual(inputBox.x + inputBox.width / 2);
 });

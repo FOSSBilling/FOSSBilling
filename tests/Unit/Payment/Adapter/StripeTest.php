@@ -617,7 +617,7 @@ test('skips subscription update webhooks without a local subscription', function
 });
 
 describe('handleInvoicePaymentSucceeded invoice linking', function (): void {
-    test('links transaction to invoice before claim attempt', function (): void {
+    test('links transaction to invoice and processes without re-claiming the row', function (): void {
         $tx = buildTransaction();
         $tx->id = 42;
         $tx->invoice_id = null;
@@ -647,9 +647,10 @@ describe('handleInvoicePaymentSucceeded invoice linking', function (): void {
         $stripeMock->subscriptions = $subscriptionsMock;
         setPrivateProperty($this->adapter, 'stripe', $stripeMock);
 
+        // The service layer holds the processing claim on entry: the adapter
+        // must never re-claim, or the claim fails and the payment is skipped.
         $transactionService = Mockery::mock();
-        $transactionService->shouldReceive('claimForProcessing')
-            ->andReturn(false);
+        $transactionService->shouldNotReceive('claimForProcessing');
 
         ['em' => $em, 'txRepo' => $txRepo, 'invoiceRepo' => $invoiceRepo] = buildEntityManagerMocks();
         $txRepo->shouldReceive('findProcessingOrProcessedByTxnId')
@@ -662,12 +663,19 @@ describe('handleInvoicePaymentSucceeded invoice linking', function (): void {
 
         $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
         expectStripeObjectLock($dbalMock, 'in_123', 1);
+        $invoiceService = Mockery::mock();
+        $invoiceService->shouldReceive('isInvoiceTypeDeposit')->andReturn(false);
+        $invoiceService->shouldReceive('issueInvoice')->andReturn(true);
+        $invoiceService->shouldReceive('payInvoiceWithCredits')->andReturn(true);
         $di = container();
         $di['dbal'] = $dbalMock;
         $di['em'] = $em;
-        $di['mod_service'] = $di->protect(function ($module, $service = null) use ($transactionService) {
+        $di['mod_service'] = $di->protect(function ($module, $service = null) use ($transactionService, $invoiceService) {
             if ($service === 'Transaction') {
                 return $transactionService;
+            }
+            if ($module === 'Invoice') {
+                return $invoiceService;
             }
 
             return Mockery::mock();
@@ -676,7 +684,7 @@ describe('handleInvoicePaymentSucceeded invoice linking', function (): void {
         $this->adapter->setDi($di);
 
         $apiAdmin = Mockery::mock();
-        $apiAdmin->shouldNotReceive('client_balance_add_funds');
+        $apiAdmin->shouldReceive('client_balance_add_funds')->once();
 
         invokePrivateMethod($this->adapter, 'handleInvoicePaymentSucceeded', [
             $apiAdmin,
@@ -685,8 +693,7 @@ describe('handleInvoicePaymentSucceeded invoice linking', function (): void {
             1,
         ]);
 
-        // Even though claimForProcessing returned false (causing early return),
-        // the invoice_id should have been persisted via em->flush().
+        // Processing proceeds: the invoice link is persisted and funds move.
         expect($tx->getInvoice()?->getId())->toBe(99);
     });
 
@@ -737,8 +744,7 @@ describe('handleInvoicePaymentSucceeded invoice linking', function (): void {
         $invoiceModel->currency = 'EUR';
 
         $transactionService = Mockery::mock();
-        $transactionService->shouldReceive('claimForProcessing')
-            ->andReturn(true);
+        $transactionService->shouldNotReceive('claimForProcessing');
 
         $invoiceService = Mockery::mock();
         $invoiceService->shouldReceive('isInvoiceTypeDeposit')
@@ -957,8 +963,7 @@ describe('handleInvoicePaymentSucceeded with invoice_payment event (API 2026-06-
         $invoiceModel->issued = 0;
 
         $transactionService = Mockery::mock();
-        $transactionService->shouldReceive('claimForProcessing')
-            ->andReturn(true);
+        $transactionService->shouldNotReceive('claimForProcessing');
 
         $invoiceService = Mockery::mock();
         $invoiceService->shouldReceive('isInvoiceTypeDeposit')
@@ -1074,8 +1079,7 @@ describe('handlePaymentIntentSucceededWebhook', function (): void {
         $clientModel = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 7]);
 
         $transactionService = Mockery::mock();
-        $transactionService->shouldReceive('claimForProcessing')
-            ->andReturn(true);
+        $transactionService->shouldNotReceive('claimForProcessing');
 
         $invoiceService = Mockery::mock();
         $invoiceService->shouldReceive('getTotalWithTax')->andReturn(29.99);
@@ -1155,7 +1159,7 @@ describe('processPaymentIntent', function (): void {
         $invoiceService->shouldReceive('payInvoiceWithCredits')->once()->with($invoice)->andReturn(true);
 
         $transactionService = Mockery::mock();
-        $transactionService->shouldReceive('claimForProcessing')->once()->with(402)->andReturn(true);
+        $transactionService->shouldNotReceive('claimForProcessing');
 
         $clientService = Mockery::mock();
         $clientService->shouldReceive('addFunds')->once();

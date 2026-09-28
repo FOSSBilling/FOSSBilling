@@ -357,35 +357,41 @@ class ServiceTransaction implements InjectionAwareInterface
      */
     private function assertNoProcessedHistoryChange(Transaction $model, array $data): void
     {
+        // Forms round-trip API renderings: '42.5' for a stored DECIMAL '42.50', '' for
+        // nulls. Compare amounts numerically at 2dp and treat '' as null so
+        // re-submitting unchanged values is not flagged as a history change.
+        $norm = static fn ($v): ?string => ($v === null || $v === '') ? null : (string) $v;
+        $differs = static fn (string $key, $current): bool => array_key_exists($key, $data) && $norm($data[$key]) !== $norm($current);
         $changed = [];
         if (!empty($data['invoice_id']) && (int) $data['invoice_id'] !== (int) $model->getInvoice()?->getId()) {
             $changed[] = 'invoice_id';
         }
-        if (array_key_exists('amount', $data) && (string) $data['amount'] !== (string) $model->getAmount()) {
+        if (array_key_exists('amount', $data) && $norm($data['amount']) !== null
+            && number_format((float) $data['amount'], 2, '.', '') !== number_format((float) $model->getAmount(), 2, '.', '')) {
             $changed[] = 'amount';
         }
-        if (array_key_exists('currency', $data) && $data['currency'] !== $model->getCurrency()) {
+        if ($differs('currency', $model->getCurrency())) {
             $changed[] = 'currency';
         }
         if (!empty($data['gateway_id']) && (int) $data['gateway_id'] !== (int) $model->getGateway()?->getId()) {
             $changed[] = 'gateway_id';
         }
-        if (array_key_exists('type', $data) && $data['type'] !== $model->getType()) {
+        if ($differs('type', $model->getType())) {
             $changed[] = 'type';
         }
-        if (array_key_exists('txn_id', $data) && (string) $data['txn_id'] !== (string) $model->getTxnId()) {
+        if ($differs('txn_id', $model->getTxnId())) {
             $changed[] = 'txn_id';
         }
-        if (array_key_exists('txn_status', $data) && $data['txn_status'] !== $model->getTxnStatus()) {
+        if ($differs('txn_status', $model->getTxnStatus())) {
             $changed[] = 'txn_status';
         }
-        if (array_key_exists('s_id', $data) && $data['s_id'] !== $model->getSId()) {
+        if ($differs('s_id', $model->getSId())) {
             $changed[] = 's_id';
         }
-        if (array_key_exists('s_period', $data) && $data['s_period'] !== $model->getSPeriod()) {
+        if ($differs('s_period', $model->getSPeriod())) {
             $changed[] = 's_period';
         }
-        if (array_key_exists('status', $data) && $data['status'] !== $model->getStatus()) {
+        if ($differs('status', $model->getStatus())) {
             $changed[] = 'status';
         }
         if ($changed !== []) {
@@ -651,6 +657,12 @@ class ServiceTransaction implements InjectionAwareInterface
      * @param int $id
      *
      * @throws \FOSSBilling\Exception
+     */
+    /**
+     * Dispatch a transaction to its payment adapter. This is the single funnel all adapter
+     * invocations pass through, and every caller (preProcessTransaction, createAndProcess,
+     * processAndCatchErrors) holds the processing claim on entry — adapters must not
+     * re-claim the row, or the claim fails and the payment is silently skipped.
      */
     public function processTransaction($id)
     {

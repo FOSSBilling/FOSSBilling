@@ -25,8 +25,8 @@ class InvoiceEventRepository extends EntityRepository
 
     /**
      * Journal rows live and die with their invoice: no retention pruning by design, this is the
-     * audit trail. The only deletion path is alongside the invoice itself (draft deletion), where
-     * there is no audit trail to preserve.
+     * audit trail. Deletion alongside the invoice covers drafts and client erasure; relaxed-mode
+     * deletions of issued invoices deliberately keep their rows.
      */
     public function deleteByInvoiceId(int $invoiceId): int
     {

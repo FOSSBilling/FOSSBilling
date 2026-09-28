@@ -403,21 +403,24 @@ class Service implements InjectionAwareInterface
         $systemService = $this->di['mod_service']('system');
         $c = $systemService->getCompany();
         $isDraft = !$invoice->isIssued();
+        $liveAddress = trim(($c['address_1'] ?? '') . ' ' . ($c['address_2'] ?? '') . ' ' . ($c['address_3'] ?? ''));
+        // The snapshot keeps one combined address line, so it fills address_1 with
+        // address_2/3 left empty. Rows predating snapshots fall back to live settings.
+        $frozenAddress = !$isDraft ? ($row['seller_address'] ?? null) : null;
         $result['seller'] = [
             'company' => !empty($row['seller_company']) ? $row['seller_company'] : ($c['name'] ?? ''),
             // Drafts have no snapshot yet, so identity comes from live
             // settings too; issued invoices keep their frozen copy.
             'company_vat' => $isDraft ? ($c['vat_number'] ?? '') : ($row['seller_company_vat'] ?? ''),
             'company_number' => $isDraft ? ($c['number'] ?? '') : ($row['seller_company_number'] ?? ''),
-            // Address, phone, and email always come from live company settings:
-            // the stored snapshot copies are legacy and ignored, so the PDF
-            // and the HTML views can never disagree about them.
-            'address' => trim(($c['address_1'] ?? '') . ' ' . ($c['address_2'] ?? '') . ' ' . ($c['address_3'] ?? '')),
-            'address_1' => $c['address_1'] ?? '',
-            'address_2' => $c['address_2'] ?? '',
-            'address_3' => $c['address_3'] ?? '',
-            'phone' => $c['tel'] ?? '',
-            'email' => $c['email'] ?? '',
+            // Issued invoices show the frozen seller details like any other
+            // legal particular; only drafts follow live company settings.
+            'address' => $frozenAddress ?: $liveAddress,
+            'address_1' => $frozenAddress ?: ($c['address_1'] ?? ''),
+            'address_2' => $frozenAddress !== null ? '' : ($c['address_2'] ?? ''),
+            'address_3' => $frozenAddress !== null ? '' : ($c['address_3'] ?? ''),
+            'phone' => !$isDraft ? ($row['seller_phone'] ?? ($c['tel'] ?? '')) : ($c['tel'] ?? ''),
+            'email' => !$isDraft ? ($row['seller_email'] ?? ($c['email'] ?? '')) : ($c['email'] ?? ''),
             'account_number' => $c['account_number'] ?? null,
             'bank_name' => $c['bank_name'] ?? null,
             'bic' => $c['bic'] ?? null,
@@ -1554,14 +1557,16 @@ class Service implements InjectionAwareInterface
                 $this->di['em']->flush();
             }
 
-            // Events and tasks run after the commit below, so neither notifications nor
-            // provisioning are held under the balance lock.
-            $this->markAsPaid($invoice, false, false, true);
+            // Events, tasks, and the journal run after the commit below, so neither notifications
+            // nor provisioning are held under the balance lock - and a journal write can never
+            // fail the payment itself.
+            $this->markAsPaid($invoice, false, false, true, true);
 
             return true;
         });
 
         if ($paid) {
+            $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_PAID);
             $this->firePaymentReceivedEvent($invoice);
             $this->executeInvoiceItemTasks(
                 $this->getInvoiceItemRepository()->findByInvoiceId((int) $invoice->getId()),
@@ -1708,7 +1713,13 @@ class Service implements InjectionAwareInterface
                     $new->setBuyerZip($invoice->getBuyerZip());
                     $new->setText1($invoice->getText1());
                     $new->setText2($invoice->getText2());
-                    $new->setSerie($systemService->getParamValue('invoice_cn_series', 'CN-'));
+                    // Each serie draws from exactly one counter: negative invoices continue
+                    // the invoice numbering, credit notes (and offline refunds) use the
+                    // credit-note counter. Sharing a prefix across counters would mint
+                    // duplicate numbers within one serie.
+                    $new->setSerie($documentLogic === 'negative_invoice'
+                        ? $systemService->getParamValue('invoice_series')
+                        : $systemService->getParamValue('invoice_cn_series', 'CN-'));
                     $new->setNr($nextNumber);
 
                     $new->setPaidAt(new \DateTime());
@@ -2675,7 +2686,12 @@ class Service implements InjectionAwareInterface
             $model->setStatus($data['status'] ?? $model->getStatus());
             $model->setTaxrate($data['taxrate'] ?? $model->getTaxrate());
             $model->setTaxname($data['taxname'] ?? $model->getTaxname());
-            $model->setIssued((bool) ($data['issued'] ?? $model->isIssued()));
+            // Issuance runs only through issueInvoice() (number claim, party snapshot,
+            // journal, events): flipping the flag here would silently mint or un-mint
+            // a legal document, so any change is refused outright.
+            if (array_key_exists('issued', $data) && (bool) $data['issued'] !== $model->isIssued()) {
+                throw new InformationException('The issued flag cannot be changed here. Issue a draft through the issue action.');
+            }
             $model->setNotes($data['notes'] ?? $model->getNotes());
 
             $created_at = $data['created_at'] ?? '';
@@ -3137,9 +3153,12 @@ class Service implements InjectionAwareInterface
                 $entityManager->remove($item);
             }
             $entityManager->flush();
-            // The journal goes with the invoice: only drafts are deletable,
-            // so there is no audit trail to preserve here.
-            $entityManager->getRepository(InvoiceEvent::class)->deleteByInvoiceId((int) $model->getId());
+            // Drafts and GDPR erasure take the journal with them; relaxed-mode
+            // deletions of issued invoices keep it as the audit trail of a
+            // numbered document.
+            if (!$model->isIssued() || $anonymizeTransactions) {
+                $entityManager->getRepository(InvoiceEvent::class)->deleteByInvoiceId((int) $model->getId());
+            }
             $entityManager->remove($model);
             $entityManager->flush();
         });

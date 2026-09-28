@@ -302,7 +302,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional string $status - Invoice status for drafts: unpaid|canceled
      * @optional string $taxrate - Invoice tax rate
      * @optional string $taxname - Invoice tax name
-     * @optional bool $issued - flag to set invoice as issued. Issued invoices are visible to clients
+     * @optional bool $issued - read-only display of the issue state. Changing it is
+     *                         refused: issue a draft through the issue action or the
+     *                         $issue flag below instead.
      * @optional string $notes - notes
      * @optional int $gateway_id - selected payment method - gateway id
      * @optional array $new_item - [title] [price]

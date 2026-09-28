@@ -895,9 +895,9 @@ class Service implements InjectionAwareInterface
     /**
      * Client deletion must never silently orphan provisioned services (hosting
      * accounts, domains, licenses, ...) nor terminate them by surprise: refuse
-     * while any service row exists and point the operator at explicit
-     * cancellation first. Cancelled services are removed with their orders
-     * through the normal flow, so a fully wound-down client deletes cleanly.
+     * while any service row exists. Service cancellation alone is not enough -
+     * it terminates remotely but leaves the row in place - so delete the
+     * service or its order first, then delete the client.
      *
      * Tables belonging to extensions that were never activated on this install
      * (e.g. service_apikey on a fresh install) simply don't exist: there is
@@ -925,7 +925,7 @@ class Service implements InjectionAwareInterface
             }
         }
         if ($active !== []) {
-            throw new InformationException('Client cannot be deleted while they have active services (:services). Cancel or delete their services first, then delete the client.', [':services' => implode(', ', $active)]);
+            throw new InformationException('Client cannot be deleted while they have service records (:services). Delete their services or orders first, then delete the client.', [':services' => implode(', ', $active)]);
         }
     }
 

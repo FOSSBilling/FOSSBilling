@@ -436,11 +436,9 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
                 }
             }
 
-            $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
-            if (!$transactionService->claimForProcessing((int) $tx->getId())) {
-                return;
-            }
-
+            // No claim here: ServiceTransaction claims the row before dispatching to the
+            // adapter, so re-claiming would always fail and skip the payment. The in-memory
+            // marker below is still needed: the succeeded branch below keys off it.
             $tx->setStatus(Transaction::STATUS_PROCESSING);
         }
 
@@ -947,11 +945,8 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             'rel_id' => $tx->getId(),
         ];
 
-        $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
-        if (!$transactionService->claimForProcessing((int) $tx->getId())) {
-            return false;
-        }
-
+        // No claim here: ServiceTransaction claims the row before dispatching to the
+        // adapter, so re-claiming would always fail and skip the payment.
         $tx->setType(Payment_Transaction::TXTYPE_PAYMENT);
         $tx->setAmount((string) $bd['amount']);
         $tx->setCurrency(strtoupper((string) ($stripeInvoice->currency ?? '')));
@@ -1270,11 +1265,9 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
         $invoiceService = $this->di['mod_service']('Invoice');
 
-        $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
-        if (!$transactionService->claimForProcessing((int) $tx->getId())) {
-            return;
-        }
-
+        // No claim here: ServiceTransaction claims the row before dispatching to the
+        // adapter, so re-claiming would always fail and skip the payment. The in-memory
+        // marker below is still needed: the succeeded branch below keys off it.
         $tx->setStatus(Transaction::STATUS_PROCESSING);
 
         $clientService = $this->di['mod_service']('client');

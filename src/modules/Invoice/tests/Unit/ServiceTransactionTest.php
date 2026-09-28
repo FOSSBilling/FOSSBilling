@@ -148,6 +148,21 @@ test('processed transaction history fields are frozen', function (): void {
         ->and($transactionModel->getNote())->toBe('verified with gateway');
 });
 
+test('processed transaction accepts re-submitted unchanged values', function (): void {
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('flush')->once();
+
+    $service = transactionService(em: $em);
+    $service->getDi()['logger'] = new Tests\Helpers\TestLogger();
+
+    $transactionModel = createEntity(Transaction::class, ['id' => 1, 'amount' => '42.50', 'currency' => 'USD']);
+    $transactionModel->setStatus(Transaction::STATUS_PROCESSED);
+
+    // The API renders DECIMAL '42.50' as float 42.5 and forms post '' for
+    // nulls: re-submitting those round-tripped values changes nothing.
+    expect($service->update($transactionModel, ['amount' => '42.5', 'currency' => 'USD', 'txn_status' => '', 'note' => 'x']))->toBeTrue();
+});
+
 test('transaction cannot be re-pointed to a canceled invoice', function (): void {
     $em = Mockery::mock(EntityManagerInterface::class);
     $em->shouldNotReceive('flush');

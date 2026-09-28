@@ -815,14 +815,17 @@
                                     <label class="form-label d-block">{{ 'Issued'|trans }}</label>
                                     <div class="d-flex flex-wrap gap-3">
                                         <label class="form-check">
-                                            <input class="form-check-input" id="radioIssuedYes" type="radio" name="issued" value="1"{% if invoice.issued  %} checked{% endif %}{% if invoice.issued %} disabled{% endif %}>
+                                            <input class="form-check-input" id="radioIssuedYes" type="radio" name="issued" value="1"{% if invoice.issued %} checked{% endif %} disabled>
                                             <span class="form-check-label">{{ 'Yes'|trans }}</span>
                                         </label>
                                         <label class="form-check">
-                                            <input class="form-check-input" id="radioIssuedNo" type="radio" name="issued" value="0"{% if not invoice.issued %} checked{% endif %}{% if invoice.issued %} disabled{% endif %}>
+                                            <input class="form-check-input" id="radioIssuedNo" type="radio" name="issued" value="0"{% if not invoice.issued %} checked{% endif %} disabled>
                                             <span class="form-check-label">{{ 'No'|trans }}</span>
                                         </label>
                                     </div>
+                                    {% if not invoice.issued %}
+                                    <div class="form-text">{{ 'Issue the invoice with the Issue button below; the issue state cannot be changed here.'|trans }}</div>
+                                    {% endif %}
                                 </div>
                                 <div class="col-lg-6">
                                     <label class="form-label" for="invoice_serie">{{ 'Serie'|trans }}</label>

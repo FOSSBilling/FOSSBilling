@@ -171,7 +171,7 @@ test('converts to api array', function (): void {
     expect($result['paid_at'])->toBeNull();
 });
 
-test('converts seller address, phone, and email from live company settings', function (): void {
+test('issued invoices show the frozen seller snapshot, drafts show live settings', function (): void {
     $service = new Service();
     $invoiceModel = createEntity(Invoice::class, [
         'seller_company' => 'Snapshot Co',
@@ -238,14 +238,30 @@ test('converts seller address, phone, and email from live company settings', fun
 
     $result = $service->toApiArray($invoiceModel);
 
-    // Company identity stays frozen from the snapshot, while contact details
-    // always reflect current company settings.
+    // Issued invoices are legal documents: every seller particular comes
+    // from the frozen snapshot, even after the company details change.
+    // The combined snapshot address fills address_1; there is no per-line split.
     expect($result['seller']['company'])->toBe('Snapshot Co')
         ->and($result['seller']['company_vat'])->toBe('SNAP_VAT')
         ->and($result['seller']['company_number'])->toBe('SNAP_NUM')
-        ->and($result['seller']['address'])->toBe('Live Street 1')
-        ->and($result['seller']['phone'])->toBe('Live phone')
-        ->and($result['seller']['email'])->toBe('live@example.com');
+        ->and($result['seller']['address'])->toBe('Stale snapshot address')
+        ->and($result['seller']['address_1'])->toBe('Stale snapshot address')
+        ->and($result['seller']['address_2'])->toBe('')
+        ->and($result['seller']['address_3'])->toBe('')
+        ->and($result['seller']['phone'])->toBe('Stale snapshot phone')
+        ->and($result['seller']['email'])->toBe('stale@example.com');
+
+    $draft = createEntity(Invoice::class);
+    $draft->setIssued(false);
+    $draft->hash = 'b1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5';
+
+    $draftResult = $service->toApiArray($draft);
+
+    // Drafts carry no snapshot yet, so they follow live company settings.
+    expect($draftResult['seller']['address'])->toBe('Live Street 1')
+        ->and($draftResult['seller']['address_1'])->toBe('Live Street 1')
+        ->and($draftResult['seller']['phone'])->toBe('Live phone')
+        ->and($draftResult['seller']['email'])->toBe('live@example.com');
 });
 
 test('converts an invoice entity to an api summary', function (): void {
@@ -1943,7 +1959,9 @@ test('pays a zero-total invoice without recording a balance transaction', functi
 
     $service = Mockery::mock(Service::class)->makePartial();
     $service->shouldReceive('getTotalWithTax')->once()->with($invoice)->andReturn(0.0);
-    $service->shouldReceive('markAsPaid')->once()->with($invoice, false, false, true)->andReturn(true);
+    $service->shouldReceive('markAsPaid')->once()->with($invoice, false, false, true, true)->andReturn(true);
+    // The journal is recorded after the credit transaction commits, never inside it.
+    $service->shouldReceive('recordJournalEvent')->once()->with($invoice, InvoiceEvent::TYPE_PAID);
 
     $di = container();
     $di['em']->shouldReceive('getRepository')->with(Invoice::class)->andReturn(invoiceLockingRepository());
@@ -1968,7 +1986,9 @@ test('records a balance transaction for a one-cent invoice', function (): void {
 
     $service = Mockery::mock(Service::class)->makePartial();
     $service->shouldReceive('getTotalWithTax')->once()->with($invoice)->andReturn(0.01);
-    $service->shouldReceive('markAsPaid')->once()->with($invoice, false, false, true)->andReturn(true);
+    $service->shouldReceive('markAsPaid')->once()->with($invoice, false, false, true, true)->andReturn(true);
+    // The journal is recorded after the credit transaction commits, never inside it.
+    $service->shouldReceive('recordJournalEvent')->once()->with($invoice, InvoiceEvent::TYPE_PAID);
 
     $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 20]);
 
@@ -2002,7 +2022,9 @@ test('pays an invoice with credits and records a balance transaction', function 
 
     $service = Mockery::mock(Service::class)->makePartial();
     $service->shouldReceive('getTotalWithTax')->once()->with($invoice)->andReturn(50.0);
-    $service->shouldReceive('markAsPaid')->once()->with($invoice, false, false, true)->andReturn(true);
+    $service->shouldReceive('markAsPaid')->once()->with($invoice, false, false, true, true)->andReturn(true);
+    // The journal is recorded after the credit transaction commits, never inside it.
+    $service->shouldReceive('recordJournalEvent')->once()->with($invoice, InvoiceEvent::TYPE_PAID);
 
     $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 20]);
 
@@ -2042,7 +2064,9 @@ test('locks the invoice before checking the client balance', function (): void {
 
     $service = Mockery::mock(Service::class)->makePartial();
     $service->shouldReceive('getTotalWithTax')->once()->with($invoice)->andReturn(50.0);
-    $service->shouldReceive('markAsPaid')->once()->with($invoice, false, false, true)->andReturn(true);
+    $service->shouldReceive('markAsPaid')->once()->with($invoice, false, false, true, true)->andReturn(true);
+    // The journal is recorded after the credit transaction commits, never inside it.
+    $service->shouldReceive('recordJournalEvent')->once()->with($invoice, InvoiceEvent::TYPE_PAID);
 
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $balanceService);
     $service->setDi($di);
@@ -2113,7 +2137,9 @@ test('pays a fully funded invoice despite floating-point rounding dust', functio
 
     $service = Mockery::mock(Service::class)->makePartial();
     $service->shouldReceive('getTotalWithTax')->once()->with($invoice)->andReturn(0.1 * 3);
-    $service->shouldReceive('markAsPaid')->once()->with($invoice, false, false, true)->andReturn(true);
+    $service->shouldReceive('markAsPaid')->once()->with($invoice, false, false, true, true)->andReturn(true);
+    // The journal is recorded after the credit transaction commits, never inside it.
+    $service->shouldReceive('recordJournalEvent')->once()->with($invoice, InvoiceEvent::TYPE_PAID);
 
     $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 20]);
 
@@ -2243,6 +2269,9 @@ test('refunds invoice with negative invoice logic', function (): void {
         ->with('invoice_cn_series', 'CN-')
         ->andReturn('CN-');
     $systemService->shouldReceive('getParamValue')
+        ->with('invoice_series')
+        ->andReturn('FOSS');
+    $systemService->shouldReceive('getParamValue')
         ->with('invoice_hash_lifetime_days', '90')
         ->andReturn(90);
     $systemService->shouldReceive('getParamValue')
@@ -2305,7 +2334,9 @@ test('refunds invoice with negative invoice logic', function (): void {
     }
     expect($creditNote)->not->toBeNull();
     expect($creditNote->getCreditNoteForInvoiceId())->toBe($invoiceModel->getId());
-    expect($creditNote->getSerie())->toBe('CN-');
+    // Negative invoices continue the invoice numbering, so they carry the
+    // invoice serie - never the credit-note serie, which has its own counter.
+    expect($creditNote->getSerie())->toBe('FOSS');
     expect($creditNote->getNr())->toBe('42');
 });
 
@@ -2782,6 +2813,46 @@ test('removes an invoice', function (): void {
 
     $journalRepo = Mockery::mock(InvoiceEventRepository::class);
     $journalRepo->shouldReceive('deleteByInvoiceId')->once()->with((int) $invoiceModel->getId())->andReturn(0);
+    $em->shouldReceive('getRepository')->with(InvoiceEvent::class)->andReturn($journalRepo);
+
+    $di = container();
+    $di['em'] = $em;
+    $em->shouldReceive('getConnection')->andReturn($connection);
+
+    $service->setDi($di);
+
+    $result = $service->rmInvoice($invoiceModel);
+    expect($result)->toBeTrue();
+});
+
+test('removing an issued invoice keeps its journal as the audit trail', function (): void {
+    $service = new Service();
+    $invoiceModel = createEntity(Invoice::class);
+    $invoiceModel->setIssued(true);
+    $invoiceModel->setStatus(Invoice::STATUS_UNPAID);
+
+    $invoiceItemModel = createEntity(InvoiceItem::class, []);
+
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('executeStatement')
+        ->atLeast()->once();
+    [$em, $invoiceItemRepo] = invoiceItemEmAndRepo();
+    $invoiceItemRepo->shouldReceive('findByInvoiceId')
+        ->atLeast()->once()
+        ->andReturn([$invoiceItemModel]);
+    $em->shouldReceive('remove')
+        ->atLeast()->once();
+    $em->shouldReceive('flush')
+        ->atLeast()->once();
+
+    $transactionRepo = Mockery::mock(TransactionRepository::class);
+    $transactionRepo->shouldReceive('detachFromInvoice')->once()->with((int) $invoiceModel->getId(), false);
+    $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($transactionRepo);
+
+    // Relaxed-mode deletion of a numbered document must not take the only
+    // record of its lifecycle with it; erasure is the exception, not this path.
+    $journalRepo = Mockery::mock(InvoiceEventRepository::class);
+    $journalRepo->shouldNotReceive('deleteByInvoiceId');
     $em->shouldReceive('getRepository')->with(InvoiceEvent::class)->andReturn($journalRepo);
 
     $di = container();
@@ -6972,6 +7043,67 @@ test('updateInvoice refuses non-lifecycle statuses on drafts', function (): void
         expect(fn () => $service->updateInvoice($invoice, ['status' => $status]))
             ->toThrow(FOSSBilling\InformationException::class, 'Draft invoices can only be unpaid or canceled');
     }
+});
+
+test('updateInvoice refuses to flip the issued flag', function (): void {
+    $service = new Service();
+    $invoice = createEntity(Invoice::class, ['id' => 10]);
+    $invoice->setIssued(false);
+    $invoice->setStatus(Invoice::STATUS_UNPAID);
+
+    $systemMock = Mockery::mock(SystemService::class);
+    $systemMock->shouldReceive('getParamValue')->with('invoice_immutability', null)->andReturn('strict');
+
+    [, $invoiceItemRepo] = invoiceItemEmAndRepo();
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('wrapInTransaction')->andReturnUsing(fn (callable $callback): mixed => $callback());
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn(invoiceLockingRepository(['status' => Invoice::STATUS_UNPAID, 'issued' => false]));
+    $em->shouldReceive('getRepository')->with(InvoiceItem::class)->andReturn($invoiceItemRepo);
+    $em->shouldReceive('refresh')->byDefault();
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(moduleService(['system' => $systemMock]));
+    $di['event_dispatcher'] = Mockery::mock(EventDispatcher::class)->shouldIgnoreMissing();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $service->setDi($di);
+
+    // Issuance runs through issueInvoice(): flipping the flag here would
+    // mint a numberless, snapshot-less, journal-less "issued" invoice.
+    expect(fn () => $service->updateInvoice($invoice, ['issued' => 1]))
+        ->toThrow(FOSSBilling\InformationException::class, 'issue action');
+    expect($invoice->isIssued())->toBeFalse();
+});
+
+test('updateInvoice accepts an unchanged issued flag', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('recordJournalEvent')->once();
+
+    $invoice = createEntity(Invoice::class, ['id' => 10]);
+    $invoice->setIssued(false);
+    $invoice->setStatus(Invoice::STATUS_UNPAID);
+
+    [$em, $invoiceItemRepo] = invoiceItemEmAndRepo();
+    $invoiceItemRepo->shouldReceive('findByInvoiceId')->andReturn([]);
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn(invoiceLockingRepository(['status' => Invoice::STATUS_UNPAID, 'issued' => false]));
+    $em->shouldReceive('wrapInTransaction')->andReturnUsing(fn (callable $callback): mixed => $callback());
+    $em->shouldReceive('refresh')->byDefault();
+    $em->shouldReceive('persist')->atLeast()->once();
+    $em->shouldReceive('flush')->atLeast()->once();
+
+    $systemMock = Mockery::mock(SystemService::class);
+    $systemMock->shouldReceive('getParamValue')->with('invoice_immutability', null)->andReturn('strict');
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(moduleService(['system' => $systemMock]));
+    $di['event_dispatcher'] = Mockery::mock(EventDispatcher::class)->shouldIgnoreMissing();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $serviceMock->setDi($di);
+
+    expect($serviceMock->updateInvoice($invoice, ['issued' => 0, 'notes' => 'kept']))->toBeTrue()
+        ->and($invoice->isIssued())->toBeFalse()
+        ->and($invoice->getNotes())->toBe('kept');
 });
 
 test('issueInvoice refuses drafts that are not unpaid', function (): void {

@@ -627,69 +627,94 @@ class UpdatePatcher implements InjectionAwareInterface
         $padding = $dbal->fetchOne("SELECT value FROM setting WHERE param = 'invoice_number_padding'");
         $padding = is_numeric($padding) && (int) $padding > 0 ? (int) $padding : 5;
 
-        $rows = $dbal->fetchAllAssociative(
-            'SELECT i.* FROM invoice i LEFT JOIN invoice_event e ON e.invoice_id = i.id WHERE e.id IS NULL'
-        );
-
-        foreach ($rows as $row) {
-            $nr = is_numeric($row['nr'] ?? null) ? (int) $row['nr'] : (int) $row['id'];
-            $snapshot = [
-                'serie_nr' => ($row['serie'] ?? '') . sprintf('%0' . $padding . 's', $nr),
-                'status' => $row['status'] ?? null,
-                'issued' => !empty($row['issued']),
-                'subtotal' => null,
-                'tax' => null,
-                'total' => null,
-                'buyer' => [
-                    'first_name' => $row['buyer_first_name'] ?? null,
-                    'last_name' => $row['buyer_last_name'] ?? null,
-                    'company' => $row['buyer_company'] ?? null,
-                    'company_vat' => $row['buyer_company_vat'] ?? null,
-                    'company_number' => $row['buyer_company_number'] ?? null,
-                    'address' => $row['buyer_address'] ?? null,
-                    'city' => $row['buyer_city'] ?? null,
-                    'state' => $row['buyer_state'] ?? null,
-                    'country' => $row['buyer_country'] ?? null,
-                    'phone' => $row['buyer_phone'] ?? null,
-                    'email' => $row['buyer_email'] ?? null,
-                    'zip' => $row['buyer_zip'] ?? null,
-                ],
-                'seller' => [
-                    'company' => $row['seller_company'] ?? null,
-                    'company_vat' => $row['seller_company_vat'] ?? null,
-                    'company_number' => $row['seller_company_number'] ?? null,
-                    'address' => $row['seller_address'] ?? null,
-                    'phone' => $row['seller_phone'] ?? null,
-                    'email' => $row['seller_email'] ?? null,
-                ],
-                'paid_at' => $this->normalizeBackfillDate($row['paid_at'] ?? null),
-                'due_at' => $this->normalizeBackfillDate($row['due_at'] ?? null),
-                'created_at' => $this->normalizeBackfillDate($row['created_at'] ?? null),
-            ];
-
-            $type = 'created';
-            if (!empty($row['issued'])) {
-                $type = match ($row['status'] ?? null) {
-                    'paid' => 'paid',
-                    'canceled' => 'canceled',
-                    'refunded' => 'refunded',
-                    default => 'issued',
-                };
-            }
-
-            $dbal->executeStatement(
-                'INSERT INTO invoice_event (invoice_id, type, client_id, snapshot, created_at) VALUES (:invoice_id, :type, :client_id, :snapshot, :created_at)',
-                [
-                    'invoice_id' => (int) $row['id'],
-                    'type' => $type,
-                    'client_id' => $row['client_id'] !== null ? (int) $row['client_id'] : null,
-                    // Substitute rather than throw on legacy bytes that cannot be encoded:
-                    // a single bad row must not wedge the whole patch run.
-                    'snapshot' => json_encode($snapshot, JSON_INVALID_UTF8_SUBSTITUTE),
-                    'created_at' => $snapshot['created_at'] ?? date('Y-m-d H:i:s'),
-                ]
+        // Keyset pages, not one unbounded read: on the first upgrade no invoice has a
+        // journal row, so an unpaged SELECT would load every invoice (including its
+        // notes/text blobs) into memory at once. Only the snapshot columns are read.
+        // Idempotent: written rows drop out of later pages via the LEFT JOIN.
+        $lastId = 0;
+        do {
+            $rows = $dbal->fetchAllAssociative(
+                'SELECT i.id, i.nr, i.serie, i.status, i.issued, i.client_id,
+                    i.buyer_first_name, i.buyer_last_name, i.buyer_company, i.buyer_company_vat,
+                    i.buyer_company_number, i.buyer_address, i.buyer_city, i.buyer_state,
+                    i.buyer_country, i.buyer_phone, i.buyer_email, i.buyer_zip,
+                    i.seller_company, i.seller_company_vat, i.seller_company_number,
+                    i.seller_address, i.seller_phone, i.seller_email,
+                    i.paid_at, i.due_at, i.created_at
+                FROM invoice i LEFT JOIN invoice_event e ON e.invoice_id = i.id
+                WHERE e.id IS NULL AND i.id > :last ORDER BY i.id LIMIT 500',
+                ['last' => $lastId]
             );
+
+            foreach ($rows as $row) {
+                $lastId = (int) $row['id'];
+                $this->writeBackfillJournalEntry($dbal, $row, $padding);
+            }
+        } while ($rows !== []);
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     */
+    private function writeBackfillJournalEntry(\Doctrine\DBAL\Connection $dbal, array $row, int $padding): void
+    {
+        $nr = is_numeric($row['nr'] ?? null) ? (int) $row['nr'] : (int) $row['id'];
+        $snapshot = [
+            'serie_nr' => ($row['serie'] ?? '') . sprintf('%0' . $padding . 's', $nr),
+            'status' => $row['status'] ?? null,
+            'issued' => !empty($row['issued']),
+            'subtotal' => null,
+            'tax' => null,
+            'total' => null,
+            'buyer' => [
+                'first_name' => $row['buyer_first_name'] ?? null,
+                'last_name' => $row['buyer_last_name'] ?? null,
+                'company' => $row['buyer_company'] ?? null,
+                'company_vat' => $row['buyer_company_vat'] ?? null,
+                'company_number' => $row['buyer_company_number'] ?? null,
+                'address' => $row['buyer_address'] ?? null,
+                'city' => $row['buyer_city'] ?? null,
+                'state' => $row['buyer_state'] ?? null,
+                'country' => $row['buyer_country'] ?? null,
+                'phone' => $row['buyer_phone'] ?? null,
+                'email' => $row['buyer_email'] ?? null,
+                'zip' => $row['buyer_zip'] ?? null,
+            ],
+            'seller' => [
+                'company' => $row['seller_company'] ?? null,
+                'company_vat' => $row['seller_company_vat'] ?? null,
+                'company_number' => $row['seller_company_number'] ?? null,
+                'address' => $row['seller_address'] ?? null,
+                'phone' => $row['seller_phone'] ?? null,
+                'email' => $row['seller_email'] ?? null,
+            ],
+            'paid_at' => $this->normalizeBackfillDate($row['paid_at'] ?? null),
+            'due_at' => $this->normalizeBackfillDate($row['due_at'] ?? null),
+            'created_at' => $this->normalizeBackfillDate($row['created_at'] ?? null),
+        ];
+
+        $type = 'created';
+        if (!empty($row['issued'])) {
+            $type = match ($row['status'] ?? null) {
+                'paid' => 'paid',
+                'canceled' => 'canceled',
+                'refunded' => 'refunded',
+                default => 'issued',
+            };
         }
+
+        $dbal->executeStatement(
+            'INSERT INTO invoice_event (invoice_id, type, client_id, snapshot, created_at) VALUES (:invoice_id, :type, :client_id, :snapshot, :created_at)',
+            [
+                'invoice_id' => (int) $row['id'],
+                'type' => $type,
+                'client_id' => $row['client_id'] !== null ? (int) $row['client_id'] : null,
+                // Substitute rather than throw on legacy bytes that cannot be encoded:
+                // a single bad row must not wedge the whole patch run.
+                'snapshot' => json_encode($snapshot, JSON_INVALID_UTF8_SUBSTITUTE),
+                'created_at' => $snapshot['created_at'] ?? date('Y-m-d H:i:s'),
+            ]
+        );
     }
 
     private function normalizeBackfillDate(mixed $value): ?string
