@@ -179,7 +179,7 @@
                     </div>
                     <div class="form-check">
                         <input class="form-check-input" id="radioInvoiceRefundLogic" type="radio" name="invoice_refund_logic" value="manual" {% if params.invoice_refund_logic|default('') == 'manual' %}checked{% endif %}>
-                        <label class="form-check-label" for="radioInvoiceRefundLogic">{{ 'Manual - No actions performed'|trans }}</label>
+                        <label class="form-check-label" for="radioInvoiceRefundLogic">{{ 'Manual - Record an offline refund document (money moves outside FOSSBilling)'|trans }}</label>
                     </div>
                 </div>
                 <div class="row g-3 mt-1">

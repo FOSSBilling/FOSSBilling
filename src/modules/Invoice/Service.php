@@ -1644,21 +1644,26 @@ class Service implements InjectionAwareInterface
         return (float) $total;
     }
 
-    public function refundInvoice(Invoice $invoice, $note = null, ?array $items = null): ?int
+    public function refundInvoice(Invoice $invoice, $note = null, ?array $items = null): int
     {
         $this->di['event_dispatcher']->dispatch(new BeforeAdminInvoiceRefundEvent((int) $invoice->getId()));
 
         $systemService = $this->di['mod_service']('system');
         $logic = $systemService->getParamValue('invoice_refund_logic', 'manual');
-        $result = null;
 
-        switch ($logic) {
+        // Manual mode records the money movement as an offline refund document: the operator
+        // returns the money outside FOSSBilling, and the credit note below is its paper trail.
+        // Numbering follows the credit-note series, never the invoice series.
+        $offline = $logic === 'manual';
+        $documentLogic = $offline ? 'credit_note' : $logic;
+
+        switch ($documentLogic) {
             case 'credit_note':
             case 'negative_invoice':
-                $new = $this->di['em']->wrapInTransaction(function () use ($invoice, $items, $logic, $note, $systemService): Invoice {
+                $new = $this->di['em']->wrapInTransaction(function () use ($invoice, $items, $documentLogic, $note, $systemService, $offline): Invoice {
                     // Reserve the number before any invoice reads. SQLite must acquire its write
                     // lock before the locking read; the outer transaction rolls this back on failure.
-                    $nextNumber = $logic === 'negative_invoice'
+                    $nextNumber = $documentLogic === 'negative_invoice'
                         ? $this->getNextInvoiceNumber()
                         : $systemService->reserveNextNumericParamValue('invoice_cn_starting_number', 1);
                     if ($nextNumber === null) {
@@ -1756,6 +1761,9 @@ class Service implements InjectionAwareInterface
                     if (!empty($note)) {
                         $this->addNote($new, $note);
                     }
+                    if ($offline) {
+                        $this->addNote($new, 'Offline refund: the amount was returned outside FOSSBilling; this credit note records it.');
+                    }
 
                     return $new;
                 });
@@ -1773,26 +1781,15 @@ class Service implements InjectionAwareInterface
 
                 break;
 
-            case 'manual':
             default:
-                // Manual mode performs no refund: the operator moves the money
-                // outside FOSSBilling. Fall through with a null result so the
-                // skipped attempt is recorded distinctly below instead of a
-                // "Refunded" entry that would imply money moved.
-                break;
-        }
-
-        if ($result === null) {
-            $this->di['logger']->warning('Refund skipped for invoice #{invoice_id}: refunds are managed manually, no credit note was generated', ['invoice_id' => $invoice->getId()]);
-
-            return null;
+                throw new InformationException('Unknown invoice refund logic: :logic', [':logic' => $logic]);
         }
 
         $this->di['event_dispatcher']->dispatch(new AfterAdminInvoiceRefundEvent((int) $invoice->getId()));
 
         $this->di['logger']->info('Refunded invoice #{invoice_id}', ['invoice_id' => $invoice->getId()]);
 
-        $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_REFUNDED);
+        $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_REFUNDED, $offline ? ['offline' => true] : null);
 
         return $result;
     }

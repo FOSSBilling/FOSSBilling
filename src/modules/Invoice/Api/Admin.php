@@ -175,7 +175,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional string $note - note for refund
      * @optional array $items - line id => quantity map for a partial refund; omit for a full refund
      *
-     * @return bool
+     * @return int $id - newly generated refund document ID
      */
     #[RequiredParams(['id' => 'Invoice ID is missing'])]
     public function refund($data)

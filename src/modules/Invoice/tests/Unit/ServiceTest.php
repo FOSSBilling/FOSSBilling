@@ -2504,16 +2504,29 @@ test('refundInvoice keeps the refund successful when notification delivery fails
     expect($emailErrors)->not->toBeEmpty();
 });
 
-test('refundInvoice in manual mode performs no refund and records the skip', function (): void {
-    $service = new Service();
-    $invoice = createEntity(Invoice::class, ['clientId' => 5]);
-    $invoice->setStatus(Invoice::STATUS_PAID);
-    setEntityId($invoice, 9);
+test('refundInvoice in manual mode records an offline refund document', function (): void {
+    $newId = 2;
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('getTotal')->andReturn(20.0);
+    $serviceMock->shouldReceive('getTax')->andReturn(0.0);
+    $serviceMock->shouldReceive('countIncome')->once();
+    $serviceMock->shouldReceive('toApiArray')->andReturn(['id' => $newId, 'total' => -20.0]);
+    $serviceMock->shouldReceive('extendInvoiceHashLifetime')->once();
 
-    $systemMock = Mockery::mock(SystemService::class);
-    $systemMock->shouldReceive('getParamValue')
-        ->with('invoice_refund_logic', 'manual')
-        ->andReturn('manual');
+    $notes = [];
+    $serviceMock->shouldReceive('addNote')
+        ->atLeast()->twice()
+        ->andReturnUsing(function (Invoice $model, string $note) use (&$notes): bool {
+            $notes[] = $note;
+
+            return true;
+        });
+
+    $invoiceModel = createEntity(Invoice::class, ['clientId' => 5]);
+    $invoiceModel->setStatus(Invoice::STATUS_PAID);
+    setEntityId($invoiceModel, 9);
+
+    $invoiceItemModel = createEntity(InvoiceItem::class, []);
 
     $events = [];
     $eventDispatcher = new class($events) {
@@ -2529,23 +2542,85 @@ test('refundInvoice in manual mode performs no refund and records the skip', fun
         }
     };
 
-    $logger = new Tests\Helpers\TestLogger();
+    $systemService = Mockery::mock(SystemService::class);
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_refund_logic', 'manual')
+        ->andReturn('manual');
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_number_padding')
+        ->andReturn(5);
+    $systemService->shouldReceive('getCompany')
+        ->andReturn([]);
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_hash_lifetime_days', '90')
+        ->andReturn(90);
+    $systemService->shouldReceive('reserveNextNumericParamValue')
+        ->once()
+        ->with('invoice_cn_starting_number', 1)
+        ->andReturn(7);
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_cn_series', 'CN-')
+        ->andReturn('CN-');
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_email_attach_pdf')
+        ->andReturn(false);
+
+    $emailService = Mockery::mock(EmailService::class);
+    $emailService->shouldReceive('sendTemplate')->once();
+
+    [$em, $invoiceItemRepo] = invoiceItemEmAndRepo();
+    $invoiceItemRepo->shouldReceive('findByInvoiceId')->andReturn([$invoiceItemModel]);
+    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('lockAndGetStatus')
+        ->once()
+        ->with(9)
+        ->andReturn(Invoice::STATUS_PAID);
+    $invoiceRepo->shouldReceive('findBy')->andReturn([]);
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
+    $creditNote = null;
+    $journal = null;
+    $em->shouldReceive('persist')
+        ->atLeast()->once()
+        ->andReturnUsing(function (object $entity) use ($newId, &$creditNote, &$journal): void {
+            if ($entity instanceof Invoice && $entity->getId() === null) {
+                setEntityId($entity, $newId);
+            }
+            if ($entity instanceof Invoice && $entity->getStatus() === Invoice::STATUS_REFUNDED && $entity->getId() === $newId) {
+                $creditNote = $entity;
+            }
+            if ($entity instanceof InvoiceEvent) {
+                $journal = $entity;
+            }
+        });
+    $em->shouldReceive('flush')->atLeast()->once();
 
     $di = container();
-    $di['mod_service'] = $di->protect(moduleService(['system' => $systemMock]));
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(moduleService([
+        'system' => $systemService,
+        'email' => $emailService,
+    ]));
     $di['event_dispatcher'] = $eventDispatcher;
-    $di['logger'] = $logger;
-    $service->setDi($di);
+    $di['logger'] = new Tests\Helpers\TestLogger();
 
-    expect($service->refundInvoice($invoice))->toBeNull()
-        // Only the pre-refund event fires; no performed-refund event.
-        ->and($events)->toHaveCount(1)
+    $serviceMock->setDi($di);
+    expect($serviceMock->refundInvoice($invoiceModel))->toBe($newId);
+    expect($events)->toHaveCount(2)
         ->and($events[0])->toBeInstanceOf(BeforeAdminInvoiceRefundEvent::class)
-        // The skip is recorded distinctly — never as a performed refund.
-        ->and($logger->calls)->toContain([
-            'method' => 'warning',
-            'params' => ['Refund skipped for invoice #{invoice_id}: refunds are managed manually, no credit note was generated', ['invoice_id' => 9]],
-        ]);
+        ->and($events[0]->invoiceId)->toBe(9)
+        ->and($events[1])->toBeInstanceOf(AfterAdminInvoiceRefundEvent::class)
+        ->and($events[1]->invoiceId)->toBe(9);
+    expect($invoiceModel->getStatus())->toBe(Invoice::STATUS_REFUNDED);
+    // The offline refund follows credit-note numbering, never the invoice series.
+    expect($creditNote)->not->toBeNull();
+    expect($creditNote->getSerie())->toBe('CN-');
+    expect($creditNote->getNr())->toBe('7');
+    expect($creditNote->getCreditNoteForInvoiceId())->toBe($invoiceModel->getId());
+    // The document is marked as an offline refund, on the note and in the journal.
+    expect($notes)->toContain('Offline refund: the amount was returned outside FOSSBilling; this credit note records it.');
+    expect($journal)->not->toBeNull();
+    expect($journal->getType())->toBe(InvoiceEvent::TYPE_REFUNDED);
+    expect($journal->getSnapshot()['offline'] ?? null)->toBeTrue();
 });
 
 test('refundInvoice refuses invoices that are not paid', function (): void {
