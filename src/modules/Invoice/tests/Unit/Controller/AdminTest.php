@@ -35,8 +35,8 @@ function journalDownloadApp(array $query = []): Box_App
 
 function journalDownloadController(array $journal): Admin
 {
-    $api = new class($journal) {
-        public function __construct(private readonly array $journal)
+    $api = new readonly class($journal) {
+        public function __construct(private array $journal)
         {
         }
 

@@ -6621,12 +6621,10 @@ test('issuing an invoice freezes buyer details from the live client', function (
     $di['em']->shouldReceive('flush')->atLeast()->once();
     $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['mod_service'] = $di->protect(function ($serviceName) use ($systemService, $clientService) {
-        return match (strtolower((string) $serviceName)) {
-            'system' => $systemService,
-            'client' => $clientService,
-            default => Mockery::mock()->shouldIgnoreMissing(),
-        };
+    $di['mod_service'] = $di->protect(fn ($serviceName) => match (strtolower((string) $serviceName)) {
+        'system' => $systemService,
+        'client' => $clientService,
+        default => Mockery::mock()->shouldIgnoreMissing(),
     });
     $serviceMock->setDi($di);
 
