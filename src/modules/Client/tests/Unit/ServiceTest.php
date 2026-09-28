@@ -725,6 +725,16 @@ test('remove wraps client cleanup and flush in one transaction', function (): vo
     $di['mod_service'] = $di->protect(moduleService($services));
 
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $schemaManager = Mockery::mock(Doctrine\DBAL\Schema\AbstractSchemaManager::class);
+    $schemaManager->shouldReceive('listTableNames')->andReturn([
+        'service_hosting',
+        'service_domain',
+        'service_downloadable',
+        'service_license',
+        'service_custom',
+        'service_apikey',
+    ]);
+    $connection->shouldReceive('createSchemaManager')->andReturn($schemaManager);
     $query = Mockery::mock(Doctrine\DBAL\Query\QueryBuilder::class);
     $query->shouldReceive('delete')->once()->with('extension_meta')->andReturnSelf();
     $query->shouldReceive('where')->once()->with('client_id = :id')->andReturnSelf();
@@ -766,6 +776,16 @@ test('remove rolls back and rethrows cleanup failures', function (): void {
 
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
     $connection->shouldReceive('isTransactionActive')->once()->andReturnTrue();
+    $schemaManager = Mockery::mock(Doctrine\DBAL\Schema\AbstractSchemaManager::class);
+    $schemaManager->shouldReceive('listTableNames')->andReturn([
+        'service_hosting',
+        'service_domain',
+        'service_downloadable',
+        'service_license',
+        'service_custom',
+        'service_apikey',
+    ]);
+    $connection->shouldReceive('createSchemaManager')->andReturn($schemaManager);
     // The erasure gate passes: no provisioned services remain.
     $connection->shouldReceive('fetchOne')->times(6)->andReturn(false);
 
@@ -791,9 +811,20 @@ test('remove refuses clients with provisioned services', function (): void {
     $di['mod_service'] = $di->protect(moduleService(['order' => $orderService]));
 
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $schemaManager = Mockery::mock(Doctrine\DBAL\Schema\AbstractSchemaManager::class);
+    // service_apikey was never activated on this install: the gate skips its
+    // missing table instead of querying it.
+    $schemaManager->shouldReceive('listTableNames')->andReturn([
+        'service_hosting',
+        'service_domain',
+        'service_downloadable',
+        'service_license',
+        'service_custom',
+    ]);
+    $connection->shouldReceive('createSchemaManager')->andReturn($schemaManager);
     // Only hosting remains: the gate names it and stops before any cleanup.
     $connection->shouldReceive('fetchOne')
-        ->times(6)
+        ->times(5)
         ->andReturnUsing(fn (string $sql): string|false => str_contains($sql, 'service_hosting') ? '1' : false);
 
     $em = $di['em'];

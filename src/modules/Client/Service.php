@@ -898,6 +898,10 @@ class Service implements InjectionAwareInterface
      * while any service row exists and point the operator at explicit
      * cancellation first. Cancelled services are removed with their orders
      * through the normal flow, so a fully wound-down client deletes cleanly.
+     *
+     * Tables belonging to extensions that were never activated on this install
+     * (e.g. service_apikey on a fresh install) simply don't exist: there is
+     * nothing to orphan in them, so they are skipped rather than queried.
      */
     private function throwIfActiveServicesRemain(Client $model): void
     {
@@ -910,8 +914,12 @@ class Service implements InjectionAwareInterface
             'service_custom' => 'custom',
             'service_apikey' => 'API keys',
         ];
+        $existing = array_flip($connection->createSchemaManager()->listTableNames());
         $active = [];
         foreach ($tables as $table => $label) {
+            if (!isset($existing[$table])) {
+                continue;
+            }
             if ($connection->fetchOne("SELECT 1 FROM {$table} WHERE client_id = :id LIMIT 1", ['id' => $model->getId()])) {
                 $active[] = $label;
             }
