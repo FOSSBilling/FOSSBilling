@@ -52,8 +52,8 @@ class CannedResponseRepository extends EntityRepository
                 $qb->addOrderBy('r.id', $sort->direction);
             }
         } else {
-            $qb->orderBy('c.id', 'ASC')
-                ->addOrderBy('r.title', 'ASC');
+            $qb->orderBy('c.id', \SortDirection::Ascending)
+                ->addOrderBy('r.title', \SortDirection::Ascending);
         }
 
         return $qb;
@@ -67,8 +67,8 @@ class CannedResponseRepository extends EntityRepository
         $rows = $this->createQueryBuilder('r')
             ->select('r.id, r.title, c.title AS categoryTitle')
             ->leftJoin('r.category', 'c')
-            ->orderBy('c.id', 'ASC')
-            ->addOrderBy('r.title', 'ASC')
+            ->orderBy('c.id', \SortDirection::Ascending)
+            ->addOrderBy('r.title', \SortDirection::Ascending)
             ->getQuery()
             ->getArrayResult();
 

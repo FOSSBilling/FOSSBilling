@@ -82,7 +82,7 @@ class PromoRepository extends EntityRepository
                 $qb->addOrderBy('p.id', $sort->direction);
             }
         } else {
-            $qb->orderBy('p.id', 'ASC');
+            $qb->orderBy('p.id', \SortDirection::Ascending);
         }
 
         return $qb;
@@ -113,8 +113,8 @@ class PromoRepository extends EntityRepository
             ->setParameter('active', true)
             ->setParameter('autoApply', true)
             ->setParameter('now', $now)
-            ->orderBy('p.priority', 'DESC')
-            ->addOrderBy('p.id', 'ASC')
+            ->orderBy('p.priority', \SortDirection::Descending)
+            ->addOrderBy('p.id', \SortDirection::Ascending)
             ->getQuery()
             ->getResult();
     }

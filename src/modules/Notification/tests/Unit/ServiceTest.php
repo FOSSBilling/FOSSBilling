@@ -23,7 +23,7 @@ test('get search query builder applies supported filters', function (): void {
 
         return $queryBuilder;
     });
-    $queryBuilder->shouldReceive('orderBy')->with('n.id', 'DESC')->once()->andReturn($queryBuilder);
+    $queryBuilder->shouldReceive('orderBy')->with('n.id', SortDirection::Descending)->once()->andReturn($queryBuilder);
 
     $repository = Mockery::mock(ExtensionMetaRepository::class)->makePartial()->shouldIgnoreMissing();
     $repository->shouldReceive('createQueryBuilderForExtension')->with('mod_notification', 'n')->once()->andReturn($queryBuilder);
@@ -61,7 +61,7 @@ test('get search query builder applies supported filters', function (): void {
     expect($parameters['date_to']->format('Y-m-d H:i:s'))->toBe('2026-02-11 23:59:59');
 });
 
-test('sorts notification search query', function (array $filter, string $expectedOrder, string $expectedDirection, ?string $expectedTieBreakerDirection): void {
+test('sorts notification search query', function (array $filter, string $expectedOrder, SortDirection $expectedDirection, ?SortDirection $expectedTieBreakerDirection): void {
     $queryBuilder = Mockery::mock(QueryBuilder::class);
     $queryBuilder->shouldReceive('andWhere')->once()->with('n.metaKey = :metaKey')->andReturn($queryBuilder);
     $queryBuilder->shouldReceive('setParameter')->once()->with('metaKey', 'message')->andReturn($queryBuilder);
@@ -86,12 +86,12 @@ test('sorts notification search query', function (array $filter, string $expecte
 
     expect($service->getSearchQueryBuilder($filter))->toBe($queryBuilder);
 })->with([
-    'created at ascending' => [['sort' => 'created_at'], 'n.createdAt', 'ASC', 'ASC'],
-    'created at descending' => [['sort' => 'created_at', 'direction' => 'DESC'], 'n.createdAt', 'DESC', 'DESC'],
-    'updated at' => [['sort' => 'updated_at', 'direction' => 'desc'], 'n.updatedAt', 'DESC', 'DESC'],
-    'id' => [['sort' => 'id'], 'n.id', 'ASC', null],
-    'invalid sort falls back to default' => [['sort' => 'n.metaValue; DROP TABLE extension_meta'], 'n.id', 'DESC', null],
-    'invalid direction falls back to ascending' => [['sort' => 'created_at', 'direction' => 'sideways'], 'n.createdAt', 'ASC', 'ASC'],
+    'created at ascending' => [['sort' => 'created_at'], 'n.createdAt', SortDirection::Ascending, SortDirection::Ascending],
+    'created at descending' => [['sort' => 'created_at', 'direction' => 'DESC'], 'n.createdAt', SortDirection::Descending, SortDirection::Descending],
+    'updated at' => [['sort' => 'updated_at', 'direction' => 'desc'], 'n.updatedAt', SortDirection::Descending, SortDirection::Descending],
+    'id' => [['sort' => 'id'], 'n.id', SortDirection::Ascending, null],
+    'invalid sort falls back to default' => [['sort' => 'n.metaValue; DROP TABLE extension_meta'], 'n.id', SortDirection::Descending, null],
+    'invalid direction falls back to ascending' => [['sort' => 'created_at', 'direction' => 'sideways'], 'n.createdAt', SortDirection::Ascending, SortDirection::Ascending],
 ]);
 
 test('create dispatches the typed event after persisting the notification', function (): void {

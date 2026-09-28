@@ -24,7 +24,7 @@ test('builds a Doctrine client search with the legacy filters', function (): voi
 
         return $queryBuilder;
     });
-    $queryBuilder->shouldReceive('orderBy')->once()->with('c.createdAt', 'DESC')->andReturn($queryBuilder);
+    $queryBuilder->shouldReceive('orderBy')->once()->with('c.createdAt', SortDirection::Descending)->andReturn($queryBuilder);
 
     $repository = Mockery::mock(ClientRepository::class)->makePartial();
     $repository->shouldReceive('createQueryBuilder')->once()->with('c')->andReturn($queryBuilder);
@@ -86,7 +86,7 @@ test('builds filtered client name pairs from entities', function (): void {
     ]);
 });
 
-test('sorts client search query', function (array $data, string $expectedOrder, string $expectedDirection, ?string $expectedTieBreakerDirection): void {
+test('sorts client search query', function (array $data, string $expectedOrder, SortDirection $expectedDirection, ?SortDirection $expectedTieBreakerDirection): void {
     $queryBuilder = Mockery::mock(QueryBuilder::class);
     $queryBuilder->shouldReceive('orderBy')->once()->with($expectedOrder, $expectedDirection)->andReturn($queryBuilder);
     if ($expectedTieBreakerDirection !== null) {
@@ -100,17 +100,17 @@ test('sorts client search query', function (array $data, string $expectedOrder, 
 
     expect($repository->getSearchQueryBuilder($data))->toBe($queryBuilder);
 })->with([
-    'email ascending' => [['sort' => 'email'], 'c.email', 'ASC', 'ASC'],
-    'email descending' => [['sort' => 'email', 'direction' => 'DESC'], 'c.email', 'DESC', 'DESC'],
-    'first name' => [['sort' => 'first_name', 'direction' => 'desc'], 'c.firstName', 'DESC', 'DESC'],
-    'last name' => [['sort' => 'last_name'], 'c.lastName', 'ASC', 'ASC'],
-    'company' => [['sort' => 'company'], 'c.company', 'ASC', 'ASC'],
-    'status' => [['sort' => 'status'], 'c.status', 'ASC', 'ASC'],
-    'created at' => [['sort' => 'created_at'], 'c.createdAt', 'ASC', 'ASC'],
-    'updated at' => [['sort' => 'updated_at', 'direction' => 'DESC'], 'c.updatedAt', 'DESC', 'DESC'],
-    'id' => [['sort' => 'id'], 'c.id', 'ASC', null],
-    'invalid sort falls back to default' => [['sort' => 'c.email; DROP TABLE client'], 'c.createdAt', 'DESC', null],
-    'invalid direction falls back to ascending' => [['sort' => 'email', 'direction' => 'sideways'], 'c.email', 'ASC', 'ASC'],
+    'email ascending' => [['sort' => 'email'], 'c.email', SortDirection::Ascending, SortDirection::Ascending],
+    'email descending' => [['sort' => 'email', 'direction' => 'DESC'], 'c.email', SortDirection::Descending, SortDirection::Descending],
+    'first name' => [['sort' => 'first_name', 'direction' => 'desc'], 'c.firstName', SortDirection::Descending, SortDirection::Descending],
+    'last name' => [['sort' => 'last_name'], 'c.lastName', SortDirection::Ascending, SortDirection::Ascending],
+    'company' => [['sort' => 'company'], 'c.company', SortDirection::Ascending, SortDirection::Ascending],
+    'status' => [['sort' => 'status'], 'c.status', SortDirection::Ascending, SortDirection::Ascending],
+    'created at' => [['sort' => 'created_at'], 'c.createdAt', SortDirection::Ascending, SortDirection::Ascending],
+    'updated at' => [['sort' => 'updated_at', 'direction' => 'DESC'], 'c.updatedAt', SortDirection::Descending, SortDirection::Descending],
+    'id' => [['sort' => 'id'], 'c.id', SortDirection::Ascending, null],
+    'invalid sort falls back to default' => [['sort' => 'c.email; DROP TABLE client'], 'c.createdAt', SortDirection::Descending, null],
+    'invalid direction falls back to ascending' => [['sort' => 'email', 'direction' => 'sideways'], 'c.email', SortDirection::Ascending, SortDirection::Ascending],
 ]);
 
 test('loads list balances and group titles in one batch', function (): void {

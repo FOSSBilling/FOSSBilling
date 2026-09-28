@@ -278,8 +278,9 @@ class ServiceTransaction implements InjectionAwareInterface
 
         try {
             $schemaManager = $this->di['dbal']->createSchemaManager();
-            $columns = array_map(static fn ($column) => $column->getName(), $schemaManager->listTableColumns('transaction'));
-            $indexes = array_map(static fn ($index) => $index->getName(), $schemaManager->listTableIndexes('transaction'));
+            $table = $schemaManager->introspectTableByUnquotedName('transaction');
+            $columns = array_map(static fn ($column) => $column->getObjectName()->toString(), $table->getColumns());
+            $indexes = array_map(static fn ($index) => $index->getObjectName()->toString(), $table->getIndexes());
 
             $supported = in_array('ipn_hash', $columns, true) && in_array('transaction_ipn_hash_idx', $indexes, true);
         } catch (\Throwable $e) {

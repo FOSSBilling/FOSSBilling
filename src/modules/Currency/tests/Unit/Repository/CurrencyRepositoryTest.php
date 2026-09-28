@@ -32,7 +32,7 @@ function currencyRepositoryEntityManager(): EntityManager
 
 test('get search query builder orders by code by default', function (): void {
     $queryBuilder = Mockery::mock(QueryBuilder::class);
-    $queryBuilder->shouldReceive('orderBy')->once()->with('c.code', 'ASC')->andReturn($queryBuilder);
+    $queryBuilder->shouldReceive('orderBy')->once()->with('c.code', SortDirection::Ascending)->andReturn($queryBuilder);
 
     $repository = Mockery::mock(CurrencyRepository::class)->makePartial();
     $repository->shouldReceive('createQueryBuilder')->once()->with('c')->andReturn($queryBuilder);
@@ -40,7 +40,7 @@ test('get search query builder orders by code by default', function (): void {
     expect($repository->getSearchQueryBuilder([]))->toBe($queryBuilder);
 });
 
-test('sorts currency search query', function (array $data, string $expectedOrder, string $expectedDirection, ?string $expectedTieBreakerDirection): void {
+test('sorts currency search query', function (array $data, string $expectedOrder, SortDirection $expectedDirection, ?SortDirection $expectedTieBreakerDirection): void {
     $queryBuilder = Mockery::mock(QueryBuilder::class);
     $queryBuilder->shouldReceive('orderBy')->once()->with($expectedOrder, $expectedDirection)->andReturn($queryBuilder);
     if ($expectedTieBreakerDirection !== null) {
@@ -54,14 +54,14 @@ test('sorts currency search query', function (array $data, string $expectedOrder
 
     expect($repository->getSearchQueryBuilder($data))->toBe($queryBuilder);
 })->with([
-    'code ascending' => [['sort' => 'code'], 'c.code', 'ASC', 'ASC'],
-    'code descending' => [['sort' => 'code', 'direction' => 'DESC'], 'c.code', 'DESC', 'DESC'],
-    'conversion rate' => [['sort' => 'conversion_rate', 'direction' => 'desc'], 'c.conversionRate', 'DESC', 'DESC'],
-    'created at' => [['sort' => 'created_at'], 'c.createdAt', 'ASC', 'ASC'],
-    'updated at' => [['sort' => 'updated_at', 'direction' => 'DESC'], 'c.updatedAt', 'DESC', 'DESC'],
-    'id' => [['sort' => 'id'], 'c.id', 'ASC', null],
-    'invalid sort falls back to default' => [['sort' => 'c.code; DROP TABLE currency'], 'c.code', 'ASC', null],
-    'invalid direction falls back to ascending' => [['sort' => 'code', 'direction' => 'sideways'], 'c.code', 'ASC', 'ASC'],
+    'code ascending' => [['sort' => 'code'], 'c.code', SortDirection::Ascending, SortDirection::Ascending],
+    'code descending' => [['sort' => 'code', 'direction' => 'DESC'], 'c.code', SortDirection::Descending, SortDirection::Descending],
+    'conversion rate' => [['sort' => 'conversion_rate', 'direction' => 'desc'], 'c.conversionRate', SortDirection::Descending, SortDirection::Descending],
+    'created at' => [['sort' => 'created_at'], 'c.createdAt', SortDirection::Ascending, SortDirection::Ascending],
+    'updated at' => [['sort' => 'updated_at', 'direction' => 'DESC'], 'c.updatedAt', SortDirection::Descending, SortDirection::Descending],
+    'id' => [['sort' => 'id'], 'c.id', SortDirection::Ascending, null],
+    'invalid sort falls back to default' => [['sort' => 'c.code; DROP TABLE currency'], 'c.code', SortDirection::Ascending, null],
+    'invalid direction falls back to ascending' => [['sort' => 'code', 'direction' => 'sideways'], 'c.code', SortDirection::Ascending, SortDirection::Ascending],
 ]);
 
 test('Currency lookups are shared between services and invalidated by writes', function (): void {

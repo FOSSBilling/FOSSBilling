@@ -93,7 +93,7 @@ class ActivityClientEmailRepository extends EntityRepository
                 $qb->addOrderBy('e.id', $sort->direction);
             }
         } else {
-            $qb->orderBy('e.id', 'DESC');
+            $qb->orderBy('e.id', \SortDirection::Descending);
         }
 
         return $qb;
