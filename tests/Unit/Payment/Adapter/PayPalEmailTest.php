@@ -184,7 +184,7 @@ describe('_isIpnValid receiver verification', function (): void {
                 'txn_type' => 'unknown_event',
                 'payment_status' => 'Unknown',
             ],
-            'get' => [],
+            'get' => signedPayPalGet(7),
         ], 1);
 
         expect($logger->calls)->toContain([
@@ -200,6 +200,18 @@ function paypalProcessAdapter(object $di): Payment_Adapter_PayPalEmail
     $adapter->setDi($di);
 
     return $adapter;
+}
+
+/**
+ * Build the query-string portion of a callback URL as issued post-fix:
+ * invoice id plus its binding signature for the given gateway.
+ */
+function signedPayPalGet(int $invoiceId, int $gatewayId = 1, array $extra = []): array
+{
+    return array_merge(
+        ['invoice_id' => $invoiceId, 'sig' => FOSSBilling\Tools::signCallbackParams($gatewayId, $invoiceId)],
+        $extra
+    );
 }
 
 function paypalEmMocks(?object $invoiceModel = null, ?object $existingSubscription = null): Mockery\MockInterface
@@ -261,7 +273,7 @@ describe('PayPal subscription IPN handling', function (): void {
                 'period3' => '1 Y',
                 'amount3' => '120.00',
             ],
-            'get' => ['invoice_id' => 16],
+            'get' => signedPayPalGet(16, 2),
         ], 2);
 
         expect($created)->toHaveCount(1)
@@ -311,7 +323,7 @@ describe('PayPal subscription IPN handling', function (): void {
                 'period3' => '1 Y',
                 'amount3' => '120.00',
             ],
-            'get' => ['invoice_id' => 16],
+            'get' => signedPayPalGet(16, 2),
         ], 2);
 
         $processed = array_values(array_filter($updates, fn (array $u): bool => ($u['status'] ?? null) === 'processed'));
@@ -368,7 +380,7 @@ describe('PayPal subscription IPN handling', function (): void {
                 'mc_currency' => 'USD',
                 'subscr_id' => 'I-ABC123',
             ],
-            'get' => ['invoice_id' => 16],
+            'get' => signedPayPalGet(16, 2),
         ], 2);
 
         expect($funds)->toHaveCount(1)
@@ -426,7 +438,7 @@ describe('PayPal subscription IPN handling', function (): void {
                 'mc_currency' => 'USD',
                 'subscr_id' => 'I-ABC123',
             ],
-            'get' => ['invoice_id' => 16],
+            'get' => signedPayPalGet(16, 2),
         ], 2);
 
         $reassigned = array_values(array_filter($updates, fn (array $u): bool => isset($u['invoice_id']) && (int) $u['invoice_id'] === 99));
@@ -458,7 +470,7 @@ describe('PayPal subscription IPN handling', function (): void {
 
         paypalProcessAdapter($di)->processTransaction($apiAdmin, 42, [
             'post' => ['txn_type' => 'web_accept', 'payment_status' => 'Pending'],
-            'get' => ['invoice_id' => 16],
+            'get' => signedPayPalGet(16, 2),
         ], 2);
 
         $received = array_values(array_filter($updates, fn (array $u): bool => ($u['status'] ?? null) === 'received'));
@@ -487,7 +499,7 @@ describe('PayPal subscription IPN handling', function (): void {
 
         expect(fn (): mixed => paypalProcessAdapter($di)->processTransaction($apiAdmin, 42, [
             'post' => ['txn_type' => 'subscr_signup', 'mc_currency' => 'USD'],
-            'get' => ['invoice_id' => 16],
+            'get' => signedPayPalGet(16, 2),
         ], 2))->toThrow(Payment_Exception::class);
     });
 
@@ -517,7 +529,7 @@ describe('PayPal subscription IPN handling', function (): void {
 
         paypalProcessAdapter($di)->processTransaction($apiAdmin, 42, [
             'post' => ['txn_type' => 'subscr_cancel', 'subscr_id' => 'I-UNKNOWN'],
-            'get' => ['invoice_id' => 16],
+            'get' => signedPayPalGet(16, 2),
         ], 2);
 
         $warnings = array_filter($logger->calls, fn (array $c): bool => $c['method'] === 'warning');
@@ -553,7 +565,7 @@ describe('PayPal subscription IPN handling', function (): void {
 
         paypalProcessAdapter($di)->processTransaction($apiAdmin, 42, [
             'post' => ['txn_type' => 'subscr_cancel', 'subscr_id' => 'I-ABC123'],
-            'get' => ['invoice_id' => 16],
+            'get' => signedPayPalGet(16, 2),
         ], 2);
 
         $processed = array_values(array_filter($updates, fn (array $u): bool => ($u['status'] ?? null) === 'processed'));
@@ -580,7 +592,7 @@ describe('PayPal subscription IPN handling', function (): void {
 
         expect(fn (): mixed => paypalProcessAdapter($di)->processTransaction($apiAdmin, 42, [
             'post' => ['txn_type' => 'web_accept', 'payment_status' => 'Completed'],
-            'get' => ['invoice_id' => 16],
+            'get' => signedPayPalGet(16, 2),
         ], 2))->toThrow(Payment_Exception::class, 'PayPal payment is missing transaction details');
     });
 
@@ -610,7 +622,7 @@ describe('PayPal subscription IPN handling', function (): void {
                 'mc_gross' => '120.00',
                 'mc_currency' => 'USD',
             ],
-            'get' => ['invoice_id' => 16],
+            'get' => signedPayPalGet(16, 2),
         ], 2))->toThrow(Payment_Exception::class, 'PayPal subscription payment is missing the subscription ID');
     });
 
@@ -641,7 +653,7 @@ describe('PayPal subscription IPN handling', function (): void {
                 'mc_gross' => '120.00',
                 'mc_currency' => 'USD',
             ],
-            'get' => ['invoice_id' => 16],
+            'get' => signedPayPalGet(16, 2),
         ], 2);
 
         $warnings = array_filter($logger->calls, fn (array $c): bool => $c['method'] === 'warning');
@@ -698,7 +710,7 @@ describe('PayPal subscription IPN handling', function (): void {
                 'amount' => '120.00',
                 'amount_currency' => 'usd',
             ],
-            'get' => ['invoice_id' => 16],
+            'get' => signedPayPalGet(16, 2),
         ], 2);
 
         expect($funds)->toHaveCount(1)
@@ -733,7 +745,7 @@ describe('PayPal subscription IPN handling', function (): void {
                 'amount' => '120.00',
                 'amount_currency' => 'MXN',
             ],
-            'get' => ['invoice_id' => 16],
+            'get' => signedPayPalGet(16, 2),
         ], 2))->toThrow(Payment_Exception::class, 'PayPal payment currency MXN does not match invoice currency USD');
     });
 
@@ -776,7 +788,7 @@ describe('PayPal subscription IPN handling', function (): void {
                 'amount' => '120.00',
                 'amount_currency' => 'USD',
             ],
-            'get' => ['invoice_id' => 16],
+            'get' => signedPayPalGet(16, 2),
         ], 2);
 
         expect($created)->toHaveCount(1)
@@ -813,7 +825,7 @@ describe('PayPal subscription IPN handling', function (): void {
                 'amount' => '120.00',
                 'amount_currency' => 'MXN',
             ],
-            'get' => ['invoice_id' => 16],
+            'get' => signedPayPalGet(16, 2),
         ], 2))->toThrow(Payment_Exception::class, 'PayPal payment currency MXN does not match invoice currency USD');
     });
 
@@ -856,7 +868,7 @@ describe('PayPal subscription IPN handling', function (): void {
                 'mc_currency' => 'USD',
                 'amount3' => '120.00',
             ],
-            'get' => ['invoice_id' => 16],
+            'get' => signedPayPalGet(16, 2),
         ], 2);
 
         expect($created)->toHaveCount(1)
@@ -907,7 +919,7 @@ describe('PayPal subscription IPN handling', function (): void {
                 'amount3' => '150.00',
                 'period3' => '1 Y',
             ],
-            'get' => ['invoice_id' => 16],
+            'get' => signedPayPalGet(16, 2),
         ], 2);
 
         expect($subscriptionUpdates)->toHaveCount(1)
@@ -945,7 +957,7 @@ describe('PayPal subscription IPN handling', function (): void {
 
         paypalProcessAdapter($di)->processTransaction($apiAdmin, 42, [
             'post' => ['txn_type' => 'subscr_modify', 'subscr_id' => 'I-UNKNOWN'],
-            'get' => ['invoice_id' => 16],
+            'get' => signedPayPalGet(16, 2),
         ], 2);
 
         $warnings = array_filter($logger->calls, fn (array $c): bool => $c['method'] === 'warning');
@@ -981,7 +993,7 @@ describe('PayPal subscription IPN handling', function (): void {
 
         paypalProcessAdapter($di)->processTransaction($apiAdmin, 42, [
             'post' => ['txn_type' => 'recurring_payment_profile_cancel', 'recurring_payment_id' => 'I-PROFILE1'],
-            'get' => ['invoice_id' => 16],
+            'get' => signedPayPalGet(16, 2),
         ], 2);
 
         $processed = array_values(array_filter($updates, fn (array $u): bool => ($u['status'] ?? null) === 'processed'));
@@ -1014,7 +1026,7 @@ describe('PayPal subscription IPN handling', function (): void {
 
         paypalProcessAdapter($di)->processTransaction($apiAdmin, 42, [
             'post' => ['txn_type' => 'recurring_payment_failed', 'recurring_payment_id' => 'I-PROFILE1'],
-            'get' => ['invoice_id' => 16],
+            'get' => signedPayPalGet(16, 2),
         ], 2);
 
         $linked = array_values(array_filter($updates, fn (array $u): bool => ($u['s_id'] ?? null) === 'I-PROFILE1'));
@@ -1050,7 +1062,7 @@ describe('PayPal subscription IPN handling', function (): void {
 
         paypalProcessAdapter($di)->processTransaction($apiAdmin, 42, [
             'post' => ['txn_type' => 'subscr_failed', 'subscr_id' => 'I-UNKNOWN'],
-            'get' => ['invoice_id' => 16],
+            'get' => signedPayPalGet(16, 2),
         ], 2);
 
         $warnings = array_filter($logger->calls, fn (array $c): bool => $c['method'] === 'warning');
@@ -1084,7 +1096,7 @@ describe('PayPal subscription IPN handling', function (): void {
 
         paypalProcessAdapter($di)->processTransaction($apiAdmin, 42, [
             'post' => ['txn_type' => 'recurring_payment_skipped', 'recurring_payment_id' => 'I-PROFILE1'],
-            'get' => ['invoice_id' => 16],
+            'get' => signedPayPalGet(16, 2),
         ], 2);
 
         $warnings = array_filter($logger->calls, fn (array $c): bool => $c['method'] === 'warning');
@@ -1123,7 +1135,7 @@ describe('PayPal subscription IPN handling', function (): void {
                 'mc_currency' => 'USD',
                 'subscr_id' => 'I-OTHER',
             ],
-            'get' => ['invoice_id' => 16],
+            'get' => signedPayPalGet(16, 2),
         ], 2))->toThrow(Payment_Exception::class, 'is not linked to invoice 16');
     });
 
@@ -1176,7 +1188,7 @@ describe('PayPal subscription IPN handling', function (): void {
                 'mc_currency' => 'USD',
                 'subscr_id' => 'I-ABC123',
             ],
-            'get' => ['invoice_id' => 16],
+            'get' => signedPayPalGet(16, 2),
         ], 2);
 
         $processed = array_values(array_filter($updates, fn (array $u): bool => ($u['status'] ?? null) === 'processed'));
@@ -1210,7 +1222,7 @@ describe('PayPal subscription IPN handling', function (): void {
                 'period3' => '1 Y',
                 'amount3' => '120.00',
             ],
-            'get' => ['invoice_id' => 16],
+            'get' => signedPayPalGet(16, 2),
         ], 2);
     })->throws(Payment_Exception::class, 'PayPal payment is missing currency details');
 
@@ -1226,5 +1238,318 @@ describe('PayPal subscription IPN handling', function (): void {
         $adapter->setDi($di);
 
         expect($adapter->isIpnDuplicate(['txn_id' => 'ABC']))->toBeFalse();
+    });
+});
+
+describe('PayPal callback invoice binding', function (): void {
+    test('rejects a callback whose invoice id was swapped after signing', function (): void {
+        $apiAdmin = Mockery::mock();
+        $apiAdmin->shouldReceive('invoice_transaction_get')->once()->with(['id' => 42])->andReturn([
+            'invoice_id' => null, 'type' => null, 'txn_id' => null,
+            'txn_status' => null, 'amount' => null, 'currency' => null,
+        ]);
+        $apiAdmin->shouldNotReceive('invoice_transaction_update', 'invoice_get');
+
+        $di = container();
+        $di['em'] = paypalEmMocks();
+        $di['logger'] = new Tests\Helpers\TestLogger();
+
+        // Signature was issued for invoice 16; the callback URL now names 99.
+        $sig = FOSSBilling\Tools::signCallbackParams(2, 16);
+
+        paypalProcessAdapter($di)->processTransaction($apiAdmin, 42, [
+            'post' => ['txn_type' => 'web_accept', 'payment_status' => 'Completed'],
+            'get' => ['invoice_id' => 99, 'sig' => $sig],
+        ], 2);
+    })->throws(Payment_Exception::class, 'PayPal callback signature is invalid');
+
+    test('rejects a callback with no signature', function (): void {
+        $apiAdmin = Mockery::mock();
+        $apiAdmin->shouldReceive('invoice_transaction_get')->once()->with(['id' => 42])->andReturn([
+            'invoice_id' => null, 'type' => null, 'txn_id' => null,
+            'txn_status' => null, 'amount' => null, 'currency' => null,
+        ]);
+        $apiAdmin->shouldNotReceive('invoice_transaction_update', 'invoice_get');
+
+        $di = container();
+        $di['em'] = paypalEmMocks();
+        $di['logger'] = new Tests\Helpers\TestLogger();
+
+        paypalProcessAdapter($di)->processTransaction($apiAdmin, 42, [
+            'post' => ['txn_type' => 'web_accept', 'payment_status' => 'Completed'],
+            'get' => ['invoice_id' => 16],
+        ], 2);
+    })->throws(Payment_Exception::class, 'PayPal callback signature is invalid');
+
+    test('rejects a signature issued for a different gateway', function (): void {
+        $apiAdmin = Mockery::mock();
+        $apiAdmin->shouldReceive('invoice_transaction_get')->once()->with(['id' => 42])->andReturn([
+            'invoice_id' => null, 'type' => null, 'txn_id' => null,
+            'txn_status' => null, 'amount' => null, 'currency' => null,
+        ]);
+        $apiAdmin->shouldNotReceive('invoice_transaction_update', 'invoice_get');
+
+        $di = container();
+        $di['em'] = paypalEmMocks();
+        $di['logger'] = new Tests\Helpers\TestLogger();
+
+        paypalProcessAdapter($di)->processTransaction($apiAdmin, 42, [
+            'post' => ['txn_type' => 'web_accept', 'payment_status' => 'Completed'],
+            'get' => ['invoice_id' => 16, 'sig' => FOSSBilling\Tools::signCallbackParams(7, 16)],
+        ], 2);
+    })->throws(Payment_Exception::class, 'PayPal callback signature is invalid');
+
+    test('binds an unbound transaction to the verified invoice', function (): void {
+        $updates = [];
+        $apiAdmin = Mockery::mock();
+        $apiAdmin->shouldReceive('invoice_transaction_get')->once()->with(['id' => 42])->andReturn([
+            'invoice_id' => null, 'type' => null, 'txn_id' => null,
+            'txn_status' => null, 'amount' => null, 'currency' => null,
+        ]);
+        $apiAdmin->shouldReceive('invoice_get')->once()->with(['id' => 16])->andReturn([
+            'id' => 16, 'currency' => 'USD', 'client' => ['id' => 9],
+        ]);
+        $apiAdmin->shouldReceive('invoice_transaction_update')->byDefault()->withArgs(function (array $data) use (&$updates): bool {
+            $updates[] = $data;
+
+            return true;
+        });
+
+        $di = container();
+        $di['em'] = paypalEmMocks();
+        $di['logger'] = new Tests\Helpers\TestLogger();
+
+        paypalProcessAdapter($di)->processTransaction($apiAdmin, 42, [
+            'post' => ['txn_type' => 'unknown_event', 'payment_status' => 'Unknown'],
+            'get' => signedPayPalGet(16, 2),
+        ], 2);
+
+        $bound = array_values(array_filter($updates, fn (array $u): bool => isset($u['invoice_id'])));
+        expect($bound)->toHaveCount(1)
+            ->and((int) $bound[0]['invoice_id'])->toBe(16);
+    });
+
+    test('accepts an unsigned renewal for a stored subscription on the same invoice', function (): void {
+        $updates = [];
+        $stored = Mockery::mock(Box\Mod\Invoice\Entity\Subscription::class);
+        $stored->shouldReceive('getId')->byDefault()->andReturn(5);
+        $stored->shouldReceive('getRelType')->byDefault()->andReturn('invoice');
+        $stored->shouldReceive('getRelId')->byDefault()->andReturn(16);
+
+        $apiAdmin = Mockery::mock();
+        $apiAdmin->shouldReceive('invoice_transaction_get')->once()->with(['id' => 42])->andReturn([
+            'invoice_id' => 16, 'type' => null, 'txn_id' => null,
+            'txn_status' => null, 'amount' => null, 'currency' => null,
+        ]);
+        $apiAdmin->shouldReceive('invoice_get')->once()->with(['id' => 16])->andReturn([
+            'id' => 16, 'currency' => 'USD', 'client' => ['id' => 9],
+        ]);
+        $apiAdmin->shouldReceive('invoice_subscription_update')->once()->with(['id' => 5, 'status' => 'canceled']);
+        $apiAdmin->shouldReceive('invoice_transaction_update')->byDefault()->withArgs(function (array $data) use (&$updates): bool {
+            $updates[] = $data;
+
+            return true;
+        });
+
+        $di = container();
+        $di['em'] = paypalEmMocks(null, $stored);
+        $di['logger'] = new Tests\Helpers\TestLogger();
+
+        // Legacy recurring profile: callback URL predates signing, so no sig.
+        paypalProcessAdapter($di)->processTransaction($apiAdmin, 42, [
+            'post' => ['txn_type' => 'recurring_payment_profile_cancel', 'subscr_id' => 'I-LEGACY'],
+            'get' => ['invoice_id' => 16],
+        ], 2);
+
+        $processed = array_values(array_filter($updates, fn (array $u): bool => ($u['status'] ?? null) === 'processed'));
+        expect($processed)->toHaveCount(1);
+    });
+
+    test('rejects an unsigned callback naming a different invoice for a stored subscription', function (): void {
+        $stored = Mockery::mock(Box\Mod\Invoice\Entity\Subscription::class);
+        $stored->shouldReceive('getRelType')->byDefault()->andReturn('invoice');
+        $stored->shouldReceive('getRelId')->byDefault()->andReturn(16);
+
+        $apiAdmin = Mockery::mock();
+        $apiAdmin->shouldReceive('invoice_transaction_get')->once()->with(['id' => 42])->andReturn([
+            'invoice_id' => 99, 'type' => null, 'txn_id' => null,
+            'txn_status' => null, 'amount' => null, 'currency' => null,
+        ]);
+        $apiAdmin->shouldNotReceive('invoice_get', 'invoice_subscription_update');
+
+        $di = container();
+        $di['em'] = paypalEmMocks(null, $stored);
+        $di['logger'] = new Tests\Helpers\TestLogger();
+
+        paypalProcessAdapter($di)->processTransaction($apiAdmin, 42, [
+            'post' => ['txn_type' => 'recurring_payment_profile_cancel', 'subscr_id' => 'I-LEGACY'],
+            'get' => ['invoice_id' => 99],
+        ], 2);
+    })->throws(Payment_Exception::class, 'PayPal callback signature is invalid');
+
+    test('rejects an unsigned callback for an unknown subscription', function (): void {
+        $apiAdmin = Mockery::mock();
+        $apiAdmin->shouldReceive('invoice_transaction_get')->once()->with(['id' => 42])->andReturn([
+            'invoice_id' => 16, 'type' => null, 'txn_id' => null,
+            'txn_status' => null, 'amount' => null, 'currency' => null,
+        ]);
+        $apiAdmin->shouldNotReceive('invoice_get');
+
+        $di = container();
+        $di['em'] = paypalEmMocks();
+        $di['logger'] = new Tests\Helpers\TestLogger();
+
+        paypalProcessAdapter($di)->processTransaction($apiAdmin, 42, [
+            'post' => ['txn_type' => 'subscr_cancel', 'subscr_id' => 'I-UNKNOWN'],
+            'get' => ['invoice_id' => 16],
+        ], 2);
+    })->throws(Payment_Exception::class, 'PayPal callback signature is invalid');
+
+    test('still requires an invoice when none is supplied', function (): void {
+        $apiAdmin = Mockery::mock();
+        $apiAdmin->shouldReceive('invoice_transaction_get')->once()->with(['id' => 42])->andReturn([
+            'invoice_id' => null, 'type' => null, 'txn_id' => null,
+            'txn_status' => null, 'amount' => null, 'currency' => null,
+        ]);
+        $apiAdmin->shouldNotReceive('invoice_get');
+
+        $di = container();
+        $di['em'] = paypalEmMocks();
+        $di['logger'] = new Tests\Helpers\TestLogger();
+
+        paypalProcessAdapter($di)->processTransaction($apiAdmin, 42, [
+            'post' => ['txn_type' => 'web_accept', 'payment_status' => 'Completed'],
+            'get' => [],
+        ], 2);
+    })->throws(Payment_Exception::class, 'PayPal transaction is not associated with an invoice');
+
+    test('rejects a completed payment whose echoed item_number names a different invoice', function (): void {
+        $apiAdmin = Mockery::mock();
+        $apiAdmin->shouldReceive('invoice_transaction_get')->twice()->with(['id' => 42])->andReturn(
+            ['invoice_id' => 16, 'type' => null, 'txn_id' => null, 'txn_status' => null, 'amount' => null, 'currency' => null, 'status' => 'received'],
+            ['invoice_id' => 16, 'type' => 'web_accept', 'txn_id' => 'TXN-9', 'txn_status' => 'Completed', 'amount' => '120.00', 'currency' => 'USD', 'status' => 'processing']
+        );
+        $apiAdmin->shouldReceive('invoice_transaction_claim_for_processing')->once()->with(['id' => 42])->andReturn(true);
+        $apiAdmin->shouldReceive('invoice_get')->once()->with(['id' => 16])->andReturn([
+            'id' => 16, 'currency' => 'USD', 'client' => ['id' => 9],
+        ]);
+        $apiAdmin->shouldReceive('invoice_transaction_update')->byDefault()->andReturnTrue();
+        $apiAdmin->shouldNotReceive('client_balance_add_funds');
+
+        $invoiceModel = Mockery::mock(Box\Mod\Invoice\Entity\Invoice::class);
+        $invoiceModel->shouldReceive('getId')->byDefault()->andReturn(16);
+        $invoiceModel->shouldReceive('getNr')->byDefault()->andReturn('00042');
+
+        $di = container();
+        $di['em'] = paypalEmMocks($invoiceModel);
+        $di['logger'] = new Tests\Helpers\TestLogger();
+
+        paypalProcessAdapter($di)->processTransaction($apiAdmin, 42, [
+            'post' => [
+                'txn_type' => 'web_accept',
+                'payment_status' => 'Completed',
+                'txn_id' => 'TXN-9',
+                'mc_gross' => '120.00',
+                'mc_currency' => 'USD',
+                'item_number' => '99999',
+            ],
+            'get' => signedPayPalGet(16, 2),
+        ], 2);
+    })->throws(Payment_Exception::class, 'PayPal item_number does not match invoice 16');
+
+    test('accepts a completed payment whose echoed references match the invoice', function (): void {
+        $funds = [];
+        $apiAdmin = Mockery::mock();
+        $apiAdmin->shouldReceive('invoice_transaction_get')->twice()->with(['id' => 42])->andReturn(
+            ['invoice_id' => 16, 'type' => null, 'txn_id' => null, 'txn_status' => null, 'amount' => null, 'currency' => null, 'status' => 'received'],
+            ['invoice_id' => 16, 'type' => 'web_accept', 'txn_id' => 'TXN-9', 'txn_status' => 'Completed', 'amount' => '120.00', 'currency' => 'USD', 'status' => 'processing']
+        );
+        $apiAdmin->shouldReceive('invoice_transaction_claim_for_processing')->once()->with(['id' => 42])->andReturn(true);
+        $apiAdmin->shouldReceive('invoice_get')->once()->with(['id' => 16])->andReturn([
+            'id' => 16, 'currency' => 'USD', 'client' => ['id' => 9],
+        ]);
+        $apiAdmin->shouldReceive('invoice_transaction_update')->byDefault()->andReturnTrue();
+        $apiAdmin->shouldReceive('client_balance_add_funds')->once()->withArgs(function (array $data) use (&$funds): bool {
+            $funds[] = $data;
+
+            return true;
+        });
+        $apiAdmin->shouldReceive('invoice_pay_with_credits')->once()->with(['id' => 16]);
+
+        $invoiceModel = Mockery::mock(Box\Mod\Invoice\Entity\Invoice::class);
+        $invoiceModel->shouldReceive('getId')->byDefault()->andReturn(16);
+        $invoiceModel->shouldReceive('getNr')->byDefault()->andReturn('00042');
+        $invoiceModel->shouldReceive('getStatus')->byDefault()->andReturn(Box\Mod\Invoice\Entity\Invoice::STATUS_UNPAID);
+        $invoiceModel->shouldReceive('isApproved')->byDefault()->andReturn(true);
+
+        $invoiceService = Mockery::mock();
+        $invoiceService->shouldReceive('getTotalWithTax')->once()->andReturn(120.00);
+        $invoiceService->shouldReceive('validatePaymentAmount')->once()->with(120.00, 120.00)->andReturnNull();
+        $invoiceService->shouldReceive('isInvoiceTypeDeposit')->once()->andReturn(false);
+
+        $di = container();
+        $di['em'] = paypalEmMocks($invoiceModel);
+        $di['logger'] = new Tests\Helpers\TestLogger();
+        $di['mod_service'] = $di->protect(static fn (): object => $invoiceService);
+
+        paypalProcessAdapter($di)->processTransaction($apiAdmin, 42, [
+            'post' => [
+                'txn_type' => 'web_accept',
+                'payment_status' => 'Completed',
+                'txn_id' => 'TXN-9',
+                'mc_gross' => '120.00',
+                'mc_currency' => 'USD',
+                'item_number' => '00042',
+            ],
+            'get' => signedPayPalGet(16, 2),
+        ], 2);
+
+        expect($funds)->toHaveCount(1);
+    });
+
+    test('getInvoiceId resolves a signed callback and rejects a tampered one', function (): void {
+        $di = container();
+        $di['em'] = paypalEmMocks();
+        $di['logger'] = new Tests\Helpers\TestLogger();
+
+        $adapter = new Payment_Adapter_PayPalEmail(['email' => 'merchant@example.com', 'test_mode' => false, 'gateway_id' => 2]);
+        $adapter->setDi($di);
+
+        expect($adapter->getInvoiceId(['get' => signedPayPalGet(16, 2)]))->toBe(16);
+        expect($adapter->getInvoiceId(['get' => []]))->toBeNull();
+        expect(fn (): mixed => $adapter->getInvoiceId(['get' => ['invoice_id' => 99, 'sig' => FOSSBilling\Tools::signCallbackParams(2, 16)]]))
+            ->toThrow(Payment_Exception::class, 'PayPal callback signature is invalid');
+    });
+
+    test('payment forms sign the callback URL for the paying invoice', function (): void {
+        $di = container();
+        $di['em'] = paypalEmMocks();
+        $di['logger'] = new Tests\Helpers\TestLogger();
+
+        $adapter = new Payment_Adapter_PayPalEmail([
+            'email' => 'merchant@example.com',
+            'test_mode' => false,
+            'gateway_id' => 2,
+            'thankyou_url' => 'https://example.com/thank-you',
+            'cancel_url' => 'https://example.com/cancel',
+            'notify_url' => 'https://example.com/ipn.php?gateway_id=2&invoice_id=16',
+        ]);
+        $adapter->setDi($di);
+
+        $invoice = [
+            'id' => 16,
+            'nr' => '00042',
+            'serie' => 'FB',
+            'currency' => 'USD',
+            'subtotal' => '100.00',
+            'tax' => '20.00',
+            'lines' => [['title' => 'Test product']],
+        ];
+
+        $fields = $adapter->getOneTimePaymentFields($invoice);
+        parse_str((string) parse_url($fields['notify_url'], PHP_URL_QUERY), $query);
+
+        expect((int) ($query['invoice_id'] ?? 0))->toBe(16)
+            ->and(FOSSBilling\Tools::verifyCallbackSignature(2, 16, $query['sig'] ?? null))->toBeTrue();
     });
 });
