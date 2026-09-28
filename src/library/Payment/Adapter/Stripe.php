@@ -436,9 +436,8 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
                 }
             }
 
-            // No claim here: ServiceTransaction claims the row before dispatching to the
-            // adapter, so re-claiming would always fail and skip the payment. The in-memory
-            // marker below is still needed: the succeeded branch below keys off it.
+            // No re-claim: the service layer already holds the processing claim, and the
+            // in-memory marker below is what the succeeded branch keys off.
             $tx->setStatus(Transaction::STATUS_PROCESSING);
         }
 
@@ -945,8 +944,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             'rel_id' => $tx->getId(),
         ];
 
-        // No claim here: ServiceTransaction claims the row before dispatching to the
-        // adapter, so re-claiming would always fail and skip the payment.
+        // No re-claim: the service layer already holds the processing claim.
         $tx->setType(Payment_Transaction::TXTYPE_PAYMENT);
         $tx->setAmount((string) $bd['amount']);
         $tx->setCurrency(strtoupper((string) ($stripeInvoice->currency ?? '')));
@@ -1265,9 +1263,8 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
         $invoiceService = $this->di['mod_service']('Invoice');
 
-        // No claim here: ServiceTransaction claims the row before dispatching to the
-        // adapter, so re-claiming would always fail and skip the payment. The in-memory
-        // marker below is still needed: the succeeded branch below keys off it.
+        // No re-claim: the service layer already holds the processing claim, and the
+        // in-memory marker below is what the succeeded branch keys off.
         $tx->setStatus(Transaction::STATUS_PROCESSING);
 
         $clientService = $this->di['mod_service']('client');
