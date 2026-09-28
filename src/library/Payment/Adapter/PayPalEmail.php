@@ -256,8 +256,8 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                 $api_admin->client_balance_add_funds($bd);
 
                 if (!empty($tx['invoice_id']) && $invoiceDbModel instanceof Invoice && !$invoiceService->isInvoiceTypeDeposit($invoiceDbModel)) {
-                    if (!$invoiceDbModel->isApproved()) {
-                        $invoiceService->approveInvoice($invoiceDbModel, ['use_credits' => false]);
+                    if (!$invoiceDbModel->isIssued()) {
+                        $invoiceService->issueInvoice($invoiceDbModel, ['use_credits' => false]);
                     }
                     $api_admin->invoice_pay_with_credits(['id' => $tx['invoice_id']]);
                 } elseif (!empty($tx['invoice_id']) && $invoiceDbModel instanceof Invoice && $invoiceService->isInvoiceTypeDeposit($invoiceDbModel)) {
@@ -542,13 +542,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
     public function isIpnDuplicate(array $ipn): bool
     {
-        $sql = 'SELECT id
-                FROM transaction
+        // `transaction` is a reserved word: quote it portably, or the lookup is
+        // a syntax error on SQLite and every IPN looks new.
+        $table = $this->di['em']->getConnection()->quoteSingleIdentifier('transaction');
+        $sql = "SELECT id
+                FROM {$table}
                 WHERE txn_id = :transaction_id
                   AND txn_status = :transaction_status
                   AND type = :transaction_type
                   AND amount = :transaction_amount
-                LIMIT 2';
+                LIMIT 2";
 
         $bindings = [
             'transaction_id' => $ipn['txn_id'] ?? null,

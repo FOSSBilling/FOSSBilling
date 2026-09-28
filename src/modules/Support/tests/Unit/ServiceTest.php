@@ -715,6 +715,12 @@ test('removes tickets by client', function (): void {
         ->andReturn([$model]);
     $service->shouldReceive('getSupportTicketRepository')->atLeast()->once()
         ->andReturn($repo);
+    $service->shouldReceive('getSupportTicketNoteRepository')->atLeast()->once()
+        ->andReturn(Mockery::mock(SupportTicketNoteRepository::class)->shouldIgnoreMissing());
+    $service->shouldReceive('getSupportTicketMessageRepository')->atLeast()->once()
+        ->andReturn(Mockery::mock(SupportTicketMessageRepository::class)->shouldIgnoreMissing());
+    $service->shouldReceive('getSupportTicketMessageHistoryRepository')->byDefault()
+        ->andReturn(Mockery::mock(SupportTicketMessageHistoryRepository::class)->shouldIgnoreMissing());
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
     supportWireKbRepositories($emMock);
@@ -730,6 +736,64 @@ test('removes tickets by client', function (): void {
 
     $result = $service->rmByClient($client);
     expect($result)->toBeNull();
+});
+
+test('rmByClient removes tickets with their notes, messages, and history', function (): void {
+    $service = Mockery::mock(Service::class)->makePartial();
+    $ticket = new SupportTicket();
+    setEntityId($ticket, 1);
+    $note = new SupportTicketNote();
+    setEntityId($note, 2);
+    $message = new SupportTicketMessage();
+    setEntityId($message, 3);
+    $history = new SupportTicketMessageHistory();
+    setEntityId($history, 4);
+
+    $repo = Mockery::mock(SupportTicketRepository::class);
+    $repo->shouldReceive('findByClientId')->atLeast()->once()
+        ->andReturn([$ticket]);
+    $service->shouldReceive('getSupportTicketRepository')->atLeast()->once()
+        ->andReturn($repo);
+    $noteRepo = Mockery::mock(SupportTicketNoteRepository::class);
+    $noteRepo->shouldReceive('findByTicketId')->atLeast()->once()
+        ->with(1)
+        ->andReturn([$note]);
+    $service->shouldReceive('getSupportTicketNoteRepository')->atLeast()->once()
+        ->andReturn($noteRepo);
+    $messageRepo = Mockery::mock(SupportTicketMessageRepository::class);
+    $messageRepo->shouldReceive('findByTicketId')->atLeast()->once()
+        ->with(1)
+        ->andReturn([$message]);
+    $service->shouldReceive('getSupportTicketMessageRepository')->atLeast()->once()
+        ->andReturn($messageRepo);
+    $historyRepo = Mockery::mock(SupportTicketMessageHistoryRepository::class);
+    $historyRepo->shouldReceive('findByMessageId')->atLeast()->once()
+        ->with(3)
+        ->andReturn([$history]);
+    $service->shouldReceive('getSupportTicketMessageHistoryRepository')->atLeast()->once()
+        ->andReturn($historyRepo);
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    supportWireKbRepositories($emMock);
+    $removed = [];
+    $emMock->shouldReceive('remove')->atLeast()->once()
+        ->with(Mockery::on(function ($entity) use (&$removed): bool {
+            $removed[] = $entity;
+
+            return true;
+        }));
+    $emMock->shouldReceive('flush')->once();
+
+    $di = container();
+    $di['em'] = $emMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $service->setDi($di);
+
+    $client = createEntity(Client::class);
+    setEntityId($client, 9);
+
+    $service->rmByClient($client);
+    expect($removed)->toContain($note, $message, $history, $ticket);
 });
 
 test('removes a ticket, its messages, and their edit history', function (): void {

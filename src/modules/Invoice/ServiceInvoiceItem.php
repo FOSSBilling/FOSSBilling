@@ -60,9 +60,9 @@ class ServiceInvoiceItem implements InjectionAwareInterface
             if (!$skipEditableCheck) {
                 $editable = $state === null
                     ? $invoiceService->isInvoiceEditable($invoice)
-                    : $invoiceService->isInvoiceStateEditable($state['status'], $state['approved']);
+                    : $invoiceService->isInvoiceStateEditable($state['status'], $state['issued']);
                 if (!$editable) {
-                    throw new \FOSSBilling\InformationException('This invoice can no longer be edited. Approved invoices are locked once issued; correct them with a credit note or a replacement invoice.');
+                    throw new \FOSSBilling\InformationException('This invoice can no longer be edited. Issued invoices are immutable; correct them with a credit note or a replacement invoice.');
                 }
             }
 

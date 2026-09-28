@@ -36,16 +36,16 @@ test('issuing a debit note charges extra without touching the original', functio
         ]);
         assertApiSuccess($added);
 
-        // Draft invoices take lines directly; debit notes are for approved ones.
+        // Draft invoices take lines directly; debit notes are for issued ones.
         $draftDebit = Tests\Helpers\ApiClient::request('admin/invoice/debit', [
             'id' => $invoiceId,
             'items' => [['title' => 'E2E too early', 'price' => 5, 'quantity' => 1]],
         ]);
         expect($draftDebit->wasSuccessful())->toBeFalse();
-        expect($draftDebit->getErrorMessage())->toContain('Only approved unpaid or paid');
+        expect($draftDebit->getErrorMessage())->toContain('Only issued unpaid or paid');
 
-        $approved = Tests\Helpers\ApiClient::request('admin/invoice/approve', ['id' => $invoiceId]);
-        assertApiSuccess($approved);
+        $issued = Tests\Helpers\ApiClient::request('admin/invoice/issue', ['id' => $invoiceId]);
+        assertApiSuccess($issued);
 
         $emptyDebit = Tests\Helpers\ApiClient::request('admin/invoice/debit', ['id' => $invoiceId]);
         expect($emptyDebit->wasSuccessful())->toBeFalse();
@@ -63,7 +63,7 @@ test('issuing a debit note charges extra without touching the original', functio
 
         $debitNote = debitNoteGetInvoice($debitNoteId);
         expect($debitNote['status'])->toBe('unpaid');
-        expect($debitNote['approved'])->toBeTrue();
+        expect($debitNote['issued'])->toBeTrue();
         expect((int) $debitNote['debit_note_for_invoice_id'])->toBe($invoiceId);
         expect($debitNote['serie'])->toBe('DN-');
         expect((float) $debitNote['total'])->toEqual(25.0);

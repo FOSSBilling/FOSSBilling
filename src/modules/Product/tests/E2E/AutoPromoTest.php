@@ -87,25 +87,47 @@ test('admin can apply and remove promos on orders and unpaid invoices', function
         $promoId = autoPromoCreatePromo($promoCode, 'absolute', 15, ['active' => 1, 'recurring' => 1]);
         ['id' => $clientId] = autoPromoCreateClient();
 
+        // Promo edits happen on the draft: once issued, the invoice is
+        // immutable and post-issuance discounts go through credit notes.
         $created = Tests\Helpers\ApiClient::request('admin/order/create', [
             'client_id' => $clientId,
             'product_id' => $productId,
-            'invoice_option' => 'issue-invoice',
-            'promo_code' => $promoCode,
+            'invoice_option' => 'no-invoice',
         ]);
         assertApiSuccess($created);
         assertApiResultIsInt($created);
         $orderId = (int) $created->getResult();
 
+        $draft = Tests\Helpers\ApiClient::request('admin/invoice/prepare', [
+            'client_id' => $clientId,
+        ]);
+        assertApiSuccess($draft);
+        assertApiResultIsInt($draft);
+        $invoiceId = (int) $draft->getResult();
+
+        $attached = Tests\Helpers\ApiClient::request('admin/invoice/attach_order', [
+            'id' => $invoiceId,
+            'order_id' => $orderId,
+        ]);
+        assertApiSuccess($attached);
+
+        $added = Tests\Helpers\ApiClient::request('admin/invoice/promo_add', [
+            'id' => $invoiceId,
+            'promo_code' => $promoCode,
+            'order_id' => $orderId,
+        ]);
+        assertApiSuccess($added);
+        expect((float) $added->getResult())->toEqual(15.0);
+
         $order = autoPromoGetOrder($orderId);
         expect((int) $order['promo_id'])->toBe($promoId);
         expect((float) $order['discount'])->toEqual(15.0);
 
-        $invoice = autoPromoGetInvoice((int) $order['unpaid_invoice_id']);
+        $invoice = autoPromoGetInvoice($invoiceId);
         expect(autoPromoHasDiscountLine($invoice, $orderId, -15.0))->toBeTrue();
 
         $removed = Tests\Helpers\ApiClient::request('admin/invoice/promo_remove', [
-            'id' => $order['unpaid_invoice_id'],
+            'id' => $invoiceId,
             'promo_id' => $promoId,
             'order_id' => $orderId,
         ]);
@@ -114,25 +136,29 @@ test('admin can apply and remove promos on orders and unpaid invoices', function
 
         $order = autoPromoGetOrder($orderId);
         expect((float) $order['discount'])->toEqual(0.0);
-        $invoice = autoPromoGetInvoice((int) $order['unpaid_invoice_id']);
+        $invoice = autoPromoGetInvoice($invoiceId);
         expect(autoPromoHasDiscountLine($invoice, $orderId, -15.0))->toBeFalse();
 
         $added = Tests\Helpers\ApiClient::request('admin/invoice/promo_add', [
-            'id' => $order['unpaid_invoice_id'],
+            'id' => $invoiceId,
             'promo_code' => $promoCode,
             'order_id' => $orderId,
         ]);
         assertApiSuccess($added);
         expect((float) $added->getResult())->toEqual(15.0);
 
+        // Issue before paying: the promo edits above are only valid on drafts.
+        $issued = Tests\Helpers\ApiClient::request('admin/invoice/issue', ['id' => $invoiceId]);
+        assertApiSuccess($issued);
+
         // Pay the checkout invoice first: renewing against an unpaid invoice
         // would simply return that same invoice instead of a renewal.
-        autoPromoMarkInvoicePaid((int) $order['unpaid_invoice_id']);
+        autoPromoMarkInvoicePaid($invoiceId);
 
         // Recurring promos carry forward to renewal invoices.
         $renewal = Tests\Helpers\ApiClient::request('admin/invoice/renewal_invoice', ['id' => $orderId]);
         assertApiSuccess($renewal);
-        expect((int) $renewal->getResult())->not->toBe((int) $order['unpaid_invoice_id']);
+        expect((int) $renewal->getResult())->not->toBe($invoiceId);
         $renewalInvoice = autoPromoGetInvoice((int) $renewal->getResult());
         expect(autoPromoHasDiscountLine($renewalInvoice, $orderId, -15.0))->toBeTrue();
     } finally {

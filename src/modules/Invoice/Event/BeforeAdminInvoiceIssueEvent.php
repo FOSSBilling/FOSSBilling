@@ -11,8 +11,8 @@ namespace Box\Mod\Invoice\Event;
 
 use FOSSBilling\Events\Event;
 
-/** Dispatched before an admin deletes an unpaid, unissued invoice. */
-final class BeforeAdminInvoiceDeleteEvent extends Event
+/** Dispatched before an invoice is issued. */
+final class BeforeAdminInvoiceIssueEvent extends Event
 {
     public function __construct(public readonly int $invoiceId)
     {

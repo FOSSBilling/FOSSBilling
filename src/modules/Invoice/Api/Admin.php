@@ -93,12 +93,29 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
+     * Get the audit journal of an invoice: one entry per lifecycle
+     * transition with a trimmed snapshot of the invoice at that time.
+     *
+     * @return array
+     */
+    #[RequiredParams(['id' => 'Invoice ID is missing'])]
+    public function journal($data)
+    {
+        $this->checkPermissions('invoice', 'view');
+
+        $model = $this->_getInvoice($data);
+
+        return $this->getService()->getJournalForInvoice((int) $model->getId());
+    }
+
+    /**
      * Sets invoice status to paid. This method differs from invoice update method
      * in a way that it sends notification to Events system, so emails are sent.
      *
      * @optional bool $execute - execute related tasks on invoice items. Default false.
      * @optional int $gateway_id - Payment gateway to associate with the invoice
      * @optional string $transactionId - Custom transaction ID to use when the selected gateway is Custom
+     * @optional string $paid_at - payment date to record instead of now, e.g. "2026-09-01 14:00:00"
      *
      * @return bool
      */
@@ -117,7 +134,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * Uses clients details, such as currency assigned to client.
      * If client currency is not defined, sets default currency for client.
      *
-     * @optional bool $approve - set true to approve invoice after preparation. Defaults to false
+     * @optional bool $issue - set true to issue invoice after preparation. Defaults to false
      * @optional int $gateway_id - Selected payment gateway id
      * @optional array $items - list of invoice lines. One line is array of line parameters
      * @optional string $text_1 - text to be displayed before invoice items table
@@ -138,18 +155,18 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
-     * Approve invoice.
+     * Issue invoice.
      *
      * @return bool
      */
     #[RequiredParams(['id' => 'Invoice ID is missing'])]
-    public function approve($data)
+    public function issue($data)
     {
         $this->checkPermissions('invoice', 'manage_invoices');
 
         $model = $this->_getInvoice($data);
 
-        return $this->getService()->approveInvoice($model, $data);
+        return $this->getService()->issueInvoice($model, $data);
     }
 
     /**
@@ -158,7 +175,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional string $note - note for refund
      * @optional array $items - line id => quantity map for a partial refund; omit for a full refund
      *
-     * @return bool
+     * @return int $id - newly generated refund document ID
      */
     #[RequiredParams(['id' => 'Invoice ID is missing'])]
     public function refund($data)
@@ -225,7 +242,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
-     * Cancel an approved unpaid invoice and issue a replacement carrying its
+     * Cancel an issued unpaid invoice and issue a replacement carrying its
      * lines forward. The replacement takes the next invoice number; the
      * original number stays with the canceled record.
      *
@@ -255,6 +272,26 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
+     * Cancel (void) an issued unpaid invoice without issuing a replacement.
+     * The invoice keeps its number with a canceled status so the audit trail
+     * survives. Linked orders keep pointing at it for history; transactions
+     * are detached but kept.
+     *
+     * @optional string $reason - reason recorded in the invoice notes
+     *
+     * @return bool
+     */
+    #[RequiredParams(['id' => 'Invoice ID is missing'])]
+    public function cancel($data)
+    {
+        $this->checkPermissions('invoice', 'manage_invoices');
+
+        $model = $this->_getInvoice($data);
+
+        return $this->getService()->cancelInvoice($model, $data);
+    }
+
+    /**
      * Update invoice details.
      *
      * @optional string $paid_at - Invoice payment date (Y-m-d) or empty to remove
@@ -262,34 +299,21 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional string $created_at - Invoice issue date (Y-m-d) or empty to remove
      * @optional string $serie - Invoice serie
      * @optional string $nr - Invoice number
-     * @optional string $status - Invoice status: paid|unpaid
+     * @optional string $status - Invoice status for drafts: unpaid|canceled
      * @optional string $taxrate - Invoice tax rate
      * @optional string $taxname - Invoice tax name
-     * @optional bool $approved - flag to set invoice as approved. Approved invoices are visible to clients
+     * @optional bool $issued - read-only display of the issue state. Changing it is
+     *                         refused: issue a draft through the issue action or the
+     *                         $issue flag below instead.
      * @optional string $notes - notes
      * @optional int $gateway_id - selected payment method - gateway id
      * @optional array $new_item - [title] [price]
      * @optional string $text_1 - Custom invoice text 1
      * @optional string $text_2 - Custom invoice text 2
-     * @optional string $seller_company - Seller company name
-     * @optional string $seller_company_vat - Seller company VAT number
-     * @optional string $seller_company_number - Seller company number
-     * @optional string $seller_address - Seller address
-     * @optional string $seller_phone - Seller phone
-     * @optional string $seller_email - Seller email
-     * @optional string $buyer_first_name - Buyer first name
-     * @optional string $buyer_last_name - Buyer last name
-     * @optional string $buyer_company - Buyer company name
-     * @optional string $buyer_company_vat - Buyer company VAT number
-     * @optional string $buyer_company_number - Buyer company number
-     * @optional string $buyer_address - Buyer address
-     * @optional string $buyer_city - Buyer city
-     * @optional string $buyer_state - Buyer state
-     * @optional string $buyer_country - Buyer country
-     * @optional string $buyer_zip - Buyer zip
-     * @optional string $buyer_phone - Buyer phone
-     * @optional string $buyer_email - Buyer email
-     * @optional bool $approve - approve the invoice after saving the supplied changes
+     * @optional bool $issue - issue the invoice after saving the supplied changes
+     *
+     * Buyer and seller details are not accepted here: they are frozen from the
+     * live client and company records when the invoice is issued.
      *
      * @return bool
      */
@@ -301,8 +325,8 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $model = $this->_getInvoice($data);
         $result = $this->getService()->updateInvoice($model, $data);
 
-        if ($result && !empty($data['approve'])) {
-            return $this->getService()->approveInvoice($model, $data);
+        if ($result && !empty($data['issue'])) {
+            return $this->getService()->issueInvoice($model, $data);
         }
 
         return $result;
@@ -358,6 +382,11 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
     /**
      * Delete invoice.
+     *
+     * Unissued unpaid drafts are always deletable. Issued unpaid and
+     * canceled invoices additionally require relaxed invoice immutability.
+     * Paid, refunded, and note/reissue-linked invoices cannot be deleted;
+     * cancel, reissue, or refund them instead.
      *
      * @return bool
      */
@@ -467,7 +496,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
-     * Calls due events on unpaid and approved invoices.
+     * Calls due events on unpaid and issued invoices.
      * Extensions can listen to BeforeInvoiceIsDueEvent and AfterInvoiceIsDueEvent.
      *
      * @optional bool $once_per_day - default true. Pass false if you want to execute this action more than once per day
@@ -1146,22 +1175,6 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $qb = $taxService->getTaxRepository()->getSearchQueryBuilder($data);
 
         return $this->getDi()['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data));
-    }
-
-    /**
-     * Automatically setup the EU VAT tax rules for you for all EU Member States.
-     * This action will delete any existing tax rules and configure the VAT rates
-     * for all EU countries.
-     *
-     * @return bool
-     */
-    public function tax_setup_eu($data)
-    {
-        $this->checkPermissions('invoice', 'manage_tax');
-
-        $taxService = $this->getDi()['mod_service']('Invoice', 'Tax');
-
-        return $taxService->setupEUTaxes($data);
     }
 
     /**
