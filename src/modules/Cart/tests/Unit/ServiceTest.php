@@ -1076,7 +1076,7 @@ test('createFromCart sets the unpaid invoice id on orders when checkout produces
     $productService->shouldReceive('findProductById')->twice()->with(5)->andReturn($product);
     $productService->shouldReceive('reserveStockForOrder')->once()->with(Mockery::type(Order::class));
 
-    // Regression test for GH-4246: prepareInvoice()/approveInvoice() must hand back a
+    // Regression test for GH-4246: prepareInvoice()/issueInvoice() must hand back a
     // Doctrine Invoice entity whose getId() is strictly ?int, matching what
     // Order::setUnpaidInvoiceId() declares. Before the Invoice module was migrated to
     // Doctrine, this was a RedBean bean whose ->id was a string, which made every
@@ -1086,7 +1086,7 @@ test('createFromCart sets the unpaid invoice id on orders when checkout produces
 
     $invoiceService = Mockery::mock(Box\Mod\Invoice\Service::class);
     $invoiceService->shouldReceive('prepareInvoice')->once()->with($client, Mockery::type('array'))->andReturn($invoice);
-    $invoiceService->shouldReceive('approveInvoice')->once()->with($invoice, Mockery::type('array'))->andReturn(true);
+    $invoiceService->shouldReceive('issueInvoice')->once()->with($invoice, Mockery::type('array'))->andReturn(true);
 
     $clientBalanceService = Mockery::mock(Box\Mod\Client\ServiceBalance::class);
     $clientBalanceService->shouldReceive('getClientBalance')->once()->with($client)->andReturn(0.0);

@@ -39,13 +39,13 @@ test('getSearchQueryBuilder orders by id descending with no filters', function (
     expect($dql)->toBe('SELECT i FROM ' . Invoice::class . ' i ORDER BY i.id DESC');
 });
 
-test('getSearchQueryBuilder filters by client_id, status, currency and approved', function (): void {
+test('getSearchQueryBuilder filters by client_id, status, currency and issued', function (): void {
     $query = invoiceEntityManager()->getRepository(Invoice::class)
         ->getSearchQueryBuilder([
             'client_id' => 7,
             'status' => Invoice::STATUS_PAID,
             'currency' => 'USD',
-            'approved' => 1,
+            'issued' => 1,
         ])
         ->getQuery();
 
@@ -53,35 +53,35 @@ test('getSearchQueryBuilder filters by client_id, status, currency and approved'
     expect($dql)->toContain('i.clientId = :client_id')
         ->and($dql)->toContain('i.status = :status')
         ->and($dql)->toContain('i.currency = :currency')
-        ->and($dql)->toContain('i.approved = :approved')
+        ->and($dql)->toContain('i.issued = :issued')
         ->and($dql)->toContain('ORDER BY i.id DESC');
 
     expect($query->getParameter('client_id')->getValue())->toBe(7)
         ->and($query->getParameter('status')->getValue())->toBe(Invoice::STATUS_PAID)
         ->and($query->getParameter('currency')->getValue())->toBe('USD')
-        ->and($query->getParameter('approved')->getValue())->toBeTrue();
+        ->and($query->getParameter('issued')->getValue())->toBeTrue();
 });
 
-test('getSearchQueryBuilder normalizes the approved filter via Tools::normalizeBoolean', function (): void {
+test('getSearchQueryBuilder normalizes the issued filter via Tools::normalizeBoolean', function (): void {
     $repository = invoiceEntityManager()->getRepository(Invoice::class);
 
     foreach ([1, '1', true, 'on', 'true'] as $truthy) {
-        $qb = $repository->getSearchQueryBuilder(['approved' => $truthy]);
-        expect($qb->getParameter('approved')->getValue())->toBeTrue();
+        $qb = $repository->getSearchQueryBuilder(['issued' => $truthy]);
+        expect($qb->getParameter('issued')->getValue())->toBeTrue();
     }
 
     foreach (['false', 'off', '0', 0, false] as $falsey) {
-        $qb = $repository->getSearchQueryBuilder(['approved' => $falsey]);
-        expect($qb->getParameter('approved')->getValue())->toBeFalse();
+        $qb = $repository->getSearchQueryBuilder(['issued' => $falsey]);
+        expect($qb->getParameter('issued')->getValue())->toBeFalse();
     }
 });
 
-test('getSearchQueryBuilder skips the approved filter when unset or empty', function (): void {
+test('getSearchQueryBuilder skips the issued filter when unset or empty', function (): void {
     $repository = invoiceEntityManager()->getRepository(Invoice::class);
 
     foreach ([null, ''] as $empty) {
-        $qb = $repository->getSearchQueryBuilder(['approved' => $empty]);
-        expect($qb->getDQL())->not->toContain('i.approved');
+        $qb = $repository->getSearchQueryBuilder(['issued' => $empty]);
+        expect($qb->getDQL())->not->toContain('i.issued');
     }
 });
 
@@ -307,14 +307,14 @@ test('lockAndGetStatus reads the status inside a transaction on every supported 
     expect($status)->toBe(Invoice::STATUS_UNPAID);
 });
 
-test('lockAndGetState reads status and approval inside a transaction', function (): void {
+test('lockAndGetState reads status and issue state inside a transaction', function (): void {
     $entityManager = invoiceEntityManager();
     $metadata = [$entityManager->getClassMetadata(Invoice::class)];
     (new Doctrine\ORM\Tools\SchemaTool($entityManager))->createSchema($metadata);
 
     $invoice = new Invoice();
     $invoice->setStatus(Invoice::STATUS_UNPAID);
-    $invoice->setApproved(true);
+    $invoice->setIssued(true);
     $entityManager->persist($invoice);
     $entityManager->flush();
 
@@ -329,7 +329,7 @@ test('lockAndGetState reads status and approval inside a transaction', function 
 
     expect($state)->toBe([
         'status' => Invoice::STATUS_UNPAID,
-        'approved' => true,
+        'issued' => true,
     ]);
 });
 
@@ -340,7 +340,7 @@ test('lockAndGetState uses DBAL boolean conversion for database text values', fu
     $connection->shouldReceive('getDatabasePlatform')->once()->andReturn(new Doctrine\DBAL\Platforms\SQLitePlatform());
     $connection->shouldReceive('fetchAssociative')->once()->andReturn([
         'status' => Invoice::STATUS_UNPAID,
-        'approved' => 'f',
+        'issued' => 'f',
     ]);
     $connection->shouldReceive('convertToPHPValue')
         ->once()
@@ -356,7 +356,7 @@ test('lockAndGetState uses DBAL boolean conversion for database text values', fu
 
     expect($repository->lockAndGetState(1))->toBe([
         'status' => Invoice::STATUS_UNPAID,
-        'approved' => false,
+        'issued' => false,
     ]);
 });
 

@@ -1246,7 +1246,7 @@ class Service implements InjectionAwareInterface
                     $balanceAmount = $clientBalanceService->getClientBalance($client);
                     $useCredits = $balanceAmount >= $ca['total'];
 
-                    $invoiceService->approveInvoice($invoiceModel, ['id' => $invoiceModel->getId(), 'use_credits' => $useCredits]);
+                    $invoiceService->issueInvoice($invoiceModel, ['id' => $invoiceModel->getId(), 'use_credits' => $useCredits]);
 
                     $isUnpaid = $invoiceModel instanceof Invoice
                         && $invoiceModel->getStatus() === Invoice::STATUS_UNPAID;

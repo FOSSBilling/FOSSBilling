@@ -48,7 +48,7 @@ test('gets invoice list', function (): void {
     $invoiceRepo = Mockery::mock(InvoiceRepository::class);
     $invoiceRepo->shouldReceive('getSearchQueryBuilder')
         ->once()
-        ->with(['client_id' => 7, 'approved' => true])
+        ->with(['client_id' => 7, 'issued' => true])
         ->andReturn(Mockery::mock(Doctrine\ORM\QueryBuilder::class));
 
     $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
@@ -129,7 +129,7 @@ test('creates renewal invoice', function (): void {
     $serviceMock->shouldReceive('generateForOrder')
         ->atLeast()->once()
         ->andReturn($model);
-    $serviceMock->shouldReceive('approveInvoice');
+    $serviceMock->shouldReceive('issueInvoice');
 
     $orderRepoMock = Mockery::mock(OrderRepository::class);
     $orderRepoMock->shouldReceive('findOneBy')
@@ -167,7 +167,7 @@ test('creates renewal invoice from a real invoice entity without accessing priva
     $serviceMock->shouldReceive('generateForOrder')
         ->atLeast()->once()
         ->andReturn($model);
-    $serviceMock->shouldReceive('approveInvoice');
+    $serviceMock->shouldReceive('issueInvoice');
 
     $orderRepoMock = Mockery::mock(OrderRepository::class);
     $orderRepoMock->shouldReceive('findOneBy')
@@ -199,7 +199,7 @@ test('creates renewal invoice for free order', function (): void {
     $serviceMock->shouldReceive('generateForOrder')
         ->atLeast()->once()
         ->andReturn($model);
-    $serviceMock->shouldReceive('approveInvoice');
+    $serviceMock->shouldReceive('issueInvoice');
 
     $orderRepoMock = Mockery::mock(OrderRepository::class);
     $orderRepoMock->shouldReceive('findOneBy')
@@ -251,7 +251,7 @@ test('creates funds invoice', function (): void {
     $serviceMock->shouldReceive('generateFundsInvoice')
         ->atLeast()->once()
         ->andReturn($model);
-    $serviceMock->shouldReceive('approveInvoice');
+    $serviceMock->shouldReceive('issueInvoice');
 
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
@@ -280,7 +280,7 @@ test('creates funds invoice from a real invoice entity without accessing private
     $serviceMock->shouldReceive('generateFundsInvoice')
         ->atLeast()->once()
         ->andReturn($model);
-    $serviceMock->shouldReceive('approveInvoice');
+    $serviceMock->shouldReceive('issueInvoice');
 
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();

@@ -1117,7 +1117,7 @@ class Service implements InjectionAwareInterface
             $invoiceService = $this->di['mod_service']('invoice');
 
             try {
-                $invoiceService->approveInvoice($invoice, ['id' => $invoice->getId(), 'use_credits' => true]);
+                $invoiceService->issueInvoice($invoice, ['id' => $invoice->getId(), 'use_credits' => true]);
 
                 if ($markInvoicePaid) {
                     $invoiceService->markAsPaidByAdmin($invoice, $data);

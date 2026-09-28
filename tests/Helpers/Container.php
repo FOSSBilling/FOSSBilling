@@ -253,7 +253,6 @@ function container(): Container
         $transactionRepository->shouldReceive('findOneBy')->byDefault()->andReturn(null);
         $transactionRepository->shouldReceive('findOneByTxnIdAndGatewayId')->byDefault()->andReturn(null);
         $transactionRepository->shouldReceive('findOneByGatewayIdAndIpnHash')->byDefault()->andReturn(null);
-        $transactionRepository->shouldReceive('findOneProcessedByTxnId')->byDefault()->andReturn(null);
         $transactionRepository->shouldReceive('findActiveByTxnIdAndGatewayId')->byDefault()->andReturn(null);
         $transactionRepository->shouldReceive('findProcessingOrProcessedByTxnId')->byDefault()->andReturn(null);
         $transactionRepository->shouldReceive('competingTransactionQuery')->byDefault()->andReturn($payGatewayQueryBuilder);
@@ -269,7 +268,7 @@ function container(): Container
         $invoiceRepository->shouldReceive('findLatestWithNr')->byDefault()->andReturn(null);
         $invoiceRepository->shouldReceive('findPaid')->byDefault()->andReturn([]);
         $invoiceRepository->shouldReceive('findByClientId')->byDefault()->andReturn([]);
-        $invoiceRepository->shouldReceive('findUnpaidApprovedNotRemindedBefore')->byDefault()->andReturn([]);
+        $invoiceRepository->shouldReceive('findUnpaidIssuedNotRemindedBefore')->byDefault()->andReturn([]);
         $invoiceRepository->shouldReceive('findUnpaidOlderThan')->byDefault()->andReturn([]);
         $invoiceRepository->shouldReceive('findPaidByRelId')->byDefault()->andReturn([]);
 

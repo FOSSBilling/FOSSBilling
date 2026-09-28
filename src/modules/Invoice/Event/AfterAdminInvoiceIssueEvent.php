@@ -11,8 +11,8 @@ namespace Box\Mod\Invoice\Event;
 
 use FOSSBilling\Events\Event;
 
-/** Dispatched after an invoice has been approved and credit payment attempted. */
-final class AfterAdminInvoiceApproveEvent extends Event
+/** Dispatched after an invoice has been issued and credit payment attempted. */
+final class AfterAdminInvoiceIssueEvent extends Event
 {
     public function __construct(public readonly int $invoiceId)
     {
