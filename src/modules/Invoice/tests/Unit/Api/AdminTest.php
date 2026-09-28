@@ -1441,6 +1441,10 @@ test('gets tax list', function (): void {
     expect($result)->toBeArray();
 });
 
+test('does not expose a tax_setup_eu endpoint (removed with the EU VAT seeder)', function (): void {
+    expect(method_exists(Admin::class, 'tax_setup_eu'))->toBeFalse();
+});
+
 test('deletes invoices in batch', function (): void {
     $api = apiEndpoint(new Admin());
     $activityMock = Mockery::mock(Admin::class)->makePartial();

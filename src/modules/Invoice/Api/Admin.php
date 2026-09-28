@@ -299,7 +299,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional string $created_at - Invoice issue date (Y-m-d) or empty to remove
      * @optional string $serie - Invoice serie
      * @optional string $nr - Invoice number
-     * @optional string $status - Invoice status: paid|unpaid
+     * @optional string $status - Invoice status for drafts: unpaid|canceled
      * @optional string $taxrate - Invoice tax rate
      * @optional string $taxname - Invoice tax name
      * @optional bool $issued - flag to set invoice as issued. Issued invoices are visible to clients
@@ -1173,22 +1173,6 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $qb = $taxService->getTaxRepository()->getSearchQueryBuilder($data);
 
         return $this->getDi()['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data));
-    }
-
-    /**
-     * Automatically setup the EU VAT tax rules for you for all EU Member States.
-     * This action will delete any existing tax rules and configure the VAT rates
-     * for all EU countries.
-     *
-     * @return bool
-     */
-    public function tax_setup_eu($data)
-    {
-        $this->checkPermissions('invoice', 'manage_tax');
-
-        $taxService = $this->getDi()['mod_service']('Invoice', 'Tax');
-
-        return $taxService->setupEUTaxes($data);
     }
 
     /**

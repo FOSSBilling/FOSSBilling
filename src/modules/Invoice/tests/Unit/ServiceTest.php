@@ -1077,7 +1077,7 @@ test('admin mark as paid with custom gateway records transaction and marks invoi
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('markAsPaid')
         ->once()
-        ->with(Mockery::type(Invoice::class), false, false, true)
+        ->with(Mockery::type(Invoice::class), false, false, true, true, Mockery::any())
         ->andReturn(true);
     $serviceMock->shouldReceive('getTotalWithTax')
         ->once()
@@ -1163,6 +1163,55 @@ test('admin mark as paid with custom gateway records transaction and marks invoi
         ->and($eventDispatcher->events[0]->invoiceId)->toBe(10);
 });
 
+test('admin mark as paid records the journal after the paid_at override', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('markAsPaid')
+        ->once()
+        ->with(Mockery::type(Invoice::class), false, false, true, true, Mockery::any())
+        ->andReturn(true);
+    // Capture the entity's paid_at at the moment the journal is recorded: it
+    // must already carry the admin-supplied date, proving the journal runs
+    // after the override.
+    $journalPaidAt = 'not-called';
+    $serviceMock->shouldReceive('recordJournalEvent')
+        ->once()
+        ->with(Mockery::type(Invoice::class), InvoiceEvent::TYPE_PAID)
+        ->andReturnUsing(function (Invoice $invoice) use (&$journalPaidAt): void {
+            $journalPaidAt = $invoice->getPaidAt()?->format('Y-m-d');
+        });
+
+    $gatewayModel = createEntity(PayGateway::class, [
+        'id' => 5,
+        'gateway' => 'Stripe',
+        'enabled' => true,
+    ]);
+
+    $invoiceModel = createEntity(Invoice::class);
+    $invoiceModel->id = 10;
+    $invoiceModel->gateway = $gatewayModel;
+    $invoiceModel->currency = 'USD';
+    $invoiceModel->status = Invoice::STATUS_UNPAID;
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($gatewayRepo = Mockery::mock(PayGatewayRepository::class));
+    $gatewayRepo->shouldReceive('find')->once()->with(5)->andReturn($gatewayModel);
+    $em->shouldReceive('persist')->atLeast()->once();
+    $em->shouldReceive('flush')->atLeast()->once();
+
+    $di = container();
+    $di['em'] = $em;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $serviceMock->setDi($di);
+
+    $result = $serviceMock->markAsPaidByAdmin($invoiceModel, [
+        'gateway_id' => 5,
+        'paid_at' => '2024-05-06',
+    ]);
+
+    expect($result)->toBeTrue()
+        ->and($journalPaidAt)->toBe('2024-05-06');
+});
+
 test('admin mark as paid with custom gateway rejects transaction linked to another invoice', function (): void {
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldNotReceive('markAsPaid');
@@ -1237,8 +1286,10 @@ test('markAsPaidByAdmin applies a payment date override', function (): void {
     $em = Mockery::mock(EntityManagerInterface::class);
     $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($gatewayRepo = Mockery::mock(PayGatewayRepository::class));
     $gatewayRepo->shouldReceive('find')->once()->with(5)->andReturn($gatewayModel);
-    $em->shouldReceive('persist')->once()->with($invoiceModel);
-    $em->shouldReceive('flush')->once();
+    // One persist/flush for the paid_at override, one for the journal entry
+    // that now records after it.
+    $em->shouldReceive('persist')->twice();
+    $em->shouldReceive('flush')->twice();
 
     $di = container();
     $di['em'] = $em;
@@ -3311,6 +3362,7 @@ test('generates funds invoice', function (): void {
     $invoiceModel = createEntity(Invoice::class);
 
     $clientModel = createEntity(Box\Mod\Client\Entity\Client::class, ['currency' => 'EUR']);
+    setEntityId($clientModel, 7);
     $fundsAmount = 20;
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
@@ -3325,17 +3377,52 @@ test('generates funds invoice', function (): void {
     $systemService->shouldReceive('getParamValue')->with('funds_min_amount', null)->andReturn($minAmount);
     $systemService->shouldReceive('getParamValue')->with('funds_max_amount', null)->andReturn($maxAmount);
     $systemService->shouldReceive('getParamValue')->with('invoice_auto_issue', true)->andReturn(true);
+    $systemService->shouldReceive('getCompany')
+        ->atLeast()->once()
+        ->andReturn([
+            'name' => 'Acme',
+            'vat_number' => 'VAT1',
+            'number' => 'NUM1',
+            'address_1' => 'Street',
+            'address_2' => '',
+            'address_3' => '',
+            'tel' => '123',
+            'email' => 'acme@example.com',
+        ]);
 
     $itemInvoiceServiceMock = Mockery::mock(ServiceInvoiceItem::class);
     $itemInvoiceServiceMock->shouldReceive('generateForAddFunds')
         ->atLeast()->once();
 
+    $clientServiceMock = Mockery::mock(ClientService::class);
+    $clientServiceMock->shouldReceive('toApiArray')
+        ->atLeast()->once()
+        ->andReturn([
+            'first_name' => 'John',
+            'last_name' => 'Doe',
+            'company' => 'JD Inc',
+            'company_vat' => 'VAT2',
+            'company_number' => 'NUM2',
+            'address_1' => 'Street 1',
+            'address_2' => '',
+            'city' => 'Springfield',
+            'state' => 'IL',
+            'country' => 'US',
+            'phone_cc' => '1',
+            'phone' => '5551234',
+            'email' => 'john@example.com',
+            'postcode' => '12345',
+        ]);
+
     $di = container();
     $di['em']->shouldReceive('persist')->atLeast()->once();
     $di['em']->shouldReceive('flush')->atLeast()->once();
-    $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($systemService, $itemInvoiceServiceMock) {
+    $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($systemService, $itemInvoiceServiceMock, $clientServiceMock) {
         if ($serviceName == 'system') {
             return $systemService;
+        }
+        if ($serviceName == 'Client') {
+            return $clientServiceMock;
         }
         if ($sub == 'InvoiceItem') {
             return $itemInvoiceServiceMock;
@@ -3345,7 +3432,13 @@ test('generates funds invoice', function (): void {
     $serviceMock->setDi($di);
 
     $result = $serviceMock->generateFundsInvoice($clientModel, $fundsAmount);
-    expect($result)->toBeInstanceOf(Invoice::class);
+    expect($result)->toBeInstanceOf(Invoice::class)
+        // Auto-issued funds invoices are born issued, so the parties must be
+        // frozen at creation rather than waiting for the issue path.
+        ->and($result->isIssued())->toBeTrue()
+        ->and($result->getSellerCompany())->toBe('Acme')
+        ->and($result->getBuyerFirstName())->toBe('John')
+        ->and($result->getBuyerEmail())->toBe('john@example.com');
 });
 
 test('isFundsEnabled defaults to true when the setting was never saved', function (): void {
@@ -6231,6 +6324,55 @@ test('updateInvoice ignores snapshot params since parties freeze at issuance', f
     // Issued invoices reject all edits in strict mode, snapshot fields included.
     expect(fn () => $service->updateInvoice($invoice, ['buyer_first_name' => 'Grace']))
         ->toThrow(FOSSBilling\InformationException::class, 'can no longer be edited');
+});
+
+test('updateInvoice refuses non-lifecycle statuses on drafts', function (): void {
+    $service = new Service();
+    $invoice = createEntity(Invoice::class, ['id' => 11]);
+    $invoice->setIssued(false);
+    $invoice->setStatus(Invoice::STATUS_UNPAID);
+
+    $systemMock = Mockery::mock(SystemService::class);
+    $systemMock->shouldReceive('getParamValue')->with('invoice_immutability', null)->andReturn('strict');
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldNotReceive('wrapInTransaction', 'persist', 'flush');
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(moduleService(['system' => $systemMock]));
+    $di['event_dispatcher'] = Mockery::mock(EventDispatcher::class)->shouldIgnoreMissing();
+    $service->setDi($di);
+
+    // paid, refunded, and free-form strings would put the draft in a state
+    // the payment, refund, and issuance paths never expect a draft to be in.
+    foreach ([Invoice::STATUS_PAID, Invoice::STATUS_REFUNDED, 'approved', 'whatever'] as $status) {
+        expect(fn () => $service->updateInvoice($invoice, ['status' => $status]))
+            ->toThrow(FOSSBilling\InformationException::class, 'Draft invoices can only be unpaid or canceled');
+    }
+});
+
+test('issueInvoice refuses drafts that are not unpaid', function (): void {
+    $invoice = createEntity(Invoice::class, ['clientId' => 5]);
+    $invoice->setIssued(false);
+    $invoice->setStatus(Invoice::STATUS_CANCELED);
+    setEntityId($invoice, 12);
+
+    $em = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
+    $em->shouldReceive('wrapInTransaction')->andReturnUsing(fn (callable $callback): mixed => $callback());
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn(invoiceLockingRepository(['status' => Invoice::STATUS_CANCELED, 'issued' => false]));
+    $em->shouldReceive('refresh')->byDefault();
+
+    $di = container();
+    $di['em'] = $em;
+    $di['event_dispatcher'] = Mockery::mock(EventDispatcher::class)->shouldIgnoreMissing();
+
+    $service = new Service();
+    $service->setDi($di);
+
+    expect(fn () => $service->issueInvoice($invoice, []))
+        ->toThrow(FOSSBilling\InformationException::class, 'Only unpaid draft invoices can be issued');
+    expect($invoice->isIssued())->toBeFalse();
 });
 
 test('promoAddToInvoice and promoRemoveFromInvoice refuse locked issued invoices', function (): void {

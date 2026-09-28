@@ -981,13 +981,14 @@ class Service implements InjectionAwareInterface
         return $email;
     }
 
-    public function markAsPaid(Invoice $invoice, $charge = true, $execute = false, bool $deferEvents = false): bool
+    public function markAsPaid(Invoice $invoice, $charge = true, $execute = false, bool $deferEvents = false, bool $deferJournal = false, ?bool &$actuallyPaid = null): bool
     {
         /** @var InvoiceItem[] $invoiceItems */
         $invoiceItems = [];
         $paid = $this->di['em']->wrapInTransaction(function () use (&$invoiceItems, $invoice, $charge): bool {
             return $this->markAsPaidInTransaction($invoice, $charge, $invoiceItems);
         });
+        $actuallyPaid = $paid;
 
         // Another payment request may have acquired the row lock first and completed the payment.
         // Treat that as an idempotent success, but do not send duplicate events or execute tasks.
@@ -1007,7 +1008,12 @@ class Service implements InjectionAwareInterface
 
         $this->di['logger']->info('Marked invoice #{invoice_id} as paid', ['invoice_id' => $invoice->getId()]);
 
-        $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_PAID);
+        // The journal snapshot is taken from entity state, so callers that
+        // mutate the invoice after payment (e.g. the admin paid_at override)
+        // defer this until their writes have landed.
+        if (!$deferJournal) {
+            $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_PAID);
+        }
 
         return true;
     }
@@ -1090,7 +1096,8 @@ class Service implements InjectionAwareInterface
         }
 
         if ($payGateway->getGateway() === 'Custom' && $payGateway->isEnabled()) {
-            $paid = $this->di['em']->wrapInTransaction(function () use ($invoice, $payGateway, $transactionId): bool {
+            $actuallyPaid = null;
+            $paid = $this->di['em']->wrapInTransaction(function () use ($invoice, $payGateway, $transactionId, &$actuallyPaid): bool {
                 // Re-validate under the invoice lock: the invoice may have
                 // been canceled or replaced after the preflight check above.
                 // Creating the transaction record in this transaction means a
@@ -1130,7 +1137,7 @@ class Service implements InjectionAwareInterface
                     throw new InformationException('Transaction ID is already associated with another invoice.');
                 }
 
-                $result = $this->markAsPaid($invoice, false, false, true);
+                $result = $this->markAsPaid($invoice, false, false, true, true, $actuallyPaid);
                 if ($result) {
                     $transaction->setAmount((string) $invoiceTotal);
                     $transaction->setCurrency($invoice->getCurrency());
@@ -1144,10 +1151,16 @@ class Service implements InjectionAwareInterface
                 return $result;
             });
 
-            // Events and tasks run after the commit above, so neither
-            // notifications nor provisioning precede the recorded payment.
-            if ($paid) {
+            // Events, tasks, and the journal run after the commit above, so
+            // neither notifications nor provisioning precede the recorded
+            // payment, and the journal snapshot includes the paid_at override.
+            // Gated on the payment having happened in this call: a concurrent
+            // caller that won the race already emitted all of these (an
+            // unknown signal defaults to emitting, preserving the old behavior
+            // for callers that predate it).
+            if ($paid && ($actuallyPaid ?? true)) {
                 $this->applyAdminPaidAtOverride($invoice, $paidAt);
+                $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_PAID);
                 $this->firePaymentReceivedEvent($invoice);
                 if ($execute) {
                     $this->executeInvoiceItemTasks(
@@ -1160,9 +1173,21 @@ class Service implements InjectionAwareInterface
             return $paid;
         }
 
-        $paid = $this->markAsPaid($invoice, false, $execute);
-        if ($paid) {
+        // Payment, journal, and notifications run after the paid_at override
+        // below so all of them observe the admin-supplied date. Gated on the
+        // payment having happened in this call, as above.
+        $actuallyPaid = null;
+        $paid = $this->markAsPaid($invoice, false, false, true, true, $actuallyPaid);
+        if ($paid && ($actuallyPaid ?? true)) {
             $this->applyAdminPaidAtOverride($invoice, $paidAt);
+            $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_PAID);
+            $this->firePaymentReceivedEvent($invoice);
+            if ($execute) {
+                $this->executeInvoiceItemTasks(
+                    $this->getInvoiceItemRepository()->findByInvoiceId((int) $invoice->getId()),
+                    $this->di['mod_service']('Invoice', 'InvoiceItem')
+                );
+            }
         }
 
         return $paid;
@@ -1408,6 +1433,13 @@ class Service implements InjectionAwareInterface
 
         $this->di['em']->wrapInTransaction(function () use ($invoice): void {
             $this->lockAndRefreshInvoice($invoice);
+
+            // First issuance is only valid from the unpaid state. Re-issuing
+            // an already-issued invoice stays idempotent (paid, refunded, or
+            // canceled rows keep their state); this guard is about drafts.
+            if (!$invoice->isIssued() && $invoice->getStatus() !== Invoice::STATUS_UNPAID) {
+                throw new InformationException('Only unpaid draft invoices can be issued.');
+            }
 
             // Freeze the parties from the live records and claim the number
             // inside the issuance lock. Already-issued invoices skip both;
@@ -2555,6 +2587,16 @@ class Service implements InjectionAwareInterface
         }
         $this->assertIssuedIdentityUnchanged($model, $data);
 
+        // Drafts have no lifecycle side effects attached to the status
+        // column, so only the states a draft may legally hold are accepted.
+        // Anything else (paid, refunded, or free-form strings) would put the
+        // row in a state the payment, refund, and issuance paths never expect.
+        // Empty values fall through to the legacy write below (blank form
+        // submits); only meaningful values are validated.
+        if (!empty($data['status']) && !$model->isIssued() && !in_array($data['status'], [Invoice::STATUS_UNPAID, Invoice::STATUS_CANCELED], true)) {
+            throw new InformationException('Invalid invoice status: :status. Draft invoices can only be unpaid or canceled.', [':status' => (string) $data['status']]);
+        }
+
         $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
         $previousStatus = null;
         $wasIssued = false;
@@ -3496,11 +3538,19 @@ class Service implements InjectionAwareInterface
         $proforma->setClientId($client->getId() ?? null);
         $proforma->setStatus(Invoice::STATUS_UNPAID);
         $proforma->setCurrency($client->getCurrency());
-        $proforma->setIssued($this->_isAutoIssued());
         $this->di['em']->persist($proforma);
         $this->di['em']->flush();
 
         $this->setInvoiceDefaults($proforma);
+
+        // With auto-issue the invoice is born issued, so the issue path's
+        // snapshot never runs for it. Freeze the parties here, before the
+        // issued flag goes on, so funds invoices carry a snapshot like any
+        // other issued invoice.
+        $this->snapshotPartiesFromLiveRecords($proforma);
+        $proforma->setIssued($this->_isAutoIssued());
+        $this->di['em']->persist($proforma);
+        $this->di['em']->flush();
 
         $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
         $invoiceItemService->generateForAddFunds($proforma, $amount);
