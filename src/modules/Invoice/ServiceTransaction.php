@@ -279,10 +279,7 @@ class ServiceTransaction implements InjectionAwareInterface
         try {
             $schemaManager = $this->di['dbal']->createSchemaManager();
             $table = $schemaManager->introspectTableByUnquotedName('transaction');
-            $columns = array_map(static fn ($column) => $column->getObjectName()->toString(), $table->getColumns());
-            $indexes = array_map(static fn ($index) => $index->getObjectName()->toString(), $table->getIndexes());
-
-            $supported = in_array('ipn_hash', $columns, true) && in_array('transaction_ipn_hash_idx', $indexes, true);
+            $supported = $table->hasColumn('ipn_hash') && $table->hasIndex('transaction_ipn_hash_idx');
         } catch (\Throwable $e) {
             if (isset($this->di['logger'])) {
                 $this->di['logger']->warning('Could not determine whether transaction.ipn_hash exists; disabling IPN hash dedupe: {exception}', ['exception' => $e]);
