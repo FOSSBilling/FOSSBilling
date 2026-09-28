@@ -1371,13 +1371,6 @@ class Service implements InjectionAwareInterface
         $systemService = $this->di['mod_service']('system');
         $client = $this->di['em']->getRepository(Client::class)->find($model->getClientId());
 
-        // No buyer/seller snapshot yet: drafts carry no party details. The
-        // snapshot is taken from the live client and company records by
-        // snapshotPartiesFromLiveRecords() when the invoice is issued, so the
-        // frozen copy always reflects reality at issuance, not at drafting.
-        // No number yet either: issueInvoice() claims one from the counter,
-        // so deleting a draft never burns a number. Display layers fall back
-        // to the invoice id while nr is null.
         $invoice_due_days = $systemService->getParamValue('invoice_due_days');
         if (!is_numeric($invoice_due_days)) {
             $invoice_due_days = 1;
