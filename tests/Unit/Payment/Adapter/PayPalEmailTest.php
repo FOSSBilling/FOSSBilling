@@ -1487,7 +1487,7 @@ describe('PayPal callback invoice binding', function (): void {
         $invoiceModel->shouldReceive('getId')->byDefault()->andReturn(16);
         $invoiceModel->shouldReceive('getNr')->byDefault()->andReturn('00042');
         $invoiceModel->shouldReceive('getStatus')->byDefault()->andReturn(Box\Mod\Invoice\Entity\Invoice::STATUS_UNPAID);
-        $invoiceModel->shouldReceive('isApproved')->byDefault()->andReturn(true);
+        $invoiceModel->shouldReceive('isIssued')->byDefault()->andReturn(true);
 
         $invoiceService = Mockery::mock();
         $invoiceService->shouldReceive('getTotalWithTax')->once()->andReturn(120.00);
@@ -1600,7 +1600,7 @@ describe('PayPal callback invoice binding', function (): void {
         $invoiceModel = Mockery::mock(Box\Mod\Invoice\Entity\Invoice::class);
         $invoiceModel->shouldReceive('getId')->byDefault()->andReturn(16);
         $invoiceModel->shouldReceive('getStatus')->byDefault()->andReturn(Box\Mod\Invoice\Entity\Invoice::STATUS_UNPAID);
-        $invoiceModel->shouldReceive('isApproved')->byDefault()->andReturn(true);
+        $invoiceModel->shouldReceive('isIssued')->byDefault()->andReturn(true);
 
         $invoiceService = Mockery::mock();
         $invoiceService->shouldReceive('getTotalWithTax')->once()->andReturn(120.00);
