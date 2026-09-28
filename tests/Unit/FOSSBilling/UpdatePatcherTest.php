@@ -1901,6 +1901,66 @@ test('availablePatches reports 0 on a non-MySQL driver regardless of the last_pa
     });
 });
 
+test('patch status reports the database level against the code level on a MySQL driver', function (): void {
+    withMysqlDbDriver(function (): void {
+        $statement = Mockery::mock(PDOStatement::class);
+        $statement->shouldReceive('execute')->andReturnTrue();
+        $statement->shouldReceive('fetchColumn')->andReturn('120');
+
+        $pdo = Mockery::mock(PDO::class);
+        $pdo->shouldReceive('prepare')->andReturn($statement);
+
+        $di = new Pimple\Container();
+        $di['pdo'] = $pdo;
+
+        $patcher = new UpdatePatcher();
+        $patcher->setDi($di);
+
+        $expectedPending = count((new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 120));
+
+        expect($patcher->patchStatus())->toBe([
+            'current' => 120,
+            'latest' => $patcher->latestPatchLevel(),
+            'pending' => $expectedPending,
+        ])->and($expectedPending)->toBeGreaterThan(0);
+    });
+});
+
+test('patch status reports unknown levels on a non-MySQL driver without touching the database', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        $pdo = Mockery::mock(PDO::class);
+        $pdo->shouldNotReceive('prepare');
+        $pdo->shouldNotReceive('query');
+
+        $di = new Pimple\Container();
+        $di['pdo'] = $pdo;
+
+        $patcher = new UpdatePatcher();
+        $patcher->setDi($di);
+
+        expect($patcher->patchStatus())->toBe([
+            'current' => null,
+            'latest' => $patcher->latestPatchLevel(),
+            'pending' => null,
+        ]);
+    });
+});
+
+test('patch status reports unknown levels when the database cannot be read', function (): void {
+    withMysqlDbDriver(function (): void {
+        $pdo = Mockery::mock(PDO::class);
+        $pdo->shouldReceive('prepare')->andThrow(new Exception('database unreachable'));
+
+        $di = new Pimple\Container();
+        $di['pdo'] = $pdo;
+
+        $patcher = new UpdatePatcher();
+        $patcher->setDi($di);
+
+        expect($patcher->patchStatus()['pending'])->toBeNull();
+    });
+});
+
 test('legacy entity decode patch follows the theme package layout patch', function (): void {
     $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 115);
 
