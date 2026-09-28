@@ -544,7 +544,7 @@ class UpdatePatcher implements InjectionAwareInterface
             return;
         }
 
-        $table = $this->di['dbal']->createSchemaManager()->introspectTable('invoice');
+        $table = $this->di['dbal']->createSchemaManager()->introspectTableByUnquotedName('invoice');
         if (!$table->hasColumn('approved') || $table->hasColumn('issued')) {
             return;
         }
@@ -572,13 +572,13 @@ class UpdatePatcher implements InjectionAwareInterface
         $new = 'invoice_status_issued_due_at_idx';
 
         $schemaManager = $this->di['dbal']->createSchemaManager();
-        if ($schemaManager->introspectTable('invoice')->hasIndex($old)) {
+        if ($schemaManager->introspectTableByUnquotedName('invoice')->hasIndex($old)) {
             $this->executeSql($this->isMysqlDriver()
                 ? "DROP INDEX `$old` ON `invoice`"
                 : "DROP INDEX $old");
         }
 
-        if (!$schemaManager->introspectTable('invoice')->hasIndex($new)) {
+        if (!$schemaManager->introspectTableByUnquotedName('invoice')->hasIndex($new)) {
             $this->executeSql('CREATE INDEX ' . $new . ' ON invoice (status, issued, due_at)');
         }
     }
@@ -595,7 +595,7 @@ class UpdatePatcher implements InjectionAwareInterface
             return;
         }
 
-        if (!$this->di['dbal']->createSchemaManager()->introspectTable('invoice')->hasColumn('buyer_phone_cc')) {
+        if (!$this->di['dbal']->createSchemaManager()->introspectTableByUnquotedName('invoice')->hasColumn('buyer_phone_cc')) {
             return;
         }
 
