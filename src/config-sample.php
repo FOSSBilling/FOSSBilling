@@ -4,11 +4,9 @@ declare(strict_types=1);
 /**
  * FOSSBilling configuration file example.
  *
- * If you are not using the web installer, you can rename this file
- * to "config.php" and fill in the values.
- * Import /install/sql/content.sql to your database
- * Open browser https://www.yourdomain.com/admin to create a new admin account.
- * Remove /install directory
+ * Fresh installations must use the web installer, which creates the database
+ * schema and seeds its initial data. Do not import /install/sql/content.sql
+ * directly, as it does not contain the database schema.
  *
  * For more information, see the documentation: https://docs.fossbilling.org/customizing-fossbilling/config/
  */
