@@ -542,13 +542,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
     public function isIpnDuplicate(array $ipn): bool
     {
-        $sql = 'SELECT id
-                FROM transaction
+        // `transaction` is a reserved word: quote it portably, or the lookup is
+        // a syntax error on SQLite and every IPN looks new.
+        $table = $this->di['em']->getConnection()->quoteSingleIdentifier('transaction');
+        $sql = "SELECT id
+                FROM {$table}
                 WHERE txn_id = :transaction_id
                   AND txn_status = :transaction_status
                   AND type = :transaction_type
                   AND amount = :transaction_amount
-                LIMIT 2';
+                LIMIT 2";
 
         $bindings = [
             'transaction_id' => $ipn['txn_id'] ?? null,

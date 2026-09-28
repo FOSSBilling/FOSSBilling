@@ -287,6 +287,15 @@ class UpdatePatcher implements InjectionAwareInterface
                 return false;
             }
 
+            // Heal journal gaps left by drift-created tables or lost writes, bounded to
+            // one page so a large backlog converges over runs instead of stalling this one.
+            // Failure here must not fail the sync itself, which already succeeded.
+            try {
+                $this->healInvoiceJournal();
+            } catch (\Throwable $e) {
+                $this->logUpdate('error', 'Invoice journal healing failed: ' . $e->getMessage());
+            }
+
             return true;
         } catch (\Throwable $e) {
             $this->logUpdate('error', 'Ambient schema sync failed: ' . $e->getMessage());
@@ -615,7 +624,7 @@ class UpdatePatcher implements InjectionAwareInterface
      * journal rows are skipped. Runs from applyCorePatches() only, never from the drift
      * healer, so a large backlog can't stall page loads.
      */
-    private function backfillInvoiceJournal(): void
+    private function backfillInvoiceJournal(int $maxPages = 0): void
     {
         if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('dbal')) {
             return;
@@ -633,7 +642,9 @@ class UpdatePatcher implements InjectionAwareInterface
         // journal row, so an unpaged SELECT would load every invoice (including its
         // notes/text blobs) into memory at once. Only the snapshot columns are read.
         // Idempotent: written rows drop out of later pages via the LEFT JOIN.
+        // $maxPages bounds periodic healing (cron, drift sync): 0 means no limit.
         $lastId = 0;
+        $pages = 0;
         do {
             $rows = $dbal->fetchAllAssociative(
                 'SELECT i.id, i.nr, i.serie, i.status, i.issued, i.client_id,
@@ -652,7 +663,18 @@ class UpdatePatcher implements InjectionAwareInterface
                 $lastId = (int) $row['id'];
                 $this->writeBackfillJournalEntry($dbal, $row, $padding);
             }
-        } while ($rows !== []);
+            ++$pages;
+        } while ($rows !== [] && ($maxPages === 0 || $pages < $maxPages));
+    }
+
+    /**
+     * Heal invoices missing every journal row (a lost journal write, or a table created
+     * after its invoices by drift healing). Bounded to one page per call so periodic
+     * callers converge without stalling; reruns pick up where this one stopped.
+     */
+    public function healInvoiceJournal(int $maxPages = 1): void
+    {
+        $this->backfillInvoiceJournal($maxPages);
     }
 
     /**
@@ -4350,9 +4372,14 @@ class UpdatePatcher implements InjectionAwareInterface
         // invoice.issued. Copy values into the new column, then drop the
         // legacy one; the portable rename covers non-MySQL drivers, and the
         // index name is swapped by renameInvoiceStatusIndex() below.
-        // All guards make reruns (and already-migrated installs) no-ops.
-        if ($this->tableHasColumn('invoice', 'approved') && !$this->tableHasColumn('invoice', 'issued')) {
-            $this->executeSql('ALTER TABLE `invoice` ADD COLUMN `issued` TINYINT(1) NOT NULL DEFAULT 0 AFTER `approved`');
+        // The copy runs on every pass until the legacy column is gone, not just on
+        // creation: DDL auto-commits, so a crash between ADD and UPDATE leaves both
+        // columns behind with issued still defaulted, and a create-only guard would
+        // skip the copy forever afterward. Re-copying is idempotent.
+        if ($this->tableHasColumn('invoice', 'approved')) {
+            if (!$this->tableHasColumn('invoice', 'issued')) {
+                $this->executeSql('ALTER TABLE `invoice` ADD COLUMN `issued` TINYINT(1) NOT NULL DEFAULT 0 AFTER `approved`');
+            }
             $this->executeSql('UPDATE `invoice` SET `issued` = `approved`');
             $this->executeSql('ALTER TABLE `invoice` DROP COLUMN `approved`');
         }

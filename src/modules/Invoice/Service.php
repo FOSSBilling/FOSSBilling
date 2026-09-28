@@ -857,6 +857,23 @@ class Service implements InjectionAwareInterface
     }
 
     #[AsEventListener]
+    public function healMissingJournalEntries(AfterAdminCronRunEvent $event): void
+    {
+        $di = $this->di ?? throw new \LogicException('The Invoice service dependency injection container has not been set.');
+
+        // Bounded to one page per run: invoices that never got any journal row (a lost
+        // write, or a table created after its invoices by drift healing) converge over
+        // runs instead of stalling this one. Failures stay local to the cron log.
+        try {
+            $patcher = new \FOSSBilling\UpdatePatcher();
+            $patcher->setDi($di);
+            $patcher->healInvoiceJournal();
+        } catch (\Throwable $e) {
+            $di['logger']->warning('Invoice journal healing failed: {message}', ['message' => $e->getMessage()]);
+        }
+    }
+
+    #[AsEventListener]
     public function removeExpiredUnpaidInvoices(AfterAdminCronRunEvent $event): void
     {
         $di = $this->di ?? throw new \LogicException('The Invoice service dependency injection container has not been set.');

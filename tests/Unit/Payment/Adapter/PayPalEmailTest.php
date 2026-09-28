@@ -209,6 +209,7 @@ function paypalEmMocks(?object $invoiceModel = null, ?object $existingSubscripti
     $subRepo = Mockery::mock(Box\Mod\Invoice\Repository\SubscriptionRepository::class);
     $subRepo->shouldReceive('findOneBy')->byDefault()->andReturn($existingSubscription);
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('quoteSingleIdentifier')->byDefault()->with('transaction')->andReturn('"transaction"');
     $connection->shouldReceive('fetchAllAssociative')->byDefault()->andReturn([]);
     $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $em->shouldReceive('getRepository')->byDefault()->andReturnUsing(static fn (string $class): object => match ($class) {
@@ -1216,6 +1217,7 @@ describe('PayPal subscription IPN handling', function (): void {
 
     test('isIpnDuplicate tolerates IPNs missing optional keys', function (): void {
         $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+        $connection->shouldReceive('quoteSingleIdentifier')->with('transaction')->andReturn('"transaction"');
         $connection->shouldReceive('fetchAllAssociative')->once()->andReturn([]);
         $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
         $em->shouldReceive('getConnection')->andReturn($connection);

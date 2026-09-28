@@ -7219,6 +7219,41 @@ test('removeExpiredUnpaidInvoices does nothing when retention is not configured'
     $invoiceServiceMock->removeExpiredUnpaidInvoices(new AfterAdminCronRunEvent());
 });
 
+test('healMissingJournalEntries is a no-op without a database connection', function (): void {
+    $service = new Service();
+    $logger = new Tests\Helpers\TestLogger();
+
+    $di = container();
+    unset($di['dbal']);
+    $di['logger'] = $logger;
+    $service->setDi($di);
+
+    $service->healMissingJournalEntries(new AfterAdminCronRunEvent());
+
+    expect($logger->calls)->toBe([]);
+});
+
+test('healMissingJournalEntries keeps cron failures local', function (): void {
+    $service = new Service();
+
+    $dbal = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbal->shouldReceive('createSchemaManager')->andThrow(new RuntimeException('dbal unavailable'));
+
+    $logger = new Tests\Helpers\TestLogger();
+
+    $di = container();
+    $di['dbal'] = $dbal;
+    $di['logger'] = $logger;
+    $service->setDi($di);
+
+    $service->healMissingJournalEntries(new AfterAdminCronRunEvent());
+
+    expect($logger->calls)->toContain([
+        'method' => 'warning',
+        'params' => ['Invoice journal healing failed: {message}', ['message' => 'dbal unavailable']],
+    ]);
+});
+
 test('removeExpiredUnpaidInvoices voids issued invoices, deletes drafts, and skips notes', function (): void {
     $systemServiceMock = Mockery::mock(SystemService::class);
     $systemServiceMock->shouldReceive('getParamValue')

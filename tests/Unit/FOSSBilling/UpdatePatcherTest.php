@@ -2679,6 +2679,35 @@ test('invoice issued-rename patch is a no-op once the renamed column exists', fu
     (new ReflectionMethod($patcher, 'patch121'))->invoke($patcher);
 });
 
+test('invoice issued-rename patch heals a crash between column add and value copy', function (): void {
+    // Both columns exist with issued still defaulted: a crash after ADD but
+    // before UPDATE. The copy must still run before the legacy column drops.
+    $invoiceColumns = Mockery::mock(PDOStatement::class);
+    $invoiceColumns->expects('execute')->with([])->twice()->andReturnTrue();
+    $invoiceColumns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->twice()->andReturn([['Field' => 'approved'], ['Field' => 'issued']]);
+
+    $copyValues = Mockery::mock(PDOStatement::class);
+    $copyValues->expects('execute')->with([])->andReturnTrue();
+    $dropApprovedColumn = Mockery::mock(PDOStatement::class);
+    $dropApprovedColumn->expects('execute')->with([])->andReturnTrue();
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `invoice`')->twice()->andReturn($invoiceColumns, $invoiceColumns);
+    $pdo->expects('prepare')
+        ->with('UPDATE `invoice` SET `issued` = `approved`')
+        ->andReturn($copyValues);
+    $pdo->expects('prepare')
+        ->with('ALTER TABLE `invoice` DROP COLUMN `approved`')
+        ->andReturn($dropApprovedColumn);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch121'))->invoke($patcher);
+});
+
 test('invoice reissue patch adds the missing replacement columns and indexes for existing installs', function (): void {
     // Regression test for https://github.com/FOSSBilling/FOSSBilling/issues/4392: the
     // invoice reissue release added entity columns with no MySQL patch, so installs

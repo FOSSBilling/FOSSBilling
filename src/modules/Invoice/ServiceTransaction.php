@@ -583,8 +583,12 @@ class ServiceTransaction implements InjectionAwareInterface
      */
     public function claimForProcessing(int $id): bool
     {
-        $affectedRows = $this->di['em']->getConnection()->executeStatement(
-            'UPDATE transaction SET status = ?, updated_at = ? WHERE id = ? AND (status IN (?, ?) OR (status = ? AND (updated_at IS NULL OR updated_at <= ?)))',
+        $connection = $this->di['em']->getConnection();
+        // `transaction` is a reserved word: quote it portably, or the claim is a
+        // syntax error on SQLite and no payment can complete there.
+        $table = $connection->quoteSingleIdentifier('transaction');
+        $affectedRows = $connection->executeStatement(
+            "UPDATE {$table} SET status = ?, updated_at = ? WHERE id = ? AND (status IN (?, ?) OR (status = ? AND (updated_at IS NULL OR updated_at <= ?)))",
             [
                 Transaction::STATUS_PROCESSING,
                 date('Y-m-d H:i:s'),

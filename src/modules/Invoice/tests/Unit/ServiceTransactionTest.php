@@ -379,6 +379,7 @@ test('converts a transaction result without database access', function (): void 
 test('counts transactions', function (): void {
     $queryResult = [['status' => Transaction::STATUS_RECEIVED, 'counter' => 1]];
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('quoteSingleIdentifier')->byDefault()->with('transaction')->andReturn('"transaction"');
     $connection->shouldReceive('quoteSingleIdentifier')->with('transaction')->andReturn('"transaction"');
     $connection->shouldReceive('fetchAllAssociative')
         ->atLeast()->once()
@@ -404,6 +405,7 @@ test('createAndProcess marks transaction as error when processing throws', funct
     $em->shouldReceive('flush')->once();
     $em->shouldReceive('refresh')->with($transactionModel)->once();
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('quoteSingleIdentifier')->byDefault()->with('transaction')->andReturn('"transaction"');
     $connection->shouldReceive('executeStatement')->once()->andReturn(1);
     $em->shouldReceive('getConnection')->andReturn($connection);
 
@@ -470,6 +472,7 @@ test('preProcessTransaction returns a boolean result', function (): void {
 
     $di = container();
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('quoteSingleIdentifier')->byDefault()->with('transaction')->andReturn('"transaction"');
     $connection->shouldReceive('executeStatement')->once()->andReturn(1);
     $di['em']->shouldReceive('getConnection')->andReturn($connection);
     $di['event_dispatcher'] = $dispatcher;
@@ -499,6 +502,7 @@ test('preProcessTransaction skips a transaction claimed by another worker', func
 
     $di = container();
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('quoteSingleIdentifier')->byDefault()->with('transaction')->andReturn('"transaction"');
     $connection->shouldReceive('executeStatement')->once()->andReturn(0);
     $di['em']->shouldReceive('getConnection')->andReturn($connection);
     $logger = new Tests\Helpers\TestLogger();
@@ -520,6 +524,7 @@ test('preProcessTransaction returns true when the adapter returns nothing', func
 
     $di = container();
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('quoteSingleIdentifier')->byDefault()->with('transaction')->andReturn('"transaction"');
     $connection->shouldReceive('executeStatement')->once()->andReturn(1);
     $di['em']->shouldReceive('getConnection')->andReturn($connection);
     $di['logger'] = new Tests\Helpers\TestLogger();
@@ -548,6 +553,7 @@ test('preProcessTransaction marks error on a generic exception', function (): vo
     $em->shouldReceive('flush')->once();
     $em->shouldReceive('refresh')->with($transactionModel)->once();
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('quoteSingleIdentifier')->byDefault()->with('transaction')->andReturn('"transaction"');
     $connection->shouldReceive('executeStatement')->once()->andReturn(1);
     $em->shouldReceive('getConnection')->andReturn($connection);
 
@@ -613,6 +619,8 @@ test('processes the rest of a received transaction batch after a failure', funct
 test('claimForProcessing includes error status in claim query', function (): void {
     $execArgs = [];
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('quoteSingleIdentifier')->byDefault()->with('transaction')->andReturn('"transaction"');
+    $connection->shouldReceive('quoteSingleIdentifier')->with('transaction')->andReturn('"transaction"');
     $connection->shouldReceive('executeStatement')
         ->withArgs(function (string $sql, array $bindings) use (&$execArgs): bool {
             $execArgs = ['sql' => $sql, 'bindings' => $bindings];
@@ -631,7 +639,41 @@ test('claimForProcessing includes error status in claim query', function (): voi
         ->and($execArgs['bindings'])->toContain(Transaction::STATUS_ERROR)
         ->and($execArgs['bindings'])->toContain(Transaction::STATUS_RECEIVED)
         ->and($execArgs['bindings'])->toContain(Transaction::STATUS_PROCESSING)
-        ->and($execArgs['sql'])->toContain('IN (?, ?)');
+        ->and($execArgs['sql'])->toContain('IN (?, ?)')
+        ->and($execArgs['sql'])->toContain('"transaction"');
+});
+
+test('claimForProcessing executes on SQLite despite the reserved table name', function (): void {
+    // Regression test: the raw UPDATE used the bare `transaction` table name, which is a
+    // syntax error on SQLite - every claim threw, so no payment could complete there.
+    // A real connection, not a mock, is the only way to prove the quoting works.
+    $config = Doctrine\ORM\ORMSetup::createAttributeMetadataConfig([Symfony\Component\Filesystem\Path::join(__DIR__, '..', '..', '..', 'Entity')], true);
+    $config->setProxyDir(sys_get_temp_dir());
+    $config->setProxyNamespace('FOSSBilling\\Tests\\DoctrineProxies');
+    $entityManager = new Doctrine\ORM\EntityManager(
+        Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]),
+        $config
+    );
+    (new Doctrine\ORM\Tools\SchemaTool($entityManager))->createSchema([
+        $entityManager->getClassMetadata(Transaction::class),
+    ]);
+
+    $tx = (new Transaction())->setStatus(Transaction::STATUS_RECEIVED);
+    $entityManager->persist($tx);
+    $entityManager->flush();
+    $id = $tx->getId();
+    $entityManager->clear();
+
+    // claimForProcessing only needs the entity manager, so wire the real one directly.
+    $service = new ServiceTransaction();
+    $di = container();
+    $di['em'] = $entityManager;
+    $service->setDi($di);
+
+    expect($service->claimForProcessing((int) $id))->toBeTrue();
+
+    $entityManager->clear();
+    expect($entityManager->find(Transaction::class, $id)?->getStatus())->toBe(Transaction::STATUS_PROCESSING);
 });
 
 test('markTransactionError does not clobber an already processed transaction', function (): void {
