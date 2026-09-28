@@ -88,11 +88,18 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
 
         $tx = $api_admin->invoice_transaction_get(['id' => $id]);
 
-        // Set the invoice ID if it's not set
+        // The invoice binding arrives through a buyer-editable callback URL,
+        // so authenticate it before anything below trusts it. Runs outside
+        // the test-mode bypass above: the binding must hold in every environment.
+        $verifiedInvoiceId = $this->verifyCallbackBinding($data, (int) $gateway_id, $tx['invoice_id'] ?? null, (int) $id);
+
+        // Set the invoice ID if it's not set. The value was authenticated above.
         if (!$tx['invoice_id']) {
-            $invoiceID = $data['get']['invoice_id'];
-            $tx['invoice_id'] = $invoiceID;
-            $api_admin->invoice_transaction_update(['id' => $id, 'invoice_id' => $invoiceID]);
+            if ($verifiedInvoiceId === null) {
+                throw new Payment_Exception('PayPal transaction is not associated with an invoice');
+            }
+            $tx['invoice_id'] = $verifiedInvoiceId;
+            $api_admin->invoice_transaction_update(['id' => $id, 'invoice_id' => $verifiedInvoiceId]);
         }
 
         if (!$tx['type'] && isset($ipn['txn_type'])) {
@@ -179,6 +186,12 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                 // we validate against the correct amount. Skip this for the
                 // initial payment (original invoice still unpaid) — that
                 // payment should go to the original invoice.
+                // Echoed references describe the original invoice, so check
+                // them before the renewal reassignment below changes it.
+                if ($invoiceDbModel instanceof Model_Invoice) {
+                    $this->verifyIpnEcho($ipn, $invoiceDbModel);
+                }
+
                 if ($ipn['txn_type'] === 'subscr_payment' && isset($ipn['subscr_id'])) {
                     $originalAlreadyPaid = $invoiceDbModel instanceof Model_Invoice
                         && $invoiceDbModel->status === Model_Invoice::STATUS_PAID;
@@ -285,6 +298,131 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
             'updated_at' => date('Y-m-d H:i:s'),
         ];
         $api_admin->invoice_transaction_update($d);
+    }
+
+    /**
+     * Resolve the invoice id from callback data, authenticating the binding.
+     * Used by flows that read the invoice from the IPN before processing it.
+     */
+    public function getInvoiceId($data): ?int
+    {
+        $invoiceId = $data['invoice_id'] ?? $data['get']['invoice_id'] ?? null;
+        if (empty($invoiceId)) {
+            return null;
+        }
+
+        $gatewayId = $this->config['gateway_id'] ?? null;
+        if ($gatewayId === null || $gatewayId === '') {
+            return (int) $invoiceId;
+        }
+
+        return $this->verifyCallbackBinding($data, (int) $gatewayId, $invoiceId);
+    }
+
+    /**
+     * Authenticate the gateway/invoice binding carried by the callback URL.
+     * Returns the verified invoice id, or null when no invoice was supplied.
+     *
+     * Unsigned callbacks predate signing and are honored only for a stored
+     * subscription on the same invoice, or for a notification continuing a
+     * previously recorded payment for the same invoice (delayed completions
+     * and refunds for pre-upgrade payments), so existing activity keeps
+     * working: a fresh payment has no earlier transaction row to match, and
+     * a tampered invoice id never matches the stored row.
+     */
+    private function verifyCallbackBinding(array $data, int $gatewayId, mixed $boundInvoiceId, ?int $currentTxId = null): ?int
+    {
+        $get = $data['get'] ?? [];
+        $invoiceId = $boundInvoiceId ?: ($get['invoice_id'] ?? null);
+        if (empty($invoiceId)) {
+            return null;
+        }
+        $invoiceId = (int) $invoiceId;
+
+        if (FOSSBilling\Tools::verifyCallbackSignature($gatewayId, $invoiceId, $get['sig'] ?? null)) {
+            return $invoiceId;
+        }
+
+        $post = $data['post'] ?? [];
+        $subscrId = (string) ($post['subscr_id'] ?? $post['recurring_payment_id'] ?? '');
+        if ($subscrId !== '') {
+            $storedSubscription = $this->di['db']->findOne('Subscription', 'sid = :sid', [':sid' => $subscrId]);
+            if ($storedSubscription && ($storedSubscription->rel_type ?? null) === 'invoice' && (int) ($storedSubscription->rel_id ?? 0) === $invoiceId) {
+                $this->di['logger']->info('Accepted unsigned PayPal callback for stored subscription ' . $subscrId . ' on invoice ' . $invoiceId);
+
+                return $invoiceId;
+            }
+        }
+
+        // A verified IPN names PayPal-grounded transaction ids, so an
+        // earlier transaction row for the same gateway payment on the same
+        // invoice proves this notification continues pre-upgrade activity
+        // rather than starting a fresh (unsigned) payment.
+        if ($currentTxId !== null) {
+            foreach ([$post['txn_id'] ?? null, $post['parent_txn_id'] ?? null] as $candidateTxnId) {
+                if (!is_string($candidateTxnId) || $candidateTxnId === '') {
+                    continue;
+                }
+                $earlier = $this->di['db']->findOne(
+                    'Transaction',
+                    'txn_id = :txn AND gateway_id = :gateway AND id != :id AND status IN (:received, :processing, :processed)',
+                    [
+                        ':txn' => $candidateTxnId,
+                        ':gateway' => $gatewayId,
+                        ':id' => $currentTxId,
+                        ':received' => Model_Transaction::STATUS_RECEIVED,
+                        ':processing' => Model_Transaction::STATUS_PROCESSING,
+                        ':processed' => Model_Transaction::STATUS_PROCESSED,
+                    ]
+                );
+                if ($earlier && (int) ($earlier->invoice_id ?? 0) === $invoiceId) {
+                    $this->di['logger']->info('Accepted unsigned PayPal callback continuing transaction ' . $candidateTxnId . ' on invoice ' . $invoiceId);
+
+                    return $invoiceId;
+                }
+            }
+        }
+
+        throw new Payment_Exception('PayPal callback signature is invalid');
+    }
+
+    /**
+     * Cross-check PayPal's echoed invoice references against the invoice
+     * about to be credited (defense in depth behind the callback signature).
+     * Only enforced when PayPal echoes the field; several notification
+     * types omit these references, and that must never fail a payment.
+     */
+    private function verifyIpnEcho(array $ipn, Model_Invoice $invoice): void
+    {
+        $echoedNr = trim((string) ($ipn['item_number'] ?? ''));
+        if ($echoedNr !== '') {
+            $expectedNr = trim((string) ($invoice->nr ?? ''));
+            if ($expectedNr !== '' && $echoedNr !== $expectedNr) {
+                throw new Payment_Exception('PayPal item_number does not match invoice ' . $invoice->id);
+            }
+        }
+
+        $echoedInvoice = trim((string) ($ipn['invoice'] ?? ''));
+        if ($echoedInvoice !== '' && (int) $echoedInvoice !== (int) $invoice->id) {
+            throw new Payment_Exception('PayPal invoice reference does not match invoice ' . $invoice->id);
+        }
+    }
+
+    /**
+     * Append a binding signature to a callback URL. Skipped when the adapter
+     * was built without a gateway id (never the case in production).
+     */
+    private function signNotifyUrl(string $url, string|int $invoiceId): string
+    {
+        $gatewayId = $this->config['gateway_id'] ?? null;
+        if ($gatewayId === null || $gatewayId === '') {
+            return $url;
+        }
+
+        $sig = FOSSBilling\Tools::signCallbackParams((int) $gatewayId, (int) $invoiceId);
+        $separator = str_contains($url, '?') ? '&' : '?';
+
+        return $url . $separator . 'sig=' . urlencode($sig);
     }
 
     private function validateCurrency($received, $expected): void
@@ -446,7 +584,7 @@ document.addEventListener('DOMContentLoaded', function() {
         $data['currency_code'] = $invoice['currency'];
         $data['return'] = $this->config['thankyou_url'];
         $data['cancel_return'] = $this->config['cancel_url'];
-        $data['notify_url'] = $this->config['notify_url'];
+        $data['notify_url'] = $this->signNotifyUrl($this->config['notify_url'], $invoice['id']);
         $data['business'] = $this->config['email'];
 
         $data['cmd'] = '_xclick-subscriptions';
@@ -496,7 +634,7 @@ document.addEventListener('DOMContentLoaded', function() {
         $data['rm'] = '2';
         $data['return'] = $this->config['thankyou_url'];
         $data['cancel_return'] = $this->config['cancel_url'];
-        $data['notify_url'] = $this->config['notify_url'];
+        $data['notify_url'] = $this->signNotifyUrl($this->config['notify_url'], $invoice['id']);
         $data['business'] = $this->config['email'];
         $data['cmd'] = '_xclick';
         $data['amount'] = $this->moneyFormat($invoice['subtotal'], $invoice['currency']);
