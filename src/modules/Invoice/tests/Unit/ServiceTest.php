@@ -1498,6 +1498,77 @@ test('counts income', function (): void {
     $serviceMock->countIncome($invoiceModel);
 });
 
+test('logs base-currency recalculation on issued invoices', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+
+    $invoiceModel = createEntity(Invoice::class);
+    $invoiceModel->currency = 'EUR';
+    $invoiceModel->refund = null;
+    $invoiceModel->setIssued(true);
+    $invoiceModel->setBaseIncome('100.00');
+
+    $currencyService = Mockery::mock(CurrencyService::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $currencyService->shouldReceive('toBaseCurrency')
+        ->atLeast()->once()
+        ->andReturn(110.0);
+
+    [$em, $invoiceItemRepo] = invoiceItemEmAndRepo();
+    $invoiceItemRepo->shouldReceive('findByInvoiceId')
+        ->atLeast()->once()
+        ->andReturn([]);
+    $em->shouldReceive('persist')->atLeast()->once();
+    $em->shouldReceive('flush')->atLeast()->once();
+
+    $logger = new Tests\Helpers\TestLogger();
+
+    $di = container();
+    $di['em'] = $em;
+    $di['logger'] = $logger;
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $currencyService);
+
+    $serviceMock->setDi($di);
+    $serviceMock->countIncome($invoiceModel);
+
+    $infoCalls = array_values(array_filter($logger->calls, fn (array $call): bool => $call['method'] === 'info'));
+    expect($infoCalls)->toHaveCount(1)
+        ->and($infoCalls[0]['params'][0])->toContain('Recalculated base-currency income');
+});
+
+test('stays silent when base-currency values are unchanged', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+
+    $invoiceModel = createEntity(Invoice::class);
+    $invoiceModel->currency = 'EUR';
+    $invoiceModel->refund = null;
+    $invoiceModel->setIssued(true);
+    $invoiceModel->setBaseIncome('100.00');
+
+    $currencyService = Mockery::mock(CurrencyService::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $currencyService->shouldReceive('toBaseCurrency')
+        ->atLeast()->once()
+        ->andReturn(100.0);
+
+    [$em, $invoiceItemRepo] = invoiceItemEmAndRepo();
+    $invoiceItemRepo->shouldReceive('findByInvoiceId')
+        ->atLeast()->once()
+        ->andReturn([]);
+    $em->shouldReceive('persist')->atLeast()->once();
+    $em->shouldReceive('flush')->atLeast()->once();
+
+    $logger = new Tests\Helpers\TestLogger();
+
+    $di = container();
+    $di['em'] = $em;
+    $di['logger'] = $logger;
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $currencyService);
+
+    $serviceMock->setDi($di);
+    $serviceMock->countIncome($invoiceModel);
+
+    $infoCalls = array_values(array_filter($logger->calls, fn (array $call): bool => $call['method'] === 'info'));
+    expect($infoCalls)->toBe([]);
+});
+
 test('prepares invoice with undefined currency', function (): void {
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('setInvoiceDefaults')

@@ -1271,11 +1271,30 @@ class Service implements InjectionAwareInterface
     {
         $table = $this->di['mod_service']('currency');
 
+        $oldIncome = $invoice->getBaseIncome();
+        $oldRefund = $invoice->getBaseRefund();
+
         $invoice->setBaseIncome($table->toBaseCurrency($invoice->getCurrency(), $this->getTotal($invoice)));
         if ($invoice->getRefund() !== null) {
             $invoice->setBaseRefund($table->toBaseCurrency($invoice->getCurrency(), (float) $invoice->getRefund()));
         } else {
             $invoice->setBaseRefund(null);
+        }
+
+        // Base-currency rewrites on issued invoices (e.g. after an FX rate move) touch locked
+        // rows: log them so a changed paid total is always explainable. Compared as floats: the
+        // columns are DECIMAL, so identical amounts can stringify differently ('100' vs '100.00').
+        $incomeChanged = $oldIncome === null
+            ? $invoice->getBaseIncome() !== null
+            : (float) $invoice->getBaseIncome() !== (float) $oldIncome;
+        $refundChanged = $oldRefund === null
+            ? $invoice->getBaseRefund() !== null
+            : (float) $invoice->getBaseRefund() !== (float) $oldRefund;
+        if ($invoice->isIssued() && isset($this->di['logger']) && ($incomeChanged || $refundChanged)) {
+            $this->di['logger']->info(
+                'Recalculated base-currency income for issued invoice #{invoice_id} ({old_income} -> {new_income})',
+                ['invoice_id' => $invoice->getId(), 'old_income' => $oldIncome, 'new_income' => $invoice->getBaseIncome()]
+            );
         }
 
         $this->di['em']->persist($invoice);

@@ -23,6 +23,11 @@ class InvoiceEventRepository extends EntityRepository
         return $this->findBy(['invoiceId' => $invoiceId], ['id' => 'ASC']);
     }
 
+    /**
+     * Journal rows live and die with their invoice: no retention pruning by design, this is the
+     * audit trail. The only deletion path is alongside the invoice itself (draft deletion), where
+     * there is no audit trail to preserve.
+     */
     public function deleteByInvoiceId(int $invoiceId): int
     {
         return (int) $this->getEntityManager()->getConnection()->delete('invoice_event', ['invoice_id' => $invoiceId]);
