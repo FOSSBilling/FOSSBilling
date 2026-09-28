@@ -214,16 +214,18 @@ class UpdatePatcher implements InjectionAwareInterface
         // Portable invoice settings/rename steps, shared with the drift healer.
         $this->applyPortableInvoiceMigrations();
 
-        // Baseline the invoice journal on every driver. Deliberately outside
-        // the drift healer above: a large backlog must not stall page loads.
-        $this->backfillInvoiceJournal();
-
         // Additive structural sync runs on every platform, MySQL/MariaDB included: it picks up any
         // column/table/index that's on entity metadata but not yet applied, without needing a
         // hand-written patch for it - the only mechanism at all on PostgreSQL/SQLite, and on
         // MySQL/MariaDB a catch-all for anything the patches above didn't (or, going forward, for
         // structural changes that land on metadata without a patch being written at all).
         $this->syncPortableSchema();
+
+        // Baseline the invoice journal on every driver, after the sync above: on non-MySQL
+        // installs the invoice_event table only comes into existence there, and backfilling
+        // first would find no table and leave existing invoices without baseline entries.
+        // Deliberately outside the drift healer: a large backlog must not stall page loads.
+        $this->backfillInvoiceJournal();
     }
 
     /**
