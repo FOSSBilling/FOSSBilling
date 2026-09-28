@@ -160,7 +160,7 @@ class InvoiceRepository extends EntityRepository
                 $qb->addOrderBy('i.id', $sort->direction);
             }
         } else {
-            $qb->orderBy('i.id', 'DESC');
+            $qb->orderBy('i.id', \SortDirection::Descending);
         }
 
         return $qb;
@@ -327,7 +327,7 @@ class InvoiceRepository extends EntityRepository
     {
         $result = $this->createQueryBuilder('i')
             ->andWhere('i.nr IS NOT NULL')
-            ->orderBy('i.id', 'DESC')
+            ->orderBy('i.id', \SortDirection::Descending)
             ->setMaxResults(1)
             ->getQuery()
             ->getResult();

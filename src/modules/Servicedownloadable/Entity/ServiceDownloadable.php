@@ -37,7 +37,7 @@ class ServiceDownloadable implements TimestampInterface
 
     /** @var Collection<int, ServiceDownloadableFile> */
     #[ORM\OneToMany(mappedBy: 'service', targetEntity: ServiceDownloadableFile::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
-    #[ORM\OrderBy(['sortOrder' => 'ASC', 'id' => 'ASC'])]
+    #[ORM\OrderBy(['sortOrder' => \SortDirection::Ascending, 'id' => \SortDirection::Ascending])]
     private Collection $files;
 
     public function __construct()

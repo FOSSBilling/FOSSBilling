@@ -144,7 +144,7 @@ class SupportTicketRepository extends EntityRepository
                 $qb->addOrderBy('t.id', $sort->direction);
             }
         } else {
-            $qb->orderBy('t.id', 'DESC');
+            $qb->orderBy('t.id', \SortDirection::Descending);
         }
 
         return $qb;
@@ -230,7 +230,7 @@ class SupportTicketRepository extends EntityRepository
     public function findLatest(int $limit = 10): array
     {
         return $this->createQueryBuilder('t')
-            ->orderBy('t.id', 'DESC')
+            ->orderBy('t.id', \SortDirection::Descending)
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();

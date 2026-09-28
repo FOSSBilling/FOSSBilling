@@ -46,7 +46,7 @@ class AdminGroupMemberRepository extends EntityRepository
             ->innerJoin('m.adminGroup', 'g')
             ->andWhere('IDENTITY(m.admin) = :admin_id')
             ->setParameter('admin_id', $adminId)
-            ->orderBy('g.id', 'ASC')
+            ->orderBy('g.id', \SortDirection::Ascending)
             ->getQuery()
             ->getResult();
 

@@ -222,7 +222,7 @@ class Service
                 $comparison = [$a['ip'] ?? '', $a['policy'] ?? ''] <=> [$b['ip'] ?? '', $b['policy'] ?? ''];
             }
 
-            return $direction === 'DESC' ? -$comparison : $comparison;
+            return $direction === \SortDirection::Descending ? -$comparison : $comparison;
         });
 
         return $counters;

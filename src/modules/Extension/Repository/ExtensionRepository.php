@@ -73,9 +73,9 @@ class ExtensionRepository extends EntityRepository
                 ->setParameter('search', '%' . $data['search'] . '%');
         }
 
-        $qb->orderBy('e.type', 'ASC')
-            ->addOrderBy('e.status', 'DESC')
-            ->addOrderBy('e.id', 'ASC');
+        $qb->orderBy('e.type', \SortDirection::Ascending)
+            ->addOrderBy('e.status', \SortDirection::Descending)
+            ->addOrderBy('e.id', \SortDirection::Ascending);
 
         return $qb;
     }

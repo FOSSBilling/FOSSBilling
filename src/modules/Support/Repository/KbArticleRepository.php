@@ -68,7 +68,7 @@ class KbArticleRepository extends EntityRepository
                 $qb->addOrderBy('a.id', $sort->direction);
             }
         } else {
-            $qb->orderBy('a.title', 'ASC');
+            $qb->orderBy('a.title', \SortDirection::Ascending);
         }
 
         return $qb;

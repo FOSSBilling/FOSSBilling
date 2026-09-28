@@ -35,7 +35,7 @@ test('builds a Doctrine query for balance searches', function (): void {
     $queryBuilder->shouldReceive('setParameter')->once()->with('date_to', Mockery::on(
         static fn (mixed $date): bool => $date instanceof DateTimeImmutable && $date->format('Y-m-d H:i:s') === '2012-12-11 00:00:00',
     ))->andReturnSelf();
-    $queryBuilder->shouldReceive('orderBy')->once()->with('m.id', 'DESC')->andReturnSelf();
+    $queryBuilder->shouldReceive('orderBy')->once()->with('m.id', SortDirection::Descending)->andReturnSelf();
 
     $balanceRepository = Mockery::mock(Box\Mod\Client\Repository\ClientBalanceRepository::class);
     $balanceRepository->shouldReceive('createQueryBuilder')->once()->with('m')->andReturn($queryBuilder);
@@ -55,7 +55,7 @@ test('builds a Doctrine query for balance searches', function (): void {
     ]))->toBe($queryBuilder);
 });
 
-test('sorts balance search query', function (array $data, string $expectedOrder, string $expectedDirection, ?string $expectedTieBreakerDirection): void {
+test('sorts balance search query', function (array $data, string $expectedOrder, SortDirection $expectedDirection, ?SortDirection $expectedTieBreakerDirection): void {
     $queryBuilder = Mockery::mock(Doctrine\ORM\QueryBuilder::class);
     $queryBuilder->shouldReceive('orderBy')->once()->with($expectedOrder, $expectedDirection)->andReturnSelf();
     if ($expectedTieBreakerDirection !== null) {
@@ -76,13 +76,13 @@ test('sorts balance search query', function (array $data, string $expectedOrder,
 
     expect($service->getSearchQueryBuilder($data))->toBe($queryBuilder);
 })->with([
-    'amount descending' => [['sort' => 'amount', 'direction' => 'DESC'], 'm.amount', 'DESC', 'DESC'],
-    'description' => [['sort' => 'description'], 'm.description', 'ASC', 'ASC'],
-    'created at' => [['sort' => 'created_at'], 'm.createdAt', 'ASC', 'ASC'],
-    'updated at' => [['sort' => 'updated_at', 'direction' => 'desc'], 'm.updatedAt', 'DESC', 'DESC'],
-    'id' => [['sort' => 'id'], 'm.id', 'ASC', null],
-    'invalid sort falls back to default' => [['sort' => 'm.id; DROP TABLE client_balance'], 'm.id', 'DESC', null],
-    'invalid direction falls back to ascending' => [['sort' => 'amount', 'direction' => 'sideways'], 'm.amount', 'ASC', 'ASC'],
+    'amount descending' => [['sort' => 'amount', 'direction' => 'DESC'], 'm.amount', SortDirection::Descending, SortDirection::Descending],
+    'description' => [['sort' => 'description'], 'm.description', SortDirection::Ascending, SortDirection::Ascending],
+    'created at' => [['sort' => 'created_at'], 'm.createdAt', SortDirection::Ascending, SortDirection::Ascending],
+    'updated at' => [['sort' => 'updated_at', 'direction' => 'desc'], 'm.updatedAt', SortDirection::Descending, SortDirection::Descending],
+    'id' => [['sort' => 'id'], 'm.id', SortDirection::Ascending, null],
+    'invalid sort falls back to default' => [['sort' => 'm.id; DROP TABLE client_balance'], 'm.id', SortDirection::Descending, null],
+    'invalid direction falls back to ascending' => [['sort' => 'amount', 'direction' => 'sideways'], 'm.amount', SortDirection::Ascending, SortDirection::Ascending],
 ]);
 
 test('toApiArray uses a supplied client without reloading it', function (): void {

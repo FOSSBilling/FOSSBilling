@@ -2075,7 +2075,7 @@ class UpdatePatcher implements InjectionAwareInterface
         }
 
         $schemaManager = $this->di['dbal']->createSchemaManager();
-        $table = $schemaManager->introspectTable('promo_redemption');
+        $table = $schemaManager->introspectTableByUnquotedName('promo_redemption');
         $columns = [];
 
         if (!$table->hasColumn('status')) {
@@ -2098,7 +2098,7 @@ class UpdatePatcher implements InjectionAwareInterface
             $this->executeSql('ALTER TABLE promo_redemption ' . implode(', ', $columns));
         }
 
-        $table = $schemaManager->introspectTable('promo_redemption');
+        $table = $schemaManager->introspectTableByUnquotedName('promo_redemption');
         $expectedIndexes = [
             'promo_id_idx' => 'promo_id',
             'client_id_idx' => 'client_id',

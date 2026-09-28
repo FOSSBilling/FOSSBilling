@@ -20,7 +20,7 @@ test('get search query builder builds all supported filters', function (): void 
 
         return $queryBuilder;
     });
-    $queryBuilder->shouldReceive('orderBy')->with('p.createdAt', 'DESC')->once()->andReturn($queryBuilder);
+    $queryBuilder->shouldReceive('orderBy')->with('p.createdAt', SortDirection::Descending)->once()->andReturn($queryBuilder);
 
     $repository = Mockery::mock(PostRepository::class)->makePartial();
     $repository->shouldReceive('createQueryBuilder')->with('p')->once()->andReturn($queryBuilder);
@@ -47,7 +47,7 @@ test('get search query builder builds all supported filters', function (): void 
     ]);
 });
 
-test('sorts post search query', function (array $data, string $expectedOrder, string $expectedDirection, ?string $expectedTieBreakerDirection): void {
+test('sorts post search query', function (array $data, string $expectedOrder, SortDirection $expectedDirection, ?SortDirection $expectedTieBreakerDirection): void {
     $queryBuilder = Mockery::mock(QueryBuilder::class);
     $queryBuilder->shouldReceive('orderBy')->with($expectedOrder, $expectedDirection)->once()->andReturn($queryBuilder);
     if ($expectedTieBreakerDirection !== null) {
@@ -61,15 +61,15 @@ test('sorts post search query', function (array $data, string $expectedOrder, st
 
     expect($repository->getSearchQueryBuilder($data))->toBe($queryBuilder);
 })->with([
-    'title ascending' => [['sort' => 'title'], 'p.title', 'ASC', 'ASC'],
-    'title descending' => [['sort' => 'title', 'direction' => 'DESC'], 'p.title', 'DESC', 'DESC'],
-    'slug' => [['sort' => 'slug'], 'p.slug', 'ASC', 'ASC'],
-    'status' => [['sort' => 'status', 'direction' => 'desc'], 'p.status', 'DESC', 'DESC'],
-    'section' => [['sort' => 'section'], 'p.section', 'ASC', 'ASC'],
-    'created at' => [['sort' => 'created_at'], 'p.createdAt', 'ASC', 'ASC'],
-    'updated at' => [['sort' => 'updated_at', 'direction' => 'DESC'], 'p.updatedAt', 'DESC', 'DESC'],
-    'published at' => [['sort' => 'published_at'], 'p.publishedAt', 'ASC', 'ASC'],
-    'id' => [['sort' => 'id'], 'p.id', 'ASC', null],
-    'invalid sort falls back to default' => [['sort' => 'p.title; DROP TABLE post'], 'p.createdAt', 'DESC', null],
-    'invalid direction falls back to ascending' => [['sort' => 'title', 'direction' => 'sideways'], 'p.title', 'ASC', 'ASC'],
+    'title ascending' => [['sort' => 'title'], 'p.title', SortDirection::Ascending, SortDirection::Ascending],
+    'title descending' => [['sort' => 'title', 'direction' => 'DESC'], 'p.title', SortDirection::Descending, SortDirection::Descending],
+    'slug' => [['sort' => 'slug'], 'p.slug', SortDirection::Ascending, SortDirection::Ascending],
+    'status' => [['sort' => 'status', 'direction' => 'desc'], 'p.status', SortDirection::Descending, SortDirection::Descending],
+    'section' => [['sort' => 'section'], 'p.section', SortDirection::Ascending, SortDirection::Ascending],
+    'created at' => [['sort' => 'created_at'], 'p.createdAt', SortDirection::Ascending, SortDirection::Ascending],
+    'updated at' => [['sort' => 'updated_at', 'direction' => 'DESC'], 'p.updatedAt', SortDirection::Descending, SortDirection::Descending],
+    'published at' => [['sort' => 'published_at'], 'p.publishedAt', SortDirection::Ascending, SortDirection::Ascending],
+    'id' => [['sort' => 'id'], 'p.id', SortDirection::Ascending, null],
+    'invalid sort falls back to default' => [['sort' => 'p.title; DROP TABLE post'], 'p.createdAt', SortDirection::Descending, null],
+    'invalid direction falls back to ascending' => [['sort' => 'title', 'direction' => 'sideways'], 'p.title', SortDirection::Ascending, SortDirection::Ascending],
 ]);

@@ -11,16 +11,16 @@
 declare(strict_types=1);
 
 dataset('directionProvider', fn (): array => [
-    ['ASC', 'ASC'],
-    ['asc', 'ASC'],
-    ['DESC', 'DESC'],
-    ['desc', 'DESC'],
-    [' Desc ', 'DESC'],
-    ['invalid', 'ASC'],
-    ['', 'ASC'],
-    [null, 'ASC'],
-    [123, 'ASC'],
-    [['DESC'], 'ASC'],
+    ['ASC', SortDirection::Ascending],
+    ['asc', SortDirection::Ascending],
+    ['DESC', SortDirection::Descending],
+    ['desc', SortDirection::Descending],
+    [' Desc ', SortDirection::Descending],
+    ['invalid', SortDirection::Ascending],
+    ['', SortDirection::Ascending],
+    [null, SortDirection::Ascending],
+    [123, SortDirection::Ascending],
+    [['DESC'], SortDirection::Ascending],
 ]);
 
 test('resolves a valid sort key and direction', function (): void {
@@ -30,12 +30,12 @@ test('resolves a valid sort key and direction', function (): void {
     );
 
     expect($sort->expression)->toBe('t.tld')
-        ->and($sort->direction)->toBe('DESC')
+        ->and($sort->direction)->toBe(SortDirection::Descending)
         ->and($sort->isSorted())->toBeTrue()
         ->and($sort->toOrderByClause())->toBe('t.tld DESC');
 });
 
-test('direction resolves case-insensitively with fallback', function (mixed $input, string $expected): void {
+test('direction resolves case-insensitively with fallback', function (mixed $input, SortDirection $expected): void {
     $sort = FOSSBilling\SortOptions::fromArray(
         ['sort' => 'id', 'direction' => $input],
         ['id' => 't.id']
@@ -71,7 +71,7 @@ test('supports custom parameter names', function (): void {
     );
 
     expect($sort->expression)->toBe('tr.name')
-        ->and($sort->direction)->toBe('DESC')
+        ->and($sort->direction)->toBe(SortDirection::Descending)
         ->and($sort->sortParam)->toBe('registrar_sort')
         ->and($sort->directionParam)->toBe('registrar_direction');
 });

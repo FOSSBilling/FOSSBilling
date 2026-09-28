@@ -53,8 +53,8 @@ class QueuedEmailRepository extends EntityRepository
                 $qb->addOrderBy('q.id', $sort->direction);
             }
         } else {
-            $qb->orderBy('q.priority', 'DESC');
-            $qb->addOrderBy('q.id', 'ASC');
+            $qb->orderBy('q.priority', \SortDirection::Descending);
+            $qb->addOrderBy('q.id', \SortDirection::Ascending);
         }
 
         return $qb;
@@ -74,8 +74,8 @@ class QueuedEmailRepository extends EntityRepository
         $qb = $this->createQueryBuilder('q')
             ->andWhere('q.status IN (:statuses)')
             ->setParameter('statuses', [QueuedEmail::STATUS_UNSENT, QueuedEmail::STATUS_PENDING, QueuedEmail::STATUS_FAILED])
-            ->orderBy('q.priority', 'DESC')
-            ->addOrderBy('q.id', 'ASC');
+            ->orderBy('q.priority', \SortDirection::Descending)
+            ->addOrderBy('q.id', \SortDirection::Ascending);
 
         if ($limit > 0) {
             $qb->setMaxResults($limit);

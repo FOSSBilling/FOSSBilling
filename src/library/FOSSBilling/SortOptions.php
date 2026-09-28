@@ -20,17 +20,17 @@ namespace FOSSBilling;
  */
 final readonly class SortOptions
 {
-    public const string DEFAULT_DIRECTION = 'ASC';
+    public const \SortDirection DEFAULT_DIRECTION = \SortDirection::Ascending;
 
     /**
-     * @param string|null $expression     resolved ORDER BY expression from the allowlist, null when no valid sort was requested
-     * @param string      $direction      resolved direction, 'ASC' or 'DESC'
-     * @param string      $sortParam      key used to read the sort column
-     * @param string      $directionParam key used to read the sort direction
+     * @param string|null    $expression     resolved ORDER BY expression from the allowlist, null when no valid sort was requested
+     * @param \SortDirection $direction      resolved direction
+     * @param string         $sortParam      key used to read the sort column
+     * @param string         $directionParam key used to read the sort direction
      */
     public function __construct(
         public ?string $expression = null,
-        public string $direction = self::DEFAULT_DIRECTION,
+        public \SortDirection $direction = self::DEFAULT_DIRECTION,
         public string $sortParam = 'sort',
         public string $directionParam = 'direction',
     ) {
@@ -82,9 +82,10 @@ final readonly class SortOptions
             return null;
         }
 
-        $clause = $this->expression . ' ' . $this->direction;
+        $direction = $this->direction === \SortDirection::Descending ? 'DESC' : 'ASC';
+        $clause = $this->expression . ' ' . $direction;
         if ($tieBreaker !== null && $tieBreaker !== $this->expression) {
-            $clause .= ', ' . $tieBreaker . ' ' . $this->direction;
+            $clause .= ', ' . $tieBreaker . ' ' . $direction;
         }
 
         return $clause;
@@ -94,10 +95,10 @@ final readonly class SortOptions
      * Resolve the direction, accepting 'ASC'/'DESC' case-insensitively.
      * Anything else falls back to the default.
      */
-    private static function resolveDirection(mixed $value): string
+    private static function resolveDirection(mixed $value): \SortDirection
     {
         if (is_string($value) && strtoupper(trim($value)) === 'DESC') {
-            return 'DESC';
+            return \SortDirection::Descending;
         }
 
         return self::DEFAULT_DIRECTION;

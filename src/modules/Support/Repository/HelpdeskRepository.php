@@ -41,7 +41,7 @@ class HelpdeskRepository extends EntityRepository
                 $qb->addOrderBy('h.id', $sort->direction);
             }
         } else {
-            $qb->orderBy('h.id', 'DESC');
+            $qb->orderBy('h.id', \SortDirection::Descending);
         }
 
         return $qb;
@@ -54,7 +54,7 @@ class HelpdeskRepository extends EntityRepository
     {
         $rows = $this->createQueryBuilder('h')
             ->select('h.id, h.name')
-            ->orderBy('h.id', 'ASC')
+            ->orderBy('h.id', \SortDirection::Ascending)
             ->getQuery()
             ->getArrayResult();
 

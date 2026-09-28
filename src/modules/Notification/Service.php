@@ -102,7 +102,7 @@ class Service implements InjectionAwareInterface
                 $qb->addOrderBy('n.id', $sort->direction);
             }
         } else {
-            $qb->orderBy('n.id', 'DESC');
+            $qb->orderBy('n.id', \SortDirection::Descending);
         }
 
         return $qb;

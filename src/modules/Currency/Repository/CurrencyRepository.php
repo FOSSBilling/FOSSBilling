@@ -77,7 +77,7 @@ class CurrencyRepository extends EntityRepository
                 $qb->addOrderBy('c.id', $sort->direction);
             }
         } else {
-            $qb->orderBy('c.code', 'ASC');
+            $qb->orderBy('c.code', \SortDirection::Ascending);
         }
 
         return $qb;
@@ -180,7 +180,7 @@ class CurrencyRepository extends EntityRepository
     {
         $qb = $this->createQueryBuilder('c')
             ->select('c.code')
-            ->orderBy('c.code', 'ASC');
+            ->orderBy('c.code', \SortDirection::Ascending);
 
         $results = $qb->getQuery()->getResult();
 

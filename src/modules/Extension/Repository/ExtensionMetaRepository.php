@@ -34,7 +34,7 @@ class ExtensionMetaRepository extends EntityRepository
 
     public function findOneByExtensionAndScope(string $extension, ?string $metaKey = null, ?string $relType = null, ?string $relId = null): ?ExtensionMeta
     {
-        $result = $this->findByExtensionAndScope($extension, $metaKey, $relType, $relId, ['id' => 'ASC'], 1);
+        $result = $this->findByExtensionAndScope($extension, $metaKey, $relType, $relId, ['id' => \SortDirection::Ascending], 1);
 
         return $result[0] ?? null;
     }
