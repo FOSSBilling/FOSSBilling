@@ -97,7 +97,7 @@ class Service implements InjectionAwareInterface
     ];
 
     /** Keys of $data that updateInvoice() actually consumes; routing keys (id, issue) and anything else are ignored. */
-    private const array UPDATEABLE_FIELDS = [
+    private const array UPDATABLE_FIELDS = [
         'gateway_id', 'text_1', 'text_2', 'paid_at', 'due_at', 'serie', 'nr',
         'status', 'taxrate', 'taxname', 'issued', 'notes', 'created_at',
         'new_item', 'items',
@@ -2617,7 +2617,7 @@ class Service implements InjectionAwareInterface
         $previousStatus = null;
         $wasIssued = false;
 
-        $changedFields = array_values(array_intersect(array_filter(array_keys($data), is_string(...)), self::UPDATEABLE_FIELDS));
+        $changedFields = array_values(array_intersect(array_filter(array_keys($data), is_string(...)), self::UPDATABLE_FIELDS));
         sort($changedFields);
         $this->di['event_dispatcher']->dispatch(new BeforeAdminInvoiceUpdateEvent((int) $model->getId(), $changedFields));
 
@@ -2816,7 +2816,7 @@ class Service implements InjectionAwareInterface
                 throw new InformationException('Promotions can only be applied to unpaid invoices');
             }
 
-            // Refresh under the held lock so the editability check below sees
+            // Refresh under the held lock so the check below sees
             // the current issue state rather than a stale snapshot.
             $this->di['em']->refresh($invoice);
             if (!$this->isInvoiceEditable($invoice)) {
@@ -2933,7 +2933,7 @@ class Service implements InjectionAwareInterface
                 throw new InformationException('Promotions can only be removed from unpaid invoices');
             }
 
-            // Refresh under the held lock so the editability check below sees
+            // Refresh under the held lock so the check below sees
             // the current issue state rather than a stale snapshot.
             $this->di['em']->refresh($invoice);
             if (!$this->isInvoiceEditable($invoice)) {

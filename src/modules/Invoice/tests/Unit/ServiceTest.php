@@ -175,8 +175,8 @@ test('converts seller address, phone, and email from live company settings', fun
     $service = new Service();
     $invoiceModel = createEntity(Invoice::class, [
         'seller_company' => 'Snapshot Co',
-        'seller_company_vat' => 'SNAPVAT',
-        'seller_company_number' => 'SNAPNUM',
+        'seller_company_vat' => 'SNAP_VAT',
+        'seller_company_number' => 'SNAP_NUM',
         'seller_address' => 'Stale snapshot address',
         'seller_phone' => 'Stale snapshot phone',
         'seller_email' => 'stale@example.com',
@@ -241,8 +241,8 @@ test('converts seller address, phone, and email from live company settings', fun
     // Company identity stays frozen from the snapshot, while contact details
     // always reflect current company settings.
     expect($result['seller']['company'])->toBe('Snapshot Co')
-        ->and($result['seller']['company_vat'])->toBe('SNAPVAT')
-        ->and($result['seller']['company_number'])->toBe('SNAPNUM')
+        ->and($result['seller']['company_vat'])->toBe('SNAP_VAT')
+        ->and($result['seller']['company_number'])->toBe('SNAP_NUM')
         ->and($result['seller']['address'])->toBe('Live Street 1')
         ->and($result['seller']['phone'])->toBe('Live phone')
         ->and($result['seller']['email'])->toBe('live@example.com');
@@ -2794,7 +2794,7 @@ test('removes an invoice', function (): void {
     expect($result)->toBeTrue();
 });
 
-test('rmByClient erases invoices in any state without deletability checks', function (): void {
+test('rmByClient erases invoices in any state, bypassing deletion guards', function (): void {
     $paid = createEntity(Invoice::class);
     setEntityId($paid, 20);
     $paid->setIssued(true);
@@ -6603,8 +6603,8 @@ test('issuing an invoice freezes buyer details from the live client', function (
             'first_name' => 'Live',
             'last_name' => 'Buyer',
             'company' => 'Buyer Co',
-            'company_vat' => 'BUYVAT',
-            'company_number' => 'BUYNUM',
+            'company_vat' => 'BUY_VAT',
+            'company_number' => 'BUY_NUM',
             'address_1' => 'Addr1',
             'address_2' => 'Addr2',
             'city' => 'Town',
@@ -6633,7 +6633,7 @@ test('issuing an invoice freezes buyer details from the live client', function (
     expect($serviceMock->issueInvoice($invoiceModel, []))->toBeTrue()
         ->and($invoiceModel->getNr())->toBe('9')
         ->and($invoiceModel->getBuyerFirstName())->toBe('Live')
-        ->and($invoiceModel->getBuyerCompanyVat())->toBe('BUYVAT')
+        ->and($invoiceModel->getBuyerCompanyVat())->toBe('BUY_VAT')
         ->and($invoiceModel->getBuyerAddress())->toBe('Addr1 Addr2')
         ->and($invoiceModel->getBuyerPhone())->toBe('CC-1 555')
         ->and($invoiceModel->getBuyerZip())->toBe('12345');

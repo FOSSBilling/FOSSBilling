@@ -2581,7 +2581,7 @@ test('invoice journal backfill patch follows the journal table patch', function 
         ->and($patches[124][1])->toBe('patch124');
 });
 
-test('invoice journal backfill writes one baseline entry per unjournaled invoice', function (): void {
+test('invoice journal backfill writes one baseline entry per invoice missing from the journal', function (): void {
     withNonMysqlDbDriver(function (): void {
         $dbFile = Path::join(sys_get_temp_dir(), 'fossbilling-journal-backfill-' . bin2hex(random_bytes(8)) . '.sqlite');
 

@@ -609,8 +609,8 @@ class UpdatePatcher implements InjectionAwareInterface
      * its actual current state (drafts as created, the rest by status). No
      * history is fabricated: installs upgrading to the journal get a truthful
      * starting point, and every later transition appends live entries.
-     * Portable across drivers; idempotent since journaled invoices are
-     * skipped. Runs from applyCorePatches() only, never from the drift
+     * Portable across drivers; idempotent: invoices that already have
+     * journal rows are skipped. Runs from applyCorePatches() only, never from the drift
      * healer, so a large backlog can't stall page loads.
      */
     private function backfillInvoiceJournal(): void
@@ -683,7 +683,7 @@ class UpdatePatcher implements InjectionAwareInterface
                     'invoice_id' => (int) $row['id'],
                     'type' => $type,
                     'client_id' => $row['client_id'] !== null ? (int) $row['client_id'] : null,
-                    // Substitute rather than throw on unencodable legacy bytes:
+                    // Substitute rather than throw on legacy bytes that cannot be encoded:
                     // a single bad row must not wedge the whole patch run.
                     'snapshot' => json_encode($snapshot, JSON_INVALID_UTF8_SUBSTITUTE),
                     'created_at' => $snapshot['created_at'] ?? date('Y-m-d H:i:s'),
@@ -4360,7 +4360,7 @@ class UpdatePatcher implements InjectionAwareInterface
     private function patch124(): void
     {
         // Baseline the invoice journal for installs predating it: one entry
-        // per unjournaled invoice, typed by its current state. The portable
+        // per invoice missing from the journal, typed by its current state. The portable
         // backfill covers non-MySQL drivers; both skip invoices that already
         // have journal rows, so reruns are no-ops.
         $this->backfillInvoiceJournal();
