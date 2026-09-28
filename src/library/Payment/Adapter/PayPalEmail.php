@@ -90,7 +90,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
         // The invoice binding arrives through a buyer-editable callback URL,
         // so authenticate it before anything below trusts it. Runs outside
         // the test-mode bypass above: the binding must hold in every environment.
-        $verifiedInvoiceId = $this->verifyCallbackBinding($data, (int) $gateway_id, $tx['invoice_id'] ?? null);
+        $verifiedInvoiceId = $this->verifyCallbackBinding($data, (int) $gateway_id, $tx['invoice_id'] ?? null, (int) $id);
 
         $ipn = $data['post'] ?? [];
 
@@ -463,11 +463,13 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
      * Returns the verified invoice id, or null when no invoice was supplied.
      *
      * Unsigned callbacks predate signing and are honored only for a stored
-     * subscription on the same invoice, so existing recurring profiles keep
-     * working: new subscription rows can only be created through a signed
-     * callback, and a tampered invoice id never matches the stored row.
+     * subscription on the same invoice, or for a notification continuing a
+     * previously recorded payment for the same invoice (delayed completions
+     * and refunds for pre-upgrade payments), so existing activity keeps
+     * working: a fresh payment has no earlier transaction row to match, and
+     * a tampered invoice id never matches the stored row.
      */
-    private function verifyCallbackBinding(array $data, int $gatewayId, mixed $boundInvoiceId): ?int
+    private function verifyCallbackBinding(array $data, int $gatewayId, mixed $boundInvoiceId, ?int $currentTxId = null): ?int
     {
         $get = $data['get'] ?? [];
         $invoiceId = $boundInvoiceId ?: ($get['invoice_id'] ?? null);
@@ -491,6 +493,25 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                 $this->di['logger']->info('Accepted unsigned PayPal callback for stored subscription ' . $subscrId . ' on invoice ' . $invoiceId);
 
                 return $invoiceId;
+            }
+        }
+
+        // A verified IPN names PayPal-grounded transaction ids, so an
+        // earlier transaction row for the same gateway payment on the same
+        // invoice proves this notification continues pre-upgrade activity
+        // rather than starting a fresh (unsigned) payment.
+        if ($currentTxId !== null) {
+            foreach ([$post['txn_id'] ?? null, $post['parent_txn_id'] ?? null] as $candidateTxnId) {
+                if (!is_string($candidateTxnId) || $candidateTxnId === '') {
+                    continue;
+                }
+                $earlier = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\Transaction::class)->findActiveByTxnIdAndGatewayId($candidateTxnId, $gatewayId, $currentTxId);
+                $earlierInvoice = $earlier?->getInvoice();
+                if ($earlierInvoice instanceof Invoice && (int) $earlierInvoice->getId() === $invoiceId) {
+                    $this->di['logger']->info('Accepted unsigned PayPal callback continuing transaction ' . $candidateTxnId . ' on invoice ' . $invoiceId);
+
+                    return $invoiceId;
+                }
             }
         }
 

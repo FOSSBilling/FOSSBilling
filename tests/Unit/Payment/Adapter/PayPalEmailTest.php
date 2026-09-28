@@ -214,18 +214,23 @@ function signedPayPalGet(int $invoiceId, int $gatewayId = 1, array $extra = []):
     );
 }
 
-function paypalEmMocks(?object $invoiceModel = null, ?object $existingSubscription = null): Mockery\MockInterface
+function paypalEmMocks(?object $invoiceModel = null, ?object $existingSubscription = null, ?callable $findActiveByTxn = null): Mockery\MockInterface
 {
     $invoiceRepo = Mockery::mock(Box\Mod\Invoice\Repository\InvoiceRepository::class);
     $invoiceRepo->shouldReceive('find')->byDefault()->andReturn($invoiceModel);
     $subRepo = Mockery::mock(Box\Mod\Invoice\Repository\SubscriptionRepository::class);
     $subRepo->shouldReceive('findOneBy')->byDefault()->andReturn($existingSubscription);
+    $transactionRepo = Mockery::mock(Box\Mod\Invoice\Repository\TransactionRepository::class);
+    $transactionRepo->shouldReceive('findActiveByTxnIdAndGatewayId')->byDefault()->andReturnUsing(
+        $findActiveByTxn ?? static fn (): ?object => null
+    );
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
     $connection->shouldReceive('fetchAllAssociative')->byDefault()->andReturn([]);
     $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $em->shouldReceive('getRepository')->byDefault()->andReturnUsing(static fn (string $class): object => match ($class) {
         Box\Mod\Invoice\Entity\Invoice::class => $invoiceRepo,
         Box\Mod\Invoice\Entity\Subscription::class => $subRepo,
+        Box\Mod\Invoice\Entity\Transaction::class => $transactionRepo,
         default => Mockery::mock(Doctrine\ORM\EntityRepository::class)->shouldIgnoreMissing(),
     });
     $em->shouldReceive('getConnection')->byDefault()->andReturn($connection);
@@ -1520,6 +1525,131 @@ describe('PayPal callback invoice binding', function (): void {
         expect(fn (): mixed => $adapter->getInvoiceId(['get' => ['invoice_id' => 99, 'sig' => FOSSBilling\Tools::signCallbackParams(2, 16)]]))
             ->toThrow(Payment_Exception::class, 'PayPal callback signature is invalid');
     });
+
+    test('accepts an unsigned refund continuing a pre-upgrade payment', function (): void {
+        $refunded = [];
+        $earlierInvoice = Mockery::mock(Box\Mod\Invoice\Entity\Invoice::class);
+        $earlierInvoice->shouldReceive('getId')->byDefault()->andReturn(16);
+        $earlier = Mockery::mock(Box\Mod\Invoice\Entity\Transaction::class);
+        $earlier->shouldReceive('getInvoice')->byDefault()->andReturn($earlierInvoice);
+
+        $apiAdmin = Mockery::mock();
+        $apiAdmin->shouldReceive('invoice_transaction_get')->once()->with(['id' => 42])->andReturn([
+            'invoice_id' => 16, 'type' => null, 'txn_id' => null,
+            'txn_status' => null, 'amount' => null, 'currency' => null,
+        ]);
+        $apiAdmin->shouldReceive('invoice_get')->once()->with(['id' => 16])->andReturn([
+            'id' => 16, 'currency' => 'USD', 'client' => ['id' => 9],
+        ]);
+        $apiAdmin->shouldReceive('invoice_transaction_update')->byDefault()->andReturnTrue();
+        $apiAdmin->shouldReceive('invoice_refund')->once()->withArgs(function (array $data) use (&$refunded): bool {
+            $refunded[] = $data;
+
+            return true;
+        });
+
+        $em = paypalEmMocks(null, null, static fn (string $txnId): ?object => $txnId === 'TXN-ORIG' ? $earlier : null);
+        $di = container();
+        $di['em'] = $em;
+        $di['logger'] = new Tests\Helpers\TestLogger();
+
+        // Refund IPN for a pre-upgrade payment: new txn id, unsigned URL,
+        // but parent_txn_id names the original recorded payment.
+        paypalProcessAdapter($di)->processTransaction($apiAdmin, 42, [
+            'post' => [
+                'txn_type' => 'web_accept',
+                'payment_status' => 'Refunded',
+                'txn_id' => 'REFUND-9',
+                'parent_txn_id' => 'TXN-ORIG',
+                'mc_gross' => '-120.00',
+                'mc_currency' => 'USD',
+            ],
+            'get' => ['invoice_id' => 16],
+        ], 2);
+
+        expect($refunded)->toHaveCount(1)
+            ->and($refunded[0]['id'])->toBe(16);
+    });
+
+    test('accepts an unsigned delayed completion with a recorded pending payment', function (): void {
+        $funds = [];
+        $earlierInvoice = Mockery::mock(Box\Mod\Invoice\Entity\Invoice::class);
+        $earlierInvoice->shouldReceive('getId')->byDefault()->andReturn(16);
+        $earlier = Mockery::mock(Box\Mod\Invoice\Entity\Transaction::class);
+        $earlier->shouldReceive('getInvoice')->byDefault()->andReturn($earlierInvoice);
+
+        $apiAdmin = Mockery::mock();
+        $apiAdmin->shouldReceive('invoice_transaction_get')->twice()->with(['id' => 42])->andReturn(
+            ['invoice_id' => 16, 'type' => null, 'txn_id' => null, 'txn_status' => null, 'amount' => null, 'currency' => null, 'status' => 'received'],
+            ['invoice_id' => 16, 'type' => 'web_accept', 'txn_id' => 'TXN-E', 'txn_status' => 'Completed', 'amount' => '120.00', 'currency' => 'USD', 'status' => 'processing']
+        );
+        $apiAdmin->shouldReceive('invoice_transaction_claim_for_processing')->once()->with(['id' => 42])->andReturn(true);
+        $apiAdmin->shouldReceive('invoice_get')->once()->with(['id' => 16])->andReturn([
+            'id' => 16, 'currency' => 'USD', 'client' => ['id' => 9],
+        ]);
+        $apiAdmin->shouldReceive('invoice_transaction_update')->byDefault()->andReturnTrue();
+        $apiAdmin->shouldReceive('client_balance_add_funds')->once()->withArgs(function (array $data) use (&$funds): bool {
+            $funds[] = $data;
+
+            return true;
+        });
+        $apiAdmin->shouldReceive('invoice_pay_with_credits')->once()->with(['id' => 16]);
+
+        $invoiceModel = Mockery::mock(Box\Mod\Invoice\Entity\Invoice::class);
+        $invoiceModel->shouldReceive('getId')->byDefault()->andReturn(16);
+        $invoiceModel->shouldReceive('getStatus')->byDefault()->andReturn(Box\Mod\Invoice\Entity\Invoice::STATUS_UNPAID);
+        $invoiceModel->shouldReceive('isApproved')->byDefault()->andReturn(true);
+
+        $invoiceService = Mockery::mock();
+        $invoiceService->shouldReceive('getTotalWithTax')->once()->andReturn(120.00);
+        $invoiceService->shouldReceive('validatePaymentAmount')->once()->with(120.00, 120.00)->andReturnNull();
+        $invoiceService->shouldReceive('isInvoiceTypeDeposit')->once()->andReturn(false);
+
+        $em = paypalEmMocks($invoiceModel, null, static fn (): ?object => $earlier);
+        $di = container();
+        $di['em'] = $em;
+        $di['logger'] = new Tests\Helpers\TestLogger();
+        $di['mod_service'] = $di->protect(static fn (): object => $invoiceService);
+
+        // eCheck-style delayed completion: unsigned pre-upgrade URL, but the
+        // same PayPal transaction was already recorded for this invoice.
+        paypalProcessAdapter($di)->processTransaction($apiAdmin, 42, [
+            'post' => [
+                'txn_type' => 'web_accept',
+                'payment_status' => 'Completed',
+                'txn_id' => 'TXN-E',
+                'mc_gross' => '120.00',
+                'mc_currency' => 'USD',
+            ],
+            'get' => ['invoice_id' => 16],
+        ], 2);
+
+        expect($funds)->toHaveCount(1);
+    });
+
+    test('rejects an unsigned callback whose earlier payment belongs to another invoice', function (): void {
+        $earlierInvoice = Mockery::mock(Box\Mod\Invoice\Entity\Invoice::class);
+        $earlierInvoice->shouldReceive('getId')->byDefault()->andReturn(16);
+        $earlier = Mockery::mock(Box\Mod\Invoice\Entity\Transaction::class);
+        $earlier->shouldReceive('getInvoice')->byDefault()->andReturn($earlierInvoice);
+
+        $apiAdmin = Mockery::mock();
+        $apiAdmin->shouldReceive('invoice_transaction_get')->once()->with(['id' => 42])->andReturn([
+            'invoice_id' => 99, 'type' => null, 'txn_id' => null,
+            'txn_status' => null, 'amount' => null, 'currency' => null,
+        ]);
+        $apiAdmin->shouldNotReceive('invoice_get');
+
+        $em = paypalEmMocks(null, null, static fn (): ?object => $earlier);
+        $di = container();
+        $di['em'] = $em;
+        $di['logger'] = new Tests\Helpers\TestLogger();
+
+        paypalProcessAdapter($di)->processTransaction($apiAdmin, 42, [
+            'post' => ['txn_type' => 'web_accept', 'payment_status' => 'Completed', 'txn_id' => 'TXN-X'],
+            'get' => ['invoice_id' => 99],
+        ], 2);
+    })->throws(Payment_Exception::class, 'PayPal callback signature is invalid');
 
     test('payment forms sign the callback URL for the paying invoice', function (): void {
         $di = container();
