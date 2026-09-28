@@ -140,7 +140,9 @@ class Server_Manager_CWP extends Server_Manager
             $new->setSuspended(false);
         }
 
-        $new->setPackage($acc['account_info']['package_name']);
+        $package = new Server_Package();
+        $package->setName((string) ($acc['account_info']['package_name'] ?? ''));
+        $new->setPackage($package);
         $new->setReseller(FOSSBilling\Tools::normalizeBoolean($acc['account_info']['reseller'] ?? false));
 
         return $new;
