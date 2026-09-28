@@ -253,7 +253,6 @@ function container(): Container
         $transactionRepository->shouldReceive('findOneBy')->byDefault()->andReturn(null);
         $transactionRepository->shouldReceive('findOneByTxnIdAndGatewayId')->byDefault()->andReturn(null);
         $transactionRepository->shouldReceive('findOneByGatewayIdAndIpnHash')->byDefault()->andReturn(null);
-        $transactionRepository->shouldReceive('findOneProcessedByTxnId')->byDefault()->andReturn(null);
         $transactionRepository->shouldReceive('findActiveByTxnIdAndGatewayId')->byDefault()->andReturn(null);
         $transactionRepository->shouldReceive('findProcessingOrProcessedByTxnId')->byDefault()->andReturn(null);
         $transactionRepository->shouldReceive('competingTransactionQuery')->byDefault()->andReturn($payGatewayQueryBuilder);

@@ -175,17 +175,6 @@ class TransactionRepository extends EntityRepository
     }
 
     /**
-     * Find a processed transaction by gateway transaction id.
-     * Mirrors the legacy `findOne('Transaction', 'status = "processed" and txn_id = ?', ...)`.
-     */
-    public function findOneProcessedByTxnId(string $txnId): ?Transaction
-    {
-        $transaction = $this->findOneBy(['status' => Transaction::STATUS_PROCESSED, 'txnId' => $txnId]);
-
-        return $transaction instanceof Transaction ? $transaction : null;
-    }
-
-    /**
      * Find an active (received/processing/processed) transaction with the
      * given gateway transaction id and gateway id, excluding a given id.
      *

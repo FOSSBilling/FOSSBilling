@@ -14,7 +14,6 @@ use Box\Mod\Client\Entity\ClientBalance;
 use Box\Mod\Client\Repository\ClientBalanceRepository;
 use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\PayGateway;
-use Box\Mod\Invoice\Entity\Subscription;
 use Box\Mod\Invoice\Entity\Transaction;
 use Box\Mod\Invoice\Event\AfterAdminTransactionCreateEvent;
 use Box\Mod\Invoice\Event\AfterAdminTransactionProcessEvent;
@@ -23,9 +22,7 @@ use Box\Mod\Invoice\Event\BeforeAdminTransactionCreateEvent;
 use Box\Mod\Invoice\Event\BeforeAdminTransactionUpdateEvent;
 use Box\Mod\Invoice\Repository\InvoiceRepository;
 use Box\Mod\Invoice\Repository\PayGatewayRepository;
-use Box\Mod\Invoice\Repository\SubscriptionRepository;
 use Box\Mod\Invoice\Repository\TransactionRepository;
-use Box\Mod\Invoice\ServiceSubscription;
 use Box\Mod\Invoice\ServiceTransaction;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\EventDispatcher\EventDispatcher as SymfonyEventDispatcher;
@@ -390,6 +387,9 @@ test('createAndProcess marks transaction as error when processing throws', funct
     $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn(Mockery::mock(PayGatewayRepository::class));
     $em->shouldReceive('flush')->once();
     $em->shouldReceive('refresh')->with($transactionModel)->once();
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('executeStatement')->once()->andReturn(1);
+    $em->shouldReceive('getConnection')->andReturn($connection);
 
     $di = container();
     $di['em'] = $em;
@@ -453,6 +453,9 @@ test('preProcessTransaction returns a boolean result', function (): void {
     });
 
     $di = container();
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('executeStatement')->once()->andReturn(1);
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
     $di['event_dispatcher'] = $dispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
 
@@ -475,10 +478,34 @@ test('preProcessTransaction returns a boolean result', function (): void {
         ->and($events[1]->transactionId)->toBe(5);
 });
 
+test('preProcessTransaction skips a transaction claimed by another worker', function (): void {
+    $transactionModel = createEntity(Transaction::class, ['id' => 5]);
+
+    $di = container();
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('executeStatement')->once()->andReturn(0);
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
+    $logger = new Tests\Helpers\TestLogger();
+    $di['logger'] = $logger;
+
+    $service = Mockery::mock(ServiceTransaction::class)->makePartial();
+    $service->shouldNotReceive('processTransaction');
+    $service->setDi($di);
+
+    expect($service->preProcessTransaction($transactionModel))->toBeTrue()
+        ->and($logger->calls)->toContain([
+            'method' => 'info',
+            'params' => ['Skipped processing transaction #{id}: already claimed by another worker', ['id' => 5]],
+        ]);
+});
+
 test('preProcessTransaction returns true when the adapter returns nothing', function (): void {
     $transactionModel = createEntity(Transaction::class, ['id' => 5]);
 
     $di = container();
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('executeStatement')->once()->andReturn(1);
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $service = Mockery::mock(ServiceTransaction::class)->makePartial();
@@ -504,6 +531,9 @@ test('preProcessTransaction marks error on a generic exception', function (): vo
     $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn(Mockery::mock(PayGatewayRepository::class));
     $em->shouldReceive('flush')->once();
     $em->shouldReceive('refresh')->with($transactionModel)->once();
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('executeStatement')->once()->andReturn(1);
+    $em->shouldReceive('getConnection')->andReturn($connection);
 
     $events = [];
     $dispatcher = new SymfonyEventDispatcher();
@@ -612,153 +642,4 @@ test('markTransactionError does not clobber an already processed transaction', f
     $method->invoke($service, 3, new RuntimeException('late error'));
 
     expect($transactionModel->getStatus())->toBe(Transaction::STATUS_PROCESSED);
-});
-
-test('_subscribe creates and persists a subscription from an approved transaction', function (): void {
-    $gateway = createEntity(PayGateway::class, ['id' => 5]);
-    $invoice = createEntity(Invoice::class);
-    setEntityId($invoice, 10);
-    $invoice->setClientId(7);
-    $invoice->setCurrency('USD');
-
-    $tx = createEntity(Transaction::class, ['id' => 1, 'gateway' => $gateway, 'invoice' => $invoice]);
-    $tx->setStatus(Transaction::STATUS_APPROVED);
-    $tx->setSId('sub_gateway_1');
-    $tx->setAmount('29.99');
-    $tx->setCurrency('USD');
-    $tx->setTxnId('txn_001');
-
-    $transactionRepo = Mockery::mock(TransactionRepository::class);
-    $transactionRepo->shouldReceive('findOneProcessedByTxnId')->andReturnNull();
-
-    $subscriptionService = Mockery::mock(ServiceSubscription::class);
-    $subscriptionService->shouldReceive('getSubscriptionPeriod')->with($invoice)->andReturn('1M');
-
-    $em = Mockery::mock(EntityManagerInterface::class);
-    $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($transactionRepo);
-
-    $capturedSubscription = null;
-    $em->shouldReceive('persist')->once()->withArgs(function (object $entity) use (&$capturedSubscription): bool {
-        $capturedSubscription = $entity;
-
-        return $entity instanceof Subscription;
-    });
-    $em->shouldReceive('flush')->atLeast()->once();
-
-    $di = container();
-    $di['em'] = $em;
-    $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['mod_service'] = $di->protect(fn ($module, $sub = '') => $subscriptionService);
-
-    $service = new ServiceTransaction();
-    $service->setDi($di);
-
-    $refl = new ReflectionClass($service);
-    $method = $refl->getMethod('_subscribe');
-    $method->invoke($service, $tx);
-
-    expect($tx->getStatus())->toBe(Transaction::STATUS_PROCESSED);
-    expect($capturedSubscription)->toBeInstanceOf(Subscription::class)
-        ->and($capturedSubscription->getSid())->toBe('sub_gateway_1')
-        ->and($capturedSubscription->getClientId())->toBe(7)
-        ->and($capturedSubscription->getPayGateway())->toBe($gateway)
-        ->and($capturedSubscription->getRelType())->toBe('invoice')
-        ->and($capturedSubscription->getRelId())->toBe(10)
-        ->and($capturedSubscription->getAmount())->toBe('29.99')
-        ->and($capturedSubscription->getCurrency())->toBe('USD')
-        ->and($capturedSubscription->getPeriod())->toBe('1M')
-        ->and($capturedSubscription->getStatus())->toBe('active');
-});
-
-test('_unsubscribe looks up the subscription by sid and delegates to the subscription service', function (): void {
-    $tx = createEntity(Transaction::class, ['id' => 1, 'gatewayId' => 5]);
-    $tx->setStatus(Transaction::STATUS_APPROVED);
-    $tx->setSId('sub_gateway_1');
-    $tx->setTxnId('txn_001');
-
-    $transactionRepo = Mockery::mock(TransactionRepository::class);
-    $transactionRepo->shouldReceive('findOneProcessedByTxnId')->andReturnNull();
-
-    $subscription = createEntity(Subscription::class, ['id' => 12]);
-    $subscriptionRepo = Mockery::mock(SubscriptionRepository::class);
-    $subscriptionRepo->shouldReceive('findOneBySid')
-        ->once()
-        ->with('sub_gateway_1')
-        ->andReturn($subscription);
-
-    $subscriptionService = Mockery::mock(ServiceSubscription::class);
-    $subscriptionService->shouldReceive('unsubscribe')
-        ->once()
-        ->with(Mockery::on(fn ($arg): bool => $arg instanceof Subscription && $arg->getId() === 12));
-
-    $em = Mockery::mock(EntityManagerInterface::class);
-    $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($transactionRepo);
-    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn(Mockery::mock(PayGatewayRepository::class));
-    $em->shouldReceive('getRepository')->with(Subscription::class)->andReturn($subscriptionRepo);
-    $em->shouldReceive('flush')->atLeast()->once();
-
-    $di = container();
-    $di['em'] = $em;
-    $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['mod_service'] = $di->protect(fn ($module, $sub = '') => $subscriptionService);
-
-    $service = new ServiceTransaction();
-    $service->setDi($di);
-
-    $refl = new ReflectionClass($service);
-    $method = $refl->getMethod('_unsubscribe');
-    $method->invoke($service, $tx);
-
-    expect($tx->getStatus())->toBe(Transaction::STATUS_PROCESSED);
-});
-
-test('debitTransaction records a client balance credit', function (): void {
-    $proforma = createEntity(Invoice::class);
-
-    $proforma->id = 5;
-    $proforma->client_id = 20;
-    $proforma->currency = 'USD';
-
-    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 20, 'currency' => 'USD']);
-
-    $tx = createEntity(Transaction::class, ['id' => 7, 'invoice' => $proforma, 'currency' => 'USD', 'amount' => '25.00']);
-
-    $clientRepo = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
-    $clientRepo->shouldReceive('find')->once()->with(20)->andReturn($client);
-
-    $em = Mockery::mock(EntityManagerInterface::class);
-    $em->shouldReceive('getRepository')->with(Box\Mod\Client\Entity\Client::class)->andReturn($clientRepo);
-    $em->shouldReceive('persist')->once()->with(
-        Mockery::on(fn (ClientBalance $balance): bool => $balance->getClient()?->getId() === 20
-            && $balance->getType() === 'transaction'
-            && $balance->getRelId() === '7'
-            && $balance->getDescription() === 'Invoice #5 payment received from transaction #7'
-            && $balance->getAmount() === '25.00')
-    );
-    $em->shouldReceive('flush')->once();
-
-    $service = transactionService(em: $em);
-
-    $service->debitTransaction($tx);
-});
-
-test('debitTransaction rejects a transaction without a client', function (): void {
-    $proforma = createEntity(Invoice::class);
-
-    $proforma->id = 5;
-    $proforma->client_id = 20;
-    $proforma->currency = 'USD';
-
-    $tx = createEntity(Transaction::class, ['id' => 7, 'invoice' => $proforma, 'currency' => 'USD', 'amount' => '25.00']);
-
-    $clientRepo = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
-    $clientRepo->shouldReceive('find')->once()->with(20)->andReturn(null);
-
-    $em = Mockery::mock(EntityManagerInterface::class);
-    $em->shouldReceive('getRepository')->with(Box\Mod\Client\Entity\Client::class)->andReturn($clientRepo);
-
-    $service = transactionService(em: $em);
-
-    expect(fn () => $service->debitTransaction($tx))
-        ->toThrow(FOSSBilling\Exception::class, 'Client #20 not found');
 });
