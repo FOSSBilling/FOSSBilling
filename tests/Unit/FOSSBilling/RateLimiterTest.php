@@ -6,7 +6,7 @@ use FOSSBilling\Security\RateLimitResult;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\HttpFoundation\Request;
 
-function createRateLimiter(string $requestIp, array $whitelist = [], ?bool $enabled = null): FOSSBilling\Security\RateLimiter
+function createRateLimiter(string $requestIp, array $whitelist = [], ?bool $enabled = null, ?bool $enforceInDevelopment = null): FOSSBilling\Security\RateLimiter
 {
     $di = new Pimple\Container();
     $di['rate_limit_cache'] = new ArrayAdapter();
@@ -14,8 +14,8 @@ function createRateLimiter(string $requestIp, array $whitelist = [], ?bool $enab
     $request->shouldReceive('getClientIp')->andReturn($requestIp);
     $di['request'] = $request;
 
-    $limiter = new class($whitelist, $enabled) extends FOSSBilling\Security\RateLimiter {
-        public function __construct(private readonly array $whitelist, private readonly ?bool $enabled)
+    $limiter = new class($whitelist, $enabled, $enforceInDevelopment) extends FOSSBilling\Security\RateLimiter {
+        public function __construct(private readonly array $whitelist, private readonly ?bool $enabled, private readonly ?bool $enforceInDevelopment)
         {
         }
 
@@ -25,6 +25,9 @@ function createRateLimiter(string $requestIp, array $whitelist = [], ?bool $enab
             $config['whitelist_ips'] = $this->whitelist;
             if ($this->enabled !== null) {
                 $config['enabled'] = $this->enabled;
+            }
+            if ($this->enforceInDevelopment !== null) {
+                $config['enforce_in_development'] = $this->enforceInDevelopment;
             }
 
             return $config;
@@ -207,4 +210,35 @@ test('whitelisted IP does not track counters', function (): void {
 
     expect($result->getReason())->toBe(RateLimitResult::REASON_WHITELISTED);
     expect($limiter->listIpCounters())->toBe([]);
+});
+
+test('development environment bypasses the limiter unless opted back in', function (): void {
+    withAppEnv('dev', function (): void {
+        $dev = createRateLimiter(requestIp: '1.1.1.1');
+        expect($dev->isEnabled())->toBeFalse();
+        // Well past the policy limit: still allowed, nothing tracked.
+        expect($dev->consume('client_signup', '1.1.1.1', 5)->isLimited())->toBeFalse();
+        expect($dev->consume('client_signup', '1.1.1.1')->isLimited())->toBeFalse();
+        expect($dev->listIpCounters())->toBe([]);
+    });
+
+    withAppEnv('dev', function (): void {
+        $devEnforced = createRateLimiter(requestIp: '1.1.1.1', enforceInDevelopment: true);
+        expect($devEnforced->isEnabled())->toBeTrue();
+        $subject = 'subject-' . uniqid('', true);
+        $devEnforced->consume('client_signup', $subject, 5);
+        expect($devEnforced->consume('client_signup', $subject)->isLimited())->toBeTrue();
+    });
+});
+
+test('production and test environments enforce the limiter', function (): void {
+    foreach (['prod', 'test', null] as $env) {
+        withAppEnv($env, function (): void {
+            $limiter = createRateLimiter(requestIp: '1.1.1.1');
+            expect($limiter->isEnabled())->toBeTrue();
+            $subject = 'subject-' . uniqid('', true);
+            $limiter->consume('client_signup', $subject, 5);
+            expect($limiter->consume('client_signup', $subject)->isLimited())->toBeTrue();
+        });
+    }
 });
