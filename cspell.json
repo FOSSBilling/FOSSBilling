@@ -625,7 +625,9 @@
         "emailaddr",
         "telno",
         "telnocc",
-        "actionstatus"
+        "actionstatus",
+        "totp",
+        "TOTP"
     ],
     "ignorePaths": [
         "node_modules/**",
