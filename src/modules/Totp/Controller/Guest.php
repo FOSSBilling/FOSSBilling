@@ -8,8 +8,15 @@ class Guest implements \FOSSBilling\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 
-    public function setDi(\Pimple\Container $di): void { $this->di = $di; }
-    public function getDi(): ?\Pimple\Container { return $this->di; }
+    public function setDi(\Pimple\Container $di): void
+    {
+        $this->di = $di;
+    }
+
+    public function getDi(): ?\Pimple\Container
+    {
+        return $this->di;
+    }
 
     public function register(\Box_App &$app): void
     {
