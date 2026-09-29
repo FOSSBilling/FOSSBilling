@@ -47,7 +47,7 @@ class Country implements \JsonSerializable
         } catch (\Throwable) {
             // ext-intl is optional on some hosts. The underlying standards
             // library calls locale_get_display_region() unconditionally, so
-            // fall back to the ISO code rather than fataling session setup.
+            // fall back to the ISO code rather than causing a fatal error during session setup.
             $this->name = $isoCode;
         }
         $this->flag = $country->getFlagEmoji();
