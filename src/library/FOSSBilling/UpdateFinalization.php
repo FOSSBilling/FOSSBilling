@@ -197,9 +197,10 @@ class UpdateFinalization implements InjectionAwareInterface
             throw new InformationException('Update finalization must be run before it can be completed.');
         }
 
-        $pendingPatches = $this->getAvailablePatchCount();
+        $patchStatus = $this->getPatchStatus();
+        $pendingPatches = $patchStatus['pending'] ?? null;
         if ($pendingPatches !== null && $pendingPatches > 0) {
-            throw new InformationException('There are still pending update patches. Run finalization before completing the update.');
+            throw new InformationException('There are still :count: pending update patches (database level :current:, code level :latest:). Re-run finalization before completing the update.', [':count:' => $pendingPatches, ':current:' => $patchStatus['current'] ?? 'unknown', ':latest:' => $patchStatus['latest'] ?? 'unknown']);
         }
 
         $state['completed_at'] = date(DATE_ATOM);
@@ -317,6 +318,17 @@ class UpdateFinalization implements InjectionAwareInterface
             // Patch counting depends on the database being reachable. During early
             // recovery paths it is better to show an unknown count than to block the page.
             return $this->createPatcher()->availablePatches();
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    private function getPatchStatus(): ?array
+    {
+        try {
+            // Same recoverability contract as getAvailablePatchCount(): an
+            // unreadable database reports unknown levels rather than blocking.
+            return $this->createPatcher()->patchStatus();
         } catch (\Throwable) {
             return null;
         }

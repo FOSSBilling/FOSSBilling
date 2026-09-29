@@ -142,7 +142,47 @@ test('client balance gateway patch restores one-time payments', function (): voi
 
     $patcher = new UpdatePatcher();
     $patcher->setDi($di);
-    (new ReflectionMethod($patcher, 'patch91'))->invoke($patcher);
+    (new ReflectionMethod($patcher, 'patch99'))->invoke($patcher);
+});
+
+test('patch status reports the database level against the code level', function (): void {
+    $statement = Mockery::mock(PDOStatement::class);
+    $statement->expects('execute')->with(['param' => 'last_patch'])->andReturnTrue();
+    $statement->expects('fetchColumn')->andReturn('115');
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')->andReturn($statement);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+
+    $expectedPending = count((new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 115));
+
+    expect($patcher->patchStatus())->toBe([
+        'current' => 115,
+        'latest' => $patcher->latestPatchLevel(),
+        'pending' => $expectedPending,
+    ])->and($expectedPending)->toBeGreaterThan(0);
+});
+
+test('patch status reports unknown levels when the database cannot be read', function (): void {
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')->andThrow(new Exception('database unreachable'));
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+
+    expect($patcher->patchStatus())->toBe([
+        'current' => null,
+        'latest' => $patcher->latestPatchLevel(),
+        'pending' => null,
+    ]);
 });
 
 test('news post description patch follows the latest 0.8-next patch', function (): void {

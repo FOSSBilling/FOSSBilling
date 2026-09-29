@@ -59,6 +59,36 @@ class UpdatePatcher implements InjectionAwareInterface
     }
 
     /**
+     * Reports the database patch level against the code's patch list - the
+     * shared source of truth behind availablePatches() for callers that need
+     * the levels themselves (e.g. the finalization completion guard).
+     *
+     * @return array{current: ?int, latest: int, pending: ?int} pending is null
+     *                                                          when the count cannot be determined
+     */
+    public function patchStatus(): array
+    {
+        $latest = $this->latestPatchLevel();
+
+        try {
+            $current = $this->getPatchLevel();
+            $pending = count($this->getPatches($current));
+        } catch (\Throwable) {
+            return [
+                'current' => null,
+                'latest' => $latest,
+                'pending' => null,
+            ];
+        }
+
+        return [
+            'current' => $current,
+            'latest' => $latest,
+            'pending' => $pending,
+        ];
+    }
+
+    /**
      * Apply configuration file patches.
      */
     public function applyConfigPatches(bool $force = false): void

@@ -452,6 +452,11 @@ class Update implements InjectionAwareInterface
             // patches below are still applying.
             $this->filesystem->touch($lockFile);
 
+            // Files on disk just changed underneath the running workers - reset
+            // opcache so finalization below runs against the new code rather
+            // than stale pre-update classes.
+            $this->invalidateOpcodeCache();
+
             /*
              * Apply pending config/database patches and remove the install folder
              * now, while the admin who triggered the update is still authenticated.
@@ -472,6 +477,19 @@ class Update implements InjectionAwareInterface
 
         // Log off the current user and destroy the session.
         $this->di['session']->destroy('admin');
+    }
+
+    /**
+     * Drops PHP's opcode cache so workers compile the just-extracted files.
+     *
+     * Best effort: opcache may be absent (e.g. CLI) or restricted, in which
+     * case there is nothing stale to clear and the update proceeds as before.
+     */
+    protected function invalidateOpcodeCache(): void
+    {
+        if (function_exists('opcache_reset')) {
+            @opcache_reset();
+        }
     }
 
     /**
