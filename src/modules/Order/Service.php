@@ -94,11 +94,6 @@ class Service implements InjectionAwareInterface
     public const META_CANCEL_AT_PERIOD_END = 'cancel_at_period_end';
     private const string META_SUSPENSION_WARNING_FOR = 'suspension_warning_for';
 
-    /**
-     * Per-order renewal merge override: '1' always merges this order's
-     * renewals, '0' never merges. Absent inherits the client's preference,
-     * then the global `invoice_merge_renewals` setting.
-     */
     public const META_MERGE_RENEWALS = 'merge_renewals';
 
     public const META_STOCK_RESERVED_QTY = 'stock_reserved_qty';
@@ -1404,6 +1399,7 @@ class Service implements InjectionAwareInterface
         if (!is_array($meta)) {
             return 0;
         }
+
         $orderId = $this->orderId($order);
 
         if (empty($meta)) {

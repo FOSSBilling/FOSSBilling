@@ -186,9 +186,6 @@ function mergeRenewalsGetInvoice(int $invoiceId): array
     return $result->getResult();
 }
 
-/**
- * @return list<int>
- */
 function mergeRenewalsInvoiceIds(int $clientId): array
 {
     $result = Tests\Helpers\ApiClient::request('admin/invoice/get_list', ['client_id' => $clientId, 'per_page' => 50]);
@@ -198,12 +195,6 @@ function mergeRenewalsInvoiceIds(int $clientId): array
     return array_map(static fn (array $invoice): int => (int) $invoice['id'], $result->getResult()['list'] ?? []);
 }
 
-/**
- * Finds the invoice whose renewal lines cover exactly the given orders.
- *
- * @param array<int, array> $invoices
- * @param list<int>         $orderIds
- */
 function mergeRenewalsFindInvoiceWithOrders(array $invoices, array $orderIds): ?int
 {
     sort($orderIds);

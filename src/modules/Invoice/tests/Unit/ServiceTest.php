@@ -3784,7 +3784,6 @@ test('renewal batch falls back to the single-invoice path when the merge check f
 });
 
 test('merged renewal invoice carries exactly one line per order and falls due with the latest expiry', function (): void {
-    $service = new Service();
     $first = createEntity(Order::class, [
         'id' => 1, 'client_id' => 7, 'currency' => 'USD', 'period' => '1M',
         'price' => '10.00', 'quantity' => 1, 'expires_at' => '2026-10-01 00:00:00',
