@@ -15,7 +15,7 @@ class TotpCredential
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: Types::BIGINT)]
-    private ?int $id = null;
+    private ?int $id = null; // @phpstan-ignore property.unusedType
 
     #[ORM\Column(name: 'owner_type', type: Types::STRING, length: 16)]
     private string $ownerType = '';
