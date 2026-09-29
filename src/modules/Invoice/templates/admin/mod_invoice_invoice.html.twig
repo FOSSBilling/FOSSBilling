@@ -965,7 +965,6 @@
                     'order_attached': 'Order attached'|trans,
                     'reminder': 'Reminder'|trans,
                 } %}
-                {% set gateway_pairs = guest.invoice_gateways({ "format": "pairs" }) %}
                 <p class="text-secondary mb-3">{{ 'Every lifecycle transition is recorded here with a snapshot of the invoice at that time, including past buyer and seller details.'|trans }}</p>
                 <table class="table card-table table-vcenter table-striped text-nowrap">
                     <thead>
@@ -1025,11 +1024,11 @@
                                     <dt class="col-sm-4 text-muted">{{ 'Total'|trans }}</dt>
                                     <dd class="col-sm-8">{{ snapshot.total|format_currency(invoice.currency ?? default_currency) }}</dd>
                                     {% endif %}
-                                    {% if snapshot.subtotal is defined and snapshot.subtotal %}
+                                    {% if snapshot.subtotal is defined and snapshot.subtotal is not null %}
                                     <dt class="col-sm-4 text-muted">{{ 'Subtotal'|trans }}</dt>
                                     <dd class="col-sm-8">{{ snapshot.subtotal|format_currency(invoice.currency ?? default_currency) }}</dd>
                                     {% endif %}
-                                    {% if snapshot.tax is defined and snapshot.tax %}
+                                    {% if snapshot.tax is defined and snapshot.tax is not null %}
                                     <dt class="col-sm-4 text-muted">{{ 'Tax'|trans }}</dt>
                                     <dd class="col-sm-8">{{ snapshot.tax|format_currency(invoice.currency ?? default_currency) }}</dd>
                                     {% endif %}
@@ -1041,9 +1040,9 @@
                                     <dt class="col-sm-4 text-muted">{{ 'Due at'|trans }}</dt>
                                     <dd class="col-sm-8">{{ snapshot.due_at|format_datetime }}</dd>
                                     {% endif %}
-                                    {% if snapshot.gateway_id is defined and snapshot.gateway_id and gateway_pairs[snapshot.gateway_id] is defined %}
+                                    {% if snapshot.gateway is defined and snapshot.gateway %}
                                     <dt class="col-sm-4 text-muted">{{ 'Payment method'|trans }}</dt>
-                                    <dd class="col-sm-8">{{ gateway_pairs[snapshot.gateway_id] }}</dd>
+                                    <dd class="col-sm-8">{{ snapshot.gateway }}</dd>
                                     {% endif %}
                                     {% if snapshot.offline is defined and snapshot.offline %}
                                     <dt class="col-sm-4 text-muted">{{ 'Refund type'|trans }}</dt>

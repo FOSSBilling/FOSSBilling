@@ -135,7 +135,12 @@ test('processed transactions freeze their money history', function (): void {
         // Manual mode records the refund as an offline document on the credit note.
         $params = Tests\Helpers\ApiClient::request('admin/system/get_params');
         assertApiSuccess($params);
-        $originalLogic = $params->getResult()['invoice_refund_logic'] ?? 'credit_note';
+        // There is no API to delete a setting, so when the key never existed
+        // restore the service default its readers would have observed.
+        $allParams = $params->getResult();
+        $originalLogic = array_key_exists('invoice_refund_logic', $allParams)
+            ? $allParams['invoice_refund_logic']
+            : 'manual';
         $manual = Tests\Helpers\ApiClient::request('admin/system/update_params', [
             'invoice_refund_logic' => 'manual',
         ]);
@@ -164,6 +169,8 @@ test('processed transactions freeze their money history', function (): void {
         expect($refundedEvents)->toHaveCount(1);
         expect($refundedEvents[0]['snapshot']['offline'] ?? null)->toBeTrue();
         expect((int) ($refundedEvents[0]['snapshot']['credit_note_id'] ?? 0))->toBe($creditNoteId);
+        // Frozen at refund time: later gateway renames must not rewrite history.
+        expect($refundedEvents[0]['snapshot']['gateway'] ?? null)->toBe('Custom');
 
         $second = Tests\Helpers\ApiClient::request('admin/invoice/prepare', ['client_id' => $clientId]);
         assertApiSuccess($second);

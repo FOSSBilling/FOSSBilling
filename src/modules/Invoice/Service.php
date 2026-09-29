@@ -738,6 +738,7 @@ class Service implements InjectionAwareInterface
     {
         try {
             $data = $this->toApiArray($invoice);
+            $gateway = $invoice->getGateway();
             $snapshot = [
                 'serie_nr' => $data['serie_nr'] ?? null,
                 'status' => $data['status'] ?? null,
@@ -750,7 +751,11 @@ class Service implements InjectionAwareInterface
                 'paid_at' => $data['paid_at'] ?? null,
                 'due_at' => $data['due_at'] ?? null,
                 'created_at' => $data['created_at'] ?? null,
-                'gateway_id' => $invoice->getGateway()?->getId(),
+                'gateway_id' => $gateway?->getId(),
+                // Frozen display title: gateway settings may change or the
+                // gateway may be removed later, while the journal is an
+                // immutable audit record.
+                'gateway' => $gateway?->getName() ?: $gateway?->getGateway(),
             ];
             if ($extra !== null) {
                 $snapshot += $extra;

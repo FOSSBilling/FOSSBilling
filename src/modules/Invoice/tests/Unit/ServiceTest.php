@@ -7475,7 +7475,7 @@ test('removeExpiredUnpaidInvoices voids issued invoices, deletes drafts, and ski
 
 test('recordJournalEvent stores a trimmed snapshot of the invoice', function (): void {
     $invoice = createEntity(Invoice::class, ['id' => 10, 'client_id' => 5]);
-    $invoice->setGateway(createEntity(PayGateway::class, ['id' => 3]));
+    $invoice->setGateway(createEntity(PayGateway::class, ['id' => 3, 'name' => 'Manual payment']));
 
     $apiArray = [
         'serie_nr' => 'FOSS00010',
@@ -7543,6 +7543,7 @@ test('recordJournalEvent stores a trimmed snapshot of the invoice', function ():
             'due_at' => '2026-09-01 00:00:00',
             'created_at' => '2026-08-01 00:00:00',
             'gateway_id' => 3,
+            'gateway' => 'Manual payment',
             'reason' => 'Manual',
         ])
         ->and($statements[0][1]['created_at'])->not->toBeEmpty();
