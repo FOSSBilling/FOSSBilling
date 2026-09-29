@@ -996,7 +996,9 @@
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="4" class="text-muted text-center">{{ 'No history recorded yet.'|trans }}</td>
+                            <td colspan="4">
+                                <div class="alert alert-info mb-0" role="alert">{{ 'History for this invoice is still being prepared — check back later.'|trans }}</div>
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
