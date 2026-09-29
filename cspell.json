@@ -627,7 +627,11 @@
         "telnocc",
         "actionstatus",
         "totp",
-        "TOTP"
+        "TOTP",
+        "otpauth",
+        "qrcode",
+        "Sviatoslav",
+        "Kubis"
     ],
     "ignorePaths": [
         "node_modules/**",
