@@ -921,7 +921,7 @@ class UpdatePatcher implements InjectionAwareInterface
             118 => 'patch118',
             119 => 'patch119',
             120 => 'patch120',
-            121 => 'patch121',
+            125 => 'patch125',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -4022,7 +4022,7 @@ class UpdatePatcher implements InjectionAwareInterface
         }
     }
 
-    private function patch121(): void
+    private function patch125(): void
     {
         // The TOTP feature added the totp_credential entity without a MySQL patch,
         // repeating the pattern from patch119/patch120: installs that never ran the
