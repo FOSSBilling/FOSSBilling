@@ -245,7 +245,7 @@ class Fingerprint
             }
 
             return $reader->country($remoteAddr)->name;
-        } catch (\Exception) {
+        } catch (\Throwable) {
             return '';
         }
     }
@@ -263,7 +263,7 @@ class Fingerprint
             $reader = new GeoIP\Reader($asnDb);
 
             return $reader->asn($remoteAddr)->asnNumber;
-        } catch (\Exception) {
+        } catch (\Throwable) {
             return '';
         }
     }
