@@ -143,7 +143,7 @@ class Service implements InjectionAwareInterface, WidgetProviderInterface
         $this->di['em']->flush();
         $issuer = rawurlencode($this->getConfig()['issuer']);
 
-        return ['secret' => $secret, 'uri' => sprintf('otpauth://totp/%s:%s?secret=%s&issuer=%s&algorithm=SHA1&digits=6&period=30', $issuer, rawurlencode($label), $secret, $issuer)];
+        return ['secret' => $secret, 'uri' => sprintf('otpauth://totp/%s:%s?secret=%s&issuer=%s&algorithm=SHA1&digits=%d&period=%d', $issuer, rawurlencode($label), $secret, $issuer, self::CODE_DIGITS, self::CODE_PERIOD)];
     }
 
     public function enable(string $ownerType, int $ownerId, string $code): array
@@ -323,7 +323,7 @@ class Service implements InjectionAwareInterface, WidgetProviderInterface
     private function verify(string $secret, string $code): bool
     {
         $code = preg_replace('/[\s-]+/', '', $code) ?? '';
-        if (!preg_match('/^\d{6}$/', $code) || $secret === '') {
+        if (!preg_match('/^\d{' . self::CODE_DIGITS . '}$/', $code) || $secret === '') {
             return false;
         }
         $counter = intdiv(time(), self::CODE_PERIOD);
@@ -332,7 +332,7 @@ class Service implements InjectionAwareInterface, WidgetProviderInterface
             $hash = hash_hmac('sha1', $binary, $this->base32Decode($secret), true);
             $position = ord($hash[19]) & 0x0F;
             $value = ((ord($hash[$position]) & 0x7F) << 24) | ((ord($hash[$position + 1]) & 0xFF) << 16) | ((ord($hash[$position + 2]) & 0xFF) << 8) | (ord($hash[$position + 3]) & 0xFF);
-            if (hash_equals(str_pad((string) ($value % 1000000), 6, '0', STR_PAD_LEFT), $code)) {
+            if (hash_equals(str_pad((string) ($value % (10 ** self::CODE_DIGITS)), self::CODE_DIGITS, '0', STR_PAD_LEFT), $code)) {
                 return true;
             }
         }
