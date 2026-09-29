@@ -91,7 +91,7 @@ class TaxRepository extends EntityRepository
                 $qb->addOrderBy('t.id', $sort->direction);
             }
         } else {
-            $qb->orderBy('t.id', 'DESC');
+            $qb->orderBy('t.id', \SortDirection::Descending);
         }
 
         return $qb;

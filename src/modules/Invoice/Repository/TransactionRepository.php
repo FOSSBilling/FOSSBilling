@@ -36,10 +36,24 @@ class TransactionRepository extends EntityRepository
      * transaction is a real record of a payment attempt/event and, like
      * client_order.unpaid_invoice_id, shouldn't be destroyed just because the invoice it
      * once pointed to was.
+     *
+     * With $anonymize (client-erasure path only), personal data is scrubbed from the
+     * surviving rows - client IP, raw gateway payloads, free-text notes and error output -
+     * while the financial record (amounts, gateway, txn id, status, dates) is kept for the
+     * books. Ordinary invoice deletion leaves the rows untouched: the client still exists
+     * and the admin still needs them intact.
      */
-    public function detachFromInvoice(int $invoiceId): int
+    public function detachFromInvoice(int $invoiceId, bool $anonymize = false): int
     {
-        return (int) $this->getEntityManager()->getConnection()->update('transaction', ['invoice_id' => null], ['invoice_id' => $invoiceId]);
+        $connection = $this->getEntityManager()->getConnection();
+        $data = ['invoice_id' => null];
+        if ($anonymize) {
+            $data += ['ip' => null, 'ipn' => null, 'note' => null, 'error' => null, 'output' => null];
+        }
+
+        // `transaction` is a reserved word: Connection::update() does not quote the table, so
+        // the bare name is a syntax error on SQLite. Quote it portably instead.
+        return (int) $connection->update($connection->quoteSingleIdentifier('transaction'), $data, ['invoice_id' => $invoiceId]);
     }
 
     /**
@@ -146,7 +160,7 @@ class TransactionRepository extends EntityRepository
                 $qb->addOrderBy('t.id', $sort->direction);
             }
         } else {
-            $qb->orderBy('t.id', 'DESC');
+            $qb->orderBy('t.id', \SortDirection::Descending);
         }
 
         return $qb;
@@ -170,17 +184,6 @@ class TransactionRepository extends EntityRepository
     public function findOneByGatewayIdAndIpnHash(int $gatewayId, string $ipnHash): ?Transaction
     {
         $transaction = $this->findOneBy(['gateway' => $this->getEntityManager()->getReference(PayGateway::class, $gatewayId), 'ipnHash' => $ipnHash]);
-
-        return $transaction instanceof Transaction ? $transaction : null;
-    }
-
-    /**
-     * Find a processed transaction by gateway transaction id.
-     * Mirrors the legacy `findOne('Transaction', 'status = "processed" and txn_id = ?', ...)`.
-     */
-    public function findOneProcessedByTxnId(string $txnId): ?Transaction
-    {
-        $transaction = $this->findOneBy(['status' => Transaction::STATUS_PROCESSED, 'txnId' => $txnId]);
 
         return $transaction instanceof Transaction ? $transaction : null;
     }

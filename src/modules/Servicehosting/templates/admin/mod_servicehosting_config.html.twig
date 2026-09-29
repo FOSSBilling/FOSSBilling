@@ -97,7 +97,7 @@
                 <div class="col-lg-6 subdomain-base-row{% if not config.allow_subdomain|default(false) %} d-none{% endif %}">
                     <label class="form-label">{{ 'Free Subdomain Base Domain'|trans }}</label>
                     <input class="form-control" type="text" name="config[subdomain_base_domain]" value="{{ config.subdomain_base_domain|default('') }}" placeholder="example.com">
-                    <div class="form-hint">{{ 'Customers can use a free subdomain provided by you, such as username.example.com, without registering or transferring a domain.'|trans }}</div>
+                    <div class="form-text">{{ 'Customers can use a free subdomain provided by you, such as username.example.com, without registering or transferring a domain.'|trans }}</div>
                 </div>
             </div>
 

@@ -49,7 +49,7 @@
                             <option value="stack_all_eligible" {% if params.promo_stacking_mode|default('best_single') == 'stack_all_eligible' %}selected{% endif %}>{{ 'Stack all eligible - combine every stackable match plus the best non-stackable one'|trans }}</option>
                             <option value="priority_first" {% if params.promo_stacking_mode|default('best_single') == 'priority_first' %}selected{% endif %}>{{ 'Priority first - apply the highest-priority match only'|trans }}</option>
                         </select>
-                        <small class="form-hint">{{ 'A promotion code entered by the client always takes precedence over automatic promotions.'|trans }}</small>
+                        <small class="form-text">{{ 'A promotion code entered by the client always takes precedence over automatic promotions.'|trans }}</small>
                     </div>
                     <div class="col-lg-4">
                         <button class="btn btn-primary" type="submit">{{ 'Save'|trans }}</button>
@@ -205,7 +205,7 @@
                                     <label class="form-label" for="valid_time">{{ 'Validity Period (Blank for Indefinite)'|trans }}</label>
                                     <div class="input-group">
                                         <div class="input-icon w-100">
-                                            <input class="form-control datepicker"
+                                            <input class="form-control datepicker" data-clear-label="{{ 'Clear date'|trans }}" data-invalid-date-label="{{ 'Enter a valid date in YYYY-MM-DD format.'|trans }}"
                                                    id="valid_time"
                                                    data-name-from="start_at"
                                                    data-name-to="end_at">
@@ -389,7 +389,7 @@
                                             </tbody>
                                         </table>
                                     </div>
-                                    <small class="form-hint">{{ 'The promotion only applies when every selected product is in the cart.'|trans }}</small>
+                                    <small class="form-text">{{ 'The promotion only applies when every selected product is in the cart.'|trans }}</small>
                                 </div>
                             </div>
                         </section>

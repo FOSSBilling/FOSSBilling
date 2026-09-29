@@ -14,7 +14,7 @@ test('get search query builder excludes the attachment blob from the select', fu
 
         return $queryBuilder;
     });
-    $queryBuilder->shouldReceive('orderBy')->with('e.id', 'DESC')->once()->andReturn($queryBuilder);
+    $queryBuilder->shouldReceive('orderBy')->with('e.id', SortDirection::Descending)->once()->andReturn($queryBuilder);
 
     $repository = Mockery::mock(ActivityClientEmailRepository::class)->makePartial();
     $repository->shouldReceive('createQueryBuilder')->with('e')->once()->andReturn($queryBuilder);
@@ -28,7 +28,7 @@ test('get search query builder excludes the attachment blob from the select', fu
     expect($selectCalls[0])->not->toContain('attachmentContent');
 });
 
-test('sorts email search query', function (array $data, string $expectedOrder, string $expectedDirection, ?string $expectedTieBreakerDirection): void {
+test('sorts email search query', function (array $data, string $expectedOrder, SortDirection $expectedDirection, ?SortDirection $expectedTieBreakerDirection): void {
     $queryBuilder = Mockery::mock(QueryBuilder::class);
     $queryBuilder->shouldReceive('select')->once()->andReturn($queryBuilder);
     $queryBuilder->shouldReceive('orderBy')->once()->with($expectedOrder, $expectedDirection)->andReturn($queryBuilder);
@@ -43,12 +43,12 @@ test('sorts email search query', function (array $data, string $expectedOrder, s
 
     expect($repository->getSearchQueryBuilder($data))->toBe($queryBuilder);
 })->with([
-    'sender descending' => [['sort' => 'sender', 'direction' => 'DESC'], 'e.sender', 'DESC', 'DESC'],
-    'recipient' => [['sort' => 'recipient'], 'e.recipients', 'ASC', 'ASC'],
-    'subject' => [['sort' => 'subject', 'direction' => 'desc'], 'e.subject', 'DESC', 'DESC'],
-    'created at' => [['sort' => 'created_at'], 'e.createdAt', 'ASC', 'ASC'],
-    'updated at' => [['sort' => 'updated_at', 'direction' => 'DESC'], 'e.updatedAt', 'DESC', 'DESC'],
-    'id' => [['sort' => 'id'], 'e.id', 'ASC', null],
-    'invalid sort falls back to default' => [['sort' => 'e.subject; DROP TABLE activity_client_email'], 'e.id', 'DESC', null],
-    'invalid direction falls back to ascending' => [['sort' => 'subject', 'direction' => 'sideways'], 'e.subject', 'ASC', 'ASC'],
+    'sender descending' => [['sort' => 'sender', 'direction' => 'DESC'], 'e.sender', SortDirection::Descending, SortDirection::Descending],
+    'recipient' => [['sort' => 'recipient'], 'e.recipients', SortDirection::Ascending, SortDirection::Ascending],
+    'subject' => [['sort' => 'subject', 'direction' => 'desc'], 'e.subject', SortDirection::Descending, SortDirection::Descending],
+    'created at' => [['sort' => 'created_at'], 'e.createdAt', SortDirection::Ascending, SortDirection::Ascending],
+    'updated at' => [['sort' => 'updated_at', 'direction' => 'DESC'], 'e.updatedAt', SortDirection::Descending, SortDirection::Descending],
+    'id' => [['sort' => 'id'], 'e.id', SortDirection::Ascending, null],
+    'invalid sort falls back to default' => [['sort' => 'e.subject; DROP TABLE activity_client_email'], 'e.id', SortDirection::Descending, null],
+    'invalid direction falls back to ascending' => [['sort' => 'subject', 'direction' => 'sideways'], 'e.subject', SortDirection::Ascending, SortDirection::Ascending],
 ]);

@@ -1016,8 +1016,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 $query->addOrderBy('t.id', $sort->direction);
             }
         } else {
-            $query->orderBy('t.tld', 'ASC');
-            $query->addOrderBy('t.id', 'ASC');
+            $query->orderBy('t.tld', \SortDirection::Ascending);
+            $query->addOrderBy('t.id', \SortDirection::Ascending);
         }
 
         return $query;
@@ -1144,8 +1144,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 $query->addOrderBy('tr.id', $sort->direction);
             }
         } else {
-            $query->orderBy('tr.name', 'ASC');
-            $query->addOrderBy('tr.id', 'ASC');
+            $query->orderBy('tr.name', \SortDirection::Ascending);
+            $query->addOrderBy('tr.id', \SortDirection::Ascending);
         }
 
         return $query;

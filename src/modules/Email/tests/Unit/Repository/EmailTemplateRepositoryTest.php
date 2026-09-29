@@ -15,8 +15,8 @@ use Doctrine\ORM\QueryBuilder;
 
 test('get search query builder orders by category by default', function (): void {
     $queryBuilder = Mockery::mock(QueryBuilder::class);
-    $queryBuilder->shouldReceive('orderBy')->once()->with('t.category', 'ASC')->andReturn($queryBuilder);
-    $queryBuilder->shouldReceive('addOrderBy')->once()->with('t.actionCode', 'ASC')->andReturn($queryBuilder);
+    $queryBuilder->shouldReceive('orderBy')->once()->with('t.category', SortDirection::Ascending)->andReturn($queryBuilder);
+    $queryBuilder->shouldReceive('addOrderBy')->once()->with('t.actionCode', SortDirection::Ascending)->andReturn($queryBuilder);
 
     $repository = Mockery::mock(EmailTemplateRepository::class)->makePartial();
     $repository->shouldReceive('createQueryBuilder')->with('t')->once()->andReturn($queryBuilder);
@@ -24,7 +24,7 @@ test('get search query builder orders by category by default', function (): void
     expect($repository->getSearchQueryBuilder([]))->toBe($queryBuilder);
 });
 
-test('sorts email template search query', function (array $data, string $expectedOrder, string $expectedDirection, ?array $expectedTieBreaker): void {
+test('sorts email template search query', function (array $data, string $expectedOrder, SortDirection $expectedDirection, ?array $expectedTieBreaker): void {
     $queryBuilder = Mockery::mock(QueryBuilder::class);
     $queryBuilder->shouldReceive('orderBy')->once()->with($expectedOrder, $expectedDirection)->andReturn($queryBuilder);
     if ($expectedTieBreaker !== null) {
@@ -38,12 +38,12 @@ test('sorts email template search query', function (array $data, string $expecte
 
     expect($repository->getSearchQueryBuilder($data))->toBe($queryBuilder);
 })->with([
-    'code ascending' => [['sort' => 'code'], 't.actionCode', 'ASC', ['t.id', 'ASC']],
-    'code descending' => [['sort' => 'code', 'direction' => 'DESC'], 't.actionCode', 'DESC', ['t.id', 'DESC']],
-    'category' => [['sort' => 'category'], 't.category', 'ASC', ['t.id', 'ASC']],
-    'subject' => [['sort' => 'subject', 'direction' => 'desc'], 't.subject', 'DESC', ['t.id', 'DESC']],
-    'enabled' => [['sort' => 'enabled'], 't.enabled', 'ASC', ['t.id', 'ASC']],
-    'id' => [['sort' => 'id'], 't.id', 'ASC', null],
-    'invalid sort falls back to default' => [['sort' => 't.actionCode; DROP TABLE email_template'], 't.category', 'ASC', ['t.actionCode', 'ASC']],
-    'invalid direction falls back to ascending' => [['sort' => 'code', 'direction' => 'sideways'], 't.actionCode', 'ASC', ['t.id', 'ASC']],
+    'code ascending' => [['sort' => 'code'], 't.actionCode', SortDirection::Ascending, ['t.id', SortDirection::Ascending]],
+    'code descending' => [['sort' => 'code', 'direction' => 'DESC'], 't.actionCode', SortDirection::Descending, ['t.id', SortDirection::Descending]],
+    'category' => [['sort' => 'category'], 't.category', SortDirection::Ascending, ['t.id', SortDirection::Ascending]],
+    'subject' => [['sort' => 'subject', 'direction' => 'desc'], 't.subject', SortDirection::Descending, ['t.id', SortDirection::Descending]],
+    'enabled' => [['sort' => 'enabled'], 't.enabled', SortDirection::Ascending, ['t.id', SortDirection::Ascending]],
+    'id' => [['sort' => 'id'], 't.id', SortDirection::Ascending, null],
+    'invalid sort falls back to default' => [['sort' => 't.actionCode; DROP TABLE email_template'], 't.category', SortDirection::Ascending, ['t.actionCode', SortDirection::Ascending]],
+    'invalid direction falls back to ascending' => [['sort' => 'code', 'direction' => 'sideways'], 't.actionCode', SortDirection::Ascending, ['t.id', SortDirection::Ascending]],
 ]);

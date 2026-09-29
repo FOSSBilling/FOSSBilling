@@ -22,6 +22,9 @@ use Box\Mod\Extension\Repository\ExtensionMetaRepository;
 use Box\Mod\Extension\Repository\ExtensionRepository;
 use Box\Mod\Extension\Service;
 use Box\Mod\Widgets\Service as WidgetsService;
+use Doctrine\DBAL\DriverManager;
+use Doctrine\ORM\Tools\SchemaTool;
+use FOSSBilling\Doctrine\EntityManagerFactory;
 use FOSSBilling\Events\EventDispatcher;
 use Symfony\Component\EventDispatcher\EventDispatcher as SymfonyEventDispatcher;
 
@@ -144,6 +147,58 @@ test('isExtensionActive returns false when module not found', function (): void 
     $result = $service->isExtensionActive('mod', 'ModDoesNotExists');
     expect($result)->toBeBool();
     expect($result)->toBeFalse();
+});
+
+test('real extension activation and deactivation invalidate cached module names', function (): void {
+    $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $em = EntityManagerFactory::create($connection);
+    (new SchemaTool($em))->createSchema([$em->getClassMetadata(Extension::class)]);
+
+    $extension = (new Extension())
+        ->setType('mod')
+        ->setName('cookieconsent')
+        ->setStatus(Extension::STATUS_DEACTIVATED);
+    $em->persist($extension);
+    $em->flush();
+
+    $module = Mockery::mock(FOSSBilling\Module::class);
+    $module->shouldReceive('getCoreModules')->andReturn([]);
+    $module->shouldReceive('getManifest')->andReturn(['version' => '1.0']);
+    $module->shouldReceive('isCore')->andReturnFalse();
+    $module->shouldReceive('install');
+    $module->shouldReceive('hasAdminController')->andReturnFalse();
+    $module->shouldReceive('hasSettingsPage')->andReturnFalse();
+
+    $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffService->shouldReceive('checkPermissionsAndThrowException')
+        ->with('extension', 'manage_extensions')
+        ->atLeast()
+        ->once();
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod'] = $di->protect(fn ($name): Mockery\MockInterface => $module);
+    $di['mod_service'] = $di->protect(fn ($name): Mockery\MockInterface => $staffService);
+
+    $service = new Service();
+    $service->setDi($di);
+
+    expect($service->isExtensionActive('mod', 'cookieconsent'))->toBeFalse();
+
+    $service->activate($extension);
+    expect($service->isExtensionActive('mod', 'cookieconsent'))->toBeTrue();
+
+    $service->deactivate($extension);
+    expect($service->isExtensionActive('mod', 'cookieconsent'))->toBeFalse();
+
+    $connection->insert('extension', [
+        'type' => 'mod',
+        'name' => 'cookieconsent',
+        'status' => Extension::STATUS_INSTALLED,
+    ]);
+    $em->clear();
+
+    expect($service->isExtensionActive('mod', 'cookieconsent'))->toBeTrue();
 });
 
 test('removeNotExistingModules removes non-existing modules', function (): void {
@@ -573,6 +628,7 @@ test('uninstall uninstalls an extension', function (): void {
 
     $extensionRepository = Mockery::mock(ExtensionRepository::class);
     $extensionRepository->shouldReceive('existsActiveByTypeAndName')->andReturn(false);
+    $extensionRepository->shouldReceive('clearInstalledNamesCache')->twice();
 
     $em = extensionBuildEm($extensionRepository);
 

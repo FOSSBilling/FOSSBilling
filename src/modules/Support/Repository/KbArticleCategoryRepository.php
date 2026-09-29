@@ -62,7 +62,7 @@ class KbArticleCategoryRepository extends EntityRepository
                 $qb->addOrderBy('c.id', $sort->direction);
             }
         } else {
-            $qb->orderBy('c.title', 'ASC');
+            $qb->orderBy('c.title', \SortDirection::Ascending);
         }
 
         return $qb;
@@ -75,7 +75,7 @@ class KbArticleCategoryRepository extends EntityRepository
     {
         $rows = $this->createQueryBuilder('c')
             ->select('c.id, c.title')
-            ->orderBy('c.id', 'ASC')
+            ->orderBy('c.id', \SortDirection::Ascending)
             ->getQuery()
             ->getArrayResult();
 

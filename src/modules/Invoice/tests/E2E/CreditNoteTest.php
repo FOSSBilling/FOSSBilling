@@ -97,6 +97,64 @@ test('refunding a paid invoice issues a linked credit note and settles the origi
     }
 });
 
+test('refunding a paid invoice in manual mode records an offline refund document', function (): void {
+    Tests\Helpers\ApiClient::resetCookies();
+    $productId = null;
+
+    try {
+        $productId = creditNoteCreateProduct(50.0);
+        ['id' => $clientId] = creditNoteCreateClient();
+
+        $created = Tests\Helpers\ApiClient::request('admin/order/create', [
+            'client_id' => $clientId,
+            'product_id' => $productId,
+            'invoice_option' => 'issue-invoice',
+        ]);
+        assertApiSuccess($created);
+        assertApiResultIsInt($created);
+        $orderId = (int) $created->getResult();
+
+        $order = creditNoteGetOrder($orderId);
+        $invoiceId = (int) $order['unpaid_invoice_id'];
+
+        creditNoteMarkInvoicePaid($invoiceId);
+
+        // Manual mode used to record nothing (null result); it now records an
+        // offline refund document on the credit-note series.
+        $params = Tests\Helpers\ApiClient::request('admin/system/get_params');
+        assertApiSuccess($params);
+        $originalLogic = $params->getResult()['invoice_refund_logic'] ?? 'credit_note';
+        $setLogic = Tests\Helpers\ApiClient::request('admin/system/update_params', [
+            'invoice_refund_logic' => 'manual',
+        ]);
+        assertApiSuccess($setLogic);
+
+        try {
+            $refunded = Tests\Helpers\ApiClient::request('admin/invoice/refund', ['id' => $invoiceId]);
+            assertApiSuccess($refunded);
+            assertApiResultIsInt($refunded);
+            $creditNoteId = (int) $refunded->getResult();
+            expect($creditNoteId)->not->toBe($invoiceId);
+
+            $creditNote = creditNoteGetInvoice($creditNoteId);
+            expect($creditNote['status'])->toBe('refunded');
+            expect((int) $creditNote['credit_note_for_invoice_id'])->toBe($invoiceId);
+            expect((float) $creditNote['total'])->toBeLessThan(0);
+
+            $original = creditNoteGetInvoice($invoiceId);
+            expect($original['status'])->toBe('refunded');
+        } finally {
+            $restore = Tests\Helpers\ApiClient::request('admin/system/update_params', [
+                'invoice_refund_logic' => $originalLogic,
+            ]);
+            assertApiSuccess($restore);
+        }
+    } finally {
+        creditNoteCleanupClient();
+        creditNoteDeleteProduct($productId);
+    }
+});
+
 function creditNoteCreateProduct(float $price): int
 {
     $result = Tests\Helpers\ApiClient::request('admin/product/prepare', [
@@ -222,8 +280,8 @@ test('partial refunds accumulate on the original until fully refunded', function
             assertApiSuccess($added);
         }
 
-        $approved = Tests\Helpers\ApiClient::request('admin/invoice/approve', ['id' => $invoiceId]);
-        assertApiSuccess($approved);
+        $issued = Tests\Helpers\ApiClient::request('admin/invoice/issue', ['id' => $invoiceId]);
+        assertApiSuccess($issued);
         creditNoteMarkInvoicePaid($invoiceId);
 
         $params = Tests\Helpers\ApiClient::request('admin/system/get_params');

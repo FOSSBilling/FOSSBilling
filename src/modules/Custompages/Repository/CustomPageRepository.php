@@ -54,7 +54,7 @@ class CustomPageRepository extends EntityRepository
                 $qb->addOrderBy('p.id', $sort->direction);
             }
         } else {
-            $qb->orderBy('p.id', 'DESC');
+            $qb->orderBy('p.id', \SortDirection::Descending);
         }
 
         return $qb;

@@ -31,14 +31,14 @@
   ],
   "devDependencies": {
     "@playwright/test": "1.63.0",
-    "@types/node": "24.13.6",
+    "@types/node": "24.19.0",
     "autoprefixer": "10.6.1",
-    "ckeditor5": "48.5.1",
+    "ckeditor5": "48.5.2",
     "esbuild": "0.28.2",
     "github-markdown-css": "5.9.0",
     "postcss": "8.5.28",
     "purgecss": "8.0.0",
-    "sass": "1.104.1",
+    "sass": "1.105.0",
     "svg-sprite": "2.0.4",
     "typescript": "7.0.2"
   },

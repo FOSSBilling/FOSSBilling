@@ -36,16 +36,16 @@ test('issuing a debit note charges extra without touching the original', functio
         ]);
         assertApiSuccess($added);
 
-        // Draft invoices take lines directly; debit notes are for approved ones.
+        // Draft invoices take lines directly; debit notes are for issued ones.
         $draftDebit = Tests\Helpers\ApiClient::request('admin/invoice/debit', [
             'id' => $invoiceId,
             'items' => [['title' => 'E2E too early', 'price' => 5, 'quantity' => 1]],
         ]);
         expect($draftDebit->wasSuccessful())->toBeFalse();
-        expect($draftDebit->getErrorMessage())->toContain('Only approved unpaid or paid');
+        expect($draftDebit->getErrorMessage())->toContain('Only issued unpaid or paid');
 
-        $approved = Tests\Helpers\ApiClient::request('admin/invoice/approve', ['id' => $invoiceId]);
-        assertApiSuccess($approved);
+        $issued = Tests\Helpers\ApiClient::request('admin/invoice/issue', ['id' => $invoiceId]);
+        assertApiSuccess($issued);
 
         $emptyDebit = Tests\Helpers\ApiClient::request('admin/invoice/debit', ['id' => $invoiceId]);
         expect($emptyDebit->wasSuccessful())->toBeFalse();
@@ -63,7 +63,7 @@ test('issuing a debit note charges extra without touching the original', functio
 
         $debitNote = debitNoteGetInvoice($debitNoteId);
         expect($debitNote['status'])->toBe('unpaid');
-        expect($debitNote['approved'])->toBeTrue();
+        expect($debitNote['issued'])->toBeTrue();
         expect((int) $debitNote['debit_note_for_invoice_id'])->toBe($invoiceId);
         expect($debitNote['serie'])->toBe('DN-');
         expect((float) $debitNote['total'])->toEqual(25.0);
@@ -74,6 +74,17 @@ test('issuing a debit note charges extra without touching the original', functio
         $original = debitNoteGetInvoice($invoiceId);
         expect($original['status'])->toBe('unpaid');
         expect($original['debited_by_invoice_ids'])->toContain($debitNoteId);
+
+        // The journal links the debited event to its debit note.
+        $journal = Tests\Helpers\ApiClient::request('admin/invoice/journal', ['id' => $invoiceId]);
+        assertApiSuccess($journal);
+        assertApiResultIsArray($journal);
+        $debitedEvents = array_values(array_filter(
+            $journal->getResult(),
+            fn (array $entry): bool => ($entry['type'] ?? null) === 'debited'
+        ));
+        expect($debitedEvents)->toHaveCount(1);
+        expect((int) ($debitedEvents[0]['snapshot']['debit_note_id'] ?? 0))->toBe($debitNoteId);
 
         // Paying the debit note settles only itself.
         debitNoteMarkInvoicePaid($debitNoteId);

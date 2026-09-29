@@ -243,7 +243,7 @@
                                 <div class="col-md-6">
                                     <label class="form-label" for="new-tld-name">{{ 'TLD'|trans }}</label>
                                     <input class="form-control" id="new-tld-name" type="text" name="tld" placeholder=".example" required>
-                                    <div class="form-hint">{{ 'The leading dot is optional. The value will be normalized automatically.'|trans }}</div>
+                                    <div class="form-text">{{ 'The leading dot is optional. The value will be normalized automatically.'|trans }}</div>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label" for="new-tld-registrar">{{ 'Registrar'|trans }}</label>
@@ -272,7 +272,7 @@
                                 <div class="col-md-6">
                                     <label class="form-label" for="new-tld-periods">{{ 'Allowed Registration Periods (years)'|trans }}</label>
                                     <input class="form-control" id="new-tld-periods" type="text" name="periods" placeholder="{{ '1,2,3,5,10'|trans }}">
-                                    <div class="form-hint">{{ 'Comma-separated list of exact registration periods, in years. Leave blank to allow any period from the minimum above upwards.'|trans }}</div>
+                                    <div class="form-text">{{ 'Comma-separated list of exact registration periods, in years. Leave blank to allow any period from the minimum above upwards.'|trans }}</div>
                                 </div>
                             </div>
                         </section>
@@ -323,7 +323,7 @@
                                             <span class="form-check-label">{{ 'No'|trans }}</span>
                                         </label>
                                     </div>
-                                    <div class="form-hint">{{ 'Require clients to enter a transfer code (EPP/auth code) before this TLD can be ordered for transfer.'|trans }}</div>
+                                    <div class="form-text">{{ 'Require clients to enter a transfer code (EPP/auth code) before this TLD can be ordered for transfer.'|trans }}</div>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label">{{ 'Active'|trans }}</label>

@@ -137,6 +137,17 @@ class UpdateFinalization implements InjectionAwareInterface
                 return true;
             }
 
+            // A previous finalize may have run against stale code (e.g. opcache
+            // still serving the pre-update UpdatePatcher, whose patch list ends
+            // at the old level) and stamped the state finalized without applying
+            // anything. That state has no other path back to pending, so heal it
+            // here instead of leaving the install wedged in maintenance mode.
+            if (($state['status'] ?? null) === self::STATUS_FINALIZED && $this->getAvailablePatchCount() > 0) {
+                $this->finalizeUpdateLocked($state);
+
+                return true;
+            }
+
             return false;
         });
 
@@ -144,9 +155,23 @@ class UpdateFinalization implements InjectionAwareInterface
             return;
         }
 
+        $this->healSchemaDrift();
+    }
+
+    /**
+     * Brings the live schema up to date when entity metadata drifted without a
+     * version change (e.g. a code-only deploy adding an entity column).
+     *
+     * Safe to call from any entry point, including CLI/cron: the drift check
+     * runs outside the finalization lock, the sync runs inside it, and both
+     * halves never throw - an unreadable database simply reports "in sync".
+     *
+     * @see https://github.com/FOSSBilling/FOSSBilling/issues/4392
+     */
+    public function healSchemaDrift(): void
+    {
         // No version change (e.g. a code-only deploy with new entity columns), so no
         // finalization runs - check for schema drift outside the lock, sync inside it.
-        // @see https://github.com/FOSSBilling/FOSSBilling/issues/4392
         $patcher = $this->createPatcher();
         if ($patcher->isSchemaOutOfSync()) {
             $this->withFinalizationLock(static fn (): bool => $patcher->ensureSchemaInSync());
@@ -257,9 +282,10 @@ class UpdateFinalization implements InjectionAwareInterface
             throw new InformationException('Update finalization must be run before it can be completed.');
         }
 
-        $pendingPatches = $this->getAvailablePatchCount();
+        $patchStatus = $this->getPatchStatus();
+        $pendingPatches = $patchStatus['pending'] ?? null;
         if ($pendingPatches !== null && $pendingPatches > 0) {
-            throw new InformationException('There are still pending update patches. Run finalization before completing the update.');
+            throw new InformationException('There are still :count: pending update patches (database level :current:, code level :latest:). Re-run finalization before completing the update.', [':count:' => $pendingPatches, ':current:' => $patchStatus['current'] ?? 'unknown', ':latest:' => $patchStatus['latest'] ?? 'unknown']);
         }
 
         $state['completed_at'] = date(DATE_ATOM);
@@ -382,7 +408,18 @@ class UpdateFinalization implements InjectionAwareInterface
         }
     }
 
-    private function createPatcher(): UpdatePatcher
+    private function getPatchStatus(): ?array
+    {
+        try {
+            // Same recoverability contract as getAvailablePatchCount(): an
+            // unreadable database reports unknown levels rather than blocking.
+            return $this->createPatcher()->patchStatus();
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    protected function createPatcher(): UpdatePatcher
     {
         $patcher = new UpdatePatcher();
         if ($this->di instanceof \Pimple\Container) {

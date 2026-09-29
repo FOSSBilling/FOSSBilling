@@ -36,7 +36,7 @@ class ProductRepository extends EntityRepository
             ->select('p.id, p.title')
             ->where('p.isAddon = :isAddon')
             ->setParameter('isAddon', true)
-            ->orderBy('p.id', 'ASC')
+            ->orderBy('p.id', \SortDirection::Ascending)
             ->getQuery()
             ->getArrayResult();
 
@@ -71,7 +71,7 @@ class ProductRepository extends EntityRepository
                 ->setParameter('type', $data['type']);
         }
 
-        $rows = $qb->orderBy('p.id', 'ASC')
+        $rows = $qb->orderBy('p.id', \SortDirection::Ascending)
             ->getQuery()
             ->getArrayResult();
 
@@ -88,6 +88,8 @@ class ProductRepository extends EntityRepository
         $qb = $this->createQueryBuilder('p')
             ->where('p.isAddon = :isAddon')
             ->setParameter('isAddon', false);
+
+        $this->addPricingJoins($qb);
 
         if (!empty($data['type'])) {
             $qb->andWhere('p.type = :type')
@@ -125,7 +127,7 @@ class ProductRepository extends EntityRepository
                 $qb->addOrderBy('p.id', $sort->direction);
             }
         } else {
-            $qb->orderBy('p.priority', 'ASC');
+            $qb->orderBy('p.priority', \SortDirection::Ascending);
         }
 
         return $qb;
@@ -176,14 +178,20 @@ class ProductRepository extends EntityRepository
      */
     public function findEnabledVisibleByCategoryId(int $categoryId): array
     {
-        return $this->findBy([
-            'isAddon' => false,
-            'status' => 'enabled',
-            'hidden' => false,
-            'productCategory' => $this->getEntityManager()->getReference(ProductCategory::class, $categoryId),
-        ], [
-            'priority' => 'ASC',
-        ]);
+        $qb = $this->createQueryBuilder('p')
+            ->where('p.isAddon = :isAddon')
+            ->andWhere('p.status = :status')
+            ->andWhere('p.hidden = :hidden')
+            ->andWhere('p.productCategory = :category')
+            ->setParameter('isAddon', false)
+            ->setParameter('status', 'enabled')
+            ->setParameter('hidden', false)
+            ->setParameter('category', $this->getEntityManager()->getReference(ProductCategory::class, $categoryId))
+            ->orderBy('p.priority', \SortDirection::Ascending);
+
+        $this->addPricingJoins($qb);
+
+        return $qb->getQuery()->getResult();
     }
 
     /**
@@ -220,7 +228,9 @@ class ProductRepository extends EntityRepository
             ->setParameter('type', 'custom')
             ->setParameter('isAddon', true)
             ->setParameter('ids', $ids)
-            ->orderBy('p.id', 'ASC');
+            ->orderBy('p.id', \SortDirection::Ascending);
+
+        $this->addPricingJoins($qb);
 
         if (!$includeUnavailable) {
             $qb->andWhere('p.active = :active')
@@ -235,6 +245,15 @@ class ProductRepository extends EntityRepository
         }
 
         return $qb->getQuery()->getResult();
+    }
+
+    private function addPricingJoins(QueryBuilder $queryBuilder): void
+    {
+        $queryBuilder
+            ->leftJoin('p.productPayment', 'payment')
+            ->addSelect('payment')
+            ->leftJoin('payment.periods', 'paymentPeriod')
+            ->addSelect('paymentPeriod');
     }
 
     public function decrementStockIfAvailable(int $productId, int $quantity, \DateTimeInterface $updatedAt): int

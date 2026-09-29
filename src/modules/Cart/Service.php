@@ -639,7 +639,7 @@ class Service implements InjectionAwareInterface
 
         // Manual promo codes always win; automatic promos only resolve when no
         // code was entered, so clients are never surprised by stacked savings.
-        $effective = $this->getEffectiveCartPromos($model, $client);
+        $effective = $this->getEffectiveCartPromos($model, $client, $products);
         $promos = $effective['promos'];
 
         $items = [];
@@ -1246,7 +1246,7 @@ class Service implements InjectionAwareInterface
                     $balanceAmount = $clientBalanceService->getClientBalance($client);
                     $useCredits = $balanceAmount >= $ca['total'];
 
-                    $invoiceService->approveInvoice($invoiceModel, ['id' => $invoiceModel->getId(), 'use_credits' => $useCredits]);
+                    $invoiceService->issueInvoice($invoiceModel, ['id' => $invoiceModel->getId(), 'use_credits' => $useCredits]);
 
                     $isUnpaid = $invoiceModel instanceof Invoice
                         && $invoiceModel->getStatus() === Invoice::STATUS_UNPAID;

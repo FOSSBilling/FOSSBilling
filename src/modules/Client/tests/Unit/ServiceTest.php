@@ -725,11 +725,23 @@ test('remove wraps client cleanup and flush in one transaction', function (): vo
     $di['mod_service'] = $di->protect(moduleService($services));
 
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $schemaManager = Mockery::mock(Doctrine\DBAL\Schema\AbstractSchemaManager::class);
+    $schemaManager->shouldReceive('listTableNames')->andReturn([
+        'service_hosting',
+        'service_domain',
+        'service_downloadable',
+        'service_license',
+        'service_custom',
+        'service_apikey',
+    ]);
+    $connection->shouldReceive('createSchemaManager')->andReturn($schemaManager);
     $query = Mockery::mock(Doctrine\DBAL\Query\QueryBuilder::class);
     $query->shouldReceive('delete')->once()->with('extension_meta')->andReturnSelf();
     $query->shouldReceive('where')->once()->with('client_id = :id')->andReturnSelf();
     $query->shouldReceive('setParameter')->once()->with('id', 1)->andReturnSelf();
     $query->shouldReceive('executeStatement')->once()->andReturn(1);
+    // No provisioned services remain: the erasure gate passes on all six tables.
+    $connection->shouldReceive('fetchOne')->times(6)->andReturn(false);
     $connection->shouldReceive('executeStatement')->once()
         ->with('DELETE FROM activity_client_history WHERE client_id = :id', ['id' => 1])
         ->andReturn(1);
@@ -740,7 +752,7 @@ test('remove wraps client cleanup and flush in one transaction', function (): vo
 
     $em = $di['em'];
     $em->shouldReceive('getRepository')->with(Box\Mod\Client\Entity\ClientPasswordReset::class)->andReturn($passwordRepository);
-    $em->shouldReceive('getConnection')->once()->andReturn($connection);
+    $em->shouldReceive('getConnection')->twice()->andReturn($connection);
     $em->shouldReceive('beginTransaction')->once();
     $em->shouldReceive('remove')->once()->with($reset);
     $em->shouldReceive('remove')->once()->with($client);
@@ -764,9 +776,21 @@ test('remove rolls back and rethrows cleanup failures', function (): void {
 
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
     $connection->shouldReceive('isTransactionActive')->once()->andReturnTrue();
+    $schemaManager = Mockery::mock(Doctrine\DBAL\Schema\AbstractSchemaManager::class);
+    $schemaManager->shouldReceive('listTableNames')->andReturn([
+        'service_hosting',
+        'service_domain',
+        'service_downloadable',
+        'service_license',
+        'service_custom',
+        'service_apikey',
+    ]);
+    $connection->shouldReceive('createSchemaManager')->andReturn($schemaManager);
+    // The erasure gate passes: no provisioned services remain.
+    $connection->shouldReceive('fetchOne')->times(6)->andReturn(false);
 
     $em = $di['em'];
-    $em->shouldReceive('getConnection')->once()->andReturn($connection);
+    $em->shouldReceive('getConnection')->twice()->andReturn($connection);
     $em->shouldReceive('beginTransaction')->once();
     $em->shouldReceive('rollback')->once();
     $em->shouldReceive('commit')->never();
@@ -774,6 +798,43 @@ test('remove rolls back and rethrows cleanup failures', function (): void {
     $service->setDi($di);
 
     expect(fn () => $service->remove($client))->toThrow($exception);
+});
+
+test('remove refuses clients with provisioned services', function (): void {
+    $service = new Box\Mod\Client\Service();
+    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1]);
+
+    $orderService = Mockery::mock();
+    $orderService->shouldReceive('rmByClient')->never();
+
+    $di = container();
+    $di['mod_service'] = $di->protect(moduleService(['order' => $orderService]));
+
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $schemaManager = Mockery::mock(Doctrine\DBAL\Schema\AbstractSchemaManager::class);
+    // service_apikey was never activated on this install: the gate skips its
+    // missing table instead of querying it.
+    $schemaManager->shouldReceive('listTableNames')->andReturn([
+        'service_hosting',
+        'service_domain',
+        'service_downloadable',
+        'service_license',
+        'service_custom',
+    ]);
+    $connection->shouldReceive('createSchemaManager')->andReturn($schemaManager);
+    // Only hosting remains: the gate names it and stops before any cleanup.
+    $connection->shouldReceive('fetchOne')
+        ->times(5)
+        ->andReturnUsing(fn (string $sql): string|false => str_contains($sql, 'service_hosting') ? '1' : false);
+
+    $em = $di['em'];
+    $em->shouldReceive('getConnection')->once()->andReturn($connection);
+    $em->shouldReceive('beginTransaction')->never();
+
+    $service->setDi($di);
+
+    expect(fn () => $service->remove($client))
+        ->toThrow(FOSSBilling\InformationException::class, 'hosting');
 });
 
 test('toApiArray returns array', function (): void {

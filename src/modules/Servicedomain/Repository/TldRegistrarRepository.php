@@ -23,7 +23,7 @@ class TldRegistrarRepository extends EntityRepository
     {
         $result = $this->createQueryBuilder('tr')
             ->select('tr.id, tr.name')
-            ->orderBy('tr.id', 'DESC')
+            ->orderBy('tr.id', \SortDirection::Descending)
             ->getQuery()
             ->getArrayResult();
 
@@ -39,7 +39,7 @@ class TldRegistrarRepository extends EntityRepository
     {
         return $this->createQueryBuilder('tr')
             ->where('tr.config IS NOT NULL')
-            ->orderBy('tr.id', 'ASC')
+            ->orderBy('tr.id', \SortDirection::Ascending)
             ->setMaxResults(1)
             ->getQuery()
             ->getOneOrNullResult();

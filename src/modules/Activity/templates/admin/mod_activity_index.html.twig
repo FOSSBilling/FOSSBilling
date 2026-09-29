@@ -68,8 +68,8 @@
                                 data-resturl="/api/admin/staff/get_pairs">
                         {% if not request.admin_id %}
                         {% else %}
-                            {% set admin = admin.staff_get({ 'id': request.admin_id }) %}
-                            <option value="{{ request.admin_id }}" selected>{{ admin.name }} ({{ admin.email }})</option>
+                            {% set selected_admin = admin.staff_get({ 'id': request.admin_id }) %}
+                            <option value="{{ request.admin_id }}" selected>{{ selected_admin.name }} ({{ selected_admin.email }})</option>
                         {% endif %}
                         </select>
                     </div>
@@ -84,8 +84,8 @@
                                 data-resturl="/api/admin/client/get_pairs">
                         {% if not request.client_id %}
                         {% else %}
-                            {% set client = admin.client_get({ 'id': request.client_id }) %}
-                            <option value="{{ request.client_id }}" selected>{{ client.first_name }} {{ client.last_name }} ({{ client.email }})</option>
+                            {% set selected_client = admin.client_get({ 'id': request.client_id }) %}
+                            <option value="{{ request.client_id }}" selected>{{ selected_client.first_name }} {{ selected_client.last_name }} ({{ selected_client.email }})</option>
                         {% endif %}
                         </select>
                     </div>
@@ -95,7 +95,7 @@
                         <label class="form-label text-muted small mb-1" for="date_range">{{ 'Date Range'|trans }}</label>
                         <div class="input-group">
                             <div class="input-icon w-100">
-                                <input class="form-control datepicker"
+                                <input class="form-control datepicker" data-clear-label="{{ 'Clear date'|trans }}" data-invalid-date-label="{{ 'Enter a valid date in YYYY-MM-DD format.'|trans }}"
                                        id="date_range"
                                        placeholder="{{ 'Select Date Range'|trans }}"
                                        value="{% if request.date_from %}{{ request.date_from|date('Y-m-d') }}{% endif %}{% if request.date_to %} to {{ request.date_to|date('Y-m-d') }}{% endif %}"

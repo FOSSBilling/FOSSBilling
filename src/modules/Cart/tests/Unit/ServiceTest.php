@@ -1076,7 +1076,7 @@ test('createFromCart sets the unpaid invoice id on orders when checkout produces
     $productService->shouldReceive('findProductById')->twice()->with(5)->andReturn($product);
     $productService->shouldReceive('reserveStockForOrder')->once()->with(Mockery::type(Order::class));
 
-    // Regression test for GH-4246: prepareInvoice()/approveInvoice() must hand back a
+    // Regression test for GH-4246: prepareInvoice()/issueInvoice() must hand back a
     // Doctrine Invoice entity whose getId() is strictly ?int, matching what
     // Order::setUnpaidInvoiceId() declares. Before the Invoice module was migrated to
     // Doctrine, this was a RedBean bean whose ->id was a string, which made every
@@ -1086,7 +1086,7 @@ test('createFromCart sets the unpaid invoice id on orders when checkout produces
 
     $invoiceService = Mockery::mock(Box\Mod\Invoice\Service::class);
     $invoiceService->shouldReceive('prepareInvoice')->once()->with($client, Mockery::type('array'))->andReturn($invoice);
-    $invoiceService->shouldReceive('approveInvoice')->once()->with($invoice, Mockery::type('array'))->andReturn(true);
+    $invoiceService->shouldReceive('issueInvoice')->once()->with($invoice, Mockery::type('array'))->andReturn(true);
 
     $clientBalanceService = Mockery::mock(Box\Mod\Client\ServiceBalance::class);
     $clientBalanceService->shouldReceive('getClientBalance')->once()->with($client)->andReturn(0.0);
@@ -2226,6 +2226,62 @@ test('toApiArray returns expected structure', function (): void {
     ];
     expect($result)->toBeArray();
     expect($result)->toEqual($expected);
+});
+
+test('toApiArray reuses cart products when resolving a manual promo', function (): void {
+    $cart = createEntity(Cart::class, ['id' => 41, 'currency_id' => 1, 'promo_id' => 7]);
+    $cartProduct = new CartProduct();
+    $cartProduct->setProductId(5);
+    $promo = createPromoEntity(7);
+    $promo->setCode('WELCOME');
+
+    $cartProductRepository = Mockery::mock(CartProductRepository::class);
+    $cartProductRepository->shouldReceive('findByCartId')
+        ->once()
+        ->with(41)
+        ->andReturn([$cartProduct]);
+
+    $entityManager = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $entityManager->shouldReceive('getRepository')
+        ->with(CartProduct::class)
+        ->andReturn($cartProductRepository);
+
+    $productService = Mockery::mock(ProductService::class);
+    $productService->shouldReceive('findPromoById')->with(7)->andReturn($promo);
+    $productService->shouldReceive('findMissingRequiredProductIds')
+        ->with($promo, [5])
+        ->andReturn([]);
+
+    $currency = Mockery::mock(Currency::class);
+    $currency->shouldReceive('toApiArray')->andReturn(['code' => 'USD']);
+    $currencyRepository = Mockery::mock(CurrencyRepository::class);
+    $currencyRepository->shouldReceive('find')->with(1)->andReturn($currency);
+    $currencyService = Mockery::mock(CurrencyService::class);
+    $currencyService->shouldReceive('getCurrencyRepository')->andReturn($currencyRepository);
+
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('cartProductToApiArray')
+        ->once()
+        ->with($cartProduct, $cart, [$cartProduct], [$promo])
+        ->andReturn([
+            'total' => 10,
+            'setup_price' => 0,
+            'discount' => 0,
+            'discount_setup' => 0,
+            'period' => '1M',
+        ]);
+
+    $di = container();
+    $di['em'] = $entityManager;
+    $di['mod_service'] = $di->protect(static fn (string $module) => $module === 'currency' ? $currencyService : $productService);
+    $service->setDi($di);
+
+    $result = $service->toApiArray($cart);
+
+    expect($result['promo_source'])->toBe('manual')
+        ->and($result['promocode'])->toBe('WELCOME')
+        ->and($result['items'])->toHaveCount(1)
+        ->and($result['total'])->toBe(10);
 });
 
 test('cart is not subscribable when items use different billing periods', function (): void {

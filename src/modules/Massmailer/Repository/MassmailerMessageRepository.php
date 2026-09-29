@@ -56,7 +56,7 @@ class MassmailerMessageRepository extends EntityRepository
                 $qb->addOrderBy('m.id', $sort->direction);
             }
         } else {
-            $qb->orderBy('m.createdAt', 'DESC');
+            $qb->orderBy('m.createdAt', \SortDirection::Descending);
         }
 
         return $qb;

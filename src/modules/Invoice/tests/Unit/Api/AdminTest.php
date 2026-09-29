@@ -145,6 +145,28 @@ test('gets an invoice', function (): void {
     expect($result)->toBeArray();
 });
 
+test('gets an invoice journal', function (): void {
+    $api = apiEndpoint(new Admin());
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('getJournalForInvoice')
+        ->once()
+        ->with(1)
+        ->andReturn([['id' => 7, 'type' => 'issued']]);
+
+    $model = createEntity(Invoice::class);
+    \Tests\Helpers\setEntityId($model, 1);
+
+    $di = container();
+    $di['em']->getRepository(Invoice::class)->shouldReceive('find')->atLeast()->once()->andReturn($model);
+
+    $api->setDi($di);
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($di['em']->getRepository(Invoice::class));
+    $api->setService($serviceMock);
+    $api->setIdentity(\Tests\Helpers\admin());
+
+    expect($api->journal(['id' => 1]))->toBe([['id' => 7, 'type' => 'issued']]);
+});
+
 test('gets an invoice with promo applications', function (): void {
     $api = apiEndpoint(new Admin());
     $serviceMock = Mockery::mock(Service::class);
@@ -243,14 +265,14 @@ test('prepares an invoice', function (): void {
     expect($result)->toBeInt()->toBe($newInvoiceId);
 });
 
-test('approves an invoice', function (): void {
+test('issues an invoice', function (): void {
     $api = apiEndpoint(new Admin());
     $data = [
         'id' => 1,
     ];
 
     $serviceMock = Mockery::mock(Service::class);
-    $serviceMock->shouldReceive('approveInvoice')
+    $serviceMock->shouldReceive('issueInvoice')
         ->atLeast()->once()
         ->andReturn(true);
 
@@ -263,7 +285,7 @@ test('approves an invoice', function (): void {
     $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($di['em']->getRepository(Invoice::class));
     $api->setService($serviceMock);
 
-    $result = $api->approve($data);
+    $result = $api->issue($data);
     expect($result)->toBeBool()->toBeTrue();
 });
 
@@ -385,6 +407,30 @@ test('reissues an invoice', function (): void {
     expect($api->reissue($data))->toBe(11);
 });
 
+test('cancels an invoice', function (): void {
+    $api = apiEndpoint(new Admin());
+    $data = [
+        'id' => 1,
+        'reason' => 'Duplicate invoice',
+    ];
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('cancelInvoice')
+        ->once()
+        ->with(Mockery::type(Invoice::class), $data)
+        ->andReturn(true);
+
+    $model = createEntity(Invoice::class);
+
+    $di = container();
+    $di['em']->getRepository(Invoice::class)->shouldReceive('find')->atLeast()->once()->andReturn($model);
+
+    $api->setDi($di);
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($di['em']->getRepository(Invoice::class));
+    $api->setService($serviceMock);
+
+    expect($api->cancel($data))->toBeTrue();
+});
+
 test('updates an invoice', function (): void {
     $api = apiEndpoint(new Admin());
     $data = [
@@ -409,11 +455,11 @@ test('updates an invoice', function (): void {
     expect($result)->toBeBool()->toBeTrue();
 });
 
-test('updates an invoice before approving it', function (): void {
+test('updates an invoice before issuing it', function (): void {
     $api = apiEndpoint(new Admin());
     $data = [
         'id' => 1,
-        'approve' => 1,
+        'issue' => 1,
         'new_item' => [
             'title' => 'Hosting',
             'quantity' => 1,
@@ -428,7 +474,7 @@ test('updates an invoice before approving it', function (): void {
         ->ordered()
         ->with($model, $data)
         ->andReturn(true);
-    $serviceMock->shouldReceive('approveInvoice')
+    $serviceMock->shouldReceive('issueInvoice')
         ->once()
         ->ordered()
         ->with($model, $data)
@@ -1395,6 +1441,10 @@ test('gets tax list', function (): void {
     expect($result)->toBeArray();
 });
 
+test('does not expose a tax_setup_eu endpoint (removed with the EU VAT seeder)', function (): void {
+    expect(method_exists(Admin::class, 'tax_setup_eu'))->toBeFalse();
+});
+
 test('deletes invoices in batch', function (): void {
     $api = apiEndpoint(new Admin());
     $activityMock = Mockery::mock(Admin::class)->makePartial();
@@ -1441,6 +1491,23 @@ test('deletes taxes in batch', function (): void {
 
     $result = $activityMock->batch_delete_tax(['ids' => [1, 2, 3]]);
     expect($result)->toBeTrue();
+});
+
+test('batch delete aborts on the first failure instead of skipping it', function (): void {
+    $api = apiEndpoint(new Admin());
+    $activityMock = Mockery::mock(Admin::class)->makePartial();
+    // Batch deletes are fail-fast by design: a deletion the operator is not
+    // allowed to perform (or that fails validation) must surface instead of
+    // being silently skipped while the rest of the batch proceeds.
+    $activityMock->shouldReceive('delete')->once()->with(['id' => 1])->andReturn(true);
+    $activityMock->shouldReceive('delete')->once()->with(['id' => 2])->andThrow(new FOSSBilling\InformationException('Only unissued, unpaid invoices (drafts) can be deleted'));
+    $activityMock->shouldNotReceive('delete')->with(['id' => 3]);
+
+    $di = container();
+    $activityMock->setDi($di);
+
+    expect(fn () => $activityMock->batch_delete(['ids' => [1, 2, 3]]))
+        ->toThrow(FOSSBilling\InformationException::class, 'Only unissued, unpaid invoices');
 });
 
 test('gets a tax', function (): void {
@@ -1556,7 +1623,7 @@ test('requires an invoice id on invoice endpoints', function ($method): void {
 })->with([
     'get',
     'mark_as_paid',
-    'approve',
+    'issue',
     'refund',
     'update',
     'delete',

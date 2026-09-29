@@ -71,8 +71,8 @@ class EmailTemplateRepository extends EntityRepository
                 $qb->addOrderBy('t.id', $sort->direction);
             }
         } else {
-            $qb->orderBy('t.category', 'ASC');
-            $qb->addOrderBy('t.actionCode', 'ASC');
+            $qb->orderBy('t.category', \SortDirection::Ascending);
+            $qb->addOrderBy('t.actionCode', \SortDirection::Ascending);
         }
 
         return $qb;

@@ -19,7 +19,7 @@ use function Tests\Helpers\assertApiResultIsArray;
 use function Tests\Helpers\assertApiResultIsInt;
 use function Tests\Helpers\assertApiSuccess;
 
-test('approved invoices are locked for editing unless the setting permits it', function (): void {
+test('issued invoices are locked for editing unless the setting permits it', function (): void {
     Tests\Helpers\ApiClient::resetCookies();
     $productId = null;
 
@@ -40,7 +40,7 @@ test('approved invoices are locked for editing unless the setting permits it', f
         $invoiceId = (int) $order['unpaid_invoice_id'];
 
         $invoice = lockEditGetInvoice($invoiceId);
-        expect($invoice['approved'])->toBeTrue();
+        expect($invoice['issued'])->toBeTrue();
         expect($invoice['editable'])->toBeFalse();
 
         // Locked: adding a line is refused.
@@ -55,12 +55,12 @@ test('approved invoices are locked for editing unless the setting permits it', f
         $deleteBlocked = Tests\Helpers\ApiClient::request('admin/invoice/delete', ['id' => $invoiceId]);
         expect($deleteBlocked->wasSuccessful())->toBeFalse();
 
-        // Opt in to quote-like editing of approved unpaid invoices.
+        // Opt in to quote-like editing of issued unpaid invoices.
         $params = Tests\Helpers\ApiClient::request('admin/system/get_params');
         assertApiSuccess($params);
-        $originalSetting = $params->getResult()['invoice_allow_edit_unpaid'] ?? '0';
+        $originalSetting = $params->getResult()['invoice_immutability'] ?? 'strict';
         $enabled = Tests\Helpers\ApiClient::request('admin/system/update_params', [
-            'invoice_allow_edit_unpaid' => '1',
+            'invoice_immutability' => 'relaxed',
         ]);
         assertApiSuccess($enabled);
 
@@ -76,7 +76,7 @@ test('approved invoices are locked for editing unless the setting permits it', f
             expect(lockEditHasLine($invoice, 'E2E discount line', -10.0))->toBeTrue();
         } finally {
             $restore = Tests\Helpers\ApiClient::request('admin/system/update_params', [
-                'invoice_allow_edit_unpaid' => $originalSetting,
+                'invoice_immutability' => $originalSetting,
             ]);
             assertApiSuccess($restore);
         }

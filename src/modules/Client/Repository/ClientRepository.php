@@ -162,7 +162,7 @@ class ClientRepository extends EntityRepository
                 $qb->addOrderBy('c.id', $sort->direction);
             }
         } else {
-            $qb->orderBy('c.createdAt', 'DESC');
+            $qb->orderBy('c.createdAt', \SortDirection::Descending);
         }
 
         return $qb;

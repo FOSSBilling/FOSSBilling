@@ -123,7 +123,7 @@ class SubscriptionRepository extends EntityRepository
                 $qb->addOrderBy('s.id', $sort->direction);
             }
         } else {
-            $qb->orderBy('s.id', 'DESC');
+            $qb->orderBy('s.id', \SortDirection::Descending);
         }
 
         return $qb;

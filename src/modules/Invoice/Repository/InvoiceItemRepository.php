@@ -53,6 +53,6 @@ class InvoiceItemRepository extends EntityRepository
     public function getSearchQueryBuilder(array $data = []): QueryBuilder
     {
         return $this->createQueryBuilder('ii')
-            ->orderBy('ii.id', 'DESC');
+            ->orderBy('ii.id', \SortDirection::Descending);
     }
 }

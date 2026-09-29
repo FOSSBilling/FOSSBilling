@@ -13,6 +13,7 @@ namespace Box\Mod\Cron;
 
 use Box\Mod\Cron\Event\AfterAdminCronRunEvent;
 use Box\Mod\Cron\Event\BeforeAdminCronRunEvent;
+use Box\Mod\System\Entity\Setting;
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
 use Symfony\Component\Filesystem\Path;
@@ -69,6 +70,19 @@ class Service
                 $this->di['logger']->withChannel('cron')->warning('Skipped cron execution because update finalization is pending.');
 
                 throw new \FOSSBilling\InformationException('Update finalization is pending. Cron jobs are paused until finalization is completed.', [], 503);
+            }
+
+            // Same-version drift never triggers version-gated finalization, and the
+            // ambient sync is skipped on CLI - heal here before invoice/order tasks
+            // run. Healing failures only log; execution continues as before.
+            // @see https://github.com/FOSSBilling/FOSSBilling/issues/4392
+            try {
+                $this->di['update_finalization']->healSchemaDrift();
+            } catch (\Throwable $exception) {
+                $this->di['logger']->withChannel('cron')->warning(
+                    'Schema drift healing failed before cron execution: {exception_message}',
+                    ['exception_message' => $exception->getMessage()]
+                );
             }
 
             $api = $this->di['api_system'];
@@ -144,6 +158,7 @@ class Service
      */
     protected function _exec($api, $method, array $params = []): void
     {
+        $this->di['em']->getRepository(Setting::class)->clearRequestCache();
         $api->{$method}($params);
 
         if (Environment::isCLI()) {
