@@ -18,7 +18,7 @@
 <script>
     (() => {
         window.setTimeout(() => {
-        const form = document.querySelector('form.auth');
+        const form = document.querySelector('form[data-fb-api]');
         const modal = document.getElementById('admin-totp-login-modal');
         const code = document.getElementById('admin-totp-login-code');
         const modalInstance = () => (window.tabler?.Modal || window.bootstrap?.Modal).getOrCreateInstance(modal);
@@ -28,7 +28,7 @@
             event.preventDefault();
             event.stopImmediatePropagation();
             const data = FOSSBilling.tools.serializeFormDataToObject(new FormData(form));
-            FOSSBilling.api.guest.post('staff/login', data, () => window.location.assign('/'), (error) => {
+            FOSSBilling.api.guest.post('staff/login', data, () => window.location.assign('{{ '/'|url(area: 'admin') }}'), (error) => {
                 if (String(error.message).toLowerCase().includes('two-factor authentication is required')) {
                     showChallenge();
                     return;
