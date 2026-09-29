@@ -738,6 +738,7 @@ class Service implements InjectionAwareInterface
     {
         try {
             $data = $this->toApiArray($invoice);
+            $gateway = $invoice->getGateway();
             $snapshot = [
                 'serie_nr' => $data['serie_nr'] ?? null,
                 'status' => $data['status'] ?? null,
@@ -750,6 +751,11 @@ class Service implements InjectionAwareInterface
                 'paid_at' => $data['paid_at'] ?? null,
                 'due_at' => $data['due_at'] ?? null,
                 'created_at' => $data['created_at'] ?? null,
+                'gateway_id' => $gateway?->getId(),
+                // Frozen display title: gateway settings may change or the
+                // gateway may be removed later, while the journal is an
+                // immutable audit record.
+                'gateway' => $gateway?->getName() ?: $gateway?->getGateway(),
             ];
             if ($extra !== null) {
                 $snapshot += $extra;
@@ -1801,7 +1807,10 @@ class Service implements InjectionAwareInterface
                     }
 
                     // Commits atomically with the credit note above.
-                    $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_REFUNDED, $offline ? ['offline' => true] : null);
+                    $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_REFUNDED, array_filter([
+                        'offline' => $offline ?: null,
+                        'credit_note_id' => (int) $new->getId(),
+                    ]));
 
                     return $new;
                 });
@@ -2082,7 +2091,7 @@ class Service implements InjectionAwareInterface
             }
 
             // Commits atomically with the debit note above.
-            $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_DEBITED);
+            $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_DEBITED, ['debit_note_id' => (int) $new->getId()]);
 
             return $new;
         });

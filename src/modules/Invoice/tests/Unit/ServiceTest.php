@@ -2820,7 +2820,9 @@ test('refundInvoice in manual mode records an offline refund document', function
     expect($journalStatements)->toHaveCount(1);
     $journalParams = $journalStatements[0][1];
     expect($journalParams['type'])->toBe(InvoiceEvent::TYPE_REFUNDED);
-    expect(json_decode($journalParams['snapshot'], true)['offline'] ?? null)->toBeTrue();
+    $journalSnapshot = json_decode($journalParams['snapshot'], true);
+    expect($journalSnapshot['offline'] ?? null)->toBeTrue();
+    expect($journalSnapshot['credit_note_id'] ?? null)->toBe($newId);
 });
 
 test('refundInvoice refuses invoices that are not paid', function (): void {
@@ -7473,6 +7475,7 @@ test('removeExpiredUnpaidInvoices voids issued invoices, deletes drafts, and ski
 
 test('recordJournalEvent stores a trimmed snapshot of the invoice', function (): void {
     $invoice = createEntity(Invoice::class, ['id' => 10, 'client_id' => 5]);
+    $invoice->setGateway(createEntity(PayGateway::class, ['id' => 3, 'name' => 'Manual payment']));
 
     $apiArray = [
         'serie_nr' => 'FOSS00010',
@@ -7539,6 +7542,8 @@ test('recordJournalEvent stores a trimmed snapshot of the invoice', function ():
             'paid_at' => null,
             'due_at' => '2026-09-01 00:00:00',
             'created_at' => '2026-08-01 00:00:00',
+            'gateway_id' => 3,
+            'gateway' => 'Manual payment',
             'reason' => 'Manual',
         ])
         ->and($statements[0][1]['created_at'])->not->toBeEmpty();

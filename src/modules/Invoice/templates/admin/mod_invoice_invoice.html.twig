@@ -1024,6 +1024,30 @@
                                     <dt class="col-sm-4 text-muted">{{ 'Total'|trans }}</dt>
                                     <dd class="col-sm-8">{{ snapshot.total|format_currency(invoice.currency ?? default_currency) }}</dd>
                                     {% endif %}
+                                    {% if snapshot.subtotal is defined and snapshot.subtotal is not null %}
+                                    <dt class="col-sm-4 text-muted">{{ 'Subtotal'|trans }}</dt>
+                                    <dd class="col-sm-8">{{ snapshot.subtotal|format_currency(invoice.currency ?? default_currency) }}</dd>
+                                    {% endif %}
+                                    {% if snapshot.tax is defined and snapshot.tax is not null %}
+                                    <dt class="col-sm-4 text-muted">{{ 'Tax'|trans }}</dt>
+                                    <dd class="col-sm-8">{{ snapshot.tax|format_currency(invoice.currency ?? default_currency) }}</dd>
+                                    {% endif %}
+                                    {% if snapshot.paid_at is defined and snapshot.paid_at %}
+                                    <dt class="col-sm-4 text-muted">{{ 'Paid at'|trans }}</dt>
+                                    <dd class="col-sm-8">{{ snapshot.paid_at|format_datetime }}</dd>
+                                    {% endif %}
+                                    {% if snapshot.due_at is defined and snapshot.due_at %}
+                                    <dt class="col-sm-4 text-muted">{{ 'Due at'|trans }}</dt>
+                                    <dd class="col-sm-8">{{ snapshot.due_at|format_datetime }}</dd>
+                                    {% endif %}
+                                    {% if snapshot.gateway is defined and snapshot.gateway %}
+                                    <dt class="col-sm-4 text-muted">{{ 'Payment method'|trans }}</dt>
+                                    <dd class="col-sm-8">{{ snapshot.gateway }}</dd>
+                                    {% endif %}
+                                    {% if snapshot.offline is defined and snapshot.offline %}
+                                    <dt class="col-sm-4 text-muted">{{ 'Refund type'|trans }}</dt>
+                                    <dd class="col-sm-8">{{ mf.text_badge('Offline'|trans, 'text-bg-warning') }} {{ 'The amount was returned outside FOSSBilling; the credit note below is its paper trail.'|trans }}</dd>
+                                    {% endif %}
                                     {% if snapshot.changed_fields is defined and snapshot.changed_fields %}
                                     <dt class="col-sm-4 text-muted">{{ 'Changed fields'|trans }}</dt>
                                     <dd class="col-sm-8">{{ snapshot.changed_fields|join(', ') }}</dd>
@@ -1039,6 +1063,14 @@
                                     {% if snapshot.order_id is defined and snapshot.order_id %}
                                     <dt class="col-sm-4 text-muted">{{ 'Order'|trans }}</dt>
                                     <dd class="col-sm-8">#{{ snapshot.order_id }}</dd>
+                                    {% endif %}
+                                    {% if snapshot.credit_note_id is defined and snapshot.credit_note_id %}
+                                    <dt class="col-sm-4 text-muted">{{ 'Credit note'|trans }}</dt>
+                                    <dd class="col-sm-8"><a href='{{ "invoice/manage/#{snapshot.credit_note_id}"|url }}'>#{{ snapshot.credit_note_id }}</a></dd>
+                                    {% endif %}
+                                    {% if snapshot.debit_note_id is defined and snapshot.debit_note_id %}
+                                    <dt class="col-sm-4 text-muted">{{ 'Debit note'|trans }}</dt>
+                                    <dd class="col-sm-8"><a href='{{ "invoice/manage/#{snapshot.debit_note_id}"|url }}'>#{{ snapshot.debit_note_id }}</a></dd>
                                     {% endif %}
                                 </dl>
                                 {% if snapshot.buyer is defined and snapshot.buyer %}
