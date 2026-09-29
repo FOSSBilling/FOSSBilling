@@ -249,6 +249,83 @@ test('client balance unique credit patch adds column and index for existing inst
     (new ReflectionMethod($patcher, 'patch96'))->invoke($patcher);
 });
 
+test('multi-group membership patch follows the invoice journal baseline patch', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 124);
+
+    expect($patches)->toHaveKey(125)
+        ->and($patches[125][1])->toBe('patch125');
+});
+
+test('multi-group membership patch copies assignments then drops the column', function (): void {
+    $tableExists = Mockery::mock(PDOStatement::class);
+    $tableExists->expects('execute')->with(['table' => 'client_group_members'])->andReturnTrue();
+    $tableExists->expects('fetchColumn')->andReturn(false);
+
+    $createTable = Mockery::mock(PDOStatement::class);
+    $createTable->expects('execute')->with([])->andReturnTrue();
+
+    $clientColumns = Mockery::mock(PDOStatement::class);
+    $clientColumns->expects('execute')->with([])->andReturnTrue();
+    $clientColumns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['Field' => 'id'],
+        ['Field' => 'client_group_id'],
+    ]);
+
+    $copyAssignments = Mockery::mock(PDOStatement::class);
+    $copyAssignments->expects('execute')->with([])->andReturnTrue();
+
+    $dropColumn = Mockery::mock(PDOStatement::class);
+    $dropColumn->expects('execute')->with([])->andReturnTrue();
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')
+        ->with('SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table LIMIT 1')
+        ->andReturn($tableExists);
+    $pdo->expects('prepare')
+        ->with(Mockery::pattern('/^CREATE TABLE `client_group_members` .*UNIQUE KEY `client_group_members_client_group`/'))
+        ->andReturn($createTable);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `client`')->andReturn($clientColumns);
+    $pdo->expects('prepare')
+        ->with('INSERT IGNORE INTO `client_group_members` (`client_id`, `client_group_id`) SELECT c.`id`, c.`client_group_id` FROM `client` c INNER JOIN `client_group` g ON g.`id` = c.`client_group_id`')
+        ->andReturn($copyAssignments);
+    $pdo->expects('prepare')
+        ->with('ALTER TABLE `client` DROP COLUMN `client_group_id`')
+        ->andReturn($dropColumn);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch125'))->invoke($patcher);
+});
+
+test('multi-group membership patch is a no-op once migrated', function (): void {
+    $tableExists = Mockery::mock(PDOStatement::class);
+    $tableExists->expects('execute')->with(['table' => 'client_group_members'])->andReturnTrue();
+    $tableExists->expects('fetchColumn')->andReturn('1');
+
+    $clientColumns = Mockery::mock(PDOStatement::class);
+    $clientColumns->expects('execute')->with([])->andReturnTrue();
+    $clientColumns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([['Field' => 'id']]);
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')
+        ->with('SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table LIMIT 1')
+        ->andReturn($tableExists);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `client`')->andReturn($clientColumns);
+    $pdo->shouldNotReceive('prepare')->with(Mockery::pattern('/^CREATE TABLE `client_group_members`/'));
+    $pdo->shouldNotReceive('prepare')->with(Mockery::pattern('/^INSERT IGNORE INTO `client_group_members`/'));
+    $pdo->shouldNotReceive('prepare')->with('ALTER TABLE `client` DROP COLUMN `client_group_id`');
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch125'))->invoke($patcher);
+});
+
 test('suspension grace patch indexes existing order tables', function (): void {
     $productColumns = Mockery::mock(PDOStatement::class);
     $productColumns->expects('execute')->with([])->andReturnTrue();
