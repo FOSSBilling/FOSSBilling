@@ -286,7 +286,7 @@ test('multi-group membership patch copies assignments then drops the column', fu
         ->andReturn($createTable);
     $pdo->expects('prepare')->with('SHOW COLUMNS FROM `client`')->andReturn($clientColumns);
     $pdo->expects('prepare')
-        ->with(Mockery::pattern('/^INSERT IGNORE INTO `client_group_members` .*FROM `client` WHERE/'))
+        ->with('INSERT IGNORE INTO `client_group_members` (`client_id`, `client_group_id`) SELECT c.`id`, c.`client_group_id` FROM `client` c INNER JOIN `client_group` g ON g.`id` = c.`client_group_id`')
         ->andReturn($copyAssignments);
     $pdo->expects('prepare')
         ->with('ALTER TABLE `client` DROP COLUMN `client_group_id`')

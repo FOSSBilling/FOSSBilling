@@ -4479,10 +4479,12 @@ class UpdatePatcher implements InjectionAwareInterface
         // Client groups went multi-membership (#4387): the single
         // `client.client_group_id` FK is replaced by the `client_group_members`
         // join table. Create it, copy existing assignments across, then drop
-        // the column (which also drops its index). INSERT IGNORE plus guards
-        // make reruns no-ops. Non-MySQL drivers get the table from the
-        // portable schema sync; the data copy and column drop are MySQL-only,
-        // like all historical data migrations.
+        // the column (which also drops its index). Only groups that still
+        // exist are copied: the legacy column had no enforced foreign key,
+        // so orphaned IDs (e.g. deleted groups) must not migrate. INSERT
+        // IGNORE plus guards make reruns no-ops. Non-MySQL drivers get the
+        // table from the portable schema sync; the data copy and column drop
+        // are MySQL-only, like all historical data migrations.
         if (!$this->tableExists('client_group_members')) {
             $this->executeSql('CREATE TABLE `client_group_members` (`id` bigint(20) NOT NULL AUTO_INCREMENT, `client_id` bigint(20) NOT NULL, `client_group_id` bigint(20) NOT NULL, `created_at` datetime DEFAULT NULL, `updated_at` datetime DEFAULT NULL, PRIMARY KEY (`id`), UNIQUE KEY `client_group_members_client_group` (`client_id`, `client_group_id`), KEY `client_group_members_group_idx` (`client_group_id`)) ENGINE=InnoDB DEFAULT CHARSET=utf8');
         }
@@ -4490,8 +4492,8 @@ class UpdatePatcher implements InjectionAwareInterface
         if ($this->tableHasColumn('client', 'client_group_id')) {
             $this->executeSql(
                 'INSERT IGNORE INTO `client_group_members` (`client_id`, `client_group_id`) '
-                . 'SELECT `id`, `client_group_id` FROM `client` '
-                . 'WHERE `client_group_id` IS NOT NULL AND `client_group_id` != 0'
+                . 'SELECT c.`id`, c.`client_group_id` FROM `client` c '
+                . 'INNER JOIN `client_group` g ON g.`id` = c.`client_group_id`'
             );
             $this->executeSql('ALTER TABLE `client` DROP COLUMN `client_group_id`');
         }
