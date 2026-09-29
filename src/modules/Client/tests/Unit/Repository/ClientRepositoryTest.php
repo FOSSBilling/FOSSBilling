@@ -123,18 +123,29 @@ test('loads list balances and group titles in one batch', function (): void {
             ['ids' => ArrayParameterType::INTEGER],
         )
         ->andReturn([
-            ['id' => '7', 'balance' => '12.50', 'group_title' => 'VIP'],
-            ['id' => '9', 'balance' => '0.00', 'group_title' => null],
+            ['id' => '7', 'balance' => '12.50'],
+            ['id' => '9', 'balance' => '0.00'],
+        ]);
+    $connection->shouldReceive('fetchAllAssociative')
+        ->once()
+        ->with(
+            Mockery::pattern('/FROM client_group_members cgm/'),
+            ['ids' => [7, 9]],
+            ['ids' => ArrayParameterType::INTEGER],
+        )
+        ->andReturn([
+            ['client_id' => '7', 'title' => 'Reseller'],
+            ['client_id' => '7', 'title' => 'VIP'],
         ]);
 
     $entityManager = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
-    $entityManager->shouldReceive('getConnection')->once()->andReturn($connection);
+    $entityManager->shouldReceive('getConnection')->twice()->andReturn($connection);
     $metadata = Mockery::mock(Doctrine\ORM\Mapping\ClassMetadata::class);
     $metadata->name = Client::class;
     $repository = new ClientRepository($entityManager, $metadata);
 
     expect($repository->getListContext([7, 9]))->toBe([
-        7 => ['balance' => 12.5, 'group' => 'VIP'],
+        7 => ['balance' => 12.5, 'group' => 'Reseller, VIP'],
         9 => ['balance' => 0.0, 'group' => null],
     ]);
 });

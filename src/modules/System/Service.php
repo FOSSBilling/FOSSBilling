@@ -778,6 +778,11 @@ class Service
      * Not subject to canUpdateParam(): this reserves an internal counter rather than applying a
      * user-driven settings change, and must work in client and cron contexts.
      *
+     * The reservation nests via SAVEPOINT when the caller already holds a transaction on the
+     * shared connection (which is always the case for the invoice issuance path), so an outer
+     * rollback undoes the advance as well: a failed issuance burns no number and leaves no gap.
+     * Pinned by ReserveNumericParamValueConcurrencyTest's rollback case.
+     *
      * Callers should invoke this before doing any of their own reads on the shared connection,
      * not after. On SQLite, an outer transaction that already read something is holding a SHARED
      * lock the whole time this method runs; if a competing writer is holding RESERVED when this

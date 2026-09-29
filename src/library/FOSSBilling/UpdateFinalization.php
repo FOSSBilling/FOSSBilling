@@ -137,6 +137,17 @@ class UpdateFinalization implements InjectionAwareInterface
                 return true;
             }
 
+            // A previous finalize may have run against stale code (e.g. opcache
+            // still serving the pre-update UpdatePatcher, whose patch list ends
+            // at the old level) and stamped the state finalized without applying
+            // anything. That state has no other path back to pending, so heal it
+            // here instead of leaving the install wedged in maintenance mode.
+            if (($state['status'] ?? null) === self::STATUS_FINALIZED && $this->getAvailablePatchCount() > 0) {
+                $this->finalizeUpdateLocked($state);
+
+                return true;
+            }
+
             return false;
         });
 
@@ -271,9 +282,10 @@ class UpdateFinalization implements InjectionAwareInterface
             throw new InformationException('Update finalization must be run before it can be completed.');
         }
 
-        $pendingPatches = $this->getAvailablePatchCount();
+        $patchStatus = $this->getPatchStatus();
+        $pendingPatches = $patchStatus['pending'] ?? null;
         if ($pendingPatches !== null && $pendingPatches > 0) {
-            throw new InformationException('There are still pending update patches. Run finalization before completing the update.');
+            throw new InformationException('There are still :count: pending update patches (database level :current:, code level :latest:). Re-run finalization before completing the update.', [':count:' => $pendingPatches, ':current:' => $patchStatus['current'] ?? 'unknown', ':latest:' => $patchStatus['latest'] ?? 'unknown']);
         }
 
         $state['completed_at'] = date(DATE_ATOM);
@@ -396,7 +408,18 @@ class UpdateFinalization implements InjectionAwareInterface
         }
     }
 
-    private function createPatcher(): UpdatePatcher
+    private function getPatchStatus(): ?array
+    {
+        try {
+            // Same recoverability contract as getAvailablePatchCount(): an
+            // unreadable database reports unknown levels rather than blocking.
+            return $this->createPatcher()->patchStatus();
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    protected function createPatcher(): UpdatePatcher
     {
         $patcher = new UpdatePatcher();
         if ($this->di instanceof \Pimple\Container) {

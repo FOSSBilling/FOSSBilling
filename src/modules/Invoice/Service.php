@@ -16,14 +16,16 @@ use Box\Mod\Client\Entity\ClientBalance;
 use Box\Mod\Cron\Event\AfterAdminCronRunEvent;
 use Box\Mod\Currency\Entity\Currency;
 use Box\Mod\Invoice\Entity\Invoice;
+use Box\Mod\Invoice\Entity\InvoiceEvent;
 use Box\Mod\Invoice\Entity\InvoiceItem;
 use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Transaction;
 use Box\Mod\Invoice\Event\AfterAdminGenerateRenewalInvoiceEvent;
-use Box\Mod\Invoice\Event\AfterAdminInvoiceApproveEvent;
 use Box\Mod\Invoice\Event\AfterAdminInvoiceAttachOrderEvent;
+use Box\Mod\Invoice\Event\AfterAdminInvoiceCancelEvent;
 use Box\Mod\Invoice\Event\AfterAdminInvoiceDebitEvent;
 use Box\Mod\Invoice\Event\AfterAdminInvoiceDeleteEvent;
+use Box\Mod\Invoice\Event\AfterAdminInvoiceIssueEvent;
 use Box\Mod\Invoice\Event\AfterAdminInvoicePaymentReceivedEvent;
 use Box\Mod\Invoice\Event\AfterAdminInvoiceRefundEvent;
 use Box\Mod\Invoice\Event\AfterAdminInvoiceReissueEvent;
@@ -31,10 +33,11 @@ use Box\Mod\Invoice\Event\AfterAdminInvoiceReminderRecordedEvent;
 use Box\Mod\Invoice\Event\AfterAdminInvoiceUpdateEvent;
 use Box\Mod\Invoice\Event\AfterInvoiceIsDueEvent;
 use Box\Mod\Invoice\Event\BeforeAdminGenerateRenewalInvoiceEvent;
-use Box\Mod\Invoice\Event\BeforeAdminInvoiceApproveEvent;
 use Box\Mod\Invoice\Event\BeforeAdminInvoiceAttachOrderEvent;
+use Box\Mod\Invoice\Event\BeforeAdminInvoiceCancelEvent;
 use Box\Mod\Invoice\Event\BeforeAdminInvoiceDebitEvent;
 use Box\Mod\Invoice\Event\BeforeAdminInvoiceDeleteEvent;
+use Box\Mod\Invoice\Event\BeforeAdminInvoiceIssueEvent;
 use Box\Mod\Invoice\Event\BeforeAdminInvoiceRefundEvent;
 use Box\Mod\Invoice\Event\BeforeAdminInvoiceReissueEvent;
 use Box\Mod\Invoice\Event\BeforeAdminInvoiceSendReminderEvent;
@@ -78,8 +81,8 @@ class Service implements InjectionAwareInterface
         'seller_company_number', 'seller_address', 'seller_phone', 'seller_email',
         'buyer_first_name', 'buyer_last_name', 'buyer_company', 'buyer_company_vat',
         'buyer_company_number', 'buyer_address', 'buyer_city', 'buyer_state',
-        'buyer_country', 'buyer_zip', 'buyer_phone', 'buyer_phone_cc',
-        'buyer_email', 'gateway_id', 'approved', 'taxname', 'taxrate',
+        'buyer_country', 'buyer_zip', 'buyer_phone',
+        'buyer_email', 'gateway_id', 'issued', 'taxname', 'taxrate',
         'due_at', 'reminded_at', 'paid_at', 'created_at', 'updated_at',
     ];
 
@@ -89,8 +92,15 @@ class Service implements InjectionAwareInterface
         'refund', 'notes', 'status', 'buyer_first_name', 'buyer_last_name',
         'buyer_company', 'buyer_company_vat', 'buyer_company_number', 'buyer_address',
         'buyer_city', 'buyer_state', 'buyer_country', 'buyer_zip', 'buyer_phone',
-        'buyer_phone_cc', 'buyer_email', 'approved', 'taxname', 'taxrate',
+        'buyer_email', 'issued', 'taxname', 'taxrate',
         'due_at', 'reminded_at', 'paid_at',
+    ];
+
+    /** Keys of $data that updateInvoice() actually consumes; routing keys (id, issue) and anything else are ignored. */
+    private const array UPDATABLE_FIELDS = [
+        'gateway_id', 'text_1', 'text_2', 'paid_at', 'due_at', 'serie', 'nr',
+        'status', 'taxrate', 'taxname', 'issued', 'notes', 'created_at',
+        'new_item', 'items',
     ];
 
     protected ?\Pimple\Container $di = null;
@@ -227,7 +237,12 @@ class Service implements InjectionAwareInterface
                 'last_name' => $invoice->getBuyerLastName(),
                 'email' => $invoice->getBuyerEmail(),
             ],
-            'approved' => $invoice->isApproved(),
+            'issued' => $invoice->isIssued(),
+            'cancellable' => $invoice->isIssued()
+                && $invoice->getStatus() === Invoice::STATUS_UNPAID
+                && $invoice->getCreditNoteForInvoiceId() === null
+                && $invoice->getDebitNoteForInvoiceId() === null
+                && $invoice->getReplacedByInvoiceId() === null,
         ];
     }
 
@@ -282,10 +297,9 @@ class Service implements InjectionAwareInterface
             'buyer_country' => $invoice->getBuyerCountry(),
             'buyer_zip' => $invoice->getBuyerZip(),
             'buyer_phone' => $invoice->getBuyerPhone(),
-            'buyer_phone_cc' => $invoice->getBuyerPhoneCc(),
             'buyer_email' => $invoice->getBuyerEmail(),
             'gateway_id' => $invoice->getGateway()?->getId(),
-            'approved' => $invoice->isApproved(),
+            'issued' => $invoice->isIssued(),
             'credit_note_for_invoice_id' => $invoice->getCreditNoteForInvoiceId(),
             'debit_note_for_invoice_id' => $invoice->getDebitNoteForInvoiceId(),
             'replaces_invoice_id' => $invoice->getReplacesInvoiceId(),
@@ -382,23 +396,31 @@ class Service implements InjectionAwareInterface
             'state' => $row['buyer_state'],
             'country' => $row['buyer_country'],
             'phone' => $row['buyer_phone'],
-            'phone_cc' => $row['buyer_phone_cc'] ?? '',
             'email' => $row['buyer_email'],
             'zip' => $row['buyer_zip'],
         ];
 
         $systemService = $this->di['mod_service']('system');
         $c = $systemService->getCompany();
+        $isDraft = !$invoice->isIssued();
+        $liveAddress = trim(($c['address_1'] ?? '') . ' ' . ($c['address_2'] ?? '') . ' ' . ($c['address_3'] ?? ''));
+        // The snapshot keeps one combined address line, so it fills address_1 with
+        // address_2/3 left empty. Rows predating snapshots fall back to live settings.
+        $frozenAddress = !$isDraft ? ($row['seller_address'] ?? null) : null;
         $result['seller'] = [
             'company' => !empty($row['seller_company']) ? $row['seller_company'] : ($c['name'] ?? ''),
-            'company_vat' => $row['seller_company_vat'] ?? '',
-            'company_number' => $row['seller_company_number'] ?? '',
-            'address' => !empty($row['seller_address']) ? $row['seller_address'] : trim(($c['address_1'] ?? '') . ' ' . ($c['address_2'] ?? '') . ' ' . ($c['address_3'] ?? '')),
-            'address_1' => $c['address_1'] ?? '',
-            'address_2' => $c['address_2'] ?? '',
-            'address_3' => $c['address_3'] ?? '',
-            'phone' => !empty($row['seller_phone']) ? $row['seller_phone'] : ($c['tel'] ?? ''),
-            'email' => !empty($row['seller_email']) ? $row['seller_email'] : ($c['email'] ?? ''),
+            // Drafts have no snapshot yet, so identity comes from live
+            // settings too; issued invoices keep their frozen copy.
+            'company_vat' => $isDraft ? ($c['vat_number'] ?? '') : ($row['seller_company_vat'] ?? ''),
+            'company_number' => $isDraft ? ($c['number'] ?? '') : ($row['seller_company_number'] ?? ''),
+            // Issued invoices show the frozen seller details like any other
+            // legal particular; only drafts follow live company settings.
+            'address' => $frozenAddress ?: $liveAddress,
+            'address_1' => $frozenAddress ?: ($c['address_1'] ?? ''),
+            'address_2' => $frozenAddress !== null ? '' : ($c['address_2'] ?? ''),
+            'address_3' => $frozenAddress !== null ? '' : ($c['address_3'] ?? ''),
+            'phone' => !$isDraft ? ($row['seller_phone'] ?? ($c['tel'] ?? '')) : ($c['tel'] ?? ''),
+            'email' => !$isDraft ? ($row['seller_email'] ?? ($c['email'] ?? '')) : ($c['email'] ?? ''),
             'account_number' => $c['account_number'] ?? null,
             'bank_name' => $c['bank_name'] ?? null,
             'bic' => $c['bic'] ?? null,
@@ -414,12 +436,33 @@ class Service implements InjectionAwareInterface
             if ($includeClientBillingEmail) {
                 $result['client']['billing_email'] = $client->getBillingEmail();
             }
+            // Drafts carry no buyer snapshot (it is taken at issuance), so
+            // display the live client record until the invoice is issued.
+            if ($isDraft && empty($row['buyer_first_name']) && empty($row['buyer_last_name']) && empty($row['buyer_company'])) {
+                $result['buyer'] = [
+                    'first_name' => $client->getFirstName(),
+                    'last_name' => $client->getLastName(),
+                    'company' => $client->getCompany(),
+                    'company_vat' => $client->getCompanyVat(),
+                    'company_number' => $client->getCompanyNumber(),
+                    'address' => trim(($client->getAddress1() ?? '') . ' ' . ($client->getAddress2() ?? '')),
+                    'city' => $client->getCity(),
+                    'state' => $client->getState(),
+                    'country' => $client->getCountry(),
+                    'phone' => trim(($client->getPhoneCc() ?? '') . ' ' . ($client->getPhone() ?? '')),
+                    'phone_cc' => $client->getPhoneCc() ?? '',
+                    'email' => $client->getEmail(),
+                    'zip' => $client->getPostcode(),
+                ];
+            }
         } else {
             $result['client'] = null;
         }
         $result['reminded_at'] = $row['reminded_at'] ?? null;
-        $result['approved'] = (bool) $row['approved'];
+        $result['issued'] = (bool) $row['issued'];
         $result['editable'] = $this->isInvoiceEditable($invoice);
+        $result['cancellable'] = $this->isInvoiceCancellable($invoice);
+        $result['deletable'] = $this->isDeletableByAdmin($invoice);
         $result['credit_note_for_invoice_id'] = $row['credit_note_for_invoice_id'] ?? null;
         $result['debit_note_for_invoice_id'] = $row['debit_note_for_invoice_id'] ?? null;
         $result['replaces_invoice_id'] = $row['replaces_invoice_id'] ?? null;
@@ -583,7 +626,7 @@ class Service implements InjectionAwareInterface
     }
 
     #[AsEventListener]
-    public function sendApprovedInvoiceEmail(AfterAdminInvoiceApproveEvent $event): void
+    public function sendIssuedInvoiceEmail(AfterAdminInvoiceIssueEvent $event): void
     {
         try {
             $invoiceModel = $this->di['em']->getRepository(Invoice::class)->find($event->invoiceId);
@@ -603,7 +646,7 @@ class Service implements InjectionAwareInterface
             // recipient has a fresh window to act on the link.
             $this->extendInvoiceHashLifetime($invoiceModel);
         } catch (\Exception $exc) {
-            $this->di['logger']->withChannel('email')->error('Failed to send email for invoice approval', ['exception' => $exc]);
+            $this->di['logger']->withChannel('email')->error('Failed to send email for an issued invoice', ['exception' => $exc]);
         }
     }
 
@@ -642,6 +685,129 @@ class Service implements InjectionAwareInterface
             ['original_invoice' => $this->toApiArray($original)]
         );
         $this->extendInvoiceHashLifetime($creditNote);
+    }
+
+    /**
+     * Notify the client that their unpaid invoice was voided, when the
+     * invoice_send_cancel_email setting opts in. Guest (client-less)
+     * invoices have no recipient, so they stay silent.
+     */
+    private function sendCancelEmail(Invoice $original, string $reason = '', ?Invoice $replacement = null): void
+    {
+        if ($original->getClientId() === null) {
+            return;
+        }
+
+        $systemService = $this->di['mod_service']('system');
+        if ($systemService->getParamValue('invoice_send_cancel_email', '0') !== '1') {
+            return;
+        }
+
+        $extraVars = ['reason' => $reason];
+        if ($replacement instanceof Invoice) {
+            $extraVars['replacement_invoice'] = $this->toApiArray($replacement);
+        }
+
+        $this->sendInvoiceEmail(
+            $original,
+            $this->toApiArray($original),
+            'mod_invoice_canceled',
+            null,
+            $extraVars
+        );
+    }
+
+    /**
+     * Append an entry to the invoice journal: a trimmed snapshot of the
+     * invoice taken after the transition, so the full history (including
+     * past buyer/seller details) stays queryable after the fact. Journal
+     * writes never break the business operation: failures are logged and
+     * swallowed, mirroring the mail sends.
+     *
+     * The row is written with a raw DBAL insert rather than through the
+     * EntityManager, nested in the caller's transaction via a savepoint when
+     * one is active (the mutation paths call this inside their
+     * `wrapInTransaction` closures, so the row commits atomically with the
+     * transition) and in its own implicit transaction otherwise. Bypassing
+     * the UnitOfWork matters: a failed insert rolls back only its savepoint
+     * instead of leaving a poisoned pending insertion that a later flush
+     * would retry — which would fail the surrounding mutation and close the
+     * EntityManager.
+     */
+    public function recordJournalEvent(Invoice $invoice, string $type, ?array $extra = null): void
+    {
+        try {
+            $data = $this->toApiArray($invoice);
+            $gateway = $invoice->getGateway();
+            $snapshot = [
+                'serie_nr' => $data['serie_nr'] ?? null,
+                'status' => $data['status'] ?? null,
+                'issued' => $data['issued'] ?? null,
+                'subtotal' => $data['subtotal'] ?? null,
+                'tax' => $data['tax'] ?? null,
+                'total' => $data['total'] ?? null,
+                'buyer' => $data['buyer'] ?? null,
+                'seller' => $data['seller'] ?? null,
+                'paid_at' => $data['paid_at'] ?? null,
+                'due_at' => $data['due_at'] ?? null,
+                'created_at' => $data['created_at'] ?? null,
+                'gateway_id' => $gateway?->getId(),
+                // Frozen display title: gateway settings may change or the
+                // gateway may be removed later, while the journal is an
+                // immutable audit record.
+                'gateway' => $gateway?->getName() ?: $gateway?->getGateway(),
+            ];
+            if ($extra !== null) {
+                $snapshot += $extra;
+            }
+
+            $adminId = null;
+            if (isset($this->di['auth']) && $this->di['auth']->isAdminLoggedIn() && isset($this->di['loggedin_admin'])) {
+                $adminId = (int) $this->di['loggedin_admin']->getId();
+            }
+
+            $snapshotJson = json_encode($snapshot, JSON_INVALID_UTF8_SUBSTITUTE);
+            if ($snapshotJson === false) {
+                throw new \FOSSBilling\Exception('Unable to encode the invoice journal snapshot.');
+            }
+
+            $connection = $this->di['em']->getConnection();
+            $connection->transactional(function () use ($connection, $invoice, $type, $adminId, $snapshotJson): void {
+                $connection->executeStatement(
+                    'INSERT INTO invoice_event (invoice_id, type, admin_id, client_id, snapshot, created_at) VALUES (:invoice_id, :type, :admin_id, :client_id, :snapshot, :created_at)',
+                    [
+                        'invoice_id' => $invoice->getId(),
+                        'type' => $type,
+                        'admin_id' => $adminId,
+                        'client_id' => $invoice->getClientId(),
+                        'snapshot' => $snapshotJson,
+                        'created_at' => date('Y-m-d H:i:s'),
+                    ]
+                );
+            });
+        } catch (\Throwable $exception) {
+            $this->di['logger']->error('Failed to record invoice journal event', [
+                'invoice_id' => $invoice->getId(),
+                'exception' => $exception,
+            ]);
+        }
+    }
+
+    /**
+     * @return list<array>
+     */
+    public function getJournalForInvoice(int $invoiceId): array
+    {
+        $events = $this->di['em']->getRepository(InvoiceEvent::class)->findByInvoiceId($invoiceId);
+
+        return array_map(fn (InvoiceEvent $event): array => [
+            'id' => $event->getId(),
+            'type' => $event->getType(),
+            'admin_id' => $event->getAdminId(),
+            'client_id' => $event->getClientId(),
+            'snapshot' => $event->getSnapshot(),
+            'created_at' => $event->getCreatedAt()?->format('Y-m-d H:i:s'),
+        ], $events);
     }
 
     public function sendInvoiceReminderEmail(AfterAdminInvoiceReminderRecordedEvent $event): void
@@ -692,7 +858,7 @@ class Service implements InjectionAwareInterface
             // fallback both firing it, etc).
             $now = new \DateTimeImmutable();
             $claimed = (bool) $di['em']->getConnection()->executeStatement(
-                "UPDATE invoice SET reminded_at = :now, updated_at = :now WHERE id = :id AND status = 'unpaid' AND approved = true AND due_at > :now AND (reminded_at IS NULL OR reminded_at < :today_start)",
+                "UPDATE invoice SET reminded_at = :now, updated_at = :now WHERE id = :id AND status = 'unpaid' AND issued = true AND due_at > :now AND (reminded_at IS NULL OR reminded_at < :today_start)",
                 [
                     'id' => $event->invoiceId,
                     'now' => $now->format('Y-m-d H:i:s'),
@@ -718,21 +884,66 @@ class Service implements InjectionAwareInterface
     }
 
     #[AsEventListener]
+    public function healMissingJournalEntries(AfterAdminCronRunEvent $event): void
+    {
+        $di = $this->di ?? throw new \LogicException('The Invoice service dependency injection container has not been set.');
+
+        // Bounded to one page per run: invoices that never got any journal row (a lost
+        // write, or a table created after its invoices by drift healing) converge over
+        // runs instead of stalling this one. Failures stay local to the cron log.
+        try {
+            $patcher = new \FOSSBilling\UpdatePatcher();
+            $patcher->setDi($di);
+            $patcher->healInvoiceJournal();
+        } catch (\Throwable $e) {
+            $di['logger']->warning('Invoice journal healing failed: {message}', ['message' => $e->getMessage()]);
+        }
+    }
+
+    #[AsEventListener]
     public function removeExpiredUnpaidInvoices(AfterAdminCronRunEvent $event): void
     {
         $di = $this->di ?? throw new \LogicException('The Invoice service dependency injection container has not been set.');
         $systemService = $di['mod_service']('System');
         $remove_after_days = $systemService->getParamValue('remove_after_days');
         if (isset($remove_after_days) && $remove_after_days) {
-            // removing old unpaid invoices, through rmInvoice() so related
-            // orders, invoice items, and reserved resources stay consistent
+            // Expire stale unpaid invoices. Drafts (never issued) are hard-deleted
+            // through rmInvoice(); issued invoices are voided instead so their
+            // numbers stay in the audit trail.
             $days = (int) $remove_after_days;
             $service = $di['mod_service']('invoice');
             $invoices = $service->getInvoiceRepository()->findUnpaidOlderThan($days);
             foreach ($invoices as $invoiceModel) {
                 $id = $invoiceModel->getId();
-                $service->rmInvoice($invoiceModel);
-                $di['logger']->info('Removed expired unpaid invoice #{id}', ['id' => $id]);
+
+                try {
+                    if ($service->isInvoiceCancellable($invoiceModel)) {
+                        $service->cancelInvoice($invoiceModel, ['reason' => "Expired unpaid — automatically voided after {$days} days."]);
+                        $di['logger']->info('Voided expired unpaid invoice #{id}', ['id' => $id]);
+                    } elseif (!$invoiceModel->isIssued()
+                        && $invoiceModel->getStatus() === Invoice::STATUS_UNPAID
+                        && $invoiceModel->getCreditNoteForInvoiceId() === null
+                        && $invoiceModel->getDebitNoteForInvoiceId() === null
+                        && $invoiceModel->getReplacesInvoiceId() === null
+                        && $invoiceModel->getReplacedByInvoiceId() === null
+                    ) {
+                        // Rechecked under the row lock inside rmInvoice(): a
+                        // draft that was issued, paid, or linked after the
+                        // listing read above is refused instead of deleted.
+                        $service->rmInvoice($invoiceModel, true);
+                        $di['logger']->info('Removed expired unpaid invoice #{id}', ['id' => $id]);
+                    } else {
+                        // Issued notes (e.g. unpaid debit notes) are legal
+                        // documents with links from their originals: neither
+                        // voiding nor deleting applies, leave them for manual
+                        // handling (refund/reissue of the original).
+                        $di['logger']->info('Skipped expired unpaid invoice #{id}: issued notes are never removed automatically', ['id' => $id]);
+                    }
+                } catch (\Throwable $e) {
+                    // One expired invoice (e.g. one changed concurrently) must
+                    // not abort cleanup of the rest.
+                    $di['logger']->warning('Could not expire unpaid invoice #{id}: {message}', ['id' => $id, 'message' => $e->getMessage()]);
+                }
             }
         }
     }
@@ -759,7 +970,7 @@ class Service implements InjectionAwareInterface
             $now = new \DateTimeImmutable();
             $todayStart = $now->modify('today');
             $claimed = (bool) $di['em']->getConnection()->executeStatement(
-                "UPDATE invoice SET reminded_at = :now, updated_at = :now WHERE id = :id AND status = 'unpaid' AND approved = true AND due_at < :tomorrow_start AND (reminded_at IS NULL OR reminded_at < :today_start)",
+                "UPDATE invoice SET reminded_at = :now, updated_at = :now WHERE id = :id AND status = 'unpaid' AND issued = true AND due_at < :tomorrow_start AND (reminded_at IS NULL OR reminded_at < :today_start)",
                 [
                     'id' => $event->invoiceId,
                     'now' => $now->format('Y-m-d H:i:s'),
@@ -820,13 +1031,14 @@ class Service implements InjectionAwareInterface
         return $email;
     }
 
-    public function markAsPaid(Invoice $invoice, $charge = true, $execute = false, bool $deferEvents = false): bool
+    public function markAsPaid(Invoice $invoice, $charge = true, $execute = false, bool $deferEvents = false, ?\DateTime $paidAtOverride = null, ?bool &$actuallyPaid = null): bool
     {
         /** @var InvoiceItem[] $invoiceItems */
         $invoiceItems = [];
-        $paid = $this->di['em']->wrapInTransaction(function () use (&$invoiceItems, $invoice, $charge): bool {
-            return $this->markAsPaidInTransaction($invoice, $charge, $invoiceItems);
+        $paid = $this->di['em']->wrapInTransaction(function () use (&$invoiceItems, $invoice, $charge, $paidAtOverride): bool {
+            return $this->markAsPaidInTransaction($invoice, $charge, $invoiceItems, $paidAtOverride);
         });
+        $actuallyPaid = $paid;
 
         // Another payment request may have acquired the row lock first and completed the payment.
         // Treat that as an idempotent success, but do not send duplicate events or execute tasks.
@@ -844,7 +1056,7 @@ class Service implements InjectionAwareInterface
             $this->executeInvoiceItemTasks($invoiceItems, $this->di['mod_service']('Invoice', 'InvoiceItem'));
         }
 
-        $this->di['logger']->info("Marked invoice {$invoice->getId()} as paid.");
+        $this->di['logger']->info('Marked invoice #{invoice_id} as paid', ['invoice_id' => $invoice->getId()]);
 
         return true;
     }
@@ -852,9 +1064,13 @@ class Service implements InjectionAwareInterface
     /**
      * Mark an invoice as paid while the caller owns its invoice-row lock.
      *
+     * The paid journal row is persisted in the same transaction: it commits
+     * atomically with the payment, so a crash can no longer leave a paid
+     * invoice without its journal entry.
+     *
      * @param InvoiceItem[] $invoiceItems
      */
-    private function markAsPaidInTransaction(Invoice $invoice, bool $charge, array &$invoiceItems): bool
+    private function markAsPaidInTransaction(Invoice $invoice, bool $charge, array &$invoiceItems, ?\DateTime $paidAtOverride = null): bool
     {
         $state = $this->lockAndRefreshInvoice($invoice);
         if ($state['status'] === Invoice::STATUS_PAID) {
@@ -866,7 +1082,6 @@ class Service implements InjectionAwareInterface
 
         $invoiceItems = $this->getInvoiceItemRepository()->findByInvoiceId((int) $invoice->getId());
         $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
-        $systemService = $this->di['mod_service']('system');
 
         foreach ($invoiceItems as $item) {
             $invoiceItemService->markAsPaid($item, $charge);
@@ -876,8 +1091,9 @@ class Service implements InjectionAwareInterface
         /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
         $currencyRepository = $currencyService->getCurrencyRepository();
 
-        $invoice->setSerie($systemService->getParamValue('invoice_series_paid'));
-        $invoice->setApproved(true);
+        // The invoice number is fixed once issued: paying must not rewrite the
+        // series, so paid invoices keep the number they were issued with.
+        $invoice->setIssued(true);
 
         $currencyRate = $currencyRepository->getRateByCode((string) $invoice->getCurrency());
         if ($currencyRate === null) {
@@ -886,13 +1102,15 @@ class Service implements InjectionAwareInterface
         $invoice->setCurrencyRate($currencyRate);
 
         $invoice->setStatus(Invoice::STATUS_PAID);
-        $invoice->setPaidAt(new \DateTime());
+        $invoice->setPaidAt($paidAtOverride ?? new \DateTime());
         $this->di['em']->persist($invoice);
         $this->di['em']->flush();
 
         $this->countIncome($invoice);
         $productService = $this->di['mod_service']('Product');
         $productService->commitReservedPromoRedemptionsForInvoice($invoice);
+
+        $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_PAID);
 
         return true;
     }
@@ -910,6 +1128,16 @@ class Service implements InjectionAwareInterface
         $payGateway = $this->validateAdminMarkAsPaidRequest($data, $invoice);
         $transactionId = isset($data['transactionId']) ? trim((string) $data['transactionId']) : null;
 
+        // Parse before any write so a bad date fails fast without side effects.
+        $paidAt = null;
+        if (isset($data['paid_at']) && trim((string) $data['paid_at']) !== '') {
+            $paidAtTimestamp = strtotime((string) $data['paid_at']);
+            if ($paidAtTimestamp === false) {
+                throw new InformationException('Invalid date format for paid_at: :value', [':value' => (string) $data['paid_at']]);
+            }
+            $paidAt = new \DateTime(date('Y-m-d H:i:s', $paidAtTimestamp));
+        }
+
         if ((int) $invoice->getGateway()?->getId() !== (int) $payGateway->getId()) {
             $invoice->setGateway($payGateway);
             $this->di['em']->persist($invoice);
@@ -917,7 +1145,8 @@ class Service implements InjectionAwareInterface
         }
 
         if ($payGateway->getGateway() === 'Custom' && $payGateway->isEnabled()) {
-            $paid = $this->di['em']->wrapInTransaction(function () use ($invoice, $payGateway, $transactionId): bool {
+            $actuallyPaid = null;
+            $paid = $this->di['em']->wrapInTransaction(function () use ($invoice, $payGateway, $transactionId, $paidAt, &$actuallyPaid): bool {
                 // Re-validate under the invoice lock: the invoice may have
                 // been canceled or replaced after the preflight check above.
                 // Creating the transaction record in this transaction means a
@@ -957,7 +1186,7 @@ class Service implements InjectionAwareInterface
                     throw new InformationException('Transaction ID is already associated with another invoice.');
                 }
 
-                $result = $this->markAsPaid($invoice, false, false, true);
+                $result = $this->markAsPaid($invoice, false, false, true, $paidAt, $actuallyPaid);
                 if ($result) {
                     $transaction->setAmount((string) $invoiceTotal);
                     $transaction->setCurrency($invoice->getCurrency());
@@ -972,8 +1201,14 @@ class Service implements InjectionAwareInterface
             });
 
             // Events and tasks run after the commit above, so neither
-            // notifications nor provisioning precede the recorded payment.
-            if ($paid) {
+            // notifications nor provisioning precede the recorded payment. The
+            // paid journal row (including the paid_at override, threaded into
+            // the payment transaction above) already committed atomically.
+            // Gated on the payment having happened in this call: a concurrent
+            // caller that won the race already emitted all of these (an
+            // unknown signal defaults to emitting, preserving the old behavior
+            // for callers that predate it).
+            if ($paid && ($actuallyPaid ?? true)) {
                 $this->firePaymentReceivedEvent($invoice);
                 if ($execute) {
                     $this->executeInvoiceItemTasks(
@@ -986,7 +1221,23 @@ class Service implements InjectionAwareInterface
             return $paid;
         }
 
-        return $this->markAsPaid($invoice, false, $execute);
+        // Payment runs first so the paid journal row commits atomically with
+        // it (carrying the admin-supplied paid_at date via the override
+        // below); notifications follow. Gated on the payment having happened
+        // in this call, as above.
+        $actuallyPaid = null;
+        $paid = $this->markAsPaid($invoice, false, false, true, $paidAt, $actuallyPaid);
+        if ($paid && ($actuallyPaid ?? true)) {
+            $this->firePaymentReceivedEvent($invoice);
+            if ($execute) {
+                $this->executeInvoiceItemTasks(
+                    $this->getInvoiceItemRepository()->findByInvoiceId((int) $invoice->getId()),
+                    $this->di['mod_service']('Invoice', 'InvoiceItem')
+                );
+            }
+        }
+
+        return $paid;
     }
 
     public function validateAdminMarkAsPaidRequest(array $data, ?Invoice $invoice = null): PayGateway
@@ -1027,7 +1278,7 @@ class Service implements InjectionAwareInterface
     {
         $systemService = $this->di['mod_service']('system');
 
-        // Claimed and advanced in one locked step, otherwise two concurrent approvals take the
+        // Claimed and advanced in one locked step, otherwise two concurrent issuances take the
         // same number and issue two invoices sharing an invoice number.
         $next_nr = $systemService->reserveNextNumericParamValue('invoice_starting_number');
 
@@ -1053,11 +1304,30 @@ class Service implements InjectionAwareInterface
     {
         $table = $this->di['mod_service']('currency');
 
+        $oldIncome = $invoice->getBaseIncome();
+        $oldRefund = $invoice->getBaseRefund();
+
         $invoice->setBaseIncome($table->toBaseCurrency($invoice->getCurrency(), $this->getTotal($invoice)));
         if ($invoice->getRefund() !== null) {
             $invoice->setBaseRefund($table->toBaseCurrency($invoice->getCurrency(), (float) $invoice->getRefund()));
         } else {
             $invoice->setBaseRefund(null);
+        }
+
+        // Base-currency rewrites on issued invoices (e.g. after an FX rate move) touch locked
+        // rows: log them so a changed paid total is always explainable. Compared as floats: the
+        // columns are DECIMAL, so identical amounts can stringify differently ('100' vs '100.00').
+        $incomeChanged = $oldIncome === null
+            ? $invoice->getBaseIncome() !== null
+            : (float) $invoice->getBaseIncome() !== (float) $oldIncome;
+        $refundChanged = $oldRefund === null
+            ? $invoice->getBaseRefund() !== null
+            : (float) $invoice->getBaseRefund() !== (float) $oldRefund;
+        if ($invoice->isIssued() && isset($this->di['logger']) && ($incomeChanged || $refundChanged)) {
+            $this->di['logger']->info(
+                'Recalculated base-currency income for issued invoice #{invoice_id} ({old_income} -> {new_income})',
+                ['invoice_id' => $invoice->getId(), 'old_income' => $oldIncome, 'new_income' => $invoice->getBaseIncome()]
+            );
         }
 
         $this->di['em']->persist($invoice);
@@ -1089,7 +1359,7 @@ class Service implements InjectionAwareInterface
         $model->setClientId($client->getId() ?? null);
         $model->setStatus(Invoice::STATUS_UNPAID);
         $model->setCurrency($client->getCurrency());
-        $model->setApproved(false);
+        $model->setIssued(false);
 
         if (!empty($data['gateway_id'])) {
             $gateway = $this->di['em']->getRepository(PayGateway::class)->find((int) $data['gateway_id']);
@@ -1113,14 +1383,20 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        $this->di['logger']->info("Prepared new invoice {$invoiceId}.");
+        $this->di['logger']->info('Prepared new invoice #{invoice_id}', ['invoice_id' => $invoiceId]);
 
-        if (isset($data['approve']) && $data['approve']) {
+        $this->recordJournalEvent($model, InvoiceEvent::TYPE_CREATED);
+
+        if (isset($data['issue']) && $data['issue']) {
             try {
-                $this->approveInvoice($model, ['id' => $invoiceId]);
-                $this->di['logger']->info("Approved invoice {$invoiceId} instantly.");
+                $this->issueInvoice($model, ['id' => $invoiceId]);
+                $this->di['logger']->info('Issued invoice #{invoice_id} instantly', ['invoice_id' => $invoiceId]);
             } catch (\Exception $e) {
-                $this->di['logger']->warning($e->getMessage());
+                $this->di['logger']->warning('Instant issue of prepared invoice #{invoice_id} failed: {message}', ['invoice_id' => $invoiceId, 'message' => $e->getMessage()]);
+
+                // The prepared draft persists, but the caller asked for an issued invoice:
+                // report the failure instead of returning a draft as success.
+                throw new InformationException('The invoice was prepared as a draft but could not be issued: :message', [':message' => $e->getMessage()]);
             }
         }
 
@@ -1129,38 +1405,8 @@ class Service implements InjectionAwareInterface
 
     public function setInvoiceDefaults(Invoice $model): void
     {
-        $clientService = $this->di['mod_service']('Client');
         $systemService = $this->di['mod_service']('system');
         $client = $this->di['em']->getRepository(Client::class)->find($model->getClientId());
-        $seller = $systemService->getCompany();
-
-        $buyer = $client instanceof Client
-            ? $clientService->toApiArray($client)
-            : array_fill_keys([
-                'first_name', 'last_name', 'company', 'company_vat', 'company_number',
-                'address_1', 'address_2', 'city', 'state', 'country',
-                'phone_cc', 'phone', 'email', 'postcode',
-            ], null);
-
-        $model->setSellerCompany($seller['name']);
-        $model->setSellerCompanyVat($seller['vat_number']);
-        $model->setSellerCompanyNumber($seller['number']);
-        $model->setSellerAddress(trim("{$seller['address_1']} {$seller['address_2']} {$seller['address_3']}"));
-        $model->setSellerPhone($seller['tel']);
-        $model->setSellerEmail($seller['email']);
-
-        $model->setBuyerFirstName($buyer['first_name']);
-        $model->setBuyerLastName($buyer['last_name']);
-        $model->setBuyerCompany($buyer['company']);
-        $model->setBuyerCompanyVat($buyer['company_vat']);
-        $model->setBuyerCompanyNumber($buyer['company_number']);
-        $model->setBuyerAddress("{$buyer['address_1']} {$buyer['address_2']}");
-        $model->setBuyerCity($buyer['city']);
-        $model->setBuyerState($buyer['state']);
-        $model->setBuyerCountry($buyer['country']);
-        $model->setBuyerPhone("{$buyer['phone_cc']} {$buyer['phone']}");
-        $model->setBuyerEmail($buyer['email']);
-        $model->setBuyerZip($buyer['postcode']);
 
         $invoice_due_days = $systemService->getParamValue('invoice_due_days');
         if (!is_numeric($invoice_due_days)) {
@@ -1171,7 +1417,6 @@ class Service implements InjectionAwareInterface
 
         $serie = $systemService->getParamValue('invoice_series');
         $model->setSerie($serie !== null ? (string) $serie : null);
-        $model->setNr($this->getNextInvoiceNumber());
         $model->setHash(bin2hex(random_bytes(random_int(15, 30))));
         $model->setHashExpiresAt($this->computeHashExpiration());
 
@@ -1188,24 +1433,92 @@ class Service implements InjectionAwareInterface
         $this->di['em']->flush();
     }
 
-    public function approveInvoice(Invoice $invoice, array $data): bool
+    /**
+     * Freeze the buyer/seller details from the live client and company
+     * records onto the invoice. Runs once, at issuance: drafts carry no party
+     * snapshot, so the frozen copy always reflects reality at the moment the
+     * document becomes legally meaningful. Already-issued invoices are left
+     * untouched, and a deleted client leaves any existing snapshot in place
+     * rather than wiping it to nulls.
+     */
+    private function snapshotPartiesFromLiveRecords(Invoice $model): void
     {
-        $this->di['event_dispatcher']->dispatch(new BeforeAdminInvoiceApproveEvent((int) $invoice->getId()));
+        if ($model->isIssued()) {
+            return;
+        }
+
+        $systemService = $this->di['mod_service']('system');
+        $seller = $systemService->getCompany();
+        $model->setSellerCompany($seller['name']);
+        $model->setSellerCompanyVat($seller['vat_number']);
+        $model->setSellerCompanyNumber($seller['number']);
+        $model->setSellerAddress(trim("{$seller['address_1']} {$seller['address_2']} {$seller['address_3']}"));
+        $model->setSellerPhone($seller['tel']);
+        $model->setSellerEmail($seller['email']);
+
+        $client = $model->getClientId() !== null
+            ? $this->di['em']->getRepository(Client::class)->find($model->getClientId())
+            : null;
+        if (!$client instanceof Client) {
+            return;
+        }
+
+        $clientService = $this->di['mod_service']('Client');
+        $buyer = $clientService->toApiArray($client);
+        $model->setBuyerFirstName($buyer['first_name']);
+        $model->setBuyerLastName($buyer['last_name']);
+        $model->setBuyerCompany($buyer['company']);
+        $model->setBuyerCompanyVat($buyer['company_vat']);
+        $model->setBuyerCompanyNumber($buyer['company_number']);
+        $model->setBuyerAddress("{$buyer['address_1']} {$buyer['address_2']}");
+        $model->setBuyerCity($buyer['city']);
+        $model->setBuyerState($buyer['state']);
+        $model->setBuyerCountry($buyer['country']);
+        $model->setBuyerPhone("{$buyer['phone_cc']} {$buyer['phone']}");
+        $model->setBuyerEmail($buyer['email']);
+        $model->setBuyerZip($buyer['postcode']);
+    }
+
+    public function issueInvoice(Invoice $invoice, array $data): bool
+    {
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminInvoiceIssueEvent((int) $invoice->getId()));
 
         $this->di['em']->wrapInTransaction(function () use ($invoice): void {
             $this->lockAndRefreshInvoice($invoice);
-            $invoice->setApproved(true);
+
+            // First issuance is only valid from the unpaid state. Re-issuing
+            // an already-issued invoice stays idempotent (paid, refunded, or
+            // canceled rows keep their state); this guard is about drafts.
+            if (!$invoice->isIssued() && $invoice->getStatus() !== Invoice::STATUS_UNPAID) {
+                throw new InformationException('Only unpaid draft invoices can be issued.');
+            }
+
+            // Freeze the parties from the live records and claim the number
+            // inside the issuance lock. Already-issued invoices skip both;
+            // legacy drafts keep their number when present.
+            $this->snapshotPartiesFromLiveRecords($invoice);
+            if (!is_numeric($invoice->getNr() ?? null)) {
+                $serie = $this->di['mod_service']('system')->getParamValue('invoice_series');
+                $invoice->setSerie($serie !== null ? (string) $serie : null);
+                $invoice->setNr($this->getNextInvoiceNumber());
+            }
+
+            $invoice->setIssued(true);
             $this->di['em']->persist($invoice);
             $this->di['em']->flush();
+
+            // Commits atomically with the issuance above: a crash can no
+            // longer leave an issued invoice without its journal entry.
+            $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_ISSUED);
         });
 
         if (isset($data['use_credits']) && $data['use_credits']) {
             $this->tryPayWithCredits($invoice);
         }
 
-        $this->di['event_dispatcher']->dispatch(new AfterAdminInvoiceApproveEvent((int) $invoice->getId()));
+        $this->di['event_dispatcher']->dispatch(new AfterAdminInvoiceIssueEvent((int) $invoice->getId()));
 
-        $this->di['logger']->info("Approved invoice {$invoice->getId()}.");
+        $this->di['logger']->info('Issued invoice #{invoice_id}', ['invoice_id' => $invoice->getId()]);
 
         return true;
     }
@@ -1233,7 +1546,7 @@ class Service implements InjectionAwareInterface
         $paid = $this->di['em']->wrapInTransaction(function () use ($invoice): bool {
             // Refresh after locking so a stale entity cannot authorize a credit deduction.
             $state = $this->lockAndRefreshInvoice($invoice);
-            if (!$state['approved']) {
+            if (!$state['issued']) {
                 return false;
             }
             if ($state['status'] === Invoice::STATUS_PAID) {
@@ -1253,7 +1566,7 @@ class Service implements InjectionAwareInterface
             if (round($balance, 2) < round($required, 2)) {
                 // @phpstan-ignore if.alwaysFalse (DEBUG is a runtime constant that may be true during debugging)
                 if (DEBUG) {
-                    $this->di['logger']->withChannel('billing')->info("Invoice {$invoice->getId()} could not be paid with credits. Money in balance {$balance} Required: {$required}.");
+                    $this->di['logger']->withChannel('billing')->info('Invoice #{id} could not be paid with credits. Money in balance {balance}. Required: {required}.', ['id' => $invoice->getId(), 'balance' => $balance, 'required' => $required]);
                 }
 
                 return false;
@@ -1261,7 +1574,7 @@ class Service implements InjectionAwareInterface
 
             // @phpstan-ignore if.alwaysFalse
             if (DEBUG) {
-                $this->di['logger']->withChannel('billing')->info("Setting invoice {$invoice->getId()} as paid with credits for the amount of {$required}.");
+                $this->di['logger']->withChannel('billing')->info('Setting invoice #{id} as paid with credits for the amount of {amount}.', ['id' => $invoice->getId(), 'amount' => $required]);
             }
 
             if ($required > 0.0) {
@@ -1280,8 +1593,11 @@ class Service implements InjectionAwareInterface
                 $this->di['em']->flush();
             }
 
-            // Events and tasks run after the commit below, so neither notifications nor
-            // provisioning are held under the balance lock.
+            // Events and tasks run after the commit below, so neither
+            // notifications nor provisioning are held under the balance lock.
+            // The paid journal row is written by markAsPaid() inside this same
+            // transaction, so it commits atomically with the payment; a
+            // journal failure still cannot fail the payment itself.
             $this->markAsPaid($invoice, false, false, true);
 
             return true;
@@ -1363,21 +1679,26 @@ class Service implements InjectionAwareInterface
         return (float) $total;
     }
 
-    public function refundInvoice(Invoice $invoice, $note = null, ?array $items = null): ?int
+    public function refundInvoice(Invoice $invoice, $note = null, ?array $items = null): int
     {
         $this->di['event_dispatcher']->dispatch(new BeforeAdminInvoiceRefundEvent((int) $invoice->getId()));
 
         $systemService = $this->di['mod_service']('system');
         $logic = $systemService->getParamValue('invoice_refund_logic', 'manual');
-        $result = null;
 
-        switch ($logic) {
+        // Manual mode records the money movement as an offline refund document: the operator
+        // returns the money outside FOSSBilling, and the credit note below is its paper trail.
+        // Numbering follows the credit-note series, never the invoice series.
+        $offline = $logic === 'manual';
+        $documentLogic = $offline ? 'credit_note' : $logic;
+
+        switch ($documentLogic) {
             case 'credit_note':
             case 'negative_invoice':
-                $new = $this->di['em']->wrapInTransaction(function () use ($invoice, $items, $logic, $note, $systemService): Invoice {
+                $new = $this->di['em']->wrapInTransaction(function () use ($invoice, $items, $documentLogic, $note, $systemService, $offline): Invoice {
                     // Reserve the number before any invoice reads. SQLite must acquire its write
                     // lock before the locking read; the outer transaction rolls this back on failure.
-                    $nextNumber = $logic === 'negative_invoice'
+                    $nextNumber = $documentLogic === 'negative_invoice'
                         ? $this->getNextInvoiceNumber()
                         : $systemService->reserveNextNumericParamValue('invoice_cn_starting_number', 1);
                     if ($nextNumber === null) {
@@ -1404,7 +1725,7 @@ class Service implements InjectionAwareInterface
                     $new->setHashExpiresAt($this->computeHashExpiration());
                     $new->setStatus(Invoice::STATUS_REFUNDED);
                     $new->setCurrency($invoice->getCurrency());
-                    $new->setApproved(true);
+                    $new->setIssued(true);
                     $new->setTaxname($invoice->getTaxname());
                     $new->setTaxrate($invoice->getTaxrate());
 
@@ -1425,13 +1746,16 @@ class Service implements InjectionAwareInterface
                     $new->setBuyerState($invoice->getBuyerState());
                     $new->setBuyerCountry($invoice->getBuyerCountry());
                     $new->setBuyerPhone($invoice->getBuyerPhone());
-                    $new->setBuyerPhoneCc($invoice->getBuyerPhoneCc());
                     $new->setBuyerEmail($invoice->getBuyerEmail());
                     $new->setBuyerZip($invoice->getBuyerZip());
                     $new->setText1($invoice->getText1());
                     $new->setText2($invoice->getText2());
-                    $new->setSerie($logic === 'negative_invoice'
-                        ? $systemService->getParamValue('invoice_series_paid')
+                    // Each serie draws from exactly one counter: negative invoices continue
+                    // the invoice numbering, credit notes (and offline refunds) use the
+                    // credit-note counter. Sharing a prefix across counters would mint
+                    // duplicate numbers within one serie.
+                    $new->setSerie($documentLogic === 'negative_invoice'
+                        ? $systemService->getParamValue('invoice_series')
                         : $systemService->getParamValue('invoice_cn_series', 'CN-'));
                     $new->setNr($nextNumber);
 
@@ -1478,6 +1802,15 @@ class Service implements InjectionAwareInterface
                     if (!empty($note)) {
                         $this->addNote($new, $note);
                     }
+                    if ($offline) {
+                        $this->addNote($new, 'Offline refund: the amount was returned outside FOSSBilling; this credit note records it.');
+                    }
+
+                    // Commits atomically with the credit note above.
+                    $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_REFUNDED, array_filter([
+                        'offline' => $offline ?: null,
+                        'credit_note_id' => (int) $new->getId(),
+                    ]));
 
                     return $new;
                 });
@@ -1495,20 +1828,13 @@ class Service implements InjectionAwareInterface
 
                 break;
 
-            case 'manual':
-                // @phpstan-ignore if.alwaysFalse
-                if (DEBUG) {
-                    $this->di['logger']->warning('Refunds are managed manually. No actions performed.');
-                }
-
-                break;
             default:
-                break;
+                throw new InformationException('Unknown invoice refund logic: :logic', [':logic' => $logic]);
         }
 
         $this->di['event_dispatcher']->dispatch(new AfterAdminInvoiceRefundEvent((int) $invoice->getId()));
 
-        $this->di['logger']->info("Refunded invoice #{$invoice->getId()}.");
+        $this->di['logger']->info('Refunded invoice #{invoice_id}', ['invoice_id' => $invoice->getId()]);
 
         return $result;
     }
@@ -1659,7 +1985,7 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * Issue a debit note against an approved invoice: a separate payable
+     * Issue a debit note against an issued invoice: a separate payable
      * document for charges the original missed. The original keeps its status;
      * only the link and notes tie the two together. Debit lines are inert
      * custom lines so paying the note never provisions anything.
@@ -1671,7 +1997,7 @@ class Service implements InjectionAwareInterface
         $this->di['event_dispatcher']->dispatch(new BeforeAdminInvoiceDebitEvent((int) $invoice->getId()));
 
         if (!$this->isDebitable($invoice)) {
-            throw new InformationException('Only approved unpaid or paid invoices can be debited');
+            throw new InformationException('Only issued unpaid or paid invoices can be debited');
         }
 
         // Validate every line before anything is written.
@@ -1689,11 +2015,11 @@ class Service implements InjectionAwareInterface
             // Recheck eligibility against the locked state; the invoice may
             // have been paid, canceled, or refunded while waiting on the lock.
             $state = $this->lockAndRefreshInvoice($invoice);
-            if (!$state['approved']
+            if (!$state['issued']
                 || !in_array($state['status'], [Invoice::STATUS_UNPAID, Invoice::STATUS_PAID], true)
                 || $invoice->getCreditNoteForInvoiceId() !== null
             ) {
-                throw new InformationException('Only approved unpaid or paid invoices can be debited');
+                throw new InformationException('Only issued unpaid or paid invoices can be debited');
             }
 
             $new = new Invoice();
@@ -1703,7 +2029,7 @@ class Service implements InjectionAwareInterface
             $new->setHashExpiresAt($this->computeHashExpiration());
             $new->setStatus(Invoice::STATUS_UNPAID);
             $new->setCurrency($invoice->getCurrency());
-            $new->setApproved(true);
+            $new->setIssued(true);
             $new->setTaxname($invoice->getTaxname());
             $new->setTaxrate($invoice->getTaxrate());
 
@@ -1724,7 +2050,6 @@ class Service implements InjectionAwareInterface
             $new->setBuyerState($invoice->getBuyerState());
             $new->setBuyerCountry($invoice->getBuyerCountry());
             $new->setBuyerPhone($invoice->getBuyerPhone());
-            $new->setBuyerPhoneCc($invoice->getBuyerPhoneCc());
             $new->setBuyerEmail($invoice->getBuyerEmail());
             $new->setBuyerZip($invoice->getBuyerZip());
             $new->setText1($invoice->getText1());
@@ -1765,6 +2090,9 @@ class Service implements InjectionAwareInterface
                 $this->addNote($new, $note);
             }
 
+            // Commits atomically with the debit note above.
+            $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_DEBITED, ['debit_note_id' => (int) $new->getId()]);
+
             return $new;
         });
         $result = (int) $new->getId();
@@ -1781,14 +2109,14 @@ class Service implements InjectionAwareInterface
 
         $this->di['event_dispatcher']->dispatch(new AfterAdminInvoiceDebitEvent((int) $invoice->getId(), $result));
 
-        $this->di['logger']->info("Debited invoice #{$invoice->getId()}.");
+        $this->di['logger']->info('Debited invoice #{invoice_id}', ['invoice_id' => $invoice->getId()]);
 
         return $result;
     }
 
     private function isDebitable(Invoice $invoice): bool
     {
-        return $invoice->isApproved()
+        return $invoice->isIssued()
             && in_array($invoice->getStatus(), [Invoice::STATUS_UNPAID, Invoice::STATUS_PAID], true)
             && $invoice->getCreditNoteForInvoiceId() === null;
     }
@@ -1866,7 +2194,7 @@ class Service implements InjectionAwareInterface
         $this->di['event_dispatcher']->dispatch(new BeforeAdminInvoiceAttachOrderEvent((int) $invoice->getId()));
 
         if (!$this->isInvoiceEditable($invoice)) {
-            throw new InformationException('This invoice can no longer be edited. Approved invoices are locked once issued; correct them with a credit note or a replacement invoice.');
+            throw new InformationException('This invoice can no longer be edited. Issued invoices are immutable; correct them with a credit note or a replacement invoice.');
         }
 
         $payload = $this->resolveAttachOrderPayload($data);
@@ -1874,16 +2202,21 @@ class Service implements InjectionAwareInterface
         $order = $this->di['em']->wrapInTransaction(function () use ($invoice, $payload): Order {
             $this->lockAndRefreshInvoice($invoice);
             if (!$this->isInvoiceEditable($invoice)) {
-                throw new InformationException('This invoice can no longer be edited. Approved invoices are locked once issued; correct them with a credit note or a replacement invoice.');
+                throw new InformationException('This invoice can no longer be edited. Issued invoices are immutable; correct them with a credit note or a replacement invoice.');
             }
 
-            return $this->createAndAttachOrder($invoice, $payload);
+            $created = $this->createAndAttachOrder($invoice, $payload);
+
+            // Commits atomically with the order and line above.
+            $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_ORDER_ATTACHED, ['order_id' => (int) $created->getId()]);
+
+            return $created;
         });
 
-        // Drafts are sent by the approval path; only re-send issued invoices.
+        // Drafts are sent by the issue path; only re-send issued invoices.
         // The send is failure-tolerant: the order and line are already
         // committed, and a retry must not create a second order.
-        if ($invoice->isApproved()) {
+        if ($invoice->isIssued()) {
             try {
                 $this->resendUpdatedInvoice($invoice);
             } catch (\Throwable $exception) {
@@ -1897,13 +2230,81 @@ class Service implements InjectionAwareInterface
 
         $this->di['event_dispatcher']->dispatch(new AfterAdminInvoiceAttachOrderEvent((int) $invoice->getId(), (int) $order->getId()));
 
-        $this->di['logger']->info("Attached order {$order->getId()} to invoice {$invoice->getId()}.");
+        $this->di['logger']->info('Attached order #{order_id} to invoice #{invoice_id}', ['order_id' => $order->getId(), 'invoice_id' => $invoice->getId()]);
 
         return (int) $order->getId();
     }
 
     /**
-     * Cancel an approved unpaid invoice and issue a replacement carrying its
+     * Cancel (void) an issued unpaid invoice without issuing a replacement.
+     *
+     * Unlike reissueInvoice(), no replacement is created: the invoice keeps
+     * its number with a canceled status so the audit trail survives, while
+     * linked orders keep pointing at it for history (generateForOrder() heals
+     * such links automatically when the next invoice is needed) and
+     * transactions are detached but kept as payment-attempt records.
+     */
+    public function cancelInvoice(Invoice $original, array $data = []): bool
+    {
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminInvoiceCancelEvent((int) $original->getId()));
+
+        if (!$this->isInvoiceCancellable($original)) {
+            throw new InformationException('Only issued unpaid invoices can be canceled. Delete drafts, or refund paid invoices instead.');
+        }
+
+        $reason = trim((string) ($data['reason'] ?? ''));
+
+        $this->di['em']->wrapInTransaction(function () use ($original, $reason): void {
+            $this->lockAndRefreshInvoice($original);
+            if (!$this->isInvoiceCancellable($original)) {
+                throw new InformationException('Only issued unpaid invoices can be canceled. Delete drafts, or refund paid invoices instead.');
+            }
+            // Re-check against the locked row, which may have changed while
+            // waiting on the lock.
+            $locked = $this->di['em']->getRepository(Invoice::class)->find($original->getId());
+            if ($locked instanceof Invoice && $locked->getReplacedByInvoiceId() !== null) {
+                throw new InformationException('This invoice has already been reissued as invoice #:id', [':id' => $locked->getReplacedByInvoiceId()]);
+            }
+
+            $original->setStatus(Invoice::STATUS_CANCELED);
+            $this->di['em']->persist($original);
+            $this->di['em']->flush();
+
+            $productService = $this->di['mod_service']('Product');
+            $productService->releaseReservedPromoRedemptionsForInvoice($original, 'invoice_canceled');
+            $productService->releaseReservedStockForInvoice($original, 'invoice_canceled');
+
+            // Detach (not delete) transactions: a transaction is a real record
+            // of a payment attempt/event that must survive the void.
+            $this->di['em']->getRepository(Transaction::class)->detachFromInvoice((int) $original->getId());
+
+            $this->addNote($original, 'Invoice canceled (voided) without replacement.');
+            if ($reason !== '') {
+                $this->addNote($original, $reason);
+            }
+
+            // Commits atomically with the void above.
+            $this->recordJournalEvent($original, InvoiceEvent::TYPE_CANCELED, ['reason' => $reason]);
+        });
+
+        $this->di['event_dispatcher']->dispatch(new AfterAdminInvoiceCancelEvent((int) $original->getId()));
+
+        try {
+            $this->sendCancelEmail($original, $reason);
+        } catch (\Throwable $exception) {
+            $this->di['logger']->withChannel('email')->error('Failed to send cancel email', [
+                'invoice_id' => $original->getId(),
+                'exception' => $exception,
+            ]);
+        }
+
+        $this->di['logger']->info('Canceled invoice #{invoice_id} without replacement', ['invoice_id' => $original->getId()]);
+
+        return true;
+    }
+
+    /**
+     * Cancel an issued unpaid invoice and issue a replacement carrying its
      * lines forward, so the correction keeps a clean audit trail while the
      * client pays a single invoice. The replacement takes the next invoice
      * number; the original number stays with the canceled record.
@@ -1917,8 +2318,8 @@ class Service implements InjectionAwareInterface
     {
         $this->di['event_dispatcher']->dispatch(new BeforeAdminInvoiceReissueEvent((int) $original->getId()));
 
-        if (!$original->isApproved() || $original->getStatus() !== Invoice::STATUS_UNPAID) {
-            throw new InformationException('Only approved unpaid invoices can be reissued');
+        if (!$original->isIssued() || $original->getStatus() !== Invoice::STATUS_UNPAID) {
+            throw new InformationException('Only issued unpaid invoices can be reissued');
         }
         if ($original->getCreditNoteForInvoiceId() !== null || $original->getDebitNoteForInvoiceId() !== null) {
             throw new InformationException('Credit and debit notes cannot be reissued');
@@ -1942,8 +2343,8 @@ class Service implements InjectionAwareInterface
             }
 
             $state = $this->lockAndRefreshInvoice($original);
-            if (!$state['approved'] || $state['status'] !== Invoice::STATUS_UNPAID) {
-                throw new InformationException('Only approved unpaid invoices can be reissued');
+            if (!$state['issued'] || $state['status'] !== Invoice::STATUS_UNPAID) {
+                throw new InformationException('Only issued unpaid invoices can be reissued');
             }
             // Re-check against the locked row, which may have changed while
             // waiting on the lock.
@@ -1967,7 +2368,7 @@ class Service implements InjectionAwareInterface
             $new->setHashExpiresAt($this->computeHashExpiration());
             $new->setStatus(Invoice::STATUS_UNPAID);
             $new->setCurrency($original->getCurrency());
-            $new->setApproved(true);
+            $new->setIssued(true);
             $new->setTaxname($original->getTaxname());
             $new->setTaxrate($original->getTaxrate());
             $new->setGateway($original->getGateway());
@@ -1990,7 +2391,6 @@ class Service implements InjectionAwareInterface
             $new->setBuyerState($original->getBuyerState());
             $new->setBuyerCountry($original->getBuyerCountry());
             $new->setBuyerPhone($original->getBuyerPhone());
-            $new->setBuyerPhoneCc($original->getBuyerPhoneCc());
             $new->setBuyerEmail($original->getBuyerEmail());
             $new->setBuyerZip($original->getBuyerZip());
             $new->setText1($original->getText1());
@@ -2075,6 +2475,9 @@ class Service implements InjectionAwareInterface
                 $this->addNote($new, $reason);
             }
 
+            // Commits atomically with the cancel-and-replace above.
+            $this->recordJournalEvent($original, InvoiceEvent::TYPE_REISSUED, ['replacement_id' => (int) $new->getId()]);
+
             return $new;
         });
         $result = (int) $new->getId();
@@ -2089,9 +2492,18 @@ class Service implements InjectionAwareInterface
             ]);
         }
 
+        try {
+            $this->sendCancelEmail($original, $reason, $new);
+        } catch (\Throwable $exception) {
+            $this->di['logger']->withChannel('email')->error('Failed to send cancel email', [
+                'invoice_id' => $original->getId(),
+                'exception' => $exception,
+            ]);
+        }
+
         $this->di['event_dispatcher']->dispatch(new AfterAdminInvoiceReissueEvent((int) $original->getId(), $result));
 
-        $this->di['logger']->info("Reissued invoice #{$original->getId()} as #{$result}.");
+        $this->di['logger']->info('Reissued invoice #{invoice_id} as #{replacement_id}', ['invoice_id' => $original->getId(), 'replacement_id' => $result]);
 
         return $result;
     }
@@ -2245,25 +2657,37 @@ class Service implements InjectionAwareInterface
         // Fast rejection for the common case; the authoritative check is repeated after the row
         // lock inside the mutation transaction below.
         if (!$this->isInvoiceEditable($model)) {
-            throw new InformationException('This invoice can no longer be edited. Approved invoices are locked once issued; correct them with a credit note or a replacement invoice.');
+            throw new InformationException('This invoice can no longer be edited. Issued invoices are immutable; correct them with a credit note or a replacement invoice.');
+        }
+        $this->assertIssuedIdentityUnchanged($model, $data);
+
+        // Drafts have no lifecycle side effects attached to the status
+        // column, so only the states a draft may legally hold are accepted.
+        // Anything else (paid, refunded, or free-form strings) would put the
+        // row in a state the payment, refund, and issuance paths never expect.
+        // Empty values fall through to the legacy write below (blank form
+        // submits); only meaningful values are validated.
+        if (!empty($data['status']) && !$model->isIssued() && !in_array($data['status'], [Invoice::STATUS_UNPAID, Invoice::STATUS_CANCELED], true)) {
+            throw new InformationException('Invalid invoice status: :status. Draft invoices can only be unpaid or canceled.', [':status' => (string) $data['status']]);
         }
 
         $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
         $previousStatus = null;
-        $wasApproved = false;
+        $wasIssued = false;
 
-        $changedFields = array_values(array_filter(array_keys($data), is_string(...)));
+        $changedFields = array_values(array_intersect(array_filter(array_keys($data), is_string(...)), self::UPDATABLE_FIELDS));
         sort($changedFields);
         $this->di['event_dispatcher']->dispatch(new BeforeAdminInvoiceUpdateEvent((int) $model->getId(), $changedFields));
 
-        $this->di['em']->wrapInTransaction(function () use ($model, $data, $invoiceItemService, &$previousStatus, &$wasApproved): void {
+        $this->di['em']->wrapInTransaction(function () use ($model, $data, $invoiceItemService, $changedFields, &$previousStatus, &$wasIssued): void {
             $this->lockAndRefreshInvoice($model);
             if (!$this->isInvoiceEditable($model)) {
-                throw new InformationException('This invoice can no longer be edited. Approved invoices are locked once issued; correct them with a credit note or a replacement invoice.');
+                throw new InformationException('This invoice can no longer be edited. Issued invoices are immutable; correct them with a credit note or a replacement invoice.');
             }
+            $this->assertIssuedIdentityUnchanged($model, $data);
 
             $previousStatus = $model->getStatus();
-            $wasApproved = $model->isApproved();
+            $wasIssued = $model->isIssued();
 
             if (!empty($data['gateway_id'])) {
                 $gateway = $this->di['em']->getRepository(PayGateway::class)->find((int) $data['gateway_id']);
@@ -2279,24 +2703,8 @@ class Service implements InjectionAwareInterface
             }
             $model->setText1($data['text_1'] ?? $model->getText1());
             $model->setText2($data['text_2'] ?? $model->getText2());
-            $model->setSellerCompany($data['seller_company'] ?? $model->getSellerCompany());
-            $model->setSellerCompanyVat($data['seller_company_vat'] ?? $model->getSellerCompanyVat());
-            $model->setSellerCompanyNumber($data['seller_company_number'] ?? $model->getSellerCompanyNumber());
-            $model->setSellerAddress($data['seller_address'] ?? $model->getSellerAddress());
-            $model->setSellerPhone($data['seller_phone'] ?? $model->getSellerPhone());
-            $model->setSellerEmail($data['seller_email'] ?? $model->getSellerEmail());
-            $model->setBuyerFirstName($data['buyer_first_name'] ?? $model->getBuyerFirstName());
-            $model->setBuyerLastName($data['buyer_last_name'] ?? $model->getBuyerLastName());
-            $model->setBuyerCompany($data['buyer_company'] ?? $model->getBuyerCompany());
-            $model->setBuyerCompanyVat($data['buyer_company_vat'] ?? $model->getBuyerCompanyVat());
-            $model->setBuyerCompanyNumber($data['buyer_company_number'] ?? $model->getBuyerCompanyNumber());
-            $model->setBuyerAddress($data['buyer_address'] ?? $model->getBuyerAddress());
-            $model->setBuyerCity($data['buyer_city'] ?? $model->getBuyerCity());
-            $model->setBuyerState($data['buyer_state'] ?? $model->getBuyerState());
-            $model->setBuyerCountry($data['buyer_country'] ?? $model->getBuyerCountry());
-            $model->setBuyerZip($data['buyer_zip'] ?? $model->getBuyerZip());
-            $model->setBuyerPhone($data['buyer_phone'] ?? $model->getBuyerPhone());
-            $model->setBuyerEmail($data['buyer_email'] ?? $model->getBuyerEmail());
+            // No buyer/seller writes: drafts carry no snapshot, issued
+            // invoices keep theirs - parties freeze at issuance.
 
             $paid_at = $data['paid_at'] ?? ($model->getPaidAt() ? $model->getPaidAt()->format('Y-m-d H:i:s') : null);
             if (empty($paid_at)) {
@@ -2325,7 +2733,12 @@ class Service implements InjectionAwareInterface
             $model->setStatus($data['status'] ?? $model->getStatus());
             $model->setTaxrate($data['taxrate'] ?? $model->getTaxrate());
             $model->setTaxname($data['taxname'] ?? $model->getTaxname());
-            $model->setApproved((bool) ($data['approved'] ?? $model->isApproved()));
+            // Issuance runs only through issueInvoice() (number claim, party snapshot,
+            // journal, events): flipping the flag here would silently mint or un-mint
+            // a legal document, so any change is refused outright.
+            if (array_key_exists('issued', $data) && (bool) $data['issued'] !== $model->isIssued()) {
+                throw new InformationException('The issued flag cannot be changed here. Issue a draft through the issue action.');
+            }
             $model->setNotes($data['notes'] ?? $model->getNotes());
 
             $created_at = $data['created_at'] ?? '';
@@ -2358,15 +2771,18 @@ class Service implements InjectionAwareInterface
                 $productService->releaseReservedPromoRedemptionsForInvoice($model, 'invoice_canceled');
                 $productService->releaseReservedStockForInvoice($model, 'invoice_canceled');
             }
+
+            // Commits atomically with the edits above.
+            $this->recordJournalEvent($model, InvoiceEvent::TYPE_UPDATED, ['changed_fields' => $changedFields]);
         });
 
         $this->di['event_dispatcher']->dispatch(new AfterAdminInvoiceUpdateEvent((int) $model->getId()));
 
-        $this->di['logger']->info("Updated invoice {$model->getId()}.");
+        $this->di['logger']->info('Updated invoice #{invoice_id}', ['invoice_id' => $model->getId()]);
 
-        // An edit to an already-approved invoice changes what the client was
-        // sent, so re-send it (the approval path sends on its own).
-        if ($wasApproved && $model->isApproved() && empty($data['approve'])) {
+        // An edit to an already-issued invoice changes what the client was
+        // sent, so re-send it (the issue path sends on its own).
+        if ($wasIssued && $model->isIssued() && empty($data['issue'])) {
             $this->resendUpdatedInvoice($model);
         }
 
@@ -2374,7 +2790,7 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * Re-send an approved invoice whose content just changed, keeping the
+     * Re-send an issued invoice whose content just changed, keeping the
      * client's copy and payment link in sync with what they will be charged.
      */
     protected function resendUpdatedInvoice(Invoice $model): void
@@ -2402,6 +2818,9 @@ class Service implements InjectionAwareInterface
     {
         if ($invoice->getStatus() !== Invoice::STATUS_UNPAID) {
             throw new InformationException('Promotions can only be applied to unpaid invoices');
+        }
+        if (!$this->isInvoiceEditable($invoice)) {
+            throw new InformationException('This invoice can no longer be edited. Issued invoices are immutable; correct them with a credit note or a replacement invoice.');
         }
 
         $order = $this->findPromoTargetOrder($invoice, $order);
@@ -2459,6 +2878,13 @@ class Service implements InjectionAwareInterface
             // concurrent promo edits on this invoice.
             if ($this->getInvoiceRepository()->lockAndGetStatus((int) $invoice->getId()) !== Invoice::STATUS_UNPAID) {
                 throw new InformationException('Promotions can only be applied to unpaid invoices');
+            }
+
+            // Refresh under the held lock so the check below sees
+            // the current issue state rather than a stale snapshot.
+            $this->di['em']->refresh($invoice);
+            if (!$this->isInvoiceEditable($invoice)) {
+                throw new InformationException('This invoice can no longer be edited. Issued invoices are immutable; correct them with a credit note or a replacement invoice.');
             }
 
             // Refresh against changes committed while waiting for the lock,
@@ -2553,6 +2979,9 @@ class Service implements InjectionAwareInterface
         if ($invoice->getStatus() !== Invoice::STATUS_UNPAID) {
             throw new InformationException('Promotions can only be removed from unpaid invoices');
         }
+        if (!$this->isInvoiceEditable($invoice)) {
+            throw new InformationException('This invoice can no longer be edited. Issued invoices are immutable; correct them with a credit note or a replacement invoice.');
+        }
 
         $order = $this->findPromoTargetOrder($invoice, $order);
 
@@ -2566,6 +2995,13 @@ class Service implements InjectionAwareInterface
             // between the pre-check and these writes.
             if ($this->getInvoiceRepository()->lockAndGetStatus((int) $invoice->getId()) !== Invoice::STATUS_UNPAID) {
                 throw new InformationException('Promotions can only be removed from unpaid invoices');
+            }
+
+            // Refresh under the held lock so the check below sees
+            // the current issue state rather than a stale snapshot.
+            $this->di['em']->refresh($invoice);
+            if (!$this->isInvoiceEditable($invoice)) {
+                throw new InformationException('This invoice can no longer be edited. Issued invoices are immutable; correct them with a credit note or a replacement invoice.');
             }
 
             $redemptions = $productService->getPromoRedemptionRepository()->findBy([
@@ -2730,14 +3166,14 @@ class Service implements InjectionAwareInterface
         return (float) $order->getPrice() * (float) $order->getQuantity();
     }
 
-    public function rmInvoice(Invoice $model, bool $requireUnapprovedUnpaid = false): bool
+    public function rmInvoice(Invoice $model, bool $requireUnissuedUnpaid = false, bool $anonymizeTransactions = false): bool
     {
         $entityManager = $this->di['em'];
-        $entityManager->wrapInTransaction(function () use ($model, $entityManager, $requireUnapprovedUnpaid): void {
+        $entityManager->wrapInTransaction(function () use ($model, $entityManager, $requireUnissuedUnpaid, $anonymizeTransactions): void {
             $this->lockAndRefreshInvoice($model);
 
-            if ($requireUnapprovedUnpaid && ($model->isApproved() || $model->getStatus() !== Invoice::STATUS_UNPAID)) {
-                throw new InformationException('Only unapproved, unpaid invoices can be deleted. Revoke an approved invoice instead.');
+            if ($requireUnissuedUnpaid && !$this->isDeletableByAdmin($model)) {
+                throw new InformationException('Only unissued, unpaid invoices (drafts) can be deleted. Cancel (void) an issued unpaid invoice, or reissue/refund it instead. Relax invoice immutability to delete issued invoices for cleanup.');
             }
 
             $productService = $this->di['mod_service']('Product');
@@ -2752,17 +3188,25 @@ class Service implements InjectionAwareInterface
             $entityManager->getConnection()->executeStatement($sql, ['id' => $model->getId()]);
 
             // Detach (not delete) transactions referencing this invoice - a transaction is a real
-            // record of a payment attempt/event, same reasoning as unpaid_invoice_id above. Runs
-            // inside the same transaction as the flushes below: without that, a later flush
+            // record of a payment attempt/event, same reasoning as unpaid_invoice_id above. On the
+            // client-erasure path the surviving rows are additionally anonymized (see
+            // TransactionRepository::detachFromInvoice): ordinary deletion keeps them intact.
+            // Runs inside the same transaction as the flushes below: without that, a later flush
             // failing (e.g. removing the invoice itself) would leave these transactions
             // permanently detached from an invoice that was never actually deleted.
-            $entityManager->getRepository(Transaction::class)->detachFromInvoice((int) $model->getId());
+            $entityManager->getRepository(Transaction::class)->detachFromInvoice((int) $model->getId(), $anonymizeTransactions);
 
             $invoiceItems = $this->getInvoiceItemRepository()->findByInvoiceId((int) $model->getId());
             foreach ($invoiceItems as $item) {
                 $entityManager->remove($item);
             }
             $entityManager->flush();
+            // Drafts and GDPR erasure take the journal with them; relaxed-mode
+            // deletions of issued invoices keep it as the audit trail of a
+            // numbered document.
+            if (!$model->isIssued() || $anonymizeTransactions) {
+                $entityManager->getRepository(InvoiceEvent::class)->deleteByInvoiceId((int) $model->getId());
+            }
             $entityManager->remove($model);
             $entityManager->flush();
         });
@@ -2774,8 +3218,8 @@ class Service implements InjectionAwareInterface
     {
         // Fast rejection for the common case; rmInvoice rechecks the fresh state under its row
         // lock before detaching or deleting anything.
-        if ($model->isApproved() || $model->getStatus() !== Invoice::STATUS_UNPAID) {
-            throw new InformationException('Only unapproved, unpaid invoices can be deleted. Revoke an approved invoice instead.');
+        if (!$this->isDeletableByAdmin($model)) {
+            throw new InformationException('Only unissued, unpaid invoices (drafts) can be deleted. Cancel (void) an issued unpaid invoice, or reissue/refund it instead. Relax invoice immutability to delete issued invoices for cleanup.');
         }
 
         $this->di['event_dispatcher']->dispatch(new BeforeAdminInvoiceDeleteEvent((int) $model->getId()));
@@ -2796,11 +3240,11 @@ class Service implements InjectionAwareInterface
 
         $due_days = isset($data['due_days']) ? (int) $data['due_days'] : null;
         $invoice = $this->generateForOrder($model, $due_days);
-        $this->approveInvoice($invoice, ['id' => $invoice->getId(), 'use_credits' => true]);
+        $this->issueInvoice($invoice, ['id' => $invoice->getId(), 'use_credits' => true]);
 
         $this->di['event_dispatcher']->dispatch(new AfterAdminGenerateRenewalInvoiceEvent((int) $model->getId(), (int) $invoice->getId()));
 
-        $this->di['logger']->info("Generated renewal invoice #{$invoice->getId()}.");
+        $this->di['logger']->info('Generated renewal invoice #{invoice_id}', ['invoice_id' => $invoice->getId()]);
 
         return $invoice->getId();
     }
@@ -2810,27 +3254,44 @@ class Service implements InjectionAwareInterface
         $unpaid = $this->findAllUnpaid($data);
         $invoiceIds = array_map(static fn (array $proforma): int => (int) ($proforma['id'] ?? 0), $unpaid);
         $models = $this->getInvoiceRepository()->findBy(['id' => $invoiceIds]);
+        $covered = 0;
+        $skipped = 0;
+        $failed = 0;
         foreach ($models as $model) {
             try {
-                $this->tryPayWithCredits($model);
-            } catch (\Exception $e) {
-                // @phpstan-ignore if.alwaysFalse
-                if (DEBUG) {
-                    $this->di['logger']->warning($e->getMessage());
+                if ($this->tryPayWithCredits($model)) {
+                    ++$covered;
+                } else {
+                    ++$skipped;
                 }
+            } catch (\Exception $e) {
+                ++$failed;
+                $this->di['logger']->warning('Failed to cover invoice #{id} with client credits: {message}', [
+                    'id' => $model->getId(),
+                    'message' => $e->getMessage(),
+                ]);
             }
         }
-        $this->di['logger']->info('Executed action to try cover unpaid invoices with client credits.');
+        $this->di['logger']->info('Covered {covered} of {total} unpaid invoices with client credits ({skipped} skipped, {failed} failed).', [
+            'covered' => $covered,
+            'total' => count($models),
+            'skipped' => $skipped,
+            'failed' => $failed,
+        ]);
 
         return true;
     }
 
     public function payInvoiceWithCredits(Invoice $model): bool
     {
-        $this->tryPayWithCredits($model);
-        $this->di['logger']->info('Cover invoice with client credits.');
+        $paid = $this->tryPayWithCredits($model);
+        if ($paid) {
+            $this->di['logger']->info('Covered invoice #{id} with client credits.', ['id' => $model->getId()]);
+        } else {
+            $this->di['logger']->warning('Could not cover invoice #{id} with client credits: insufficient balance, or the invoice is unissued or already paid.', ['id' => $model->getId()]);
+        }
 
-        return true;
+        return $paid;
     }
 
     /**
@@ -2904,7 +3365,7 @@ class Service implements InjectionAwareInterface
         $proforma->setClientId($client->getId() !== null ? (int) $client->getId() : null);
         $proforma->setStatus(Invoice::STATUS_UNPAID);
         $proforma->setCurrency($order->getCurrency());
-        $proforma->setApproved(false);
+        $proforma->setIssued(false);
         $this->di['em']->persist($proforma);
         $this->di['em']->flush();
 
@@ -2927,6 +3388,8 @@ class Service implements InjectionAwareInterface
             }
         }
 
+        $this->recordJournalEvent($proforma, InvoiceEvent::TYPE_CREATED);
+
         return $proforma;
     }
 
@@ -2944,7 +3407,7 @@ class Service implements InjectionAwareInterface
         foreach ($models as $model) {
             try {
                 $invoice = $this->generateForOrder($model);
-                $this->approveInvoice($invoice, ['id' => $invoice->getId(), 'use_credits' => true]);
+                $this->issueInvoice($invoice, ['id' => $invoice->getId(), 'use_credits' => true]);
             } catch (\Exception $e) {
                 $this->di['logger']->warning($e->getMessage());
             }
@@ -3042,7 +3505,7 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * Fires the before/after due-date events for every unpaid, approved invoice in range, same
+     * Fires the before/after due-date events for every unpaid, issued invoice in range, same
      * as before this class started reminder-throttling. Listeners (built-in or third-party
      * extensions) decide for themselves whether a given invoice is actionable; this method does
      * not filter by reminder interval so it does not narrow what extensions can observe. The
@@ -3064,7 +3527,7 @@ class Service implements InjectionAwareInterface
 
         $daysLeft = SqlExpr::dateDiffDays($connection, 'due_at', ':now');
         $beforeDueList = $connection->fetchAllAssociative(
-            "SELECT id, {$daysLeft} as days_left FROM invoice WHERE status = 'unpaid' AND approved = true AND due_at > :now",
+            "SELECT id, {$daysLeft} as days_left FROM invoice WHERE status = 'unpaid' AND issued = true AND due_at > :now",
             ['now' => $nowFormatted]
         );
         foreach ($beforeDueList as $params) {
@@ -3080,7 +3543,7 @@ class Service implements InjectionAwareInterface
         // sometime today" is exactly "due before the start of tomorrow".
         $daysPassed = SqlExpr::dateDiffDays($connection, 'due_at', ':now');
         $afterDueList = $connection->fetchAllAssociative(
-            "SELECT id, ABS({$daysPassed}) as days_passed FROM invoice WHERE status = 'unpaid' AND approved = true AND due_at < :tomorrow_start",
+            "SELECT id, ABS({$daysPassed}) as days_passed FROM invoice WHERE status = 'unpaid' AND issued = true AND due_at < :tomorrow_start",
             ['now' => $nowFormatted, 'tomorrow_start' => $tomorrowStart]
         );
         foreach ($afterDueList as $params) {
@@ -3117,6 +3580,8 @@ class Service implements InjectionAwareInterface
         }
 
         $this->di['logger']->info('Invoice payment reminder recorded');
+
+        $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_REMINDER);
 
         return true;
     }
@@ -3175,14 +3640,24 @@ class Service implements InjectionAwareInterface
         $proforma->setClientId($client->getId() ?? null);
         $proforma->setStatus(Invoice::STATUS_UNPAID);
         $proforma->setCurrency($client->getCurrency());
-        $proforma->setApproved($this->_isAutoApproved());
         $this->di['em']->persist($proforma);
         $this->di['em']->flush();
 
         $this->setInvoiceDefaults($proforma);
 
+        // With auto-issue the invoice is born issued, so the issue path's
+        // snapshot never runs for it. Freeze the parties here, before the
+        // issued flag goes on, so funds invoices carry a snapshot like any
+        // other issued invoice.
+        $this->snapshotPartiesFromLiveRecords($proforma);
+        $proforma->setIssued($this->_isAutoIssued());
+        $this->di['em']->persist($proforma);
+        $this->di['em']->flush();
+
         $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
         $invoiceItemService->generateForAddFunds($proforma, $amount);
+
+        $this->recordJournalEvent($proforma, InvoiceEvent::TYPE_CREATED);
 
         return $proforma;
     }
@@ -3200,7 +3675,11 @@ class Service implements InjectionAwareInterface
         $this->checkInvoiceAuth($invoice, InvoiceOperation::PAYMENT);
 
         if ($invoice->getStatus() === Invoice::STATUS_CANCELED || $invoice->getReplacedByInvoiceId() !== null) {
-            throw new InformationException('This invoice was canceled and cannot be paid');
+            throw new InformationException('This invoice was canceled and cannot be paid', [], 403);
+        }
+
+        if ($invoice->getStatus() === Invoice::STATUS_PAID) {
+            throw new InformationException('This invoice is already paid', [], 403);
         }
 
         $gtw = $this->di['em']->getRepository(PayGateway::class)->find((int) $data['gateway_id']);
@@ -3390,7 +3869,7 @@ class Service implements InjectionAwareInterface
                     LEFT JOIN client_balance as cb on m.client_id = cb.client_id
                     LEFT JOIN invoice_item as pi on pi.invoice_id = m.id
                 WHERE m.status = :status
-                    AND m.approved = true
+                    AND m.issued = true
                     AND cb.amount >= pi.price
                     AND pi.type != :type';
         $params = ['status' => Invoice::STATUS_UNPAID, 'type' => InvoiceItem::TYPE_DEPOSIT];
@@ -3423,7 +3902,7 @@ class Service implements InjectionAwareInterface
     {
         $cutoff = strtotime("-{$days_after_issue} days");
 
-        return $this->getInvoiceRepository()->findUnpaidApprovedNotRemindedBefore($cutoff);
+        return $this->getInvoiceRepository()->findUnpaidIssuedNotRemindedBefore($cutoff);
     }
 
     public function isInvoiceReminderIntervalEnabled(string $param, int $days, string $default = '', mixed $intervals = null): bool
@@ -3466,76 +3945,158 @@ class Service implements InjectionAwareInterface
         return $days;
     }
 
-    private function _isAutoApproved(): bool
+    private function _isAutoIssued(): bool
     {
         /**
          * @var \Box\Mod\System\Service $systemService
          */
         $systemService = $this->di['mod_service']('system');
 
-        return (bool) $systemService->getParamValue('invoice_auto_approval', true);
+        return (bool) $systemService->getParamValue('invoice_auto_issue', true);
     }
 
     /**
-     * Whether an approved but still unpaid invoice may be edited.
+     * Whether the invoice immutability escape hatch is enabled.
      *
-     * In many jurisdictions an issued (approved) invoice is immutable and
-     * corrections must go through a credit note or a replacement invoice,
-     * so this defaults to off. Enabling it treats approved unpaid invoices
-     * as editable quotes: lines and details can change and the invoice is
-     * re-sent to the client afterwards.
+     * Strict (default) keeps every issued invoice immutable: no
+     * content edits and no hard deletes. Relaxed restores the pre-immutability
+     * behavior for unpaid invoices only (content edits and cleanup deletes).
+     * Paid, refunded, canceled, note, and reissue-linked invoices stay
+     * immutable in both modes.
+     *
+     * This is a transitional setting and will be removed in a future release,
+     * at which point strict becomes the only behavior.
      */
-    public function allowUnpaidInvoiceEdits(): bool
+    public function isImmutabilityRelaxed(): bool
     {
-        /**
-         * @var \Box\Mod\System\Service $systemService
-         */
+        /** @var \Box\Mod\System\Service $systemService */
         $systemService = $this->di['mod_service']('system');
 
-        return (bool) $systemService->getParamValue('invoice_allow_edit_unpaid', false);
+        $mode = $systemService->getParamValue('invoice_immutability', null);
+        if ($mode === null || $mode === '') {
+            // Pre-migration fallback: honor the retired per-action keys until
+            // the update patcher migrates them (see UpdatePatcher).
+            return (bool) $systemService->getParamValue('invoice_allow_edit_unpaid', false)
+                || (bool) $systemService->getParamValue('invoice_allow_delete_approved', false);
+        }
+
+        return $mode === 'relaxed';
+    }
+
+    /**
+     * Whether the invoice can be canceled (voided) without a replacement.
+     *
+     * Only issued unpaid invoices qualify. Drafts should be deleted, paid
+     * invoices refunded, and credit/debit notes or already-reissued invoices
+     * are never cancellable.
+     */
+    public function isInvoiceCancellable(Invoice $invoice): bool
+    {
+        return $invoice->isIssued()
+            && $invoice->getStatus() === Invoice::STATUS_UNPAID
+            && $invoice->getCreditNoteForInvoiceId() === null
+            && $invoice->getDebitNoteForInvoiceId() === null
+            && $invoice->getReplacedByInvoiceId() === null;
+    }
+
+    /**
+     * Whether the invoice can be hard-deleted by an admin.
+     *
+     * Unissued unpaid drafts (without note/reissue links) are always
+     * deletable. Issued unpaid and canceled invoices additionally require
+     * relaxed invoice immutability. Paid, refunded, note, and reissue-linked
+     * invoices are never deletable so the audit trail survives.
+     */
+    public function isDeletableByAdmin(Invoice $invoice): bool
+    {
+        if ($invoice->getCreditNoteForInvoiceId() !== null
+            || $invoice->getDebitNoteForInvoiceId() !== null
+            || $invoice->getReplacesInvoiceId() !== null
+            || $invoice->getReplacedByInvoiceId() !== null
+        ) {
+            return false;
+        }
+
+        if (!$invoice->isIssued() && $invoice->getStatus() === Invoice::STATUS_UNPAID) {
+            return true;
+        }
+
+        if (!in_array($invoice->getStatus(), [Invoice::STATUS_UNPAID, Invoice::STATUS_CANCELED], true)) {
+            return false;
+        }
+
+        return $this->isImmutabilityRelaxed();
     }
 
     /**
      * Whether the invoice's content (lines, amounts, details) may be changed.
      *
-     * Unapproved invoices are drafts and always editable. Approved invoices
-     * are immutable once paid, refunded, or canceled; an approved unpaid
-     * invoice is only editable when the `invoice_allow_edit_unpaid` setting
-     * permits it.
+     * Unissued invoices are drafts and always editable. Issued invoices
+     * are immutable once paid, refunded, or canceled; an issued unpaid
+     * invoice is only editable when invoice immutability is relaxed, which
+     * treats it as an editable quote (edited invoices are re-sent to the
+     * client afterwards).
      */
     public function isInvoiceEditable(Invoice $invoice): bool
     {
-        return $this->isInvoiceStateEditable($invoice->getStatus(), $invoice->isApproved());
+        return $this->isInvoiceStateEditable($invoice->getStatus(), $invoice->isIssued());
     }
 
-    public function isInvoiceStateEditable(string $status, bool $approved): bool
+    public function isInvoiceStateEditable(string $status, bool $issued): bool
     {
         if (in_array($status, [Invoice::STATUS_PAID, Invoice::STATUS_REFUNDED, Invoice::STATUS_CANCELED], true)) {
             return false;
         }
 
-        if (!$approved) {
+        if (!$issued) {
             return true;
         }
 
-        return $this->allowUnpaidInvoiceEdits();
+        return $this->isImmutabilityRelaxed();
     }
 
     /**
-     * Lock an invoice row and return its current approval/status state.
+     * Reject attempts to rewrite an issued invoice's identity (numbering
+     * series/number, lifecycle status, issue state), even when relaxed
+     * editing is enabled. Identity fields define the legal document; changing
+     * them edits history rather than correcting it. Issued invoices are
+     * corrected through payment, credit notes, reissue, or cancel (void).
+     */
+    private function assertIssuedIdentityUnchanged(Invoice $model, array $data): void
+    {
+        if (!$model->isIssued()) {
+            return;
+        }
+
+        $issued = array_key_exists('issued', $data) ? (bool) $data['issued'] : $model->isIssued();
+        $status = array_key_exists('status', $data) ? (string) $data['status'] : $model->getStatus();
+        $serie = array_key_exists('serie', $data) ? (string) $data['serie'] : (string) $model->getSerie();
+        $nr = array_key_exists('nr', $data) ? (string) $data['nr'] : (string) $model->getNr();
+
+        if ($issued !== $model->isIssued()
+            || $status !== $model->getStatus()
+            || $serie !== (string) $model->getSerie()
+            || $nr !== (string) $model->getNr()
+        ) {
+            throw new InformationException('Invoice number, status, and issue state are locked once issued. Correct issued invoices with a payment, credit note, reissue, or cancel (void) instead.');
+        }
+    }
+
+    /**
+     * Lock an invoice row and return its current issue/status state.
      *
      * Callers must keep the surrounding transaction open until their mutation is complete. The
-     * lock is the serialization point shared by invoice edits, item edits, approval, payment,
+     * lock is the serialization point shared by invoice edits, item edits, issuing, payment,
      * and deletion.
      *
-     * @return array{status: string, approved: bool}
+     * @return array{status: string, issued: bool}
      */
     public function lockInvoiceState(Invoice $invoice): array
     {
         if ($invoice->getId() === null) {
             return [
                 'status' => $invoice->getStatus(),
-                'approved' => $invoice->isApproved(),
+                'issued' => $invoice->isIssued(),
             ];
         }
 
@@ -3548,7 +4109,7 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @return array{status: string, approved: bool}
+     * @return array{status: string, issued: bool}
      */
     private function lockAndRefreshInvoice(Invoice $invoice): array
     {
@@ -3661,7 +4222,7 @@ class Service implements InjectionAwareInterface
 
     public function getBuyer(Invoice $invoice): array
     {
-        return [
+        $buyer = [
             'first_name' => $invoice->getBuyerFirstName(),
             'last_name' => $invoice->getBuyerLastName(),
             'company' => $invoice->getBuyerCompany(),
@@ -3670,17 +4231,39 @@ class Service implements InjectionAwareInterface
             'state' => $invoice->getBuyerState(),
             'country' => $invoice->getBuyerCountry(),
             'phone' => $invoice->getBuyerPhone(),
-            'phone_cc' => $invoice->getBuyerPhoneCc() ?? '',
             'email' => $invoice->getBuyerEmail(),
             'zip' => $invoice->getBuyerZip(),
         ];
+
+        // The invoice snapshot no longer stores a country code, but payment
+        // gateways still take one: source it from the live client record.
+        $buyer['phone_cc'] = '';
+        if ($invoice->getClientId() !== null) {
+            $client = $this->di['em']->getRepository(Client::class)->find($invoice->getClientId());
+            if ($client instanceof Client) {
+                $buyer['phone_cc'] = $client->getPhoneCc() ?? '';
+            }
+        }
+
+        return $buyer;
     }
 
+    /**
+     * Delete every invoice of a client being deleted, in any state — paid,
+     * refunded, canceled, and linked notes included, together with their
+     * journal entries. This is intentional erasure (client deletion is the
+     * GDPR-style "forget me" path), not cleanup: it deliberately bypasses
+     * the never-delete guards that protect financial records everywhere
+     * else, so it must only ever be called from client removal.
+     *
+     * Transactions survive (they are payment records, not invoice data) but
+     * are anonymized in place: personal data goes, the financial record stays.
+     */
     public function rmByClient(Client $client): void
     {
         $invoices = $this->getInvoiceRepository()->findByClientId((int) $client->getId());
         foreach ($invoices as $invoice) {
-            $this->rmInvoice($invoice);
+            $this->rmInvoice($invoice, false, true);
         }
     }
 
@@ -4058,7 +4641,7 @@ class Service implements InjectionAwareInterface
             }
 
             $invoice = $this->generateForOrder($originalOrder);
-            $this->approveInvoice($invoice, ['use_credits' => false]);
+            $this->issueInvoice($invoice, ['use_credits' => false]);
 
             $this->di['logger']->info("Generated renewal invoice #{$invoice->getId()} for subscription payment (SID: {$subscriptionSid}, client: {$clientId}).");
 

@@ -233,3 +233,63 @@ test('getSearchQueryBuilder sorts by allowlisted columns', function (array $data
     'invalid sort falls back to default' => [['sort' => 't.id; DROP TABLE transaction'], 'ORDER BY t.id DESC', false],
     'invalid direction falls back to ascending' => [['sort' => 'status', 'direction' => 'sideways'], 'ORDER BY t.status ASC, t.id ASC', true],
 ]);
+
+/*
+ * detachFromInvoice() runs raw SQL against a real table here (not a mocked
+ * connection): the anonymize flag is a data-preservation behavior, and only a
+ * real round trip proves which columns survive it.
+ */
+test('detachFromInvoice keeps personal data unless anonymizing', function (): void {
+    $em = transactionEntityManager();
+    (new SchemaTool($em))->createSchema([$em->getClassMetadata(Transaction::class)]);
+
+    $seed = function () use ($em): int {
+        $tx = (new Transaction())
+            ->setTxnId('gateway-txn-1')
+            ->setAmount(100.0)
+            ->setCurrency('EUR')
+            ->setIp('203.0.113.7')
+            ->setIpn('payer_email=client@example.com')
+            ->setNote('admin note')
+            ->setError('gateway said no')
+            ->setOutput('raw output');
+        $em->persist($tx);
+        $em->flush();
+        $id = $tx->getId();
+        $table = $em->getConnection()->quoteSingleIdentifier('transaction');
+        $em->getConnection()->update($table, ['invoice_id' => 7], ['id' => $id]);
+        $em->clear();
+
+        return $id;
+    };
+
+    $read = function (int $id) use ($em): Transaction {
+        $tx = $em->find(Transaction::class, $id);
+        expect($tx)->toBeInstanceOf(Transaction::class);
+
+        return $tx;
+    };
+
+    // Ordinary deletion: detached, everything intact.
+    $plainId = $seed();
+    $em->getRepository(Transaction::class)->detachFromInvoice(7);
+    $plain = $read($plainId);
+    expect($plain->getInvoice())->toBeNull()
+        ->and($plain->getIp())->toBe('203.0.113.7')
+        ->and($plain->getIpn())->toBe('payer_email=client@example.com')
+        ->and($plain->getNote())->toBe('admin note');
+
+    // Erasure: detached, personal data scrubbed, financial record kept.
+    $erasedId = $seed();
+    $em->getRepository(Transaction::class)->detachFromInvoice(7, true);
+    $erased = $read($erasedId);
+    expect($erased->getInvoice())->toBeNull()
+        ->and($erased->getIp())->toBeNull()
+        ->and($erased->getIpn())->toBeNull()
+        ->and($erased->getNote())->toBeNull()
+        ->and($erased->getError())->toBeNull()
+        ->and($erased->getOutput())->toBeNull()
+        ->and($erased->getTxnId())->toBe('gateway-txn-1')
+        ->and((float) $erased->getAmount())->toBe(100.0)
+        ->and($erased->getCurrency())->toBe('EUR');
+});

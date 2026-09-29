@@ -14,6 +14,7 @@ namespace Box\Mod\Client;
 use Box\Mod\Client\Entity\Client;
 use Box\Mod\Client\Entity\ClientBalance;
 use Box\Mod\Client\Entity\ClientGroup;
+use Box\Mod\Client\Entity\ClientGroupMembership;
 use Box\Mod\Client\Entity\ClientPasswordReset;
 use Box\Mod\Client\Event\AfterAdminClientCreateEvent;
 use Box\Mod\Client\Event\AfterClientSignUpEvent;
@@ -21,6 +22,7 @@ use Box\Mod\Client\Event\BeforeAdminClientCreateEvent;
 use Box\Mod\Client\Event\BeforeClientPasswordResetEvent;
 use Box\Mod\Client\Event\BeforeClientSignUpEvent;
 use Box\Mod\Client\Repository\ClientBalanceRepository;
+use Box\Mod\Client\Repository\ClientGroupMembershipRepository;
 use Box\Mod\Client\Repository\ClientGroupRepository;
 use Box\Mod\Client\Repository\ClientPasswordResetRepository;
 use Box\Mod\Client\Repository\ClientRepository;
@@ -45,7 +47,7 @@ class Service implements InjectionAwareInterface
      * new entity columns must be added here to be exportable.
      */
     private const array EXPORTABLE_COLUMNS = [
-        'id', 'aid', 'client_group_id', 'role', 'auth_type', 'email', 'status',
+        'id', 'aid', 'role', 'auth_type', 'email', 'status',
         'email_approved', 'tax_exempt', 'type', 'first_name', 'last_name',
         'gender', 'birthday', 'phone_cc', 'phone', 'company', 'company_vat',
         'company_number', 'address_1', 'address_2', 'city', 'state', 'postcode',
@@ -69,6 +71,7 @@ class Service implements InjectionAwareInterface
 
     private ClientRepository $clientRepository;
     private ClientGroupRepository $clientGroupRepository;
+    private ClientGroupMembershipRepository $clientGroupMembershipRepository;
     private ClientBalanceRepository $clientBalanceRepository;
     private ClientPasswordResetRepository $clientPasswordResetRepository;
 
@@ -148,6 +151,7 @@ class Service implements InjectionAwareInterface
         $this->di = $di;
         $this->clientRepository = $di['em']->getRepository(Client::class);
         $this->clientGroupRepository = $di['em']->getRepository(ClientGroup::class);
+        $this->clientGroupMembershipRepository = $di['em']->getRepository(ClientGroupMembership::class);
         $this->clientBalanceRepository = $di['em']->getRepository(ClientBalance::class);
         $this->clientPasswordResetRepository = $di['em']->getRepository(ClientPasswordReset::class);
     }
@@ -220,7 +224,7 @@ class Service implements InjectionAwareInterface
         // `client` also holds `pass`, `salt`, and `api_token` - reuse EXPORTABLE_COLUMNS
         // instead of `c.*` so listing never exposes them.
         $sql = $selectStmt ?? 'SELECT c.' . implode(', c.', self::EXPORTABLE_COLUMNS);
-        $sql .= ' FROM client as c left join client_group as cg on c.client_group_id = cg.id';
+        $sql .= ' FROM client as c';
 
         $search = (isset($data['search']) && !empty($data['search'])) ? $data['search'] : null;
         $client_id = (isset($data['client_id']) && !empty($data['client_id'])) ? $data['client_id'] : null;
@@ -265,7 +269,7 @@ class Service implements InjectionAwareInterface
         }
 
         if ($group_id) {
-            $where[] = 'c.client_group_id = :group_id';
+            $where[] = 'EXISTS (SELECT 1 FROM client_group_members cgm WHERE cgm.client_id = c.id AND cgm.client_group_id = :group_id)';
             $params['group_id'] = $group_id;
         }
 
@@ -526,14 +530,19 @@ class Service implements InjectionAwareInterface
 
         if ($isAdmin) {
             $details['group'] = null;
+            $details['client_groups'] = [];
 
-            $group = $client->getClientGroup();
-            if ($group instanceof ClientGroup) {
-                $details['group'] = $group->getTitle();
-                $details['client_group'] = [
-                    'id' => $group->getId(),
-                    'title' => $group->getTitle(),
-                ];
+            $groups = $client->getClientGroups();
+            if ($groups !== []) {
+                $titles = [];
+                foreach ($groups as $id => $group) {
+                    $details['client_groups'][] = [
+                        'id' => $id,
+                        'title' => $group->getTitle(),
+                    ];
+                    $titles[] = $group->getTitle();
+                }
+                $details['group'] = implode(', ', $titles);
             }
 
             if ($includeSensitive) {
@@ -610,8 +619,8 @@ class Service implements InjectionAwareInterface
 
     public function deleteGroup(ClientGroup $model): bool
     {
-        $client = $this->clientRepository->findOneBy(['clientGroup' => $model]);
-        if ($client) {
+        $membership = $this->clientGroupMembershipRepository->findOneBy(['clientGroup' => $model]);
+        if ($membership) {
             throw new \FOSSBilling\Exception('Cannot remove groups with clients');
         }
 
@@ -623,6 +632,42 @@ class Service implements InjectionAwareInterface
         $this->di['logger']->info('Removed client group #{model_id}', ['model_id' => $model->getId()]);
 
         return true;
+    }
+
+    /**
+     * Replace a client's group memberships with the given group IDs.
+     *
+     * @param array<int|string> $groupIds
+     */
+    public function setClientGroupIds(Client $client, array $groupIds): void
+    {
+        $groupIds = array_values(array_unique(array_map(intval(...), array_filter(
+            $groupIds,
+            static fn (mixed $groupId): bool => filter_var($groupId, FILTER_VALIDATE_INT) !== false && (int) $groupId > 0
+        ))));
+
+        foreach ($client->getGroupMemberships() as $membership) {
+            if (!in_array($membership->getClientGroup()?->getId(), $groupIds)) {
+                $client->getGroupMemberships()->removeElement($membership);
+            }
+        }
+
+        $existing = $client->getGroupIds();
+        foreach ($groupIds as $groupId) {
+            if (in_array($groupId, $existing)) {
+                continue;
+            }
+
+            $group = $this->clientGroupRepository->find($groupId);
+            if (!$group instanceof ClientGroup) {
+                throw new InformationException('Client group not found');
+            }
+
+            $membership = new ClientGroupMembership();
+            $membership->setClient($client);
+            $membership->setClientGroup($group);
+            $client->getGroupMemberships()->add($membership);
+        }
     }
 
     private function createClient(array $data): Client
@@ -652,15 +697,7 @@ class Service implements InjectionAwareInterface
 
         $client->setAid($data['aid'] ?? null);
         $client->setLastName($data['last_name'] ?? null);
-        if (!empty($data['group_id'])) {
-            $group = $this->clientGroupRepository->find((int) $data['group_id']);
-            if (!$group instanceof ClientGroup) {
-                throw new InformationException('Client group not found');
-            }
-            $client->setClientGroup($group);
-        } else {
-            $client->setClientGroup(null);
-        }
+        $this->setClientGroupIds($client, (array) ($data['group_ids'] ?? []));
         $client->setStatus($data['status'] ?? Client::ACTIVE);
         $client->setGender($data['gender'] ?? null);
         $birthday = $data['birthday'] ?? null;
@@ -844,6 +881,8 @@ class Service implements InjectionAwareInterface
 
     public function remove(Client $model): void
     {
+        $this->throwIfActiveServicesRemain($model);
+
         $entityManager = $this->di['em'];
         $connection = $entityManager->getConnection();
 
@@ -887,6 +926,43 @@ class Service implements InjectionAwareInterface
             }
 
             throw $exception;
+        }
+    }
+
+    /**
+     * Client deletion must never silently orphan provisioned services (hosting
+     * accounts, domains, licenses, ...) nor terminate them by surprise: refuse
+     * while any service row exists. Service cancellation alone is not enough -
+     * it terminates remotely but leaves the row in place - so delete the
+     * service or its order first, then delete the client.
+     *
+     * Tables belonging to extensions that were never activated on this install
+     * (e.g. service_apikey on a fresh install) simply don't exist: there is
+     * nothing to orphan in them, so they are skipped rather than queried.
+     */
+    private function throwIfActiveServicesRemain(Client $model): void
+    {
+        $connection = $this->di['em']->getConnection();
+        $tables = [
+            'service_hosting' => 'hosting',
+            'service_domain' => 'domain',
+            'service_downloadable' => 'downloadable',
+            'service_license' => 'license',
+            'service_custom' => 'custom',
+            'service_apikey' => 'API keys',
+        ];
+        $existing = array_flip($connection->createSchemaManager()->listTableNames());
+        $active = [];
+        foreach ($tables as $table => $label) {
+            if (!isset($existing[$table])) {
+                continue;
+            }
+            if ($connection->fetchOne("SELECT 1 FROM {$table} WHERE client_id = :id LIMIT 1", ['id' => $model->getId()])) {
+                $active[] = $label;
+            }
+        }
+        if ($active !== []) {
+            throw new InformationException('Client cannot be deleted while they have service records (:services). Delete their services or orders first, then delete the client.', [':services' => implode(', ', $active)]);
         }
     }
 

@@ -186,3 +186,36 @@ test('external IP lookup skips private responses and trims a public response', f
     expect($tools->getExternalIP())->toBe('8.8.8.8')
         ->and($httpClient->getRequestsCount())->toBe(2);
 });
+
+test('callback signature matches the HMAC of the gateway and invoice pair', function (): void {
+    $previousSalt = FOSSBilling\Config::getProperty('info.salt');
+    FOSSBilling\Config::setProperty('info.salt', 'test-salt', false);
+
+    try {
+        $expected = hash_hmac('sha256', '2|16', 'test-salt');
+
+        expect(FOSSBilling\Tools::signCallbackParams(2, 16))->toBe($expected)
+            ->and(FOSSBilling\Tools::signCallbackParams('2', '16'))->toBe($expected);
+    } finally {
+        FOSSBilling\Config::setProperty('info.salt', $previousSalt, false);
+    }
+});
+
+test('callback signature verification accepts matching signatures only', function (): void {
+    $previousSalt = FOSSBilling\Config::getProperty('info.salt');
+    FOSSBilling\Config::setProperty('info.salt', 'test-salt', false);
+
+    try {
+        $sig = FOSSBilling\Tools::signCallbackParams(2, 16);
+
+        expect(FOSSBilling\Tools::verifyCallbackSignature(2, 16, $sig))->toBeTrue()
+            ->and(FOSSBilling\Tools::verifyCallbackSignature(2, 99, $sig))->toBeFalse()
+            ->and(FOSSBilling\Tools::verifyCallbackSignature(7, 16, $sig))->toBeFalse()
+            ->and(FOSSBilling\Tools::verifyCallbackSignature(2, 16, 'tampered'))->toBeFalse()
+            ->and(FOSSBilling\Tools::verifyCallbackSignature(2, 16, ''))->toBeFalse()
+            ->and(FOSSBilling\Tools::verifyCallbackSignature(2, 16, null))->toBeFalse()
+            ->and(FOSSBilling\Tools::verifyCallbackSignature(2, 16, 12345))->toBeFalse();
+    } finally {
+        FOSSBilling\Config::setProperty('info.salt', $previousSalt, false);
+    }
+});

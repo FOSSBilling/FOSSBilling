@@ -890,7 +890,7 @@ foreach ($manualClients as $mi => $cid) {
                 ['title' => 'Demo manual line - service', 'price' => 10, 'quantity' => 2],
             ],
         ]);
-        api('admin/invoice/approve', ['id' => (int) $iid]);
+        api('admin/invoice/issue', ['id' => (int) $iid]);
         note("  manual invoice id={$iid} client={$cid}");
         $manualInvoiceIds[] = (int) $iid;
         $manifest['invoices_manual'][] = ['id' => (int) $iid, 'client_id' => $cid];

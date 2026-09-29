@@ -379,7 +379,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         $em = $this->di['em'];
         foreach ($this->getSupportTicketRepository()->findByClientId((int) $client->getId()) as $ticket) {
-            $em->remove($ticket);
+            $this->removeTicket($ticket);
         }
         $em->flush();
     }
@@ -388,6 +388,24 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         $em = $this->di['em'];
         $id = $model->getId();
+
+        $this->removeTicket($model);
+        $em->flush();
+
+        $this->di['logger']->info('Removed ticket "{id}"', ['id' => $id]);
+
+        return true;
+    }
+
+    /**
+     * Remove a ticket with its notes, messages, and message edit history.
+     * Shared by admin deletion and client erasure: removing only the ticket
+     * row would orphan message bodies containing personal data.
+     */
+    private function removeTicket(SupportTicket $ticket): void
+    {
+        $em = $this->di['em'];
+        $id = $ticket->getId();
 
         foreach ($this->getSupportTicketNoteRepository()->findByTicketId($id ?? 0) as $note) {
             $em->remove($note);
@@ -399,12 +417,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $em->remove($message);
         }
 
-        $em->remove($model);
-        $em->flush();
-
-        $this->di['logger']->info('Removed ticket "{id}"', ['id' => $id]);
-
-        return true;
+        $em->remove($ticket);
     }
 
     public function toApiArray(SupportTicket $model, bool $deep = true, \Box\Mod\Staff\Entity\Admin|Client|null $identity = null): array

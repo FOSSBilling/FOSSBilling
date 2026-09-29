@@ -246,7 +246,7 @@ class Fingerprint
             }
 
             return $reader->country($clientIp)->name;
-        } catch (\Exception) {
+        } catch (\Throwable) {
             return '';
         }
     }
@@ -262,7 +262,7 @@ class Fingerprint
             $reader = new GeoIP\Reader($asnDb);
 
             return $reader->asn($clientIp)->asnNumber;
-        } catch (\Exception) {
+        } catch (\Throwable) {
             return '';
         }
     }

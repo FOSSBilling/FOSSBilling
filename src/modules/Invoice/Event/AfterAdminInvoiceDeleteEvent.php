@@ -11,7 +11,7 @@ namespace Box\Mod\Invoice\Event;
 
 use FOSSBilling\Events\Event;
 
-/** Dispatched after an admin deletes an unpaid, unapproved invoice. */
+/** Dispatched after an admin deletes an unpaid, unissued invoice. */
 final class AfterAdminInvoiceDeleteEvent extends Event
 {
     public function __construct(public readonly int $invoiceId)

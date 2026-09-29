@@ -1076,7 +1076,7 @@ test('createFromCart sets the unpaid invoice id on orders when checkout produces
     $productService->shouldReceive('findProductById')->twice()->with(5)->andReturn($product);
     $productService->shouldReceive('reserveStockForOrder')->once()->with(Mockery::type(Order::class));
 
-    // Regression test for GH-4246: prepareInvoice()/approveInvoice() must hand back a
+    // Regression test for GH-4246: prepareInvoice()/issueInvoice() must hand back a
     // Doctrine Invoice entity whose getId() is strictly ?int, matching what
     // Order::setUnpaidInvoiceId() declares. Before the Invoice module was migrated to
     // Doctrine, this was a RedBean bean whose ->id was a string, which made every
@@ -1086,7 +1086,7 @@ test('createFromCart sets the unpaid invoice id on orders when checkout produces
 
     $invoiceService = Mockery::mock(Box\Mod\Invoice\Service::class);
     $invoiceService->shouldReceive('prepareInvoice')->once()->with($client, Mockery::type('array'))->andReturn($invoice);
-    $invoiceService->shouldReceive('approveInvoice')->once()->with($invoice, Mockery::type('array'))->andReturn(true);
+    $invoiceService->shouldReceive('issueInvoice')->once()->with($invoice, Mockery::type('array'))->andReturn(true);
 
     $clientBalanceService = Mockery::mock(Box\Mod\Client\ServiceBalance::class);
     $clientBalanceService->shouldReceive('getClientBalance')->once()->with($client)->andReturn(0.0);
@@ -2452,9 +2452,9 @@ test('isPromoAvailableForClientGroup returns expected result', function (Promo $
     expect($result)->toEqual($expectedResult);
 })->with(fn (): array => [
     [createPromoEntity(1)->setClientGroups(json_encode([])), createEntity(Client::class), true],
-    [createPromoEntity(2)->setClientGroups(json_encode([1, 2])), createEntity(Client::class, ['clientGroup' => null]), false],
-    [createPromoEntity(3)->setClientGroups(json_encode([1, 2])), createEntity(Client::class, ['clientGroup' => null]), false],
-    [createPromoEntity(4)->setClientGroups(json_encode([1, 2])), createEntity(Client::class, ['clientGroup' => null]), true],
+    [createPromoEntity(2)->setClientGroups(json_encode([1, 2])), createEntity(Client::class), false],
+    [createPromoEntity(3)->setClientGroups(json_encode([1, 2])), createEntity(Client::class), false],
+    [createPromoEntity(4)->setClientGroups(json_encode([1, 2])), createEntity(Client::class), true],
     [createPromoEntity(5)->setClientGroups(json_encode([])), null, true],
     [createPromoEntity(6)->setClientGroups(json_encode([1, 2])), null, false],
 ]);

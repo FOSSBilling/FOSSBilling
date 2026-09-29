@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace FOSSBilling\Security;
 
 use FOSSBilling\Config;
+use FOSSBilling\Environment;
 use FOSSBilling\InjectionAwareInterface;
 use Pimple\Container;
 use Psr\Cache\CacheItemPoolInterface;
@@ -44,6 +45,10 @@ class RateLimiter implements InjectionAwareInterface
     {
         return [
             'enabled' => true,
+            // Development environments (APP_ENV=dev: DDEV, local checkouts) bypass rate
+            // limiting so local development and E2E runs are never throttled by shared
+            // budgets. Set enforce_in_development to true to test throttling locally.
+            'enforce_in_development' => false,
             'whitelist_ips' => [],
             'policies' => [
                 'api_guest' => ['policy' => 'token_bucket', 'limit' => 100, 'interval' => '60 seconds'],
@@ -87,7 +92,7 @@ class RateLimiter implements InjectionAwareInterface
         $config = $this->getConfig();
         $policy = $config['policies'][$policyName] ?? null;
 
-        if (($config['enabled'] ?? true) === false) {
+        if (!$this->isEnabled()) {
             return new RateLimitResult($policyName, false, null, null, null, RateLimitResult::REASON_DISABLED);
         }
 
@@ -143,7 +148,18 @@ class RateLimiter implements InjectionAwareInterface
 
     public function isEnabled(): bool
     {
-        return ($this->getConfig()['enabled'] ?? true) !== false;
+        $config = $this->getConfig();
+        if (($config['enabled'] ?? true) === false) {
+            return false;
+        }
+
+        // Development bypass (see getDefaultConfig()): a dev box is never throttled unless
+        // the operator explicitly opts back in. Production and test environments are unaffected.
+        if (Environment::isDevelopment() && ($config['enforce_in_development'] ?? false) !== true) {
+            return false;
+        }
+
+        return true;
     }
 
     public function listIpCounters(?string $ip = null): array

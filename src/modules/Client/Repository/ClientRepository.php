@@ -113,7 +113,7 @@ class ClientRepository extends EntityRepository
         }
 
         if ($groupId) {
-            $qb->andWhere('IDENTITY(c.clientGroup) = :group_id')
+            $qb->andWhere('EXISTS (SELECT 1 FROM Box\Mod\Client\Entity\ClientGroupMembership m WHERE m.client = c AND IDENTITY(m.clientGroup) = :group_id)')
                 ->setParameter('group_id', $groupId);
         }
 
@@ -180,21 +180,36 @@ class ClientRepository extends EntityRepository
         }
 
         $rows = $this->getEntityManager()->getConnection()->fetchAllAssociative(
-            'SELECT c.id, COALESCE(SUM(cb.amount), 0) AS balance, cg.title AS group_title
+            'SELECT c.id, COALESCE(SUM(cb.amount), 0) AS balance
              FROM client c
              LEFT JOIN client_balance cb ON cb.client_id = c.id
-             LEFT JOIN client_group cg ON cg.id = c.client_group_id
              WHERE c.id IN (:ids)
-             GROUP BY c.id, cg.title',
+             GROUP BY c.id',
             ['ids' => $clientIds],
             ['ids' => ArrayParameterType::INTEGER],
         );
 
+        $groupRows = $this->getEntityManager()->getConnection()->fetchAllAssociative(
+            'SELECT cgm.client_id, cg.title
+             FROM client_group_members cgm
+             JOIN client_group cg ON cg.id = cgm.client_group_id
+             WHERE cgm.client_id IN (:ids)
+             ORDER BY cg.title ASC',
+            ['ids' => $clientIds],
+            ['ids' => ArrayParameterType::INTEGER],
+        );
+
+        $titles = [];
+        foreach ($groupRows as $groupRow) {
+            $titles[(int) $groupRow['client_id']][] = (string) $groupRow['title'];
+        }
+
         $context = [];
         foreach ($rows as $row) {
-            $context[(int) $row['id']] = [
+            $clientId = (int) $row['id'];
+            $context[$clientId] = [
                 'balance' => (float) $row['balance'],
-                'group' => $row['group_title'],
+                'group' => isset($titles[$clientId]) ? implode(', ', $titles[$clientId]) : null,
             ];
         }
 

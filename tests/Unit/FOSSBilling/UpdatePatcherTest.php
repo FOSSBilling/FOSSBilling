@@ -249,6 +249,83 @@ test('client balance unique credit patch adds column and index for existing inst
     (new ReflectionMethod($patcher, 'patch96'))->invoke($patcher);
 });
 
+test('multi-group membership patch follows the invoice journal baseline patch', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 124);
+
+    expect($patches)->toHaveKey(125)
+        ->and($patches[125][1])->toBe('patch125');
+});
+
+test('multi-group membership patch copies assignments then drops the column', function (): void {
+    $tableExists = Mockery::mock(PDOStatement::class);
+    $tableExists->expects('execute')->with(['table' => 'client_group_members'])->andReturnTrue();
+    $tableExists->expects('fetchColumn')->andReturn(false);
+
+    $createTable = Mockery::mock(PDOStatement::class);
+    $createTable->expects('execute')->with([])->andReturnTrue();
+
+    $clientColumns = Mockery::mock(PDOStatement::class);
+    $clientColumns->expects('execute')->with([])->andReturnTrue();
+    $clientColumns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['Field' => 'id'],
+        ['Field' => 'client_group_id'],
+    ]);
+
+    $copyAssignments = Mockery::mock(PDOStatement::class);
+    $copyAssignments->expects('execute')->with([])->andReturnTrue();
+
+    $dropColumn = Mockery::mock(PDOStatement::class);
+    $dropColumn->expects('execute')->with([])->andReturnTrue();
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')
+        ->with('SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table LIMIT 1')
+        ->andReturn($tableExists);
+    $pdo->expects('prepare')
+        ->with(Mockery::pattern('/^CREATE TABLE `client_group_members` .*UNIQUE KEY `client_group_members_client_group`/'))
+        ->andReturn($createTable);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `client`')->andReturn($clientColumns);
+    $pdo->expects('prepare')
+        ->with('INSERT IGNORE INTO `client_group_members` (`client_id`, `client_group_id`) SELECT c.`id`, c.`client_group_id` FROM `client` c INNER JOIN `client_group` g ON g.`id` = c.`client_group_id`')
+        ->andReturn($copyAssignments);
+    $pdo->expects('prepare')
+        ->with('ALTER TABLE `client` DROP COLUMN `client_group_id`')
+        ->andReturn($dropColumn);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch125'))->invoke($patcher);
+});
+
+test('multi-group membership patch is a no-op once migrated', function (): void {
+    $tableExists = Mockery::mock(PDOStatement::class);
+    $tableExists->expects('execute')->with(['table' => 'client_group_members'])->andReturnTrue();
+    $tableExists->expects('fetchColumn')->andReturn('1');
+
+    $clientColumns = Mockery::mock(PDOStatement::class);
+    $clientColumns->expects('execute')->with([])->andReturnTrue();
+    $clientColumns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([['Field' => 'id']]);
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')
+        ->with('SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table LIMIT 1')
+        ->andReturn($tableExists);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `client`')->andReturn($clientColumns);
+    $pdo->shouldNotReceive('prepare')->with(Mockery::pattern('/^CREATE TABLE `client_group_members`/'));
+    $pdo->shouldNotReceive('prepare')->with(Mockery::pattern('/^INSERT IGNORE INTO `client_group_members`/'));
+    $pdo->shouldNotReceive('prepare')->with('ALTER TABLE `client` DROP COLUMN `client_group_id`');
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch125'))->invoke($patcher);
+});
+
 test('suspension grace patch indexes existing order tables', function (): void {
     $productColumns = Mockery::mock(PDOStatement::class);
     $productColumns->expects('execute')->with([])->andReturnTrue();
@@ -1284,10 +1361,11 @@ function withDbDriverConfig(array $dbConfig, Closure $callback): void
  * unrelated PDO mock, since migrateThemePackageLayout() now runs unconditionally regardless of
  * driver (see the dedicated tests above asserting its exact SQL/params).
  *
- * Also tolerates seedInvoiceNoteSettings() and storeSchemaMetadataHash() bookkeeping: both run
- * unconditionally on every platform (portable check-then-write SQL, no MySQL-only syntax), so
- * any applyCorePatches() test would trip over them otherwise. fetchColumn() reports "missing"
- * so the seed path exercises its INSERT branch.
+ * Also tolerates seedInvoiceNoteSettings(), migrateInvoiceImmutabilitySetting(), and
+ * storeSchemaMetadataHash() bookkeeping: all run unconditionally on every platform (portable
+ * check-then-write SQL, no MySQL-only syntax), so any applyCorePatches() test would trip over
+ * them otherwise. fetchColumn() reports "missing" so the seed/migration paths exercise their
+ * INSERT branches and the legacy-key deletes run as no-ops.
  */
 function mockPdoAllowingThemeMigrationCalls(): Mockery\MockInterface
 {
@@ -1298,6 +1376,7 @@ function mockPdoAllowingThemeMigrationCalls(): Mockery\MockInterface
     $pdo = Mockery::mock(PDO::class);
     $pdo->shouldReceive('prepare')
         ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'UPDATE setting')
+            || str_starts_with($sql, 'DELETE FROM setting')
             || str_starts_with($sql, 'UPDATE extension_meta')
             || $sql === "DELETE FROM extension_meta WHERE extension = 'mod_hook' AND meta_key = 'listener'"
             || $sql === "DELETE FROM extension WHERE type = 'hook'"))
@@ -1381,6 +1460,142 @@ test('applyCorePatches removes retired hook data on non-MySQL drivers and remain
             ->and((int) $pdo->query("SELECT COUNT(*) FROM extension_meta WHERE extension = 'mod_hook' AND meta_key = 'config'")->fetchColumn())->toBe(1)
             ->and((int) $pdo->query("SELECT COUNT(*) FROM extension_meta WHERE extension = 'mod_invoice' AND meta_key = 'listener'")->fetchColumn())->toBe(1)
             ->and((int) $pdo->query("SELECT COUNT(*) FROM extension WHERE type = 'mod' AND name = 'invoice'")->fetchColumn())->toBe(1);
+    });
+});
+
+test('migrateInvoiceImmutabilitySetting folds legacy toggles into the single setting', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        $pdo = new PDO('sqlite::memory:');
+        $pdo->exec('CREATE TABLE setting (param TEXT PRIMARY KEY, value TEXT, public INTEGER, created_at TEXT, updated_at TEXT)');
+        $pdo->exec("INSERT INTO setting (param, value, public, created_at, updated_at) VALUES ('invoice_allow_edit_unpaid', '1', 0, '2026-01-01 00:00:00', '2026-01-01 00:00:00')");
+
+        $di = new Pimple\Container();
+        $di['pdo'] = $pdo;
+        $di['logger'] = new Tests\Helpers\TestLogger();
+
+        $patcher = new UpdatePatcher();
+        $patcher->setDi($di);
+        $migrate = fn (): mixed => (new ReflectionMethod($patcher, 'migrateInvoiceImmutabilitySetting'))->invoke($patcher);
+
+        // Either legacy opt-in maps to relaxed, and the legacy rows are removed.
+        $migrate();
+        expect($pdo->query("SELECT value FROM setting WHERE param = 'invoice_immutability'")->fetchColumn())->toBe('relaxed')
+            ->and((int) $pdo->query("SELECT COUNT(*) FROM setting WHERE param IN ('invoice_allow_edit_unpaid', 'invoice_allow_delete_approved')")->fetchColumn())->toBe(0);
+
+        // Idempotent: a second run keeps the migrated value.
+        $migrate();
+        expect($pdo->query("SELECT value FROM setting WHERE param = 'invoice_immutability'")->fetchColumn())->toBe('relaxed');
+
+        // Legacy rows left at off converge to strict.
+        $pdo->exec("INSERT INTO setting (param, value, public, created_at, updated_at) VALUES ('invoice_allow_delete_approved', '0', 0, '2026-01-01 00:00:00', '2026-01-01 00:00:00')");
+        $pdo->exec("DELETE FROM setting WHERE param = 'invoice_immutability'");
+        $migrate();
+        expect($pdo->query("SELECT value FROM setting WHERE param = 'invoice_immutability'")->fetchColumn())->toBe('strict')
+            ->and((int) $pdo->query("SELECT COUNT(*) FROM setting WHERE param IN ('invoice_allow_edit_unpaid', 'invoice_allow_delete_approved')")->fetchColumn())->toBe(0);
+
+        // Fresh installs without any legacy rows get nothing (strict is the code default).
+        $pdo->exec("DELETE FROM setting WHERE param = 'invoice_immutability'");
+        $migrate();
+        expect((int) $pdo->query("SELECT COUNT(*) FROM setting WHERE param = 'invoice_immutability'")->fetchColumn())->toBe(0);
+    });
+});
+
+test('migrateInvoiceAutoIssueSetting carries the renamed toggle over', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        $pdo = new PDO('sqlite::memory:');
+        $pdo->exec('CREATE TABLE setting (param TEXT PRIMARY KEY, value TEXT, public INTEGER, created_at TEXT, updated_at TEXT)');
+        $pdo->exec("INSERT INTO setting (param, value, public, created_at, updated_at) VALUES ('invoice_auto_approval', '0', 0, '2026-01-01 00:00:00', '2026-01-01 00:00:00')");
+
+        $di = new Pimple\Container();
+        $di['pdo'] = $pdo;
+        $di['logger'] = new Tests\Helpers\TestLogger();
+
+        $patcher = new UpdatePatcher();
+        $patcher->setDi($di);
+        $migrate = fn (): mixed => (new ReflectionMethod($patcher, 'migrateInvoiceAutoIssueSetting'))->invoke($patcher);
+
+        // The value carries over and the legacy row is removed.
+        $migrate();
+        expect($pdo->query("SELECT value FROM setting WHERE param = 'invoice_auto_issue'")->fetchColumn())->toBe('0')
+            ->and((int) $pdo->query("SELECT COUNT(*) FROM setting WHERE param = 'invoice_auto_approval'")->fetchColumn())->toBe(0);
+
+        // Idempotent: a second run keeps the migrated value.
+        $migrate();
+        expect($pdo->query("SELECT value FROM setting WHERE param = 'invoice_auto_issue'")->fetchColumn())->toBe('0');
+
+        // An already-migrated install is left alone.
+        $pdo->exec("UPDATE setting SET value = '1' WHERE param = 'invoice_auto_issue'");
+        $pdo->exec("INSERT INTO setting (param, value, public, created_at, updated_at) VALUES ('invoice_auto_approval', '0', 0, '2026-01-01 00:00:00', '2026-01-01 00:00:00')");
+        $migrate();
+        expect($pdo->query("SELECT value FROM setting WHERE param = 'invoice_auto_issue'")->fetchColumn())->toBe('1')
+            ->and((int) $pdo->query("SELECT COUNT(*) FROM setting WHERE param = 'invoice_auto_approval'")->fetchColumn())->toBe(0);
+    });
+});
+
+test('renameInvoiceApprovedColumn renames the flag while preserving values', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        $path = Path::join(sys_get_temp_dir(), 'fossbilling-invoice-rename-' . bin2hex(random_bytes(8)) . '.sqlite');
+
+        try {
+            $pdo = new PDO('sqlite:' . $path);
+            $pdo->exec('CREATE TABLE invoice (id INTEGER PRIMARY KEY, status TEXT, approved TINYINT(1) NOT NULL DEFAULT 0, due_at TEXT)');
+            $pdo->exec('CREATE INDEX invoice_status_approved_due_at_idx ON invoice (status, approved, due_at)');
+            $pdo->exec('INSERT INTO invoice (id, approved) VALUES (1, 1)');
+
+            $di = new Pimple\Container();
+            $di['pdo'] = $pdo;
+            $di['dbal'] = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $path]);
+            $di['logger'] = new Tests\Helpers\TestLogger();
+
+            $patcher = new UpdatePatcher();
+            $patcher->setDi($di);
+            $rename = fn (): mixed => (new ReflectionMethod($patcher, 'renameInvoiceApprovedColumn'))->invoke($patcher);
+
+            $rename();
+            expect((int) $pdo->query("SELECT COUNT(*) FROM pragma_table_info('invoice') WHERE name = 'issued'")->fetchColumn())->toBe(1)
+                ->and((int) $pdo->query("SELECT COUNT(*) FROM pragma_table_info('invoice') WHERE name = 'approved'")->fetchColumn())->toBe(0)
+                ->and((int) $pdo->query('SELECT issued FROM invoice WHERE id = 1')->fetchColumn())->toBe(1);
+
+            // Idempotent: a second run and a fresh install (no approved column) are no-ops.
+            $rename();
+            expect((int) $pdo->query('SELECT issued FROM invoice WHERE id = 1')->fetchColumn())->toBe(1);
+        } finally {
+            (new Filesystem())->remove($path);
+        }
+    });
+});
+
+test('renameInvoiceStatusIndex swaps the legacy composite index name', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        $path = Path::join(sys_get_temp_dir(), 'fossbilling-invoice-index-' . bin2hex(random_bytes(8)) . '.sqlite');
+
+        try {
+            $pdo = new PDO('sqlite:' . $path);
+            $pdo->exec('CREATE TABLE invoice (id INTEGER PRIMARY KEY, status TEXT, issued TINYINT(1) NOT NULL DEFAULT 0, due_at TEXT)');
+            $pdo->exec('CREATE INDEX invoice_status_approved_due_at_idx ON invoice (status, issued, due_at)');
+
+            $di = new Pimple\Container();
+            $di['pdo'] = $pdo;
+            $di['dbal'] = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $path]);
+            $di['logger'] = new Tests\Helpers\TestLogger();
+
+            $patcher = new UpdatePatcher();
+            $patcher->setDi($di);
+            $rename = fn (): mixed => (new ReflectionMethod($patcher, 'renameInvoiceStatusIndex'))->invoke($patcher);
+
+            $rename();
+            $indexes = $pdo->query("SELECT name FROM pragma_index_list('invoice')")->fetchAll(PDO::FETCH_COLUMN);
+            expect($indexes)->toContain('invoice_status_issued_due_at_idx')
+                ->and($indexes)->not->toContain('invoice_status_approved_due_at_idx');
+
+            // Idempotent: a second run is a no-op.
+            $rename();
+            $indexes = $pdo->query("SELECT name FROM pragma_index_list('invoice')")->fetchAll(PDO::FETCH_COLUMN);
+            expect($indexes)->toContain('invoice_status_issued_due_at_idx')
+                ->and($indexes)->not->toContain('invoice_status_approved_due_at_idx');
+        } finally {
+            (new Filesystem())->remove($path);
+        }
     });
 });
 
@@ -1508,13 +1723,16 @@ test('applyCorePatches migrates the theme setting values on a non-MySQL driver, 
             ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'UPDATE extension_meta')))
             ->andReturn($extensionMetaStatement);
 
-        // seedInvoiceNoteSettings() also runs unconditionally from applyCorePatches() - allow
-        // its check-then-insert bookkeeping without asserting on it here.
+        // seedInvoiceNoteSettings() and migrateInvoiceImmutabilitySetting() also run
+        // unconditionally from applyCorePatches() - allow their check-then-write
+        // bookkeeping without asserting on it here. fetchColumn() reports "missing"
+        // so the migration takes its skip-INSERT path and the legacy-key deletes
+        // run as no-ops.
         $seedStatement = Mockery::mock(PDOStatement::class);
         $seedStatement->shouldReceive('execute')->andReturnTrue();
         $seedStatement->shouldReceive('fetchColumn')->andReturn(false);
         $pdo->shouldReceive('prepare')
-            ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'SELECT value FROM setting') || str_starts_with($sql, 'INSERT INTO setting')))
+            ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'SELECT value FROM setting') || str_starts_with($sql, 'INSERT INTO setting') || str_starts_with($sql, 'DELETE FROM setting')))
             ->andReturn($seedStatement);
         allowRetiredHookCleanupCalls($pdo);
 
@@ -1557,13 +1775,14 @@ test('applyCorePatches migrates saved theme settings/presets in extension_meta o
             ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'UPDATE setting')))
             ->andReturn($otherStatement);
 
-        // seedInvoiceNoteSettings() also runs unconditionally from applyCorePatches() - allow
-        // its check-then-insert bookkeeping without asserting on it here.
+        // seedInvoiceNoteSettings() and migrateInvoiceImmutabilitySetting() also run
+        // unconditionally from applyCorePatches() - allow their check-then-write
+        // bookkeeping without asserting on it here.
         $seedStatement = Mockery::mock(PDOStatement::class);
         $seedStatement->shouldReceive('execute')->andReturnTrue();
         $seedStatement->shouldReceive('fetchColumn')->andReturn(false);
         $pdo->shouldReceive('prepare')
-            ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'SELECT value FROM setting') || str_starts_with($sql, 'INSERT INTO setting')))
+            ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'SELECT value FROM setting') || str_starts_with($sql, 'INSERT INTO setting') || str_starts_with($sql, 'DELETE FROM setting')))
             ->andReturn($seedStatement);
         allowRetiredHookCleanupCalls($pdo);
 
@@ -1756,6 +1975,66 @@ test('availablePatches reports 0 on a non-MySQL driver regardless of the last_pa
         $patcher->setDi($di);
 
         expect($patcher->availablePatches())->toBe(0);
+    });
+});
+
+test('patch status reports the database level against the code level on a MySQL driver', function (): void {
+    withMysqlDbDriver(function (): void {
+        $statement = Mockery::mock(PDOStatement::class);
+        $statement->shouldReceive('execute')->andReturnTrue();
+        $statement->shouldReceive('fetchColumn')->andReturn('120');
+
+        $pdo = Mockery::mock(PDO::class);
+        $pdo->shouldReceive('prepare')->andReturn($statement);
+
+        $di = new Pimple\Container();
+        $di['pdo'] = $pdo;
+
+        $patcher = new UpdatePatcher();
+        $patcher->setDi($di);
+
+        $expectedPending = count((new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 120));
+
+        expect($patcher->patchStatus())->toBe([
+            'current' => 120,
+            'latest' => $patcher->latestPatchLevel(),
+            'pending' => $expectedPending,
+        ])->and($expectedPending)->toBeGreaterThan(0);
+    });
+});
+
+test('patch status reports unknown levels on a non-MySQL driver without touching the database', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        $pdo = Mockery::mock(PDO::class);
+        $pdo->shouldNotReceive('prepare');
+        $pdo->shouldNotReceive('query');
+
+        $di = new Pimple\Container();
+        $di['pdo'] = $pdo;
+
+        $patcher = new UpdatePatcher();
+        $patcher->setDi($di);
+
+        expect($patcher->patchStatus())->toBe([
+            'current' => null,
+            'latest' => $patcher->latestPatchLevel(),
+            'pending' => null,
+        ]);
+    });
+});
+
+test('patch status reports unknown levels when the database cannot be read', function (): void {
+    withMysqlDbDriver(function (): void {
+        $pdo = Mockery::mock(PDO::class);
+        $pdo->shouldReceive('prepare')->andThrow(new Exception('database unreachable'));
+
+        $di = new Pimple\Container();
+        $di['pdo'] = $pdo;
+
+        $patcher = new UpdatePatcher();
+        $patcher->setDi($di);
+
+        expect($patcher->patchStatus()['pending'])->toBeNull();
     });
 });
 
@@ -2226,11 +2505,387 @@ test('ensureSchemaInSync restores note columns missing from an older schema, the
     }
 });
 
+test('ensureSchemaInSync renames the issue flag on a code-only deploy instead of duplicating it', function (): void {
+    // A code-only deploy (no version bump) never runs the version-gated
+    // patch121, so the drift healer must rename approved to issued itself -
+    // the additive sync alone would add an empty issued column next to the
+    // data-bearing approved one (or leave queries crashing on it).
+    withNonMysqlDbDriver(function (): void {
+        $dbFile = Path::join(sys_get_temp_dir(), 'fossbilling-schema-sync-rename-' . bin2hex(random_bytes(8)) . '.sqlite');
+
+        try {
+            $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $dbFile]);
+            $entityManager = FOSSBilling\Doctrine\EntityManagerFactory::create($connection);
+            FOSSBilling\Doctrine\SchemaInstaller::createSchema($entityManager);
+
+            // Rewind the invoice table to its pre-rename shape with live data.
+            $connection->executeStatement('DROP INDEX invoice_status_issued_due_at_idx');
+            $connection->executeStatement('ALTER TABLE invoice RENAME COLUMN issued TO approved');
+            $connection->executeStatement('CREATE INDEX invoice_status_approved_due_at_idx ON invoice (status, approved, due_at)');
+            $connection->executeStatement("INSERT INTO invoice (status, approved) VALUES ('unpaid', 1)");
+
+            $columnNames = static fn (): array => array_column(
+                $connection->fetchAllAssociative('PRAGMA table_info(invoice)'),
+                'name'
+            );
+            expect($columnNames())->toContain('approved');
+
+            $pdo = new PDO('sqlite:' . $dbFile);
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+            $di = new Pimple\Container();
+            $di['pdo'] = $pdo;
+            $di['em'] = $entityManager;
+            $di['dbal'] = $connection;
+            $di['logger'] = new Tests\Helpers\TestLogger();
+
+            $patcher = new UpdatePatcher();
+            $patcher->setDi($di);
+
+            expect($patcher->ensureSchemaInSync())->toBeTrue();
+            expect($columnNames())->toContain('issued')
+                ->and($columnNames())->not->toContain('approved')
+                ->and((int) $pdo->query('SELECT issued FROM invoice')->fetchColumn())->toBe(1);
+
+            $names = array_column($connection->fetchAllAssociative("SELECT name FROM pragma_index_list('invoice')"), 'name');
+            expect($names)->toContain('invoice_status_issued_due_at_idx')
+                ->and($names)->not->toContain('invoice_status_approved_due_at_idx');
+
+            // The recorded hash now matches, so the next request is a single-SELECT no-op.
+            expect($patcher->ensureSchemaInSync())->toBeFalse();
+        } finally {
+            (new Filesystem())->remove($dbFile);
+        }
+    });
+});
+
+test('ensureSchemaInSync drops the dead buyer country-code column on a code-only deploy', function (): void {
+    // A code-only deploy never runs the version-gated patch122, so the drift
+    // healer must drop buyer_phone_cc itself - the additive sync only ever
+    // adds, so without this the unmapped column lingers forever.
+    withNonMysqlDbDriver(function (): void {
+        $dbFile = Path::join(sys_get_temp_dir(), 'fossbilling-schema-sync-drop-cc-' . bin2hex(random_bytes(8)) . '.sqlite');
+
+        try {
+            $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $dbFile]);
+            $entityManager = FOSSBilling\Doctrine\EntityManagerFactory::create($connection);
+            FOSSBilling\Doctrine\SchemaInstaller::createSchema($entityManager);
+
+            // Re-add the removed column as it exists on pre-cleanup installs.
+            $connection->executeStatement('ALTER TABLE invoice ADD COLUMN buyer_phone_cc VARCHAR(255) DEFAULT NULL');
+
+            $columnNames = static fn (): array => array_column(
+                $connection->fetchAllAssociative('PRAGMA table_info(invoice)'),
+                'name'
+            );
+            expect($columnNames())->toContain('buyer_phone_cc');
+
+            $pdo = new PDO('sqlite:' . $dbFile);
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+            $di = new Pimple\Container();
+            $di['pdo'] = $pdo;
+            $di['em'] = $entityManager;
+            $di['dbal'] = $connection;
+            $di['logger'] = new Tests\Helpers\TestLogger();
+
+            $patcher = new UpdatePatcher();
+            $patcher->setDi($di);
+
+            expect($patcher->ensureSchemaInSync())->toBeTrue();
+            expect($columnNames())->not->toContain('buyer_phone_cc');
+
+            // The recorded hash now matches, so the next request is a single-SELECT no-op.
+            expect($patcher->ensureSchemaInSync())->toBeFalse();
+        } finally {
+            (new Filesystem())->remove($dbFile);
+        }
+    });
+});
+
 test('invoice reissue patch follows the credit and debit note patch', function (): void {
     $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 119);
 
     expect($patches)->toHaveKey(120)
         ->and($patches[120][1])->toBe('patch120');
+});
+
+test('invoice issued-rename patch follows the reissue patch', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 120);
+
+    expect($patches)->toHaveKey(121)
+        ->and($patches[121][1])->toBe('patch121');
+});
+
+test('invoice buyer-phone-cc removal patch follows the issued-rename patch', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 121);
+
+    expect($patches)->toHaveKey(122)
+        ->and($patches[122][1])->toBe('patch122');
+});
+
+test('invoice buyer-phone-cc removal patch drops the dead column', function (): void {
+    $invoiceColumns = Mockery::mock(PDOStatement::class);
+    $invoiceColumns->expects('execute')->with([])->andReturnTrue();
+    $invoiceColumns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([['Field' => 'buyer_phone_cc']]);
+
+    $dropColumn = Mockery::mock(PDOStatement::class);
+    $dropColumn->expects('execute')->with([])->andReturnTrue();
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `invoice`')->andReturn($invoiceColumns);
+    $pdo->expects('prepare')
+        ->with('ALTER TABLE `invoice` DROP COLUMN `buyer_phone_cc`')
+        ->andReturn($dropColumn);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch122'))->invoke($patcher);
+});
+
+test('invoice buyer-phone-cc removal patch is a no-op once the column is gone', function (): void {
+    $invoiceColumns = Mockery::mock(PDOStatement::class);
+    $invoiceColumns->expects('execute')->with([])->andReturnTrue();
+    $invoiceColumns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([['Field' => 'buyer_phone']]);
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `invoice`')->andReturn($invoiceColumns);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch122'))->invoke($patcher);
+});
+
+test('invoice journal patch follows the buyer-phone-cc removal patch', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 122);
+
+    expect($patches)->toHaveKey(123)
+        ->and($patches[123][1])->toBe('patch123');
+});
+
+test('invoice journal patch creates the journal table for existing installs', function (): void {
+    $tableCheck = Mockery::mock(PDOStatement::class);
+    $tableCheck->expects('execute')->with(['table' => 'invoice_event'])->andReturnTrue();
+    $tableCheck->expects('fetchColumn')->with()->andReturn(false);
+
+    $createTable = Mockery::mock(PDOStatement::class);
+    $createTable->expects('execute')->with([])->andReturnTrue();
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')
+        ->with('SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table LIMIT 1')
+        ->andReturn($tableCheck);
+    $pdo->expects('prepare')
+        ->with("CREATE TABLE `invoice_event` (`id` bigint(20) NOT NULL AUTO_INCREMENT, `invoice_id` bigint(20) DEFAULT NULL, `type` varchar(50) NOT NULL DEFAULT 'updated', `admin_id` bigint(20) DEFAULT NULL, `client_id` bigint(20) DEFAULT NULL, `snapshot` JSON DEFAULT NULL, `created_at` datetime DEFAULT NULL, PRIMARY KEY (`id`), KEY `invoice_event_invoice_id_idx` (`invoice_id`))")
+        ->andReturn($createTable);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch123'))->invoke($patcher);
+});
+
+test('invoice journal patch is a no-op once the table exists', function (): void {
+    $tableCheck = Mockery::mock(PDOStatement::class);
+    $tableCheck->expects('execute')->with(['table' => 'invoice_event'])->andReturnTrue();
+    $tableCheck->expects('fetchColumn')->with()->andReturn(1);
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')
+        ->with('SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table LIMIT 1')
+        ->andReturn($tableCheck);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch123'))->invoke($patcher);
+});
+
+test('invoice journal backfill patch follows the journal table patch', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 123);
+
+    expect($patches)->toHaveKey(124)
+        ->and($patches[124][1])->toBe('patch124');
+});
+
+test('invoice journal backfill writes one baseline entry per invoice missing from the journal', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        $dbFile = Path::join(sys_get_temp_dir(), 'fossbilling-journal-backfill-' . bin2hex(random_bytes(8)) . '.sqlite');
+
+        try {
+            $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $dbFile]);
+            $entityManager = FOSSBilling\Doctrine\EntityManagerFactory::create($connection);
+            FOSSBilling\Doctrine\SchemaInstaller::createSchema($entityManager);
+
+            $now = date('Y-m-d H:i:s');
+            $connection->executeStatement(
+                "INSERT INTO invoice (status, issued, serie, nr, client_id, buyer_first_name, created_at) VALUES
+                    ('unpaid', 0, 'FOSS', NULL, 5, NULL, :now),
+                    ('paid', 1, 'FOSS', '7', 5, 'Ada', :now),
+                    ('canceled', 1, 'FOSS', '8', NULL, NULL, :now)",
+                ['now' => $now]
+            );
+
+            $pdo = new PDO('sqlite:' . $dbFile);
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+            $di = new Pimple\Container();
+            $di['pdo'] = $pdo;
+            $di['dbal'] = $connection;
+            $di['logger'] = new Tests\Helpers\TestLogger();
+
+            $patcher = new UpdatePatcher();
+            $patcher->setDi($di);
+            (new ReflectionMethod($patcher, 'backfillInvoiceJournal'))->invoke($patcher);
+
+            $entries = $connection->fetchAllAssociative('SELECT invoice_id, type, client_id, snapshot FROM invoice_event ORDER BY invoice_id');
+            expect($entries)->toHaveCount(3)
+                ->and($entries[0]['type'])->toBe('created')
+                ->and($entries[1]['type'])->toBe('paid')
+                ->and($entries[2]['type'])->toBe('canceled');
+
+            $paidSnapshot = json_decode((string) $entries[1]['snapshot'], true);
+            expect($paidSnapshot['serie_nr'])->toBe('FOSS00007')
+                ->and($paidSnapshot['buyer']['first_name'])->toBe('Ada')
+                ->and($paidSnapshot['total'])->toBeNull();
+
+            // Idempotent: a second run writes nothing more.
+            (new ReflectionMethod($patcher, 'backfillInvoiceJournal'))->invoke($patcher);
+            expect($connection->fetchOne('SELECT COUNT(*) FROM invoice_event'))->toBe(3);
+        } finally {
+            (new Filesystem())->remove($dbFile);
+        }
+    });
+});
+
+test('journal baseline writes are claimed per invoice', function (): void {
+    // Two back-to-back writes for the same invoice - what overlapping healers
+    // would attempt - must leave exactly one baseline entry behind.
+    withNonMysqlDbDriver(function (): void {
+        $dbFile = Path::join(sys_get_temp_dir(), 'fossbilling-journal-claim-' . bin2hex(random_bytes(8)) . '.sqlite');
+
+        try {
+            $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $dbFile]);
+            $entityManager = FOSSBilling\Doctrine\EntityManagerFactory::create($connection);
+            FOSSBilling\Doctrine\SchemaInstaller::createSchema($entityManager);
+
+            $now = date('Y-m-d H:i:s');
+            $connection->executeStatement(
+                "INSERT INTO invoice (status, issued, serie, nr, client_id, created_at) VALUES ('unpaid', 0, 'FOSS', NULL, 5, :now)",
+                ['now' => $now]
+            );
+
+            $pdo = new PDO('sqlite:' . $dbFile);
+            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+            $di = new Pimple\Container();
+            $di['pdo'] = $pdo;
+            $di['dbal'] = $connection;
+            $di['logger'] = new Tests\Helpers\TestLogger();
+
+            $patcher = new UpdatePatcher();
+            $patcher->setDi($di);
+            $writeBaseline = (new ReflectionMethod($patcher, 'writeBackfillJournalEntry'))->getClosure($patcher);
+            $row = [
+                'id' => 1, 'nr' => null, 'serie' => 'FOSS', 'status' => 'unpaid', 'issued' => 0,
+                'client_id' => 5, 'paid_at' => null, 'due_at' => null, 'created_at' => $now,
+            ];
+
+            $writeBaseline($connection, $row, 5);
+            $writeBaseline($connection, $row, 5);
+
+            expect($connection->fetchOne('SELECT COUNT(*) FROM invoice_event'))->toBe(1);
+        } finally {
+            (new Filesystem())->remove($dbFile);
+        }
+    });
+});
+
+test('invoice issued-rename patch copies values and drops the legacy column', function (): void {
+    $invoiceColumns = Mockery::mock(PDOStatement::class);
+    $invoiceColumns->expects('execute')->with([])->twice()->andReturnTrue();
+    $invoiceColumns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->twice()->andReturn([['Field' => 'approved']]);
+
+    $addIssuedColumn = Mockery::mock(PDOStatement::class);
+    $addIssuedColumn->expects('execute')->with([])->andReturnTrue();
+    $copyValues = Mockery::mock(PDOStatement::class);
+    $copyValues->expects('execute')->with([])->andReturnTrue();
+    $dropApprovedColumn = Mockery::mock(PDOStatement::class);
+    $dropApprovedColumn->expects('execute')->with([])->andReturnTrue();
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `invoice`')->twice()->andReturn($invoiceColumns, $invoiceColumns);
+    $pdo->expects('prepare')
+        ->with('ALTER TABLE `invoice` ADD COLUMN `issued` TINYINT(1) NOT NULL DEFAULT 0 AFTER `approved`')
+        ->andReturn($addIssuedColumn);
+    $pdo->expects('prepare')
+        ->with('UPDATE `invoice` SET `issued` = `approved`')
+        ->andReturn($copyValues);
+    $pdo->expects('prepare')
+        ->with('ALTER TABLE `invoice` DROP COLUMN `approved`')
+        ->andReturn($dropApprovedColumn);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch121'))->invoke($patcher);
+});
+
+test('invoice issued-rename patch is a no-op once the renamed column exists', function (): void {
+    $invoiceColumns = Mockery::mock(PDOStatement::class);
+    $invoiceColumns->expects('execute')->with([])->andReturnTrue();
+    $invoiceColumns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([['Field' => 'issued']]);
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `invoice`')->andReturn($invoiceColumns);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch121'))->invoke($patcher);
+});
+
+test('invoice issued-rename patch heals a crash between column add and value copy', function (): void {
+    // Both columns exist with issued still defaulted: a crash after ADD but
+    // before UPDATE. The copy must still run before the legacy column drops.
+    $invoiceColumns = Mockery::mock(PDOStatement::class);
+    $invoiceColumns->expects('execute')->with([])->twice()->andReturnTrue();
+    $invoiceColumns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->twice()->andReturn([['Field' => 'approved'], ['Field' => 'issued']]);
+
+    $copyValues = Mockery::mock(PDOStatement::class);
+    $copyValues->expects('execute')->with([])->andReturnTrue();
+    $dropApprovedColumn = Mockery::mock(PDOStatement::class);
+    $dropApprovedColumn->expects('execute')->with([])->andReturnTrue();
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `invoice`')->twice()->andReturn($invoiceColumns, $invoiceColumns);
+    $pdo->expects('prepare')
+        ->with('UPDATE `invoice` SET `issued` = `approved`')
+        ->andReturn($copyValues);
+    $pdo->expects('prepare')
+        ->with('ALTER TABLE `invoice` DROP COLUMN `approved`')
+        ->andReturn($dropApprovedColumn);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch121'))->invoke($patcher);
 });
 
 test('invoice reissue patch adds the missing replacement columns and indexes for existing installs', function (): void {

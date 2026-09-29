@@ -163,3 +163,29 @@ test('reserveNextNumericParamValue never hands out a duplicate value when called
     sort($reserved);
     expect($reserved)->toBe(range(0, $totalReservations - 1));
 });
+
+/*
+ * The missing half of the guarantee above: a reservation made inside an outer transaction that
+ * then rolls back must not advance the counter. The reservation nests via SAVEPOINT on the one
+ * shared connection, so the outer rollback undoes it - a failed invoice issuance burns no number
+ * and leaves no gap in the series. Single worker, no concurrency needed: rollback semantics are
+ * a single-connection property.
+ *
+ * Worker output is three values: the reservation made inside the doomed transaction, the raw
+ * counter value after the rollback, and a fresh reservation afterwards. All three must be 0.
+ */
+test('reserveNextNumericParamValue inside a rolled-back outer transaction leaves no gap', function (): void {
+    $reserved = reserveNumericParamValueConcurrently(
+        <<<'PHP'
+            $connection->beginTransaction();
+            $results[] = $service->reserveNextNumericParamValue('concurrency_counter');
+            $connection->rollBack();
+            $results[] = (int) $connection->fetchOne("SELECT value FROM setting WHERE param = 'concurrency_counter'");
+            $results[] = $service->reserveNextNumericParamValue('concurrency_counter');
+            PHP,
+        1,
+        0,
+    );
+
+    expect($reserved)->toBe([0, 0, 0]);
+});
