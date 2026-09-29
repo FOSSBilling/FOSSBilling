@@ -4484,18 +4484,7 @@ class UpdatePatcher implements InjectionAwareInterface
         // portable schema sync; the data copy and column drop are MySQL-only,
         // like all historical data migrations.
         if (!$this->tableExists('client_group_members')) {
-            $this->executeSql(
-                'CREATE TABLE `client_group_members` ('
-                . '`id` bigint(20) NOT NULL AUTO_INCREMENT, '
-                . '`client_id` bigint(20) NOT NULL, '
-                . '`client_group_id` bigint(20) NOT NULL, '
-                . '`created_at` datetime DEFAULT NULL, '
-                . '`updated_at` datetime DEFAULT NULL, '
-                . 'PRIMARY KEY (`id`), '
-                . 'UNIQUE KEY `client_group_members_client_group` (`client_id`, `client_group_id`), '
-                . 'KEY `client_group_members_group_idx` (`client_group_id`)'
-                . ') ENGINE=InnoDB DEFAULT CHARSET=utf8'
-            );
+            $this->executeSql('CREATE TABLE `client_group_members` (`id` bigint(20) NOT NULL AUTO_INCREMENT, `client_id` bigint(20) NOT NULL, `client_group_id` bigint(20) NOT NULL, `created_at` datetime DEFAULT NULL, `updated_at` datetime DEFAULT NULL, PRIMARY KEY (`id`), UNIQUE KEY `client_group_members_client_group` (`client_id`, `client_group_id`), KEY `client_group_members_group_idx` (`client_group_id`)) ENGINE=InnoDB DEFAULT CHARSET=utf8');
         }
 
         if ($this->tableHasColumn('client', 'client_group_id')) {
