@@ -4440,6 +4440,8 @@ class UpdatePatcher implements InjectionAwareInterface
                 UNIQUE KEY `totp_credential_owner_unique` (`owner_type`, `owner_id`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         ');
+    }
+    
     private function patch121(): void
     {
         // The invoice issue-terminology rename moves invoice.approved to
