@@ -308,6 +308,23 @@ class ServiceSubscription implements InjectionAwareInterface
     }
 
     /**
+     * Whether the order is paid through an active gateway subscription.
+     * Such orders are renewed by the gateway's subscription payment flow and
+     * must keep their one-order-per-invoice shape, so the renewal batch
+     * excludes them from merging.
+     */
+    public function hasActiveSubscriptionForOrder(Order $order): bool
+    {
+        foreach ($this->getSubscriptionsForOrder($order, 'active') as $subscription) {
+            if (trim((string) $subscription->getSid()) !== '') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * @return list<Subscription>
      */
     private function getSubscriptionsForOrder(Order $order, ?string $status = null): array

@@ -385,6 +385,23 @@
                                         </label>
                                     </div>
                                 </div>
+                                <div class="col-xl-3">
+                                    <label class="form-label d-block">{{ 'Merge Renewal Invoices'|trans }}</label>
+                                    <div class="d-flex flex-wrap gap-3">
+                                        <label class="form-check">
+                                            <input class="form-check-input" id="radioMergeRenewalsInherit" type="radio" name="merge_renewals" value=""{% if client.merge_renewals is null %} checked{% endif %}>
+                                            <span class="form-check-label">{{ 'Inherit'|trans }}</span>
+                                        </label>
+                                        <label class="form-check">
+                                            <input class="form-check-input" id="radioMergeRenewalsYes" type="radio" name="merge_renewals" value="1"{% if client.merge_renewals is same as(true) %} checked{% endif %}>
+                                            <span class="form-check-label">{{ 'Yes'|trans }}</span>
+                                        </label>
+                                        <label class="form-check">
+                                            <input class="form-check-input" id="radioMergeRenewalsNo" type="radio" name="merge_renewals" value="0"{% if client.merge_renewals is same as(false) %} checked{% endif %}>
+                                            <span class="form-check-label">{{ 'No'|trans }}</span>
+                                        </label>
+                                    </div>
+                                </div>
                                 <div class="col-xl-6">
                                     <label class="form-label" for="created_at">{{ 'Account Created At'|trans }}</label>
                                     <div class="input-group">

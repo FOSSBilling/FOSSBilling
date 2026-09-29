@@ -249,6 +249,55 @@ test('client balance unique credit patch adds column and index for existing inst
     (new ReflectionMethod($patcher, 'patch96'))->invoke($patcher);
 });
 
+test('merge renewals patch follows the multi-group membership patch', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 125);
+
+    expect($patches)->toHaveKey(126)
+        ->and($patches[126][1])->toBe('patch126');
+});
+
+test('merge renewals patch adds the client preference column', function (): void {
+    $clientColumns = Mockery::mock(PDOStatement::class);
+    $clientColumns->expects('execute')->with([])->andReturnTrue();
+    $clientColumns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([['Field' => 'id']]);
+
+    $addColumn = Mockery::mock(PDOStatement::class);
+    $addColumn->expects('execute')->with([])->andReturnTrue();
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `client`')->andReturn($clientColumns);
+    $pdo->expects('prepare')
+        ->with('ALTER TABLE `client` ADD COLUMN `merge_renewals` TINYINT(1) DEFAULT NULL')
+        ->andReturn($addColumn);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch126'))->invoke($patcher);
+});
+
+test('merge renewals patch is a no-op once migrated', function (): void {
+    $clientColumns = Mockery::mock(PDOStatement::class);
+    $clientColumns->expects('execute')->with([])->andReturnTrue();
+    $clientColumns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['Field' => 'id'],
+        ['Field' => 'merge_renewals'],
+    ]);
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `client`')->andReturn($clientColumns);
+    $pdo->shouldNotReceive('prepare')->with(Mockery::pattern('/^ALTER TABLE `client` ADD COLUMN `merge_renewals`/'));
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch126'))->invoke($patcher);
+});
+
 test('multi-group membership patch follows the invoice journal baseline patch', function (): void {
     $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 124);
 

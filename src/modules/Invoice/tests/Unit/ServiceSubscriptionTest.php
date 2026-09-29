@@ -325,6 +325,38 @@ test('reports end-of-period cancellation support for active gateway subscription
     expect($service->canCancelAtPeriodEndForOrder($order))->toBeTrue();
 });
 
+test('detects orders paid through an active gateway subscription', function (): void {
+    $subscription = createEntity(Subscription::class, ['id' => 7]);
+    $subscription->setSid('sub_123');
+
+    $subRepo = Mockery::mock(SubscriptionRepository::class);
+    $subRepo->shouldReceive('find')->with(7)->andReturn($subscription);
+
+    $service = subscriptionService(subRepo: $subRepo);
+    $service->getDi()['dbal'] = createSubscriptionDbal();
+
+    // Order 10 sits on invoice 25, which carries the active subscription.
+    // Order 99 has no subscription rows at all.
+    expect($service->hasActiveSubscriptionForOrder(createEntity(Order::class, ['id' => 10])))->toBeTrue()
+        ->and($service->hasActiveSubscriptionForOrder(createEntity(Order::class, ['id' => 99])))->toBeFalse();
+});
+
+test('ignores subscriptions without a gateway sid', function (): void {
+    $subscription = createEntity(Subscription::class, ['id' => 7]);
+    $subscription->setSid('');
+
+    $subRepo = Mockery::mock(SubscriptionRepository::class);
+    $subRepo->shouldReceive('find')->with(7)->andReturn($subscription);
+
+    $dbal = createSubscriptionDbal();
+    $dbal->executeStatement("UPDATE subscription SET sid = '' WHERE id = 7");
+
+    $service = subscriptionService(subRepo: $subRepo);
+    $service->getDi()['dbal'] = $dbal;
+
+    expect($service->hasActiveSubscriptionForOrder(createEntity(Order::class, ['id' => 10])))->toBeFalse();
+});
+
 test('finds a subscription ID by gateway SID without throwing for missing records', function (): void {
     $dbal = Mockery::mock();
     $dbal->shouldReceive('fetchOne')

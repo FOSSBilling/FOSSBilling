@@ -61,6 +61,14 @@
                     <small class="form-text">{{ 'When enabled, client wallet top-up invoices skip the draft stage. All other invoices are always saved as drafts first.'|trans }}</small>
                 </div>
                 <div class="mt-3">
+                    <input type="hidden" name="invoice_merge_renewals" value="0">
+                    <label class="form-check form-switch form-switch-2">
+                        <input class="form-check-input" name="invoice_merge_renewals" type="checkbox" value="1" {% if params.invoice_merge_renewals|default('') == '1' %}checked{% endif %}>
+                        <span class="form-check-label">{{ 'Merge Renewal Invoices'|trans }}</span>
+                    </label>
+                    <small class="form-text">{{ 'When enabled, the renewal batch combines orders from the same client, currency, due date, and billing period onto a single invoice instead of generating one invoice per order. Orders paid through a gateway subscription are always invoiced separately. Can be overridden per client and per order.'|trans }}</small>
+                </div>
+                <div class="mt-3">
                     <label class="form-label d-block">{{ 'Invoice Immutability'|trans }}</label>
                     <div class="form-check">
                         <input class="form-check-input" id="radioImmutabilityStrict" type="radio" name="invoice_immutability" value="strict" {% if params.invoice_immutability|default('strict') == 'strict' %}checked{% endif %}>
