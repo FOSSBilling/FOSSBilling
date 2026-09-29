@@ -78,6 +78,7 @@ test('issuing a debit note charges extra without touching the original', functio
         // The journal links the debited event to its debit note.
         $journal = Tests\Helpers\ApiClient::request('admin/invoice/journal', ['id' => $invoiceId]);
         assertApiSuccess($journal);
+        assertApiResultIsArray($journal);
         $debitedEvents = array_values(array_filter(
             $journal->getResult(),
             fn (array $entry): bool => ($entry['type'] ?? null) === 'debited'
