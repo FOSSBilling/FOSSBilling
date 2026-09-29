@@ -61,6 +61,7 @@
                     <small class="form-text">{{ 'When enabled, client wallet top-up invoices skip the draft stage. All other invoices are always saved as drafts first.'|trans }}</small>
                 </div>
                 <div class="mt-3">
+                    <input type="hidden" name="invoice_merge_renewals" value="0">
                     <label class="form-check form-switch form-switch-2">
                         <input class="form-check-input" name="invoice_merge_renewals" type="checkbox" value="1" {% if params.invoice_merge_renewals|default('') == '1' %}checked{% endif %}>
                         <span class="form-check-label">{{ 'Merge Renewal Invoices'|trans }}</span>

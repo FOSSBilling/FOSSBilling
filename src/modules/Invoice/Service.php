@@ -3461,6 +3461,11 @@ class Service implements InjectionAwareInterface
      * every order so none are picked up again on the next run), and the
      * invoice falls due with the latest expiry in the bucket.
      *
+     * All renewal lines resolve before anything persists, and creation runs
+     * in a transaction: a failing order rolls back the draft and every order
+     * link instead of stranding a partial invoice that would hide linked
+     * orders from the next batch.
+     *
      * Like generateForOrder, everything happens while the invoice is a draft,
      * so invoice immutability is never violated: lines are never appended to
      * an already-issued invoice.
@@ -3477,37 +3482,43 @@ class Service implements InjectionAwareInterface
         $client = $this->di['em']->getRepository(Client::class)->find($first->getClientId())
             ?? throw new InformationException('Client not found');
 
-        $proforma = new Invoice();
-        $proforma->setClientId($client->getId() !== null ? (int) $client->getId() : null);
-        $proforma->setStatus(Invoice::STATUS_UNPAID);
-        $proforma->setCurrency($first->getCurrency());
-        $proforma->setIssued(false);
-        $this->di['em']->persist($proforma);
-        $this->di['em']->flush();
-
-        $this->setInvoiceDefaults($proforma);
-
-        $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
-        $dueAt = null;
+        $resolved = [];
         foreach ($orders as $order) {
-            ['price' => $price, 'line' => $line] = $this->resolveRenewalLine($order);
-            $invoiceItemService->generateFromOrder($proforma, $order, InvoiceItem::TASK_RENEW, $price, $line, $applyPromo);
-
-            $expiresAt = $order->getExpiresAt();
-            if ($expiresAt instanceof \DateTime && ($dueAt === null || $expiresAt > $dueAt)) {
-                $dueAt = $expiresAt;
-            }
+            $resolved[] = [$order, $this->resolveRenewalLine($order)];
         }
 
-        if ($dueAt instanceof \DateTime) {
-            $proforma->setDueAt($dueAt);
+        return $this->di['em']->wrapInTransaction(function () use ($resolved, $client, $first, $applyPromo): Invoice {
+            $proforma = new Invoice();
+            $proforma->setClientId($client->getId() !== null ? (int) $client->getId() : null);
+            $proforma->setStatus(Invoice::STATUS_UNPAID);
+            $proforma->setCurrency($first->getCurrency());
+            $proforma->setIssued(false);
             $this->di['em']->persist($proforma);
             $this->di['em']->flush();
-        }
 
-        $this->recordJournalEvent($proforma, InvoiceEvent::TYPE_CREATED);
+            $this->setInvoiceDefaults($proforma);
 
-        return $proforma;
+            $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
+            $dueAt = null;
+            foreach ($resolved as [$order, ['price' => $price, 'line' => $line]]) {
+                $invoiceItemService->generateFromOrder($proforma, $order, InvoiceItem::TASK_RENEW, $price, $line, $applyPromo);
+
+                $expiresAt = $order->getExpiresAt();
+                if ($expiresAt instanceof \DateTime && ($dueAt === null || $expiresAt > $dueAt)) {
+                    $dueAt = $expiresAt;
+                }
+            }
+
+            if ($dueAt instanceof \DateTime) {
+                $proforma->setDueAt($dueAt);
+                $this->di['em']->persist($proforma);
+                $this->di['em']->flush();
+            }
+
+            $this->recordJournalEvent($proforma, InvoiceEvent::TYPE_CREATED);
+
+            return $proforma;
+        });
     }
 
     public function generateInvoicesForExpiringOrders(): bool

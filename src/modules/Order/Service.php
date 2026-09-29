@@ -1391,7 +1391,7 @@ class Service implements InjectionAwareInterface
             return;
         }
 
-        $this->updateOrderMeta($order, [self::META_MERGE_RENEWALS => $value ? '1' : '0']);
+        $this->updateOrderMeta($order, [self::META_MERGE_RENEWALS => \FOSSBilling\Tools::normalizeBoolean($value) ? '1' : '0']);
     }
 
     public function updateOrderMeta(Order $order, $meta): int

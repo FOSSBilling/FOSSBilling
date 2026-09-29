@@ -391,6 +391,7 @@ test('update stores the tri-state merge_renewals preference', function (mixed $i
 })->with([
     'opt-in merges' => ['1', true],
     'opt-out never merges' => ['0', false],
+    'string false never merges' => ['false', false],
     'empty inherits the global setting' => ['', null],
 ]);
 

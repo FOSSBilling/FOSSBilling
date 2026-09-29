@@ -3802,6 +3802,7 @@ test('merged renewal invoice carries exactly one line per order and falls due wi
     $em->shouldReceive('getRepository')->with(Client::class)->andReturn($clientRepo);
     $em->shouldReceive('persist');
     $em->shouldReceive('flush');
+    $em->shouldReceive('wrapInTransaction')->once()->andReturnUsing(static fn (callable $run): mixed => $run());
 
     $lineCalls = [];
     $invoiceItemService = Mockery::mock(ServiceInvoiceItem::class);
@@ -3842,6 +3843,35 @@ test('merged renewal invoice requires at least one order', function (): void {
     $serviceMock->setDi(container());
 
     expect(fn (): Invoice => $serviceMock->generateMergedInvoiceForOrders([]))->toThrow(FOSSBilling\InformationException::class);
+});
+
+test('merged renewal invoice resolves every line before persisting anything', function (): void {
+    $good = createEntity(Order::class, [
+        'id' => 1, 'client_id' => 7, 'currency' => 'USD', 'period' => '1M',
+        'price' => '10.00', 'quantity' => 1, 'expires_at' => '2026-10-01 00:00:00',
+    ]);
+    $bad = createEntity(Order::class, [
+        'id' => 2, 'client_id' => 7, 'currency' => 'USD', 'period' => '1M',
+        'price' => '-5.00', 'quantity' => 1, 'expires_at' => '2026-10-01 00:00:00',
+    ]);
+    $client = createEntity(Client::class);
+    setEntityId($client, 7);
+
+    $clientRepo = Mockery::mock(ClientRepository::class);
+    $clientRepo->shouldReceive('find')->with(7)->andReturn($client);
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(Client::class)->andReturn($clientRepo);
+    $em->shouldNotReceive('persist', 'wrapInTransaction');
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $di = container();
+    $di['em'] = $em;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $serviceMock->setDi($di);
+
+    expect(fn (): Invoice => $serviceMock->generateMergedInvoiceForOrders([$good, $bad]))
+        ->toThrow(FOSSBilling\InformationException::class, 'negative amount');
 });
 
 test('activates paid invoices in batch', function (): void {

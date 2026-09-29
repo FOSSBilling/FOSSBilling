@@ -435,7 +435,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         if (array_key_exists('merge_renewals', $data)) {
             $mergeRenewals = $data['merge_renewals'];
-            $client->setMergeRenewals($mergeRenewals === null || $mergeRenewals === '' ? null : (bool) $mergeRenewals);
+            $client->setMergeRenewals($mergeRenewals === null || $mergeRenewals === '' ? null : Tools::normalizeBoolean($mergeRenewals));
         }
 
         if (array_key_exists('birthday', $data) && $data['birthday'] !== null && $data['birthday'] !== '') {

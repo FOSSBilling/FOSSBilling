@@ -128,9 +128,7 @@ test('renewal batch merges same-bucket orders and respects the opt-out', functio
         foreach ($products as $productId) {
             Tests\Helpers\ApiClient::request('admin/product/delete', ['id' => $productId]);
         }
-        if ($previousFlag !== null) {
-            Tests\Helpers\ApiClient::request('admin/system/update_params', ['invoice_merge_renewals' => $previousFlag]);
-        }
+        Tests\Helpers\ApiClient::request('admin/system/update_params', ['invoice_merge_renewals' => $previousFlag ?? '0']);
     }
 });
 
