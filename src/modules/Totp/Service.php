@@ -242,7 +242,7 @@ class Service implements InjectionAwareInterface, WidgetProviderInterface
         if (!$credential?->isEnabled() || !$this->consumeCode($credential, $code)) {
             throw new InformationException('The verification code is invalid.', [], 401);
         }
-
+        $this->di['em']->flush();
         $oldSession = $this->di['session']->getId();
         $this->di['session']->regenerateId();
         $this->di['session']->delete('totp_challenge');
