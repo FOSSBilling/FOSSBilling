@@ -1,0 +1,17 @@
+<div class="alert alert-info alert-dismissible fade show mb-3 d-none" id="totp-client-security-notice" role="alert">
+    <div class="alert-icon">
+        <svg class="icon alert-icon icon-2" aria-hidden="true"><use href="#info-circle"></use></svg>
+    </div>
+    <strong>{{ 'Improve your account security'|trans }}</strong>
+    {{ 'Two-factor authentication is not enabled for your account.'|trans }}
+    <a href="{{ 'client/profile#tab-totp-panel'|url }}" class="alert-action">{{ 'Set up 2FA'|trans }}</a>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="{{ 'Close'|trans }}"></button>
+</div>
+<script>
+    (() => {
+        const notice = document.getElementById('totp-client-security-notice');
+        FOSSBilling.api.client.get('totp/status', {}, (result) => {
+            if (result.notice_enabled && result.allowed && !result.enabled) notice.classList.remove('d-none');
+        });
+    })();
+</script>

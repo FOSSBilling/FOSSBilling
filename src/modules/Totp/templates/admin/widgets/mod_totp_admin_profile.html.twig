@@ -1,0 +1,101 @@
+<div class="tab-pane fade" id="tab-totp" role="tabpanel">
+    <div class="p-3">
+        <h4>{{ 'Two-Factor Authentication'|trans }}</h4>
+        <p class="text-secondary">{{ 'Protect your staff account with an authenticator app or a recovery code.'|trans }}</p>
+        <div id="admin-totp-status" class="alert alert-info">{{ 'Loading two-factor authentication status...'|trans }}</div>
+        <div id="admin-totp-setup" class="d-none">
+            <div class="border rounded p-3 mb-3 bg-light-subtle text-center">
+                <p class="fw-semibold mb-2">{{ 'Scan with your authenticator app'|trans }}</p>
+                <canvas id="admin-totp-qr" class="bg-white p-2 rounded" width="220" height="220" aria-label="{{ 'TOTP setup QR code'|trans }}"></canvas>
+                <p class="small text-muted mb-0 mt-2">{{ 'If scanning does not work, use the manual secret below.'|trans }}</p>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="admin-totp-secret">{{ 'Secret'|trans }}</label>
+                <input class="form-control" id="admin-totp-secret" type="text" readonly>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="admin-totp-code">{{ 'Verification code'|trans }}</label>
+                <input class="form-control" id="admin-totp-code" type="text" inputmode="numeric" autocomplete="one-time-code">
+            </div>
+            <button class="btn btn-primary" type="button" id="admin-totp-setup-button">{{ 'Start Setup'|trans }}</button>
+            <button class="btn btn-primary d-none" type="button" id="admin-totp-enable">{{ 'Enable Two-Factor Authentication'|trans }}</button>
+            <div id="admin-totp-recovery" class="alert alert-warning d-none mt-3"></div>
+        </div>
+        <div id="admin-totp-enabled" class="d-none">
+            <div class="mb-3">
+                <label class="form-label" for="admin-totp-disable-code">{{ 'Authenticator or recovery code'|trans }}</label>
+                <input class="form-control" id="admin-totp-disable-code" type="text" inputmode="numeric">
+            </div>
+            <button class="btn btn-outline-danger" type="button" id="admin-totp-disable">{{ 'Disable Two-Factor Authentication'|trans }}</button>
+            <button class="btn btn-outline-secondary" type="button" id="admin-totp-regenerate">{{ 'Regenerate Recovery Codes'|trans }}</button>
+            <div id="admin-totp-new-recovery" class="alert alert-warning d-none mt-3"></div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="admin-totp-recovery-modal" tabindex="-1" aria-labelledby="admin-totp-recovery-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="admin-totp-recovery-title">{{ 'Save your recovery codes'|trans }}</h5>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">{{ 'These codes are shown only once. Store them somewhere safe before continuing.'|trans }}</div>
+                <pre id="admin-totp-recovery-codes" class="bg-light rounded p-3 user-select-all"></pre>
+                <label class="form-check mt-3">
+                    <input class="form-check-input" id="admin-totp-recovery-saved" type="checkbox">
+                    <span class="form-check-label">{{ 'I have saved my recovery codes'|trans }}</span>
+                </label>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="admin-totp-recovery-continue" type="button" disabled>{{ 'Continue'|trans }}</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    (() => {
+        const status = document.getElementById('admin-totp-status');
+        const setup = document.getElementById('admin-totp-setup');
+        const enabled = document.getElementById('admin-totp-enabled');
+        const recoveryModal = document.getElementById('admin-totp-recovery-modal');
+        const recoverySaved = document.getElementById('admin-totp-recovery-saved');
+        const recoveryContinue = document.getElementById('admin-totp-recovery-continue');
+        const showCodes = (result) => {
+            document.getElementById('admin-totp-recovery-codes').textContent = result.recovery_codes.join('\n');
+            recoverySaved.checked = false;
+            recoveryContinue.disabled = true;
+            (window.tabler?.Modal || window.bootstrap?.Modal).getOrCreateInstance(recoveryModal).show();
+        };
+        FOSSBilling.api.admin.get('totp/status', {}, (result) => {
+            if (!result.allowed) {
+                status.textContent = '{{ 'Two-factor authentication is disabled by the administrator.'|trans }}';
+                return;
+            }
+            if (result.enabled) {
+                status.textContent = '{{ 'Two-factor authentication is enabled.'|trans }}';
+                enabled.classList.remove('d-none');
+            } else {
+                status.textContent = '{{ 'Two-factor authentication is not enabled.'|trans }}';
+                setup.classList.remove('d-none');
+            }
+        });
+        document.getElementById('admin-totp-setup-button').addEventListener('click', () => FOSSBilling.api.admin.post('totp/setup', {}, (result) => {
+            document.getElementById('admin-totp-secret').value = result.secret;
+            FOSSBilling.qrCode.toCanvas(document.getElementById('admin-totp-qr'), result.uri, { width: 220, margin: 2, errorCorrectionLevel: 'M' });
+            document.getElementById('admin-totp-setup-button').classList.add('d-none');
+            document.getElementById('admin-totp-enable').classList.remove('d-none');
+        }));
+        document.getElementById('admin-totp-enable').addEventListener('click', () => FOSSBilling.api.admin.post('totp/enable', { code: document.getElementById('admin-totp-code').value }, (result) => {
+            showCodes(result);
+        }));
+        document.getElementById('admin-totp-disable').addEventListener('click', () => FOSSBilling.api.admin.post('totp/disable', { code: document.getElementById('admin-totp-disable-code').value }, () => window.location.reload()));
+        recoverySaved.addEventListener('change', () => { recoveryContinue.disabled = !recoverySaved.checked; });
+        recoveryContinue.addEventListener('click', () => {
+            (window.tabler?.Modal || window.bootstrap?.Modal).getOrCreateInstance(recoveryModal).hide();
+            setup.classList.add('d-none');
+            enabled.classList.remove('d-none');
+            status.textContent = '{{ 'Two-factor authentication is enabled.'|trans }}';
+        });
+        document.getElementById('admin-totp-regenerate').addEventListener('click', () => FOSSBilling.api.admin.post('totp/regenerate_recovery_codes', { code: document.getElementById('admin-totp-disable-code').value }, showCodes));
+    })();
+</script>
