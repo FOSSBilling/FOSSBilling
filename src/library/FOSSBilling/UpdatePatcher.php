@@ -921,6 +921,7 @@ class UpdatePatcher implements InjectionAwareInterface
             118 => 'patch118',
             119 => 'patch119',
             120 => 'patch120',
+            121 => 'patch121',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -4019,6 +4020,28 @@ class UpdatePatcher implements InjectionAwareInterface
         if (!$this->tableHasIndex('invoice', 'invoice_replaced_by_invoice_idx')) {
             $this->executeSql('ALTER TABLE `invoice` ADD INDEX `invoice_replaced_by_invoice_idx` (`replaced_by_invoice_id`)');
         }
+    }
+
+    private function patch121(): void
+    {
+        // The TOTP feature added the totp_credential entity without a MySQL patch,
+        // repeating the pattern from patch119/patch120: installs that never ran the
+        // ambient schema sync crash on the missing table. Create it explicitly here;
+        // the portable sync covers non-MySQL drivers and same-version deploys via
+        // ensureSchemaInSync(). IF NOT EXISTS makes reruns (and installs that already
+        // synced this table) no-ops.
+        $this->executeSql('
+            CREATE TABLE IF NOT EXISTS `totp_credential` (
+                `id` bigint(20) NOT NULL AUTO_INCREMENT,
+                `owner_type` varchar(16) NOT NULL,
+                `owner_id` bigint(20) NOT NULL,
+                `secret` longtext NOT NULL,
+                `recovery_codes` longtext NOT NULL,
+                `enabled` tinyint(1) NOT NULL,
+                PRIMARY KEY (`id`),
+                UNIQUE KEY `totp_credential_owner_unique` (`owner_type`, `owner_id`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        ');
     }
 
     /**
