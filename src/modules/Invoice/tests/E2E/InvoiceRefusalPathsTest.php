@@ -185,6 +185,9 @@ test('claiming and processing are idempotent', function (): void {
         assertApiResultIsArray($list);
         $txId = (int) $list->getResult()['list'][0]['id'];
         $journalBefore = refPathJournalTypes($invoiceId);
+        // The paid event landed in the same transaction as the payment;
+        // the retry assertions below prove nothing is added to it.
+        expect($journalBefore)->toContain('paid');
 
         // Already processed: the claim reports false instead of erroring.
         $claim = Tests\Helpers\ApiClient::request('admin/invoice/transaction_claim_for_processing', ['id' => $txId]);

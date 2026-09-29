@@ -724,10 +724,15 @@ class Service implements InjectionAwareInterface
      * writes never break the business operation: failures are logged and
      * swallowed, mirroring the mail sends.
      *
-     * The persist joins the caller's transaction when one is active (the
-     * mutation paths call this inside their `wrapInTransaction` closures, so
-     * the row commits atomically with the transition) and its own implicit
-     * transaction otherwise.
+     * The row is written with a raw DBAL insert rather than through the
+     * EntityManager, nested in the caller's transaction via a savepoint when
+     * one is active (the mutation paths call this inside their
+     * `wrapInTransaction` closures, so the row commits atomically with the
+     * transition) and in its own implicit transaction otherwise. Bypassing
+     * the UnitOfWork matters: a failed insert rolls back only its savepoint
+     * instead of leaving a poisoned pending insertion that a later flush
+     * would retry — which would fail the surrounding mutation and close the
+     * EntityManager.
      */
     public function recordJournalEvent(Invoice $invoice, string $type, ?array $extra = null): void
     {
@@ -755,14 +760,25 @@ class Service implements InjectionAwareInterface
                 $adminId = (int) $this->di['loggedin_admin']->getId();
             }
 
-            $journal = new InvoiceEvent();
-            $journal->setInvoiceId($invoice->getId());
-            $journal->setType($type);
-            $journal->setAdminId($adminId);
-            $journal->setClientId($invoice->getClientId());
-            $journal->setSnapshot($snapshot);
-            $this->di['em']->persist($journal);
-            $this->di['em']->flush();
+            $snapshotJson = json_encode($snapshot, JSON_INVALID_UTF8_SUBSTITUTE);
+            if ($snapshotJson === false) {
+                throw new \FOSSBilling\Exception('Unable to encode the invoice journal snapshot.');
+            }
+
+            $connection = $this->di['em']->getConnection();
+            $connection->transactional(function () use ($connection, $invoice, $type, $adminId, $snapshotJson): void {
+                $connection->executeStatement(
+                    'INSERT INTO invoice_event (invoice_id, type, admin_id, client_id, snapshot, created_at) VALUES (:invoice_id, :type, :admin_id, :client_id, :snapshot, :created_at)',
+                    [
+                        'invoice_id' => $invoice->getId(),
+                        'type' => $type,
+                        'admin_id' => $adminId,
+                        'client_id' => $invoice->getClientId(),
+                        'snapshot' => $snapshotJson,
+                        'created_at' => date('Y-m-d H:i:s'),
+                    ]
+                );
+            });
         } catch (\Throwable $exception) {
             $this->di['logger']->error('Failed to record invoice journal event', [
                 'invoice_id' => $invoice->getId(),

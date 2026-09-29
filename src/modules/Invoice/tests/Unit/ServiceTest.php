@@ -2768,18 +2768,27 @@ test('refundInvoice in manual mode records an offline refund document', function
     $invoiceRepo->shouldReceive('findBy')->andReturn([]);
     $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
     $creditNote = null;
-    $journal = null;
+    $journalStatements = [];
+    $journalConnection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $journalConnection->shouldReceive('transactional')
+        ->atLeast()->once()
+        ->andReturnUsing(function (callable $callback) use ($journalConnection, &$journalStatements): void {
+            $journalConnection->shouldReceive('executeStatement')
+                ->atLeast()->once()
+                ->andReturnUsing(function (string $sql, array $params) use (&$journalStatements): void {
+                    $journalStatements[] = [$sql, $params];
+                });
+            $callback($journalConnection);
+        });
+    $em->shouldReceive('getConnection')->andReturn($journalConnection);
     $em->shouldReceive('persist')
         ->atLeast()->once()
-        ->andReturnUsing(function (object $entity) use ($newId, &$creditNote, &$journal): void {
+        ->andReturnUsing(function (object $entity) use ($newId, &$creditNote): void {
             if ($entity instanceof Invoice && $entity->getId() === null) {
                 setEntityId($entity, $newId);
             }
             if ($entity instanceof Invoice && $entity->getStatus() === Invoice::STATUS_REFUNDED && $entity->getId() === $newId) {
                 $creditNote = $entity;
-            }
-            if ($entity instanceof InvoiceEvent) {
-                $journal = $entity;
             }
         });
     $em->shouldReceive('flush')->atLeast()->once();
@@ -2808,9 +2817,10 @@ test('refundInvoice in manual mode records an offline refund document', function
     expect($creditNote->getCreditNoteForInvoiceId())->toBe($invoiceModel->getId());
     // The document is marked as an offline refund, on the note and in the journal.
     expect($notes)->toContain('Offline refund: the amount was returned outside FOSSBilling; this credit note records it.');
-    expect($journal)->not->toBeNull();
-    expect($journal->getType())->toBe(InvoiceEvent::TYPE_REFUNDED);
-    expect($journal->getSnapshot()['offline'] ?? null)->toBeTrue();
+    expect($journalStatements)->toHaveCount(1);
+    $journalParams = $journalStatements[0][1];
+    expect($journalParams['type'])->toBe(InvoiceEvent::TYPE_REFUNDED);
+    expect(json_decode($journalParams['snapshot'], true)['offline'] ?? null)->toBeTrue();
 });
 
 test('refundInvoice refuses invoices that are not paid', function (): void {
@@ -7481,14 +7491,25 @@ test('recordJournalEvent stores a trimmed snapshot of the invoice', function ():
         'lines' => [['title' => 'Widget']],
     ];
 
-    $persisted = [];
-    $em = Mockery::mock(EntityManagerInterface::class);
-    $em->shouldReceive('persist')
+    $statements = [];
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('transactional')
         ->once()
-        ->andReturnUsing(function (object $entity) use (&$persisted): void {
-            $persisted[] = $entity;
+        ->andReturnUsing(function (callable $callback) use ($connection, &$statements): void {
+            $connection->shouldReceive('executeStatement')
+                ->once()
+                ->andReturnUsing(function (string $sql, array $params) use (&$statements): void {
+                    $statements[] = [$sql, $params];
+                });
+            $callback($connection);
         });
-    $em->shouldReceive('flush')->once();
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    // The journal bypasses the UnitOfWork entirely: a failed insert rolls
+    // back only its savepoint instead of poisoning the EntityManager.
+    $em->shouldReceive('getConnection')->once()->andReturn($connection);
+    $em->shouldNotReceive('persist');
+    $em->shouldNotReceive('flush');
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('toApiArray')->once()->with($invoice)->andReturn($apiArray);
@@ -7500,12 +7521,13 @@ test('recordJournalEvent stores a trimmed snapshot of the invoice', function ():
 
     $serviceMock->recordJournalEvent($invoice, InvoiceEvent::TYPE_ISSUED, ['reason' => 'Manual']);
 
-    expect($persisted)->toHaveCount(1)
-        ->and($persisted[0])->toBeInstanceOf(InvoiceEvent::class)
-        ->and($persisted[0]->getInvoiceId())->toBe(10)
-        ->and($persisted[0]->getType())->toBe(InvoiceEvent::TYPE_ISSUED)
-        ->and($persisted[0]->getClientId())->toBe(5)
-        ->and($persisted[0]->getSnapshot())->toBe([
+    expect($statements)->toHaveCount(1)
+        ->and($statements[0][0])->toContain('INSERT INTO invoice_event')
+        ->and($statements[0][1]['invoice_id'])->toBe(10)
+        ->and($statements[0][1]['type'])->toBe(InvoiceEvent::TYPE_ISSUED)
+        ->and($statements[0][1]['admin_id'])->toBeNull()
+        ->and($statements[0][1]['client_id'])->toBe(5)
+        ->and(json_decode($statements[0][1]['snapshot'], true))->toEqual([
             'serie_nr' => 'FOSS00010',
             'status' => Invoice::STATUS_UNPAID,
             'issued' => true,
@@ -7518,14 +7540,22 @@ test('recordJournalEvent stores a trimmed snapshot of the invoice', function ():
             'due_at' => '2026-09-01 00:00:00',
             'created_at' => '2026-08-01 00:00:00',
             'reason' => 'Manual',
-        ]);
+        ])
+        ->and($statements[0][1]['created_at'])->not->toBeEmpty();
 });
 
 test('recordJournalEvent failure does not break the business operation', function (): void {
     $invoice = createEntity(Invoice::class, ['id' => 10]);
 
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    // The savepoint-nested insert blows up; the failure is swallowed so the
+    // surrounding mutation (and its EntityManager) survives untouched.
+    $connection->shouldReceive('transactional')->andThrow(new RuntimeException('DB down'));
+
     $em = Mockery::mock(EntityManagerInterface::class);
-    $em->shouldReceive('persist')->andThrow(new RuntimeException('DB down'));
+    $em->shouldReceive('getConnection')->once()->andReturn($connection);
+    $em->shouldNotReceive('persist');
+    $em->shouldNotReceive('flush');
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('toApiArray')->andReturn([]);
