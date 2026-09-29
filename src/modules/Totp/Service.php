@@ -137,7 +137,7 @@ class Service implements InjectionAwareInterface, WidgetProviderInterface
     public function enable(string $ownerType, int $ownerId, string $code): array
     {
         $credential = $this->find($ownerType, $ownerId);
-        if (!$credential || !$this->verify($this->decrypt($credential->getSecret()), $code)) {
+        if (!$credential instanceof TotpCredential || !$this->verify($this->decrypt($credential->getSecret()), $code)) {
             throw new InformationException('The verification code is invalid.');
         }
         $recoveryCodes = $this->generateRecoveryCodes();
@@ -149,7 +149,7 @@ class Service implements InjectionAwareInterface, WidgetProviderInterface
     public function disable(string $ownerType, int $ownerId, string $code): bool
     {
         $credential = $this->find($ownerType, $ownerId);
-        if (!$credential || !$this->consumeCode($credential, $code)) {
+        if (!$credential instanceof TotpCredential || !$this->verify($this->decrypt($credential->getSecret()), $code)) {
             throw new InformationException('The verification code is invalid.');
         }
         $credential->setEnabled(false)->setRecoveryCodes([]);
@@ -171,7 +171,7 @@ class Service implements InjectionAwareInterface, WidgetProviderInterface
     public function regenerateRecoveryCodes(string $ownerType, int $ownerId, string $code): array
     {
         $credential = $this->find($ownerType, $ownerId);
-        if (!$credential || !$credential->isEnabled() || !$this->consumeCode($credential, $code)) {
+        if (!$credential instanceof TotpCredential || !$credential->isEnabled() || !$this->consumeCode($credential, $code)) {
             throw new InformationException('The verification code is invalid.');
         }
         $recoveryCodes = $this->generateRecoveryCodes();

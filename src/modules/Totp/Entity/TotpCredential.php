@@ -42,7 +42,7 @@ class TotpCredential
     public function getRecoveryCodes(): array
     {
         $codes = json_decode($this->recoveryCodes, true);
-        return is_array($codes) ? array_values(array_filter($codes, 'is_string')) : [];
+        return is_array($codes) ? array_values(array_filter($codes, is_string(...))) : [];
     }
     public function setRecoveryCodes(array $codes): self
     {
