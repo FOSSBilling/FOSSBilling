@@ -85,7 +85,7 @@ class SentryHelper
         'default',
     ];
 
-    // Basenames (without the .php extension) of the registrar adapters we ship.
+    // Base names (without the .php extension) of the registrar adapters we ship.
     // Errors whose culprit file is an unknown adapter come from third-party
     // adapters, which we can't fix, so they are dropped in before_send.
     // Keep in sync with the files on disk - SentryHelperTest asserts the match.

@@ -12,7 +12,7 @@ function invokeIsThirdPartyAdapter(string $path): bool
     return $method->invoke(null, $path);
 }
 
-function shippedBasenames(string $subdirectory): array
+function shippedFileNames(string $subdirectory): array
 {
     $files = glob(Path::join(PATH_LIBRARY, $subdirectory, '*.php')) ?: [];
 
@@ -20,7 +20,7 @@ function shippedBasenames(string $subdirectory): array
 }
 
 test('errors from unknown registrar adapters are treated as third-party', function (): void {
-    foreach (['DomainNameApi', 'Hostafrica', 'Liquid'] as $adapter) {
+    foreach (['DomainNameApi', 'HostAfrica', 'Liquid'] as $adapter) {
         expect(invokeIsThirdPartyAdapter(Path::join(PATH_LIBRARY, 'Registrar', 'Adapter', $adapter . '.php')))->toBeTrue();
     }
 });
@@ -30,11 +30,11 @@ test('errors from unknown server managers are treated as third-party', function 
 });
 
 test('errors from shipped adapters and managers are not treated as third-party', function (): void {
-    foreach (shippedBasenames('Registrar/Adapter') as $adapter) {
+    foreach (shippedFileNames('Registrar/Adapter') as $adapter) {
         expect(invokeIsThirdPartyAdapter(Path::join(PATH_LIBRARY, 'Registrar', 'Adapter', $adapter . '.php')))->toBeFalse();
     }
 
-    foreach (shippedBasenames('Server/Manager') as $manager) {
+    foreach (shippedFileNames('Server/Manager') as $manager) {
         expect(invokeIsThirdPartyAdapter(Path::join(PATH_LIBRARY, 'Server', 'Manager', $manager . '.php')))->toBeFalse();
     }
 });
@@ -49,13 +49,13 @@ test('the adapter allowlists match the files shipped on disk', function (): void
 
     $adapters = $reflection->getConstant('ALLOWED_REGISTRAR_ADAPTERS');
     sort($adapters);
-    $onDiskAdapters = shippedBasenames('Registrar/Adapter');
+    $onDiskAdapters = shippedFileNames('Registrar/Adapter');
     sort($onDiskAdapters);
     expect($adapters)->toBe($onDiskAdapters);
 
     $managers = $reflection->getConstant('ALLOWED_SERVER_MANAGERS');
     sort($managers);
-    $onDiskManagers = shippedBasenames('Server/Manager');
+    $onDiskManagers = shippedFileNames('Server/Manager');
     sort($onDiskManagers);
     expect($managers)->toBe($onDiskManagers);
 });
