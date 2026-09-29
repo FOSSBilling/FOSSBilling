@@ -631,7 +631,8 @@
         "otpauth",
         "qrcode",
         "Sviatoslav",
-        "Kubis"
+        "Kubis",
+        "longtext"
     ],
     "ignorePaths": [
         "node_modules/**",
