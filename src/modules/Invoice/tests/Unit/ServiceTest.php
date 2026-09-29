@@ -3780,6 +3780,40 @@ test('renewal batch retries each order singly when merged generation fails', fun
 
     $di = container();
     $di['em']->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
+    $di['em']->shouldReceive('isOpen')->andReturn(true);
+    $di['mod_service'] = $di->protect(fn ($name, $sub = '') => match ([$name, $sub]) {
+        ['Order', ''] => $orderService,
+        ['Invoice', 'Subscription'] => $subscriptionService,
+        default => throw new RuntimeException("Unexpected service: {$name}/{$sub}"),
+    });
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $serviceMock->setDi($di);
+    expect($serviceMock->generateInvoicesForExpiringOrders())->toBeTrue();
+});
+
+test('renewal batch resets the manager and stops when merged generation closes it', function (): void {
+    $first = createEntity(Order::class, ['id' => 1, 'client_id' => 7]);
+    $second = createEntity(Order::class, ['id' => 2, 'client_id' => 7]);
+
+    $subscriptionService = Mockery::mock(ServiceSubscription::class);
+    $subscriptionService->shouldReceive('hasActiveSubscriptionForOrder')->twice()->andReturn(false);
+
+    $orderService = Mockery::mock(OrderService::class);
+    $orderService->shouldReceive('getSoonExpiringActiveOrders')->atLeast()->once()->andReturn([['id' => 1], ['id' => 2]]);
+
+    $orderRepoMock = Mockery::mock(OrderRepository::class);
+    $orderRepoMock->shouldReceive('findBy')->atLeast()->once()->andReturn([$first, $second]);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('shouldMergeRenewalsForOrder')->twice()->andReturn(true);
+    $serviceMock->shouldReceive('generateMergedInvoiceForOrders')->once()->with([$first, $second])->andThrow(new Exception('flush failed'));
+    $serviceMock->shouldReceive('resetEntityManager')->once();
+    $serviceMock->shouldNotReceive('generateForOrder', 'issueInvoice');
+
+    $di = container();
+    $di['em']->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
+    $di['em']->shouldReceive('isOpen')->andReturn(false);
     $di['mod_service'] = $di->protect(fn ($name, $sub = '') => match ([$name, $sub]) {
         ['Order', ''] => $orderService,
         ['Invoice', 'Subscription'] => $subscriptionService,

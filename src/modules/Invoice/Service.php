@@ -3575,8 +3575,17 @@ class Service implements InjectionAwareInterface
             } catch (\Exception $e) {
                 $this->di['logger']->warning($e->getMessage());
 
-                // A failed merge must not block the bucket-mates: retry each
-                // order on the historical single-invoice path instead.
+                // A failed ORM flush closes the EntityManager and clear()
+                // can't reopen it: replace it so the process stays usable,
+                // then stop the batch, mirroring doBatchPaidInvoiceActivation.
+                // Otherwise retry each order on the historical single-invoice
+                // path so one bad order cannot block its bucket-mates.
+                if (!$this->di['em']->isOpen()) {
+                    $this->resetEntityManager();
+
+                    break;
+                }
+
                 if (count($bucket) > 1) {
                     foreach ($bucket as $order) {
                         try {
