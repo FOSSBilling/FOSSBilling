@@ -1320,6 +1320,7 @@ class UpdatePatcher implements InjectionAwareInterface
             123 => 'patch123',
             124 => 'patch124',
             125 => 'patch125',
+            126 => 'patch126',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -4420,7 +4421,7 @@ class UpdatePatcher implements InjectionAwareInterface
         }
     }
 
-    private function patch125(): void
+    private function patch126(): void
     {
         // The TOTP feature added the totp_credential entity without a MySQL patch,
         // repeating the pattern from patch119/patch120: installs that never ran the
@@ -4441,7 +4442,7 @@ class UpdatePatcher implements InjectionAwareInterface
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         ');
     }
-    
+
     private function patch121(): void
     {
         // The invoice issue-terminology rename moves invoice.approved to
