@@ -1187,7 +1187,7 @@ test('admin mark as paid with custom gateway records transaction and marks invoi
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('markAsPaid')
         ->once()
-        ->with(Mockery::type(Invoice::class), false, false, true, true, Mockery::any())
+        ->with(Mockery::type(Invoice::class), false, false, true, null, Mockery::any())
         ->andReturn(true);
     $serviceMock->shouldReceive('getTotalWithTax')
         ->once()
@@ -1273,22 +1273,23 @@ test('admin mark as paid with custom gateway records transaction and marks invoi
         ->and($eventDispatcher->events[0]->invoiceId)->toBe(10);
 });
 
-test('admin mark as paid records the journal after the paid_at override', function (): void {
+test('admin mark as paid threads the paid_at override into the payment transaction', function (): void {
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('markAsPaid')
         ->once()
-        ->with(Mockery::type(Invoice::class), false, false, true, true, Mockery::any())
+        ->with(
+            Mockery::type(Invoice::class),
+            false,
+            false,
+            true,
+            Mockery::on(fn ($value): bool => $value instanceof DateTime && $value->format('Y-m-d') === '2024-05-06'),
+            Mockery::any()
+        )
         ->andReturn(true);
-    // Capture the entity's paid_at at the moment the journal is recorded: it
-    // must already carry the admin-supplied date, proving the journal runs
-    // after the override.
-    $journalPaidAt = 'not-called';
-    $serviceMock->shouldReceive('recordJournalEvent')
-        ->once()
-        ->with(Mockery::type(Invoice::class), InvoiceEvent::TYPE_PAID)
-        ->andReturnUsing(function (Invoice $invoice) use (&$journalPaidAt): void {
-            $journalPaidAt = $invoice->getPaidAt()?->format('Y-m-d');
-        });
+    // The paid journal row (and its paid_at snapshot) is written inside
+    // markAsPaid's transaction, which receives the override above — nothing
+    // is recorded here anymore.
+    $serviceMock->shouldNotReceive('recordJournalEvent');
 
     $gatewayModel = createEntity(PayGateway::class, [
         'id' => 5,
@@ -1305,8 +1306,9 @@ test('admin mark as paid records the journal after the paid_at override', functi
     $em = Mockery::mock(EntityManagerInterface::class);
     $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($gatewayRepo = Mockery::mock(PayGatewayRepository::class));
     $gatewayRepo->shouldReceive('find')->once()->with(5)->andReturn($gatewayModel);
-    $em->shouldReceive('persist')->atLeast()->once();
-    $em->shouldReceive('flush')->atLeast()->once();
+    // The gateway is unchanged and the payment itself is mocked: nothing is written here.
+    $em->shouldNotReceive('persist');
+    $em->shouldNotReceive('flush');
 
     $di = container();
     $di['em'] = $em;
@@ -1318,8 +1320,7 @@ test('admin mark as paid records the journal after the paid_at override', functi
         'paid_at' => '2024-05-06',
     ]);
 
-    expect($result)->toBeTrue()
-        ->and($journalPaidAt)->toBe('2024-05-06');
+    expect($result)->toBeTrue();
 });
 
 test('admin mark as paid with custom gateway rejects transaction linked to another invoice', function (): void {
@@ -1379,6 +1380,14 @@ test('markAsPaidByAdmin applies a payment date override', function (): void {
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('markAsPaid')
         ->once()
+        ->with(
+            Mockery::type(Invoice::class),
+            false,
+            false,
+            true,
+            Mockery::on(fn ($value): bool => $value instanceof DateTime && $value->format('Y-m-d H:i:s') === '2026-08-01 10:30:00'),
+            Mockery::any()
+        )
         ->andReturn(true);
 
     $gatewayModel = createEntity(PayGateway::class, [
@@ -1396,10 +1405,9 @@ test('markAsPaidByAdmin applies a payment date override', function (): void {
     $em = Mockery::mock(EntityManagerInterface::class);
     $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($gatewayRepo = Mockery::mock(PayGatewayRepository::class));
     $gatewayRepo->shouldReceive('find')->once()->with(5)->andReturn($gatewayModel);
-    // One persist/flush for the paid_at override, one for the journal entry
-    // that now records after it.
-    $em->shouldReceive('persist')->twice();
-    $em->shouldReceive('flush')->twice();
+    // The override is threaded into markAsPaid (mocked): nothing is written here.
+    $em->shouldNotReceive('persist');
+    $em->shouldNotReceive('flush');
 
     $di = container();
     $di['em'] = $em;
@@ -1408,8 +1416,130 @@ test('markAsPaidByAdmin applies a payment date override', function (): void {
 
     $result = $serviceMock->markAsPaidByAdmin($invoiceModel, ['paid_at' => '2026-08-01 10:30:00']);
 
-    expect($result)->toBeTrue()
-        ->and($invoiceModel->getPaidAt()?->format('Y-m-d H:i:s'))->toBe('2026-08-01 10:30:00');
+    expect($result)->toBeTrue();
+});
+
+test('markAsPaid records the paid journal inside the payment transaction', function (): void {
+    $invoice = createEntity(Invoice::class);
+    $invoice->id = 10;
+    $invoice->client_id = 20;
+    $invoice->currency = 'USD';
+    $invoice->issued = 1;
+    $invoice->status = Invoice::STATUS_UNPAID;
+
+    // Tracks whether the journal write happens while the payment
+    // transaction closure is still executing: it must, so the row commits
+    // atomically with the payment instead of in a later transaction.
+    $inTransaction = false;
+    $journalPaidAt = null;
+
+    $invoiceItemRepo = Mockery::mock(InvoiceItemRepository::class);
+    $invoiceItemRepo->shouldReceive('findByInvoiceId')->with(10)->andReturn([]);
+
+    $currencyRepo = Mockery::mock(CurrencyRepository::class);
+    $currencyRepo->shouldReceive('getRateByCode')->with('USD')->andReturn(1.0);
+    $currencyService = Mockery::mock(CurrencyService::class);
+    $currencyService->shouldReceive('getCurrencyRepository')->andReturn($currencyRepo);
+    $currencyService->shouldReceive('toBaseCurrency')->andReturn(0.0);
+
+    $productService = Mockery::mock(ProductService::class);
+    $productService->shouldReceive('commitReservedPromoRedemptionsForInvoice')->once()->with($invoice);
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('wrapInTransaction')->andReturnUsing(function (callable $callback) use (&$inTransaction): mixed {
+        $inTransaction = true;
+
+        try {
+            return $callback();
+        } finally {
+            $inTransaction = false;
+        }
+    });
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn(invoiceLockingRepository(['status' => Invoice::STATUS_UNPAID, 'issued' => true]));
+    $em->shouldReceive('getRepository')->with(InvoiceItem::class)->andReturn($invoiceItemRepo);
+    $em->shouldReceive('refresh')->byDefault();
+    $em->shouldReceive('persist')->atLeast()->once();
+    $em->shouldReceive('flush')->atLeast()->once();
+
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('recordJournalEvent')
+        ->once()
+        ->with($invoice, InvoiceEvent::TYPE_PAID)
+        ->andReturnUsing(function () use (&$inTransaction, &$journalPaidAt, $invoice): void {
+            $journalPaidAt = [$inTransaction, $invoice->getPaidAt()?->format('Y-m-d')];
+        });
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(moduleService([
+        'currency' => $currencyService,
+        'product' => $productService,
+    ]));
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $service->setDi($di);
+
+    expect($service->markAsPaid($invoice, true, false, true, new DateTime('2026-08-01 10:30:00')))->toBeTrue()
+        // Recorded while the payment transaction was still open, carrying
+        // the admin-supplied paid_at date rather than the payment time.
+        ->and($journalPaidAt)->toBe([true, '2026-08-01']);
+});
+
+test('issueInvoice still issues when the journal snapshot fails', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('getNextInvoiceNumber')->once()->andReturn(42);
+    // The snapshot build blows up; the swallowed journal must not fail the issuance.
+    $serviceMock->shouldReceive('toApiArray')->andThrow(new RuntimeException('snapshot boom'));
+
+    $invoiceModel = createEntity(Invoice::class);
+    $invoiceModel->id = 10;
+    $invoiceModel->client_id = null;
+    $invoiceModel->issued = 0;
+    $invoiceModel->status = Invoice::STATUS_UNPAID;
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('wrapInTransaction')->andReturnUsing(fn (callable $callback): mixed => $callback());
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn(invoiceLockingRepository(['status' => Invoice::STATUS_UNPAID, 'issued' => false]));
+    $em->shouldReceive('refresh')->byDefault();
+    $em->shouldReceive('persist')->atLeast()->once();
+    $em->shouldReceive('flush')->atLeast()->once();
+
+    $eventDispatcher = new class {
+        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        {
+            return $event;
+        }
+    };
+
+    $logger = new Tests\Helpers\TestLogger();
+
+    $di = container();
+    $di['em'] = $em;
+    $di['event_dispatcher'] = $eventDispatcher;
+    $di['logger'] = $logger;
+    $di['mod_service'] = $di->protect(moduleService([
+        'system' => (function (): Mockery\MockInterface {
+            $system = Mockery::mock(SystemService::class);
+            $system->shouldReceive('getParamValue')->with('invoice_series')->andReturn('TEST-');
+            $system->shouldReceive('getCompany')->andReturn([
+                'name' => 'Test Co',
+                'vat_number' => '',
+                'number' => '',
+                'address_1' => '',
+                'address_2' => '',
+                'address_3' => '',
+                'tel' => '',
+                'email' => '',
+            ]);
+
+            return $system;
+        })(),
+    ]));
+    $serviceMock->setDi($di);
+
+    expect($serviceMock->issueInvoice($invoiceModel, []))->toBeTrue()
+        ->and($invoiceModel->isIssued())->toBeTrue()
+        ->and($invoiceModel->getNr())->toBe('42')
+        ->and(array_filter($logger->calls, fn (array $call): bool => $call['method'] === 'error'))->not->toBeEmpty();
 });
 
 test('markAsPaidByAdmin rejects an invalid payment date before any write', function (): void {
@@ -1990,9 +2120,9 @@ test('pays a zero-total invoice without recording a balance transaction', functi
 
     $service = Mockery::mock(Service::class)->makePartial();
     $service->shouldReceive('getTotalWithTax')->once()->with($invoice)->andReturn(0.0);
-    $service->shouldReceive('markAsPaid')->once()->with($invoice, false, false, true, true)->andReturn(true);
-    // The journal is recorded after the credit transaction commits, never inside it.
-    $service->shouldReceive('recordJournalEvent')->once()->with($invoice, InvoiceEvent::TYPE_PAID);
+    $service->shouldReceive('markAsPaid')->once()->with($invoice, false, false, true)->andReturn(true);
+    // The paid journal row is written by markAsPaid() inside the credit transaction, not here.
+    $service->shouldNotReceive('recordJournalEvent');
 
     $di = container();
     $di['em']->shouldReceive('getRepository')->with(Invoice::class)->andReturn(invoiceLockingRepository());
@@ -2017,9 +2147,9 @@ test('records a balance transaction for a one-cent invoice', function (): void {
 
     $service = Mockery::mock(Service::class)->makePartial();
     $service->shouldReceive('getTotalWithTax')->once()->with($invoice)->andReturn(0.01);
-    $service->shouldReceive('markAsPaid')->once()->with($invoice, false, false, true, true)->andReturn(true);
-    // The journal is recorded after the credit transaction commits, never inside it.
-    $service->shouldReceive('recordJournalEvent')->once()->with($invoice, InvoiceEvent::TYPE_PAID);
+    $service->shouldReceive('markAsPaid')->once()->with($invoice, false, false, true)->andReturn(true);
+    // The paid journal row is written by markAsPaid() inside the credit transaction, not here.
+    $service->shouldNotReceive('recordJournalEvent');
 
     $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 20]);
 
@@ -2053,9 +2183,9 @@ test('pays an invoice with credits and records a balance transaction', function 
 
     $service = Mockery::mock(Service::class)->makePartial();
     $service->shouldReceive('getTotalWithTax')->once()->with($invoice)->andReturn(50.0);
-    $service->shouldReceive('markAsPaid')->once()->with($invoice, false, false, true, true)->andReturn(true);
-    // The journal is recorded after the credit transaction commits, never inside it.
-    $service->shouldReceive('recordJournalEvent')->once()->with($invoice, InvoiceEvent::TYPE_PAID);
+    $service->shouldReceive('markAsPaid')->once()->with($invoice, false, false, true)->andReturn(true);
+    // The paid journal row is written by markAsPaid() inside the credit transaction, not here.
+    $service->shouldNotReceive('recordJournalEvent');
 
     $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 20]);
 
@@ -2095,9 +2225,9 @@ test('locks the invoice before checking the client balance', function (): void {
 
     $service = Mockery::mock(Service::class)->makePartial();
     $service->shouldReceive('getTotalWithTax')->once()->with($invoice)->andReturn(50.0);
-    $service->shouldReceive('markAsPaid')->once()->with($invoice, false, false, true, true)->andReturn(true);
-    // The journal is recorded after the credit transaction commits, never inside it.
-    $service->shouldReceive('recordJournalEvent')->once()->with($invoice, InvoiceEvent::TYPE_PAID);
+    $service->shouldReceive('markAsPaid')->once()->with($invoice, false, false, true)->andReturn(true);
+    // The paid journal row is written by markAsPaid() inside the credit transaction, not here.
+    $service->shouldNotReceive('recordJournalEvent');
 
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $balanceService);
     $service->setDi($di);
@@ -2168,9 +2298,9 @@ test('pays a fully funded invoice despite floating-point rounding dust', functio
 
     $service = Mockery::mock(Service::class)->makePartial();
     $service->shouldReceive('getTotalWithTax')->once()->with($invoice)->andReturn(0.1 * 3);
-    $service->shouldReceive('markAsPaid')->once()->with($invoice, false, false, true, true)->andReturn(true);
-    // The journal is recorded after the credit transaction commits, never inside it.
-    $service->shouldReceive('recordJournalEvent')->once()->with($invoice, InvoiceEvent::TYPE_PAID);
+    $service->shouldReceive('markAsPaid')->once()->with($invoice, false, false, true)->andReturn(true);
+    // The paid journal row is written by markAsPaid() inside the credit transaction, not here.
+    $service->shouldNotReceive('recordJournalEvent');
 
     $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 20]);
 
