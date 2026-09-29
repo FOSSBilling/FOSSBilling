@@ -315,7 +315,8 @@ class Service implements InjectionAwareInterface
             $lines[] = $line;
         }
 
-        $current_invoice_tax_rate = $row['taxrate'];
+        // taxrate is a varchar column that can hold any admin-supplied value - see getTax().
+        $current_invoice_tax_rate = (float) ($row['taxrate'] ?? 0);
         if ($current_invoice_tax_rate > 0 && $taxable_subtotal != 0) {
             $tax = round($taxable_subtotal * $current_invoice_tax_rate / 100, 2);
         } else {
@@ -1161,7 +1162,10 @@ class Service implements InjectionAwareInterface
 
     public function getTax(\Model_Invoice $invoice): float
     {
-        if ($invoice->taxrate <= 0) {
+        // taxrate is a varchar column that can hold any admin-supplied value,
+        // so cast it: invalid rates behave as 0% instead of throwing.
+        $taxRate = (float) $invoice->taxrate;
+        if ($taxRate <= 0) {
             return 0.0;
         }
 
@@ -1182,7 +1186,7 @@ class Service implements InjectionAwareInterface
             return 0.0;
         }
 
-        return round($taxable_subtotal * $invoice->taxrate / 100, 2);
+        return round($taxable_subtotal * $taxRate / 100, 2);
     }
 
     public function getTotal(\Model_Invoice $invoice): float

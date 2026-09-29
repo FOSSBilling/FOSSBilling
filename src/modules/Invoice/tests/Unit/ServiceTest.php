@@ -1910,6 +1910,49 @@ test('refunds invoice with negative invoice logic', function (): void {
     expect($result)->toBeInt()->toBe($newId);
 });
 
+test('computes invoice tax from a numeric rate', function (): void {
+    $service = new Service();
+
+    $invoiceModel = new Model_Invoice();
+    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
+    $invoiceModel->id = 1;
+    $invoiceModel->taxrate = '20';
+
+    $itemModel = new Model_InvoiceItem();
+    $itemModel->loadBean(new Tests\Helpers\DummyBean());
+    $itemModel->taxed = true;
+    $itemModel->price = 100;
+    $itemModel->quantity = 1;
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('find')->once()->andReturn([$itemModel]);
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $service->setDi($di);
+
+    expect($service->getTax($invoiceModel))->toBe(20.0);
+});
+
+test('treats a non-numeric invoice tax rate as zero instead of crashing', function (): void {
+    $service = new Service();
+
+    $invoiceModel = new Model_Invoice();
+    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
+    $invoiceModel->id = 1;
+    // taxrate is a varchar column that can hold any admin-supplied value.
+    $invoiceModel->taxrate = 'not-a-rate';
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('find')->zeroOrMoreTimes()->andReturn([]);
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $service->setDi($di);
+
+    expect($service->getTax($invoiceModel))->toBe(0.0);
+});
+
 test('updates an invoice', function (): void {
     $service = new Service();
     $data = [
