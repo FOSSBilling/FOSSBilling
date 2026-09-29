@@ -52,20 +52,25 @@ test('group-targeted promos follow any membership of a multi-group client', func
             'client_groups' => [$resellerGroup],
         ]);
 
-        // A is in both groups, B in Charity only, C in neither.
+        // A is in both groups, B in Charity only, C in neither. One login per
+        // client: guest logins share a 10/hour api_login budget across the
+        // whole E2E suite, so both the auto-discount and the manual-code
+        // assertions run in the same session.
         $clientA = multiGroupCreateClient([$charityGroup, $resellerGroup]);
         $clientB = multiGroupCreateClient([$charityGroup]);
         $clientC = multiGroupCreateClient([]);
 
-        // The automatic Charity promo resolves for both members, not for C.
-        expect(multiGroupCartDiscount($clientA, $product))->toEqual(10.0);
-        expect(multiGroupCartDiscount($clientB, $product))->toEqual(10.0);
-        expect(multiGroupCartDiscount($clientC, $product))->toEqual(0.0);
+        [$discountA, $applyA] = multiGroupClientOutcome($clientA, $product, $manualCode);
+        expect($discountA)->toEqual(10.0);
+        expect($applyA)->toBeTrue();
 
-        // The manual Reseller code applies for A, and is rejected for B and C.
-        expect(multiGroupApplyCode($clientA, $product, $manualCode))->toBeTrue();
-        expect(multiGroupApplyCode($clientB, $product, $manualCode))->toContain('cannot be applied');
-        expect(multiGroupApplyCode($clientC, $product, $manualCode))->toContain('cannot be applied');
+        [$discountB, $applyB] = multiGroupClientOutcome($clientB, $product, $manualCode);
+        expect($discountB)->toEqual(10.0);
+        expect($applyB)->toContain('cannot be applied');
+
+        [$discountC, $applyC] = multiGroupClientOutcome($clientC, $product, $manualCode);
+        expect($discountC)->toEqual(0.0);
+        expect($applyC)->toContain('cannot be applied');
     } finally {
         multiGroupCleanupClient($clientA);
         multiGroupCleanupClient($clientB);
@@ -183,7 +188,13 @@ function multiGroupLogin(array $client): void
     assertApiSuccess($login);
 }
 
-function multiGroupCartDiscount(array $client, int $product): float
+/**
+ * Logs in once, adds the product, and returns the automatic discount plus
+ * the manual code outcome (true when it applies, otherwise the error).
+ *
+ * @return array{float, bool|string}
+ */
+function multiGroupClientOutcome(array $client, int $product, string $code): array
 {
     multiGroupLogin($client);
     Tests\Helpers\ApiClient::request('guest/cart/add_item', ['id' => $product, 'multiple' => 1]);
@@ -191,21 +202,11 @@ function multiGroupCartDiscount(array $client, int $product): float
     $cart = Tests\Helpers\ApiClient::request('guest/cart/get');
     assertApiSuccess($cart);
     assertApiResultIsArray($cart);
-
-    return (float) $cart->getResult()['discount'];
-}
-
-/**
- * @return bool|string true when the code applies, otherwise the error message
- */
-function multiGroupApplyCode(array $client, int $product, string $code): bool|string
-{
-    multiGroupLogin($client);
-    Tests\Helpers\ApiClient::request('guest/cart/add_item', ['id' => $product, 'multiple' => 1]);
+    $discount = (float) $cart->getResult()['discount'];
 
     $applied = Tests\Helpers\ApiClient::request('guest/cart/apply_promo', ['promocode' => $code]);
 
-    return $applied->wasSuccessful() ? true : $applied->getErrorMessage();
+    return [$discount, $applied->wasSuccessful() ? true : $applied->getErrorMessage()];
 }
 
 function multiGroupCleanupClient(?array $client): void
