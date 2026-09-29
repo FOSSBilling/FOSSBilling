@@ -3758,6 +3758,72 @@ test('renewal batch invoices different billing periods separately', function ():
     expect($serviceMock->generateInvoicesForExpiringOrders())->toBeTrue();
 });
 
+test('renewal batch retries each order singly when merged generation fails', function (): void {
+    $first = createEntity(Order::class, ['id' => 1, 'client_id' => 7]);
+    $second = createEntity(Order::class, ['id' => 2, 'client_id' => 7]);
+    $invoiceModel = createEntity(Invoice::class);
+
+    $subscriptionService = Mockery::mock(ServiceSubscription::class);
+    $subscriptionService->shouldReceive('hasActiveSubscriptionForOrder')->twice()->andReturn(false);
+
+    $orderService = Mockery::mock(OrderService::class);
+    $orderService->shouldReceive('getSoonExpiringActiveOrders')->atLeast()->once()->andReturn([['id' => 1], ['id' => 2]]);
+
+    $orderRepoMock = Mockery::mock(OrderRepository::class);
+    $orderRepoMock->shouldReceive('findBy')->atLeast()->once()->andReturn([$first, $second]);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('shouldMergeRenewalsForOrder')->twice()->andReturn(true);
+    $serviceMock->shouldReceive('generateMergedInvoiceForOrders')->once()->with([$first, $second])->andThrow(new Exception('second order has no rate'));
+    $serviceMock->shouldReceive('generateForOrder')->twice()->andReturn($invoiceModel);
+    $serviceMock->shouldReceive('issueInvoice')->twice();
+
+    $di = container();
+    $di['em']->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
+    $di['mod_service'] = $di->protect(fn ($name, $sub = '') => match ([$name, $sub]) {
+        ['Order', ''] => $orderService,
+        ['Invoice', 'Subscription'] => $subscriptionService,
+        default => throw new RuntimeException("Unexpected service: {$name}/{$sub}"),
+    });
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $serviceMock->setDi($di);
+    expect($serviceMock->generateInvoicesForExpiringOrders())->toBeTrue();
+});
+
+test('renewal batch does not regenerate when issuance fails', function (): void {
+    $first = createEntity(Order::class, ['id' => 1, 'client_id' => 7]);
+    $second = createEntity(Order::class, ['id' => 2, 'client_id' => 7]);
+    $invoiceModel = createEntity(Invoice::class);
+
+    $subscriptionService = Mockery::mock(ServiceSubscription::class);
+    $subscriptionService->shouldReceive('hasActiveSubscriptionForOrder')->twice()->andReturn(false);
+
+    $orderService = Mockery::mock(OrderService::class);
+    $orderService->shouldReceive('getSoonExpiringActiveOrders')->atLeast()->once()->andReturn([['id' => 1], ['id' => 2]]);
+
+    $orderRepoMock = Mockery::mock(OrderRepository::class);
+    $orderRepoMock->shouldReceive('findBy')->atLeast()->once()->andReturn([$first, $second]);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('shouldMergeRenewalsForOrder')->twice()->andReturn(true);
+    $serviceMock->shouldReceive('generateMergedInvoiceForOrders')->once()->with([$first, $second])->andReturn($invoiceModel);
+    $serviceMock->shouldReceive('issueInvoice')->once()->andThrow(new Exception('gateway credits failed'));
+    $serviceMock->shouldNotReceive('generateForOrder');
+
+    $di = container();
+    $di['em']->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
+    $di['mod_service'] = $di->protect(fn ($name, $sub = '') => match ([$name, $sub]) {
+        ['Order', ''] => $orderService,
+        ['Invoice', 'Subscription'] => $subscriptionService,
+        default => throw new RuntimeException("Unexpected service: {$name}/{$sub}"),
+    });
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $serviceMock->setDi($di);
+    expect($serviceMock->generateInvoicesForExpiringOrders())->toBeTrue();
+});
+
 test('renewal batch falls back to the single-invoice path when the merge check fails', function (): void {
     $order = createEntity(Order::class, ['id' => 1, 'client_id' => 7]);
     $invoiceModel = createEntity(Invoice::class);

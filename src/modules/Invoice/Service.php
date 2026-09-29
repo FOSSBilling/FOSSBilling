@@ -3564,15 +3564,38 @@ class Service implements InjectionAwareInterface
         }
 
         foreach ($buckets as $bucket) {
+            $invoices = [];
+
             try {
                 // Single-order buckets keep the exact single-order behavior,
                 // including the existing unpaid-invoice reuse branch.
-                $invoice = count($bucket) === 1
-                    ? $this->generateForOrder($bucket[0])
-                    : $this->generateMergedInvoiceForOrders($bucket);
-                $this->issueInvoice($invoice, ['id' => $invoice->getId(), 'use_credits' => true]);
+                $invoices = count($bucket) === 1
+                    ? [$this->generateForOrder($bucket[0])]
+                    : [$this->generateMergedInvoiceForOrders($bucket)];
             } catch (\Exception $e) {
                 $this->di['logger']->warning($e->getMessage());
+
+                // A failed merge must not block the bucket-mates: retry each
+                // order on the historical single-invoice path instead.
+                if (count($bucket) > 1) {
+                    foreach ($bucket as $order) {
+                        try {
+                            $invoices[] = $this->generateForOrder($order);
+                        } catch (\Exception $fallback) {
+                            $this->di['logger']->warning($fallback->getMessage());
+                        }
+                    }
+                }
+            }
+
+            // Issuance runs outside generation: an issue failure retries
+            // neither generation (which would duplicate lines) nor credits.
+            foreach ($invoices as $invoice) {
+                try {
+                    $this->issueInvoice($invoice, ['id' => $invoice->getId(), 'use_credits' => true]);
+                } catch (\Exception $e) {
+                    $this->di['logger']->warning($e->getMessage());
+                }
             }
         }
 
