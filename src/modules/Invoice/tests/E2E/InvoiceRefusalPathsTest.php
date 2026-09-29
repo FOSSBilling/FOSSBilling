@@ -42,6 +42,7 @@ test('promotions are refused on issued invoices', function (): void {
 
         $draft = Tests\Helpers\ApiClient::request('admin/invoice/prepare', ['client_id' => $clientId]);
         assertApiSuccess($draft);
+        assertApiResultIsInt($draft);
         $draftId = (int) $draft->getResult();
 
         $attached = Tests\Helpers\ApiClient::request('admin/invoice/attach_order', [
@@ -103,6 +104,7 @@ test('processed transactions freeze their money history', function (): void {
             'invoice_option' => 'issue-invoice',
         ]);
         assertApiSuccess($created);
+        assertApiResultIsInt($created);
         $orderId = (int) $created->getResult();
         $order = refPathGetOrder($orderId);
         $invoiceId = (int) $order['unpaid_invoice_id'];
@@ -135,6 +137,7 @@ test('processed transactions freeze their money history', function (): void {
 
         $second = Tests\Helpers\ApiClient::request('admin/invoice/prepare', ['client_id' => $clientId]);
         assertApiSuccess($second);
+        assertApiResultIsInt($second);
         $secondId = (int) $second->getResult();
 
         $gatewayId = refPathCustomGatewayId();
@@ -171,6 +174,7 @@ test('claiming and processing are idempotent', function (): void {
             'invoice_option' => 'issue-invoice',
         ]);
         assertApiSuccess($created);
+        assertApiResultIsInt($created);
         $order = refPathGetOrder((int) $created->getResult());
         $invoiceId = (int) $order['unpaid_invoice_id'];
 
@@ -178,6 +182,7 @@ test('claiming and processing are idempotent', function (): void {
 
         $list = Tests\Helpers\ApiClient::request('admin/invoice/transaction_get_list', ['invoice_id' => $invoiceId]);
         assertApiSuccess($list);
+        assertApiResultIsArray($list);
         $txId = (int) $list->getResult()['list'][0]['id'];
         $journalBefore = refPathJournalTypes($invoiceId);
 
@@ -190,7 +195,7 @@ test('claiming and processing are idempotent', function (): void {
         $process = Tests\Helpers\ApiClient::request('admin/invoice/transaction_process', ['id' => $txId]);
         assertApiSuccess($process);
 
-        // Idempotent retries journal nothing new.
+        // Idempotent retries add no journal rows.
         expect(refPathJournalTypes($invoiceId))->toBe($journalBefore);
     } finally {
         refPathCleanupClient();
@@ -209,6 +214,7 @@ test('canceled invoices refuse payment and issued invoices lock their identity',
             'items' => [['title' => 'E2E service', 'price' => 30, 'quantity' => 1]],
         ]);
         assertApiSuccess($draft);
+        assertApiResultIsInt($draft);
         $invoiceId = (int) $draft->getResult();
 
         $issued = Tests\Helpers\ApiClient::request('admin/invoice/issue', ['id' => $invoiceId]);

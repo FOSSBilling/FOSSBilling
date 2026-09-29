@@ -1512,27 +1512,25 @@ test('issueInvoice still issues when the journal snapshot fails', function (): v
 
     $logger = new Tests\Helpers\TestLogger();
 
+    $systemServiceMock = Mockery::mock(SystemService::class);
+    $systemServiceMock->shouldReceive('getParamValue')->with('invoice_series')->andReturn('TEST-');
+    $systemServiceMock->shouldReceive('getCompany')->andReturn([
+        'name' => 'Test Co',
+        'vat_number' => '',
+        'number' => '',
+        'address_1' => '',
+        'address_2' => '',
+        'address_3' => '',
+        'tel' => '',
+        'email' => '',
+    ]);
+
     $di = container();
     $di['em'] = $em;
     $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = $logger;
     $di['mod_service'] = $di->protect(moduleService([
-        'system' => (function (): Mockery\MockInterface {
-            $system = Mockery::mock(SystemService::class);
-            $system->shouldReceive('getParamValue')->with('invoice_series')->andReturn('TEST-');
-            $system->shouldReceive('getCompany')->andReturn([
-                'name' => 'Test Co',
-                'vat_number' => '',
-                'number' => '',
-                'address_1' => '',
-                'address_2' => '',
-                'address_3' => '',
-                'tel' => '',
-                'email' => '',
-            ]);
-
-            return $system;
-        })(),
+        'system' => $systemServiceMock,
     ]));
     $serviceMock->setDi($di);
 
