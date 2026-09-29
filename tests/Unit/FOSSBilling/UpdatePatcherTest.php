@@ -142,7 +142,7 @@ test('client balance gateway patch restores one-time payments', function (): voi
 
     $patcher = new UpdatePatcher();
     $patcher->setDi($di);
-    (new ReflectionMethod($patcher, 'patch99'))->invoke($patcher);
+    (new ReflectionMethod($patcher, 'patch91'))->invoke($patcher);
 });
 
 test('patch status reports the database level against the code level', function (): void {
