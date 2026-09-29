@@ -723,6 +723,16 @@ class Service implements InjectionAwareInterface
      * past buyer/seller details) stays queryable after the fact. Journal
      * writes never break the business operation: failures are logged and
      * swallowed, mirroring the mail sends.
+     *
+     * The row is written with a raw DBAL insert rather than through the
+     * EntityManager, nested in the caller's transaction via a savepoint when
+     * one is active (the mutation paths call this inside their
+     * `wrapInTransaction` closures, so the row commits atomically with the
+     * transition) and in its own implicit transaction otherwise. Bypassing
+     * the UnitOfWork matters: a failed insert rolls back only its savepoint
+     * instead of leaving a poisoned pending insertion that a later flush
+     * would retry — which would fail the surrounding mutation and close the
+     * EntityManager.
      */
     public function recordJournalEvent(Invoice $invoice, string $type, ?array $extra = null): void
     {
@@ -750,14 +760,25 @@ class Service implements InjectionAwareInterface
                 $adminId = (int) $this->di['loggedin_admin']->getId();
             }
 
-            $journal = new InvoiceEvent();
-            $journal->setInvoiceId($invoice->getId());
-            $journal->setType($type);
-            $journal->setAdminId($adminId);
-            $journal->setClientId($invoice->getClientId());
-            $journal->setSnapshot($snapshot);
-            $this->di['em']->persist($journal);
-            $this->di['em']->flush();
+            $snapshotJson = json_encode($snapshot, JSON_INVALID_UTF8_SUBSTITUTE);
+            if ($snapshotJson === false) {
+                throw new \FOSSBilling\Exception('Unable to encode the invoice journal snapshot.');
+            }
+
+            $connection = $this->di['em']->getConnection();
+            $connection->transactional(function () use ($connection, $invoice, $type, $adminId, $snapshotJson): void {
+                $connection->executeStatement(
+                    'INSERT INTO invoice_event (invoice_id, type, admin_id, client_id, snapshot, created_at) VALUES (:invoice_id, :type, :admin_id, :client_id, :snapshot, :created_at)',
+                    [
+                        'invoice_id' => $invoice->getId(),
+                        'type' => $type,
+                        'admin_id' => $adminId,
+                        'client_id' => $invoice->getClientId(),
+                        'snapshot' => $snapshotJson,
+                        'created_at' => date('Y-m-d H:i:s'),
+                    ]
+                );
+            });
         } catch (\Throwable $exception) {
             $this->di['logger']->error('Failed to record invoice journal event', [
                 'invoice_id' => $invoice->getId(),
@@ -1004,12 +1025,12 @@ class Service implements InjectionAwareInterface
         return $email;
     }
 
-    public function markAsPaid(Invoice $invoice, $charge = true, $execute = false, bool $deferEvents = false, bool $deferJournal = false, ?bool &$actuallyPaid = null): bool
+    public function markAsPaid(Invoice $invoice, $charge = true, $execute = false, bool $deferEvents = false, ?\DateTime $paidAtOverride = null, ?bool &$actuallyPaid = null): bool
     {
         /** @var InvoiceItem[] $invoiceItems */
         $invoiceItems = [];
-        $paid = $this->di['em']->wrapInTransaction(function () use (&$invoiceItems, $invoice, $charge): bool {
-            return $this->markAsPaidInTransaction($invoice, $charge, $invoiceItems);
+        $paid = $this->di['em']->wrapInTransaction(function () use (&$invoiceItems, $invoice, $charge, $paidAtOverride): bool {
+            return $this->markAsPaidInTransaction($invoice, $charge, $invoiceItems, $paidAtOverride);
         });
         $actuallyPaid = $paid;
 
@@ -1031,22 +1052,19 @@ class Service implements InjectionAwareInterface
 
         $this->di['logger']->info('Marked invoice #{invoice_id} as paid', ['invoice_id' => $invoice->getId()]);
 
-        // The journal snapshot is taken from entity state, so callers that
-        // mutate the invoice after payment (e.g. the admin paid_at override)
-        // defer this until their writes have landed.
-        if (!$deferJournal) {
-            $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_PAID);
-        }
-
         return true;
     }
 
     /**
      * Mark an invoice as paid while the caller owns its invoice-row lock.
      *
+     * The paid journal row is persisted in the same transaction: it commits
+     * atomically with the payment, so a crash can no longer leave a paid
+     * invoice without its journal entry.
+     *
      * @param InvoiceItem[] $invoiceItems
      */
-    private function markAsPaidInTransaction(Invoice $invoice, bool $charge, array &$invoiceItems): bool
+    private function markAsPaidInTransaction(Invoice $invoice, bool $charge, array &$invoiceItems, ?\DateTime $paidAtOverride = null): bool
     {
         $state = $this->lockAndRefreshInvoice($invoice);
         if ($state['status'] === Invoice::STATUS_PAID) {
@@ -1078,13 +1096,15 @@ class Service implements InjectionAwareInterface
         $invoice->setCurrencyRate($currencyRate);
 
         $invoice->setStatus(Invoice::STATUS_PAID);
-        $invoice->setPaidAt(new \DateTime());
+        $invoice->setPaidAt($paidAtOverride ?? new \DateTime());
         $this->di['em']->persist($invoice);
         $this->di['em']->flush();
 
         $this->countIncome($invoice);
         $productService = $this->di['mod_service']('Product');
         $productService->commitReservedPromoRedemptionsForInvoice($invoice);
+
+        $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_PAID);
 
         return true;
     }
@@ -1120,7 +1140,7 @@ class Service implements InjectionAwareInterface
 
         if ($payGateway->getGateway() === 'Custom' && $payGateway->isEnabled()) {
             $actuallyPaid = null;
-            $paid = $this->di['em']->wrapInTransaction(function () use ($invoice, $payGateway, $transactionId, &$actuallyPaid): bool {
+            $paid = $this->di['em']->wrapInTransaction(function () use ($invoice, $payGateway, $transactionId, $paidAt, &$actuallyPaid): bool {
                 // Re-validate under the invoice lock: the invoice may have
                 // been canceled or replaced after the preflight check above.
                 // Creating the transaction record in this transaction means a
@@ -1160,7 +1180,7 @@ class Service implements InjectionAwareInterface
                     throw new InformationException('Transaction ID is already associated with another invoice.');
                 }
 
-                $result = $this->markAsPaid($invoice, false, false, true, true, $actuallyPaid);
+                $result = $this->markAsPaid($invoice, false, false, true, $paidAt, $actuallyPaid);
                 if ($result) {
                     $transaction->setAmount((string) $invoiceTotal);
                     $transaction->setCurrency($invoice->getCurrency());
@@ -1174,16 +1194,15 @@ class Service implements InjectionAwareInterface
                 return $result;
             });
 
-            // Events, tasks, and the journal run after the commit above, so
-            // neither notifications nor provisioning precede the recorded
-            // payment, and the journal snapshot includes the paid_at override.
+            // Events and tasks run after the commit above, so neither
+            // notifications nor provisioning precede the recorded payment. The
+            // paid journal row (including the paid_at override, threaded into
+            // the payment transaction above) already committed atomically.
             // Gated on the payment having happened in this call: a concurrent
             // caller that won the race already emitted all of these (an
             // unknown signal defaults to emitting, preserving the old behavior
             // for callers that predate it).
             if ($paid && ($actuallyPaid ?? true)) {
-                $this->applyAdminPaidAtOverride($invoice, $paidAt);
-                $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_PAID);
                 $this->firePaymentReceivedEvent($invoice);
                 if ($execute) {
                     $this->executeInvoiceItemTasks(
@@ -1196,14 +1215,13 @@ class Service implements InjectionAwareInterface
             return $paid;
         }
 
-        // Payment, journal, and notifications run after the paid_at override
-        // below so all of them observe the admin-supplied date. Gated on the
-        // payment having happened in this call, as above.
+        // Payment runs first so the paid journal row commits atomically with
+        // it (carrying the admin-supplied paid_at date via the override
+        // below); notifications follow. Gated on the payment having happened
+        // in this call, as above.
         $actuallyPaid = null;
-        $paid = $this->markAsPaid($invoice, false, false, true, true, $actuallyPaid);
+        $paid = $this->markAsPaid($invoice, false, false, true, $paidAt, $actuallyPaid);
         if ($paid && ($actuallyPaid ?? true)) {
-            $this->applyAdminPaidAtOverride($invoice, $paidAt);
-            $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_PAID);
             $this->firePaymentReceivedEvent($invoice);
             if ($execute) {
                 $this->executeInvoiceItemTasks(
@@ -1214,17 +1232,6 @@ class Service implements InjectionAwareInterface
         }
 
         return $paid;
-    }
-
-    private function applyAdminPaidAtOverride(Invoice $invoice, ?\DateTime $paidAt): void
-    {
-        if ($paidAt === null) {
-            return;
-        }
-
-        $invoice->setPaidAt($paidAt);
-        $this->di['em']->persist($invoice);
-        $this->di['em']->flush();
     }
 
     public function validateAdminMarkAsPaidRequest(array $data, ?Invoice $invoice = null): PayGateway
@@ -1493,6 +1500,10 @@ class Service implements InjectionAwareInterface
             $invoice->setIssued(true);
             $this->di['em']->persist($invoice);
             $this->di['em']->flush();
+
+            // Commits atomically with the issuance above: a crash can no
+            // longer leave an issued invoice without its journal entry.
+            $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_ISSUED);
         });
 
         if (isset($data['use_credits']) && $data['use_credits']) {
@@ -1502,8 +1513,6 @@ class Service implements InjectionAwareInterface
         $this->di['event_dispatcher']->dispatch(new AfterAdminInvoiceIssueEvent((int) $invoice->getId()));
 
         $this->di['logger']->info('Issued invoice #{invoice_id}', ['invoice_id' => $invoice->getId()]);
-
-        $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_ISSUED);
 
         return true;
     }
@@ -1578,16 +1587,17 @@ class Service implements InjectionAwareInterface
                 $this->di['em']->flush();
             }
 
-            // Events, tasks, and the journal run after the commit below, so neither notifications
-            // nor provisioning are held under the balance lock - and a journal write can never
-            // fail the payment itself.
-            $this->markAsPaid($invoice, false, false, true, true);
+            // Events and tasks run after the commit below, so neither
+            // notifications nor provisioning are held under the balance lock.
+            // The paid journal row is written by markAsPaid() inside this same
+            // transaction, so it commits atomically with the payment; a
+            // journal failure still cannot fail the payment itself.
+            $this->markAsPaid($invoice, false, false, true);
 
             return true;
         });
 
         if ($paid) {
-            $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_PAID);
             $this->firePaymentReceivedEvent($invoice);
             $this->executeInvoiceItemTasks(
                 $this->getInvoiceItemRepository()->findByInvoiceId((int) $invoice->getId()),
@@ -1790,6 +1800,9 @@ class Service implements InjectionAwareInterface
                         $this->addNote($new, 'Offline refund: the amount was returned outside FOSSBilling; this credit note records it.');
                     }
 
+                    // Commits atomically with the credit note above.
+                    $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_REFUNDED, $offline ? ['offline' => true] : null);
+
                     return $new;
                 });
                 $result = (int) $new->getId();
@@ -1813,8 +1826,6 @@ class Service implements InjectionAwareInterface
         $this->di['event_dispatcher']->dispatch(new AfterAdminInvoiceRefundEvent((int) $invoice->getId()));
 
         $this->di['logger']->info('Refunded invoice #{invoice_id}', ['invoice_id' => $invoice->getId()]);
-
-        $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_REFUNDED, $offline ? ['offline' => true] : null);
 
         return $result;
     }
@@ -2070,6 +2081,9 @@ class Service implements InjectionAwareInterface
                 $this->addNote($new, $note);
             }
 
+            // Commits atomically with the debit note above.
+            $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_DEBITED);
+
             return $new;
         });
         $result = (int) $new->getId();
@@ -2087,8 +2101,6 @@ class Service implements InjectionAwareInterface
         $this->di['event_dispatcher']->dispatch(new AfterAdminInvoiceDebitEvent((int) $invoice->getId(), $result));
 
         $this->di['logger']->info('Debited invoice #{invoice_id}', ['invoice_id' => $invoice->getId()]);
-
-        $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_DEBITED);
 
         return $result;
     }
@@ -2184,7 +2196,12 @@ class Service implements InjectionAwareInterface
                 throw new InformationException('This invoice can no longer be edited. Issued invoices are immutable; correct them with a credit note or a replacement invoice.');
             }
 
-            return $this->createAndAttachOrder($invoice, $payload);
+            $created = $this->createAndAttachOrder($invoice, $payload);
+
+            // Commits atomically with the order and line above.
+            $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_ORDER_ATTACHED, ['order_id' => (int) $created->getId()]);
+
+            return $created;
         });
 
         // Drafts are sent by the issue path; only re-send issued invoices.
@@ -2205,8 +2222,6 @@ class Service implements InjectionAwareInterface
         $this->di['event_dispatcher']->dispatch(new AfterAdminInvoiceAttachOrderEvent((int) $invoice->getId(), (int) $order->getId()));
 
         $this->di['logger']->info('Attached order #{order_id} to invoice #{invoice_id}', ['order_id' => $order->getId(), 'invoice_id' => $invoice->getId()]);
-
-        $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_ORDER_ATTACHED, ['order_id' => (int) $order->getId()]);
 
         return (int) $order->getId();
     }
@@ -2258,6 +2273,9 @@ class Service implements InjectionAwareInterface
             if ($reason !== '') {
                 $this->addNote($original, $reason);
             }
+
+            // Commits atomically with the void above.
+            $this->recordJournalEvent($original, InvoiceEvent::TYPE_CANCELED, ['reason' => $reason]);
         });
 
         $this->di['event_dispatcher']->dispatch(new AfterAdminInvoiceCancelEvent((int) $original->getId()));
@@ -2272,8 +2290,6 @@ class Service implements InjectionAwareInterface
         }
 
         $this->di['logger']->info('Canceled invoice #{invoice_id} without replacement', ['invoice_id' => $original->getId()]);
-
-        $this->recordJournalEvent($original, InvoiceEvent::TYPE_CANCELED, ['reason' => $reason]);
 
         return true;
     }
@@ -2450,6 +2466,9 @@ class Service implements InjectionAwareInterface
                 $this->addNote($new, $reason);
             }
 
+            // Commits atomically with the cancel-and-replace above.
+            $this->recordJournalEvent($original, InvoiceEvent::TYPE_REISSUED, ['replacement_id' => (int) $new->getId()]);
+
             return $new;
         });
         $result = (int) $new->getId();
@@ -2476,8 +2495,6 @@ class Service implements InjectionAwareInterface
         $this->di['event_dispatcher']->dispatch(new AfterAdminInvoiceReissueEvent((int) $original->getId(), $result));
 
         $this->di['logger']->info('Reissued invoice #{invoice_id} as #{replacement_id}', ['invoice_id' => $original->getId(), 'replacement_id' => $result]);
-
-        $this->recordJournalEvent($original, InvoiceEvent::TYPE_REISSUED, ['replacement_id' => $result]);
 
         return $result;
     }
@@ -2653,7 +2670,7 @@ class Service implements InjectionAwareInterface
         sort($changedFields);
         $this->di['event_dispatcher']->dispatch(new BeforeAdminInvoiceUpdateEvent((int) $model->getId(), $changedFields));
 
-        $this->di['em']->wrapInTransaction(function () use ($model, $data, $invoiceItemService, &$previousStatus, &$wasIssued): void {
+        $this->di['em']->wrapInTransaction(function () use ($model, $data, $invoiceItemService, $changedFields, &$previousStatus, &$wasIssued): void {
             $this->lockAndRefreshInvoice($model);
             if (!$this->isInvoiceEditable($model)) {
                 throw new InformationException('This invoice can no longer be edited. Issued invoices are immutable; correct them with a credit note or a replacement invoice.');
@@ -2745,13 +2762,14 @@ class Service implements InjectionAwareInterface
                 $productService->releaseReservedPromoRedemptionsForInvoice($model, 'invoice_canceled');
                 $productService->releaseReservedStockForInvoice($model, 'invoice_canceled');
             }
+
+            // Commits atomically with the edits above.
+            $this->recordJournalEvent($model, InvoiceEvent::TYPE_UPDATED, ['changed_fields' => $changedFields]);
         });
 
         $this->di['event_dispatcher']->dispatch(new AfterAdminInvoiceUpdateEvent((int) $model->getId()));
 
         $this->di['logger']->info('Updated invoice #{invoice_id}', ['invoice_id' => $model->getId()]);
-
-        $this->recordJournalEvent($model, InvoiceEvent::TYPE_UPDATED, ['changed_fields' => $changedFields]);
 
         // An edit to an already-issued invoice changes what the client was
         // sent, so re-send it (the issue path sends on its own).
