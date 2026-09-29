@@ -17,7 +17,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             throw new InformationException('Staff identity not found.');
         }
 
-return $identity;
+        return $identity;
     }
 
     public function status(): array

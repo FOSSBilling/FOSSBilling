@@ -17,7 +17,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
             throw new InformationException('Client identity not found.');
         }
 
-return $identity;
+        return $identity;
     }
 
     public function status(): array
