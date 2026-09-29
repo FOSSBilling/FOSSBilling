@@ -80,6 +80,9 @@ class Client implements ApiArrayInterface, TimestampInterface
     #[ORM\Column(name: 'tax_exempt', type: Types::BOOLEAN, nullable: true, options: ['default' => false])]
     private ?bool $taxExempt = false;
 
+    #[ORM\Column(name: 'merge_renewals', type: Types::BOOLEAN, nullable: true)]
+    private ?bool $mergeRenewals = null;
+
     #[ORM\Column(type: Types::STRING, length: 100, nullable: true)]
     private ?string $type = null;
 
@@ -383,6 +386,23 @@ class Client implements ApiArrayInterface, TimestampInterface
     public function setTaxExempt(?bool $taxExempt): self
     {
         $this->taxExempt = $taxExempt;
+
+        return $this;
+    }
+
+    /**
+     * Per-client renewal merge preference: true = always merge this client's
+     * renewals, false = never merge, null = inherit the global
+     * `invoice_merge_renewals` setting.
+     */
+    public function getMergeRenewals(): ?bool
+    {
+        return $this->mergeRenewals;
+    }
+
+    public function setMergeRenewals(?bool $mergeRenewals): self
+    {
+        $this->mergeRenewals = $mergeRenewals;
 
         return $this;
     }
@@ -963,6 +983,7 @@ class Client implements ApiArrayInterface, TimestampInterface
             'auth_type' => $this->authType,
             'status' => $this->status ?? self::ACTIVE,
             'tax_exempt' => $this->taxExempt ?? false,
+            'merge_renewals' => $this->mergeRenewals,
             'notes' => $this->notes,
             'ip' => $this->ip,
             'referred_by' => $this->referredBy,

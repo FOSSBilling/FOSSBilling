@@ -48,7 +48,7 @@ class Service implements InjectionAwareInterface
      */
     private const array EXPORTABLE_COLUMNS = [
         'id', 'aid', 'role', 'auth_type', 'email', 'status',
-        'email_approved', 'tax_exempt', 'type', 'first_name', 'last_name',
+        'email_approved', 'tax_exempt', 'merge_renewals', 'type', 'first_name', 'last_name',
         'gender', 'birthday', 'phone_cc', 'phone', 'company', 'company_vat',
         'company_number', 'address_1', 'address_2', 'city', 'state', 'postcode',
         'country', 'notes', 'currency', 'lang', 'timezone', 'ip', 'referred_by',

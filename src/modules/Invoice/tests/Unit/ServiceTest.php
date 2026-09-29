@@ -10,7 +10,9 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Client\Entity\Client;
 use Box\Mod\Client\Entity\ClientBalance;
+use Box\Mod\Client\Repository\ClientRepository;
 use Box\Mod\Client\Service as ClientService;
 use Box\Mod\Cron\Event\AfterAdminCronRunEvent;
 use Box\Mod\Currency\Entity\Currency as CurrencyEntity;
@@ -59,6 +61,7 @@ use Box\Mod\Invoice\ServicePayGateway;
 use Box\Mod\Invoice\ServiceSubscription;
 use Box\Mod\Invoice\ServiceTax;
 use Box\Mod\Order\Entity\Order;
+use Box\Mod\Order\Repository\OrderMetaRepository;
 use Box\Mod\Order\Repository\OrderRepository;
 use Box\Mod\Order\Service as OrderService;
 use Box\Mod\Product\Entity\Product;
@@ -1730,7 +1733,7 @@ test('prepares invoice with undefined currency', function (): void {
         'issue',
     ];
 
-    $clientModel = createEntity(Box\Mod\Client\Entity\Client::class);
+    $clientModel = createEntity(Client::class);
 
     $invoiceModel = createEntity(Invoice::class);
 
@@ -1780,7 +1783,7 @@ test('prepareInvoice with instant issue reports issuance failures instead of ret
         ->once()
         ->andThrow(new FOSSBilling\InformationException('Only unpaid draft invoices can be issued.'));
 
-    $clientModel = createEntity(Box\Mod\Client\Entity\Client::class, ['currency' => 'EUR']);
+    $clientModel = createEntity(Client::class, ['currency' => 'EUR']);
 
     $em = Mockery::mock(EntityManagerInterface::class);
     $em->shouldReceive('persist')->atLeast()->once();
@@ -2149,11 +2152,11 @@ test('records a balance transaction for a one-cent invoice', function (): void {
     // The paid journal row is written by markAsPaid() inside the credit transaction, not here.
     $service->shouldNotReceive('recordJournalEvent');
 
-    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 20]);
+    $client = createEntity(Client::class, ['id' => 20]);
 
     $di = container();
     $di['em']->shouldReceive('getRepository')->with(Invoice::class)->andReturn(invoiceLockingRepository());
-    $di['em']->shouldReceive('getReference')->with(Box\Mod\Client\Entity\Client::class, 20)->andReturn($client);
+    $di['em']->shouldReceive('getReference')->with(Client::class, 20)->andReturn($client);
     $di['em']->shouldReceive('persist')->once()->with(
         Mockery::on(fn (ClientBalance $balance): bool => $balance->getClient()?->getId() === 20
             && $balance->getType() === 'invoice'
@@ -2185,11 +2188,11 @@ test('pays an invoice with credits and records a balance transaction', function 
     // The paid journal row is written by markAsPaid() inside the credit transaction, not here.
     $service->shouldNotReceive('recordJournalEvent');
 
-    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 20]);
+    $client = createEntity(Client::class, ['id' => 20]);
 
     $di = container();
     $di['em']->shouldReceive('getRepository')->with(Invoice::class)->andReturn(invoiceLockingRepository());
-    $di['em']->shouldReceive('getReference')->with(Box\Mod\Client\Entity\Client::class, 20)->andReturn($client);
+    $di['em']->shouldReceive('getReference')->with(Client::class, 20)->andReturn($client);
     $di['em']->shouldReceive('persist')->once()->with(
         Mockery::on(fn (ClientBalance $balance): bool => $balance->getClient()?->getId() === 20
             && $balance->getType() === 'invoice'
@@ -2300,11 +2303,11 @@ test('pays a fully funded invoice despite floating-point rounding dust', functio
     // The paid journal row is written by markAsPaid() inside the credit transaction, not here.
     $service->shouldNotReceive('recordJournalEvent');
 
-    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 20]);
+    $client = createEntity(Client::class, ['id' => 20]);
 
     $di = container();
     $di['em']->shouldReceive('getRepository')->with(Invoice::class)->andReturn(invoiceLockingRepository());
-    $di['em']->shouldReceive('getReference')->with(Box\Mod\Client\Entity\Client::class, 20)->andReturn($client);
+    $di['em']->shouldReceive('getReference')->with(Client::class, 20)->andReturn($client);
     $di['em']->shouldReceive('persist')->once()->with(
         Mockery::on(fn (ClientBalance $balance): bool => $balance->getClient()?->getId() === 20
             && $balance->getType() === 'invoice'
@@ -3064,7 +3067,7 @@ test('rmByClient erases invoices in any state, bypassing deletion guards', funct
         ->with(5)
         ->andReturn([$paid, $draft]);
 
-    $client = createEntity(Box\Mod\Client\Entity\Client::class);
+    $client = createEntity(Client::class);
     setEntityId($client, 5);
 
     $serviceMock->setDi($di);
@@ -3595,6 +3598,253 @@ test('generates invoices for expiring orders', function (): void {
     expect($result)->toBeBool()->toBeTrue();
 });
 
+function mergeRenewalCheckService(array $metaPairs, ?object $client, mixed $global): Service
+{
+    $metaRepo = Mockery::mock(OrderMetaRepository::class);
+    $metaRepo->shouldReceive('getPairsForOrder')->andReturn($metaPairs);
+
+    $orderService = Mockery::mock(OrderService::class);
+    $orderService->shouldReceive('getOrderMetaRepository')->andReturn($metaRepo);
+
+    $systemService = Mockery::mock(SystemService::class);
+    $systemService->shouldReceive('getParamValue')->with('invoice_merge_renewals', false)->andReturn($global);
+
+    $clientRepo = Mockery::mock(ClientRepository::class);
+    $clientRepo->shouldReceive('find')->andReturn($client);
+
+    $di = container();
+    $di['em']->shouldReceive('getRepository')->with(Client::class)->andReturn($clientRepo);
+    $di['mod_service'] = $di->protect(fn ($name) => match ($name) {
+        'Order' => $orderService,
+        'system' => $systemService,
+        default => throw new RuntimeException("Unexpected service: {$name}"),
+    });
+
+    $service = new Service();
+    $service->setDi($di);
+
+    return $service;
+}
+
+test('per-order merge override wins over the client preference and the global setting', function (): void {
+    $forcedOn = mergeRenewalCheckService(
+        [OrderService::META_MERGE_RENEWALS => '1'],
+        createEntity(Client::class, ['merge_renewals' => false]),
+        false
+    );
+    $forcedOff = mergeRenewalCheckService(
+        [OrderService::META_MERGE_RENEWALS => '0'],
+        createEntity(Client::class, ['merge_renewals' => true]),
+        true
+    );
+
+    expect($forcedOn->shouldMergeRenewalsForOrder(createEntity(Order::class, ['id' => 1, 'client_id' => 2])))->toBeTrue()
+        ->and($forcedOff->shouldMergeRenewalsForOrder(createEntity(Order::class, ['id' => 3, 'client_id' => 4])))->toBeFalse();
+});
+
+test('client merge preference wins over the global setting', function (): void {
+    $clientOn = mergeRenewalCheckService([], createEntity(Client::class, ['merge_renewals' => true]), false);
+    $clientOff = mergeRenewalCheckService([], createEntity(Client::class, ['merge_renewals' => false]), true);
+
+    expect($clientOn->shouldMergeRenewalsForOrder(createEntity(Order::class, ['id' => 1, 'client_id' => 2])))->toBeTrue()
+        ->and($clientOff->shouldMergeRenewalsForOrder(createEntity(Order::class, ['id' => 3, 'client_id' => 4])))->toBeFalse();
+});
+
+test('global merge setting applies when neither the order nor the client overrides', function (): void {
+    $globalOn = mergeRenewalCheckService([], createEntity(Client::class), '1');
+    $globalOff = mergeRenewalCheckService([], createEntity(Client::class), false);
+    $missingClient = mergeRenewalCheckService([], null, true);
+
+    expect($globalOn->shouldMergeRenewalsForOrder(createEntity(Order::class, ['id' => 1, 'client_id' => 2])))->toBeTrue()
+        ->and($globalOff->shouldMergeRenewalsForOrder(createEntity(Order::class, ['id' => 3, 'client_id' => 4])))->toBeFalse()
+        ->and($missingClient->shouldMergeRenewalsForOrder(createEntity(Order::class, ['id' => 5, 'client_id' => 6])))->toBeTrue();
+});
+
+test('renewal batch merges mergeable orders sharing a bucket into one invoice', function (): void {
+    $first = createEntity(Order::class, ['id' => 1, 'client_id' => 7, 'currency' => 'USD', 'period' => '1M', 'expires_at' => '2026-10-01 00:00:00']);
+    $second = createEntity(Order::class, ['id' => 2, 'client_id' => 7, 'currency' => 'USD', 'period' => '1M', 'expires_at' => '2026-10-01 00:00:00']);
+    $invoiceModel = createEntity(Invoice::class);
+
+    $subscriptionService = Mockery::mock(ServiceSubscription::class);
+    $subscriptionService->shouldReceive('hasActiveSubscriptionForOrder')->twice()->andReturn(false);
+
+    $orderService = Mockery::mock(OrderService::class);
+    $orderService->shouldReceive('getSoonExpiringActiveOrders')->atLeast()->once()->andReturn([['id' => 1], ['id' => 2]]);
+
+    $orderRepoMock = Mockery::mock(OrderRepository::class);
+    $orderRepoMock->shouldReceive('findBy')->atLeast()->once()->andReturn([$first, $second]);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('shouldMergeRenewalsForOrder')->twice()->andReturn(true);
+    $serviceMock->shouldReceive('generateMergedInvoiceForOrders')->once()->with([$first, $second])->andReturn($invoiceModel);
+    $serviceMock->shouldReceive('issueInvoice')->once();
+    $serviceMock->shouldNotReceive('generateForOrder');
+
+    $di = container();
+    $di['em']->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
+    $di['mod_service'] = $di->protect(fn ($name, $sub = '') => match ([$name, $sub]) {
+        ['Order', ''] => $orderService,
+        ['Invoice', 'Subscription'] => $subscriptionService,
+        default => throw new RuntimeException("Unexpected service: {$name}/{$sub}"),
+    });
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $serviceMock->setDi($di);
+    expect($serviceMock->generateInvoicesForExpiringOrders())->toBeTrue();
+});
+
+test('renewal batch keeps subscription-backed orders on the single-invoice path', function (): void {
+    $order = createEntity(Order::class, ['id' => 1, 'client_id' => 7]);
+    $invoiceModel = createEntity(Invoice::class);
+
+    $subscriptionService = Mockery::mock(ServiceSubscription::class);
+    $subscriptionService->shouldReceive('hasActiveSubscriptionForOrder')->once()->with($order)->andReturn(true);
+
+    $orderService = Mockery::mock(OrderService::class);
+    $orderService->shouldReceive('getSoonExpiringActiveOrders')->atLeast()->once()->andReturn([['id' => 1]]);
+
+    $orderRepoMock = Mockery::mock(OrderRepository::class);
+    $orderRepoMock->shouldReceive('findBy')->atLeast()->once()->andReturn([$order]);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('shouldMergeRenewalsForOrder')->once()->with($order)->andReturn(true);
+    $serviceMock->shouldReceive('generateForOrder')->once()->with($order)->andReturn($invoiceModel);
+    $serviceMock->shouldReceive('issueInvoice')->once();
+    $serviceMock->shouldNotReceive('generateMergedInvoiceForOrders');
+
+    $di = container();
+    $di['em']->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
+    $di['mod_service'] = $di->protect(fn ($name, $sub = '') => match ([$name, $sub]) {
+        ['Order', ''] => $orderService,
+        ['Invoice', 'Subscription'] => $subscriptionService,
+        default => throw new RuntimeException("Unexpected service: {$name}/{$sub}"),
+    });
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $serviceMock->setDi($di);
+    expect($serviceMock->generateInvoicesForExpiringOrders())->toBeTrue();
+});
+
+test('renewal batch invoices different billing periods separately', function (): void {
+    $monthly = createEntity(Order::class, ['id' => 1, 'client_id' => 7, 'currency' => 'USD', 'period' => '1M', 'expires_at' => '2026-10-01 00:00:00']);
+    $yearly = createEntity(Order::class, ['id' => 2, 'client_id' => 7, 'currency' => 'USD', 'period' => '1Y', 'expires_at' => '2026-10-01 00:00:00']);
+    $invoiceModel = createEntity(Invoice::class);
+
+    $subscriptionService = Mockery::mock(ServiceSubscription::class);
+    $subscriptionService->shouldReceive('hasActiveSubscriptionForOrder')->twice()->andReturn(false);
+
+    $orderService = Mockery::mock(OrderService::class);
+    $orderService->shouldReceive('getSoonExpiringActiveOrders')->atLeast()->once()->andReturn([['id' => 1], ['id' => 2]]);
+
+    $orderRepoMock = Mockery::mock(OrderRepository::class);
+    $orderRepoMock->shouldReceive('findBy')->atLeast()->once()->andReturn([$monthly, $yearly]);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('shouldMergeRenewalsForOrder')->twice()->andReturn(true);
+    $serviceMock->shouldReceive('generateForOrder')->twice()->andReturn($invoiceModel);
+    $serviceMock->shouldReceive('issueInvoice')->twice();
+    $serviceMock->shouldNotReceive('generateMergedInvoiceForOrders');
+
+    $di = container();
+    $di['em']->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
+    $di['mod_service'] = $di->protect(fn ($name, $sub = '') => match ([$name, $sub]) {
+        ['Order', ''] => $orderService,
+        ['Invoice', 'Subscription'] => $subscriptionService,
+        default => throw new RuntimeException("Unexpected service: {$name}/{$sub}"),
+    });
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $serviceMock->setDi($di);
+    expect($serviceMock->generateInvoicesForExpiringOrders())->toBeTrue();
+});
+
+test('renewal batch falls back to the single-invoice path when the merge check fails', function (): void {
+    $order = createEntity(Order::class, ['id' => 1, 'client_id' => 7]);
+    $invoiceModel = createEntity(Invoice::class);
+
+    $orderService = Mockery::mock(OrderService::class);
+    $orderService->shouldReceive('getSoonExpiringActiveOrders')->atLeast()->once()->andReturn([['id' => 1]]);
+
+    $orderRepoMock = Mockery::mock(OrderRepository::class);
+    $orderRepoMock->shouldReceive('findBy')->atLeast()->once()->andReturn([$order]);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('shouldMergeRenewalsForOrder')->once()->andThrow(new Exception('meta store unavailable'));
+    $serviceMock->shouldReceive('generateForOrder')->once()->with($order)->andReturn($invoiceModel);
+    $serviceMock->shouldReceive('issueInvoice')->once();
+    $serviceMock->shouldNotReceive('generateMergedInvoiceForOrders');
+
+    $di = container();
+    $di['em']->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderService);
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $serviceMock->setDi($di);
+    expect($serviceMock->generateInvoicesForExpiringOrders())->toBeTrue();
+});
+
+test('merged renewal invoice carries exactly one line per order and falls due with the latest expiry', function (): void {
+    $service = new Service();
+    $first = createEntity(Order::class, [
+        'id' => 1, 'client_id' => 7, 'currency' => 'USD', 'period' => '1M',
+        'price' => '10.00', 'quantity' => 1, 'expires_at' => '2026-10-01 00:00:00',
+    ]);
+    $second = createEntity(Order::class, [
+        'id' => 2, 'client_id' => 7, 'currency' => 'USD', 'period' => '1M',
+        'price' => '20.00', 'quantity' => 1, 'expires_at' => '2026-10-05 00:00:00',
+    ]);
+    $client = createEntity(Client::class);
+    setEntityId($client, 7);
+
+    $clientRepo = Mockery::mock(ClientRepository::class);
+    $clientRepo->shouldReceive('find')->with(7)->andReturn($client);
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(Client::class)->andReturn($clientRepo);
+    $em->shouldReceive('persist');
+    $em->shouldReceive('flush');
+
+    $lineCalls = [];
+    $invoiceItemService = Mockery::mock(ServiceInvoiceItem::class);
+    $invoiceItemService->shouldReceive('generateFromOrder')
+        ->twice()
+        ->andReturnUsing(function (Invoice $proforma, Order $order) use (&$lineCalls): void {
+            // Each order contributes exactly one line to the shared draft:
+            // the #1969 duplication shape would call twice for one order.
+            $lineCalls[] = [(int) $order->getId(), $proforma];
+        });
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('setInvoiceDefaults')->once();
+    $serviceMock->shouldReceive('recordJournalEvent')->once();
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(fn ($name, $sub = '') => match ([$name, $sub]) {
+        ['Invoice', 'InvoiceItem'] => $invoiceItemService,
+        default => throw new RuntimeException("Unexpected service: {$name}/{$sub}"),
+    });
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $serviceMock->setDi($di);
+    $invoice = $serviceMock->generateMergedInvoiceForOrders([$first, $second]);
+
+    expect($lineCalls)->toHaveCount(2)
+        ->and(array_map(fn (array $call): int => $call[0], $lineCalls))->toBe([1, 2])
+        ->and($lineCalls[0][1])->toBe($lineCalls[1][1])
+        ->and($lineCalls[0][1])->toBe($invoice)
+        ->and($invoice->getCurrency())->toBe('USD')
+        ->and($invoice->getDueAt()?->format('Y-m-d'))->toBe('2026-10-05')
+        ->and($invoice->isIssued())->toBeFalse();
+});
+
+test('merged renewal invoice requires at least one order', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->setDi(container());
+
+    expect(fn (): Invoice => $serviceMock->generateMergedInvoiceForOrders([]))->toThrow(FOSSBilling\InformationException::class);
+});
+
 test('activates paid invoices in batch', function (): void {
     $service = new Service();
     $invoiceItemModel = createEntity(InvoiceItem::class, []);
@@ -4096,7 +4346,7 @@ test('counts invoices', function (): void {
 
 test('throws exception when generating funds invoice without active order', function (): void {
     $service = new Service();
-    $clientModel = createEntity(Box\Mod\Client\Entity\Client::class);
+    $clientModel = createEntity(Client::class);
 
     expect(fn (): Invoice => $service->generateFundsInvoice($clientModel, 10))
         ->toThrow(FOSSBilling\Exception::class, 'You must have at least one active order before you can add funds so you cannot proceed at the current time!');
@@ -4104,7 +4354,7 @@ test('throws exception when generating funds invoice without active order', func
 
 test('throws exception when generating funds invoice while the feature is disabled', function (): void {
     $service = new Service();
-    $clientModel = createEntity(Box\Mod\Client\Entity\Client::class, ['currency' => 'EUR']);
+    $clientModel = createEntity(Client::class, ['currency' => 'EUR']);
 
     $systemService = Mockery::mock(SystemService::class);
     $systemService->shouldReceive('getParamValue')
@@ -4123,7 +4373,7 @@ test('throws exception when generating funds invoice while the feature is disabl
 
 test('throws exception when generating funds invoice below minimum amount', function (): void {
     $service = new Service();
-    $clientModel = createEntity(Box\Mod\Client\Entity\Client::class, ['currency' => 'EUR']);
+    $clientModel = createEntity(Client::class, ['currency' => 'EUR']);
     $fundsAmount = 2;
 
     $minAmount = 10;
@@ -4144,7 +4394,7 @@ test('throws exception when generating funds invoice below minimum amount', func
 
 test('throws exception when generating funds invoice above maximum amount', function (): void {
     $service = new Service();
-    $clientModel = createEntity(Box\Mod\Client\Entity\Client::class, ['currency' => 'EUR']);
+    $clientModel = createEntity(Client::class, ['currency' => 'EUR']);
     $fundsAmount = 200;
 
     $minAmount = 10;
@@ -4167,7 +4417,7 @@ test('generates funds invoice', function (): void {
     $service = new Service();
     $invoiceModel = createEntity(Invoice::class);
 
-    $clientModel = createEntity(Box\Mod\Client\Entity\Client::class, ['currency' => 'EUR']);
+    $clientModel = createEntity(Client::class, ['currency' => 'EUR']);
     setEntityId($clientModel, 7);
     $fundsAmount = 20;
 
@@ -5091,7 +5341,7 @@ test('promoAddToInvoice applies a promo to an order on an unpaid invoice', funct
         'unpaid_invoice_id' => 10,
     ]);
 
-    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 3]);
+    $client = createEntity(Client::class, ['id' => 3]);
 
     $promo = new Box\Mod\Product\Entity\Promo();
     $promoReflection = new ReflectionProperty($promo, 'id');
@@ -5143,13 +5393,13 @@ test('promoAddToInvoice applies a promo to an order on an unpaid invoice', funct
     $em->shouldReceive('flush')->atLeast()->once();
 
     // Client lookup.
-    $clientRepo = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
+    $clientRepo = Mockery::mock(ClientRepository::class);
     $clientRepo->shouldReceive('find')->once()->with(3)->andReturn($client);
     $invoiceRepo = Mockery::mock(InvoiceRepository::class);
     $invoiceRepo->shouldReceive('lockAndGetStatus')->once()->with(10)->andReturn(Invoice::STATUS_UNPAID);
     $em->shouldReceive('getRepository')->andReturnUsing(
         fn (string $class) => match ($class) {
-            Box\Mod\Client\Entity\Client::class => $clientRepo,
+            Client::class => $clientRepo,
             Invoice::class => $invoiceRepo,
             default => $invoiceItemRepo,
         }
@@ -5191,7 +5441,7 @@ test('promoAddToInvoice values a percentage promo from the invoice order line', 
         'unpaid_invoice_id' => 10,
     ]);
 
-    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 3]);
+    $client = createEntity(Client::class, ['id' => 3]);
 
     $promo = new Box\Mod\Product\Entity\Promo();
     $promoReflection = new ReflectionProperty($promo, 'id');
@@ -5252,13 +5502,13 @@ test('promoAddToInvoice values a percentage promo from the invoice order line', 
     $em->shouldReceive('persist')->atLeast()->once();
     $em->shouldReceive('flush')->atLeast()->once();
 
-    $clientRepo = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
+    $clientRepo = Mockery::mock(ClientRepository::class);
     $clientRepo->shouldReceive('find')->once()->with(3)->andReturn($client);
     $invoiceRepo = Mockery::mock(InvoiceRepository::class);
     $invoiceRepo->shouldReceive('lockAndGetStatus')->once()->with(10)->andReturn(Invoice::STATUS_UNPAID);
     $em->shouldReceive('getRepository')->andReturnUsing(
         fn (string $class) => match ($class) {
-            Box\Mod\Client\Entity\Client::class => $clientRepo,
+            Client::class => $clientRepo,
             Invoice::class => $invoiceRepo,
             default => $invoiceItemRepo,
         }
@@ -5427,8 +5677,8 @@ test('promoAddToInvoice aborts when the invoice is paid concurrently', function 
     $currencyService = Mockery::mock(CurrencyService::class);
     $currencyService->shouldReceive('getCurrencyRepository')->once()->andReturn($currencyRepository);
 
-    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 3]);
-    $clientRepo = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
+    $client = createEntity(Client::class, ['id' => 3]);
+    $clientRepo = Mockery::mock(ClientRepository::class);
     $clientRepo->shouldReceive('find')->once()->with(3)->andReturn($client);
     $invoiceRepo = Mockery::mock(InvoiceRepository::class);
     // A payment committed after the pre-check: the locked status is paid.
@@ -5438,7 +5688,7 @@ test('promoAddToInvoice aborts when the invoice is paid concurrently', function 
     $em->shouldReceive('wrapInTransaction')->once()->andReturnUsing(fn (callable $callback): mixed => $callback());
     $em->shouldReceive('getRepository')->andReturnUsing(
         fn (string $class) => match ($class) {
-            Box\Mod\Client\Entity\Client::class => $clientRepo,
+            Client::class => $clientRepo,
             Invoice::class => $invoiceRepo,
             default => Mockery::mock(InvoiceItemRepository::class)->shouldIgnoreMissing(),
         }
@@ -5671,9 +5921,9 @@ test('refundInvoice validates partial refund input', function (): void {
     $invoiceRepo->shouldReceive('findBy')->andReturn([]);
     $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
 
-    $clientRepo = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
+    $clientRepo = Mockery::mock(ClientRepository::class);
     $clientRepo->shouldReceive('find')->andReturn(null);
-    $em->shouldReceive('getRepository')->with(Box\Mod\Client\Entity\Client::class)->andReturn($clientRepo);
+    $em->shouldReceive('getRepository')->with(Client::class)->andReturn($clientRepo);
 
     $systemService = Mockery::mock(SystemService::class);
     $systemService->shouldReceive('getParamValue')

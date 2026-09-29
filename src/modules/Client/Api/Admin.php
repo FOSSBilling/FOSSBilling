@@ -275,6 +275,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional string $lang - Client language
      * @optional string $timezone - IANA timezone identifier (e.g. "America/New_York"). Used to localize dates and times shown to the client.
      * @optional string $notes - Notes about client. Visible for admin only
+     * @optional bool $merge_renewals - Renewal merge preference: 1 to always merge, 0 to never merge, empty to inherit the global setting
      * @optional string $custom_1 - Custom field 1
      * @optional string $custom_2 - Custom field 2
      * @optional string $custom_3 - Custom field 3
@@ -430,6 +431,11 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         if (array_key_exists('tax_exempt', $data)) {
             $client->setTaxExempt((bool) $data['tax_exempt']);
+        }
+
+        if (array_key_exists('merge_renewals', $data)) {
+            $mergeRenewals = $data['merge_renewals'];
+            $client->setMergeRenewals($mergeRenewals === null || $mergeRenewals === '' ? null : (bool) $mergeRenewals);
         }
 
         if (array_key_exists('birthday', $data) && $data['birthday'] !== null && $data['birthday'] !== '') {

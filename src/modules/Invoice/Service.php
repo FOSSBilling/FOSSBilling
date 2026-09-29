@@ -3295,30 +3295,23 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @param int $due_days
+     * Resolves the renewal price and line overrides for a single order.
+     *
+     * Domain renewal pricing comes from the registrar/config rather than the
+     * order, since it legitimately changes between registration and renewal.
+     * Other products keep the order's own price so admin-edited prices are
+     * respected.
+     *
+     * @return array{price: float|string, line: array<string, mixed>}
      */
-    public function generateForOrder(Order $order, $due_days = null, bool $applyPromo = true): Invoice
+    private function resolveRenewalLine(Order $order): array
     {
-        // check if we do have invoice prepared already
-        if ($order->getUnpaidInvoiceId() !== null) {
-            $p = $this->getInvoiceRepository()->find($order->getUnpaidInvoiceId());
-            if ($p instanceof Invoice && $p->getStatus() === Invoice::STATUS_UNPAID) {
-                return $p;
-            }
-
-            $orderService = $this->di['mod_service']('Order');
-            $orderService->unsetUnpaidInvoice($order);
-        }
-
         $price = $order->getPrice();
         $line = [
             'price' => $order->getPrice(),
             'quantity' => $order->getQuantity(),
         ];
 
-        // Domain renewal pricing is resolved from the registrar/config rather than
-        // the order, since it legitimately changes between registration and renewal.
-        // Other products keep the order's own price so admin-edited prices are respected.
         if (in_array($order->getStatus(), [
             Order::STATUS_ACTIVE,
             Order::STATUS_FAILED_RENEW,
@@ -3357,6 +3350,27 @@ class Service implements InjectionAwareInterface
             throw new InformationException('Invoices are not generated for negative amount orders.');
         }
 
+        return ['price' => $price, 'line' => $line];
+    }
+
+    /**
+     * @param int $due_days
+     */
+    public function generateForOrder(Order $order, $due_days = null, bool $applyPromo = true): Invoice
+    {
+        // check if we do have invoice prepared already
+        if ($order->getUnpaidInvoiceId() !== null) {
+            $p = $this->getInvoiceRepository()->find($order->getUnpaidInvoiceId());
+            if ($p instanceof Invoice && $p->getStatus() === Invoice::STATUS_UNPAID) {
+                return $p;
+            }
+
+            $orderService = $this->di['mod_service']('Order');
+            $orderService->unsetUnpaidInvoice($order);
+        }
+
+        ['price' => $price, 'line' => $line] = $this->resolveRenewalLine($order);
+
         $client = $this->di['em']->getRepository(Client::class)->find($order->getClientId())
             ?? throw new InformationException('Client not found');
 
@@ -3393,6 +3407,109 @@ class Service implements InjectionAwareInterface
         return $proforma;
     }
 
+    /**
+     * Resolves whether an order's renewals merge with other orders.
+     * Precedence: per-order meta override, then the client's tri-state
+     * preference, then the global `invoice_merge_renewals` setting (off
+     * unless explicitly enabled).
+     */
+    public function shouldMergeRenewalsForOrder(Order $order): bool
+    {
+        $orderService = $this->di['mod_service']('Order');
+        $meta = $orderService->getOrderMetaRepository()->getPairsForOrder((int) $order->getId());
+        $override = $meta[\Box\Mod\Order\Service::META_MERGE_RENEWALS] ?? null;
+        if ($override === '1') {
+            return true;
+        }
+        if ($override === '0') {
+            return false;
+        }
+
+        $client = $this->di['em']->getRepository(Client::class)->find($order->getClientId());
+        $preference = $client instanceof Client ? $client->getMergeRenewals() : null;
+        if ($preference !== null) {
+            return $preference;
+        }
+
+        $systemService = $this->di['mod_service']('system');
+
+        return (bool) $systemService->getParamValue('invoice_merge_renewals', false);
+    }
+
+    /**
+     * Groups mergeable renewals so one invoice covers the same client,
+     * currency, due date, and billing period. The period is part of the key
+     * because mixing billing cycles on one invoice confuses direct debits
+     * and standing orders.
+     */
+    private function renewalMergeKey(Order $order): string
+    {
+        $expiresAt = $order->getExpiresAt();
+
+        return implode('|', [
+            $order->getClientId(),
+            $order->getCurrency(),
+            $expiresAt instanceof \DateTime ? $expiresAt->format('Y-m-d') : '',
+            $order->getPeriod() ?? '',
+        ]);
+    }
+
+    /**
+     * Builds one draft renewal invoice covering several orders, then returns
+     * it unissued for the caller to issue. Each order gets its own renewal
+     * line (via generateFromOrder, which also stamps `unpaid_invoice_id` on
+     * every order so none are picked up again on the next run), and the
+     * invoice falls due with the latest expiry in the bucket.
+     *
+     * Like generateForOrder, everything happens while the invoice is a draft,
+     * so invoice immutability is never violated: lines are never appended to
+     * an already-issued invoice.
+     *
+     * @param list<Order> $orders non-empty, same merge bucket
+     */
+    public function generateMergedInvoiceForOrders(array $orders, bool $applyPromo = true): Invoice
+    {
+        $first = reset($orders);
+        if (!$first instanceof Order) {
+            throw new InformationException('No orders were provided for the merged renewal invoice.');
+        }
+
+        $client = $this->di['em']->getRepository(Client::class)->find($first->getClientId())
+            ?? throw new InformationException('Client not found');
+
+        $proforma = new Invoice();
+        $proforma->setClientId($client->getId() !== null ? (int) $client->getId() : null);
+        $proforma->setStatus(Invoice::STATUS_UNPAID);
+        $proforma->setCurrency($first->getCurrency());
+        $proforma->setIssued(false);
+        $this->di['em']->persist($proforma);
+        $this->di['em']->flush();
+
+        $this->setInvoiceDefaults($proforma);
+
+        $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
+        $dueAt = null;
+        foreach ($orders as $order) {
+            ['price' => $price, 'line' => $line] = $this->resolveRenewalLine($order);
+            $invoiceItemService->generateFromOrder($proforma, $order, InvoiceItem::TASK_RENEW, $price, $line, $applyPromo);
+
+            $expiresAt = $order->getExpiresAt();
+            if ($expiresAt instanceof \DateTime && ($dueAt === null || $expiresAt > $dueAt)) {
+                $dueAt = $expiresAt;
+            }
+        }
+
+        if ($dueAt instanceof \DateTime) {
+            $proforma->setDueAt($dueAt);
+            $this->di['em']->persist($proforma);
+            $this->di['em']->flush();
+        }
+
+        $this->recordJournalEvent($proforma, InvoiceEvent::TYPE_CREATED);
+
+        return $proforma;
+    }
+
     public function generateInvoicesForExpiringOrders(): bool
     {
         $orderService = $this->di['mod_service']('Order');
@@ -3404,9 +3521,44 @@ class Service implements InjectionAwareInterface
 
         $orderIds = array_map(static fn (array $order): int => (int) ($order['id'] ?? 0), $orders);
         $models = $this->di['em']->getRepository(Order::class)->findBy(['id' => $orderIds]);
+
+        $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
+
+        /** @var array<string, list<Order>> $buckets */
+        $buckets = [];
         foreach ($models as $model) {
+            $mergeable = false;
+
             try {
-                $invoice = $this->generateForOrder($model);
+                $mergeable = $this->shouldMergeRenewalsForOrder($model)
+                    && !$subscriptionService->hasActiveSubscriptionForOrder($model);
+            } catch (\Exception $e) {
+                // Conservative fallback: an order that cannot be evaluated
+                // for merging keeps the historical one-invoice-per-order path.
+                $this->di['logger']->warning($e->getMessage());
+            }
+
+            if (!$mergeable) {
+                try {
+                    $invoice = $this->generateForOrder($model);
+                    $this->issueInvoice($invoice, ['id' => $invoice->getId(), 'use_credits' => true]);
+                } catch (\Exception $e) {
+                    $this->di['logger']->warning($e->getMessage());
+                }
+
+                continue;
+            }
+
+            $buckets[$this->renewalMergeKey($model)][] = $model;
+        }
+
+        foreach ($buckets as $bucket) {
+            try {
+                // Single-order buckets keep the exact single-order behavior,
+                // including the existing unpaid-invoice reuse branch.
+                $invoice = count($bucket) === 1
+                    ? $this->generateForOrder($bucket[0])
+                    : $this->generateMergedInvoiceForOrders($bucket);
                 $this->issueInvoice($invoice, ['id' => $invoice->getId(), 'use_credits' => true]);
             } catch (\Exception $e) {
                 $this->di['logger']->warning($e->getMessage());

@@ -1320,6 +1320,7 @@ class UpdatePatcher implements InjectionAwareInterface
             123 => 'patch123',
             124 => 'patch124',
             125 => 'patch125',
+            126 => 'patch126',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -4496,6 +4497,17 @@ class UpdatePatcher implements InjectionAwareInterface
                 . 'INNER JOIN `client_group` g ON g.`id` = c.`client_group_id`'
             );
             $this->executeSql('ALTER TABLE `client` DROP COLUMN `client_group_id`');
+        }
+    }
+
+    private function patch126(): void
+    {
+        // Per-client renewal merge preference (#4118): tri-state column,
+        // NULL inherits the global `invoice_merge_renewals` setting. Guarded
+        // so reruns are no-ops; non-MySQL drivers get the column from the
+        // portable schema sync.
+        if (!$this->tableHasColumn('client', 'merge_renewals')) {
+            $this->executeSql('ALTER TABLE `client` ADD COLUMN `merge_renewals` TINYINT(1) DEFAULT NULL');
         }
     }
 

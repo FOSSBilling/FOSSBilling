@@ -366,6 +366,34 @@ test('update clears groups when group_ids is empty', function (): void {
     expect($adminClient->update(['id' => 1, 'group_ids' => []]))->toBeTrue();
 });
 
+test('update stores the tri-state merge_renewals preference', function (mixed $input, ?bool $expected): void {
+    $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
+    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1]);
+
+    $clientRepository = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
+    $clientRepository->shouldReceive('find')->once()->with(1)->andReturn($client);
+
+    $clientService = Mockery::mock(Box\Mod\Client\Service::class);
+
+    $di = container();
+    $em = $di['em'];
+    $em->shouldReceive('getRepository')->with(Box\Mod\Client\Entity\Client::class)->andReturn($clientRepository);
+    $em->shouldReceive('persist')->once()->with($client);
+    $em->shouldReceive('flush')->once();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod_service'] = $di->protect(moduleService(['client' => $clientService]));
+
+    $adminClient->setDi($di);
+    $adminClient->setService($clientService);
+
+    expect($adminClient->update(['id' => 1, 'merge_renewals' => $input]))->toBeTrue()
+        ->and($client->getMergeRenewals())->toBe($expected);
+})->with([
+    'opt-in merges' => ['1', true],
+    'opt-out never merges' => ['0', false],
+    'empty inherits the global setting' => ['', null],
+]);
+
 test('update rejects a non-integer group id', function (): void {
     $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
     $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1]);
