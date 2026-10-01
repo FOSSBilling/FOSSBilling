@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# cspell:words enmod fcgi setenvif dissite ensite enconf configtest dbname NFIZXNYMJ Gemqiihh
 set -euo pipefail
 
 repo_root="$(pwd)"
@@ -9,6 +10,12 @@ rm -f src/config.php
 sudo apt-get update
 sudo apt-get install -y --no-install-recommends apache2
 sudo a2enmod rewrite proxy_fcgi setenvif
+sudo tee /etc/apache2/conf-available/fossbilling-ci.conf >/dev/null <<EOF
+ServerName localhost
+User $(id -un)
+Group $(id -gn)
+EOF
+sudo a2enconf fossbilling-ci
 cat > /tmp/fossbilling-ci-fpm.conf <<EOF
 [global]
 error_log = ${repo_root}/test-results/server/php-fpm.log
