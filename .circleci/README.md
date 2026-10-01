@@ -312,6 +312,22 @@ These native measurements cover PHP 8.5 and frontend/integration validation;
 they exclude PHP 8.3/8.4, PHPStan, quality checks, and packaging. They are proof
 of the initial architecture, not a complete CI speed comparison.
 
+Final native verification
+[24](https://app.circleci.com/pipelines/github/FOSSBilling/FOSSBilling/24),
+revision `e3e2923fd45c37f11db8b5a954a8ddb1ed771ff2`, passed all four jobs in
+2m18s using 45 credits. All three JUnit reports were downloaded and compared
+with the Docker baseline: no added, missing or changed test outcomes. Apache
+startup checks passed, and the browser HTML report and JUnit were verified in
+the uploaded artifacts. The native repeat in pipeline 22 passed in 2m14s using
+43 credits. These runs reuse dependency download caches but still install
+Apache and the matching Playwright browser in each fresh job.
+
+Trigger the initial native proof with `--param native-pilot-stage=php`; use
+`--param native-pilot-stage=integration` for all four native jobs. The original
+Docker pilot has its own `run-validation-pilot` parameter. Enable one at a time
+unless intentionally comparing both workflows. Default config compiles to
+zero jobs.
+
 References:
 
 - [PHP convenience image](https://circleci.com/developer/images/image/cimg/php)
