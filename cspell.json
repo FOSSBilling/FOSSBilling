@@ -439,6 +439,7 @@
         "oldconfig",
         "ordermodel",
         "TINYINT",
+        "LONGTEXT",
         "hostings",
         "rulesets",
         "describedby",
