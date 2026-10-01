@@ -181,8 +181,6 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                             throw new Payment_Exception('PayPal subscription ' . $ipn['subscr_id'] . ' is not linked to invoice ' . $tx['invoice_id']);
                         }
                     }
-
-                    // No re-claim: the service layer already holds the processing claim.
                 } elseif (($ipn['payment_status'] ?? '') === 'Refunded') {
                     break;
                 } else {
