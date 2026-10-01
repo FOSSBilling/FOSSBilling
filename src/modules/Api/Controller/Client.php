@@ -94,8 +94,28 @@ class Client implements InjectionAwareInterface
             // Sentry by default only captures unhandled exceptions, so we need to manually capture these.
             \Sentry\captureException($exc);
 
-            return $this->renderJson(null, $exc);
+            return $this->renderJson(null, $this->sanitizeGuestError($role, $class, $call, $exc));
         }
+    }
+
+    /**
+     * Guest callers get a generic message for unexpected internal failures so
+     * implementation details never leak; the original is logged for operators.
+     */
+    private function sanitizeGuestError($role, $class, $call, \Exception $exc): \Exception
+    {
+        if ($role !== 'guest' || $exc instanceof \FOSSBilling\Exception) {
+            return $exc;
+        }
+
+        $this->di['logger']->error('Guest API internal error in {call}: {exception_class}: {message}', [
+            'call' => $call,
+            'class' => $class,
+            'exception_class' => $exc::class,
+            'message' => $exc->getMessage(),
+        ]);
+
+        return new \FOSSBilling\InformationException('An unexpected error occurred. Please try again later.');
     }
 
     private function _loadConfig(): void
