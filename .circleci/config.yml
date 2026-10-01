@@ -157,6 +157,7 @@ jobs:
       ADMIN_EMAIL: email@example.com
       ADMIN_PASSWORD: 4WGemqiihh8iM3
       PLAYWRIGHT_JUNIT_OUTPUT_FILE: tests/E2E/Playwright/artifacts/junit/results.xml
+      NATIVE_SUITE: << parameters.suite >>
     steps:
       - native-app-install
       - when:

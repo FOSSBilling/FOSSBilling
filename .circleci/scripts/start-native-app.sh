@@ -70,4 +70,10 @@ curl --fail --silent --show-error \
   'http://localhost/install/install.php?a=install' >/dev/null
 
 # Match the browser pilot's session configuration.
-php -r '$path = "src/config.php"; $config = require $path; $config["security"]["perform_session_fingerprinting"] = false; file_put_contents($path, "<?php\nreturn " . var_export($config, true) . ";\n");'
+if [[ "${NATIVE_SUITE:-}" == browser ]]; then
+  php -r '$path = "src/config.php"; $config = require $path; $config["security"]["perform_session_fingerprinting"] = false; file_put_contents($path, "<?php\nreturn " . var_export($config, true) . ";\n");'
+fi
+
+# Check a rewritten route and .htaccess protection of configuration files.
+curl --fail --silent --show-error http://localhost/login >/dev/null
+test "$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' http://localhost/config.php)" = 404
