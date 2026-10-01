@@ -188,7 +188,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function action_delete(Order $order): void
+    public function action_delete(Order $order, bool $forceDelete = false): void
     {
         $model = $this->_getOrderService($order, false);
         if ($model instanceof ServiceLicense) {

@@ -287,6 +287,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * Delete order.
      *
      * @optional bool $delete_addons - Remove addons also. Default false.
+     * @optional bool $force_delete - remove the local service even if remote cancellation fails. Default false.
      *
      * @return bool
      */

@@ -20,6 +20,7 @@ use Box\Mod\Servicehosting\Repository\ServiceHostingHpRepository;
 use Box\Mod\Servicehosting\Repository\ServiceHostingRepository;
 use Box\Mod\Servicehosting\Repository\ServiceHostingServerRepository;
 use Box\Mod\Servicehosting\Service;
+use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 
 use function Tests\Helpers\container;
@@ -47,7 +48,7 @@ test('batch enriches hosting accounts with orders and clients', function (): voi
         'updated_at' => '2026-07-19 10:01:00',
     ];
 
-    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection = Mockery::mock(Connection::class);
     $connection->shouldReceive('fetchAllAssociative')
         ->once()
         ->with(Mockery::pattern('/FROM client_order/'), ['hosting', 10])
@@ -87,7 +88,7 @@ test('batch enriches hosting accounts with orders and clients', function (): voi
 
 test('batch returns hosting accounts without orders', function (): void {
     $service = new Service();
-    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection = Mockery::mock(Connection::class);
     $connection->shouldReceive('fetchAllAssociative')->once()->andReturn([]);
 
     $di = container();
@@ -451,6 +452,54 @@ test('action delete', function (): void {
     $serviceMock->action_delete($orderModel);
 });
 
+test('action delete with force removes local service when remote cancel fails', function (): void {
+    $orderModel = createEntity(Order::class, ['status' => Order::STATUS_ACTIVE]);
+    $model = new ServiceHosting();
+
+    $orderServiceMock = Mockery::mock(OrderService::class);
+    $orderServiceMock->shouldReceive('getOrderService')->andReturn($model);
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('remove')->once()->with($model);
+    $emMock->shouldReceive('flush')->once();
+    $emMock->shouldIgnoreMissing();
+
+    $di = container();
+    $di['em'] = $emMock;
+    $di['logger'] = new FOSSBilling\Logger();
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('action_cancel')->once()->andThrow(new FOSSBilling\Exception('WHM unreachable'));
+
+    $serviceMock->setDi($di);
+    $serviceMock->action_delete($orderModel, true);
+});
+
+test('action delete without force rethrows remote cancel failure', function (): void {
+    $orderModel = createEntity(Order::class, ['status' => Order::STATUS_ACTIVE]);
+    $model = new ServiceHosting();
+
+    $orderServiceMock = Mockery::mock(OrderService::class);
+    $orderServiceMock->shouldReceive('getOrderService')->andReturn($model);
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldNotReceive('remove');
+    $emMock->shouldIgnoreMissing();
+
+    $di = container();
+    $di['em'] = $emMock;
+    $di['logger'] = new FOSSBilling\Logger();
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('action_cancel')->once()->andThrow(new FOSSBilling\Exception('WHM unreachable'));
+
+    $serviceMock->setDi($di);
+
+    expect(fn () => $serviceMock->action_delete($orderModel, false))->toThrow(FOSSBilling\Exception::class, 'WHM unreachable');
+});
+
 test('change account plan', function (): void {
     $service = new Service();
     $orderModel = createEntity(Order::class, ['status' => Order::STATUS_ACTIVE]);
@@ -802,7 +851,7 @@ test('get server pairs', function (): void {
         ],
     ];
 
-    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection = Mockery::mock(Connection::class);
     $connection->shouldReceive('fetchAllAssociative')->atLeast()->once()->andReturn($queryResult);
 
     $di = container();
@@ -1020,7 +1069,7 @@ test('get hp pairs', function (): void {
         ],
     ];
 
-    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection = Mockery::mock(Connection::class);
     $connection->shouldReceive('fetchAllAssociative')->atLeast()->once()->andReturn($queryResult);
 
     $di = container();
@@ -1062,11 +1111,15 @@ test('delete hp', function (): void {
     $model = new ServiceHostingHp();
     setEntityId($model, 1);
 
+    $connectionMock = Mockery::mock(Connection::class);
+    $connectionMock->shouldReceive('fetchFirstColumn')->atLeast()->once()->andReturn([]);
+
     $repo = Mockery::mock(ServiceHostingRepository::class);
-    $repo->shouldReceive('findOneBy')->atLeast()->once()->andReturn(null);
+    $repo->shouldReceive('findOneBy')->andReturn(null);
     $repo->shouldIgnoreMissing();
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getConnection')->andReturn($connectionMock);
     $emMock->shouldReceive('getRepository')->with(ServiceHosting::class)->andReturn($repo);
     $emMock->shouldReceive('remove')->atLeast()->once();
     $emMock->shouldReceive('flush')->atLeast()->once();
@@ -1079,6 +1132,28 @@ test('delete hp', function (): void {
 
     $result = $service->deleteHp($model);
     expect($result)->toBeTrue();
+});
+
+test('delete hp refuses orphaned usages without detaching', function (): void {
+    $service = new Service();
+    $model = new ServiceHostingHp();
+    setEntityId($model, 1);
+
+    $connectionMock = Mockery::mock(Connection::class);
+    $connectionMock->shouldReceive('fetchFirstColumn')->once()->andReturn([5]);
+    $connectionMock->shouldReceive('fetchFirstColumn')->once()->andReturn([]);
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getConnection')->andReturn($connectionMock);
+    $emMock->shouldNotReceive('remove');
+    $emMock->shouldIgnoreMissing();
+
+    $di = container();
+    $di['em'] = $emMock;
+    $di['logger'] = new FOSSBilling\Logger();
+    $service->setDi($di);
+
+    expect(fn () => $service->deleteHp($model))->toThrow(FOSSBilling\InformationException::class, 'orphaned');
 });
 
 test('to hosting hp api array', function (): void {

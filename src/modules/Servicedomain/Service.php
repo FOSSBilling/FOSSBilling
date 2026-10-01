@@ -393,14 +393,21 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function action_delete(Order $order): void
+    public function action_delete(Order $order, bool $forceDelete = false): void
     {
         $service = $this->_getOrderService($order, false);
 
         if ($service instanceof ServiceDomain) {
             // cancel if not canceled
             if ($order->getStatus() != Order::STATUS_CANCELED) {
-                $this->action_cancel($order);
+                try {
+                    $this->action_cancel($order);
+                } catch (\Exception $e) {
+                    if (!$forceDelete) {
+                        throw $e;
+                    }
+                    $this->di['logger']->info('Remote cancel failed during forced delete, removing local service: {message}', ['message' => $e->getMessage()]);
+                }
             }
             $this->di['em']->remove($service);
             $this->di['em']->flush();

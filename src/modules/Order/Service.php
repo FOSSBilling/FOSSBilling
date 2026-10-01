@@ -1818,7 +1818,7 @@ class Service implements InjectionAwareInterface
         }
 
         try {
-            $this->_callOnService($order, Order::ACTION_DELETE);
+            $this->_callOnService($order, Order::ACTION_DELETE, $forceDelete);
         } catch (\Exception $e) {
             if (!$forceDelete) {
                 throw $e;

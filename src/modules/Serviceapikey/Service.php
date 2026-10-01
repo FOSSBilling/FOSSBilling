@@ -110,7 +110,7 @@ class Service implements InjectionAwareInterface
         return $this->action_unsuspend($order);
     }
 
-    public function action_delete(Order $order): void
+    public function action_delete(Order $order, bool $forceDelete = false): void
     {
         $model = $this->_getService($order, false);
         if ($model instanceof ServiceApiKey) {
