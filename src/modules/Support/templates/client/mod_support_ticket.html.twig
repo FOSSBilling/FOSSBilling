@@ -80,7 +80,7 @@
             {% for i, message in ticket.messages %}
                 <div class="row">
                     <div class="col-md-12">
-                        <div class="card {% if message.author.role == 'admin' %}border-primary{% endif %}">
+                        <div class="card {% if message.author.role|default('') == 'admin' %}border-primary{% endif %}">
                             <div class="card-header d-flex justify-content-between align-items-center">
                                 <div class="d-flex align-items-center gap-2">
                                     {{ avatar(message.author.email|default(''), 40, 'img-thumbnail d-none d-md-block', null, 'div') }}
@@ -88,7 +88,7 @@
                                         <span class="text-muted">
                                             {{ message.author.name }}
                                         </span>
-                                        {% if message.author.role == 'admin' %}
+                                        {% if message.author.role|default('') == 'admin' %}
                                             <span class="badge text-bg-primary">
                                                     {{ 'Operator'|trans }}
                                                 </span>
