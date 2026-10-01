@@ -990,25 +990,25 @@ class Service implements InjectionAwareInterface
 
         $buyer = $clientService->toApiArray($client);
 
-        $model->seller_company = $seller['name'];
-        $model->seller_company_vat = $seller['vat_number'];
-        $model->seller_company_number = $seller['number'];
-        $model->seller_address = trim("{$seller['address_1']} {$seller['address_2']} {$seller['address_3']}");
-        $model->seller_phone = $seller['tel'];
-        $model->seller_email = $seller['email'];
+        $model->seller_company = $seller['name'] ?? null;
+        $model->seller_company_vat = $seller['vat_number'] ?? null;
+        $model->seller_company_number = $seller['number'] ?? null;
+        $model->seller_address = trim(($seller['address_1'] ?? '') . ' ' . ($seller['address_2'] ?? '') . ' ' . ($seller['address_3'] ?? ''));
+        $model->seller_phone = $seller['tel'] ?? null;
+        $model->seller_email = $seller['email'] ?? null;
 
-        $model->buyer_first_name = $buyer['first_name'];
-        $model->buyer_last_name = $buyer['last_name'];
-        $model->buyer_company = $buyer['company'];
-        $model->buyer_company_vat = $buyer['company_vat'];
-        $model->buyer_company_number = $buyer['company_number'];
-        $model->buyer_address = "{$buyer['address_1']} {$buyer['address_2']}";
-        $model->buyer_city = $buyer['city'];
-        $model->buyer_state = $buyer['state'];
-        $model->buyer_country = $buyer['country'];
-        $model->buyer_phone = "{$buyer['phone_cc']} {$buyer['phone']}";
-        $model->buyer_email = $buyer['email'];
-        $model->buyer_zip = $buyer['postcode'];
+        $model->buyer_first_name = $buyer['first_name'] ?? null;
+        $model->buyer_last_name = $buyer['last_name'] ?? null;
+        $model->buyer_company = $buyer['company'] ?? null;
+        $model->buyer_company_vat = $buyer['company_vat'] ?? null;
+        $model->buyer_company_number = $buyer['company_number'] ?? null;
+        $model->buyer_address = trim(($buyer['address_1'] ?? '') . ' ' . ($buyer['address_2'] ?? ''));
+        $model->buyer_city = $buyer['city'] ?? null;
+        $model->buyer_state = $buyer['state'] ?? null;
+        $model->buyer_country = $buyer['country'] ?? null;
+        $model->buyer_phone = trim(($buyer['phone_cc'] ?? '') . ' ' . ($buyer['phone'] ?? ''));
+        $model->buyer_email = $buyer['email'] ?? null;
+        $model->buyer_zip = $buyer['postcode'] ?? null;
 
         $invoice_due_days = $systemService->getParamValue('invoice_due_days');
         if (!is_numeric($invoice_due_days)) {
@@ -2405,13 +2405,13 @@ class Service implements InjectionAwareInterface
     private function getSellerData(array $invoice, int &$lines): array
     {
         $sourceData = [
-            'Name' => $invoice['seller']['company'],
-            'Address 1' => $invoice['seller']['address_1'],
-            'Address 2' => $invoice['seller']['address_2'],
-            'Address 3' => $invoice['seller']['address_3'],
-            'Phone' => $invoice['seller']['phone'],
-            'Email' => $invoice['seller']['email'],
-            'VAT Number' => $invoice['seller']['company_vat'],
+            'Name' => $invoice['seller']['company'] ?? null,
+            'Address 1' => $invoice['seller']['address_1'] ?? null,
+            'Address 2' => $invoice['seller']['address_2'] ?? null,
+            'Address 3' => $invoice['seller']['address_3'] ?? null,
+            'Phone' => $invoice['seller']['phone'] ?? null,
+            'Email' => $invoice['seller']['email'] ?? null,
+            'VAT Number' => $invoice['seller']['company_vat'] ?? null,
         ];
 
         foreach ($sourceData as $label => $data) {
@@ -2428,15 +2428,15 @@ class Service implements InjectionAwareInterface
     private function getBuyerData(array $invoice, int &$lines): array
     {
         $sourceData = [
-            'Company' => $invoice['buyer']['company'],
-            'Name' => $invoice['buyer']['first_name'] . ' ' . $invoice['buyer']['last_name'],
-            'Address' => $invoice['buyer']['address'],
-            'City' => $invoice['buyer']['city'],
-            'State' => $invoice['buyer']['state'],
-            'Zip' => $invoice['buyer']['zip'],
-            'Country' => $invoice['buyer']['country'],
-            'Phone' => $invoice['buyer']['phone'],
-            'VAT Number' => $invoice['buyer']['company_vat'],
+            'Company' => $invoice['buyer']['company'] ?? null,
+            'Name' => trim(($invoice['buyer']['first_name'] ?? '') . ' ' . ($invoice['buyer']['last_name'] ?? '')),
+            'Address' => $invoice['buyer']['address'] ?? null,
+            'City' => $invoice['buyer']['city'] ?? null,
+            'State' => $invoice['buyer']['state'] ?? null,
+            'Zip' => $invoice['buyer']['zip'] ?? null,
+            'Country' => $invoice['buyer']['country'] ?? null,
+            'Phone' => $invoice['buyer']['phone'] ?? null,
+            'VAT Number' => $invoice['buyer']['company_vat'] ?? null,
         ];
 
         foreach ($sourceData as $label => $data) {
