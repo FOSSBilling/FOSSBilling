@@ -13,6 +13,9 @@
     {% set needsFinalize = (not finalized) or (pendingPatches is not same as(null) and pendingPatches > 0) %}
     {% set canComplete = finalized and (pendingPatches is same as(null) or pendingPatches is same as(0)) %}
     {% set updateType = state.update_type is defined and state.update_type is not same as(null) ? state.update_type + 0 : null %}
+    {% set schemaDrift = finalization.schema_drift|default({}) %}
+    {% set driftOutOfSync = schemaDrift.out_of_sync|default(false) %}
+    {% set lastSyncFailure = schemaDrift.last_sync_failure|default(null) %}
 
     <div class="page page-center">
         <div class="container-tight py-4">
@@ -46,6 +49,21 @@
                         {% endif %}
 
                         {% if needsFinalize %}
+                            {% if driftOutOfSync %}
+                                <div class="alert alert-warning" role="alert">
+                                    <div class="alert-icon">
+                                        <svg class="icon alert-icon icon-2" aria-hidden="true">
+                                            <use href="#alert-triangle" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        {{ 'The database schema is behind the current code and will be synchronized during finalization.'|trans }}
+                                        {% if lastSyncFailure %}
+                                            {{ 'A previous automatic synchronization attempt failed (last attempt: %time%). If finalization reports an error, check the update log before retrying.'|trans({'%time%': lastSyncFailure.attempted_at}) }}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endif %}
                             <div class="d-grid">
                                 <a class="btn btn-primary" href="{{ 'system/finalize_update'|api_url }}"
                                     {{ fb_api_link({

@@ -91,6 +91,7 @@ class UpdateFinalization implements InjectionAwareInterface
             'current_version' => Version::VERSION,
             'state' => $state,
             'pending_patches' => $this->getAvailablePatchCount(),
+            'schema_drift' => $this->getSchemaDriftStatus(),
         ];
     }
 
@@ -416,6 +417,30 @@ class UpdateFinalization implements InjectionAwareInterface
             return $this->createPatcher()->patchStatus();
         } catch (\Throwable) {
             return null;
+        }
+    }
+
+    /**
+     * Lock-free schema-drift report for {@see self::getStatus()}. Never
+     * throws - an unreadable database reports "no drift", the same
+     * recoverability contract as getAvailablePatchCount().
+     *
+     * @return array{out_of_sync: bool, last_sync_failure: array{hash: string, attempted_at: string}|null}
+     */
+    private function getSchemaDriftStatus(): array
+    {
+        try {
+            $patcher = $this->createPatcher();
+
+            return [
+                'out_of_sync' => $patcher->isSchemaOutOfSync(),
+                'last_sync_failure' => $patcher->lastSchemaSyncFailure(),
+            ];
+        } catch (\Throwable) {
+            return [
+                'out_of_sync' => false,
+                'last_sync_failure' => null,
+            ];
         }
     }
 
