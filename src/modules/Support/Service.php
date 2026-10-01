@@ -767,6 +767,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
      * The synthesized `name` field concatenates first and last name to mimic
      * the entity {@see Client::getFullName()} behaviour.
      *
+     * Name and email fields are nullable, so only a missing row means a
+     * missing client.
+     *
      * @return array{id: int, first_name: string, last_name: string, email: string, name: string}|null
      */
     private function fetchClientSummary(int $clientId): ?array
@@ -776,7 +779,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             ['id' => $clientId]
         );
 
-        if ($row === false || !isset($row['id'], $row['first_name'], $row['last_name'], $row['email'])) {
+        if ($row === false) {
             return null;
         }
 
