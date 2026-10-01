@@ -1,4 +1,4 @@
-# cspell:words buildx zstd
+# cspell:words buildx buildkit zstd
 version: 2.1
 
 orbs:
@@ -11,11 +11,22 @@ parameters:
     default: false
   pilot-resource-class:
     type: enum
-    enum: [medium, large]
+    enum: [medium, large, large.gen2]
     default: large
   pilot-docker-layer-caching:
     type: boolean
     default: false
+
+executors:
+  docker-host:
+    parameters:
+      dlc:
+        type: boolean
+        default: false
+    machine:
+      image: ubuntu-2404:current
+      docker_layer_caching: << parameters.dlc >>
+    resource_class: << pipeline.parameters.pilot-resource-class >>
 
 commands:
   inspect-environment:
@@ -50,11 +61,12 @@ jobs:
       php-version:
         type: enum
         enum: ['8.3', '8.4', '8.5']
+      dlc:
+        type: boolean
+        default: false
     executor:
-      name: docker/machine
-      image: ubuntu-2404:current
-      resource_class: << pipeline.parameters.pilot-resource-class >>
-      dlc: << pipeline.parameters.pilot-docker-layer-caching >>
+      name: docker-host
+      dlc: << parameters.dlc >>
     environment:
       PHP_VERSION: << parameters.php-version >>
     steps:
@@ -118,9 +130,7 @@ jobs:
 
   live-tests:
     executor:
-      name: docker/machine
-      image: ubuntu-2404:current
-      resource_class: << pipeline.parameters.pilot-resource-class >>
+      name: docker-host
     steps:
       - checkout
       - inspect-environment
@@ -138,9 +148,7 @@ jobs:
 
   playwright-tests:
     executor:
-      name: docker/machine
-      image: ubuntu-2404:current
-      resource_class: << pipeline.parameters.pilot-resource-class >>
+      name: docker-host
     steps:
       - checkout
       - inspect-environment
@@ -183,6 +191,7 @@ workflows:
       - php-build-test:
           name: pilot-php-8.5
           php-version: '8.5'
+          dlc: << pipeline.parameters.pilot-docker-layer-caching >>
       - live-tests:
           name: pilot-live-tests
           requires: [pilot-php-8.5]

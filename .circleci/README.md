@@ -1,3 +1,4 @@
+<!-- cspell:words buildx zstd -->
 # CircleCI validation pilot
 
 This is an opt-in parallel validation pipeline. GitHub Actions remain the
@@ -55,17 +56,19 @@ References:
 Linux machine executors preserve Docker Compose networking and host mounts.
 The initial compatibility run used `medium`; the optimized pilot defaults to
 `large` (four CPUs), matching the core count of Actions' public Linux runners.
-`pilot-resource-class` can select `medium` for controlled comparisons.
+`pilot-resource-class` can select `medium` or `large.gen2` for controlled
+comparisons.
 Registry caches are read-only and optional.
 There is no registry login, cache export, publishing, deployment context,
 test splitting or additional test coverage.
 
 ### Native optimization trials
 
-The pinned `circleci/docker@4.0.1` orb supplies the machine executor and
-BuildKit build command. A stable per-PHP Buildx builder preserves its volume
-for native Docker layer caching (DLC). DLC is enabled only on the three build
-jobs when `pilot-docker-layer-caching: true`; its default is false to avoid
+The pinned `circleci/docker@4.0.1` orb supplies the BuildKit build command.
+The native machine executor exposes Gen2 resource classes, which the orb's
+machine executor parameter does not yet list. A stable per-PHP Buildx builder preserves its volume
+for native Docker layer caching (DLC). DLC is enabled only on the PHP 8.5 build
+job when `pilot-docker-layer-caching: true`; its default is false to avoid
 charging for runs that were not intended as cache trials. Integration jobs
 continue consuming the exact upstream image through a native workspace.
 
@@ -78,7 +81,8 @@ Compare the first DLC-enabled run with a subsequent run on the same revision
 after cache upload has completed. Record actual cache hits rather than
 assuming a warm cache. Also run with DLC disabled to separate runner/orb/npm
 changes from DLC benefit. At published prices, `large` costs 20 credits/minute
-and DLC adds 200 credits per build job (600 per pilot). Timing-derived compute
+and `large.gen2` costs 36 credits/minute. DLC adds 200 credits per build job
+(200 per pilot). Workflow Insights reports actual credits; timing-derived compute
 costs are estimates; they exclude storage/network charges and plan allowances.
 Do not adopt DLC solely because it lowers runtime if the saved compute does
 not justify its charge.
@@ -198,6 +202,20 @@ reporting compatibility, not a performance improvement. Benchmark resource
 classes and cache behavior next, recording credits alongside elapsed time.
 Fork PR checkout/check association, cancellation, and browser failure-artifact
 retention still need dedicated trials before activation or cutover.
+
+Native optimization trials use the same application/test inputs as the
+compatibility run. Pipeline [7](https://app.circleci.com/pipelines/github/FOSSBilling/FOSSBilling/7)
+on `4dabb6bea61881c66188d4ef5951f032913ddc23` passed all five jobs using
+`large`, the Docker orb, native npm caching, and DLC on all PHP builds.
+Workflow elapsed time was 5m02s and Insights reported 822 credits. PHP 8.5
+image building took 87s, Pest 39s, and browser execution 95s.
+
+The same-revision DLC repeat restored cache data but reused only 10 cached
+steps on PHP 8.5, compared with 40 on PHP 8.3. This is a mixed cache hit,
+not a fully warm result. Subsequent config limits DLC to the PHP 8.5 build,
+which gates the integration jobs, to prevent parallel cache writers from
+competing and reduce the fixed DLC charge to 200 credits per pilot. Gen2
+runner and PHP-8.5-only DLC trials follow before selecting defaults.
 
 Later phases: move PR quality checks, cut over required validation checks,
 then migrate previews and assess releases separately. Keep GitHub labeling,
