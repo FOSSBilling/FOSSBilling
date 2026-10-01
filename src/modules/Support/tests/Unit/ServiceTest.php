@@ -2249,6 +2249,29 @@ test('message get author details client', function (): void {
     expect($result)->toHaveKey('name');
 });
 
+test('message get author details client with null last name', function (): void {
+    $service = new Service();
+
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('fetchAssociative')
+        ->atLeast()->once()
+        ->andReturn(['id' => 1, 'first_name' => 'Client', 'last_name' => null, 'email' => 'client@example.com']);
+
+    $di = container();
+    $di['dbal'] = $dbalMock;
+    $service->setDi($di);
+
+    $ticketMsg = new SupportTicketMessage();
+    setEntityId($ticketMsg, 1);
+    $ticketMsg->setClientId(1);
+
+    $result = $service->messageGetAuthorDetails($ticketMsg);
+    expect($result)->toBeArray();
+    expect($result)->toHaveKeys(['name', 'role']);
+    expect($result['role'])->toBe('client');
+    expect($result['name'])->toBe('Client');
+});
+
 test('message to api array', function (): void {
     $service = new Service();
 
