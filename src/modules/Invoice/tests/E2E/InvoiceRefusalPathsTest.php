@@ -303,6 +303,60 @@ test('canceled invoices refuse payment and issued invoices lock their identity',
     }
 });
 
+test('a gateway-less issued invoice is payable via mark as paid without unlocking edits (GH-4409)', function (): void {
+    Tests\Helpers\ApiClient::resetCookies();
+
+    try {
+        ['id' => $clientId] = refPathCreateClient();
+
+        $draft = Tests\Helpers\ApiClient::request('admin/invoice/prepare', [
+            'client_id' => $clientId,
+            'items' => [['title' => 'E2E service', 'price' => 30, 'quantity' => 1]],
+        ]);
+        assertApiSuccess($draft);
+        assertApiResultIsInt($draft);
+        $invoiceId = (int) $draft->getResult();
+
+        $issued = Tests\Helpers\ApiClient::request('admin/invoice/issue', ['id' => $invoiceId]);
+        assertApiSuccess($issued);
+
+        $invoice = Tests\Helpers\ApiClient::request('admin/invoice/get', ['id' => $invoiceId]);
+        assertApiSuccess($invoice);
+        expect($invoice->getResult()['issued'])->toBeTrue();
+        expect($invoice->getResult()['editable'])->toBeFalse();
+
+        // Marking paid without a gateway is still refused.
+        $missingGateway = Tests\Helpers\ApiClient::request('admin/invoice/mark_as_paid', [
+            'id' => $invoiceId,
+        ]);
+        expect($missingGateway->wasSuccessful())->toBeFalse();
+        expect($missingGateway->getErrorMessage())->toContain('Payment gateway is required');
+
+        // The Manage tab stays locked: a standalone gateway change is refused.
+        $updateBlocked = Tests\Helpers\ApiClient::request('admin/invoice/update', [
+            'id' => $invoiceId,
+            'gateway_id' => refPathCustomGatewayId(),
+        ]);
+        expect($updateBlocked->wasSuccessful())->toBeFalse();
+        expect($updateBlocked->getErrorMessage())->toContain('can no longer be edited');
+
+        // The payment path carries the gateway instead: locked but payable.
+        $paid = Tests\Helpers\ApiClient::request('admin/invoice/mark_as_paid', [
+            'id' => $invoiceId,
+            'gateway_id' => refPathCustomGatewayId(),
+            'transactionId' => 'txn' . uniqid(),
+        ]);
+        assertApiSuccess($paid);
+
+        $paidInvoice = Tests\Helpers\ApiClient::request('admin/invoice/get', ['id' => $invoiceId]);
+        assertApiSuccess($paidInvoice);
+        expect($paidInvoice->getResult()['status'])->toBe('paid');
+        expect((int) $paidInvoice->getResult()['gateway_id'])->toBe(refPathCustomGatewayId());
+    } finally {
+        refPathCleanupClient();
+    }
+});
+
 function refPathCreateProduct(float $price): int
 {
     $result = Tests\Helpers\ApiClient::request('admin/product/prepare', [
