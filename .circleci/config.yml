@@ -1,4 +1,4 @@
-# cspell:words buildx buildkit zstd cimg
+# cspell:words buildx buildkit zstd cimg fcgi setenvif diss a2enmod a2dissite a2ensite
 version: 2.1
 
 orbs:
@@ -8,7 +8,7 @@ orbs:
 parameters:
   native-pilot-stage:
     type: enum
-    enum: ['off', php]
+    enum: ['off', php, integration]
     default: 'off'
   run-validation-pilot:
     type: boolean
@@ -33,6 +33,27 @@ executors:
     resource_class: << pipeline.parameters.pilot-resource-class >>
 
 commands:
+  native-composer-install:
+    steps:
+      - restore_cache:
+          keys:
+            - v1-native-composer-php85-{{ checksum "composer.lock" }}
+      - run:
+          name: Install locked PHP dependencies
+          command: composer install --prefer-dist --optimize-autoloader --no-interaction --no-progress
+      - save_cache:
+          key: v1-native-composer-php85-{{ checksum "composer.lock" }}
+          paths:
+            - /home/circleci/.cache/composer
+  native-app-install:
+    steps:
+      - checkout
+      - native-composer-install
+      - attach_workspace:
+          at: .
+      - run:
+          name: Install app with native Apache, PHP-FPM and database service
+          command: bash .circleci/scripts/start-native-app.sh
   inspect-environment:
     steps:
       - run:
@@ -76,16 +97,7 @@ jobs:
             php --version
             php -m
             composer --version
-      - restore_cache:
-          keys:
-            - v1-native-composer-php85-{{ checksum "composer.lock" }}
-      - run:
-          name: Install locked PHP dependencies
-          command: composer install --prefer-dist --optimize-autoloader --no-interaction --no-progress
-      - save_cache:
-          key: v1-native-composer-php85-{{ checksum "composer.lock" }}
-          paths:
-            - /home/circleci/.cache/composer
+      - native-composer-install
       - run:
           name: Prepare native test configuration
           command: |
@@ -99,6 +111,96 @@ jobs:
       - store_artifacts:
           path: test-results/unit
           destination: native-unit-results
+
+  native-frontend:
+    docker:
+      - image: cimg/node:24.9.0@sha256:4729cd041e58fd288a12475aa011b7b62c58d351703813e6b7e0746a701e9602
+    resource_class: medium.gen2
+    steps:
+      - checkout
+      - run: node --version && npm --version && git rev-parse HEAD
+      - restore_cache:
+          keys:
+            - v1-native-npm-node24-{{ checksum "package-lock.json" }}
+      - run: npm ci --no-audit --no-fund
+      - save_cache:
+          key: v1-native-npm-node24-{{ checksum "package-lock.json" }}
+          paths: [~/.npm]
+      - run:
+          name: Build production assets and typecheck browser tests
+          command: NODE_ENV=production npm run build && npm run pw:tsc
+      - persist_to_workspace:
+          root: .
+          paths:
+            - src/public/assets
+            - src/themes/default/admin/assets/build
+            - src/themes/default/client/assets/build
+
+  native-integration:
+    parameters:
+      suite:
+        type: enum
+        enum: [live, browser]
+    docker:
+      - image: cimg/php:8.5.10-node@sha256:c60f1384d1eda0bd1a57c60e23a55c4a87b8fcd59cc2ea89c6d1c687d9d64fca
+      - image: mariadb:lts@sha256:805c8e104bd563d5bfa24fadd3f31cd419ea859cb5277f32b5dbf2db714f9ed1
+        environment:
+          MARIADB_DATABASE: fossbilling
+          MARIADB_ROOT_PASSWORD: root
+    resource_class: medium.gen2
+    environment:
+      APP_ENV: test
+      COMPOSER_CACHE_DIR: /home/circleci/.cache/composer
+      APP_URL: http://localhost/
+      TEST_API_KEY: AW6qEQCa7U7FG96J9NFIZXNYMJ79M8LH
+      PLAYWRIGHT_BASE_URL: http://localhost/
+      ADMIN_EMAIL: email@example.com
+      ADMIN_PASSWORD: 4WGemqiihh8iM3
+      PLAYWRIGHT_JUNIT_OUTPUT_FILE: tests/E2E/Playwright/artifacts/junit/results.xml
+    steps:
+      - native-app-install
+      - when:
+          condition:
+            equal: [live, << parameters.suite >>]
+          steps:
+            - run:
+                name: Native live API tests
+                command: |
+                  mkdir -p test-results/live
+                  ./src/vendor/bin/pest --test-directory ../tests --testsuite=E2E --ci --log-junit test-results/live/live.xml
+            - store_test_results:
+                path: test-results/live
+      - when:
+          condition:
+            equal: [browser, << parameters.suite >>]
+          steps:
+            - restore_cache:
+                keys:
+                  - v1-native-npm-node24-{{ checksum "package-lock.json" }}
+            - run: npm ci --no-audit --no-fund
+            - run:
+                name: Install matching baseline Playwright runner and Chromium
+                command: |
+                  # Keep the existing Docker pilot's runner version for parity.
+                  mkdir -p /tmp/playwright-runner
+                  npm install --prefix /tmp/playwright-runner --no-audit --no-fund @playwright/test@1.62.1
+                  rm -rf node_modules/@playwright/test
+                  ln -s /tmp/playwright-runner/node_modules/@playwright/test node_modules/@playwright/test
+                  /tmp/playwright-runner/node_modules/.bin/playwright install --with-deps chromium
+            - run:
+                name: Native Playwright tests
+                command: /tmp/playwright-runner/node_modules/.bin/playwright test --reporter=line,junit,html
+            - store_test_results:
+                path: tests/E2E/Playwright/artifacts/junit
+            - store_artifacts:
+                path: tests/E2E/Playwright/artifacts
+                destination: native-playwright
+      - store_artifacts:
+          path: test-results
+          destination: native-test-results
+      - store_artifacts:
+          path: src/data/log
+          destination: native-app-logs
 
   php-build-test:
     parameters:
@@ -225,9 +327,22 @@ jobs:
 workflows:
   native-validation-pilot:
     when:
-      equal: [php, << pipeline.parameters.native-pilot-stage >>]
+      not:
+        equal: ['off', << pipeline.parameters.native-pilot-stage >>]
     jobs:
       - native-php-tests
+      - native-frontend:
+          filters: pipeline.parameters.native-pilot-stage == "integration"
+      - native-integration:
+          name: native-live-tests
+          suite: live
+          filters: pipeline.parameters.native-pilot-stage == "integration"
+          requires: [native-frontend]
+      - native-integration:
+          name: native-browser-tests
+          suite: browser
+          filters: pipeline.parameters.native-pilot-stage == "integration"
+          requires: [native-frontend]
   validation-pilot:
     when: << pipeline.parameters.run-validation-pilot >>
     jobs:
