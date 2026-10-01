@@ -1,0 +1,159 @@
+version: 2.1
+
+# Parallel validation pilot. Existing GitHub Actions remain authoritative.
+parameters:
+  run-validation-pilot:
+    type: boolean
+    default: false
+
+executors:
+  docker-host:
+    machine:
+      image: ubuntu-2404:current
+    resource_class: medium
+
+commands:
+  inspect-environment:
+    steps:
+      - run:
+          name: Record checkout and Docker environment
+          command: |
+            git rev-parse HEAD
+            docker version
+            docker buildx version
+            docker compose version
+      - run:
+          name: Install image compression tool
+          command: |
+            if ! command -v zstd >/dev/null; then
+              sudo apt-get update
+              sudo apt-get install -y zstd
+            fi
+  load-test-image:
+    steps:
+      - attach_workspace:
+          at: /tmp/fossbilling-workspace
+      - run:
+          name: Load shared PHP 8.5 test image
+          command: zstd --decompress --stdout /tmp/fossbilling-workspace/test-image-8.5.tar.zst | docker load
+
+jobs:
+  php-build-test:
+    parameters:
+      php-version:
+        type: enum
+        enum: ['8.3', '8.4', '8.5']
+    executor: docker-host
+    environment:
+      PHP_VERSION: << parameters.php-version >>
+    steps:
+      - checkout
+      - inspect-environment
+      - run:
+          name: Build Docker test image (registry cache read-only)
+          no_output_timeout: 20m
+          command: |
+            docker buildx create --name fossbilling-pilot --driver docker-container --use
+            docker buildx build \
+              --build-arg "PHP_VERSION=${PHP_VERSION}" \
+              --build-arg INSTALL_TRANSLATIONS=false \
+              --cache-from "type=registry,ref=ghcr.io/fossbilling/fossbilling-build-cache:cache-ci-${PHP_VERSION}" \
+              --load \
+              --tag "fossbilling:test-${PHP_VERSION}" \
+              --target test \
+              --progress plain .
+      - when:
+          condition:
+            equal: ['8.3', << parameters.php-version >>]
+          steps:
+            - run:
+                name: PHPStan
+                command: |
+                  docker run --rm --env APP_ENV=test "fossbilling:test-${PHP_VERSION}" \
+                    ./src/vendor/bin/phpstan analyse --configuration phpstan.neon --memory-limit=512M
+      - run:
+          name: Pest unit and module tests
+          command: |
+            mkdir -p test-results/unit
+            docker run --rm --env APP_ENV=test \
+              --volume "${PWD}/test-results/unit:/test-results" \
+              "fossbilling:test-${PHP_VERSION}" \
+              ./src/vendor/bin/pest --test-directory ../tests --configuration phpunit.xml.dist --ci \
+                --log-junit /test-results/unit.xml
+      - store_test_results:
+          path: test-results/unit
+      - store_artifacts:
+          path: test-results/unit
+          destination: unit-results
+      - when:
+          condition:
+            equal: ['8.5', << parameters.php-version >>]
+          steps:
+            - run:
+                name: Export shared PHP 8.5 image
+                command: |
+                  mkdir -p /tmp/fossbilling-workspace
+                  docker save fossbilling:test-8.5 | zstd -T0 -6 --stdout > /tmp/fossbilling-workspace/test-image-8.5.tar.zst
+            - persist_to_workspace:
+                root: /tmp/fossbilling-workspace
+                paths:
+                  - test-image-8.5.tar.zst
+
+  live-tests:
+    executor: docker-host
+    steps:
+      - checkout
+      - inspect-environment
+      - load-test-image
+      - run:
+          name: Live API tests
+          command: |
+            FOSSBILLING_TEST_RESULTS_DIR="${PWD}/test-results/live" \
+              bash .github/scripts/run-docker-live-tests.sh fossbilling:test-8.5
+      - store_test_results:
+          path: test-results/live
+      - store_artifacts:
+          path: test-results/live
+          destination: live-results
+
+  playwright-tests:
+    executor: docker-host
+    steps:
+      - checkout
+      - inspect-environment
+      - run:
+          name: Typecheck browser tests and build admin assets with Node 24
+          command: |
+            docker run --rm --user "$(id -u):$(id -g)" --env HOME=/tmp \
+              --volume "${PWD}:/workspace" --workdir /workspace \
+              node:24-bookworm \
+              bash -euc 'npm ci --no-audit --no-fund; npm run pw:tsc; NODE_ENV=production npm run build-admin_default'
+      - load-test-image
+      - run:
+          name: Playwright tests
+          command: bash .github/scripts/run-docker-playwright-tests.sh fossbilling:test-8.5 --reporter=line,junit,html
+      - store_test_results:
+          path: tests/E2E/Playwright/artifacts/junit
+      - store_artifacts:
+          path: tests/E2E/Playwright/artifacts
+          destination: playwright
+
+workflows:
+  validation-pilot:
+    when: << pipeline.parameters.run-validation-pilot >>
+    jobs:
+      - php-build-test:
+          name: pilot-php-8.3
+          php-version: '8.3'
+      - php-build-test:
+          name: pilot-php-8.4
+          php-version: '8.4'
+      - php-build-test:
+          name: pilot-php-8.5
+          php-version: '8.5'
+      - live-tests:
+          name: pilot-live-tests
+          requires: [pilot-php-8.5]
+      - playwright-tests:
+          name: pilot-playwright-tests
+          requires: [pilot-php-8.5]
