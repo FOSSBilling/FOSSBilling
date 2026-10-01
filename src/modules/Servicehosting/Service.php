@@ -1111,7 +1111,6 @@ class Service implements InjectionAwareInterface
      */
     private function splitActiveOrphanedIds(array $serviceIds): array
     {
-        $serviceIds = array_map(intval(...), $serviceIds);
         if ($serviceIds === []) {
             return ['total' => 0, 'active' => 0, 'orphaned' => 0, 'orphanedIds' => []];
         }

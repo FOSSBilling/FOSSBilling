@@ -11,7 +11,6 @@
 declare(strict_types=1);
 
 use Box\Mod\Servicehosting\Service;
-use FOSSBilling\InformationException;
 
 use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
@@ -1017,7 +1016,7 @@ test('delete hp rejects orphaned accounts', function (): void {
     $service->setDi($di);
 
     expect(fn (): bool => $service->deleteHp($model))
-        ->toThrow(InformationException::class, 'Cannot remove hosting plan which has orphaned accounts; detach them first');
+        ->toThrow(FOSSBilling\InformationException::class, 'Cannot remove hosting plan which has orphaned accounts; detach them first');
 });
 
 test('server usage stats split active from orphaned usages', function (): void {
@@ -1488,7 +1487,7 @@ test('validateOrderData rejects admin-controlled values differing from product c
     try {
         $service->validateOrderData($data, $product);
         expect(true)->toBeFalse('Expected FOSSBilling\InformationException was not thrown.');
-    } catch (InformationException $e) {
+    } catch (FOSSBilling\InformationException $e) {
         expect($e->getMessage())->toBe('The requested configuration does not match the selected product.');
         expect($e->getCode())->toBe(705);
     }

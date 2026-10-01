@@ -620,7 +620,7 @@ test('testHpDelete', function (): void {
         expect($result)->toBeBool();
         expect($result)->toBeTrue();
     } catch (FOSSBilling\Exception $e) {
-        // If the function throws an exception, then the test should fail
+        // If the function throws an exception, the test should fail
         $this->fail('Exception thrown: ' . $e->getMessage());
     }
 });

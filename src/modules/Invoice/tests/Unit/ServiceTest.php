@@ -2011,7 +2011,6 @@ test('treats a non-numeric invoice tax rate as zero instead of crashing', functi
     $invoiceModel = new Model_Invoice();
     $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
     $invoiceModel->id = 1;
-    // taxrate is a varchar column that can hold any admin-supplied value.
     $invoiceModel->taxrate = 'not-a-rate';
 
     $dbMock = Mockery::mock('\Box_Database');

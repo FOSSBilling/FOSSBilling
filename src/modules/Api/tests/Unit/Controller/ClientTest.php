@@ -377,7 +377,7 @@ class ClientTestArrayLoggerDouble
     }
 }
 
-function invokeTryCall(TestableClient $controller, string $role, string $class, string $call, array $params)
+function invokeTryCall(TestableClient $controller, string $role, string $class, string $call, array $params): mixed
 {
     $reflection = new ReflectionMethod(Client::class, 'tryCall');
 
