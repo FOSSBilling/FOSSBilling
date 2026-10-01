@@ -812,7 +812,7 @@ class Service implements InjectionAwareInterface
             $this->di['db']->store($invoice);
         }
 
-        if (($payGateway->gateway ?? null) === 'Custom' && (int) ($payGateway->enabled ?? 0) === 1) {
+        if (($payGateway->gateway ?? null) === 'Custom') {
             $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
             $invoiceTotal = $this->getTotalWithTax($invoice);
             $newtx = $transactionService->create([
@@ -857,7 +857,10 @@ class Service implements InjectionAwareInterface
         }
 
         $payGateway = $this->di['db']->getExistingModelById('PayGateway', $gatewayId, 'Payment gateway not found');
-        if (($payGateway->gateway ?? null) === 'Custom' && (int) ($payGateway->enabled ?? 0) === 1) {
+        if ((int) ($payGateway->enabled ?? 0) !== 1) {
+            throw new InformationException('Payment gateway is not enabled');
+        }
+        if (($payGateway->gateway ?? null) === 'Custom') {
             $transactionId = trim((string) ($data['transactionId'] ?? ''));
             if ($transactionId === '') {
                 throw new InformationException('Transaction ID is required when using the Custom payment gateway.');

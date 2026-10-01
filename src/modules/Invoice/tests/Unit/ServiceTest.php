@@ -1348,6 +1348,77 @@ test('admin mark as paid with custom gateway rejects transaction linked to anoth
     ]))->toThrow(FOSSBilling\InformationException::class, 'Transaction ID is already associated with another invoice.');
 });
 
+test('validateAdminMarkAsPaidRequest requires a gateway when neither request nor invoice has one', function (): void {
+    $invoiceModel = new Model_Invoice();
+    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
+    $invoiceModel->status = Model_Invoice::STATUS_UNPAID;
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldNotReceive('getExistingModelById');
+
+    $di = container();
+    $di['db'] = $dbMock;
+
+    $service = new Service();
+    $service->setDi($di);
+
+    expect(fn () => $service->validateAdminMarkAsPaidRequest([], $invoiceModel))
+        ->toThrow(FOSSBilling\InformationException::class, 'Payment gateway is required when marking an invoice as paid.');
+});
+
+test('validateAdminMarkAsPaidRequest rejects a disabled gateway', function (): void {
+    $gatewayModel = new Model_PayGateway();
+    $gatewayModel->loadBean(new Tests\Helpers\DummyBean());
+    $gatewayModel->id = 5;
+    $gatewayModel->gateway = 'Stripe';
+    $gatewayModel->enabled = 0;
+
+    $invoiceModel = new Model_Invoice();
+    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
+    $invoiceModel->status = Model_Invoice::STATUS_UNPAID;
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('getExistingModelById')
+        ->once()
+        ->with('PayGateway', 5, 'Payment gateway not found')
+        ->andReturn($gatewayModel);
+
+    $di = container();
+    $di['db'] = $dbMock;
+
+    $service = new Service();
+    $service->setDi($di);
+
+    expect(fn () => $service->validateAdminMarkAsPaidRequest(['gateway_id' => 5], $invoiceModel))
+        ->toThrow(FOSSBilling\InformationException::class, 'Payment gateway is not enabled');
+});
+
+test('validateAdminMarkAsPaidRequest accepts an explicit gateway for a gateway-less invoice', function (): void {
+    $gatewayModel = new Model_PayGateway();
+    $gatewayModel->loadBean(new Tests\Helpers\DummyBean());
+    $gatewayModel->id = 7;
+    $gatewayModel->gateway = 'Stripe';
+    $gatewayModel->enabled = 1;
+
+    $invoiceModel = new Model_Invoice();
+    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
+    $invoiceModel->status = Model_Invoice::STATUS_UNPAID;
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('getExistingModelById')
+        ->once()
+        ->with('PayGateway', 7, 'Payment gateway not found')
+        ->andReturn($gatewayModel);
+
+    $di = container();
+    $di['db'] = $dbMock;
+
+    $service = new Service();
+    $service->setDi($di);
+
+    expect($service->validateAdminMarkAsPaidRequest(['gateway_id' => 7], $invoiceModel))->toBe($gatewayModel);
+});
+
 test('counts income', function (): void {
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
 

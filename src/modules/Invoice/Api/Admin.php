@@ -70,9 +70,11 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Sets invoice status to paid. This method differs from invoice update method
      * in a way that it sends notification to Events system, so emails are sent.
+     * The gateway must be enabled; when the invoice has no gateway, gateway_id
+     * is required and is saved on the invoice.
      *
      * @optional bool $execute - execute related tasks on invoice items. Default false.
-     * @optional int $gateway_id - Payment gateway to associate with the invoice
+     * @optional int $gateway_id - Payment gateway to associate with the invoice. Required when the invoice has no gateway.
      * @optional string $transactionId - Custom transaction ID to use when the selected gateway is Custom
      *
      * @return bool
