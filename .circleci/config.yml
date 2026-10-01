@@ -8,8 +8,8 @@ orbs:
 parameters:
   native-pilot-stage:
     type: enum
-    enum: [off, php]
-    default: off
+    enum: ['off', php]
+    default: 'off'
   run-validation-pilot:
     type: boolean
     default: false
