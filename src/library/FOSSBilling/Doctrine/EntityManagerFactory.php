@@ -61,7 +61,7 @@ class EntityManagerFactory
             }
         }
 
-        $connection = DriverManagerFactory::getConnection();
+        $connection = DriverManagerFactory::getSharedConnection();
 
         return new EntityManager($connection, $config);
     }

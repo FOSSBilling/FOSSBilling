@@ -1140,11 +1140,7 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('Order not found');
         }
 
-        // Issuing the invoice reads the order back via the legacy RedBean
-        // connection (getLegacyOrder()), which is separate from Doctrine's
-        // connection and cannot see rows from a still-open Doctrine
-        // transaction. This must run after wrapInTransaction() above has
-        // committed, not inside it.
+        // Issue the invoice after the order-creation transaction commits.
         if ($invoiceOption == 'issue-invoice') {
             $invoiceService = $this->di['mod_service']('invoice');
 

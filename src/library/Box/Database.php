@@ -55,16 +55,8 @@ class Box_Database implements InjectionAwareInterface
 
     public function transaction(callable $callback)
     {
-        if (!is_object($this->orm) || !method_exists($this->orm, 'getDatabaseAdapter')) {
-            return $callback();
-        }
-
-        $adapter = $this->orm->getDatabaseAdapter();
-        if ($adapter === null) {
-            return $callback();
-        }
-
-        return RedBeanPHP\Util\Transaction::transaction($adapter, $callback);
+        // DBAL manages nesting on the PDO shared with Doctrine and RedBean.
+        return $this->di['dbal']->transactional(static fn () => $callback());
     }
 
     public function getAll($sql, $values = [])

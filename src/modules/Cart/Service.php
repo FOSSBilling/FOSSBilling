@@ -1030,7 +1030,8 @@ class Service implements InjectionAwareInterface
                     $promoProductService->createCheckoutPromoRedemptions($promo, $client, $orders, $checkoutInvoice, $redemptionStatus);
                 }
 
-                // Activate orders after the checkout state is durably persisted.
+                // Order rows have been flushed. The legacy service modules
+                // can read them through the shared checkout connection.
                 $orderService = $this->di['mod_service']('Order');
                 $ids = [];
                 foreach ($orders as $order) {

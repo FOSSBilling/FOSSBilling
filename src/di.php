@@ -88,13 +88,10 @@ $di['crypt'] = function () use ($di) {
 $di['pdo'] = function () {
     $debugConfig = Config::getProperty('debug_and_monitoring', []);
     $dbConfig = DriverManagerFactory::getDatabaseConfig();
-    $driverOptions = [
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-    ];
-
-    $connection = DriverManagerFactory::getConnection($driverOptions);
+    $connection = DriverManagerFactory::getSharedConnection();
     /** @var PDO $pdo */
     $pdo = $connection->getNativeConnection();
+    $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
 
     if (isset($debugConfig['debug']) && $debugConfig['debug']) {
         $pdo->setAttribute(PDO::ATTR_STATEMENT_CLASS, ['Box_DbLoggedPDOStatement']);
@@ -145,16 +142,8 @@ $di['db'] = function () use ($di) {
     $freeze = Config::getProperty('db.freeze', true);
     $mapper->freeze($freeze);
 
-    // RedBean's writer cache assumes it's the only thing writing to the
-    // database: it only invalidates on RedBean's own write queries, so it
-    // has no way to know when Doctrine ($di['em'], a separate connection)
-    // has just written a row. Without this, a RedBean read that repeats an
-    // earlier RedBean read of the same row - even one issued after a
-    // Doctrine write in between - returns the same stale cached result.
-    // See Order\Service::_callOnService(), which converts to a legacy order
-    // via RedBean on every action call; a later action in the same request
-    // (e.g. activate, right after create sets the order's service_id via
-    // Doctrine) would otherwise see the pre-update row.
+    // Doctrine writes do not invalidate RedBean's cache. Keep legacy reads
+    // fresh so activation sees the service_id saved during service creation.
     $mapper->useWriterCache(false);
 
     $db = new Box_Database();
@@ -169,7 +158,7 @@ $di['db'] = function () use ($di) {
  *
  * @return Connection The Doctrine DBAL connection instance.
  */
-$di['dbal'] = (fn (): Connection => DriverManagerFactory::getConnection());
+$di['dbal'] = (fn (): Connection => DriverManagerFactory::getSharedConnection());
 
 /*
  * Creates and returns a Doctrine ORM EntityManager instance.

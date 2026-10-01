@@ -19,6 +19,17 @@ use FOSSBilling\Tools;
 
 class DriverManagerFactory
 {
+    private static ?Connection $sharedConnection = null;
+
+    /**
+     * Share transaction scope between Doctrine, DBAL, and RedBean's PDO.
+     * Use getConnection() only when a separate connection is required.
+     */
+    public static function getSharedConnection(): Connection
+    {
+        return self::$sharedConnection ??= self::getConnection();
+    }
+
     /**
      * List of supported database drivers for Doctrine DBAL connections.
      *
