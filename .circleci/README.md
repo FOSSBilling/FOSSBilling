@@ -31,9 +31,9 @@ Selected organization: `gh/FOSSBilling`, ID
 using the implicit GitHub OAuth pipeline
 `32028f14-086d-505a-9dee-7c749de33a59`. Project variables were empty at setup.
 Fork secret forwarding was disabled and verified before enabling fork builds;
-redundant-run cancellation is enabled. The project metadata still reported
-`master` although GitHub's verified default is `main`. Pilot runs use an
-explicit branch; reconcile that metadata before applying PR-only filtering.
+redundant-run cancellation is enabled. Following the project refreshed its
+stale metadata to `main`, updated the PR-only branch override to `main`, and
+recognized the repository as open source. Pilot runs use an explicit branch.
 
 References:
 
@@ -133,7 +133,35 @@ The live report contained 84 tests and one failure in AutoPromoTest's admin
 invoice promotion flow (`attach_order` rejected an immutable invoice). The
 original committed script reproduced the same failure against that image;
 the reporting change is not its cause. This image was not rebuilt for the
-pilot, so fresh-image parity and the full browser run remain unverified.
+pilot. The remote fresh-image run below passed this flow and the full browser
+suite; the local failure does not reproduce on the pilot revision.
+
+Remote pilot on 2026-10-01, revision
+`974ee4a8ac6c1b1c61b8ec4dd44572e072053ad6`:
+
+- [CircleCI pipeline 3](https://app.circleci.com/pipelines/github/FOSSBilling/FOSSBilling/3)
+  passed all five jobs. All three PHP suites and PHPStan passed; live API
+  tests passed all 91 tests and Playwright passed all 44 tests. CircleCI
+  received JUnit for every test job and the browser HTML report.
+- [Actions comparison](https://github.com/FOSSBilling/FOSSBilling/actions/runs/36936483500)
+  passed the equivalent validation jobs on the same revision. Spellcheck
+  separately flagged `buildx` and `zstd` in the new config; a scoped spelling
+  annotation addresses those command names.
+
+| Equivalent validation timing | CircleCI medium | GitHub Actions |
+| --- | --- | --- |
+| First PHP job start to final browser completion | 5m37s | 4m10s |
+| PHP 8.3 job including PHPStan | 3m03s | 1m37s |
+| PHP 8.4 job | 2m21s | 1m10s |
+| PHP 8.5 job including CircleCI image export | 2m49s | 1m15s |
+| Live API job | 1m18s | 1m12s |
+| Browser job | 2m33s | 2m29s |
+
+The conservative CircleCI baseline is slower. This proves execution and
+reporting compatibility, not a performance improvement. Benchmark resource
+classes and cache behavior next, recording credits alongside elapsed time.
+Fork PR checkout/check association, cancellation, and browser failure-artifact
+retention still need dedicated trials before activation or cutover.
 
 Later phases: move PR quality checks, cut over required validation checks,
 then migrate previews and assess releases separately. Keep GitHub labeling,

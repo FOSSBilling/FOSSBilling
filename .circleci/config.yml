@@ -1,3 +1,4 @@
+# cspell:words buildx zstd
 version: 2.1
 
 # Parallel validation pilot. Existing GitHub Actions remain authoritative.
