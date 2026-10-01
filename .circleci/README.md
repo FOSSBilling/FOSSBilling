@@ -53,10 +53,42 @@ References:
 - Collect Pest and Playwright JUnit results and browser failure artifacts.
 
 Linux machine executors preserve Docker Compose networking and host mounts.
-The initial resource class is `medium`; compare resource consumption and
-credit cost before increasing it. Registry caches are read-only and optional.
+The initial compatibility run used `medium`; the optimized pilot defaults to
+`large` (four CPUs), matching the core count of Actions' public Linux runners.
+`pilot-resource-class` can select `medium` for controlled comparisons.
+Registry caches are read-only and optional.
 There is no registry login, cache export, publishing, deployment context,
-Docker layer caching charge, test splitting or additional test coverage.
+test splitting or additional test coverage.
+
+### Native optimization trials
+
+The pinned `circleci/docker@4.0.1` orb supplies the machine executor and
+BuildKit build command. A stable per-PHP Buildx builder preserves its volume
+for native Docker layer caching (DLC). DLC is enabled only on the three build
+jobs when `pilot-docker-layer-caching: true`; its default is false to avoid
+charging for runs that were not intended as cache trials. Integration jobs
+continue consuming the exact upstream image through a native workspace.
+
+Playwright restores and saves the npm download cache with a versioned Node 24
+and lockfile key, and still runs `npm ci`. It does not cache `node_modules` or
+skip typechecking/building. JUnit and human-readable artifacts use CircleCI's
+native result and artifact storage.
+
+Compare the first DLC-enabled run with a subsequent run on the same revision
+after cache upload has completed. Record actual cache hits rather than
+assuming a warm cache. Also run with DLC disabled to separate runner/orb/npm
+changes from DLC benefit. At published prices, `large` costs 20 credits/minute
+and DLC adds 200 credits per build job (600 per pilot). Timing-derived compute
+costs are estimates; they exclude storage/network charges and plan allowances.
+Do not adopt DLC solely because it lowers runtime if the saved compute does
+not justify its charge.
+
+References:
+
+- [Docker orb](https://circleci.com/developer/orbs/orb/circleci/docker)
+- [Native DLC and named builders](https://circleci.com/docs/guides/optimize/docker-layer-caching/)
+- [Credit prices](https://circleci.com/pricing/price-list/)
+- [Actions public runner resources](https://docs.github.com/en/actions/reference/runners/github-hosted-runners)
 
 The browser script still deliberately uses its existing Playwright 1.62.1
 container/runner pairing, while the package lock uses 1.63.0. Reconcile that
@@ -119,6 +151,10 @@ circleci config validate .circleci/config.yml
 circleci config process .circleci/config.yml --pipeline-parameters 'run-validation-pilot: true'
 bash -n .github/scripts/run-docker-live-tests.sh .github/scripts/run-docker-playwright-tests.sh
 ```
+
+For a DLC trial, pass both `run-validation-pilot=true` and
+`pilot-docker-layer-caching=true` when triggering the OAuth pipeline. Keep all
+parameters and the tested revision identical for the warm-cache repeat.
 
 Config compilation verifies the job graph, not Docker execution. Run the
 pilot on a dedicated branch after organization/project setup; retain Actions
