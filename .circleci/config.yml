@@ -1,4 +1,4 @@
-# cspell:words buildx buildkit zstd
+# cspell:words buildx buildkit zstd cimg
 version: 2.1
 
 orbs:
@@ -6,6 +6,10 @@ orbs:
 
 # Parallel validation pilot. Existing GitHub Actions remain authoritative.
 parameters:
+  native-pilot-stage:
+    type: enum
+    enum: [off, php]
+    default: off
   run-validation-pilot:
     type: boolean
     default: false
@@ -56,6 +60,46 @@ commands:
           command: zstd --decompress --stdout /tmp/fossbilling-workspace/test-image-8.5.tar.zst | docker load
 
 jobs:
+  native-php-tests:
+    docker:
+      - image: cimg/php:8.5.10@sha256:7c7ba12e0204ec9b291019a738b4cab3bae2167aaa70c594d6608ec21085c8fe
+    resource_class: medium.gen2
+    environment:
+      APP_ENV: test
+      COMPOSER_CACHE_DIR: /home/circleci/.cache/composer
+    steps:
+      - checkout
+      - run:
+          name: Record native PHP environment
+          command: |
+            git rev-parse HEAD
+            php --version
+            php -m
+            composer --version
+      - restore_cache:
+          keys:
+            - v1-native-composer-php85-{{ checksum "composer.lock" }}
+      - run:
+          name: Install locked PHP dependencies
+          command: composer install --prefer-dist --optimize-autoloader --no-interaction --no-progress
+      - save_cache:
+          key: v1-native-composer-php85-{{ checksum "composer.lock" }}
+          paths:
+            - /home/circleci/.cache/composer
+      - run:
+          name: Prepare native test configuration
+          command: |
+            php -r '$config = require "src/config-sample.php"; file_put_contents("src/config.php", "<?php\nreturn " . var_export($config, true) . ";\n");'
+            mkdir -p src/data/cache src/data/log src/data/uploads test-results/unit
+      - run:
+          name: Native Pest unit and module tests
+          command: ./src/vendor/bin/pest --test-directory ../tests --configuration phpunit.xml.dist --ci --log-junit test-results/unit/unit.xml
+      - store_test_results:
+          path: test-results/unit
+      - store_artifacts:
+          path: test-results/unit
+          destination: native-unit-results
+
   php-build-test:
     parameters:
       php-version:
@@ -179,6 +223,11 @@ jobs:
           destination: playwright
 
 workflows:
+  native-validation-pilot:
+    when:
+      equal: [php, << pipeline.parameters.native-pilot-stage >>]
+    jobs:
+      - native-php-tests
   validation-pilot:
     when: << pipeline.parameters.run-validation-pilot >>
     jobs:
