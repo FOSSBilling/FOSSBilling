@@ -220,11 +220,18 @@
                             <div class="modal-body">
                                 <input type="hidden" name="id" value="{{ invoice.id }}">
                                 <input type="hidden" name="execute" value="1">
+                                {% set pay_gateways = guest.invoice_gateways %}
+                                {% if pay_gateways|length == 0 %}
+                                <div class="alert alert-warning" role="alert">
+                                    {{ 'No active payment gateways are configured. Configure one before recording a payment.'|trans }}
+                                    <a href="{{ 'invoice/gateways'|url }}">{{ 'Manage payment gateways'|trans }}</a>
+                                </div>
+                                {% else %}
                                 <div class="d-flex flex-column gap-3">
                                     <div>
                                         <label class="form-label" for="mark-paid-gateway">{{ 'Payment Method'|trans }}</label>
                                         <select class="form-select" name="gateway_id" id="mark-paid-gateway" onchange="onMarkPaidGatewayChange(this)">
-                                            {% for gtw in guest.invoice_gateways %}
+                                            {% for gtw in pay_gateways %}
                                             <option value="{{ gtw.id }}" data-code="{{ gtw.code }}" {% if gtw.id == invoice.gateway_id %}selected{% endif %}>{{ gtw.title }}</option>
                                             {% endfor %}
                                         </select>
@@ -239,10 +246,11 @@
                                         <input class="form-control" type="datetime-local" name="paid_at" id="mark-paid-date" value="{{ 'now'|date('Y-m-d\\TH:i') }}">
                                     </div>
                                 </div>
+                                {% endif %}
                             </div>
                             <div class="modal-footer">
                                 <a href="#" class="btn btn-link link-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</a>
-                                <input type="submit" class="btn btn-primary" value="{{ 'Submit'|trans }}">
+                                <input type="submit" class="btn btn-primary" value="{{ 'Submit'|trans }}"{% if pay_gateways|length == 0 %} disabled{% endif %}>
                             </div>
                             </form>
                         </div>
@@ -253,7 +261,10 @@
                                 var code = select.options[select.selectedIndex].dataset.code;
                                 row.style.display = code === 'Custom' ? '' : 'none';
                             }
-                            onMarkPaidGatewayChange(document.getElementById('mark-paid-gateway'));
+                            var gatewaySelect = document.getElementById('mark-paid-gateway');
+                            if (gatewaySelect) {
+                                onMarkPaidGatewayChange(gatewaySelect);
+                            }
                         </script>
                         {% endif %}
 
@@ -860,6 +871,9 @@
                                 <div class="col-lg-6">
                                     <label class="form-label">{{ 'Payment Method'|trans }}</label>
                                     {{ mf.selectbox('gateway_id', guest.invoice_gateways({ "format": "pairs" }), invoice.gateway_id, 0, 'Select Payment Method'|trans) }}
+                                    {% if invoice.issued and invoice.status == 'unpaid' %}
+                                    <div class="form-text">{{ 'Issued invoices are locked: to record an offline payment, choose the payment method in Mark as Paid instead.'|trans }}</div>
+                                    {% endif %}
                                 </div>
                                 <div class="col-lg-6">
                                     <label class="form-label" for="created_at">{{ 'Date Created'|trans }}</label>

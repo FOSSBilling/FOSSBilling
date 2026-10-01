@@ -1574,6 +1574,71 @@ test('markAsPaidByAdmin rejects an invalid payment date before any write', funct
         ->toThrow(FOSSBilling\InformationException::class, 'Invalid date format for paid_at');
 });
 
+test('validateAdminMarkAsPaidRequest requires a gateway when neither request nor invoice has one', function (): void {
+    $invoiceModel = createEntity(Invoice::class);
+    $invoiceModel->status = Invoice::STATUS_UNPAID;
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldNotReceive('getRepository');
+
+    $di = container();
+    $di['em'] = $em;
+
+    $service = new Service();
+    $service->setDi($di);
+
+    expect(fn () => $service->validateAdminMarkAsPaidRequest([], $invoiceModel))
+        ->toThrow(FOSSBilling\InformationException::class, 'Payment gateway is required when marking an invoice as paid.');
+});
+
+test('validateAdminMarkAsPaidRequest rejects a disabled gateway', function (): void {
+    $gatewayModel = createEntity(PayGateway::class, [
+        'id' => 5,
+        'gateway' => 'Stripe',
+        'enabled' => false,
+    ]);
+
+    $invoiceModel = createEntity(Invoice::class);
+    $invoiceModel->status = Invoice::STATUS_UNPAID;
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($gatewayRepo = Mockery::mock(PayGatewayRepository::class));
+    $gatewayRepo->shouldReceive('find')->once()->with(5)->andReturn($gatewayModel);
+
+    $di = container();
+    $di['em'] = $em;
+
+    $service = new Service();
+    $service->setDi($di);
+
+    expect(fn () => $service->validateAdminMarkAsPaidRequest(['gateway_id' => 5], $invoiceModel))
+        ->toThrow(FOSSBilling\InformationException::class, 'Payment gateway is not enabled');
+});
+
+test('validateAdminMarkAsPaidRequest accepts an explicit gateway for a gateway-less issued invoice', function (): void {
+    $gatewayModel = createEntity(PayGateway::class, [
+        'id' => 7,
+        'gateway' => 'Stripe',
+        'enabled' => true,
+    ]);
+
+    $invoiceModel = createEntity(Invoice::class);
+    $invoiceModel->status = Invoice::STATUS_UNPAID;
+    $invoiceModel->issued = true;
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($gatewayRepo = Mockery::mock(PayGatewayRepository::class));
+    $gatewayRepo->shouldReceive('find')->once()->with(7)->andReturn($gatewayModel);
+
+    $di = container();
+    $di['em'] = $em;
+
+    $service = new Service();
+    $service->setDi($di);
+
+    expect($service->validateAdminMarkAsPaidRequest(['gateway_id' => 7], $invoiceModel))->toBe($gatewayModel);
+});
+
 test('admin mark as paid creates no transaction when the invoice is canceled under lock', function (): void {
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldNotReceive('markAsPaid', 'getTotalWithTax');
