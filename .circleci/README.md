@@ -6,9 +6,10 @@ required checks and the only publisher. The default pipeline parameter
 `run-validation-pilot: false` compiles to no jobs. Enable it explicitly for
 a pilot run; do not make it the default until the trigger design is verified.
 
-The Docker-based pilot establishes compatibility and supplies measurements;
-it is not the selected migration architecture. A design review from first
-principles is pending before further implementation.
+The Docker-based pilot establishes compatibility and supplies measurements.
+Initial trials of the native architecture were approved on 2026-10-02 and
+are available separately through `native-pilot-stage: php` or `integration`.
+Both pilots remain off by default. The full migration and cutover are pending.
 
 ## Organization and integration
 
@@ -234,7 +235,7 @@ timings above. Runs 7 and 8 use `4dabb6b`; run 11 uses `3ef0c57`, changing CI
 configuration/documentation only. They are individual diagnostic samples, not
 an accepted performance comparison or evidence for the proposed native design.
 
-## Proposed architecture, pending review
+## Native architecture and initial trials
 
 Prefer CircleCI's language containers and service containers for application
 validation. Preserve existing checks and outcomes, rather than reproducing
@@ -277,7 +278,39 @@ cold/warm dependencies, queue time, total validation latency and credits.
 Resource sizing and test splitting follow measurements; do not introduce
 parallel browser workers against a shared mutable database by default.
 
-This is a proposed design, not yet validated by execution or implemented.
+The initial implementation covers one native PHP 8.5 job, a Node 24 frontend
+producer, and separate live/browser jobs using native MariaDB services and
+Apache/PHP-FPM. The PHP matrix, PHPStan/quality checks, and independent Docker
+packaging check remain subsequent steps.
+
+### Initial execution results
+
+Native PHP pipeline [16](https://app.circleci.com/pipelines/github/FOSSBilling/FOSSBilling/16)
+passed in 33s using 7 credits. Its JUnit report matches the Docker PHP 8.5
+baseline exactly after normalizing checkout-root prefixes in Pest class names:
+3,895 test records, the same four PostgreSQL skips, and no changed outcomes.
+Composer installation took 4.8s and Pest took 16.1s. This uses a digest-pinned
+PHP 8.5.10 convenience image and `medium.gen2` (two CPUs), without image builds.
+
+The first complete native pipeline
+[20](https://app.circleci.com/pipelines/github/FOSSBilling/FOSSBilling/20)
+passed in 2m10s using 44 credits. All 91 live API and 44 browser test identities
+and outcomes match the Docker reports. Node runs the existing full production
+asset build and browser typecheck once; live/browser jobs depend only on that
+asset workspace, not on the unit job. Composer/npm download caches are native
+and lockfile keyed. Each integration job installs its own fresh app/database.
+
+An initial server-setup failure was traced to Apache's default user lacking
+permission to traverse the checkout directory. Apache and FPM now run as the
+checkout owner. Server logs uploaded on that failure. Explicit startup checks
+also exercise `/login` rewriting and the 404 protection for `/config.php`.
+Only the browser job disables session fingerprinting, matching the Docker
+browser runner. Playwright 1.62.1 and its matching Chromium preserve the current
+baseline; reconciling the package-lock version remains separate work.
+
+These native measurements cover PHP 8.5 and frontend/integration validation;
+they exclude PHP 8.3/8.4, PHPStan, quality checks, and packaging. They are proof
+of the initial architecture, not a complete CI speed comparison.
 
 References:
 
