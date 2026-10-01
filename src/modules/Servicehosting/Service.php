@@ -1078,6 +1078,102 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
+    /**
+     * Counts how many service hostings use a server, split into ones linked
+     * to an order (active) and ones with no linked order (orphaned).
+     *
+     * @return array{total: int, active: int, orphaned: int, orphanedIds: int[]}
+     */
+    public function getServerUsageStats(\Model_ServiceHostingServer $server): array
+    {
+        $rows = $this->di['db']->getAll('SELECT id FROM service_hosting WHERE service_hosting_server_id = ?', [(int) $server->id]);
+
+        return $this->splitActiveOrphanedIds(array_map(intval(...), array_column($rows, 'id')));
+    }
+
+    /**
+     * Counts how many service hostings use a hosting plan, split into ones
+     * linked to an order (active) and ones with no linked order (orphaned).
+     *
+     * @return array{total: int, active: int, orphaned: int, orphanedIds: int[]}
+     */
+    public function getHpUsageStats(\Model_ServiceHostingHp $plan): array
+    {
+        $rows = $this->di['db']->getAll('SELECT id FROM service_hosting WHERE service_hosting_hp_id = ?', [(int) $plan->id]);
+
+        return $this->splitActiveOrphanedIds(array_map(intval(...), array_column($rows, 'id')));
+    }
+
+    /**
+     * @param int[] $serviceIds
+     *
+     * @return array{total: int, active: int, orphaned: int, orphanedIds: int[]}
+     */
+    private function splitActiveOrphanedIds(array $serviceIds): array
+    {
+        $serviceIds = array_map(intval(...), $serviceIds);
+        if ($serviceIds === []) {
+            return ['total' => 0, 'active' => 0, 'orphaned' => 0, 'orphanedIds' => []];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($serviceIds), '?'));
+        $rows = $this->di['db']->getAll(
+            "SELECT DISTINCT service_id FROM client_order WHERE service_type = ? AND service_id IN ($placeholders)",
+            [\Box\Mod\Product\Service::HOSTING, ...$serviceIds]
+        );
+        $activeIds = array_map(intval(...), array_column($rows, 'service_id'));
+        $orphanedIds = array_values(array_diff($serviceIds, $activeIds));
+
+        return [
+            'total' => count($serviceIds),
+            'active' => count($activeIds),
+            'orphaned' => count($orphanedIds),
+            'orphanedIds' => $orphanedIds,
+        ];
+    }
+
+    public function detachOrphanedServerUsages(\Model_ServiceHostingServer $server): int
+    {
+        $stats = $this->getServerUsageStats($server);
+        if ($stats['orphanedIds'] === []) {
+            return 0;
+        }
+
+        $count = 0;
+        foreach ($stats['orphanedIds'] as $id) {
+            $orphan = $this->di['db']->load('ServiceHosting', $id);
+            if ($orphan instanceof \Model_ServiceHosting) {
+                $orphan->service_hosting_server_id = null;
+                $this->di['db']->store($orphan);
+                ++$count;
+            }
+        }
+        $this->di['logger']->info('Detached %s orphaned service hostings from hosting server %s', $count, $server->id);
+
+        return $count;
+    }
+
+    public function detachOrphanedHpUsages(\Model_ServiceHostingHp $plan): int
+    {
+        $stats = $this->getHpUsageStats($plan);
+        if ($stats['orphanedIds'] === []) {
+            return 0;
+        }
+
+        $count = 0;
+        foreach ($stats['orphanedIds'] as $id) {
+            $orphan = $this->di['db']->load('ServiceHosting', $id);
+            if ($orphan instanceof \Model_ServiceHosting) {
+                $orphan->service_hosting_hp_id = null;
+                $this->di['db']->store($orphan);
+                ++$count;
+            }
+        }
+        $this->di['logger']->info('Detached %s orphaned service hostings from hosting plan %s', $count, $plan->id);
+
+        return $count;
+    }
+
     public function updateServer(\Model_ServiceHostingServer $model, array $data): bool
     {
         $model->name = $data['name'] ?? $model->name;
@@ -1259,9 +1355,12 @@ class Service implements InjectionAwareInterface
     public function deleteHp(\Model_ServiceHostingHp $model): bool
     {
         $id = $model->id;
-        $serviceHosting = $this->di['db']->findOne('ServiceHosting', 'service_hosting_hp_id = ?', [$model->id]);
-        if ($serviceHosting) {
+        $stats = $this->getHpUsageStats($model);
+        if ($stats['active'] > 0) {
             throw new InformationException('Cannot remove hosting plan which has active accounts');
+        }
+        if ($stats['orphaned'] > 0) {
+            throw new InformationException('Cannot remove hosting plan which has orphaned accounts; detach them first');
         }
         $this->di['db']->trash($model);
         $this->di['logger']->info('Deleted hosting plan %s', $id);

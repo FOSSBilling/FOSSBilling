@@ -353,6 +353,10 @@ test('testServerDelete', function (): void {
 
     $serviceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
     $serviceMock
+    ->shouldReceive('getServerUsageStats')
+    ->atLeast()->once()
+    ->andReturn(['total' => 0, 'active' => 0, 'orphaned' => 0, 'orphanedIds' => []]);
+    $serviceMock
     ->shouldReceive('deleteServer')
     ->atLeast()->once()
     ->andReturn(true);
@@ -362,10 +366,6 @@ test('testServerDelete', function (): void {
     ->shouldReceive('getExistingModelById')
     ->atLeast()->once()
     ->andReturn(new Model_ServiceHostingServer());
-    $dbMock
-    ->shouldReceive('find')
-    ->atLeast()->once()
-    ->andReturn([]);
 
     $di = container();
     $di['db'] = $dbMock;
@@ -375,8 +375,14 @@ test('testServerDelete', function (): void {
     $result = $api->server_delete($data);
     expect($result)->toBeTrue();
 
-    // Test case 2: Server is used by service_hostings and cannot be deleted
+    // Test case 2: Server is used by active service_hostings and cannot be deleted
     $data['id'] = 2;
+
+    $serviceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
+    $serviceMock
+    ->shouldReceive('getServerUsageStats')
+    ->atLeast()->once()
+    ->andReturn(['total' => 1, 'active' => 1, 'orphaned' => 0, 'orphanedIds' => []]);
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock
@@ -384,21 +390,76 @@ test('testServerDelete', function (): void {
     ->atLeast()->once()
     ->andReturn(new Model_ServiceHostingServer());
 
-    // Mock the 'find' method to return a non-empty array, simulating the server being used by service hostings
-    $dbMock
-    ->shouldReceive('find')
-    ->atLeast()->once()
-    ->andReturn(['dummy_data']);
-
     $di = container();
     $di['db'] = $dbMock;
     $api->setDi($di);
+    $api->setService($serviceMock);
 
-    // Now, we expect an exception to be thrown because the server is used by service_hostings
+    // Now, we expect an exception to be thrown because the server is used by service hostings
     $this->expectException(FOSSBilling\Exception::class);
     $this->expectExceptionCode(704);
 
     $api->server_delete($data);
+});
+
+test('testServerDeleteWithOrphanedUsages', function (): void {
+    $api = apiEndpoint(new Admin());
+
+    // Orphaned usages without force: informative exception, nothing detached
+    $serviceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
+    $serviceMock
+    ->shouldReceive('getServerUsageStats')
+    ->atLeast()->once()
+    ->andReturn(['total' => 2, 'active' => 0, 'orphaned' => 2, 'orphanedIds' => [11, 12]]);
+    $serviceMock
+    ->shouldNotReceive('detachOrphanedServerUsages', 'deleteServer');
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock
+    ->shouldReceive('getExistingModelById')
+    ->atLeast()->once()
+    ->andReturn(new Model_ServiceHostingServer());
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $api->setDi($di);
+    $api->setService($serviceMock);
+
+    try {
+        $api->server_delete(['id' => 2]);
+        $this->fail('Expected exception was not thrown');
+    } catch (FOSSBilling\InformationException $e) {
+        expect($e->getCode())->toBe(704);
+        expect($e->getMessage())->toContain('orphaned');
+    }
+
+    // Orphaned usages with force: detach then delete
+    $serviceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
+    $serviceMock
+    ->shouldReceive('getServerUsageStats')
+    ->atLeast()->once()
+    ->andReturn(['total' => 2, 'active' => 0, 'orphaned' => 2, 'orphanedIds' => [11, 12]]);
+    $serviceMock
+    ->shouldReceive('detachOrphanedServerUsages')
+    ->once()
+    ->andReturn(2);
+    $serviceMock
+    ->shouldReceive('deleteServer')
+    ->once()
+    ->andReturn(true);
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock
+    ->shouldReceive('getExistingModelById')
+    ->atLeast()->once()
+    ->andReturn(new Model_ServiceHostingServer());
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $api->setDi($di);
+    $api->setService($serviceMock);
+
+    expect($api->server_delete(['id' => 2, 'force' => true]))->toBeTrue();
 });
 
 test('testServerUpdate', function (): void {
@@ -532,6 +593,10 @@ test('testHpDelete', function (): void {
 
     $serviceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
     $serviceMock
+    ->shouldReceive('getHpUsageStats')
+    ->atLeast()->once()
+    ->andReturn(['total' => 0, 'active' => 0, 'orphaned' => 0, 'orphanedIds' => []]);
+    $serviceMock
     ->shouldReceive('deleteHp')
     ->atLeast()->once()
     ->andReturn(true);
@@ -541,10 +606,6 @@ test('testHpDelete', function (): void {
     ->shouldReceive('getExistingModelById')
     ->atLeast()->once()
     ->andReturn($model);
-    $dbMock
-    ->shouldReceive('find')
-    ->atLeast()->once()
-    ->andReturn([]);
 
     $di = container();
     $di['db'] = $dbMock;
@@ -559,9 +620,69 @@ test('testHpDelete', function (): void {
         expect($result)->toBeBool();
         expect($result)->toBeTrue();
     } catch (FOSSBilling\Exception $e) {
-        // If the function throws an exception, the test should fail
+        // If the function throws an exception, then the test should fail
         $this->fail('Exception thrown: ' . $e->getMessage());
     }
+});
+
+test('testHpDeleteWithOrphanedUsages', function (): void {
+    $api = apiEndpoint(new Admin());
+
+    // Orphaned usages without force: informative exception, nothing detached
+    $serviceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
+    $serviceMock
+    ->shouldReceive('getHpUsageStats')
+    ->atLeast()->once()
+    ->andReturn(['total' => 1, 'active' => 0, 'orphaned' => 1, 'orphanedIds' => [11]]);
+    $serviceMock
+    ->shouldNotReceive('detachOrphanedHpUsages', 'deleteHp');
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock
+    ->shouldReceive('getExistingModelById')
+    ->atLeast()->once()
+    ->andReturn(new Model_ServiceHostingHp());
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $api->setDi($di);
+    $api->setService($serviceMock);
+
+    try {
+        $api->hp_delete(['id' => 1]);
+        $this->fail('Expected exception was not thrown');
+    } catch (FOSSBilling\InformationException $e) {
+        expect($e->getCode())->toBe(704);
+        expect($e->getMessage())->toContain('orphaned');
+    }
+
+    // Orphaned usages with force: detach then delete
+    $serviceMock = Mockery::mock(Box\Mod\Servicehosting\Service::class);
+    $serviceMock
+    ->shouldReceive('getHpUsageStats')
+    ->atLeast()->once()
+    ->andReturn(['total' => 1, 'active' => 0, 'orphaned' => 1, 'orphanedIds' => [11]]);
+    $serviceMock
+    ->shouldReceive('detachOrphanedHpUsages')
+    ->once()
+    ->andReturn(1);
+    $serviceMock
+    ->shouldReceive('deleteHp')
+    ->once()
+    ->andReturn(true);
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock
+    ->shouldReceive('getExistingModelById')
+    ->atLeast()->once()
+    ->andReturn(new Model_ServiceHostingHp());
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $api->setDi($di);
+    $api->setService($serviceMock);
+
+    expect($api->hp_delete(['id' => 1, 'force' => true]))->toBeTrue();
 });
 
 test('testHpGet', function (): void {

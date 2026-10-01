@@ -11,6 +11,7 @@
 declare(strict_types=1);
 
 use Box\Mod\Servicehosting\Service;
+use FOSSBilling\InformationException;
 
 use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
@@ -990,7 +991,7 @@ test('delete hp', function (): void {
 
     $dbMock = Mockery::mock('\Box_Database');
     $dbMock->shouldReceive('trash')->atLeast()->once();
-    $dbMock->shouldReceive('findOne')->atLeast()->once()->andReturn(null);
+    $dbMock->shouldReceive('getAll')->atLeast()->once()->andReturn([]);
 
     $di = container();
     $di['db'] = $dbMock;
@@ -999,6 +1000,91 @@ test('delete hp', function (): void {
 
     $result = $service->deleteHp($model);
     expect($result)->toBeTrue();
+});
+
+test('delete hp rejects orphaned accounts', function (): void {
+    $service = new Service();
+    $model = new Model_ServiceHostingHp();
+    $model->loadBean(new Tests\Helpers\DummyBean());
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('getAll')->atLeast()->once()->andReturn([['id' => 11]]);
+    $dbMock->shouldNotReceive('trash');
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['logger'] = new Box_Log();
+    $service->setDi($di);
+
+    expect(fn (): bool => $service->deleteHp($model))
+        ->toThrow(InformationException::class, 'Cannot remove hosting plan which has orphaned accounts; detach them first');
+});
+
+test('server usage stats split active from orphaned usages', function (): void {
+    $service = new Service();
+    $server = new Model_ServiceHostingServer();
+    $server->loadBean(new Tests\Helpers\DummyBean());
+    $server->id = 1;
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('getAll')
+        ->once()
+        ->with('SELECT id FROM service_hosting WHERE service_hosting_server_id = ?', [1])
+        ->andReturn([['id' => 11], ['id' => 12]]);
+    $dbMock->shouldReceive('getAll')
+        ->once()
+        ->withArgs(function (string $sql, array $values): bool {
+            return str_contains($sql, 'client_order')
+                && $values === [Box\Mod\Product\Service::HOSTING, 11, 12];
+        })
+        ->andReturn([['service_id' => 11]]);
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['logger'] = new Box_Log();
+    $service->setDi($di);
+
+    expect($service->getServerUsageStats($server))->toBe([
+        'total' => 2,
+        'active' => 1,
+        'orphaned' => 1,
+        'orphanedIds' => [12],
+    ]);
+});
+
+test('detach orphaned server usages nulls the server link', function (): void {
+    $service = new Service();
+    $server = new Model_ServiceHostingServer();
+    $server->loadBean(new Tests\Helpers\DummyBean());
+    $server->id = 1;
+
+    $orphan = new Model_ServiceHosting();
+    $orphan->loadBean(new Tests\Helpers\DummyBean());
+    $orphan->id = 12;
+    $orphan->service_hosting_server_id = 1;
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('getAll')
+        ->once()
+        ->with('SELECT id FROM service_hosting WHERE service_hosting_server_id = ?', [1])
+        ->andReturn([['id' => 12]]);
+    $dbMock->shouldReceive('getAll')
+        ->once()
+        ->withArgs(function (string $sql, array $values): bool {
+            return str_contains($sql, 'client_order')
+                && $values === [Box\Mod\Product\Service::HOSTING, 12];
+        })
+        ->andReturn([]);
+    $dbMock->shouldReceive('load')->once()->with('ServiceHosting', 12)->andReturn($orphan);
+    $dbMock->shouldReceive('store')->once()->with($orphan);
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['logger'] = new Box_Log();
+    $service->setDi($di);
+
+    expect($service->detachOrphanedServerUsages($server))->toBe(1);
+    expect($orphan->service_hosting_server_id)->toBeNull();
 });
 
 test('to hosting hp api array', function (): void {
@@ -1402,7 +1488,7 @@ test('validateOrderData rejects admin-controlled values differing from product c
     try {
         $service->validateOrderData($data, $product);
         expect(true)->toBeFalse('Expected FOSSBilling\InformationException was not thrown.');
-    } catch (FOSSBilling\InformationException $e) {
+    } catch (InformationException $e) {
         expect($e->getMessage())->toBe('The requested configuration does not match the selected product.');
         expect($e->getCode())->toBe(705);
     }

@@ -242,6 +242,8 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Delete server.
      *
+     * @optional bool $force - detach orphaned usages with no linked order and delete
+     *
      * @throws \FOSSBilling\Exception
      */
     #[RequiredParams(['id' => 'Server ID was not passed'])]
@@ -251,11 +253,18 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $this->getDi()['db']->getExistingModelById('ServiceHostingServer', $data['id'], 'Server not found');
 
-        $hosting_services = $this->getDi()['db']->find('ServiceHosting', 'service_hosting_server_id = :server_id', [':server_id' => $data['id']]);
-        $count = is_array($hosting_services) ? count($hosting_services) : 0; // Handle the case where $hosting_services might be null
+        $stats = $this->getService()->getServerUsageStats($model);
+        if ($stats['active'] > 0) {
+            throw new \FOSSBilling\InformationException('Hosting server is used by :count: service hostings', [':count:' => $stats['active']], 704);
+        }
 
-        if ($count > 0) {
-            throw new \FOSSBilling\InformationException('Hosting server is used by :count: service hostings', [':count:' => $count], 704);
+        if ($stats['orphaned'] > 0) {
+            $force = Tools::normalizeBoolean($data['force'] ?? false);
+            if (!$force) {
+                throw new \FOSSBilling\InformationException('Hosting server is used by :count: orphaned service hostings with no linked order. Re-run with force=true to detach them and delete the server.', [':count:' => $stats['orphaned']], 704);
+            }
+
+            $this->getService()->detachOrphanedServerUsages($model);
         }
 
         return (bool) $this->getService()->deleteServer($model);
@@ -362,6 +371,8 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Delete hosting plan.
      *
+     * @optional bool $force - detach orphaned usages with no linked order and delete
+     *
      * @throws \FOSSBilling\InformationException
      */
     #[RequiredParams(['id' => 'Hosting plan ID was not passed'])]
@@ -371,12 +382,18 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $this->getDi()['db']->getExistingModelById('ServiceHostingHp', $data['id'], 'Hosting plan not found');
 
-        $hosting_services = $this->getDi()['db']->find('ServiceHosting', 'service_hosting_hp_id = :hp_id', [':hp_id' => $data['id']]);
+        $stats = $this->getService()->getHpUsageStats($model);
+        if ($stats['active'] > 0) {
+            throw new \FOSSBilling\InformationException('Hosting plan is used by :count: service hostings', [':count:' => $stats['active']], 704);
+        }
 
-        // Ensure $hosting_services is an array before counting its elements
-        $count = is_array($hosting_services) ? count($hosting_services) : 0; // Handle the case where $hosting_services might be null
-        if ($count > 0) {
-            throw new \FOSSBilling\InformationException('Hosting plan is used by :count: service hostings', [':count:' => $count], 704);
+        if ($stats['orphaned'] > 0) {
+            $force = Tools::normalizeBoolean($data['force'] ?? false);
+            if (!$force) {
+                throw new \FOSSBilling\InformationException('Hosting plan is used by :count: orphaned service hostings with no linked order. Re-run with force=true to detach them and delete the plan.', [':count:' => $stats['orphaned']], 704);
+            }
+
+            $this->getService()->detachOrphanedHpUsages($model);
         }
 
         return (bool) $this->getService()->deleteHp($model);
