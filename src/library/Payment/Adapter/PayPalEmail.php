@@ -182,13 +182,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                         }
                     }
 
-                    // Claim transaction for processing
-                    // Prevents race conditions when multiple Completed IPNs arrive simultaneously
-                    if (!$api_admin->invoice_transaction_claim_for_processing(['id' => $id])) {
-                        $this->di['logger']->warning('Skipping PayPal transaction ' . $id . ': already being processed');
-
-                        return;
-                    }
+                    // No re-claim: the service layer already holds the processing claim.
                 } elseif (($ipn['payment_status'] ?? '') === 'Refunded') {
                     break;
                 } else {
