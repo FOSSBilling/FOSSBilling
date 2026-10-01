@@ -48,7 +48,7 @@ test('batch enriches hosting accounts with orders and clients', function (): voi
         'updated_at' => '2026-07-19 10:01:00',
     ];
 
-    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection = Mockery::mock(Connection::class);
     $connection->shouldReceive('fetchAllAssociative')
         ->once()
         ->with(Mockery::pattern('/FROM client_order/'), ['hosting', 10])
@@ -88,7 +88,7 @@ test('batch enriches hosting accounts with orders and clients', function (): voi
 
 test('batch returns hosting accounts without orders', function (): void {
     $service = new Service();
-    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection = Mockery::mock(Connection::class);
     $connection->shouldReceive('fetchAllAssociative')->once()->andReturn([]);
 
     $di = container();
@@ -851,7 +851,7 @@ test('get server pairs', function (): void {
         ],
     ];
 
-    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection = Mockery::mock(Connection::class);
     $connection->shouldReceive('fetchAllAssociative')->atLeast()->once()->andReturn($queryResult);
 
     $di = container();
@@ -1069,7 +1069,7 @@ test('get hp pairs', function (): void {
         ],
     ];
 
-    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection = Mockery::mock(Connection::class);
     $connection->shouldReceive('fetchAllAssociative')->atLeast()->once()->andReturn($queryResult);
 
     $di = container();
