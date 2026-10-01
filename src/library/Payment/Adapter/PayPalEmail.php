@@ -145,12 +145,6 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                     }
 
                     $this->validateCurrency($ipn['mc_currency'] ?? null, $invoice['currency'] ?? null);
-
-                    // Claim transaction for processing
-                    // Prevents race conditions when multiple Completed IPNs arrive simultaneously
-                    if (!$api_admin->invoice_transaction_claim_for_processing(['id' => $id])) {
-                        return;
-                    }
                 } else {
                     $api_admin->invoice_transaction_update([
                         'id' => $id,
