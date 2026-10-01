@@ -367,6 +367,25 @@ class UpdatePatcher implements InjectionAwareInterface
     }
 
     /**
+     * Whether current entity metadata differs from the last synced state,
+     * ignoring the retry cooldown - the reporting half of isSchemaOutOfSync(),
+     * for status surfaces that must stay truthful while a failed sync backs
+     * off. Never throws: an unreadable database reports "no drift".
+     */
+    public function isSchemaOutOfSyncIgnoringCooldown(): bool
+    {
+        if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('em')) {
+            return false;
+        }
+
+        try {
+            return $this->fetchStoredSchemaHash() !== EntityManagerFactory::entityDefinitionsHash();
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    /**
      * @throws \Exception when the database cannot be read
      */
     private function fetchStoredSchemaHash(): mixed

@@ -433,7 +433,7 @@ class UpdateFinalization implements InjectionAwareInterface
             $patcher = $this->createPatcher();
 
             return [
-                'out_of_sync' => $patcher->isSchemaOutOfSync(),
+                'out_of_sync' => $patcher->isSchemaOutOfSyncIgnoringCooldown(),
                 'last_sync_failure' => $patcher->lastSchemaSyncFailure(),
             ];
         } catch (\Throwable) {

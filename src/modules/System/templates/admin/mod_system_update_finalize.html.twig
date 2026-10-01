@@ -48,22 +48,26 @@
                             <p>{{ 'You are updating your system to FOSSBilling %target_version%. The system needs to run %count% update patches before you can proceed.'|trans({'%target_version%': FOSSBillingVersion, '%count%': pendingPatches}) }}</p>
                         {% endif %}
 
-                        {% if needsFinalize %}
-                            {% if driftOutOfSync %}
-                                <div class="alert alert-warning" role="alert">
-                                    <div class="alert-icon">
-                                        <svg class="icon alert-icon icon-2" aria-hidden="true">
-                                            <use href="#alert-triangle" />
-                                        </svg>
-                                    </div>
-                                    <div>
-                                        {{ 'The database schema is behind the current code and will be synchronized during finalization.'|trans }}
-                                        {% if lastSyncFailure %}
-                                            {{ 'A previous automatic synchronization attempt failed (last attempt: %time%). If finalization reports an error, check the update log before retrying.'|trans({'%time%': lastSyncFailure.attempted_at}) }}
-                                        {% endif %}
-                                    </div>
+                        {% if driftOutOfSync %}
+                            <div class="alert alert-warning" role="alert">
+                                <div class="alert-icon">
+                                    <svg class="icon alert-icon icon-2" aria-hidden="true">
+                                        <use href="#alert-triangle" />
+                                    </svg>
                                 </div>
-                            {% endif %}
+                                <div>
+                                    {% if finalized %}
+                                        {{ 'The database schema is still behind the current code. Re-run finalization to synchronize it.'|trans }}
+                                    {% else %}
+                                        {{ 'The database schema is behind the current code and will be synchronized during finalization.'|trans }}
+                                    {% endif %}
+                                    {% if lastSyncFailure %}
+                                        {{ 'A previous automatic synchronization attempt failed (last attempt: %time%). If finalization reports an error, check the update log before retrying.'|trans({'%time%': lastSyncFailure.attempted_at}) }}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endif %}
+                        {% if needsFinalize %}
                             <div class="d-grid">
                                 <a class="btn btn-primary" href="{{ 'system/finalize_update'|api_url }}"
                                     {{ fb_api_link({

@@ -2493,12 +2493,17 @@ test('ensureSchemaInSync backs off after a failed attempt until the cooldown end
         expect($patcher->ensureSchemaInSync())->toBeFalse()
             ->and($columnNames())->not->toContain('credit_note_for_invoice_id');
 
+        // Status reporting ignores the cooldown so the drift stays visible
+        // while retries back off.
+        expect($patcher->isSchemaOutOfSyncIgnoringCooldown())->toBeTrue();
+
         // Once the cooldown expires the same hash retries and the sync completes.
         $pdo->exec("UPDATE setting SET updated_at = '2000-01-01 00:00:00' WHERE param = 'schema_metadata_hash_failed'");
 
         expect($patcher->isSchemaOutOfSync())->toBeTrue();
         expect($patcher->ensureSchemaInSync())->toBeTrue()
-            ->and($columnNames())->toContain('credit_note_for_invoice_id');
+            ->and($columnNames())->toContain('credit_note_for_invoice_id')
+            ->and($patcher->isSchemaOutOfSyncIgnoringCooldown())->toBeFalse();
     } finally {
         (new Filesystem())->remove($dbFile);
     }
