@@ -1335,8 +1335,8 @@ class Service implements InjectionAwareInterface
         if ($stats['active'] > 0) {
             throw new InformationException('Cannot remove hosting plan which has active accounts');
         }
-        if ($stats['orphanedIds'] !== []) {
-            $this->detachOrphanedHpUsages($model);
+        if ($stats['orphaned'] > 0) {
+            throw new InformationException('Cannot remove hosting plan which has orphaned accounts; detach them first');
         }
         $this->di['em']->remove($model);
         $this->di['em']->flush();

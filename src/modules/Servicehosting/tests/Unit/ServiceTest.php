@@ -1134,6 +1134,28 @@ test('delete hp', function (): void {
     expect($result)->toBeTrue();
 });
 
+test('delete hp refuses orphaned usages without detaching', function (): void {
+    $service = new Service();
+    $model = new ServiceHostingHp();
+    setEntityId($model, 1);
+
+    $connectionMock = Mockery::mock(Connection::class);
+    $connectionMock->shouldReceive('fetchFirstColumn')->once()->andReturn([5]);
+    $connectionMock->shouldReceive('fetchFirstColumn')->once()->andReturn([]);
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getConnection')->andReturn($connectionMock);
+    $emMock->shouldNotReceive('remove');
+    $emMock->shouldIgnoreMissing();
+
+    $di = container();
+    $di['em'] = $emMock;
+    $di['logger'] = new FOSSBilling\Logger();
+    $service->setDi($di);
+
+    expect(fn () => $service->deleteHp($model))->toThrow(FOSSBilling\InformationException::class, 'orphaned');
+});
+
 test('to hosting hp api array', function (): void {
     $service = new Service();
     $model = new ServiceHostingHp();
