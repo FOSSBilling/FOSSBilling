@@ -4104,7 +4104,7 @@ test('deleteFromOrder removes client_order_meta rows before removing the order',
     $order = createEntity(Order::class, ['id' => 42, 'status' => Order::STATUS_ACTIVE]);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
-    $serviceMock->shouldReceive('_callOnService')->once()->with($order, Order::ACTION_DELETE);
+    $serviceMock->shouldReceive('_callOnService')->once()->with($order, Order::ACTION_DELETE, false);
 
     $orderMetaRepository = Mockery::mock(OrderMetaRepository::class);
     $orderMetaRepository->shouldReceive('deleteByOrderId')->once()->with(42);

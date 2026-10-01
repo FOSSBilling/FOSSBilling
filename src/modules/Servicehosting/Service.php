@@ -353,14 +353,21 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function action_delete(Order $order): void
+    public function action_delete(Order $order, bool $forceDelete = false): void
     {
         $orderService = $this->di['mod_service']('order');
         $service = $orderService->getOrderService($order);
         if ($service instanceof ServiceHosting) {
             // cancel if not canceled
             if ($order->getStatus() != Order::STATUS_CANCELED) {
-                $this->action_cancel($order);
+                try {
+                    $this->action_cancel($order);
+                } catch (\Exception $e) {
+                    if (!$forceDelete) {
+                        throw $e;
+                    }
+                    $this->di['logger']->info('Remote cancel failed during forced delete, removing local service: {message}', ['message' => $e->getMessage()]);
+                }
             }
             $this->di['em']->remove($service);
             $this->di['em']->flush();
@@ -1241,15 +1248,95 @@ class Service implements InjectionAwareInterface
         return [$sql, []];
     }
 
+    public function getServerUsageStats(ServiceHostingServer $server): array
+    {
+        $serviceIds = $this->di['em']->getConnection()->fetchFirstColumn(
+            'SELECT id FROM service_hosting WHERE service_hosting_server_id = ?',
+            [(int) $server->getId()]
+        );
+
+        return $this->splitActiveOrphanedIds($serviceIds);
+    }
+
+    public function getHpUsageStats(ServiceHostingHp $plan): array
+    {
+        $serviceIds = $this->di['em']->getConnection()->fetchFirstColumn(
+            'SELECT id FROM service_hosting WHERE service_hosting_hp_id = ?',
+            [(int) $plan->getId()]
+        );
+
+        return $this->splitActiveOrphanedIds($serviceIds);
+    }
+
+    private function splitActiveOrphanedIds(array $serviceIds): array
+    {
+        $serviceIds = array_map(intval(...), $serviceIds);
+        if ($serviceIds === []) {
+            return ['total' => 0, 'active' => 0, 'orphaned' => 0, 'orphanedIds' => []];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($serviceIds), '?'));
+        $activeIds = $this->di['em']->getConnection()->fetchFirstColumn(
+            "SELECT DISTINCT service_id FROM client_order WHERE service_type = ? AND service_id IN ($placeholders)",
+            array_merge([\Box\Mod\Product\Service::HOSTING], $serviceIds)
+        );
+        $activeIds = array_map(intval(...), $activeIds);
+        $orphanedIds = array_values(array_diff($serviceIds, $activeIds));
+
+        return [
+            'total' => count($serviceIds),
+            'active' => count($activeIds),
+            'orphaned' => count($orphanedIds),
+            'orphanedIds' => $orphanedIds,
+        ];
+    }
+
+    public function detachOrphanedServerUsages(ServiceHostingServer $server): int
+    {
+        $stats = $this->getServerUsageStats($server);
+        if ($stats['orphanedIds'] === []) {
+            return 0;
+        }
+
+        $orphans = $this->getServiceHostingRepository()->findBy(['id' => $stats['orphanedIds']]);
+        foreach ($orphans as $orphan) {
+            $orphan->setServiceHostingServer(null);
+        }
+        $this->di['em']->flush();
+        $this->di['logger']->info('Detached {count} orphaned service hostings from hosting server {id}', ['count' => count($orphans), 'id' => $server->getId()]);
+
+        return count($orphans);
+    }
+
+    public function detachOrphanedHpUsages(ServiceHostingHp $plan): int
+    {
+        $stats = $this->getHpUsageStats($plan);
+        if ($stats['orphanedIds'] === []) {
+            return 0;
+        }
+
+        $orphans = $this->getServiceHostingRepository()->findBy(['id' => $stats['orphanedIds']]);
+        foreach ($orphans as $orphan) {
+            $orphan->setServiceHostingHp(null);
+        }
+        $this->di['em']->flush();
+        $this->di['logger']->info('Detached {count} orphaned service hostings from hosting plan {id}', ['count' => count($orphans), 'id' => $plan->getId()]);
+
+        return count($orphans);
+    }
+
     /**
      * @throws InformationException
      */
     public function deleteHp(ServiceHostingHp $model): bool
     {
         $id = $model->getId();
-        $serviceHosting = $this->getServiceHostingRepository()->findOneBy(['serviceHostingHp' => $model]);
-        if ($serviceHosting) {
+        $stats = $this->getHpUsageStats($model);
+        if ($stats['active'] > 0) {
             throw new InformationException('Cannot remove hosting plan which has active accounts');
+        }
+        if ($stats['orphanedIds'] !== []) {
+            $this->detachOrphanedHpUsages($model);
         }
         $this->di['em']->remove($model);
         $this->di['em']->flush();
