@@ -1449,12 +1449,12 @@ class Service implements InjectionAwareInterface
 
         $systemService = $this->di['mod_service']('system');
         $seller = $systemService->getCompany();
-        $model->setSellerCompany($seller['name']);
-        $model->setSellerCompanyVat($seller['vat_number']);
-        $model->setSellerCompanyNumber($seller['number']);
-        $model->setSellerAddress(trim("{$seller['address_1']} {$seller['address_2']} {$seller['address_3']}"));
-        $model->setSellerPhone($seller['tel']);
-        $model->setSellerEmail($seller['email']);
+        $model->setSellerCompany($seller['name'] ?? null);
+        $model->setSellerCompanyVat($seller['vat_number'] ?? null);
+        $model->setSellerCompanyNumber($seller['number'] ?? null);
+        $model->setSellerAddress(trim(($seller['address_1'] ?? '') . ' ' . ($seller['address_2'] ?? '') . ' ' . ($seller['address_3'] ?? '')));
+        $model->setSellerPhone($seller['tel'] ?? null);
+        $model->setSellerEmail($seller['email'] ?? null);
 
         $client = $model->getClientId() !== null
             ? $this->di['em']->getRepository(Client::class)->find($model->getClientId())
@@ -1465,18 +1465,18 @@ class Service implements InjectionAwareInterface
 
         $clientService = $this->di['mod_service']('Client');
         $buyer = $clientService->toApiArray($client);
-        $model->setBuyerFirstName($buyer['first_name']);
-        $model->setBuyerLastName($buyer['last_name']);
-        $model->setBuyerCompany($buyer['company']);
-        $model->setBuyerCompanyVat($buyer['company_vat']);
-        $model->setBuyerCompanyNumber($buyer['company_number']);
-        $model->setBuyerAddress("{$buyer['address_1']} {$buyer['address_2']}");
-        $model->setBuyerCity($buyer['city']);
-        $model->setBuyerState($buyer['state']);
-        $model->setBuyerCountry($buyer['country']);
-        $model->setBuyerPhone("{$buyer['phone_cc']} {$buyer['phone']}");
-        $model->setBuyerEmail($buyer['email']);
-        $model->setBuyerZip($buyer['postcode']);
+        $model->setBuyerFirstName($buyer['first_name'] ?? null);
+        $model->setBuyerLastName($buyer['last_name'] ?? null);
+        $model->setBuyerCompany($buyer['company'] ?? null);
+        $model->setBuyerCompanyVat($buyer['company_vat'] ?? null);
+        $model->setBuyerCompanyNumber($buyer['company_number'] ?? null);
+        $model->setBuyerAddress(trim(($buyer['address_1'] ?? '') . ' ' . ($buyer['address_2'] ?? '')));
+        $model->setBuyerCity($buyer['city'] ?? null);
+        $model->setBuyerState($buyer['state'] ?? null);
+        $model->setBuyerCountry($buyer['country'] ?? null);
+        $model->setBuyerPhone(trim(($buyer['phone_cc'] ?? '') . ' ' . ($buyer['phone'] ?? '')));
+        $model->setBuyerEmail($buyer['email'] ?? null);
+        $model->setBuyerZip($buyer['postcode'] ?? null);
     }
 
     public function issueInvoice(Invoice $invoice, array $data): bool
@@ -4698,13 +4698,13 @@ class Service implements InjectionAwareInterface
     private function getSellerData(array $invoice, int &$lines): array
     {
         $sourceData = [
-            'Name' => $invoice['seller']['company'],
-            'Address 1' => $invoice['seller']['address_1'],
-            'Address 2' => $invoice['seller']['address_2'],
-            'Address 3' => $invoice['seller']['address_3'],
-            'Phone' => $invoice['seller']['phone'],
-            'Email' => $invoice['seller']['email'],
-            'VAT Number' => $invoice['seller']['company_vat'],
+            'Name' => $invoice['seller']['company'] ?? null,
+            'Address 1' => $invoice['seller']['address_1'] ?? null,
+            'Address 2' => $invoice['seller']['address_2'] ?? null,
+            'Address 3' => $invoice['seller']['address_3'] ?? null,
+            'Phone' => $invoice['seller']['phone'] ?? null,
+            'Email' => $invoice['seller']['email'] ?? null,
+            'VAT Number' => $invoice['seller']['company_vat'] ?? null,
         ];
 
         foreach ($sourceData as $label => $data) {
@@ -4721,15 +4721,15 @@ class Service implements InjectionAwareInterface
     private function getBuyerData(array $invoice, int &$lines): array
     {
         $sourceData = [
-            'Company' => $invoice['buyer']['company'],
-            'Name' => $invoice['buyer']['first_name'] . ' ' . $invoice['buyer']['last_name'],
-            'Address' => $invoice['buyer']['address'],
-            'City' => $invoice['buyer']['city'],
-            'State' => $invoice['buyer']['state'],
-            'Zip' => $invoice['buyer']['zip'],
-            'Country' => $invoice['buyer']['country'],
-            'Phone' => $invoice['buyer']['phone'],
-            'VAT Number' => $invoice['buyer']['company_vat'],
+            'Company' => $invoice['buyer']['company'] ?? null,
+            'Name' => trim(($invoice['buyer']['first_name'] ?? '') . ' ' . ($invoice['buyer']['last_name'] ?? '')),
+            'Address' => $invoice['buyer']['address'] ?? null,
+            'City' => $invoice['buyer']['city'] ?? null,
+            'State' => $invoice['buyer']['state'] ?? null,
+            'Zip' => $invoice['buyer']['zip'] ?? null,
+            'Country' => $invoice['buyer']['country'] ?? null,
+            'Phone' => $invoice['buyer']['phone'] ?? null,
+            'VAT Number' => $invoice['buyer']['company_vat'] ?? null,
         ];
 
         foreach ($sourceData as $label => $data) {
