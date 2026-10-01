@@ -1144,7 +1144,7 @@ class Service implements InjectionAwareInterface
             $this->di['em']->flush();
         }
 
-        if ($payGateway->getGateway() === 'Custom' && $payGateway->isEnabled()) {
+        if ($payGateway->getGateway() === 'Custom') {
             $actuallyPaid = null;
             $paid = $this->di['em']->wrapInTransaction(function () use ($invoice, $payGateway, $transactionId, $paidAt, &$actuallyPaid): bool {
                 // Re-validate under the invoice lock: the invoice may have
@@ -1251,7 +1251,10 @@ class Service implements InjectionAwareInterface
         if ($payGateway === null) {
             throw new InformationException('Payment gateway not found');
         }
-        if ($payGateway->getGateway() === 'Custom' && $payGateway->isEnabled()) {
+        if (!$payGateway->isEnabled()) {
+            throw new InformationException('Payment gateway is not enabled');
+        }
+        if ($payGateway->getGateway() === 'Custom') {
             $transactionId = trim((string) ($data['transactionId'] ?? ''));
             if ($transactionId === '') {
                 throw new InformationException('Transaction ID is required when using the Custom payment gateway.');
