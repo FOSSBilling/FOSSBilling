@@ -1,10 +1,14 @@
-<!-- cspell:words buildx zstd -->
+<!-- cspell:words buildx zstd cimg FPM -->
 # CircleCI validation pilot
 
 This is an opt-in parallel validation pipeline. GitHub Actions remain the
 required checks and the only publisher. The default pipeline parameter
 `run-validation-pilot: false` compiles to no jobs. Enable it explicitly for
 a pilot run; do not make it the default until the trigger design is verified.
+
+The Docker-based pilot establishes compatibility and supplies measurements;
+it is not the selected migration architecture. A design review from first
+principles is pending before further implementation.
 
 ## Organization and integration
 
@@ -215,7 +219,71 @@ steps on PHP 8.5, compared with 40 on PHP 8.3. This is a mixed cache hit,
 not a fully warm result. Subsequent config limits DLC to the PHP 8.5 build,
 which gates the integration jobs, to prevent parallel cache writers from
 competing and reduce the fixed DLC charge to 200 credits per pilot. Gen2
-runner and PHP-8.5-only DLC trials follow before selecting defaults.
+runner trial is diagnostic. Further cache trials are paused pending the
+architecture decision below.
+
+| Diagnostic run | Workflow elapsed | Actual Insights credits | Result |
+| --- | --- | --- | --- |
+| [3: medium compatibility baseline](https://app.circleci.com/pipelines/github/FOSSBilling/FOSSBilling/3) | 5m39s | 123 | All five jobs passed |
+| [7: large, first DLC run on all PHP jobs](https://app.circleci.com/pipelines/github/FOSSBilling/FOSSBilling/7) | 5m02s | 822 | All five jobs passed |
+| [8: identical-revision DLC repeat, mixed hits](https://app.circleci.com/pipelines/github/FOSSBilling/FOSSBilling/8) | 5m34s | 790 | All five jobs passed |
+| [11: large.gen2, DLC off](https://app.circleci.com/pipelines/github/FOSSBilling/FOSSBilling/11) | 4m20s | 338 | All five jobs passed |
+
+These figures include workflow startup and differ from the first-job-to-last-job
+timings above. Runs 7 and 8 use `4dabb6b`; run 11 uses `3ef0c57`, changing CI
+configuration/documentation only. They are individual diagnostic samples, not
+an accepted performance comparison or evidence for the proposed native design.
+
+## Proposed architecture, pending review
+
+Prefer CircleCI's language containers and service containers for application
+validation. Preserve existing checks and outcomes, rather than reproducing
+the Actions job graph or its image-building approach.
+
+| Work | Proposed execution | Dependencies |
+| --- | --- | --- |
+| Pest matrix, PHP 8.3/8.4/8.5 | Native Docker executor with pinned `cimg/php` images; Composer download caches per PHP/lockfile | Checkout and Composer installation only |
+| PHPStan and later PHP quality checks | Same PHP environment, initially alongside PHP 8.3 tests | Composer dependencies, no frontend or application-image build |
+| Frontend checks and production assets | Native Node 24 executor; npm download cache; run the existing full build and browser typecheck once | Checkout and npm installation |
+| Live API tests | PHP primary container, Apache with PHP-FPM, MariaDB service container, fresh app install | Built frontend assets via workspace; Composer dependencies |
+| Browser tests | PHP/Node/browser environment, Apache with PHP-FPM, separate MariaDB service container and fresh install | Built frontend assets via workspace; matching Playwright package/browser |
+| Docker packaging validation | One independent machine build and runtime smoke check for the shipped PHP 8.5 image | Runs beside application validation; does not gate starting live/browser tests |
+
+The PHP convenience image already provides Composer, FPM, and the required
+core extensions, including the database drivers. Verify precise image digests
+and PHP/Node/browser versions before a pilot. Add services for optional
+PostgreSQL tests in a separate coverage expansion, so suite changes are not
+hidden in performance comparisons.
+
+Apache is deliberate: `src/.htaccess` handles rewrites, authorization-header
+forwarding, and access rules. A basic `php -S` server would not reproduce that
+contract. Start Apache/PHP-FPM in the primary container so checkout, dependencies
+and assets are directly available; a secondary service container cannot be
+assumed to see those files. MariaDB can use CircleCI's native shared network.
+Keep live and browser databases isolated.
+
+The new graph removes frontend/release assembly from each PHP matrix job and
+removes image export, transfer and load from the integration dependency chain.
+Workspaces carry frontend outputs; caches carry dependency downloads; native
+JUnit and artifacts carry diagnostics. Retain Docker packaging coverage as a
+separate check, including the release-tree transformations that source-based
+tests would no longer exercise. Publishing stays in its existing phase.
+
+First prove one native PHP job and exact suite/skip parity. Next prove the
+frontend producer and live/browser environment, including installation,
+Apache routing, authentication, writable directories and failure reports.
+Only then expand the matrix and benchmark identical revisions, coverage,
+cold/warm dependencies, queue time, total validation latency and credits.
+Resource sizing and test splitting follow measurements; do not introduce
+parallel browser workers against a shared mutable database by default.
+
+This is a proposed design, not yet validated by execution or implemented.
+
+References:
+
+- [PHP convenience image](https://circleci.com/developer/images/image/cimg/php)
+- [PHP image build specification](https://github.com/CircleCI-Public/cimg-php/blob/main/8.5/Dockerfile)
+- [Native Docker executor and services](https://circleci.com/docs/guides/execution-managed/using-docker/)
 
 Later phases: move PR quality checks, cut over required validation checks,
 then migrate previews and assess releases separately. Keep GitHub labeling,
