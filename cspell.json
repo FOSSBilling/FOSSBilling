@@ -581,7 +581,8 @@
         "emailaddr",
         "telno",
         "telnocc",
-        "actionstatus"
+        "actionstatus",
+        "AUTOINCREMENT"
     ],
     "ignorePaths": [
         "node_modules/**",
