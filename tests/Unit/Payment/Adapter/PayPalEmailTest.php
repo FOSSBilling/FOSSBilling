@@ -344,7 +344,7 @@ describe('PayPal subscription IPN handling', function (): void {
             ['invoice_id' => 16, 'type' => null, 'txn_id' => null, 'txn_status' => null, 'amount' => null, 'currency' => null, 'status' => 'received'],
             ['invoice_id' => 16, 'type' => 'subscr_payment', 'txn_id' => 'TXN-1', 'txn_status' => 'Completed', 'amount' => '120.00', 'currency' => 'USD', 'status' => 'processing']
         );
-        $apiAdmin->shouldReceive('invoice_transaction_claim_for_processing')->once()->with(['id' => 42])->andReturn(true);
+        $apiAdmin->shouldNotReceive('invoice_transaction_claim_for_processing');
         $apiAdmin->shouldReceive('invoice_get')->once()->with(['id' => 16])->andReturn([
             'id' => 16, 'currency' => 'USD', 'client' => ['id' => 9],
         ]);
@@ -404,7 +404,7 @@ describe('PayPal subscription IPN handling', function (): void {
             ['invoice_id' => 16, 'type' => null, 'txn_id' => null, 'txn_status' => null, 'amount' => null, 'currency' => null, 'status' => 'received'],
             ['invoice_id' => 16, 'type' => 'subscr_payment', 'txn_id' => 'TXN-2', 'txn_status' => 'Completed', 'amount' => '120.00', 'currency' => 'USD', 'status' => 'processing']
         );
-        $apiAdmin->shouldReceive('invoice_transaction_claim_for_processing')->once()->with(['id' => 42])->andReturn(true);
+        $apiAdmin->shouldNotReceive('invoice_transaction_claim_for_processing');
         $apiAdmin->shouldReceive('invoice_get')->once()->with(['id' => 16])->andReturn([
             'id' => 16, 'currency' => 'USD', 'client' => ['id' => 9],
         ]);
@@ -632,24 +632,40 @@ describe('PayPal subscription IPN handling', function (): void {
         ], 2))->toThrow(Payment_Exception::class, 'PayPal subscription payment is missing the subscription ID');
     });
 
-    test('contended transaction claims are logged instead of silently skipped', function (): void {
+    test('processes a completed payment without re-claiming the row', function (): void {
+        $updates = [];
         $apiAdmin = Mockery::mock();
-        $apiAdmin->shouldReceive('invoice_transaction_get')->once()->with(['id' => 42])->andReturn([
-            'invoice_id' => 16, 'type' => null, 'txn_id' => null,
-            'txn_status' => null, 'amount' => null, 'currency' => null, 'status' => 'received',
-        ]);
+        $apiAdmin->shouldReceive('invoice_transaction_get')->twice()->with(['id' => 42])->andReturn(
+            ['invoice_id' => 16, 'type' => null, 'txn_id' => null, 'txn_status' => null, 'amount' => null, 'currency' => null, 'status' => 'received'],
+            ['invoice_id' => 16, 'type' => 'web_accept', 'txn_id' => 'TXN-1', 'txn_status' => 'Completed', 'amount' => '120.00', 'currency' => 'USD', 'status' => 'processing']
+        );
         $apiAdmin->shouldReceive('invoice_get')->once()->with(['id' => 16])->andReturn([
             'id' => 16, 'currency' => 'USD', 'client' => ['id' => 9],
         ]);
-        $apiAdmin->shouldReceive('invoice_transaction_update')->byDefault();
-        $apiAdmin->shouldReceive('invoice_transaction_claim_for_processing')->once()->with(['id' => 42])->andReturn(false);
-        $apiAdmin->shouldNotReceive('client_balance_add_funds');
+        $apiAdmin->shouldReceive('invoice_transaction_update')->byDefault()->withArgs(function (array $data) use (&$updates): bool {
+            $updates[] = $data;
 
-        $em = paypalEmMocks();
-        $logger = new Tests\Helpers\TestLogger();
+            return true;
+        });
+        $apiAdmin->shouldNotReceive('invoice_transaction_claim_for_processing');
+        $apiAdmin->shouldReceive('client_balance_add_funds')->once();
+        $apiAdmin->shouldReceive('invoice_pay_with_credits')->once()->with(['id' => 16]);
+
+        $invoiceModel = Mockery::mock(Box\Mod\Invoice\Entity\Invoice::class);
+        $invoiceModel->shouldReceive('getId')->byDefault()->andReturn(16);
+        $invoiceModel->shouldReceive('getStatus')->byDefault()->andReturn(Box\Mod\Invoice\Entity\Invoice::STATUS_UNPAID);
+        $invoiceModel->shouldReceive('isIssued')->byDefault()->andReturn(true);
+
+        $invoiceService = Mockery::mock();
+        $invoiceService->shouldReceive('getTotalWithTax')->once()->andReturn(120.00);
+        $invoiceService->shouldReceive('validatePaymentAmount')->once()->andReturnNull();
+        $invoiceService->shouldReceive('isInvoiceTypeDeposit')->once()->andReturn(false);
+
+        $em = paypalEmMocks($invoiceModel);
         $di = container();
         $di['em'] = $em;
-        $di['logger'] = $logger;
+        $di['logger'] = new Tests\Helpers\TestLogger();
+        $di['mod_service'] = $di->protect(static fn (): object => $invoiceService);
 
         paypalProcessAdapter($di)->processTransaction($apiAdmin, 42, [
             'post' => [
@@ -662,8 +678,8 @@ describe('PayPal subscription IPN handling', function (): void {
             'get' => signedPayPalGet(16, 2),
         ], 2);
 
-        $warnings = array_filter($logger->calls, fn (array $c): bool => $c['method'] === 'warning');
-        expect($warnings)->not->toBeEmpty();
+        $processed = array_values(array_filter($updates, fn (array $u): bool => ($u['status'] ?? null) === 'processed'));
+        expect($processed)->toHaveCount(1);
     });
 
     test('recurring_payment from the newer flow pays the original invoice', function (): void {
@@ -674,7 +690,7 @@ describe('PayPal subscription IPN handling', function (): void {
             ['invoice_id' => 16, 'type' => null, 'txn_id' => null, 'txn_status' => null, 'amount' => null, 'currency' => null, 'status' => 'received'],
             ['invoice_id' => 16, 'type' => 'recurring_payment', 'txn_id' => 'TXN-R1', 'txn_status' => 'Completed', 'amount' => '120.00', 'currency' => 'USD', 'status' => 'processing']
         );
-        $apiAdmin->shouldReceive('invoice_transaction_claim_for_processing')->once()->with(['id' => 42])->andReturn(true);
+        $apiAdmin->shouldNotReceive('invoice_transaction_claim_for_processing');
         $apiAdmin->shouldReceive('invoice_get')->once()->with(['id' => 16])->andReturn([
             'id' => 16, 'currency' => 'USD', 'client' => ['id' => 9],
         ]);
@@ -1152,7 +1168,7 @@ describe('PayPal subscription IPN handling', function (): void {
             ['invoice_id' => 16, 'type' => null, 'txn_id' => null, 'txn_status' => null, 'amount' => null, 'currency' => null, 'status' => 'received'],
             ['invoice_id' => 16, 'type' => 'subscr_payment', 'txn_id' => 'TXN-1', 'txn_status' => 'Completed', 'amount' => '120.00', 'currency' => 'USD', 'status' => 'processing']
         );
-        $apiAdmin->shouldReceive('invoice_transaction_claim_for_processing')->once()->with(['id' => 42])->andReturn(true);
+        $apiAdmin->shouldNotReceive('invoice_transaction_claim_for_processing');
         $apiAdmin->shouldReceive('invoice_get')->once()->with(['id' => 16])->andReturn([
             'id' => 16, 'currency' => 'USD', 'client' => ['id' => 9],
         ]);
@@ -1436,7 +1452,7 @@ describe('PayPal callback invoice binding', function (): void {
             ['invoice_id' => 16, 'type' => null, 'txn_id' => null, 'txn_status' => null, 'amount' => null, 'currency' => null, 'status' => 'received'],
             ['invoice_id' => 16, 'type' => 'web_accept', 'txn_id' => 'TXN-9', 'txn_status' => 'Completed', 'amount' => '120.00', 'currency' => 'USD', 'status' => 'processing']
         );
-        $apiAdmin->shouldReceive('invoice_transaction_claim_for_processing')->once()->with(['id' => 42])->andReturn(true);
+        $apiAdmin->shouldNotReceive('invoice_transaction_claim_for_processing');
         $apiAdmin->shouldReceive('invoice_get')->once()->with(['id' => 16])->andReturn([
             'id' => 16, 'currency' => 'USD', 'client' => ['id' => 9],
         ]);
@@ -1471,7 +1487,7 @@ describe('PayPal callback invoice binding', function (): void {
             ['invoice_id' => 16, 'type' => null, 'txn_id' => null, 'txn_status' => null, 'amount' => null, 'currency' => null, 'status' => 'received'],
             ['invoice_id' => 16, 'type' => 'web_accept', 'txn_id' => 'TXN-9', 'txn_status' => 'Completed', 'amount' => '120.00', 'currency' => 'USD', 'status' => 'processing']
         );
-        $apiAdmin->shouldReceive('invoice_transaction_claim_for_processing')->once()->with(['id' => 42])->andReturn(true);
+        $apiAdmin->shouldNotReceive('invoice_transaction_claim_for_processing');
         $apiAdmin->shouldReceive('invoice_get')->once()->with(['id' => 16])->andReturn([
             'id' => 16, 'currency' => 'USD', 'client' => ['id' => 9],
         ]);
@@ -1585,7 +1601,7 @@ describe('PayPal callback invoice binding', function (): void {
             ['invoice_id' => 16, 'type' => null, 'txn_id' => null, 'txn_status' => null, 'amount' => null, 'currency' => null, 'status' => 'received'],
             ['invoice_id' => 16, 'type' => 'web_accept', 'txn_id' => 'TXN-E', 'txn_status' => 'Completed', 'amount' => '120.00', 'currency' => 'USD', 'status' => 'processing']
         );
-        $apiAdmin->shouldReceive('invoice_transaction_claim_for_processing')->once()->with(['id' => 42])->andReturn(true);
+        $apiAdmin->shouldNotReceive('invoice_transaction_claim_for_processing');
         $apiAdmin->shouldReceive('invoice_get')->once()->with(['id' => 16])->andReturn([
             'id' => 16, 'currency' => 'USD', 'client' => ['id' => 9],
         ]);

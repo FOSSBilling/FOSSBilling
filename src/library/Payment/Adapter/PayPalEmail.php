@@ -181,14 +181,6 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
                             throw new Payment_Exception('PayPal subscription ' . $ipn['subscr_id'] . ' is not linked to invoice ' . $tx['invoice_id']);
                         }
                     }
-
-                    // Claim transaction for processing
-                    // Prevents race conditions when multiple Completed IPNs arrive simultaneously
-                    if (!$api_admin->invoice_transaction_claim_for_processing(['id' => $id])) {
-                        $this->di['logger']->warning('Skipping PayPal transaction ' . $id . ': already being processed');
-
-                        return;
-                    }
                 } elseif (($ipn['payment_status'] ?? '') === 'Refunded') {
                     break;
                 } else {
