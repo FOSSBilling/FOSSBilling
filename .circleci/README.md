@@ -356,6 +356,29 @@ stage control. No hosted run was triggered. The current config expands to all
 six jobs without parameters; no workflow activation conditions or job filters
 remain.
 
+### Remote six-job verification
+
+After a fresh local recheck of the current working tree, pipeline
+[25](https://app.circleci.com/pipelines/github/FOSSBilling/FOSSBilling/25)
+tested revision `e0d5587c26cfb5a573c40aa77be3c596664891c3`. All six jobs passed.
+Workflow Insights records 129 seconds and 61 credits; this is measured workflow
+duration, rather than the CLI watcher's polling-dependent completion time.
+
+Every PHP version produced 3,891 passed records and the same four skips,
+with exact identity/outcome parity against its fresh local report. PHPStan
+passed on 8.3. Frontend installation, the full production build, typechecking
+and workspace persistence passed. All 91 live API and 44 browser records
+match the earlier native reports. Uploaded JUnit and browser HTML reports
+were downloaded and verified.
+
+The Node orb created its new npm archive cache, and the browser job consumed
+the frontend workspace and restored the PHP 8.5 and npm caches. This confirms
+cache creation and downstream use, not a separate warm-run benchmark. No
+duplicate manual run was triggered. The equivalent Actions PHP, live API,
+browser, spellcheck, quality and CodeQL checks passed on the tested revision;
+its preview packaging workflow was still pending when these results were
+recorded. Packaging and PR quality coverage on CircleCI remain future work.
+
 
 References:
 
