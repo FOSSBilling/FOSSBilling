@@ -128,6 +128,12 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $invoice = $this->_getInvoice($data);
 
+        // Marking a deposit invoice as paid credits the client balance, so it
+        // requires the same permission as crediting the balance directly.
+        if ($this->getService()->isInvoiceTypeDeposit($invoice)) {
+            $this->checkPermissions('client', 'manage_balance');
+        }
+
         return $this->getService()->markAsPaidByAdmin($invoice, $data);
     }
 
