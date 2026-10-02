@@ -410,7 +410,7 @@ test('multi-group membership patch drops legacy foreign keys before dropping the
     $legacyForeignKeys = Mockery::mock(PDOStatement::class);
     $legacyForeignKeys->expects('execute')->with(['table' => 'client', 'column' => 'client_group_id'])->andReturnTrue();
     $legacyForeignKeys->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
-        ['CONSTRAINT_NAME' => 'client_ibfk_1'],
+        ['CONSTRAINT_NAME' => 'legacy_client_group_fk'],
     ]);
 
     $dropForeignKey = Mockery::mock(PDOStatement::class);
@@ -445,7 +445,7 @@ test('multi-group membership patch drops legacy foreign keys before dropping the
         ->with('SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table AND COLUMN_NAME = :column AND REFERENCED_TABLE_NAME IS NOT NULL')
         ->andReturn($legacyForeignKeys);
     $pdo->expects('prepare')
-        ->with('ALTER TABLE `client` DROP FOREIGN KEY `client_ibfk_1`')
+        ->with('ALTER TABLE `client` DROP FOREIGN KEY `legacy_client_group_fk`')
         ->ordered()
         ->andReturn($dropForeignKey);
     $pdo->expects('prepare')
