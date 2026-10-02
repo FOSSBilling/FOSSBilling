@@ -198,6 +198,22 @@ test('adds new item', function (): void {
     expect($invoiceItemModel->price)->toBe(-10.0);
 });
 
+test('adds new item rejects deposit line types', function (): void {
+    $service = new ServiceInvoiceItem();
+    $invoiceModel = new Model_Invoice();
+    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldNotReceive('dispense', 'store');
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $service->setDi($di);
+
+    expect(fn (): int => $service->addNew($invoiceModel, ['title' => 'Add funds', 'price' => 10, 'type' => Model_InvoiceItem::TYPE_DEPOSIT]))
+        ->toThrow(FOSSBilling\InformationException::class, 'Add Funds flow');
+});
+
 test('gets total', function (): void {
     $service = new ServiceInvoiceItem();
     $price = 5;

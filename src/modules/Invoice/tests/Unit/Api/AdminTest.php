@@ -125,6 +125,9 @@ test('marks invoice as paid', function (): void {
     $serviceMock->shouldReceive('markAsPaidByAdmin')
         ->atLeast()->once()
         ->andReturn(true);
+    $serviceMock->shouldReceive('isInvoiceTypeDeposit')
+        ->atLeast()->once()
+        ->andReturn(false);
 
     $gatewayServiceMock = Mockery::mock(ServicePayGateway::class);
     $gatewayServiceMock->shouldReceive('toApiArray')
@@ -160,6 +163,50 @@ test('marks invoice as paid', function (): void {
 
     $result = $api->mark_as_paid($data);
     expect($result)->toBeTrue();
+});
+
+test('marking a deposit invoice as paid requires the balance permission', function (): void {
+    $api = apiEndpoint(new Admin());
+    $data = [
+        'id' => 1,
+        'execute' => true,
+    ];
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('isInvoiceTypeDeposit')
+        ->once()
+        ->andReturn(true);
+    $serviceMock->shouldReceive('markAsPaidByAdmin')->never();
+
+    $invoiceModel = new Model_Invoice();
+    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
+    $invoiceModel->gateway_id = '1';
+
+    $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
+        ->byDefault()
+        ->andReturn(true);
+    $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
+        ->once()
+        ->with('client', 'manage_balance', null, Mockery::any())
+        ->andThrow(new FOSSBilling\InformationException('You do not have permission to manage the client balance', [], 403));
+
+    $dbMock = Mockery::mock('\Box_Database');
+    $dbMock->shouldReceive('getExistingModelById')
+        ->atLeast()->once()
+        ->andReturn($invoiceModel);
+
+    $di = container();
+    $di['db'] = $dbMock;
+    $di['mod_service'] = $di->protect(moduleService([
+        'invoice' => $serviceMock,
+        'staff' => $staffServiceMock,
+    ]));
+    $api->setDi($di);
+    $api->setService($serviceMock);
+
+    expect(fn (): bool => $api->mark_as_paid($data))
+        ->toThrow(FOSSBilling\InformationException::class, 'client balance');
 });
 
 test('prepares an invoice', function (): void {

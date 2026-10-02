@@ -100,6 +100,18 @@ class UpdateFinalization implements InjectionAwareInterface
             return null;
         }
 
+        // A previous finalize may have run against stale code and stamped the
+        // state finalized without applying anything. Flip it back to pending
+        // so the finalize screen offers finalization again instead of leaving
+        // the install wedged with patches unapplied.
+        if (($state['status'] ?? null) === self::STATUS_FINALIZED && ($this->getAvailablePatchCount() ?? 0) > 0) {
+            $state['status'] = self::STATUS_PENDING;
+            $state['finalized_at'] = null;
+            $this->writeState($state);
+
+            return $state;
+        }
+
         // Pending/finalized states contain the original maintenance-mode state,
         // so keep them intact until the admin completes finalization.
         if ($this->stateRequiresFinalization($state)) {
@@ -334,7 +346,7 @@ class UpdateFinalization implements InjectionAwareInterface
         }
     }
 
-    private function createPatcher(): UpdatePatcher
+    protected function createPatcher(): UpdatePatcher
     {
         $patcher = new UpdatePatcher();
         if ($this->di instanceof \Pimple\Container) {

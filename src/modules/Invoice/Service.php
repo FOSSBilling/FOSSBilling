@@ -834,6 +834,7 @@ class Service implements InjectionAwareInterface
 
             $result = $this->markAsPaid($invoice, false, $execute);
             if ($result) {
+                $this->creditDepositBalanceIfNeeded($invoice, $payGateway, $transactionId, $invoiceTotal);
                 $transaction->amount = $invoiceTotal;
                 $transaction->currency = $invoice->currency;
                 $transaction->status = \Model_Transaction::STATUS_PROCESSED;
@@ -846,7 +847,64 @@ class Service implements InjectionAwareInterface
             return $result;
         }
 
-        return $this->markAsPaid($invoice, false, $execute);
+        $result = $this->markAsPaid($invoice, false, $execute);
+        if ($result) {
+            $this->creditDepositBalanceIfNeeded($invoice, $payGateway, $transactionId);
+        }
+
+        return $result;
+    }
+
+    /**
+     * Credit the client balance for an Add Funds (deposit) invoice paid by an admin.
+     *
+     * No-op for ordinary invoices. Must only be called when the payment
+     * happened in this call (i.e. markAsPaid() just returned true): the
+     * admin flow marks items paid without charging them, so unlike gateway
+     * payments nothing else credits the balance. Only deposit lines are
+     * credited: a draft deposit invoice can gain non-deposit lines before
+     * issuance, and those charges must not become spendable balance.
+     */
+    private function creditDepositBalanceIfNeeded(\Model_Invoice $invoice, \Model_PayGateway $payGateway, ?string $transactionId, ?float $invoiceTotal = null): void
+    {
+        if (!$this->isInvoiceTypeDeposit($invoice)) {
+            return;
+        }
+
+        $items = $this->di['db']->find('InvoiceItem', 'invoice_id = ?', [$invoice->id]);
+        $hasOtherItems = false;
+        foreach ($items as $item) {
+            if ($item->type != \Model_InvoiceItem::TYPE_DEPOSIT) {
+                $hasOtherItems = true;
+
+                break;
+            }
+        }
+
+        if ($hasOtherItems) {
+            $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
+            $amount = 0.0;
+            foreach ($items as $item) {
+                if ($item->type == \Model_InvoiceItem::TYPE_DEPOSIT) {
+                    $amount += $invoiceItemService->getTotalWithTax($item);
+                }
+            }
+        } else {
+            $amount = $invoiceTotal ?? $this->getTotalWithTax($invoice);
+        }
+
+        $client = $this->di['db']->getExistingModelById('Client', $invoice->client_id, 'Client not found');
+
+        $gatewayTitle = $payGateway->title ?: $payGateway->gateway;
+        $reference = trim((string) $transactionId);
+        $description = $reference !== ''
+            ? sprintf('%s transaction No: %s', $gatewayTitle, $reference)
+            : sprintf('%s manual payment', $gatewayTitle);
+
+        $this->di['mod_service']('Client')->addFunds($client, $amount, $description, [
+            'type' => 'invoice',
+            'rel_id' => (string) $invoice->id,
+        ]);
     }
 
     public function validateAdminMarkAsPaidRequest(array $data, ?\Model_Invoice $invoice = null): \Model_PayGateway

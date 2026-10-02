@@ -27,7 +27,7 @@ class SentryHelper
      * If you modify what's reported, update this to the version number to the release that includes your changes.
      * This is important as we rely on it to inform the user that they may want to review what's been changed.
      */
-    final public const string last_change = '0.8.7';
+    final public const string last_change = '0.8.8';
 
     /**
      * `package@version` is required for Sentry to parse a release as semver - not composer.json's
@@ -83,6 +83,31 @@ class SentryHelper
     private const array ALLOWED_THEMES = [
         'admin_default',
         'huraga',
+    ];
+
+    // Basenames (without the .php extension) of the registrar adapters we ship.
+    // Errors whose culprit file is an unknown adapter come from third-party
+    // adapters, which we can't fix, so they are dropped in before_send.
+    // Keep in sync with the files on disk - SentryHelperTest asserts the match.
+    private const array ALLOWED_REGISTRAR_ADAPTERS = [
+        'Custom',
+        'Email',
+        'Internetbs',
+        'Namecheap',
+        'Netearthone',
+        'Resellbiz',
+        'Resellerclub',
+        'Resellerid',
+    ];
+
+    // Same as above, for the server managers we ship.
+    private const array ALLOWED_SERVER_MANAGERS = [
+        'Custom',
+        'CWP',
+        'Directadmin',
+        'Hestia',
+        'Plesk',
+        'Whm',
     ];
 
     // Array containing instance IDs that are blacklisted from error reporting and a timestamp of when their blacklist expires.
@@ -182,6 +207,13 @@ class SentryHelper
                     if (str_starts_with($exceptionPath, PATH_LIBRARY)) {
                         $event->setTag('library.class', self::getLibrary($exceptionPath));
                     }
+
+                    // Drop errors from third-party registrar / server adapters.
+                    // They live in the same directories as ours but we can't fix them,
+                    // so reporting them only burns quota and buries real issues.
+                    if (self::isThirdPartyAdapter($exceptionPath)) {
+                        return null;
+                    }
                 }
 
                 if (self::skipReporting($module, $theme)) {
@@ -247,6 +279,31 @@ class SentryHelper
     private static function getLibrary(string $exceptionPath): string
     {
         return Path::getFilenameWithoutExtension($exceptionPath);
+    }
+
+    /**
+     * Whether an exception file is a third-party adapter we don't ship.
+     *
+     * Third-party registrar and server adapters live alongside ours under
+     * `library/Registrar/Adapter/` and `library/Server/Manager/`. Anything in
+     * those directories whose basename isn't in the allowlists above is
+     * third-party code, so its errors are dropped rather than reported.
+     */
+    private static function isThirdPartyAdapter(string $exceptionPath): bool
+    {
+        $directories = [
+            Path::join(PATH_LIBRARY, 'Registrar', 'Adapter') => self::ALLOWED_REGISTRAR_ADAPTERS,
+            Path::join(PATH_LIBRARY, 'Server', 'Manager') => self::ALLOWED_SERVER_MANAGERS,
+        ];
+
+        foreach ($directories as $directory => $allowed) {
+            if (str_starts_with($exceptionPath, $directory . DIRECTORY_SEPARATOR)
+                && !in_array(Path::getFilenameWithoutExtension($exceptionPath), $allowed, true)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

@@ -146,6 +146,13 @@ class ServiceInvoiceItem implements InjectionAwareInterface
 
     public function addNew(\Model_Invoice $proforma, array $data): int
     {
+        // Deposit lines credit the client balance when the invoice is paid,
+        // so they may only be created through the Add Funds flow
+        // (generateForAddFunds) — never from generic invoice input.
+        if (($data['type'] ?? \Model_InvoiceItem::TYPE_CUSTOM) == \Model_InvoiceItem::TYPE_DEPOSIT) {
+            throw new \FOSSBilling\InformationException('Deposit invoice items can only be created through the Add Funds flow.');
+        }
+
         $title = $data['title'] ?? '';
         if (empty($title)) {
             throw new \FOSSBilling\InformationException('Invoice item title is missing');

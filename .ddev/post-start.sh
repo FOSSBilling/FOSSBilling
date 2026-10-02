@@ -7,6 +7,7 @@ nodeBuildTimestamp="node_modules/package.stamp"
 
 # Composer vars
 composerVendorPath="src/vendor"
+composerJson="composer.json"
 composerLock="composer.lock"
 customVendorTimestamp="src/vendor/composer.stamp"
 
@@ -29,7 +30,8 @@ elif [ ! -f "src/public/assets/manifest.json" ] \
 fi
 
 # If the composer packages aren't installed or are outdated, install the locked versions
-if [ ! -d "$composerVendorPath" ] || [ ! -f "$customVendorTimestamp" ] || [ "$composerLock" -nt "$customVendorTimestamp" ]; then
+# composer.json is checked too: autoload-only changes don't touch the lock file.
+if [ ! -d "$composerVendorPath" ] || [ ! -f "$customVendorTimestamp" ] || [ "$composerJson" -nt "$customVendorTimestamp" ] || [ "$composerLock" -nt "$customVendorTimestamp" ]; then
     composer install
     echo "$now" > "$customVendorTimestamp"
 fi
