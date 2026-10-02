@@ -1,15 +1,19 @@
 <!-- cspell:words buildx zstd cimg FPM -->
-# CircleCI validation pilot
+# CircleCI validation
 
-This is an opt-in parallel validation pipeline. GitHub Actions remain the
-required checks and the only publisher. The default pipeline parameter
-`run-validation-pilot: false` compiles to no jobs. Enable it explicitly for
-a pilot run; do not make it the default until the trigger design is verified.
+Each CircleCI pipeline runs the `validation` workflow: PHP 8.3/8.4/8.5 tests,
+PHPStan on 8.3, frontend assets/typechecking, and separate live API and browser
+jobs. No pilot activation parameter or stage filters remain. GitHub Actions
+remain the required checks and the only publisher; cutover is still pending.
 
-The Docker-based pilot establishes compatibility and supplies measurements.
-Initial trials of the native architecture were approved on 2026-10-02 and
-are available separately through `native-pilot-stage: php` or `integration`.
-Both pilots remain off by default. The full migration and cutover are pending.
+Keep experiments local until hosted verification is needed. Once this config
+is pushed, the configured CircleCI push trigger will start all six jobs.
+
+The earlier Docker compatibility workflow has been removed, including its
+machine executor, image-build/test jobs, image transfer commands, Docker orb,
+and activation/resource/cache parameters. Its diagnostic results below are
+historical evidence, not an additional active test path. Docker packaging
+validation remains a separate future step.
 
 ## Organization and integration
 
@@ -49,58 +53,17 @@ References:
 
 ## Pilot scope
 
-- Build the existing Dockerfile `test` target for PHP 8.3, 8.4 and 8.5.
-- Run PHPStan on 8.3 and the existing Pest unit/module suites on all versions.
-- Pass the compressed PHP 8.5 image through a workflow workspace.
-- Start live API and Playwright jobs after PHP 8.5 succeeds. PHP 8.3 and 8.4
-  remain separate checks; integration success does not imply matrix success.
-- Preserve MariaDB, Chromium, one browser worker, the existing browser retry,
-  Node 24 typechecking and the admin asset build.
-- Collect Pest and Playwright JUnit results and browser failure artifacts.
+- Run the existing Pest unit/module suites in pinned PHP 8.3, 8.4 and 8.5
+  environments, plus PHPStan on 8.3 to match Actions coverage.
+- Build full production frontend assets and typecheck browser tests in Node 24.
+- Pass frontend outputs through a workflow workspace.
+- Run live API and browser tests in separate PHP environments with MariaDB
+  services and fresh app installations, after the frontend build succeeds.
+- Collect Pest and Playwright JUnit reports, browser artifacts and server logs.
 
-Linux machine executors preserve Docker Compose networking and host mounts.
-The initial compatibility run used `medium`; the optimized pilot defaults to
-`large` (four CPUs), matching the core count of Actions' public Linux runners.
-`pilot-resource-class` can select `medium` or `large.gen2` for controlled
-comparisons.
-Registry caches are read-only and optional.
-There is no registry login, cache export, publishing, deployment context,
-test splitting or additional test coverage.
-
-### Native optimization trials
-
-The pinned `circleci/docker@4.0.1` orb supplies the BuildKit build command.
-The native machine executor exposes Gen2 resource classes, which the orb's
-machine executor parameter does not yet list. A stable per-PHP Buildx builder preserves its volume
-for native Docker layer caching (DLC). DLC is enabled only on the PHP 8.5 build
-job when `pilot-docker-layer-caching: true`; its default is false to avoid
-charging for runs that were not intended as cache trials. Integration jobs
-continue consuming the exact upstream image through a native workspace.
-
-Playwright restores and saves the npm download cache with a versioned Node 24
-and lockfile key, and still runs `npm ci`. It does not cache `node_modules` or
-skip typechecking/building. JUnit and human-readable artifacts use CircleCI's
-native result and artifact storage.
-
-Compare the first DLC-enabled run with a subsequent run on the same revision
-after cache upload has completed. Record actual cache hits rather than
-assuming a warm cache. Also run with DLC disabled to separate runner/orb/npm
-changes from DLC benefit. At published prices, `large` costs 20 credits/minute
-and `large.gen2` costs 36 credits/minute. DLC adds 200 credits per build job
-(200 per pilot). Workflow Insights reports actual credits; timing-derived compute
-costs are estimates; they exclude storage/network charges and plan allowances.
-Do not adopt DLC solely because it lowers runtime if the saved compute does
-not justify its charge.
-
-References:
-
-- [Docker orb](https://circleci.com/developer/orbs/orb/circleci/docker)
-- [Native DLC and named builders](https://circleci.com/docs/guides/optimize/docker-layer-caching/)
-- [Credit prices](https://circleci.com/pricing/price-list/)
-- [Actions public runner resources](https://docs.github.com/en/actions/reference/runners/github-hosted-runners)
-
-The browser script still deliberately uses its existing Playwright 1.62.1
-container/runner pairing, while the package lock uses 1.63.0. Reconcile that
+PR quality checks and independent Docker packaging validation are not yet
+part of this pilot. Keep Playwright 1.62.1 and its matching browser
+for parity with the recorded baseline; reconcile the package-lock version
 separately so a dependency update is not mistaken for a migration effect.
 
 ## Baseline and acceptance
@@ -157,18 +120,19 @@ have been proven. Move quality checks in a subsequent phase.
 
 ```sh
 circleci config validate .circleci/config.yml
-circleci config process .circleci/config.yml --pipeline-parameters 'run-validation-pilot: true'
-bash -n .github/scripts/run-docker-live-tests.sh .github/scripts/run-docker-playwright-tests.sh
+circleci config process .circleci/config.yml
+bash -n .circleci/scripts/start-native-app.sh
 ```
 
-For a DLC trial, pass both `run-validation-pilot=true` and
-`pilot-docker-layer-caching=true` when triggering the OAuth pipeline. Keep all
-parameters and the tested revision identical for the warm-cache repeat.
+Config compilation verifies the job graph, not runtime execution. Prepare
+changes locally before hosted runs and retain Actions checks during comparison.
+Disable the CircleCI trigger or revert the configuration to stop these jobs.
+There are no published outputs to undo.
 
-Config compilation verifies the job graph, not Docker execution. Run the
-pilot on a dedicated branch after organization/project setup; retain Actions
-checks during comparison. Roll back by keeping the parameter false or
-disabling the pilot trigger. There are no published outputs to undo.
+### Historical Docker compatibility trials (removed)
+
+The following results describe the retired Docker workflow. Its parameters
+and jobs are no longer available in the current configuration.
 
 Local preparation checks on 2026-10-01: CircleCI compiled the default config
 to zero jobs and the enabled config to all five intended jobs. Shell syntax
@@ -203,12 +167,12 @@ Remote pilot on 2026-10-01, revision
 | Browser job | 2m33s | 2m29s |
 
 The conservative CircleCI baseline is slower. This proves execution and
-reporting compatibility, not a performance improvement. Benchmark resource
-classes and cache behavior next, recording credits alongside elapsed time.
+reporting compatibility, not a performance improvement. The later resource-class and cache trials below also recorded credits
+alongside elapsed time.
 Fork PR checkout/check association, cancellation, and browser failure-artifact
 retention still need dedicated trials before activation or cutover.
 
-Native optimization trials use the same application/test inputs as the
+The retired Docker optimization trials used the same application/test inputs as the
 compatibility run. Pipeline [7](https://app.circleci.com/pipelines/github/FOSSBilling/FOSSBilling/7)
 on `4dabb6bea61881c66188d4ef5951f032913ddc23` passed all five jobs using
 `large`, the Docker orb, native npm caching, and DLC on all PHP builds.
@@ -217,7 +181,7 @@ image building took 87s, Pest 39s, and browser execution 95s.
 
 The same-revision DLC repeat restored cache data but reused only 10 cached
 steps on PHP 8.5, compared with 40 on PHP 8.3. This is a mixed cache hit,
-not a fully warm result. Subsequent config limits DLC to the PHP 8.5 build,
+not a fully warm result. A subsequent configuration limited DLC to the PHP 8.5 build,
 which gates the integration jobs, to prevent parallel cache writers from
 competing and reduce the fixed DLC charge to 200 credits per pilot. Gen2
 runner trial is diagnostic. Further cache trials are paused pending the
@@ -243,7 +207,7 @@ the Actions job graph or its image-building approach.
 
 | Work | Proposed execution | Dependencies |
 | --- | --- | --- |
-| Pest matrix, PHP 8.3/8.4/8.5 | Native Docker executor with pinned `cimg/php` images; Composer download caches per PHP/lockfile | Checkout and Composer installation only |
+| Pest matrix, PHP 8.3/8.4/8.5 | Native Docker executor with pinned `cimg/php` images; PHP orb caches isolated by PHP version/lockfile | Checkout and Composer installation only |
 | PHPStan and later PHP quality checks | Same PHP environment, initially alongside PHP 8.3 tests | Composer dependencies, no frontend or application-image build |
 | Frontend checks and production assets | Native Node 24 executor; npm download cache; run the existing full build and browser typecheck once | Checkout and npm installation |
 | Live API tests | PHP primary container, Apache with PHP-FPM, MariaDB service container, fresh app install | Built frontend assets via workspace; Composer dependencies |
@@ -278,10 +242,11 @@ cold/warm dependencies, queue time, total validation latency and credits.
 Resource sizing and test splitting follow measurements; do not introduce
 parallel browser workers against a shared mutable database by default.
 
-The initial implementation covers one native PHP 8.5 job, a Node 24 frontend
+The initial trials covered one native PHP 8.5 job, a Node 24 frontend
 producer, and separate live/browser jobs using native MariaDB services and
-Apache/PHP-FPM. The PHP matrix, PHPStan/quality checks, and independent Docker
-packaging check remain subsequent steps.
+Apache/PHP-FPM. The current configuration expands PHP to 8.3/8.4/8.5 and
+adds PHPStan on 8.3. PR quality checks and the independent Docker packaging
+check remain subsequent steps.
 
 ### Initial execution results
 
@@ -322,14 +287,80 @@ the uploaded artifacts. The native repeat in pipeline 22 passed in 2m14s using
 43 credits. These runs reuse dependency download caches but still install
 Apache and the matching Playwright browser in each fresh job.
 
-Trigger the initial native proof with `--param native-pilot-stage=php`; use
-`--param native-pilot-stage=integration` for all four native jobs. The original
-Docker pilot has its own `run-validation-pilot` parameter. Enable one at a time
-unless intentionally comparing both workflows. Default config compiles to
-zero jobs.
+The Docker compatibility workflow and the native proof's stage control have
+been removed. Current pipelines run the complete six-job validation workflow
+without activation parameters.
+
+### Dependency orb refactor
+
+Native jobs use the pinned `circleci/php@3.0.0` and `circleci/node@7.2.1`
+orbs for dependency installation and caching. PHP uses `php/install_packages`
+with `vendor_dir: src/vendor`, the actual Composer file-cache path, the
+existing installation flags, and a PHP-specific cache version. This orb
+caches both installed dependencies and downloaded archives; it still runs
+`composer install` to check the platform and regenerate the optimized
+autoloader. Matrix jobs use `v2-native-php8.<minor>` cache versions; integration
+jobs share the PHP 8.5 cache namespace.
+
+Node uses `node/install-packages` with the existing
+`npm ci --no-audit --no-fund` command and an explicit `~/.npm` cache path.
+The override command enables the orb's download-cache steps; the expanded
+configuration caches no `node_modules`. Its fallback keys can reuse older
+download archives, while `npm ci` continues to enforce the current lockfile.
+Both native Node consumers now use the same orb cache namespace.
+
+Keep the digest-pinned convenience images: they already include PHP, Composer,
+or Node, so the orbs' runtime installation commands are unnecessary. App
+installation, Apache/FPM setup, test commands and reporting remain specific
+to this repository.
+
+Validate and expand configuration before running the expanded shell steps
+in clean local containers. Local shell execution checks dependency installs
+and tests; it does not verify hosted cache transfers, workspace orchestration,
+artifact uploads, or CircleCI performance. The installed CircleCI CLI lacks
+`local execute`, so these checks use Docker directly. Avoid pushing experimental
+changes until hosted verification is needed, since pushes also start Actions.
+
+Local validation of this refactor passed: the expanded PHP orb install and
+Pest suite produced 3,895 records with four skips, matching every test identity
+and outcome from native pipeline 24. The expanded Node orb install, full
+production asset build, and browser typecheck passed in the pinned Node image.
+At that stage, config validation and expansion passed, including the
+zero-job default and all four enabled native jobs. No hosted run was triggered for this refactor;
+cache transfers and performance remain unverified with the new orb caches.
+
+
+### PHP matrix expansion
+
+The `php-tests` job uses CircleCI's matrix syntax to create `php-tests-8.3`,
+`php-tests-8.4` and `php-tests-8.5`. The `php-minor` parameter selects one of
+three executors with digest-pinned images and `medium.gen2` resources. Every
+version installs locked dependencies, prepares the same configuration, runs
+the existing Pest suite and uploads JUnit. Artifact destinations include the
+PHP version. Only PHP 8.3 runs the existing PHPStan command, before Pest,
+matching `.github/workflows/php-build-test.yml`.
+
+The `validation` workflow runs the three matrix jobs plus frontend, live API
+and browser jobs for six in total. Integration jobs still
+wait only for frontend assets and use PHP 8.5; they do not rebuild an app
+image or wait for the matrix. CircleCI keeps matrix jobs independent rather
+than reproducing Actions' strategy-level cancellation of sibling jobs on a
+failure. Every PHP version must pass before cutover is considered.
+
+Local validation passed in clean pinned PHP 8.3.35 and 8.4.26 containers:
+each produced 3,891 passed records and the same four skips, with exact test
+identity/outcome parity against the previously verified PHP 8.5.10 report.
+PHPStan passed on 8.3. The expanded 8.5 shell commands and image are unchanged
+from that successful local run. Config validation and matrix expansion passed before removal of the pilot
+stage control. No hosted run was triggered. The current config expands to all
+six jobs without parameters; no workflow activation conditions or job filters
+remain.
+
 
 References:
 
+- [PHP orb](https://circleci.com/developer/orbs/orb/circleci/php)
+- [Node orb](https://circleci.com/developer/orbs/orb/circleci/node)
 - [PHP convenience image](https://circleci.com/developer/images/image/cimg/php)
 - [PHP image build specification](https://github.com/CircleCI-Public/cimg-php/blob/main/8.5/Dockerfile)
 - [Native Docker executor and services](https://circleci.com/docs/guides/execution-managed/using-docker/)

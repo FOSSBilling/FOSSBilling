@@ -1,131 +1,97 @@
-# cspell:words buildx buildkit zstd cimg NFIZXNYMJ Gemqiihh
+# cspell:words cimg NFIZXNYMJ Gemqiihh
 version: 2.1
 
 orbs:
-  docker: circleci/docker@4.0.1
+  php: circleci/php@3.0.0
+  node: circleci/node@7.2.1
 
-# Parallel validation pilot. Existing GitHub Actions remain authoritative.
-parameters:
-  native-pilot-stage:
-    type: enum
-    enum: ['off', php, integration]
-    default: 'off'
-  run-validation-pilot:
-    type: boolean
-    default: false
-  pilot-resource-class:
-    type: enum
-    enum: [medium, large, large.gen2]
-    default: large
-  pilot-docker-layer-caching:
-    type: boolean
-    default: false
-
+# GitHub Actions remain authoritative until the migration is verified.
 executors:
-  docker-host:
-    parameters:
-      dlc:
-        type: boolean
-        default: false
-    machine:
-      image: ubuntu-2404:current
-      docker_layer_caching: << parameters.dlc >>
-    resource_class: << pipeline.parameters.pilot-resource-class >>
+  php83:
+    docker:
+      - image: cimg/php:8.3@sha256:94415e29f8f30f40f4b0953f3fb6e00baf0ddb390896fe5522b305c59b47b64c
+    resource_class: medium.gen2
+  php84:
+    docker:
+      - image: cimg/php:8.4@sha256:30e53de9b14d10ee3480ff6db62074524229f4888207effe0a964e3e4799438a
+    resource_class: medium.gen2
+  php85:
+    docker:
+      - image: cimg/php:8.5.10@sha256:7c7ba12e0204ec9b291019a738b4cab3bae2167aaa70c594d6608ec21085c8fe
+    resource_class: medium.gen2
 
 commands:
-  native-composer-install:
-    steps:
-      - restore_cache:
-          keys:
-            - v1-native-composer-php85-{{ checksum "composer.lock" }}
-      - run:
-          name: Install locked PHP dependencies
-          command: composer install --prefer-dist --optimize-autoloader --no-interaction --no-progress
-      - save_cache:
-          key: v1-native-composer-php85-{{ checksum "composer.lock" }}
-          paths:
-            - /home/circleci/.cache/composer
   native-app-install:
     steps:
       - checkout
-      - native-composer-install
+      - php/install_packages:
+          vendor_dir: src/vendor
+          cache_files_dir: /home/circleci/.cache/composer/files
+          cache_version: v2-native-php8.5
+          install_flags: --prefer-dist --optimize-autoloader --no-interaction --no-progress
       - attach_workspace:
           at: .
       - run:
           name: Install app with native Apache, PHP-FPM and database service
           command: bash .circleci/scripts/start-native-app.sh
-  inspect-environment:
-    steps:
-      - run:
-          name: Record checkout and Docker environment
-          command: |
-            git rev-parse HEAD
-            nproc
-            lscpu
-            docker version
-            docker buildx version
-            docker compose version
-      - run:
-          name: Install image compression tool
-          command: |
-            if ! command -v zstd >/dev/null; then
-              sudo apt-get update
-              sudo apt-get install -y zstd
-            fi
-  load-test-image:
-    steps:
-      - attach_workspace:
-          at: /tmp/fossbilling-workspace
-      - run:
-          name: Load shared PHP 8.5 test image
-          command: zstd --decompress --stdout /tmp/fossbilling-workspace/test-image-8.5.tar.zst | docker load
 
 jobs:
-  native-php-tests:
-    docker:
-      - image: cimg/php:8.5.10@sha256:7c7ba12e0204ec9b291019a738b4cab3bae2167aaa70c594d6608ec21085c8fe
-    resource_class: medium.gen2
+  php-tests:
+    parameters:
+      php-minor:
+        type: enum
+        enum: ['3', '4', '5']
+    executor: php8<< parameters.php-minor >>
     environment:
       APP_ENV: test
       COMPOSER_CACHE_DIR: /home/circleci/.cache/composer
     steps:
       - checkout
       - run:
-          name: Record native PHP environment
+          name: Record PHP environment
           command: |
             git rev-parse HEAD
             php --version
             php -m
             composer --version
-      - native-composer-install
+      - php/install_packages:
+          vendor_dir: src/vendor
+          cache_files_dir: /home/circleci/.cache/composer/files
+          cache_version: v2-native-php8.<< parameters.php-minor >>
+          install_flags: --prefer-dist --optimize-autoloader --no-interaction --no-progress
       - run:
-          name: Prepare native test configuration
+          name: Prepare test configuration
           command: |
             php -r '$config = require "src/config-sample.php"; file_put_contents("src/config.php", "<?php\nreturn " . var_export($config, true) . ";\n");'
             mkdir -p src/data/cache src/data/log src/data/uploads test-results/unit
+      - when:
+          condition:
+            equal: ['3', << parameters.php-minor >>]
+          steps:
+            - run:
+                name: PHPStan (PHP 8.3)
+                command: ./src/vendor/bin/phpstan analyse --configuration phpstan.neon --memory-limit=512M
       - run:
-          name: Native Pest unit and module tests
+          name: Pest unit and module tests
           command: ./src/vendor/bin/pest --test-directory ../tests --configuration phpunit.xml.dist --ci --log-junit test-results/unit/unit.xml
       - store_test_results:
           path: test-results/unit
       - store_artifacts:
           path: test-results/unit
-          destination: native-unit-results
+          destination: unit-results-php-8.<< parameters.php-minor >>
 
-  native-frontend:
+  frontend-build:
     docker:
       - image: cimg/node:24.9.0@sha256:4729cd041e58fd288a12475aa011b7b62c58d351703813e6b7e0746a701e9602
     resource_class: medium.gen2
     steps:
       - checkout
       - run: node --version && npm --version && git rev-parse HEAD
-      - restore_cache:
-          keys:
-            - v1-native-npm-node24-{{ checksum "package-lock.json" }}
-      - run: npm ci --no-audit --no-fund
-      - save_cache:
-          key: v1-native-npm-node24-{{ checksum "package-lock.json" }}
-          paths: [~/.npm]
+      - node/install-packages:
+          pkg-manager: npm
+          cache-path: ~/.npm
+          cache-version: v1-native-node24
+          override-ci-command: npm ci --no-audit --no-fund
       - run:
           name: Build production assets and typecheck browser tests
           command: NODE_ENV=production npm run build && npm run pw:tsc
@@ -136,7 +102,7 @@ jobs:
             - src/themes/default/admin/assets/build
             - src/themes/default/client/assets/build
 
-  native-integration:
+  integration-tests:
     parameters:
       suite:
         type: enum
@@ -177,14 +143,15 @@ jobs:
           condition:
             equal: [browser, << parameters.suite >>]
           steps:
-            - restore_cache:
-                keys:
-                  - v1-native-npm-node24-{{ checksum "package-lock.json" }}
-            - run: npm ci --no-audit --no-fund
+            - node/install-packages:
+                pkg-manager: npm
+                cache-path: ~/.npm
+                cache-version: v1-native-node24
+                override-ci-command: npm ci --no-audit --no-fund
             - run:
                 name: Install matching baseline Playwright runner and Chromium
                 command: |
-                  # Keep the existing Docker pilot's runner version for parity.
+                  # Keep the recorded baseline runner version for parity.
                   mkdir -p /tmp/playwright-runner
                   npm install --prefix /tmp/playwright-runner --no-audit --no-fund @playwright/test@1.62.1
                   rm -rf node_modules/@playwright/test
@@ -205,163 +172,20 @@ jobs:
           path: src/data/log
           destination: native-app-logs
 
-  php-build-test:
-    parameters:
-      php-version:
-        type: enum
-        enum: ['8.3', '8.4', '8.5']
-      dlc:
-        type: boolean
-        default: false
-    executor:
-      name: docker-host
-      dlc: << parameters.dlc >>
-    environment:
-      PHP_VERSION: << parameters.php-version >>
-    steps:
-      - checkout
-      - inspect-environment
-      - run:
-          name: Select stable Buildx builder for native layer caching
-          command: |
-            builder="fossbilling-pilot-${PHP_VERSION//./-}"
-            if ! docker buildx inspect "$builder" >/dev/null 2>&1; then
-              docker buildx create --name "$builder" --driver docker-container
-            fi
-            docker buildx use "$builder"
-      - docker/build:
-          step_name: Build Docker test image with Docker orb
-          image: fossbilling
-          tag: test-${PHP_VERSION}
-          use_buildkit: true
-          cache_from: type=registry,ref=ghcr.io/fossbilling/fossbilling-build-cache:cache-ci-${PHP_VERSION}
-          extra_build_args: >-
-            --build-arg=PHP_VERSION=${PHP_VERSION}
-            --build-arg=INSTALL_TRANSLATIONS=false
-            --load --target=test --progress=plain
-          no_output_timeout: 20m
-      - when:
-          condition:
-            equal: ['8.3', << parameters.php-version >>]
-          steps:
-            - run:
-                name: PHPStan
-                command: |
-                  docker run --rm --env APP_ENV=test "fossbilling:test-${PHP_VERSION}" \
-                    ./src/vendor/bin/phpstan analyse --configuration phpstan.neon --memory-limit=512M
-      - run:
-          name: Pest unit and module tests
-          command: |
-            mkdir -p test-results/unit
-            docker run --rm --env APP_ENV=test \
-              --volume "${PWD}/test-results/unit:/test-results" \
-              "fossbilling:test-${PHP_VERSION}" \
-              ./src/vendor/bin/pest --test-directory ../tests --configuration phpunit.xml.dist --ci \
-                --log-junit /test-results/unit.xml
-      - store_test_results:
-          path: test-results/unit
-      - store_artifacts:
-          path: test-results/unit
-          destination: unit-results
-      - when:
-          condition:
-            equal: ['8.5', << parameters.php-version >>]
-          steps:
-            - run:
-                name: Export shared PHP 8.5 image
-                command: |
-                  mkdir -p /tmp/fossbilling-workspace
-                  docker save fossbilling:test-8.5 | zstd -T0 -6 --stdout > /tmp/fossbilling-workspace/test-image-8.5.tar.zst
-            - persist_to_workspace:
-                root: /tmp/fossbilling-workspace
-                paths:
-                  - test-image-8.5.tar.zst
-
-  live-tests:
-    executor:
-      name: docker-host
-    steps:
-      - checkout
-      - inspect-environment
-      - load-test-image
-      - run:
-          name: Live API tests
-          command: |
-            FOSSBILLING_TEST_RESULTS_DIR="${PWD}/test-results/live" \
-              bash .github/scripts/run-docker-live-tests.sh fossbilling:test-8.5
-      - store_test_results:
-          path: test-results/live
-      - store_artifacts:
-          path: test-results/live
-          destination: live-results
-
-  playwright-tests:
-    executor:
-      name: docker-host
-    steps:
-      - checkout
-      - inspect-environment
-      - restore_cache:
-          keys:
-            - v1-circleci-npm-node24-{{ checksum "package-lock.json" }}
-      - run:
-          name: Typecheck browser tests and build admin assets with Node 24
-          command: |
-            mkdir -p .circleci/npm-cache
-            docker run --rm --user "$(id -u):$(id -g)" --env HOME=/tmp --env npm_config_cache=/npm-cache \
-              --volume "${PWD}/.circleci/npm-cache:/npm-cache" \
-              --volume "${PWD}:/workspace" --workdir /workspace \
-              node:24-bookworm \
-              bash -euc 'npm ci --no-audit --no-fund; npm run pw:tsc; NODE_ENV=production npm run build-admin_default'
-      - save_cache:
-          key: v1-circleci-npm-node24-{{ checksum "package-lock.json" }}
-          paths:
-            - .circleci/npm-cache
-      - load-test-image
-      - run:
-          name: Playwright tests
-          command: bash .github/scripts/run-docker-playwright-tests.sh fossbilling:test-8.5 --reporter=line,junit,html
-      - store_test_results:
-          path: tests/E2E/Playwright/artifacts/junit
-      - store_artifacts:
-          path: tests/E2E/Playwright/artifacts
-          destination: playwright
-
 workflows:
-  native-validation-pilot:
-    when:
-      not:
-        equal: ['off', << pipeline.parameters.native-pilot-stage >>]
+  validation:
     jobs:
-      - native-php-tests
-      - native-frontend:
-          filters: pipeline.parameters.native-pilot-stage == "integration"
-      - native-integration:
+      - php-tests:
+          name: php-tests-8.<< matrix.php-minor >>
+          matrix:
+            parameters:
+              php-minor: ['3', '4', '5']
+      - frontend-build
+      - integration-tests:
           name: native-live-tests
           suite: live
-          filters: pipeline.parameters.native-pilot-stage == "integration"
-          requires: [native-frontend]
-      - native-integration:
+          requires: [frontend-build]
+      - integration-tests:
           name: native-browser-tests
           suite: browser
-          filters: pipeline.parameters.native-pilot-stage == "integration"
-          requires: [native-frontend]
-  validation-pilot:
-    when: << pipeline.parameters.run-validation-pilot >>
-    jobs:
-      - php-build-test:
-          name: pilot-php-8.3
-          php-version: '8.3'
-      - php-build-test:
-          name: pilot-php-8.4
-          php-version: '8.4'
-      - php-build-test:
-          name: pilot-php-8.5
-          php-version: '8.5'
-          dlc: << pipeline.parameters.pilot-docker-layer-caching >>
-      - live-tests:
-          name: pilot-live-tests
-          requires: [pilot-php-8.5]
-      - playwright-tests:
-          name: pilot-playwright-tests
-          requires: [pilot-php-8.5]
+          requires: [frontend-build]
