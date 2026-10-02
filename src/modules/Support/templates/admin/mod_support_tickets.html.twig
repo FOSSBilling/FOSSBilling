@@ -241,7 +241,7 @@
                             <input class="form-check-input m-0 align-middle batch-delete-checkbox" type="checkbox" data-item-id="{{ ticket.id }}">
                         </td>
                         <td>
-                            {% if ticket.author.role == 'client' %}
+                            {% if ticket.author.role|default('') == 'client' %}
                                 <div class="d-flex py-1 align-items-center">
                                     <a href='{{ "client/manage/#{ticket.author.id}"|url }}'>
                                         {{ avatar(ticket.author.email, 40, 'avatar me-2') }}

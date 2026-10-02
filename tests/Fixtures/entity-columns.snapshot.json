@@ -107,6 +107,7 @@
     "client.ip",
     "client.lang",
     "client.last_name",
+    "client.merge_renewals",
     "client.notes",
     "client.pass",
     "client.phone",

@@ -249,6 +249,55 @@ test('client balance unique credit patch adds column and index for existing inst
     (new ReflectionMethod($patcher, 'patch96'))->invoke($patcher);
 });
 
+test('merge renewals patch follows the multi-group membership patch', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 125);
+
+    expect($patches)->toHaveKey(126)
+        ->and($patches[126][1])->toBe('patch126');
+});
+
+test('merge renewals patch adds the client preference column', function (): void {
+    $clientColumns = Mockery::mock(PDOStatement::class);
+    $clientColumns->expects('execute')->with([])->andReturnTrue();
+    $clientColumns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([['Field' => 'id']]);
+
+    $addColumn = Mockery::mock(PDOStatement::class);
+    $addColumn->expects('execute')->with([])->andReturnTrue();
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `client`')->andReturn($clientColumns);
+    $pdo->expects('prepare')
+        ->with('ALTER TABLE `client` ADD COLUMN `merge_renewals` TINYINT(1) DEFAULT NULL')
+        ->andReturn($addColumn);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch126'))->invoke($patcher);
+});
+
+test('merge renewals patch is a no-op once migrated', function (): void {
+    $clientColumns = Mockery::mock(PDOStatement::class);
+    $clientColumns->expects('execute')->with([])->andReturnTrue();
+    $clientColumns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['Field' => 'id'],
+        ['Field' => 'merge_renewals'],
+    ]);
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `client`')->andReturn($clientColumns);
+    $pdo->shouldNotReceive('prepare')->with(Mockery::pattern('/^ALTER TABLE `client` ADD COLUMN `merge_renewals`/'));
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch126'))->invoke($patcher);
+});
+
 test('multi-group membership patch follows the invoice journal baseline patch', function (): void {
     $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 124);
 
@@ -2444,12 +2493,50 @@ test('ensureSchemaInSync backs off after a failed attempt until the cooldown end
         expect($patcher->ensureSchemaInSync())->toBeFalse()
             ->and($columnNames())->not->toContain('credit_note_for_invoice_id');
 
+        // Status reporting ignores the cooldown so the drift stays visible
+        // while retries back off.
+        expect($patcher->isSchemaOutOfSyncIgnoringCooldown())->toBeTrue();
+
         // Once the cooldown expires the same hash retries and the sync completes.
         $pdo->exec("UPDATE setting SET updated_at = '2000-01-01 00:00:00' WHERE param = 'schema_metadata_hash_failed'");
 
         expect($patcher->isSchemaOutOfSync())->toBeTrue();
         expect($patcher->ensureSchemaInSync())->toBeTrue()
-            ->and($columnNames())->toContain('credit_note_for_invoice_id');
+            ->and($columnNames())->toContain('credit_note_for_invoice_id')
+            ->and($patcher->isSchemaOutOfSyncIgnoringCooldown())->toBeFalse();
+    } finally {
+        (new Filesystem())->remove($dbFile);
+    }
+});
+
+test('lastSchemaSyncFailure reports the recorded failed attempt for diagnostics', function (): void {
+    $dbFile = Path::join(sys_get_temp_dir(), 'fossbilling-schema-failure-' . bin2hex(random_bytes(8)) . '.sqlite');
+
+    try {
+        $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $dbFile]);
+        $entityManager = FOSSBilling\Doctrine\EntityManagerFactory::create($connection);
+        FOSSBilling\Doctrine\SchemaInstaller::createSchema($entityManager);
+
+        $pdo = new PDO('sqlite:' . $dbFile);
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+        $di = new Pimple\Container();
+        $di['pdo'] = $pdo;
+        $di['em'] = $entityManager;
+        $di['logger'] = new Tests\Helpers\TestLogger();
+
+        $patcher = new UpdatePatcher();
+        $patcher->setDi($di);
+
+        expect($patcher->lastSchemaSyncFailure())->toBeNull();
+
+        $currentHash = FOSSBilling\Doctrine\EntityManagerFactory::entityDefinitionsHash();
+        (new ReflectionMethod($patcher, 'recordFailedSyncAttempt'))->invoke($patcher, $currentHash);
+
+        $failure = $patcher->lastSchemaSyncFailure();
+        expect($failure)->toBeArray()
+            ->and($failure['hash'])->toBe($currentHash)
+            ->and($failure['attempted_at'])->toBeString();
     } finally {
         (new Filesystem())->remove($dbFile);
     }
@@ -3018,6 +3105,136 @@ test('ensureSchemaInSync restores reissue columns missing from an older schema, 
 
         expect($patcher->ensureSchemaInSync())->toBeTrue()
             ->and($columnNames())->toContain('replaces_invoice_id', 'replaced_by_invoice_id');
+
+        // The recorded hash now matches, so the next request is a single-SELECT no-op.
+        expect($patcher->ensureSchemaInSync())->toBeFalse();
+    } finally {
+        (new Filesystem())->remove($dbFile);
+    }
+});
+
+test('promo columns patch follows the renewal merge preference patch', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 126);
+
+    expect($patches)->toHaveKey(127)
+        ->and($patches[127][1])->toBe('patch127');
+});
+
+test('promo columns patch adds the bundle and auto-apply columns for existing installs', function (): void {
+    $columns = Mockery::mock(PDOStatement::class);
+    $columns->shouldReceive('execute')->with([])->andReturnTrue();
+    $columns->shouldReceive('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([]);
+
+    $indexes = Mockery::mock(PDOStatement::class);
+    $indexes->shouldReceive('execute')->with([])->andReturnTrue();
+    $indexes->shouldReceive('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([]);
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->shouldReceive('prepare')->with('SHOW COLUMNS FROM `promo`')->andReturn($columns);
+    $pdo->shouldReceive('prepare')->with('SHOW INDEX FROM `promo`')->andReturn($indexes);
+
+    foreach ([
+        'ALTER TABLE `promo` ADD COLUMN `requires_products` LONGTEXT DEFAULT NULL',
+        'ALTER TABLE `promo` ADD COLUMN `auto_apply` TINYINT DEFAULT 0',
+        'ALTER TABLE `promo` ADD COLUMN `priority` INT DEFAULT 0',
+        'ALTER TABLE `promo` ADD COLUMN `stackable` TINYINT DEFAULT 0',
+        'ALTER TABLE `promo` ADD INDEX `auto_apply_index_idx` (`auto_apply`)',
+    ] as $alter) {
+        $statement = Mockery::mock(PDOStatement::class);
+        $statement->expects('execute')->with([])->andReturnTrue();
+        $pdo->expects('prepare')->with($alter)->andReturn($statement);
+    }
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch127'))->invoke($patcher);
+});
+
+test('promo columns patch is a no-op when the columns and index already exist', function (): void {
+    $columns = Mockery::mock(PDOStatement::class);
+    $columns->shouldReceive('execute')->with([])->andReturnTrue();
+    $columns->shouldReceive('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['Field' => 'requires_products'],
+        ['Field' => 'auto_apply'],
+        ['Field' => 'priority'],
+        ['Field' => 'stackable'],
+    ]);
+
+    $indexes = Mockery::mock(PDOStatement::class);
+    $indexes->shouldReceive('execute')->with([])->andReturnTrue();
+    $indexes->shouldReceive('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['Key_name' => 'auto_apply_index_idx'],
+    ]);
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->shouldReceive('prepare')->with('SHOW COLUMNS FROM `promo`')->andReturn($columns);
+    $pdo->shouldReceive('prepare')->with('SHOW INDEX FROM `promo`')->andReturn($indexes);
+    $pdo->shouldNotReceive('prepare')->with(Mockery::pattern('/^ALTER TABLE/'));
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch127'))->invoke($patcher);
+});
+
+test('ensureSchemaInSync restores promo bundle and auto-apply columns missing from an older schema', function (): void {
+    // Upgrade path for https://github.com/FOSSBilling/FOSSBilling/issues/4433:
+    // #4386 and #4401 added Promo columns without a migration, so installs
+    // upgrading through those releases crash loading any promo until the
+    // portable schema sync heals them.
+    $dbFile = Path::join(sys_get_temp_dir(), 'fossbilling-schema-sync-promo-' . bin2hex(random_bytes(8)) . '.sqlite');
+
+    try {
+        $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $dbFile]);
+        $entityManager = FOSSBilling\Doctrine\EntityManagerFactory::create($connection);
+        FOSSBilling\Doctrine\SchemaInstaller::createSchema($entityManager);
+
+        $connection->executeStatement('DROP INDEX auto_apply_index_idx');
+        $connection->executeStatement('ALTER TABLE promo DROP COLUMN requires_products');
+        $connection->executeStatement('ALTER TABLE promo DROP COLUMN auto_apply');
+        $connection->executeStatement('ALTER TABLE promo DROP COLUMN priority');
+        $connection->executeStatement('ALTER TABLE promo DROP COLUMN stackable');
+
+        $columnNames = static fn (): array => array_column(
+            $connection->fetchAllAssociative('PRAGMA table_info(promo)'),
+            'name'
+        );
+        expect($columnNames())->not->toContain('requires_products', 'auto_apply', 'priority', 'stackable');
+
+        // The reported crash: any full Promo hydration fails on the stale schema.
+        $connection->insert('promo', ['code' => 'PROMO10', 'type' => 'percentage', 'value' => '10.00', 'active' => 1]);
+        $promoId = (int) $connection->lastInsertId();
+
+        try {
+            $entityManager->find(Box\Mod\Product\Entity\Promo::class, $promoId);
+            $entityManager->clear();
+            expect(false)->toBeTrue('expected Promo hydration to fail on a schema missing requires_products');
+        } catch (Doctrine\DBAL\Exception $e) {
+            expect($e->getMessage())->toContain('requires_products');
+        }
+
+        $pdo = new PDO('sqlite:' . $dbFile);
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+        $di = new Pimple\Container();
+        $di['pdo'] = $pdo;
+        $di['em'] = $entityManager;
+        $di['logger'] = new Tests\Helpers\TestLogger();
+
+        $patcher = new UpdatePatcher();
+        $patcher->setDi($di);
+
+        expect($patcher->ensureSchemaInSync())->toBeTrue()
+            ->and($columnNames())->toContain('requires_products', 'auto_apply', 'priority', 'stackable');
+
+        $promo = $entityManager->find(Box\Mod\Product\Entity\Promo::class, $promoId);
+        expect($promo)->toBeInstanceOf(Box\Mod\Product\Entity\Promo::class)
+            ->and($promo->getCode())->toBe('PROMO10');
 
         // The recorded hash now matches, so the next request is a single-SELECT no-op.
         expect($patcher->ensureSchemaInSync())->toBeFalse();

@@ -94,6 +94,8 @@ class Service implements InjectionAwareInterface
     public const META_CANCEL_AT_PERIOD_END = 'cancel_at_period_end';
     private const string META_SUSPENSION_WARNING_FOR = 'suspension_warning_for';
 
+    public const META_MERGE_RENEWALS = 'merge_renewals';
+
     public const META_STOCK_RESERVED_QTY = 'stock_reserved_qty';
 
     private const array BUILT_IN_SERVICE_TYPES = [
@@ -1374,6 +1376,24 @@ class Service implements InjectionAwareInterface
         return 0;
     }
 
+    /**
+     * Stores the per-order renewal merge override. Null/empty clears the
+     * override so the order inherits again; '1' forces merging, anything
+     * else forbids it.
+     */
+    public function setMergeRenewalsOverride(Order $order, mixed $value): void
+    {
+        $orderId = $this->orderId($order);
+
+        if ($value === null || $value === '') {
+            $this->getOrderMetaRepository()->deleteByOrderIdAndName($orderId, self::META_MERGE_RENEWALS);
+
+            return;
+        }
+
+        $this->updateOrderMeta($order, [self::META_MERGE_RENEWALS => \FOSSBilling\Tools::normalizeBoolean($value) ? '1' : '0']);
+    }
+
     public function updateOrderMeta(Order $order, $meta): int
     {
         if (!is_array($meta)) {
@@ -1464,6 +1484,10 @@ class Service implements InjectionAwareInterface
         }
         $order->setNotes($notes);
         $order->setReason($reason);
+
+        if (array_key_exists('merge_renewals', $data)) {
+            $this->setMergeRenewalsOverride($order, $data['merge_renewals']);
+        }
 
         $this->updateOrderMeta($order, $data['meta'] ?? null);
 
@@ -1794,7 +1818,7 @@ class Service implements InjectionAwareInterface
         }
 
         try {
-            $this->_callOnService($order, Order::ACTION_DELETE);
+            $this->_callOnService($order, Order::ACTION_DELETE, $forceDelete);
         } catch (\Exception $e) {
             if (!$forceDelete) {
                 throw $e;

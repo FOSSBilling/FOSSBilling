@@ -3522,6 +3522,53 @@ test('updateOrderMeta clears existing meta', function (): void {
     expect($result)->toEqual(1);
 });
 
+test('setMergeRenewalsOverride stores the opt-in and opt-out', function (mixed $value, string $expected): void {
+    $metaRepoMock = Mockery::mock(OrderMetaRepository::class)->shouldIgnoreMissing();
+    $metaRepoMock->shouldReceive('findOneByOrderIdAndName')->with(7, Service::META_MERGE_RENEWALS)->once()->andReturn(null);
+
+    $persisted = [];
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(Box\Mod\Order\Entity\OrderMeta::class)->andReturn($metaRepoMock);
+    $emMock->shouldReceive('persist')->once()->andReturnUsing(function ($entity) use (&$persisted): void {
+        $persisted[] = $entity;
+    });
+    $emMock->shouldReceive('flush')->once();
+    $emMock->shouldIgnoreMissing();
+
+    $di = container();
+    $di['em'] = $emMock;
+
+    $svc = new Service();
+    $svc->setDi($di);
+
+    $svc->setMergeRenewalsOverride(createEntity(Order::class, ['id' => 7]), $value);
+
+    expect($persisted)->toHaveCount(1)
+        ->and($persisted[0]->getName())->toBe(Service::META_MERGE_RENEWALS)
+        ->and($persisted[0]->getValue())->toBe($expected);
+})->with([
+    'truthy enables merging' => ['1', '1'],
+    'falsy disables merging' => [false, '0'],
+]);
+
+test('setMergeRenewalsOverride clears the override so the order inherits again', function (): void {
+    $metaRepoMock = Mockery::mock(OrderMetaRepository::class)->shouldIgnoreMissing();
+    $metaRepoMock->shouldReceive('deleteByOrderIdAndName')->once()->with(7, Service::META_MERGE_RENEWALS)->andReturn(1);
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(Box\Mod\Order\Entity\OrderMeta::class)->andReturn($metaRepoMock);
+    $emMock->shouldNotReceive('persist');
+    $emMock->shouldIgnoreMissing();
+
+    $di = container();
+    $di['em'] = $emMock;
+
+    $svc = new Service();
+    $svc->setDi($di);
+
+    $svc->setMergeRenewalsOverride(createEntity(Order::class, ['id' => 7]), null);
+});
+
 test('updateOrderConfig succeeds when no form id is set', function (): void {
     $di = container();
     $di['logger'] = new FOSSBilling\Logger();
@@ -4057,7 +4104,7 @@ test('deleteFromOrder removes client_order_meta rows before removing the order',
     $order = createEntity(Order::class, ['id' => 42, 'status' => Order::STATUS_ACTIVE]);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
-    $serviceMock->shouldReceive('_callOnService')->once()->with($order, Order::ACTION_DELETE);
+    $serviceMock->shouldReceive('_callOnService')->once()->with($order, Order::ACTION_DELETE, false);
 
     $orderMetaRepository = Mockery::mock(OrderMetaRepository::class);
     $orderMetaRepository->shouldReceive('deleteByOrderId')->once()->with(42);

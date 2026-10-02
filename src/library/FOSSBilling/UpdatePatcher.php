@@ -367,6 +367,25 @@ class UpdatePatcher implements InjectionAwareInterface
     }
 
     /**
+     * Whether current entity metadata differs from the last synced state,
+     * ignoring the retry cooldown - the reporting half of isSchemaOutOfSync(),
+     * for status surfaces that must stay truthful while a failed sync backs
+     * off. Never throws: an unreadable database reports "no drift".
+     */
+    public function isSchemaOutOfSyncIgnoringCooldown(): bool
+    {
+        if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('em')) {
+            return false;
+        }
+
+        try {
+            return $this->fetchStoredSchemaHash() !== EntityManagerFactory::entityDefinitionsHash();
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    /**
      * @throws \Exception when the database cannot be read
      */
     private function fetchStoredSchemaHash(): mixed
@@ -382,25 +401,46 @@ class UpdatePatcher implements InjectionAwareInterface
      */
     private function isSyncCoolingDown(string $currentHash): bool
     {
-        try {
-            $rows = $this->fetchAll('SELECT value, updated_at FROM setting WHERE param = :param', [
-                'param' => self::SCHEMA_METADATA_HASH_FAILED_PARAM,
-            ]);
-        } catch (\Throwable) {
+        $failed = $this->lastSchemaSyncFailure();
+        if ($failed === null || $failed['hash'] !== $currentHash) {
             return false;
         }
 
-        $failed = $rows[0] ?? null;
-        if (!is_array($failed) || ($failed['value'] ?? null) !== $currentHash) {
-            return false;
-        }
-
-        $attemptedAt = strtotime((string) ($failed['updated_at'] ?? ''));
+        $attemptedAt = strtotime($failed['attempted_at']);
         if ($attemptedAt === false) {
             return false;
         }
 
         return $attemptedAt + self::SCHEMA_SYNC_RETRY_COOLDOWN > time();
+    }
+
+    /**
+     * The most recent failed portable-schema-sync attempt, if any. Never
+     * throws: unreadable state reports "no failure". Surfaced via
+     * {@see UpdateFinalization::getStatus()} so a repeatedly failing sync
+     * is visible instead of living only in the update log.
+     *
+     * @return array{hash: string, attempted_at: string}|null
+     */
+    public function lastSchemaSyncFailure(): ?array
+    {
+        try {
+            $rows = $this->fetchAll('SELECT value, updated_at FROM setting WHERE param = :param', [
+                'param' => self::SCHEMA_METADATA_HASH_FAILED_PARAM,
+            ]);
+        } catch (\Throwable) {
+            return null;
+        }
+
+        $failed = $rows[0] ?? null;
+        if (!is_array($failed) || !is_string($failed['value'] ?? null) || $failed['value'] === '') {
+            return null;
+        }
+
+        return [
+            'hash' => $failed['value'],
+            'attempted_at' => (string) ($failed['updated_at'] ?? ''),
+        ];
     }
 
     /**
@@ -897,7 +937,19 @@ class UpdatePatcher implements InjectionAwareInterface
             $result = SchemaSynchronizer::syncEntities($entityManager, $eagerEntityClasses);
             $this->storeSchemaMetadataHash(EntityManagerFactory::entityDefinitionsHash());
         } catch (\Throwable $e) {
-            $this->logUpdate('error', 'Schema sync against the configured database failed: ' . $e->getMessage());
+            // Attach the metadata hash so the failure can be correlated with
+            // the cooldown row (see lastSchemaSyncFailure()).
+            $metadataHash = null;
+
+            try {
+                $metadataHash = EntityManagerFactory::entityDefinitionsHash();
+            } catch (\Throwable) {
+                // Hashing must not mask the original sync error.
+            }
+
+            $this->logUpdate('error', 'Schema sync against the configured database failed: ' . $e->getMessage(), [
+                'metadata_hash' => $metadataHash,
+            ]);
 
             return null;
         }
@@ -1321,6 +1373,7 @@ class UpdatePatcher implements InjectionAwareInterface
             124 => 'patch124',
             125 => 'patch125',
             126 => 'patch126',
+            127 => 'patch127',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -4519,6 +4572,47 @@ class UpdatePatcher implements InjectionAwareInterface
                 . 'INNER JOIN `client_group` g ON g.`id` = c.`client_group_id`'
             );
             $this->executeSql('ALTER TABLE `client` DROP COLUMN `client_group_id`');
+        }
+    }
+
+    private function patch126(): void
+    {
+        // Per-client renewal merge preference (#4118): tri-state column,
+        // NULL inherits the global `invoice_merge_renewals` setting. Guarded
+        // so reruns are no-ops; non-MySQL drivers get the column from the
+        // portable schema sync.
+        if (!$this->tableHasColumn('client', 'merge_renewals')) {
+            $this->executeSql('ALTER TABLE `client` ADD COLUMN `merge_renewals` TINYINT(1) DEFAULT NULL');
+        }
+    }
+
+    private function patch127(): void
+    {
+        // Promotion columns #4386 (auto_apply, priority, stackable) and #4401
+        // (requires_products) shipped without a migration, crashing promo
+        // loads with "Unknown column 't0.requires_products'" on installs the
+        // portable sync didn't heal. Definitions match Doctrine's DDL for the
+        // Promo entity. Guards make reruns no-ops; non-MySQL drivers use the
+        // portable sync.
+        // @see https://github.com/FOSSBilling/FOSSBilling/issues/4433
+        if (!$this->tableHasColumn('promo', 'requires_products')) {
+            $this->executeSql('ALTER TABLE `promo` ADD COLUMN `requires_products` LONGTEXT DEFAULT NULL');
+        }
+
+        if (!$this->tableHasColumn('promo', 'auto_apply')) {
+            $this->executeSql('ALTER TABLE `promo` ADD COLUMN `auto_apply` TINYINT DEFAULT 0');
+        }
+
+        if (!$this->tableHasColumn('promo', 'priority')) {
+            $this->executeSql('ALTER TABLE `promo` ADD COLUMN `priority` INT DEFAULT 0');
+        }
+
+        if (!$this->tableHasColumn('promo', 'stackable')) {
+            $this->executeSql('ALTER TABLE `promo` ADD COLUMN `stackable` TINYINT DEFAULT 0');
+        }
+
+        if (!$this->tableHasIndex('promo', 'auto_apply_index_idx')) {
+            $this->executeSql('ALTER TABLE `promo` ADD INDEX `auto_apply_index_idx` (`auto_apply`)');
         }
     }
 

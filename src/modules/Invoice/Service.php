@@ -1144,7 +1144,7 @@ class Service implements InjectionAwareInterface
             $this->di['em']->flush();
         }
 
-        if ($payGateway->getGateway() === 'Custom' && $payGateway->isEnabled()) {
+        if ($payGateway->getGateway() === 'Custom') {
             $actuallyPaid = null;
             $paid = $this->di['em']->wrapInTransaction(function () use ($invoice, $payGateway, $transactionId, $paidAt, &$actuallyPaid): bool {
                 // Re-validate under the invoice lock: the invoice may have
@@ -1251,7 +1251,10 @@ class Service implements InjectionAwareInterface
         if ($payGateway === null) {
             throw new InformationException('Payment gateway not found');
         }
-        if ($payGateway->getGateway() === 'Custom' && $payGateway->isEnabled()) {
+        if (!$payGateway->isEnabled()) {
+            throw new InformationException('Payment gateway is not enabled');
+        }
+        if ($payGateway->getGateway() === 'Custom') {
             $transactionId = trim((string) ($data['transactionId'] ?? ''));
             if ($transactionId === '') {
                 throw new InformationException('Transaction ID is required when using the Custom payment gateway.');
@@ -1449,12 +1452,12 @@ class Service implements InjectionAwareInterface
 
         $systemService = $this->di['mod_service']('system');
         $seller = $systemService->getCompany();
-        $model->setSellerCompany($seller['name']);
-        $model->setSellerCompanyVat($seller['vat_number']);
-        $model->setSellerCompanyNumber($seller['number']);
-        $model->setSellerAddress(trim("{$seller['address_1']} {$seller['address_2']} {$seller['address_3']}"));
-        $model->setSellerPhone($seller['tel']);
-        $model->setSellerEmail($seller['email']);
+        $model->setSellerCompany($seller['name'] ?? null);
+        $model->setSellerCompanyVat($seller['vat_number'] ?? null);
+        $model->setSellerCompanyNumber($seller['number'] ?? null);
+        $model->setSellerAddress(trim(($seller['address_1'] ?? '') . ' ' . ($seller['address_2'] ?? '') . ' ' . ($seller['address_3'] ?? '')));
+        $model->setSellerPhone($seller['tel'] ?? null);
+        $model->setSellerEmail($seller['email'] ?? null);
 
         $client = $model->getClientId() !== null
             ? $this->di['em']->getRepository(Client::class)->find($model->getClientId())
@@ -1465,18 +1468,18 @@ class Service implements InjectionAwareInterface
 
         $clientService = $this->di['mod_service']('Client');
         $buyer = $clientService->toApiArray($client);
-        $model->setBuyerFirstName($buyer['first_name']);
-        $model->setBuyerLastName($buyer['last_name']);
-        $model->setBuyerCompany($buyer['company']);
-        $model->setBuyerCompanyVat($buyer['company_vat']);
-        $model->setBuyerCompanyNumber($buyer['company_number']);
-        $model->setBuyerAddress("{$buyer['address_1']} {$buyer['address_2']}");
-        $model->setBuyerCity($buyer['city']);
-        $model->setBuyerState($buyer['state']);
-        $model->setBuyerCountry($buyer['country']);
-        $model->setBuyerPhone("{$buyer['phone_cc']} {$buyer['phone']}");
-        $model->setBuyerEmail($buyer['email']);
-        $model->setBuyerZip($buyer['postcode']);
+        $model->setBuyerFirstName($buyer['first_name'] ?? null);
+        $model->setBuyerLastName($buyer['last_name'] ?? null);
+        $model->setBuyerCompany($buyer['company'] ?? null);
+        $model->setBuyerCompanyVat($buyer['company_vat'] ?? null);
+        $model->setBuyerCompanyNumber($buyer['company_number'] ?? null);
+        $model->setBuyerAddress(trim(($buyer['address_1'] ?? '') . ' ' . ($buyer['address_2'] ?? '')));
+        $model->setBuyerCity($buyer['city'] ?? null);
+        $model->setBuyerState($buyer['state'] ?? null);
+        $model->setBuyerCountry($buyer['country'] ?? null);
+        $model->setBuyerPhone(trim(($buyer['phone_cc'] ?? '') . ' ' . ($buyer['phone'] ?? '')));
+        $model->setBuyerEmail($buyer['email'] ?? null);
+        $model->setBuyerZip($buyer['postcode'] ?? null);
     }
 
     public function issueInvoice(Invoice $invoice, array $data): bool
@@ -3295,30 +3298,23 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @param int $due_days
+     * Resolves the renewal price and line overrides for a single order.
+     *
+     * Domain renewal pricing comes from the registrar/config rather than the
+     * order, since it legitimately changes between registration and renewal.
+     * Other products keep the order's own price so admin-edited prices are
+     * respected.
+     *
+     * @return array{price: float|string, line: array<string, mixed>}
      */
-    public function generateForOrder(Order $order, $due_days = null, bool $applyPromo = true): Invoice
+    private function resolveRenewalLine(Order $order): array
     {
-        // check if we do have invoice prepared already
-        if ($order->getUnpaidInvoiceId() !== null) {
-            $p = $this->getInvoiceRepository()->find($order->getUnpaidInvoiceId());
-            if ($p instanceof Invoice && $p->getStatus() === Invoice::STATUS_UNPAID) {
-                return $p;
-            }
-
-            $orderService = $this->di['mod_service']('Order');
-            $orderService->unsetUnpaidInvoice($order);
-        }
-
         $price = $order->getPrice();
         $line = [
             'price' => $order->getPrice(),
             'quantity' => $order->getQuantity(),
         ];
 
-        // Domain renewal pricing is resolved from the registrar/config rather than
-        // the order, since it legitimately changes between registration and renewal.
-        // Other products keep the order's own price so admin-edited prices are respected.
         if (in_array($order->getStatus(), [
             Order::STATUS_ACTIVE,
             Order::STATUS_FAILED_RENEW,
@@ -3357,6 +3353,27 @@ class Service implements InjectionAwareInterface
             throw new InformationException('Invoices are not generated for negative amount orders.');
         }
 
+        return ['price' => $price, 'line' => $line];
+    }
+
+    /**
+     * @param int $due_days
+     */
+    public function generateForOrder(Order $order, $due_days = null, bool $applyPromo = true): Invoice
+    {
+        // check if we do have invoice prepared already
+        if ($order->getUnpaidInvoiceId() !== null) {
+            $p = $this->getInvoiceRepository()->find($order->getUnpaidInvoiceId());
+            if ($p instanceof Invoice && $p->getStatus() === Invoice::STATUS_UNPAID) {
+                return $p;
+            }
+
+            $orderService = $this->di['mod_service']('Order');
+            $orderService->unsetUnpaidInvoice($order);
+        }
+
+        ['price' => $price, 'line' => $line] = $this->resolveRenewalLine($order);
+
         $client = $this->di['em']->getRepository(Client::class)->find($order->getClientId())
             ?? throw new InformationException('Client not found');
 
@@ -3393,6 +3410,120 @@ class Service implements InjectionAwareInterface
         return $proforma;
     }
 
+    /**
+     * Resolves whether an order's renewals merge with other orders.
+     * Precedence: per-order meta override, then the client's tri-state
+     * preference, then the global `invoice_merge_renewals` setting (off
+     * unless explicitly enabled).
+     */
+    public function shouldMergeRenewalsForOrder(Order $order): bool
+    {
+        $orderService = $this->di['mod_service']('Order');
+        $meta = $orderService->getOrderMetaRepository()->getPairsForOrder((int) $order->getId());
+        $override = $meta[\Box\Mod\Order\Service::META_MERGE_RENEWALS] ?? null;
+        if ($override === '1') {
+            return true;
+        }
+        if ($override === '0') {
+            return false;
+        }
+
+        $client = $this->di['em']->getRepository(Client::class)->find($order->getClientId());
+        $preference = $client instanceof Client ? $client->getMergeRenewals() : null;
+        if ($preference !== null) {
+            return $preference;
+        }
+
+        $systemService = $this->di['mod_service']('system');
+
+        return (bool) $systemService->getParamValue('invoice_merge_renewals', false);
+    }
+
+    /**
+     * Groups mergeable renewals so one invoice covers the same client,
+     * currency, due date, and billing period. The period is part of the key
+     * because mixing billing cycles on one invoice confuses direct debits
+     * and standing orders.
+     */
+    private function renewalMergeKey(Order $order): string
+    {
+        $expiresAt = $order->getExpiresAt();
+
+        return implode('|', [
+            $order->getClientId(),
+            $order->getCurrency(),
+            $expiresAt instanceof \DateTime ? $expiresAt->format('Y-m-d') : '',
+            $order->getPeriod() ?? '',
+        ]);
+    }
+
+    /**
+     * Builds one draft renewal invoice covering several orders, then returns
+     * it unissued for the caller to issue. Each order gets its own renewal
+     * line (via generateFromOrder, which also stamps `unpaid_invoice_id` on
+     * every order so none are picked up again on the next run), and the
+     * invoice falls due with the latest expiry in the bucket.
+     *
+     * All renewal lines resolve before anything persists, and creation runs
+     * in a transaction: a failing order rolls back the draft and every order
+     * link instead of stranding a partial invoice that would hide linked
+     * orders from the next batch.
+     *
+     * Like generateForOrder, everything happens while the invoice is a draft,
+     * so invoice immutability is never violated: lines are never appended to
+     * an already-issued invoice.
+     *
+     * @param list<Order> $orders non-empty, same merge bucket
+     */
+    public function generateMergedInvoiceForOrders(array $orders, bool $applyPromo = true): Invoice
+    {
+        $first = reset($orders);
+        if (!$first instanceof Order) {
+            throw new InformationException('No orders were provided for the merged renewal invoice.');
+        }
+
+        $client = $this->di['em']->getRepository(Client::class)->find($first->getClientId())
+            ?? throw new InformationException('Client not found');
+
+        $resolved = [];
+        foreach ($orders as $order) {
+            $resolved[] = [$order, $this->resolveRenewalLine($order)];
+        }
+
+        return $this->di['em']->wrapInTransaction(function () use ($resolved, $client, $first, $applyPromo): Invoice {
+            $proforma = new Invoice();
+            $proforma->setClientId($client->getId() !== null ? (int) $client->getId() : null);
+            $proforma->setStatus(Invoice::STATUS_UNPAID);
+            $proforma->setCurrency($first->getCurrency());
+            $proforma->setIssued(false);
+            $this->di['em']->persist($proforma);
+            $this->di['em']->flush();
+
+            $this->setInvoiceDefaults($proforma);
+
+            $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
+            $dueAt = null;
+            foreach ($resolved as [$order, ['price' => $price, 'line' => $line]]) {
+                $invoiceItemService->generateFromOrder($proforma, $order, InvoiceItem::TASK_RENEW, $price, $line, $applyPromo);
+
+                $expiresAt = $order->getExpiresAt();
+                if ($expiresAt instanceof \DateTime && ($dueAt === null || $expiresAt > $dueAt)) {
+                    $dueAt = $expiresAt;
+                }
+            }
+
+            if ($dueAt instanceof \DateTime) {
+                $proforma->setDueAt($dueAt);
+                $this->di['em']->persist($proforma);
+                $this->di['em']->flush();
+            }
+
+            $this->recordJournalEvent($proforma, InvoiceEvent::TYPE_CREATED);
+
+            return $proforma;
+        });
+    }
+
     public function generateInvoicesForExpiringOrders(): bool
     {
         $orderService = $this->di['mod_service']('Order');
@@ -3404,12 +3535,79 @@ class Service implements InjectionAwareInterface
 
         $orderIds = array_map(static fn (array $order): int => (int) ($order['id'] ?? 0), $orders);
         $models = $this->di['em']->getRepository(Order::class)->findBy(['id' => $orderIds]);
+
+        $subscriptionService = $this->di['mod_service']('Invoice', 'Subscription');
+
+        /** @var array<string, list<Order>> $buckets */
+        $buckets = [];
         foreach ($models as $model) {
+            $mergeable = false;
+
             try {
-                $invoice = $this->generateForOrder($model);
-                $this->issueInvoice($invoice, ['id' => $invoice->getId(), 'use_credits' => true]);
+                $mergeable = $this->shouldMergeRenewalsForOrder($model)
+                    && !$subscriptionService->hasActiveSubscriptionForOrder($model);
+            } catch (\Exception $e) {
+                // Conservative fallback: an order that cannot be evaluated
+                // for merging keeps the historical one-invoice-per-order path.
+                $this->di['logger']->warning($e->getMessage());
+            }
+
+            if (!$mergeable) {
+                try {
+                    $invoice = $this->generateForOrder($model);
+                    $this->issueInvoice($invoice, ['id' => $invoice->getId(), 'use_credits' => true]);
+                } catch (\Exception $e) {
+                    $this->di['logger']->warning($e->getMessage());
+                }
+
+                continue;
+            }
+
+            $buckets[$this->renewalMergeKey($model)][] = $model;
+        }
+
+        foreach ($buckets as $bucket) {
+            $invoices = [];
+
+            try {
+                // Single-order buckets keep the exact single-order behavior,
+                // including the existing unpaid-invoice reuse branch.
+                $invoices = count($bucket) === 1
+                    ? [$this->generateForOrder($bucket[0])]
+                    : [$this->generateMergedInvoiceForOrders($bucket)];
             } catch (\Exception $e) {
                 $this->di['logger']->warning($e->getMessage());
+
+                // A failed ORM flush closes the EntityManager and clear()
+                // can't reopen it: replace it so the process stays usable,
+                // then stop the batch, mirroring doBatchPaidInvoiceActivation.
+                // Otherwise retry each order on the historical single-invoice
+                // path so one bad order cannot block its bucket-mates.
+                if (!$this->di['em']->isOpen()) {
+                    $this->resetEntityManager();
+
+                    break;
+                }
+
+                if (count($bucket) > 1) {
+                    foreach ($bucket as $order) {
+                        try {
+                            $invoices[] = $this->generateForOrder($order);
+                        } catch (\Exception $fallback) {
+                            $this->di['logger']->warning($fallback->getMessage());
+                        }
+                    }
+                }
+            }
+
+            // Issuance runs outside generation: an issue failure retries
+            // neither generation (which would duplicate lines) nor credits.
+            foreach ($invoices as $invoice) {
+                try {
+                    $this->issueInvoice($invoice, ['id' => $invoice->getId(), 'use_credits' => true]);
+                } catch (\Exception $e) {
+                    $this->di['logger']->warning($e->getMessage());
+                }
             }
         }
 
@@ -4503,13 +4701,13 @@ class Service implements InjectionAwareInterface
     private function getSellerData(array $invoice, int &$lines): array
     {
         $sourceData = [
-            'Name' => $invoice['seller']['company'],
-            'Address 1' => $invoice['seller']['address_1'],
-            'Address 2' => $invoice['seller']['address_2'],
-            'Address 3' => $invoice['seller']['address_3'],
-            'Phone' => $invoice['seller']['phone'],
-            'Email' => $invoice['seller']['email'],
-            'VAT Number' => $invoice['seller']['company_vat'],
+            'Name' => $invoice['seller']['company'] ?? null,
+            'Address 1' => $invoice['seller']['address_1'] ?? null,
+            'Address 2' => $invoice['seller']['address_2'] ?? null,
+            'Address 3' => $invoice['seller']['address_3'] ?? null,
+            'Phone' => $invoice['seller']['phone'] ?? null,
+            'Email' => $invoice['seller']['email'] ?? null,
+            'VAT Number' => $invoice['seller']['company_vat'] ?? null,
         ];
 
         foreach ($sourceData as $label => $data) {
@@ -4526,15 +4724,15 @@ class Service implements InjectionAwareInterface
     private function getBuyerData(array $invoice, int &$lines): array
     {
         $sourceData = [
-            'Company' => $invoice['buyer']['company'],
-            'Name' => $invoice['buyer']['first_name'] . ' ' . $invoice['buyer']['last_name'],
-            'Address' => $invoice['buyer']['address'],
-            'City' => $invoice['buyer']['city'],
-            'State' => $invoice['buyer']['state'],
-            'Zip' => $invoice['buyer']['zip'],
-            'Country' => $invoice['buyer']['country'],
-            'Phone' => $invoice['buyer']['phone'],
-            'VAT Number' => $invoice['buyer']['company_vat'],
+            'Company' => $invoice['buyer']['company'] ?? null,
+            'Name' => trim(($invoice['buyer']['first_name'] ?? '') . ' ' . ($invoice['buyer']['last_name'] ?? '')),
+            'Address' => $invoice['buyer']['address'] ?? null,
+            'City' => $invoice['buyer']['city'] ?? null,
+            'State' => $invoice['buyer']['state'] ?? null,
+            'Zip' => $invoice['buyer']['zip'] ?? null,
+            'Country' => $invoice['buyer']['country'] ?? null,
+            'Phone' => $invoice['buyer']['phone'] ?? null,
+            'VAT Number' => $invoice['buyer']['company_vat'] ?? null,
         ];
 
         foreach ($sourceData as $label => $data) {

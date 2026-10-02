@@ -27,7 +27,7 @@ test('maps client tables without changing their columns', function (): void {
     expect($client->getTableName())->toBe('client')
         ->and($client->getColumnNames())->toBe([
             'id', 'aid', 'role', 'auth_type', 'email', 'pass', 'salt',
-            'status', 'email_approved', 'tax_exempt', 'type', 'first_name', 'last_name',
+            'status', 'email_approved', 'tax_exempt', 'merge_renewals', 'type', 'first_name', 'last_name',
             'gender', 'birthday', 'phone_cc', 'phone', 'company', 'company_vat',
             'company_number', 'address_1', 'address_2', 'city', 'state', 'postcode',
             'country', 'notes', 'currency', 'lang', 'timezone', 'ip', 'api_token',
@@ -39,6 +39,7 @@ test('maps client tables without changing their columns', function (): void {
         ->and($client->getFieldMapping('email')['unique'])->toBeTrue()
         ->and($client->getFieldMapping('status')['nullable'])->toBeTrue()
         ->and($client->getFieldMapping('taxExempt')['nullable'])->toBeTrue()
+        ->and($client->getFieldMapping('mergeRenewals')['nullable'])->toBeTrue()
         ->and($client->getFieldMapping('gender')['length'])->toBe(20)
         ->and($balance->getTableName())->toBe('client_balance')
         ->and($balance->getColumnNames())->toBe([
@@ -74,6 +75,7 @@ test('converts an admin client list entity to the legacy API shape', function ()
         ]),
         'status' => 'active',
         'tax_exempt' => 0,
+        'merge_renewals' => 1,
         'custom_15' => 'VIP',
         'createdAt' => new DateTime('2026-07-19 10:00:00'),
         'updatedAt' => new DateTime('2026-07-19 10:00:00'),
@@ -92,6 +94,7 @@ test('converts an admin client list entity to the legacy API shape', function ()
         'group_ids' => [3],
         'status' => 'active',
         'tax_exempt' => 0,
+        'merge_renewals' => 1,
         'custom_15' => 'VIP',
         'created_at' => '2026-07-19 10:00:00',
         'updated_at' => '2026-07-19 10:00:00',

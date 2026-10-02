@@ -1883,7 +1883,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
         $setupIntentParams = [
             'customer' => $customerId,
-            'payment_method_types' => ['card'],
+            'allowed_payment_method_types' => ['card'],
             'usage' => 'off_session',
             'metadata' => [
                 'invoice_id' => (string) $invoice->getId(),

@@ -144,6 +144,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional string $notes - order notes
      * @optional array  $meta - list of meta properties
      * @optional int $suspension_grace_days - per-order grace period override; empty inherits the product setting
+     * @optional bool $merge_renewals - per-order renewal merge override: 1 to always merge, 0 to never merge, absent inherits the client preference then the global setting
      *
      * @return bool
      */
@@ -286,6 +287,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * Delete order.
      *
      * @optional bool $delete_addons - Remove addons also. Default false.
+     * @optional bool $force_delete - remove the local service even if remote cancellation fails. Default false.
      *
      * @return bool
      */

@@ -265,3 +265,15 @@ test('completion reports the pending patch levels instead of a bare message', fu
         $finalization->completeFinalization();
     })->toThrow(InformationException::class, 'There are still 1 pending update patches (database level 120, code level 124)');
 });
+
+test('reports schema drift state alongside the finalization status', function (): void {
+    $finalization = new UpdateFinalization();
+    $status = $finalization->getStatus(false);
+
+    // No database is reachable without DI, so the drift check degrades to
+    // "in sync" rather than blocking the status call.
+    expect($status['schema_drift'])->toBe([
+        'out_of_sync' => false,
+        'last_sync_failure' => null,
+    ]);
+});
