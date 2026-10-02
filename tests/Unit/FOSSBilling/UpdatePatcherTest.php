@@ -323,8 +323,32 @@ test('multi-group membership patch copies assignments then drops the column', fu
     $copyAssignments = Mockery::mock(PDOStatement::class);
     $copyAssignments->expects('execute')->with([])->andReturnTrue();
 
+    $legacyForeignKeys = Mockery::mock(PDOStatement::class);
+    $legacyForeignKeys->expects('execute')->with(['table' => 'client', 'column' => 'client_group_id'])->andReturnTrue();
+    $legacyForeignKeys->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([]);
+
     $dropColumn = Mockery::mock(PDOStatement::class);
     $dropColumn->expects('execute')->with([])->andReturnTrue();
+
+    $deleteOrphanClients = Mockery::mock(PDOStatement::class);
+    $deleteOrphanClients->expects('execute')->with([])->andReturnTrue();
+
+    $deleteOrphanGroups = Mockery::mock(PDOStatement::class);
+    $deleteOrphanGroups->expects('execute')->with([])->andReturnTrue();
+
+    $missingClientFk = Mockery::mock(PDOStatement::class);
+    $missingClientFk->expects('execute')->with(['table' => 'client_group_members', 'constraint' => 'client_group_members_client_fk', 'type' => 'FOREIGN KEY'])->andReturnTrue();
+    $missingClientFk->expects('fetchColumn')->andReturn(false);
+
+    $missingGroupFk = Mockery::mock(PDOStatement::class);
+    $missingGroupFk->expects('execute')->with(['table' => 'client_group_members', 'constraint' => 'client_group_members_group_fk', 'type' => 'FOREIGN KEY'])->andReturnTrue();
+    $missingGroupFk->expects('fetchColumn')->andReturn(false);
+
+    $addClientFk = Mockery::mock(PDOStatement::class);
+    $addClientFk->expects('execute')->with([])->andReturnTrue();
+
+    $addGroupFk = Mockery::mock(PDOStatement::class);
+    $addGroupFk->expects('execute')->with([])->andReturnTrue();
 
     $pdo = Mockery::mock(PDO::class);
     $pdo->expects('prepare')
@@ -338,8 +362,108 @@ test('multi-group membership patch copies assignments then drops the column', fu
         ->with('INSERT IGNORE INTO `client_group_members` (`client_id`, `client_group_id`) SELECT c.`id`, c.`client_group_id` FROM `client` c INNER JOIN `client_group` g ON g.`id` = c.`client_group_id`')
         ->andReturn($copyAssignments);
     $pdo->expects('prepare')
+        ->with('SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table AND COLUMN_NAME = :column AND REFERENCED_TABLE_NAME IS NOT NULL')
+        ->andReturn($legacyForeignKeys);
+    $pdo->expects('prepare')
         ->with('ALTER TABLE `client` DROP COLUMN `client_group_id`')
         ->andReturn($dropColumn);
+    $pdo->expects('prepare')
+        ->with('DELETE FROM `client_group_members` WHERE `client_id` NOT IN (SELECT `id` FROM `client`)')
+        ->andReturn($deleteOrphanClients);
+    $pdo->expects('prepare')
+        ->with('DELETE FROM `client_group_members` WHERE `client_group_id` NOT IN (SELECT `id` FROM `client_group`)')
+        ->andReturn($deleteOrphanGroups);
+    $pdo->expects('prepare')
+        ->twice()
+        ->with('SELECT 1 FROM information_schema.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table AND CONSTRAINT_NAME = :constraint AND CONSTRAINT_TYPE = :type LIMIT 1')
+        ->andReturn($missingClientFk, $missingGroupFk);
+    $pdo->expects('prepare')
+        ->with('ALTER TABLE `client_group_members` ADD CONSTRAINT `client_group_members_client_fk` FOREIGN KEY (`client_id`) REFERENCES `client` (`id`) ON DELETE CASCADE')
+        ->andReturn($addClientFk);
+    $pdo->expects('prepare')
+        ->with('ALTER TABLE `client_group_members` ADD CONSTRAINT `client_group_members_group_fk` FOREIGN KEY (`client_group_id`) REFERENCES `client_group` (`id`) ON DELETE CASCADE')
+        ->andReturn($addGroupFk);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch125'))->invoke($patcher);
+});
+
+test('multi-group membership patch drops legacy foreign keys before dropping the column', function (): void {
+    $tableExists = Mockery::mock(PDOStatement::class);
+    $tableExists->expects('execute')->with(['table' => 'client_group_members'])->andReturnTrue();
+    $tableExists->expects('fetchColumn')->andReturn('1');
+
+    $clientColumns = Mockery::mock(PDOStatement::class);
+    $clientColumns->expects('execute')->with([])->andReturnTrue();
+    $clientColumns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['Field' => 'id'],
+        ['Field' => 'client_group_id'],
+    ]);
+
+    $copyAssignments = Mockery::mock(PDOStatement::class);
+    $copyAssignments->expects('execute')->with([])->andReturnTrue();
+
+    $legacyForeignKeys = Mockery::mock(PDOStatement::class);
+    $legacyForeignKeys->expects('execute')->with(['table' => 'client', 'column' => 'client_group_id'])->andReturnTrue();
+    $legacyForeignKeys->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['CONSTRAINT_NAME' => 'legacy_client_group_fk'],
+    ]);
+
+    $dropForeignKey = Mockery::mock(PDOStatement::class);
+    $dropForeignKey->expects('execute')->with([])->andReturnTrue();
+
+    $dropColumn = Mockery::mock(PDOStatement::class);
+    $dropColumn->expects('execute')->with([])->andReturnTrue();
+
+    $deleteOrphanClients = Mockery::mock(PDOStatement::class);
+    $deleteOrphanClients->expects('execute')->with([])->andReturnTrue();
+
+    $deleteOrphanGroups = Mockery::mock(PDOStatement::class);
+    $deleteOrphanGroups->expects('execute')->with([])->andReturnTrue();
+
+    $presentClientFk = Mockery::mock(PDOStatement::class);
+    $presentClientFk->expects('execute')->with(['table' => 'client_group_members', 'constraint' => 'client_group_members_client_fk', 'type' => 'FOREIGN KEY'])->andReturnTrue();
+    $presentClientFk->expects('fetchColumn')->andReturn('1');
+
+    $presentGroupFk = Mockery::mock(PDOStatement::class);
+    $presentGroupFk->expects('execute')->with(['table' => 'client_group_members', 'constraint' => 'client_group_members_group_fk', 'type' => 'FOREIGN KEY'])->andReturnTrue();
+    $presentGroupFk->expects('fetchColumn')->andReturn('1');
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')
+        ->with('SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table LIMIT 1')
+        ->andReturn($tableExists);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `client`')->andReturn($clientColumns);
+    $pdo->expects('prepare')
+        ->with('INSERT IGNORE INTO `client_group_members` (`client_id`, `client_group_id`) SELECT c.`id`, c.`client_group_id` FROM `client` c INNER JOIN `client_group` g ON g.`id` = c.`client_group_id`')
+        ->andReturn($copyAssignments);
+    $pdo->expects('prepare')
+        ->with('SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table AND COLUMN_NAME = :column AND REFERENCED_TABLE_NAME IS NOT NULL')
+        ->andReturn($legacyForeignKeys);
+    $pdo->expects('prepare')
+        ->with('ALTER TABLE `client` DROP FOREIGN KEY `legacy_client_group_fk`')
+        ->ordered()
+        ->andReturn($dropForeignKey);
+    $pdo->expects('prepare')
+        ->with('ALTER TABLE `client` DROP COLUMN `client_group_id`')
+        ->ordered()
+        ->andReturn($dropColumn);
+    $pdo->expects('prepare')
+        ->with('DELETE FROM `client_group_members` WHERE `client_id` NOT IN (SELECT `id` FROM `client`)')
+        ->andReturn($deleteOrphanClients);
+    $pdo->expects('prepare')
+        ->with('DELETE FROM `client_group_members` WHERE `client_group_id` NOT IN (SELECT `id` FROM `client_group`)')
+        ->andReturn($deleteOrphanGroups);
+    $pdo->expects('prepare')
+        ->twice()
+        ->with('SELECT 1 FROM information_schema.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table AND CONSTRAINT_NAME = :constraint AND CONSTRAINT_TYPE = :type LIMIT 1')
+        ->andReturn($presentClientFk, $presentGroupFk);
+    $pdo->shouldNotReceive('prepare')->with(Mockery::pattern('/^CREATE TABLE `client_group_members`/'));
+    $pdo->shouldNotReceive('prepare')->with(Mockery::pattern('/^ALTER TABLE `client_group_members` ADD CONSTRAINT/'));
 
     $di = new Pimple\Container();
     $di['pdo'] = $pdo;
@@ -358,14 +482,39 @@ test('multi-group membership patch is a no-op once migrated', function (): void 
     $clientColumns->expects('execute')->with([])->andReturnTrue();
     $clientColumns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([['Field' => 'id']]);
 
+    $deleteOrphanClients = Mockery::mock(PDOStatement::class);
+    $deleteOrphanClients->expects('execute')->with([])->andReturnTrue();
+
+    $deleteOrphanGroups = Mockery::mock(PDOStatement::class);
+    $deleteOrphanGroups->expects('execute')->with([])->andReturnTrue();
+
+    $presentClientFk = Mockery::mock(PDOStatement::class);
+    $presentClientFk->expects('execute')->with(['table' => 'client_group_members', 'constraint' => 'client_group_members_client_fk', 'type' => 'FOREIGN KEY'])->andReturnTrue();
+    $presentClientFk->expects('fetchColumn')->andReturn('1');
+
+    $presentGroupFk = Mockery::mock(PDOStatement::class);
+    $presentGroupFk->expects('execute')->with(['table' => 'client_group_members', 'constraint' => 'client_group_members_group_fk', 'type' => 'FOREIGN KEY'])->andReturnTrue();
+    $presentGroupFk->expects('fetchColumn')->andReturn('1');
+
     $pdo = Mockery::mock(PDO::class);
     $pdo->expects('prepare')
         ->with('SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table LIMIT 1')
         ->andReturn($tableExists);
     $pdo->expects('prepare')->with('SHOW COLUMNS FROM `client`')->andReturn($clientColumns);
+    $pdo->expects('prepare')
+        ->with('DELETE FROM `client_group_members` WHERE `client_id` NOT IN (SELECT `id` FROM `client`)')
+        ->andReturn($deleteOrphanClients);
+    $pdo->expects('prepare')
+        ->with('DELETE FROM `client_group_members` WHERE `client_group_id` NOT IN (SELECT `id` FROM `client_group`)')
+        ->andReturn($deleteOrphanGroups);
+    $pdo->expects('prepare')
+        ->twice()
+        ->with('SELECT 1 FROM information_schema.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table AND CONSTRAINT_NAME = :constraint AND CONSTRAINT_TYPE = :type LIMIT 1')
+        ->andReturn($presentClientFk, $presentGroupFk);
     $pdo->shouldNotReceive('prepare')->with(Mockery::pattern('/^CREATE TABLE `client_group_members`/'));
     $pdo->shouldNotReceive('prepare')->with(Mockery::pattern('/^INSERT IGNORE INTO `client_group_members`/'));
-    $pdo->shouldNotReceive('prepare')->with('ALTER TABLE `client` DROP COLUMN `client_group_id`');
+    $pdo->shouldNotReceive('prepare')->with(Mockery::pattern('/^ALTER TABLE `client` DROP/'));
+    $pdo->shouldNotReceive('prepare')->with(Mockery::pattern('/^ALTER TABLE `client_group_members` ADD CONSTRAINT/'));
 
     $di = new Pimple\Container();
     $di['pdo'] = $pdo;

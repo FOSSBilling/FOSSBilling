@@ -1159,6 +1159,43 @@ class UpdatePatcher implements InjectionAwareInterface
         return false;
     }
 
+    /**
+     * @return list<string>
+     */
+    private function getColumnForeignKeys(string $table, string $column): array
+    {
+        $rows = $this->fetchAll(
+            'SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table AND COLUMN_NAME = :column AND REFERENCED_TABLE_NAME IS NOT NULL',
+            ['table' => $table, 'column' => $column],
+        );
+
+        return array_values(array_unique(array_map(static fn (array $row): string => (string) $row['CONSTRAINT_NAME'], $rows)));
+    }
+
+    private function tableHasForeignKey(string $table, string $constraintName): bool
+    {
+        return (bool) $this->fetchOne(
+            'SELECT 1 FROM information_schema.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table AND CONSTRAINT_NAME = :constraint AND CONSTRAINT_TYPE = :type LIMIT 1',
+            ['table' => $table, 'constraint' => $constraintName, 'type' => 'FOREIGN KEY'],
+        );
+    }
+
+    private function addForeignKeyIfMissing(string $table, string $constraintName, string $column, string $referencedTable, string $referencedColumn): void
+    {
+        if ($this->tableHasForeignKey($table, $constraintName)) {
+            return;
+        }
+
+        $this->executeSql(sprintf(
+            'ALTER TABLE `%s` ADD CONSTRAINT `%s` FOREIGN KEY (`%s`) REFERENCES `%s` (`%s`) ON DELETE CASCADE',
+            $this->quoteIdentifier($table),
+            $this->quoteIdentifier($constraintName),
+            $this->quoteIdentifier($column),
+            $this->quoteIdentifier($referencedTable),
+            $this->quoteIdentifier($referencedColumn),
+        ));
+    }
+
     private function quoteIdentifier(string $identifier): string
     {
         if (!preg_match('/^[A-Za-z0-9_]+$/', $identifier)) {
@@ -4531,14 +4568,13 @@ class UpdatePatcher implements InjectionAwareInterface
     private function patch125(): void
     {
         // Client groups went multi-membership (#4387): the single
-        // `client.client_group_id` FK is replaced by the `client_group_members`
+        // `client.client_group_id` column is replaced by the `client_group_members`
         // join table. Create it, copy existing assignments across, then drop
         // the column (which also drops its index). Only groups that still
-        // exist are copied: the legacy column had no enforced foreign key,
-        // so orphaned IDs (e.g. deleted groups) must not migrate. INSERT
-        // IGNORE plus guards make reruns no-ops. Non-MySQL drivers get the
-        // table from the portable schema sync; the data copy and column drop
-        // are MySQL-only, like all historical data migrations.
+        // exist are copied: orphaned IDs (e.g. deleted groups) must not
+        // migrate. INSERT IGNORE plus guards make reruns no-ops. Non-MySQL
+        // drivers get the table from the portable schema sync; the data copy
+        // and column drop are MySQL-only, like all historical data migrations.
         if (!$this->tableExists('client_group_members')) {
             $this->executeSql('CREATE TABLE `client_group_members` (`id` bigint(20) NOT NULL AUTO_INCREMENT, `client_id` bigint(20) NOT NULL, `client_group_id` bigint(20) NOT NULL, `created_at` datetime DEFAULT NULL, `updated_at` datetime DEFAULT NULL, PRIMARY KEY (`id`), UNIQUE KEY `client_group_members_client_group` (`client_id`, `client_group_id`), KEY `client_group_members_group_idx` (`client_group_id`)) ENGINE=InnoDB DEFAULT CHARSET=utf8');
         }
@@ -4549,8 +4585,29 @@ class UpdatePatcher implements InjectionAwareInterface
                 . 'SELECT c.`id`, c.`client_group_id` FROM `client` c '
                 . 'INNER JOIN `client_group` g ON g.`id` = c.`client_group_id`'
             );
+
+            // Installs created fresh while the legacy column was still mapped as
+            // a Doctrine ManyToOne carry a real foreign key on it (SchemaTool
+            // materializes JoinColumns, with an auto-generated name per install),
+            // while long-upgraded installs have none. MariaDB/MySQL refuse to drop
+            // a column whose index backs a foreign key (error 1553), so drop those
+            // constraints first, looking the names up instead of assuming them.
+            foreach ($this->getColumnForeignKeys('client', 'client_group_id') as $foreignKey) {
+                $this->executeSql(sprintf('ALTER TABLE `client` DROP FOREIGN KEY `%s`', $this->quoteIdentifier($foreignKey)));
+            }
+
             $this->executeSql('ALTER TABLE `client` DROP COLUMN `client_group_id`');
         }
+
+        // Bring upgraded installs in line with fresh installs, whose SchemaTool-built
+        // join table carries both foreign keys with cascade deletes: drop memberships
+        // orphaned by later client/group deletions (which no constraint could stop),
+        // then add any missing constraint. Rows from the copy above always satisfy
+        // both keys by construction, so this cannot fail on migrated data.
+        $this->executeSql('DELETE FROM `client_group_members` WHERE `client_id` NOT IN (SELECT `id` FROM `client`)');
+        $this->executeSql('DELETE FROM `client_group_members` WHERE `client_group_id` NOT IN (SELECT `id` FROM `client_group`)');
+        $this->addForeignKeyIfMissing('client_group_members', 'client_group_members_client_fk', 'client_id', 'client', 'id');
+        $this->addForeignKeyIfMissing('client_group_members', 'client_group_members_group_fk', 'client_group_id', 'client_group', 'id');
     }
 
     private function patch126(): void
