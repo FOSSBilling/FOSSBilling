@@ -1187,6 +1187,9 @@ class Service implements InjectionAwareInterface
                 }
 
                 $result = $this->markAsPaid($invoice, false, false, true, $paidAt, $actuallyPaid);
+                if ($actuallyPaid ?? $result) {
+                    $this->creditDepositBalanceIfNeeded($invoice, $payGateway, $transactionId, $invoiceTotal);
+                }
                 if ($result) {
                     $transaction->setAmount((string) $invoiceTotal);
                     $transaction->setCurrency($invoice->getCurrency());
@@ -1223,10 +1226,19 @@ class Service implements InjectionAwareInterface
 
         // Payment runs first so the paid journal row commits atomically with
         // it (carrying the admin-supplied paid_at date via the override
-        // below); notifications follow. Gated on the payment having happened
+        // below); a deposit credit commits in the same transaction so a
+        // crash cannot leave a paid Add Funds invoice without its balance.
+        // Notifications follow. Gated on the payment having happened
         // in this call, as above.
         $actuallyPaid = null;
-        $paid = $this->markAsPaid($invoice, false, false, true, $paidAt, $actuallyPaid);
+        $paid = $this->di['em']->wrapInTransaction(function () use ($invoice, $payGateway, $transactionId, $paidAt, &$actuallyPaid): bool {
+            $result = $this->markAsPaid($invoice, false, false, true, $paidAt, $actuallyPaid);
+            if ($actuallyPaid ?? $result) {
+                $this->creditDepositBalanceIfNeeded($invoice, $payGateway, $transactionId);
+            }
+
+            return $result;
+        });
         if ($paid && ($actuallyPaid ?? true)) {
             $this->firePaymentReceivedEvent($invoice);
             if ($execute) {
@@ -1262,6 +1274,35 @@ class Service implements InjectionAwareInterface
         }
 
         return $payGateway;
+    }
+
+    /**
+     * Credit the client balance for an Add Funds (deposit) invoice paid by an admin.
+     *
+     * No-op for ordinary invoices. Must only be called when the payment
+     * happened in this call (gated on $actuallyPaid by the caller) and
+     * inside the payment transaction so the credit commits atomically
+     * with the paid-marking.
+     */
+    private function creditDepositBalanceIfNeeded(Invoice $invoice, PayGateway $payGateway, ?string $transactionId, ?float $invoiceTotal = null): void
+    {
+        if (!$this->isInvoiceTypeDeposit($invoice)) {
+            return;
+        }
+
+        $amount = $invoiceTotal ?? $this->getTotalWithTax($invoice);
+        $client = $this->di['em']->getRepository(Client::class)->find($invoice->getClientId());
+        if (!$client instanceof Client) {
+            throw new InformationException('Client not found');
+        }
+
+        $gatewayTitle = $payGateway->getName() ?: $payGateway->getGateway();
+        $reference = trim((string) $transactionId);
+        $description = $reference !== ''
+            ? sprintf('%s transaction No: %s', $gatewayTitle, $reference)
+            : sprintf('%s manual payment', $gatewayTitle);
+
+        $this->di['mod_service']('client')->addFunds($client, $amount, $description, []);
     }
 
     /**
