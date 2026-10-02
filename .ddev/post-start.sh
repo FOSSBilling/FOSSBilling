@@ -7,6 +7,7 @@ nodeBuildTimestamp="node_modules/package.stamp"
 
 # Composer vars
 composerVendorPath="src/vendor"
+composerJson="composer.json"
 composerLock="composer.lock"
 customVendorTimestamp="src/vendor/composer.stamp"
 
@@ -29,7 +30,11 @@ elif [ ! -f "src/public/assets/manifest.json" ] \
 fi
 
 # If the composer packages aren't installed or are outdated, install the locked versions
-if [ ! -d "$composerVendorPath" ] || [ ! -f "$customVendorTimestamp" ] || [ "$composerLock" -nt "$customVendorTimestamp" ]; then
+# If the composer packages aren't installed or are outdated, install the locked versions.
+# composer.json is checked alongside composer.lock: autoload-only changes (e.g. a new
+# PSR-4 mapping or a moved class) don't touch the lock file, but still require a
+# regenerated autoloader, otherwise previously installed vendors go stale.
+if [ ! -d "$composerVendorPath" ] || [ ! -f "$customVendorTimestamp" ] || [ "$composerJson" -nt "$customVendorTimestamp" ] || [ "$composerLock" -nt "$customVendorTimestamp" ]; then
     composer install
     echo "$now" > "$customVendorTimestamp"
 fi
