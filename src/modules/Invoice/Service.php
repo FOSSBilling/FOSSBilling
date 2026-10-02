@@ -1282,7 +1282,9 @@ class Service implements InjectionAwareInterface
      * No-op for ordinary invoices. Must only be called when the payment
      * happened in this call (gated on $actuallyPaid by the caller) and
      * inside the payment transaction so the credit commits atomically
-     * with the paid-marking.
+     * with the paid-marking. Only deposit lines are credited: a draft
+     * deposit invoice can gain non-deposit lines before issuance, and
+     * those charges must not become spendable balance.
      */
     private function creditDepositBalanceIfNeeded(Invoice $invoice, PayGateway $payGateway, ?string $transactionId, ?float $invoiceTotal = null): void
     {
@@ -1290,7 +1292,28 @@ class Service implements InjectionAwareInterface
             return;
         }
 
-        $amount = $invoiceTotal ?? $this->getTotalWithTax($invoice);
+        $items = $this->getInvoiceItemRepository()->findByInvoiceId((int) $invoice->getId());
+        $hasOtherItems = false;
+        foreach ($items as $item) {
+            if ($item->getType() != InvoiceItem::TYPE_DEPOSIT) {
+                $hasOtherItems = true;
+
+                break;
+            }
+        }
+
+        if ($hasOtherItems) {
+            $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
+            $amount = 0.0;
+            foreach ($items as $item) {
+                if ($item->getType() == InvoiceItem::TYPE_DEPOSIT) {
+                    $amount += $invoiceItemService->getTotalWithTax($item);
+                }
+            }
+        } else {
+            $amount = $invoiceTotal ?? $this->getTotalWithTax($invoice);
+        }
+
         $client = $this->di['em']->getRepository(Client::class)->find($invoice->getClientId());
         if (!$client instanceof Client) {
             throw new InformationException('Client not found');
@@ -1302,7 +1325,10 @@ class Service implements InjectionAwareInterface
             ? sprintf('%s transaction No: %s', $gatewayTitle, $reference)
             : sprintf('%s manual payment', $gatewayTitle);
 
-        $this->di['mod_service']('client')->addFunds($client, $amount, $description, []);
+        $this->di['mod_service']('client')->addFunds($client, $amount, $description, [
+            'type' => 'invoice',
+            'rel_id' => (string) $invoice->getId(),
+        ]);
     }
 
     /**
