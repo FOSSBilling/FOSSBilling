@@ -207,6 +207,13 @@ class ServiceInvoiceItem implements InjectionAwareInterface
 
     public function addNew(Invoice $proforma, array $data, bool $skipEditableCheck = false): int
     {
+        // Deposit lines credit the client balance when the invoice is paid,
+        // so they may only be created through the Add Funds flow
+        // (generateForAddFunds) — never from generic invoice input.
+        if (($data['type'] ?? InvoiceItem::TYPE_CUSTOM) === InvoiceItem::TYPE_DEPOSIT) {
+            throw new \FOSSBilling\InformationException('Deposit invoice items can only be created through the Add Funds flow.');
+        }
+
         return $this->runInvoiceMutation($proforma, $skipEditableCheck, function () use ($proforma, $data): int {
             $title = $data['title'] ?? '';
             if (empty($title)) {
