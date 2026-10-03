@@ -836,10 +836,12 @@ Each existing job checks documentation-only branches after checkout, using
 `circleci-agent step halt` to preserve successful job checks. The allowlist
 is limited to root README/contribution/governance documents, this README,
 and Markdown under `docs/`. The entire branch diff from the merge base of
-freshly fetched `main` must qualify. Main, manual/API runs, empty diffs,
+freshly fetched canonical FOSSBilling `main` must qualify. Main, manual/API runs, empty diffs,
 failed comparisons and mixed/code/config changes always run full validation.
 Rename detection is disabled so deleted or moved executable paths remain
-visible. All 11 local Git-repository cases passed. The pipeline parameter
+visible. All 12 local Git-repository cases passed, including a fork whose own main
+contains unreviewed application changes. Run these regression checks with
+`python3 .circleci/tests/test-validation-scope.py`. The pipeline parameter
 `force-full-validation=true` explicitly overrides filtering. Actions checks,
 including spellcheck, remain authoritative.
 
@@ -873,3 +875,15 @@ Hosted baseline pipeline 71 passed all seven jobs in 72s / 49 credits, with
 installing widget packages. Scope checks took 0.281s in the application job
 and 0.346s in the widget job. This updated baseline includes the Playwright
 upgrade, prebuilt widget fixture and documentation filter.
+
+Hosted prepared-image pipeline 72 passed all seven jobs in 54s / 41 credits.
+A full forced repeat on the same revision, pipeline 73, passed in 59s / 46
+credits. First-use browser environment startup was 6.855s versus baseline
+5.699s; browser preparation fell from 19.546s to 0.334s, and actual test
+execution was 18.505s versus 17.746s. Widget installation remained 0.475s.
+These two samples show a net improvement after image startup, while their
+5s workflow variation reinforces the need for broader cold/warm sampling.
+
+- [Updated Playwright baseline: pipeline 71](https://app.circleci.com/pipelines/github/FOSSBilling/FOSSBilling/71)
+- [Prepared Chromium image: pipeline 72](https://app.circleci.com/pipelines/github/FOSSBilling/FOSSBilling/72)
+- [Same-revision full repeat: pipeline 73](https://app.circleci.com/pipelines/github/FOSSBilling/FOSSBilling/73)

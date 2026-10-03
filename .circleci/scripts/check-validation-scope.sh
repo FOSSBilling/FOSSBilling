@@ -7,11 +7,12 @@ if [[ "${VALIDATION_TRIGGER:-}" != webhook || "${CIRCLE_BRANCH:-main}" == main |
   echo 'Run full validation: main, manual, or explicitly requested run.'
   exit 0
 fi
-if ! git fetch --quiet --no-tags origin '+refs/heads/main:refs/remotes/origin/main'; then
+# A fork's own main may contain application changes not present upstream.
+if ! git fetch --quiet --no-tags https://github.com/FOSSBilling/FOSSBilling.git '+refs/heads/main:refs/remotes/validation/main'; then
   echo 'Run full validation: could not fetch main.'
   exit 0
 fi
-if ! base=$(git merge-base HEAD refs/remotes/origin/main); then
+if ! base=$(git merge-base HEAD refs/remotes/validation/main); then
   echo 'Run full validation: no verified merge base.'
   exit 0
 fi
