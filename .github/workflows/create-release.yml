@@ -206,6 +206,19 @@ jobs:
           echo "FOSSBILLING_RELEASE_DIGEST=sha256:$(sha256sum "../dist/FOSSBilling-${RELEASE_VERSION}.zip" | awk '{print $1}')" >> "$GITHUB_ENV"
         working-directory: ./release-tree
 
+      - name: 'Validate Release Tag'
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          # An existing tag pins the release commit; refuse a mismatched archive.
+          if tag_commit="$(git rev-parse --verify --quiet "refs/tags/${RELEASE_VERSION}^{commit}")"; then
+            head_commit="$(git rev-parse HEAD)"
+            if [[ "${tag_commit}" != "${head_commit}" ]]; then
+              echo "Tag ${RELEASE_VERSION} points at ${tag_commit}, but this run built from ${head_commit}. Re-run with target_ref set to the tag or the matching commit."
+              exit 1
+            fi
+          fi
+
       - name: 'Upload Release Archive to R2'
         id: r2-upload
         # Mirrors the release archive to our own IPv6-reachable storage, alongside the
@@ -243,15 +256,6 @@ jobs:
           REPOSITORY: ${{ github.repository }}
         run: |
           asset="./dist/FOSSBilling-${RELEASE_VERSION}.zip"
-
-          # An existing tag pins the release commit; refuse a mismatched archive.
-          if tag_commit="$(git rev-parse --verify --quiet "refs/tags/${RELEASE_VERSION}^{commit}")"; then
-            head_commit="$(git rev-parse HEAD)"
-            if [[ "${tag_commit}" != "${head_commit}" ]]; then
-              echo "Tag ${RELEASE_VERSION} points at ${tag_commit}, but this run built from ${head_commit}. Re-run with target_ref set to the tag or the matching commit."
-              exit 1
-            fi
-          fi
 
           if gh release view "${RELEASE_VERSION}" --repo "${REPOSITORY}" >/dev/null 2>&1; then
             gh release upload "${RELEASE_VERSION}" "${asset}" \
