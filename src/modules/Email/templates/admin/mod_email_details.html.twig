@@ -54,7 +54,7 @@
             <svg class="icon icon-tabler" width="24" height="24">
                 <use href="#eye" />
             </svg>
-            <span class="d-block text-secondary">{{ 'Preview'|trans }}</span>
+            <span>{{ 'Preview'|trans }}</span>
         </button>
         {% if can_send_emails %}
         <a class="btn btn-primary"
@@ -62,7 +62,7 @@
             <svg class="icon icon-tabler" width="24" height="24">
                 <use href="#refresh" />
             </svg>
-            <span class="d-block text-secondary">{{ 'Resend'|trans }}</span>
+            <span>{{ 'Resend'|trans }}</span>
         </a>
         {% endif %}
         {% if can_delete_email_history %}
@@ -71,7 +71,7 @@
             <svg class="icon icon-tabler" width="24" height="24">
                 <use href="#trash" />
             </svg>
-            <span class="d-block text-secondary">{{ 'Delete'|trans }}</span>
+            <span>{{ 'Delete'|trans }}</span>
         </a>
         {% endif %}
     </div>
