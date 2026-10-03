@@ -1,4 +1,4 @@
-# cspell:words cimg NFIZXNYMJ Gemqiihh pwuser
+# cspell:words cimg NFIZXNYMJ Gemqiihh
 version: 2.1
 
 orbs:
@@ -19,29 +19,23 @@ executors:
     docker:
       - image: cimg/php:8.5.10@sha256:7c7ba12e0204ec9b291019a738b4cab3bae2167aaa70c594d6608ec21085c8fe
     resource_class: medium.gen2
-  integration-live: &integration-environment
-    docker:
-      - &integration-php
-        image: cimg/php:8.5.10-node@sha256:c60f1384d1eda0bd1a57c60e23a55c4a87b8fcd59cc2ea89c6d1c687d9d64fca
-      - &integration-db
-        image: mariadb:lts@sha256:805c8e104bd563d5bfa24fadd3f31cd419ea859cb5277f32b5dbf2db714f9ed1
-        environment:
-          MARIADB_DATABASE: fossbilling
-          MARIADB_ROOT_PASSWORD: root
-    resource_class: medium.gen2
-  integration-browser:
-    <<: *integration-environment
-    docker:
-      - *integration-php
-      - *integration-db
-      - image: mcr.microsoft.com/playwright:v1.62.1-noble@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e
-        user: pwuser
-        command:
-          - /bin/sh
-          - -c
-          - cd /home/pwuser && exec npx --yes playwright@1.62.1 run-server --port 3000 --host 0.0.0.0
 
 commands:
+  install-playwright-runner:
+    steps:
+      - node/install-packages:
+          pkg-manager: npm
+          cache-path: ~/.npm
+          cache-version: v1-native-node24
+          override-ci-command: npm ci --no-audit --no-fund
+      - run:
+          name: Install matching baseline Playwright runner
+          command: |
+            # Keep the recorded baseline runner version for parity.
+            mkdir -p /tmp/playwright-runner
+            npm install --prefix /tmp/playwright-runner --no-audit --no-fund @playwright/test@1.62.1
+            rm -rf node_modules/@playwright/test
+            ln -s /tmp/playwright-runner/node_modules/@playwright/test node_modules/@playwright/test
   native-app-install:
     steps:
       - checkout
@@ -123,12 +117,41 @@ jobs:
             - src/themes/default/admin/assets/build
             - src/themes/default/client/assets/build
 
+  frontend-browser-tests:
+    docker:
+      - image: mcr.microsoft.com/playwright:v1.62.1-noble@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e
+    resource_class: medium.gen2
+    environment:
+      PLAYWRIGHT_JUNIT_OUTPUT_FILE: tests/E2E/Playwright/artifacts/junit/results.xml
+      PLAYWRIGHT_HTML_OUTPUT_DIR: tests/E2E/Playwright/artifacts/report
+      PLAYWRIGHT_HTML_OPEN: never
+    steps:
+      - checkout
+      - run: node --version && npm --version && git rev-parse HEAD
+      - attach_workspace:
+          at: .
+      - install-playwright-runner
+      - run:
+          name: Frontend widget browser tests
+          command: /tmp/playwright-runner/node_modules/.bin/playwright test --config=playwright.widgets.config.ts --reporter=line,junit,html
+      - store_test_results:
+          path: tests/E2E/Playwright/artifacts/junit
+      - store_artifacts:
+          path: tests/E2E/Playwright/artifacts
+          destination: frontend-playwright
+
   integration-tests:
     parameters:
       suite:
         type: enum
         enum: [live, browser]
-    executor: integration-<< parameters.suite >>
+    docker:
+      - image: cimg/php:8.5.10-node@sha256:c60f1384d1eda0bd1a57c60e23a55c4a87b8fcd59cc2ea89c6d1c687d9d64fca
+      - image: mariadb:lts@sha256:805c8e104bd563d5bfa24fadd3f31cd419ea859cb5277f32b5dbf2db714f9ed1
+        environment:
+          MARIADB_DATABASE: fossbilling
+          MARIADB_ROOT_PASSWORD: root
+    resource_class: medium.gen2
     environment:
       APP_ENV: test
       COMPOSER_CACHE_DIR: /home/circleci/.cache/composer
@@ -158,35 +181,13 @@ jobs:
           condition:
             equal: [browser, << parameters.suite >>]
           steps:
-            - node/install-packages:
-                pkg-manager: npm
-                cache-path: ~/.npm
-                cache-version: v1-native-node24
-                override-ci-command: npm ci --no-audit --no-fund
+            - install-playwright-runner
             - run:
-                name: Install matching Playwright runner
-                command: |
-                  # Keep the recorded baseline runner version for parity.
-                  mkdir -p /tmp/playwright-runner
-                  npm install --prefix /tmp/playwright-runner --no-audit --no-fund @playwright/test@1.62.1
-                  rm -rf node_modules/@playwright/test
-                  ln -s /tmp/playwright-runner/node_modules/@playwright/test node_modules/@playwright/test
-            - run:
-                name: Wait for Playwright browser service
-                command: |
-                  for attempt in {1..60}; do
-                    if (echo > /dev/tcp/127.0.0.1/3000) 2>/dev/null; then
-                      exit 0
-                    fi
-                    sleep 1
-                  done
-                  echo 'Playwright browser service did not become ready' >&2
-                  exit 1
+                name: Install matching Chromium
+                command: /tmp/playwright-runner/node_modules/.bin/playwright install --with-deps chromium
             - run:
                 name: Native Playwright tests
-                environment:
-                  PW_TEST_CONNECT_WS_ENDPOINT: ws://127.0.0.1:3000/
-                command: /tmp/playwright-runner/node_modules/.bin/playwright test --reporter=line,junit,html
+                command: /tmp/playwright-runner/node_modules/.bin/playwright test --config=playwright.application.config.ts --reporter=line,junit,html
             - store_test_results:
                 path: tests/E2E/Playwright/artifacts/junit
             - store_artifacts:
@@ -208,6 +209,8 @@ workflows:
             parameters:
               php-minor: ['3', '4', '5']
       - frontend-build
+      - frontend-browser-tests:
+          requires: [frontend-build]
       - integration-tests:
           name: native-live-tests
           suite: live

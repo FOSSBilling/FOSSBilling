@@ -2,12 +2,12 @@
 # CircleCI validation
 
 Each CircleCI pipeline runs the `validation` workflow: PHP 8.3/8.4/8.5 tests,
-PHPStan on 8.3, frontend assets/typechecking, and separate live API and browser
-jobs. No pilot activation parameter or stage filters remain. GitHub Actions
+PHPStan on 8.3, frontend assets/typechecking, live API tests, application
+browser tests and frontend widget browser tests. No pilot activation parameter or stage filters remain. GitHub Actions
 remain the required checks and the only publisher; cutover is still pending.
 
 Keep experiments local until hosted verification is needed. Once this config
-is pushed, the configured CircleCI push trigger will start all six jobs.
+is pushed, the configured CircleCI push trigger will start all seven jobs.
 
 The earlier Docker compatibility workflow has been removed, including its
 machine executor, image-build/test jobs, image transfer commands, Docker orb,
@@ -423,6 +423,43 @@ this single sample. Retain the official service for its prepared browser
 environment, but do not claim a material performance improvement from this
 run. Warm/cold repeats and hosted failure-artifact uploads remain separate
 validation work; the local probe proves transfer back to the runner only.
+
+
+### Frontend widget separation
+
+The widget file accounted for 23 of 44 browser tests and 41.8 seconds of
+summed test time in pipeline 52. It mounts HTML directly, bundles widget
+source using esbuild and loads the production admin CSS. It needs frontend
+source/dependencies and built assets, but no installed PHP application,
+MariaDB service or admin credentials.
+
+The `frontend-browser-tests` job uses the pinned official Playwright 1.62.1
+image as its primary container, the existing full npm installation and the
+frontend asset workspace. `playwright.widgets.config.ts` selects only the
+widget file, with two workers and fully parallel tests. Every test retains
+its own browser context and runs its setup hooks. The application job uses
+`playwright.application.config.ts` to exclude that file and keeps one worker
+against its isolated app/database. Both jobs retain JUnit and HTML/failure
+artifacts. They run alongside each other after the frontend build succeeds.
+
+The default `playwright.config.ts` still selects all 44 tests with one worker,
+so existing Actions and local commands keep their coverage. The browser
+TypeScript check now includes all three root configurations. The application
+job preserves the working-copy choice to install Chromium in its PHP/Node
+container; the official image is used only for the new frontend widget job.
+Dependency minimization is a later trial.
+
+Local validation passed with the expanded commands and fresh frontend assets:
+23 widget tests passed without any backend container, and 21 application
+tests passed against a fresh app/database. The union of downloaded-style
+JUnit records matches all 44 pipeline-52 identities/outcomes, with no overlap,
+omissions or retries. Default test discovery still lists all 44 tests.
+The production frontend build and typecheck passed. A widget-only repeat
+under a two-CPU limit took 47.4 seconds with one worker and 28.0 seconds with
+two; both retained exact 23-test parity and required no retries. These local
+Docker Desktop timings are diagnostic, not a hosted benchmark. A disposable
+intentional widget failure retained JUnit, HTML, screenshot, video and a valid
+trace archive. The failure probe is not committed.
 
 
 ### MariaDB image comparison
