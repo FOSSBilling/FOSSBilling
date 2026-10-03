@@ -331,7 +331,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $vars['_tpl'] = $data['_tpl'] ?? $t['content'];
         $systemService = $this->getDi()['mod_service']('System');
 
-        return $systemService->renderEmailTplString($vars['_tpl'], $vars);
+        // Preview-only output, which the modal re-escapes for display: decoded
+        // form keeps subject previews accurate, content previews unchanged.
+        return $systemService->renderEmailSubjectString($vars['_tpl'], $vars);
     }
 
     /**

@@ -86,6 +86,66 @@ test('getCompany returns company information', function (): void {
     expect($result)->toBe($expected);
 });
 
+test('getCompany returns raw values without HTML-encoding them', function (): void {
+    // Escaping here double-escapes in templates and bakes entities into
+    // stored snapshots.
+    $service = new Service();
+
+    $multParamsResults = [
+        [
+            'param' => 'company_name',
+            'value' => 'A & B <Ltd>',
+        ],
+        [
+            'param' => 'company_email',
+            'value' => 'a&b@example.com',
+        ],
+        [
+            'param' => 'company_address_1',
+            'value' => '5 "Main" St',
+        ],
+        [
+            'param' => 'company_vat_number',
+            'value' => "O'Brien",
+        ],
+    ];
+    $resultMock = Mockery::mock(Doctrine\DBAL\Result::class);
+    $resultMock->shouldReceive('fetchAllAssociative')
+        ->once()
+        ->andReturn($multParamsResults);
+
+    $queryBuilderMock = Mockery::mock(Doctrine\DBAL\Query\QueryBuilder::class);
+    $queryBuilderMock->shouldReceive('select')->once()->with('param', 'value')->andReturnSelf();
+    $queryBuilderMock->shouldReceive('from')->once()->with('setting')->andReturnSelf();
+    $queryBuilderMock->shouldReceive('where')->once()->with('param IN (:params)')->andReturnSelf();
+    $queryBuilderMock->shouldReceive('setParameter')->once()->andReturnSelf();
+    $queryBuilderMock->shouldReceive('executeQuery')->once()->andReturn($resultMock);
+
+    $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $dbalMock->shouldReceive('createQueryBuilder')->once()->andReturn($queryBuilderMock);
+
+    $di = container();
+    $di['dbal'] = $dbalMock;
+
+    $service->setDi($di);
+
+    $result = $service->getCompany();
+    expect($result['name'])->toBe('A & B <Ltd>')
+        ->and($result['email'])->toBe('a&b@example.com')
+        ->and($result['address_1'])->toBe('5 "Main" St')
+        ->and($result['vat_number'])->toBe("O'Brien");
+});
+
+test('renderEmailSubjectString decodes the HTML autoescape pass', function (): void {
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('renderEmailTplString')
+        ->once()
+        ->with('[A & B Ltd] Invoice', [], null)
+        ->andReturn('[A &amp; B Ltd] Invoice');
+
+    expect($service->renderEmailSubjectString('[A & B Ltd] Invoice', []))->toBe('[A & B Ltd] Invoice');
+});
+
 test('getParams returns system parameters', function (): void {
     $service = new Service();
     $expected = [

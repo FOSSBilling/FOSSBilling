@@ -210,3 +210,9 @@ test('callback signature verification accepts matching signatures only', functio
         FOSSBilling\Config::setProperty('info.salt', $previousSalt, false);
     }
 });
+
+test('validate and sanitize email returns the address unescaped', function (): void {
+    $tools = new FOSSBilling\Tools();
+
+    expect($tools->validateAndSanitizeEmail('foo&bar@example.com', true, false))->toBe('foo&bar@example.com');
+});

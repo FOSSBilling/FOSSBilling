@@ -56,7 +56,8 @@ test('sendMessage builds the mail payload from the client entity without a fatal
     $clientService->shouldReceive('toApiArray')->with($client, true, null)->once()->andReturn([]);
 
     $systemService = Mockery::mock(Box\Mod\System\Service::class);
-    $systemService->shouldReceive('renderEmailTplString')->twice()->andReturn('');
+    $systemService->shouldReceive('renderEmailSubjectString')->once()->andReturn('');
+    $systemService->shouldReceive('renderEmailTplString')->once()->andReturn('');
 
     $extensionService = Mockery::mock(Box\Mod\Extension\Service::class);
     $extensionService->shouldReceive('isExtensionActive')->with('mod', 'demo')->once()->andReturn(false);

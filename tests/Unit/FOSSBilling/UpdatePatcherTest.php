@@ -32,11 +32,13 @@ test('invoice item attempts patch follows the manual currency rate patch', funct
 test('tld periods patch follows the invoice item attempts patch', function (): void {
     $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 97);
 
-    expect($patches)->toHaveCount(4)
+    expect($patches)->toHaveCount(5)
         ->toHaveKey(98)
         ->and($patches[98][1])->toBe('patch98')
         ->and($patches)->toHaveKey(117)
-        ->and($patches[117][1])->toBe('patch117');
+        ->and($patches[117][1])->toBe('patch117')
+        ->and($patches)->toHaveKey(118)
+        ->and($patches[118][1])->toBe('patch118');
 });
 
 test('tld periods patch adds the column for existing installs', function (): void {
@@ -143,6 +145,105 @@ test('client balance gateway patch restores one-time payments', function (): voi
     $patcher = new UpdatePatcher();
     $patcher->setDi($di);
     (new ReflectionMethod($patcher, 'patch91'))->invoke($patcher);
+});
+
+test('legacy entity decode patch follows the news post description patch', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 117);
+
+    expect($patches)->toHaveKey(118)
+        ->and($patches[118][1])->toBe('patch118');
+});
+
+test('legacy entity decode repair restores raw invoice and notification values', function (): void {
+    // Uses real SQLite to prove the repair is portable SQL. patch118 runs
+    // exactly once per install, so rows written raw afterwards are never scanned.
+    $pdo = new PDO('sqlite::memory:');
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $pdo->exec('CREATE TABLE invoice (id INTEGER PRIMARY KEY, seller_company TEXT, seller_company_vat TEXT, seller_company_number TEXT, seller_address TEXT, seller_phone TEXT, seller_email TEXT)');
+    $pdo->exec("INSERT INTO invoice (seller_company, seller_company_vat, seller_company_number, seller_address, seller_phone, seller_email) VALUES ('A &amp; B Ltd', 'GB&amp;123', NULL, '5 &lt;Main&gt; St', 'O&#039;Brien', 'a&amp;b@example.com')");
+    $pdo->exec("INSERT INTO invoice (seller_company) VALUES ('Plain Company')");
+    $pdo->exec('CREATE TABLE extension_meta (id INTEGER PRIMARY KEY, extension TEXT, rel_type TEXT, rel_id TEXT, meta_key TEXT, meta_value TEXT)');
+    $pdo->exec("INSERT INTO extension_meta (extension, rel_type, rel_id, meta_key, meta_value) VALUES ('mod_notification', 'staff', '1', 'message', 'Call A &amp; B about the invoice')");
+    $pdo->exec("INSERT INTO extension_meta (extension, rel_type, rel_id, meta_key, meta_value) VALUES ('mod_notification', 'staff', '1', 'message', 'Plain note')");
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    // Invoke the repair directly: patch118's setPatchLevel() bookkeeping is
+    // MySQL-only SQL (`ON DUPLICATE KEY UPDATE`), so the data assertions run
+    // here while the mocked rollback test below covers the patch wiring.
+    $repair = new ReflectionMethod($patcher, 'decodeLegacyServiceEscapedEntities');
+
+    $repair->invoke($patcher);
+
+    $invoice = $pdo->query('SELECT * FROM invoice WHERE id = 1')->fetch(PDO::FETCH_ASSOC);
+    expect($invoice['seller_company'])->toBe('A & B Ltd')
+        ->and($invoice['seller_company_vat'])->toBe('GB&123')
+        ->and($invoice['seller_company_number'])->toBeNull()
+        ->and($invoice['seller_address'])->toBe('5 <Main> St')
+        ->and($invoice['seller_phone'])->toBe("O'Brien")
+        ->and($invoice['seller_email'])->toBe('a&b@example.com');
+
+    $plain = $pdo->query('SELECT seller_company FROM invoice WHERE id = 2')->fetchColumn();
+    expect($plain)->toBe('Plain Company');
+
+    $note = $pdo->query("SELECT meta_value FROM extension_meta WHERE meta_key = 'message' AND id = 1")->fetchColumn();
+    expect($note)->toBe('Call A & B about the invoice');
+
+    $plainNote = $pdo->query("SELECT meta_value FROM extension_meta WHERE meta_key = 'message' AND id = 2")->fetchColumn();
+    expect($plainNote)->toBe('Plain note');
+
+    // Second run must change nothing.
+    $repair->invoke($patcher);
+
+    expect($pdo->query('SELECT * FROM invoice WHERE id = 1')->fetch(PDO::FETCH_ASSOC))->toBe($invoice)
+        ->and($pdo->query("SELECT meta_value FROM extension_meta WHERE meta_key = 'message' AND id = 1")->fetchColumn())->toBe('Call A & B about the invoice');
+});
+
+test('legacy entity decode patch rolls back row repairs when the patch level cannot be recorded', function (): void {
+    // Without atomicity, rows committed before a failed setPatchLevel() would
+    // be decoded a second time on retry.
+    $selectInvoices = Mockery::mock(PDOStatement::class);
+    $selectInvoices->expects('execute')->with([])->andReturnTrue();
+    $selectInvoices->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['id' => 1, 'seller_company' => 'A &amp; B Ltd', 'seller_company_vat' => null, 'seller_company_number' => null, 'seller_address' => null, 'seller_phone' => null, 'seller_email' => null],
+    ]);
+
+    $updateInvoice = Mockery::mock(PDOStatement::class);
+    $updateInvoice->expects('execute')->with(['seller_company' => 'A & B Ltd', 'id' => 1])->andReturnTrue();
+
+    $selectNotes = Mockery::mock(PDOStatement::class);
+    $selectNotes->expects('execute')->with([])->andReturnTrue();
+    $selectNotes->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([]);
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('beginTransaction')->once()->andReturnTrue();
+    $pdo->expects('rollBack')->once()->andReturnTrue();
+    $pdo->shouldNotReceive('commit');
+    $pdo->expects('prepare')
+        ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'SELECT id, seller_company')))
+        ->andReturn($selectInvoices);
+    $pdo->expects('prepare')
+        ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'UPDATE invoice SET')))
+        ->andReturn($updateInvoice);
+    $pdo->expects('prepare')
+        ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'SELECT id, meta_value')))
+        ->andReturn($selectNotes);
+    $pdo->expects('prepare')
+        ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'INSERT INTO setting')))
+        ->andThrow(new RuntimeException('level write failed'));
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+
+    expect(fn (): mixed => (new ReflectionMethod($patcher, 'patch118'))->invoke($patcher))
+        ->toThrow(FOSSBilling\Exception::class, 'There was an error while applying database patches');
 });
 
 test('patch status reports the database level against the code level', function (): void {

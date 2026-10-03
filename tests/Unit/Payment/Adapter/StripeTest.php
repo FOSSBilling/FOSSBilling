@@ -2095,3 +2095,13 @@ describe('applyOneTimePayment already-paid guard', function (): void {
         expect($addFundsCalled)->toBeFalse();
     });
 });
+
+test('checkout buyer details are encoded as JS string literals', function (): void {
+    // HTML entities are never decoded inside <script>, so HTML-escaping would
+    // corrupt the data sent to Stripe.
+    $encoded = invokePrivateMethod($this->adapter, 'encodeJsString', ["O'Brien & <Sons>"]);
+
+    expect($encoded)->toBe('"O\u0027Brien \u0026 \u003CSons\u003E"')
+        ->and(json_decode($encoded))->toBe("O'Brien & <Sons>")
+        ->and($encoded)->not->toContain('</script>');
+});
