@@ -246,7 +246,7 @@ workflows:
           matrix:
             parameters:
               php-minor: ['3', '4', '5']
-      - frontend-build
+      - frontend-build:
           name: Frontend (build)
       - frontend-browser-tests:
           name: Frontend (browser tests)
