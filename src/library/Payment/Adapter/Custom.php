@@ -82,7 +82,7 @@ class Payment_Adapter_Custom
     public function processTransaction(FOSSBilling\Api\Proxy $api_admin, int $id, array $data, int $gateway_id)
     {
         if (!$this->isIpnValid($data)) {
-            throw new Payment_Exception('Custom payment gateway callbacks must be confirmed by an administrator.');
+            throw new Payment_Exception('Custom payments must be approved by an administrator.');
         }
 
         try {
