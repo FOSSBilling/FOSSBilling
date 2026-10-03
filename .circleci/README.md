@@ -288,8 +288,8 @@ the uploaded artifacts. The native repeat in pipeline 22 passed in 2m14s using
 Apache and the matching Playwright browser in each fresh job.
 
 The Docker compatibility workflow and the native proof's stage control have
-been removed. Current pipelines run the complete six-job validation workflow
-without activation parameters.
+been removed. At that stage, pipelines ran the complete six-job validation workflow
+without activation parameters. The widget separation below adds a seventh job.
 
 ### Dependency orb refactor
 
@@ -460,6 +460,28 @@ two; both retained exact 23-test parity and required no retries. These local
 Docker Desktop timings are diagnostic, not a hosted benchmark. A disposable
 intentional widget failure retained JUnit, HTML, screenshot, video and a valid
 trace archive. The failure probe is not committed.
+
+Hosted pipeline [55](https://app.circleci.com/pipelines/github/FOSSBilling/FOSSBilling/55),
+revision `298b2b3056a702069ba4dc6a7510b41d6c855f8b`, passed all seven jobs.
+Downloaded JUnit verifies 23 widget and 21 application tests, with a disjoint
+union matching every pipeline-52 test identity/outcome. Both HTML reports
+were downloaded and checked; neither browser job required retries. Existing
+Actions CI, quality and CodeQL checks passed on this revision.
+
+| Hosted measurement | Pipeline 52 | Pipeline 55 |
+| --- | --- | --- |
+| Workflow duration (Insights) | 2m05s | 1m20s |
+| Workflow credits (Insights) | 57 | 57 |
+| Application browser job elapsed | 99.2s (all 44 tests) | 61.9s (21 tests) |
+| Widget browser job elapsed | Included above | 50.4s (23 tests) |
+| Browser test execution | 62.8s combined | 18.4s app / 23.6s widgets, concurrently |
+
+This single sample reduced workflow duration by 45 seconds at unchanged
+credits. It includes the application job's return to in-container Chromium
+installation, which took 18.5 seconds, alongside widget separation and
+parallelism. Further warm/cold samples are needed before treating the result
+as a sustained improvement. Hosted failure-artifact uploads still need a
+dedicated failure trial; local retention has been verified.
 
 
 ### MariaDB image comparison
