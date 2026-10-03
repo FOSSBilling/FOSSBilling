@@ -1,4 +1,4 @@
-<!-- cspell:words buildx zstd cimg FPM -->
+<!-- cspell:words buildx zstd cimg FPM pwuser -->
 # CircleCI validation
 
 Each CircleCI pipeline runs the `validation` workflow: PHP 8.3/8.4/8.5 tests,
@@ -332,8 +332,8 @@ cache transfers and performance remain unverified with the new orb caches.
 
 ### PHP matrix expansion
 
-The `php-tests` job uses CircleCI's matrix syntax to create `php-tests-8.3`,
-`php-tests-8.4` and `php-tests-8.5`. The `php-minor` parameter selects one of
+The `php-tests` job uses CircleCI's matrix syntax to create `PHP tests (8.3)`,
+`PHP tests (8.4)` and `PHP tests (8.5)`. The `php-minor` parameter selects one of
 three executors with digest-pinned images and `medium.gen2` resources. Every
 version installs locked dependencies, prepares the same configuration, runs
 the existing Pest suite and uploads JUnit. Artifact destinations include the
@@ -379,9 +379,34 @@ browser, spellcheck, quality and CodeQL checks passed on the tested revision;
 its preview packaging workflow was still pending when these results were
 recorded. Packaging and PR quality coverage on CircleCI remain future work.
 
+### Official Playwright service experiment
+
+Browser jobs keep PHP/Node, Apache and the checkout in their primary container,
+with MariaDB and the pinned official Playwright 1.62.1 Noble image as services.
+The Playwright service runs `playwright@1.62.1 run-server` as `pwuser` on port
+3000. The matching test runner connects through `PW_TEST_CONNECT_WS_ENDPOINT`.
+Only browser jobs start this service; live API jobs keep their two-container
+environment. The primary no longer downloads Chromium or installs browser
+system packages on every run. Test selection, retries and report paths stay
+the same.
+
+The preceding browser job spent 18.8 seconds installing its runner and browser,
+and 59.1 seconds executing tests. Compare total job startup and execution,
+including the official image pull and browser-server startup, before claiming
+a performance gain. First verify all 44 tests and a disposable failure probe
+locally before a hosted comparison. Configuration validation and expansion
+passed. After Docker Desktop was restarted, the expanded browser job ran
+locally with the pinned PHP, MariaDB and official Playwright images sharing
+a network namespace. All 44 tests passed with exact identity/outcome parity
+against pipeline 25. A separate disposable test failed deliberately and
+retained its JUnit, HTML, screenshot, video and valid trace archive in the
+primary container. The probe is not part of the committed suite. Local
+execution does not establish hosted performance or artifact-upload behavior.
+
 
 References:
 
+- [Playwright Docker and remote connections](https://playwright.dev/docs/docker)
 - [PHP orb](https://circleci.com/developer/orbs/orb/circleci/php)
 - [Node orb](https://circleci.com/developer/orbs/orb/circleci/node)
 - [PHP convenience image](https://circleci.com/developer/images/image/cimg/php)
