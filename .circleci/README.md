@@ -694,6 +694,43 @@ from normal validation runs and application release publishing.
 
 
 
+### Frontend concurrency and resource trial
+
+The production core, admin and client builders write separate output trees.
+The CircleCI runner `.circleci/scripts/build-frontend.sh` runs the existing
+`npm run check` first, launches those three existing build scripts together,
+waits for every status, prints each log and fails if any build failed. Only
+a successful build group proceeds to the existing `npm run pw:tsc`.
+Per-build logs are retained as artifacts; the three frontend workspace paths
+and default Actions/local `npm run build` behavior remain unchanged.
+
+A clean pinned Node 24.9.0 container with locked dependencies compared
+sequential/concurrent builds at two CPUs/4 GB and four CPUs/8 GB. Three rounds
+reversed trial order in the middle round. Each run removed all three output
+trees and completed every existing check. All 12 runs produced exactly the
+same SHA-256 hashes for all 300 generated files.
+
+| Local median build/check time | Two CPUs | Four CPUs |
+| --- | --- | --- |
+| Sequential | 6.84s | 6.58s |
+| Concurrent | 5.75s | 4.15s |
+
+A deliberate Sass error in the disposable admin source made the runner fail,
+retain its error log, wait for the core/client builds and skip the browser
+typecheck. Restoring the fixture restored success. These local measurements
+exclude dependency installation, checkout, workspace upload and hosted CPU
+performance. Pipeline 62's sequential build/check step was already 4.3s in a
+14.0s frontend job, so whole-job savings may be small.
+
+For the hosted trial, the standard workflow uses `medium.gen2` and a temporary
+separate workflow runs the identical frontend job on `large.gen2`. Its
+workspace has no consumers and cannot collide with the validation workspace.
+[CircleCI pricing](https://circleci.com/pricing/price-list/) lists 12 and 24
+credits/minute respectively. Compare complete frontend-job time and credits,
+not build time alone; remove the temporary workflow/resource parameter after
+choosing the final resource class.
+
+
 ### MariaDB image comparison
 
 On 2026-10-03, the pinned upstream `mariadb:lts` image reported MariaDB

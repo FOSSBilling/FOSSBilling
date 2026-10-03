@@ -118,9 +118,14 @@ jobs:
           destination: unit-results-php-8.<< parameters.php-minor >>
 
   frontend-build:
+    parameters:
+      resource-class:
+        type: enum
+        enum: [medium.gen2, large.gen2]
+        default: medium.gen2
     docker:
       - image: cimg/node:24.9.0@sha256:4729cd041e58fd288a12475aa011b7b62c58d351703813e6b7e0746a701e9602
-    resource_class: medium.gen2
+    resource_class: << parameters.resource-class >>
     steps:
       - checkout
       - run: node --version && npm --version && git rev-parse HEAD
@@ -131,7 +136,10 @@ jobs:
           override-ci-command: npm ci --no-audit --no-fund
       - run:
           name: Build production assets and typecheck browser tests
-          command: NODE_ENV=production npm run build && npm run pw:tsc
+          command: NODE_ENV=production bash .circleci/scripts/build-frontend.sh
+      - store_artifacts:
+          path: test-results/frontend-build
+          destination: frontend-build-diagnostics
       - persist_to_workspace:
           root: .
           paths:
@@ -223,6 +231,12 @@ jobs:
           destination: native-app-logs
 
 workflows:
+  # Temporary resource comparison; separate workflow isolates its workspace.
+  frontend-resource-trial:
+    jobs:
+      - frontend-build:
+          name: frontend-build-large-trial
+          resource-class: large.gen2
   validation:
     jobs:
       - php-tests:
