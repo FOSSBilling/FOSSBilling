@@ -96,9 +96,18 @@ jobs:
           condition:
             equal: ['3', << parameters.php-minor >>]
           steps:
+            - restore_cache:
+                keys:
+                  - phpstan-v1-php8.3-{{ arch }}-{{ checksum "composer.lock" }}-{{ checksum "phpstan.neon" }}-{{ checksum ".circleci/phpstan.neon" }}-{{ .Branch }}-{{ .Revision }}
+                  - phpstan-v1-php8.3-{{ arch }}-{{ checksum "composer.lock" }}-{{ checksum "phpstan.neon" }}-{{ checksum ".circleci/phpstan.neon" }}-{{ .Branch }}-
             - run:
                 name: PHPStan tests
-                command: ./src/vendor/bin/phpstan analyse --configuration phpstan.neon --memory-limit=512M
+                command: ./src/vendor/bin/phpstan analyse --configuration .circleci/phpstan.neon --memory-limit=512M --no-progress -vv
+            # Result caches need a new snapshot per revision: CircleCI caches are immutable.
+            - save_cache:
+                key: phpstan-v1-php8.3-{{ arch }}-{{ checksum "composer.lock" }}-{{ checksum "phpstan.neon" }}-{{ checksum ".circleci/phpstan.neon" }}-{{ .Branch }}-{{ .Revision }}
+                paths:
+                  - cache/phpstan
       - run:
           name: Pest unit and module tests
           command: ./src/vendor/bin/pest --test-directory ../tests --configuration phpunit.xml.dist --ci --log-junit test-results/unit/unit.xml

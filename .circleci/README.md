@@ -540,6 +540,37 @@ change removes unnecessary dependencies and a duplicate runner installation
 while preserving the tested application suite.
 
 
+### PHPStan result caching
+
+Only the PHP 8.3 job restores and saves PHPStan results. The CircleCI overlay
+`.circleci/phpstan.neon` includes the root analysis configuration and sets
+`tmpDir` to the ignored `cache/phpstan` directory. The full `src` scope,
+rule level and bootstrap remain inherited; GitHub Actions and default local
+commands continue using the root configuration.
+
+Native cache keys isolate PHP 8.3, executor architecture, Composer lockfile,
+both analysis configurations and branch. Exact revision lookup falls back
+to the latest matching branch snapshot. A new revision saves a new snapshot
+because CircleCI caches are immutable; this differs from dependency archives,
+which do not need refreshing after each successful analysis. Failed PHPStan
+steps do not publish a snapshot. Only this job writes the namespace.
+
+PHPStan checks file/dependency changes and its own runtime/configuration
+metadata before reusing results, and periodically performs a full analysis.
+`-vv` reports whether results were actually reused; a CircleCI archive hit
+alone is insufficient evidence. See the [PHPStan result cache documentation](https://phpstan.org/user-guide/result-cache).
+
+Local disposable PHP 8.3 containers passed the cold analysis (79s) and a
+fresh-container warm analysis (17.4s, zero files reanalysed). Adding a
+temporary method returning a string as `int` made the warm analysis fail
+with the expected `return.type` error and one file reanalysed. Removing
+that probe restored a pass. Config validation/expansion confirms only PHP
+8.3 gains the restore/analyse/save steps; PHP 8.4/8.5 remain unchanged.
+Hosted measurements must include restore/save overhead.
+This targets PHP analysis time and credits; the browser jobs currently gate
+workflow completion, so it may not reduce overall workflow duration.
+
+
 ### MariaDB image comparison
 
 On 2026-10-03, the pinned upstream `mariadb:lts` image reported MariaDB
