@@ -425,8 +425,43 @@ run. Warm/cold repeats and hosted failure-artifact uploads remain separate
 validation work; the local probe proves transfer back to the runner only.
 
 
+### MariaDB image comparison
+
+On 2026-10-03, the pinned upstream `mariadb:lts` image reported MariaDB
+12.3.3. `cimg/mariadb:12.3` was not available, so changing providers would
+also change database versions. Keep the current service image for now.
+
+A disposable local comparison used MariaDB 11.8.7 from both providers,
+with pinned digests, `linux/amd64`, fresh data directories, identical
+`MARIADB_DATABASE`/`MARIADB_ROOT_PASSWORD` variables and authenticated TCP
+queries. Three sequential trials per provider alternated execution order;
+each verified the server version and an InnoDB write/read. Image pulls were
+completed before timing began. Every disposable container and its anonymous
+data volume was removed afterwards.
+
+| Local diagnostic | Upstream MariaDB | CircleCI MariaDB |
+| --- | --- | --- |
+| SQL-ready time, three trials | 7.2s / 7.1s / 4.9s | 7.0s / 10.3s / 11.1s |
+| Median SQL-ready time | 7.1s | 10.3s |
+| Compressed amd64 layers | 103.8 MB | 451.7 MB |
+| Unpacked local image | 453.4 MB | 1,962.8 MB |
+
+The upstream 11.8.7 index digest was
+`sha256:78185355dd49b54dd6909072531ce8d7e06aa0eccd7aa5b23c93ebb7e34c5aaa`;
+the CircleCI digest was
+`sha256:58b31276d40c929fd93efca8e594de457fdc8e79b5f0a27b39638afa02ba51a5`.
+CircleCI's image includes its base toolchain; that is useful for a primary
+executor but offers no demonstrated gain for this database service. The
+Ubuntu bases differ (24.04 upstream, 22.04 CircleCI). These small local
+Docker Desktop measurements do not predict hosted pull/cache timings or
+full-suite performance. No config change or hosted run was made for this
+comparison. Revisit if a matching version becomes available or measurements
+identify database readiness as a bottleneck.
+
 References:
 
+- [CircleCI MariaDB image](https://circleci.com/developer/images/image/cimg/mariadb)
+- [CircleCI MariaDB Dockerfile](https://github.com/CircleCI-Public/cimg-mariadb/blob/main/11.8/Dockerfile)
 - [Playwright Docker and remote connections](https://playwright.dev/docs/docker)
 - [PHP orb](https://circleci.com/developer/orbs/orb/circleci/php)
 - [Node orb](https://circleci.com/developer/orbs/orb/circleci/node)
