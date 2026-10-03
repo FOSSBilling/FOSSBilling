@@ -77,8 +77,8 @@ test('offline payments settle through approval instead of processing', function 
         expect($settled->getResult()['status'])->toBe('processed');
 
         // Approving again stays a success: settlement is idempotent.
-        $reapproved = Tests\Helpers\ApiClient::request('admin/invoice/transaction_approve', ['id' => $txId]);
-        assertApiSuccess($reapproved);
+        $approvedAgain = Tests\Helpers\ApiClient::request('admin/invoice/transaction_approve', ['id' => $txId]);
+        assertApiSuccess($approvedAgain);
     } finally {
         approvePathCleanupClient();
     }
