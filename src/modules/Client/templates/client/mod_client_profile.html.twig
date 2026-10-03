@@ -27,6 +27,7 @@
                            data-bs-target="#details-tab-pane" href="#details-tab-pane">{{ 'Details'|trans }}</a>
                         <a class="nav-link" id="pass-tab" data-bs-toggle="tab" data-bs-target="#pass-tab-pane"
                            href="#pass-tab-pane">{{ 'Change Password'|trans }}</a>
+                        {{ render_widgets('client.profile.tabs') }}
                         <a class="nav-link" id="apikey-tab" data-bs-toggle="tab"
                            data-bs-target="#apikey-tab-pane" href="#apikey-tab-pane">{{ 'API Key'|trans }}</a>
                         <a class="nav-link" id="currency-tab" data-bs-toggle="tab"
@@ -200,6 +201,7 @@
                             <button class="btn btn-primary" type="submit">{{ 'Change Password'|trans }}</button>
                         </form>
                     </div>
+                    {{ render_widgets('client.profile.tab_content') }}
                     <div class="card-body tab-pane" id="apikey-tab-pane" role="tabpanel" tabindex="0">
                         <h5 class="card-title mb-1">{{ 'API Key'|trans }}</h5>
                         <p class="card-text fs-7 text-muted">{{ 'API key allows integration with external applications. You will need this key for authentication.'|trans }}</p>
@@ -235,3 +237,4 @@
 
     </div>
 {% endblock %}
+

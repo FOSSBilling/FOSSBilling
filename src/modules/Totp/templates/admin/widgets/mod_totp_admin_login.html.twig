@@ -1,0 +1,42 @@
+<div class="modal fade" id="admin-totp-login-modal" tabindex="-1" aria-labelledby="admin-totp-login-title" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="admin-totp-login-title">{{ 'Two-Factor Authentication'|trans }}</h5>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted">{{ 'Enter the code from your authenticator app or use a recovery code to continue.'|trans }}</p>
+                <label class="form-label" for="admin-totp-login-code">{{ 'Verification code'|trans }}</label>
+                <input class="form-control" id="admin-totp-login-code" type="text" inputmode="numeric" autocomplete="one-time-code" autofocus>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="admin-totp-login-submit" type="button">{{ 'Continue'|trans }}</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    (() => {
+        window.setTimeout(() => {
+        const form = document.querySelector('form[data-fb-api]');
+        const modal = document.getElementById('admin-totp-login-modal');
+        const code = document.getElementById('admin-totp-login-code');
+        const modalInstance = () => (window.tabler?.Modal || window.bootstrap?.Modal).getOrCreateInstance(modal);
+        const showChallenge = () => { code.value = ''; modalInstance().show(); setTimeout(() => code.focus(), 250); };
+        document.addEventListener('submit', (event) => {
+            if (event.target !== form) return;
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            const data = FOSSBilling.tools.serializeFormDataToObject(new FormData(form));
+            FOSSBilling.api.guest.post('staff/login', data, () => window.location.assign('{{ '/'|url(area: 'admin') }}'), (error) => {
+                if (String(error.message).toLowerCase().includes('two-factor authentication is required')) {
+                    showChallenge();
+                    return;
+                }
+                FOSSBilling.ui.notify(`${error.message} (${error.code})`, 'error');
+            });
+        }, true);
+        document.getElementById('admin-totp-login-submit').addEventListener('click', () => FOSSBilling.api.guest.post('totp/challenge', { code: code.value }, () => window.location.assign('{{ '/'|url(area: 'admin') }}'), (error) => FOSSBilling.ui.notify(`${error.message} (${error.code})`, 'error')));
+        }, 0);
+    })();
+</script>

@@ -1,5 +1,6 @@
 // @ts-nocheck -- Runtime DOM/widget integration; converted to TS without changing behavior.
 import { formatCurrencyAmount } from './currency-format.mts';
+import QRCode from 'qrcode';
 
 /**
  * FOSSBilling browser runtime.
@@ -10,6 +11,7 @@ import { formatCurrencyAmount } from './currency-format.mts';
   'use strict';
 
   const FOSSBilling = window.FOSSBilling || {};
+  FOSSBilling.qrCode = QRCode;
   const readyCallbacks = [];
   const editorsByElement = new WeakMap();
   const editorsByName = new Map();

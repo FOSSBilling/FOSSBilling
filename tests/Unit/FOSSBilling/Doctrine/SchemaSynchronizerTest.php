@@ -35,6 +35,7 @@ function schemaSynchronizerFixture(): array
         Box\Mod\Custompages\Entity\CustomPage::class,
         Box\Mod\Massmailer\Entity\MassmailerMessage::class,
         Box\Mod\Serviceapikey\Entity\ServiceApiKey::class,
+        Box\Mod\Totp\Entity\TotpCredential::class,
     ]);
 
     return [$connection, $entityManager];

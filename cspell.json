@@ -626,7 +626,14 @@
         "emailaddr",
         "telno",
         "telnocc",
-        "actionstatus"
+        "actionstatus",
+        "totp",
+        "TOTP",
+        "otpauth",
+        "qrcode",
+        "Sviatoslav",
+        "Kubis",
+        "longtext"
     ],
     "ignorePaths": [
         "node_modules/**",
