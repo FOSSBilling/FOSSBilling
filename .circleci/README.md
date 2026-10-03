@@ -652,7 +652,7 @@ Bash syntax, config validation and spelling checks passed.
 This is a local feasibility result. Pipeline 56's hosted app setup was
 already 7.4s, and prepared-image pull/startup time is still unmeasured.
 The local result justified a hosted trial; Docker Hub publication was
-subsequently agreed and completed. Hosted startup savings remain to be measured.
+subsequently agreed and completed. The initial hosted results below measure startup and setup separately.
 
 Pipeline [61](https://app.circleci.com/pipelines/github/FOSSBilling/FOSSBilling/61)
 passed all seven jobs at `25434d453bdabe85a4b0550a80a64e3caab6865f`
@@ -660,6 +660,36 @@ using the original executor image. This verifies the installation fallback,
 not prepared-image hosted performance. PHPStan also reused pipeline 57's
 branch snapshot on this new revision and passed in 1.6s, confirming the
 cross-revision cache fallback from the previous trial.
+
+Hosted pipeline [62](https://app.circleci.com/pipelines/github/FOSSBilling/FOSSBilling/62)
+passed all seven jobs at `e3e4973e654091036e1219c76feb37119bc68427`
+with the published prepared image. Existing Actions CI, quality and CodeQL
+checks passed. Downloaded JUnit preserves all 91 live API and 21 application
+browser test identities/outcomes, without browser retries. HTML and server
+logs are present. Startup logs confirm no runtime Apache package install.
+
+| Hosted measurement | Pipeline 61: current base | Pipeline 62: prepared Apache |
+| --- | --- | --- |
+| Browser environment startup | 1.2s | 1.5s |
+| Browser app setup | 8.6s | 2.1s |
+| Browser job elapsed | 54.6s | 52.5s |
+| Live API environment startup | 1.1s | 1.5s |
+| Live API app setup | 7.9s | 2.0s |
+| Live API job elapsed | 41.7s | 36.4s |
+| Full workflow duration (Insights) | 82s | 72s |
+| Full workflow credits (Insights) | 53 | 48 |
+
+Prepared-image setup saves roughly six seconds in each integration job,
+while startup adds about 0.4s in this first sample. Chromium installation
+rose from 17.5s to 21.8s, offsetting part of the browser setup saving.
+These are individual runs: the whole-workflow difference also includes
+variation in unchanged jobs and does not establish sustained credit or
+runtime gains. Retain the prepared image for the demonstrated setup saving
+and removal of per-job Apache package downloads. Rollback requires restoring
+the prior pinned `cimg/php:8.5.10-node` primary image; the script retains its
+installation fallback. Publishing or rebuilding this tool image is separate
+from normal validation runs and application release publishing.
+
 
 
 
