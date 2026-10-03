@@ -44,17 +44,21 @@ class i18n
         $cookieLocale = $request->cookies->get(CookieNames::LOCALE);
         $legacyCookieLocale = $request->cookies->get(CookieNames::LEGACY_LOCALE);
         $cookieBBLANG = $request->cookies->get(CookieNames::LEGACY_BOX_LOCALE);
+        $enabledLocales = [];
+        if (!empty($cookieLocale) || !empty($legacyCookieLocale) || !empty($cookieBBLANG)) {
+            $enabledLocales = self::getLocales();
+        }
 
         /*
          * If the locale cookie is set and it's one of the enabled locales, use that.
          * Otherwise, fallback to auto-detection when enable.
          */
-        if (!empty($cookieLocale) && in_array($cookieLocale, self::getLocales())) {
+        if (!empty($cookieLocale) && in_array($cookieLocale, $enabledLocales, true)) {
             $locale = $cookieLocale;
-        } elseif (!empty($legacyCookieLocale) && in_array($legacyCookieLocale, self::getLocales())) {
+        } elseif (!empty($legacyCookieLocale) && in_array($legacyCookieLocale, $enabledLocales, true)) {
             $locale = $legacyCookieLocale;
             $cookies?->queue(CookieNames::LOCALE, (string) $locale, strtotime('+1 month'), '/');
-        } elseif (!empty($cookieBBLANG) && in_array($cookieBBLANG, self::getLocales())) {
+        } elseif (!empty($cookieBBLANG) && in_array($cookieBBLANG, $enabledLocales, true)) {
             $locale = $cookieBBLANG;
             $cookies?->queue(CookieNames::LOCALE, (string) $locale, strtotime('+1 month'), '/');
         } elseif ($autoDetect && self::isBrowserLocaleDetectionEnabled()) {
@@ -83,12 +87,18 @@ class i18n
      */
     private static function getBrowserLocale(Request $request, ?CookieQueue $cookies = null): ?string
     {
+        // ext-intl is optional on some hosts. Without the Locale class these
+        // calls error fatally, so bail out and use the default locale.
+        if (!class_exists(\Locale::class)) {
+            return null;
+        }
+
         $header = $request->headers->get('Accept-Language', '');
 
         try {
             $detectedLocale = @\Locale::acceptFromHttp($header);
             $detectedLocale = @\Locale::canonicalize($detectedLocale . '.utf8');
-        } catch (\Exception) {
+        } catch (\Throwable) {
             $detectedLocale = '';
         }
 
@@ -98,7 +108,7 @@ class i18n
 
         try {
             $matchingLocale = \Locale::lookup(self::getLocales(), $detectedLocale, false, null);
-        } catch (\Exception) {
+        } catch (\Throwable) {
             $matchingLocale = null;
         }
 

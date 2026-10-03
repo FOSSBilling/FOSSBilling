@@ -381,7 +381,7 @@
                                 <div class="col-lg-6">
                                     <label class="form-label" for="expires_at">{{ 'Date Expires'|trans }}</label>
                                     <div class="input-icon">
-                                        <input class="form-control datepicker"
+                                        <input class="form-control datepicker" data-clear-label="{{ 'Clear date'|trans }}" data-invalid-date-label="{{ 'Enter a valid date in YYYY-MM-DD format.'|trans }}"
                                                id="expires_at"
                                                value="{% if order.expires_at %}{{ order.expires_at|date('Y-m-d') }}{% endif %}"
                                                name="expires_at"
@@ -409,6 +409,24 @@
                                     <div class="form-text">{{ 'Leave empty to inherit the product setting (%days% days).'|trans({ '%days%': order.product_suspension_grace_days|default(0) }) }}</div>
                                 </div>
                                 <div class="col-lg-6">
+                                    <label class="form-label d-block">{{ 'Merge Renewal Invoices'|trans }}</label>
+                                    <div class="d-flex flex-wrap gap-3">
+                                        <label class="form-check">
+                                            <input class="form-check-input" type="radio" name="merge_renewals" value=""{% if order.meta.merge_renewals|default('') == '' %} checked{% endif %}>
+                                            <span class="form-check-label">{{ 'Inherit'|trans }}</span>
+                                        </label>
+                                        <label class="form-check">
+                                            <input class="form-check-input" type="radio" name="merge_renewals" value="1"{% if order.meta.merge_renewals|default('') == '1' %} checked{% endif %}>
+                                            <span class="form-check-label">{{ 'Yes'|trans }}</span>
+                                        </label>
+                                        <label class="form-check">
+                                            <input class="form-check-input" type="radio" name="merge_renewals" value="0"{% if order.meta.merge_renewals|default('') == '0' %} checked{% endif %}>
+                                            <span class="form-check-label">{{ 'No'|trans }}</span>
+                                        </label>
+                                    </div>
+                                    <div class="form-text">{{ 'Combine this order’s renewals with other orders from the same client, currency, due date, and billing period. Inherits the client preference, then the global setting.'|trans }}</div>
+                                </div>
+                                <div class="col-lg-6">
                                     <label class="form-label" for="order_reason">{{ 'Reason'|trans }}</label>
                                     <input class="form-control" id="order_reason" type="text" name="reason" value="{{ order.reason }}">
                                 </div>
@@ -430,7 +448,7 @@
                                 </div>
                                 <div class="col-12">
                                     <label class="form-label" for="order_notes">{{ 'Notes'|trans }}</label>
-                                    <textarea class="form-control" id="order_notes" name="notes" rows="3">{{ order.notes }}</textarea>
+                                    <textarea data-bs-toggle="autosize" class="form-control" id="order_notes" name="notes" rows="3">{{ order.notes }}</textarea>
                                 </div>
                             </div>
                         {% endblock %}

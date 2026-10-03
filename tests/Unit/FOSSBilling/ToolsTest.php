@@ -10,6 +10,11 @@
 
 declare(strict_types=1);
 
+use Pimple\Container;
+use Psr\Log\NullLogger;
+use Symfony\Component\HttpClient\MockHttpClient;
+use Symfony\Component\HttpClient\Response\MockResponse;
+
 dataset('sanitizeContentProvider', fn (): array => [
     // [input, expected_output, allowSafeHtml]
     ['', '', false],
@@ -164,4 +169,53 @@ test('validate and sanitize email returns the address unescaped', function (): v
     $tools = new FOSSBilling\Tools();
 
     expect($tools->validateAndSanitizeEmail('foo&bar@example.com', true, false))->toBe('foo&bar@example.com');
+});
+
+test('external IP lookup skips private responses and trims a public response', function (): void {
+    $httpClient = new MockHttpClient([
+        new MockResponse('192.168.1.10'),
+        new MockResponse("8.8.8.8\n"),
+    ]);
+    $di = new Container();
+    $di['http_client'] = $httpClient;
+    $di['logger'] = new NullLogger();
+
+    $tools = new FOSSBilling\Tools();
+    $tools->setDi($di);
+
+    expect($tools->getExternalIP())->toBe('8.8.8.8')
+        ->and($httpClient->getRequestsCount())->toBe(2);
+});
+
+test('callback signature matches the HMAC of the gateway and invoice pair', function (): void {
+    $previousSalt = FOSSBilling\Config::getProperty('info.salt');
+    FOSSBilling\Config::setProperty('info.salt', 'test-salt', false);
+
+    try {
+        $expected = hash_hmac('sha256', '2|16', 'test-salt');
+
+        expect(FOSSBilling\Tools::signCallbackParams(2, 16))->toBe($expected)
+            ->and(FOSSBilling\Tools::signCallbackParams('2', '16'))->toBe($expected);
+    } finally {
+        FOSSBilling\Config::setProperty('info.salt', $previousSalt, false);
+    }
+});
+
+test('callback signature verification accepts matching signatures only', function (): void {
+    $previousSalt = FOSSBilling\Config::getProperty('info.salt');
+    FOSSBilling\Config::setProperty('info.salt', 'test-salt', false);
+
+    try {
+        $sig = FOSSBilling\Tools::signCallbackParams(2, 16);
+
+        expect(FOSSBilling\Tools::verifyCallbackSignature(2, 16, $sig))->toBeTrue()
+            ->and(FOSSBilling\Tools::verifyCallbackSignature(2, 99, $sig))->toBeFalse()
+            ->and(FOSSBilling\Tools::verifyCallbackSignature(7, 16, $sig))->toBeFalse()
+            ->and(FOSSBilling\Tools::verifyCallbackSignature(2, 16, 'tampered'))->toBeFalse()
+            ->and(FOSSBilling\Tools::verifyCallbackSignature(2, 16, ''))->toBeFalse()
+            ->and(FOSSBilling\Tools::verifyCallbackSignature(2, 16, null))->toBeFalse()
+            ->and(FOSSBilling\Tools::verifyCallbackSignature(2, 16, 12345))->toBeFalse();
+    } finally {
+        FOSSBilling\Config::setProperty('info.salt', $previousSalt, false);
+    }
 });

@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Theme\Controller;
 
+use Box\Mod\Theme\Event\BeforeAdminThemeSettingsSaveEvent;
 use Symfony\Component\HttpFoundation\Response;
 
 class Admin implements \FOSSBilling\InjectionAwareInterface
@@ -40,7 +41,11 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
     public function save_theme_settings(\Box_App $app, $theme): Response
     {
         $body = $app->getRequest()->request->all();
-        $this->di['events_manager']->fire(['event' => 'onBeforeThemeSettingsSave', 'params' => $body]);
+        $settingNames = array_values(array_diff(
+            array_map(static fn (int|string $key): string => (string) $key, array_keys($body)),
+            ['save-current-setting', 'save-current-setting-preset'],
+        ));
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminThemeSettingsSaveEvent((string) $theme, $settingNames));
 
         $api = $this->di['api_admin'];
 

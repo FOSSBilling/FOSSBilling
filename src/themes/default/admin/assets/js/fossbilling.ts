@@ -1,5 +1,6 @@
 // @ts-nocheck -- Runtime DOM/widget integration; converted to TS without changing behavior.
 import backToTop from "./ui/backToTop.ts";
+import { pruneListParamsForTab } from "./utils.ts";
 
 function renderTimeSeriesSparkline(...args) {
   return import("./ui/charts.ts").then(({ renderTimeSeriesSparkline: renderChart }) => renderChart(...args));
@@ -179,6 +180,12 @@ globalThis.FOSSBilling = Object.assign(globalThis.FOSSBilling || {}, {
      }
 
      const url = new URL(window.location.href);
+     const pane = document.getElementById(tabId);
+     const targetNamespace = pane ? pane.getAttribute('data-list-ns') : null;
+     const otherNamespaces = Array.from(document.querySelectorAll('.tab-pane[data-list-ns]'))
+       .filter((other) => other.id !== tabId)
+       .map((other) => other.getAttribute('data-list-ns') ?? '');
+     url.search = pruneListParamsForTab(url.search, targetNamespace, otherNamespaces);
      url.hash = tabId;
      url.searchParams.delete('tab');
      window.history.replaceState({}, '', url);
@@ -193,6 +200,35 @@ globalThis.FOSSBilling = Object.assign(globalThis.FOSSBilling || {}, {
        if (targetSelector) {
          syncTabUrl(targetSelector.slice(1));
        }
+     });
+
+     // Re-clicking the active tab resets its list; other panes keep the default no-op.
+     tabTrigger.addEventListener('click', function(event) {
+       const targetSelector = getTabTargetSelector(this);
+       if (!targetSelector) {
+         return;
+       }
+
+       const pane = document.getElementById(targetSelector.slice(1));
+       if (!pane || !pane.classList.contains('active')) {
+         return;
+       }
+
+       const namespace = pane.getAttribute('data-list-ns');
+       if (namespace === null) {
+         return;
+       }
+
+       const url = new URL(window.location.href);
+       const pruned = pruneListParamsForTab(url.search, null, [namespace]);
+       if (pruned === url.search && url.hash === targetSelector) {
+         return;
+       }
+
+       event.preventDefault();
+       url.search = pruned;
+       url.hash = targetSelector;
+       window.location.assign(url);
      });
    });
 
@@ -220,29 +256,6 @@ globalThis.FOSSBilling = Object.assign(globalThis.FOSSBilling || {}, {
      event.preventDefault();
      showTabById(targetSelector.slice(1));
    });
-
-   //===== Discord community popover (shown once) =====//
-   const discordBtn = document.getElementById('discord-community-btn');
-   const isDiscordBtnVisible = () => {
-     if (!discordBtn) {
-       return false;
-     }
-
-     const style = window.getComputedStyle(discordBtn);
-
-     return style.visibility !== 'hidden' && style.display !== 'none' && discordBtn.getClientRects().length > 0;
-   };
-
-   if (discordBtn && !localStorage.getItem('fb-discord-popover-seen') && isDiscordBtnVisible()) {
-     const popover = tabler.Popover.getOrCreateInstance(discordBtn);
-     localStorage.setItem('fb-discord-popover-seen', '1');
-     popover.show();
-     document.addEventListener('click', (e) => {
-       if (!discordBtn.contains(e.target)) {
-         popover.hide();
-       }
-     }, { once: true });
-   }
 
    //===== Search filter toggle state =====//
    const syncSearchFilterToggleState = (toggle, panel) => {

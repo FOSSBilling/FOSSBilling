@@ -3,6 +3,7 @@ import postcss from 'postcss';
 import * as sass from 'sass';
 import { PurgeCSS } from 'purgecss';
 import { dirname, join, resolve } from 'path';
+import { fileURLToPath } from 'url';
 import { mkdir, readFile, readdir, rm, stat, writeFile } from 'fs/promises';
 import * as esbuild from 'esbuild';
 import type { BuildOptions, Drop, Loader, Plugin } from 'esbuild';
@@ -21,6 +22,7 @@ interface PurgeOptions {
   enabled?: boolean;
   area?: 'admin' | 'client';
   additionalStandardSafelist?: RegExp[];
+  additionalGreedySafelist?: RegExp[];
 }
 
 interface CssBuildOptions {
@@ -145,6 +147,7 @@ export async function purgeCssFile(cssFilePath: string, options: PurgeOptions) {
     enabled = false,
     area = 'admin',
     additionalStandardSafelist = [],
+    additionalGreedySafelist = [],
   } = options;
 
   if (!enabled) {
@@ -157,7 +160,7 @@ export async function purgeCssFile(cssFilePath: string, options: PurgeOptions) {
 
   try {
     const css = await readFile(cssFilePath, 'utf8');
-    const modulesPath = resolve(themePath, '../../modules');
+    const modulesPath = resolve(dirname(fileURLToPath(import.meta.url)), '../../src/modules');
     const moduleArea = area === 'client' ? 'client' : 'admin';
 
     const purgeCSSResult = await new PurgeCSS().purge({
@@ -205,7 +208,7 @@ export async function purgeCssFile(cssFilePath: string, options: PurgeOptions) {
           ...additionalStandardSafelist,
         ],
         deep: [/tom-select/, /ts-/],
-        greedy: [/^theme-/],
+        greedy: [/^theme-/, ...additionalGreedySafelist],
       },
       defaultExtractor: content => content.match(/[A-Za-z0-9-_:/]+/g) || [],
     });

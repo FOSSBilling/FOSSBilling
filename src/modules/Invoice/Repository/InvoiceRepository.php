@@ -14,9 +14,11 @@ namespace Box\Mod\Invoice\Repository;
 use Box\Mod\Client\Entity\Client;
 use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\InvoiceItem;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
 use FOSSBilling\Doctrine\RowLock;
+use FOSSBilling\SortOptions;
 use FOSSBilling\Tools;
 
 class InvoiceRepository extends EntityRepository
@@ -52,8 +54,8 @@ class InvoiceRepository extends EntityRepository
      * raw-SQL path required.
      *
      * @param array $data optional filters: search, id, nr, client_id, client,
-     *                    status, approved, currency, created_at, date_from,
-     *                    date_to, paid_at, order_id
+     *                    status, issued, currency, created_at, date_from,
+     *                    date_to, paid_at, order_id, sort, direction
      */
     public function getSearchQueryBuilder(array $data = []): QueryBuilder
     {
@@ -73,12 +75,12 @@ class InvoiceRepository extends EntityRepository
 
         $idNr = $data['nr'] ?? null;
         if ($idNr) {
-            $qb->andWhere('i.id = :id_nr OR i.nr = :id_nr')->setParameter('id_nr', $idNr);
+            $qb->andWhere('(i.id = :id_nr OR i.nr = :id_nr)')->setParameter('id_nr', $idNr);
         }
 
-        $approved = $data['approved'] ?? null;
-        if ($approved !== null && $approved !== '') {
-            $qb->andWhere('i.approved = :approved')->setParameter('approved', Tools::normalizeBoolean($approved));
+        $issued = $data['issued'] ?? null;
+        if ($issued !== null && $issued !== '') {
+            $qb->andWhere('i.issued = :issued')->setParameter('issued', Tools::normalizeBoolean($issued));
         }
 
         $status = $data['status'] ?? null;
@@ -136,13 +138,30 @@ class InvoiceRepository extends EntityRepository
         $search = $data['search'] ?? null;
         if ($search) {
             $searchNumeric = (int) preg_replace('/[^0-9]/', '', (string) $search);
-            $qb->andWhere('i.id = :search_numeric_id OR i.nr LIKE :search_like OR i.id LIKE :search OR i.id IN (SELECT IDENTITY(ii.invoice) FROM ' . InvoiceItem::class . ' ii WHERE ii.title LIKE :search_like)')
+            $qb->andWhere('(i.id = :search_numeric_id OR i.nr LIKE :search_like OR i.id LIKE :search OR i.id IN (SELECT IDENTITY(ii.invoice) FROM ' . InvoiceItem::class . ' ii WHERE ii.title LIKE :search_like))')
                 ->setParameter('search_numeric_id', $searchNumeric)
                 ->setParameter('search_like', '%' . $search . '%')
                 ->setParameter('search', $search);
         }
 
-        $qb->orderBy('i.id', 'DESC');
+        $sort = SortOptions::fromArray($data, [
+            'id' => 'i.id',
+            'nr' => 'i.nr',
+            'status' => 'i.status',
+            'currency' => 'i.currency',
+            'created_at' => 'i.createdAt',
+            'updated_at' => 'i.updatedAt',
+            'paid_at' => 'i.paidAt',
+            'due_at' => 'i.dueAt',
+        ]);
+        if ($sort->isSorted()) {
+            $qb->orderBy($sort->expression, $sort->direction);
+            if ($sort->expression !== 'i.id') {
+                $qb->addOrderBy('i.id', $sort->direction);
+            }
+        } else {
+            $qb->orderBy('i.id', \SortDirection::Descending);
+        }
 
         return $qb;
     }
@@ -188,18 +207,41 @@ class InvoiceRepository extends EntityRepository
      */
     public function lockAndGetStatus(int $invoiceId): ?string
     {
-        $connection = $this->getEntityManager()->getConnection();
-
-        if (!$connection->isTransactionActive()) {
+        if (!$this->getEntityManager()->getConnection()->isTransactionActive()) {
             throw new \FOSSBilling\Exception('Invoice status cannot be locked outside of a transaction.');
         }
 
-        $status = $connection->fetchOne(
-            'SELECT status FROM invoice WHERE id = :id' . RowLock::suffix($connection),
+        $state = $this->lockAndGetState($invoiceId);
+
+        return $state['status'] ?? null;
+    }
+
+    /**
+     * Must be called within a transaction, held for as long as the state is acted on.
+     *
+     * @return array{status: string, issued: bool}|null
+     */
+    public function lockAndGetState(int $invoiceId): ?array
+    {
+        $connection = $this->getEntityManager()->getConnection();
+
+        if (!$connection->isTransactionActive()) {
+            throw new \FOSSBilling\Exception('Invoice state cannot be locked outside of a transaction.');
+        }
+
+        $row = $connection->fetchAssociative(
+            'SELECT status, issued FROM invoice WHERE id = :id' . RowLock::suffix($connection),
             ['id' => $invoiceId],
         );
 
-        return $status === false ? null : (string) $status;
+        if ($row === false) {
+            return null;
+        }
+
+        return [
+            'status' => (string) $row['status'],
+            'issued' => $connection->convertToPHPValue($row['issued'], Types::BOOLEAN) ?? false,
+        ];
     }
 
     /**
@@ -219,19 +261,19 @@ class InvoiceRepository extends EntityRepository
     }
 
     /**
-     * Approved, unpaid invoices that have not been reminded and were
+     * Issued, unpaid invoices that have not been reminded and were
      * created before the given cutoff timestamp.
      *
      * @return Invoice[]
      */
-    public function findUnpaidApprovedNotRemindedBefore(int $cutoffTimestamp): array
+    public function findUnpaidIssuedNotRemindedBefore(int $cutoffTimestamp): array
     {
         $cutoff = new \DateTime();
         $cutoff->setTimestamp($cutoffTimestamp);
 
         return $this->createQueryBuilder('i')
             ->andWhere('i.status = :status')
-            ->andWhere('i.approved = true')
+            ->andWhere('i.issued = true')
             ->andWhere('i.remindedAt IS NULL')
             ->andWhere('i.createdAt < :cutoff')
             ->setParameter('status', Invoice::STATUS_UNPAID)
@@ -285,7 +327,7 @@ class InvoiceRepository extends EntityRepository
     {
         $result = $this->createQueryBuilder('i')
             ->andWhere('i.nr IS NOT NULL')
-            ->orderBy('i.id', 'DESC')
+            ->orderBy('i.id', \SortDirection::Descending)
             ->setMaxResults(1)
             ->getQuery()
             ->getResult();

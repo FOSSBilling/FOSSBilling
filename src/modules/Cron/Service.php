@@ -11,6 +11,9 @@ declare(strict_types=1);
 
 namespace Box\Mod\Cron;
 
+use Box\Mod\Cron\Event\AfterAdminCronRunEvent;
+use Box\Mod\Cron\Event\BeforeAdminCronRunEvent;
+use Box\Mod\System\Entity\Setting;
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
 use Symfony\Component\Filesystem\Path;
@@ -69,12 +72,24 @@ class Service
                 throw new \FOSSBilling\InformationException('Update finalization is pending. Cron jobs are paused until finalization is completed.', [], 503);
             }
 
+            // Same-version drift never triggers version-gated finalization, and the
+            // ambient sync is skipped on CLI - heal here before invoice/order tasks
+            // run. Healing failures only log; execution continues as before.
+            // @see https://github.com/FOSSBilling/FOSSBilling/issues/4392
+            try {
+                $this->di['update_finalization']->healSchemaDrift();
+            } catch (\Throwable $exception) {
+                $this->di['logger']->withChannel('cron')->warning(
+                    'Schema drift healing failed before cron execution: {exception_message}',
+                    ['exception_message' => $exception->getMessage()]
+                );
+            }
+
             $api = $this->di['api_system'];
             $this->di['logger']->withChannel('cron')->info('Started executing cron jobs.');
 
             // @core tasks
-            $this->_exec($api, 'hook_batch_connect');
-            $this->di['events_manager']->fire(['event' => 'onBeforeAdminCronRun']);
+            $this->di['event_dispatcher']->dispatch(new BeforeAdminCronRunEvent());
 
             $this->_exec($api, 'invoice_batch_pay_with_credits');
             $this->_exec($api, 'invoice_batch_activate_paid');
@@ -118,7 +133,7 @@ class Service
             $count = $this->clearOldSessions() ?? 0;
             $this->di['logger']->withChannel('cron')->info("Cleared {$count} outdated sessions from the database.");
 
-            $this->di['events_manager']->fire(['event' => 'onAfterAdminCronRun']);
+            $this->di['event_dispatcher']->dispatch(new AfterAdminCronRunEvent());
 
             if ($failedTasks !== []) {
                 $this->di['logger']->withChannel('cron')->warning('Finished executing cron jobs, but the following tasks failed: ' . implode(', ', $failedTasks) . '.');
@@ -143,6 +158,7 @@ class Service
      */
     protected function _exec($api, $method, array $params = []): void
     {
+        $this->di['em']->getRepository(Setting::class)->clearRequestCache();
         $api->{$method}($params);
 
         if (Environment::isCLI()) {

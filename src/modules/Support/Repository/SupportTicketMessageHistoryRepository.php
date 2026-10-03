@@ -26,7 +26,7 @@ class SupportTicketMessageHistoryRepository extends EntityRepository
         return $this->createQueryBuilder('h')
             ->andWhere('h.message = :mid')
             ->setParameter('mid', $messageId)
-            ->orderBy('h.id', 'DESC')
+            ->orderBy('h.id', \SortDirection::Descending)
             ->getQuery()
             ->getResult();
     }

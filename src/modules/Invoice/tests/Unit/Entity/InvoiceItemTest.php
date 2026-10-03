@@ -28,7 +28,7 @@ test('maps invoice_item table without changing columns', function (): void {
 
     expect($meta->getTableName())->toBe('invoice_item')
         ->and($meta->getColumnNames())->toBe([
-            'id', 'type', 'rel_id', 'task', 'status', 'title',
+            'id', 'type', 'rel_id', 'refunded_item_id', 'task', 'status', 'title',
             'period', 'quantity', 'unit', 'price', 'charged', 'taxed', 'attempts',
             'created_at', 'updated_at',
         ])

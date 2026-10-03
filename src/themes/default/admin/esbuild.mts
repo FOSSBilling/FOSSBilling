@@ -45,6 +45,7 @@ async function build() {
       purge: {
         area: 'admin',
         additionalStandardSafelist: [/^flag-country-/, /^clr-/],
+        additionalGreedySafelist: [/data-vc/],
       },
     });
 
@@ -58,6 +59,7 @@ async function build() {
       purge: {
         area: 'admin',
         additionalStandardSafelist: [/^flag-country-/, /^clr-/],
+        additionalGreedySafelist: [/data-vc/],
       },
     });
 

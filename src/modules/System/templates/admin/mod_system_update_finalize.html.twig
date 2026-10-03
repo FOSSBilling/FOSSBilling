@@ -7,7 +7,15 @@
     {% set state = finalization.state|default({}) %}
     {% set status = finalization.status|default('not_required') %}
     {% set finalized = status == 'finalized' %}
+    {% set pendingPatches = finalization.pending_patches|default(null) %}
+    {# A finalize stamped by stale code can leave the state finalized while patches are still pending.
+       There is no other path back, so keep offering finalization until the count reaches zero. #}
+    {% set needsFinalize = (not finalized) or (pendingPatches is not same as(null) and pendingPatches > 0) %}
+    {% set canComplete = finalized and (pendingPatches is same as(null) or pendingPatches is same as(0)) %}
     {% set updateType = state.update_type is defined and state.update_type is not same as(null) ? state.update_type + 0 : null %}
+    {% set schemaDrift = finalization.schema_drift|default({}) %}
+    {% set driftOutOfSync = schemaDrift.out_of_sync|default(false) %}
+    {% set lastSyncFailure = schemaDrift.last_sync_failure|default(null) %}
 
     <div class="page page-center">
         <div class="container-tight py-4">
@@ -32,15 +40,34 @@
                             </div>
                         </div>
                     {% else %}
-                        {% if finalized %}
+                        {% if finalized and not needsFinalize %}
                             <p>{{ 'FOSSBilling has successfully applied the patches for version %version%.'|trans({'%version%': FOSSBillingVersion}) }}</p>
-                        {% elseif finalization.pending_patches is same as(null) or finalization.pending_patches is same as(0) %}
+                        {% elseif pendingPatches is same as(null) or pendingPatches is same as(0) %}
                             <p>{{ 'You are updating your system to FOSSBilling %target_version%. The system needs to check and apply any pending update patches before you can proceed.'|trans({'%target_version%': FOSSBillingVersion}) }}</p>
                         {% else %}
-                            <p>{{ 'You are updating your system to FOSSBilling %target_version%. The system needs to run %count% update patches before you can proceed.'|trans({'%target_version%': FOSSBillingVersion, '%count%': finalization.pending_patches}) }}</p>
+                            <p>{{ 'You are updating your system to FOSSBilling %target_version%. The system needs to run %count% update patches before you can proceed.'|trans({'%target_version%': FOSSBillingVersion, '%count%': pendingPatches}) }}</p>
                         {% endif %}
 
-                        {% if not finalized %}
+                        {% if driftOutOfSync %}
+                            <div class="alert alert-warning" role="alert">
+                                <div class="alert-icon">
+                                    <svg class="icon alert-icon icon-2" aria-hidden="true">
+                                        <use href="#alert-triangle" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    {% if finalized %}
+                                        {{ 'The database schema is still behind the current code. Re-run finalization to synchronize it.'|trans }}
+                                    {% else %}
+                                        {{ 'The database schema is behind the current code and will be synchronized during finalization.'|trans }}
+                                    {% endif %}
+                                    {% if lastSyncFailure %}
+                                        {{ 'A previous automatic synchronization attempt failed (last attempt: %time%). If finalization reports an error, check the update log before retrying.'|trans({'%time%': lastSyncFailure.attempted_at}) }}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endif %}
+                        {% if needsFinalize %}
                             <div class="d-grid">
                                 <a class="btn btn-primary" href="{{ 'system/finalize_update'|api_url }}"
                                     {{ fb_api_link({
@@ -61,7 +88,8 @@
                                 </a>
                             </div>
                             <div id="finalization-progress"></div>
-                        {% else %}
+                        {% endif %}
+                        {% if canComplete %}
                             <p>{{ 'Proceeding will restore the maintenance mode setting to its previous state and return you to the dashboard.'|trans }}</p>
 
                             <div class="d-grid">

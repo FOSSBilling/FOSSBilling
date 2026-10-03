@@ -17,6 +17,17 @@ namespace Box\Mod\Client\Api;
 
 use Box\Mod\Client\Entity\Client;
 use Box\Mod\Client\Entity\ClientPasswordReset;
+use Box\Mod\Client\Event\AfterClientLoginEvent;
+use Box\Mod\Client\Event\AfterClientPasswordResetEvent;
+use Box\Mod\Client\Event\BeforeClientLoginEvent;
+use Box\Mod\Client\Event\BeforeClientPasswordResetConfirmationEvent;
+use Box\Mod\Client\Event\BeforeClientPasswordResetEvent;
+use Box\Mod\Client\Event\BeforeClientPasswordResetRequestEvent;
+use Box\Mod\Client\Event\ClientLoginFailedEvent;
+use Box\Mod\Client\Service;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use Doctrine\ORM\EntityManagerInterface;
+use FOSSBilling\Doctrine\EntityManagerFactory;
 use FOSSBilling\Http\CookieNames;
 use FOSSBilling\Security\RandomizedTimeFloor;
 use FOSSBilling\Tools;
@@ -97,34 +108,49 @@ class Guest extends \FOSSBilling\Api\AbstractApi
 
             // Keyed independently of the IP limiter above so that spreading
             // probes across IPs doesn't help an attacker hammer one address.
-            // Consumed only after the CAPTCHA check so a stream of invalid
-            // CAPTCHA submissions can't burn through one address's quota.
-            $emailLimit = $this->getDi()['rate_limiter']->consume('client_signup_email', $email);
+            // Check the quota without consuming it. A token is recorded only
+            // after client validation succeeds, so malformed submissions
+            // cannot exhaust another address's signup quota.
+            $emailLimit = $this->getDi()['rate_limiter']->consume('client_signup_email', $email, 0);
 
             $autoLogin = Tools::normalizeBoolean($config['auto_login_after_signup'] ?? true, true);
 
             if ($emailLimit->isLimited() || $service->clientAlreadyExists($email)) {
-                // Never disclose whether this address is already registered:
-                // no distinct error, no duplicate row, and the same return
-                // value as a genuine signup below. Falling through to an
-                // ordinary login attempt keeps the response and any session
-                // side effects identical to the success path, reusing
-                // login()'s own timing- and message-safe handling instead of
-                // reimplementing it here.
-                $this->getDi()['logger']->withChannel('security')->info('Client signup declined for an existing or rate-limited email from IP {ip}.', ['ip' => $this->getIp()]);
-
-                if ($autoLogin) {
-                    try {
-                        $this->login(['email' => $email, 'password' => $data['password']]);
-                    } catch (\Throwable $e) {
-                        $this->getDi()['logger']->error($e->getMessage());
-                    }
+                if (!$emailLimit->isLimited()) {
+                    $this->getDi()['rate_limiter']->consume('client_signup_email', $email);
                 }
 
-                return true;
+                return $this->handleExistingOrRateLimitedSignup($email, $data, $autoLogin);
             }
 
-            $client = $service->guestCreateClient($data);
+            try {
+                $client = $service->guestCreateClient($data);
+            } catch (UniqueConstraintViolationException $exception) {
+                $this->resetEntityManagerAfterViolation($service);
+
+                // guestCreateClient() only persists a Client, whose sole
+                // unique key is `client.email`. Re-check so an unrelated
+                // constraint failure still surfaces instead of being masked
+                // as an existing-account signup.
+                try {
+                    $duplicate = $service->clientAlreadyExists($email);
+                } catch (\Throwable) {
+                    throw $exception;
+                }
+
+                if (!$duplicate) {
+                    throw $exception;
+                }
+
+                // The zero-token probe above passed (a limited result would
+                // have returned early), so record the quota use just like the
+                // existing-account path does.
+                $this->getDi()['rate_limiter']->consume('client_signup_email', $email);
+
+                return $this->handleExistingOrRateLimitedSignup($email, $data, $autoLogin);
+            }
+
+            $this->getDi()['rate_limiter']->consume('client_signup_email', $email);
 
             if (isset($config['require_email_confirmation']) && (bool) $config['require_email_confirmation']) {
                 $service->sendEmailConfirmationForClient($client);
@@ -144,6 +170,61 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         }
     }
 
+    private function handleExistingOrRateLimitedSignup(string $email, array $data, bool $autoLogin): bool
+    {
+        // Never disclose whether this address is already registered:
+        // no distinct error, no duplicate row, and the same return
+        // value as a genuine signup below. Falling through to an
+        // ordinary login attempt keeps the response and any session
+        // side effects identical to the success path, reusing
+        // login()'s own timing- and message-safe handling instead of
+        // reimplementing it here.
+        $this->getDi()['logger']->withChannel('security')->info('Client signup declined for an existing or rate-limited email from IP {ip}.', ['ip' => $this->getIp()]);
+
+        if ($autoLogin) {
+            try {
+                $this->login(['email' => $email, 'password' => $data['password']]);
+            } catch (\Throwable $e) {
+                $this->getDi()['logger']->error($e->getMessage());
+            }
+        }
+
+        return true;
+    }
+
+    private function resetEntityManagerAfterViolation(object $service): void
+    {
+        $di = $this->getDi();
+        if (!$di->offsetExists('em')) {
+            return;
+        }
+
+        $em = $di['em'];
+        if (!$em instanceof EntityManagerInterface || $em->isOpen()) {
+            return;
+        }
+
+        // A failed flush closes the EntityManager; replace it so the
+        // duplicate re-check and fallback login below use a usable one.
+        try {
+            $freshEm = EntityManagerFactory::create();
+        } catch (\Throwable) {
+            return;
+        }
+
+        unset($di['em']);
+        $di['em'] = $freshEm;
+
+        try {
+            if ($service instanceof Service) {
+                $service->setDi($di);
+            }
+        } catch (\Throwable) {
+            // The fallback login already tolerates failures; keep the
+            // generic signup response even if the refresh fails.
+        }
+    }
+
     /**
      * Client login action.
      *
@@ -159,20 +240,18 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         try {
             $this->getDi()['tools']->validateAndSanitizeEmail($data['email'], true, false);
 
-            $event_params = $data;
-            $event_params['ip'] = $this->ip;
-            $this->getDi()['events_manager']->fire(['event' => 'onBeforeClientLogin', 'params' => $event_params]);
+            $this->getDi()['event_dispatcher']->dispatch(new BeforeClientLoginEvent($this->ip));
 
             $service = $this->getService();
             $client = $service->authorizeClient($data['email'], $data['password']);
 
             if (!$client instanceof Client) {
-                $this->getDi()['events_manager']->fire(['event' => 'onEventClientLoginFailed', 'params' => $event_params]);
+                $this->getDi()['event_dispatcher']->dispatch(new ClientLoginFailedEvent($this->ip));
 
                 throw new \FOSSBilling\InformationException('Please check your login details.', [], 401);
             }
 
-            $this->getDi()['events_manager']->fire(['event' => 'onAfterClientLogin', 'params' => ['id' => $client->getId(), 'ip' => $this->ip]]);
+            $this->getDi()['event_dispatcher']->dispatch(new AfterClientLoginEvent((int) $client->getId(), $this->ip));
 
             $oldSession = $this->getDi()['session']->getId();
             $this->getDi()['session']->regenerateId();
@@ -205,7 +284,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         $startedAt = microtime(true);
 
         try {
-            $this->getDi()['events_manager']->fire(['event' => 'onBeforePasswordResetClient']);
+            $this->getDi()['event_dispatcher']->dispatch(new BeforeClientPasswordResetEvent($this->getIp()));
             $service = $this->getDi()['mod_service']('client');
 
             // Sanitize email
@@ -227,7 +306,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
 
             $this->checkCaptchaIfEnabled($data);
 
-            $this->getDi()['events_manager']->fire(['event' => 'onBeforeGuestPasswordResetRequest', 'params' => $data]);
+            $this->getDi()['event_dispatcher']->dispatch(new BeforeClientPasswordResetRequestEvent($this->getIp()));
 
             $em = $this->getDi()['em'];
             $client = $em->getRepository(Client::class)->findOneByEmailAndActive($data['email']);
@@ -262,7 +341,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         try {
             $this->getDi()['rate_limiter']->consumeOrThrow('client_password_reset_confirm_post_ip', (string) $this->getIp());
 
-            $this->getDi()['events_manager']->fire(['event' => 'onBeforeClientProfilePasswordReset', 'params' => $data['hash']]);
+            $this->getDi()['event_dispatcher']->dispatch(new BeforeClientPasswordResetConfirmationEvent($this->getIp()));
 
             $this->getDi()['validator']->passwordsMatch($data);
             $this->getDi()['validator']->isPasswordStrong($data['password']);
@@ -308,7 +387,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             $email['code'] = 'mod_client_password_reset_information';
             $emailService = $this->getDi()['mod_service']('email');
             $emailService->sendTemplate($email);
-            $this->getDi()['events_manager']->fire(['event' => 'onAfterClientProfilePasswordReset', 'params' => ['id' => $client->getId()]]);
+            $this->getDi()['event_dispatcher']->dispatch(new AfterClientPasswordResetEvent((int) $client->getId()));
 
             return true;
         } finally {

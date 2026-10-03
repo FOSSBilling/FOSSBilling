@@ -95,3 +95,48 @@ test('ip lookup skips lookup when ip parameter is missing', function (): void {
     $result = $controller->ip_lookup($boxAppMock);
     expect($result)->toBe('rendered');
 });
+
+test('rate limits sorts counters with request sort parameters before pagination', function (): void {
+    $controller = new Box\Mod\Security\Controller\Admin();
+    $di = container();
+    $di['is_admin_logged'] = true;
+
+    $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffService->shouldReceive('checkPermissionsAndThrowException')->once()->with('security', 'view');
+
+    $counters = [
+        ['ip' => '10.0.0.2', 'policy' => 'b_policy'],
+        ['ip' => '10.0.0.1', 'policy' => 'a_policy'],
+    ];
+
+    $securityService = Mockery::mock(Box\Mod\Security\Service::class);
+    $securityService->shouldReceive('getRateLimitList')->once()->with(null, null)->andReturn($counters);
+    $securityService->shouldReceive('sortRateLimitCounters')
+        ->once()
+        ->with($counters, ['sort' => 'policy', 'direction' => 'DESC'])
+        ->andReturn($counters);
+    $securityService->shouldReceive('getRateLimitStatus')->once()->andReturn(['enabled' => true]);
+
+    $di['mod_service'] = $di->protect(fn (string $name): object => $name === 'Staff' ? $staffService : $securityService);
+
+    $pager = Mockery::mock();
+    $pager->shouldReceive('paginateArray')
+        ->once()
+        ->with($counters, Mockery::type(FOSSBilling\PaginationOptions::class))
+        ->andReturn(['list' => $counters]);
+    $di['pager'] = $pager;
+
+    $controller->setDi($di);
+
+    $request = Symfony\Component\HttpFoundation\Request::create('/security/rate-limits?sort=policy&direction=DESC');
+
+    $boxAppMock = Mockery::mock('\Box_App');
+    $boxAppMock->shouldReceive('getRequest')->once()->andReturn($request);
+    $boxAppMock->shouldReceive('render')
+        ->once()
+        ->with('mod_security_rate_limits', Mockery::on(fn (array $params): bool => $params['rate_limit_counters'] === ['list' => $counters]))
+        ->andReturn('rendered');
+
+    $result = $controller->rate_limits($boxAppMock);
+    expect($result)->toBe('rendered');
+});

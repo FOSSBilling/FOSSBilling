@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 use Box\Mod\Client\Entity\Client;
 use Box\Mod\Client\Entity\ClientBalance;
+use Box\Mod\Client\Entity\ClientGroup;
 use Doctrine\DBAL\DriverManager;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\ORMSetup;
@@ -85,3 +86,85 @@ test('getClientBalanceSumForUpdate rejects being called outside of a transaction
     expect(fn () => $entityManager->getRepository(ClientBalance::class)->getClientBalanceSumForUpdate(1))
         ->toThrow(FOSSBilling\Exception::class, 'Client balance cannot be locked outside of a transaction.');
 });
+
+test('getClientBalanceSumForUpdate skips the aggregate lock on PostgreSQL', function (): void {
+    // PostgreSQL rejects FOR UPDATE on aggregate queries outright. The client-row mutex is a
+    // plain row select and stays locking; the SUM goes without, which is still correct there
+    // because READ COMMITTED gives every statement a fresh snapshot once the mutex is held.
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('isTransactionActive')->once()->andReturn(true);
+    $connection->shouldReceive('getDatabasePlatform')->andReturn(Mockery::mock(Doctrine\DBAL\Platforms\PostgreSQLPlatform::class));
+    $connection->shouldReceive('fetchOne')
+        ->once()
+        ->ordered()
+        ->with('SELECT id FROM client WHERE id = :client_id FOR UPDATE', ['client_id' => 1])
+        ->andReturn(1);
+    $connection->shouldReceive('fetchOne')
+        ->once()
+        ->ordered()
+        ->with('SELECT SUM(amount) FROM client_balance WHERE client_id = :client_id', ['client_id' => 1])
+        ->andReturn('42.00');
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getConnection')->andReturn($connection);
+
+    $repository = new Box\Mod\Client\Repository\ClientBalanceRepository(
+        $emMock,
+        new Doctrine\ORM\Mapping\ClassMetadata(ClientBalance::class)
+    );
+
+    expect($repository->getClientBalanceSumForUpdate(1))->toBe(42.0);
+});
+
+function clientBalancePostgresDsn(): string
+{
+    return getenv('FOSSBILLING_TEST_PGSQL_DSN') ?: 'pgsql://postgres:postgres@127.0.0.1:5432/postgres';
+}
+
+function clientBalancePostgresAvailable(): bool
+{
+    try {
+        DriverManager::getConnection((new Doctrine\DBAL\Tools\DsnParser())->parse(clientBalancePostgresDsn()))->fetchOne('SELECT 1');
+
+        return true;
+    } catch (Throwable) {
+        return false;
+    }
+}
+
+function clientBalancePostgresEntityManager(): EntityManager
+{
+    $config = ORMSetup::createAttributeMetadataConfig([Path::join(__DIR__, '..', '..', '..', 'Entity')], true);
+    $config->setProxyDir(sys_get_temp_dir());
+    $config->setProxyNamespace('FOSSBilling\\Tests\\DoctrineProxies');
+
+    return new EntityManager(DriverManager::getConnection((new Doctrine\DBAL\Tools\DsnParser())->parse(clientBalancePostgresDsn())), $config);
+}
+
+test('getClientBalanceSumForUpdate runs on real PostgreSQL', function (): void {
+    $entityManager = clientBalancePostgresEntityManager();
+    $connection = $entityManager->getConnection();
+    // A single fixed, always-recreated schema rather than a fresh randomly-named one per test:
+    // dropping-and-recreating it here means a run never leaves a stray schema behind.
+    $connection->executeStatement('DROP SCHEMA IF EXISTS fb_client_balance_test CASCADE');
+    $connection->executeStatement('CREATE SCHEMA fb_client_balance_test');
+    $connection->executeStatement('SET search_path TO fb_client_balance_test');
+    // ClientGroup is only here for Client's foreign key; the test never touches it.
+    $metadata = array_map($entityManager->getClassMetadata(...), [Client::class, ClientBalance::class, ClientGroup::class]);
+    (new Doctrine\ORM\Tools\SchemaTool($entityManager))->createSchema($metadata);
+
+    $client = new Client();
+    $entityManager->persist($client);
+
+    $balance = new ClientBalance();
+    $balance->setClient($client);
+    $balance->setAmount('42.00');
+    $entityManager->persist($balance);
+    $entityManager->flush();
+
+    $sum = $entityManager->wrapInTransaction(
+        fn () => $entityManager->getRepository(ClientBalance::class)->getClientBalanceSumForUpdate($client->getId())
+    );
+
+    expect($sum)->toBe(42.0);
+})->skip(fn (): bool => !clientBalancePostgresAvailable(), 'No PostgreSQL server reachable at FOSSBILLING_TEST_PGSQL_DSN (or the localhost:5432 default) - this test only runs when one is available.');

@@ -11,18 +11,36 @@
 declare(strict_types=1);
 
 use Box\Mod\Activity\Entity\ActivityAdminHistory;
+use Box\Mod\Client\Event\AfterClientSignUpEvent;
 use Box\Mod\Staff\Entity\Admin;
 use Box\Mod\Staff\Entity\AdminGroup;
 use Box\Mod\Staff\Entity\AdminGroupMember;
 use Box\Mod\Staff\Entity\AdminPasswordReset;
+use Box\Mod\Staff\Event\AdminLoginFailedEvent;
+use Box\Mod\Staff\Event\AfterAdminLoginEvent;
+use Box\Mod\Staff\Event\AfterAdminStaffCreateEvent;
+use Box\Mod\Staff\Event\AfterAdminStaffDeleteEvent;
+use Box\Mod\Staff\Event\AfterAdminStaffPasswordChangeEvent;
+use Box\Mod\Staff\Event\AfterAdminStaffUpdateEvent;
+use Box\Mod\Staff\Event\BeforeAdminLoginEvent;
+use Box\Mod\Staff\Event\BeforeAdminStaffCreateEvent;
+use Box\Mod\Staff\Event\BeforeAdminStaffDeleteEvent;
+use Box\Mod\Staff\Event\BeforeAdminStaffPasswordChangeEvent;
+use Box\Mod\Staff\Event\BeforeAdminStaffUpdateEvent;
 use Box\Mod\Staff\Repository\AdminGroupMemberRepository;
 use Box\Mod\Staff\Repository\AdminGroupRepository;
 use Box\Mod\Staff\Repository\AdminPasswordResetRepository;
 use Box\Mod\Staff\Repository\AdminRepository;
 use Box\Mod\Staff\Service;
 use Box\Mod\Support\Entity\Helpdesk;
+use Box\Mod\Support\Event\AfterTicketClosedEvent;
+use Box\Mod\Support\Event\AfterTicketOpenedEvent;
+use Box\Mod\Support\Event\AfterTicketRepliedEvent;
+use Box\Mod\Support\Event\TicketActorRole;
 use Box\Mod\Support\Repository\HelpdeskRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use FOSSBilling\Events\EventDispatcher;
+use Symfony\Component\EventDispatcher\EventDispatcher as SymfonyEventDispatcher;
 
 use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
@@ -72,6 +90,73 @@ function staffServiceWithGroupPermissions(array $groups = [], bool $isSuperAdmin
     $service->setDi($di);
 
     return $service;
+}
+
+function dispatchStaffTicketEvent(Service $service, Pimple\Container $di, string $action, TicketActorRole $actor = TicketActorRole::CLIENT, int $ticketId = 42): void
+{
+    if ($service->getDi() !== $di) {
+        $service->setDi($di);
+    }
+
+    $dispatcher = new EventDispatcher(
+        static fn (): array => ['staff'],
+        static fn (string $module): Service => $service,
+    );
+    $event = match ($action) {
+        'opened' => new AfterTicketOpenedEvent($ticketId, $actor),
+        'replied' => new AfterTicketRepliedEvent($ticketId, $actor),
+        'closed' => new AfterTicketClosedEvent($ticketId, $actor),
+        default => throw new InvalidArgumentException(sprintf('Unknown support ticket action "%s".', $action)),
+    };
+
+    $dispatcher->dispatch($event);
+}
+
+/** @return array{SymfonyEventDispatcher, ArrayObject} */
+function staffLoginEventDispatcher(): array
+{
+    $events = new ArrayObject();
+    $dispatcher = new SymfonyEventDispatcher();
+
+    foreach ([BeforeAdminLoginEvent::class, AdminLoginFailedEvent::class, AfterAdminLoginEvent::class] as $eventClass) {
+        $dispatcher->addListener($eventClass, static function (object $event) use ($events): void {
+            $events->append($event);
+        });
+    }
+
+    return [$dispatcher, $events];
+}
+
+/** @return array{SymfonyEventDispatcher, ArrayObject} */
+function staffAccountCrudEventDispatcher(): array
+{
+    $events = new ArrayObject();
+    $dispatcher = new SymfonyEventDispatcher();
+
+    foreach ([
+        BeforeAdminStaffCreateEvent::class,
+        AfterAdminStaffCreateEvent::class,
+        BeforeAdminStaffUpdateEvent::class,
+        AfterAdminStaffUpdateEvent::class,
+        BeforeAdminStaffDeleteEvent::class,
+        AfterAdminStaffDeleteEvent::class,
+        BeforeAdminStaffPasswordChangeEvent::class,
+        AfterAdminStaffPasswordChangeEvent::class,
+    ] as $eventClass) {
+        $dispatcher->addListener($eventClass, static function (object $event) use ($events): void {
+            $events->append($event);
+        });
+    }
+
+    return [$dispatcher, $events];
+}
+
+function staffLoginEventSummaries(ArrayObject $events): array
+{
+    return array_map(
+        static fn (object $event): array => [$event::class, get_object_vars($event)],
+        iterator_to_array($events),
+    );
 }
 
 function staffSetEntityId(object $entity, int $id): void
@@ -149,9 +234,7 @@ test('login returns admin details on successful login', function (): void {
 
     $admin = \Tests\Helpers\admin(['id' => 1, 'email' => $email, 'name' => 'Admin', 'pass' => 'hashedPassword']);
 
-    $emMock = Mockery::mock('\Box_EventManager');
-    $emMock->shouldReceive('fire')->atLeast()->once()
-        ->andReturn(true);
+    [$eventDispatcher, $dispatchedEvents] = staffLoginEventDispatcher();
 
     $adminRepository = Mockery::mock(AdminRepository::class);
     $adminRepository->shouldReceive('findOneByEmailAndActive')->atLeast()->once()
@@ -170,7 +253,7 @@ test('login returns admin details on successful login', function (): void {
         ->andReturn(false);
 
     $di = container();
-    $di['events_manager'] = $emMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['em']->shouldReceive('getRepository')->with(Admin::class)->andReturn($adminRepository);
     $di['session'] = $sessionMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
@@ -187,118 +270,10 @@ test('login returns admin details on successful login', function (): void {
         'name' => 'Admin',
     ];
 
-    expect($result)->toBe($expected);
-});
-
-test('login retries connecting event listeners once before firing the login event', function (): void {
-    $email = 'email@domain.com';
-    $password = 'pass';
-    $ip = '127.0.0.1';
-
-    $admin = \Tests\Helpers\admin(['id' => 1, 'email' => $email, 'name' => 'Admin', 'pass' => 'hashedPassword']);
-
-    $emMock = Mockery::mock('\Box_EventManager');
-    $emMock->shouldReceive('fire')->atLeast()->once()
-        ->andReturn(true);
-
-    $adminRepository = Mockery::mock(AdminRepository::class);
-    $adminRepository->shouldReceive('findOneByEmailAndActive')->atLeast()->once()
-        ->with($email)
-        ->andReturn($admin);
-
-    $sessionMock = Mockery::mock(FOSSBilling\Session::class);
-    $sessionMock->shouldReceive('regenerateId')->atLeast()->once();
-    $sessionMock->shouldReceive('set')->atLeast()->once();
-
-    $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
-    $passwordMock->shouldReceive('verify')->atLeast()->once()
-        ->with($password, $admin->getPass())
-        ->andReturn(true);
-    $passwordMock->shouldReceive('needsRehash')->atLeast()->once()
-        ->andReturn(false);
-
-    // First attempt fails, as if another process held the rebuild lock past its timeout.
-    $hookServiceMock = Mockery::mock(Box\Mod\Hook\Service::class);
-    $hookServiceMock->shouldReceive('hasConnectedListeners')->atLeast()->once()->andReturn(false);
-    $hookServiceMock->shouldReceive('batchConnect')->twice()->andReturn(false, true);
-
-    $di = container();
-    $di['events_manager'] = $emMock;
-    $di['em']->shouldReceive('getRepository')->with(Admin::class)->andReturn($adminRepository);
-    $di['session'] = $sessionMock;
-    $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['password'] = $passwordMock;
-    $di['mod_service'] = $di->protect(fn (string $name = ''): object => strtolower($name) === 'hook' ? $hookServiceMock : Mockery::mock()->shouldIgnoreMissing());
-
-    $service = new Service();
-    $service->setDi($di);
-
-    $result = $service->login($email, $password, $ip);
-
-    expect($result)->toBe([
-        'id' => 1,
-        'email' => $email,
-        'name' => 'Admin',
-    ]);
-});
-
-test('login still succeeds, and logs a warning, when both attempts to connect event listeners fail', function (): void {
-    $email = 'email@domain.com';
-    $password = 'pass';
-    $ip = '127.0.0.1';
-
-    $admin = \Tests\Helpers\admin(['id' => 1, 'email' => $email, 'name' => 'Admin', 'pass' => 'hashedPassword']);
-
-    $emMock = Mockery::mock('\Box_EventManager');
-    $emMock->shouldReceive('fire')->atLeast()->once()
-        ->andReturn(true);
-
-    $adminRepository = Mockery::mock(AdminRepository::class);
-    $adminRepository->shouldReceive('findOneByEmailAndActive')->atLeast()->once()
-        ->with($email)
-        ->andReturn($admin);
-
-    $sessionMock = Mockery::mock(FOSSBilling\Session::class);
-    $sessionMock->shouldReceive('regenerateId')->atLeast()->once();
-    $sessionMock->shouldReceive('set')->atLeast()->once();
-
-    $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
-    $passwordMock->shouldReceive('verify')->atLeast()->once()
-        ->with($password, $admin->getPass())
-        ->andReturn(true);
-    $passwordMock->shouldReceive('needsRehash')->atLeast()->once()
-        ->andReturn(false);
-
-    // Both attempts fail to connect listeners, e.g. another process holding the rebuild lock
-    // for longer than either attempt's timeout. Login must still succeed - it must not become
-    // unavailable because of this housekeeping step.
-    $hookServiceMock = Mockery::mock(Box\Mod\Hook\Service::class);
-    $hookServiceMock->shouldReceive('hasConnectedListeners')->atLeast()->once()->andReturn(false);
-    $hookServiceMock->shouldReceive('batchConnect')->twice()->andReturn(false, false);
-
-    $loggerMock = new Tests\Helpers\TestLogger();
-
-    $di = container();
-    $di['events_manager'] = $emMock;
-    $di['em']->shouldReceive('getRepository')->with(Admin::class)->andReturn($adminRepository);
-    $di['session'] = $sessionMock;
-    $di['logger'] = $loggerMock;
-    $di['password'] = $passwordMock;
-    $di['mod_service'] = $di->protect(fn (string $name = ''): object => strtolower($name) === 'hook' ? $hookServiceMock : Mockery::mock()->shouldIgnoreMissing());
-
-    $service = new Service();
-    $service->setDi($di);
-
-    $result = $service->login($email, $password, $ip);
-
-    expect($result)->toBe([
-        'id' => 1,
-        'email' => $email,
-        'name' => 'Admin',
-    ])
-        ->and($loggerMock->calls)->toContain([
-            'method' => 'warning',
-            'params' => ['Could not connect event listeners after two attempts; this login (and other events) may not be recorded.'],
+    expect($result)->toBe($expected)
+        ->and(staffLoginEventSummaries($dispatchedEvents))->toBe([
+            [BeforeAdminLoginEvent::class, ['ip' => $ip]],
+            [AfterAdminLoginEvent::class, ['adminId' => 1, 'ip' => $ip]],
         ]);
 });
 
@@ -307,9 +282,7 @@ test('login throws exception when credentials are invalid', function (): void {
     $password = 'pass';
     $ip = '127.0.0.1';
 
-    $emMock = Mockery::mock('\Box_EventManager');
-    $emMock->shouldReceive('fire')->atLeast()->once()
-        ->andReturn(true);
+    [$eventDispatcher, $dispatchedEvents] = staffLoginEventDispatcher();
 
     $adminRepository = Mockery::mock(AdminRepository::class);
     $adminRepository->shouldReceive('findOneByEmailAndActive')->atLeast()->once()
@@ -321,7 +294,7 @@ test('login throws exception when credentials are invalid', function (): void {
         ->with($password);
 
     $di = container();
-    $di['events_manager'] = $emMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['em']->shouldReceive('getRepository')->with(Admin::class)->andReturn($adminRepository);
     $di['password'] = $passwordMock;
 
@@ -330,6 +303,11 @@ test('login throws exception when credentials are invalid', function (): void {
 
     expect(fn (): array => $service->login($email, $password, $ip))
         ->toThrow(FOSSBilling\Exception::class, 'Check your login details');
+
+    expect(staffLoginEventSummaries($dispatchedEvents))->toBe([
+        [BeforeAdminLoginEvent::class, ['ip' => $ip]],
+        [AdminLoginFailedEvent::class, ['ip' => $ip]],
+    ]);
 });
 
 test('hasPermission returns true for super administrator group member', function (): void {
@@ -436,6 +414,9 @@ test('onAfterAdminOrderSuspend sends a staff notification', function (): void {
     $orderRepository->shouldReceive('find')->once()->with(42)->andReturn($order);
 
     $entityManager = Mockery::mock(EntityManagerInterface::class);
+    $entityManager->shouldReceive('getRepository')->with(AdminGroup::class)->andReturn(Mockery::mock(AdminGroupRepository::class));
+    $entityManager->shouldReceive('getRepository')->with(AdminGroupMember::class)->andReturn(Mockery::mock(AdminGroupMemberRepository::class));
+    $entityManager->shouldReceive('getRepository')->with(AdminPasswordReset::class)->andReturn(Mockery::mock(AdminPasswordResetRepository::class));
     $entityManager->shouldReceive('getRepository')
         ->once()
         ->with(Box\Mod\Order\Entity\Order::class)
@@ -459,15 +440,49 @@ test('onAfterAdminOrderSuspend sends a staff notification', function (): void {
         'email' => $emailService,
     });
 
-    $event = Mockery::mock(Box_Event::class);
-    $event->shouldReceive('getDi')->once()->andReturn($di);
-    $event->shouldReceive('getParameters')->once()->andReturn(['id' => 42]);
-
-    Service::onAfterAdminOrderSuspend($event);
+    $service = new Service();
+    $service->setDi($di);
+    $service->notifyStaffAfterOrderSuspend(new Box\Mod\Order\Event\AfterAdminOrderSuspendEvent(42));
 });
 
-test('onAfterClientReplyTicket sends email notification', function (): void {
-    $eventMock = Mockery::mock('\Box_Event');
+test('typed client order creation sends a staff notification', function (): void {
+    $order = Tests\Helpers\createEntity(Box\Mod\Order\Entity\Order::class, ['id' => 42]);
+    $orderRepository = Mockery::mock(Box\Mod\Order\Repository\OrderRepository::class);
+    $orderRepository->shouldReceive('find')->once()->with(42)->andReturn($order);
+
+    $entityManager = Mockery::mock(EntityManagerInterface::class);
+    $entityManager->shouldReceive('getRepository')->with(AdminGroup::class)->andReturn(Mockery::mock(AdminGroupRepository::class));
+    $entityManager->shouldReceive('getRepository')->with(AdminGroupMember::class)->andReturn(Mockery::mock(AdminGroupMemberRepository::class));
+    $entityManager->shouldReceive('getRepository')->with(AdminPasswordReset::class)->andReturn(Mockery::mock(AdminPasswordResetRepository::class));
+    $entityManager->shouldReceive('getRepository')
+        ->once()
+        ->with(Box\Mod\Order\Entity\Order::class)
+        ->andReturn($orderRepository);
+
+    $orderData = ['id' => 42, 'title' => 'Hosting'];
+    $orderService = Mockery::mock(Box\Mod\Order\Service::class);
+    $orderService->shouldReceive('toApiArray')->once()->with($order, true)->andReturn($orderData);
+
+    $emailService = Mockery::mock(Box\Mod\Email\Service::class);
+    $emailService->shouldReceive('sendTemplate')->once()->with([
+        'to_staff' => true,
+        'code' => 'mod_staff_client_order',
+        'order' => $orderData,
+    ]);
+
+    $di = container();
+    $di['em'] = $entityManager;
+    $di['mod_service'] = $di->protect(fn (string $name): object => match ($name) {
+        'order' => $orderService,
+        'email' => $emailService,
+    });
+
+    $service = new Service();
+    $service->setDi($di);
+    $service->notifyStaffAfterClientOrderCreate(new Box\Mod\Order\Event\AfterClientOrderCreateEvent(42, 7, '192.0.2.7'));
+});
+
+test('typed ticket replied event limits client details in the email notification', function (): void {
     $ticketId = 42;
     $clientId = 7;
     $ticketModel = (new Box\Mod\Support\Entity\SupportTicket())
@@ -475,6 +490,17 @@ test('onAfterClientReplyTicket sends email notification', function (): void {
         ->setPriority(25);
     $clientModel = createEntity(Box\Mod\Client\Entity\Client::class);
     $clientDetails = [
+        'id' => $clientId,
+        'email' => 'client@example.com',
+        'first_name' => 'Example',
+        'last_name' => 'Client',
+        'company_vat' => 'VAT-SECRET',
+        'birthday' => '1990-01-02',
+        'phone' => '555-0100',
+        'address_1' => '123 Privacy St',
+        'timezone' => 'UTC',
+    ];
+    $ticketClientDetails = [
         'id' => $clientId,
         'email' => 'client@example.com',
         'first_name' => 'Example',
@@ -505,12 +531,9 @@ test('onAfterClientReplyTicket sends email notification', function (): void {
             'ticket' => [
                 'subject' => 'Example ticket',
                 'priority' => 25,
-                'client' => $clientDetails,
+                'client' => $ticketClientDetails,
             ],
         ]);
-
-    $eventMock->shouldReceive('getParameters')->once()
-        ->andReturn(['id' => $ticketId]);
 
     $service = new Service();
 
@@ -526,15 +549,11 @@ test('onAfterClientReplyTicket sends email notification', function (): void {
             return $emailServiceMock;
         }
     });
-
-    $eventMock->shouldReceive('getDi')->atLeast()->once()
-        ->andReturn($di);
     $service->setDi($di);
-    $service->onAfterClientReplyTicket($eventMock);
+    dispatchStaffTicketEvent($service, $di, 'replied');
 });
 
-test('onAfterClientReplyTicket still sends when its client no longer exists', function (): void {
-    $eventMock = Mockery::mock('\\Box_Event');
+test('typed ticket replied event still sends when its client no longer exists', function (): void {
     $ticketId = 42;
     $clientId = 7;
     $ticketModel = (new Box\Mod\Support\Entity\SupportTicket())
@@ -572,15 +591,11 @@ test('onAfterClientReplyTicket still sends when its client no longer exists', fu
         'email' => $emailServiceMock,
     });
 
-    $eventMock->shouldReceive('getParameters')->once()->andReturn(['id' => $ticketId]);
-    $eventMock->shouldReceive('getDi')->once()->andReturn($di);
-
-    Service::onAfterClientReplyTicket($eventMock);
+    $service = new Service();
+    dispatchStaffTicketEvent($service, $di, 'replied');
 });
 
-test('onAfterClientReplyTicket handles email exception', function (): void {
-    $eventMock = Mockery::mock('\Box_Event');
-
+test('typed ticket replied event handles email exception', function (): void {
     $supportServiceMock = Mockery::mock(Box\Mod\Support\Service::class);
     $supportServiceMock->shouldReceive('getTicketById')->atLeast()->once()
         ->andReturn(new Box\Mod\Support\Entity\SupportTicket());
@@ -591,9 +606,6 @@ test('onAfterClientReplyTicket handles email exception', function (): void {
     $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once()
         ->andThrow(new Exception('PHPunit controlled Exception'));
 
-    $eventMock->shouldReceive('getparameters')->atLeast()->once()
-        ->andReturn(['id' => random_int(1, 100)]);
-
     $service = new Service();
 
     $di = container();
@@ -605,50 +617,80 @@ test('onAfterClientReplyTicket handles email exception', function (): void {
             return $emailServiceMock;
         }
     });
-
-    $eventMock->shouldReceive('getDi')->atLeast()->once()
-        ->andReturn($di);
     $service->setDi($di);
-    $service->onAfterClientReplyTicket($eventMock);
+    dispatchStaffTicketEvent($service, $di, 'replied');
 });
 
-test('onAfterClientCloseTicket sends email notification', function (): void {
-    $eventMock = Mockery::mock('\Box_Event');
+test('typed ticket closed event sends email notification', function (): void {
+    $ticketId = 42;
+    $clientId = 7;
+    $ticketModel = (new Box\Mod\Support\Entity\SupportTicket())
+        ->setClientId($clientId);
+    $clientModel = createEntity(Box\Mod\Client\Entity\Client::class);
+    $clientDetails = [
+        'id' => $clientId,
+        'email' => 'client@example.com',
+        'first_name' => 'Example',
+        'last_name' => 'Client',
+        'company_vat' => 'VAT-SECRET',
+        'birthday' => '1990-01-02',
+        'phone' => '555-0100',
+        'address_1' => '123 Privacy St',
+        'timezone' => 'UTC',
+    ];
+    $ticketClientDetails = [
+        'id' => $clientId,
+        'email' => 'client@example.com',
+        'first_name' => 'Example',
+        'last_name' => 'Client',
+    ];
 
     $supportServiceMock = Mockery::mock(Box\Mod\Support\Service::class);
     $supportServiceMock->shouldReceive('getTicketById')->atLeast()->once()
-        ->andReturn(new Box\Mod\Support\Entity\SupportTicket());
+        ->with($ticketId)
+        ->andReturn($ticketModel);
     $supportServiceMock->shouldReceive('toApiArray')->atLeast()->once()
+        ->with($ticketModel, true)
         ->andReturn([]);
+
+    $clientServiceMock = Mockery::mock(Box\Mod\Client\Service::class);
+    $clientServiceMock->shouldReceive('get')->once()
+        ->with(['id' => $clientId])
+        ->andReturn($clientModel);
+    $clientServiceMock->shouldReceive('toApiArray')->once()
+        ->with($clientModel)
+        ->andReturn($clientDetails);
 
     $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);
     $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once()
-        ->with(Mockery::on(fn ($email): bool => $email['code'] === 'mod_staff_ticket_close'));
-
-    $eventMock->shouldReceive('getparameters')->atLeast()->once()
-        ->andReturn(['id' => random_int(1, 100)]);
+        ->with([
+            'to_staff' => true,
+            'code' => 'mod_staff_ticket_close',
+            'ticket' => [
+                'priority' => 100,
+                'client' => $ticketClientDetails,
+            ],
+        ]);
 
     $service = new Service();
 
     $di = container();
-    $di['mod_service'] = $di->protect(function ($name) use ($supportServiceMock, $emailServiceMock) {
+    $di['mod_service'] = $di->protect(function ($name) use ($supportServiceMock, $clientServiceMock, $emailServiceMock) {
         if ($name == 'support') {
             return $supportServiceMock;
+        }
+        if ($name == 'client') {
+            return $clientServiceMock;
         }
         if ($name == 'email') {
             return $emailServiceMock;
         }
     });
-
-    $eventMock->shouldReceive('getDi')->atLeast()->once()
-        ->andReturn($di);
     $service->setDi($di);
-    $service->onAfterClientCloseTicket($eventMock);
+    dispatchStaffTicketEvent($service, $di, 'closed');
 });
 
-test('onAfterClientCloseTicket handles email exception', function (): void {
-    $eventMock = Mockery::mock('\Box_Event');
-
+test('typed ticket closed event handles email exception', function (): void {
     $supportServiceMock = Mockery::mock(Box\Mod\Support\Service::class);
     $supportServiceMock->shouldReceive('getTicketById')->atLeast()->once()
         ->andReturn(new Box\Mod\Support\Entity\SupportTicket());
@@ -659,9 +701,6 @@ test('onAfterClientCloseTicket handles email exception', function (): void {
     $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once()
         ->andThrow(new Exception('PHPunit controlled Exception'));
 
-    $eventMock->shouldReceive('getparameters')->atLeast()->once()
-        ->andReturn(['id' => random_int(1, 100)]);
-
     $service = new Service();
 
     $di = container();
@@ -673,16 +712,11 @@ test('onAfterClientCloseTicket handles email exception', function (): void {
             return $emailServiceMock;
         }
     });
-
-    $eventMock->shouldReceive('getDi')->atLeast()->once()
-        ->andReturn($di);
     $service->setDi($di);
-    $service->onAfterClientCloseTicket($eventMock);
+    dispatchStaffTicketEvent($service, $di, 'closed');
 });
 
-test('onAfterClientOpenTicket sends guest email notification', function (): void {
-    $eventMock = Mockery::mock('\Box_Event');
-
+test('typed ticket opened event sends guest email notification', function (): void {
     $supportServiceMock = Mockery::mock(Box\Mod\Support\Service::class);
     $supportServiceMock->shouldReceive('getTicketById')->atLeast()->once()
         ->andReturn(new Box\Mod\Support\Entity\SupportTicket());
@@ -693,9 +727,6 @@ test('onAfterClientOpenTicket sends guest email notification', function (): void
     $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once()
         ->with(Mockery::on(fn ($email): bool => $email['code'] === 'mod_staff_ticket_open'));
 
-    $eventMock->shouldReceive('getparameters')->atLeast()->once()
-        ->andReturn(['id' => random_int(1, 100)]);
-
     $service = new Service();
 
     $di = container();
@@ -707,16 +738,11 @@ test('onAfterClientOpenTicket sends guest email notification', function (): void
             return $emailServiceMock;
         }
     });
-
-    $eventMock->shouldReceive('getDi')->atLeast()->once()
-        ->andReturn($di);
     $service->setDi($di);
-    $service->onAfterClientOpenTicket($eventMock);
+    dispatchStaffTicketEvent($service, $di, 'opened', TicketActorRole::GUEST);
 });
 
-test('onAfterClientOpenTicket handles guest email exception', function (): void {
-    $eventMock = Mockery::mock('\Box_Event');
-
+test('typed ticket opened event handles guest email exception', function (): void {
     $supportServiceMock = Mockery::mock(Box\Mod\Support\Service::class);
     $supportServiceMock->shouldReceive('getTicketById')->atLeast()->once()
         ->andReturn(new Box\Mod\Support\Entity\SupportTicket());
@@ -727,9 +753,6 @@ test('onAfterClientOpenTicket handles guest email exception', function (): void 
     $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once()
         ->andThrow(new Exception('PHPunit controlled Exception'));
 
-    $eventMock->shouldReceive('getparameters')->atLeast()->once()
-        ->andReturn(['id' => random_int(1, 100)]);
-
     $service = new Service();
 
     $di = container();
@@ -741,16 +764,11 @@ test('onAfterClientOpenTicket handles guest email exception', function (): void 
             return $emailServiceMock;
         }
     });
-
-    $eventMock->shouldReceive('getDi')->atLeast()->once()
-        ->andReturn($di);
     $service->setDi($di);
-    $service->onAfterClientOpenTicket($eventMock);
+    dispatchStaffTicketEvent($service, $di, 'opened', TicketActorRole::GUEST);
 });
 
-test('onAfterClientReplyTicket sends guest email notification', function (): void {
-    $eventMock = Mockery::mock('\Box_Event');
-
+test('typed ticket replied event sends guest email notification', function (): void {
     $supportServiceMock = Mockery::mock(Box\Mod\Support\Service::class);
     $supportServiceMock->shouldReceive('getTicketById')->atLeast()->once()
         ->andReturn(new Box\Mod\Support\Entity\SupportTicket());
@@ -761,9 +779,6 @@ test('onAfterClientReplyTicket sends guest email notification', function (): voi
     $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once()
         ->with(Mockery::on(fn ($email): bool => $email['code'] === 'mod_staff_ticket_reply'));
 
-    $eventMock->shouldReceive('getparameters')->atLeast()->once()
-        ->andReturn(['id' => random_int(1, 100)]);
-
     $service = new Service();
 
     $di = container();
@@ -775,16 +790,11 @@ test('onAfterClientReplyTicket sends guest email notification', function (): voi
             return $emailServiceMock;
         }
     });
-
-    $eventMock->shouldReceive('getDi')->atLeast()->once()
-        ->andReturn($di);
     $service->setDi($di);
-    $service->onAfterClientReplyTicket($eventMock);
+    dispatchStaffTicketEvent($service, $di, 'replied', TicketActorRole::GUEST);
 });
 
-test('onAfterClientReplyTicket handles guest email exception', function (): void {
-    $eventMock = Mockery::mock('\Box_Event');
-
+test('typed ticket replied event handles guest email exception', function (): void {
     $supportServiceMock = Mockery::mock(Box\Mod\Support\Service::class);
     $supportServiceMock->shouldReceive('getTicketById')->atLeast()->once()
         ->andReturn(new Box\Mod\Support\Entity\SupportTicket());
@@ -795,9 +805,6 @@ test('onAfterClientReplyTicket handles guest email exception', function (): void
     $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once()
         ->andThrow(new Exception('PHPunit controlled Exception'));
 
-    $eventMock->shouldReceive('getparameters')->atLeast()->once()
-        ->andReturn(['id' => random_int(1, 100)]);
-
     $service = new Service();
 
     $di = container();
@@ -809,15 +816,11 @@ test('onAfterClientReplyTicket handles guest email exception', function (): void
             return $emailServiceMock;
         }
     });
-
-    $eventMock->shouldReceive('getDi')->atLeast()->once()
-        ->andReturn($di);
     $service->setDi($di);
-    $service->onAfterClientReplyTicket($eventMock);
+    dispatchStaffTicketEvent($service, $di, 'replied', TicketActorRole::GUEST);
 });
 
 test('onAfterClientSignUp sends sanitized client details in the email variables', function (): void {
-    $eventMock = Mockery::mock('\Box_Event');
     $clientId = 42;
     $client = createEntity(Box\Mod\Client\Entity\Client::class);
     $clientDetails = [
@@ -843,9 +846,6 @@ test('onAfterClientSignUp sends sanitized client details in the email variables'
             'c' => $clientDetails,
         ]);
 
-    $eventMock->shouldReceive('getParameters')->once()
-        ->andReturn(['id' => $clientId]);
-
     $service = new Service();
 
     $di = container();
@@ -858,14 +858,11 @@ test('onAfterClientSignUp sends sanitized client details in the email variables'
         }
     });
 
-    $eventMock->shouldReceive('getDi')->atLeast()->once()
-        ->andReturn($di);
     $service->setDi($di);
-    $service->onAfterClientSignUp($eventMock);
+    $service->onAfterClientSignUp(new AfterClientSignUpEvent($clientId));
 });
 
 test('onAfterClientSignUp handles email exception', function (): void {
-    $eventMock = Mockery::mock('\Box_Event');
     $clientId = 42;
     $client = createEntity(Box\Mod\Client\Entity\Client::class);
 
@@ -881,9 +878,6 @@ test('onAfterClientSignUp handles email exception', function (): void {
     $emailServiceMock->shouldReceive('sendTemplate')->once()
         ->andThrow(new Exception('PHPunit controlled Exception'));
 
-    $eventMock->shouldReceive('getParameters')->once()
-        ->andReturn(['id' => $clientId]);
-
     $service = new Service();
 
     $di = container();
@@ -896,15 +890,11 @@ test('onAfterClientSignUp handles email exception', function (): void {
         }
     });
 
-    $eventMock->shouldReceive('getDi')->atLeast()->once()
-        ->andReturn($di);
     $service->setDi($di);
-    $service->onAfterClientSignUp($eventMock);
+    $service->onAfterClientSignUp(new AfterClientSignUpEvent($clientId));
 });
 
-test('onAfterClientCloseTicket handles guest email exception', function (): void {
-    $eventMock = Mockery::mock('\Box_Event');
-
+test('typed ticket closed event handles guest email exception', function (): void {
     $supportServiceMock = Mockery::mock(Box\Mod\Support\Service::class);
     $supportServiceMock->shouldReceive('getTicketById')->atLeast()->once()
         ->andReturn(new Box\Mod\Support\Entity\SupportTicket());
@@ -914,9 +904,6 @@ test('onAfterClientCloseTicket handles guest email exception', function (): void
     $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);
     $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once()
         ->andThrow(new Exception('PHPunit controlled Exception'));
-
-    $eventMock->shouldReceive('getparameters')->atLeast()->once()
-        ->andReturn(['id' => random_int(1, 100)]);
 
     $service = new Service();
 
@@ -929,20 +916,55 @@ test('onAfterClientCloseTicket handles guest email exception', function (): void
             return $emailServiceMock;
         }
     });
-    $eventMock->shouldReceive('getDi')->atLeast()->once()
-        ->andReturn($di);
     $service->setDi($di);
-    $service->onAfterClientCloseTicket($eventMock);
+    dispatchStaffTicketEvent($service, $di, 'closed', TicketActorRole::GUEST);
 });
 
-test('onAfterClientOpenTicket sends mod_staff_ticket_open email', function (): void {
+test('staff ignores ticket lifecycle events caused by an admin', function (): void {
+    $di = container();
+    $moduleServiceRequests = [];
+    $di['mod_service'] = $di->protect(static function (string $name) use (&$moduleServiceRequests): object {
+        $moduleServiceRequests[] = $name;
+
+        throw new LogicException(sprintf('Unexpected module service request: %s', $name));
+    });
+
+    $service = new Service();
+    foreach (['opened', 'replied', 'closed'] as $action) {
+        dispatchStaffTicketEvent($service, $di, $action, TicketActorRole::ADMIN);
+    }
+
+    expect($moduleServiceRequests)->toBeEmpty();
+});
+
+test('typed ticket opened event sends mod_staff_ticket_open email', function (): void {
     $di = container();
 
+    $clientId = 7;
     $ticketModel = new Box\Mod\Support\Entity\SupportTicket();
-    \Tests\Helpers\setEntityId($ticketModel, 1);
+    staffSetEntityId($ticketModel, 1);
     $helpdesk = new Helpdesk();
-    \Tests\Helpers\setEntityId($helpdesk, 1);
+    staffSetEntityId($helpdesk, 1);
     $ticketModel->setSupportHelpdesk($helpdesk);
+    $ticketModel->setClientId($clientId);
+    $clientModel = createEntity(Box\Mod\Client\Entity\Client::class);
+    $clientDetails = [
+        'id' => $clientId,
+        'email' => 'client@example.com',
+        'first_name' => 'Example',
+        'last_name' => 'Client',
+        'company_vat' => 'VAT-SECRET',
+        'birthday' => '1990-01-02',
+        'phone' => '555-0100',
+        'address_1' => '123 Privacy St',
+        'timezone' => 'UTC',
+    ];
+    $ticketClientDetails = [
+        'id' => $clientId,
+        'email' => 'client@example.com',
+        'first_name' => 'Example',
+        'last_name' => 'Client',
+    ];
 
     $supportServiceMock = Mockery::mock(Box\Mod\Support\Service::class);
     $supportServiceMock->shouldReceive('getTicketById')->atLeast()->once()
@@ -952,20 +974,34 @@ test('onAfterClientOpenTicket sends mod_staff_ticket_open email', function (): v
     $supportServiceMock->shouldReceive('toApiArray')->atLeast()->once()
         ->andReturn($supportTicketArray);
 
+    $clientServiceMock = Mockery::mock(Box\Mod\Client\Service::class);
+    $clientServiceMock->shouldReceive('get')->once()
+        ->with(['id' => $clientId])
+        ->andReturn($clientModel);
+    $clientServiceMock->shouldReceive('toApiArray')->once()
+        ->with($clientModel)
+        ->andReturn($clientDetails);
+
     $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);
 
     $emailConfig = [
         'to_staff' => true,
         'code' => 'mod_staff_ticket_open',
-        'ticket' => ['priority' => 100],
+        'ticket' => [
+            'priority' => 100,
+            'client' => $ticketClientDetails,
+        ],
     ];
     $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once()
         ->with($emailConfig)
         ->andReturn(true);
 
-    $di['mod_service'] = $di->protect(function ($name) use ($supportServiceMock, $emailServiceMock) {
+    $di['mod_service'] = $di->protect(function ($name) use ($supportServiceMock, $clientServiceMock, $emailServiceMock) {
         if ($name == 'support') {
             return $supportServiceMock;
+        }
+        if ($name == 'client') {
+            return $clientServiceMock;
         }
         if ($name == 'email') {
             return $emailServiceMock;
@@ -976,6 +1012,9 @@ test('onAfterClientOpenTicket sends mod_staff_ticket_open email', function (): v
     $repoMock->shouldReceive('find')->atLeast()->once()
         ->andReturn(null);
     $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(AdminGroup::class)->andReturn(Mockery::mock(AdminGroupRepository::class)->shouldIgnoreMissing());
+    $emMock->shouldReceive('getRepository')->with(AdminGroupMember::class)->andReturn(Mockery::mock(AdminGroupMemberRepository::class)->shouldIgnoreMissing());
+    $emMock->shouldReceive('getRepository')->with(AdminPasswordReset::class)->andReturn(Mockery::mock(AdminPasswordResetRepository::class)->shouldIgnoreMissing());
     $emMock->shouldReceive('getRepository')
         ->with(Helpdesk::class)
         ->atLeast()->once()
@@ -984,25 +1023,38 @@ test('onAfterClientOpenTicket sends mod_staff_ticket_open email', function (): v
     $admin = \Tests\Helpers\admin();
     $di['loggedin_admin'] = $admin;
 
-    $eventMock = Mockery::mock('\Box_Event');
-    $eventMock->shouldReceive('getDi')->atLeast()->once()
-        ->andReturn($di);
-
-    $eventMock->shouldReceive('getparameters')->atLeast()->once()
-        ->andReturn(['id' => random_int(1, 100)]);
-
     $service = new Service();
-    $service->onAfterClientOpenTicket($eventMock);
+    dispatchStaffTicketEvent($service, $di, 'opened');
 });
 
-test('onAfterClientOpenTicket sends mod_support_helpdesk_ticket_open email', function (): void {
+test('typed ticket opened event sends mod_support_helpdesk_ticket_open email', function (): void {
     $di = container();
 
+    $clientId = 7;
     $ticketModel = new Box\Mod\Support\Entity\SupportTicket();
-    \Tests\Helpers\setEntityId($ticketModel, 1);
+    staffSetEntityId($ticketModel, 1);
     $helpdesk = new Helpdesk();
-    \Tests\Helpers\setEntityId($helpdesk, 1);
+    staffSetEntityId($helpdesk, 1);
     $ticketModel->setSupportHelpdesk($helpdesk);
+    $ticketModel->setClientId($clientId);
+    $clientModel = createEntity(Box\Mod\Client\Entity\Client::class);
+    $clientDetails = [
+        'id' => $clientId,
+        'email' => 'client@example.com',
+        'first_name' => 'Example',
+        'last_name' => 'Client',
+        'company_vat' => 'VAT-SECRET',
+        'birthday' => '1990-01-02',
+        'phone' => '555-0100',
+        'address_1' => '123 Privacy St',
+        'timezone' => 'UTC',
+    ];
+    $ticketClientDetails = [
+        'id' => $clientId,
+        'email' => 'client@example.com',
+        'first_name' => 'Example',
+        'last_name' => 'Client',
+    ];
 
     $supportServiceMock = Mockery::mock(Box\Mod\Support\Service::class);
     $supportServiceMock->shouldReceive('getTicketById')->atLeast()->once()
@@ -1012,21 +1064,35 @@ test('onAfterClientOpenTicket sends mod_support_helpdesk_ticket_open email', fun
     $supportServiceMock->shouldReceive('toApiArray')->atLeast()->once()
         ->andReturn($supportTicketArray);
 
+    $clientServiceMock = Mockery::mock(Box\Mod\Client\Service::class);
+    $clientServiceMock->shouldReceive('get')->once()
+        ->with(['id' => $clientId])
+        ->andReturn($clientModel);
+    $clientServiceMock->shouldReceive('toApiArray')->once()
+        ->with($clientModel)
+        ->andReturn($clientDetails);
+
     $helpdeskModel = (new Helpdesk())->setEmail('helpdesk@support.com');
 
     $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);
     $emailConfig = [
         'to' => $helpdeskModel->getEmail(),
         'code' => 'mod_support_helpdesk_ticket_open',
-        'ticket' => ['priority' => 100],
+        'ticket' => [
+            'priority' => 100,
+            'client' => $ticketClientDetails,
+        ],
     ];
     $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once()
         ->with($emailConfig)
         ->andReturn(true);
 
-    $di['mod_service'] = $di->protect(function ($name) use ($supportServiceMock, $emailServiceMock) {
+    $di['mod_service'] = $di->protect(function ($name) use ($supportServiceMock, $clientServiceMock, $emailServiceMock) {
         if ($name == 'support') {
             return $supportServiceMock;
+        }
+        if ($name == 'client') {
+            return $clientServiceMock;
         }
         if ($name == 'email') {
             return $emailServiceMock;
@@ -1037,6 +1103,9 @@ test('onAfterClientOpenTicket sends mod_support_helpdesk_ticket_open email', fun
     $repoMock->shouldReceive('find')->atLeast()->once()
         ->andReturn($helpdeskModel);
     $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(AdminGroup::class)->andReturn(Mockery::mock(AdminGroupRepository::class)->shouldIgnoreMissing());
+    $emMock->shouldReceive('getRepository')->with(AdminGroupMember::class)->andReturn(Mockery::mock(AdminGroupMemberRepository::class)->shouldIgnoreMissing());
+    $emMock->shouldReceive('getRepository')->with(AdminPasswordReset::class)->andReturn(Mockery::mock(AdminPasswordResetRepository::class)->shouldIgnoreMissing());
     $emMock->shouldReceive('getRepository')
         ->with(Helpdesk::class)
         ->atLeast()->once()
@@ -1045,15 +1114,8 @@ test('onAfterClientOpenTicket sends mod_support_helpdesk_ticket_open email', fun
     $admin = \Tests\Helpers\admin();
     $di['loggedin_admin'] = $admin;
 
-    $eventMock = Mockery::mock('\Box_Event');
-    $eventMock->shouldReceive('getDi')->atLeast()->once()
-        ->andReturn($di);
-
-    $eventMock->shouldReceive('getparameters')->atLeast()->once()
-        ->andReturn(['id' => random_int(1, 100)]);
-
     $service = new Service();
-    $service->onAfterClientOpenTicket($eventMock);
+    dispatchStaffTicketEvent($service, $di, 'opened');
 });
 
 test('getList returns paginated result', function (): void {
@@ -1125,6 +1187,27 @@ test('getSearchQuery returns correct query and params', function (array $data, s
     expect(str_contains((string) $result[0], $expectedStr))->toBeTrue($result[0]);
     expect(array_diff_key($result[1], $expectedParams))->toBe([]);
 })->with('searchFilters');
+
+test('getSearchQuery applies allowlisted sort', function (): void {
+    $di = container();
+
+    $service = new Service();
+    $service->setDi($di);
+
+    [$query] = $service->getSearchQuery(['sort' => 'name', 'direction' => 'desc']);
+    expect($query)->toContain('ORDER BY name DESC, id DESC');
+
+    [$pkQuery] = $service->getSearchQuery(['sort' => 'id', 'direction' => 'desc']);
+    expect($pkQuery)->toContain('ORDER BY id DESC');
+    expect($pkQuery)->not->toContain('id DESC, id DESC');
+
+    [$defaultQuery] = $service->getSearchQuery([]);
+    expect($defaultQuery)->toContain('ORDER BY id ASC');
+
+    [$invalidQuery] = $service->getSearchQuery(['sort' => 'pass', 'direction' => 'desc']);
+    expect($invalidQuery)->toContain('ORDER BY id ASC');
+    expect($invalidQuery)->not->toContain('pass DESC');
+});
 
 test('getCronAdmin returns existing cron admin', function (): void {
     $adminModel = \Tests\Helpers\admin();
@@ -1250,10 +1333,8 @@ test('update updates admin details', function (): void {
         'signature' => '1345',
     ];
 
-    $adminModel = \Tests\Helpers\admin();
-
-    $eventsMock = Mockery::mock('\Box_EventManager');
-    $eventsMock->shouldReceive('fire')->atLeast()->once();
+    $adminModel = \Tests\Helpers\admin(['id' => 5]);
+    [$eventDispatcher, $events] = staffAccountCrudEventDispatcher();
 
     $logStub = $this->createStub(FOSSBilling\Logger::class);
 
@@ -1262,7 +1343,7 @@ test('update updates admin details', function (): void {
     $serviceMock->shouldReceive('hasPermission')->atLeast()->once()->andReturn(true);
 
     $di = container();
-    $di['events_manager'] = $eventsMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = $logStub;
     $di['em']->shouldReceive('persist')->atLeast()->once();
     $di['em']->shouldReceive('flush')->atLeast()->once();
@@ -1272,6 +1353,10 @@ test('update updates admin details', function (): void {
 
     $result = $serviceMock->update($adminModel, $data);
     expect($result)->toBeTrue();
+    expect(array_map(static fn (object $event): string => $event::class, $events->getArrayCopy()))
+        ->toBe([BeforeAdminStaffUpdateEvent::class, AfterAdminStaffUpdateEvent::class]);
+    expect($events[0]->adminId)->toBe(5);
+    expect($events[1]->adminId)->toBe(5);
 });
 
 test('update rejects deactivating last active super administrator', function (): void {
@@ -1282,46 +1367,47 @@ test('update rejects deactivating last active super administrator', function ():
     $groupMemberRepository->shouldReceive('adminBelongsToSystemGroup')->once()->with(3, AdminGroup::SYSTEM_SUPER_ADMIN)->andReturn(true);
     $groupMemberRepository->shouldReceive('countActiveMembersInSystemGroup')->once()->with(AdminGroup::SYSTEM_SUPER_ADMIN)->andReturn(1);
 
-    $eventsMock = Mockery::mock('\Box_EventManager');
-    $eventsMock->shouldReceive('fire')->atLeast()->once();
+    [$eventDispatcher, $events] = staffAccountCrudEventDispatcher();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('hasPermission')->atLeast()->once()->andReturn(true);
 
     $di = container();
     $di['em'] = staffEntityManager($groupRepository, $groupMemberRepository);
-    $di['events_manager'] = $eventsMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['loggedin_admin'] = staffHierarchyBypassAdmin();
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->update($adminModel, ['status' => Admin::STATUS_INACTIVE]))
         ->toThrow(FOSSBilling\InformationException::class, 'Cannot remove the last active super administrator');
+    expect($events->getArrayCopy())->toHaveCount(1);
+    expect($events[0])->toBeInstanceOf(BeforeAdminStaffUpdateEvent::class);
 });
 
 test('update rejects deactivating own staff account', function (): void {
     $adminModel = \Tests\Helpers\admin(['id' => 10, 'status' => Admin::STATUS_ACTIVE]);
 
-    $eventsMock = Mockery::mock('\Box_EventManager');
-    $eventsMock->shouldReceive('fire')->atLeast()->once();
+    [$eventDispatcher, $events] = staffAccountCrudEventDispatcher();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('hasPermission')->once()->andReturn(true);
 
     $di = container();
     $di['em'] = staffEntityManager(Mockery::mock(AdminGroupRepository::class), Mockery::mock(AdminGroupMemberRepository::class));
-    $di['events_manager'] = $eventsMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['loggedin_admin'] = staffRegularAdmin();
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->update($adminModel, ['status' => Admin::STATUS_INACTIVE]))
         ->toThrow(FOSSBilling\InformationException::class, 'You cannot deactivate your own staff account');
+    expect($events->getArrayCopy())->toHaveCount(1);
+    expect($events[0])->toBeInstanceOf(BeforeAdminStaffUpdateEvent::class);
 });
 
 test('delete removes admin account', function (): void {
     $adminModel = \Tests\Helpers\admin(['id' => 5]);
 
-    $eventsMock = Mockery::mock('\Box_EventManager');
-    $eventsMock->shouldReceive('fire')->atLeast()->once();
+    [$eventDispatcher, $events] = staffAccountCrudEventDispatcher();
 
     $logStub = $this->createStub(FOSSBilling\Logger::class);
 
@@ -1342,7 +1428,7 @@ test('delete removes admin account', function (): void {
 
     $di = container();
     $di['em'] = staffEntityManager(Mockery::mock(AdminGroupRepository::class), $groupMemberRepository, null, $passwordResetRepository);
-    $di['events_manager'] = $eventsMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = $logStub;
     $di['loggedin_admin'] = staffHierarchyBypassAdmin();
 
@@ -1350,6 +1436,10 @@ test('delete removes admin account', function (): void {
 
     $result = $serviceMock->delete($adminModel);
     expect($result)->toBeTrue();
+    expect(array_map(static fn (object $event): string => $event::class, $events->getArrayCopy()))
+        ->toBe([BeforeAdminStaffDeleteEvent::class, AfterAdminStaffDeleteEvent::class]);
+    expect($events[0]->adminId)->toBe(5);
+    expect($events[1]->adminId)->toBe(5);
 });
 
 test('delete rejects removing last active super administrator', function (): void {
@@ -1383,10 +1473,9 @@ test('delete rejects cron account', function (): void {
 
 test('changePassword updates admin password', function (): void {
     $plainTextPassword = 'password';
-    $adminModel = \Tests\Helpers\admin();
+    $adminModel = \Tests\Helpers\admin(['id' => 5]);
 
-    $eventsMock = Mockery::mock('\Box_EventManager');
-    $eventsMock->shouldReceive('fire')->atLeast()->once();
+    [$eventDispatcher, $events] = staffAccountCrudEventDispatcher();
 
     $logStub = $this->createStub(FOSSBilling\Logger::class);
 
@@ -1401,7 +1490,7 @@ test('changePassword updates admin password', function (): void {
     $serviceMock->shouldReceive('hasPermission')->atLeast()->once()->andReturn(true);
 
     $di = container();
-    $di['events_manager'] = $eventsMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = $logStub;
     $di['em']->shouldReceive('persist')->atLeast()->once();
     $di['em']->shouldReceive('flush')->atLeast()->once();
@@ -1413,6 +1502,10 @@ test('changePassword updates admin password', function (): void {
 
     $result = $serviceMock->changePassword($adminModel, $plainTextPassword);
     expect($result)->toBeTrue();
+    expect(array_map(static fn (object $event): string => $event::class, $events->getArrayCopy()))
+        ->toBe([BeforeAdminStaffPasswordChangeEvent::class, AfterAdminStaffPasswordChangeEvent::class]);
+    expect($events[0]->adminId)->toBe(5);
+    expect($events[1]->adminId)->toBe(5);
 });
 
 test('create creates new admin account', function (): void {
@@ -1422,14 +1515,15 @@ test('create creates new admin account', function (): void {
         'status' => 'active',
         'password' => '1345',
         'group_id' => 2,
+        'api_token' => 'token-must-not-be-exposed',
+        'password_confirm' => 'confirmation-must-not-be-exposed',
     ];
 
     $newId = 1;
     $group = new AdminGroup();
     staffSetEntityId($group, 2);
 
-    $eventsMock = Mockery::mock('\Box_EventManager');
-    $eventsMock->shouldReceive('fire')->atLeast()->once();
+    [$eventDispatcher, $events] = staffAccountCrudEventDispatcher();
 
     $logStub = $this->createStub(FOSSBilling\Logger::class);
 
@@ -1442,7 +1536,7 @@ test('create creates new admin account', function (): void {
     $serviceMock->shouldReceive('hasPermission')->atLeast()->once()->andReturn(true);
 
     $di = container();
-    $di['events_manager'] = $eventsMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = $logStub;
     $di['em'] = staffEntityManager(Mockery::mock(AdminGroupRepository::class)->shouldReceive('findById')->once()->with(2)->andReturn($group)->getMock());
     $di['loggedin_admin'] = staffHierarchyBypassAdmin();
@@ -1454,6 +1548,15 @@ test('create creates new admin account', function (): void {
     expect($result)->toBeInt();
     expect($result)->toBe($newId);
     expect($di['em']->persisted[1])->toBeInstanceOf(AdminGroupMember::class);
+    expect(array_map(static fn (object $event): string => $event::class, $events->getArrayCopy()))
+        ->toBe([BeforeAdminStaffCreateEvent::class, AfterAdminStaffCreateEvent::class]);
+    expect($events[0]->input)->toBe([
+        'email' => 'test@example.com',
+        'name' => 'testJohn',
+        'status' => 'active',
+        'group_id' => 2,
+    ]);
+    expect($events[1]->adminId)->toBe(1);
 });
 
 test('create rejects missing initial group', function (): void {
@@ -1485,8 +1588,7 @@ test('create throws exception for duplicate email', function (): void {
     $group = new AdminGroup();
     staffSetEntityId($group, 2);
 
-    $eventsMock = Mockery::mock('\Box_EventManager');
-    $eventsMock->shouldReceive('fire')->atLeast()->once();
+    [$eventDispatcher, $events] = staffAccountCrudEventDispatcher();
 
     $groupRepository = Mockery::mock(AdminGroupRepository::class)->shouldReceive('findById')->once()->with(2)->andReturn($group)->getMock();
     $emMock = Mockery::mock(EntityManagerInterface::class);
@@ -1516,7 +1618,7 @@ test('create throws exception for duplicate email', function (): void {
     $serviceMock->shouldReceive('hasPermission')->atLeast()->once()->andReturn(true);
 
     $di = container();
-    $di['events_manager'] = $eventsMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = $logStub;
     $di['em'] = $emMock;
     $di['loggedin_admin'] = staffHierarchyBypassAdmin();
@@ -1526,6 +1628,8 @@ test('create throws exception for duplicate email', function (): void {
 
     expect(fn () => $serviceMock->create($data))
         ->toThrow(FOSSBilling\Exception::class, "Staff member with email {$data['email']} is already registered.");
+    expect($events->getArrayCopy())->toHaveCount(1);
+    expect($events[0])->toBeInstanceOf(BeforeAdminStaffCreateEvent::class);
 });
 
 test('createGroup creates new admin group', function (): void {
@@ -2079,6 +2183,26 @@ test('getActivityAdminHistorySearchQuery returns correct query and params', func
     expect(str_contains((string) $result[0], $expectedStr))->toBeTrue($result[0]);
     expect(array_diff_key($result[1], $expectedParams))->toBe([]);
 })->with('ActivityAdminHistorySearchFilters');
+
+test('getActivityAdminHistorySearchQuery applies allowlisted sort', function (): void {
+    $di = container();
+
+    $service = new Service();
+    $service->setDi($di);
+
+    [$query] = $service->getActivityAdminHistorySearchQuery(['sort' => 'created_at', 'direction' => 'desc']);
+    expect($query)->toContain('ORDER BY m.created_at DESC, m.id DESC');
+
+    [$pkQuery] = $service->getActivityAdminHistorySearchQuery(['sort' => 'id', 'direction' => 'desc']);
+    expect($pkQuery)->toContain('ORDER BY m.id DESC');
+    expect($pkQuery)->not->toContain('m.id DESC, m.id DESC');
+
+    [$defaultQuery] = $service->getActivityAdminHistorySearchQuery([]);
+    expect($defaultQuery)->toContain('ORDER BY m.id DESC');
+
+    [$invalidQuery] = $service->getActivityAdminHistorySearchQuery(['sort' => 'admin_id']);
+    expect($invalidQuery)->toContain('ORDER BY m.id DESC');
+});
 
 test('toActivityAdminHistoryRowApiArray returns paginated history data without additional lookups', function (): void {
     $service = new Service();

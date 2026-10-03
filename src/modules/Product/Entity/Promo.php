@@ -22,6 +22,7 @@ use FOSSBilling\Interfaces\TimestampInterface;
 #[ORM\Index(name: 'start_index_idx', columns: ['start_at'])]
 #[ORM\Index(name: 'end_index_idx', columns: ['end_at'])]
 #[ORM\Index(name: 'active_index_idx', columns: ['active'])]
+#[ORM\Index(name: 'auto_apply_index_idx', columns: ['auto_apply'])]
 #[ORM\HasLifecycleCallbacks]
 class Promo implements ApiArrayInterface, TimestampInterface
 {
@@ -81,11 +82,26 @@ class Promo implements ApiArrayInterface, TimestampInterface
     #[ORM\Column(name: 'client_groups', type: \Doctrine\DBAL\Types\Types::TEXT, nullable: true)]
     private ?string $clientGroups = null;
 
+    #[ORM\Column(name: 'requires_products', type: \Doctrine\DBAL\Types\Types::TEXT, nullable: true)]
+    private ?string $requiresProducts = null;
+
     #[ORM\Column(name: 'start_at', type: \Doctrine\DBAL\Types\Types::DATETIME_MUTABLE, nullable: true)]
     private ?\DateTime $startAt = null;
 
     #[ORM\Column(name: 'end_at', type: \Doctrine\DBAL\Types\Types::DATETIME_MUTABLE, nullable: true)]
     private ?\DateTime $endAt = null;
+
+    #[ORM\Column(name: 'auto_apply', type: \Doctrine\DBAL\Types\Types::BOOLEAN, nullable: true, options: ['default' => false])]
+    /** @phpstan-ignore property.unusedType (column is nullable in the DB) */
+    private ?bool $autoApply = false;
+
+    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::INTEGER, nullable: true, options: ['default' => 0])]
+    /** @phpstan-ignore property.unusedType (column is nullable in the DB) */
+    private ?int $priority = 0;
+
+    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::BOOLEAN, nullable: true, options: ['default' => false])]
+    /** @phpstan-ignore property.unusedType (column is nullable in the DB) */
+    private ?bool $stackable = false;
 
     public function toApiArray(): array
     {
@@ -104,8 +120,12 @@ class Promo implements ApiArrayInterface, TimestampInterface
             'products' => $this->products,
             'periods' => $this->periods,
             'client_groups' => $this->clientGroups,
+            'requires_products' => $this->requiresProducts,
             'start_at' => $this->startAt?->format('Y-m-d H:i:s'),
             'end_at' => $this->endAt?->format('Y-m-d H:i:s'),
+            'auto_apply' => $this->autoApply ?? false,
+            'priority' => $this->priority ?? 0,
+            'stackable' => $this->stackable ?? false,
             'created_at' => $this->getCreatedAt()?->format('Y-m-d H:i:s'),
             'updated_at' => $this->getUpdatedAt()?->format('Y-m-d H:i:s'),
         ];
@@ -272,6 +292,18 @@ class Promo implements ApiArrayInterface, TimestampInterface
         return $this;
     }
 
+    public function getRequiresProducts(): ?string
+    {
+        return $this->requiresProducts;
+    }
+
+    public function setRequiresProducts(?string $requiresProducts): self
+    {
+        $this->requiresProducts = $requiresProducts;
+
+        return $this;
+    }
+
     public function getStartAt(): ?\DateTime
     {
         return $this->startAt;
@@ -292,6 +324,42 @@ class Promo implements ApiArrayInterface, TimestampInterface
     public function setEndAt(?\DateTime $endAt): self
     {
         $this->endAt = $endAt;
+
+        return $this;
+    }
+
+    public function isAutoApply(): bool
+    {
+        return $this->autoApply ?? false;
+    }
+
+    public function setAutoApply(bool $autoApply): self
+    {
+        $this->autoApply = $autoApply;
+
+        return $this;
+    }
+
+    public function getPriority(): int
+    {
+        return $this->priority ?? 0;
+    }
+
+    public function setPriority(?int $priority): self
+    {
+        $this->priority = max(0, $priority ?? 0);
+
+        return $this;
+    }
+
+    public function isStackable(): bool
+    {
+        return $this->stackable ?? false;
+    }
+
+    public function setStackable(bool $stackable): self
+    {
+        $this->stackable = $stackable;
 
         return $this;
     }

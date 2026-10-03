@@ -11,7 +11,10 @@ declare(strict_types=1);
 
 namespace Box\Mod\System;
 
+use Box\Mod\Cron\Event\BeforeAdminCronRunEvent;
 use Box\Mod\System\Entity\Setting;
+use Box\Mod\System\Event\AfterAdminSettingsUpdateEvent;
+use Box\Mod\System\Event\BeforeAdminSettingsUpdateEvent;
 use Box\Mod\System\Repository\SettingRepository;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception\DeadlockException;
@@ -30,6 +33,7 @@ use FOSSBilling\SentryHelper;
 use FOSSBilling\Twig\SandboxedStringRenderer;
 use FOSSBilling\Version;
 use Pimple\Container;
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Contracts\Cache\ItemInterface;
@@ -141,6 +145,13 @@ class Service
     private function writeParamValue(string $param, $value, bool $createIfNotExists): void
     {
         $value = $value === null ? null : (string) $value;
+
+        // Normalize the key so the permission check and the lookup below
+        // agree on it, then reject anything outside the canonical charset.
+        $param = strtolower($param);
+        if (!preg_match('/^[a-z0-9_]+$/', $param)) {
+            throw new \FOSSBilling\InformationException('Invalid parameter name, received: param_.', ['param_' => $param]);
+        }
 
         // Skip this param if the user isn't permitted to update it.
         if (!$this->canUpdateParam($param)) {
@@ -275,7 +286,8 @@ class Service
 
     public function updateParams($data): bool
     {
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminSettingsUpdate', 'params' => $data]);
+        $parameterNames = array_map(static fn (int|string $key): string => (string) $key, array_keys($data));
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminSettingsUpdateEvent($parameterNames));
 
         foreach ($data as $key => $val) {
             if (!$this->canUpdateParam($key)) {
@@ -290,7 +302,7 @@ class Service
         // Flush the batch once; a unique-constraint collision surfaces to the caller.
         $this->di['em']->flush();
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminSettingsUpdate']);
+        $this->di['event_dispatcher']->dispatch(new AfterAdminSettingsUpdateEvent());
 
         $this->di['logger']->info('Updated system general settings');
 
@@ -734,23 +746,23 @@ class Service
         return true;
     }
 
-    public static function onBeforeAdminCronRun(\Box_Event $event): void
+    #[AsEventListener]
+    public function refreshGeoIpAndPruneCache(BeforeAdminCronRunEvent $event): void
     {
-        $di = $event->getDi();
         /** @var Reader $geoipReader */
         $geoipReader = (new \ReflectionClass(Reader::class))->newInstanceWithoutConstructor();
-        $geoipReader->setDi($di);
+        $geoipReader->setDi($this->di);
         $geoipReader->updateDefaultDatabases();
 
         try {
             // Prune the cache. Only filesystem-backed pools support this; Redis/Memcached
             // expire entries on their own and don't implement PruneableInterface.
-            $cache = $di['cache'];
+            $cache = $this->di['cache'];
             if ($cache instanceof \Symfony\Component\Cache\PruneableInterface && $cache->prune()) {
-                $di['logger']->withChannel('cron')->info('Pruned the filesystem cache');
+                $this->di['logger']->withChannel('cron')->info('Pruned the filesystem cache');
             }
         } catch (\Exception $e) {
-            $di['logger']->error($e->getMessage());
+            $this->di['logger']->error($e->getMessage());
         }
     }
 
@@ -765,6 +777,11 @@ class Service
      *
      * Not subject to canUpdateParam(): this reserves an internal counter rather than applying a
      * user-driven settings change, and must work in client and cron contexts.
+     *
+     * The reservation nests via SAVEPOINT when the caller already holds a transaction on the
+     * shared connection (which is always the case for the invoice issuance path), so an outer
+     * rollback undoes the advance as well: a failed issuance burns no number and leaves no gap.
+     * Pinned by ReserveNumericParamValueConcurrencyTest's rollback case.
      *
      * Callers should invoke this before doing any of their own reads on the shared connection,
      * not after. On SQLite, an outer transaction that already read something is holding a SHARED
@@ -816,7 +833,11 @@ class Service
         /** @var Connection $connection */
         $connection = $this->di['dbal'];
 
-        return $connection->transactional(fn (Connection $connection): ?int => $this->doReserveNumericParamValue($connection, $param, $seed));
+        try {
+            return $connection->transactional(fn (Connection $connection): ?int => $this->doReserveNumericParamValue($connection, $param, $seed));
+        } finally {
+            $this->settingRepository->clearRequestCache();
+        }
     }
 
     private function doReserveNumericParamValue(Connection $connection, string $param, ?int $seed): ?int
@@ -884,6 +905,10 @@ class Service
 
     private function canUpdateParam(string $param): bool
     {
+        // Compare case-insensitively so the check agrees with the lookup,
+        // which resolves case-insensitively on some database drivers.
+        $param = strtolower($param);
+
         $company = [
             'company_name',
             'company_email',

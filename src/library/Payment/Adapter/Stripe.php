@@ -73,6 +73,11 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
+    public static function requiresManualApproval(): bool
+    {
+        return false;
+    }
+
     /**
      * Building this opens a genuinely separate database connection - see
      * cacheGatewayCustomer() for why isolation from $this->di['em'] is
@@ -316,6 +321,10 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
         $invoice = $this->resolveInvoice($tx, $data);
 
+        if (!isset($data['get']['payment_intent']) && !isset($data['get']['setup_intent'])) {
+            throw new Payment_Exception('Stripe payment data is missing.', [], 7020);
+        }
+
         try {
             if (isset($data['get']['payment_intent'])) {
                 $this->processPaymentIntent($tx, $invoice, $data);
@@ -363,12 +372,34 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
     private function processPaymentIntent(Transaction $tx, ?Invoice $invoice, array $data): void
     {
         $charge = $this->stripe->paymentIntents->retrieve($data['get']['payment_intent'], []);
+        $this->validateRedirectPaymentIntent($tx, $invoice, $charge);
 
         $this->withStripeObjectLock(
             $charge->id,
             (int) $tx->getGateway()?->getId(),
             fn () => $this->processPaymentIntentUnderLock($tx, $invoice, $charge)
         );
+    }
+
+    private function validateRedirectPaymentIntent(Transaction $tx, ?Invoice $invoice, object $paymentIntent): void
+    {
+        $gatewayId = $paymentIntent->metadata->gateway_id ?? null;
+        if (!is_numeric($gatewayId) || (int) $gatewayId !== (int) $tx->getGateway()?->getId()) {
+            throw new FOSSBilling\Exception('PaymentIntent does not belong to this payment gateway');
+        }
+
+        if (!$invoice instanceof Invoice) {
+            return;
+        }
+
+        $invoiceId = $paymentIntent->metadata->invoice_id ?? null;
+        if (!is_numeric($invoiceId) || (int) $invoiceId !== (int) $invoice->getId()) {
+            throw new FOSSBilling\Exception('PaymentIntent does not belong to this invoice');
+        }
+
+        if (strcasecmp((string) ($paymentIntent->currency ?? ''), (string) $invoice->getCurrency()) !== 0) {
+            throw new FOSSBilling\Exception('PaymentIntent currency does not match invoice currency');
+        }
     }
 
     private function processPaymentIntentUnderLock(Transaction $tx, ?Invoice $invoice, object $charge): void
@@ -414,11 +445,8 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
                 }
             }
 
-            $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
-            if (!$transactionService->claimForProcessing((int) $tx->getId())) {
-                return;
-            }
-
+            // No re-claim: the service layer already holds the processing claim, and the
+            // in-memory marker below is what the succeeded branch keys off.
             $tx->setStatus(Transaction::STATUS_PROCESSING);
         }
 
@@ -453,8 +481,8 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             $clientService->addFunds($client, $bd['amount'], $bd['description'], $bd);
 
             if ($tx->getInvoice() instanceof Invoice && $invoice instanceof Invoice && !$invoiceService->isInvoiceTypeDeposit($invoice)) {
-                if (!$invoice->isApproved()) {
-                    $invoiceService->approveInvoice($invoice, ['use_credits' => false]);
+                if (!$invoice->isIssued()) {
+                    $invoiceService->issueInvoice($invoice, ['use_credits' => false]);
                 }
                 $invoiceService->payInvoiceWithCredits($invoice);
             } elseif ($tx->getInvoice() instanceof Invoice && $invoice instanceof Invoice && $invoiceService->isInvoiceTypeDeposit($invoice)) {
@@ -615,8 +643,8 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
         $invoiceService = $this->di['mod_service']('Invoice');
         if (!$invoiceService->isInvoiceTypeDeposit($invoice)) {
-            if (!$invoice->isApproved()) {
-                $invoiceService->approveInvoice($invoice, ['use_credits' => false]);
+            if (!$invoice->isIssued()) {
+                $invoiceService->issueInvoice($invoice, ['use_credits' => false]);
             }
             $invoiceService->payInvoiceWithCredits($invoice);
         }
@@ -925,11 +953,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             'rel_id' => $tx->getId(),
         ];
 
-        $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
-        if (!$transactionService->claimForProcessing((int) $tx->getId())) {
-            return false;
-        }
-
+        // No re-claim: the service layer already holds the processing claim.
         $tx->setType(Payment_Transaction::TXTYPE_PAYMENT);
         $tx->setAmount((string) $bd['amount']);
         $tx->setCurrency(strtoupper((string) ($stripeInvoice->currency ?? '')));
@@ -942,8 +966,8 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             $invoiceModel = $this->di['em']->getRepository(Invoice::class)->find((int) $invoiceId);
 
             if ($invoiceModel instanceof Invoice && !$invoiceService->isInvoiceTypeDeposit($invoiceModel)) {
-                if (!$invoiceModel->isApproved()) {
-                    $invoiceService->approveInvoice($invoiceModel, ['use_credits' => false]);
+                if (!$invoiceModel->isIssued()) {
+                    $invoiceService->issueInvoice($invoiceModel, ['use_credits' => false]);
                 }
                 $invoiceService->payInvoiceWithCredits($invoiceModel);
             }
@@ -1248,11 +1272,8 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
         $invoiceService = $this->di['mod_service']('Invoice');
 
-        $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
-        if (!$transactionService->claimForProcessing((int) $tx->getId())) {
-            return;
-        }
-
+        // No re-claim: the service layer already holds the processing claim, and the
+        // in-memory marker below is what the succeeded branch keys off.
         $tx->setStatus(Transaction::STATUS_PROCESSING);
 
         $clientService = $this->di['mod_service']('client');
@@ -1285,8 +1306,8 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         $clientService->addFunds($client, $bd['amount'], $bd['description'], $bd);
 
         if ($tx->getInvoice() instanceof Invoice && $invoice instanceof Invoice && !$invoiceService->isInvoiceTypeDeposit($invoice)) {
-            if (!$invoice->isApproved()) {
-                $invoiceService->approveInvoice($invoice, ['use_credits' => false]);
+            if (!$invoice->isIssued()) {
+                $invoiceService->issueInvoice($invoice, ['use_credits' => false]);
             }
             $invoiceService->payInvoiceWithCredits($invoice);
         } elseif ($tx->getInvoice() instanceof Invoice && $invoice instanceof Invoice && $invoiceService->isInvoiceTypeDeposit($invoice)) {
@@ -1871,7 +1892,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 
         $setupIntentParams = [
             'customer' => $customerId,
-            'payment_method_types' => ['card'],
+            'allowed_payment_method_types' => ['card'],
             'usage' => 'off_session',
             'metadata' => [
                 'invoice_id' => (string) $invoice->getId(),

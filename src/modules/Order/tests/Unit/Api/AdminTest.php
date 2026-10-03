@@ -800,3 +800,35 @@ test('export_csv delegates to service when permissions granted', function (): vo
 
     expect($result)->toBeInstanceOf(Symfony\Component\HttpFoundation\Response::class);
 });
+
+test('rejects order create with promo when product promo permission is missing', function (): void {
+    $api = apiEndpoint(new Admin());
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('createOrder')->never();
+
+    $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffServiceMock->shouldReceive('hasPermission')->byDefault()->andReturn(true);
+    $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
+        ->byDefault()
+        ->andReturn(true);
+    $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
+        ->once()
+        ->with('product', 'manage_promos', null, Mockery::any())
+        ->andThrow(new FOSSBilling\InformationException('Denied', [], 403));
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn (string $name): Mockery\MockInterface => match (strtolower($name)) {
+        'staff' => $staffServiceMock,
+        default => Mockery::mock()->shouldIgnoreMissing(),
+    });
+
+    $api->setDi($di);
+    $api->setService($serviceMock);
+
+    expect(fn () => $api->create([
+        'client_id' => 1,
+        'product_id' => 1,
+        'promo_code' => 'ADMIN10',
+    ]))->toThrow(FOSSBilling\InformationException::class);
+});

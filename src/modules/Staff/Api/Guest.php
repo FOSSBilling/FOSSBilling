@@ -17,6 +17,9 @@ namespace Box\Mod\Staff\Api;
 
 use Box\Mod\Staff\Entity\Admin;
 use Box\Mod\Staff\Entity\AdminPasswordReset;
+use Box\Mod\Staff\Event\AfterStaffPasswordResetEvent;
+use Box\Mod\Staff\Event\BeforeStaffPasswordResetConfirmationEvent;
+use Box\Mod\Staff\Event\BeforeStaffPasswordResetRequestEvent;
 use FOSSBilling\Security\RandomizedTimeFloor;
 use FOSSBilling\Validation\Api\RequiredParams;
 
@@ -68,7 +71,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             if (isset($config['public']['reset_pw']) && $config['public']['reset_pw'] == '0') {
                 throw new \FOSSBilling\InformationException('Password reset has been disabled');
             }
-            $this->getDi()['events_manager']->fire(['event' => 'onBeforePasswordResetStaff']);
+            $this->getDi()['event_dispatcher']->dispatch(new BeforeStaffPasswordResetConfirmationEvent($this->getIp()));
             $required = [
                 'code' => 'Code required',
                 'password' => 'Password required',
@@ -115,7 +118,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
 
             $this->getDi()['logger']->withChannel('security')->info('Staff password reset completed for admin #{admin_id} from IP {ip}', ['admin_id' => $admin->getId(), 'ip' => $this->getIp()]);
 
-            $this->getDi()['events_manager']->fire(['event' => 'onAfterPasswordResetStaff', 'params' => ['id' => $admin->getId()]]);
+            $this->getDi()['event_dispatcher']->dispatch(new AfterStaffPasswordResetEvent((int) $admin->getId()));
 
             // send email
             $email = [];
@@ -142,7 +145,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         $startedAt = microtime(true);
 
         try {
-            $this->getDi()['events_manager']->fire(['event' => 'onBeforePasswordResetStaff']);
+            $this->getDi()['event_dispatcher']->dispatch(new BeforeStaffPasswordResetRequestEvent($this->getIp()));
             $data['email'] = $this->getDi()['tools']->validateAndSanitizeEmail($data['email']);
 
             $ipLimit = $this->getDi()['rate_limiter']->consume('staff_password_reset_ip', (string) $this->getIp());

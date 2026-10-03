@@ -18,6 +18,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Get paginated list of custom pages.
      *
+     * @optional string $sort - sort column: 'id', 'title', 'slug' or 'created_at'
+     * @optional string $direction - sort direction: 'ASC' or 'DESC'
+     *
      * @return array
      */
     public function get_list($data)

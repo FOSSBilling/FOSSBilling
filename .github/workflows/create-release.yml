@@ -11,9 +11,8 @@ on:
         required: true
         type: string
       target_ref:
-        description: 'Git ref to build and tag'
+        description: 'Git ref to build and tag (target)'
         required: true
-        default: main
         type: string
       draft:
         description: 'Create as a draft release'
@@ -181,11 +180,11 @@ jobs:
         run: echo "CACHE_IMAGE=ghcr.io/${GITHUB_REPOSITORY@L}-build-cache" >> "${GITHUB_ENV}"
 
       - name: 'Set up Docker Buildx'
-        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
 
       - name: 'Build Release Artifact'
         id: build
-        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
         with:
           build-args: |
             FOSSBILLING_VERSION=${{ inputs.version }}
@@ -206,6 +205,19 @@ jobs:
 
           echo "FOSSBILLING_RELEASE_DIGEST=sha256:$(sha256sum "../dist/FOSSBilling-${RELEASE_VERSION}.zip" | awk '{print $1}')" >> "$GITHUB_ENV"
         working-directory: ./release-tree
+
+      - name: 'Validate Release Tag'
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          # An existing tag pins the release commit; refuse a mismatched archive.
+          if tag_commit="$(git rev-parse --verify --quiet "refs/tags/${RELEASE_VERSION}^{commit}")"; then
+            head_commit="$(git rev-parse HEAD)"
+            if [[ "${tag_commit}" != "${head_commit}" ]]; then
+              echo "Tag ${RELEASE_VERSION} points at ${tag_commit}, but this run built from ${head_commit}. Re-run with target_ref set to the tag or the matching commit."
+              exit 1
+            fi
+          fi
 
       - name: 'Upload Release Archive to R2'
         id: r2-upload
@@ -250,11 +262,17 @@ jobs:
               --repo "${REPOSITORY}" \
               --clobber
 
+            edit_args=(
+              "${RELEASE_VERSION}"
+              --repo "${REPOSITORY}"
+              --target "${TARGET_REF}"
+            )
+
             if [[ "${RELEASE_NOTES}" != "none" ]]; then
-              gh release edit "${RELEASE_VERSION}" \
-                --repo "${REPOSITORY}" \
-                --notes-file release-notes.md
+              edit_args+=(--notes-file release-notes.md)
             fi
+
+            gh release edit "${edit_args[@]}"
 
             echo "operation=updated" >> "${GITHUB_OUTPUT}"
             exit 0

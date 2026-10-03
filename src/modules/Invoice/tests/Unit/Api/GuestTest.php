@@ -35,6 +35,12 @@ test('gets an invoice', function (): void {
     $serviceMock->shouldReceive('toApiArray')
         ->atLeast()->once()
         ->andReturn([]);
+    $serviceMock->shouldReceive('getDebitingInvoiceIds')
+        ->atLeast()->once()
+        ->andReturn([]);
+    $serviceMock->shouldReceive('getRelatedInvoiceReferences')
+        ->atLeast()->once()
+        ->andReturn([]);
 
     $model = createEntity(Invoice::class);
 

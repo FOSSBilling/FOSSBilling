@@ -29,7 +29,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
     public function get_list($data)
     {
         $data['client_id'] = $this->getIdentity()->getId();
-        $data['approved'] = true;
+        $data['issued'] = true;
 
         $service = $this->getService();
         $qb = $service->getInvoiceRepository()->getSearchQueryBuilder($data);
@@ -57,7 +57,11 @@ class Client extends \FOSSBilling\Api\AbstractApi
             throw new \FOSSBilling\InformationException('Invoice was not found');
         }
 
-        return $this->getService()->toApiArray($model, true, $identity);
+        $result = $this->getService()->toApiArray($model, true, $identity);
+        $result['debited_by_invoice_ids'] = $this->getService()->getDebitingInvoiceIds($model);
+        $result['related_invoices'] = $this->getService()->getRelatedInvoiceReferences($model);
+
+        return $result;
     }
 
     /**
@@ -78,7 +82,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
         }
         $service = $this->getService();
         $invoice = $service->generateForOrder($model);
-        $service->approveInvoice($invoice, ['id' => $invoice->getId(), 'use_credits' => true]);
+        $service->issueInvoice($invoice, ['id' => $invoice->getId(), 'use_credits' => true]);
         $this->getDi()['logger']->info('Generated new renewal invoice #{invoice_id}', ['invoice_id' => $invoice->getId()]);
 
         return $invoice->getHash();
@@ -99,7 +103,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
 
         $service = $this->getService();
         $invoice = $service->generateFundsInvoice($this->getIdentity(), $data['amount']);
-        $service->approveInvoice($invoice, ['id' => $invoice->getId()]);
+        $service->issueInvoice($invoice, ['id' => $invoice->getId()]);
         $this->getDi()['logger']->info('Generated add funds invoice #{invoice_id}', ['invoice_id' => $invoice->getId()]);
 
         return $invoice->getHash();
@@ -127,7 +131,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
         return $this->getDi()['pager']->paginateMappedQuery(
             $qb,
             PaginationOptions::fromArray($data),
-            static fn ($row): array => $transactionService->transactionResultToApiArray($row[0], $row['gateway'] ?? null),
+            static fn ($row): array => $transactionService->transactionResultToApiArray($row[0], $row['gateway'] ?? null, $row['gateway_code'] ?? null),
         );
     }
 

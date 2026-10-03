@@ -18,11 +18,9 @@ use Symfony\Component\Filesystem\Path;
  * process - each running $workerBody against a shared, freshly-seeded SQLite counter file, then
  * returns every reservation every worker made, combined.
  *
- * A standalone script rather than reusing Service::setDi(): setDi() also wires up the
- * EntityManager for unrelated settings CRUD these tests don't exercise, and pulling that in would
- * require the full application bootstrap in every worker process. $workerBody sets the protected
- * $di property directly via reflection instead, bypassing setDi() -
- * reserveNextNumericParamValue() only ever touches $this->di['dbal']. $workerBody receives
+ * Each standalone worker uses a minimal EntityManager for the settings repository, so setDi()
+ * initializes the service and its cache invalidation without a full application bootstrap.
+ * $workerBody receives
  * $connection (an already-open Connection to the shared counter file), $service (a fresh
  * Box\Mod\System\Service already wired to it), and $count (reservations to make) as PHP source
  * text - it must populate $results with reserveNextNumericParamValue()'s return values and end by
@@ -41,8 +39,10 @@ function reserveNumericParamValueConcurrently(string $workerBody, int $workerCou
         require \$argv[1];
         [, , \$dbPath, \$count] = \$argv;
         \$connection = \\Doctrine\\DBAL\\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => \$dbPath]);
+        \$configuration = \\Doctrine\\ORM\\ORMSetup::createAttributeMetadataConfiguration([], true);
+        \$entityManager = new \\Doctrine\\ORM\\EntityManager(\$connection, \$configuration);
         \$service = new \\Box\\Mod\\System\\Service();
-        (new ReflectionProperty(\$service, 'di'))->setValue(\$service, new \\Pimple\\Container(['dbal' => \$connection]));
+        \$service->setDi(new \\Pimple\\Container(['dbal' => \$connection, 'em' => \$entityManager]));
 
         \$results = [];
         {$workerBody}
@@ -162,4 +162,30 @@ test('reserveNextNumericParamValue never hands out a duplicate value when called
 
     sort($reserved);
     expect($reserved)->toBe(range(0, $totalReservations - 1));
+});
+
+/*
+ * The missing half of the guarantee above: a reservation made inside an outer transaction that
+ * then rolls back must not advance the counter. The reservation nests via SAVEPOINT on the one
+ * shared connection, so the outer rollback undoes it - a failed invoice issuance burns no number
+ * and leaves no gap in the series. Single worker, no concurrency needed: rollback semantics are
+ * a single-connection property.
+ *
+ * Worker output is three values: the reservation made inside the doomed transaction, the raw
+ * counter value after the rollback, and a fresh reservation afterwards. All three must be 0.
+ */
+test('reserveNextNumericParamValue inside a rolled-back outer transaction leaves no gap', function (): void {
+    $reserved = reserveNumericParamValueConcurrently(
+        <<<'PHP'
+            $connection->beginTransaction();
+            $results[] = $service->reserveNextNumericParamValue('concurrency_counter');
+            $connection->rollBack();
+            $results[] = (int) $connection->fetchOne("SELECT value FROM setting WHERE param = 'concurrency_counter'");
+            $results[] = $service->reserveNextNumericParamValue('concurrency_counter');
+            PHP,
+        1,
+        0,
+    );
+
+    expect($reserved)->toBe([0, 0, 0]);
 });

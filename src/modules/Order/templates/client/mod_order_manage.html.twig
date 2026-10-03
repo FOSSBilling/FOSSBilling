@@ -139,7 +139,11 @@
             {{ render_widgets('client.order.manage.service.before', { 'order': order, 'service': service }) }}
             {% if order.status == 'active' and guest.system_template_exists({ 'file': service_partial }) %}
                 {% set service = client.order_service({ 'id': order.id }) %}
-                {{ include(service_partial, { 'order': order, 'service': service }) }}
+                {% if service %}
+                    {{ include(service_partial, { 'order': order, 'service': service }) }}
+                {% else %}
+                    <div class="alert alert-info" role="alert">{{ 'This order has no active service to manage.'|trans }}</div>
+                {% endif %}
             {% endif %}
             {{ render_widgets('client.order.manage.service.after', { 'order': order, 'service': service }) }}
 

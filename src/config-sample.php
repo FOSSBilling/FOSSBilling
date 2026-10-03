@@ -4,12 +4,9 @@ declare(strict_types=1);
 /**
  * FOSSBilling configuration file example.
  *
- * If you are not using the web installer, you can rename this file
- * to "config.php" and fill in the values.
- * Import /install/sql/structure.sql to your database
- * Import /install/sql/content.sql to your database
- * Open browser https://www.yourdomain.com/admin to create a new admin account.
- * Remove /install directory
+ * Fresh installations must use the web installer, which creates the database
+ * schema and seeds its initial data. Do not import /install/sql/content.sql
+ * directly, as it does not contain the database schema.
  *
  * For more information, see the documentation: https://docs.fossbilling.org/customizing-fossbilling/config/
  */
@@ -249,6 +246,13 @@ return [
 
     'rate_limiter' => [
         'enabled' => true,
+
+        /*
+         * Development environments (APP_ENV=dev) bypass rate limiting so local
+         * development and E2E runs are never throttled. Set this to true to
+         * test throttling behavior on a development box.
+         */
+        // 'enforce_in_development' => true,
 
         /*
          * Any IP address within this list will not be put through the rate-limiter system.

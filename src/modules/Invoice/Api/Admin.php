@@ -20,6 +20,7 @@ use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Subscription;
 use Box\Mod\Invoice\Entity\Tax;
 use Box\Mod\Invoice\Entity\Transaction;
+use Box\Mod\Invoice\Event\BeforeAdminTransactionProcessEvent;
 use Box\Mod\Order\Entity\Order;
 use FOSSBilling\InformationException;
 use FOSSBilling\PaginationOptions;
@@ -32,6 +33,8 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * Returns paginated list of invoices.
      *
      * @optional bool $summary - return only fields needed by invoice list views, without expanding related records
+     * @optional string $sort - sort column: 'id', 'nr', 'status', 'currency', 'created_at', 'updated_at', 'paid_at' or 'due_at'
+     * @optional string $direction - sort direction: 'ASC' or 'DESC'
      *
      * @return array
      */
@@ -66,30 +69,70 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return array
      */
+    #[RequiredParams(['id' => 'Invoice ID is missing'])]
     public function get($data)
     {
         $this->checkPermissions('invoice', 'view');
 
         $model = $this->_getInvoice($data);
 
-        return $this->getService()->toApiArray($model, true, $this->getIdentity());
+        // Detail view only: the list endpoint serializes every row through
+        // toApiArray, where per-invoice promo lookups would be N+1 queries.
+        $result = $this->getService()->toApiArray($model, true, $this->getIdentity());
+        $result['promo_applications'] = $this->getService()->getInvoicePromoApplications($model);
+        $result['debited_by_invoice_ids'] = $this->getService()->getDebitingInvoiceIds($model);
+
+        if (!empty($result['lines'])) {
+            $remaining = $this->getService()->getLineRemainingQuantities($model);
+            foreach ($result['lines'] as $i => $line) {
+                $result['lines'][$i]['remaining_quantity'] = $remaining[$line['id']] ?? $line['quantity'];
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Get the audit journal of an invoice: one entry per lifecycle
+     * transition with a trimmed snapshot of the invoice at that time.
+     *
+     * @return array
+     */
+    #[RequiredParams(['id' => 'Invoice ID is missing'])]
+    public function journal($data)
+    {
+        $this->checkPermissions('invoice', 'view');
+
+        $model = $this->_getInvoice($data);
+
+        return $this->getService()->getJournalForInvoice((int) $model->getId());
     }
 
     /**
      * Sets invoice status to paid. This method differs from invoice update method
      * in a way that it sends notification to Events system, so emails are sent.
+     * The gateway must be enabled; when the invoice has no gateway, gateway_id
+     * is required and is saved on the invoice, including on locked issued invoices.
      *
      * @optional bool $execute - execute related tasks on invoice items. Default false.
-     * @optional int $gateway_id - Payment gateway to associate with the invoice
+     * @optional int $gateway_id - Payment gateway to associate with the invoice. Required when the invoice has no gateway.
      * @optional string $transactionId - Custom transaction ID to use when the selected gateway is Custom
+     * @optional string $paid_at - payment date to record instead of now, e.g. "2026-09-01 14:00:00"
      *
      * @return bool
      */
+    #[RequiredParams(['id' => 'Invoice ID is missing'])]
     public function mark_as_paid($data)
     {
         $this->checkPermissions('invoice', 'manage_invoices');
 
         $invoice = $this->_getInvoice($data);
+
+        // Marking a deposit invoice as paid credits the client balance, so it
+        // requires the same permission as crediting the balance directly.
+        if ($this->getService()->isInvoiceTypeDeposit($invoice)) {
+            $this->checkPermissions('client', 'manage_balance');
+        }
 
         return $this->getService()->markAsPaidByAdmin($invoice, $data);
     }
@@ -99,7 +142,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * Uses clients details, such as currency assigned to client.
      * If client currency is not defined, sets default currency for client.
      *
-     * @optional bool $approve - set true to approve invoice after preparation. Defaults to false
+     * @optional bool $issue - set true to issue invoice after preparation. Defaults to false
      * @optional int $gateway_id - Selected payment gateway id
      * @optional array $items - list of invoice lines. One line is array of line parameters
      * @optional string $text_1 - text to be displayed before invoice items table
@@ -120,34 +163,140 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
-     * Approve invoice.
+     * Issue invoice.
      *
      * @return bool
      */
-    public function approve($data)
+    #[RequiredParams(['id' => 'Invoice ID is missing'])]
+    public function issue($data)
     {
         $this->checkPermissions('invoice', 'manage_invoices');
 
         $model = $this->_getInvoice($data);
 
-        return $this->getService()->approveInvoice($model, $data);
+        return $this->getService()->issueInvoice($model, $data);
     }
 
     /**
      * Add refunds.
      *
      * @optional string $note - note for refund
+     * @optional array $items - line id => quantity map for a partial refund; omit for a full refund
      *
-     * @return bool
+     * @return int $id - newly generated refund document ID
      */
+    #[RequiredParams(['id' => 'Invoice ID is missing'])]
     public function refund($data)
     {
         $this->checkPermissions('invoice', 'manage_invoices');
 
         $model = $this->_getInvoice($data);
         $note = $data['note'] ?? null;
+        $items = $data['items'] ?? null;
+        if ($items !== null && (!is_array($items) || $items === [])) {
+            throw new InformationException('Refund lines are invalid');
+        }
 
-        return $this->getService()->refundInvoice($model, $note);
+        return $this->getService()->refundInvoice($model, $note, $items);
+    }
+
+    /**
+     * Issue a debit note against an invoice.
+     *
+     * @optional string $note - note for the debit note
+     * @optional array $items - list of charge lines, each with title, price, and optional quantity, taxed and unit
+     *
+     * @return int $id - newly generated debit note ID
+     */
+    #[RequiredParams(['id' => 'Invoice ID is missing'])]
+    public function debit($data)
+    {
+        $this->checkPermissions('invoice', 'manage_invoices');
+
+        $model = $this->_getInvoice($data);
+        $note = $data['note'] ?? null;
+        $items = $data['items'] ?? null;
+        if (!is_array($items) || $items === []) {
+            throw new InformationException('Debit lines are missing');
+        }
+
+        return $this->getService()->debitInvoice($model, array_values($items), $note);
+    }
+
+    /**
+     * Attach a product to an editable invoice. Creates the order and adds it
+     * as an order line, so paying the invoice provisions the service.
+     *
+     * @optional int $order_id - attach an existing pending order instead of creating one
+     * @optional int $product_id - product to order and attach
+     * @optional int $quantity - quantity to order. Default 1
+     * @optional float $price - overridden unit price, zero allowed. Default is the product price.
+     * @optional string $period - billing period for recurrent products
+     * @optional array $config - product custom order form values
+     * @optional string $group_id - attach as an addon of this order group
+     * @optional string $title - order title. Default is the product title
+     *
+     * @return int $id - attached order ID
+     */
+    #[RequiredParams(['id' => 'Invoice ID is missing'])]
+    public function attach_order($data)
+    {
+        $this->checkPermissions('invoice', 'manage_invoices');
+        $this->checkPermissions('order', 'manage');
+
+        $model = $this->_getInvoice($data);
+
+        return $this->getService()->attachOrderToInvoice($model, $data);
+    }
+
+    /**
+     * Cancel an issued unpaid invoice and issue a replacement carrying its
+     * lines forward. The replacement takes the next invoice number; the
+     * original number stays with the canceled record.
+     *
+     * @optional string $reason - reason recorded on the replacement invoice
+     * @optional int $order_id - attach an existing pending order to the replacement
+     * @optional int $product_id - product to order and attach to the replacement
+     * @optional int $quantity - quantity to order. Default 1
+     * @optional float $price - overridden unit price, zero allowed
+     * @optional string $period - billing period for recurrent products
+     * @optional array $config - product custom order form values
+     * @optional string $group_id - attach as an addon of this order group
+     * @optional string $title - order title
+     *
+     * @return int $id - replacement invoice ID
+     */
+    #[RequiredParams(['id' => 'Invoice ID is missing'])]
+    public function reissue($data)
+    {
+        $this->checkPermissions('invoice', 'manage_invoices');
+        if (!empty($data['order_id']) || !empty($data['product_id'])) {
+            $this->checkPermissions('order', 'manage');
+        }
+
+        $model = $this->_getInvoice($data);
+
+        return $this->getService()->reissueInvoice($model, $data);
+    }
+
+    /**
+     * Cancel (void) an issued unpaid invoice without issuing a replacement.
+     * The invoice keeps its number with a canceled status so the audit trail
+     * survives. Linked orders keep pointing at it for history; transactions
+     * are detached but kept.
+     *
+     * @optional string $reason - reason recorded in the invoice notes
+     *
+     * @return bool
+     */
+    #[RequiredParams(['id' => 'Invoice ID is missing'])]
+    public function cancel($data)
+    {
+        $this->checkPermissions('invoice', 'manage_invoices');
+
+        $model = $this->_getInvoice($data);
+
+        return $this->getService()->cancelInvoice($model, $data);
     }
 
     /**
@@ -158,37 +307,25 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional string $created_at - Invoice issue date (Y-m-d) or empty to remove
      * @optional string $serie - Invoice serie
      * @optional string $nr - Invoice number
-     * @optional string $status - Invoice status: paid|unpaid
+     * @optional string $status - Invoice status for drafts: unpaid|canceled
      * @optional string $taxrate - Invoice tax rate
      * @optional string $taxname - Invoice tax name
-     * @optional bool $approved - flag to set invoice as approved. Approved invoices are visible to clients
+     * @optional bool $issued - read-only display of the issue state. Changing it is
+     *                         refused: issue a draft through the issue action or the
+     *                         $issue flag below instead.
      * @optional string $notes - notes
      * @optional int $gateway_id - selected payment method - gateway id
      * @optional array $new_item - [title] [price]
      * @optional string $text_1 - Custom invoice text 1
      * @optional string $text_2 - Custom invoice text 2
-     * @optional string $seller_company - Seller company name
-     * @optional string $seller_company_vat - Seller company VAT number
-     * @optional string $seller_company_number - Seller company number
-     * @optional string $seller_address - Seller address
-     * @optional string $seller_phone - Seller phone
-     * @optional string $seller_email - Seller email
-     * @optional string $buyer_first_name - Buyer first name
-     * @optional string $buyer_last_name - Buyer last name
-     * @optional string $buyer_company - Buyer company name
-     * @optional string $buyer_company_vat - Buyer company VAT number
-     * @optional string $buyer_company_number - Buyer company number
-     * @optional string $buyer_address - Buyer address
-     * @optional string $buyer_city - Buyer city
-     * @optional string $buyer_state - Buyer state
-     * @optional string $buyer_country - Buyer country
-     * @optional string $buyer_zip - Buyer zip
-     * @optional string $buyer_phone - Buyer phone
-     * @optional string $buyer_email - Buyer email
-     * @optional bool $approve - approve the invoice after saving the supplied changes
+     * @optional bool $issue - issue the invoice after saving the supplied changes
+     *
+     * Buyer and seller details are not accepted here: they are frozen from the
+     * live client and company records when the invoice is issued.
      *
      * @return bool
      */
+    #[RequiredParams(['id' => 'Invoice ID is missing'])]
     public function update($data)
     {
         $this->checkPermissions('invoice', 'manage_invoices');
@@ -196,8 +333,8 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $model = $this->_getInvoice($data);
         $result = $this->getService()->updateInvoice($model, $data);
 
-        if ($result && !empty($data['approve'])) {
-            return $this->getService()->approveInvoice($model, $data);
+        if ($result && !empty($data['issue'])) {
+            return $this->getService()->issueInvoice($model, $data);
         }
 
         return $result;
@@ -254,8 +391,14 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Delete invoice.
      *
+     * Unissued unpaid drafts are always deletable. Issued unpaid and
+     * canceled invoices additionally require relaxed invoice immutability.
+     * Paid, refunded, and note/reissue-linked invoices cannot be deleted;
+     * cancel, reissue, or refund them instead.
+     *
      * @return bool
      */
+    #[RequiredParams(['id' => 'Invoice ID is missing'])]
     public function delete($data)
     {
         $this->checkPermissions('invoice', 'manage_invoices');
@@ -309,6 +452,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      */
+    #[RequiredParams(['id' => 'Invoice ID is missing'])]
     public function pay_with_credits($data)
     {
         $this->checkPermissions('invoice', 'manage_invoices');
@@ -360,11 +504,8 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
-     * Calls due events on unpaid and approved invoices.
-     * Attach custom event hooks events:.
-     *
-     * onEventBeforeInvoiceIsDue - event receives params: id and days_left
-     * onEventAfterInvoiceIsDue - event receives params: id and days_passed
+     * Calls due events on unpaid and issued invoices.
+     * Extensions can listen to BeforeInvoiceIsDueEvent and AfterInvoiceIsDueEvent.
      *
      * @optional bool $once_per_day - default true. Pass false if you want to execute this action more than once per day
      *
@@ -379,10 +520,11 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
     /**
      * Send payment reminder notification for client.
-     * Calls event hook, so you can attach your custom notification code.
+     * Dispatches typed reminder events for custom notification code.
      *
      * @return bool
      */
+    #[RequiredParams(['id' => 'Invoice ID is missing'])]
     public function send_reminder($data)
     {
         $this->checkPermissions('invoice', 'manage_invoices');
@@ -420,6 +562,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
     /**
      * Process selected transaction.
+     *
+     * Automated gateways only: offline payments settle through the approve
+     * action instead.
      */
     #[RequiredParams(['id' => 'Transaction ID is missing'])]
     public function transaction_process($data): bool
@@ -431,11 +576,44 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             throw new \FOSSBilling\Exception('Transaction not found');
         }
 
-        $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminTransactionProcess', 'params' => ['id' => $model->getId()]]);
+        $transactionService = $this->getDi()['mod_service']('Invoice', 'Transaction');
+        $gateway = $model->getGateway();
+        // Offline payments settle through approval, never callback retries.
+        // Processed rows stay idempotent: the claim below reports them as
+        // already handled instead of throwing.
+        if ($gateway instanceof PayGateway
+            && $model->getStatus() !== Transaction::STATUS_PROCESSED
+            && \Box\Mod\Invoice\ServicePayGateway::isManualApprovalGateway($gateway->getGateway())
+        ) {
+            throw $transactionService->manualApprovalException($gateway);
+        }
+
+        $this->getDi()['event_dispatcher']->dispatch(new BeforeAdminTransactionProcessEvent((int) $model->getId()));
+
+        return $transactionService->preProcessTransaction($model);
+    }
+
+    /**
+     * Approve an offline payment after confirming the money arrived.
+     *
+     * Only for gateways that settle through manual approval (e.g. Custom).
+     * Credits the client and marks the invoice paid.
+     */
+    #[RequiredParams(['id' => 'Transaction ID is missing'])]
+    public function transaction_approve($data): bool
+    {
+        $this->checkPermissions('invoice', 'manage_transactions');
+
+        $model = $this->getDi()['em']->getRepository(Transaction::class)->find((int) $data['id']);
+        if (!$model instanceof Transaction) {
+            throw new \FOSSBilling\Exception('Transaction not found');
+        }
+
+        $this->getDi()['event_dispatcher']->dispatch(new BeforeAdminTransactionProcessEvent((int) $model->getId()));
 
         $transactionService = $this->getDi()['mod_service']('Invoice', 'Transaction');
 
-        return $transactionService->preProcessTransaction($model);
+        return $transactionService->approveTransaction($model);
     }
 
     /**
@@ -449,7 +627,6 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional string $currency - Currency code. Must be available on FOSSBilling
      * @optional string $type - Currency code. Must be available on FOSSBilling
      * @optional string $status - Transaction status on FOSSBilling
-     * @optional bool $validate_ipn - Flag to enable and disable IPN validation for this transaction
      * @optional string $note - Custom note
      *
      * @return bool
@@ -535,6 +712,8 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * Get paginated list of transactions.
      *
      * @optional string $txn_id - search for transactions by transaction id on payment gateway
+     * @optional string $sort - sort column: 'id', 'status', 'currency', 'type', 'txn_id', 'amount', 'gateway', 'created_at' or 'updated_at'
+     * @optional string $direction - sort direction: 'ASC' or 'DESC'
      *
      * @return array
      */
@@ -548,7 +727,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         return $this->getDi()['pager']->paginateMappedQuery(
             $qb,
             PaginationOptions::fromArray($data),
-            static fn ($row): array => $transactionService->transactionResultToApiArray($row[0], $row['gateway'] ?? null),
+            static fn ($row): array => $transactionService->transactionResultToApiArray($row[0], $row['gateway'] ?? null, $row['gateway_code'] ?? null),
         );
     }
 
@@ -649,6 +828,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
     /**
      * Get available gateways.
+     *
+     * @optional string $sort - sort column: 'id', 'title' or 'code'
+     * @optional string $direction - sort direction: 'ASC' or 'DESC'
      *
      * @return array
      */
@@ -800,6 +982,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
     /**
      * Get list of subscriptions.
+     *
+     * @optional string $sort - sort column: 'id', 'sid', 'status', 'currency', 'period', 'amount', 'created_at' or 'updated_at'
+     * @optional string $direction - sort direction: 'ASC' or 'DESC'
      *
      * @return array
      */
@@ -1020,6 +1205,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Get list of taxes.
      *
+     * @optional string $sort - sort column: 'id', 'name', 'country', 'state', 'taxrate', 'created_at' or 'updated_at'
+     * @optional string $direction - sort direction: 'ASC' or 'DESC'
+     *
      * @return array
      */
     public function tax_get_list($data)
@@ -1033,19 +1221,65 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
-     * Automatically setup the EU VAT tax rules for you for all EU Member States.
-     * This action will delete any existing tax rules and configure the VAT rates
-     * for all EU countries.
+     * Apply an existing promotion to an order on an unpaid invoice.
      *
-     * @return bool
+     * @optional string $promo_code - promo code to apply (takes precedence over promo_id)
+     * @optional int $promo_id - promo ID to apply
+     * @optional int $order_id - order on the invoice to discount; required when the invoice covers several orders
+     *
+     * @return float - applied discount amount in the invoice currency
      */
-    public function tax_setup_eu($data)
+    #[RequiredParams(['id' => 'Invoice ID is missing'])]
+    public function promo_add($data): float
     {
-        $this->checkPermissions('invoice', 'manage_tax');
+        $this->checkPermissions('invoice', 'manage_invoices');
+        $this->checkPermissions('product', 'manage_promos');
 
-        $taxService = $this->getDi()['mod_service']('Invoice', 'Tax');
+        $model = $this->_getInvoice($data);
+        [$promo, $order] = $this->resolvePromoAndOrder($data);
 
-        return $taxService->setupEUTaxes($data);
+        return $this->getService()->promoAddToInvoice($model, $promo, $order);
+    }
+
+    /**
+     * Remove a previously applied promotion from an order on an unpaid invoice.
+     *
+     * @optional string $promo_code - promo code to remove (takes precedence over promo_id)
+     * @optional int $promo_id - promo ID to remove
+     * @optional int $order_id - order on the invoice to remove the discount from; required when the invoice covers several orders
+     *
+     * @return float - removed discount amount in the invoice currency
+     */
+    #[RequiredParams(['id' => 'Invoice ID is missing'])]
+    public function promo_remove($data): float
+    {
+        $this->checkPermissions('invoice', 'manage_invoices');
+        $this->checkPermissions('product', 'manage_promos');
+
+        $model = $this->_getInvoice($data);
+        [$promo, $order] = $this->resolvePromoAndOrder($data);
+
+        return $this->getService()->promoRemoveFromInvoice($model, $promo, $order);
+    }
+
+    /**
+     * @return array{0: \Box\Mod\Product\Entity\Promo, 1: ?Order}
+     */
+    private function resolvePromoAndOrder(array $data): array
+    {
+        $productService = $this->getDi()['mod_service']('Product');
+        $promo = $productService->resolvePromoReference(
+            isset($data['promo_code']) ? (string) $data['promo_code'] : null,
+            isset($data['promo_id']) ? (int) $data['promo_id'] : null
+        ) ?? throw new InformationException('Promo code or promo ID was not passed');
+
+        $order = null;
+        if (!empty($data['order_id'])) {
+            $order = $this->getDi()['em']->getRepository(Order::class)->find((int) $data['order_id'])
+                ?? throw new InformationException('Order not found');
+        }
+
+        return [$promo, $order];
     }
 
     #[RequiredParams(['id' => 'Invoice ID was not passed'])]

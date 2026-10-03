@@ -114,6 +114,102 @@ test('does not finalize an update in the request that extracts it', function ():
     }
 });
 
+test('resets the opcode cache after extracting the update archive', function (): void {
+    $filesystem = new Filesystem();
+    $latestVersion = '0.8.5-test-' . bin2hex(random_bytes(8));
+    $entryName = '.fossbilling-update-test-' . bin2hex(random_bytes(8)) . '.txt';
+    $extractedFile = Path::join(PATH_ROOT, $entryName);
+    $archiveFile = Path::join(PATH_CACHE, $latestVersion . '.zip');
+    $lockFile = Path::join(PATH_ROOT, Update::LOCK_FILENAME);
+    $lockExisted = $filesystem->exists($lockFile);
+
+    $zip = new ZipFile();
+    $zip->addFromString($entryName, 'opcode cache reset test');
+    $archiveContent = $zip->outputAsString();
+
+    $releaseInfo = [
+        'version' => $latestVersion,
+        'minimum_php_version' => '8.3',
+        'download_url' => 'https://github.com/FOSSBilling/FOSSBilling/releases/download/test/update.zip',
+        'digest' => 'sha256:' . hash('sha256', $archiveContent),
+        'update_type' => 0,
+    ];
+
+    $finalization = Mockery::mock(UpdateFinalization::class);
+    $finalization->shouldReceive('isRequired')->once()->andReturnFalse();
+    $finalization->shouldReceive('createPendingState')->once()->andReturn(['status' => 'pending']);
+
+    $readiness = Mockery::mock();
+    $readiness->shouldReceive('check')->once()->andReturn(['can_update' => true]);
+
+    $session = Mockery::mock();
+    $session->shouldReceive('destroy')->once()->with('admin');
+
+    $di = new Pimple\Container();
+    $di['filesystem'] = $filesystem;
+    $di['http_client'] = new MockHttpClient(new MockResponse($archiveContent));
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['session'] = $session;
+    $di['update_finalization'] = $finalization;
+    $di['update_readiness'] = $readiness;
+
+    $update = new class($releaseInfo) extends Update {
+        public int $opcodeCacheResets = 0;
+
+        public function __construct(private readonly array $releaseInfo)
+        {
+            parent::__construct();
+        }
+
+        public function getUpdateBranch(): string
+        {
+            return 'release';
+        }
+
+        public function getLatestVersion(): string
+        {
+            return $this->releaseInfo['version'];
+        }
+
+        public function getLatestVersionInfo(?string $branch = null, bool $refetch = false): array
+        {
+            return $this->releaseInfo;
+        }
+
+        public function isUpdateAvailable(): bool
+        {
+            return true;
+        }
+
+        protected function invalidateOpcodeCache(): void
+        {
+            ++$this->opcodeCacheResets;
+        }
+    };
+    $update->setDi($di);
+
+    try {
+        $update->performUpdate();
+
+        // Without this reset, workers keep serving the pre-update compiled
+        // classes and the next request finalizes against stale code.
+        expect($update->opcodeCacheResets)->toBe(1);
+    } finally {
+        $filesystem->remove($extractedFile);
+        $filesystem->remove($archiveFile);
+        if (!$lockExisted) {
+            $filesystem->remove($lockFile);
+        }
+    }
+});
+
+test('opcode cache reset is best-effort and never throws', function (): void {
+    $method = new ReflectionMethod(Update::class, 'invalidateOpcodeCache');
+    $method->invoke(new Update());
+
+    expect(true)->toBeTrue();
+});
+
 test('does not create pending state when archive extraction fails', function (): void {
     $filesystem = new Filesystem();
     $latestVersion = '0.8.5-test-' . bin2hex(random_bytes(8));

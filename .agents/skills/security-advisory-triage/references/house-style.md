@@ -80,7 +80,10 @@ Technical root-cause walkthrough:
 - Contrast with sibling code that handles the same concern correctly.
   FOSSBilling's own advisories consistently point out when "the fix pattern
   already exists elsewhere in the codebase"; it reads as more convincing
-  than describing the bug in isolation.
+  than describing the bug in isolation. Name the sibling by file and method
+  only, never by another advisory's GHSA tag (short tags like "GHSA-xxxx"
+  are not valid references). If another advisory truly must be named, use
+  its full ID, but prefer leaving the cross-reference out entirely.
 - History where relevant: which PR/commit introduced the gap, or which
   later hardening pass should have covered this path but missed it. This
   turns "here's a bug" into "here's why it slipped through," which reads as
@@ -285,3 +288,8 @@ if you need the specifics):
   feedback cut a first draft roughly in half (one code quote, no
   non-load-bearing response path, history in one closing paragraph;
   Workarounds in two or three sentences with side effects in a clause).
+- v1.12: Details must contrast sibling code by file and method, never by
+  another advisory's short GHSA tag (not a valid reference); full ID only
+  if a cross-reference is unavoidable, preferably omitted. Caught during
+  review of a draft that cited "GHSA-xxxx" for the sibling global-counter
+  fix.

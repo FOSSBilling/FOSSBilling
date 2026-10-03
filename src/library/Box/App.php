@@ -44,7 +44,7 @@ class Box_App
 
     public function __construct(array|object $options = [], ?StandardDebugBar $debugBar = null)
     {
-        $this->options = new ArrayObject($options);
+        $this->options = new ArrayObject((array) $options);
 
         if (!$debugBar) {
             $this->debugBar = new StandardDebugBar();
@@ -59,9 +59,10 @@ class Box_App
         $this->request = $di['request'];
     }
 
-    public function setUrl(string $url): void
+    public function setUrl(?string $url): void
     {
-        $this->url = $url;
+        // Bot probes and legacy callers can pass null/empty. Fall back to '/'.
+        $this->url = ($url === null || $url === '') ? '/' : $url;
     }
 
     public function getDebugBar(): StandardDebugBar

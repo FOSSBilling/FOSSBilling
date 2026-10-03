@@ -11,6 +11,9 @@
 declare(strict_types=1);
 
 use Box\Mod\System\Service;
+use Doctrine\DBAL\DriverManager;
+use Doctrine\ORM\Tools\SchemaTool;
+use FOSSBilling\Doctrine\EntityManagerFactory;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 
@@ -309,10 +312,31 @@ test('updateParams updates system parameters in a single flush', function (): vo
     $data = [
         'company_name' => 'Inc. Test',
         'company_email' => 'work@example.eu',
+        'smtp_password' => 'do-not-expose-this-value',
     ];
 
-    $eventMock = Mockery::mock('\Box_EventManager');
-    $eventMock->shouldReceive('fire')->atLeast()->once();
+    $sequence = [];
+    $eventDispatcher = new class($sequence) {
+        /** @var list<FOSSBilling\Events\Event> */
+        public array $events = [];
+
+        /** @var list<string> */
+        private array $sequence;
+
+        /** @param list<string> $sequence */
+        public function __construct(array &$sequence)
+        {
+            $this->sequence = &$sequence;
+        }
+
+        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        {
+            $this->events[] = $event;
+            $this->sequence[] = $event instanceof Box\Mod\System\Event\BeforeAdminSettingsUpdateEvent ? 'typed-before' : 'typed-after';
+
+            return $event;
+        }
+    };
 
     $logStub = $this->createStub(FOSSBilling\Logger::class);
 
@@ -323,20 +347,141 @@ test('updateParams updates system parameters in a single flush', function (): vo
     $settingRepository = Mockery::mock(Box\Mod\System\Repository\SettingRepository::class);
     $settingRepository->shouldReceive('findOneByParam')->with('company_name')->andReturn($companyName);
     $settingRepository->shouldReceive('findOneByParam')->with('company_email')->andReturn(null);
+    $settingRepository->shouldReceive('findOneByParam')->with('smtp_password')->andReturn(null);
 
     $di = container();
-    $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = $logStub;
     $di['mod_service'] = $di->protect(fn (): object => $staffServiceMock);
     $di['em']->shouldReceive('getRepository')->with(Box\Mod\System\Entity\Setting::class)->andReturn($settingRepository);
-    $di['em']->shouldReceive('persist')->once();
-    $di['em']->shouldReceive('flush')->once();
+    $di['em']->shouldReceive('persist')->twice();
+    $di['em']->shouldReceive('flush')->once()->andReturnUsing(static function () use (&$sequence): void {
+        $sequence[] = 'flush';
+    });
     $service->setDi($di);
 
     $result = $service->updateParams($data);
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
     expect($companyName->getValue())->toBe('Inc. Test');
+    expect($sequence)->toBe(['typed-before', 'flush', 'typed-after']);
+    expect($eventDispatcher->events)->toHaveCount(2);
+    expect($eventDispatcher->events[0])->toBeInstanceOf(Box\Mod\System\Event\BeforeAdminSettingsUpdateEvent::class);
+    expect($eventDispatcher->events[0]->parameterNames)->toBe(array_keys($data));
+    expect(property_exists($eventDispatcher->events[0], 'data'))->toBeFalse();
+    expect($eventDispatcher->events[0]->parameterNames)->not->toContain('do-not-expose-this-value');
+    expect($eventDispatcher->events[1])->toBeInstanceOf(Box\Mod\System\Event\AfterAdminSettingsUpdateEvent::class);
+});
+
+test('updateParams denies a mixed-case guarded key without the company permission', function (): void {
+    $service = new Service();
+
+    $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffServiceMock->shouldReceive('hasPermission')->once()->with(null, 'system', 'manage_company_details')->andReturn(false);
+
+    $settingRepository = Mockery::mock(Box\Mod\System\Repository\SettingRepository::class);
+    $settingRepository->shouldReceive('findOneByParam')->never();
+
+    $di = container();
+    $di['event_dispatcher'] = new class {
+        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        {
+            return $event;
+        }
+    };
+    $di['mod_service'] = $di->protect(fn (): object => $staffServiceMock);
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\System\Entity\Setting::class)->andReturn($settingRepository);
+    $service->setDi($di);
+
+    expect(fn (): bool => $service->updateParams(['Company_Account_Number' => 'attacker']))->toThrow(
+        FOSSBilling\InformationException::class,
+        'You do not have permission to update the parameter'
+    );
+});
+
+test('updateParams denies a mixed-case legal key without the legal permission', function (): void {
+    $service = new Service();
+
+    $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffServiceMock->shouldReceive('hasPermission')->once()->with(null, 'system', 'manage_company_legal')->andReturn(false);
+
+    $settingRepository = Mockery::mock(Box\Mod\System\Repository\SettingRepository::class);
+    $settingRepository->shouldReceive('findOneByParam')->never();
+
+    $di = container();
+    $di['event_dispatcher'] = new class {
+        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        {
+            return $event;
+        }
+    };
+    $di['mod_service'] = $di->protect(fn (): object => $staffServiceMock);
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\System\Entity\Setting::class)->andReturn($settingRepository);
+    $service->setDi($di);
+
+    expect(fn (): bool => $service->updateParams(['Company_Note' => 'attacker']))->toThrow(FOSSBilling\InformationException::class);
+});
+
+test('setParamValue skips a mixed-case guarded key without the company permission', function (): void {
+    $service = new Service();
+
+    $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffServiceMock->shouldReceive('hasPermission')->once()->with(null, 'system', 'manage_company_details')->andReturn(false);
+
+    $settingRepository = Mockery::mock(Box\Mod\System\Repository\SettingRepository::class);
+    $settingRepository->shouldReceive('findOneByParam')->never();
+
+    $di = container();
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\System\Entity\Setting::class)->andReturn($settingRepository);
+    $di['mod_service'] = $di->protect(fn (): object => $staffServiceMock);
+    $service->setDi($di);
+
+    expect($service->setParamValue('Company_Bic', 'attacker'))->toBeTrue();
+});
+
+test('updateParams rejects a key with a trailing space', function (): void {
+    $service = new Service();
+
+    $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffServiceMock->shouldReceive('hasPermission')->andReturn(true);
+
+    $settingRepository = Mockery::mock(Box\Mod\System\Repository\SettingRepository::class);
+    $settingRepository->shouldReceive('findOneByParam')->never();
+
+    $di = container();
+    $di['event_dispatcher'] = new class {
+        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        {
+            return $event;
+        }
+    };
+    $di['mod_service'] = $di->protect(fn (): object => $staffServiceMock);
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\System\Entity\Setting::class)->andReturn($settingRepository);
+    $service->setDi($di);
+
+    expect(fn (): bool => $service->updateParams(['company_name ' => 'attacker']))->toThrow(
+        FOSSBilling\InformationException::class,
+        'Invalid parameter name'
+    );
+});
+
+test('setParamValue canonicalizes a mixed-case unguarded key', function (): void {
+    $service = new Service();
+    $setting = Tests\Helpers\createEntity(Box\Mod\System\Entity\Setting::class, ['param' => 'last_cron_exec', 'value' => 'old']);
+
+    $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class);
+
+    $settingRepository = Mockery::mock(Box\Mod\System\Repository\SettingRepository::class);
+    $settingRepository->shouldReceive('findOneByParam')->once()->with('last_cron_exec')->andReturn($setting);
+
+    $di = container();
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\System\Entity\Setting::class)->andReturn($settingRepository);
+    $di['em']->shouldReceive('flush')->once();
+    $di['mod_service'] = $di->protect(fn (): object => $staffServiceMock);
+    $service->setDi($di);
+
+    expect($service->setParamValue('Last_Cron_Exec', 'new'))->toBeTrue();
+    expect($setting->getValue())->toBe('new');
 });
 
 test('getMessages returns system messages', function (): void {
@@ -622,6 +767,23 @@ test('reserveNextNumericParamValue seeds a missing counter and reserves from it'
     $service->setDi($di);
 
     expect($service->reserveNextNumericParamValue('invoice_starting_number', 101))->toBe(101);
+});
+
+test('reserveNextNumericParamValue invalidates a cached missing setting after seeding it', function (): void {
+    $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $entityManager = EntityManagerFactory::create($connection);
+    (new SchemaTool($entityManager))->createSchema([$entityManager->getClassMetadata(Box\Mod\System\Entity\Setting::class)]);
+
+    $di = container();
+    $di['em'] = $entityManager;
+    $di['dbal'] = $connection;
+
+    $service = new Service();
+    $service->setDi($di);
+
+    expect($service->getParamValue('invoice_starting_number'))->toBeNull()
+        ->and($service->reserveNextNumericParamValue('invoice_starting_number', 101))->toBe(101)
+        ->and($service->getParamValue('invoice_starting_number'))->toBe('102');
 });
 
 test('reserveNextNumericParamValue ignores the seed when the counter became valid under the lock', function (): void {

@@ -122,3 +122,49 @@ test('stale unpaid orders are matched by pending-setup status, unpaid invoice ov
 
     expect($repository->getStaleUnpaid(5))->toBe([]);
 });
+
+test('lockAndGetUnpaidInvoiceId reads the link inside a transaction', function (): void {
+    $connection = mockOrderRepositoryConnection();
+    $connection->shouldReceive('isTransactionActive')->once()->andReturnTrue();
+    $connection->shouldReceive('fetchAssociative')
+        ->once()
+        ->withArgs(fn (string $sql, array $parameters): bool => $parameters === ['id' => 42]
+            && str_contains($sql, 'unpaid_invoice_id FROM client_order'))
+        ->andReturn(['unpaid_invoice_id' => 10]);
+
+    $entityManager = Mockery::mock(EntityManagerInterface::class);
+    $entityManager->shouldReceive('getConnection')->andReturn($connection);
+
+    $repository = new OrderRepository($entityManager, new ClassMetadata(Order::class));
+
+    expect($repository->lockAndGetUnpaidInvoiceId(42))->toBe(10);
+});
+
+test('lockAndGetUnpaidInvoiceId maps a missing link to null', function (): void {
+    $connection = mockOrderRepositoryConnection();
+    $connection->shouldReceive('isTransactionActive')->twice()->andReturnTrue();
+    $connection->shouldReceive('fetchAssociative')
+        ->twice()
+        ->andReturn(['unpaid_invoice_id' => null], false);
+
+    $entityManager = Mockery::mock(EntityManagerInterface::class);
+    $entityManager->shouldReceive('getConnection')->andReturn($connection);
+
+    $repository = new OrderRepository($entityManager, new ClassMetadata(Order::class));
+
+    expect($repository->lockAndGetUnpaidInvoiceId(42))->toBeNull();
+    expect($repository->lockAndGetUnpaidInvoiceId(43))->toBeNull();
+});
+
+test('lockAndGetUnpaidInvoiceId rejects being called outside of a transaction', function (): void {
+    $connection = mockOrderRepositoryConnection();
+    $connection->shouldReceive('isTransactionActive')->once()->andReturnFalse();
+
+    $entityManager = Mockery::mock(EntityManagerInterface::class);
+    $entityManager->shouldReceive('getConnection')->andReturn($connection);
+
+    $repository = new OrderRepository($entityManager, new ClassMetadata(Order::class));
+
+    expect(fn (): ?int => $repository->lockAndGetUnpaidInvoiceId(42))
+        ->toThrow(FOSSBilling\Exception::class, 'outside of a transaction');
+});

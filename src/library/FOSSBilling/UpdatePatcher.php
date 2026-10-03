@@ -13,6 +13,7 @@ namespace FOSSBilling;
 
 use Box\Mod\Extension\Entity\Extension;
 use FOSSBilling\Doctrine\DriverManagerFactory;
+use FOSSBilling\Doctrine\EntityManagerFactory;
 use FOSSBilling\Doctrine\ModuleEntityScope;
 use FOSSBilling\Doctrine\SchemaSynchronizer;
 use Symfony\Component\Filesystem\Exception\IOException;
@@ -23,6 +24,10 @@ use Symfony\Component\Uid\Uuid;
 
 class UpdatePatcher implements InjectionAwareInterface
 {
+    private const string SCHEMA_METADATA_HASH_PARAM = 'schema_metadata_hash';
+    private const string SCHEMA_METADATA_HASH_FAILED_PARAM = 'schema_metadata_hash_failed';
+    private const int SCHEMA_SYNC_RETRY_COOLDOWN = 3600;
+
     private ?\Pimple\Container $di = null;
     private Filesystem $filesystem;
     private array $downloadableStorageMigrationMap = [];
@@ -57,6 +62,44 @@ class UpdatePatcher implements InjectionAwareInterface
         $patches = $this->getPatches($patchLevel);
 
         return count($patches);
+    }
+
+    /**
+     * Reports the database patch level against the code's patch list - the
+     * shared source of truth behind availablePatches() for callers that need
+     * the levels themselves (e.g. the finalization completion guard).
+     *
+     * @return array{current: ?int, latest: int, pending: ?int} pending is null
+     *                                                          when the count cannot be determined (non-MySQL platform or unreadable database)
+     */
+    public function patchStatus(): array
+    {
+        $latest = $this->latestPatchLevel();
+
+        if (!$this->isMysqlDriver()) {
+            return [
+                'current' => null,
+                'latest' => $latest,
+                'pending' => null,
+            ];
+        }
+
+        try {
+            $current = $this->getPatchLevel();
+            $pending = count($this->getPatches($current));
+        } catch (\Throwable) {
+            return [
+                'current' => null,
+                'latest' => $latest,
+                'pending' => null,
+            ];
+        }
+
+        return [
+            'current' => $current,
+            'latest' => $latest,
+            'pending' => $pending,
+        ];
     }
 
     public function latestPatchLevel(): int
@@ -197,12 +240,30 @@ class UpdatePatcher implements InjectionAwareInterface
         // forever.
         $this->migrateThemePackageLayout();
 
+        // Retired hook packages and listener registrations have no runtime consumer. Remove
+        // their records on every driver so old installs do not retain invisible extensions.
+        $this->removeRetiredHookData();
+
+        // Same treatment for the debit-note settings rows content.sql seeds for fresh installs:
+        // plain check-then-insert SQL, idempotent, so every platform gets them even though no
+        // MySQL-only patch can run there.
+        $this->seedInvoiceNoteSettings();
+
+        // Portable invoice settings/rename steps, shared with the drift healer.
+        $this->applyPortableInvoiceMigrations();
+
         // Additive structural sync runs on every platform, MySQL/MariaDB included: it picks up any
         // column/table/index that's on entity metadata but not yet applied, without needing a
         // hand-written patch for it - the only mechanism at all on PostgreSQL/SQLite, and on
         // MySQL/MariaDB a catch-all for anything the patches above didn't (or, going forward, for
         // structural changes that land on metadata without a patch being written at all).
         $this->syncPortableSchema();
+
+        // Baseline the invoice journal on every driver, after the sync above: on non-MySQL
+        // installs the invoice_event table only comes into existence there, and backfilling
+        // first would find no table and leave existing invoices without baseline entries.
+        // Deliberately outside the drift healer: a large backlog must not stall page loads.
+        $this->backfillInvoiceJournal();
     }
 
     /**
@@ -216,6 +277,632 @@ class UpdatePatcher implements InjectionAwareInterface
         } catch (\Throwable) {
             // Can't determine the driver - don't guess. Fail safe by not running MySQL-only DDL.
             return false;
+        }
+    }
+
+    /**
+     * Brings the live schema up to date with current Doctrine entity metadata when the metadata
+     * changed since the last sync - independent of the version-gated finalization flow, so a
+     * code-only deploy (e.g. `git pull` to a commit that adds an entity column without bumping
+     * Version::VERSION) still gets its schema updated instead of crashing on the next query.
+     *
+     * Runs the portable invoice migrations before the additive sync: renames
+     * cannot be expressed by the sync, so without this a renamed column would
+     * be synced as an empty duplicate (or left crashing).
+     *
+     * The gate is EntityManagerFactory::entityDefinitionsHash(), a content hash every node running
+     * the same code computes identically - the last-synced value is kept in a plain setting row
+     * (SCHEMA_METADATA_HASH_PARAM), so a match costs file reads plus a single SELECT and runs
+     * outside the finalization lock (see UpdateFinalization::finalizePendingUpdate()).
+     *
+     * @return bool whether a sync attempt ran (even if it applied nothing)
+     */
+    public function ensureSchemaInSync(): bool
+    {
+        if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('em')) {
+            return false;
+        }
+
+        $currentHash = null;
+
+        try {
+            $currentHash = EntityManagerFactory::entityDefinitionsHash();
+            if ($this->fetchStoredSchemaHash() === $currentHash || $this->isSyncCoolingDown($currentHash)) {
+                return false;
+            }
+
+            // Same unconditional settings seeding applyCorePatches() performs, so the
+            // same-version path it never runs on doesn't leave them missing either.
+            $this->seedInvoiceNoteSettings();
+
+            // Rename steps must precede the additive sync below, which cannot
+            // express them (see applyPortableInvoiceMigrations()).
+            $this->applyPortableInvoiceMigrations();
+
+            if ($this->syncPortableSchema() === null) {
+                $this->recordFailedSyncAttempt($currentHash);
+
+                return false;
+            }
+
+            // Heal journal gaps left by drift-created tables or lost writes, bounded to
+            // one page so a large backlog converges over runs instead of stalling this one.
+            // Failure here must not fail the sync itself, which already succeeded.
+            try {
+                $this->healInvoiceJournal();
+            } catch (\Throwable $e) {
+                $this->logUpdate('error', 'Invoice journal healing failed: ' . $e->getMessage());
+            }
+
+            return true;
+        } catch (\Throwable $e) {
+            $this->logUpdate('error', 'Ambient schema sync failed: ' . $e->getMessage());
+            $this->recordFailedSyncAttempt($currentHash);
+
+            return false;
+        }
+    }
+
+    /**
+     * Whether the live schema may have drifted from current entity metadata - the hash-comparison
+     * half of ensureSchemaInSync(), safe to call without holding the finalization lock. Never
+     * throws: an unreadable database simply reports "in sync" and the next request checks again.
+     * Also honors the sync retry cooldown, so a persistently failing sync doesn't take the
+     * finalization lock on every request just to back off again inside it.
+     */
+    public function isSchemaOutOfSync(): bool
+    {
+        if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('em')) {
+            return false;
+        }
+
+        try {
+            $currentHash = EntityManagerFactory::entityDefinitionsHash();
+
+            return $this->fetchStoredSchemaHash() !== $currentHash
+                && !$this->isSyncCoolingDown($currentHash);
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    /**
+     * Whether current entity metadata differs from the last synced state,
+     * ignoring the retry cooldown - the reporting half of isSchemaOutOfSync(),
+     * for status surfaces that must stay truthful while a failed sync backs
+     * off. Never throws: an unreadable database reports "no drift".
+     */
+    public function isSchemaOutOfSyncIgnoringCooldown(): bool
+    {
+        if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('em')) {
+            return false;
+        }
+
+        try {
+            return $this->fetchStoredSchemaHash() !== EntityManagerFactory::entityDefinitionsHash();
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    /**
+     * @throws \Exception when the database cannot be read
+     */
+    private function fetchStoredSchemaHash(): mixed
+    {
+        return $this->fetchOne('SELECT value FROM setting WHERE param = :param', [
+            'param' => self::SCHEMA_METADATA_HASH_PARAM,
+        ]);
+    }
+
+    /**
+     * Whether a sync for this exact metadata hash already failed within the retry cooldown.
+     * Read failures fail open (no cooldown), leaving the outcome to the sync attempt itself.
+     */
+    private function isSyncCoolingDown(string $currentHash): bool
+    {
+        $failed = $this->lastSchemaSyncFailure();
+        if ($failed === null || $failed['hash'] !== $currentHash) {
+            return false;
+        }
+
+        $attemptedAt = strtotime($failed['attempted_at']);
+        if ($attemptedAt === false) {
+            return false;
+        }
+
+        return $attemptedAt + self::SCHEMA_SYNC_RETRY_COOLDOWN > time();
+    }
+
+    /**
+     * The most recent failed portable-schema-sync attempt, if any. Never
+     * throws: unreadable state reports "no failure". Surfaced via
+     * {@see UpdateFinalization::getStatus()} so a repeatedly failing sync
+     * is visible instead of living only in the update log.
+     *
+     * @return array{hash: string, attempted_at: string}|null
+     */
+    public function lastSchemaSyncFailure(): ?array
+    {
+        try {
+            $rows = $this->fetchAll('SELECT value, updated_at FROM setting WHERE param = :param', [
+                'param' => self::SCHEMA_METADATA_HASH_FAILED_PARAM,
+            ]);
+        } catch (\Throwable) {
+            return null;
+        }
+
+        $failed = $rows[0] ?? null;
+        if (!is_array($failed) || !is_string($failed['value'] ?? null) || $failed['value'] === '') {
+            return null;
+        }
+
+        return [
+            'hash' => $failed['value'],
+            'attempted_at' => (string) ($failed['updated_at'] ?? ''),
+        ];
+    }
+
+    /**
+     * Remembers a failed sync attempt for the cooldown above. Never throws - failures here must
+     * not mask the original error.
+     */
+    private function recordFailedSyncAttempt(?string $currentHash): void
+    {
+        if ($currentHash === null) {
+            return;
+        }
+
+        try {
+            $existing = $this->fetchOne('SELECT value FROM setting WHERE param = :param', [
+                'param' => self::SCHEMA_METADATA_HASH_FAILED_PARAM,
+            ]);
+
+            if ($existing === false) {
+                $now = date('Y-m-d H:i:s');
+                $this->executeSql(
+                    'INSERT INTO setting (param, value, public, created_at, updated_at) VALUES (:param, :value, 0, :created_at, :updated_at)',
+                    [
+                        'param' => self::SCHEMA_METADATA_HASH_FAILED_PARAM,
+                        'value' => $currentHash,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ]
+                );
+            } else {
+                $this->executeSql('UPDATE setting SET value = :value, updated_at = :updated_at WHERE param = :param', [
+                    'value' => $currentHash,
+                    'updated_at' => date('Y-m-d H:i:s'),
+                    'param' => self::SCHEMA_METADATA_HASH_FAILED_PARAM,
+                ]);
+            }
+        } catch (\Throwable) {
+            // Best effort only - the next request retries the bookkeeping too.
+        }
+    }
+
+    /**
+     * Seeds the debit-note settings rows content.sql gives fresh installs - existing installs
+     * upgrading through the credit/debit-note releases never get those rows otherwise.
+     * Plain check-then-insert SQL with no MySQL-specific syntax, so it runs unconditionally on
+     * every platform; never overwrites a customized value.
+     */
+    private function seedInvoiceNoteSettings(): void
+    {
+        $defaults = [
+            'invoice_dn_series' => 'DN-',
+            'invoice_dn_starting_number' => '1',
+        ];
+
+        foreach ($defaults as $param => $value) {
+            $existing = $this->fetchOne('SELECT value FROM setting WHERE param = :param', [
+                'param' => $param,
+            ]);
+
+            if ($existing !== false) {
+                continue;
+            }
+
+            $now = date('Y-m-d H:i:s');
+            $this->executeSql(
+                'INSERT INTO setting (param, value, public, created_at, updated_at) VALUES (:param, :value, 0, :created_at, :updated_at)',
+                [
+                    'param' => $param,
+                    'value' => $value,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]
+            );
+        }
+    }
+
+    /**
+     * Portable, idempotent invoice settings/rename steps shared by
+     * applyCorePatches() and ensureSchemaInSync(). The additive schema sync
+     * cannot express the approved-to-issued rename, so the drift-healing path
+     * runs these first - otherwise a code-only deploy would sync an empty
+     * issued column alongside the data-bearing approved one (or crash).
+     */
+    private function applyPortableInvoiceMigrations(): void
+    {
+        $this->migrateInvoiceImmutabilitySetting();
+
+        // Paid invoices keep their issued number, so the retired paid-only
+        // series has no reader left. Remove it unconditionally.
+        $this->executeSql('DELETE FROM setting WHERE param = :param', ['param' => 'invoice_series_paid']);
+
+        // The auto-approval toggle was renamed to match the issue terminology.
+        $this->migrateInvoiceAutoIssueSetting();
+
+        // The invoice approval flag was renamed to issued, matching the new
+        // terminology. Runs before the structural sync so the sync sees
+        // the renamed column instead of adding it alongside the legacy one.
+        $this->renameInvoiceApprovedColumn();
+
+        // The column rename leaves the legacy composite index name behind, and
+        // the structural sync only ever adds - so without this the old name
+        // lingers as a duplicate forever.
+        $this->renameInvoiceStatusIndex();
+
+        // The dead buyer_phone_cc column is gone from entity metadata, and the
+        // structural sync only ever adds - so without this the column lingers
+        // on existing installs forever.
+        $this->dropInvoiceBuyerPhoneCcColumn();
+
+        // Same story for the dead transaction.validate_ipn flag: nothing ever
+        // read it, the entity no longer maps it, and the additive sync would
+        // otherwise leave it behind on existing installs forever.
+        $this->dropTransactionValidateIpnColumn();
+    }
+
+    /**
+     * Folds the retired per-action invoice toggles (invoice_allow_edit_unpaid,
+     * invoice_allow_delete_approved) into the single invoice_immutability
+     * setting, then removes the legacy rows. Either legacy opt-in maps to
+     * 'relaxed', preserving behavior; otherwise the install converges to
+     * 'strict'. Plain portable SQL and idempotent like seedInvoiceNoteSettings(),
+     * so it runs unconditionally from applyCorePatches() on every platform.
+     */
+    private function migrateInvoiceImmutabilitySetting(): void
+    {
+        $fetch = fn (string $param): mixed => $this->fetchOne('SELECT value FROM setting WHERE param = :param', [
+            'param' => $param,
+        ]);
+
+        $migrated = $fetch('invoice_immutability');
+        if ($migrated === false) {
+            $edit = $fetch('invoice_allow_edit_unpaid');
+            $delete = $fetch('invoice_allow_delete_approved');
+            if ($edit !== false || $delete !== false) {
+                $now = date('Y-m-d H:i:s');
+                $this->executeSql(
+                    'INSERT INTO setting (param, value, public, created_at, updated_at) VALUES (:param, :value, 0, :created_at, :updated_at)',
+                    [
+                        'param' => 'invoice_immutability',
+                        'value' => ($edit === '1' || $delete === '1') ? 'relaxed' : 'strict',
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ]
+                );
+            }
+        }
+
+        $this->executeSql('DELETE FROM setting WHERE param = :param', ['param' => 'invoice_allow_edit_unpaid']);
+        $this->executeSql('DELETE FROM setting WHERE param = :param', ['param' => 'invoice_allow_delete_approved']);
+    }
+
+    /**
+     * Carries the retired invoice_auto_approval toggle over to its renamed
+     * invoice_auto_issue successor, then drops the legacy row. Like
+     * migrateInvoiceImmutabilitySetting(), plain portable SQL and idempotent,
+     * so it runs unconditionally from applyCorePatches() on every platform.
+     */
+    private function migrateInvoiceAutoIssueSetting(): void
+    {
+        $autoApproval = $this->fetchOne('SELECT value FROM setting WHERE param = :param', [
+            'param' => 'invoice_auto_approval',
+        ]);
+        if ($autoApproval === false) {
+            return;
+        }
+
+        $autoIssue = $this->fetchOne('SELECT value FROM setting WHERE param = :param', [
+            'param' => 'invoice_auto_issue',
+        ]);
+        if ($autoIssue === false) {
+            $now = date('Y-m-d H:i:s');
+            $this->executeSql(
+                'INSERT INTO setting (param, value, public, created_at, updated_at) VALUES (:param, :value, 0, :created_at, :updated_at)',
+                [
+                    'param' => 'invoice_auto_issue',
+                    'value' => $autoApproval,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]
+            );
+        }
+
+        $this->executeSql('DELETE FROM setting WHERE param = :param', ['param' => 'invoice_auto_approval']);
+    }
+
+    /**
+     * Renames invoice.approved to invoice.issued, preserving values. Portable
+     * across drivers via the DBAL schema manager for the existence check;
+     * MySQL/MariaDB uses CHANGE (works on versions without RENAME COLUMN
+     * support), everything else uses RENAME COLUMN. Idempotent: a fresh
+     * install already has issued, and a migrated one no longer has approved.
+     */
+    private function renameInvoiceApprovedColumn(): void
+    {
+        if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('dbal')) {
+            return;
+        }
+
+        $table = $this->di['dbal']->createSchemaManager()->introspectTableByUnquotedName('invoice');
+        if (!$table->hasColumn('approved') || $table->hasColumn('issued')) {
+            return;
+        }
+
+        if ($this->isMysqlDriver()) {
+            $this->executeSql('ALTER TABLE `invoice` CHANGE `approved` `issued` TINYINT(1) NOT NULL DEFAULT 0');
+        } else {
+            $this->executeSql('ALTER TABLE invoice RENAME COLUMN approved TO issued');
+        }
+    }
+
+    /**
+     * Swaps the legacy invoice_status_approved_due_at_idx composite index for
+     * its issued-column successor. Portable across drivers via the DBAL schema
+     * manager for the existence checks; runs unconditionally from
+     * applyCorePatches() on every platform like the rest of this block.
+     */
+    private function renameInvoiceStatusIndex(): void
+    {
+        if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('dbal')) {
+            return;
+        }
+
+        $old = 'invoice_status_approved_due_at_idx';
+        $new = 'invoice_status_issued_due_at_idx';
+
+        $schemaManager = $this->di['dbal']->createSchemaManager();
+        if ($schemaManager->introspectTableByUnquotedName('invoice')->hasIndex($old)) {
+            $this->executeSql($this->isMysqlDriver()
+                ? "DROP INDEX `$old` ON `invoice`"
+                : "DROP INDEX $old");
+        }
+
+        if (!$schemaManager->introspectTableByUnquotedName('invoice')->hasIndex($new)) {
+            $this->executeSql('CREATE INDEX ' . $new . ' ON invoice (status, issued, due_at)');
+        }
+    }
+
+    /**
+     * Drops the dead invoice.buyer_phone_cc column, which the entity no
+     * longer maps. Portable across drivers via the DBAL schema manager for
+     * the existence check; every supported driver accepts DROP COLUMN.
+     * Idempotent: fresh installs never have it, migrated ones no longer do.
+     */
+    private function dropInvoiceBuyerPhoneCcColumn(): void
+    {
+        if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('dbal')) {
+            return;
+        }
+
+        if (!$this->di['dbal']->createSchemaManager()->introspectTableByUnquotedName('invoice')->hasColumn('buyer_phone_cc')) {
+            return;
+        }
+
+        $this->executeSql($this->isMysqlDriver()
+            ? 'ALTER TABLE `invoice` DROP COLUMN `buyer_phone_cc`'
+            : 'ALTER TABLE invoice DROP COLUMN buyer_phone_cc');
+    }
+
+    /**
+     * Drops the dead transaction.validate_ipn column, which nothing ever
+     * read and the entity no longer maps. Portable across drivers via the
+     * DBAL schema manager for the existence check; every supported driver
+     * accepts DROP COLUMN. Idempotent: fresh installs never have it,
+     * migrated ones no longer do.
+     */
+    private function dropTransactionValidateIpnColumn(): void
+    {
+        if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('dbal')) {
+            return;
+        }
+
+        if (!$this->di['dbal']->createSchemaManager()->introspectTableByUnquotedName('transaction')->hasColumn('validate_ipn')) {
+            return;
+        }
+
+        // `transaction` is reserved on every driver: quote it, or the ALTER
+        // is a syntax error outside MySQL's backticks.
+        $this->executeSql($this->isMysqlDriver()
+            ? 'ALTER TABLE `transaction` DROP COLUMN `validate_ipn`'
+            : 'ALTER TABLE "transaction" DROP COLUMN "validate_ipn"');
+    }
+
+    /**
+     * Writes one baseline journal entry per invoice that has none, typed by
+     * its actual current state (drafts as created, the rest by status). No
+     * history is fabricated: installs upgrading to the journal get a truthful
+     * starting point, and every later transition appends live entries.
+     * Portable across drivers; idempotent: invoices that already have
+     * journal rows are skipped. Runs from applyCorePatches() only, never from the drift
+     * healer, so a large backlog can't stall page loads.
+     */
+    private function backfillInvoiceJournal(int $maxPages = 0): void
+    {
+        if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('dbal')) {
+            return;
+        }
+
+        $dbal = $this->di['dbal'];
+        if (!$dbal->createSchemaManager()->tablesExist(['invoice_event'])) {
+            return;
+        }
+
+        $padding = $dbal->fetchOne("SELECT value FROM setting WHERE param = 'invoice_number_padding'");
+        $padding = is_numeric($padding) && (int) $padding > 0 ? (int) $padding : 5;
+
+        // Keyset pages, not one unbounded read: on the first upgrade no invoice has a
+        // journal row, so an unpaged SELECT would load every invoice (including its
+        // notes/text blobs) into memory at once. Only the snapshot columns are read.
+        // Idempotent: written rows drop out of later pages via the LEFT JOIN.
+        // $maxPages bounds periodic healing (cron, drift sync): 0 means no limit.
+        $lastId = 0;
+        $pages = 0;
+        do {
+            $rows = $dbal->fetchAllAssociative(
+                'SELECT i.id, i.nr, i.serie, i.status, i.issued, i.client_id,
+                    i.buyer_first_name, i.buyer_last_name, i.buyer_company, i.buyer_company_vat,
+                    i.buyer_company_number, i.buyer_address, i.buyer_city, i.buyer_state,
+                    i.buyer_country, i.buyer_phone, i.buyer_email, i.buyer_zip,
+                    i.seller_company, i.seller_company_vat, i.seller_company_number,
+                    i.seller_address, i.seller_phone, i.seller_email,
+                    i.paid_at, i.due_at, i.created_at
+                FROM invoice i LEFT JOIN invoice_event e ON e.invoice_id = i.id
+                WHERE e.id IS NULL AND i.id > :last ORDER BY i.id LIMIT 500',
+                ['last' => $lastId]
+            );
+
+            foreach ($rows as $row) {
+                $lastId = (int) $row['id'];
+                $this->writeBackfillJournalEntry($dbal, $row, $padding);
+            }
+            ++$pages;
+        } while ($rows !== [] && ($maxPages === 0 || $pages < $maxPages));
+    }
+
+    /**
+     * Heal invoices missing every journal row (a lost journal write, or a table created
+     * after its invoices by drift healing). Bounded to one page per call so periodic
+     * callers converge without stalling; reruns pick up where this one stopped.
+     */
+    public function healInvoiceJournal(int $maxPages = 1): void
+    {
+        $this->backfillInvoiceJournal($maxPages);
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     */
+    private function writeBackfillJournalEntry(\Doctrine\DBAL\Connection $dbal, array $row, int $padding): void
+    {
+        $invoiceId = (int) $row['id'];
+
+        // Claim the baseline first: concurrent healers (overlapping cron runs, or drift
+        // healing racing cron) select the same event-less rows. This conditional UPDATE
+        // is atomic on every driver, so exactly one winner per invoice proceeds while
+        // losers - including runs that arrive after a live event landed - skip instead
+        // of writing a duplicate baseline.
+        $claimed = (bool) $dbal->executeStatement(
+            'UPDATE invoice SET updated_at = updated_at WHERE id = :id AND NOT EXISTS (SELECT 1 FROM invoice_event WHERE invoice_id = :id)',
+            ['id' => $invoiceId]
+        );
+        if (!$claimed) {
+            return;
+        }
+
+        $nr = is_numeric($row['nr'] ?? null) ? (int) $row['nr'] : $invoiceId;
+        $snapshot = [
+            'serie_nr' => ($row['serie'] ?? '') . sprintf('%0' . $padding . 's', $nr),
+            'status' => $row['status'] ?? null,
+            'issued' => !empty($row['issued']),
+            'subtotal' => null,
+            'tax' => null,
+            'total' => null,
+            'buyer' => [
+                'first_name' => $row['buyer_first_name'] ?? null,
+                'last_name' => $row['buyer_last_name'] ?? null,
+                'company' => $row['buyer_company'] ?? null,
+                'company_vat' => $row['buyer_company_vat'] ?? null,
+                'company_number' => $row['buyer_company_number'] ?? null,
+                'address' => $row['buyer_address'] ?? null,
+                'city' => $row['buyer_city'] ?? null,
+                'state' => $row['buyer_state'] ?? null,
+                'country' => $row['buyer_country'] ?? null,
+                'phone' => $row['buyer_phone'] ?? null,
+                'email' => $row['buyer_email'] ?? null,
+                'zip' => $row['buyer_zip'] ?? null,
+            ],
+            'seller' => [
+                'company' => $row['seller_company'] ?? null,
+                'company_vat' => $row['seller_company_vat'] ?? null,
+                'company_number' => $row['seller_company_number'] ?? null,
+                'address' => $row['seller_address'] ?? null,
+                'phone' => $row['seller_phone'] ?? null,
+                'email' => $row['seller_email'] ?? null,
+            ],
+            'paid_at' => $this->normalizeBackfillDate($row['paid_at'] ?? null),
+            'due_at' => $this->normalizeBackfillDate($row['due_at'] ?? null),
+            'created_at' => $this->normalizeBackfillDate($row['created_at'] ?? null),
+        ];
+
+        $type = 'created';
+        if (!empty($row['issued'])) {
+            $type = match ($row['status'] ?? null) {
+                'paid' => 'paid',
+                'canceled' => 'canceled',
+                'refunded' => 'refunded',
+                default => 'issued',
+            };
+        }
+
+        $dbal->executeStatement(
+            'INSERT INTO invoice_event (invoice_id, type, client_id, snapshot, created_at) VALUES (:invoice_id, :type, :client_id, :snapshot, :created_at)',
+            [
+                'invoice_id' => $invoiceId,
+                'type' => $type,
+                'client_id' => $row['client_id'] !== null ? (int) $row['client_id'] : null,
+                // Substitute rather than throw on legacy bytes that cannot be encoded:
+                // a single bad row must not wedge the whole patch run.
+                'snapshot' => json_encode($snapshot, JSON_INVALID_UTF8_SUBSTITUTE),
+                'created_at' => $snapshot['created_at'] ?? date('Y-m-d H:i:s'),
+            ]
+        );
+    }
+
+    private function normalizeBackfillDate(mixed $value): ?string
+    {
+        if ($value instanceof \DateTimeInterface) {
+            return $value->format('Y-m-d H:i:s');
+        }
+        if (is_string($value) && $value !== '') {
+            return $value;
+        }
+
+        return null;
+    }
+
+    /**
+     * Records the metadata identity the schema was last synced against, in the same plain
+     * setting row ensureSchemaInSync() compares. Portable check-then-write, no
+     * ON DUPLICATE KEY UPDATE, so it works on every driver.
+     */
+    private function storeSchemaMetadataHash(string $hash): void
+    {
+        $existing = $this->fetchOne('SELECT value FROM setting WHERE param = :param', [
+            'param' => self::SCHEMA_METADATA_HASH_PARAM,
+        ]);
+
+        if ($existing === false) {
+            $now = date('Y-m-d H:i:s');
+            $this->executeSql(
+                'INSERT INTO setting (param, value, public, created_at, updated_at) VALUES (:param, :value, 0, :created_at, :updated_at)',
+                [
+                    'param' => self::SCHEMA_METADATA_HASH_PARAM,
+                    'value' => $hash,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ]
+            );
+        } elseif ($existing !== $hash) {
+            $this->executeSql('UPDATE setting SET value = :value, updated_at = :updated_at WHERE param = :param', [
+                'value' => $hash,
+                'updated_at' => date('Y-m-d H:i:s'),
+                'param' => self::SCHEMA_METADATA_HASH_PARAM,
+            ]);
         }
     }
 
@@ -235,11 +922,14 @@ class UpdatePatcher implements InjectionAwareInterface
      * Errors are logged, not thrown: this runs on every request via UpdateFinalization, and a
      * database this can't reach (or a metadata error) should degrade to "nothing changed", the same
      * outcome as before this method existed, rather than breaking the request.
+     *
+     * @return array{applied: list<string>, skipped: list<string>}|null the sync result, or null
+     *                                                                  when the sync could not run
      */
-    private function syncPortableSchema(): void
+    private function syncPortableSchema(): ?array
     {
         if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('em')) {
-            return;
+            return null;
         }
 
         $entityManager = $this->di['em'];
@@ -270,14 +960,28 @@ class UpdatePatcher implements InjectionAwareInterface
             ));
 
             if ($eagerEntityClasses === []) {
-                return;
+                return null;
             }
 
             $result = SchemaSynchronizer::syncEntities($entityManager, $eagerEntityClasses);
+            $this->migrateClientGroupMemberships($connection);
+            $this->storeSchemaMetadataHash(EntityManagerFactory::entityDefinitionsHash());
         } catch (\Throwable $e) {
-            $this->logUpdate('error', 'Schema sync against the configured database failed: ' . $e->getMessage());
+            // Attach the metadata hash so the failure can be correlated with
+            // the cooldown row (see lastSchemaSyncFailure()).
+            $metadataHash = null;
 
-            return;
+            try {
+                $metadataHash = EntityManagerFactory::entityDefinitionsHash();
+            } catch (\Throwable) {
+                // Hashing must not mask the original sync error.
+            }
+
+            $this->logUpdate('error', 'Schema sync against the configured database failed: ' . $e->getMessage(), [
+                'metadata_hash' => $metadataHash,
+            ]);
+
+            return null;
         }
 
         if ($result['applied'] !== []) {
@@ -297,6 +1001,44 @@ class UpdatePatcher implements InjectionAwareInterface
                 ['skipped' => $result['skipped']],
             );
         }
+
+        return $result;
+    }
+
+    /**
+     * Run once: non-MySQL installs retain the legacy column, so replaying the
+     * copy would restore memberships removed by administrators.
+     */
+    private function migrateClientGroupMemberships(\Doctrine\DBAL\Connection $connection): void
+    {
+        $marker = 'client_group_memberships_migrated';
+        if ($connection->fetchOne('SELECT value FROM setting WHERE param = :param', ['param' => $marker]) !== false) {
+            return;
+        }
+
+        $schemaManager = $connection->createSchemaManager();
+        if (!$schemaManager->tablesExist(['client'])
+            || !$schemaManager->introspectTableByUnquotedName('client')->hasColumn('client_group_id')) {
+            return;
+        }
+
+        $connection->transactional(static function (\Doctrine\DBAL\Connection $connection) use ($marker): void {
+            $connection->executeStatement(
+                'INSERT INTO client_group_members (client_id, client_group_id) '
+                . 'SELECT c.id, c.client_group_id FROM client c '
+                . 'INNER JOIN client_group g ON g.id = c.client_group_id '
+                . 'WHERE NOT EXISTS (SELECT 1 FROM client_group_members m '
+                . 'WHERE m.client_id = c.id AND m.client_group_id = c.client_group_id)'
+            );
+            $now = date('Y-m-d H:i:s');
+            $connection->insert('setting', [
+                'param' => $marker,
+                'value' => '1',
+                'public' => 0,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+        });
     }
 
     /**
@@ -481,6 +1223,43 @@ class UpdatePatcher implements InjectionAwareInterface
         }
 
         return false;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function getColumnForeignKeys(string $table, string $column): array
+    {
+        $rows = $this->fetchAll(
+            'SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table AND COLUMN_NAME = :column AND REFERENCED_TABLE_NAME IS NOT NULL',
+            ['table' => $table, 'column' => $column],
+        );
+
+        return array_values(array_unique(array_map(static fn (array $row): string => (string) $row['CONSTRAINT_NAME'], $rows)));
+    }
+
+    private function tableHasForeignKey(string $table, string $constraintName): bool
+    {
+        return (bool) $this->fetchOne(
+            'SELECT 1 FROM information_schema.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table AND CONSTRAINT_NAME = :constraint AND CONSTRAINT_TYPE = :type LIMIT 1',
+            ['table' => $table, 'constraint' => $constraintName, 'type' => 'FOREIGN KEY'],
+        );
+    }
+
+    private function addForeignKeyIfMissing(string $table, string $constraintName, string $column, string $referencedTable, string $referencedColumn): void
+    {
+        if ($this->tableHasForeignKey($table, $constraintName)) {
+            return;
+        }
+
+        $this->executeSql(sprintf(
+            'ALTER TABLE `%s` ADD CONSTRAINT `%s` FOREIGN KEY (`%s`) REFERENCES `%s` (`%s`) ON DELETE CASCADE',
+            $this->quoteIdentifier($table),
+            $this->quoteIdentifier($constraintName),
+            $this->quoteIdentifier($column),
+            $this->quoteIdentifier($referencedTable),
+            $this->quoteIdentifier($referencedColumn),
+        ));
     }
 
     private function quoteIdentifier(string $identifier): string
@@ -687,6 +1466,17 @@ class UpdatePatcher implements InjectionAwareInterface
             114 => 'patch114',
             115 => 'patch115',
             116 => 'patch116',
+            117 => 'patch117',
+            118 => 'patch118',
+            119 => 'patch119',
+            120 => 'patch120',
+            121 => 'patch121',
+            122 => 'patch122',
+            123 => 'patch123',
+            124 => 'patch124',
+            125 => 'patch125',
+            126 => 'patch126',
+            127 => 'patch127',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -1023,13 +1813,11 @@ class UpdatePatcher implements InjectionAwareInterface
         $newUploadsPath = Path::join(PATH_ROOT, 'data', 'uploads');
 
         if ($filesystem->exists($oldUploadsPath) && $filesystem->exists($newUploadsPath)) {
-            foreach (glob($oldUploadsPath . '/*') ?: [] as $oldFile) {
-                if (is_file($oldFile)) {
-                    $filename = basename($oldFile);
-                    $newFilePath = Path::join($newUploadsPath, $filename);
-                    if (!$filesystem->exists($newFilePath)) {
-                        $filesystem->rename($oldFile, $newFilePath);
-                    }
+            $files = (new Finder())->files()->in($oldUploadsPath)->depth('== 0');
+            foreach ($files as $oldFile) {
+                $newFilePath = Path::join($newUploadsPath, $oldFile->getFilename());
+                if (!$filesystem->exists($newFilePath)) {
+                    $filesystem->rename($oldFile->getPathname(), $newFilePath);
                 }
             }
         }
@@ -1297,9 +2085,6 @@ class UpdatePatcher implements InjectionAwareInterface
             }
 
             $this->executeSql("DELETE FROM extension_meta WHERE extension = 'mod_hook' AND rel_type = 'mod' AND rel_id = 'spamchecker' AND meta_key = 'listener'");
-
-            $hookService = $this->di['mod_service']('hook');
-            $hookService->batchConnect('antispam');
 
             $this->executeSql("DELETE FROM extension_meta WHERE extension = 'mod_spamchecker' AND meta_key = 'config'");
 
@@ -1782,7 +2567,7 @@ class UpdatePatcher implements InjectionAwareInterface
     private function patch71(): void
     {
         // Ensure the invoice table has the gateway_id, text_1, and text_2
-        // columns. These have been part of structure.sql for a long time, but
+        // columns. These long predate the Doctrine schema cutover, but
         // databases upgraded from very old installations (e.g. BoxBilling era)
         // may be missing them, which produces PHP "Undefined array key"
         // warnings in Invoice\Service::toApiArray().
@@ -1846,7 +2631,7 @@ class UpdatePatcher implements InjectionAwareInterface
         }
 
         $schemaManager = $this->di['dbal']->createSchemaManager();
-        $table = $schemaManager->introspectTable('promo_redemption');
+        $table = $schemaManager->introspectTableByUnquotedName('promo_redemption');
         $columns = [];
 
         if (!$table->hasColumn('status')) {
@@ -1869,7 +2654,7 @@ class UpdatePatcher implements InjectionAwareInterface
             $this->executeSql('ALTER TABLE promo_redemption ' . implode(', ', $columns));
         }
 
-        $table = $schemaManager->introspectTable('promo_redemption');
+        $table = $schemaManager->introspectTableByUnquotedName('promo_redemption');
         $expectedIndexes = [
             'promo_id_idx' => 'promo_id',
             'client_id_idx' => 'client_id',
@@ -2780,7 +3565,7 @@ class UpdatePatcher implements InjectionAwareInterface
 
     private function patch110(): void
     {
-        // These columns were declared int(11) in structure.sql while the primary key
+        // These columns were int(11) in the pre-cutover schema while the primary key
         // column they reference is bigint(20), a width mismatch that predates this
         // patch. Widen them to match so large ids don't overflow the FK column.
         $narrowForeignKeys = [
@@ -2804,7 +3589,7 @@ class UpdatePatcher implements InjectionAwareInterface
     private function patch111(): void
     {
         // The Serviceapikey module (PR #4055) added the ServiceApiKey Doctrine entity but
-        // never gave it a structure.sql counterpart, so the service_apikey table was never
+        // never added it to the pre-cutover schema definition, so the service_apikey table was never
         // created on any MySQL install — fresh or upgraded.
         if (!$this->tableExists('service_apikey')) {
             $this->executeSql(
@@ -2958,6 +3743,13 @@ class UpdatePatcher implements InjectionAwareInterface
         return ['invoices' => $repairedInvoices, 'notifications' => $repairedNotes];
     }
 
+    /** Remove obsolete listener registrations and standalone hook-package records. */
+    private function removeRetiredHookData(): void
+    {
+        $this->executeSql("DELETE FROM extension_meta WHERE extension = 'mod_hook' AND meta_key = 'listener'");
+        $this->executeSql("DELETE FROM extension WHERE type = 'hook'");
+    }
+
     /**
      * Bundles the shipped themes into one package: admin_default -> default/admin,
      * huraga -> default/client. Third-party themes are untouched.
@@ -3032,7 +3824,7 @@ class UpdatePatcher implements InjectionAwareInterface
     {
         // Enforce unique session_id on cart at the DB level (matches the Cart entity
         // UniqueConstraint and CartRepository::findBySessionId()'s existing assumption of at
-        // most one cart per session). structure.sql has only ever had a plain index here.
+        // most one cart per session). The pre-cutover schema only ever had a plain index here.
         //
         // Reconcile any duplicate session_ids before adding the unique index: keep the
         // highest-id (most recently created) row per duplicated session_id - the one a
@@ -3555,7 +4347,7 @@ class UpdatePatcher implements InjectionAwareInterface
         }
 
         // mod_massmailer: legacy module installs created the datetime columns as
-        // varchar(35); align them with the DATETIME entity mapping and structure.sql.
+        // varchar(35); align them with the DATETIME entity mapping.
         if ($this->tableExists('mod_massmailer')) {
             foreach (['sent_at', 'created_at', 'updated_at'] as $column) {
                 if ($this->tableHasColumn('mod_massmailer', $column)) {
@@ -3709,6 +4501,219 @@ class UpdatePatcher implements InjectionAwareInterface
         }
         if (!$this->tableHasIndex('session', 'session_lifetime_idx')) {
             $this->executeSql('ALTER TABLE `session` ADD INDEX `session_lifetime_idx` (`lifetime`)');
+        }
+    }
+
+    private function patch117(): void
+    {
+        // Installs predating the news post description field miss the column
+        // while the entity and repository already select it.
+        if (!$this->tableHasColumn('post', 'description')) {
+            $this->executeSql('ALTER TABLE `post` ADD COLUMN `description` TEXT DEFAULT NULL AFTER `title`');
+        }
+    }
+
+    private function patch118(): void
+    {
+        // The one-credit-note-per-invoice unique constraint shipped briefly and
+        // was replaced by partial refunds, which need many credit notes per
+        // original. Drop it where the schema sync created it; installs that
+        // never synced it and fresh installs are unaffected.
+        if ($this->tableHasIndex('invoice', 'invoice_credit_note_for_unique')) {
+            $this->executeSql('ALTER TABLE `invoice` DROP INDEX `invoice_credit_note_for_unique`');
+        }
+    }
+
+    private function patch119(): void
+    {
+        // The credit/debit-note releases added three entity columns without a MySQL patch,
+        // relying on the ambient schema sync - which only runs inside version-gated
+        // finalization, so code-only deploys (e.g. `git pull` with no Version::VERSION bump)
+        // crash with "Unknown column 'credit_note_for_invoice_id'" instead. Create them
+        // explicitly here; the portable sync covers non-MySQL drivers and same-version
+        // deploys via ensureSchemaInSync(). All guards make reruns (and installs that
+        // already synced these) no-ops.
+        // @see https://github.com/FOSSBilling/FOSSBilling/issues/4392
+        if (!$this->tableHasColumn('invoice', 'credit_note_for_invoice_id')) {
+            $this->executeSql('ALTER TABLE `invoice` ADD COLUMN `credit_note_for_invoice_id` bigint(20) DEFAULT NULL AFTER `status`');
+        }
+        if (!$this->tableHasIndex('invoice', 'invoice_credit_note_for_idx')) {
+            $this->executeSql('ALTER TABLE `invoice` ADD INDEX `invoice_credit_note_for_idx` (`credit_note_for_invoice_id`)');
+        }
+
+        if (!$this->tableHasColumn('invoice', 'debit_note_for_invoice_id')) {
+            $this->executeSql('ALTER TABLE `invoice` ADD COLUMN `debit_note_for_invoice_id` bigint(20) DEFAULT NULL AFTER `credit_note_for_invoice_id`');
+        }
+        if (!$this->tableHasIndex('invoice', 'invoice_debit_note_for_idx')) {
+            $this->executeSql('ALTER TABLE `invoice` ADD INDEX `invoice_debit_note_for_idx` (`debit_note_for_invoice_id`)');
+        }
+
+        if (!$this->tableHasColumn('invoice_item', 'refunded_item_id')) {
+            $this->executeSql('ALTER TABLE `invoice_item` ADD COLUMN `refunded_item_id` bigint(20) DEFAULT NULL AFTER `rel_id`');
+        }
+    }
+
+    private function patch120(): void
+    {
+        // The invoice reissue release added two entity columns without a MySQL patch,
+        // repeating the credit/debit-note pattern from patch119: installs that never
+        // ran the ambient schema sync crash with "Unknown column 'replaces_invoice_id'"
+        // instead. Create them explicitly here; the portable sync covers non-MySQL
+        // drivers and same-version deploys via ensureSchemaInSync(). All guards make
+        // reruns (and installs that already synced these) no-ops.
+        // @see https://github.com/FOSSBilling/FOSSBilling/issues/4392
+        if (!$this->tableHasColumn('invoice', 'replaces_invoice_id')) {
+            $this->executeSql('ALTER TABLE `invoice` ADD COLUMN `replaces_invoice_id` bigint(20) DEFAULT NULL AFTER `debit_note_for_invoice_id`');
+        }
+        if (!$this->tableHasIndex('invoice', 'invoice_replaces_invoice_idx')) {
+            $this->executeSql('ALTER TABLE `invoice` ADD INDEX `invoice_replaces_invoice_idx` (`replaces_invoice_id`)');
+        }
+
+        if (!$this->tableHasColumn('invoice', 'replaced_by_invoice_id')) {
+            $this->executeSql('ALTER TABLE `invoice` ADD COLUMN `replaced_by_invoice_id` bigint(20) DEFAULT NULL AFTER `replaces_invoice_id`');
+        }
+        if (!$this->tableHasIndex('invoice', 'invoice_replaced_by_invoice_idx')) {
+            $this->executeSql('ALTER TABLE `invoice` ADD INDEX `invoice_replaced_by_invoice_idx` (`replaced_by_invoice_id`)');
+        }
+    }
+
+    private function patch121(): void
+    {
+        // The invoice issue-terminology rename moves invoice.approved to
+        // invoice.issued. Copy values into the new column, then drop the
+        // legacy one; the portable rename covers non-MySQL drivers, and the
+        // index name is swapped by renameInvoiceStatusIndex() below.
+        // The copy runs on every pass until the legacy column is gone, not just on
+        // creation: DDL auto-commits, so a crash between ADD and UPDATE leaves both
+        // columns behind with issued still defaulted, and a create-only guard would
+        // skip the copy forever afterward. Re-copying is idempotent.
+        if ($this->tableHasColumn('invoice', 'approved')) {
+            if (!$this->tableHasColumn('invoice', 'issued')) {
+                $this->executeSql('ALTER TABLE `invoice` ADD COLUMN `issued` TINYINT(1) NOT NULL DEFAULT 0 AFTER `approved`');
+            }
+            $this->executeSql('UPDATE `invoice` SET `issued` = `approved`');
+            $this->executeSql('ALTER TABLE `invoice` DROP COLUMN `approved`');
+        }
+    }
+
+    private function patch122(): void
+    {
+        // invoice.buyer_phone_cc was write-only dead data: nothing ever wrote
+        // it except null-to-null copies, and nothing rendered it. The entity
+        // no longer maps it, so drop the column; the portable drop below
+        // covers non-MySQL drivers. The guard makes reruns a no-op.
+        if ($this->tableHasColumn('invoice', 'buyer_phone_cc')) {
+            $this->executeSql('ALTER TABLE `invoice` DROP COLUMN `buyer_phone_cc`');
+        }
+    }
+
+    private function patch123(): void
+    {
+        // The invoice journal keeps a per-invoice audit trail (see
+        // Service::recordJournalEvent()): one row per lifecycle transition
+        // with a trimmed snapshot. Fresh installs get the table from entity
+        // metadata and the portable sync covers non-MySQL drivers, so this
+        // MySQL-only CREATE is just for existing installs. The guard makes
+        // reruns a no-op.
+        if ($this->tableExists('invoice_event')) {
+            return;
+        }
+
+        $this->executeSql('CREATE TABLE `invoice_event` (`id` bigint(20) NOT NULL AUTO_INCREMENT, `invoice_id` bigint(20) DEFAULT NULL, `type` varchar(50) NOT NULL DEFAULT \'updated\', `admin_id` bigint(20) DEFAULT NULL, `client_id` bigint(20) DEFAULT NULL, `snapshot` JSON DEFAULT NULL, `created_at` datetime DEFAULT NULL, PRIMARY KEY (`id`), KEY `invoice_event_invoice_id_idx` (`invoice_id`))');
+    }
+
+    private function patch124(): void
+    {
+        // Baseline the invoice journal for installs predating it: one entry
+        // per invoice missing from the journal, typed by its current state. The portable
+        // backfill covers non-MySQL drivers; both skip invoices that already
+        // have journal rows, so reruns are no-ops.
+        $this->backfillInvoiceJournal();
+    }
+
+    private function patch125(): void
+    {
+        // Client groups went multi-membership (#4387): the single
+        // `client.client_group_id` column is replaced by the `client_group_members`
+        // join table. Create it, copy existing assignments across, then drop
+        // the column (which also drops its index). Only groups that still
+        // exist are copied: orphaned IDs (e.g. deleted groups) must not
+        // migrate. INSERT IGNORE plus guards make reruns no-ops. Non-MySQL
+        // drivers get the table and assignment copy from syncPortableSchema();
+        // only the legacy column drop remains MySQL-only.
+        if (!$this->tableExists('client_group_members')) {
+            $this->executeSql('CREATE TABLE `client_group_members` (`id` bigint(20) NOT NULL AUTO_INCREMENT, `client_id` bigint(20) NOT NULL, `client_group_id` bigint(20) NOT NULL, `created_at` datetime DEFAULT NULL, `updated_at` datetime DEFAULT NULL, PRIMARY KEY (`id`), UNIQUE KEY `client_group_members_client_group` (`client_id`, `client_group_id`), KEY `client_group_members_group_idx` (`client_group_id`)) ENGINE=InnoDB DEFAULT CHARSET=utf8');
+        }
+
+        if ($this->tableHasColumn('client', 'client_group_id')) {
+            $this->executeSql(
+                'INSERT IGNORE INTO `client_group_members` (`client_id`, `client_group_id`) '
+                . 'SELECT c.`id`, c.`client_group_id` FROM `client` c '
+                . 'INNER JOIN `client_group` g ON g.`id` = c.`client_group_id`'
+            );
+
+            // Installs created fresh while the legacy column was still mapped as
+            // a Doctrine ManyToOne carry a real foreign key on it (SchemaTool
+            // materializes JoinColumns, with an auto-generated name per install),
+            // while long-upgraded installs have none. MariaDB/MySQL refuse to drop
+            // a column whose index backs a foreign key (error 1553), so drop those
+            // constraints first, looking the names up instead of assuming them.
+            foreach ($this->getColumnForeignKeys('client', 'client_group_id') as $foreignKey) {
+                $this->executeSql(sprintf('ALTER TABLE `client` DROP FOREIGN KEY `%s`', $this->quoteIdentifier($foreignKey)));
+            }
+
+            $this->executeSql('ALTER TABLE `client` DROP COLUMN `client_group_id`');
+        }
+
+        // Bring upgraded installs in line with fresh installs, whose SchemaTool-built
+        // join table carries both foreign keys with cascade deletes: drop memberships
+        // orphaned by later client/group deletions (which no constraint could stop),
+        // then add any missing constraint. Rows from the copy above always satisfy
+        // both keys by construction, so this cannot fail on migrated data.
+        $this->executeSql('DELETE FROM `client_group_members` WHERE `client_id` NOT IN (SELECT `id` FROM `client`)');
+        $this->executeSql('DELETE FROM `client_group_members` WHERE `client_group_id` NOT IN (SELECT `id` FROM `client_group`)');
+        $this->addForeignKeyIfMissing('client_group_members', 'client_group_members_client_fk', 'client_id', 'client', 'id');
+        $this->addForeignKeyIfMissing('client_group_members', 'client_group_members_group_fk', 'client_group_id', 'client_group', 'id');
+    }
+
+    private function patch126(): void
+    {
+        // Per-client renewal merge preference (#4118): tri-state column,
+        // NULL inherits the global `invoice_merge_renewals` setting. Guarded
+        // so reruns are no-ops; non-MySQL drivers get the column from the
+        // portable schema sync.
+        if (!$this->tableHasColumn('client', 'merge_renewals')) {
+            $this->executeSql('ALTER TABLE `client` ADD COLUMN `merge_renewals` TINYINT(1) DEFAULT NULL');
+        }
+    }
+
+    private function patch127(): void
+    {
+        // Promotion columns #4386 (auto_apply, priority, stackable) and #4401
+        // (requires_products) shipped without a migration, crashing promo
+        // loads with "Unknown column 't0.requires_products'" on installs the
+        // portable sync didn't heal. Definitions match Doctrine's DDL for the
+        // Promo entity. Guards make reruns no-ops; non-MySQL drivers use the
+        // portable sync.
+        // @see https://github.com/FOSSBilling/FOSSBilling/issues/4433
+        if (!$this->tableHasColumn('promo', 'requires_products')) {
+            $this->executeSql('ALTER TABLE `promo` ADD COLUMN `requires_products` LONGTEXT DEFAULT NULL');
+        }
+
+        if (!$this->tableHasColumn('promo', 'auto_apply')) {
+            $this->executeSql('ALTER TABLE `promo` ADD COLUMN `auto_apply` TINYINT DEFAULT 0');
+        }
+
+        if (!$this->tableHasColumn('promo', 'priority')) {
+            $this->executeSql('ALTER TABLE `promo` ADD COLUMN `priority` INT DEFAULT 0');
+        }
+
+        if (!$this->tableHasColumn('promo', 'stackable')) {
+            $this->executeSql('ALTER TABLE `promo` ADD COLUMN `stackable` TINYINT DEFAULT 0');
+        }
+
+        if (!$this->tableHasIndex('promo', 'auto_apply_index_idx')) {
+            $this->executeSql('ALTER TABLE `promo` ADD INDEX `auto_apply_index_idx` (`auto_apply`)');
         }
     }
 

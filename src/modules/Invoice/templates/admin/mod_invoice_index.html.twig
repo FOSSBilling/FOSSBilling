@@ -13,7 +13,7 @@
         <svg class="icon">
             <use href="#plus" />
         </svg>
-        {{ 'New Invoice'|trans }}
+        {{ 'New Draft'|trans }}
     </button>
 {% endset %}
 
@@ -140,7 +140,7 @@
                                     <label class="form-label text-muted small mb-1" for="issue_date">{{ 'Date Issued'|trans }}</label>
                                     <div class="input-group">
                                         <div class="input-icon w-100">
-                                            <input class="form-control datepicker"
+                                            <input class="form-control datepicker" data-clear-label="{{ 'Clear date'|trans }}" data-invalid-date-label="{{ 'Enter a valid date in YYYY-MM-DD format.'|trans }}"
                                                    id="issue_date"
                                                    placeholder="{{ 'Select Date Range'|trans }}"
                                                    value="{% if request.date_from %}{{ request.date_from|date('Y-m-d') }}{% endif %}{% if request.date_to %} to {{ request.date_to|date('Y-m-d') }}{% endif %}"
@@ -191,32 +191,33 @@
                     </form>
                 </section>
               <div class="table-responsive">
-                <table class="table card-table table-vcenter table-striped text-nowrap sortable">
+                <table class="table card-table table-vcenter table-striped text-nowrap">
                     <thead>
                         <tr>
-                            <th class="w-1 no-sort">
+                            <th class="w-1">
                                 <input type="checkbox" class="form-check-input m-0 align-middle batch-delete-master-checkbox">
                             </th>
-                            <th class="w-1">#</th>
-                            <th class="w-1 no-sort"></th>
+                            {{ include('partial_sortable_th.html.twig', { 'label': '#'|trans, 'sort_key': 'id', 'url': 'invoice', 'th_class': 'w-1', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                            <th class="w-1"></th>
                             <th>{{ 'Name'|trans }}</th>
                             <th class="text-center">{{ 'Amount'|trans }}</th>
-                            <th class="text-center">{{ 'Issued at'|trans }}</th>
-                            <th class="text-center">{{ 'Due Date'|trans }}</th>
-                            <th class="text-center">{{ 'Paid at'|trans }}</th>
-                            <th>{{ 'Status'|trans }}</th>
-                            <th class="w-1 no-sort"></th>
+                            {{ include('partial_sortable_th.html.twig', { 'label': 'Issued at'|trans, 'sort_key': 'created_at', 'url': 'invoice', 'th_class': 'text-center', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                            {{ include('partial_sortable_th.html.twig', { 'label': 'Due Date'|trans, 'sort_key': 'due_at', 'url': 'invoice', 'th_class': 'text-center', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                            {{ include('partial_sortable_th.html.twig', { 'label': 'Paid at'|trans, 'sort_key': 'paid_at', 'url': 'invoice', 'th_class': 'text-center', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                            {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'invoice', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                            <th class="w-1"></th>
                         </tr>
                     </thead>
                     <tbody>
                         {% set invoices = admin.invoice_get_list({ 'per_page': 25, 'page': request.page }|merge(request)|merge({ 'summary': 1 })) %}
+                        {% set params = admin.system_get_params %}
                         {% for invoice in invoices.list %}
                         <tr>
                             <td>
                                 <input type="checkbox" class="form-check-input m-0 align-middle batch-delete-checkbox" data-item-id="{{ invoice.id }}">
                             </td>
                             <td>
-                                <a href="{{ 'invoice/manage'|url }}/{{ invoice.id }}">{{ invoice.serie_nr }}</a>
+                                <a href="{{ 'invoice/manage'|url }}/{{ invoice.id }}">{% if invoice.issued %}{{ invoice.serie_nr }}{% else %}{{ 'Draft'|trans }} #{{ invoice.id }}{% endif %}</a>
                             </td>
                             <td>
                                 <a href='{{ "client/manage/#{invoice.client.id}"|url }}'>
@@ -230,19 +231,29 @@
                             <td class="text-center">{{ invoice.created_at|date('Y-m-d') }}</td>
                             <td class="text-center">{% if invoice.due_at %}{{ invoice.due_at|date('Y-m-d') }}{% else %}-{% endif %}</td>
                             <td class="text-center">{% if invoice.paid_at %}{{ invoice.paid_at|date('Y-m-d') }}{% else %}-{% endif %}</td>
-                            <td>{{ mf.status_badge(invoice.status, 'invoice') }}</td>
+                            <td>{{ mf.status_badge(invoice.status, 'invoice') }}{% if not invoice.issued %} {{ mf.text_badge('Draft'|trans, 'text-bg-secondary') }}{% endif %}</td>
                             <td>
                                 <a class="btn btn-icon" href='{{ "invoice/manage/#{invoice.id}"|url }}'>
                                     <svg class="icon">
                                         <use href="#edit" />
                                     </svg>
                                 </a>
+                                {% if invoice.cancellable %}
+                                <a class="btn btn-icon" href="{{ 'invoice/cancel'|api_url(query: { 'id': invoice.id }) }}"
+                                    {{ fb_api_link({modal: {type: 'confirm', title: 'Cancel this invoice without a replacement?'|trans}, reload: true}) }}>
+                                    <svg class="icon">
+                                        <use href="#x" />
+                                    </svg>
+                                </a>
+                                {% endif %}
+                                {% if (invoice.status == 'unpaid' and not invoice.issued) or (params.invoice_immutability|default('strict') == 'relaxed' and invoice.status == 'canceled') %}
                                 <a class="btn btn-icon" href="{{ 'invoice/delete'|api_url(query: { 'id': invoice.id }) }}"
                                     {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
                                     <svg class="icon">
                                         <use href="#trash" />
                                     </svg>
                                 </a>
+                                {% endif %}
                             </td>
                         </tr>
                         {% else %}
@@ -274,7 +285,7 @@
                 <div class="modal-dialog modal-dialog-centered modal-lg">
                     <form class="modal-content" method="post" action="{{ 'invoice/prepare'|api_url }}" {{ fb_api_form({callback: 'onAfterInvoicePrepared'}) }}>
                         <div class="modal-header">
-                            <h3 class="modal-title" id="newInvoiceModalLabel">{{ 'Create New Invoice'|trans }}</h3>
+                            <h3 class="modal-title" id="newInvoiceModalLabel">{{ 'New Draft Invoice'|trans }}</h3>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
                         </div>
                         <div class="modal-body">
@@ -301,11 +312,12 @@
                                         name="product_id"
                                         data-resturl="/api/admin/product/get_pairs">
                                 </select>
+                                <small class="form-text">{{ 'This saves a draft you can edit on the next page. Nothing is sent to the client until you issue it.'|trans }}</small>
                             </div>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</button>
-                            <button type="submit" class="btn btn-primary">{{ 'Prepare'|trans }}</button>
+                            <button type="submit" class="btn btn-primary">{{ 'Save Draft'|trans }}</button>
                         </div>
                     </form>
                 </div>

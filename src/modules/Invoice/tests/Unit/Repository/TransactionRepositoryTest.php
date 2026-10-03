@@ -95,7 +95,7 @@ test('competingTransactionQuery applies gateway and exclude filters when provide
 test('getSearchQueryBuilder orders by id descending and selects the gateway name', function (): void {
     $query = transactionSearchQuery([]);
 
-    expect($query->getDQL())->toContain('SELECT t, pg.name AS gateway FROM ' . Transaction::class . ' t LEFT JOIN t.gateway pg')
+    expect($query->getDQL())->toContain('SELECT t, pg.name AS gateway, pg.gateway AS gateway_code FROM ' . Transaction::class . ' t LEFT JOIN t.gateway pg')
         ->and($query->getDQL())->toContain('ORDER BY t.id DESC');
 });
 
@@ -208,4 +208,88 @@ test('paginateMappedQuery yields gateway-aware mixed rows', function (): void {
 
     $gatewayRow = $result['list'][1];
     expect($gatewayRow)->toBe([Transaction::class, 'Stripe']);
+});
+
+test('getSearchQueryBuilder sorts by allowlisted columns', function (array $data, string $expectedOrderBy, bool $expectsTieBreak): void {
+    $dql = transactionSearchQuery($data)->getDQL();
+
+    expect($dql)->toContain($expectedOrderBy);
+    if ($expectsTieBreak) {
+        expect($dql)->toContain(', t.id');
+    } else {
+        expect($dql)->not->toContain(', t.id');
+    }
+})->with([
+    'id ascending' => [['sort' => 'id'], 'ORDER BY t.id ASC', false],
+    'id descending' => [['sort' => 'id', 'direction' => 'DESC'], 'ORDER BY t.id DESC', false],
+    'status' => [['sort' => 'status'], 'ORDER BY t.status ASC, t.id ASC', true],
+    'currency' => [['sort' => 'currency'], 'ORDER BY t.currency ASC, t.id ASC', true],
+    'type' => [['sort' => 'type', 'direction' => 'desc'], 'ORDER BY t.type DESC, t.id DESC', true],
+    'txn_id' => [['sort' => 'txn_id'], 'ORDER BY t.txnId ASC, t.id ASC', true],
+    'amount' => [['sort' => 'amount'], 'ORDER BY t.amount ASC, t.id ASC', true],
+    'gateway' => [['sort' => 'gateway'], 'ORDER BY pg.name ASC, t.id ASC', true],
+    'created_at' => [['sort' => 'created_at'], 'ORDER BY t.createdAt ASC, t.id ASC', true],
+    'updated_at' => [['sort' => 'updated_at', 'direction' => 'DESC'], 'ORDER BY t.updatedAt DESC, t.id DESC', true],
+    'invalid sort falls back to default' => [['sort' => 't.id; DROP TABLE transaction'], 'ORDER BY t.id DESC', false],
+    'invalid direction falls back to ascending' => [['sort' => 'status', 'direction' => 'sideways'], 'ORDER BY t.status ASC, t.id ASC', true],
+]);
+
+/*
+ * detachFromInvoice() runs raw SQL against a real table here (not a mocked
+ * connection): the anonymize flag is a data-preservation behavior, and only a
+ * real round trip proves which columns survive it.
+ */
+test('detachFromInvoice keeps personal data unless anonymizing', function (): void {
+    $em = transactionEntityManager();
+    (new SchemaTool($em))->createSchema([$em->getClassMetadata(Transaction::class)]);
+
+    $seed = function () use ($em): int {
+        $tx = (new Transaction())
+            ->setTxnId('gateway-txn-1')
+            ->setAmount(100.0)
+            ->setCurrency('EUR')
+            ->setIp('203.0.113.7')
+            ->setIpn('payer_email=client@example.com')
+            ->setNote('admin note')
+            ->setError('gateway said no')
+            ->setOutput('raw output');
+        $em->persist($tx);
+        $em->flush();
+        $id = $tx->getId();
+        $table = $em->getConnection()->quoteSingleIdentifier('transaction');
+        $em->getConnection()->update($table, ['invoice_id' => 7], ['id' => $id]);
+        $em->clear();
+
+        return $id;
+    };
+
+    $read = function (int $id) use ($em): Transaction {
+        $tx = $em->find(Transaction::class, $id);
+        expect($tx)->toBeInstanceOf(Transaction::class);
+
+        return $tx;
+    };
+
+    // Ordinary deletion: detached, everything intact.
+    $plainId = $seed();
+    $em->getRepository(Transaction::class)->detachFromInvoice(7);
+    $plain = $read($plainId);
+    expect($plain->getInvoice())->toBeNull()
+        ->and($plain->getIp())->toBe('203.0.113.7')
+        ->and($plain->getIpn())->toBe('payer_email=client@example.com')
+        ->and($plain->getNote())->toBe('admin note');
+
+    // Erasure: detached, personal data scrubbed, financial record kept.
+    $erasedId = $seed();
+    $em->getRepository(Transaction::class)->detachFromInvoice(7, true);
+    $erased = $read($erasedId);
+    expect($erased->getInvoice())->toBeNull()
+        ->and($erased->getIp())->toBeNull()
+        ->and($erased->getIpn())->toBeNull()
+        ->and($erased->getNote())->toBeNull()
+        ->and($erased->getError())->toBeNull()
+        ->and($erased->getOutput())->toBeNull()
+        ->and($erased->getTxnId())->toBe('gateway-txn-1')
+        ->and((float) $erased->getAmount())->toBe(100.0)
+        ->and($erased->getCurrency())->toBe('EUR');
 });

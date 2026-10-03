@@ -18,15 +18,15 @@ use FOSSBilling\Interfaces\ApiArrayInterface;
 /**
  * Installed extension record.
  *
- * The `extension` table tracks which extensions (modules, themes, payment
- * gateways, hooks, ...) are installed in this FOSSBilling instance, along
- * with their current status and version. The actual extension code lives
- * on disk; this row is only the metadata used by the extension manager.
+ * The `extension` table tracks which extensions are installed in this
+ * FOSSBilling instance, along with their type, status, and version. The actual
+ * extension code lives on disk; this row is only the metadata used by the
+ * extension manager.
  */
 #[ORM\Entity(repositoryClass: \Box\Mod\Extension\Repository\ExtensionRepository::class)]
 #[ORM\Table(name: 'extension')]
 #[ORM\Index(name: 'idx_extension_type', columns: ['type'])]
-// structure.sql has always enforced this as UNIQUE KEY type_name (type, name) - matches
+// The pre-cutover schema has always enforced this as UNIQUE KEY type_name (type, name) - matches
 // ExtensionRepository::findOneByTypeAndName() / Service::activateExistingExtension()'s existing
 // check-then-insert assumption that at most one row exists per (type, name) pair.
 #[ORM\UniqueConstraint(name: 'type_name', columns: ['type', 'name'])]
@@ -36,7 +36,6 @@ class Extension implements ApiArrayInterface
     final public const string TYPE_THEME = 'theme';
     final public const string TYPE_PG = 'pg';
     final public const string TYPE_TRANSLATION = 'translation';
-    final public const string TYPE_HOOK = 'hook';
 
     final public const string STATUS_INSTALLED = 'installed';
     final public const string STATUS_DEACTIVATED = 'deactivated';

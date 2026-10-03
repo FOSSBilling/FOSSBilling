@@ -315,3 +315,21 @@ test('attachOrderConfig throws when product has no files configured', function (
     expect(fn (): array => $service->attachOrderConfig($productModel, ['period' => '1M']))
         ->toThrow(Exception::class, 'Product is not configured completely.');
 });
+
+test('product file upload rejects a request without the expected file field', function (): void {
+    $service = new Service();
+
+    $request = new Symfony\Component\HttpFoundation\Request();
+    $request->files = new Symfony\Component\HttpFoundation\FileBag([
+        'other' => new UploadedFile(__FILE__, 'other.txt', null, UPLOAD_ERR_OK, true),
+    ]);
+
+    $di = container();
+    $di['request'] = $request;
+    $service->setDi($di);
+
+    $productModel = serviceDownloadableCreateProductEntity();
+
+    expect(fn (): bool => $service->uploadProductFile($productModel))
+        ->toThrow(FOSSBilling\Exception::class, 'File upload failed: no files in request.');
+});
