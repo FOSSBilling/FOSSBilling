@@ -247,13 +247,15 @@ workflows:
             parameters:
               php-minor: ['3', '4', '5']
       - frontend-build
+          name: Frontend (build)
       - frontend-browser-tests:
+          name: Frontend (browser tests)
           requires: [frontend-build]
       - integration-tests:
-          name: native-live-tests
+          name: Integration (Live API tests)
           suite: live
           requires: [frontend-build]
       - integration-tests:
-          name: Native browser tests
+          name: Integration (Browser tests)
           suite: browser
           requires: [frontend-build]
