@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\System\Controller;
 
-class Admin implements \FOSSBilling\InjectionAwareInterface
+class Admin implements \FOSSBilling\Core\Container\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 
@@ -53,7 +53,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         ];
     }
 
-    public function register(\Box_App &$app): void
+    public function register(\FOSSBilling\Core\Http\App &$app): void
     {
         $app->get('/system', 'get_index', [], static::class);
         $app->get('/system/', 'get_index', [], static::class);
@@ -63,28 +63,28 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         $app->get('/system/update/finalize', 'get_update_finalize', [], static::class);
     }
 
-    public function get_index(\Box_App $app): string
+    public function get_index(\FOSSBilling\Core\Http\App $app): string
     {
         $this->di['is_admin_logged'];
 
         return $app->render('mod_system_index');
     }
 
-    public function get_activity(\Box_App $app): string
+    public function get_activity(\FOSSBilling\Core\Http\App $app): string
     {
         $this->di['is_admin_logged'];
 
         return $app->render('mod_system_activity');
     }
 
-    public function get_update(\Box_App $app): string
+    public function get_update(\FOSSBilling\Core\Http\App $app): string
     {
         $this->di['is_admin_logged'];
 
         return $app->render('mod_system_update');
     }
 
-    public function get_update_finalize(\Box_App $app): string
+    public function get_update_finalize(\FOSSBilling\Core\Http\App $app): string
     {
         $this->di['is_admin_logged'];
 

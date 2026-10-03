@@ -24,7 +24,7 @@ test('dependency injection container is properly set and retrieved', function ()
 });
 
 test('register method registers email routes', function (): void {
-    $boxAppMock = Mockery::mock('\Box_App');
+    $boxAppMock = Mockery::mock(FOSSBilling\Core\Http\App::class);
     $boxAppMock->shouldReceive('get')
         ->times(5);
 
@@ -33,7 +33,7 @@ test('register method registers email routes', function (): void {
 });
 
 test('getHistory renders email history template', function (): void {
-    $boxAppMock = Mockery::mock('\Box_App');
+    $boxAppMock = Mockery::mock(FOSSBilling\Core\Http\App::class);
     $boxAppMock->shouldReceive('render')
         ->atLeast()->once()
         ->with('mod_email_history');

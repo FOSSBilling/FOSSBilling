@@ -16,10 +16,10 @@ declare(strict_types=1);
 namespace Box\Mod\Product\Api;
 
 use Box\Mod\Product\Entity\Product;
-use FOSSBilling\PaginationOptions;
-use FOSSBilling\Validation\Api\RequiredParams;
+use FOSSBilling\Core\Pagination\Options;
+use FOSSBilling\Core\Validation\Api\RequiredParams;
 
-class Admin extends \FOSSBilling\Api\AbstractApi
+class Admin extends \FOSSBilling\Core\Api\AbstractApi
 {
     /**
      * Get paginated list of products.
@@ -84,7 +84,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return int - new product id
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['title' => 'You must specify a title', 'type' => 'Type was not passed'])]
     public function prepare($data): int
@@ -96,13 +96,13 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         if ($data['type'] == 'domain') {
             $model = $service->getMainDomainProduct();
             if ($model !== null) {
-                throw new \FOSSBilling\InformationException('You have already created domain product.', null, 413);
+                throw new \FOSSBilling\Core\Exception\InformationException('You have already created domain product.', null, 413);
             }
         }
 
         $types = $service->getTypes();
         if (!array_key_exists($data['type'], $types)) {
-            throw new \FOSSBilling\Exception('Product type :type is not registered.', [':type' => $data['type']], 413);
+            throw new \FOSSBilling\Core\Exception\BaseException('Product type :type is not registered.', [':type' => $data['type']], 413);
         }
 
         $categoryId = $data['product_category_id'] ?? null;
@@ -134,7 +134,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     public function update($data)
     {
@@ -151,7 +151,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['priority' => 'priority params is missing'])]
     public function update_priority($data)
@@ -159,7 +159,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $this->checkPermissions('product', 'manage_products');
 
         if (!is_array($data['priority'] ?? null)) {
-            throw new \FOSSBilling\Exception('priority params is missing');
+            throw new \FOSSBilling\Core\Exception\BaseException('priority params is missing');
         }
 
         $service = $this->getService();
@@ -202,7 +202,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return int - new addon id
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['title' => 'You must specify a title'])]
     public function addon_create($data)
@@ -225,7 +225,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return array
      *
-     * @throws \FOSSBilling\InformationException
+     * @throws \FOSSBilling\Core\Exception\InformationException
      */
     #[RequiredParams(['id' => 'Addon ID was not passed'])]
     public function addon_get($data)
@@ -234,7 +234,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $this->getService()->findProductById((int) $data['id']);
         if (!$model instanceof Product || !$model->isAddon()) {
-            throw new \FOSSBilling\InformationException('Addon not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Addon not found');
         }
         $service = $this->getService();
 
@@ -264,7 +264,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      *
-     * @throws \FOSSBilling\InformationException
+     * @throws \FOSSBilling\Core\Exception\InformationException
      */
     #[RequiredParams(['id' => 'Addon ID was not passed'])]
     public function addon_update($data)
@@ -273,7 +273,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $model = $this->getService()->findProductById((int) $data['id']);
         if (!$model instanceof Product || !$model->isAddon()) {
-            throw new \FOSSBilling\InformationException('Addon not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Addon not found');
         }
         $this->di['logger']->info('Updated addon #{model_id}', ['model_id' => $model->getId()]);
 
@@ -328,7 +328,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Category ID was not passed'])]
     public function category_update($data)
@@ -351,7 +351,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return array
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Category ID was not passed'])]
     public function category_get($data)
@@ -371,7 +371,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return int - new category id
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['title' => 'Category title is required'])]
     public function category_create($data): int
@@ -392,7 +392,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Category ID was not passed'])]
     public function category_delete($data)
@@ -419,7 +419,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $service = $this->getService();
         $qb = $service->getPromoSearchQueryBuilder($data);
-        $pager = $this->di['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data));
+        $pager = $this->di['pager']->paginateDoctrineQuery($qb, Options::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
             $pager['list'][$key] = $this->getService()->enrichPromoApiArray($item);
@@ -447,7 +447,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return int - new promo code id
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams([
         'code' => 'Promo code is missing',
@@ -486,7 +486,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return array
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Promo ID was not passed'])]
     public function promo_get($data)
@@ -504,7 +504,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return int - ID of the new promo code
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Promo ID was not passed'])]
     public function promo_duplicate($data)
@@ -525,7 +525,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return array
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['promo_id' => 'Promo ID is missing'])]
     public function promo_redemption_get_list($data)
@@ -539,7 +539,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $repo = $this->getService()->getPromoRedemptionRepository();
 
         $qb = $repo->getSearchQueryBuilder($data);
-        $pager = $this->di['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data));
+        $pager = $this->di['pager']->paginateDoctrineQuery($qb, Options::fromArray($data));
 
         foreach ($pager['list'] as $key => $item) {
             $pager['list'][$key] = $this->getService()->enrichPromoRedemptionApiArray($item);
@@ -571,7 +571,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Promo ID was not passed'])]
     public function promo_update($data)
@@ -589,7 +589,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Promo ID was not passed'])]
     public function promo_delete($data)

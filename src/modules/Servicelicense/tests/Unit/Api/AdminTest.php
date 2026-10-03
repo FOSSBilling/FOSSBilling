@@ -164,5 +164,5 @@ test('throws exception when order not activated', function (): void {
     $api->setDi($di);
 
     expect(fn () => $api->_getService($data))
-        ->toThrow(FOSSBilling\Exception::class, 'Order is not activated');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Order is not activated');
 });

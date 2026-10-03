@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice\Event;
 
-use FOSSBilling\Events\Event;
+use FOSSBilling\Core\Events\Event;
 
 /** Dispatched after a debit note has been issued for an invoice. */
 final class AfterAdminInvoiceDebitEvent extends Event

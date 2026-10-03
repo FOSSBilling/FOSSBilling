@@ -11,11 +11,11 @@ declare(strict_types=1);
 
 namespace Box\Mod\Security\Checks;
 
-use FOSSBilling\Enums\SecurityCheckResultEnum;
-use FOSSBilling\SecurityCheckResult;
+use FOSSBilling\Core\Security\CheckResult;
+use FOSSBilling\Core\Security\CheckResultStatus;
 use Pimple\Container;
 
-class phpVersion implements \FOSSBilling\Interfaces\SecurityCheckInterface
+class phpVersion implements \FOSSBilling\Core\Security\CheckInterface
 {
     protected ?Container $di = null;
 
@@ -39,7 +39,7 @@ class phpVersion implements \FOSSBilling\Interfaces\SecurityCheckInterface
         return __trans('Checks if the PHP version FOSSBilling is running on is still receiving security support.');
     }
 
-    public function performCheck(): SecurityCheckResult
+    public function performCheck(): CheckResult
     {
         $phpVersionString = PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION;
 
@@ -51,17 +51,17 @@ class phpVersion implements \FOSSBilling\Interfaces\SecurityCheckInterface
             foreach ($data['data'] as $version) {
                 if ($phpVersionString == $version['name']) {
                     if ($version['isLatestVersion']) {
-                        return new SecurityCheckResult(SecurityCheckResultEnum::PASS, __trans('PHP :version: is the latest version of PHP.', [':version:' => $phpVersionString]));
+                        return new CheckResult(CheckResultStatus::PASS, __trans('PHP :version: is the latest version of PHP.', [':version:' => $phpVersionString]));
                     } elseif ($version['isSecureVersion']) {
-                        return new SecurityCheckResult(SecurityCheckResultEnum::PASS, __trans("PHP :version: isn't the latest, but is still supported.", [':version:' => $phpVersionString]));
+                        return new CheckResult(CheckResultStatus::PASS, __trans("PHP :version: isn't the latest, but is still supported.", [':version:' => $phpVersionString]));
                     }
 
-                    return new SecurityCheckResult(SecurityCheckResultEnum::FAIL, __trans('PHP :version: is out of date and does not get security patches.', [':version:' => $phpVersionString]));
+                    return new CheckResult(CheckResultStatus::FAIL, __trans('PHP :version: is out of date and does not get security patches.', [':version:' => $phpVersionString]));
                 }
             }
         } catch (\Exception) {
         }
 
-        return new SecurityCheckResult(SecurityCheckResultEnum::FAIL, __trans('Failed to lookup PHP version status.'));
+        return new CheckResult(CheckResultStatus::FAIL, __trans('Failed to lookup PHP version status.'));
     }
 }

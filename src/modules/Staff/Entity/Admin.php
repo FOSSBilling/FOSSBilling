@@ -13,16 +13,16 @@ namespace Box\Mod\Staff\Entity;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use FOSSBilling\Doctrine\TimestampTrait;
-use FOSSBilling\Interfaces\ApiArrayInterface;
-use FOSSBilling\Interfaces\TimestampInterface;
+use FOSSBilling\Core\Api\ArrayInterface;
+use FOSSBilling\Core\Doctrine\TimestampInterface;
+use FOSSBilling\Core\Doctrine\TimestampTrait;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Staff\Repository\AdminRepository::class)]
 #[ORM\Table(name: 'admin')]
 #[ORM\UniqueConstraint(name: 'email', columns: ['email'])]
 #[ORM\UniqueConstraint(name: 'system_name', columns: ['system_name'])]
 #[ORM\HasLifecycleCallbacks]
-class Admin implements ApiArrayInterface, TimestampInterface
+class Admin implements ArrayInterface, TimestampInterface
 {
     use TimestampTrait;
 
@@ -180,7 +180,7 @@ class Admin implements ApiArrayInterface, TimestampInterface
         return $this->status === self::STATUS_ACTIVE;
     }
 
-    public function toApiArray(\Box\Mod\Client\Entity\Client|self|\FOSSBilling\Identity\Guest|null $identity = null): array
+    public function toApiArray(\Box\Mod\Client\Entity\Client|self|\FOSSBilling\Core\Identity\Guest|null $identity = null): array
     {
         return [
             'id' => $this->id,

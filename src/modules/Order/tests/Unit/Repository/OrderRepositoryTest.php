@@ -166,5 +166,5 @@ test('lockAndGetUnpaidInvoiceId rejects being called outside of a transaction', 
     $repository = new OrderRepository($entityManager, new ClassMetadata(Order::class));
 
     expect(fn (): ?int => $repository->lockAndGetUnpaidInvoiceId(42))
-        ->toThrow(FOSSBilling\Exception::class, 'outside of a transaction');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'outside of a transaction');
 });

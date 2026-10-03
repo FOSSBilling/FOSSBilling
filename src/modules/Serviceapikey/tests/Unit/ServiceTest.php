@@ -205,7 +205,7 @@ test('install creates the service_apikey table portably instead of via raw MySQL
     // unconditionally, so this hook was already redundant there; it's only load-bearing on
     // PG/SQLite fresh installs, where nothing else creates the table.
     $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
-    $em = FOSSBilling\Doctrine\EntityManagerFactory::create($connection);
+    $em = FOSSBilling\Core\Doctrine\EntityManagerFactory::create($connection);
 
     expect($connection->createSchemaManager()->tablesExist(['service_apikey']))->toBeFalse();
 

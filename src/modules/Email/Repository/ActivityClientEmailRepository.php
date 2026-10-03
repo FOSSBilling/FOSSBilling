@@ -14,7 +14,7 @@ namespace Box\Mod\Email\Repository;
 use Box\Mod\Email\Entity\ActivityClientEmail;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
-use FOSSBilling\SortOptions;
+use FOSSBilling\Core\SortOptions;
 
 class ActivityClientEmailRepository extends EntityRepository
 {
@@ -114,7 +114,7 @@ class ActivityClientEmailRepository extends EntityRepository
     {
         $email = $this->find($id);
         if (!$email instanceof ActivityClientEmail) {
-            throw new \FOSSBilling\InformationException('Email not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Email not found');
         }
 
         return $email;
@@ -127,7 +127,7 @@ class ActivityClientEmailRepository extends EntityRepository
     {
         $email = $this->findOneForClientById($clientId, $id);
         if (!$email instanceof ActivityClientEmail) {
-            throw new \FOSSBilling\InformationException('Email not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('Email not found');
         }
 
         return $email;

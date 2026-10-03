@@ -22,7 +22,7 @@ use Doctrine\ORM\Events;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\SchemaTool;
-use FOSSBilling\Doctrine\EntityManagerFactory;
+use FOSSBilling\Core\Doctrine\EntityManagerFactory;
 
 function extensionRepoCreateRepository(): ExtensionRepository
 {

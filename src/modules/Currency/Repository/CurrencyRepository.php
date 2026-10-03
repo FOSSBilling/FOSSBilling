@@ -20,7 +20,7 @@ use Doctrine\ORM\Event\OnFlushEventArgs;
 use Doctrine\ORM\Event\PostFlushEventArgs;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Doctrine\ORM\QueryBuilder;
-use FOSSBilling\SortOptions;
+use FOSSBilling\Core\SortOptions;
 use Symfony\Component\Intl\Currencies;
 
 class CurrencyRepository extends EntityRepository

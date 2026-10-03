@@ -209,7 +209,7 @@ function paypalProcessAdapter(object $di): Payment_Adapter_PayPalEmail
 function signedPayPalGet(int $invoiceId, int $gatewayId = 1, array $extra = []): array
 {
     return array_merge(
-        ['invoice_id' => $invoiceId, 'sig' => FOSSBilling\Tools::signCallbackParams($gatewayId, $invoiceId)],
+        ['invoice_id' => $invoiceId, 'sig' => FOSSBilling\Core\Security\Credential::signCallbackParams($gatewayId, $invoiceId)],
         $extra
     );
 }
@@ -1278,7 +1278,7 @@ describe('PayPal callback invoice binding', function (): void {
         $di['logger'] = new Tests\Helpers\TestLogger();
 
         // Signature was issued for invoice 16; the callback URL now names 99.
-        $sig = FOSSBilling\Tools::signCallbackParams(2, 16);
+        $sig = FOSSBilling\Core\Security\Credential::signCallbackParams(2, 16);
 
         paypalProcessAdapter($di)->processTransaction($apiAdmin, 42, [
             'post' => ['txn_type' => 'web_accept', 'payment_status' => 'Completed'],
@@ -1318,7 +1318,7 @@ describe('PayPal callback invoice binding', function (): void {
 
         paypalProcessAdapter($di)->processTransaction($apiAdmin, 42, [
             'post' => ['txn_type' => 'web_accept', 'payment_status' => 'Completed'],
-            'get' => ['invoice_id' => 16, 'sig' => FOSSBilling\Tools::signCallbackParams(7, 16)],
+            'get' => ['invoice_id' => 16, 'sig' => FOSSBilling\Core\Security\Credential::signCallbackParams(7, 16)],
         ], 2);
     })->throws(Payment_Exception::class, 'PayPal callback signature is invalid');
 
@@ -1540,7 +1540,7 @@ describe('PayPal callback invoice binding', function (): void {
 
         expect($adapter->getInvoiceId(['get' => signedPayPalGet(16, 2)]))->toBe(16);
         expect($adapter->getInvoiceId(['get' => []]))->toBeNull();
-        expect(fn (): mixed => $adapter->getInvoiceId(['get' => ['invoice_id' => 99, 'sig' => FOSSBilling\Tools::signCallbackParams(2, 16)]]))
+        expect(fn (): mixed => $adapter->getInvoiceId(['get' => ['invoice_id' => 99, 'sig' => FOSSBilling\Core\Security\Credential::signCallbackParams(2, 16)]]))
             ->toThrow(Payment_Exception::class, 'PayPal callback signature is invalid');
     });
 
@@ -1698,7 +1698,7 @@ describe('PayPal callback invoice binding', function (): void {
         parse_str((string) parse_url($fields['notify_url'], PHP_URL_QUERY), $query);
 
         expect((int) ($query['invoice_id'] ?? 0))->toBe(16)
-            ->and(FOSSBilling\Tools::verifyCallbackSignature(2, 16, $query['sig'] ?? null))->toBeTrue();
+            ->and(FOSSBilling\Core\Security\Credential::verifyCallbackSignature(2, 16, $query['sig'] ?? null))->toBeTrue();
     });
 });
 

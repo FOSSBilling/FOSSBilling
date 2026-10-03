@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Cron\Event;
 
-use FOSSBilling\Events\Event;
+use FOSSBilling\Core\Events\Event;
 
 /** Dispatched immediately before the admin cron jobs run. */
 final class BeforeAdminCronRunEvent extends Event

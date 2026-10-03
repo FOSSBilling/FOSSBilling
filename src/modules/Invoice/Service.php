@@ -51,16 +51,15 @@ use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Dompdf\Dompdf;
 use Dompdf\Options;
-use FOSSBilling\Doctrine\EntityManagerFactory;
-use FOSSBilling\Doctrine\RowLock;
-use FOSSBilling\Doctrine\SqlExpr;
-use FOSSBilling\Environment;
-use FOSSBilling\Http\ResponseFactory;
-use FOSSBilling\i18n;
-use FOSSBilling\InformationException;
-use FOSSBilling\InjectionAwareInterface;
-use FOSSBilling\Tools;
-use FOSSBilling\Validation\PriceValidator;
+use FOSSBilling\Core\Container\InjectionAwareInterface;
+use FOSSBilling\Core\Doctrine\EntityManagerFactory;
+use FOSSBilling\Core\Doctrine\RowLock;
+use FOSSBilling\Core\Doctrine\SqlExpr;
+use FOSSBilling\Core\Exception\InformationException;
+use FOSSBilling\Core\Http\ResponseFactory;
+use FOSSBilling\Core\I18n\I18n;
+use FOSSBilling\Core\System\Environment;
+use FOSSBilling\Core\Validation\PriceValidator;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -768,7 +767,7 @@ class Service implements InjectionAwareInterface
 
             $snapshotJson = json_encode($snapshot, JSON_INVALID_UTF8_SUBSTITUTE);
             if ($snapshotJson === false) {
-                throw new \FOSSBilling\Exception('Unable to encode the invoice journal snapshot.');
+                throw new \FOSSBilling\Core\Exception\BaseException('Unable to encode the invoice journal snapshot.');
             }
 
             $connection = $this->di['em']->getConnection();
@@ -892,7 +891,7 @@ class Service implements InjectionAwareInterface
         // write, or a table created after its invoices by drift healing) converge over
         // runs instead of stalling this one. Failures stay local to the cron log.
         try {
-            $patcher = new \FOSSBilling\UpdatePatcher();
+            $patcher = new \FOSSBilling\Core\Update\Patcher();
             $patcher->setDi($di);
             $patcher->healInvoiceJournal();
         } catch (\Throwable $e) {
@@ -989,7 +988,7 @@ class Service implements InjectionAwareInterface
 
             $invoice = $this->toApiArray($invoiceModel, true, null, true);
             if (!isset($invoice['client']) || !is_array($invoice['client']) || !isset($invoice['client']['id'])) {
-                throw new \FOSSBilling\Exception('Invoice client data is unavailable.');
+                throw new \FOSSBilling\Core\Exception\BaseException('Invoice client data is unavailable.');
             }
 
             $email = [];
@@ -1097,7 +1096,7 @@ class Service implements InjectionAwareInterface
 
         $currencyRate = $currencyRepository->getRateByCode((string) $invoice->getCurrency());
         if ($currencyRate === null) {
-            throw new \FOSSBilling\Exception("Currency rate for code '{$invoice->getCurrency()}' is not configured.");
+            throw new \FOSSBilling\Core\Exception\BaseException("Currency rate for code '{$invoice->getCurrency()}' is not configured.");
         }
         $invoice->setCurrencyRate($currencyRate);
 
@@ -1124,7 +1123,7 @@ class Service implements InjectionAwareInterface
             throw new InformationException('This invoice was canceled and cannot be marked as paid');
         }
 
-        $execute = Tools::normalizeBoolean($data['execute'] ?? false);
+        $execute = \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['execute'] ?? false);
         $payGateway = $this->validateAdminMarkAsPaidRequest($data, $invoice);
         $transactionId = isset($data['transactionId']) ? trim((string) $data['transactionId']) : null;
 
@@ -1356,14 +1355,14 @@ class Service implements InjectionAwareInterface
             // In theory this code should never need to be called, but is provided as a fallback
             $r = $this->getInvoiceRepository()->findLatestWithNr();
             if (!$r instanceof Invoice || !is_numeric($r->getNr())) {
-                throw new \FOSSBilling\Exception('Unable to determine the next invoice number');
+                throw new \FOSSBilling\Core\Exception\BaseException('Unable to determine the next invoice number');
             }
 
             // Seeding the counter and reserving from it has to be one locked step too, otherwise
             // two callers deriving the same seed both write it and both reserve the same number.
             $next_nr = $systemService->reserveNextNumericParamValue('invoice_starting_number', intval($r->getNr()) + 1);
             if ($next_nr === null) {
-                throw new \FOSSBilling\Exception('Unable to determine the next invoice number');
+                throw new \FOSSBilling\Core\Exception\BaseException('Unable to determine the next invoice number');
             }
         }
 
@@ -1413,7 +1412,7 @@ class Service implements InjectionAwareInterface
             $currency = $currencyRepository->findDefault();
 
             if (!$currency instanceof Currency) {
-                throw new \FOSSBilling\Exception('Default currency not found');
+                throw new \FOSSBilling\Core\Exception\BaseException('Default currency not found');
             }
 
             $currencyCode = $currency->getCode();
@@ -1597,7 +1596,7 @@ class Service implements InjectionAwareInterface
     {
         $epsilon = 0.01;
         if ($received < $expected - $epsilon) {
-            throw new \FOSSBilling\Exception('Payment amount does not match the expected invoice total. Expected :expected, received :received.', [':expected' => number_format($expected, 2, '.', ''), ':received' => number_format($received, 2, '.', '')]);
+            throw new \FOSSBilling\Core\Exception\BaseException('Payment amount does not match the expected invoice total. Expected :expected, received :received.', [':expected' => number_format($expected, 2, '.', ''), ':received' => number_format($received, 2, '.', '')]);
         }
 
         // Warn on significant overpayments — this can indicate a misdirected
@@ -1772,7 +1771,7 @@ class Service implements InjectionAwareInterface
                         ? $this->getNextInvoiceNumber()
                         : $systemService->reserveNextNumericParamValue('invoice_cn_starting_number', 1);
                     if ($nextNumber === null) {
-                        throw new \FOSSBilling\Exception('Unable to determine the next invoice number');
+                        throw new \FOSSBilling\Core\Exception\BaseException('Unable to determine the next invoice number');
                     }
 
                     // Use the current locked status rather than the possibly stale entity state.
@@ -2079,7 +2078,7 @@ class Service implements InjectionAwareInterface
             // lock before the locking read; the outer transaction rolls this back on failure.
             $next_nr = $systemService->reserveNextNumericParamValue('invoice_dn_starting_number', 1);
             if ($next_nr === null) {
-                throw new \FOSSBilling\Exception('Unable to determine the next debit note number');
+                throw new \FOSSBilling\Core\Exception\BaseException('Unable to determine the next debit note number');
             }
 
             // Recheck eligibility against the locked state; the invoice may
@@ -2409,7 +2408,7 @@ class Service implements InjectionAwareInterface
             // lock before the locking read; the outer transaction rolls this back on failure.
             $next_nr = $this->getNextInvoiceNumber();
             if ($next_nr === null) {
-                throw new \FOSSBilling\Exception('Unable to determine the next invoice number');
+                throw new \FOSSBilling\Core\Exception\BaseException('Unable to determine the next invoice number');
             }
 
             $state = $this->lockAndRefreshInvoice($original);
@@ -2674,7 +2673,7 @@ class Service implements InjectionAwareInterface
             $orderId = $orderService->createOrder($client, $product, $orderData);
             $order = $this->di['em']->getRepository(Order::class)->find($orderId);
             if (!$order instanceof Order) {
-                throw new \FOSSBilling\Exception('Order could not be created');
+                throw new \FOSSBilling\Core\Exception\BaseException('Order could not be created');
             }
         }
 
@@ -2924,7 +2923,7 @@ class Service implements InjectionAwareInterface
         $currencyRepository = $currencyService->getCurrencyRepository();
         $rate = $currencyRepository->getRateByCode((string) $order->getCurrency());
         if ($rate === null) {
-            throw new \FOSSBilling\Exception("Currency rate for '{$order->getCurrency()}' is not configured");
+            throw new \FOSSBilling\Core\Exception\BaseException("Currency rate for '{$order->getCurrency()}' is not configured");
         }
 
         if ($promo->getType() === \Box\Mod\Product\Entity\Promo::PERCENTAGE) {
@@ -2991,7 +2990,7 @@ class Service implements InjectionAwareInterface
                 try {
                     $primaryPromo = $productService->findPromoById($order->getPromoId());
                     $order->setPromoRecurring($primaryPromo->isRecurring());
-                } catch (\FOSSBilling\Exception) {
+                } catch (\FOSSBilling\Core\Exception\BaseException) {
                     // Leave the existing flag untouched.
                 }
             }
@@ -3396,7 +3395,7 @@ class Service implements InjectionAwareInterface
                 $currencyRepository = $currencyService->getCurrencyRepository();
                 $rate = $currencyRepository->getRateByCode($order->getCurrency());
                 if ($rate === null) {
-                    throw new \FOSSBilling\Exception("Currency rate for '{$order->getCurrency()}' is not configured");
+                    throw new \FOSSBilling\Core\Exception\BaseException("Currency rate for '{$order->getCurrency()}' is not configured");
                 }
 
                 $renewalLine = $productService->getProductRenewalLineConfig($product, $config);
@@ -3596,7 +3595,7 @@ class Service implements InjectionAwareInterface
         $orderService = $this->di['mod_service']('Order');
         $orders = $orderService->getSoonExpiringActiveOrders();
 
-        if (Tools::safeCount($orders) == 0) {
+        if (\FOSSBilling\Core\Utils\Arr::safeCount($orders) == 0) {
             return true;
         }
 
@@ -3953,7 +3952,7 @@ class Service implements InjectionAwareInterface
         }
 
         if (!$gtw->isEnabled()) {
-            throw new \FOSSBilling\Exception('Payment method not enabled', null, 814);
+            throw new \FOSSBilling\Core\Exception\BaseException('Payment method not enabled', null, 814);
         }
 
         $subscribeService = $this->di['mod_service']('Invoice', 'Subscription');
@@ -3963,7 +3962,7 @@ class Service implements InjectionAwareInterface
         }
 
         if (!$subscribe && !$payGatewayService->canPerformSinglePayment($gtw)) {
-            throw new \FOSSBilling\Exception('One-time payments are not enabled for the selected payment gateway', null, 815);
+            throw new \FOSSBilling\Core\Exception\BaseException('One-time payments are not enabled for the selected payment gateway', null, 815);
         }
 
         $adapter = $payGatewayService->getPaymentAdapter($gtw, $invoice, $data);
@@ -4094,7 +4093,7 @@ class Service implements InjectionAwareInterface
             'buyer' => $this->getBuyerData($invoice, $buyerLines),
             'buyer_lines' => $buyerLines,
             'invoice' => $invoice,
-            'locale' => i18n::getActiveLocale($this->di['request'], true, $this->di['cookie_queue']),
+            'locale' => I18n::getActiveLocale($this->di['request'], true, $this->di['cookie_queue']),
         ];
 
         $twigFactory = $this->di['twig_factory'];
@@ -4437,7 +4436,7 @@ class Service implements InjectionAwareInterface
                 ->setTax($item['tax'])
                 ->setQuantity($item['quantity']);
             $items[] = $pi;
-            if (is_null($first_title) && Tools::safeCount($proforma['lines']) == 1) {
+            if (is_null($first_title) && \FOSSBilling\Core\Utils\Arr::safeCount($proforma['lines']) == 1) {
                 $first_title = $item['title'];
             }
         }

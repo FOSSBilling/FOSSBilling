@@ -23,9 +23,9 @@ function journalDownloadEntries(): array
     ];
 }
 
-function journalDownloadApp(array $query = []): Box_App
+function journalDownloadApp(array $query = []): FOSSBilling\Core\Http\App
 {
-    $app = Mockery::mock(Box_App::class);
+    $app = Mockery::mock(FOSSBilling\Core\Http\App::class);
     $app->shouldReceive('getRequest')
         ->once()
         ->andReturn(Request::create('/', 'GET', $query));

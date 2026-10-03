@@ -82,7 +82,7 @@ test('approveTransaction credits the client and marks the invoice paid', functio
     $tx = customApprovalTransaction();
     $di = customApprovalDi($tx);
 
-    $apiAdmin = (new ReflectionClass(FOSSBilling\Api\Proxy::class))->newInstanceWithoutConstructor();
+    $apiAdmin = (new ReflectionClass(FOSSBilling\Core\Api\Proxy::class))->newInstanceWithoutConstructor();
 
     expect(customApprovalAdapter($di)->approveTransaction($apiAdmin, 42, 1))->toBeTrue()
         ->and($tx->getStatus())->toBe(Transaction::STATUS_PROCESSED)
@@ -94,7 +94,7 @@ test('approveTransaction throws for an unknown transaction', function (): void {
     $tx = customApprovalTransaction();
     $di = customApprovalDi($tx);
 
-    $apiAdmin = (new ReflectionClass(FOSSBilling\Api\Proxy::class))->newInstanceWithoutConstructor();
+    $apiAdmin = (new ReflectionClass(FOSSBilling\Core\Api\Proxy::class))->newInstanceWithoutConstructor();
 
     try {
         customApprovalAdapter($di)->approveTransaction($apiAdmin, 404, 1);
@@ -112,10 +112,10 @@ test('approveTransaction throws when the transaction has no invoice', function (
     $tx->setInvoice(null);
     $di = customApprovalDi($tx);
 
-    $apiAdmin = (new ReflectionClass(FOSSBilling\Api\Proxy::class))->newInstanceWithoutConstructor();
+    $apiAdmin = (new ReflectionClass(FOSSBilling\Core\Api\Proxy::class))->newInstanceWithoutConstructor();
 
     expect(fn (): mixed => customApprovalAdapter($di)->approveTransaction($apiAdmin, 42, 1))
-        ->toThrow(FOSSBilling\InformationException::class, 'Invoice not found');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Invoice not found');
 });
 
 test('approveTransaction throws when the transaction has no gateway', function (): void {
@@ -125,7 +125,7 @@ test('approveTransaction throws when the transaction has no gateway', function (
     $tx->setInvoice($invoice);
     $di = customApprovalDi($tx);
 
-    $apiAdmin = (new ReflectionClass(FOSSBilling\Api\Proxy::class))->newInstanceWithoutConstructor();
+    $apiAdmin = (new ReflectionClass(FOSSBilling\Core\Api\Proxy::class))->newInstanceWithoutConstructor();
 
     try {
         customApprovalAdapter($di)->approveTransaction($apiAdmin, 42, 1);

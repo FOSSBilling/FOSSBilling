@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Profile\Event;
 
-use FOSSBilling\Events\Event;
+use FOSSBilling\Core\Events\Event;
 
 /** Dispatched before a client's profile data is validated and saved. */
 final class BeforeClientProfileUpdateEvent extends Event

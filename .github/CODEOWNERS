@@ -2,6 +2,6 @@
 
 /src/modules/Security/ @BelleNottelling
 /src/modules/Serviceapikey/ @BelleNottelling
-/src/library/FOSSBilling/GeoIP/ @BelleNottelling
-/src/library/FOSSBilling/Fingerprint.php @BelleNottelling
-/src/library/FOSSBilling/SentryHelper.php @BelleNottelling
+/src/core/GeoIP/ @BelleNottelling
+/src/core/Security/Fingerprint.php @BelleNottelling
+/src/core/SentryHelper.php @BelleNottelling

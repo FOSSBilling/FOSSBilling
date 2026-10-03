@@ -17,7 +17,7 @@ declare(strict_types=1);
  */
 
 use Doctrine\ORM\Mapping as ORM;
-use FOSSBilling\Doctrine\EntityManagerFactory;
+use FOSSBilling\Core\Doctrine\EntityManagerFactory;
 use Symfony\Component\Filesystem\Path;
 
 function entityMigrationCoverageSnapshotPath(): string

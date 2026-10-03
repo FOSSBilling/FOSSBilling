@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Client\Event;
 
-use FOSSBilling\Events\Event;
+use FOSSBilling\Core\Events\Event;
 
 /** Dispatched after a guest signup has persisted its new client. */
 final class AfterClientSignUpEvent extends Event

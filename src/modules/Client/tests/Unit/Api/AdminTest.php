@@ -49,12 +49,12 @@ test('getList returns array', function (): void {
     ->once()
     ->andReturn($repository);
 
-    $pagerMock = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
+    $pagerMock = Mockery::mock(FOSSBilling\Core\Pagination\Service::class)->makePartial();
 
     $pagerMock
     ->shouldReceive('paginateDoctrineQuery')
     ->once()
-    ->with($queryBuilder, Mockery::type(FOSSBilling\PaginationOptions::class), Mockery::type(Box\Mod\Staff\Entity\Admin::class))
+    ->with($queryBuilder, Mockery::type(FOSSBilling\Core\Pagination\Options::class), Mockery::type(Box\Mod\Staff\Entity\Admin::class))
     ->andReturn($simpleResultArr);
 
     $di = container();
@@ -112,14 +112,14 @@ test('login returns array', function (): void {
     $serviceMock = Mockery::mock(Box\Mod\Client\Service::class);
     $serviceMock->shouldReceive('toSessionArray')->atLeast()->once()->andReturn($sessionArray);
 
-    $sessionMock = Mockery::mock(FOSSBilling\Session::class);
+    $sessionMock = Mockery::mock(FOSSBilling\Core\Session::class);
     $sessionMock->shouldReceive('set')->atLeast()->once();
 
     $di = container();
     $di['mod_service'] = $di->protect(moduleService(['client' => $serviceMock]));
     $di['session'] = $sessionMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $validatorStub = $this->createStub(FOSSBilling\Validate::class);
+    $validatorStub = $this->createStub(FOSSBilling\Core\Validation\Validator::class);
     $di['validator'] = $validatorStub;
 
     $adminClient->setDi($di);
@@ -142,11 +142,7 @@ test('create returns int', function (): void {
     $serviceMock->shouldReceive('emailAlreadyRegistered')->atLeast()->once()->andReturn(false);
     $serviceMock->shouldReceive('adminCreateClient')->atLeast()->once()->andReturn(1);
 
-    $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
-    $toolsMock->shouldReceive('validateAndSanitizeEmail')->atLeast()->once();
-
     $di = container();
-    $di['tools'] = $toolsMock;
 
     $adminClient->setDi($di);
     $adminClient->setService($serviceMock);
@@ -166,17 +162,13 @@ test('create throws exception when email is already registered', function (): vo
     $serviceMock = Mockery::mock(Box\Mod\Client\Service::class);
     $serviceMock->shouldReceive('emailAlreadyRegistered')->atLeast()->once()->andReturn(true);
 
-    $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
-    $toolsMock->shouldReceive('validateAndSanitizeEmail')->atLeast()->once();
-
     $di = container();
-    $di['tools'] = $toolsMock;
 
     $adminClient->setDi($di);
     $adminClient->setService($serviceMock);
 
     $adminClient->create($data);
-})->throws(FOSSBilling\Exception::class, 'This email address is already registered.');
+})->throws(FOSSBilling\Core\Exception\BaseException::class, 'This email address is already registered.');
 
 test('delete returns true', function (): void {
     $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
@@ -188,7 +180,7 @@ test('delete returns true', function (): void {
         {
         }
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->calls->append($event);
 
@@ -204,7 +196,7 @@ test('delete returns true', function (): void {
     $di = container();
     $di['event_dispatcher'] = $dispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $validatorStub = $this->createStub(FOSSBilling\Validate::class);
+    $validatorStub = $this->createStub(FOSSBilling\Core\Validation\Validator::class);
     $di['validator'] = $validatorStub;
 
     $adminClient->setDi($di);
@@ -267,7 +259,7 @@ test('update returns true', function (): void {
     $dispatcher = new class {
         public array $events = [];
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->events[] = $event;
 
@@ -275,14 +267,10 @@ test('update returns true', function (): void {
         }
     };
 
-    $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
-    $toolsMock->shouldReceive('validateAndSanitizeEmail')->atLeast()->once();
-
     $di = container();
     $di['mod_service'] = $di->protect(moduleService(['client' => $serviceMock]));
     $di['event_dispatcher'] = $dispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['tools'] = $toolsMock;
 
     $adminClient->setDi($di);
     $result = $adminClient->update($data);
@@ -410,7 +398,7 @@ test('update rejects a non-integer group id', function (): void {
     $adminClient->setDi($di);
 
     expect(fn () => $adminClient->update(['id' => 1, 'group_ids' => ['invalid']]))
-        ->toThrow(FOSSBilling\InformationException::class, 'Invalid client group ID');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Invalid client group ID');
 });
 
 test('update throws exception when email is already registered', function (): void {
@@ -462,16 +450,12 @@ test('update throws exception when email is already registered', function (): vo
     $di = container();
     $di['mod_service'] = $di->protect(moduleService(['client' => $serviceMock]));
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['validator'] = new FOSSBilling\Validate();
-
-    $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
-    $toolsMock->shouldReceive('validateAndSanitizeEmail')->atLeast()->once();
-    $di['tools'] = $toolsMock;
+    $di['validator'] = new FOSSBilling\Core\Validation\Validator();
 
     $adminClient->setDi($di);
 
     $adminClient->update($data);
-})->throws(FOSSBilling\Exception::class, 'This email address is already registered.');
+})->throws(FOSSBilling\Core\Exception\BaseException::class, 'This email address is already registered.');
 
 test('update throws exception when id is not passed', function (): void {
     $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
@@ -479,7 +463,7 @@ test('update throws exception when id is not passed', function (): void {
 
     $di = container();
 
-    $di['validator'] = new FOSSBilling\Validate();
+    $di['validator'] = new FOSSBilling\Core\Validation\Validator();
     $adminClient->setDi($di);
 
     // Validate required parameters before calling update
@@ -487,7 +471,7 @@ test('update throws exception when id is not passed', function (): void {
     $validator->checkRequiredParamsForArray(['id' => 'Client ID was not passed'], $data);
 
     $adminClient->update($data);
-})->throws(FOSSBilling\Exception::class, 'Client ID was not passed');
+})->throws(FOSSBilling\Core\Exception\BaseException::class, 'Client ID was not passed');
 
 test('changePassword returns true', function (): void {
     $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
@@ -500,7 +484,7 @@ test('changePassword returns true', function (): void {
     $dispatcher = new class {
         public array $events = [];
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->events[] = $event;
 
@@ -508,7 +492,7 @@ test('changePassword returns true', function (): void {
         }
     };
 
-    $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
+    $passwordMock = Mockery::mock(FOSSBilling\Core\PasswordManager::class);
     $passwordMock->shouldReceive('hashIt')->atLeast()->once()->with($data['password']);
 
     $profileService = Mockery::mock(Box\Mod\Profile\Service::class);
@@ -518,7 +502,7 @@ test('changePassword returns true', function (): void {
     $di['event_dispatcher'] = $dispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['password'] = $passwordMock;
-    $validatorStub = $this->createStub(FOSSBilling\Validate::class);
+    $validatorStub = $this->createStub(FOSSBilling\Core\Validation\Validator::class);
     $di['validator'] = $validatorStub;
     $di['mod_service'] = $di->protect(moduleService(['profile' => $profileService]));
 
@@ -540,7 +524,7 @@ test('changePassword throws exception when passwords do not match', function ():
         'password_confirm' => 'NotIdentical',
     ];
 
-    $validatorStub = new FOSSBilling\Validate();
+    $validatorStub = new FOSSBilling\Core\Validation\Validator();
 
     $di = container();
     $di['validator'] = $validatorStub;
@@ -548,7 +532,7 @@ test('changePassword throws exception when passwords do not match', function ():
     $adminClient->setDi($di);
 
     $adminClient->change_password($data);
-})->throws(FOSSBilling\Exception::class, 'Passwords do not match');
+})->throws(FOSSBilling\Core\Exception\BaseException::class, 'Passwords do not match');
 
 test('balanceGetList returns array', function (): void {
     $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
@@ -572,7 +556,7 @@ test('balanceGetList returns array', function (): void {
     ->atLeast()->once()
     ->andReturn(['String', []]);
 
-    $pagerMock = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
+    $pagerMock = Mockery::mock(FOSSBilling\Core\Pagination\Service::class)->makePartial();
 
     $pagerMock
     ->shouldReceive('getPaginatedResultSet')
@@ -599,7 +583,7 @@ test('balanceDelete returns true', function (): void {
 
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $validatorStub = $this->createStub(FOSSBilling\Validate::class);
+    $validatorStub = $this->createStub(FOSSBilling\Core\Validation\Validator::class);
     $di['validator'] = $validatorStub;
 
     $adminClient->setDi($di);
@@ -622,7 +606,7 @@ test('balanceAddFunds returns true', function (): void {
     $di = container();
     $di['mod_service'] = $di->protect(moduleService(['client' => $serviceMock]));
 
-    $validatorStub = $this->createStub(FOSSBilling\Validate::class);
+    $validatorStub = $this->createStub(FOSSBilling\Core\Validation\Validator::class);
     $di['validator'] = $validatorStub;
 
     $adminClient->setDi($di);
@@ -663,7 +647,7 @@ test('loginHistoryGetList returns array', function (): void {
     ->atLeast()->once()
     ->andReturn(['String', []]);
 
-    $pagerMock = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
+    $pagerMock = Mockery::mock(FOSSBilling\Core\Pagination\Service::class)->makePartial();
 
     $pagerMock
     ->shouldReceive('getPaginatedResultSet')
@@ -732,7 +716,7 @@ test('groupUpdate returns true', function (): void {
 
     $di = container();
 
-    $validatorStub = $this->createStub(FOSSBilling\Validate::class);
+    $validatorStub = $this->createStub(FOSSBilling\Core\Validation\Validator::class);
     $di['validator'] = $validatorStub;
 
     $adminClient->setDi($di);
@@ -754,7 +738,7 @@ test('groupDelete returns true', function (): void {
 
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $validatorStub = $this->createStub(FOSSBilling\Validate::class);
+    $validatorStub = $this->createStub(FOSSBilling\Core\Validation\Validator::class);
     $di['validator'] = $validatorStub;
 
     $adminClient->setDi($di);
@@ -770,7 +754,7 @@ test('groupGet returns array', function (): void {
     $data['id'] = '2';
 
     $di = container();
-    $validatorStub = $this->createStub(FOSSBilling\Validate::class);
+    $validatorStub = $this->createStub(FOSSBilling\Core\Validation\Validator::class);
     $di['validator'] = $validatorStub;
 
     $adminClient->setDi($di);
@@ -785,7 +769,7 @@ test('batchDelete returns true', function (): void {
     $activityMock = Mockery::mock(Box\Mod\Client\Api\Admin::class)->makePartial();
     $activityMock->shouldReceive('delete')->atLeast()->once()->andReturn(true);
 
-    $validatorStub = $this->createStub(FOSSBilling\Validate::class);
+    $validatorStub = $this->createStub(FOSSBilling\Core\Validation\Validator::class);
 
     $di = container();
     $di['validator'] = $validatorStub;
@@ -807,13 +791,13 @@ test('export_csv requires both view and export permissions', function (): void {
     $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
         ->once()
         ->with('client', 'view', null, Mockery::any())
-        ->andThrow(new FOSSBilling\InformationException('You need the "client.view" permission to perform this action', [], 403));
+        ->andThrow(new FOSSBilling\Core\Exception\InformationException('You need the "client.view" permission to perform this action', [], 403));
 
     $adminClient->setDi($di);
     $adminClient->setService($serviceMock);
 
     expect(fn () => $adminClient->export_csv(['headers' => ['id']]))
-        ->toThrow(FOSSBilling\InformationException::class);
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class);
 });
 
 test('export_csv delegates to service when permissions granted', function (): void {

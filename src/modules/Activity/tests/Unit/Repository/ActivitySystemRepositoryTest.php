@@ -13,7 +13,7 @@ use Symfony\Component\Filesystem\Path;
 test('deletes system activity by client id', function (): void {
     $config = ORMSetup::createAttributeMetadataConfig([Path::join(__DIR__, '..', '..', '..', 'Entity')], true);
     $config->setProxyDir(sys_get_temp_dir());
-    $config->setProxyNamespace('FOSSBilling\\Tests\\DoctrineProxies');
+    $config->setProxyNamespace('FOSSBilling\\Core\\Tests\\DoctrineProxies');
     $entityManager = new EntityManager(DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]), $config);
     $metadata = $entityManager->getClassMetadata(ActivitySystem::class);
     (new SchemaTool($entityManager))->createSchema([$metadata]);

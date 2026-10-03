@@ -63,7 +63,7 @@ class Payment_Adapter_Custom
      *
      * @return string - html form with auto submit javascript
      */
-    public function getHtml(FOSSBilling\Api\Proxy $api_admin, int $invoice_id, bool $subscription): string
+    public function getHtml(FOSSBilling\Core\Api\Proxy $api_admin, int $invoice_id, bool $subscription): string
     {
         $invoiceModel = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\Invoice::class)->find($invoice_id);
         if (!$invoiceModel instanceof Box\Mod\Invoice\Entity\Invoice) {
@@ -89,7 +89,7 @@ class Payment_Adapter_Custom
      *
      * @throws Payment_Exception
      */
-    public function approveTransaction(FOSSBilling\Api\Proxy $api_admin, int $id, int $gateway_id): bool
+    public function approveTransaction(FOSSBilling\Core\Api\Proxy $api_admin, int $id, int $gateway_id): bool
     {
         // Get the transaction and invoice associated with the transaction
         $tx = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\Transaction::class)->find($id);
@@ -97,7 +97,7 @@ class Payment_Adapter_Custom
             throw new Payment_Exception('Transaction not found', [], 7010);
         }
         $invoice = $tx->getInvoice()
-            ?? throw new FOSSBilling\InformationException('Invoice not found');
+            ?? throw new FOSSBilling\Core\Exception\InformationException('Invoice not found');
 
         // Load the payment gateway and client associated with the transaction
         $gateway = $tx->getGateway();

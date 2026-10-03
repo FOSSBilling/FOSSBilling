@@ -135,7 +135,7 @@ test('testSelectRequiresClientParameter', function (): void {
     $api->setService(Mockery::mock(Box\Mod\Theme\Service::class));
 
     expect(fn (): bool => $api->select($data))
-        ->toThrow(FOSSBilling\InformationException::class, 'The "client" parameter is required.');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'The "client" parameter is required.');
 });
 
 test('testSelectRejectsInvalidClientParameter', function (): void {
@@ -151,7 +151,7 @@ test('testSelectRejectsInvalidClientParameter', function (): void {
     $api->setService(Mockery::mock(Box\Mod\Theme\Service::class));
 
     expect(fn (): bool => $api->select($data))
-        ->toThrow(FOSSBilling\InformationException::class, 'Invalid "client" parameter.');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Invalid "client" parameter.');
 });
 
 test('testSelectRejectsThemeFromOppositeArea', function (): void {
@@ -174,7 +174,7 @@ test('testSelectRejectsThemeFromOppositeArea', function (): void {
     $api->setService($serviceMock);
 
     expect(fn (): bool => $api->select($data))
-        ->toThrow(FOSSBilling\InformationException::class, 'Theme "default/admin" is not available for the selected area.');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Theme "default/admin" is not available for the selected area.');
 });
 
 test('testSelectRejectsPackageSharedTierCode', function (): void {
@@ -197,7 +197,7 @@ test('testSelectRejectsPackageSharedTierCode', function (): void {
     $api->setService($serviceMock);
 
     expect(fn (): bool => $api->select($data))
-        ->toThrow(FOSSBilling\InformationException::class, 'Theme "default/shared" is not available for the selected area.');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Theme "default/shared" is not available for the selected area.');
 });
 
 test('testPresetDelete', function (): void {

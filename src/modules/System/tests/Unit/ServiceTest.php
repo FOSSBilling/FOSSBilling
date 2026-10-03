@@ -13,7 +13,7 @@ declare(strict_types=1);
 use Box\Mod\System\Service;
 use Doctrine\DBAL\DriverManager;
 use Doctrine\ORM\Tools\SchemaTool;
-use FOSSBilling\Doctrine\EntityManagerFactory;
+use FOSSBilling\Core\Doctrine\EntityManagerFactory;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 
@@ -22,7 +22,7 @@ use function Tests\Helpers\container;
 test('getParamValue throws exception when key parameter is missing', function (): void {
     $service = new Service();
     $param = '';
-    $this->expectException(FOSSBilling\Exception::class);
+    $this->expectException(FOSSBilling\Core\Exception\BaseException::class);
     $this->expectExceptionMessage('Parameter key is missing');
 
     $service->getParamValue($param);
@@ -302,7 +302,7 @@ test('getPublicParamValue throws when the parameter is missing or not public', f
     $di['em']->shouldReceive('getRepository')->with(Box\Mod\System\Entity\Setting::class)->andReturn($settingRepository);
     $service->setDi($di);
 
-    $this->expectException(FOSSBilling\Exception::class);
+    $this->expectException(FOSSBilling\Core\Exception\BaseException::class);
     $this->expectExceptionMessage('Parameter company_name does not exist');
     $service->getPublicParamValue('company_name');
 });
@@ -317,7 +317,7 @@ test('updateParams updates system parameters in a single flush', function (): vo
 
     $sequence = [];
     $eventDispatcher = new class($sequence) {
-        /** @var list<FOSSBilling\Events\Event> */
+        /** @var list<FOSSBilling\Core\Events\Event> */
         public array $events = [];
 
         /** @var list<string> */
@@ -329,7 +329,7 @@ test('updateParams updates system parameters in a single flush', function (): vo
             $this->sequence = &$sequence;
         }
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->events[] = $event;
             $this->sequence[] = $event instanceof Box\Mod\System\Event\BeforeAdminSettingsUpdateEvent ? 'typed-before' : 'typed-after';
@@ -338,7 +338,7 @@ test('updateParams updates system parameters in a single flush', function (): vo
         }
     };
 
-    $logStub = $this->createStub(FOSSBilling\Logger::class);
+    $logStub = $this->createStub(FOSSBilling\Core\Logging\Logger::class);
 
     $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class);
     $staffServiceMock->shouldReceive('hasPermission')->andReturn(true);
@@ -384,7 +384,7 @@ test('updateParams denies a mixed-case guarded key without the company permissio
 
     $di = container();
     $di['event_dispatcher'] = new class {
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             return $event;
         }
@@ -394,7 +394,7 @@ test('updateParams denies a mixed-case guarded key without the company permissio
     $service->setDi($di);
 
     expect(fn (): bool => $service->updateParams(['Company_Account_Number' => 'attacker']))->toThrow(
-        FOSSBilling\InformationException::class,
+        FOSSBilling\Core\Exception\InformationException::class,
         'You do not have permission to update the parameter'
     );
 });
@@ -410,7 +410,7 @@ test('updateParams denies a mixed-case legal key without the legal permission', 
 
     $di = container();
     $di['event_dispatcher'] = new class {
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             return $event;
         }
@@ -419,7 +419,7 @@ test('updateParams denies a mixed-case legal key without the legal permission', 
     $di['em']->shouldReceive('getRepository')->with(Box\Mod\System\Entity\Setting::class)->andReturn($settingRepository);
     $service->setDi($di);
 
-    expect(fn (): bool => $service->updateParams(['Company_Note' => 'attacker']))->toThrow(FOSSBilling\InformationException::class);
+    expect(fn (): bool => $service->updateParams(['Company_Note' => 'attacker']))->toThrow(FOSSBilling\Core\Exception\InformationException::class);
 });
 
 test('setParamValue skips a mixed-case guarded key without the company permission', function (): void {
@@ -450,7 +450,7 @@ test('updateParams rejects a key with a trailing space', function (): void {
 
     $di = container();
     $di['event_dispatcher'] = new class {
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             return $event;
         }
@@ -460,7 +460,7 @@ test('updateParams rejects a key with a trailing space', function (): void {
     $service->setDi($di);
 
     expect(fn (): bool => $service->updateParams(['company_name ' => 'attacker']))->toThrow(
-        FOSSBilling\InformationException::class,
+        FOSSBilling\Core\Exception\InformationException::class,
         'Invalid parameter name'
     );
 });
@@ -494,12 +494,12 @@ test('getMessages returns system messages', function (): void {
     $systemServiceMock = Mockery::mock(new Service($filesystemMock))->makePartial();
     $systemServiceMock->allows()->getParamValue(Mockery::any())->andReturn(false);
 
-    $updaterMock = Mockery::mock(FOSSBilling\Update::class);
+    $updaterMock = Mockery::mock(FOSSBilling\Core\Update\Updater::class);
     $updaterMock->allows()->isUpdateAvailable()->andReturn(true);
     $updaterMock->allows()->getLatestVersion()->andReturn($latestVersion);
     $updaterMock->allows()->isBehindOnDBPatches()->andReturn(false);
 
-    $urlMock = Mockery::mock(FOSSBilling\Url::class);
+    $urlMock = Mockery::mock(FOSSBilling\Core\Url::class);
     $urlMock->allows()->adminLink(Mockery::any())->andReturn('http://example.com');
 
     $di = container();
@@ -614,7 +614,7 @@ test('getPendingMessages returns pending messages from session', function (): vo
     $service = new Service();
     $di = container();
 
-    $sessionMock = Mockery::mock(FOSSBilling\Session::class);
+    $sessionMock = Mockery::mock(FOSSBilling\Core\Security\Session::class);
     $sessionMock->shouldReceive('get')->atLeast()->once()
         ->with('pending_messages')
         ->andReturn([]);
@@ -630,7 +630,7 @@ test('getPendingMessages returns empty array when session returns non-array', fu
     $service = new Service();
     $di = container();
 
-    $sessionMock = Mockery::mock(FOSSBilling\Session::class);
+    $sessionMock = Mockery::mock(FOSSBilling\Core\Security\Session::class);
     $sessionMock->shouldReceive('get')->atLeast()->once()
         ->with('pending_messages')
         ->andReturn(null);
@@ -650,7 +650,7 @@ test('setPendingMessage adds message to pending messages', function (): void {
 
     $di = container();
 
-    $sessionMock = Mockery::mock(FOSSBilling\Session::class);
+    $sessionMock = Mockery::mock(FOSSBilling\Core\Security\Session::class);
     $sessionMock->shouldReceive('set')->atLeast()->once()
         ->with('pending_messages', Mockery::any());
 
@@ -667,7 +667,7 @@ test('clearPendingMessages clears pending messages', function (): void {
     $service = new Service();
     $di = container();
 
-    $sessionMock = Mockery::mock(FOSSBilling\Session::class);
+    $sessionMock = Mockery::mock(FOSSBilling\Core\Security\Session::class);
     $sessionMock->shouldReceive('delete')->atLeast()->once()
         ->with('pending_messages');
     $di['session'] = $sessionMock;

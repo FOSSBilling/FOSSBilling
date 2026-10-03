@@ -15,14 +15,13 @@ use Box\Mod\Order\Entity\Order;
 use Box\Mod\Servicehosting\Entity\ServiceHosting;
 use Box\Mod\Servicehosting\Entity\ServiceHostingHp;
 use Box\Mod\Servicehosting\Entity\ServiceHostingServer;
-use FOSSBilling\PaginationOptions;
-use FOSSBilling\Tools;
-use FOSSBilling\Validation\Api\RequiredParams;
+use FOSSBilling\Core\Pagination\Options;
+use FOSSBilling\Core\Validation\Api\RequiredParams;
 
 /**
  * Hosting service management.
  */
-class Admin extends \FOSSBilling\Api\AbstractApi
+class Admin extends \FOSSBilling\Core\Api\AbstractApi
 {
     /**
      * Change hosting account plan.
@@ -158,7 +157,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('servicehosting', 'view_servers');
         [$sql, $params] = $this->getService()->getServersSearchQuery($data);
-        $result = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+        $result = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, Options::fromArray($data));
 
         $ids = array_map(static fn (array $server): int => (int) $server['id'], $result['list']);
         $models = $this->getDi()['em']->getRepository(ServiceHostingServer::class)->findBy(['id' => $ids]);
@@ -171,7 +170,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             $id = (int) $server['id'];
             $model = $modelsById[$id] ?? null;
             if (!$model instanceof ServiceHostingServer) {
-                throw new \FOSSBilling\Exception(sprintf('Server %d not found', $id));
+                throw new \FOSSBilling\Core\Exception\BaseException(sprintf('Server %d not found', $id));
             }
 
             $result['list'][$key] = $this->getService()->toHostingServerApiArray($model, false, $this->getIdentity());
@@ -194,7 +193,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('servicehosting', 'view_servers');
         [$sql, $params] = $this->getService()->getAccountsSearchQuery($data);
-        $result = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+        $result = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, Options::fromArray($data));
         $result['list'] = $this->getService()->getAccountsBatchForApi($result['list'], $this->getIdentity());
 
         return $result;
@@ -219,7 +218,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return int - server id
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams([
         'name' => 'Server name was not passed',
@@ -234,7 +233,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $data['config'] = [
             'userprefix' => $data['userprefix'] ?? null,
-            'tls_verify' => Tools::normalizeBoolean($data['tls_verify'] ?? true, true),
+            'tls_verify' => \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['tls_verify'] ?? true, true),
         ];
 
         return (int) $service->createServer($data['name'], $data['ip'], $data['manager'], $data);
@@ -245,7 +244,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return array
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Server ID was not passed'])]
     public function server_get($data)
@@ -263,7 +262,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @optional bool $force - detach orphaned usages with no linked order and delete
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Server ID was not passed'])]
     public function server_delete($data): bool
@@ -278,12 +277,12 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         if ($count > 0) {
             $stats = $this->getService()->getServerUsageStats($model);
             if ($stats['active'] > 0) {
-                throw new \FOSSBilling\InformationException('Hosting server is used by :count: service hostings', [':count:' => $stats['active']], 704);
+                throw new \FOSSBilling\Core\Exception\InformationException('Hosting server is used by :count: service hostings', [':count:' => $stats['active']], 704);
             }
 
-            $force = Tools::normalizeBoolean($data['force'] ?? false);
+            $force = \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['force'] ?? false);
             if (!$force) {
-                throw new \FOSSBilling\InformationException('Hosting server is used by :count: orphaned service hostings with no linked order. Re-run with force=true to detach them and delete the server.', [':count:' => $stats['orphaned']], 704);
+                throw new \FOSSBilling\Core\Exception\InformationException('Hosting server is used by :count: orphaned service hostings with no linked order. Re-run with force=true to detach them and delete the server.', [':count:' => $stats['orphaned']], 704);
             }
 
             $this->getService()->detachOrphanedServerUsages($model);
@@ -310,7 +309,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional bool $tls_verify - flag to define whether to verify TLS certificates when calling server APIs
      * @optional bool $active - flag to enable/disable server
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Server ID was not passed'])]
     public function server_update($data): bool
@@ -324,7 +323,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $data['config'] = $existingConfig;
         $data['config']['userprefix'] = $data['userprefix'] ?? ($existingConfig['userprefix'] ?? null);
-        $data['config']['tls_verify'] = Tools::normalizeBoolean($data['tls_verify'] ?? ($existingConfig['tls_verify'] ?? true), true);
+        $data['config']['tls_verify'] = \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['tls_verify'] ?? ($existingConfig['tls_verify'] ?? true), true);
 
         $updated = (bool) $service->updateServer($model, $data);
 
@@ -339,15 +338,15 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         try {
             $this->getService()->getServerManager($model);
-        } catch (\Server_Exception|\FOSSBilling\Exception $e) {
-            throw new \FOSSBilling\InformationException($e->getMessage(), [], $e->getCode() ?: 719);
+        } catch (\Server_Exception|\FOSSBilling\Core\Exception\BaseException $e) {
+            throw new \FOSSBilling\Core\Exception\InformationException($e->getMessage(), [], $e->getCode() ?: 719);
         }
     }
 
     /**
      * Test connection to server.
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Server ID was not passed'])]
     public function server_test_connection($data): bool
@@ -383,7 +382,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('servicehosting', 'manage_plans');
         [$sql, $params] = $this->getService()->getHpSearchQuery($data);
-        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, Options::fromArray($data));
 
         $ids = array_map(static fn (array $item): int => (int) $item['id'], $pager['list']);
         $models = $this->getDi()['em']->getRepository(ServiceHostingHp::class)->findBy(['id' => $ids]);
@@ -396,7 +395,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             $id = (int) $item['id'];
             $model = $modelsById[$id] ?? null;
             if (!$model instanceof ServiceHostingHp) {
-                throw new \FOSSBilling\Exception(sprintf('Hosting plan %d not found', $id));
+                throw new \FOSSBilling\Core\Exception\BaseException(sprintf('Hosting plan %d not found', $id));
             }
             $pager['list'][$key] = $this->getService()->toHostingHpApiArray($model, false, $this->getIdentity());
         }
@@ -409,7 +408,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @optional bool $force - detach orphaned usages with no linked order and delete
      *
-     * @throws \FOSSBilling\InformationException
+     * @throws \FOSSBilling\Core\Exception\InformationException
      */
     #[RequiredParams(['id' => 'Hosting plan ID was not passed'])]
     public function hp_delete($data): bool
@@ -423,12 +422,12 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         if ($count > 0) {
             $stats = $this->getService()->getHpUsageStats($model);
             if ($stats['active'] > 0) {
-                throw new \FOSSBilling\InformationException('Hosting plan is used by :count: service hostings', [':count:' => $stats['active']], 704);
+                throw new \FOSSBilling\Core\Exception\InformationException('Hosting plan is used by :count: service hostings', [':count:' => $stats['active']], 704);
             }
 
-            $force = Tools::normalizeBoolean($data['force'] ?? false);
+            $force = \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['force'] ?? false);
             if (!$force) {
-                throw new \FOSSBilling\InformationException('Hosting plan is used by :count: orphaned service hostings with no linked order. Re-run with force=true to detach them and delete the plan.', [':count:' => $stats['orphaned']], 704);
+                throw new \FOSSBilling\Core\Exception\InformationException('Hosting plan is used by :count: orphaned service hostings with no linked order. Re-run with force=true to detach them and delete the plan.', [':count:' => $stats['orphaned']], 704);
             }
 
             $this->getService()->detachOrphanedHpUsages($model);
@@ -442,7 +441,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return array
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Hosting plan ID was not passed'])]
     public function hp_get($data)
@@ -459,7 +458,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @optional string $name - hosting plan name. Used as identifier on server
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Hosting plan ID was not passed'])]
     public function hp_update($data): bool
@@ -478,7 +477,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return int - new hosting plan id
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['name' => 'Hosting plan name was not passed'])]
     public function hp_create($data): int
@@ -499,12 +498,12 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $order = $this->getDi()['em']->getRepository(Order::class)->find($data['order_id']);
         if (!$order instanceof Order) {
-            throw new \FOSSBilling\Exception('Order not found');
+            throw new \FOSSBilling\Core\Exception\BaseException('Order not found');
         }
         $orderService = $this->getDi()['mod_service']('order');
         $s = $orderService->getOrderService($order);
         if (!$s instanceof ServiceHosting) {
-            throw new \FOSSBilling\Exception('Order is not activated');
+            throw new \FOSSBilling\Core\Exception\BaseException('Order is not activated');
         }
 
         return [$order, $s];
@@ -514,7 +513,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $model = $this->getDi()['em']->getRepository(ServiceHostingServer::class)->find($id);
         if (!$model instanceof ServiceHostingServer) {
-            throw new \FOSSBilling\Exception('Server not found');
+            throw new \FOSSBilling\Core\Exception\BaseException('Server not found');
         }
 
         return $model;
@@ -524,7 +523,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $model = $this->getDi()['em']->getRepository(ServiceHostingHp::class)->find($id);
         if (!$model instanceof ServiceHostingHp) {
-            throw new \FOSSBilling\Exception('Hosting plan not found');
+            throw new \FOSSBilling\Core\Exception\BaseException('Hosting plan not found');
         }
 
         return $model;

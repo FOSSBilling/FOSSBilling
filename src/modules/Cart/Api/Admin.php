@@ -16,15 +16,14 @@ use Box\Mod\Client\Entity\Client;
 use Box\Mod\Currency\Entity\Currency;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Product\Entity\Promo;
-use FOSSBilling\InformationException;
-use FOSSBilling\PaginationOptions;
-use FOSSBilling\Tools;
-use FOSSBilling\Validation\Api\RequiredParams;
+use FOSSBilling\Core\Exception\InformationException;
+use FOSSBilling\Core\Pagination\Options;
+use FOSSBilling\Core\Validation\Api\RequiredParams;
 
 /**
  * Shopping cart management.
  */
-class Admin extends \FOSSBilling\Api\AbstractApi
+class Admin extends \FOSSBilling\Core\Api\AbstractApi
 {
     /**
      * @param array $data
@@ -37,12 +36,12 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     public function get_list($data)
     {
         [$sql, $params] = $this->getService()->getSearchQuery($data);
-        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, PaginationOptions::fromArray($data));
+        $pager = $this->getDi()['pager']->getPaginatedResultSet($sql, $params, Options::fromArray($data));
 
         foreach ($pager['list'] as $key => $cartArr) {
             $cart = $this->getDi()['em']->getRepository(Cart::class)->find((int) $cartArr['id']);
             if (!$cart instanceof Cart) {
-                throw new \FOSSBilling\Exception('Cart not found');
+                throw new \FOSSBilling\Core\Exception\BaseException('Cart not found');
             }
             $pager['list'][$key] = $this->getService()->toApiArray($cart);
         }
@@ -62,7 +61,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $cart = $this->getDi()['em']->getRepository(Cart::class)->find((int) $data['id']);
         if (!$cart instanceof Cart) {
-            throw new \FOSSBilling\Exception('Shopping cart not found');
+            throw new \FOSSBilling\Core\Exception\BaseException('Shopping cart not found');
         }
 
         return $this->getService()->toApiArray($cart);
@@ -245,7 +244,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('order', 'manage');
 
-        $markInvoicePaid = Tools::normalizeBoolean($data['mark_invoice_paid'] ?? false);
+        $markInvoicePaid = \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['mark_invoice_paid'] ?? false);
         if ($markInvoicePaid) {
             $this->checkPermissions('invoice');
             $this->getDi()['mod_service']('Invoice')->validateAdminMarkAsPaidRequest($data);
@@ -255,7 +254,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         return $this->getService()->checkoutStaffBasket($basket, $client, $adminId, [
             'gateway_id' => isset($data['gateway_id']) && $data['gateway_id'] !== '' ? (int) $data['gateway_id'] : null,
-            'activate' => array_key_exists('activate', $data) ? Tools::normalizeBoolean($data['activate']) : true,
+            'activate' => array_key_exists('activate', $data) ? \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['activate']) : true,
             'mark_invoice_paid' => $markInvoicePaid,
             'transactionId' => $data['transactionId'] ?? null,
         ]);
@@ -295,7 +294,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
                 $conn->executeStatement('DELETE FROM cart_product WHERE cart_id = :id', ['id' => $id]);
                 $conn->executeStatement('DELETE FROM cart WHERE id = :id', ['id' => $id]);
             }
-            $this->getDi()['logger']->info('Removed {expired_count} expired shopping carts', ['expired_count' => Tools::safeCount($expiredCarts)]);
+            $this->getDi()['logger']->info('Removed {expired_count} expired shopping carts', ['expired_count' => \FOSSBilling\Core\Utils\Arr::safeCount($expiredCarts)]);
         }
 
         return true;

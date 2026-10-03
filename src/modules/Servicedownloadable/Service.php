@@ -16,8 +16,7 @@ use Box\Mod\Product\Entity\Product;
 use Box\Mod\Servicedownloadable\Entity\ServiceDownloadable;
 use Box\Mod\Servicedownloadable\Entity\ServiceDownloadableFile;
 use Box\Mod\Servicedownloadable\Repository\ServiceDownloadableFileRepository;
-use FOSSBilling\InjectionAwareInterface;
-use FOSSBilling\Tools;
+use FOSSBilling\Core\Container\InjectionAwareInterface;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -127,7 +126,7 @@ class Service implements InjectionAwareInterface
         $mimeType = strtolower((string) $file->getMimeType());
 
         if (!in_array($extension, $allowedTypes['extensions'], true)) {
-            throw new \FOSSBilling\Exception('File extension :ext is not allowed. Allowed extensions: :allowed', [':ext' => $extension, ':allowed' => implode(', ', $allowedTypes['extensions'])]);
+            throw new \FOSSBilling\Core\Exception\BaseException('File extension :ext is not allowed. Allowed extensions: :allowed', [':ext' => $extension, ':allowed' => implode(', ', $allowedTypes['extensions'])]);
         }
 
         if (!$this->isAllowedMimeType($mimeType, $allowedTypes['mime_types']) && $this->di->offsetExists('logger')) {
@@ -161,7 +160,7 @@ class Service implements InjectionAwareInterface
         $config = json_decode($product->getConfig() ?? '', true) ?? [];
         $files = $this->validateFileDefinitions($config[self::FILES_CONFIG_KEY] ?? null);
         if ($files === []) {
-            throw new \FOSSBilling\Exception('Product is not configured completely.');
+            throw new \FOSSBilling\Core\Exception\BaseException('Product is not configured completely.');
         }
 
         // Use the validated file list, not the raw product config value.
@@ -176,7 +175,7 @@ class Service implements InjectionAwareInterface
     {
         $data[self::FILES_CONFIG_KEY] = $this->validateFileDefinitions($data[self::FILES_CONFIG_KEY] ?? null);
         if ($data[self::FILES_CONFIG_KEY] === []) {
-            throw new \FOSSBilling\Exception('Downloadable files are missing in product config');
+            throw new \FOSSBilling\Core\Exception\BaseException('Downloadable files are missing in product config');
         }
     }
 
@@ -184,7 +183,7 @@ class Service implements InjectionAwareInterface
     {
         $config = json_decode($order->getConfig() ?? '', true);
         if (!is_array($config)) {
-            throw new \FOSSBilling\Exception(sprintf('Order #%s config is missing', $order->getId()));
+            throw new \FOSSBilling\Core\Exception\BaseException(sprintf('Order #%s config is missing', $order->getId()));
         }
         $this->validateOrderData($config);
 
@@ -289,7 +288,7 @@ class Service implements InjectionAwareInterface
     private function validateStoredFilename(mixed $storedFilename): string
     {
         if (!is_string($storedFilename) || preg_match('/\A[a-f0-9]{64}\z/', $storedFilename) !== 1) {
-            throw new \FOSSBilling\Exception('File is not available at the moment. Please contact support.', null, 404);
+            throw new \FOSSBilling\Core\Exception\BaseException('File is not available at the moment. Please contact support.', null, 404);
         }
 
         return $storedFilename;
@@ -367,7 +366,7 @@ class Service implements InjectionAwareInterface
             $productModel->setConfig(json_encode($config, JSON_THROW_ON_ERROR));
             $productModel->setUpdatedAt(new \DateTime());
 
-            if (Tools::normalizeBoolean($config['update_orders'] ?? false)) {
+            if (\FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($config['update_orders'] ?? false)) {
                 $this->addFileToExistingOrders($productModel, $fileDefinition);
             }
         });
@@ -387,7 +386,7 @@ class Service implements InjectionAwareInterface
         $this->di['em']->wrapInTransaction(function () use ($product, $config, $index): void {
             $product->setConfig(json_encode($config, JSON_THROW_ON_ERROR));
 
-            if (Tools::normalizeBoolean($config['update_orders'] ?? false)) {
+            if (\FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($config['update_orders'] ?? false)) {
                 $this->updateFileInExistingOrders($product, $config[self::FILES_CONFIG_KEY][$index]);
             }
         });
@@ -406,7 +405,7 @@ class Service implements InjectionAwareInterface
         $this->di['em']->wrapInTransaction(function () use ($product, $config, $fileKey): void {
             $product->setConfig(json_encode($config, JSON_THROW_ON_ERROR));
 
-            if (Tools::normalizeBoolean($config['update_orders'] ?? false)) {
+            if (\FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($config['update_orders'] ?? false)) {
                 $this->removeFileFromExistingOrders($product, $fileKey);
             }
         });
@@ -435,7 +434,7 @@ class Service implements InjectionAwareInterface
     {
         $file = $service->findFileById($fileId);
         if (!$file instanceof ServiceDownloadableFile) {
-            throw new \FOSSBilling\InformationException('File not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('File not found');
         }
 
         $storedFilename = $file->getStoredFilename();
@@ -472,7 +471,7 @@ class Service implements InjectionAwareInterface
     {
         $filePath = $this->getStoredFilePath($file->getStoredFilename());
         if (!$this->filesystem->exists($filePath)) {
-            throw new \FOSSBilling\Exception('File cannot be downloaded at the moment. Please contact support.', null, 404);
+            throw new \FOSSBilling\Core\Exception\BaseException('File cannot be downloaded at the moment. Please contact support.', null, 404);
         }
 
         if ($countDownload) {
@@ -498,7 +497,7 @@ class Service implements InjectionAwareInterface
     public function saveProductConfig(Product $productModel, $data): bool
     {
         $config = json_decode($productModel->getConfig() ?? '', true) ?: [];
-        $config['update_orders'] = Tools::normalizeBoolean($data['update_orders'] ?? false);
+        $config['update_orders'] = \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['update_orders'] ?? false);
         $updatedAt = new \DateTime();
         $productModel->setConfig(json_encode($config, JSON_THROW_ON_ERROR));
         $productModel->setUpdatedAt($updatedAt);
@@ -516,7 +515,7 @@ class Service implements InjectionAwareInterface
         $filePath = $this->getStoredFilePath($definition['stored_filename']);
 
         if (!$this->filesystem->exists($filePath)) {
-            throw new \FOSSBilling\Exception('File cannot be downloaded at the moment. Please contact support.', null, 404);
+            throw new \FOSSBilling\Core\Exception\BaseException('File cannot be downloaded at the moment. Please contact support.', null, 404);
         }
 
         $response = new BinaryFileResponse($filePath);
@@ -538,12 +537,12 @@ class Service implements InjectionAwareInterface
     {
         $file = $this->di['request']->files->get('file_data');
         if (!$file instanceof \Symfony\Component\HttpFoundation\File\UploadedFile) {
-            throw new \FOSSBilling\Exception('File upload failed: no files in request.');
+            throw new \FOSSBilling\Core\Exception\BaseException('File upload failed: no files in request.');
         }
 
         $errorCode = $file->getError();
         if ($errorCode !== UPLOAD_ERR_OK) {
-            throw new \FOSSBilling\Exception('File upload failed: ' . $this->_error_message($errorCode));
+            throw new \FOSSBilling\Core\Exception\BaseException('File upload failed: ' . $this->_error_message($errorCode));
         }
         $this->validateFileUpload($file);
 
@@ -589,11 +588,11 @@ class Service implements InjectionAwareInterface
         $fileKeys = [];
         foreach ($files as $file) {
             if (!is_array($file)) {
-                throw new \FOSSBilling\Exception('Downloadable file configuration is invalid');
+                throw new \FOSSBilling\Core\Exception\BaseException('Downloadable file configuration is invalid');
             }
             $fileKey = $this->validateFileKey($file['id'] ?? null);
             if (isset($fileKeys[$fileKey])) {
-                throw new \FOSSBilling\Exception('Downloadable file configuration contains duplicate file IDs');
+                throw new \FOSSBilling\Core\Exception\BaseException('Downloadable file configuration contains duplicate file IDs');
             }
             $fileKeys[$fileKey] = true;
             $validated[] = [
@@ -611,7 +610,7 @@ class Service implements InjectionAwareInterface
     private function validateFileKey(mixed $fileKey): string
     {
         if (!is_string($fileKey) || preg_match('/\A[a-f0-9]{32}\z/', $fileKey) !== 1) {
-            throw new \FOSSBilling\InformationException('File not found');
+            throw new \FOSSBilling\Core\Exception\InformationException('File not found');
         }
 
         return $fileKey;
@@ -632,7 +631,7 @@ class Service implements InjectionAwareInterface
     {
         $label = $this->normalizeOptionalText($value);
         if ($label !== null && mb_strlen($label) > 255) {
-            throw new \FOSSBilling\Exception('File label cannot exceed 255 characters');
+            throw new \FOSSBilling\Core\Exception\BaseException('File label cannot exceed 255 characters');
         }
 
         return $label;
@@ -642,7 +641,7 @@ class Service implements InjectionAwareInterface
     {
         $description = $this->normalizeOptionalText($value);
         if ($description !== null && mb_strlen($description) > 1000) {
-            throw new \FOSSBilling\Exception('File description cannot exceed 1000 characters');
+            throw new \FOSSBilling\Core\Exception\BaseException('File description cannot exceed 1000 characters');
         }
 
         return $description;
@@ -651,7 +650,7 @@ class Service implements InjectionAwareInterface
     private function validateDisplayFilename(mixed $filename): string
     {
         if (!is_string($filename) || $filename === '' || mb_strlen($filename) > 255) {
-            throw new \FOSSBilling\Exception('Downloadable filename is invalid');
+            throw new \FOSSBilling\Core\Exception\BaseException('Downloadable filename is invalid');
         }
 
         return $filename;
@@ -665,7 +664,7 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        throw new \FOSSBilling\InformationException('File not found');
+        throw new \FOSSBilling\Core\Exception\InformationException('File not found');
     }
 
     private function addFileToExistingOrders(Product $product, array $definition): void

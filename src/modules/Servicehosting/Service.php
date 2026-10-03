@@ -20,11 +20,10 @@ use Box\Mod\Servicehosting\Entity\ServiceHostingServer;
 use Box\Mod\Servicehosting\Repository\ServiceHostingHpRepository;
 use Box\Mod\Servicehosting\Repository\ServiceHostingRepository;
 use Box\Mod\Servicehosting\Repository\ServiceHostingServerRepository;
-use FOSSBilling\Exception;
-use FOSSBilling\InformationException;
-use FOSSBilling\InjectionAwareInterface;
-use FOSSBilling\SortOptions;
-use FOSSBilling\Tools;
+use FOSSBilling\Core\Container\InjectionAwareInterface;
+use FOSSBilling\Core\Exception\BaseException;
+use FOSSBilling\Core\Exception\InformationException;
+use FOSSBilling\Core\SortOptions;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Finder;
@@ -151,7 +150,7 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        if (Tools::normalizeBoolean($data['reseller'] ?? false) !== Tools::normalizeBoolean($productConfig['reseller'] ?? false)) {
+        if (\FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['reseller'] ?? false) !== \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($productConfig['reseller'] ?? false)) {
             throw new InformationException('The requested configuration does not match the selected product.', null, 705);
         }
     }
@@ -198,7 +197,7 @@ class Service implements InjectionAwareInterface
         $model->setSld($c['sld']);
         $model->setTld($c['tld']);
         $model->setIp($server->getIp());
-        $model->setReseller(Tools::normalizeBoolean($c['reseller'] ?? false));
+        $model->setReseller(\FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($c['reseller'] ?? false));
 
         $this->di['em']->persist($model);
         $this->di['em']->flush();
@@ -207,7 +206,7 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @throws Exception
+     * @throws BaseException
      */
     public function action_activate(Order $order): array
     {
@@ -231,7 +230,7 @@ class Service implements InjectionAwareInterface
         $alreadyProvisioned = !empty($model->getUsername());
 
         // Generate a password for the service
-        $pass = $this->di['tools']->generatePassword($serverManager->getPasswordLength(), true);
+        $pass = \FOSSBilling\Core\Security\Credential::generatePassword($serverManager->getPasswordLength(), true);
 
         // If a password is already specified in the order's configuration, use that instead
         if (isset($config['password']) && !empty($config['password'])) {
@@ -270,7 +269,7 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @throws Exception
+     * @throws BaseException
      *
      * @todo
      */
@@ -283,7 +282,7 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @throws Exception
+     * @throws BaseException
      */
     public function action_suspend(Order $order, ?string $reason = null): bool
     {
@@ -298,7 +297,7 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @throws Exception
+     * @throws BaseException
      */
     public function action_unsuspend(Order $order): bool
     {
@@ -312,7 +311,7 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @throws Exception
+     * @throws BaseException
      */
     public function action_cancel(Order $order): bool
     {
@@ -326,7 +325,7 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @throws Exception
+     * @throws BaseException
      */
     public function action_uncancel(Order $order): bool
     {
@@ -337,7 +336,7 @@ class Service implements InjectionAwareInterface
         $serverManager = $this->_getServerManagerForOrder($model);
 
         // As we replace the password internally with asterisks, generate a new password
-        $pass = $this->di['tools']->generatePassword($serverManager->getPasswordLength(), true);
+        $pass = \FOSSBilling\Core\Security\Credential::generatePassword($serverManager->getPasswordLength(), true);
         $model->setPass($pass);
 
         // Retrieve the adapter and account, then create the account on the server
@@ -537,7 +536,7 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @throws Exception
+     * @throws BaseException
      */
     private function _getServerManagerForOrder(ServiceHosting $model)
     {
@@ -554,7 +553,7 @@ class Service implements InjectionAwareInterface
 
         $server = $this->getExistingServer((int) $model->getServiceHostingServer()?->getId(), 'Server not found');
         $client = $this->di['em']->getRepository(Client::class)->find($model->getClientId())
-            ?? throw new Exception('Client not found');
+            ?? throw new BaseException('Client not found');
 
         $server_client = new \Server_Client();
         $server_client
@@ -576,7 +575,7 @@ class Service implements InjectionAwareInterface
             ->setClient($server_client)
             ->setPackage($package)
             ->setUsername($model->getUsername())
-            ->setReseller(Tools::normalizeBoolean($model->isReseller()))
+            ->setReseller(\FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($model->isReseller()))
             ->setDomain($model->getSld() . $model->getTld())
             ->setPassword($model->getPass())
             ->setNs1($server->getNs1())
@@ -640,7 +639,7 @@ class Service implements InjectionAwareInterface
             $result['max_accounts'] = $model->getMaxAccounts();
             $result['manager'] = $model->getManager();
             $result['config'] = json_decode($model->getConfig() ?? '', true) ?? [];
-            $result['port'] = Tools::normalizePort($model->getPort());
+            $result['port'] = \FOSSBilling\Core\Utils\Normalizer::normalizePort($model->getPort());
             $result['passwordLength'] = $model->getPasswordLength();
             $result['created_at'] = $this->formatDateTime($model->getCreatedAt());
             $result['updated_at'] = $this->formatDateTime($model->getUpdatedAt());
@@ -1025,7 +1024,7 @@ class Service implements InjectionAwareInterface
     public function createServer($name, $ip, $manager, $data): ?int
     {
         if (!in_array($manager, $this->_getServerManagers(), true)) {
-            throw new Exception('Server manager :manager is not a valid server manager', [':manager' => $manager]);
+            throw new BaseException('Server manager :manager is not a valid server manager', [':manager' => $manager]);
         }
 
         $model = new ServiceHostingServer();
@@ -1038,7 +1037,7 @@ class Service implements InjectionAwareInterface
             $model->setAssignedIps(self::processAssignedIPs($assigned_ips));
         }
 
-        $model->setActive(Tools::normalizeBoolean($data['active'] ?? true));
+        $model->setActive(\FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['active'] ?? true));
         $model->setStatusUrl($data['status_url'] ?? null);
         $model->setMaxAccounts(isset($data['max_accounts']) ? (int) $data['max_accounts'] : null);
 
@@ -1051,11 +1050,11 @@ class Service implements InjectionAwareInterface
         $model->setUsername($data['username'] ?? null);
         $model->setPassword($data['password'] ?? null);
         $model->setAccesshash($data['accesshash'] ?? null);
-        $normalizedPort = Tools::normalizePort($data['port'] ?? null);
+        $normalizedPort = \FOSSBilling\Core\Utils\Normalizer::normalizePort($data['port'] ?? null);
         $model->setPort($normalizedPort !== null ? (string) $normalizedPort : null);
         $model->setConfig(isset($data['config']) ? json_encode($data['config']) : null);
         $model->setPasswordLength(is_numeric($data['passwordLength'] ?? '') ? intval($data['passwordLength']) : null);
-        $model->setSecure(Tools::normalizeBoolean($data['secure'] ?? true));
+        $model->setSecure(\FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['secure'] ?? true));
 
         $this->di['em']->persist($model);
         $this->di['em']->flush();
@@ -1088,7 +1087,7 @@ class Service implements InjectionAwareInterface
             $model->setAssignedIps(self::processAssignedIPs($assigned_ips));
         }
 
-        $model->setActive(array_key_exists('active', $data) ? Tools::normalizeBoolean($data['active']) : $model->isActive());
+        $model->setActive(array_key_exists('active', $data) ? \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['active']) : $model->isActive());
         $model->setStatusUrl($data['status_url'] ?? $model->getStatusUrl());
         $model->setMaxAccounts(array_key_exists('max_accounts', $data) ? ($data['max_accounts'] !== null ? (int) $data['max_accounts'] : null) : $model->getMaxAccounts());
         $model->setNs1($data['ns1'] ?? $model->getNs1());
@@ -1097,14 +1096,14 @@ class Service implements InjectionAwareInterface
         $model->setNs4($data['ns4'] ?? $model->getNs4());
         if (isset($data['manager'])) {
             if (!in_array($data['manager'], $this->_getServerManagers(), true)) {
-                throw new Exception('Server manager :manager is not a valid server manager', [':manager' => $data['manager']]);
+                throw new BaseException('Server manager :manager is not a valid server manager', [':manager' => $data['manager']]);
             }
             $model->setManager($data['manager']);
         }
-        $port = Tools::normalizePort($data['port'] ?? null);
+        $port = \FOSSBilling\Core\Utils\Normalizer::normalizePort($data['port'] ?? null);
         $model->setPort($port !== null ? (string) $port : $model->getPort());
         $model->setConfig(isset($data['config']) ? json_encode($data['config']) : $model->getConfig());
-        $model->setSecure(array_key_exists('secure', $data) ? Tools::normalizeBoolean($data['secure']) : $model->isSecure());
+        $model->setSecure(array_key_exists('secure', $data) ? \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['secure']) : $model->isSecure());
         $model->setUsername($this->normalizeCredential('username', $data['username'] ?? null, $model->getUsername(), $model->getId(), false));
         $model->setPassword($this->normalizeCredential('password', $data['password'] ?? null, $model->getPassword(), $model->getId(), true));
         $model->setAccesshash($this->normalizeCredential('accesshash', $data['accesshash'] ?? null, $model->getAccesshash(), $model->getId(), true));
@@ -1144,18 +1143,18 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @throws Exception
+     * @throws BaseException
      */
     public function getServerManager(ServiceHostingServer $model)
     {
         if (empty($model->getManager())) {
-            throw new Exception('Invalid server manager. Server was not configured properly.', null, 654);
+            throw new BaseException('Invalid server manager. Server was not configured properly.', null, 654);
         }
 
         $config = [];
         $config['ip'] = $model->getIp();
         $config['host'] = $model->getHostname();
-        $config['port'] = Tools::normalizePort($model->getPort());
+        $config['port'] = \FOSSBilling\Core\Utils\Normalizer::normalizePort($model->getPort());
         $config['config'] = [];
         $config['config'] = json_decode($model->getConfig() ?? '', true) ?? [];
         $config['secure'] = $model->isSecure();
@@ -1167,7 +1166,7 @@ class Service implements InjectionAwareInterface
         $manager = $this->di['server_manager']($model->getManager(), $config);
 
         if (!$manager instanceof \Server_Manager) {
-            throw new Exception('Server manager :adapter is invalid.', [':adapter' => $model->getManager()]);
+            throw new BaseException('Server manager :adapter is invalid.', [':adapter' => $model->getManager()]);
         }
 
         return $manager;
@@ -1175,7 +1174,7 @@ class Service implements InjectionAwareInterface
 
     /**
      * @throws \Server_Exception
-     * @throws Exception
+     * @throws BaseException
      */
     public function testConnection(ServiceHostingServer $model)
     {
@@ -1456,7 +1455,7 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @throws Exception
+     * @throws BaseException
      */
     public function getServerManagerWithLog(ServiceHostingServer $model, Order $order)
     {
@@ -1610,7 +1609,7 @@ class Service implements InjectionAwareInterface
         $table = $this->di['mod_service']('product');
         $d = $table->getMainDomainProduct();
         if (!$d instanceof Product) {
-            throw new Exception('Could not find main domain product');
+            throw new BaseException('Could not find main domain product');
         }
 
         return ['product' => $d, 'config' => $dc];
@@ -1685,7 +1684,7 @@ class Service implements InjectionAwareInterface
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);
         if (!$model instanceof ServiceHosting) {
-            throw new Exception('Order :id has no active service', [':id' => $order->getId()]);
+            throw new BaseException('Order :id has no active service', [':id' => $order->getId()]);
         }
 
         return $model;
@@ -1695,7 +1694,7 @@ class Service implements InjectionAwareInterface
     {
         $server = $this->getServiceHostingServerRepository()->find($id);
         if (!$server instanceof ServiceHostingServer) {
-            throw new Exception($message);
+            throw new BaseException($message);
         }
 
         return $server;
@@ -1705,7 +1704,7 @@ class Service implements InjectionAwareInterface
     {
         $hp = $this->getServiceHostingHpRepository()->find($id);
         if (!$hp instanceof ServiceHostingHp) {
-            throw new Exception($message);
+            throw new BaseException($message);
         }
 
         return $hp;

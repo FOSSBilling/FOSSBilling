@@ -68,7 +68,7 @@ class Server_Manager_Hestia extends Server_Manager
 
     public function getPort(): int
     {
-        return FOSSBilling\Tools::normalizePort($this->_config['port'] ?? null, 8083);
+        return FOSSBilling\Core\Utils\Normalizer::normalizePort($this->_config['port'] ?? null, 8083);
     }
 
     #[Override]
@@ -343,7 +343,7 @@ class Server_Manager_Hestia extends Server_Manager
      */
     private function request($params): mixed
     {
-        $verifyTls = FOSSBilling\Tools::normalizeBoolean($this->_config['config']['tls_verify'] ?? true, true);
+        $verifyTls = FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($this->_config['config']['tls_verify'] ?? true, true);
         $host = 'https://' . $this->_config['host'] . ':' . $this->getPort() . '/api/';
 
         // Set return code to yes

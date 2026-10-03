@@ -10,10 +10,10 @@ declare(strict_types=1);
  */
 
 use Box\Mod\Invoice\Entity\Invoice;
-use FOSSBilling\Environment;
+use FOSSBilling\Core\System\Environment;
 use Pimple\Container;
 
-class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOSSBilling\InjectionAwareInterface
+class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOSSBilling\Core\Container\InjectionAwareInterface
 {
     protected ?Container $di = null;
 
@@ -485,7 +485,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
         }
         $invoiceId = (int) $invoiceId;
 
-        if (FOSSBilling\Tools::verifyCallbackSignature($gatewayId, $invoiceId, $get['sig'] ?? null)) {
+        if (FOSSBilling\Core\Security\Credential::verifyCallbackSignature($gatewayId, $invoiceId, $get['sig'] ?? null)) {
             return $invoiceId;
         }
 
@@ -558,7 +558,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
             return $url;
         }
 
-        $sig = FOSSBilling\Tools::signCallbackParams((int) $gatewayId, (int) $invoiceId);
+        $sig = FOSSBilling\Core\Security\Credential::signCallbackParams((int) $gatewayId, (int) $invoiceId);
         $separator = str_contains($url, '?') ? '&' : '?';
 
         return $url . $separator . 'sig=' . urlencode($sig);

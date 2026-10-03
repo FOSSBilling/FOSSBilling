@@ -45,13 +45,13 @@ test('balanceGetList returns array', function (): void {
     ->with($balance, $client)
     ->andReturn([]);
 
-    $pagerMock = Mockery::mock(FOSSBilling\Pagination::class)->makePartial();
+    $pagerMock = Mockery::mock(FOSSBilling\Core\Pagination\Service::class)->makePartial();
     $pagerMock
     ->shouldReceive('paginateMappedQuery')
     ->once()
-    ->andReturnUsing(static function (Doctrine\ORM\QueryBuilder $query, FOSSBilling\PaginationOptions $pagination, callable $mapper) use ($queryBuilder, $balance): array {
+    ->andReturnUsing(static function (Doctrine\ORM\QueryBuilder $query, FOSSBilling\Core\Pagination\Options $pagination, callable $mapper) use ($queryBuilder, $balance): array {
         expect($query)->toBe($queryBuilder)
-            ->and($pagination)->toBeInstanceOf(FOSSBilling\PaginationOptions::class);
+            ->and($pagination)->toBeInstanceOf(FOSSBilling\Core\Pagination\Options::class);
 
         return ['list' => [$mapper($balance)]];
     });

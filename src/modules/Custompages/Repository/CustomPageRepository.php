@@ -14,7 +14,7 @@ namespace Box\Mod\Custompages\Repository;
 use Box\Mod\Custompages\Entity\CustomPage;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
-use FOSSBilling\SortOptions;
+use FOSSBilling\Core\SortOptions;
 
 class CustomPageRepository extends EntityRepository
 {

@@ -12,8 +12,8 @@ declare(strict_types=1);
 
 use Box\Mod\Theme\Event\BeforeAdminThemeSettingsSaveEvent;
 use Box\Mod\Theme\Model\Theme;
-use FOSSBilling\Sanitizer\BrowserHtmlSanitizer;
-use FOSSBilling\Twig\SandboxedStringRenderer;
+use FOSSBilling\Core\HtmlSanitizerFactory;
+use FOSSBilling\Core\Twig\SandboxedStringRenderer;
 use Twig\Environment;
 use Twig\Loader\ArrayLoader;
 use Twig\TwigFilter;
@@ -37,7 +37,7 @@ function renderClientThemeFooterLinkCheckboxes(array $settings): array
         ['settings' => $settings],
         'Theme settings template',
     );
-    $html = BrowserHtmlSanitizer::sanitizeThemeSettingsHtml($html);
+    $html = HtmlSanitizerFactory::sanitize($html, 'theme_settings');
 
     $document = new DOMDocument();
     $previousLibxmlErrorsSetting = libxml_use_internal_errors(true);
@@ -64,7 +64,7 @@ test('getDi returns dependency injection container', function (): void {
 
 test('register configures routes', function (): void {
     $controller = new Box\Mod\Theme\Controller\Admin();
-    $boxAppMock = Mockery::mock('\Box_App');
+    $boxAppMock = Mockery::mock(FOSSBilling\Core\Http\App::class);
     $boxAppMock->shouldReceive('get')
         ->atLeast()
         ->once();
@@ -79,7 +79,7 @@ test('getTheme renders theme preset', function (): void {
     $controller = new Box\Mod\Theme\Controller\Admin();
     $di = container();
 
-    $boxAppMock = Mockery::mock('\Box_App');
+    $boxAppMock = Mockery::mock(FOSSBilling\Core\Http\App::class);
     $boxAppMock->shouldReceive('render')
         ->atLeast()
         ->once()
@@ -131,7 +131,7 @@ test('getTheme renders theme preset', function (): void {
         ->andReturn([]);
 
     // Create a mod mock that returns the service via getService()
-    $modMock = Mockery::mock(FOSSBilling\Module::class);
+    $modMock = Mockery::mock(FOSSBilling\Core\Module::class);
     $modMock->shouldReceive('getService')
         ->atLeast()
         ->once()
@@ -170,7 +170,7 @@ test('save theme settings dispatches safe typed event and strips preset control 
     $themeServiceMock->shouldReceive('regenerateThemeCssAndJsFiles');
     $themeServiceMock->shouldReceive('regenerateThemeSettingsDataFile');
 
-    $modMock = Mockery::mock(FOSSBilling\Module::class);
+    $modMock = Mockery::mock(FOSSBilling\Core\Module::class);
     $modMock->shouldReceive('getService')->andReturn($themeServiceMock);
 
     $eventDispatcher = new class($steps, $events) {
@@ -178,7 +178,7 @@ test('save theme settings dispatches safe typed event and strips preset control 
         {
         }
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->steps[] = 'event';
             $this->events[] = $event;
@@ -204,7 +204,7 @@ test('save theme settings dispatches safe typed event and strips preset control 
         'save-current-setting-preset' => 'My Preset',
     ]);
 
-    $boxAppMock = Mockery::mock('\Box_App');
+    $boxAppMock = Mockery::mock(FOSSBilling\Core\Http\App::class);
     $boxAppMock->shouldReceive('getRequest')->once()->andReturn($request);
     $boxAppMock->shouldReceive('redirect')
         ->once()

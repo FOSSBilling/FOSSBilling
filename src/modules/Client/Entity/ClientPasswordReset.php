@@ -13,8 +13,8 @@ namespace Box\Mod\Client\Entity;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use FOSSBilling\Doctrine\TimestampTrait;
-use FOSSBilling\Interfaces\TimestampInterface;
+use FOSSBilling\Core\Doctrine\TimestampInterface;
+use FOSSBilling\Core\Doctrine\TimestampTrait;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Client\Repository\ClientPasswordResetRepository::class)]
 #[ORM\Table(name: 'client_password_reset')]

@@ -17,10 +17,10 @@ use function Tests\Helpers\moduleService;
 function staffGuestTestEventDispatcher(): object
 {
     return new class {
-        /** @var list<FOSSBilling\Events\Event> */
+        /** @var list<FOSSBilling\Core\Events\Event> */
         public array $dispatched = [];
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->dispatched[] = $event;
 
@@ -41,10 +41,10 @@ test('login without email', function (): void {
     $api = apiEndpoint(new Box\Mod\Staff\Api\Guest());
     $guestApi = apiEndpoint(new Box\Mod\Staff\Api\Guest());
 
-    $dispatcher = new FOSSBilling\Api\Dispatcher();
+    $dispatcher = new FOSSBilling\Core\Api\Dispatcher();
 
     expect(fn () => $dispatcher->validateRequiredParams($guestApi, 'login', ['email' => null, 'password' => 'pass']))
-        ->toThrow(FOSSBilling\InformationException::class);
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class);
 });
 
 test('login without password', function (): void {
@@ -52,50 +52,43 @@ test('login without password', function (): void {
     $guestApi = apiEndpoint(new Box\Mod\Staff\Api\Guest());
 
     $di = container();
-    $di['validator'] = new FOSSBilling\Validate();
+    $di['validator'] = new FOSSBilling\Core\Validation\Validator();
 
     $guestApi->setDi($di);
-    expect(fn () => $guestApi->login(['email' => 'email@domain.com']))->toThrow(FOSSBilling\Exception::class);
+    expect(fn () => $guestApi->login(['email' => 'email@domain.com']))->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 test('password reset requires an email', function (): void {
-    $dispatcher = new FOSSBilling\Api\Dispatcher();
+    $dispatcher = new FOSSBilling\Core\Api\Dispatcher();
     $guestApi = new Box\Mod\Staff\Api\Guest();
 
     expect(fn () => $dispatcher->validateRequiredParams($guestApi, 'passwordreset', []))
-        ->toThrow(FOSSBilling\InformationException::class, 'Email required');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Email required');
 });
 
 test('password reset request dispatches only IP metadata before email validation', function (): void {
     $guestApi = apiEndpoint(new Box\Mod\Staff\Api\Guest());
-    $modMock = Mockery::mock('\\' . FOSSBilling\Module::class);
+    $modMock = Mockery::mock('\\' . FOSSBilling\Core\Module::class);
     $modMock->shouldReceive('getConfig')->once()->andReturn([]);
 
     $eventDispatcher = staffGuestTestEventDispatcher();
-    $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
-    $toolsMock->shouldReceive('validateAndSanitizeEmail')
-        ->once()
-        ->with('private@example.com')
-        ->andReturnUsing(function () use ($eventDispatcher): string {
-            expect($eventDispatcher->dispatched)->toHaveCount(1);
-            expect($eventDispatcher->dispatched[0])->toBeInstanceOf(Box\Mod\Staff\Event\BeforeStaffPasswordResetRequestEvent::class);
 
-            return 'private@example.com';
-        });
-
-    $rateLimiter = Mockery::mock(FOSSBilling\Security\RateLimiter::class);
+    $rateLimiter = Mockery::mock(FOSSBilling\Core\Security\RateLimiter::class);
     $rateLimiter->shouldReceive('consume')
         ->once()
         ->with('staff_password_reset_ip', '192.0.2.11')
-        ->andReturn(new FOSSBilling\Security\RateLimitResult('staff_password_reset_ip', true, 5, 0));
+        ->andReturnUsing(function () use ($eventDispatcher): FOSSBilling\Core\Security\RateLimitResult {
+            expect($eventDispatcher->dispatched)->toHaveCount(1);
+
+            return new FOSSBilling\Core\Security\RateLimitResult('staff_password_reset_ip', true, 5, 0);
+        });
 
     $di = container();
     $di['event_dispatcher'] = $eventDispatcher;
-    $di['tools'] = $toolsMock;
     $di['rate_limiter'] = $rateLimiter;
     $di['logger'] = new Tests\Helpers\TestLogger();
 
-    $guestApi->setMod($modMock);
+    $guestApi->setModule($modMock);
     $guestApi->setDi($di);
     $guestApi->setIp('192.0.2.11');
 
@@ -107,22 +100,22 @@ test('password reset request dispatches only IP metadata before email validation
 
 test('password reset confirmation dispatches before required-field validation', function (): void {
     $guestApi = apiEndpoint(new Box\Mod\Staff\Api\Guest());
-    $modMock = Mockery::mock('\\' . FOSSBilling\Module::class);
+    $modMock = Mockery::mock('\\' . FOSSBilling\Core\Module::class);
     $modMock->shouldReceive('getConfig')->once()->andReturn([]);
 
     $eventDispatcher = staffGuestTestEventDispatcher();
-    $rateLimiter = Mockery::mock(FOSSBilling\Security\RateLimiter::class);
+    $rateLimiter = Mockery::mock(FOSSBilling\Core\Security\RateLimiter::class);
     $rateLimiter->shouldReceive('consumeOrThrow')
         ->once()
         ->with('staff_password_reset_confirm_post_ip', '192.0.2.12')
-        ->andReturn(new FOSSBilling\Security\RateLimitResult('staff_password_reset_confirm_post_ip', false, 5, 4));
+        ->andReturn(new FOSSBilling\Core\Security\RateLimitResult('staff_password_reset_confirm_post_ip', false, 5, 4));
 
-    $validator = Mockery::mock(FOSSBilling\Validate::class);
+    $validator = Mockery::mock(FOSSBilling\Core\Validation\Validator::class);
     $validator->shouldReceive('checkRequiredParamsForArray')->once()->andReturnUsing(function () use ($eventDispatcher): void {
         expect($eventDispatcher->dispatched)->toHaveCount(1);
         expect($eventDispatcher->dispatched[0])->toBeInstanceOf(Box\Mod\Staff\Event\BeforeStaffPasswordResetConfirmationEvent::class);
 
-        throw new FOSSBilling\InformationException('Code required');
+        throw new FOSSBilling\Core\Exception\InformationException('Code required');
     });
 
     $di = container();
@@ -131,7 +124,7 @@ test('password reset confirmation dispatches before required-field validation', 
     $di['validator'] = $validator;
     $di['logger'] = new Tests\Helpers\TestLogger();
 
-    $guestApi->setMod($modMock);
+    $guestApi->setModule($modMock);
     $guestApi->setDi($di);
     $guestApi->setIp('192.0.2.12');
 
@@ -139,7 +132,7 @@ test('password reset confirmation dispatches before required-field validation', 
         'code' => 'private-reset-code',
         'password' => 'private-password',
         'password_confirm' => 'private-password',
-    ]))->toThrow(FOSSBilling\InformationException::class, 'Code required');
+    ]))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Code required');
 
     expect($eventDispatcher->dispatched)->toHaveCount(1);
     expect($eventDispatcher->dispatched[0])->toEqual(new Box\Mod\Staff\Event\BeforeStaffPasswordResetConfirmationEvent('192.0.2.12'));
@@ -148,7 +141,7 @@ test('password reset confirmation dispatches before required-field validation', 
 
 test('successful login', function (): void {
     $api = apiEndpoint(new Box\Mod\Staff\Api\Guest());
-    $modMock = Mockery::mock('\\' . FOSSBilling\Module::class);
+    $modMock = Mockery::mock('\\' . FOSSBilling\Core\Module::class);
     $modMock
     ->shouldReceive('getConfig')
     ->atLeast()->once()
@@ -160,19 +153,16 @@ test('successful login', function (): void {
     ->atLeast()->once()
     ->andReturn([]);
 
-    $sessionMock = Mockery::mock(FOSSBilling\Session::class);
+    $sessionMock = Mockery::mock(FOSSBilling\Core\Security\Session::class);
     $sessionMock->shouldReceive('delete')->atLeast()->once();
 
     $di = container();
 
-    $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
-    $toolsMock->shouldReceive('validateAndSanitizeEmail')->atLeast()->once();
-    $di['tools'] = $toolsMock;
     $di['session'] = $sessionMock;
-    $di['validator'] = new FOSSBilling\Validate();
+    $di['validator'] = new FOSSBilling\Core\Validation\Validator();
 
     $guestApi = apiEndpoint(new Box\Mod\Staff\Api\Guest());
-    $guestApi->setMod($modMock);
+    $guestApi->setModule($modMock);
     $guestApi->setService($serviceMock);
     $guestApi->setDi($di);
     $result = $guestApi->login(['email' => 'email@domain.com', 'password' => 'pass']);
@@ -181,7 +171,7 @@ test('successful login', function (): void {
 
 test('login check ip exception', function (): void {
     $api = apiEndpoint(new Box\Mod\Staff\Api\Guest());
-    $modMock = Mockery::mock('\\' . FOSSBilling\Module::class);
+    $modMock = Mockery::mock('\\' . FOSSBilling\Core\Module::class);
     $configArr = [
         'allowed_ips' => '1.1.1.1' . PHP_EOL . '2.2.2.2',
         'check_ip' => true,
@@ -193,13 +183,10 @@ test('login check ip exception', function (): void {
 
     $di = container();
 
-    $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
-    $toolsMock->shouldReceive('validateAndSanitizeEmail')->atLeast()->once();
-    $di['tools'] = $toolsMock;
-    $di['validator'] = new FOSSBilling\Validate();
+    $di['validator'] = new FOSSBilling\Core\Validation\Validator();
 
     $guestApi = apiEndpoint(new Box\Mod\Staff\Api\Guest());
-    $guestApi->setMod($modMock);
+    $guestApi->setModule($modMock);
     $guestApi->setDi($di);
     $ip = '192.168.0.1';
     $guestApi->setIp($ip);
@@ -209,13 +196,13 @@ test('login check ip exception', function (): void {
         'password' => 'pass',
     ];
     expect(fn () => $guestApi->login($data))
-        ->toThrow(FOSSBilling\Exception::class, 'You are not allowed to login to admin area from this IP address.');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'You are not allowed to login to admin area from this IP address.');
 });
 
 test('updatePassword invalidates existing sessions', function (): void {
     $guestApi = apiEndpoint(new Box\Mod\Staff\Api\Guest());
 
-    $modMock = Mockery::mock('\\' . FOSSBilling\Module::class);
+    $modMock = Mockery::mock('\\' . FOSSBilling\Core\Module::class);
     $modMock->shouldReceive('getConfig')->atLeast()->once()->andReturn([]);
 
     $admin = \Tests\Helpers\admin(['id' => 1, 'status' => Box\Mod\Staff\Entity\Admin::STATUS_ACTIVE]);
@@ -227,7 +214,7 @@ test('updatePassword invalidates existing sessions', function (): void {
 
     $eventDispatcher = staffGuestTestEventDispatcher();
 
-    $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
+    $passwordMock = Mockery::mock(FOSSBilling\Core\Security\PasswordManager::class);
     $passwordMock->shouldReceive('hashIt')->atLeast()->once();
 
     $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);
@@ -252,7 +239,7 @@ test('updatePassword invalidates existing sessions', function (): void {
     $di['password'] = $passwordMock;
     $di['mod_service'] = $di->protect(moduleService(['email' => $emailServiceMock, 'profile' => $profileServiceMock]));
 
-    $guestApi->setMod($modMock);
+    $guestApi->setModule($modMock);
     $guestApi->setDi($di);
     $guestApi->setIp('192.0.2.10');
 

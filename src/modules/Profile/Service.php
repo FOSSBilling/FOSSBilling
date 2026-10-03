@@ -23,10 +23,9 @@ use Box\Mod\Profile\Event\BeforeAdminProfileUpdateEvent;
 use Box\Mod\Profile\Event\BeforeClientProfilePasswordChangeEvent;
 use Box\Mod\Profile\Event\BeforeClientProfileUpdateEvent;
 use Box\Mod\Staff\Entity\Admin;
-use FOSSBilling\i18n;
-use FOSSBilling\InformationException;
-use FOSSBilling\InjectionAwareInterface;
-use FOSSBilling\Tools;
+use FOSSBilling\Core\Container\InjectionAwareInterface;
+use FOSSBilling\Core\Exception\InformationException;
+use FOSSBilling\Core\I18n\I18n;
 use Symfony\Component\Intl\Countries;
 use Symfony\Component\Intl\Locales;
 
@@ -85,7 +84,7 @@ class Service implements InjectionAwareInterface
         $adminId = (int) $admin->getId();
         $this->di['event_dispatcher']->dispatch(new BeforeAdminApiKeyChangeEvent($adminId));
 
-        $admin->setApiToken($this->di['tools']->generatePassword(32));
+        $admin->setApiToken(\FOSSBilling\Core\Security\Credential::generatePassword(32));
         $this->di['em']->persist($admin);
         $this->di['em']->flush();
 
@@ -107,7 +106,7 @@ class Service implements InjectionAwareInterface
         $admin->setName($data['name'] ?? $admin->getName());
         $admin->setSignature($data['signature'] ?? $admin->getSignature());
         if (array_key_exists('timezone', $data)) {
-            $admin->setTimezone(i18n::validateTimezone($data['timezone']));
+            $admin->setTimezone(I18n::validateTimezone($data['timezone']));
         }
         $this->di['em']->persist($admin);
         $this->di['em']->flush();
@@ -151,7 +150,7 @@ class Service implements InjectionAwareInterface
         }
 
         if (!empty($email)) {
-            $this->di['tools']->validateAndSanitizeEmail($data['email']);
+            \FOSSBilling\Core\Validation\EmailValidator::validateAndSanitizeEmail($data['email']);
 
             $clientService = $this->di['mod_service']('client');
             if ($clientService->emailAlreadyRegistered($email, $client)) {
@@ -171,11 +170,11 @@ class Service implements InjectionAwareInterface
         }
 
         if (isset($data['phone_cc']) && $data['phone_cc'] !== '') {
-            $client->setPhoneCc((string) Tools::validatePhoneCC($data['phone_cc']));
+            $client->setPhoneCc((string) \FOSSBilling\Core\Validation\PhoneValidator::validatePhoneCC($data['phone_cc']));
         }
 
         if (isset($data['phone']) && is_string($data['phone']) && $data['phone'] !== '') {
-            $client->setPhone(Tools::validatePhoneNumber($data['phone']));
+            $client->setPhone(\FOSSBilling\Core\Validation\PhoneValidator::validatePhoneNumber($data['phone']));
         }
 
         $client->setFirstName($data['first_name'] ?? $client->getFirstName());
@@ -206,7 +205,7 @@ class Service implements InjectionAwareInterface
         }
         $client->setLang($lang);
         if (array_key_exists('timezone', $data)) {
-            $client->setTimezone(i18n::validateTimezone($data['timezone']));
+            $client->setTimezone(I18n::validateTimezone($data['timezone']));
         }
         $client->setNotes($data['notes'] ?? $client->getNotes());
         $client->setCustom1($data['custom_1'] ?? $client->getCustom1());
@@ -242,7 +241,7 @@ class Service implements InjectionAwareInterface
 
     public function resetApiKey(Client $client): ?string
     {
-        $client->setApiToken($this->di['tools']->generatePassword(32));
+        $client->setApiToken(\FOSSBilling\Core\Security\Credential::generatePassword(32));
 
         $this->di['em']->persist($client);
         $this->di['em']->flush();
@@ -295,13 +294,13 @@ class Service implements InjectionAwareInterface
     public function invalidateSessions(?string $type = null, ?int $id = null): bool
     {
         if (empty($type)) {
-            $auth = new \Box_Authorization($this->di);
+            $auth = new \FOSSBilling\Core\Security\Authorization($this->di);
             if ($auth->isAdminLoggedIn()) {
                 $type = 'admin';
             } elseif ($auth->isClientLoggedIn()) {
                 $type = 'client';
             } else {
-                throw new \FOSSBilling\Exception('Unable to invalidate sessions, nobody is logged in');
+                throw new \FOSSBilling\Core\Exception\BaseException('Unable to invalidate sessions, nobody is logged in');
             }
         }
 
@@ -320,7 +319,7 @@ class Service implements InjectionAwareInterface
         }
 
         if ($type !== 'admin' && $type !== 'client') {
-            throw new \FOSSBilling\Exception('Unable to invalidate sessions, an invalid type was used');
+            throw new \FOSSBilling\Core\Exception\BaseException('Unable to invalidate sessions, an invalid type was used');
         }
 
         $sessions = $this->getSessions();

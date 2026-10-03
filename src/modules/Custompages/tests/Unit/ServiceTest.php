@@ -8,8 +8,8 @@ use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
-use FOSSBilling\Pagination;
-use FOSSBilling\PaginationOptions;
+use FOSSBilling\Core\Pagination\Options as PaginationOptions;
+use FOSSBilling\Core\Pagination\Service as PaginationService;
 
 function buildCustompagesService(object $repo, ?EntityManagerInterface $em = null, ?Pimple\Container $extra = null): Service
 {
@@ -21,8 +21,6 @@ function buildCustompagesService(object $repo, ?EntityManagerInterface $em = nul
     $di['em'] = $em;
     // The production logger follows PSR-3; this test only needs a lightweight stub.
     $di['logger'] = Mockery::mock()->shouldIgnoreMissing();
-    $di['tools'] = Mockery::mock(FOSSBilling\Tools::class);
-    $di['tools']->allows('slug')->andReturnUsing(fn ($s): string => strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', (string) $s)));
 
     if ($extra !== null) {
         foreach ($extra->keys() as $key) {
@@ -41,7 +39,7 @@ test('search pages delegates to repository query builder and doctrine paginator'
     $repo = Mockery::mock(Box\Mod\Custompages\Repository\CustomPageRepository::class);
     $repo->expects('getSearchQueryBuilder')->with(['search' => 'landing'])->andReturn($qb);
 
-    $pager = Mockery::mock(Pagination::class);
+    $pager = Mockery::mock(PaginationService::class);
     $pager->expects('paginateDoctrineQuery')->with($qb, Mockery::on(fn ($o): bool => $o instanceof PaginationOptions))->andReturn(['list' => [], 'total' => 0]);
 
     $extra = new Pimple\Container();
@@ -111,7 +109,7 @@ test('get page rejects unknown column type', function (): void {
 
     $service = buildCustompagesService($repo);
 
-    expect(fn (): ?array => $service->getPage(1, 'title'))->toThrow(FOSSBilling\Exception::class);
+    expect(fn (): ?array => $service->getPage(1, 'title'))->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
 test('create page generates unique slug and inserts via dbal', function (): void {
@@ -138,8 +136,6 @@ test('create page generates unique slug and inserts via dbal', function (): void
     $di = new Pimple\Container();
     $di['em'] = $em;
     $di['logger'] = $logger;
-    $di['tools'] = Mockery::mock(FOSSBilling\Tools::class);
-    $di['tools']->allows('slug')->with('About Us')->andReturn('about-us');
 
     $service = new Service();
     $service->setDi($di);
@@ -178,8 +174,6 @@ test('create page appends incrementing suffix until slug is unique', function ()
     $di = new Pimple\Container();
     $di['em'] = $em;
     $di['logger'] = Mockery::mock()->shouldIgnoreMissing();
-    $di['tools'] = Mockery::mock(FOSSBilling\Tools::class);
-    $di['tools']->allows('slug')->with('Page')->andReturn('page');
 
     $service = new Service();
     $service->setDi($di);
@@ -195,7 +189,7 @@ test('update page throws when page not found', function (): void {
 
     $service = buildCustompagesService($repo);
 
-    expect(fn (): int => $service->updatePage(5, 't', '', '', 'c', 'slug'))->toThrow(FOSSBilling\Exception::class, 'Custom page not found');
+    expect(fn (): int => $service->updatePage(5, 't', '', '', 'c', 'slug'))->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Custom page not found');
 });
 
 test('update page throws on duplicate slug with legacy code', function (): void {
@@ -209,7 +203,7 @@ test('update page throws on duplicate slug with legacy code', function (): void 
     $service = buildCustompagesService($repo);
 
     expect(fn (): int => $service->updatePage(5, 'T', '', '', 'C', 'taken'))
-        ->toThrow(fn (FOSSBilling\Exception $e): bool => $e->getCode() === 9999);
+        ->toThrow(fn (FOSSBilling\Core\Exception\BaseException $e): bool => $e->getCode() === 9999);
 });
 
 test('update page applies setters and returns id', function (): void {
@@ -217,7 +211,7 @@ test('update page applies setters and returns id', function (): void {
 
     $repo = Mockery::mock(Box\Mod\Custompages\Repository\CustomPageRepository::class);
     $repo->expects('find')->with(5)->andReturn($page);
-    $repo->expects('findOneBySlugExcludingId')->with('new', 5)->andReturn(null);
+    $repo->expects('findOneBySlugExcludingId')->with('new-slug', 5)->andReturn(null);
 
     $em = Mockery::mock(EntityManagerInterface::class);
     $em->allows('getRepository')->with(CustomPage::class)->andReturn($repo);
@@ -226,8 +220,6 @@ test('update page applies setters and returns id', function (): void {
     $di = new Pimple\Container();
     $di['em'] = $em;
     $di['logger'] = Mockery::mock()->shouldIgnoreMissing();
-    $di['tools'] = Mockery::mock(FOSSBilling\Tools::class);
-    $di['tools']->allows('slug')->with('New Slug')->andReturn('new');
 
     $service = new Service();
     $service->setDi($di);
@@ -239,7 +231,7 @@ test('update page applies setters and returns id', function (): void {
     expect($page->getDescription())->toBe('d');
     expect($page->getKeywords())->toBe('k');
     expect($page->getContent())->toBe('new content');
-    expect($page->getSlug())->toBe('new');
+    expect($page->getSlug())->toBe('new-slug');
 });
 
 test('delete page by scalar removes the entity', function (): void {
@@ -256,7 +248,6 @@ test('delete page by scalar removes the entity', function (): void {
     $di = new Pimple\Container();
     $di['em'] = $em;
     $di['logger'] = Mockery::mock()->shouldIgnoreMissing();
-    $di['tools'] = Mockery::mock(FOSSBilling\Tools::class);
 
     $service = new Service();
     $service->setDi($di);
@@ -276,7 +267,6 @@ test('delete page by scalar is a no-op when not found', function (): void {
     $di = new Pimple\Container();
     $di['em'] = $em;
     $di['logger'] = Mockery::mock()->shouldIgnoreMissing();
-    $di['tools'] = Mockery::mock(FOSSBilling\Tools::class);
 
     $service = new Service();
     $service->setDi($di);
@@ -325,8 +315,6 @@ test('create page retries on a concurrent slug conflict and succeeds on the next
     $di = new Pimple\Container();
     $di['em'] = $em;
     $di['logger'] = Mockery::mock()->shouldIgnoreMissing();
-    $di['tools'] = Mockery::mock(FOSSBilling\Tools::class);
-    $di['tools']->allows('slug')->with('About')->andReturn('about');
 
     $service = new Service();
     $service->setDi($di);
@@ -353,14 +341,12 @@ test('create page gives up after repeated slug conflicts', function (): void {
     $di = new Pimple\Container();
     $di['em'] = $em;
     $di['logger'] = Mockery::mock()->shouldIgnoreMissing();
-    $di['tools'] = Mockery::mock(FOSSBilling\Tools::class);
-    $di['tools']->allows('slug')->with('Title')->andReturn('title');
 
     $service = new Service();
     $service->setDi($di);
 
     expect(fn (): int => $service->createPage('Title', '', '', 'content'))
-        ->toThrow(FOSSBilling\Exception::class, 'Unable to generate a unique slug');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Unable to generate a unique slug');
 });
 
 test('update page surfaces a concurrent constraint violation as the uniqueness error', function (): void {
@@ -369,7 +355,7 @@ test('update page surfaces a concurrent constraint violation as the uniqueness e
     $repo = Mockery::mock(Box\Mod\Custompages\Repository\CustomPageRepository::class);
     $repo->expects('find')->with(5)->andReturn($page);
     // App-level check passes (no conflict visible yet), but the DB rejects the concurrent slug.
-    $repo->expects('findOneBySlugExcludingId')->with('new', 5)->andReturn(null);
+    $repo->expects('findOneBySlugExcludingId')->with('new-slug', 5)->andReturn(null);
 
     $em = Mockery::mock(EntityManagerInterface::class);
     $em->allows('getRepository')->with(CustomPage::class)->andReturn($repo);
@@ -378,14 +364,12 @@ test('update page surfaces a concurrent constraint violation as the uniqueness e
     $di = new Pimple\Container();
     $di['em'] = $em;
     $di['logger'] = Mockery::mock()->shouldIgnoreMissing();
-    $di['tools'] = Mockery::mock(FOSSBilling\Tools::class);
-    $di['tools']->allows('slug')->with('New Slug')->andReturn('new');
 
     $service = new Service();
     $service->setDi($di);
 
     expect(fn (): int => $service->updatePage(5, 'New', '', '', 'content', 'New Slug'))
-        ->toThrow(fn (FOSSBilling\Exception $e): bool => $e->getCode() === 9999);
+        ->toThrow(fn (FOSSBilling\Core\Exception\BaseException $e): bool => $e->getCode() === 9999);
 });
 
 test('create page truncates a long title slug to fit varchar 255', function (): void {
@@ -410,13 +394,11 @@ test('create page truncates a long title slug to fit varchar 255', function (): 
     $di = new Pimple\Container();
     $di['em'] = $em;
     $di['logger'] = Mockery::mock()->shouldIgnoreMissing();
-    $di['tools'] = Mockery::mock(FOSSBilling\Tools::class);
-    $di['tools']->allows('slug')->with('Long Title')->andReturn($longSlug);
 
     $service = new Service();
     $service->setDi($di);
 
-    $service->createPage('Long Title', '', '', 'content');
+    $service->createPage(str_repeat('a', 260), '', '', 'content');
 
     expect(strlen($captured['slug']))->toBe(255);
 });
@@ -446,13 +428,11 @@ test('create page reserves room for the suffix when truncating a conflicting lon
     $di = new Pimple\Container();
     $di['em'] = $em;
     $di['logger'] = Mockery::mock()->shouldIgnoreMissing();
-    $di['tools'] = Mockery::mock(FOSSBilling\Tools::class);
-    $di['tools']->allows('slug')->with('Long Title')->andReturn($base);
 
     $service = new Service();
     $service->setDi($di);
 
-    $service->createPage('Long Title', '', '', 'content');
+    $service->createPage(str_repeat('a', 300), '', '', 'content');
 
     expect($captured['slug'])->toBe(str_repeat('a', 253) . '-1');
     expect(strlen($captured['slug']))->toBe(255);
@@ -464,7 +444,7 @@ test('install creates the custom_pages table portably instead of via raw MySQL D
     // at all, so this hook is the only thing that ever creates the table - unlike most modules,
     // it genuinely runs on every platform, confirmed here against a real SQLite connection.
     $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
-    $em = FOSSBilling\Doctrine\EntityManagerFactory::create($connection);
+    $em = FOSSBilling\Core\Doctrine\EntityManagerFactory::create($connection);
 
     expect($connection->createSchemaManager()->tablesExist(['custom_pages']))->toBeFalse();
 

@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice\Event;
 
-use FOSSBilling\Events\Event;
+use FOSSBilling\Core\Events\Event;
 
 /** Dispatched before an editable invoice is updated; submitted values are omitted. */
 final class BeforeAdminInvoiceUpdateEvent extends Event

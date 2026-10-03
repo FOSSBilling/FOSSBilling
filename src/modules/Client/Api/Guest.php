@@ -27,13 +27,12 @@ use Box\Mod\Client\Event\ClientLoginFailedEvent;
 use Box\Mod\Client\Service;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
-use FOSSBilling\Doctrine\EntityManagerFactory;
-use FOSSBilling\Http\CookieNames;
-use FOSSBilling\Security\RandomizedTimeFloor;
-use FOSSBilling\Tools;
-use FOSSBilling\Validation\Api\RequiredParams;
+use FOSSBilling\Core\Doctrine\EntityManagerFactory;
+use FOSSBilling\Core\Http\CookieNames;
+use FOSSBilling\Core\Security\RandomizedTimeFloor;
+use FOSSBilling\Core\Validation\Api\RequiredParams;
 
-class Guest extends \FOSSBilling\Api\AbstractApi
+class Guest extends \FOSSBilling\Core\Api\AbstractApi
 {
     /**
      * Client signup action.
@@ -84,12 +83,12 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         $startedAt = microtime(true);
 
         try {
-            $this->getDi()['rate_limiter']->consumeOrThrow('client_signup', (string) $this->getIp());
+            $this->getDi()['rate_limiter']->consumeOrThrow('client_signup', $this->getIp());
 
             $config = $this->getDi()['mod_config']('client');
 
             if (isset($config['disable_signup']) && $config['disable_signup']) {
-                throw new \FOSSBilling\InformationException('New registrations are temporarily disabled');
+                throw new \FOSSBilling\Core\Exception\InformationException('New registrations are temporarily disabled');
             }
 
             $this->getDi()['validator']->passwordsMatch($data);
@@ -101,7 +100,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             $service = $this->getService();
 
             $email = $data['email'] ?? null;
-            $email = $this->getDi()['tools']->validateAndSanitizeEmail($email);
+            $email = \FOSSBilling\Core\Validation\EmailValidator::validateAndSanitizeEmail($email);
             $email = strtolower(trim((string) $email));
 
             $this->checkCaptchaIfEnabled($data);
@@ -113,7 +112,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             // cannot exhaust another address's signup quota.
             $emailLimit = $this->getDi()['rate_limiter']->consume('client_signup_email', $email, 0);
 
-            $autoLogin = Tools::normalizeBoolean($config['auto_login_after_signup'] ?? true, true);
+            $autoLogin = \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($config['auto_login_after_signup'] ?? true, true);
 
             if ($emailLimit->isLimited() || $service->clientAlreadyExists($email)) {
                 if (!$emailLimit->isLimited()) {
@@ -230,7 +229,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
      *
      * @return array - session data
      *
-     * @throws \FOSSBilling\InformationException
+     * @throws \FOSSBilling\Core\Exception\InformationException
      */
     #[RequiredParams(['email' => 'Email required', 'password' => 'Password required'])]
     public function login($data)
@@ -238,7 +237,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         $startedAt = microtime(true);
 
         try {
-            $this->getDi()['tools']->validateAndSanitizeEmail($data['email'], true, false);
+            \FOSSBilling\Core\Validation\EmailValidator::validateAndSanitizeEmail($data['email'], true, false);
 
             $this->getDi()['event_dispatcher']->dispatch(new BeforeClientLoginEvent($this->ip));
 
@@ -248,7 +247,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             if (!$client instanceof Client) {
                 $this->getDi()['event_dispatcher']->dispatch(new ClientLoginFailedEvent($this->ip));
 
-                throw new \FOSSBilling\InformationException('Please check your login details.', [], 401);
+                throw new \FOSSBilling\Core\Exception\InformationException('Please check your login details.', [], 401);
             }
 
             $this->getDi()['event_dispatcher']->dispatch(new AfterClientLoginEvent((int) $client->getId(), $this->ip));
@@ -276,7 +275,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
     /**
      * Password reset confirmation email will be sent to email.
      *
-     * @throws \FOSSBilling\Exception
+     * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['email' => 'Email required'])]
     public function reset_password($data): bool
@@ -288,9 +287,9 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             $service = $this->getDi()['mod_service']('client');
 
             // Sanitize email
-            $data['email'] = $this->getDi()['tools']->validateAndSanitizeEmail($data['email']);
+            $data['email'] = \FOSSBilling\Core\Validation\EmailValidator::validateAndSanitizeEmail($data['email']);
 
-            $ipLimit = $this->getDi()['rate_limiter']->consume('client_password_reset_ip', (string) $this->getIp());
+            $ipLimit = $this->getDi()['rate_limiter']->consume('client_password_reset_ip', $this->getIp());
             if ($ipLimit->isLimited()) {
                 $this->getDi()['logger']->withChannel('security')->info('Client password reset rate limited from IP {ip}.', ['ip' => $this->getIp()]);
 
@@ -339,7 +338,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         $startedAt = microtime(true);
 
         try {
-            $this->getDi()['rate_limiter']->consumeOrThrow('client_password_reset_confirm_post_ip', (string) $this->getIp());
+            $this->getDi()['rate_limiter']->consumeOrThrow('client_password_reset_confirm_post_ip', $this->getIp());
 
             $this->getDi()['event_dispatcher']->dispatch(new BeforeClientPasswordResetConfirmationEvent($this->getIp()));
 
@@ -351,24 +350,24 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             if (!$reset instanceof ClientPasswordReset) {
                 $this->getDi()['logger']->withChannel('security')->info('Client password reset confirmation failed from IP {ip}: reset token not found', ['ip' => $this->getIp()]);
 
-                throw new \FOSSBilling\InformationException('The link has expired or you have already reset your password.');
+                throw new \FOSSBilling\Core\Exception\InformationException('The link has expired or you have already reset your password.');
             }
 
             if (strtotime((string) $reset->getCreatedAt()?->format('Y-m-d H:i:s')) - time() + 900 < 0) {
                 $this->getDi()['logger']->withChannel('security')->info('Client password reset confirmation failed for client #{client_id} from IP {ip}: reset token expired', ['client_id' => $reset->getClient()?->getId(), 'ip' => $this->getIp()]);
 
-                throw new \FOSSBilling\InformationException('The link has expired or you have already reset your password.');
+                throw new \FOSSBilling\Core\Exception\InformationException('The link has expired or you have already reset your password.');
             }
 
             $client = $reset->getClient();
             if (!$client instanceof Client) {
-                throw new \FOSSBilling\InformationException('The link has expired or you have already reset your password.');
+                throw new \FOSSBilling\Core\Exception\InformationException('The link has expired or you have already reset your password.');
             }
 
             if ($client->getStatus() !== Client::ACTIVE) {
                 $this->getDi()['logger']->withChannel('security')->info('Client password reset confirmation failed for client #{client_id} from IP {ip}: account status {status}', ['client_id' => $client->getId(), 'ip' => $this->getIp(), 'status' => $client->getStatus()]);
 
-                throw new \FOSSBilling\InformationException('The link has expired or you have already reset your password.');
+                throw new \FOSSBilling\Core\Exception\InformationException('The link has expired or you have already reset your password.');
             }
 
             $client->setPass($this->getDi()['password']->hashIt($data['password']));
@@ -419,8 +418,8 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             $title = $field['title'] ?? '';
 
             $field['title'] = is_scalar($title) ? (string) $title : '';
-            $field['active'] = Tools::normalizeBoolean($field['active'] ?? false);
-            $field['required'] = Tools::normalizeBoolean($field['required'] ?? false);
+            $field['active'] = \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($field['active'] ?? false);
+            $field['required'] = \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($field['required'] ?? false);
             $customFields[$fieldName] = $field;
         }
 

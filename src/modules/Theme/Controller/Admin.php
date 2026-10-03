@@ -14,7 +14,7 @@ namespace Box\Mod\Theme\Controller;
 use Box\Mod\Theme\Event\BeforeAdminThemeSettingsSaveEvent;
 use Symfony\Component\HttpFoundation\Response;
 
-class Admin implements \FOSSBilling\InjectionAwareInterface
+class Admin implements \FOSSBilling\Core\Container\InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
 
@@ -28,7 +28,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
-    public function register(\Box_App &$app): void
+    public function register(\FOSSBilling\Core\Http\App &$app): void
     {
         // Allows '/' so package-shaped theme codes (e.g. 'default/admin') match.
         $app->get('/theme/:theme', 'get_theme', ['theme' => '[a-zA-Z0-9_\-/]+'], static::class);
@@ -38,7 +38,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
     /**
      * Save theme settings.
      */
-    public function save_theme_settings(\Box_App $app, $theme): Response
+    public function save_theme_settings(\FOSSBilling\Core\Http\App $app, $theme): Response
     {
         $body = $app->getRequest()->request->all();
         $settingNames = array_values(array_diff(
@@ -67,7 +67,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
 
         try {
             if (!$t->isAssetsPathWritable()) {
-                throw new \FOSSBilling\Exception('Theme ":name" assets folder is not writable. Files cannot be uploaded and settings cannot be saved. Set folder permissions to 755', [':name' => $t->getName()]);
+                throw new \FOSSBilling\Core\Exception\BaseException('Theme ":name" assets folder is not writable. Files cannot be uploaded and settings cannot be saved. Set folder permissions to 755', [':name' => $t->getName()]);
             }
             $service->updateSettings($t, $preset, $body);
             $service->regenerateThemeCssAndJsFiles($t, $preset, $api);
@@ -91,7 +91,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
         return $app->redirect($red_url);
     }
 
-    public function get_theme(\Box_App $app, $theme): string
+    public function get_theme(\FOSSBilling\Core\Http\App $app, $theme): string
     {
         $this->di['is_admin_logged'];
 
@@ -104,7 +104,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
 
         try {
             $html = $service->renderThemeSettingsPageHtml($t, $settings);
-        } catch (\FOSSBilling\InformationException $e) {
+        } catch (\FOSSBilling\Core\Exception\InformationException $e) {
             $html = '';
             $error ??= $e->getMessage();
         }

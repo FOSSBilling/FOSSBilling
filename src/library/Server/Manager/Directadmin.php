@@ -145,7 +145,7 @@ class Server_Manager_Directadmin extends Server_Manager
      */
     public function getPort(): int
     {
-        return FOSSBilling\Tools::normalizePort($this->_config['port'] ?? null, 2222);
+        return FOSSBilling\Core\Utils\Normalizer::normalizePort($this->_config['port'] ?? null, 2222);
     }
 
     /**
@@ -538,7 +538,7 @@ class Server_Manager_Directadmin extends Server_Manager
      */
     private function request(string $command, array $fields = [], bool $post = true, string $asUser = ''): array
     {
-        $verifyTls = FOSSBilling\Tools::normalizeBoolean($this->_config['config']['tls_verify'] ?? true, true);
+        $verifyTls = FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($this->_config['config']['tls_verify'] ?? true, true);
 
         // Get the host from the configuration
         $host = $this->_config['host'];
@@ -750,7 +750,7 @@ class Server_Manager_Directadmin extends Server_Manager
             return $default;
         }
 
-        return FOSSBilling\Tools::normalizeBoolean($value) ? 'ON' : 'OFF';
+        return FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($value) ? 'ON' : 'OFF';
     }
 
     /**

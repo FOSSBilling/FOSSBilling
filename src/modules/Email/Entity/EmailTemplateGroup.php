@@ -13,8 +13,8 @@ namespace Box\Mod\Email\Entity;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use FOSSBilling\Doctrine\CreatedAtTrait;
-use FOSSBilling\Interfaces\ApiArrayInterface;
+use FOSSBilling\Core\Api\ArrayInterface;
+use FOSSBilling\Core\Doctrine\CreatedAtTrait;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Email\Repository\EmailTemplateGroupRepository::class)]
 #[ORM\Table(name: 'email_template_group')]
@@ -23,7 +23,7 @@ use FOSSBilling\Interfaces\ApiArrayInterface;
 #[ORM\UniqueConstraint(name: 'email_template_group_unique', columns: ['email_template_id', 'admin_group_id'])]
 #[ORM\Index(name: 'email_template_group_group_id_idx', columns: ['admin_group_id'])]
 #[ORM\HasLifecycleCallbacks]
-class EmailTemplateGroup implements ApiArrayInterface
+class EmailTemplateGroup implements ArrayInterface
 {
     use CreatedAtTrait;
 

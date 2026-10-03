@@ -17,10 +17,10 @@ use function Tests\Helpers\moduleService;
 function clientGuestTestEventDispatcher(): object
 {
     return new class {
-        /** @var list<FOSSBilling\Events\Event> */
+        /** @var list<FOSSBilling\Core\Events\Event> */
         public array $dispatched = [];
 
-        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
         {
             $this->dispatched[] = $event;
 
@@ -82,17 +82,13 @@ test('create returns true and creates the account for a new email', function ():
     $serviceMock->shouldReceive('checkExtraRequiredFields')->atLeast()->once();
     $serviceMock->shouldReceive('checkCustomFields')->atLeast()->once();
 
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Core\Validation\Validator::class);
     $validatorMock->shouldReceive('isPasswordStrong')->atLeast()->once();
     $validatorMock->shouldReceive('passwordsMatch')->atLeast()->once();
-
-    $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
-    $toolsMock->shouldReceive('validateAndSanitizeEmail')->atLeast()->once()->andReturn($data['email']);
 
     $di = container();
     $di['mod_config'] = $di->protect(fn ($name): array => $configArr);
     $di['validator'] = $validatorMock;
-    $di['tools'] = $toolsMock;
 
     $guestClient->setDi($di);
     $guestClient->setService($serviceMock);
@@ -127,7 +123,7 @@ test('create returns true without creating a duplicate account or disclosing tha
     $serviceMock->shouldReceive('authorizeClient')->atLeast()->once()->andReturn(null);
     $serviceMock->shouldNotReceive('guestCreateClient');
 
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Core\Validation\Validator::class);
     $validatorMock->shouldReceive('isPasswordStrong')->atLeast()->once();
     $validatorMock->shouldReceive('passwordsMatch')->atLeast()->once();
 
@@ -135,9 +131,6 @@ test('create returns true without creating a duplicate account or disclosing tha
     $di['mod_config'] = $di->protect(fn ($name): array => $configArr);
     $di['validator'] = $validatorMock;
 
-    $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
-    $toolsMock->shouldReceive('validateAndSanitizeEmail')->atLeast()->once()->andReturn($data['email']);
-    $di['tools'] = $toolsMock;
     $di['event_dispatcher'] = clientGuestTestEventDispatcher();
 
     $guestClient->setDi($di);
@@ -170,19 +163,19 @@ test('create returns true without creating an account when the per-email signup 
     $serviceMock->shouldReceive('authorizeClient')->atLeast()->once()->andReturn(null);
     $serviceMock->shouldNotReceive('guestCreateClient');
 
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Core\Validation\Validator::class);
     $validatorMock->shouldReceive('isPasswordStrong')->atLeast()->once();
     $validatorMock->shouldReceive('passwordsMatch')->atLeast()->once();
 
     $rateLimiterMock = new class {
-        public function consume(string $policyName, string $subject, int $tokens = 1): FOSSBilling\Security\RateLimitResult
+        public function consume(string $policyName, string $subject, int $tokens = 1): FOSSBilling\Core\Security\RateLimitResult
         {
             $limited = $policyName === 'client_signup_email';
 
-            return new FOSSBilling\Security\RateLimitResult($policyName, $limited, null, null);
+            return new FOSSBilling\Core\Security\RateLimitResult($policyName, $limited, null, null);
         }
 
-        public function consumeOrThrow(string $policyName, string $subject, int $tokens = 1): FOSSBilling\Security\RateLimitResult
+        public function consumeOrThrow(string $policyName, string $subject, int $tokens = 1): FOSSBilling\Core\Security\RateLimitResult
         {
             return $this->consume($policyName, $subject, $tokens);
         }
@@ -193,10 +186,6 @@ test('create returns true without creating an account when the per-email signup 
     $di['validator'] = $validatorMock;
     $di['rate_limiter'] = $rateLimiterMock;
     $di['event_dispatcher'] = clientGuestTestEventDispatcher();
-
-    $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
-    $toolsMock->shouldReceive('validateAndSanitizeEmail')->atLeast()->once()->andReturn($data['email']);
-    $di['tools'] = $toolsMock;
 
     $guestClient->setDi($di);
     $guestClient->setService($serviceMock);
@@ -220,36 +209,32 @@ test('create does not consume the per-email signup quota when client validation 
     $serviceMock->shouldReceive('clientAlreadyExists')->once()->andReturn(false);
     $serviceMock->shouldReceive('checkExtraRequiredFields')->once();
     $serviceMock->shouldReceive('checkCustomFields')->once();
-    $serviceMock->shouldReceive('guestCreateClient')->once()->andThrow(new FOSSBilling\InformationException('Invalid country code: ZZ'));
+    $serviceMock->shouldReceive('guestCreateClient')->once()->andThrow(new FOSSBilling\Core\Exception\InformationException('Invalid country code: ZZ'));
 
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Core\Validation\Validator::class);
     $validatorMock->shouldReceive('isPasswordStrong')->once();
     $validatorMock->shouldReceive('passwordsMatch')->once();
 
-    $rateLimiterMock = Mockery::mock(FOSSBilling\Security\RateLimiter::class);
+    $rateLimiterMock = Mockery::mock(FOSSBilling\Core\Security\RateLimiter::class);
     $rateLimiterMock->shouldReceive('consumeOrThrow')
         ->once()
         ->with('client_signup', Mockery::type('string'))
-        ->andReturn(new FOSSBilling\Security\RateLimitResult('client_signup', false, 5, 4));
+        ->andReturn(new FOSSBilling\Core\Security\RateLimitResult('client_signup', false, 5, 4));
     $rateLimiterMock->shouldReceive('consume')
         ->once()
         ->with('client_signup_email', $data['email'], 0)
-        ->andReturn(new FOSSBilling\Security\RateLimitResult('client_signup_email', false, 5, 5));
-
-    $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
-    $toolsMock->shouldReceive('validateAndSanitizeEmail')->once()->andReturn($data['email']);
+        ->andReturn(new FOSSBilling\Core\Security\RateLimitResult('client_signup_email', false, 5, 5));
 
     $di = container();
     $di['mod_config'] = $di->protect(fn ($name): array => ['disable_signup' => false]);
     $di['validator'] = $validatorMock;
     $di['rate_limiter'] = $rateLimiterMock;
-    $di['tools'] = $toolsMock;
 
     $guestClient->setDi($di);
     $guestClient->setService($serviceMock);
 
     expect(fn (): bool => $guestClient->create($data))
-        ->toThrow(FOSSBilling\InformationException::class, 'Invalid country code: ZZ');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Invalid country code: ZZ');
 });
 
 test('create returns generic success when a concurrent signup wins the email race', function (): void {
@@ -273,32 +258,28 @@ test('create returns generic success when a concurrent signup wins the email rac
     // Fallback login attempt fails like an ordinary bad-password login.
     $serviceMock->shouldReceive('authorizeClient')->once()->andReturn(null);
 
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Core\Validation\Validator::class);
     $validatorMock->shouldReceive('isPasswordStrong')->once();
     $validatorMock->shouldReceive('passwordsMatch')->once();
 
-    $rateLimiterMock = Mockery::mock(FOSSBilling\Security\RateLimiter::class);
+    $rateLimiterMock = Mockery::mock(FOSSBilling\Core\Security\RateLimiter::class);
     $rateLimiterMock->shouldReceive('consumeOrThrow')
         ->once()
         ->with('client_signup', Mockery::type('string'))
-        ->andReturn(new FOSSBilling\Security\RateLimitResult('client_signup', false, 5, 4));
+        ->andReturn(new FOSSBilling\Core\Security\RateLimitResult('client_signup', false, 5, 4));
     $rateLimiterMock->shouldReceive('consume')
         ->once()
         ->with('client_signup_email', $data['email'], 0)
-        ->andReturn(new FOSSBilling\Security\RateLimitResult('client_signup_email', false, 5, 5));
+        ->andReturn(new FOSSBilling\Core\Security\RateLimitResult('client_signup_email', false, 5, 5));
     $rateLimiterMock->shouldReceive('consume')
         ->once()
         ->with('client_signup_email', $data['email'])
-        ->andReturn(new FOSSBilling\Security\RateLimitResult('client_signup_email', false, 5, 4));
-
-    $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
-    $toolsMock->shouldReceive('validateAndSanitizeEmail')->atLeast()->once()->andReturn($data['email']);
+        ->andReturn(new FOSSBilling\Core\Security\RateLimitResult('client_signup_email', false, 5, 4));
 
     $di = container();
     $di['mod_config'] = $di->protect(fn ($name): array => ['disable_signup' => false]);
     $di['validator'] = $validatorMock;
     $di['rate_limiter'] = $rateLimiterMock;
-    $di['tools'] = $toolsMock;
     $di['event_dispatcher'] = clientGuestTestEventDispatcher();
 
     $guestClient->setDi($di);
@@ -325,28 +306,24 @@ test('create rethrows the constraint violation when the email is still free afte
     $serviceMock->shouldReceive('guestCreateClient')->once()->andThrow($duplicateKeyException);
     $serviceMock->shouldNotReceive('authorizeClient');
 
-    $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
+    $validatorMock = Mockery::mock(FOSSBilling\Core\Validation\Validator::class);
     $validatorMock->shouldReceive('isPasswordStrong')->once();
     $validatorMock->shouldReceive('passwordsMatch')->once();
 
-    $rateLimiterMock = Mockery::mock(FOSSBilling\Security\RateLimiter::class);
+    $rateLimiterMock = Mockery::mock(FOSSBilling\Core\Security\RateLimiter::class);
     $rateLimiterMock->shouldReceive('consumeOrThrow')
         ->once()
         ->with('client_signup', Mockery::type('string'))
-        ->andReturn(new FOSSBilling\Security\RateLimitResult('client_signup', false, 5, 4));
+        ->andReturn(new FOSSBilling\Core\Security\RateLimitResult('client_signup', false, 5, 4));
     $rateLimiterMock->shouldReceive('consume')
         ->once()
         ->with('client_signup_email', $data['email'], 0)
-        ->andReturn(new FOSSBilling\Security\RateLimitResult('client_signup_email', false, 5, 5));
-
-    $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
-    $toolsMock->shouldReceive('validateAndSanitizeEmail')->once()->andReturn($data['email']);
+        ->andReturn(new FOSSBilling\Core\Security\RateLimitResult('client_signup_email', false, 5, 5));
 
     $di = container();
     $di['mod_config'] = $di->protect(fn ($name): array => ['disable_signup' => false]);
     $di['validator'] = $validatorMock;
     $di['rate_limiter'] = $rateLimiterMock;
-    $di['tools'] = $toolsMock;
 
     $guestClient->setDi($di);
     $guestClient->setService($serviceMock);
@@ -372,7 +349,7 @@ test('create throws exception when signup is disabled', function (): void {
     $guestClient->setDi($di);
 
     $guestClient->create($data);
-})->throws(FOSSBilling\Exception::class, 'New registrations are temporarily disabled');
+})->throws(FOSSBilling\Core\Exception\BaseException::class, 'New registrations are temporarily disabled');
 
 test('create throws exception when passwords do not match', function (): void {
     $guestClient = apiEndpoint(new Box\Mod\Client\Api\Guest());
@@ -391,7 +368,7 @@ test('create throws exception when passwords do not match', function (): void {
     $guestClient->setDi($di);
 
     $guestClient->create($data);
-})->throws(FOSSBilling\Exception::class, 'Passwords do not match.');
+})->throws(FOSSBilling\Core\Exception\BaseException::class, 'Passwords do not match.');
 
 test('login returns array', function (): void {
     $guestClient = apiEndpoint(new Box\Mod\Client\Api\Guest());
@@ -415,9 +392,9 @@ test('login returns array', function (): void {
 
     $eventDispatcher = clientGuestTestEventDispatcher();
 
-    $sessionMock = Mockery::mock(FOSSBilling\Session::class);
+    $sessionMock = Mockery::mock(FOSSBilling\Core\Session::class);
     $sessionMock->shouldReceive('set')->atLeast()->once();
-    $sessionMock->shouldReceive('getId')->atLeast()->once();
+    $sessionMock->shouldReceive('getId')->atLeast()->once()->andReturn('test_session_id');
     $sessionMock->shouldReceive('regenerateId')->atLeast()->once();
     $sessionMock->shouldReceive('delete')->atLeast()->once();
 
@@ -425,14 +402,10 @@ test('login returns array', function (): void {
     $cartServiceMock->shouldReceive('transferFromOtherSession')->atLeast()->once()
         ->andReturn(true);
 
-    $toolsStub = Mockery::mock(FOSSBilling\Tools::class);
-    $toolsStub->shouldReceive('validateAndSanitizeEmail')->atLeast()->once()->with($data['email'], true, false)->andReturn($data['email']);
-
     $di = container();
     $di['event_dispatcher'] = $eventDispatcher;
     $di['session'] = $sessionMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['tools'] = $toolsStub;
     $di['mod_service'] = $di->protect(moduleService(['cart' => $cartServiceMock]));
 
     $guestClient->setDi($di);
@@ -452,19 +425,16 @@ test('failed client login dispatches only IP metadata', function (): void {
     $guestClient = apiEndpoint(new Box\Mod\Client\Api\Guest());
     $service = Mockery::mock(Box\Mod\Client\Service::class);
     $service->shouldReceive('authorizeClient')->once()->with('test@example.com', 'private-password')->andReturn(null);
-    $tools = Mockery::mock(FOSSBilling\Tools::class);
-    $tools->shouldReceive('validateAndSanitizeEmail')->once()->with('test@example.com', true, false)->andReturn('test@example.com');
     $eventDispatcher = clientGuestTestEventDispatcher();
 
     $di = container();
     $di['event_dispatcher'] = $eventDispatcher;
-    $di['tools'] = $tools;
     $guestClient->setDi($di);
     $guestClient->setService($service);
     $guestClient->setIp('192.0.2.2');
 
     expect(fn () => $guestClient->login(['email' => 'test@example.com', 'password' => 'private-password']))
-        ->toThrow(FOSSBilling\InformationException::class, 'Please check your login details.');
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Please check your login details.');
 
     expect($eventDispatcher->dispatched)->toHaveCount(2);
     expect($eventDispatcher->dispatched[0])->toEqual(new Box\Mod\Client\Event\BeforeClientLoginEvent('192.0.2.2'));
@@ -492,15 +462,11 @@ test('resetPassword returns true with new flow', function (): void {
     $serviceMock->shouldReceive('createPasswordResetRequestForClient')->atLeast()->once()->andReturn('hashedString');
     $serviceMock->shouldReceive('sendPasswordResetRequestEmailForClient')->atLeast()->once();
 
-    $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
-    $toolsMock->shouldReceive('validateAndSanitizeEmail')->atLeast()->once()->andReturn($data['email']);
-
     $di = container();
     $di['em'] = $em;
     $di['event_dispatcher'] = $eventDispatcher;
     $di['mod_service'] = $di->protect(moduleService(['client' => $serviceMock]));
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['tools'] = $toolsMock;
 
     $guestClient->setDi($di);
     $guestClient->setIp('192.0.2.3');
@@ -532,10 +498,6 @@ test('resetPassword returns true when email not found', function (): void {
     $di['em'] = $em;
     $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
-
-    $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
-    $toolsMock->shouldReceive('validateAndSanitizeEmail')->atLeast()->once()->andReturn($data['email']);
-    $di['tools'] = $toolsMock;
 
     $guestClient->setDi($di);
     $guestClient->setIp('192.0.2.4');
@@ -579,7 +541,7 @@ test('updatePassword returns true', function (): void {
 
     $eventDispatcher = clientGuestTestEventDispatcher();
 
-    $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
+    $passwordMock = Mockery::mock(FOSSBilling\Core\PasswordManager::class);
     $passwordMock->shouldReceive('hashIt')->atLeast()->once();
 
     $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);
@@ -624,7 +586,7 @@ test('updatePassword throws exception when reset not found', function (): void {
     $guestClient->setIp('192.0.2.6');
 
     expect(fn () => $guestClient->update_password($data))
-        ->toThrow(FOSSBilling\Exception::class, 'The link has expired or you have already reset your password.');
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'The link has expired or you have already reset your password.');
 
     expect($eventDispatcher->dispatched)->toHaveCount(1);
     expect($eventDispatcher->dispatched[0])->toEqual(new Box\Mod\Client\Event\BeforeClientPasswordResetConfirmationEvent('192.0.2.6'));

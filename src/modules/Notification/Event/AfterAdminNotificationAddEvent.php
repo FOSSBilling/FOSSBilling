@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Notification\Event;
 
-use FOSSBilling\Events\Event;
+use FOSSBilling\Core\Events\Event;
 
 final class AfterAdminNotificationAddEvent extends Event
 {

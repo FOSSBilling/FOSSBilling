@@ -22,8 +22,8 @@ use Box\Mod\Cron\Event\BeforeAdminCronRunEvent;
 use Box\Mod\Staff\Event\AfterAdminLoginEvent;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Types\Types;
-use FOSSBilling\InjectionAwareInterface;
-use FOSSBilling\SortOptions;
+use FOSSBilling\Core\Container\InjectionAwareInterface;
+use FOSSBilling\Core\SortOptions;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 
 class Service implements InjectionAwareInterface
@@ -249,7 +249,7 @@ class Service implements InjectionAwareInterface
         )->fetchAssociative();
 
         if ($client === false) {
-            throw new \FOSSBilling\Exception('Client not found');
+            throw new \FOSSBilling\Core\Exception\BaseException('Client not found');
         }
 
         return [

@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Antispam\Api;
 
-class Guest extends \FOSSBilling\Api\AbstractApi
+class Guest extends \FOSSBilling\Core\Api\AbstractApi
 {
     /**
      * Returns recaptcha configuration info.

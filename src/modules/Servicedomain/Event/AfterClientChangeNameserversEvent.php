@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicedomain\Event;
 
-use FOSSBilling\Events\Event;
+use FOSSBilling\Core\Events\Event;
 
 /** Dispatched after nameservers have been persisted following the registrar update. */
 final class AfterClientChangeNameserversEvent extends Event

@@ -16,8 +16,8 @@ use Doctrine\DBAL\Platforms\PostgreSQLPlatform;
 use Doctrine\DBAL\Platforms\SQLitePlatform;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
-use FOSSBilling\Doctrine\RowLock;
-use FOSSBilling\SortOptions;
+use FOSSBilling\Core\Doctrine\RowLock;
+use FOSSBilling\Core\SortOptions;
 
 class PromoRedemptionRepository extends EntityRepository
 {
@@ -146,7 +146,7 @@ class PromoRedemptionRepository extends EntityRepository
         $connection = $this->getEntityManager()->getConnection();
 
         if (!$connection->isTransactionActive()) {
-            throw new \FOSSBilling\Exception('Promo redemption cannot be locked outside of a transaction.');
+            throw new \FOSSBilling\Core\Exception\BaseException('Promo redemption cannot be locked outside of a transaction.');
         }
 
         $platform = $connection->getDatabasePlatform();
