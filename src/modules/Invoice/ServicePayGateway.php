@@ -409,6 +409,27 @@ class ServicePayGateway implements InjectionAwareInterface
         return $model->isAllowSingle();
     }
 
+    /**
+     * Whether the gateway settles payments through explicit admin approval
+     * instead of a verifiable gateway callback.
+     *
+     * Resolved from the adapter class without instantiating it, so a
+     * misconfigured automated gateway (missing API keys) still reports its
+     * capability. Unknown or legacy adapters default to automated handling.
+     */
+    public static function isManualApprovalGateway(?string $code): bool
+    {
+        if ($code === null || $code === '') {
+            return false;
+        }
+        $class = "Payment_Adapter_{$code}";
+        if (!class_exists($class) || !is_callable([$class, 'requiresManualApproval'])) {
+            return false;
+        }
+
+        return (bool) $class::requiresManualApproval();
+    }
+
     public function getPaymentAdapter(PayGateway $pg, ?Invoice $model = null, $optional = []): object
     {
         $config = json_decode($pg->getConfig() ?? '', true) ?? [];

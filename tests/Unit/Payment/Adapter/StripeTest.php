@@ -2457,3 +2457,26 @@ test('checkout buyer details are encoded as JS string literals', function (): vo
         ->and(json_decode($encoded))->toBe("O'Brien & <Sons>")
         ->and($encoded)->not->toContain('</script>');
 });
+
+describe('processTransaction payload handling', function (): void {
+    test('rejects an empty payload with a clear error instead of stalling', function (): void {
+        $tx = createEntity(Transaction::class, ['id' => 7]);
+
+        ['em' => $em, 'txRepo' => $txRepo] = buildEntityManagerMocks();
+        $txRepo->shouldReceive('find')->with(7)->andReturn($tx);
+
+        $di = container();
+        $di['em'] = $em;
+        $this->adapter->setDi($di);
+
+        $apiAdmin = (new ReflectionClass(FOSSBilling\Api\Proxy::class))->newInstanceWithoutConstructor();
+
+        try {
+            $this->adapter->processTransaction($apiAdmin, 7, [], 1);
+            expect(false)->toBeTrue('empty Stripe payloads must throw');
+        } catch (Payment_Exception $e) {
+            expect($e->getMessage())->toBe('Stripe payment data is missing.')
+                ->and($e->getCode())->toBe(7020);
+        }
+    });
+});

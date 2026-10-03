@@ -56,7 +56,11 @@
                         {% if transaction.error %}
                             <div class="px-3 pt-3">
                                 <strong class="text-danger">{{ transaction.error_code }} - {{ transaction.error }}</strong>
-                                <p class="mb-0">{{ 'If you are sure that this transaction is valid you can update transaction details in &quot;Manage&quot; tab and try processing transaction again'|trans }}</p>
+                                {% if transaction.requires_manual_approval %}
+                                    <p class="mb-0">{{ 'If you confirmed this offline payment is valid, approve it to credit the client and mark the invoice paid.'|trans }}</p>
+                                {% else %}
+                                    <p class="mb-0">{{ 'If you are sure that this transaction is valid you can update transaction details in &quot;Manage&quot; tab and try processing transaction again'|trans }}</p>
+                                {% endif %}
                             </div>
                         {% endif %}
 
@@ -135,19 +139,33 @@
                     {% endblock %}
 
                     {% block summary_actions %}
-                        <a class="btn btn-primary" href="{{ 'invoice/transaction_process'|api_url(query: { 'id': transaction.id }) }}" {{ fb_api_link({reload: true}) }}>
-                            <svg class="icon" width="24" height="24">
-                                <use href="#refresh" />
-                            </svg>
-                            <span>{{ 'Process'|trans }}</span>
-                        </a>
-                        <a class="btn btn-danger" href="{{ 'invoice/transaction_delete'|api_url(query: { 'id': transaction.id }) }}"
-                            {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'invoice/transactions'|url}) }}>
-                            <svg class="icon" width="24" height="24">
-                                <use href="#trash" />
-                            </svg>
-                            <span>{{ 'Delete'|trans }}</span>
-                        </a>
+                        {% if transaction.requires_manual_approval %}
+                            {% if transaction.status in ['received', 'error', 'approved'] %}
+                                <p class="text-muted w-100 mb-0">{{ 'Offline payment — approve only after the funds arrived. Approving credits the client and marks the invoice paid.'|trans }}</p>
+                                <a class="btn btn-primary" href="{{ 'invoice/transaction_approve'|api_url(query: { 'id': transaction.id }) }}" {{ fb_api_link({modal: {type: 'confirm', title: 'Approve this payment?'|trans}, reload: true}) }}>
+                                    <svg class="icon" width="24" height="24">
+                                        <use href="#check" />
+                                    </svg>
+                                    <span>{{ 'Approve'|trans }}</span>
+                                </a>
+                            {% endif %}
+                        {% elseif transaction.status in ['received', 'error'] %}
+                            <a class="btn btn-primary" href="{{ 'invoice/transaction_process'|api_url(query: { 'id': transaction.id }) }}" {{ fb_api_link({reload: true}) }}>
+                                <svg class="icon" width="24" height="24">
+                                    <use href="#refresh" />
+                                </svg>
+                                <span>{{ 'Process'|trans }}</span>
+                            </a>
+                        {% endif %}
+                        {% if transaction.status != 'processed' %}
+                            <a class="btn btn-danger" href="{{ 'invoice/transaction_delete'|api_url(query: { 'id': transaction.id }) }}"
+                                {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'invoice/transactions'|url}) }}>
+                                <svg class="icon" width="24" height="24">
+                                    <use href="#trash" />
+                                </svg>
+                                <span>{{ 'Delete'|trans }}</span>
+                            </a>
+                        {% endif %}
                     {% endblock %}
                 {% endembed %}
             </div>
@@ -181,28 +199,15 @@
                     {% endembed %}
                     {% embed 'partial_admin_form_card.html.twig' with {
                         title: 'Transaction Processing Information'|trans,
-                        subtitle: 'Define how this transaction should be processed and validated.'|trans,
+                        subtitle: 'Define how this transaction should be processed.'|trans,
                         card_class: 'mb-4'
                     } %}
                         {% import 'macro_functions.html.twig' as mf %}
                         {% block form_content %}
                             <div class="row g-3">
-                                <div class="col-xl-6">
+                                <div class="col-xl-12">
                                     <label class="form-label">{{ 'Payment Gateway'|trans }}</label>
                                     {{ mf.selectbox('gateway_id', admin.invoice_gateway_get_pairs, transaction.gateway_id, 0, 'Select Payment Gateway'|trans) }}
-                                </div>
-                                <div class="col-xl-6">
-                                    <label class="form-label d-block">{{ 'Validate IPN'|trans }}</label>
-                                    <div class="d-flex flex-wrap gap-3">
-                                        <label class="form-check">
-                                            <input class="form-check-input" id="radioValidateIpnYes" type="radio" name="validate_ipn" value="1"{% if transaction.validate_ipn  %} checked{% endif %}>
-                                            <span class="form-check-label">{{ 'Yes'|trans }}</span>
-                                        </label>
-                                        <label class="form-check">
-                                            <input class="form-check-input" id="radioValidateIpnNo" type="radio" name="validate_ipn" value="0"{% if not transaction.validate_ipn %} checked{% endif %}>
-                                            <span class="form-check-label">{{ 'No'|trans }}</span>
-                                        </label>
-                                    </div>
                                 </div>
                             </div>
                         {% endblock %}

@@ -1701,3 +1701,37 @@ describe('PayPal callback invoice binding', function (): void {
             ->and(FOSSBilling\Tools::verifyCallbackSignature(2, 16, $query['sig'] ?? null))->toBeTrue();
     });
 });
+
+describe('processTransaction payload handling', function (): void {
+    test('rejects a missing post payload with a clear error', function (): void {
+        $apiAdmin = Mockery::mock();
+        $apiAdmin->shouldNotReceive('invoice_transaction_get');
+
+        $di = container();
+        $di['em'] = paypalEmMocks();
+
+        try {
+            paypalProcessAdapter($di)->processTransaction($apiAdmin, 42, [], 2);
+            expect(false)->toBeTrue('missing PayPal payloads must throw');
+        } catch (Payment_Exception $e) {
+            expect($e->getMessage())->toBe('PayPal payment data is missing.')
+                ->and($e->getCode())->toBe(7021);
+        }
+    });
+
+    test('rejects a non-array post payload with a clear error', function (): void {
+        $apiAdmin = Mockery::mock();
+        $apiAdmin->shouldNotReceive('invoice_transaction_get');
+
+        $di = container();
+        $di['em'] = paypalEmMocks();
+
+        try {
+            paypalProcessAdapter($di)->processTransaction($apiAdmin, 42, ['post' => 'corrupt'], 2);
+            expect(false)->toBeTrue('corrupt PayPal payloads must throw');
+        } catch (Payment_Exception $e) {
+            expect($e->getMessage())->toBe('PayPal payment data is missing.')
+                ->and($e->getCode())->toBe(7021);
+        }
+    });
+});

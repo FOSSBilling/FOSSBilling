@@ -79,7 +79,7 @@
     <div class="card-header">
         <div>
             <h3 class="card-title">{{ 'Transactions'|trans }}</h3>
-            <p class="card-subtitle">{{ 'Review invoice transactions, filter payment activity, and retry or remove transaction records.'|trans }}</p>
+            <p class="card-subtitle">{{ 'Review invoice transactions, filter payment activity, and approve or retry transaction records.'|trans }}</p>
         </div>
     </div>
 
@@ -215,17 +215,29 @@
                             <use href="#edit" />
                         </svg>
                     </a>
-                    <a class="btn btn-icon" href="{{ 'invoice/transaction_process'|api_url(query: { 'id': tx.id }) }}" title="{{ 'Process Again'|trans }}" {{ fb_api_link({message: 'Processed'|trans}) }}>
-                        <svg class="icon">
-                            <use href="#refresh" />
-                        </svg>
-                    </a>
-                    <a class="btn btn-icon" href="{{ 'invoice/transaction_delete'|api_url(query: { 'id': tx.id }) }}"
-                        {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
-                        <svg class="icon">
-                            <use href="#trash" />
-                        </svg>
-                    </a>
+                    {% if tx.requires_manual_approval %}
+                        {% if tx.status in ['received', 'error', 'approved'] %}
+                            <a class="btn btn-icon" href="{{ 'invoice/transaction_approve'|api_url(query: { 'id': tx.id }) }}" title="{{ 'Approve'|trans }}" {{ fb_api_link({modal: {type: 'confirm', title: 'Approve this payment?'|trans}, reload: true}) }}>
+                                <svg class="icon">
+                                    <use href="#check" />
+                                </svg>
+                            </a>
+                        {% endif %}
+                    {% elseif tx.status in ['received', 'error'] %}
+                        <a class="btn btn-icon" href="{{ 'invoice/transaction_process'|api_url(query: { 'id': tx.id }) }}" title="{{ 'Process Again'|trans }}" {{ fb_api_link({message: 'Processed'|trans}) }}>
+                            <svg class="icon">
+                                <use href="#refresh" />
+                            </svg>
+                        </a>
+                    {% endif %}
+                    {% if tx.status != 'processed' %}
+                        <a class="btn btn-icon" href="{{ 'invoice/transaction_delete'|api_url(query: { 'id': tx.id }) }}"
+                            {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
+                            <svg class="icon">
+                                <use href="#trash" />
+                            </svg>
+                        </a>
+                    {% endif %}
                 </td>
             </tr>
             {% else %}

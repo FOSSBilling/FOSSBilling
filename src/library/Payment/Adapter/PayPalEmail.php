@@ -27,6 +27,11 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
         return $this->di;
     }
 
+    public static function requiresManualApproval(): bool
+    {
+        return false;
+    }
+
     public function __construct(private $config)
     {
         if (!isset($this->config['email'])) {
@@ -79,8 +84,13 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
         return $this->_generateForm($url, $data);
     }
 
-    public function processTransaction($api_admin, $id, $data, $gateway_id): void
+    public function processTransaction($api_admin, int $id, array $data, int $gateway_id): void
     {
+        $post = (isset($data['post']) && is_array($data['post'])) ? $data['post'] : [];
+        if ($post === []) {
+            throw new Payment_Exception('PayPal payment data is missing.', [], 7021);
+        }
+
         if (!Environment::isTesting() && !$this->_isIpnValid($data)) {
             throw new Payment_Exception('IPN is invalid');
         }
@@ -90,9 +100,9 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
         // The invoice binding arrives through a buyer-editable callback URL,
         // so authenticate it before anything below trusts it. Runs outside
         // the test-mode bypass above: the binding must hold in every environment.
-        $verifiedInvoiceId = $this->verifyCallbackBinding($data, (int) $gateway_id, $tx['invoice_id'] ?? null, (int) $id);
+        $verifiedInvoiceId = $this->verifyCallbackBinding($data, $gateway_id, $tx['invoice_id'] ?? null, $id);
 
-        $ipn = $data['post'] ?? [];
+        $ipn = $post;
 
         // PayPal's newer subscription flow uses recurring_payment* names for the
         // same concepts: normalize them once so every path below just works.
@@ -434,9 +444,14 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
     /**
      * Resolve the invoice id from callback data, authenticating the binding.
      * Used by flows that read the invoice from the IPN before processing it.
+     *
+     * @param mixed $data raw callback input, which callers may not have validated yet
      */
     public function getInvoiceId($data): ?int
     {
+        if (!is_array($data)) {
+            return null;
+        }
         $invoiceId = $data['invoice_id'] ?? $data['get']['invoice_id'] ?? null;
         if (empty($invoiceId)) {
             return null;
@@ -570,7 +585,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
         return 'https://www.paypal.com/cgi-bin/webscr';
     }
 
-    private function _isIpnValid($data): bool
+    private function _isIpnValid(array $data): bool
     {
         // use http_raw_post_data instead of post due to encoding
         parse_str((string) $data['http_raw_post_data'], $post);

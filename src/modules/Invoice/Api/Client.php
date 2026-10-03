@@ -131,7 +131,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
         return $this->getDi()['pager']->paginateMappedQuery(
             $qb,
             PaginationOptions::fromArray($data),
-            static fn ($row): array => $transactionService->transactionResultToApiArray($row[0], $row['gateway'] ?? null),
+            static fn ($row): array => $transactionService->transactionResultToApiArray($row[0], $row['gateway'] ?? null, $row['gateway_code'] ?? null),
         );
     }
 

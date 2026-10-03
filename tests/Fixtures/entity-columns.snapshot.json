@@ -755,6 +755,5 @@
     "transaction.txn_id",
     "transaction.txn_status",
     "transaction.type",
-    "transaction.updated_at",
-    "transaction.validate_ipn"
+    "transaction.updated_at"
 ]

@@ -23,6 +23,7 @@ use Box\Mod\Invoice\Event\BeforeAdminTransactionUpdateEvent;
 use Box\Mod\Invoice\Repository\InvoiceRepository;
 use Box\Mod\Invoice\Repository\PayGatewayRepository;
 use Box\Mod\Invoice\Repository\TransactionRepository;
+use Box\Mod\Invoice\ServicePayGateway;
 use Box\Mod\Invoice\ServiceTransaction;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\EventDispatcher\EventDispatcher as SymfonyEventDispatcher;
@@ -95,7 +96,6 @@ test('updates a transaction', function (): void {
         'type' => '',
         'note' => '',
         'status' => '',
-        'validate_ipn' => '',
     ];
     $result = $service->update($transactionModel, $data);
     expect($result)->toBeTrue()
@@ -355,7 +355,6 @@ test('converts a transaction result without database access', function (): void 
         'type' => 'payment',
         'status' => 'processed',
         'ip' => '192.0.2.1',
-        'validate_ipn' => true,
         'error' => null,
         'error_code' => null,
         'note' => 'Test payment',
@@ -370,7 +369,6 @@ test('converts a transaction result without database access', function (): void 
         'gateway' => 'Stripe',
         'amount' => 19.95,
         'status' => 'processed',
-        'validate_ipn' => true,
         'created_at' => '2026-07-19 10:00:00',
         'updated_at' => '2026-07-19 10:01:00',
     ]);
@@ -638,8 +636,9 @@ test('claimForProcessing includes error status in claim query', function (): voi
     expect($result)->toBeTrue()
         ->and($execArgs['bindings'])->toContain(Transaction::STATUS_ERROR)
         ->and($execArgs['bindings'])->toContain(Transaction::STATUS_RECEIVED)
+        ->and($execArgs['bindings'])->toContain(Transaction::STATUS_APPROVED)
         ->and($execArgs['bindings'])->toContain(Transaction::STATUS_PROCESSING)
-        ->and($execArgs['sql'])->toContain('IN (?, ?)')
+        ->and($execArgs['sql'])->toContain('IN (?, ?, ?)')
         ->and($execArgs['sql'])->toContain('"transaction"');
 });
 
@@ -700,4 +699,231 @@ test('markTransactionError does not clobber an already processed transaction', f
     $method->invoke($service, 3, new RuntimeException('late error'));
 
     expect($transactionModel->getStatus())->toBe(Transaction::STATUS_PROCESSED);
+});
+
+test('decodes missing and corrupt IPN payloads to an empty array', function (): void {
+    $service = transactionService();
+    $logger = new Tests\Helpers\TestLogger();
+    $service->getDi()['logger'] = $logger;
+
+    $missing = createEntity(Transaction::class, ['id' => 1]);
+    expect($service->getDecodedIpn($missing))->toBe([]);
+
+    $empty = createEntity(Transaction::class, ['id' => 2]);
+    $empty->setIpn('');
+    expect($service->getDecodedIpn($empty))->toBe([]);
+
+    $corrupt = createEntity(Transaction::class, ['id' => 3]);
+    $corrupt->setIpn('{not-json');
+    expect($service->getDecodedIpn($corrupt))->toBe([]);
+
+    $scalar = createEntity(Transaction::class, ['id' => 4]);
+    $scalar->setIpn('"just-a-string"');
+    expect($service->getDecodedIpn($scalar))->toBe([]);
+
+    $valid = createEntity(Transaction::class, ['id' => 5]);
+    $valid->setIpn(json_encode(['source' => 'ipn', 'get' => []]));
+    expect($service->getDecodedIpn($valid))->toBe(['source' => 'ipn', 'get' => []])
+        ->and($logger->calls)->toHaveCount(2);
+});
+
+test('processTransaction refuses offline gateways without resolving an adapter', function (): void {
+    $gateway = createEntity(PayGateway::class, ['id' => 1]);
+    $gateway->setGateway('Custom');
+    $gateway->setName('Custom');
+
+    // The legacy crash input: a null stored payload.
+    $transactionModel = createEntity(Transaction::class, ['id' => 1]);
+    $transactionModel->setGateway($gateway);
+    $transactionModel->setIpn(null);
+
+    $transactionRepo = Mockery::mock(TransactionRepository::class);
+    $transactionRepo->shouldReceive('find')->with(1)->andReturn($transactionModel);
+
+    $service = transactionService($transactionRepo);
+    $service->getDi()['logger'] = new Tests\Helpers\TestLogger();
+    $di = $service->getDi();
+    $di['mod_service'] = $di->protect(static function (): object {
+        throw new RuntimeException('adapter must not resolve for offline gateways');
+    });
+
+    try {
+        $service->processTransaction(1);
+        expect(false)->toBeTrue('processTransaction must throw for offline gateways');
+    } catch (Payment_Exception $e) {
+        expect($e->getMessage())->toBe('Custom payments must be approved by an administrator.')
+            ->and($e->getCode())->toBe(7002);
+    }
+});
+
+test('processTransaction passes an empty array for a missing IPN payload', function (): void {
+    $gateway = createEntity(PayGateway::class, ['id' => 2]);
+    $gateway->setGateway('Stripe');
+    $gateway->setName('Stripe');
+
+    $transactionModel = createEntity(Transaction::class, ['id' => 2]);
+    $transactionModel->setGateway($gateway);
+    $transactionModel->setIpn(null);
+
+    $adapter = new class {
+        public ?array $seen = null;
+
+        public function processTransaction($api, int $id, array $data, int $gatewayId): bool
+        {
+            $this->seen = $data;
+
+            return true;
+        }
+    };
+
+    $transactionRepo = Mockery::mock(TransactionRepository::class);
+    $transactionRepo->shouldReceive('find')->with(2)->andReturn($transactionModel);
+
+    $payGatewayService = Mockery::mock(ServicePayGateway::class);
+    $payGatewayService->shouldReceive('getPaymentAdapter')->once()->andReturn($adapter);
+
+    $service = transactionService($transactionRepo);
+    $di = $service->getDi();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['api_system'] = new stdClass();
+    $di['mod_service'] = $di->protect(static fn (): object => $payGatewayService);
+
+    expect($service->processTransaction(2))->toBeTrue()
+        ->and($adapter->seen)->toBe([]);
+});
+
+test('approveTransaction settles an offline payment', function (): void {
+    $gateway = createEntity(PayGateway::class, ['id' => 1]);
+    $gateway->setGateway('Custom');
+    $gateway->setName('Custom');
+
+    $transactionModel = createEntity(Transaction::class, ['id' => 5]);
+    $transactionModel->setGateway($gateway);
+    $transactionModel->setStatus(Transaction::STATUS_RECEIVED);
+    $transactionModel->setError('stale error');
+    $transactionModel->setErrorCode(9999);
+
+    $adapter = new readonly class($transactionModel) {
+        public function __construct(private object $tx)
+        {
+        }
+
+        public function approveTransaction($api, int $id, int $gatewayId): bool
+        {
+            $this->tx->setStatus(Transaction::STATUS_PROCESSED);
+
+            return true;
+        }
+    };
+
+    $payGatewayService = Mockery::mock(ServicePayGateway::class);
+    $payGatewayService->shouldReceive('getPaymentAdapter')->once()->andReturn($adapter);
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('flush')->atLeast()->once();
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('quoteSingleIdentifier')->byDefault()->with('transaction')->andReturn('"transaction"');
+    $connection->shouldReceive('executeStatement')->once()->andReturn(1);
+    $em->shouldReceive('getConnection')->andReturn($connection);
+
+    $events = [];
+    $dispatcher = new SymfonyEventDispatcher();
+    $dispatcher->addListener(AfterAdminTransactionProcessEvent::class, static function (AfterAdminTransactionProcessEvent $event) use (&$events): void {
+        $events[] = $event;
+    });
+
+    $di = container();
+    $di['em'] = $em;
+    $di['api_system'] = new stdClass();
+    $di['event_dispatcher'] = $dispatcher;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod_service'] = $di->protect(static fn (): object => $payGatewayService);
+
+    $service = new ServiceTransaction();
+    $service->setDi($di);
+
+    expect($service->approveTransaction($transactionModel))->toBeTrue()
+        ->and($transactionModel->getStatus())->toBe(Transaction::STATUS_PROCESSED)
+        ->and($transactionModel->getError())->toBeNull()
+        ->and($transactionModel->getErrorCode())->toBeNull()
+        ->and($events)->toHaveCount(1)
+        ->and($events[0]->transactionId)->toBe(5);
+});
+
+test('approveTransaction refuses automated gateways', function (): void {
+    $gateway = createEntity(PayGateway::class, ['id' => 2]);
+    $gateway->setGateway('Stripe');
+
+    $transactionModel = createEntity(Transaction::class, ['id' => 6]);
+    $transactionModel->setGateway($gateway);
+
+    $service = transactionService();
+
+    expect(fn () => $service->approveTransaction($transactionModel))
+        ->toThrow(FOSSBilling\Exception::class, 'does not require manual approval');
+});
+
+test('processReceivedATransactions skips offline gateways', function (): void {
+    $gateway = createEntity(PayGateway::class, ['id' => 1]);
+    $gateway->setGateway('Custom');
+
+    $transactionModel = createEntity(Transaction::class, ['id' => 1]);
+    $transactionModel->setGateway($gateway);
+
+    $transactionRepository = Mockery::mock(TransactionRepository::class);
+    $transactionRepository->shouldReceive('find')->once()->with(1)->andReturn($transactionModel);
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($transactionRepository);
+
+    $di = container();
+    $di['em'] = $em;
+    $logger = new Tests\Helpers\TestLogger();
+    $di['logger'] = $logger;
+
+    $service = Mockery::mock(ServiceTransaction::class)->makePartial();
+    $service->shouldReceive('getReceived')->once()->andReturn([['id' => 1]]);
+    $service->shouldNotReceive('preProcessTransaction');
+    $service->setDi($di);
+
+    expect($service->processReceivedATransactions())->toBeTrue()
+        ->and($logger->calls)->toContain([
+            'method' => 'info',
+            'params' => ['Skipped processing transaction #{id}: manual approval required', ['id' => 1]],
+        ]);
+});
+
+test('converts to api array with an invalid ipn payload', function (): void {
+    $service = transactionService();
+    $service->getDi()['logger'] = new Tests\Helpers\TestLogger();
+
+    $transactionModel = createEntity(Transaction::class, ['id' => 7]);
+    $transactionModel->setIpn('{not-json');
+
+    $result = $service->toApiArray($transactionModel, true);
+    expect($result['ipn'])->toBe([]);
+});
+
+test('exposes gateway capability flags in api arrays', function (): void {
+    $service = transactionService();
+
+    $customGateway = createEntity(PayGateway::class, ['id' => 1]);
+    $customGateway->setGateway('Custom');
+    $customGateway->setName('Custom');
+    $customTx = createEntity(Transaction::class, ['id' => 8]);
+    $customTx->setGateway($customGateway);
+
+    $result = $service->toApiArray($customTx, false);
+    expect($result['gateway_code'])->toBe('Custom')
+        ->and($result['requires_manual_approval'])->toBeTrue();
+
+    $stripeGateway = createEntity(PayGateway::class, ['id' => 2]);
+    $stripeGateway->setGateway('Stripe');
+    $stripeGateway->setName('Stripe');
+    $stripeTx = createEntity(Transaction::class, ['id' => 9]);
+    $stripeTx->setGateway($stripeGateway);
+
+    $listRow = $service->transactionResultToApiArray($stripeTx, 'Stripe', 'Stripe');
+    expect($listRow['gateway_code'])->toBe('Stripe')
+        ->and($listRow['requires_manual_approval'])->toBeFalse();
 });
