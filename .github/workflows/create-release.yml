@@ -13,7 +13,6 @@ on:
       target_ref:
         description: 'Git ref to build and tag'
         required: true
-        default: main
         type: string
       draft:
         description: 'Create as a draft release'
@@ -250,11 +249,20 @@ jobs:
               --repo "${REPOSITORY}" \
               --clobber
 
+            # Reconcile the target too: a pre-existing draft (for example one
+            # from release-drafter) can keep the wrong branch. GitHub applies
+            # target_commitish only while the tag does not exist.
+            edit_args=(
+              "${RELEASE_VERSION}"
+              --repo "${REPOSITORY}"
+              --target "${TARGET_REF}"
+            )
+
             if [[ "${RELEASE_NOTES}" != "none" ]]; then
-              gh release edit "${RELEASE_VERSION}" \
-                --repo "${REPOSITORY}" \
-                --notes-file release-notes.md
+              edit_args+=(--notes-file release-notes.md)
             fi
+
+            gh release edit "${edit_args[@]}"
 
             echo "operation=updated" >> "${GITHUB_OUTPUT}"
             exit 0
