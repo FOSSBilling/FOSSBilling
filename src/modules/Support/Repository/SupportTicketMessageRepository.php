@@ -39,7 +39,7 @@ class SupportTicketMessageRepository extends EntityRepository
         return $this->createQueryBuilder('m')
             ->andWhere('m.ticket = :tid')
             ->setParameter('tid', $ticketId)
-            ->orderBy('m.id', 'ASC')
+            ->orderBy('m.id', \SortDirection::Ascending)
             ->getQuery()
             ->getResult();
     }
@@ -63,7 +63,7 @@ class SupportTicketMessageRepository extends EntityRepository
         return $this->createQueryBuilder('m')
             ->andWhere('m.ticket = :tid')
             ->setParameter('tid', $ticketId)
-            ->orderBy('m.id', 'ASC')
+            ->orderBy('m.id', \SortDirection::Ascending)
             ->setMaxResults(1)
             ->getQuery()
             ->getOneOrNullResult();

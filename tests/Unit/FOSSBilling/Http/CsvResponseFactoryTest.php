@@ -11,13 +11,24 @@
 declare(strict_types=1);
 
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Platforms\MySQLPlatform;
 use FOSSBilling\Http\CsvResponseFactory;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+
+function getStreamedCsvContent(StreamedResponse $response): string
+{
+    ob_start();
+    $response->sendContent();
+
+    return (string) ob_get_clean();
+}
 
 test('CSV factory strips pass, salt, api_token, hash, and config from numeric-array headers', function (): void {
     $connection = Mockery::mock(Connection::class);
-    $connection->shouldReceive('fetchAllAssociative')
-        ->with('SELECT * FROM `client`', [])
-        ->andReturn([
+    $connection->shouldReceive('getDatabasePlatform')->once()->andReturn(new MySQLPlatform());
+    $connection->shouldReceive('iterateAssociative')
+        ->with('SELECT * FROM `client`')
+        ->andReturn(new ArrayIterator([
             [
                 'id' => 1,
                 'email' => 'client@example.com',
@@ -28,11 +39,11 @@ test('CSV factory strips pass, salt, api_token, hash, and config from numeric-ar
                 'config' => '{"password":"leaked-config"}',
                 'status' => 'active',
             ],
-        ]);
+        ]));
 
     $factory = new CsvResponseFactory($connection);
     $response = $factory->create('client', 'clients.csv', ['id', 'email', 'pass', 'salt', 'api_token', 'hash', 'config', 'status']);
-    $content = $response->getContent();
+    $content = getStreamedCsvContent($response);
 
     expect($content)->toContain('id')
         ->and($content)->toContain('email')
@@ -51,21 +62,12 @@ test('CSV factory strips pass, salt, api_token, hash, and config from numeric-ar
 
 test('CSV factory does not leak all columns when every requested header is sensitive', function (): void {
     $connection = Mockery::mock(Connection::class);
-    $connection->shouldReceive('fetchAllAssociative')
-        ->with('SELECT * FROM `client`', [])
-        ->andReturn([
-            [
-                'id' => 1,
-                'email' => 'client@example.com',
-                'pass' => 'leaked-hash',
-                'salt' => 'leaked-salt',
-                'api_token' => 'leaked-token',
-            ],
-        ]);
+    $connection->shouldReceive('getDatabasePlatform')->once()->andReturn(new MySQLPlatform());
+    $connection->shouldNotReceive('iterateAssociative');
 
     $factory = new CsvResponseFactory($connection);
     $response = $factory->create('client', 'clients.csv', ['pass', 'salt', 'api_token']);
-    $content = $response->getContent();
+    $content = getStreamedCsvContent($response);
 
     expect($content)->not->toContain('leaked-hash')
         ->and($content)->not->toContain('leaked-salt')
@@ -75,9 +77,10 @@ test('CSV factory does not leak all columns when every requested header is sensi
 
 test('CSV factory exports all non-sensitive columns when no headers are specified', function (): void {
     $connection = Mockery::mock(Connection::class);
-    $connection->shouldReceive('fetchAllAssociative')
-        ->with('SELECT * FROM `client`', [])
-        ->andReturn([
+    $connection->shouldReceive('getDatabasePlatform')->once()->andReturn(new MySQLPlatform());
+    $connection->shouldReceive('iterateAssociative')
+        ->with('SELECT * FROM `client`')
+        ->andReturn(new ArrayIterator([
             [
                 'id' => 1,
                 'email' => 'client@example.com',
@@ -86,11 +89,11 @@ test('CSV factory exports all non-sensitive columns when no headers are specifie
                 'api_token' => 'leaked-token',
                 'status' => 'active',
             ],
-        ]);
+        ]));
 
     $factory = new CsvResponseFactory($connection);
     $response = $factory->create('client', 'clients.csv');
-    $content = $response->getContent();
+    $content = getStreamedCsvContent($response);
 
     expect($content)->toContain('id')
         ->and($content)->toContain('email')
@@ -101,4 +104,23 @@ test('CSV factory exports all non-sensitive columns when no headers are specifie
         ->and($content)->not->toContain('leaked-hash')
         ->and($content)->not->toContain('leaked-salt')
         ->and($content)->not->toContain('leaked-token');
+});
+
+test('CSV factory writes values in requested header order and preserves missing columns', function (): void {
+    $connection = Mockery::mock(Connection::class);
+    $connection->shouldReceive('getDatabasePlatform')->once()->andReturn(new MySQLPlatform());
+    $connection->shouldReceive('iterateAssociative')
+        ->with('SELECT * FROM `client`')
+        ->andReturn(new ArrayIterator([
+            [
+                'id' => 1,
+                'email' => 'client@example.com',
+                'status' => 'active',
+            ],
+        ]));
+
+    $factory = new CsvResponseFactory($connection);
+    $response = $factory->create('client', 'clients.csv', ['status', 'email', 'missing']);
+
+    expect(getStreamedCsvContent($response))->toBe("status,email,missing\nactive,client@example.com,\n");
 });

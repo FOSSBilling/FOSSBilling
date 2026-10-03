@@ -71,17 +71,17 @@
                 </form>
             </section>
             <div class="table-responsive">
-                <table class="table card-table table-vcenter table-striped text-nowrap sortable">
+                <table class="table card-table table-vcenter table-striped text-nowrap">
                     <thead>
                         <tr>
-                            <th class="w-1 no-sort">
+                            <th class="w-1">
                                 <input type="checkbox" class="form-check-input m-0 align-middle batch-delete-master-checkbox">
                             </th>
-                            <th class="w-1">#</th>
-                            <th>{{ 'Title'|trans }}</th>
-                            <th>{{ 'Active'|trans }}</th>
-                            <th>{{ 'Date'|trans }}</th>
-                            <th class="w-1 no-sort"></th>
+                            {{ include('partial_sortable_th.html.twig', { 'label': '#'|trans, 'sort_key': 'id', 'url': 'news/index', 'th_class': 'w-1', 'default_sort': 'created_at', 'default_direction': 'DESC' }) }}
+                            {{ include('partial_sortable_th.html.twig', { 'label': 'Title'|trans, 'sort_key': 'title', 'url': 'news/index', 'default_sort': 'created_at', 'default_direction': 'DESC' }) }}
+                            {{ include('partial_sortable_th.html.twig', { 'label': 'Active'|trans, 'sort_key': 'status', 'url': 'news/index', 'default_sort': 'created_at', 'default_direction': 'DESC' }) }}
+                            {{ include('partial_sortable_th.html.twig', { 'label': 'Date'|trans, 'sort_key': 'created_at', 'url': 'news/index', 'default_sort': 'created_at', 'default_direction': 'DESC' }) }}
+                            <th class="w-1"></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -162,7 +162,7 @@
                                 <div class="col-12">
                                     <label class="form-label" for="new-announcement-content">{{ 'Content'|trans }}</label>
                                     <textarea class="editor-textarea" id="new-announcement-content" name="content" rows="10">{{ request.content }}</textarea>
-                                    <small class="mt-2 form-hint">{{ 'If the text is very long you can use <strong>&lt;!--more--&gt;</strong> tag. Inserting this tag within the post will create and excerpt of text (before the tag) to be displayed in posts list. Users will be able to see whole content when they click on "Read more" button.'|trans|raw }}</small>
+                                    <small class="mt-2 form-text">{{ 'If the text is very long you can use <strong>&lt;!--more--&gt;</strong> tag. Inserting this tag within the post will create and excerpt of text (before the tag) to be displayed in posts list. Users will be able to see whole content when they click on "Read more" button.'|trans|raw }}</small>
                                 </div>
                             </div>
                         </section>
@@ -185,7 +185,7 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
     }
 
-    const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+    const modal = tabler.Modal.getOrCreateInstance(modalElement);
     if (window.location.hash === '#tab-new') {
         modal.show();
     }

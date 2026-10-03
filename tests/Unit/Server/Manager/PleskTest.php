@@ -2,6 +2,10 @@
 
 declare(strict_types=1);
 
+use PleskX\Api\Client;
+use PleskX\Api\Operator\Session;
+use Symfony\Component\HttpFoundation\Request;
+
 function invokePleskCreateSubscriptionProps(Server_Manager_Plesk $manager, Server_Account $account, string $action): array
 {
     $reflection = new ReflectionClass($manager);
@@ -64,6 +68,16 @@ test('createSubscriptionProps omits htype from gen_setup for the set action', fu
     expect($props['set']['values']['gen_setup'])->not->toHaveKey('htype');
 });
 
+test('createSubscriptionProps only sends the FTP password when creating a subscription', function (): void {
+    $addProps = invokePleskCreateSubscriptionProps($this->manager, $this->account, 'add');
+    $setProps = invokePleskCreateSubscriptionProps($this->manager, $this->account, 'set');
+    $addHostingProperties = array_column($addProps['add']['hosting']['vrt_hst']['property'], 'value', 'name');
+    $setHostingProperties = array_column($setProps['set']['values']['hosting']['vrt_hst']['property'], 'value', 'name');
+
+    expect($addHostingProperties['ftp_password'])->toBe('secret')
+        ->and($setHostingProperties)->not->toHaveKey('ftp_password');
+});
+
 test('createSubscriptionProps uses custom package limits and permissions', function (): void {
     $this->account->getPackage()->setCustomValues([
         'aftp' => 'true',
@@ -106,4 +120,33 @@ test('createSubscriptionProps does not send plan-name on updates, since webspace
     $props = invokePleskCreateSubscriptionProps($this->manager, $this->account, 'set');
 
     expect($props['set']['values'])->not->toHaveKey('plan-name');
+});
+
+test('getLoginUrl passes the trusted client IP to Plesk session creation', function (): void {
+    $originalServer = $_SERVER;
+    $originalTrustedProxies = Request::getTrustedProxies();
+    $originalTrustedHeaderSet = Request::getTrustedHeaderSet();
+
+    try {
+        $_SERVER['REMOTE_ADDR'] = '10.0.0.2';
+        $_SERVER['HTTP_X_FORWARDED_FOR'] = '8.8.8.8';
+        Request::setTrustedProxies(['10.0.0.2'], Request::HEADER_X_FORWARDED_FOR);
+
+        $session = Mockery::mock(Session::class);
+        $session->shouldReceive('create')
+            ->once()
+            ->with('example', '8.8.8.8')
+            ->andReturn('session-id');
+        $client = Mockery::mock(Client::class);
+        $client->shouldReceive('session')->once()->andReturn($session);
+
+        $clientProperty = new ReflectionProperty($this->manager, '_client');
+        $clientProperty->setValue($this->manager, $client);
+
+        expect($this->manager->getLoginUrl($this->account))
+            ->toBe('http://plesk.example.com:8443/enterprise/rsession_init.php?PHPSESSID=session-id');
+    } finally {
+        $_SERVER = $originalServer;
+        Request::setTrustedProxies($originalTrustedProxies, $originalTrustedHeaderSet);
+    }
 });

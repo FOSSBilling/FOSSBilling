@@ -25,6 +25,9 @@ class Client extends \FOSSBilling\Api\AbstractApi
     /**
      * Get payments information.
      *
+     * @optional string $sort - sort column: 'id', 'amount', 'description', 'created_at' or 'updated_at'
+     * @optional string $direction - sort direction: 'ASC' or 'DESC'
+     *
      * @return array
      */
     public function balance_get_list($data)

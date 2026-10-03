@@ -39,13 +39,13 @@ test('getSearchQueryBuilder orders by id descending with no filters', function (
     expect($dql)->toBe('SELECT i FROM ' . Invoice::class . ' i ORDER BY i.id DESC');
 });
 
-test('getSearchQueryBuilder filters by client_id, status, currency and approved', function (): void {
+test('getSearchQueryBuilder filters by client_id, status, currency and issued', function (): void {
     $query = invoiceEntityManager()->getRepository(Invoice::class)
         ->getSearchQueryBuilder([
             'client_id' => 7,
             'status' => Invoice::STATUS_PAID,
             'currency' => 'USD',
-            'approved' => 1,
+            'issued' => 1,
         ])
         ->getQuery();
 
@@ -53,35 +53,35 @@ test('getSearchQueryBuilder filters by client_id, status, currency and approved'
     expect($dql)->toContain('i.clientId = :client_id')
         ->and($dql)->toContain('i.status = :status')
         ->and($dql)->toContain('i.currency = :currency')
-        ->and($dql)->toContain('i.approved = :approved')
+        ->and($dql)->toContain('i.issued = :issued')
         ->and($dql)->toContain('ORDER BY i.id DESC');
 
     expect($query->getParameter('client_id')->getValue())->toBe(7)
         ->and($query->getParameter('status')->getValue())->toBe(Invoice::STATUS_PAID)
         ->and($query->getParameter('currency')->getValue())->toBe('USD')
-        ->and($query->getParameter('approved')->getValue())->toBeTrue();
+        ->and($query->getParameter('issued')->getValue())->toBeTrue();
 });
 
-test('getSearchQueryBuilder normalizes the approved filter via Tools::normalizeBoolean', function (): void {
+test('getSearchQueryBuilder normalizes the issued filter via Tools::normalizeBoolean', function (): void {
     $repository = invoiceEntityManager()->getRepository(Invoice::class);
 
     foreach ([1, '1', true, 'on', 'true'] as $truthy) {
-        $qb = $repository->getSearchQueryBuilder(['approved' => $truthy]);
-        expect($qb->getParameter('approved')->getValue())->toBeTrue();
+        $qb = $repository->getSearchQueryBuilder(['issued' => $truthy]);
+        expect($qb->getParameter('issued')->getValue())->toBeTrue();
     }
 
     foreach (['false', 'off', '0', 0, false] as $falsey) {
-        $qb = $repository->getSearchQueryBuilder(['approved' => $falsey]);
-        expect($qb->getParameter('approved')->getValue())->toBeFalse();
+        $qb = $repository->getSearchQueryBuilder(['issued' => $falsey]);
+        expect($qb->getParameter('issued')->getValue())->toBeFalse();
     }
 });
 
-test('getSearchQueryBuilder skips the approved filter when unset or empty', function (): void {
+test('getSearchQueryBuilder skips the issued filter when unset or empty', function (): void {
     $repository = invoiceEntityManager()->getRepository(Invoice::class);
 
     foreach ([null, ''] as $empty) {
-        $qb = $repository->getSearchQueryBuilder(['approved' => $empty]);
-        expect($qb->getDQL())->not->toContain('i.approved');
+        $qb = $repository->getSearchQueryBuilder(['issued' => $empty]);
+        expect($qb->getDQL())->not->toContain('i.issued');
     }
 });
 
@@ -307,6 +307,59 @@ test('lockAndGetStatus reads the status inside a transaction on every supported 
     expect($status)->toBe(Invoice::STATUS_UNPAID);
 });
 
+test('lockAndGetState reads status and issue state inside a transaction', function (): void {
+    $entityManager = invoiceEntityManager();
+    $metadata = [$entityManager->getClassMetadata(Invoice::class)];
+    (new Doctrine\ORM\Tools\SchemaTool($entityManager))->createSchema($metadata);
+
+    $invoice = new Invoice();
+    $invoice->setStatus(Invoice::STATUS_UNPAID);
+    $invoice->setIssued(true);
+    $entityManager->persist($invoice);
+    $entityManager->flush();
+
+    $connection = $entityManager->getConnection();
+    $connection->beginTransaction();
+
+    try {
+        $state = $entityManager->getRepository(Invoice::class)->lockAndGetState($invoice->getId());
+    } finally {
+        $connection->rollBack();
+    }
+
+    expect($state)->toBe([
+        'status' => Invoice::STATUS_UNPAID,
+        'issued' => true,
+    ]);
+});
+
+test('lockAndGetState uses DBAL boolean conversion for database text values', function (): void {
+    $entityManager = invoiceEntityManager();
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('isTransactionActive')->once()->andReturnTrue();
+    $connection->shouldReceive('getDatabasePlatform')->once()->andReturn(new Doctrine\DBAL\Platforms\SQLitePlatform());
+    $connection->shouldReceive('fetchAssociative')->once()->andReturn([
+        'status' => Invoice::STATUS_UNPAID,
+        'issued' => 'f',
+    ]);
+    $connection->shouldReceive('convertToPHPValue')
+        ->once()
+        ->with('f', Doctrine\DBAL\Types\Types::BOOLEAN)
+        ->andReturnFalse();
+
+    $repositoryEntityManager = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $repositoryEntityManager->shouldReceive('getConnection')->andReturn($connection);
+    $repository = new Box\Mod\Invoice\Repository\InvoiceRepository(
+        $repositoryEntityManager,
+        $entityManager->getClassMetadata(Invoice::class),
+    );
+
+    expect($repository->lockAndGetState(1))->toBe([
+        'status' => Invoice::STATUS_UNPAID,
+        'issued' => false,
+    ]);
+});
+
 test('lockAndGetStatus rejects being called outside of a transaction', function (): void {
     $entityManager = invoiceEntityManager();
     $metadata = [$entityManager->getClassMetadata(Invoice::class)];
@@ -315,3 +368,26 @@ test('lockAndGetStatus rejects being called outside of a transaction', function 
     expect(fn () => $entityManager->getRepository(Invoice::class)->lockAndGetStatus(1))
         ->toThrow(FOSSBilling\Exception::class, 'Invoice status cannot be locked outside of a transaction.');
 });
+
+test('getSearchQueryBuilder sorts by allowlisted columns', function (array $data, string $expectedOrderBy, bool $expectsTieBreak): void {
+    $dql = invoiceSearchDql($data);
+
+    expect($dql)->toContain($expectedOrderBy);
+    if ($expectsTieBreak) {
+        expect($dql)->toContain(', i.id');
+    } else {
+        expect($dql)->not->toContain(', i.id');
+    }
+})->with([
+    'id ascending' => [['sort' => 'id'], 'ORDER BY i.id ASC', false],
+    'id descending' => [['sort' => 'id', 'direction' => 'DESC'], 'ORDER BY i.id DESC', false],
+    'nr' => [['sort' => 'nr'], 'ORDER BY i.nr ASC, i.id ASC', true],
+    'status' => [['sort' => 'status', 'direction' => 'desc'], 'ORDER BY i.status DESC, i.id DESC', true],
+    'currency' => [['sort' => 'currency'], 'ORDER BY i.currency ASC, i.id ASC', true],
+    'created_at' => [['sort' => 'created_at'], 'ORDER BY i.createdAt ASC, i.id ASC', true],
+    'updated_at' => [['sort' => 'updated_at', 'direction' => 'DESC'], 'ORDER BY i.updatedAt DESC, i.id DESC', true],
+    'paid_at' => [['sort' => 'paid_at'], 'ORDER BY i.paidAt ASC, i.id ASC', true],
+    'due_at' => [['sort' => 'due_at'], 'ORDER BY i.dueAt ASC, i.id ASC', true],
+    'invalid sort falls back to default' => [['sort' => 'i.id; DROP TABLE invoice'], 'ORDER BY i.id DESC', false],
+    'invalid direction falls back to ascending' => [['sort' => 'status', 'direction' => 'sideways'], 'ORDER BY i.status ASC, i.id ASC', true],
+]);

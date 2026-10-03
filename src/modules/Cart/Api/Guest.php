@@ -145,6 +145,10 @@ class Guest extends \FOSSBilling\Api\AbstractApi
      *
      * @param array $data Product data
      *
+     * @optional array $addons - selected addons, keyed by addon ID. Each entry accepts `selected` (bool),
+     *                           `period` (string, for recurrent addons) and `quantity` (int, only honored
+     *                           when the addon allows quantity selection - otherwise it resolves to 1).
+     *
      * @return bool
      */
     #[RequiredParams(['id' => 'Product ID was not passed'])]

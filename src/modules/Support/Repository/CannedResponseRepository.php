@@ -13,6 +13,7 @@ namespace Box\Mod\Support\Repository;
 
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
+use FOSSBilling\SortOptions;
 
 class CannedResponseRepository extends EntityRepository
 {
@@ -20,9 +21,7 @@ class CannedResponseRepository extends EntityRepository
     {
         $qb = $this->createQueryBuilder('r')
             ->leftJoin('r.category', 'c')
-            ->addSelect('c')
-            ->orderBy('c.id', 'ASC')
-            ->addOrderBy('r.title', 'ASC');
+            ->addSelect('c');
 
         if (isset($data['id']) && $data['id'] !== '') {
             $qb->andWhere('r.id = :id')
@@ -40,6 +39,23 @@ class CannedResponseRepository extends EntityRepository
                 ->setParameter('search', $search);
         }
 
+        $sort = SortOptions::fromArray($data, [
+            'id' => 'r.id',
+            'title' => 'r.title',
+            'category' => 'c.title',
+            'created_at' => 'r.createdAt',
+            'updated_at' => 'r.updatedAt',
+        ]);
+        if ($sort->isSorted()) {
+            $qb->orderBy($sort->expression, $sort->direction);
+            if ($sort->expression !== 'r.id') {
+                $qb->addOrderBy('r.id', $sort->direction);
+            }
+        } else {
+            $qb->orderBy('c.id', \SortDirection::Ascending)
+                ->addOrderBy('r.title', \SortDirection::Ascending);
+        }
+
         return $qb;
     }
 
@@ -51,8 +67,8 @@ class CannedResponseRepository extends EntityRepository
         $rows = $this->createQueryBuilder('r')
             ->select('r.id, r.title, c.title AS categoryTitle')
             ->leftJoin('r.category', 'c')
-            ->orderBy('c.id', 'ASC')
-            ->addOrderBy('r.title', 'ASC')
+            ->orderBy('c.id', \SortDirection::Ascending)
+            ->addOrderBy('r.title', \SortDirection::Ascending)
             ->getQuery()
             ->getArrayResult();
 

@@ -97,7 +97,7 @@
                                 <label class="form-label text-muted small mb-1" for="subscription-date-range">{{ 'Created At'|trans }}</label>
                                 <div class="input-group">
                                     <div class="input-icon w-100">
-                                        <input class="form-control datepicker"
+                                        <input class="form-control datepicker" data-clear-label="{{ 'Clear date'|trans }}" data-invalid-date-label="{{ 'Enter a valid date in YYYY-MM-DD format.'|trans }}"
                                                id="subscription-date-range"
                                                placeholder="{{ 'Select Date Range'|trans }}"
                                                value="{% if request.date_from %}{{ request.date_from|date('Y-m-d') }}{% endif %}{% if request.date_to %} to {{ request.date_to|date('Y-m-d') }}{% endif %}"
@@ -139,10 +139,10 @@
                         </th>
                         <th class="w-1"></th>
                         <th>{{ 'Name'|trans }}</th>
-                        <th class="w-1">{{ 'ID'|trans }}</th>
-                        <th>{{ 'Amount'|trans }}</th>
+                        {{ include('partial_sortable_th.html.twig', { 'label': 'ID'|trans, 'sort_key': 'sid', 'url': 'invoice/subscriptions', 'th_class': 'w-1', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                        {{ include('partial_sortable_th.html.twig', { 'label': 'Amount'|trans, 'sort_key': 'amount', 'url': 'invoice/subscriptions', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
                         <th>{{ 'Gateway'|trans }}</th>
-                        <th>{{ 'Status'|trans }}</th>
+                        {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'invoice/subscriptions', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
                         <th class="w-1"></th>
                     </tr>
                 </thead>
@@ -163,7 +163,7 @@
                         </td>
                         <td>{{ subscription.sid }}</td>
                         <td>{{ subscription.amount|format_currency(subscription.currency ?? default_currency) }} {{ subscription.period|period_title }}</td>
-                        <td>{{ subscription.gateway.title }}</td>
+                        <td>{{ subscription.gateway.title|default('') }}</td>
                         <td>{{ mf.status_badge(subscription.status, 'subscription') }}</td>
                         <td>
                             <a class="btn btn-icon" href='{{ "invoice/subscription/#{subscription.id}"|url }}'>
@@ -274,7 +274,7 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
     }
 
-    const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+    const modal = tabler.Modal.getOrCreateInstance(modalElement);
 
     if (window.location.hash === '#tab-new') {
         modal.show();

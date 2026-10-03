@@ -174,6 +174,22 @@ test('throws exception when synchronizing domain without order_id', function ():
         ->toThrow(FOSSBilling\InformationException::class);
 });
 
+test('requires order_id on domain management endpoints', function ($method): void {
+    $adminApi = apiEndpoint(new Admin());
+    $dispatcher = new FOSSBilling\Api\Dispatcher();
+
+    expect(fn () => $dispatcher->validateRequiredParams($adminApi, $method, []))
+        ->toThrow(FOSSBilling\InformationException::class, 'Order ID is missing');
+})->with([
+    'update_nameservers',
+    'update_contacts',
+    'enable_privacy_protection',
+    'disable_privacy_protection',
+    'get_transfer_code',
+    'lock',
+    'unlock',
+]);
+
 test('gets transfer code', function (): void {
     $adminApi = apiEndpoint(new Admin());
     $api = apiEndpoint(new Admin());

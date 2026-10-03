@@ -14,6 +14,7 @@ namespace Box\Mod\Email\Repository;
 use Box\Mod\Email\Entity\QueuedEmail;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
+use FOSSBilling\SortOptions;
 
 class QueuedEmailRepository extends EntityRepository
 {
@@ -22,9 +23,7 @@ class QueuedEmailRepository extends EntityRepository
      */
     public function getSearchQueryBuilder(array $data = []): QueryBuilder
     {
-        $qb = $this->createQueryBuilder('q')
-            ->orderBy('q.priority', 'DESC')
-            ->addOrderBy('q.id', 'ASC');
+        $qb = $this->createQueryBuilder('q');
 
         if (!empty($data['status'])) {
             $qb->andWhere('q.status = :status')
@@ -34,6 +33,28 @@ class QueuedEmailRepository extends EntityRepository
         if (!empty($data['client_id'])) {
             $qb->andWhere('q.clientId = :client_id')
                 ->setParameter('client_id', (int) $data['client_id']);
+        }
+
+        $sort = SortOptions::fromArray($data, [
+            'subject' => 'q.subject',
+            'recipient' => 'q.recipient',
+            'sender' => 'q.sender',
+            'to_name' => 'q.toName',
+            'status' => 'q.status',
+            'priority' => 'q.priority',
+            'tries' => 'q.tries',
+            'created_at' => 'q.createdAt',
+            'updated_at' => 'q.updatedAt',
+            'id' => 'q.id',
+        ]);
+        if ($sort->isSorted()) {
+            $qb->orderBy($sort->expression, $sort->direction);
+            if ($sort->expression !== 'q.id') {
+                $qb->addOrderBy('q.id', $sort->direction);
+            }
+        } else {
+            $qb->orderBy('q.priority', \SortDirection::Descending);
+            $qb->addOrderBy('q.id', \SortDirection::Ascending);
         }
 
         return $qb;
@@ -53,8 +74,8 @@ class QueuedEmailRepository extends EntityRepository
         $qb = $this->createQueryBuilder('q')
             ->andWhere('q.status IN (:statuses)')
             ->setParameter('statuses', [QueuedEmail::STATUS_UNSENT, QueuedEmail::STATUS_PENDING, QueuedEmail::STATUS_FAILED])
-            ->orderBy('q.priority', 'DESC')
-            ->addOrderBy('q.id', 'ASC');
+            ->orderBy('q.priority', \SortDirection::Descending)
+            ->addOrderBy('q.id', \SortDirection::Ascending);
 
         if ($limit > 0) {
             $qb->setMaxResults($limit);

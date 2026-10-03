@@ -1,7 +1,7 @@
 {
   "id": "embed",
   "type": "mod",
-  "name": "Embed parts",
+  "name": "Embed Parts",
   "description": "Provides ability to embed parts of FOSSBilling to other websites",
   "icon_url": "icon.svg",
   "homepage_url": "https://github.com/FOSSBilling",

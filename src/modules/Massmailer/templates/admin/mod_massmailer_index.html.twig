@@ -45,7 +45,7 @@
                 </div>
 
                 <div class="tab-content border-top">
-                    <div class="tab-pane fade show active" id="tab-index" role="tabpanel">
+                    <div class="tab-pane fade show active" id="tab-index" role="tabpanel" data-list-ns="">
                         {{ include('partial_search.html.twig', {
                             search_body_class: filter_panel_open ? 'pb-2 border-bottom-0' : '',
                             search_toolbar_actions: new_message_action
@@ -88,20 +88,17 @@
                             <table class="table card-table table-vcenter table-striped text-nowrap">
                                 <thead>
                                 <tr>
-                                    <th>{{ 'Subject'|trans }}</th>
-                                    <th>{{ 'From'|trans }}</th>
-                                    <th>{{ 'Status'|trans }}</th>
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Subject'|trans, 'sort_key': 'subject', 'url': 'massmailer', 'hash': '#tab-index', 'default_sort': 'created_at', 'default_direction': 'DESC' }) }}
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'From'|trans, 'sort_key': 'from_name', 'url': 'massmailer', 'hash': '#tab-index', 'default_sort': 'created_at', 'default_direction': 'DESC' }) }}
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'massmailer', 'hash': '#tab-index', 'default_sort': 'created_at', 'default_direction': 'DESC' }) }}
                                     <th></th>
                                 </tr>
                                 </thead>
                                 <tbody>
                                 {% set msgs = admin.massmailer_get_list({
                                     "per_page": 25,
-                                    "page": request.page,
-                                    "id": request.id,
-                                    "status": request.status,
-                                    "search": request.search
-                                }) %}
+                                    "page": request.page
+                                }|merge(request)) %}
                                 {% for i, msg in msgs.list %}
                                     <tr>
                                         <td>{{ msg.subject }}</td>
@@ -225,7 +222,7 @@
 
         document.addEventListener('DOMContentLoaded', function () {
             var modalElement = document.getElementById('newMassMailerModal');
-            var modal = modalElement ? bootstrap.Modal.getOrCreateInstance(modalElement) : null;
+            var modal = modalElement ? tabler.Modal.getOrCreateInstance(modalElement) : null;
 
             if (window.location.hash === '#tab-new' && modal) {
                 modal.show();
@@ -233,7 +230,7 @@
 
             var tabTrigger = document.querySelector('[data-bs-toggle="tab"][href="' + window.location.hash + '"]');
             if (tabTrigger) {
-                bootstrap.Tab.getOrCreateInstance(tabTrigger).show();
+                tabler.Tab.getOrCreateInstance(tabTrigger).show();
             }
 
             modalElement?.addEventListener('hidden.bs.modal', function () {

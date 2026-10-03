@@ -247,7 +247,7 @@ class Service implements InjectionAwareInterface
     /**
      * @todo
      */
-    public function action_delete(Order $order): void
+    public function action_delete(Order $order, bool $forceDelete = false): void
     {
         $orderService = $this->di['mod_service']('order');
         $service = $orderService->getOrderService($order);

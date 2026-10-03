@@ -8,6 +8,7 @@ use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\InvoiceItem;
 use Box\Mod\Order\Entity\Order;
 use Doctrine\ORM\EntityRepository;
+use FOSSBilling\Doctrine\RowLock;
 use FOSSBilling\Doctrine\SqlExpr;
 
 class OrderRepository extends EntityRepository
@@ -26,6 +27,30 @@ class OrderRepository extends EntityRepository
     public function findByUnpaidInvoiceId(int $invoiceId): array
     {
         return $this->findBy(['unpaidInvoiceId' => $invoiceId]);
+    }
+
+    /**
+     * Must be called within a transaction, held for as long as the invoice
+     * link is acted on.
+     */
+    public function lockAndGetUnpaidInvoiceId(int $orderId): ?int
+    {
+        $connection = $this->getEntityManager()->getConnection();
+
+        if (!$connection->isTransactionActive()) {
+            throw new \FOSSBilling\Exception('Order link cannot be locked outside of a transaction.');
+        }
+
+        $row = $connection->fetchAssociative(
+            'SELECT unpaid_invoice_id FROM client_order WHERE id = :id' . RowLock::suffix($connection),
+            ['id' => $orderId],
+        );
+
+        if ($row === false || $row['unpaid_invoice_id'] === null) {
+            return null;
+        }
+
+        return (int) $row['unpaid_invoice_id'];
     }
 
     public function findForClientById(int $clientId, int $orderId): ?Order

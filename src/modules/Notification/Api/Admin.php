@@ -28,6 +28,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Get paginated list of notifications.
      *
+     * @optional string $sort - sort column: 'id', 'created_at' or 'updated_at'
+     * @optional string $direction - sort direction: 'ASC' or 'DESC'
+     *
      * @return array
      */
     public function get_list($data)
@@ -67,9 +70,8 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             return false;
         }
 
-        $message = htmlspecialchars($data['message'], ENT_QUOTES, 'UTF-8');
-
-        return $this->getService()->create($message);
+        // Stored raw; the admin list template escapes on render.
+        return $this->getService()->create($data['message']);
     }
 
     /**

@@ -54,8 +54,8 @@ define('PATH_MODS', Path::join(PATH_ROOT, 'modules'));
 define('PATH_DATA', Path::join(PATH_ROOT, 'data'));
 define('PATH_CACHE', Path::join(PATH_DATA, 'cache'));
 define('PATH_LOG', Path::join(PATH_DATA, 'log'));
-define('HURAGA_CONFIG', Path::join(PATH_THEMES, 'huraga', 'config', 'settings_data.json'));
-define('HURAGA_CONFIG_TEMPLATE', Path::join(PATH_THEMES, 'huraga', 'config', 'settings_data.json.example'));
+define('CLIENT_THEME_CONFIG', Path::join(PATH_THEMES, 'default', 'client', 'config', 'settings_data.json'));
+define('CLIENT_THEME_CONFIG_TEMPLATE', Path::join(PATH_THEMES, 'default', 'client', 'config', 'settings_data.json.example'));
 define('PATH_HTACCESS', Path::join(PATH_ROOT, '.htaccess'));
 define('PAGE_INSTALL', Path::join('./assets', 'install.html.twig'));
 define('PAGE_RESULT', Path::join('./assets', 'result.html.twig'));
@@ -504,10 +504,11 @@ final class FOSSBilling_Installer
      * through a portable rewrite of that same file (see {@see FOSSBilling\Doctrine\InstallSeeder})
      * rather than a second, duplicated copy of the data.
      *
-     * MySQL/MariaDB installs used to run install/sql/structure.sql and content.sql almost
-     * verbatim via raw PDO instead - `install/sql/structure.sql` is no longer used by a fresh
-     * install of any platform; it remains only as the frozen definition existing, pre-cutover
-     * MySQL installs are upgraded from via {@see FOSSBilling\UpdatePatcher}'s legacy patches.
+     * MySQL/MariaDB installs used to run a hand-maintained install/sql/structure.sql and
+     * content.sql almost verbatim via raw PDO instead; the schema dump is gone (its content
+     * at the cutover commit is preserved in git history as the reference the legacy
+     * {@see FOSSBilling\UpdatePatcher} patches below were written against), and only
+     * content.sql's seed rows survive, replayed portably as described above.
      */
     private function installPortable(): void
     {
@@ -543,8 +544,8 @@ final class FOSSBilling_Installer
         $this->installPortable();
 
         // Copy config templates when applicable
-        if (!$this->filesystem->exists(HURAGA_CONFIG) && $this->filesystem->exists(HURAGA_CONFIG_TEMPLATE)) {
-            $this->filesystem->copy(HURAGA_CONFIG_TEMPLATE, HURAGA_CONFIG); // Copy the file instead of renaming it. This allows local dev instances to not need to restore the original file manually.
+        if (!$this->filesystem->exists(CLIENT_THEME_CONFIG) && $this->filesystem->exists(CLIENT_THEME_CONFIG_TEMPLATE)) {
+            $this->filesystem->copy(CLIENT_THEME_CONFIG_TEMPLATE, CLIENT_THEME_CONFIG); // Copy the file instead of renaming it. This allows local dev instances to not need to restore the original file manually.
         }
 
         // If .htaccess doesn't exist, fetch the latest from GitHub.

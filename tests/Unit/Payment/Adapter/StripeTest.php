@@ -617,7 +617,7 @@ test('skips subscription update webhooks without a local subscription', function
 });
 
 describe('handleInvoicePaymentSucceeded invoice linking', function (): void {
-    test('links transaction to invoice before claim attempt', function (): void {
+    test('links transaction to invoice and processes without re-claiming the row', function (): void {
         $tx = buildTransaction();
         $tx->id = 42;
         $tx->invoice_id = null;
@@ -647,9 +647,10 @@ describe('handleInvoicePaymentSucceeded invoice linking', function (): void {
         $stripeMock->subscriptions = $subscriptionsMock;
         setPrivateProperty($this->adapter, 'stripe', $stripeMock);
 
+        // The service layer holds the processing claim on entry: the adapter
+        // must never re-claim, or the claim fails and the payment is skipped.
         $transactionService = Mockery::mock();
-        $transactionService->shouldReceive('claimForProcessing')
-            ->andReturn(false);
+        $transactionService->shouldNotReceive('claimForProcessing');
 
         ['em' => $em, 'txRepo' => $txRepo, 'invoiceRepo' => $invoiceRepo] = buildEntityManagerMocks();
         $txRepo->shouldReceive('findProcessingOrProcessedByTxnId')
@@ -662,12 +663,19 @@ describe('handleInvoicePaymentSucceeded invoice linking', function (): void {
 
         $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
         expectStripeObjectLock($dbalMock, 'in_123', 1);
+        $invoiceService = Mockery::mock();
+        $invoiceService->shouldReceive('isInvoiceTypeDeposit')->andReturn(false);
+        $invoiceService->shouldReceive('issueInvoice')->andReturn(true);
+        $invoiceService->shouldReceive('payInvoiceWithCredits')->andReturn(true);
         $di = container();
         $di['dbal'] = $dbalMock;
         $di['em'] = $em;
-        $di['mod_service'] = $di->protect(function ($module, $service = null) use ($transactionService) {
+        $di['mod_service'] = $di->protect(function ($module, $service = null) use ($transactionService, $invoiceService) {
             if ($service === 'Transaction') {
                 return $transactionService;
+            }
+            if ($module === 'Invoice') {
+                return $invoiceService;
             }
 
             return Mockery::mock();
@@ -676,7 +684,7 @@ describe('handleInvoicePaymentSucceeded invoice linking', function (): void {
         $this->adapter->setDi($di);
 
         $apiAdmin = Mockery::mock();
-        $apiAdmin->shouldNotReceive('client_balance_add_funds');
+        $apiAdmin->shouldReceive('client_balance_add_funds')->once();
 
         invokePrivateMethod($this->adapter, 'handleInvoicePaymentSucceeded', [
             $apiAdmin,
@@ -685,8 +693,7 @@ describe('handleInvoicePaymentSucceeded invoice linking', function (): void {
             1,
         ]);
 
-        // Even though claimForProcessing returned false (causing early return),
-        // the invoice_id should have been persisted via em->flush().
+        // Processing proceeds: the invoice link is persisted and funds move.
         expect($tx->getInvoice()?->getId())->toBe(99);
     });
 
@@ -733,18 +740,17 @@ describe('handleInvoicePaymentSucceeded invoice linking', function (): void {
 
         $invoiceModel->id = 77;
         $invoiceModel->status = Invoice::STATUS_UNPAID;
-        $invoiceModel->approved = 0;
+        $invoiceModel->issued = 0;
         $invoiceModel->currency = 'EUR';
 
         $transactionService = Mockery::mock();
-        $transactionService->shouldReceive('claimForProcessing')
-            ->andReturn(true);
+        $transactionService->shouldNotReceive('claimForProcessing');
 
         $invoiceService = Mockery::mock();
         $invoiceService->shouldReceive('isInvoiceTypeDeposit')
             ->with($invoiceModel)
             ->andReturn(false);
-        $invoiceService->shouldReceive('approveInvoice')
+        $invoiceService->shouldReceive('issueInvoice')
             ->with($invoiceModel, ['use_credits' => false])
             ->andReturn(true);
         $invoiceService->shouldReceive('payInvoiceWithCredits')
@@ -783,7 +789,7 @@ describe('handleInvoicePaymentSucceeded invoice linking', function (): void {
             1,
         ]);
 
-        // The unpaid original invoice should be approved and paid via the fallback
+        // The unpaid original invoice should be issued and paid via the fallback
         expect($tx->getInvoice()?->getId())->toBe(77);
     });
 });
@@ -954,16 +960,15 @@ describe('handleInvoicePaymentSucceeded with invoice_payment event (API 2026-06-
 
         $invoiceModel->id = 42;
         $invoiceModel->status = Invoice::STATUS_UNPAID;
-        $invoiceModel->approved = 0;
+        $invoiceModel->issued = 0;
 
         $transactionService = Mockery::mock();
-        $transactionService->shouldReceive('claimForProcessing')
-            ->andReturn(true);
+        $transactionService->shouldNotReceive('claimForProcessing');
 
         $invoiceService = Mockery::mock();
         $invoiceService->shouldReceive('isInvoiceTypeDeposit')
             ->andReturn(false);
-        $invoiceService->shouldReceive('approveInvoice')
+        $invoiceService->shouldReceive('issueInvoice')
             ->andReturn(true);
         $invoiceService->shouldReceive('payInvoiceWithCredits')
             ->andReturn(true);
@@ -1066,7 +1071,7 @@ describe('handlePaymentIntentSucceededWebhook', function (): void {
         $invoiceModel = createEntity(Invoice::class);
 
         $invoiceModel->id = 15;
-        $invoiceModel->approved = 1;
+        $invoiceModel->issued = 1;
         $invoiceModel->client_id = 7;
 
         $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
@@ -1074,8 +1079,7 @@ describe('handlePaymentIntentSucceededWebhook', function (): void {
         $clientModel = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 7]);
 
         $transactionService = Mockery::mock();
-        $transactionService->shouldReceive('claimForProcessing')
-            ->andReturn(true);
+        $transactionService->shouldNotReceive('claimForProcessing');
 
         $invoiceService = Mockery::mock();
         $invoiceService->shouldReceive('getTotalWithTax')->andReturn(29.99);
@@ -1129,7 +1133,7 @@ describe('processPaymentIntent', function (): void {
         $invoice = createEntity(Invoice::class, [
             'id' => 15,
             'client_id' => 7,
-            'approved' => true,
+            'issued' => true,
         ]);
 
         $tx = buildTransaction();
@@ -1155,7 +1159,7 @@ describe('processPaymentIntent', function (): void {
         $invoiceService->shouldReceive('payInvoiceWithCredits')->once()->with($invoice)->andReturn(true);
 
         $transactionService = Mockery::mock();
-        $transactionService->shouldReceive('claimForProcessing')->once()->with(402)->andReturn(true);
+        $transactionService->shouldNotReceive('claimForProcessing');
 
         $clientService = Mockery::mock();
         $clientService->shouldReceive('addFunds')->once();
@@ -1192,6 +1196,7 @@ describe('processPaymentIntent', function (): void {
             'status' => 'succeeded',
             'amount' => 2500,
             'currency' => 'usd',
+            'metadata' => ['gateway_id' => '4'],
         ]);
 
         $paymentIntentsMock = Mockery::mock();
@@ -1228,6 +1233,48 @@ describe('processPaymentIntent', function (): void {
 
         expect($tx->txn_id)->toBe('pi_webhook_first');
     });
+
+    test('rejects redirect PaymentIntents that are not bound to the invoice', function (array $paymentIntent): void {
+        $tx = buildTransaction();
+        $tx->setGateway(createEntity(PayGateway::class, ['id' => 4]));
+
+        $invoice = createEntity(Invoice::class, [
+            'id' => 15,
+            'currency' => 'USD',
+        ]);
+
+        $paymentIntentsMock = Mockery::mock();
+        $paymentIntentsMock->shouldReceive('retrieve')
+            ->once()
+            ->with('pi_unbound', [])
+            ->andReturn(Stripe\PaymentIntent::constructFrom($paymentIntent));
+
+        $stripeMock = Mockery::mock(StripeClient::class);
+        $stripeMock->paymentIntents = $paymentIntentsMock;
+        setPrivateProperty($this->adapter, 'stripe', $stripeMock);
+
+        expect(fn (): mixed => invokePrivateMethod($this->adapter, 'processPaymentIntent', [
+            $tx,
+            $invoice,
+            ['get' => ['payment_intent' => 'pi_unbound']],
+        ]))->toThrow(FOSSBilling\Exception::class);
+    })->with([
+        'wrong invoice' => [[
+            'id' => 'pi_unbound',
+            'currency' => 'usd',
+            'metadata' => ['invoice_id' => '99', 'gateway_id' => '4'],
+        ]],
+        'wrong gateway' => [[
+            'id' => 'pi_unbound',
+            'currency' => 'usd',
+            'metadata' => ['invoice_id' => '15', 'gateway_id' => '8'],
+        ]],
+        'wrong currency' => [[
+            'id' => 'pi_unbound',
+            'currency' => 'jpy',
+            'metadata' => ['invoice_id' => '15', 'gateway_id' => '4'],
+        ]],
+    ]);
 });
 
 describe('processSetupIntent', function (): void {
@@ -2398,5 +2445,38 @@ describe('applyOneTimePayment already-paid guard', function (): void {
         invokePrivateMethod($this->adapter, 'applyOneTimePayment', [$tx, $invoice, $charge]);
 
         expect($addFundsCalled)->toBeFalse();
+    });
+});
+
+test('checkout buyer details are encoded as JS string literals', function (): void {
+    // HTML entities are never decoded inside <script>, so HTML-escaping would
+    // corrupt the data sent to Stripe (issue #4305).
+    $encoded = invokePrivateMethod($this->adapter, 'encodeJsString', ["O'Brien & <Sons>"]);
+
+    expect($encoded)->toBe('"O\u0027Brien \u0026 \u003CSons\u003E"')
+        ->and(json_decode($encoded))->toBe("O'Brien & <Sons>")
+        ->and($encoded)->not->toContain('</script>');
+});
+
+describe('processTransaction payload handling', function (): void {
+    test('rejects an empty payload with a clear error instead of stalling', function (): void {
+        $tx = createEntity(Transaction::class, ['id' => 7]);
+
+        ['em' => $em, 'txRepo' => $txRepo] = buildEntityManagerMocks();
+        $txRepo->shouldReceive('find')->with(7)->andReturn($tx);
+
+        $di = container();
+        $di['em'] = $em;
+        $this->adapter->setDi($di);
+
+        $apiAdmin = (new ReflectionClass(FOSSBilling\Api\Proxy::class))->newInstanceWithoutConstructor();
+
+        try {
+            $this->adapter->processTransaction($apiAdmin, 7, [], 1);
+            expect(false)->toBeTrue('empty Stripe payloads must throw');
+        } catch (Payment_Exception $e) {
+            expect($e->getMessage())->toBe('Stripe payment data is missing.')
+                ->and($e->getCode())->toBe(7020);
+        }
     });
 });

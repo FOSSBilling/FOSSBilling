@@ -18,6 +18,7 @@ use Psr\Cache\CacheItemPoolInterface;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 use Symfony\Component\Cache\Adapter\MemcachedAdapter;
 use Symfony\Component\Cache\Adapter\RedisAdapter;
+use Symfony\Component\HttpFoundation\IpUtils;
 use Symfony\Contracts\Cache\CacheInterface;
 
 class CacheFactory
@@ -110,7 +111,7 @@ class CacheFactory
         $driver = $cacheConfig['driver'] ?? 'filesystem';
 
         if (!in_array($driver, self::SUPPORTED_DRIVERS, true)) {
-            throw new Exception('Unsupported cache driver :driver. Supported drivers are: :supported.', [':driver' => $driver, ':supported' => implode(', ', self::SUPPORTED_DRIVERS)]);
+            throw new Exception('Unsupported cache driver :driver. Supported drivers are: :supported.', [':driver' => $driver, ':supported' => implode(', ', self::SUPPORTED_DRIVERS)], 5001);
         }
 
         if ($driver === 'filesystem') {
@@ -124,7 +125,7 @@ class CacheFactory
         // misconfiguration; from createFromConfig() directly (fallbackOnFailure: false), it reaches
         // the caller as this specific message instead of the generic "could not connect" one below.
         if ($instanceId === '') {
-            throw new Exception('The ":driver" cache driver requires an installation identifier ("info.instance_id" in the configuration file) so that installations sharing the same server don\'t collide. Reinstall or update FOSSBilling to have one generated automatically, or set it manually.', [':driver' => $driver]);
+            throw new Exception('The ":driver" cache driver requires an installation identifier ("info.instance_id" in the configuration file) so that installations sharing the same server don\'t collide. Reinstall or update FOSSBilling to have one generated automatically, or set it manually.', [':driver' => $driver], 5001);
         }
 
         try {
@@ -136,9 +137,15 @@ class CacheFactory
             self::assertUsable($pool);
 
             return $pool;
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
+            // Deliberately narrower than \Throwable: the redis/memcached extensions and Symfony's
+            // cache adapters only ever raise \Exception (or a subclass) for an expected connection/
+            // configuration failure - a bad host, missing extension, wrong credentials, and so on.
+            // A \Error here (TypeError, ArgumentCountError, ...) means a genuine bug in our own
+            // adapter-construction code, not an admin misconfiguration, so it's left to propagate
+            // and be reported as usual instead of being swallowed under the ":driver" code below.
             if (!$fallbackOnFailure) {
-                throw new Exception('Could not connect to the configured ":driver" cache backend: :message', [':driver' => $driver, ':message' => $e->getMessage()]);
+                throw new Exception('Could not connect to the configured ":driver" cache backend: :message', [':driver' => $driver, ':message' => $e->getMessage()], 5001);
             }
 
             error_log(sprintf('FOSSBilling: failed to initialize the "%s" cache driver (%s); falling back to the filesystem cache.', $driver, $e->getMessage()));
@@ -277,7 +284,7 @@ class CacheFactory
             return false;
         }
 
-        return $ip === '::1' || str_starts_with($ip, '127.');
+        return IpUtils::checkIp($ip, ['127.0.0.0/8', '::1/128']);
     }
 
     private static function createMemcachedAdapter(array $memcachedConfig, string $namespace, int $defaultLifetime): MemcachedAdapter

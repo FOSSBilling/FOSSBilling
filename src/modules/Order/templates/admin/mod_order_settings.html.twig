@@ -59,7 +59,7 @@
                     <input class="form-check-input" type="checkbox" name="show_addons" value="1" {% if params.show_addons|default(false) %}checked{% endif %}>
                     <span class="form-check-label">{{ 'Show Addon Orders in Orders List'|trans }}</span>
                 </label>
-                <small class="form-hint">{{ 'If disabled, addon orders remain available in the main order view under the Addons tab.'|trans }}</small>
+                <small class="form-text">{{ 'If disabled, addon orders remain available in the main order view under the Addons tab.'|trans }}</small>
             </div>
             <div class="card-body border-top">
                 <h4 class="card-title mb-2">{{ 'Suspension and Cancellation'|trans }}</h4>
@@ -110,7 +110,7 @@
                             <input class="form-control" id="batch_cancel_unpaid_after_days" type="number" min="0" name="batch_cancel_unpaid_after_days" value="{{ params.batch_cancel_unpaid_after_days|default('') }}" placeholder="7">
                             <span class="input-group-text">{{ 'days'|trans }}</span>
                         </div>
-                        <small class="form-hint">{{ 'Counted from the invoice due date. If no unpaid invoice remains, counted from the order creation date instead. Defaults to 7 days when left blank.'|trans }}</small>
+                        <small class="form-text">{{ 'Counted from the invoice due date. If no unpaid invoice remains, counted from the order creation date instead. Defaults to 7 days when left blank.'|trans }}</small>
                     </div>
                 </div>
             </div>

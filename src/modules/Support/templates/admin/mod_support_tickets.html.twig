@@ -185,7 +185,7 @@
                                 <label class="form-label text-muted small mb-1" for="created_at">{{ 'Created At'|trans }}</label>
                                 <div class="input-group">
                                     <div class="input-icon w-100">
-                                        <input class="form-control datepicker"
+                                        <input class="form-control datepicker" data-clear-label="{{ 'Clear date'|trans }}" data-invalid-date-label="{{ 'Enter a valid date in YYYY-MM-DD format.'|trans }}"
                                                id="created_at"
                                                placeholder="{{ 'Select Date Range'|trans }}"
                                                value="{% if request.date_from %}{{ request.date_from|date('Y-m-d') }}{% endif %}{% if request.date_to %} to {{ request.date_to|date('Y-m-d') }}{% endif %}"
@@ -220,17 +220,17 @@
                 </form>
             </section>
             <div class="table-responsive">
-            <table class="table card-table table-vcenter table-striped text-nowrap sortable">
+            <table class="table card-table table-vcenter table-striped text-nowrap">
                 <thead>
                     <tr>
-                        <th class="w-1 no-sort">
+                        <th class="w-1">
                             <input class="form-check-input m-0 align-middle batch-delete-master-checkbox" type="checkbox">
                         </th>
                         <th>{{ 'Author'|trans }}</th>
-                        <th>{{ 'Subject'|trans }}</th>
-                        <th>{{ 'Status'|trans }}</th>
+                        {{ include('partial_sortable_th.html.twig', { 'label': 'Subject'|trans, 'sort_key': 'subject', 'url': 'support', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                        {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'support', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
                         <th>{{ 'Helpdesk'|trans }}</th>
-                        <th class="w-1 no-sort"></th>
+                        <th class="w-1"></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -241,7 +241,7 @@
                             <input class="form-check-input m-0 align-middle batch-delete-checkbox" type="checkbox" data-item-id="{{ ticket.id }}">
                         </td>
                         <td>
-                            {% if ticket.author.role == 'client' %}
+                            {% if ticket.author.role|default('') == 'client' %}
                                 <div class="d-flex py-1 align-items-center">
                                     <a href='{{ "client/manage/#{ticket.author.id}"|url }}'>
                                         {{ avatar(ticket.author.email, 40, 'avatar me-2') }}
@@ -380,7 +380,7 @@
                 continue;
             }
 
-            const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+            const modal = tabler.Modal.getOrCreateInstance(modalElement);
             if (window.location.hash === hash) {
                 modal.show();
             }

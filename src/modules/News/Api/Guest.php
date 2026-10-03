@@ -21,6 +21,9 @@ class Guest extends \FOSSBilling\Api\AbstractApi
      *
      * @param array $data Filtering and pagination parameters
      *
+     * @optional string $sort - sort column: 'id', 'title', 'slug', 'status', 'section', 'created_at', 'updated_at' or 'published_at'
+     * @optional string $direction - sort direction: 'ASC' or 'DESC'
+     *
      * @return array Paginated list of news items
      */
     public function get_list(array $data): array

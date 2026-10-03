@@ -21,7 +21,7 @@ test('getPairs returns array', function (): void {
     /** @var Mockery\Expectation $expectation */
     $expectation = $themeService->shouldReceive('getCurrentClientAreaThemeCode');
     $expectation->atLeast()->once();
-    $expectation->andReturn('huraga');
+    $expectation->andReturn('default/client');
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $themeService);

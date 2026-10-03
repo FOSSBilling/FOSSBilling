@@ -46,6 +46,44 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         return $this->invoiceItemRepository;
     }
 
+    private function runInvoiceMutation(?Invoice $invoice, bool $skipEditableCheck, callable $mutation): mixed
+    {
+        if (!$invoice instanceof Invoice) {
+            return $mutation();
+        }
+
+        $operation = function () use ($invoice, $skipEditableCheck, $mutation): mixed {
+            /** @var Service $invoiceService */
+            $invoiceService = $this->di['mod_service']('Invoice');
+            $state = $invoice->getId() === null ? null : $invoiceService->lockInvoiceState($invoice);
+
+            if (!$skipEditableCheck) {
+                $editable = $state === null
+                    ? $invoiceService->isInvoiceEditable($invoice)
+                    : $invoiceService->isInvoiceStateEditable($state['status'], $state['issued']);
+                if (!$editable) {
+                    throw new \FOSSBilling\InformationException('This invoice can no longer be edited. Issued invoices are immutable; correct them with a credit note or a replacement invoice.');
+                }
+            }
+
+            return $mutation();
+        };
+
+        // A caller such as updateInvoice already owns the transaction and invoice-row lock. A
+        // standalone item API call creates its own transaction so payment cannot commit between
+        // the invoice-state check and the item flush.
+        if ($invoice->getId() === null) {
+            return $operation();
+        }
+
+        $connection = $this->di['em']->getConnection();
+        if ($connection->isTransactionActive()) {
+            return $operation();
+        }
+
+        return $this->di['em']->wrapInTransaction($operation);
+    }
+
     public function markAsPaid(InvoiceItem $item, $charge = true): void
     {
         if ($charge && !$item->getCharged()) {
@@ -167,35 +205,44 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         }
     }
 
-    public function addNew(Invoice $proforma, array $data): int
+    public function addNew(Invoice $proforma, array $data, bool $skipEditableCheck = false): int
     {
-        $title = $data['title'] ?? '';
-        if (empty($title)) {
-            throw new \FOSSBilling\InformationException('Invoice item title is missing');
+        // Deposit lines credit the client balance when the invoice is paid,
+        // so they may only be created through the Add Funds flow
+        // (generateForAddFunds) — never from generic invoice input.
+        if (($data['type'] ?? InvoiceItem::TYPE_CUSTOM) === InvoiceItem::TYPE_DEPOSIT) {
+            throw new \FOSSBilling\InformationException('Deposit invoice items can only be created through the Add Funds flow.');
         }
 
-        $period = $this->normalizePeriod($data['period'] ?? null);
-        if ($period !== null) {
-            $period = $this->di['period']($period)->getCode();
-        }
+        return $this->runInvoiceMutation($proforma, $skipEditableCheck, function () use ($proforma, $data): int {
+            $title = $data['title'] ?? '';
+            if (empty($title)) {
+                throw new \FOSSBilling\InformationException('Invoice item title is missing');
+            }
 
-        $pi = new InvoiceItem();
-        $pi->setInvoice($proforma);
-        $pi->setType($data['type'] ?? InvoiceItem::TYPE_CUSTOM);
-        $pi->setRelId(isset($data['rel_id']) ? (string) $data['rel_id'] : null);
-        $pi->setTask($data['task'] ?? InvoiceItem::TASK_VOID);
-        $pi->setStatus($data['status'] ?? InvoiceItem::STATUS_PENDING_PAYMENT);
-        $pi->setTitle($data['title']);
-        $pi->setPeriod($period);
-        $pi->setQuantity(PriceValidator::validateQuantity($data['quantity'] ?? 1));
-        $pi->setUnit($data['unit'] ?? null);
-        $pi->setCharged($data['charged'] ?? 0);
-        $pi->setPrice(PriceValidator::validateSignedAmount($data['price'] ?? 0));
-        $pi->setTaxed($data['taxed'] ?? false);
-        $this->di['em']->persist($pi);
-        $this->di['em']->flush();
+            $period = $this->normalizePeriod($data['period'] ?? null);
+            if ($period !== null) {
+                $period = $this->di['period']($period)->getCode();
+            }
 
-        return (int) $pi->getId();
+            $pi = new InvoiceItem();
+            $pi->setInvoice($proforma);
+            $pi->setType($data['type'] ?? InvoiceItem::TYPE_CUSTOM);
+            $pi->setRelId(isset($data['rel_id']) ? (string) $data['rel_id'] : null);
+            $pi->setTask($data['task'] ?? InvoiceItem::TASK_VOID);
+            $pi->setStatus($data['status'] ?? InvoiceItem::STATUS_PENDING_PAYMENT);
+            $pi->setTitle($data['title']);
+            $pi->setPeriod($period);
+            $pi->setQuantity(PriceValidator::validateQuantity($data['quantity'] ?? 1));
+            $pi->setUnit($data['unit'] ?? null);
+            $pi->setCharged($data['charged'] ?? 0);
+            $pi->setPrice(PriceValidator::validateSignedAmount($data['price'] ?? 0));
+            $pi->setTaxed($data['taxed'] ?? false);
+            $this->di['em']->persist($pi);
+            $this->di['em']->flush();
+
+            return (int) $pi->getId();
+        });
     }
 
     private function normalizePeriod(mixed $period): ?string
@@ -218,43 +265,52 @@ class ServiceInvoiceItem implements InjectionAwareInterface
             return 0;
         }
 
-        $rate = $this->di['em']->getConnection()->fetchOne('SELECT taxrate FROM invoice WHERE id = :id', ['id' => $item->getInvoice()?->getId()]);
-        if ($rate <= 0) {
+        $price = $item->getPrice();
+        if (!is_numeric($price)) {
             return 0;
         }
 
-        return round($item->getPrice() * $rate / 100, 2);
+        $rate = $this->di['em']->getConnection()->fetchOne('SELECT taxrate FROM invoice WHERE id = :id', ['id' => $item->getInvoice()?->getId()]);
+        if (!is_numeric($rate) || $rate <= 0) {
+            return 0;
+        }
+
+        return round((float) $price * (float) $rate / 100, 2);
     }
 
     public function update(InvoiceItem $item, array $data): void
     {
-        $item->setTitle($data['title'] ?? $item->getTitle());
-        if (isset($data['price'])) {
-            $item->setPrice(PriceValidator::validateSignedAmount($data['price']));
-        }
+        $this->runInvoiceMutation($item->getInvoice(), false, function () use ($item, $data): void {
+            $item->setTitle($data['title'] ?? $item->getTitle());
+            if (isset($data['price'])) {
+                $item->setPrice(PriceValidator::validateSignedAmount($data['price']));
+            }
 
-        if (array_key_exists('quantity', $data)) {
-            $item->setQuantity(PriceValidator::validateQuantity($data['quantity']));
-        }
+            if (array_key_exists('quantity', $data)) {
+                $item->setQuantity(PriceValidator::validateQuantity($data['quantity']));
+            }
 
-        if (isset($data['taxed']) && !empty($data['taxed'])) {
-            $item->setTaxed((bool) $data['taxed']);
-        } else {
-            $item->setTaxed(false);
-        }
+            if (isset($data['taxed']) && !empty($data['taxed'])) {
+                $item->setTaxed((bool) $data['taxed']);
+            } else {
+                $item->setTaxed(false);
+            }
 
-        $this->di['em']->persist($item);
-        $this->di['em']->flush();
+            $this->di['em']->persist($item);
+            $this->di['em']->flush();
+        });
     }
 
     public function remove(InvoiceItem $model): bool
     {
-        $id = $model->getId();
-        $this->di['em']->remove($model);
-        $this->di['em']->flush();
-        $this->di['logger']->info('Removed invoice item "{id}"', ['id' => $id]);
+        return $this->runInvoiceMutation($model->getInvoice(), false, function () use ($model): bool {
+            $id = $model->getId();
+            $this->di['em']->remove($model);
+            $this->di['em']->flush();
+            $this->di['logger']->info('Removed invoice item "{id}"', ['id' => $id]);
 
-        return true;
+            return true;
+        });
     }
 
     public function generateForAddFunds(Invoice $proforma, $amount): void
@@ -391,7 +447,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         return $item;
     }
 
-    public function generateFromOrder(Invoice $proforma, Order $order, $task, $price, array $line = []): void
+    public function generateFromOrder(Invoice $proforma, Order $order, $task, $price, array $line = [], bool $applyPromo = true): void
     {
         $corderService = $this->di['mod_service']('Order');
 
@@ -411,7 +467,7 @@ class ServiceInvoiceItem implements InjectionAwareInterface
         $pi->setRelId((string) $order->getId());
         $pi->setTask($task);
         $pi->setStatus(InvoiceItem::STATUS_PENDING_PAYMENT);
-        $pi->setTitle($order->getTitle());
+        $pi->setTitle($line['title'] ?? $order->getTitle());
         $pi->setPeriod($period);
         $pi->setQuantity(PriceValidator::validateQuantity($quantity));
         $pi->setUnit($unit);
@@ -422,10 +478,14 @@ class ServiceInvoiceItem implements InjectionAwareInterface
 
         $corderService->setUnpaidInvoice($order, $proforma);
 
+        if (!$applyPromo) {
+            return;
+        }
+
         // apply discount for new invoice if promo code is recurrent
         $productService = $this->di['mod_service']('Product');
-        $promoAdjustment = $productService->getRenewalPromoAdjustment($order, (float) $price, (float) $quantity);
-        if ($promoAdjustment !== null) {
+        $promoAdjustments = $productService->getRenewalPromoAdjustments($order, (float) $price, (float) $quantity);
+        foreach ($promoAdjustments as $promoAdjustment) {
             $pd = [
                 'title' => $promoAdjustment['title'],
                 'price' => $promoAdjustment['discount_amount'] * -1,

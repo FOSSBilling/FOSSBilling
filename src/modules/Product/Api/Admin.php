@@ -24,6 +24,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Get paginated list of products.
      *
+     * @optional string $sort - sort column: 'id', 'title', 'slug', 'status', 'type', 'priority', 'created_at' or 'updated_at'
+     * @optional string $direction - sort direction: 'ASC' or 'DESC'
+     *
      * @return array
      */
     public function get_list($data)
@@ -405,6 +408,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Get product promo codes list.
      *
+     * @optional string $sort - sort column: 'id', 'code', 'type', 'value', 'active', 'priority', 'start_at', 'end_at', 'created_at' or 'updated_at'
+     * @optional string $direction - sort direction: 'ASC' or 'DESC'
+     *
      * @return array
      */
     public function promo_get_list($data)
@@ -427,6 +433,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @optional array $products - list of product ids for which this promo code applies
      * @optional array $periods - list of period codes
+     * @optional array $requires_products - list of product ids that must all be in the cart (bundle condition)
      * @optional bool $active - flag to enable/disable promo code
      * @optional bool $freesetup - flag to enable/disable free setup price
      * @optional bool $once_per_client - flag to enable/disable promo code usage once per client
@@ -434,6 +441,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional int $maxuses - how many times this promo code can be used
      * @optional string $start_at - date (Y-m-d) when will this promo code be active
      * @optional string $end_at - date (Y-m-d) when this promo code expires
+     * @optional bool $auto_apply - apply automatically when targeting matches, without a code
+     * @optional int $priority - ordering for automatic application (higher wins ties)
+     * @optional bool $stackable - can combine with other automatic promos
      *
      * @return int - new promo code id
      *
@@ -461,9 +471,14 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         if (isset($data['client_groups']) && is_array($data['client_groups'])) {
             $clientGroups = $data['client_groups'];
         }
+
+        $requiresProducts = [];
+        if (isset($data['requires_products']) && is_array($data['requires_products'])) {
+            $requiresProducts = $data['requires_products'];
+        }
         $service = $this->getService();
 
-        return (int) $service->createPromo($data['code'], $data['type'], $data['value'], $products, $periods, $clientGroups, $data);
+        return (int) $service->createPromo($data['code'], $data['type'], $data['value'], $products, $periods, $clientGroups, $requiresProducts, $data);
     }
 
     /**
@@ -505,6 +520,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Get promo redemption history.
      *
+     * @optional string $sort - sort column: 'id', 'phase', 'status', 'discount_amount', 'committed_at', 'released_at', 'created_at' or 'updated_at'
+     * @optional string $direction - sort direction: 'ASC' or 'DESC'
+     *
      * @return array
      *
      * @throws \FOSSBilling\Exception
@@ -513,6 +531,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     public function promo_redemption_get_list($data)
     {
         $this->checkPermissions('product', 'view');
+        $this->checkPermissions('client', 'view');
+        $this->checkPermissions('order', 'view');
+        $this->checkPermissions('invoice', 'view');
 
         /** @var \Box\Mod\Product\Repository\PromoRedemptionRepository $repo */
         $repo = $this->getService()->getPromoRedemptionRepository();
@@ -535,6 +556,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional string $value - promo code value. Percents or discount amount in currency
      * @optional array $products - list of product ids for which this promo code applies
      * @optional array $periods - list of period codes
+     * @optional array $requires_products - list of product ids that must all be in the cart (bundle condition)
      * @optional bool $active - flag to enable/disable promo code
      * @optional bool $freesetup - flag to enable/disable free setup price
      * @optional bool $once_per_client - flag to enable/disable promo code usage once per client
@@ -543,6 +565,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional string $start_at - date (Y-m-d) when will this promo code be active
      * @optional string $end_at - date (Y-m-d) when this promo code expires
      * @optional int $used - how many times this promo code was already used
+     * @optional bool $auto_apply - apply automatically when targeting matches, without a code
+     * @optional int $priority - ordering for automatic application (higher wins ties)
+     * @optional bool $stackable - can combine with other automatic promos
      *
      * @return bool
      *

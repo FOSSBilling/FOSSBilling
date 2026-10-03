@@ -11,7 +11,6 @@ declare(strict_types=1);
 
 namespace FOSSBilling;
 
-use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\Mailer\Mailer;
 use Symfony\Component\Mailer\Transport;
 use Symfony\Component\Mime\Address;
@@ -141,9 +140,7 @@ class Mail
         switch ($this->transport) {
             case 'sendmail':
                 $dsn = 'sendmail://default';
-                if (!function_exists('proc_open')) {
-                    throw new InformationException('FOSSBilling requires the proc_open PHP function to be enabled when using the sendmail transport');
-                }
+                self::assertSendmailFunctionsAvailable();
 
                 break;
             case 'smtp':
@@ -161,6 +158,9 @@ class Mail
                 if (empty($this->dsn)) {
                     throw new InformationException("Unable to send email: 'Custom' transport method was selected without a custom DSN");
                 }
+                if (str_starts_with(strtolower(trim($this->dsn)), 'sendmail://')) {
+                    self::assertSendmailFunctionsAvailable();
+                }
                 $dsn = $this->dsn;
 
                 break;
@@ -172,8 +172,24 @@ class Mail
             $transport = Transport::fromDsn($dsn);
             $mailer = new Mailer($transport);
             $mailer->send($this->email);
-        } catch (TransportExceptionInterface $e) {
+        } catch (\Throwable $e) {
+            // Disabled proc_open/escapeshellarg surface here as an Error rather
+            // than a TransportExceptionInterface. Wrap it so cron batch-send
+            // logs a friendly failure instead of crashing.
             throw new Exception('Failed to send email via :transport with the exception :e', [':transport' => $this->transport, ':e' => $e]);
+        }
+    }
+
+    /**
+     * The sendmail transport shells out via proc_open() and escapeshellarg(),
+     * which shared hosts often disable. Fail early with a friendly message.
+     *
+     * @throws InformationException
+     */
+    private static function assertSendmailFunctionsAvailable(): void
+    {
+        if (!function_exists('proc_open') || !function_exists('escapeshellarg')) {
+            throw new InformationException('FOSSBilling requires the proc_open and escapeshellarg PHP functions to be enabled when using the sendmail transport');
         }
     }
 

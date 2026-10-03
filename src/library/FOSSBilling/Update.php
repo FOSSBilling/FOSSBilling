@@ -495,6 +495,11 @@ class Update implements InjectionAwareInterface
             // is not mistaken for an abandoned update.
             $this->filesystem->touch($lockFile);
 
+            // Files on disk just changed underneath the running workers - reset
+            // opcache so the next request finalizes against the new code rather
+            // than stale pre-update classes.
+            $this->invalidateOpcodeCache();
+
             $finalization->createPendingState(Version::VERSION, $latestVersionNum, [
                 'branch' => $updateBranch,
                 'update_type' => $releaseInfo['update_type'] ?? Version::getUpdateType($latestVersionNum),
@@ -506,6 +511,19 @@ class Update implements InjectionAwareInterface
 
         // Log off the current user and destroy the session.
         $this->di['session']->destroy('admin');
+    }
+
+    /**
+     * Drops PHP's opcode cache so workers compile the just-extracted files.
+     *
+     * Best effort: opcache may be absent (e.g. CLI) or restricted, in which
+     * case there is nothing stale to clear and the update proceeds as before.
+     */
+    protected function invalidateOpcodeCache(): void
+    {
+        if (function_exists('opcache_reset')) {
+            @opcache_reset();
+        }
     }
 
     /**

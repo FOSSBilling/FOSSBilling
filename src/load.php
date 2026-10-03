@@ -47,18 +47,8 @@ function checkInstaller(): void
         return;
     }
 
-    // Check if /install directory still exists after installation has been completed.
-    if ($filesystem->exists(PATH_CONFIG) && $filesystem->exists(Path::join('install', 'install.php'))) {
-        // Throw exception only if debug mode is NOT enabled.
-        if (!empty(Config::getProperty('debug_and_monitoring.debug'))) {
-            throw new Exception('For security reasons, you have to delete the install directory before you can use FOSSBilling.', 2);
-        }
-    }
-
-    // If the config file exists and not install.php, but the install folder does, perform some cleanup.
-    // The guard above already excludes dev/test, so this only skips DEBUG instances.
-    // @phpstan-ignore booleanNot.alwaysTrue (DEBUG is a runtime constant)
-    if ($filesystem->exists(PATH_CONFIG) && $filesystem->exists(Path::normalize('install')) && !DEBUG) {
+    // If the config file and install directory both exist, installation has completed.
+    if ($filesystem->exists(PATH_CONFIG) && $filesystem->exists(Path::normalize('install'))) {
         // Bootstrap runs before the DI logger and PHP error log are configured.
         error_log('Removing the install directory now that installation is complete.');
         $filesystem->remove('install');

@@ -217,7 +217,7 @@ INSERT INTO `post` (`id`, `admin_id`, `title`, `description`, `content`, `slug`,
 VALUES
 	(1,1,'FOSSBilling needs your donations','Donations are crucial for the success and sustainability of FOSSBilling and other open-source projects. We need your help.','Donations are crucial for the success and sustainability of FOSSBilling and other open-source projects. Without financial support from users and the broader community, it is difficult for these projects to continue to grow and evolve.\nDonations help to cover the costs of development and maintenance. Developing and maintaining software requires time and resources, and without financial support, it can be challenging for open-source projects to sustain their efforts.\n\nThe FOSSBilling project has expenses such as hosting, hardware, software, and other costs associated with developing and maintaining FOSSBilling and other open-source projects. Your donations also help cover some of the maintainers'' expenses.\nClick [here](https://fossbilling.org/donate) to donate to the FOSSBilling project.','fossbilling-needs-your-donations','active',NULL,NULL,NULL,NULL,NULL,NOW(),NOW()),
 	(2,1,'Check out great features of FOSSBilling','FOSSBilling supports automated billing, invoicing, product provisioning', '* Supports automated billing, invoicing, product provisioning\n* Automatically create accounts as soon as the payment is received, suspend when account becomes overdue, terminate when a specified amount of time passes.\n* FOSSBilling is perfectly created to sell shared and reseller hosting accounts, software licenses and downloadable products.\n* Integrated helpdesk, knowledgebase, news and announcements system.\n','great-features-of-fossbilling','active',NULL,NULL,NULL,NULL,NULL,NOW(),NOW()),
-	(3,1,'FOSSBilling is customizable','You can create your own simple or advanced hooks on FOSSBilling events.','* You can create your own simple or advanced hooks on FOSSBilling events. For example, send notification via sms when new client signs up.\n* Create custom theme for your client interface\n','fossbilling-is-customizable','active',NULL,NULL,NULL,NULL,NULL,NOW(),NOW());
+	(3,1,'FOSSBilling is customizable','You can extend FOSSBilling with typed event listeners.','* You can extend FOSSBilling with typed event listeners. For example, send an SMS notification when a new client signs up.\n* Create custom theme for your client interface\n','fossbilling-is-customizable','active',NULL,NULL,NULL,NULL,NULL,NOW(),NOW());
 
 /*!40000 ALTER TABLE `post` ENABLE KEYS */;
 UNLOCK TABLES;
@@ -304,7 +304,7 @@ LOCK TABLES `setting` WRITE;
 
 INSERT INTO `setting` (`id`, `param`, `value`, `public`, `category`, `hash`, `created_at`, `updated_at`)
 VALUES
-	(1,'last_patch','114',0,NULL,NULL,NOW(),NOW()),
+	(1,'last_patch','127',0,NULL,NULL,NOW(),NOW()),
 	(2,'company_name','Company Name',0,NULL,NULL,NOW(),NOW()),
 	(3,'company_email','support@yourcompany.com',0,NULL,NULL,NOW(),NOW()),
 	(4,'company_signature','FOSSBilling.org - Client Management, Invoicing and Support Software',0,NULL,NULL,NOW(),NOW()),
@@ -319,23 +319,25 @@ VALUES
 	(13,'company_note','This is a placeholder for your About Us page. It will be available in /about-us.\nReplace this with information about your company, such as:\n- Your company history and mission\n- Services offered\n- Values and vision\n- Contact or support information\n- Any other details you want your clients to know about your business',0,NULL,NULL,NOW(),NOW()),
 	(14,'invoice_series','FOSS',0,NULL,NULL,NOW(),NOW()),
 	(15,'invoice_due_days','5',0,NULL,NULL,NOW(),NOW()),
-	(16,'invoice_auto_approval','1',0,NULL,NULL,NOW(),NOW()),
+	(16,'invoice_auto_issue','1',0,NULL,NULL,NOW(),NOW()),
 	(17,'invoice_issue_days_before_expire','14',0,NULL,NULL,NOW(),NOW()),
-	(18,'theme','huraga',0,NULL,NULL,NOW(),NOW()),
+	(18,'theme','default/client',0,NULL,NULL,NOW(),NOW()),
 	(19,'issue_invoice_days_before_expire','7',0,NULL,NULL,NOW(),NOW()),
 	(20,'invoice_refund_logic','credit_note',0,NULL,NULL,NOW(),NOW()),
 	(21,'invoice_cn_series','CN-',0,NULL,NULL,NOW(),NOW()),
 	(22,'invoice_cn_starting_number','1',0,NULL,NULL,NOW(),NOW()),
-	(23,'invoice_starting_number','1',0,NULL,NULL,NOW(),NOW()),
-	(24,'nameserver_1',NULL,0,NULL,NULL,NOW(),NOW()),
-	(25,'nameserver_2',NULL,0,NULL,NULL,NOW(),NOW()),
-	(26,'nameserver_3',NULL,0,NULL,NULL,NOW(),NOW()),
-	(27,'nameserver_4',NULL,0,NULL,NULL,NOW(),NOW()),
-	(28,'funds_min_amount','10',0,NULL,NULL,NOW(),NOW()),
-	(29,'funds_max_amount','200',0,NULL,NULL,NOW(),NOW()),
-	(30,'company_favicon','public/branding/favicon.ico',0,NULL,NULL,NOW(),NOW()),
-	(31,'hide_company_public','1',0,NULL,NULL,NOW(),NOW()),
-	(32,'invoice_hash_lifetime_days','90',0,NULL,NULL,NOW(),NOW());
+	(23,'invoice_dn_series','DN-',0,NULL,NULL,NOW(),NOW()),
+	(24,'invoice_dn_starting_number','1',0,NULL,NULL,NOW(),NOW()),
+	(25,'invoice_starting_number','1',0,NULL,NULL,NOW(),NOW()),
+	(26,'nameserver_1',NULL,0,NULL,NULL,NOW(),NOW()),
+	(27,'nameserver_2',NULL,0,NULL,NULL,NOW(),NOW()),
+	(28,'nameserver_3',NULL,0,NULL,NULL,NOW(),NOW()),
+	(29,'nameserver_4',NULL,0,NULL,NULL,NOW(),NOW()),
+	(30,'funds_min_amount','10',0,NULL,NULL,NOW(),NOW()),
+	(31,'funds_max_amount','200',0,NULL,NULL,NOW(),NOW()),
+	(32,'company_favicon','public/branding/favicon.ico',0,NULL,NULL,NOW(),NOW()),
+	(33,'hide_company_public','1',0,NULL,NULL,NOW(),NOW()),
+	(34,'invoice_hash_lifetime_days','90',0,NULL,NULL,NOW(),NOW());
 
 /*!40000 ALTER TABLE `setting` ENABLE KEYS */;
 UNLOCK TABLES;

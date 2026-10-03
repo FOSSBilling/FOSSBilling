@@ -38,8 +38,18 @@ class Country implements \JsonSerializable
         }
 
         // Instance the language
-        $country = CountryAlpha2::from($countryRecord['iso_code']);
-        $this->name = $country->getNameInLanguage($language);
+        $isoCode = $countryRecord['iso_code'];
+        $country = is_string($isoCode) ? CountryAlpha2::tryFrom($isoCode) : null;
+        $country ??= throw new IncompleteRecord('Unknown country ISO code for the provided IP address');
+
+        try {
+            $this->name = $country->getNameInLanguage($language);
+        } catch (\Throwable) {
+            // ext-intl is optional on some hosts. The underlying standards
+            // library calls locale_get_display_region() unconditionally, so
+            // fall back to the ISO code rather than causing a fatal error during session setup.
+            $this->name = $isoCode;
+        }
         $this->flag = $country->getFlagEmoji();
 
         foreach ($country->getCurrenciesAlpha3() as $currency) {

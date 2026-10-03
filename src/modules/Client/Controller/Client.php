@@ -88,7 +88,6 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         }
 
         $service = $this->di['mod_service']('client');
-        $this->di['events_manager']->fire(['event' => 'onBeforePasswordResetClient']);
         $data = [
             'hash' => $hash,
         ];

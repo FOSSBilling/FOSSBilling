@@ -15,6 +15,7 @@ use Egulias\EmailValidator\EmailValidator;
 use Egulias\EmailValidator\Validation\DNSCheckValidation;
 use Egulias\EmailValidator\Validation\MultipleValidationWithAnd;
 use Egulias\EmailValidator\Validation\RFCValidation;
+use Symfony\Component\HttpFoundation\IpUtils;
 
 class Tools
 {
@@ -174,8 +175,8 @@ class Tools
      */
     public function validateAndSanitizeEmail(string $email, bool $throw = true, bool $checkDNS = true)
     {
-        $email = htmlspecialchars($email);
-
+        // Validated and returned raw: `&` is legal in an address, so encoding
+        // here would corrupt stored addresses and wrongly reject valid ones.
         $validator = new EmailValidator();
         if (Environment::isProduction() && $checkDNS) {
             $validations = new MultipleValidationWithAnd([
@@ -350,8 +351,8 @@ class Tools
                     'timeout' => 2,
                 ]);
 
-                $ip = filter_var($response->getContent(), FILTER_VALIDATE_IP);
-                if ($ip) {
+                $ip = filter_var(trim($response->getContent()), FILTER_VALIDATE_IP);
+                if ($ip && !IpUtils::checkIp($ip, IpUtils::PRIVATE_SUBNETS)) {
                     return $ip;
                 }
             } catch (\Exception $e) {
@@ -527,5 +528,28 @@ class Tools
         }
 
         return $sessionId;
+    }
+
+    /**
+     * Sign a payment callback's gateway/invoice pair with the install salt.
+     * No expiry: recurring notifications reuse the same callback URL.
+     */
+    public static function signCallbackParams(string|int $gatewayId, string|int $invoiceId): string
+    {
+        return hash_hmac('sha256', $gatewayId . '|' . $invoiceId, (string) Config::getProperty('info.salt'));
+    }
+
+    /**
+     * Verify a signature produced by signCallbackParams().
+     */
+    public static function verifyCallbackSignature(string|int $gatewayId, string|int $invoiceId, mixed $signature): bool
+    {
+        if (!is_string($signature) || $signature === '') {
+            return false;
+        }
+
+        $expectedSignature = self::signCallbackParams($gatewayId, $invoiceId);
+
+        return hash_equals($expectedSignature, $signature);
     }
 }

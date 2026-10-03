@@ -23,6 +23,7 @@ use Box\Mod\Servicehosting\Repository\ServiceHostingServerRepository;
 use FOSSBilling\Exception;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\SortOptions;
 use FOSSBilling\Tools;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -352,14 +353,21 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function action_delete(Order $order): void
+    public function action_delete(Order $order, bool $forceDelete = false): void
     {
         $orderService = $this->di['mod_service']('order');
         $service = $orderService->getOrderService($order);
         if ($service instanceof ServiceHosting) {
             // cancel if not canceled
             if ($order->getStatus() != Order::STATUS_CANCELED) {
-                $this->action_cancel($order);
+                try {
+                    $this->action_cancel($order);
+                } catch (\Exception $e) {
+                    if (!$forceDelete) {
+                        throw $e;
+                    }
+                    $this->di['logger']->info('Remote cancel failed during forced delete, removing local service: {message}', ['message' => $e->getMessage()]);
+                }
             }
             $this->di['em']->remove($service);
             $this->di['em']->flush();
@@ -765,6 +773,12 @@ class Service implements InjectionAwareInterface
         [$sld, $tld] = [null, null];
 
         if ($data['domain']['action'] == 'owndomain') {
+            $required = [
+                'owndomain_sld' => 'Hosting product must have defined owndomain_sld parameter',
+                'owndomain_tld' => 'Hosting product must have defined owndomain_tld parameter',
+            ];
+            $this->di['validator']->checkRequiredParamsForArray($required, $data['domain']);
+
             $sld = $data['domain']['owndomain_sld'];
             $tld = str_contains((string) $data['domain']['owndomain_tld'], '.') ? $data['domain']['owndomain_tld'] : '.' . $data['domain']['owndomain_tld'];
         }
@@ -838,7 +852,14 @@ class Service implements InjectionAwareInterface
         $serverManagers = [];
 
         foreach ($this->_getServerManagers() as $serverManager) {
-            $serverManagers[$serverManager] = $this->getServerManagerConfig($serverManager);
+            $config = $this->getServerManagerConfig($serverManager);
+
+            // Skip managers whose config cannot be loaded (missing class,
+            // broken file, no form definition): the admin templates read
+            // `manager.label`, so an empty config would crash the page.
+            if ($config !== []) {
+                $serverManagers[$serverManager] = $config;
+            }
         }
 
         return $serverManagers;
@@ -961,9 +982,16 @@ class Service implements InjectionAwareInterface
 
     public function getServersSearchQuery($data): array
     {
-        $sql = 'SELECT *
+        $sort = SortOptions::fromArray(is_array($data) ? $data : [], [
+            'id' => 'id',
+            'name' => 'name',
+            'ip' => 'ip',
+            'hostname' => 'hostname',
+        ]);
+        $orderBy = $sort->toOrderByClause('id') ?? 'id ASC';
+        $sql = "SELECT *
                 FROM service_hosting_server
-                ORDER BY id ASC';
+                ORDER BY {$orderBy}";
 
         return [$sql, []];
     }
@@ -980,7 +1008,16 @@ class Service implements InjectionAwareInterface
             $params['server_id'] = $serverID;
         }
 
-        $sql = $sql . ' ORDER BY id ASC';
+        $sort = SortOptions::fromArray(is_array($data) ? $data : [], [
+            'id' => 'id',
+            'username' => 'username',
+            'sld' => 'sld',
+            'tld' => 'tld',
+            'ip' => 'ip',
+            'created_at' => 'created_at',
+        ]);
+        $orderBy = $sort->toOrderByClause('id') ?? 'id ASC';
+        $sql = $sql . " ORDER BY {$orderBy}";
 
         return [$sql, $params];
     }
@@ -1199,11 +1236,93 @@ class Service implements InjectionAwareInterface
 
     public function getHpSearchQuery($data): array
     {
-        $sql = 'SELECT *
+        $sort = SortOptions::fromArray(is_array($data) ? $data : [], [
+            'id' => 'id',
+            'name' => 'name',
+        ]);
+        $orderBy = $sort->toOrderByClause('id') ?? 'id asc';
+        $sql = "SELECT *
                 FROM service_hosting_hp
-                ORDER BY id asc';
+                ORDER BY {$orderBy}";
 
         return [$sql, []];
+    }
+
+    public function getServerUsageStats(ServiceHostingServer $server): array
+    {
+        $serviceIds = $this->di['em']->getConnection()->fetchFirstColumn(
+            'SELECT id FROM service_hosting WHERE service_hosting_server_id = ?',
+            [(int) $server->getId()]
+        );
+
+        return $this->splitActiveOrphanedIds($serviceIds);
+    }
+
+    public function getHpUsageStats(ServiceHostingHp $plan): array
+    {
+        $serviceIds = $this->di['em']->getConnection()->fetchFirstColumn(
+            'SELECT id FROM service_hosting WHERE service_hosting_hp_id = ?',
+            [(int) $plan->getId()]
+        );
+
+        return $this->splitActiveOrphanedIds($serviceIds);
+    }
+
+    private function splitActiveOrphanedIds(array $serviceIds): array
+    {
+        $serviceIds = array_map(intval(...), $serviceIds);
+        if ($serviceIds === []) {
+            return ['total' => 0, 'active' => 0, 'orphaned' => 0, 'orphanedIds' => []];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($serviceIds), '?'));
+        $activeIds = $this->di['em']->getConnection()->fetchFirstColumn(
+            "SELECT DISTINCT service_id FROM client_order WHERE service_type = ? AND service_id IN ($placeholders)",
+            array_merge([\Box\Mod\Product\Service::HOSTING], $serviceIds)
+        );
+        $activeIds = array_map(intval(...), $activeIds);
+        $orphanedIds = array_values(array_diff($serviceIds, $activeIds));
+
+        return [
+            'total' => count($serviceIds),
+            'active' => count($activeIds),
+            'orphaned' => count($orphanedIds),
+            'orphanedIds' => $orphanedIds,
+        ];
+    }
+
+    public function detachOrphanedServerUsages(ServiceHostingServer $server): int
+    {
+        $stats = $this->getServerUsageStats($server);
+        if ($stats['orphanedIds'] === []) {
+            return 0;
+        }
+
+        $orphans = $this->getServiceHostingRepository()->findBy(['id' => $stats['orphanedIds']]);
+        foreach ($orphans as $orphan) {
+            $orphan->setServiceHostingServer(null);
+        }
+        $this->di['em']->flush();
+        $this->di['logger']->info('Detached {count} orphaned service hostings from hosting server {id}', ['count' => count($orphans), 'id' => $server->getId()]);
+
+        return count($orphans);
+    }
+
+    public function detachOrphanedHpUsages(ServiceHostingHp $plan): int
+    {
+        $stats = $this->getHpUsageStats($plan);
+        if ($stats['orphanedIds'] === []) {
+            return 0;
+        }
+
+        $orphans = $this->getServiceHostingRepository()->findBy(['id' => $stats['orphanedIds']]);
+        foreach ($orphans as $orphan) {
+            $orphan->setServiceHostingHp(null);
+        }
+        $this->di['em']->flush();
+        $this->di['logger']->info('Detached {count} orphaned service hostings from hosting plan {id}', ['count' => count($orphans), 'id' => $plan->getId()]);
+
+        return count($orphans);
     }
 
     /**
@@ -1212,9 +1331,12 @@ class Service implements InjectionAwareInterface
     public function deleteHp(ServiceHostingHp $model): bool
     {
         $id = $model->getId();
-        $serviceHosting = $this->getServiceHostingRepository()->findOneBy(['serviceHostingHp' => $model]);
-        if ($serviceHosting) {
+        $stats = $this->getHpUsageStats($model);
+        if ($stats['active'] > 0) {
             throw new InformationException('Cannot remove hosting plan which has active accounts');
+        }
+        if ($stats['orphaned'] > 0) {
+            throw new InformationException('Cannot remove hosting plan which has orphaned accounts; detach them first');
         }
         $this->di['em']->remove($model);
         $this->di['em']->flush();
@@ -1404,11 +1526,11 @@ class Service implements InjectionAwareInterface
 
         if (isset($data['domain']['action'])) {
             $this->validateDomainAction($data, $c);
-        }
 
-        [$sld, $tld] = $this->_getDomainTuple($data);
-        $data['sld'] = $sld;
-        $data['tld'] = $tld;
+            [$sld, $tld] = $this->_getDomainTuple($data);
+            $data['sld'] = $sld;
+            $data['tld'] = $tld;
+        }
 
         return $data;
     }
@@ -1448,7 +1570,15 @@ class Service implements InjectionAwareInterface
 
         $c = json_decode($product->getConfig() ?? '', true) ?? [];
 
-        $dc = $data['domain'];
+        $dc = $data['domain'] ?? null;
+
+        // Hosting can be ordered without domain fields (e.g. API orders
+        // carrying only sld/tld): there is no domain action to attach
+        // a product for.
+        if (!is_array($dc) || ($dc['action'] ?? null) === null) {
+            return false;
+        }
+
         $action = $dc['action'];
 
         if ($action == 'subdomain') {

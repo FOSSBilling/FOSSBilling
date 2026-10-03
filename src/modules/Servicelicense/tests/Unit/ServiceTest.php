@@ -14,6 +14,8 @@ use Box\Mod\Order\Entity\Order;
 use Box\Mod\Order\Service as OrderService;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Servicelicense\Entity\ServiceLicense;
+use Box\Mod\Servicelicense\Event\AfterServiceLicenseResetEvent;
+use Box\Mod\Servicelicense\Event\BeforeServiceLicenseResetEvent;
 use Box\Mod\Servicelicense\Repository\ServiceLicenseRepository;
 use Box\Mod\Servicelicense\Server;
 use Box\Mod\Servicelicense\Service;
@@ -21,6 +23,7 @@ use Doctrine\ORM\EntityManagerInterface;
 
 use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
+use function Tests\Helpers\setEntityId;
 
 function serviceLicenseCreateProductEntity(string $config): Product
 {
@@ -225,22 +228,39 @@ test('action delete', function (): void {
 
 test('reset', function (): void {
     $service = new Service();
-    $serviceLicenseModel = new ServiceLicense();
+    $serviceLicenseModel = (new ServiceLicense())->setClientId(17)->setIps('["192.0.2.4"]');
+    setEntityId($serviceLicenseModel, 42);
 
-    $eventMock = Mockery::mock(Box_EventManager::class);
-    $eventMock->shouldReceive('fire')->atLeast()->once();
+    $timeline = [];
+    $flushed = false;
+    $eventDispatcher = new Symfony\Component\EventDispatcher\EventDispatcher();
+    $eventDispatcher->addListener(BeforeServiceLicenseResetEvent::class, static function (BeforeServiceLicenseResetEvent $event) use (&$timeline, &$flushed, $serviceLicenseModel): void {
+        expect($flushed)->toBeFalse();
+        expect($serviceLicenseModel->getIps())->toBe('["192.0.2.4"]');
+        expect(get_object_vars($event))->toBe(['licenseId' => 42, 'clientId' => 17]);
+        $timeline[] = 'before';
+    });
+    $eventDispatcher->addListener(AfterServiceLicenseResetEvent::class, static function (AfterServiceLicenseResetEvent $event) use (&$timeline, &$flushed): void {
+        expect($flushed)->toBeTrue();
+        expect(get_object_vars($event))->toBe(['licenseId' => 42, 'clientId' => 17]);
+        $timeline[] = 'after';
+    });
 
     $em = Mockery::mock(EntityManagerInterface::class);
-    $em->shouldReceive('flush')->atLeast()->once();
+    $em->shouldReceive('flush')->once()->andReturnUsing(function () use (&$flushed): void {
+        $flushed = true;
+    });
 
     $di = container();
     $di['em'] = $em;
     $di['logger'] = new FOSSBilling\Logger();
-    $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $eventDispatcher;
 
     $service->setDi($di);
     $result = $service->reset($serviceLicenseModel);
     expect($result)->toBeTrue();
+    expect($serviceLicenseModel->getIps())->toBe('[]');
+    expect($timeline)->toBe(['before', 'after']);
 });
 
 test('is license active', function (): void {

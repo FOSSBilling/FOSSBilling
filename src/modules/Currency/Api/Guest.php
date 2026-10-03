@@ -69,7 +69,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
 
         $p = floatval($price);
         if ($convert) {
-            $p = $price * $c['conversion_rate'];
+            $p = $p * (float) $c['conversion_rate'];
         }
 
         $di = $this->getDi();

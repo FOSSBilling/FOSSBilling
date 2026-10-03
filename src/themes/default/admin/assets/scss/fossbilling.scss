@@ -1,0 +1,423 @@
+@use "flags";
+@use "theme_settings";
+@use "../../../../../../frontend/styles/shared-theme";
+
+// Let responsive tables use the available width before falling back to scrolling.
+// Individual cells can retain text-nowrap for values that must stay together.
+.table-responsive > .table > :is(thead, tbody, tfoot) > tr > :is(th, td):not(.text-nowrap) {
+    white-space: normal;
+    overflow-wrap: break-word;
+}
+
+.table-responsive > .table > tbody > tr > td:has(> .btn-icon) {
+    white-space: nowrap;
+}
+
+.table-responsive {
+    container-type: inline-size;
+}
+
+@container (max-width: 60rem) {
+    .table-responsive > .table > :is(thead, tbody, tfoot) > tr > :is(th, td) {
+        padding-inline: 0.5rem;
+    }
+}
+
+// Keep the keyboard skip link above Tabler's fixed sidebar.
+.admin-skip-link {
+    z-index: 1100;
+}
+
+// Keep navigation readable in both the expanded sidebar and the folded rail.
+.admin-sidebar .navbar-nav {
+    --tblr-nav-link-font-size: 1rem;
+
+    .nav-link-icon {
+        --tblr-nav-link-icon-height: 1.5rem;
+    }
+
+    .nav-link-icon .icon {
+        --tblr-icon-size: 1.5rem;
+    }
+
+    .dropdown-menu {
+        --tblr-dropdown-font-size: 1rem;
+    }
+}
+
+.admin-sidebar-logout {
+    display: none;
+}
+
+@media (min-width: 992px) {
+    // Follow the sidebar's actual width, including its folded and hover states.
+    .admin-sidebar .navbar-footer {
+        container-type: inline-size;
+    }
+
+    @container (min-width: 12rem) {
+        .admin-sidebar-logout {
+            display: inline-flex;
+        }
+    }
+}
+
+// Bound the expanded mobile menu while keeping long extension lists reachable.
+@media (max-width: 991.98px) {
+    .admin-sidebar #navbar-menu {
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+}
+
+.modal-dialog {
+    margin-right: auto;
+    margin-left: auto;
+}
+
+.page {
+    min-height: calc(100vh - var(--admin-debugbar-top, 0px) - var(--admin-debugbar-bottom, 0px) + var(--admin-debugbar-launcher-bottom, 0px) - 2px);
+    margin-top: var(--admin-debugbar-launcher-top, 0px);
+    padding-bottom: var(--admin-debugbar-launcher-bottom, 0px);
+}
+
+// Keep the closed debugger in its own full-width dock, like the open toolbar.
+body div.phpdebugbar.phpdebugbar-closed {
+    width: 100%;
+    border-inline: 0;
+}
+
+@media (min-width: 992px) {
+    .admin-sidebar.navbar-vertical.navbar-expand-lg {
+        top: var(--admin-debugbar-top, 0px);
+        bottom: var(--admin-debugbar-bottom, 0px);
+    }
+}
+
+.ck.ck-content:not(.ck-comment__input *) {
+    min-height: 300px;
+    overflow-y: auto;
+}
+
+.ts-input {
+    color: inherit;
+}
+
+.ts-wrapper {
+    .ts-control {
+        width: 100%;
+        color: inherit;
+        &.locale {
+            width: 205px;
+        }
+        .dropdown-menu {
+            width: 100%;
+            height: auto;
+        }
+    }
+
+    .ts-dropdown {
+        .active {
+            background-color: color-mix(in oklab, var(--tblr-secondary) 6%, transparent);
+            color: inherit;
+        }
+
+        .selected {
+            background-color: color-mix(in oklab, var(--tblr-secondary) 10%, transparent);
+        }
+    }
+}
+
+.canned_ticket_response {
+    width: 18rem;
+}
+
+.navbar-brand-image {
+    height: 1.6rem
+}
+
+.ts-dropdown.locale-selector-dropdown {
+    background-color: var(--tblr-bg-surface);
+    border: var(--tblr-border-width) var(--tblr-border-style) var(--tblr-border-color);
+    border-radius: 0 0 var(--tblr-border-radius) var(--tblr-border-radius);
+    box-shadow: var(--tblr-box-shadow);
+    z-index: 1080;
+    border-top: 1px solid var(--tblr-border-color);
+}
+
+.ts-dropdown.locale-selector-dropdown .dropdown-item {
+    background-color: transparent;
+    color: var(--tblr-body-color);
+    padding: 0.5rem 1rem;
+}
+
+.ts-dropdown-content {
+    background-color: var(--tblr-bg-forms);
+}
+
+.ts-dropdown.locale-selector-dropdown .dropdown-item:hover,
+.ts-dropdown.locale-selector-dropdown .dropdown-item.active,
+.ts-dropdown.locale-selector-dropdown .dropdown-item.selected {
+    background-color: color-mix(in oklab, var(--tblr-primary) 10%, transparent);
+    color: var(--tblr-primary);
+}
+
+.navbar-nav .nav-item {
+    overflow: visible;
+}
+
+.navbar-nav {
+    overflow: visible;
+}
+
+.header {
+    overflow: visible;
+}
+
+.ts-wrapper.js-locale-selector.focus .ts-control.locale {
+    border-color: var(--tblr-border-color) !important;
+    box-shadow: none !important;
+    outline: var(--tblr-focus-ring-width) solid var(--tblr-focus-ring-color);
+    outline-offset: 2px;
+}
+
+.ts-wrapper.js-locale-selector .ts-control.locale {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    white-space: nowrap;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    line-height: 1.5;
+    min-height: auto;
+}
+
+.ts-wrapper.js-locale-selector {
+    min-width: 260px;
+}
+
+@media (max-width: 768px) {
+    .ts-wrapper.js-locale-selector {
+        min-width: 200px;
+        width: auto;
+    }
+}
+
+@media (max-width: 320px) {
+    .js-theme-toggler {
+        display: none;
+    }
+}
+
+#script-code, #html-code, #html-code2 {
+    resize: none;
+}
+
+[data-bs-theme=dark]
+{
+  .toast {
+    background: var(--tblr-bg-surface);
+    border: var(--tblr-border-width) var(--tblr-border-style) var(--tblr-secondary);
+    }
+  .toast-header {
+    color: var(--tblr-secondary);
+   }
+}
+
+.toast {
+    position: relative;
+  }
+
+.search-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.search-input-group > .input-group-text {
+    color: var(--tblr-secondary);
+}
+
+.search-input-group > .form-control {
+    min-width: 16rem;
+}
+
+.search-filter-toggle,
+.search-submit-toggle {
+    appearance: none;
+    -webkit-appearance: none;
+    min-width: 0;
+    min-height: 0;
+    padding: 0.375rem 0.75rem;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: -0.375rem -0.75rem;
+    color: inherit;
+    border-radius: 0.25rem;
+
+    &:focus,
+    &:focus-visible,
+    &:active {
+        box-shadow: none;
+    }
+}
+
+.new-client-modal-dialog {
+    max-width: min(720px, calc(100vw - 1.5rem));
+}
+
+.fb-modal-form > .modal-body > .fb-modal-section + .fb-modal-section {
+    margin-top: 1.75rem;
+}
+
+.fb-modal-section {
+    padding: 0.25rem 0 0;
+}
+
+.fb-modal-section-header {
+    margin-bottom: 1rem;
+}
+
+.fb-modal-section-header-collapsible {
+    display: block;
+}
+
+.fb-modal-section-heading-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+}
+
+.fb-modal-section-title {
+    margin: 0;
+}
+
+.fb-modal-section-description {
+    margin-top: 0.25rem;
+    color: var(--tblr-secondary);
+    font-size: 0.875rem;
+}
+
+.fb-modal-section-toggle {
+    appearance: none;
+    -webkit-appearance: none;
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    min-height: 0;
+    padding: 0;
+    margin: 0;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    color: var(--tblr-secondary);
+    box-shadow: none;
+    line-height: 1;
+
+    &:hover,
+    &:focus,
+    &:focus-visible,
+    &:active {
+        background: transparent;
+        color: var(--tblr-body-color);
+        box-shadow: none;
+    }
+
+    .icon {
+        width: 0.9rem;
+        height: 0.9rem;
+        transition: transform 0.2s ease;
+    }
+
+    &[aria-expanded="true"] .icon {
+        transform: rotate(180deg);
+    }
+}
+
+.fb-modal-subsection-body {
+    padding: 0 0 0.85rem;
+}
+
+@media (min-width: 992px) {
+    .new-client-modal-dialog {
+        max-width: min(820px, calc(100vw - 2rem));
+    }
+}
+
+.activity-log-filters .form-label {
+    margin-bottom: 0.5rem;
+}
+
+.activity-log-table .activity-message-cell {
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+#back-to-top {
+    left: auto;
+    right: 1.5rem;
+    bottom: 2rem;
+    z-index: 1030;
+}
+
+.back-to-top-hidden {
+    display: none !important;
+}
+
+.back-to-top-visible {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+}
+
+.dashboard-stat-link {
+    color: var(--tblr-body-color);
+    font-weight: 500;
+    text-decoration: none;
+
+    &:hover,
+    &:focus {
+        color: var(--tblr-primary);
+        text-decoration: none;
+    }
+}
+
+.db-avatar {
+    background-color: var(--tblr-bg-surface);
+}
+
+@media (min-width: 992px) {
+    .activity-log-filters .form-label {
+        margin-bottom: 0;
+    }
+}
+
+.search-filter-toggle:focus-visible,
+.search-submit-toggle:focus-visible,
+.fb-modal-section-toggle:focus-visible {
+    outline: var(--tblr-focus-ring-width) solid var(--tblr-focus-ring-color);
+    outline-offset: 2px;
+}
+
+.datepicker-wrapper {
+    .datepicker {
+        padding-right: 4.5rem;
+    }
+
+    .datepicker-clear {
+        position: absolute;
+        right: 2rem;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 3;
+    }
+}
+
+textarea[data-bs-toggle="autosize"] {
+    max-height: 24rem;
+}

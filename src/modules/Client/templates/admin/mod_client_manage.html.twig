@@ -261,8 +261,11 @@
                                     </div>
                                 </div>
                                 <div class="col-xl-6">
-                                    <label class="form-label">{{ 'Group'|trans }}</label>
-                                    {{ mf.selectbox('group_id', admin.client_group_get_pairs, client.group_id, 0, 'Select Group'|trans) }}
+                                    <label class="form-label">{{ 'Groups'|trans }}</label>
+                                    <input type="hidden" name="group_ids[]" value=""/>
+                                    <table class="table card-table table-vcenter table-striped text-nowrap">
+                                        <tbody>{% set group_pairs = admin.client_group_get_pairs %}{% for id, title in group_pairs %}<tr><td class="w-1"><input type="checkbox" name="group_ids[]" value="{{ id }}" {% if id in client.group_ids|default([]) %} checked{% endif %} /></td><td>{{ title }}</td></tr>{% endfor %}</tbody>
+                                    </table>
                                 </div>
                                 <div class="col-xl-6">
                                     <label class="form-label">{{ 'Email'|trans }}</label>
@@ -271,7 +274,7 @@
                                 <div class="col-xl-6">
                                     <label class="form-label">{{ 'Billing Email'|trans }}</label>
                                     <input class="form-control" type="email" name="billing_email" value="{{ client.billing_email }}" placeholder="{{ client.email }}">
-                                    <small class="form-hint">{{ 'Invoice notifications are sent here. Leave blank to use the account email.'|trans }}</small>
+                                    <small class="form-text">{{ 'Invoice notifications are sent here. Leave blank to use the account email.'|trans }}</small>
                                 </div>
                                 <div class="col-xl-3">
                                     <label class="form-label">{{ 'First Name'|trans }}</label>
@@ -285,7 +288,7 @@
                                     <label class="form-label" for="birthday">{{ 'Date of Birth'|trans }}</label>
                                     <div class="input-group">
                                         <div class="input-icon w-100">
-                                            <input class="form-control datepicker"
+                                            <input class="form-control datepicker" data-clear-label="{{ 'Clear date'|trans }}" data-invalid-date-label="{{ 'Enter a valid date in YYYY-MM-DD format.'|trans }}"
                                                    id="birthday"
                                                    value="{{ client.birthday }}"
                                                    name="birthday"
@@ -382,11 +385,28 @@
                                         </label>
                                     </div>
                                 </div>
+                                <div class="col-xl-3">
+                                    <label class="form-label d-block">{{ 'Merge Renewal Invoices'|trans }}</label>
+                                    <div class="d-flex flex-wrap gap-3">
+                                        <label class="form-check">
+                                            <input class="form-check-input" id="radioMergeRenewalsInherit" type="radio" name="merge_renewals" value=""{% if client.merge_renewals is null %} checked{% endif %}>
+                                            <span class="form-check-label">{{ 'Inherit'|trans }}</span>
+                                        </label>
+                                        <label class="form-check">
+                                            <input class="form-check-input" id="radioMergeRenewalsYes" type="radio" name="merge_renewals" value="1"{% if client.merge_renewals is same as(true) %} checked{% endif %}>
+                                            <span class="form-check-label">{{ 'Yes'|trans }}</span>
+                                        </label>
+                                        <label class="form-check">
+                                            <input class="form-check-input" id="radioMergeRenewalsNo" type="radio" name="merge_renewals" value="0"{% if client.merge_renewals is same as(false) %} checked{% endif %}>
+                                            <span class="form-check-label">{{ 'No'|trans }}</span>
+                                        </label>
+                                    </div>
+                                </div>
                                 <div class="col-xl-6">
                                     <label class="form-label" for="created_at">{{ 'Account Created At'|trans }}</label>
                                     <div class="input-group">
                                         <div class="input-icon w-100">
-                                            <input class="form-control datepicker"
+                                            <input class="form-control datepicker" data-clear-label="{{ 'Clear date'|trans }}" data-invalid-date-label="{{ 'Enter a valid date in YYYY-MM-DD format.'|trans }}"
                                                    id="created_at"
                                                    value="{{ client.created_at|date('Y-m-d') }}"
                                                    name="created_at"
@@ -417,11 +437,11 @@
                                             </optgroup>
                                         {% endfor %}
                                     </select>
-                                    <small class="form-hint text-muted">{{ 'Used to display dates and times in the client\'s local time across tickets, invoices, and order history.'|trans }}</small>
+                                    <small class="form-text text-muted">{{ 'Used to display dates and times in the client\'s local time across tickets, invoices, and order history.'|trans }}</small>
                                 </div>
                                 <div class="col-12">
                                     <label class="form-label">{{ 'Notes'|trans }}</label>
-                                    <textarea class="form-control" name="notes" rows="5">{{ client.notes }}</textarea>
+                                    <textarea data-bs-toggle="autosize" class="form-control" name="notes" rows="5">{{ client.notes }}</textarea>
                                 </div>
                             </div>
                         </section>
@@ -447,7 +467,8 @@
                         <div class="row g-3">
                             <div class="col-xl-6">
                                 <label class="form-label">{{ 'Password'|trans }}</label>
-                                <input class="form-control" type="password" name="password" value="" required>
+                                <input class="form-control" id="client-new-password" type="password" name="password" value="" required>
+                                {{ include('partial_password_strength.html.twig', { input_id: 'client-new-password' }) }}
                             </div>
                             <div class="col-xl-6">
                                 <label class="form-label">{{ 'Confirm Password'|trans }}</label>
@@ -493,7 +514,10 @@
         </div>
         {% endif %}
 
-        <div class="tab-pane fade" id="tab-orders" role="tabpanel">
+        <div class="tab-pane fade" id="tab-orders" role="tabpanel" data-list-ns="order">
+            {% set orderPage = request.order_page matches '/^\\d+$/' ? request.order_page : 1 %}
+            {% set orderPerPage = request.order_per_page matches '/^\\d+$/' ? request.order_per_page : 25 %}
+            {% set orders = admin.order_get_list(request|merge({ 'page': orderPage, 'per_page': orderPerPage, 'client_id': client.id, 'sort': request.order_sort|default(null), 'direction': request.order_direction|default('ASC') })) %}
             {% embed 'partial_admin_related_section.html.twig' with {
                 title: 'Client Orders'|trans,
                 subtitle: 'Review the client’s active and historical orders, or create a new order directly for this client.'|trans,
@@ -514,16 +538,15 @@
                         <table class="table card-table table-vcenter table-striped text-nowrap">
                             <thead>
                                 <tr>
-                                    <th class="w-1">#</th>
-                                    <th>{{ 'Title'|trans }}</th>
+                                    {{ include('partial_sortable_th.html.twig', { 'label': '#'|trans, 'sort_key': 'id', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-orders', 'sort_param': 'order_sort', 'direction_param': 'order_direction', 'page_param': 'order_page', 'default_sort': 'id', 'default_direction': 'DESC', 'th_class': 'w-1' }) }}
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Title'|trans, 'sort_key': 'title', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-orders', 'sort_param': 'order_sort', 'direction_param': 'order_direction', 'page_param': 'order_page', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
                                     <th>{{ 'Amount'|trans }}</th>
                                     <th>{{ 'Period'|trans }}</th>
-                                    <th>{{ 'Status'|trans }}</th>
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-orders', 'sort_param': 'order_sort', 'direction_param': 'order_direction', 'page_param': 'order_page', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
                                     <th class="w-1"></th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {% set orders = admin.order_get_list({ 'per_page': 20, 'client_id': client.id }) %}
                                 {% for order in orders.list %}
                                 <tr>
                                     <td>{{ order.id }}</td>
@@ -550,10 +573,19 @@
                         </table>
                     </div>
                 {% endblock %}
+
+                {% block section_footer %}
+                    <div class="d-flex align-items-center">
+                        {{ include('partial_pagination.html.twig', { 'list': orders, 'url': 'client/manage/' ~ client.id, 'hash': '#tab-orders', 'page_param': 'order_page', 'per_page_param': 'order_per_page', 'split_footer_controls': true }) }}
+                    </div>
+                {% endblock %}
             {% endembed %}
         </div>
 
-        <div class="tab-pane fade" id="tab-invoices" role="tabpanel">
+        <div class="tab-pane fade" id="tab-invoices" role="tabpanel" data-list-ns="invoice">
+            {% set invoicePage = request.invoice_page matches '/^\\d+$/' ? request.invoice_page : 1 %}
+            {% set invoicePerPage = request.invoice_per_page matches '/^\\d+$/' ? request.invoice_per_page : 25 %}
+            {% set invoices = admin.invoice_get_list(request|merge({ 'page': invoicePage, 'per_page': invoicePerPage, 'client_id': client.id, 'summary': 1, 'sort': request.invoice_sort|default(null), 'direction': request.invoice_direction|default('ASC') })) %}
             {% embed 'partial_admin_related_section.html.twig' with {
                 title: 'Client Invoices'|trans,
                 subtitle: 'Review invoices issued to this client or prepare a new invoice directly from the account view.'|trans,
@@ -574,16 +606,15 @@
                         <table class="table card-table table-vcenter table-striped text-nowrap">
                             <thead>
                                 <tr>
-                                    <th class="w-1">#</th>
+                                    {{ include('partial_sortable_th.html.twig', { 'label': '#'|trans, 'sort_key': 'nr', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-invoices', 'sort_param': 'invoice_sort', 'direction_param': 'invoice_direction', 'page_param': 'invoice_page', 'default_sort': 'id', 'default_direction': 'DESC', 'th_class': 'w-1' }) }}
                                     <th>{{ 'Amount'|trans }}</th>
-                                    <th>{{ 'Issued On'|trans }}</th>
-                                    <th>{{ 'Paid On'|trans }}</th>
-                                    <th>{{ 'Status'|trans }}</th>
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Issued On'|trans, 'sort_key': 'created_at', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-invoices', 'sort_param': 'invoice_sort', 'direction_param': 'invoice_direction', 'page_param': 'invoice_page', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Paid On'|trans, 'sort_key': 'paid_at', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-invoices', 'sort_param': 'invoice_sort', 'direction_param': 'invoice_direction', 'page_param': 'invoice_page', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-invoices', 'sort_param': 'invoice_sort', 'direction_param': 'invoice_direction', 'page_param': 'invoice_page', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
                                     <th class="w-1"></th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {% set invoices = admin.invoice_get_list({ 'per_page': 100, 'client_id': client.id, 'summary': 1 }) %}
                                 {% for invoice in invoices.list %}
                                 <tr>
                                     <td>
@@ -610,10 +641,19 @@
                         </table>
                     </div>
                 {% endblock %}
+
+                {% block section_footer %}
+                    <div class="d-flex align-items-center">
+                        {{ include('partial_pagination.html.twig', { 'list': invoices, 'url': 'client/manage/' ~ client.id, 'hash': '#tab-invoices', 'page_param': 'invoice_page', 'per_page_param': 'invoice_per_page', 'split_footer_controls': true }) }}
+                    </div>
+                {% endblock %}
             {% endembed %}
         </div>
 
-        <div class="tab-pane fade" id="tab-support" role="tabpanel" aria-labelledby="support-tab">
+        <div class="tab-pane fade" id="tab-support" role="tabpanel" aria-labelledby="support-tab" data-list-ns="ticket">
+            {% set ticketPage = request.ticket_page matches '/^\\d+$/' ? request.ticket_page : 1 %}
+            {% set ticketPerPage = request.ticket_per_page matches '/^\\d+$/' ? request.ticket_per_page : 25 %}
+            {% set tickets = admin.support_ticket_get_list(request|merge({ 'page': ticketPage, 'per_page': ticketPerPage, 'client_id': client.id, 'deep': 0, 'include_first': 0, 'sort': request.ticket_sort|default(null), 'direction': request.ticket_direction|default('DESC') })) %}
             {% embed 'partial_admin_related_section.html.twig' with {
                 title: 'Help Desk'|trans,
                 subtitle: 'Track the client’s support tickets and open a new ticket without leaving the client profile.'|trans,
@@ -634,15 +674,14 @@
                         <table class="table card-table table-vcenter table-striped text-nowrap">
                             <thead>
                                 <tr>
-                                    <th class="w-1">#</th>
+                                    {{ include('partial_sortable_th.html.twig', { 'label': '#'|trans, 'sort_key': 'id', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-support', 'sort_param': 'ticket_sort', 'direction_param': 'ticket_direction', 'page_param': 'ticket_page', 'default_sort': 'id', 'default_direction': 'DESC', 'th_class': 'w-1' }) }}
                                     <th>{{ 'Help desk'|trans }}</th>
-                                    <th>{{ 'Subject'|trans }}</th>
-                                    <th>{{ 'Status'|trans }}</th>
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Subject'|trans, 'sort_key': 'subject', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-support', 'sort_param': 'ticket_sort', 'direction_param': 'ticket_direction', 'page_param': 'ticket_page', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-support', 'sort_param': 'ticket_sort', 'direction_param': 'ticket_direction', 'page_param': 'ticket_page', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
                                     <th class="w-1"></th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {% set tickets = admin.support_ticket_get_list({ 'per_page': 20, 'client_id': client.id, 'deep': 0, 'include_first': 0 }) %}
                                 {% for ticket in tickets.list %}
                                 <tr>
                                     <td>{{ ticket.id }}</td>
@@ -668,11 +707,20 @@
                         </table>
                     </div>
                 {% endblock %}
+
+                {% block section_footer %}
+                    <div class="d-flex align-items-center">
+                        {{ include('partial_pagination.html.twig', { 'list': tickets, 'url': 'client/manage/' ~ client.id, 'hash': '#tab-support', 'page_param': 'ticket_page', 'per_page_param': 'ticket_per_page', 'split_footer_controls': true }) }}
+                    </div>
+                {% endblock %}
             {% endembed %}
         </div>
 
         {% if can_manage_balance %}
-        <div class="tab-pane fade" id="tab-balance" role="tabpanel" aria-labelledby="balance-tab">
+        <div class="tab-pane fade" id="tab-balance" role="tabpanel" aria-labelledby="balance-tab" data-list-ns="balance">
+            {% set balancePage = request.balance_page matches '/^\\d+$/' ? request.balance_page : 1 %}
+            {% set balancePerPage = request.balance_per_page matches '/^\\d+$/' ? request.balance_per_page : 25 %}
+            {% set payments = admin.client_balance_get_list(request|merge({ 'page': balancePage, 'per_page': balancePerPage, 'client_id': client.id, 'sort': request.balance_sort|default(null), 'direction': request.balance_direction|default('DESC') })) %}
             {% embed 'partial_admin_related_section.html.twig' with {
                 title: 'Client Payments History'|trans,
                 subtitle: 'Review balance adjustments and record a manual credit for this client when needed.'|trans,
@@ -683,14 +731,13 @@
                         <table class="table card-table table-vcenter table-striped text-nowrap">
                             <thead>
                                 <tr>
-                                    <th>{{ 'Amount'|trans }}</th>
-                                    <th>{{ 'Description'|trans }}</th>
-                                    <th>{{ 'Date'|trans }}</th>
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Amount'|trans, 'sort_key': 'amount', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-balance', 'sort_param': 'balance_sort', 'direction_param': 'balance_direction', 'page_param': 'balance_page', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Description'|trans, 'sort_key': 'description', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-balance', 'sort_param': 'balance_sort', 'direction_param': 'balance_direction', 'page_param': 'balance_page', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Date'|trans, 'sort_key': 'created_at', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-balance', 'sort_param': 'balance_sort', 'direction_param': 'balance_direction', 'page_param': 'balance_page', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
                                     <th class="w-1"></th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {% set payments = admin.client_balance_get_list({ 'per_page': 20, 'client_id': client.id }) %}
                                 {% for i, tx in payments.list %}
                                 <tr>
                                     <td>{{ (tx.amount ?? 0)|format_currency(tx.currency ?? default_currency) }}</td>
@@ -712,6 +759,12 @@
                                 {% endfor %}
                             </tbody>
                         </table>
+                    </div>
+                {% endblock %}
+
+                {% block section_footer %}
+                    <div class="d-flex align-items-center">
+                        {{ include('partial_pagination.html.twig', { 'list': payments, 'url': 'client/manage/' ~ client.id, 'hash': '#tab-balance', 'page_param': 'balance_page', 'per_page_param': 'balance_per_page', 'split_footer_controls': true }) }}
                     </div>
                 {% endblock %}
             {% endembed %}
@@ -754,7 +807,10 @@
         {% endif %}
 
         {% if can_view_client_login_history %}
-        <div class="tab-pane fade" id="tab-history" role="tabpanel" aria-labelledby="history-tab">
+        <div class="tab-pane fade" id="tab-history" role="tabpanel" aria-labelledby="history-tab" data-list-ns="login">
+            {% set loginPage = request.login_page matches '/^\\d+$/' ? request.login_page : 1 %}
+            {% set loginPerPage = request.login_per_page matches '/^\\d+$/' ? request.login_per_page : 25 %}
+            {% set logins = admin.client_login_history_get_list(request|merge({ 'page': loginPage, 'per_page': loginPerPage, 'client_id': client.id, 'sort': request.login_sort|default(null), 'direction': request.login_direction|default('DESC') })) %}
             {% embed 'partial_admin_related_section.html.twig' with {
                 title: 'Login History'|trans,
                 subtitle: 'See recent client login activity, including originating IP address and detected country.'|trans,
@@ -766,14 +822,13 @@
                         <table class="table card-table table-vcenter table-striped text-nowrap">
                             <thead>
                                 <tr>
-                                    <th>{{ 'IP'|trans }}</th>
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'IP'|trans, 'sort_key': 'ip', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-history', 'sort_param': 'login_sort', 'direction_param': 'login_direction', 'page_param': 'login_page', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
                                     <th>{{ 'Country'|trans }}</th>
-                                    <th>{{ 'Date'|trans }}</th>
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Date'|trans, 'sort_key': 'created_at', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-history', 'sort_param': 'login_sort', 'direction_param': 'login_direction', 'page_param': 'login_page', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
                                 </tr>
                             </thead>
 
                             <tbody>
-                                {% set logins = admin.client_login_history_get_list({ 'per_page': 10, 'page': request.page, 'client_id': client.id }) %}
                                 {% for i, login in logins.list %}
                                 <tr>
                                     <td>{{ mf.ip_lookup_link(login.ip) }}</td>
@@ -789,15 +844,21 @@
                         </table>
                     </div>
                 {% endblock %}
+
+                {% block section_footer %}
+                    <div class="d-flex align-items-center">
+                        {{ include('partial_pagination.html.twig', { 'list': logins, 'url': 'client/manage/' ~ client.id, 'hash': '#tab-history', 'page_param': 'login_page', 'per_page_param': 'login_per_page', 'split_footer_controls': true }) }}
+                    </div>
+                {% endblock %}
             {% endembed %}
         </div>
         {% endif %}
 
         {% if can_view_email_history %}
-        <div class="tab-pane fade" id="tab-emails" role="tabpanel" aria-labelledby="emails-tab">
-            {% set emailsPerPage = request.per_page matches '/^\\d+$/' ? request.per_page : 25 %}
-            {% set emailsPage = request.page matches '/^\\d+$/' ? request.page : 1 %}
-            {% set emails = admin.email_email_get_list({ 'per_page': emailsPerPage, 'page': emailsPage, 'client_id': client.id }) %}
+        <div class="tab-pane fade" id="tab-emails" role="tabpanel" aria-labelledby="emails-tab" data-list-ns="email">
+            {% set emailPage = request.email_page matches '/^\\d+$/' ? request.email_page : 1 %}
+            {% set emailPerPage = request.email_per_page matches '/^\\d+$/' ? request.email_per_page : 25 %}
+            {% set emails = admin.email_email_get_list(request|merge({ 'page': emailPage, 'per_page': emailPerPage, 'client_id': client.id, 'sort': request.email_sort|default(null), 'direction': request.email_direction|default('ASC') })) %}
             {% embed 'partial_admin_related_section.html.twig' with {
                 title: 'Emails Sent to Client'|trans,
                 subtitle: 'Review outbound email history for this client and preview the rendered message content.'|trans,
@@ -808,9 +869,9 @@
                         <table class="table card-table table-vcenter table-striped text-nowrap">
                             <thead>
                                 <tr>
-                                    <th>{{ 'Email Subject'|trans }}</th>
-                                    <th>{{ 'To'|trans }}</th>
-                                    <th>{{ 'Date'|trans }}</th>
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Email Subject'|trans, 'sort_key': 'subject', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-emails', 'sort_param': 'email_sort', 'direction_param': 'email_direction', 'page_param': 'email_page', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'To'|trans, 'sort_key': 'recipient', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-emails', 'sort_param': 'email_sort', 'direction_param': 'email_direction', 'page_param': 'email_page', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Date'|trans, 'sort_key': 'created_at', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-emails', 'sort_param': 'email_sort', 'direction_param': 'email_direction', 'page_param': 'email_page', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
                                     <th class="w-1"></th>
                                 </tr>
                             </thead>
@@ -849,14 +910,17 @@
 
                 {% block section_footer %}
                     <div class="d-flex align-items-center">
-                        {{ include('partial_pagination.html.twig', { 'list': emails, 'url': 'client/manage/' ~ client.id, 'hash': '#tab-emails', 'split_footer_controls': true }) }}
+                        {{ include('partial_pagination.html.twig', { 'list': emails, 'url': 'client/manage/' ~ client.id, 'hash': '#tab-emails', 'page_param': 'email_page', 'per_page_param': 'email_per_page', 'split_footer_controls': true }) }}
                     </div>
                 {% endblock %}
             {% endembed %}
         </div>
         {% endif %}
 
-        <div class="tab-pane fade" id="tab-transactions" role="tabpanel" aria-labelledby="transactions-tab">
+        <div class="tab-pane fade" id="tab-transactions" role="tabpanel" aria-labelledby="transactions-tab" data-list-ns="txn">
+            {% set txnPage = request.txn_page matches '/^\\d+$/' ? request.txn_page : 1 %}
+            {% set txnPerPage = request.txn_per_page matches '/^\\d+$/' ? request.txn_per_page : 25 %}
+            {% set transactions = admin.invoice_transaction_get_list(request|merge({ 'page': txnPage, 'per_page': txnPerPage, 'client_id': client.id, 'sort': request.txn_sort|default(null), 'direction': request.txn_direction|default('ASC') })) %}
             {% embed 'partial_admin_related_section.html.twig' with {
                 title: 'Transactions Received'|trans,
                 subtitle: 'Review payment transactions recorded against this client across all gateways.'|trans,
@@ -864,22 +928,21 @@
             } %}
                 {% block section_content %}
                     {% import 'macro_functions.html.twig' as mf %}
-                    {% set transactions = admin.invoice_transaction_get_list({ 'client_id': client.id, 'per_page': 100 }).list %}
                     <div class="table-responsive">
                         <table class="table card-table table-vcenter table-striped text-nowrap">
                             <thead>
                                 <tr>
-                                    <th>{{ 'ID'|trans }}</th>
-                                    <th>{{ 'Type'|trans }}</th>
-                                    <th>{{ 'Gateway'|trans }}</th>
-                                    <th>{{ 'Amount'|trans }}</th>
-                                    <th>{{ 'Status'|trans }}</th>
-                                    <th>{{ 'Date'|trans }}</th>
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'ID'|trans, 'sort_key': 'txn_id', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-transactions', 'sort_param': 'txn_sort', 'direction_param': 'txn_direction', 'page_param': 'txn_page', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Type'|trans, 'sort_key': 'type', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-transactions', 'sort_param': 'txn_sort', 'direction_param': 'txn_direction', 'page_param': 'txn_page', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Gateway'|trans, 'sort_key': 'gateway', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-transactions', 'sort_param': 'txn_sort', 'direction_param': 'txn_direction', 'page_param': 'txn_page', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Amount'|trans, 'sort_key': 'amount', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-transactions', 'sort_param': 'txn_sort', 'direction_param': 'txn_direction', 'page_param': 'txn_page', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-transactions', 'sort_param': 'txn_sort', 'direction_param': 'txn_direction', 'page_param': 'txn_page', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                                    {{ include('partial_sortable_th.html.twig', { 'label': 'Date'|trans, 'sort_key': 'created_at', 'url': 'client/manage/' ~ client.id, 'hash': '#tab-transactions', 'sort_param': 'txn_sort', 'direction_param': 'txn_direction', 'page_param': 'txn_page', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
                                     <th class="w-1"></th>
                                 </tr>
                             </thead>
                             <tbody>
-                            {% for i, tx in transactions %}
+                            {% for i, tx in transactions.list %}
                                 <tr>
                                     <td>{{ tx.txn_id }}</td>
                                     <td>{{ tx.type }}</td>
@@ -906,6 +969,12 @@
                             {% endfor %}
                             </tbody>
                         </table>
+                    </div>
+                {% endblock %}
+
+                {% block section_footer %}
+                    <div class="d-flex align-items-center">
+                        {{ include('partial_pagination.html.twig', { 'list': transactions, 'url': 'client/manage/' ~ client.id, 'hash': '#tab-transactions', 'page_param': 'txn_page', 'per_page_param': 'txn_per_page', 'split_footer_controls': true }) }}
                     </div>
                 {% endblock %}
             {% endembed %}
