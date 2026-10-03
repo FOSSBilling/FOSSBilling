@@ -518,6 +518,27 @@ report was present. A separate intentional failure retained JUnit, HTML,
 screenshot, video and a valid trace archive. Config validation/expansion,
 lockfile integrity/version checks and spelling checks passed.
 
+Hosted pipeline [56](https://app.circleci.com/pipelines/github/FOSSBilling/FOSSBilling/56),
+revision `9838478c7dc9a13d97bcceefdf0067b25e072f8c`, passed all seven jobs.
+Downloaded application JUnit matches all 21 pipeline-55 identities/outcomes;
+HTML was checked and no retries occurred. Existing Actions CI, quality and
+CodeQL checks also passed. The Node orb created a 3.8 MiB standalone npm
+archive cache.
+
+| Hosted measurement | Pipeline 55 | Pipeline 56 |
+| --- | --- | --- |
+| Application npm + runner installation | 7.3s | 0.5s |
+| Application browser job elapsed | 61.9s | 59.0s |
+| Workflow duration (Insights) | 1m20s | 1m17s |
+| Workflow credits (Insights) | 57 | 56 |
+
+Application test execution remained similar (18.4s versus 18.6s). Container
+startup rose from 1.5s to 5.9s, partly offsetting the installation saving.
+This is one hosted sample, including first cache creation; subsequent warm
+restoration and sustained timing improvements are not established. The
+change removes unnecessary dependencies and a duplicate runner installation
+while preserving the tested application suite.
+
 
 ### MariaDB image comparison
 
