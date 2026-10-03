@@ -755,6 +755,16 @@ all attributable to frontend concurrency. These are individual hosted runs,
 not evidence of sustained workflow or credit savings. Rollback is restoring
 the original `NODE_ENV=production npm run build && npm run pw:tsc` command.
 
+Final pipeline [66](https://app.circleci.com/pipelines/github/FOSSBilling/FOSSBilling/66)
+passed all seven jobs and existing Actions CI, quality and CodeQL checks at
+`a6056ceef69cae337794163e4c5083d58c472c95`, after removing the benchmark
+workflow/parameter. Expanded-config comparison confirms its seven jobs are
+identical to the successful standard workflow in pipeline 63. The build/check
+step repeated at 3.74s, with 13.6s job-detail elapsed time and three reported
+job credits. The full workflow recorded 66s/45 credits in Insights; the small
+frontend saving cannot explain that whole difference from pipeline 62.
+
+
 
 
 ### MariaDB image comparison
