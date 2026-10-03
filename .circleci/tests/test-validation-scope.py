@@ -34,7 +34,7 @@ def check_cases(root):
     fork = root / "fork"
     git(root, "clone", str(origin), str(fork))
     identify(fork)
-    (fork / "app.php").write_text("Unreviewed fork change\n")
+    (fork / "app.php").write_text("Additional fork change\n")
     git(fork, "add", ".")
     git(fork, "commit", "-m", "Change fork main")
 

@@ -840,7 +840,7 @@ freshly fetched canonical FOSSBilling `main` must qualify. Main, manual/API runs
 failed comparisons and mixed/code/config changes always run full validation.
 Rename detection is disabled so deleted or moved executable paths remain
 visible. All 12 local Git-repository cases passed, including a fork whose own main
-contains unreviewed application changes. Run these regression checks with
+contains application changes absent upstream. Run these regression checks with
 `python3 .circleci/tests/test-validation-scope.py`. The pipeline parameter
 `force-full-validation=true` explicitly overrides filtering. Actions checks,
 including spellcheck, remain authoritative.
