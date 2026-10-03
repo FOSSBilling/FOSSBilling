@@ -134,7 +134,6 @@ jobs:
           destination: unit-results-php-8.<< parameters.php-minor >>
 
   frontend-build:
-    name: Frontend (build)
     docker:
       - image: cimg/node:24.9.0@sha256:4729cd041e58fd288a12475aa011b7b62c58d351703813e6b7e0746a701e9602
     resource_class: medium.gen2
