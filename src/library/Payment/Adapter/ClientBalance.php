@@ -92,7 +92,12 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\InjectionAwareInterfa
                 </script>";
     }
 
-    public function processTransaction($api_admin, $id, $data, $gateway_id): bool
+    public static function requiresManualApproval(): bool
+    {
+        return false;
+    }
+
+    public function processTransaction($api_admin, int $id, array $data, int $gateway_id): bool
     {
         if (!$this->isIpnValid($data)) {
             throw new Payment_Exception('IPN is invalid');
@@ -101,8 +106,9 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\InjectionAwareInterfa
         $tx = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\Transaction::class)->find((int) $id);
 
         $invoiceModel = $tx?->getInvoice();
+        $get = (isset($data['get']) && is_array($data['get'])) ? $data['get'] : [];
         if (!$invoiceModel instanceof Invoice) {
-            $invoiceModel = $this->di['em']->getRepository(Invoice::class)->find((int) ($data['get']['invoice_id'] ?? 0));
+            $invoiceModel = $this->di['em']->getRepository(Invoice::class)->find((int) ($get['invoice_id'] ?? 0));
         }
         if (!$invoiceModel instanceof Invoice) {
             throw new Payment_Exception('Invoice not found');
@@ -135,7 +141,7 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\InjectionAwareInterfa
         return true;
     }
 
-    public function isIpnValid($data): bool
+    public function isIpnValid(array $data): bool
     {
         return $this->di['auth']->isClientLoggedIn();
     }

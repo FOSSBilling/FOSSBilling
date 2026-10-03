@@ -712,3 +712,13 @@ test('returns null when description is empty', function (): void {
     $result = $serviceMock->getDescription($payGateway);
     expect($result)->toBeNull();
 });
+
+test('identifies manual approval gateways by adapter capability', function (): void {
+    expect(ServicePayGateway::isManualApprovalGateway('Custom'))->toBeTrue()
+        ->and(ServicePayGateway::isManualApprovalGateway('Stripe'))->toBeFalse()
+        ->and(ServicePayGateway::isManualApprovalGateway('PayPalEmail'))->toBeFalse()
+        ->and(ServicePayGateway::isManualApprovalGateway('ClientBalance'))->toBeFalse()
+        ->and(ServicePayGateway::isManualApprovalGateway(null))->toBeFalse()
+        ->and(ServicePayGateway::isManualApprovalGateway(''))->toBeFalse()
+        ->and(ServicePayGateway::isManualApprovalGateway('NoSuchGateway'))->toBeFalse();
+});

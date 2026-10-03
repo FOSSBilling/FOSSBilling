@@ -548,6 +548,11 @@ class UpdatePatcher implements InjectionAwareInterface
         // structural sync only ever adds - so without this the column lingers
         // on existing installs forever.
         $this->dropInvoiceBuyerPhoneCcColumn();
+
+        // Same story for the dead transaction.validate_ipn flag: nothing ever
+        // read it, the entity no longer maps it, and the additive sync would
+        // otherwise leave it behind on existing installs forever.
+        $this->dropTransactionValidateIpnColumn();
     }
 
     /**
@@ -691,6 +696,30 @@ class UpdatePatcher implements InjectionAwareInterface
         $this->executeSql($this->isMysqlDriver()
             ? 'ALTER TABLE `invoice` DROP COLUMN `buyer_phone_cc`'
             : 'ALTER TABLE invoice DROP COLUMN buyer_phone_cc');
+    }
+
+    /**
+     * Drops the dead transaction.validate_ipn column, which nothing ever
+     * read and the entity no longer maps. Portable across drivers via the
+     * DBAL schema manager for the existence check; every supported driver
+     * accepts DROP COLUMN. Idempotent: fresh installs never have it,
+     * migrated ones no longer do.
+     */
+    private function dropTransactionValidateIpnColumn(): void
+    {
+        if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('dbal')) {
+            return;
+        }
+
+        if (!$this->di['dbal']->createSchemaManager()->introspectTableByUnquotedName('transaction')->hasColumn('validate_ipn')) {
+            return;
+        }
+
+        // `transaction` is reserved on every driver: quote it, or the ALTER
+        // is a syntax error outside MySQL's backticks.
+        $this->executeSql($this->isMysqlDriver()
+            ? 'ALTER TABLE `transaction` DROP COLUMN `validate_ipn`'
+            : 'ALTER TABLE "transaction" DROP COLUMN "validate_ipn"');
     }
 
     /**
