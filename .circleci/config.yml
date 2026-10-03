@@ -24,6 +24,22 @@ executors:
     docker:
       - image: cimg/php:8.5.10@sha256:7c7ba12e0204ec9b291019a738b4cab3bae2167aaa70c594d6608ec21085c8fe
     resource_class: medium.gen2
+  native-live:
+    docker:
+      - image: docker.io/fossbilling/circleci-php-apache:php8.5.10-node-apache-25434d4@sha256:acfccef40b6fdd3f274e0bad1c28661e2393ee48beefd62f6ebe3181804033aa
+      - image: mariadb:lts@sha256:805c8e104bd563d5bfa24fadd3f31cd419ea859cb5277f32b5dbf2db714f9ed1
+        environment:
+          MARIADB_DATABASE: fossbilling
+          MARIADB_ROOT_PASSWORD: root
+    resource_class: medium.gen2
+  native-browser:
+    docker:
+      - image: docker.io/fossbilling/circleci-php-apache:php8.5.10-node-apache-playwright1.63.0-0c8c3451@sha256:c9509b7da4ef07e75629b93a27571f286428aa886950bd79be0e587232508dff
+      - image: mariadb:lts@sha256:805c8e104bd563d5bfa24fadd3f31cd419ea859cb5277f32b5dbf2db714f9ed1
+        environment:
+          MARIADB_DATABASE: fossbilling
+          MARIADB_ROOT_PASSWORD: root
+    resource_class: medium.gen2
 
 commands:
   checkout-for-validation:
@@ -172,13 +188,7 @@ jobs:
       suite:
         type: enum
         enum: [live, browser]
-    docker:
-      - image: docker.io/fossbilling/circleci-php-apache:php8.5.10-node-apache-25434d4@sha256:acfccef40b6fdd3f274e0bad1c28661e2393ee48beefd62f6ebe3181804033aa
-      - image: mariadb:lts@sha256:805c8e104bd563d5bfa24fadd3f31cd419ea859cb5277f32b5dbf2db714f9ed1
-        environment:
-          MARIADB_DATABASE: fossbilling
-          MARIADB_ROOT_PASSWORD: root
-    resource_class: medium.gen2
+    executor: native-<< parameters.suite >>
     environment:
       APP_ENV: test
       COMPOSER_CACHE_DIR: /home/circleci/.cache/composer
@@ -210,8 +220,9 @@ jobs:
           steps:
             - install-playwright-runner
             - run:
-                name: Install matching Chromium
-                command: .circleci/playwright/node_modules/.bin/playwright install --with-deps chromium
+                name: Verify matching preinstalled Chromium
+                command: |
+                  node -e 'const {chromium}=require("./.circleci/playwright/node_modules/playwright"); (async()=>{const browser=await chromium.launch(); console.log(browser.version()); await browser.close()})().catch(error=>{console.error(error);process.exit(1)})'
             - run:
                 name: Native Playwright tests
                 command: .circleci/playwright/node_modules/.bin/playwright test --config=playwright.application.config.ts --reporter=line,junit,html

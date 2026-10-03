@@ -815,9 +815,9 @@ Later phases: move PR quality checks, cut over required validation checks,
 then migrate previews and assess releases separately. Keep GitHub labeling,
 merge-hold checks, CodeQL and repository housekeeping on Actions initially.
 
-## Further optimisation trials (2026-10-03)
+## Further optimization trials (2026-10-03)
 
-Playwright 1.63.0 is pinned in the root and standalone runner lockfiles.
+Playwright 1.63.0 is pinned in the root and standalone runner lock files.
 The Actions Docker wrapper now derives its version from the root manifest,
 and CircleCI checks that both manifests agree. The official widget image
 is pinned to the matching release digest.
@@ -842,3 +842,34 @@ Rename detection is disabled so deleted or moved executable paths remain
 visible. All 11 local Git-repository cases passed. The pipeline parameter
 `force-full-validation=true` explicitly overrides filtering. Actions checks,
 including spellcheck, remain authoritative.
+
+The application browser executor adds Chromium headless shell and its Linux
+dependencies to the existing pinned PHP/Apache image. Live API jobs retain
+the smaller Apache-only executor. The Dockerfile uses the locked runner to
+install `--with-deps --only-shell chromium` under `/ms-playwright`, readable
+by `circleci`; no application source or dependencies are baked into the image.
+The runtime checks the browser can launch instead of downloading it.
+
+```sh
+docker build --platform linux/amd64 -f .circleci/images/php-apache-playwright/Dockerfile \
+  -t fossbilling-circleci-php-apache-playwright:trial .
+```
+
+Rebuild and repin this image, the official widget image and both runner lock
+files together when upgrading Playwright. Tests continue to use the same
+headless Chromium mode, one application worker, two widget workers and the
+same retry settings.
+
+All 21 application tests passed without retries in the Apache-only baseline,
+full-Chromium image and headless-only image on 1.63.0. Their JUnit test-name
+sets match exactly. A deliberately broken prebuilt widget fixture failed
+its selected test and retained HTML, screenshot, video and trace artifacts.
+Local timings include Docker Desktop emulation and are not hosted performance
+claims. The headless-only image is about 747 MB larger unpacked than the
+Apache-only image, versus about 1,343 MB for the full-Chromium variant.
+
+Hosted baseline pipeline 71 passed all seven jobs in 72s / 49 credits, with
+19.546s installing Chromium, 17.746s running application tests, and 0.484s
+installing widget packages. Scope checks took 0.281s in the application job
+and 0.346s in the widget job. This updated baseline includes the Playwright
+upgrade, prebuilt widget fixture and documentation filter.
