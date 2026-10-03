@@ -614,13 +614,18 @@ docker build --platform linux/amd64 -t fossbilling-circleci-php-apache:trial \
   .circleci/images/php-apache
 ```
 
-The active integration executor still uses the existing upstream image.
-A prepared image must be published to an agreed registry and referenced by
-its resulting immutable digest before testing hosted pulls. Building it
+The prepared image is published publicly as
+`docker.io/fossbilling/circleci-php-apache:php8.5.10-node-apache-25434d4`.
+The integration executor now trials its pinned index digest
+`sha256:acfccef40b6fdd3f274e0bad1c28661e2393ee48beefd62f6ebe3181804033aa`.
+Anonymous manifest access was verified, including the Linux AMD64 platform.
+Only live API and application browser executors change; MariaDB, test
+selection and all other jobs retain their existing images/configuration. Building it
 inside every validation job would put installation back on the critical
 path. Rebuild when the pinned base changes or Apache packages need updating;
 APT resolves Apache packages at build time, so the final published digest
-must identify the tested contents. Compare hosted pull/startup, app setup,
+must identify the tested contents. Use a new versioned tag for each rebuild,
+then update the executor digest after verification. Compare hosted pull/startup, app setup,
 whole-job elapsed time and credits before adopting it. The image should
 remain a separate CI tool image, outside application release packaging.
 
@@ -646,8 +651,8 @@ Bash syntax, config validation and spelling checks passed.
 
 This is a local feasibility result. Pipeline 56's hosted app setup was
 already 7.4s, and prepared-image pull/startup time is still unmeasured.
-Registry destination and publication must be agreed before a hosted image
-trial; active executor images are unchanged.
+The local result justified a hosted trial; Docker Hub publication was
+subsequently agreed and completed. Hosted startup savings remain to be measured.
 
 Pipeline [61](https://app.circleci.com/pipelines/github/FOSSBilling/FOSSBilling/61)
 passed all seven jobs at `25434d453bdabe85a4b0550a80a64e3caab6865f`

@@ -168,7 +168,7 @@ jobs:
         type: enum
         enum: [live, browser]
     docker:
-      - image: cimg/php:8.5.10-node@sha256:c60f1384d1eda0bd1a57c60e23a55c4a87b8fcd59cc2ea89c6d1c687d9d64fca
+      - image: docker.io/fossbilling/circleci-php-apache:php8.5.10-node-apache-25434d4@sha256:acfccef40b6fdd3f274e0bad1c28661e2393ee48beefd62f6ebe3181804033aa
       - image: mariadb:lts@sha256:805c8e104bd563d5bfa24fadd3f31cd419ea859cb5277f32b5dbf2db714f9ed1
         environment:
           MARIADB_DATABASE: fossbilling
