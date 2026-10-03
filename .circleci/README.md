@@ -722,13 +722,39 @@ exclude dependency installation, checkout, workspace upload and hosted CPU
 performance. Pipeline 62's sequential build/check step was already 4.3s in a
 14.0s frontend job, so whole-job savings may be small.
 
-For the hosted trial, the standard workflow uses `medium.gen2` and a temporary
-separate workflow runs the identical frontend job on `large.gen2`. Its
-workspace has no consumers and cannot collide with the validation workspace.
+For the hosted trial, the standard workflow used `medium.gen2` and a temporary
+separate workflow ran the identical frontend job on `large.gen2`. Its
+workspace had no consumers and could not collide with the validation workspace.
 [CircleCI pricing](https://circleci.com/pricing/price-list/) lists 12 and 24
 credits/minute respectively. Compare complete frontend-job time and credits,
-not build time alone; remove the temporary workflow/resource parameter after
-choosing the final resource class.
+not build time alone. The temporary workflow/resource parameter is now
+removed, retaining concurrency on `medium.gen2` and the single seven-job
+validation workflow.
+
+Pipeline [63](https://app.circleci.com/pipelines/github/FOSSBilling/FOSSBilling/63)
+passed both workflows at `4a0734bca56be860262474fe6215e35416628478`,
+along with existing Actions CI, quality and CodeQL checks. Downloaded reports
+match all 23 widget, 21 application and 91 live API test identities/outcomes.
+Each resource class retained all three build logs.
+
+| Hosted frontend measurement | Sequential medium, pipeline 62 | Concurrent medium, pipeline 63 | Concurrent large, pipeline 63 |
+| --- | --- | --- | --- |
+| Build/check step | 4.32s | 3.73s | 2.37s |
+| Job elapsed from job details | 14.0s | 13.1s | 11.2s |
+| Job duration reported by Insights | 17s | 15s | 13s |
+| Job credits reported by Insights | 3 | 3 | 5 |
+
+Insights durations use different start/stop boundaries from job-detail
+elapsed times; compare within each measurement source. Large saved a further
+1.9s of job elapsed time for two extra reported credits, so retain medium for
+this short job. Concurrent medium saves about 0.6s in the build/check step
+and retains useful failure diagnostics at the same reported credit usage.
+The standard workflow recorded 68s/47 credits versus pipeline 62's 72s/48;
+that larger difference also includes variation in unchanged jobs and is not
+all attributable to frontend concurrency. These are individual hosted runs,
+not evidence of sustained workflow or credit savings. Rollback is restoring
+the original `NODE_ENV=production npm run build && npm run pw:tsc` command.
+
 
 
 ### MariaDB image comparison
