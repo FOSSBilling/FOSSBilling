@@ -561,14 +561,39 @@ metadata before reusing results, and periodically performs a full analysis.
 alone is insufficient evidence. See the [PHPStan result cache documentation](https://phpstan.org/user-guide/result-cache).
 
 Local disposable PHP 8.3 containers passed the cold analysis (79s) and a
-fresh-container warm analysis (17.4s, zero files reanalysed). Adding a
+fresh-container warm analysis (17.4s, zero files analysed again). Adding a
 temporary method returning a string as `int` made the warm analysis fail
-with the expected `return.type` error and one file reanalysed. Removing
+with the expected `return.type` error and one file analysed again. Removing
 that probe restored a pass. Config validation/expansion confirms only PHP
 8.3 gains the restore/analyse/save steps; PHP 8.4/8.5 remain unchanged.
 Hosted measurements must include restore/save overhead.
 This targets PHP analysis time and credits; the browser jobs currently gate
 workflow completion, so it may not reduce overall workflow duration.
+
+
+Hosted pipeline [57](https://app.circleci.com/pipelines/github/FOSSBilling/FOSSBilling/57),
+revision `2271a5f91f6a39bc646a4ca72f5d4dfb6ceffa55`, passed all seven jobs
+and existing Actions CI, quality and CodeQL checks. Its cold PHPStan analysis
+saved a 5.1 MiB archive. A targeted same-revision rerun of only PHP 8.3
+restored that archive and PHPStan confirmed reuse with one file analysed again.
+Both downloaded PHP reports match all 3,891 passing tests and four skips
+against the earlier matrix baseline, with identical test identities/outcomes.
+
+| Hosted measurement | Cold | Warm PHP 8.3 rerun |
+| --- | --- | --- |
+| PHPStan reported analysis time | 18.8s | 1.7s |
+| PHPStan step elapsed | 19.0s | 1.9s |
+| Result cache restore step | 0.13s (miss) | 0.43s |
+| Result cache save step | 0.52s | 0.06s (existing key) |
+| PHP 8.3 job elapsed | 43.2s | 35.3s |
+
+The cold full workflow took 79s and 54 credits in Insights, versus pipeline
+56's 77s and 56 credits. The warm experiment reran only PHP 8.3, so its
+workflow duration/credits cannot be compared with a full seven-job workflow.
+The analysis saving is established for this cache hit; these single samples
+do not establish sustained credit or overall workflow improvements. Restoring
+an older branch snapshot after a source commit remains for normal subsequent
+runs; deliberate source-change invalidation was verified locally.
 
 
 ### MariaDB image comparison
