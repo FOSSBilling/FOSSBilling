@@ -1245,6 +1245,10 @@ class Service implements InjectionAwareInterface
         if (!$order instanceof Order && !$order instanceof \Model_ClientOrder) {
             throw new \FOSSBilling\Exception('Order :id not found', [':id' => $orderId]);
         }
+        // Credit payment can activate through RedBean while this entity stays cached.
+        if ($order instanceof Order) {
+            $this->di['em']->refresh($order);
+        }
         $force = !empty($data['force']);
 
         $orderStatus = $this->orderStatus($order);
