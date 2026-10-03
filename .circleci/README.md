@@ -649,6 +649,14 @@ already 7.4s, and prepared-image pull/startup time is still unmeasured.
 Registry destination and publication must be agreed before a hosted image
 trial; active executor images are unchanged.
 
+Pipeline [61](https://app.circleci.com/pipelines/github/FOSSBilling/FOSSBilling/61)
+passed all seven jobs at `25434d453bdabe85a4b0550a80a64e3caab6865f`
+using the original executor image. This verifies the installation fallback,
+not prepared-image hosted performance. PHPStan also reused pipeline 57's
+branch snapshot on this new revision and passed in 1.6s, confirming the
+cross-revision cache fallback from the previous trial.
+
+
 
 
 ### MariaDB image comparison
