@@ -11,7 +11,6 @@ declare(strict_types=1);
 class Payment_Adapter_Custom
 {
     protected ?Pimple\Container $di = null;
-    private const string TRUSTED_SOURCE = 'admin';
 
     public function __construct(private $config)
     {
@@ -20,6 +19,16 @@ class Payment_Adapter_Custom
     public function setDi(Pimple\Container $di): void
     {
         $this->di = $di;
+    }
+
+    /**
+     * Offline gateways have no verifiable callback: a stored IPN payload can
+     * neither prove nor disprove payment. Approval is an explicit admin act,
+     * never an adapter decision over decoded data.
+     */
+    public static function requiresManualApproval(): bool
+    {
+        return true;
     }
 
     public static function getConfig(): array
@@ -73,67 +82,52 @@ class Payment_Adapter_Custom
     }
 
     /**
-     * Processes a transaction using a custom payment adapter.
+     * Approve an offline payment on behalf of an administrator.
      *
-     * @param FOSSBilling\Core\Api\Proxy $api_admin  the API admin object
-     * @param int                        $id         the ID of the transaction to process
-     * @param array                      $data       the data associated with the transaction
-     * @param int                        $gateway_id the ID of the payment gateway to use
+     * Takes no IPN payload by design: there is no signed callback to verify.
+     * Only reachable through the permission-checked admin approve action.
      *
-     * @return bool returns true if the transaction was processed successfully, false otherwise
+     * @throws Payment_Exception
      */
-    public function processTransaction(FOSSBilling\Core\Api\Proxy $api_admin, int $id, array $data, int $gateway_id): bool
+    public function approveTransaction(FOSSBilling\Core\Api\Proxy $api_admin, int $id, int $gateway_id): bool
     {
-        if (!$this->isIpnValid($data)) {
-            throw new Payment_Exception('Custom payment gateway callbacks must be confirmed by an administrator.');
+        // Get the transaction and invoice associated with the transaction
+        $tx = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\Transaction::class)->find($id);
+        if (!$tx instanceof Box\Mod\Invoice\Entity\Transaction) {
+            throw new Payment_Exception('Transaction not found', [], 7010);
         }
+        $invoice = $tx->getInvoice()
+            ?? throw new FOSSBilling\Core\Exception\InformationException('Invoice not found');
 
-        try {
-            // Get the transaction and invoice associated with the transaction
-            $tx = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\Transaction::class)->find($id);
-            if (!$tx instanceof Box\Mod\Invoice\Entity\Transaction) {
-                throw new Exception('Transaction not found');
-            }
-            $invoice = $tx->getInvoice()
-                ?? throw new FOSSBilling\Core\Exception\InformationException('Invoice not found');
-
-            // Load the payment gateway and client associated with the transaction
-            $gateway = $tx->getGateway();
-            if (!$gateway instanceof Box\Mod\Invoice\Entity\PayGateway) {
-                throw new Exception('Payment gateway not found for transaction');
-            }
-            $clientService = $this->di['mod_service']('Client');
-            $client = $clientService->get(['id' => $invoice->getClientId()]);
-
-            // Calculate the total amount of the invoice
-            $invoiceService = $this->di['mod_service']('Invoice');
-            $invoiceTotal = $invoiceService->getTotalWithTax($invoice);
-
-            // Add funds to the client's account and mark the invoice as paid
-            $gatewayName = $gateway->getName() ?: $gateway->getGateway();
-            $tx_desc = $gatewayName . ' transaction No: ' . $tx->getTxnId();
-            $clientService->addFunds($client, $invoiceTotal, $tx_desc, []);
-            $invoiceService->markAsPaid($invoice, true, true);
-
-            // Update the transaction status and details
-            $tx->setStatus(Box\Mod\Invoice\Entity\Transaction::STATUS_PROCESSED);
-            $tx->setAmount((string) $invoiceTotal);
-            $tx->setNote($gatewayName . ' transaction No: ' . $tx->getTxnId());
-            $tx->setCurrency($invoice->getCurrency());
-            $tx->setUpdatedAt(new DateTime());
-
-            // Store the updated transaction and use its return to indicate a success or failure.
-            $this->di['em']->persist($tx);
-            $this->di['em']->flush();
-
-            return true;
-        } catch (Exception) {
-            return false;
+        // Load the payment gateway and client associated with the transaction
+        $gateway = $tx->getGateway();
+        if (!$gateway instanceof Box\Mod\Invoice\Entity\PayGateway) {
+            throw new Payment_Exception('Transaction is not linked to a payment gateway', [], 7011);
         }
-    }
+        $clientService = $this->di['mod_service']('Client');
+        $client = $clientService->get(['id' => $invoice->getClientId()]);
 
-    public function isIpnValid(array $data): bool
-    {
-        return ($data['source'] ?? null) === self::TRUSTED_SOURCE;
+        // Calculate the total amount of the invoice
+        $invoiceService = $this->di['mod_service']('Invoice');
+        $invoiceTotal = $invoiceService->getTotalWithTax($invoice);
+
+        // Add funds to the client's account and mark the invoice as paid
+        $gatewayName = $gateway->getName() ?: $gateway->getGateway();
+        $tx_desc = $gatewayName . ' transaction No: ' . $tx->getTxnId();
+        $clientService->addFunds($client, $invoiceTotal, $tx_desc, []);
+        $invoiceService->markAsPaid($invoice, true, true);
+
+        // Update the transaction status and details
+        $tx->setStatus(Box\Mod\Invoice\Entity\Transaction::STATUS_PROCESSED);
+        $tx->setAmount((string) $invoiceTotal);
+        $tx->setNote($gatewayName . ' transaction No: ' . $tx->getTxnId());
+        $tx->setCurrency($invoice->getCurrency());
+        $tx->setUpdatedAt(new DateTime());
+
+        // Store the updated transaction and use its return to indicate a success or failure.
+        $this->di['em']->persist($tx);
+        $this->di['em']->flush();
+
+        return true;
     }
 }

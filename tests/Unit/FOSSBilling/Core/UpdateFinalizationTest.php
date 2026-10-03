@@ -9,9 +9,11 @@ declare(strict_types=1);
  * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
 
+use FOSSBilling\Core\Exception\InformationException;
 use FOSSBilling\Core\System\Config;
 use FOSSBilling\Core\System\Version;
 use FOSSBilling\Core\Update\Finalization;
+use FOSSBilling\Core\Update\Patcher;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 
@@ -176,4 +178,102 @@ test('completion restores captured maintenance mode and records the current vers
         ->and($completedState['version'])->toBe(Version::VERSION)
         ->and($finalization->isRequired(false))->toBeFalse()
         ->and(Config::getProperty('maintenance_mode'))->toBe($state['maintenance_mode']);
+});
+
+function stubUpdatePatcherWithPendingPatches(): object
+{
+    return new class extends Patcher {
+        public int $pendingPatches = 1;
+        public bool $corePatchesApplied = false;
+
+        public function availablePatches(): int
+        {
+            return $this->pendingPatches;
+        }
+
+        public function patchStatus(): array
+        {
+            return [
+                'current' => 120,
+                'latest' => 124,
+                'pending' => $this->pendingPatches,
+            ];
+        }
+
+        public function applyConfigPatches(bool $force = false): void
+        {
+        }
+
+        public function applyCorePatches(bool $force = false): void
+        {
+            $this->corePatchesApplied = true;
+            $this->pendingPatches = 0;
+        }
+    };
+}
+
+function finalizationWithStubPatcher(object $stubPatcher): Finalization
+{
+    $finalization = new class extends Finalization {
+        public object $stubPatcher;
+
+        protected function createPatcher(): Patcher
+        {
+            return $this->stubPatcher;
+        }
+    };
+    $finalization->stubPatcher = $stubPatcher;
+
+    return $finalization;
+}
+
+function seedFinalizedState(Filesystem $filesystem, string $statePath): void
+{
+    $filesystem->dumpFile(
+        $statePath,
+        json_encode([
+            'status' => 'finalized',
+            'target_version' => Version::VERSION,
+        ], JSON_THROW_ON_ERROR)
+    );
+}
+
+test('re-runs finalization when the state is finalized but patches are still pending', function (): void {
+    seedFinalizedState($this->updateFinalizationFilesystem, $this->updateFinalizationStatePath);
+
+    $stubPatcher = stubUpdatePatcherWithPendingPatches();
+    $finalization = finalizationWithStubPatcher($stubPatcher);
+    $finalization->finalizePendingUpdate();
+
+    expect($stubPatcher->corePatchesApplied)->toBeTrue();
+
+    $state = json_decode(
+        $this->updateFinalizationFilesystem->readFile($this->updateFinalizationStatePath),
+        true,
+        512,
+        JSON_THROW_ON_ERROR
+    );
+    expect($state['status'])->toBe('finalized');
+});
+
+test('completion reports the pending patch levels instead of a bare message', function (): void {
+    seedFinalizedState($this->updateFinalizationFilesystem, $this->updateFinalizationStatePath);
+
+    $finalization = finalizationWithStubPatcher(stubUpdatePatcherWithPendingPatches());
+
+    expect(function () use ($finalization): void {
+        $finalization->completeFinalization();
+    })->toThrow(InformationException::class, 'There are still 1 pending update patches (database level 120, code level 124)');
+});
+
+test('reports schema drift state alongside the finalization status', function (): void {
+    $finalization = new Finalization();
+    $status = $finalization->getStatus(false);
+
+    // No database is reachable without DI, so the drift check degrades to
+    // "in sync" rather than blocking the status call.
+    expect($status['schema_drift'])->toBe([
+        'out_of_sync' => false,
+        'last_sync_failure' => null,
+    ]);
 });

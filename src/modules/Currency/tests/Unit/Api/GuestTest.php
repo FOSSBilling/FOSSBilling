@@ -142,6 +142,15 @@ dataset('formatProvider', [
     [
         [
             'code' => 'EUR',
+            'price' => 'not-a-number',
+        ],
+        'formatCurrency',
+        0.0,
+        '€0.00',
+    ],
+    [
+        [
+            'code' => 'EUR',
             'price' => 100000,
             'convert' => false,
         ],

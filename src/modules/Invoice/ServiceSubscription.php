@@ -15,6 +15,8 @@ use Box\Mod\Client\Entity\Client;
 use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Subscription;
+use Box\Mod\Invoice\Event\AfterAdminSubscriptionCreateEvent;
+use Box\Mod\Invoice\Event\AfterAdminSubscriptionDeleteEvent;
 use Box\Mod\Invoice\Repository\SubscriptionRepository;
 use Box\Mod\Order\Entity\Order;
 use FOSSBilling\Core\Container\InjectionAwareInterface;
@@ -59,7 +61,7 @@ class ServiceSubscription implements InjectionAwareInterface
         $this->di['em']->flush();
         $newId = (int) $model->getId();
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminSubscriptionCreate', 'params' => ['id' => $newId]]);
+        $this->di['event_dispatcher']->dispatch(new AfterAdminSubscriptionCreateEvent($newId));
 
         $this->di['logger']->info('Created subscription {subscription_id}', ['subscription_id' => $newId]);
 
@@ -69,7 +71,7 @@ class ServiceSubscription implements InjectionAwareInterface
     public function update(Subscription $model, array $data): bool
     {
         if (($data['status'] ?? null) === 'canceled') {
-            $this->cancelAtGateway($model, (string) ($data['sid'] ?? $model->getSid()));
+            $this->cancelAtGateway($model);
         }
 
         return $this->persistUpdate($model, $data);
@@ -138,7 +140,7 @@ class ServiceSubscription implements InjectionAwareInterface
         $this->di['em']->remove($model);
         $this->di['em']->flush();
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminSubscriptionDelete', 'params' => ['id' => $id]]);
+        $this->di['event_dispatcher']->dispatch(new AfterAdminSubscriptionDeleteEvent((int) $id));
 
         $this->di['logger']->info('Removed subscription {id}', ['id' => $id]);
 
@@ -184,9 +186,9 @@ class ServiceSubscription implements InjectionAwareInterface
         $this->persistUpdate($model, ['status' => self::STATUS_PENDING_CANCELLATION]);
     }
 
-    private function cancelAtGateway(Subscription $model, ?string $subscriptionId = null): void
+    private function cancelAtGateway(Subscription $model): void
     {
-        $subscriptionId = trim($subscriptionId ?? (string) $model->getSid());
+        $subscriptionId = trim((string) $model->getSid());
         if ($subscriptionId === '') {
             return;
         }
@@ -303,6 +305,23 @@ class ServiceSubscription implements InjectionAwareInterface
         $id = $this->di['dbal']->fetchOne('SELECT id FROM subscription WHERE sid = :sid', ['sid' => $sid]);
 
         return is_numeric($id) ? (int) $id : null;
+    }
+
+    /**
+     * Whether the order is paid through an active gateway subscription.
+     * Such orders are renewed by the gateway's subscription payment flow and
+     * must keep their one-order-per-invoice shape, so the renewal batch
+     * excludes them from merging.
+     */
+    public function hasActiveSubscriptionForOrder(Order $order): bool
+    {
+        foreach ($this->getSubscriptionsForOrder($order, 'active') as $subscription) {
+            if (trim((string) $subscription->getSid()) !== '') {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

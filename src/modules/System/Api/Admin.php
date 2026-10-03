@@ -15,6 +15,10 @@ declare(strict_types=1);
 
 namespace Box\Mod\System\Api;
 
+use Box\Mod\System\Event\AfterAdminManualUpdateEvent;
+use Box\Mod\System\Event\AfterAdminUpdateCoreEvent;
+use Box\Mod\System\Event\BeforeAdminManualUpdateEvent;
+use Box\Mod\System\Event\BeforeAdminUpdateCoreEvent;
 use FOSSBilling\Core\Cache\CacheFactory;
 use FOSSBilling\Core\Cache\Driver;
 use FOSSBilling\Core\Doctrine\EntityManagerFactory;
@@ -342,7 +346,7 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         }
 
         $new_version = $updater->getLatestVersion();
-        $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminUpdateCore']);
+        $this->getDi()['event_dispatcher']->dispatch(new BeforeAdminUpdateCoreEvent());
         $updater->performUpdate();
 
         $this->getDi()['logger']->info('Installed FOSSBilling update files from {previous_version} to {new_version}. Update finalization is pending.', ['previous_version' => \FOSSBilling\Core\System\Version::VERSION, 'new_version' => $new_version]);
@@ -366,7 +370,7 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         }
 
         $this->getDi()['update_finalization']->finalizeUpdate();
-        $this->getDi()['events_manager']->fire(['event' => 'onAfterAdminUpdateCore']);
+        $this->getDi()['event_dispatcher']->dispatch(new AfterAdminUpdateCoreEvent());
         $this->getDi()['logger']->info('Finalized FOSSBilling update to {version}.', ['version' => \FOSSBilling\Core\System\Version::VERSION]);
 
         return true;
@@ -424,9 +428,9 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         }
 
         $updater = $this->getDi()['updater'];
-        $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminManualUpdate']);
+        $this->getDi()['event_dispatcher']->dispatch(new BeforeAdminManualUpdateEvent());
         $updater->performManualUpdate();
-        $this->getDi()['events_manager']->fire(['event' => 'onAfterAdminManualUpdate']);
+        $this->getDi()['event_dispatcher']->dispatch(new AfterAdminManualUpdateEvent());
         $this->getDi()['logger']->info('Updated FOSSBilling - applied patches and updated configuration file.');
 
         return true;

@@ -157,7 +157,7 @@ class Service implements InjectionAwareInterface
     public function getThemePresets(Model\Theme $theme): array
     {
         $presets = [];
-        $metaRows = $this->getExtensionMetaRepository()->findByExtensionAndScope('mod_theme', null, 'settings', $theme->getName(), ['metaKey' => 'ASC']);
+        $metaRows = $this->getExtensionMetaRepository()->findByExtensionAndScope('mod_theme', null, 'settings', $theme->getName(), ['metaKey' => \SortDirection::Ascending]);
         foreach ($metaRows as $meta) {
             $presets[$meta->getMetaKey()] = $meta->getMetaKey();
         }
@@ -184,12 +184,19 @@ class Service implements InjectionAwareInterface
     {
         $preset ??= $this->getCurrentThemePreset($theme);
 
+        $defaults = $theme->getPresetFromSettingsDataFile($preset);
+
         $meta = $this->getExtensionMetaRepository()->findOneByExtensionAndScope('mod_theme', (string) $preset, 'settings', $theme->getName());
-        if ($meta instanceof ExtensionMeta) {
-            return json_decode($meta->getMetaValue() ?? '', true) ?? [];
+        if (!$meta instanceof ExtensionMeta) {
+            return $defaults;
         }
 
-        return $theme->getPresetFromSettingsDataFile($preset);
+        // Saved presets predate settings added in later releases: fall back
+        // to the shipped defaults for keys the saved preset does not define,
+        // so templates never hit missing keys after an update adds settings.
+        $saved = json_decode($meta->getMetaValue() ?? '', true) ?? [];
+
+        return array_merge($defaults, $saved);
     }
 
     public function updateSettings(Model\Theme $theme, $preset, array $params): bool

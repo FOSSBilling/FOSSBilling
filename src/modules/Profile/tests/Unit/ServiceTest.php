@@ -9,10 +9,35 @@
  */
 
 declare(strict_types=1);
+
+use Box\Mod\Profile\Event\AfterAdminApiKeyChangeEvent;
+use Box\Mod\Profile\Event\AfterAdminProfilePasswordChangeEvent;
+use Box\Mod\Profile\Event\AfterAdminProfileUpdateEvent;
+use Box\Mod\Profile\Event\AfterClientProfilePasswordChangeEvent;
+use Box\Mod\Profile\Event\AfterClientProfileUpdateEvent;
+use Box\Mod\Profile\Event\BeforeAdminApiKeyChangeEvent;
+use Box\Mod\Profile\Event\BeforeAdminProfilePasswordChangeEvent;
+use Box\Mod\Profile\Event\BeforeAdminProfileUpdateEvent;
+use Box\Mod\Profile\Event\BeforeClientProfilePasswordChangeEvent;
+use Box\Mod\Profile\Event\BeforeClientProfileUpdateEvent;
 use Box\Mod\Profile\Service;
+use FOSSBilling\Core\Events\Event;
 
 use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
+
+final class ProfileTestEventDispatcher
+{
+    /** @var list<Event> */
+    public array $events = [];
+
+    public function dispatch(Event $event): Event
+    {
+        $this->events[] = $event;
+
+        return $event;
+    }
+}
 
 test('gets dependency injection container', function (): void {
     $service = new Service();
@@ -31,14 +56,11 @@ test('gets admin identity array', function (): void {
 });
 
 test('updates admin', function (): void {
-    $emMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class);
-    $emMock->shouldReceive('fire')
-        ->atLeast()->once()
-        ->andReturn(true);
+    $eventDispatcher = new ProfileTestEventDispatcher();
 
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['events_manager'] = $emMock;
+    $di['event_dispatcher'] = $eventDispatcher;
 
     $model = createEntity(Box\Mod\Staff\Entity\Admin::class);
 
@@ -46,23 +68,32 @@ test('updates admin', function (): void {
         'signature' => 'new signature',
         'email' => 'example@gmail.com',
         'name' => 'Admin',
+        'password' => 'secret-password',
+        'api_token' => 'secret-token',
     ];
 
     $service = new Service();
     $service->setDi($di);
     $result = $service->updateAdmin($model, $data);
     expect($result)->toBeTrue();
+    expect($eventDispatcher->events)->toHaveCount(2);
+    expect($eventDispatcher->events[0])->toBeInstanceOf(BeforeAdminProfileUpdateEvent::class);
+    expect($eventDispatcher->events[0]->adminId)->toBe((int) $model->getId());
+    expect($eventDispatcher->events[0]->data)->toBe([
+        'signature' => 'new signature',
+        'email' => 'example@gmail.com',
+        'name' => 'Admin',
+    ]);
+    expect($eventDispatcher->events[1])->toBeInstanceOf(AfterAdminProfileUpdateEvent::class);
+    expect($eventDispatcher->events[1]->adminId)->toBe((int) $model->getId());
 });
 
 test('generates new api key', function (): void {
-    $emMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class);
-    $emMock->shouldReceive('fire')
-        ->atLeast()->once()
-        ->andReturn(true);
+    $eventDispatcher = new ProfileTestEventDispatcher();
 
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['events_manager'] = $emMock;
+    $di['event_dispatcher'] = $eventDispatcher;
 
     $model = createEntity(Box\Mod\Staff\Entity\Admin::class);
 
@@ -75,14 +106,16 @@ test('generates new api key', function (): void {
 
     $result = $service->generateNewApiKey($model);
     expect($result)->toBeTrue();
+    expect($eventDispatcher->events)->toHaveCount(2);
+    expect($eventDispatcher->events[0])->toBeInstanceOf(BeforeAdminApiKeyChangeEvent::class);
+    expect($eventDispatcher->events[0]->adminId)->toBe((int) $model->getId());
+    expect($eventDispatcher->events[1])->toBeInstanceOf(AfterAdminApiKeyChangeEvent::class);
+    expect($eventDispatcher->events[1]->adminId)->toBe((int) $model->getId());
 });
 
 test('changes admin password', function (): void {
     $password = 'new_pass';
-    $emMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class);
-    $emMock->shouldReceive('fire')
-        ->atLeast()->once()
-        ->andReturn(true);
+    $eventDispatcher = new ProfileTestEventDispatcher();
 
     $passwordMock = Mockery::mock(FOSSBilling\Core\PasswordManager::class);
     $passwordMock->shouldReceive('hashIt')
@@ -90,7 +123,7 @@ test('changes admin password', function (): void {
 
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['events_manager'] = $emMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['password'] = $passwordMock;
 
     $model = createEntity(Box\Mod\Staff\Entity\Admin::class);
@@ -100,13 +133,15 @@ test('changes admin password', function (): void {
 
     $result = $service->changeAdminPassword($model, $password);
     expect($result)->toBeTrue();
+    expect($eventDispatcher->events)->toHaveCount(2);
+    expect($eventDispatcher->events[0])->toBeInstanceOf(BeforeAdminProfilePasswordChangeEvent::class);
+    expect($eventDispatcher->events[0]->adminId)->toBe((int) $model->getId());
+    expect($eventDispatcher->events[1])->toBeInstanceOf(AfterAdminProfilePasswordChangeEvent::class);
+    expect($eventDispatcher->events[1]->adminId)->toBe((int) $model->getId());
 });
 
 test('updates client', function (): void {
-    $emMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class);
-    $emMock->shouldReceive('fire')
-        ->atLeast()->once()
-        ->andReturn(true);
+    $eventDispatcher = new ProfileTestEventDispatcher();
 
     $modMock = Mockery::mock(FOSSBilling\Core\Module::class);
     $modMock->shouldReceive('getConfig')
@@ -121,7 +156,7 @@ test('updates client', function (): void {
 
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['events_manager'] = $emMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['mod_service'] = $di->protect(fn ($name): Mockery\MockInterface => $clientServiceMock);
     $di['mod'] = $di->protect(fn (): Mockery\MockInterface => $modMock);
 
@@ -168,6 +203,8 @@ test('updates client', function (): void {
         'custom_18' => 'string',
         'custom_19' => 'string',
         'custom_20' => 'string',
+        'password' => 'secret-password',
+        'api_token' => 'secret-token',
     ];
 
     $service = new Service();
@@ -175,13 +212,18 @@ test('updates client', function (): void {
     $result = $service->updateClient($model, $data);
     expect($result)->toBeTrue();
     expect($model->getBillingEmail())->toBe('billing@example.com');
+    expect($eventDispatcher->events)->toHaveCount(2);
+    expect($eventDispatcher->events[0])->toBeInstanceOf(BeforeClientProfileUpdateEvent::class);
+    expect($eventDispatcher->events[0]->clientId)->toBe((int) $model->getId());
+    $expectedEventData = $data;
+    unset($expectedEventData['password'], $expectedEventData['api_token']);
+    expect($eventDispatcher->events[0]->data)->toBe($expectedEventData);
+    expect($eventDispatcher->events[1])->toBeInstanceOf(AfterClientProfileUpdateEvent::class);
+    expect($eventDispatcher->events[1]->clientId)->toBe((int) $model->getId());
 });
 
 test('throws exception when email change is not allowed', function (): void {
-    $emMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class);
-    $emMock->shouldReceive('fire')
-        ->atLeast()->once()
-        ->andReturn(true);
+    $eventDispatcher = new ProfileTestEventDispatcher();
 
     $modMock = Mockery::mock(FOSSBilling\Core\Module::class);
     $modMock->shouldReceive('getConfig')
@@ -197,7 +239,7 @@ test('throws exception when email change is not allowed', function (): void {
 
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['events_manager'] = $emMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['mod_service'] = $di->protect(fn ($name): Mockery\MockInterface => $clientServiceMock);
     $di['mod'] = $di->protect(fn (): Mockery\MockInterface => $modMock);
 
@@ -210,13 +252,12 @@ test('throws exception when email change is not allowed', function (): void {
 
     expect(fn (): bool => $service->updateClient($model, $data))
         ->toThrow(FOSSBilling\Core\Exception\BaseException::class);
+    expect($eventDispatcher->events)->toHaveCount(1);
+    expect($eventDispatcher->events[0])->toBeInstanceOf(BeforeClientProfileUpdateEvent::class);
 });
 
 test('throws exception when email already registered', function (): void {
-    $emMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class);
-    $emMock->shouldReceive('fire')
-        ->atLeast()->once()
-        ->andReturn(true);
+    $eventDispatcher = new ProfileTestEventDispatcher();
 
     $modMock = Mockery::mock(FOSSBilling\Core\Module::class);
     $modMock->shouldReceive('getConfig')
@@ -232,7 +273,7 @@ test('throws exception when email already registered', function (): void {
 
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['events_manager'] = $emMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['mod_service'] = $di->protect(fn ($name): Mockery\MockInterface => $clientServiceMock);
     $di['mod'] = $di->protect(fn (): Mockery\MockInterface => $modMock);
 
@@ -245,6 +286,8 @@ test('throws exception when email already registered', function (): void {
 
     expect(fn (): bool => $service->updateClient($model, $data))
         ->toThrow(FOSSBilling\Core\Exception\BaseException::class);
+    expect($eventDispatcher->events)->toHaveCount(1);
+    expect($eventDispatcher->events[0])->toBeInstanceOf(BeforeClientProfileUpdateEvent::class);
 });
 
 test('resets api key', function (): void {
@@ -265,10 +308,7 @@ test('resets api key', function (): void {
 });
 
 test('changes client password', function (): void {
-    $emMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class);
-    $emMock->shouldReceive('fire')
-        ->atLeast()->once()
-        ->andReturn(true);
+    $eventDispatcher = new ProfileTestEventDispatcher();
 
     $password = 'new password';
 
@@ -278,7 +318,7 @@ test('changes client password', function (): void {
 
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['events_manager'] = $emMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['password'] = $passwordMock;
 
     $model = createEntity(Box\Mod\Client\Entity\Client::class);
@@ -287,6 +327,11 @@ test('changes client password', function (): void {
     $service->setDi($di);
     $result = $service->changeClientPassword($model, $password);
     expect($result)->toBeTrue();
+    expect($eventDispatcher->events)->toHaveCount(2);
+    expect($eventDispatcher->events[0])->toBeInstanceOf(BeforeClientProfilePasswordChangeEvent::class);
+    expect($eventDispatcher->events[0]->clientId)->toBe((int) $model->getId());
+    expect($eventDispatcher->events[1])->toBeInstanceOf(AfterClientProfilePasswordChangeEvent::class);
+    expect($eventDispatcher->events[1]->clientId)->toBe((int) $model->getId());
 });
 
 test('logs out client', function (): void {

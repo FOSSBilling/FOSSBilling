@@ -148,6 +148,9 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
     /**
      * Get a paginated list of servers.
      *
+     * @optional string $sort - sort by one of: id, name, ip, hostname
+     * @optional string $direction - sort direction: ASC or DESC
+     *
      * @return array
      */
     public function server_get_list($data)
@@ -180,6 +183,9 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
      * Get a paginated list of hosting accounts, along with the "order" and "client" information.
      *
      * @param $data array Accepts the optional "server_id" property
+     *
+     * @optional string $sort - sort by one of: id, username, sld, tld, ip, created_at
+     * @optional string $direction - sort direction: ASC or DESC
      *
      * @return array
      */
@@ -254,6 +260,8 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
     /**
      * Delete server.
      *
+     * @optional bool $force - detach orphaned usages with no linked order and delete
+     *
      * @throws \FOSSBilling\Core\Exception\BaseException
      */
     #[RequiredParams(['id' => 'Server ID was not passed'])]
@@ -267,7 +275,17 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
             ->count(['serviceHostingServer' => $model]);
 
         if ($count > 0) {
-            throw new \FOSSBilling\Core\Exception\InformationException('Hosting server is used by :count: service hostings', [':count:' => $count], 704);
+            $stats = $this->getService()->getServerUsageStats($model);
+            if ($stats['active'] > 0) {
+                throw new \FOSSBilling\Core\Exception\InformationException('Hosting server is used by :count: service hostings', [':count:' => $stats['active']], 704);
+            }
+
+            $force = \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['force'] ?? false);
+            if (!$force) {
+                throw new \FOSSBilling\Core\Exception\InformationException('Hosting server is used by :count: orphaned service hostings with no linked order. Re-run with force=true to detach them and delete the server.', [':count:' => $stats['orphaned']], 704);
+            }
+
+            $this->getService()->detachOrphanedServerUsages($model);
         }
 
         return (bool) $this->getService()->deleteServer($model);
@@ -355,6 +373,9 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
     /**
      * Get hosting plans paginated list.
      *
+     * @optional string $sort - sort by one of: id, name
+     * @optional string $direction - sort direction: ASC or DESC
+     *
      * @return array
      */
     public function hp_get_list($data)
@@ -385,6 +406,8 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
     /**
      * Delete hosting plan.
      *
+     * @optional bool $force - detach orphaned usages with no linked order and delete
+     *
      * @throws \FOSSBilling\Core\Exception\InformationException
      */
     #[RequiredParams(['id' => 'Hosting plan ID was not passed'])]
@@ -397,7 +420,17 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         $count = $this->getDi()['em']->getRepository(ServiceHosting::class)
             ->count(['serviceHostingHp' => $model]);
         if ($count > 0) {
-            throw new \FOSSBilling\Core\Exception\InformationException('Hosting plan is used by :count: service hostings', [':count:' => $count], 704);
+            $stats = $this->getService()->getHpUsageStats($model);
+            if ($stats['active'] > 0) {
+                throw new \FOSSBilling\Core\Exception\InformationException('Hosting plan is used by :count: service hostings', [':count:' => $stats['active']], 704);
+            }
+
+            $force = \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['force'] ?? false);
+            if (!$force) {
+                throw new \FOSSBilling\Core\Exception\InformationException('Hosting plan is used by :count: orphaned service hostings with no linked order. Re-run with force=true to detach them and delete the plan.', [':count:' => $stats['orphaned']], 704);
+            }
+
+            $this->getService()->detachOrphanedHpUsages($model);
         }
 
         return (bool) $this->getService()->deleteHp($model);

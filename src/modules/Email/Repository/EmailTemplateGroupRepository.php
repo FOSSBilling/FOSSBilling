@@ -25,7 +25,7 @@ class EmailTemplateGroupRepository extends EntityRepository
             ->select('g.adminGroupId')
             ->andWhere('g.emailTemplate = :template_id')
             ->setParameter('template_id', $templateId)
-            ->orderBy('g.adminGroupId', 'ASC')
+            ->orderBy('g.adminGroupId', \SortDirection::Ascending)
             ->getQuery()
             ->getSingleColumnResult());
     }

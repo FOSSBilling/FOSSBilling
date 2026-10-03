@@ -44,7 +44,7 @@
                                 <label class="form-label text-muted small mb-1" for="notification-date-range">{{ 'Date Range'|trans }}</label>
                                 <div class="input-group">
                                     <div class="input-icon w-100">
-                                        <input class="form-control datepicker"
+                                        <input class="form-control datepicker" data-clear-label="{{ 'Clear date'|trans }}" data-invalid-date-label="{{ 'Enter a valid date in YYYY-MM-DD format.'|trans }}"
                                                id="notification-date-range"
                                                placeholder="{{ 'Select Date Range'|trans }}"
                                                value="{% if request.date_from %}{{ request.date_from|date('Y-m-d') }}{% endif %}{% if request.date_to %} to {{ request.date_to|date('Y-m-d') }}{% endif %}"
@@ -82,7 +82,7 @@
                     <thead>
                         <tr>
                             <th>{{ 'Message'|trans }}</th>
-                            <th>{{ 'Date'|trans }}</th>
+                            {{ include('partial_sortable_th.html.twig', { 'label': 'Date'|trans, 'sort_key': 'created_at', 'url': 'notification', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
                             <th class="w-1"></th>
                         </tr>
                     </thead>
@@ -90,7 +90,7 @@
                     {% set events = admin.notification_get_list({ "per_page": 25, "page": request.page }|merge(request)) %}
                     {% for i, event in events.list %}
                         <tr>
-                            <td>{{ event.meta_value|raw }}</td>
+                            <td>{{ event.meta_value }}</td>
                             <td>{{ event.created_at|date('Y-m-d H:i') }}</td>
                             <td>
                                 <a class="btn btn-icon" href="{{ 'notification/delete'|api_url(query: { 'id': event.id }) }}"

@@ -73,6 +73,11 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
         return $this->di;
     }
 
+    public static function requiresManualApproval(): bool
+    {
+        return false;
+    }
+
     /**
      * Building this opens a genuinely separate database connection - see
      * cacheGatewayCustomer() for why isolation from $this->di['em'] is
@@ -201,6 +206,18 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
         return $this->_generateForm($invoiceModel);
     }
 
+    /**
+     * Encode a value as a JS string literal for the inline checkout forms.
+     * The HEX flags keep it safe inside a <script> block (including
+     * `</script>` breakouts) while preserving the exact value.
+     */
+    private static function encodeJsString(string $value): string
+    {
+        $encoded = json_encode($value, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE);
+
+        return is_string($encoded) ? $encoded : "''";
+    }
+
     public function cancelSubscription(string $subscriptionId): void
     {
         $subscription = $this->stripe->subscriptions->retrieve($subscriptionId, []);
@@ -304,6 +321,10 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
 
         $invoice = $this->resolveInvoice($tx, $data);
 
+        if (!isset($data['get']['payment_intent']) && !isset($data['get']['setup_intent'])) {
+            throw new Payment_Exception('Stripe payment data is missing.', [], 7020);
+        }
+
         try {
             if (isset($data['get']['payment_intent'])) {
                 $this->processPaymentIntent($tx, $invoice, $data);
@@ -351,12 +372,34 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
     private function processPaymentIntent(Transaction $tx, ?Invoice $invoice, array $data): void
     {
         $charge = $this->stripe->paymentIntents->retrieve($data['get']['payment_intent'], []);
+        $this->validateRedirectPaymentIntent($tx, $invoice, $charge);
 
         $this->withStripeObjectLock(
             $charge->id,
             (int) $tx->getGateway()?->getId(),
             fn () => $this->processPaymentIntentUnderLock($tx, $invoice, $charge)
         );
+    }
+
+    private function validateRedirectPaymentIntent(Transaction $tx, ?Invoice $invoice, object $paymentIntent): void
+    {
+        $gatewayId = $paymentIntent->metadata->gateway_id ?? null;
+        if (!is_numeric($gatewayId) || (int) $gatewayId !== (int) $tx->getGateway()?->getId()) {
+            throw new FOSSBilling\Core\Exception\BaseException('PaymentIntent does not belong to this payment gateway');
+        }
+
+        if (!$invoice instanceof Invoice) {
+            return;
+        }
+
+        $invoiceId = $paymentIntent->metadata->invoice_id ?? null;
+        if (!is_numeric($invoiceId) || (int) $invoiceId !== (int) $invoice->getId()) {
+            throw new FOSSBilling\Core\Exception\BaseException('PaymentIntent does not belong to this invoice');
+        }
+
+        if (strcasecmp((string) ($paymentIntent->currency ?? ''), (string) $invoice->getCurrency()) !== 0) {
+            throw new FOSSBilling\Core\Exception\BaseException('PaymentIntent currency does not match invoice currency');
+        }
     }
 
     private function processPaymentIntentUnderLock(Transaction $tx, ?Invoice $invoice, object $charge): void
@@ -402,11 +445,8 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
                 }
             }
 
-            $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
-            if (!$transactionService->claimForProcessing((int) $tx->getId())) {
-                return;
-            }
-
+            // No re-claim: the service layer already holds the processing claim, and the
+            // in-memory marker below is what the succeeded branch keys off.
             $tx->setStatus(Transaction::STATUS_PROCESSING);
         }
 
@@ -441,8 +481,8 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
             $clientService->addFunds($client, $bd['amount'], $bd['description'], $bd);
 
             if ($tx->getInvoice() instanceof Invoice && $invoice instanceof Invoice && !$invoiceService->isInvoiceTypeDeposit($invoice)) {
-                if (!$invoice->isApproved()) {
-                    $invoiceService->approveInvoice($invoice, ['use_credits' => false]);
+                if (!$invoice->isIssued()) {
+                    $invoiceService->issueInvoice($invoice, ['use_credits' => false]);
                 }
                 $invoiceService->payInvoiceWithCredits($invoice);
             } elseif ($tx->getInvoice() instanceof Invoice && $invoice instanceof Invoice && $invoiceService->isInvoiceTypeDeposit($invoice)) {
@@ -603,8 +643,8 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
 
         $invoiceService = $this->di['mod_service']('Invoice');
         if (!$invoiceService->isInvoiceTypeDeposit($invoice)) {
-            if (!$invoice->isApproved()) {
-                $invoiceService->approveInvoice($invoice, ['use_credits' => false]);
+            if (!$invoice->isIssued()) {
+                $invoiceService->issueInvoice($invoice, ['use_credits' => false]);
             }
             $invoiceService->payInvoiceWithCredits($invoice);
         }
@@ -913,11 +953,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
             'rel_id' => $tx->getId(),
         ];
 
-        $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
-        if (!$transactionService->claimForProcessing((int) $tx->getId())) {
-            return false;
-        }
-
+        // No re-claim: the service layer already holds the processing claim.
         $tx->setType(Payment_Transaction::TXTYPE_PAYMENT);
         $tx->setAmount((string) $bd['amount']);
         $tx->setCurrency(strtoupper((string) ($stripeInvoice->currency ?? '')));
@@ -930,8 +966,8 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
             $invoiceModel = $this->di['em']->getRepository(Invoice::class)->find((int) $invoiceId);
 
             if ($invoiceModel instanceof Invoice && !$invoiceService->isInvoiceTypeDeposit($invoiceModel)) {
-                if (!$invoiceModel->isApproved()) {
-                    $invoiceService->approveInvoice($invoiceModel, ['use_credits' => false]);
+                if (!$invoiceModel->isIssued()) {
+                    $invoiceService->issueInvoice($invoiceModel, ['use_credits' => false]);
                 }
                 $invoiceService->payInvoiceWithCredits($invoiceModel);
             }
@@ -1236,11 +1272,8 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
 
         $invoiceService = $this->di['mod_service']('Invoice');
 
-        $transactionService = $this->di['mod_service']('Invoice', 'Transaction');
-        if (!$transactionService->claimForProcessing((int) $tx->getId())) {
-            return;
-        }
-
+        // No re-claim: the service layer already holds the processing claim, and the
+        // in-memory marker below is what the succeeded branch keys off.
         $tx->setStatus(Transaction::STATUS_PROCESSING);
 
         $clientService = $this->di['mod_service']('client');
@@ -1273,8 +1306,8 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
         $clientService->addFunds($client, $bd['amount'], $bd['description'], $bd);
 
         if ($tx->getInvoice() instanceof Invoice && $invoice instanceof Invoice && !$invoiceService->isInvoiceTypeDeposit($invoice)) {
-            if (!$invoice->isApproved()) {
-                $invoiceService->approveInvoice($invoice, ['use_credits' => false]);
+            if (!$invoice->isIssued()) {
+                $invoiceService->issueInvoice($invoice, ['use_credits' => false]);
             }
             $invoiceService->payInvoiceWithCredits($invoice);
         } elseif ($tx->getInvoice() instanceof Invoice && $invoice instanceof Invoice && $invoiceService->isInvoiceTypeDeposit($invoice)) {
@@ -1805,8 +1838,8 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
                             return_url: \':callbackUrl&redirect=true&invoice_hash=:invoice_hash\',
                             payment_method_data: {
                                 billing_details: {
-                                    name: \':buyer_name\',
-                                    email: \':buyer_email\',
+                                    name: :buyer_name,
+                                    email: :buyer_email,
                                 },
                             },
                         },
@@ -1824,8 +1857,8 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
         $bindings = [
             ':pub_key' => $pubKey,
             ':intent_secret' => $intent->client_secret,
-            ':buyer_email' => htmlspecialchars((string) $invoice->getBuyerEmail(), ENT_QUOTES, 'UTF-8'),
-            ':buyer_name' => htmlspecialchars(trim($invoice->getBuyerFirstName() . ' ' . $invoice->getBuyerLastName()), ENT_QUOTES, 'UTF-8'),
+            ':buyer_email' => self::encodeJsString((string) $invoice->getBuyerEmail()),
+            ':buyer_name' => self::encodeJsString(trim($invoice->getBuyerFirstName() . ' ' . $invoice->getBuyerLastName())),
             ':callbackUrl' => $this->config['notify_url'],
             ':invoice_hash' => $invoice->getHash(),
         ];
@@ -1859,7 +1892,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
 
         $setupIntentParams = [
             'customer' => $customerId,
-            'payment_method_types' => ['card'],
+            'allowed_payment_method_types' => ['card'],
             'usage' => 'off_session',
             'metadata' => [
                 'invoice_id' => (string) $invoice->getId(),
@@ -1920,8 +1953,8 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
                                 return_url: \':callbackUrl&redirect=true&invoice_hash=:invoice_hash\',
                                 payment_method_data: {
                                     billing_details: {
-                                        name: \':buyer_name\',
-                                        email: \':buyer_email\',
+                                        name: :buyer_name,
+                                        email: :buyer_email,
                                     },
                                 },
                             },
@@ -1938,8 +1971,8 @@ class Payment_Adapter_Stripe implements FOSSBilling\Core\Container\InjectionAwar
         $bindings = [
             ':pub_key' => $pubKey,
             ':setup_intent_secret' => $setupIntent->client_secret,
-            ':buyer_email' => htmlspecialchars($invoice->getBuyerEmail() ?? '', ENT_QUOTES, 'UTF-8'),
-            ':buyer_name' => htmlspecialchars(trim($invoice->getBuyerFirstName() . ' ' . $invoice->getBuyerLastName()), ENT_QUOTES, 'UTF-8'),
+            ':buyer_email' => self::encodeJsString($invoice->getBuyerEmail() ?? ''),
+            ':buyer_name' => self::encodeJsString(trim($invoice->getBuyerFirstName() . ' ' . $invoice->getBuyerLastName())),
             ':callbackUrl' => $this->config['notify_url'],
             ':invoice_hash' => $invoice->getHash(),
         ];

@@ -1,4 +1,5 @@
 {% set service = admin.order_service({ 'id': order.id }) %}
+{% if service %}
 
 <div class="card-body overflow-auto">
     <div class="mb-3">
@@ -122,3 +123,8 @@
         </div>
     </form>
 </div>
+{% else %}
+<div class="card-body">
+    <div class="alert alert-info" role="alert">{{ 'This order has no active service to manage.'|trans }}</div>
+</div>
+{% endif %}

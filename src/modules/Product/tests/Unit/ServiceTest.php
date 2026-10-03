@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 use Box\Mod\Client\Entity\Client;
 use Box\Mod\Client\Entity\ClientGroup;
+use Box\Mod\Client\Entity\ClientGroupMembership;
 use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Order\Entity\Order;
 use Box\Mod\Order\Repository\OrderRepository;
@@ -29,6 +30,7 @@ use Box\Mod\Product\Repository\PromoRepository;
 use Box\Mod\Product\Service;
 use Box\Mod\Servicedomain\Entity\Tld;
 use Box\Mod\Servicedomain\Repository\TldRepository;
+use Doctrine\Common\Collections\ArrayCollection;
 
 use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
@@ -50,6 +52,20 @@ function productTestCreatePromoEntity(int $id): Promo
     $reflection->setValue($promo, $id);
 
     return $promo;
+}
+
+function productTestClientWithGroups(int ...$groupIds): Client
+{
+    $memberships = [];
+    foreach ($groupIds as $groupId) {
+        $memberships[] = createEntity(ClientGroupMembership::class, [
+            'clientGroup' => createEntity(ClientGroup::class, ['id' => $groupId]),
+        ]);
+    }
+
+    return createEntity(Client::class, [
+        'groupMemberships' => new ArrayCollection($memberships),
+    ]);
 }
 
 function productTestCreateProductCategoryEntity(int $id): ProductCategory
@@ -382,6 +398,77 @@ test('get selected addons for cart returns prepared addon items', function (): v
     expect($result)->toHaveCount(1);
     expect($result[0]['product'])->toBe($addon);
     expect($result[0]['config']['parent_id'])->toBe(10);
+});
+
+test('get selected addons for cart keeps quantity when addon allows it', function (): void {
+    $parentProduct = productTestCreateProductEntity(10);
+    $addon = productTestCreateProductEntity(20)->setStatus('enabled')->setType(Service::CUSTOM)->setIsAddon(true)->setAllowQuantitySelect(true);
+
+    $validator = Mockery::mock(FOSSBilling\Core\Validation\Validator::class);
+    $validator->shouldNotReceive('checkRequiredParamsForArray');
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('getAddonById')->once()->with(20)->andReturn($addon);
+    $serviceMock->shouldReceive('isRecurrentProductPricing')->once()->with($addon)->andReturn(false);
+
+    $di = container();
+    $di['validator'] = $validator;
+    $serviceMock->setDi($di);
+
+    $result = $serviceMock->getSelectedAddonsForCart($parentProduct, [
+        20 => ['selected' => true, 'quantity' => 3],
+    ]);
+
+    expect($result)->toHaveCount(1);
+    expect($result[0]['config']['quantity'])->toBe(3);
+    expect($result[0]['config']['parent_id'])->toBe(10);
+});
+
+test('get selected addons for cart coerces quantity to one when addon disallows it', function (): void {
+    $parentProduct = productTestCreateProductEntity(10);
+    $addon = productTestCreateProductEntity(20)->setStatus('enabled')->setType(Service::CUSTOM)->setIsAddon(true)->setAllowQuantitySelect(false);
+
+    $validator = Mockery::mock(FOSSBilling\Core\Validation\Validator::class);
+    $validator->shouldNotReceive('checkRequiredParamsForArray');
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('getAddonById')->once()->with(20)->andReturn($addon);
+    $serviceMock->shouldReceive('isRecurrentProductPricing')->once()->with($addon)->andReturn(false);
+
+    $di = container();
+    $di['validator'] = $validator;
+    $serviceMock->setDi($di);
+
+    $result = $serviceMock->getSelectedAddonsForCart($parentProduct, [
+        20 => ['selected' => true, 'quantity' => 5],
+    ]);
+
+    expect($result)->toHaveCount(1);
+    expect($result[0]['config']['quantity'])->toBe(1);
+});
+
+test('validate selected addons rejects quantity for addons without quantity selection', function (): void {
+    $parentProduct = productTestCreateProductEntity(10)->setAddons(json_encode([20]));
+    $addon = productTestCreateProductEntity(20)->setStatus('enabled')->setIsAddon(true)->setAllowQuantitySelect(false);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('getAddonById')->once()->with(20)->andReturn($addon);
+
+    expect(fn () => $serviceMock->validateSelectedAddonsForProduct($parentProduct, [
+        20 => ['selected' => true, 'quantity' => 3],
+    ]))->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'invalid for the associated product');
+});
+
+test('validate selected addons allows quantity for addons with quantity selection', function (): void {
+    $parentProduct = productTestCreateProductEntity(10)->setAddons(json_encode([20]));
+    $addon = productTestCreateProductEntity(20)->setStatus('enabled')->setIsAddon(true)->setAllowQuantitySelect(true);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('getAddonById')->once()->with(20)->andReturn($addon);
+
+    expect(fn () => $serviceMock->validateSelectedAddonsForProduct($parentProduct, [
+        20 => ['selected' => true, 'quantity' => 3],
+    ]))->not->toThrow(Throwable::class);
 });
 
 test('reduce stock decrements atomically rather than writing back a read value', function (): void {
@@ -737,6 +824,45 @@ test('get product renewal line config uses generic pricing implementation', func
     $line = $service->getProductRenewalLineConfig($product, ['period' => '1Y', 'quantity' => 2]);
 
     expect($line)->toBe(['price' => 20.0, 'quantity' => 2, 'setup_price' => 5.0]);
+});
+
+test('get product order line config only honors an explicitly trusted staff price override', function (): void {
+    $service = new Service();
+    $productPayment = productTestCreateProductPaymentEntity(15)
+        ->setType(ProductPayment::RECURRENT);
+    productTestAddPeriod($productPayment, '1Y', 20.0, 5.0, true);
+
+    $product = productTestCreateProductEntity(9)
+        ->setType(Service::CUSTOM)
+        ->setProductPayment($productPayment);
+
+    $service->setDi(container());
+
+    $config = ['period' => '1Y', 'quantity' => 2, Service::PRICE_OVERRIDE_KEY => 7.5];
+
+    expect($service->getProductOrderLineConfig($product, $config))
+        ->toBe(['price' => 20.0, 'quantity' => 2, 'setup_price' => 5.0]);
+    expect($service->getProductOrderLineConfig($product, $config, true))
+        ->toBe(['price' => 7.5, 'quantity' => 2, 'setup_price' => 5.0]);
+});
+
+test('get product order line config ignores invalid price overrides', function (): void {
+    $service = new Service();
+    $productPayment = productTestCreateProductPaymentEntity(15)
+        ->setType(ProductPayment::RECURRENT);
+    productTestAddPeriod($productPayment, '1Y', 20.0, 5.0, true);
+
+    $product = productTestCreateProductEntity(9)
+        ->setType(Service::CUSTOM)
+        ->setProductPayment($productPayment);
+
+    $service->setDi(container());
+
+    foreach (['free', -3.0, null] as $override) {
+        $line = $service->getProductOrderLineConfig($product, ['period' => '1Y', Service::PRICE_OVERRIDE_KEY => $override], true);
+
+        expect($line['price'])->toBe(20.0);
+    }
 });
 
 test('get related product discount uses domain pricing implementation', function (): void {
@@ -1246,7 +1372,7 @@ test('create promo', function (): void {
     $di['em'] = $emMock;
 
     $service->setDi($di);
-    $result = $service->createPromo('code', 'percentage', 50, [], [], [], []);
+    $result = $service->createPromo('code', 'percentage', 50, [], [], [], [], []);
     expect($result)->toBeInt();
     expect($result)->toEqual(1);
 });
@@ -1268,6 +1394,7 @@ test('duplicate promo', function (): void {
         ->setProducts('[1]')
         ->setPeriods('["1M"]')
         ->setClientGroups('[2]')
+        ->setRequiresProducts('[5]')
         ->setStartAt(new DateTime('2012-01-01'))
         ->setEndAt(new DateTime('2012-01-02'));
 
@@ -1319,6 +1446,7 @@ test('duplicate promo', function (): void {
     expect($emMock->captured->getProducts())->toBe('[1]');
     expect($emMock->captured->getPeriods())->toBe('["1M"]');
     expect($emMock->captured->getClientGroups())->toBe('[2]');
+    expect($emMock->captured->getRequiresProducts())->toBe('[5]');
 });
 
 test('duplicate promo generates alternate code when copy code already exists', function (): void {
@@ -1479,6 +1607,62 @@ test('client has active promo application', function (): void {
     $service->setDi($di);
 
     expect($service->clientHasActivePromoApplication($client, $promo))->toBeTrue();
+});
+
+test('client has active promo application for update skips the lock when promo is not once per client', function (): void {
+    $service = new Service();
+    $promo = productTestCreatePromoEntity(5)->setOncePerClient(false);
+
+    $client = createEntity(Client::class, ['id' => 9]);
+
+    $repoMock = Mockery::mock(PromoRedemptionRepository::class);
+    $repoMock->shouldNotReceive('clientHasActiveCheckoutApplicationForUpdate');
+
+    $emMock = new class($repoMock) {
+        public function __construct(private $repo)
+        {
+        }
+
+        public function getRepository(string $class): object
+        {
+            return $this->repo;
+        }
+    };
+
+    $di = container();
+    $di['em'] = $emMock;
+
+    $service->setDi($di);
+
+    expect($service->clientHasActivePromoApplicationForUpdate($client, $promo))->toBeFalse();
+});
+
+test('client has active promo application for update delegates to the locking repository method', function (): void {
+    $service = new Service();
+    $promo = productTestCreatePromoEntity(5)->setOncePerClient(true);
+
+    $client = createEntity(Client::class, ['id' => 9]);
+
+    $repoMock = Mockery::mock(PromoRedemptionRepository::class);
+    $repoMock->shouldReceive('clientHasActiveCheckoutApplicationForUpdate')->once()->with(5, 9)->andReturn(true);
+
+    $emMock = new class($repoMock) {
+        public function __construct(private $repo)
+        {
+        }
+
+        public function getRepository(string $class): object
+        {
+            return $this->repo;
+        }
+    };
+
+    $di = container();
+    $di['em'] = $emMock;
+
+    $service->setDi($di);
+
+    expect($service->clientHasActivePromoApplicationForUpdate($client, $promo))->toBeTrue();
 });
 
 test('promo can be applied', function (Promo $promo, bool $expectedResult): void {
@@ -1743,6 +1927,9 @@ test('get renewal promo adjustment for domain order', function (): void {
     $promoRepo = Mockery::mock(PromoRepository::class);
     $promoRepo->shouldNotReceive('find');
 
+    $redemptionRepo = Mockery::mock(PromoRedemptionRepository::class);
+    $redemptionRepo->shouldReceive('findBy')->once()->andReturn([]);
+
     $currencyRepository = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
     $currencyRepository->shouldReceive('getRateByCode')->once()->with('EUR')->andReturn(2.0);
 
@@ -1763,8 +1950,8 @@ test('get renewal promo adjustment for domain order', function (): void {
 
     $di = container();
     $di['api_guest'] = $apiGuest;
-    $di['em'] = new readonly class($promoRepo) {
-        public function __construct(private object $promoRepo)
+    $di['em'] = new readonly class($promoRepo, $redemptionRepo) {
+        public function __construct(private object $promoRepo, private object $redemptionRepo)
         {
         }
 
@@ -1772,6 +1959,7 @@ test('get renewal promo adjustment for domain order', function (): void {
         {
             return match ($class) {
                 Promo::class => $this->promoRepo,
+                PromoRedemption::class => $this->redemptionRepo,
                 default => throw new RuntimeException('Unexpected repository ' . $class),
             };
         }
@@ -1804,6 +1992,10 @@ test('get renewal promo adjustment ignores missing promo for non-domain order', 
         ->with(15)
         ->andThrow(new FOSSBilling\Core\Exception\InformationException('Promo not found'));
 
+    $redemptionRepo = Mockery::mock(PromoRedemptionRepository::class);
+    $redemptionRepo->shouldReceive('findBy')->once()->andReturn([]);
+    $serviceMock->shouldReceive('getPromoRedemptionRepository')->once()->andReturn($redemptionRepo);
+
     expect($serviceMock->getRenewalPromoAdjustment($order, 20.0, 1.0))->toBeNull();
 });
 
@@ -1816,12 +2008,32 @@ test('get product discount uses product order line config', function (): void {
     $product = productTestCreateProductEntity(5)->setIsAddon(false);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
-    $serviceMock->shouldReceive('getProductOrderLineConfig')->once()->with($product, ['period' => '1Y'])->andReturn([
-        'price' => 100.0,
-        'quantity' => 2,
-    ]);
+    $serviceMock->shouldReceive('getProductOrderLineConfig')
+        ->once()
+        ->with($product, ['period' => '1Y'], false)
+        ->andReturn(['price' => 100.0, 'quantity' => 2]);
+    $serviceMock->shouldReceive('getProductOrderLineConfig')
+        ->once()
+        ->with($product, ['period' => '1Y'], true)
+        ->andReturn(['price' => 40.0, 'quantity' => 2]);
 
     expect($serviceMock->getProductDiscount($product, $promo, ['period' => '1Y']))->toBe(20.0);
+    expect($serviceMock->getProductDiscount($product, $promo, ['period' => '1Y'], true))->toBe(8.0);
+});
+
+test('get product discount by id forwards the price override flag', function (): void {
+    $product = productTestCreateProductEntity(5);
+    $promo = productTestCreatePromoEntity(7);
+    $config = ['period' => '1Y', Service::PRICE_OVERRIDE_KEY => 40.0];
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('findProductById')->once()->with(5)->andReturn($product);
+    $serviceMock->shouldReceive('getProductDiscount')
+        ->once()
+        ->with($product, $promo, $config, true)
+        ->andReturn(8.0);
+
+    expect($serviceMock->getProductDiscountById(5, $promo, $config, true))->toBe(8.0);
 });
 
 test('get renewal product discount uses product renewal line config', function (): void {
@@ -1849,10 +2061,12 @@ test('is promo available for client group', function (Promo $promo, ?Client $cli
 
     expect($service->isPromoAvailableForClientGroup($promo))->toBe($expectedResult);
 })->with([
-    'no restrictions' => [fn (): Promo => productTestCreatePromoEntity(1)->setClientGroups(json_encode([])), fn (): Client => $client = createEntity(Client::class), true],
-    'restricted and no client group' => [fn (): Promo => productTestCreatePromoEntity(2)->setClientGroups(json_encode([1, 2])), fn (): object => createEntity(Client::class, ['clientGroup' => null]), false],
-    'restricted and wrong client group' => [fn (): Promo => productTestCreatePromoEntity(3)->setClientGroups(json_encode([1, 2])), fn (): object => createEntity(Client::class, ['clientGroup' => createEntity(ClientGroup::class, ['id' => 3])]), false],
-    'restricted and matching client group' => [fn (): Promo => productTestCreatePromoEntity(4)->setClientGroups(json_encode([1, 2])), fn (): object => createEntity(Client::class, ['clientGroup' => createEntity(ClientGroup::class, ['id' => 2])]), true],
+    'no restrictions' => [fn (): Promo => productTestCreatePromoEntity(1)->setClientGroups(json_encode([])), fn (): Client => createEntity(Client::class), true],
+    'restricted and no client group' => [fn (): Promo => productTestCreatePromoEntity(2)->setClientGroups(json_encode([1, 2])), fn (): object => productTestClientWithGroups(), false],
+    'restricted and wrong client group' => [fn (): Promo => productTestCreatePromoEntity(3)->setClientGroups(json_encode([1, 2])), fn (): object => productTestClientWithGroups(3), false],
+    'restricted and matching client group' => [fn (): Promo => productTestCreatePromoEntity(4)->setClientGroups(json_encode([1, 2])), fn (): object => productTestClientWithGroups(2), true],
+    'restricted and matching one of several client groups' => [fn (): Promo => productTestCreatePromoEntity(7)->setClientGroups(json_encode([1, 2])), fn (): object => productTestClientWithGroups(3, 2), true],
+    'restricted and none of several client groups match' => [fn (): Promo => productTestCreatePromoEntity(8)->setClientGroups(json_encode([1, 2])), fn (): object => productTestClientWithGroups(3, 4), false],
     'no restrictions and no client' => [fn (): Promo => productTestCreatePromoEntity(5)->setClientGroups(json_encode([])), null, true],
     'restricted and no client' => [fn (): Promo => productTestCreatePromoEntity(6)->setClientGroups(json_encode([1, 2])), null, false],
 ]);
@@ -2890,4 +3104,605 @@ test('enrich promo redemption leaves invoice serie_nr null when invoice is missi
         'serie_nr' => null,
         'status' => null,
     ]);
+});
+
+test('promo entity exposes automatic application fields', function (): void {
+    $promo = productTestCreatePromoEntity(1);
+
+    expect($promo->isAutoApply())->toBeFalse();
+    expect($promo->getPriority())->toBe(0);
+    expect($promo->isStackable())->toBeFalse();
+
+    $promo->setAutoApply(true)->setPriority(5)->setStackable(true);
+
+    expect($promo->isAutoApply())->toBeTrue();
+    expect($promo->getPriority())->toBe(5);
+    expect($promo->isStackable())->toBeTrue();
+
+    $array = $promo->toApiArray();
+    expect($array['auto_apply'])->toBeTrue();
+    expect($array['priority'])->toBe(5);
+    expect($array['stackable'])->toBeTrue();
+});
+
+test('getPromoStackingMode returns the configured mode', function (): void {
+    $systemService = Mockery::mock(Box\Mod\System\Service::class);
+    $systemService->shouldReceive('getParamValue')
+        ->once()
+        ->with('promo_stacking_mode', Service::STACKING_BEST_SINGLE)
+        ->andReturn(Service::STACKING_STACK_ALL);
+
+    $service = new Service();
+    $di = container();
+    $di['mod_service'] = $di->protect(moduleService(['system' => $systemService]));
+    $service->setDi($di);
+
+    expect($service->getPromoStackingMode())->toBe(Service::STACKING_STACK_ALL);
+});
+
+test('getPromoStackingMode falls back to best_single for unknown values', function (): void {
+    $systemService = Mockery::mock(Box\Mod\System\Service::class);
+    $systemService->shouldReceive('getParamValue')->once()->andReturn('stack-everything');
+
+    $service = new Service();
+    $di = container();
+    $di['mod_service'] = $di->protect(moduleService(['system' => $systemService]));
+    $service->setDi($di);
+
+    expect($service->getPromoStackingMode())->toBe(Service::STACKING_BEST_SINGLE);
+});
+
+test('resolvePromosToApply picks the highest-value promo in best_single mode', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('getPromoStackingMode')->once()->andReturn(Service::STACKING_BEST_SINGLE);
+
+    $low = productTestCreatePromoEntity(1)->setPriority(10);
+    $high = productTestCreatePromoEntity(2)->setPriority(0);
+
+    $result = $serviceMock->resolvePromosToApply([
+        ['promo' => $low, 'discount' => 5.0],
+        ['promo' => $high, 'discount' => 20.0],
+    ]);
+
+    expect($result)->toHaveCount(1);
+    expect($result[0]->getId())->toBe(2);
+});
+
+test('resolvePromosToApply picks the highest-priority promo in priority_first mode', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('getPromoStackingMode')->once()->andReturn(Service::STACKING_PRIORITY_FIRST);
+
+    $priority = productTestCreatePromoEntity(1)->setPriority(10);
+    $valuable = productTestCreatePromoEntity(2)->setPriority(0);
+
+    $result = $serviceMock->resolvePromosToApply([
+        ['promo' => $priority, 'discount' => 5.0],
+        ['promo' => $valuable, 'discount' => 20.0],
+    ]);
+
+    expect($result)->toHaveCount(1);
+    expect($result[0]->getId())->toBe(1);
+});
+
+test('resolvePromosToApply stacks stackable promos with the best non-stackable one', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('getPromoStackingMode')->once()->andReturn(Service::STACKING_STACK_ALL);
+
+    $stackableSmall = productTestCreatePromoEntity(1)->setStackable(true);
+    $stackableBig = productTestCreatePromoEntity(2)->setStackable(true);
+    $exclusiveSmall = productTestCreatePromoEntity(3);
+    $exclusiveBig = productTestCreatePromoEntity(4);
+
+    $result = $serviceMock->resolvePromosToApply([
+        ['promo' => $stackableSmall, 'discount' => 5.0],
+        ['promo' => $stackableBig, 'discount' => 15.0],
+        ['promo' => $exclusiveSmall, 'discount' => 3.0],
+        ['promo' => $exclusiveBig, 'discount' => 8.0],
+    ]);
+
+    $ids = array_map(fn (Promo $promo): int => (int) $promo->getId(), $result);
+    sort($ids);
+    expect($ids)->toBe([1, 2, 4]);
+    // Highest-value promo first so it becomes the order's primary promo.
+    expect($result[0]->getId())->toBe(2);
+});
+
+test('resolvePromosToApply returns an empty list when nothing is eligible', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldNotReceive('getPromoStackingMode');
+
+    expect($serviceMock->resolvePromosToApply([]))->toBe([]);
+});
+
+test('findEligibleAutoPromos returns matching promos with total discounts', function (): void {
+    $client = createEntity(Client::class, ['id' => 9]);
+    $product = productTestCreateProductEntity(5);
+    $promo = productTestCreatePromoEntity(7)->setAutoApply(true);
+
+    $promoRepo = Mockery::mock(PromoRepository::class);
+    $promoRepo->shouldReceive('findAutoApplyPromos')->once()->andReturn([$promo]);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('getPromoRepository')->once()->andReturn($promoRepo);
+    $serviceMock->shouldReceive('promoCanBeApplied')->once()->with($promo)->andReturn(true);
+    $serviceMock->shouldReceive('isPromoAvailableForClientGroup')->once()->with($promo, $client)->andReturn(true);
+    $serviceMock->shouldReceive('canClientUsePromo')->once()->with($client, $promo)->andReturn(true);
+    $serviceMock->shouldReceive('isPromoApplicableToProduct')->once()->andReturn(true);
+    $serviceMock->shouldReceive('getProductDiscount')->once()->with($product, $promo, [], true)->andReturn(12.5);
+
+    $result = $serviceMock->findEligibleAutoPromos($client, [['product' => $product, 'config' => []]], true);
+
+    expect($result)->toHaveCount(1);
+    expect($result[0]['promo'])->toBe($promo);
+    expect($result[0]['discount'])->toBe(12.5);
+});
+
+test('findEligibleAutoPromos skips promos with no applicable lines', function (): void {
+    $client = createEntity(Client::class, ['id' => 9]);
+    $product = productTestCreateProductEntity(5);
+    $promo = productTestCreatePromoEntity(7)->setAutoApply(true);
+
+    $promoRepo = Mockery::mock(PromoRepository::class);
+    $promoRepo->shouldReceive('findAutoApplyPromos')->once()->andReturn([$promo]);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('getPromoRepository')->once()->andReturn($promoRepo);
+    $serviceMock->shouldReceive('promoCanBeApplied')->once()->andReturn(true);
+    $serviceMock->shouldReceive('isPromoAvailableForClientGroup')->once()->andReturn(true);
+    $serviceMock->shouldReceive('canClientUsePromo')->once()->andReturn(true);
+    $serviceMock->shouldReceive('isPromoApplicableToProduct')->once()->andReturn(false);
+    $serviceMock->shouldNotReceive('getProductDiscount');
+
+    expect($serviceMock->findEligibleAutoPromos($client, [['product' => $product, 'config' => []]]))->toBe([]);
+});
+
+test('getPromoRequiredProducts decodes and normalizes the bundle condition', function (): void {
+    $service = new Service();
+
+    expect($service->getPromoRequiredProducts(productTestCreatePromoEntity(1)))->toBe([]);
+    expect($service->getPromoRequiredProducts(productTestCreatePromoEntity(2)->setRequiresProducts('[5,"7",0,-2,5]')))->toBe([5, 7]);
+});
+
+test('findMissingRequiredProductIds reports only the absent products', function (): void {
+    $service = new Service();
+    $promo = productTestCreatePromoEntity(7)->setRequiresProducts('[5,9]');
+
+    expect($service->findMissingRequiredProductIds($promo, [5, 9, 12]))->toBe([]);
+    expect($service->findMissingRequiredProductIds($promo, [5]))->toBe([9]);
+    expect($service->findMissingRequiredProductIds(productTestCreatePromoEntity(8), [5]))->toBe([]);
+});
+
+test('isPromoCartConditionMet checks line products against the bundle condition', function (): void {
+    $service = new Service();
+    $promo = productTestCreatePromoEntity(7)->setRequiresProducts('[5,9]');
+
+    $lines = [
+        ['product' => productTestCreateProductEntity(5), 'config' => []],
+        ['product' => productTestCreateProductEntity(9), 'config' => []],
+    ];
+
+    expect($service->isPromoCartConditionMet($promo, $lines))->toBeTrue();
+    expect($service->isPromoCartConditionMet($promo, [$lines[0]]))->toBeFalse();
+    expect($service->isPromoCartConditionMet(productTestCreatePromoEntity(8), []))->toBeTrue();
+});
+
+test('findEligibleAutoPromos skips promos whose bundle condition is unmet', function (): void {
+    $client = createEntity(Client::class, ['id' => 9]);
+    $product = productTestCreateProductEntity(5);
+    $promo = productTestCreatePromoEntity(7)->setAutoApply(true)->setRequiresProducts('[5,9]');
+
+    $promoRepo = Mockery::mock(PromoRepository::class);
+    $promoRepo->shouldReceive('findAutoApplyPromos')->once()->andReturn([$promo]);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('getPromoRepository')->once()->andReturn($promoRepo);
+    $serviceMock->shouldReceive('promoCanBeApplied')->once()->andReturn(true);
+    $serviceMock->shouldReceive('isPromoAvailableForClientGroup')->once()->andReturn(true);
+    $serviceMock->shouldReceive('canClientUsePromo')->once()->andReturn(true);
+    $serviceMock->shouldNotReceive('getProductDiscount');
+
+    expect($serviceMock->findEligibleAutoPromos($client, [['product' => $product, 'config' => []]]))->toBe([]);
+});
+
+test('resolvePromoReference prefers code over id and returns null when empty', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $promo = productTestCreatePromoEntity(7);
+
+    $serviceMock->shouldReceive('findActivePromoByCode')->once()->with('CODE')->andReturn($promo);
+    $serviceMock->shouldNotReceive('findPromoById');
+
+    expect($serviceMock->resolvePromoReference('CODE', 8))->toBe($promo);
+    expect($serviceMock->resolvePromoReference(null, null))->toBeNull();
+    expect($serviceMock->resolvePromoReference('  ', 0))->toBeNull();
+});
+
+test('resolvePromoReference throws for unknown codes', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('findActivePromoByCode')->once()->with('NOPE')->andReturn(null);
+
+    expect(fn () => $serviceMock->resolvePromoReference('NOPE', null))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'The promo code has expired or does not exist');
+});
+
+test('reservePromosForOrder reserves every promo and records the primary', function (): void {
+    $first = productTestCreatePromoEntity(7)->setRecurring(true);
+    $second = productTestCreatePromoEntity(8)->setRecurring(true);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('usePromo')->once()->with($first);
+    $serviceMock->shouldReceive('usePromo')->once()->with($second);
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('persist')->once();
+
+    $di = container();
+    $di['em'] = $emMock;
+    $serviceMock->setDi($di);
+
+    $order = createEntity(Order::class, ['id' => 3]);
+    $serviceMock->reservePromosForOrder([$first, $second], $order);
+
+    expect($order->getPromoId())->toBe(7);
+    expect($order->isPromoRecurring())->toBeTrue();
+    expect($order->getPromoUsed())->toBe(1);
+});
+
+test('reservePromosForOrder keeps a one-time primary from renewing', function (): void {
+    $first = productTestCreatePromoEntity(7)->setRecurring(false);
+    $second = productTestCreatePromoEntity(8)->setRecurring(true);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('usePromo')->twice();
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('persist')->once();
+
+    $di = container();
+    $di['em'] = $emMock;
+    $serviceMock->setDi($di);
+
+    $order = createEntity(Order::class, ['id' => 3]);
+    $serviceMock->reservePromosForOrder([$first, $second], $order);
+
+    expect($order->getPromoId())->toBe(7);
+    expect($order->isPromoRecurring())->toBeFalse();
+});
+
+test('releaseCheckoutPromoRedemptions releases reserved rows and reports the count', function (): void {
+    $promo = productTestCreatePromoEntity(7);
+    $order = createEntity(Order::class, ['id' => 3]);
+
+    $redemption = new PromoRedemption();
+    $redemption->setPromo($promo)->setStatus(PromoRedemption::STATUS_RESERVED)->setPhase(PromoRedemption::PHASE_CHECKOUT);
+
+    $redemptionRepo = Mockery::mock(PromoRedemptionRepository::class);
+    $redemptionRepo->shouldReceive('findBy')->once()->andReturn([$redemption]);
+
+    $promoRepo = Mockery::mock(PromoRepository::class);
+    $promoRepo->shouldReceive('decrementUsage')->once()->with(7, 1, Mockery::type(DateTimeInterface::class));
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('flush')->once();
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('getPromoRedemptionRepository')->andReturn($redemptionRepo);
+    $serviceMock->shouldReceive('getPromoRepository')->andReturn($promoRepo);
+
+    $di = container();
+    $di['em'] = $emMock;
+    $serviceMock->setDi($di);
+
+    expect($serviceMock->releaseCheckoutPromoRedemptions($order, $promo, 'admin_removed'))->toBe(1);
+    expect($redemption->getStatus())->toBe(PromoRedemption::STATUS_RELEASED);
+});
+
+test('releaseCheckoutPromoRedemptions returns zero when nothing is reserved', function (): void {
+    $promo = productTestCreatePromoEntity(7);
+    $order = createEntity(Order::class, ['id' => 3]);
+
+    $redemptionRepo = Mockery::mock(PromoRedemptionRepository::class);
+    $redemptionRepo->shouldReceive('findBy')->once()->andReturn([]);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('getPromoRedemptionRepository')->once()->andReturn($redemptionRepo);
+    $serviceMock->shouldNotReceive('getPromoRepository');
+
+    $di = container();
+    $serviceMock->setDi($di);
+
+    expect($serviceMock->releaseCheckoutPromoRedemptions($order, $promo, 'admin_removed'))->toBe(0);
+});
+
+test('renewal skips a one-time primary but keeps stacked recurring promos', function (): void {
+    $order = createEntity(Order::class, [
+        'id' => 21,
+        'promo_id' => 15,
+        'promo_recurring' => false,
+        'product_id' => 17,
+        'discount' => 30.0,
+        'currency' => 'USD',
+    ]);
+    $product = productTestCreateProductEntity(17)->setType('service');
+
+    $stackedPromo = productTestCreatePromoEntity(16)->setCode('STACK')->setRecurring(true);
+    $stackedRedemption = new PromoRedemption();
+    $stackedRedemption->setPromo($stackedPromo)
+        ->setPhase(PromoRedemption::PHASE_CHECKOUT)
+        ->setStatus(PromoRedemption::STATUS_COMMITTED)
+        ->setDiscountAmount(10.0);
+
+    $redemptionRepo = Mockery::mock(PromoRedemptionRepository::class);
+    $redemptionRepo->shouldReceive('findBy')
+        ->once()
+        ->with([
+            'clientOrderId' => 21,
+            'phase' => PromoRedemption::PHASE_CHECKOUT,
+            'status' => PromoRedemption::STATUS_COMMITTED,
+        ])
+        ->andReturn([$stackedRedemption]);
+    $redemptionRepo->shouldReceive('findBy')
+        ->once()
+        ->with([
+            'clientOrderId' => 21,
+            'promo' => $stackedPromo,
+            'phase' => PromoRedemption::PHASE_CHECKOUT,
+            'status' => PromoRedemption::STATUS_COMMITTED,
+        ])
+        ->andReturn([$stackedRedemption]);
+
+    $apiGuest = new class {
+        public function currency_format(array $data): string
+        {
+            return $data['code'] . ' ' . $data['price'];
+        }
+    };
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('findProductById')->andReturn($product);
+    $serviceMock->shouldReceive('getPromoRedemptionRepository')->andReturn($redemptionRepo);
+
+    $di = container();
+    $di['api_guest'] = $apiGuest;
+    $serviceMock->setDi($di);
+
+    $result = $serviceMock->getRenewalPromoAdjustments($order, 100.0, 1.0);
+
+    // The one-time primary must not repeat; only the stacked promo applies.
+    expect($result)->toHaveCount(1);
+    expect($result[0]['promo'])->toBe($stackedPromo);
+    expect($result[0]['discount_amount'])->toEqual(10.0);
+});
+
+test('renewal splits the historical discount between primary and stacked promos', function (): void {
+    $order = createEntity(Order::class, [
+        'id' => 22,
+        'promo_id' => 15,
+        'promo_recurring' => true,
+        'product_id' => 17,
+        'discount' => 30.0,
+        'currency' => 'USD',
+    ]);
+    $product = productTestCreateProductEntity(17)->setType('service');
+    $primaryPromo = productTestCreatePromoEntity(15)->setCode('PRIMARY')->setRecurring(true);
+
+    $stackedPromo = productTestCreatePromoEntity(16)->setCode('STACK')->setRecurring(true);
+    $stackedRedemption = new PromoRedemption();
+    $stackedRedemption->setPromo($stackedPromo)
+        ->setPhase(PromoRedemption::PHASE_CHECKOUT)
+        ->setStatus(PromoRedemption::STATUS_COMMITTED)
+        ->setDiscountAmount(10.0);
+
+    $redemptionRepo = Mockery::mock(PromoRedemptionRepository::class);
+    $redemptionRepo->shouldReceive('findBy')
+        ->once()
+        ->with([
+            'clientOrderId' => 22,
+            'phase' => PromoRedemption::PHASE_CHECKOUT,
+            'status' => PromoRedemption::STATUS_COMMITTED,
+        ])
+        ->andReturn([$stackedRedemption]);
+    $redemptionRepo->shouldReceive('findBy')
+        ->once()
+        ->with([
+            'clientOrderId' => 22,
+            'promo' => $primaryPromo,
+            'phase' => PromoRedemption::PHASE_CHECKOUT,
+            'status' => PromoRedemption::STATUS_COMMITTED,
+        ])
+        ->andReturn([]);
+    $redemptionRepo->shouldReceive('findBy')
+        ->once()
+        ->with([
+            'clientOrderId' => 22,
+            'promo' => $stackedPromo,
+            'phase' => PromoRedemption::PHASE_CHECKOUT,
+            'status' => PromoRedemption::STATUS_COMMITTED,
+        ])
+        ->andReturn([$stackedRedemption]);
+
+    $apiGuest = new class {
+        public function currency_format(array $data): string
+        {
+            return $data['code'] . ' ' . $data['price'];
+        }
+    };
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('findProductById')->andReturn($product);
+    $serviceMock->shouldReceive('findPromoById')->once()->with(15)->andReturn($primaryPromo);
+    $serviceMock->shouldReceive('getPromoRedemptionRepository')->andReturn($redemptionRepo);
+
+    $di = container();
+    $di['api_guest'] = $apiGuest;
+    $serviceMock->setDi($di);
+
+    $result = $serviceMock->getRenewalPromoAdjustments($order, 100.0, 1.0);
+
+    // Primary owns the remainder (30 - 10), stacked keeps its share.
+    expect($result)->toHaveCount(2);
+    expect($result[0]['promo'])->toBe($primaryPromo);
+    expect($result[0]['discount_amount'])->toEqual(20.0);
+    expect($result[1]['promo'])->toBe($stackedPromo);
+    expect($result[1]['discount_amount'])->toEqual(10.0);
+});
+
+test('renewal excludes a stacked one-time discount from a recurring primary', function (): void {
+    $order = createEntity(Order::class, [
+        'id' => 23,
+        'promo_id' => 15,
+        'promo_recurring' => true,
+        'product_id' => 17,
+        'discount' => 100.0,
+        'currency' => 'USD',
+    ]);
+    $product = productTestCreateProductEntity(17)->setType('service');
+    $primaryPromo = productTestCreatePromoEntity(15)->setCode('RECURRING')->setRecurring(true);
+    $primaryRedemption = new PromoRedemption();
+    $primaryRedemption->setPromo($primaryPromo)
+        ->setPhase(PromoRedemption::PHASE_CHECKOUT)
+        ->setStatus(PromoRedemption::STATUS_COMMITTED)
+        ->setDiscountAmount(60.0);
+
+    $oneTimePromo = productTestCreatePromoEntity(16)->setCode('ONETIME')->setRecurring(false);
+    $oneTimeRedemption = new PromoRedemption();
+    $oneTimeRedemption->setPromo($oneTimePromo)
+        ->setPhase(PromoRedemption::PHASE_CHECKOUT)
+        ->setStatus(PromoRedemption::STATUS_COMMITTED)
+        ->setDiscountAmount(40.0);
+
+    $redemptionRepo = Mockery::mock(PromoRedemptionRepository::class);
+    $redemptionRepo->shouldReceive('findBy')
+        ->once()
+        ->with([
+            'clientOrderId' => 23,
+            'phase' => PromoRedemption::PHASE_CHECKOUT,
+            'status' => PromoRedemption::STATUS_COMMITTED,
+        ])
+        ->andReturn([$primaryRedemption, $oneTimeRedemption]);
+    $redemptionRepo->shouldReceive('findBy')
+        ->once()
+        ->with([
+            'clientOrderId' => 23,
+            'promo' => $primaryPromo,
+            'phase' => PromoRedemption::PHASE_CHECKOUT,
+            'status' => PromoRedemption::STATUS_COMMITTED,
+        ])
+        ->andReturn([$primaryRedemption]);
+
+    $apiGuest = new class {
+        public function currency_format(array $data): string
+        {
+            return $data['code'] . ' ' . $data['price'];
+        }
+    };
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('findProductById')->andReturn($product);
+    $serviceMock->shouldReceive('findPromoById')->once()->with(15)->andReturn($primaryPromo);
+    $serviceMock->shouldReceive('getPromoRedemptionRepository')->andReturn($redemptionRepo);
+
+    $di = container();
+    $di['api_guest'] = $apiGuest;
+    $serviceMock->setDi($di);
+
+    $result = $serviceMock->getRenewalPromoAdjustments($order, 100.0, 1.0);
+
+    expect($result)->toHaveCount(1);
+    expect($result[0]['promo'])->toBe($primaryPromo);
+    expect($result[0]['discount_amount'])->toEqual(60.0);
+});
+
+test('renewal treats a recorded zero primary discount as available', function (): void {
+    $order = createEntity(Order::class, [
+        'id' => 24,
+        'promo_id' => 15,
+        'promo_recurring' => true,
+        'product_id' => 17,
+        'discount' => 40.0,
+        'currency' => 'USD',
+    ]);
+    $product = productTestCreateProductEntity(17)->setType('service');
+    $primaryPromo = productTestCreatePromoEntity(15)->setCode('RECURRING')->setRecurring(true);
+    $primaryRedemption = new PromoRedemption();
+    $primaryRedemption->setPromo($primaryPromo)
+        ->setPhase(PromoRedemption::PHASE_CHECKOUT)
+        ->setStatus(PromoRedemption::STATUS_COMMITTED)
+        ->setDiscountAmount(0.0);
+
+    $oneTimePromo = productTestCreatePromoEntity(16)->setCode('ONETIME')->setRecurring(false);
+    $oneTimeRedemption = new PromoRedemption();
+    $oneTimeRedemption->setPromo($oneTimePromo)
+        ->setPhase(PromoRedemption::PHASE_CHECKOUT)
+        ->setStatus(PromoRedemption::STATUS_COMMITTED)
+        ->setDiscountAmount(40.0);
+
+    $redemptionRepo = Mockery::mock(PromoRedemptionRepository::class);
+    $redemptionRepo->shouldReceive('findBy')
+        ->once()
+        ->with([
+            'clientOrderId' => 24,
+            'phase' => PromoRedemption::PHASE_CHECKOUT,
+            'status' => PromoRedemption::STATUS_COMMITTED,
+        ])
+        ->andReturn([$primaryRedemption, $oneTimeRedemption]);
+    $redemptionRepo->shouldReceive('findBy')
+        ->once()
+        ->with([
+            'clientOrderId' => 24,
+            'promo' => $primaryPromo,
+            'phase' => PromoRedemption::PHASE_CHECKOUT,
+            'status' => PromoRedemption::STATUS_COMMITTED,
+        ])
+        ->andReturn([$primaryRedemption]);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('findProductById')->andReturn($product);
+    $serviceMock->shouldReceive('findPromoById')->once()->with(15)->andReturn($primaryPromo);
+    $serviceMock->shouldReceive('getPromoRedemptionRepository')->andReturn($redemptionRepo);
+
+    $result = $serviceMock->getRenewalPromoAdjustments($order, 100.0, 1.0);
+
+    expect($result)->toBe([]);
+});
+
+test('transferReservedPromoRedemptionsForOrders moves reservations to the new invoice', function (): void {
+    $replacement = createEntity(Invoice::class, ['id' => 11]);
+
+    $carried = new PromoRedemption();
+    $carried->setClientOrderId(42)
+        ->setInvoiceId(10)
+        ->setStatus(PromoRedemption::STATUS_RESERVED);
+
+    $redemptionRepo = Mockery::mock(PromoRedemptionRepository::class);
+    $redemptionRepo->shouldReceive('findBy')
+        ->once()
+        ->with([
+            'clientOrderId' => [42],
+            'status' => PromoRedemption::STATUS_RESERVED,
+        ])
+        ->andReturn([$carried]);
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('flush')->once();
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('getPromoRedemptionRepository')->andReturn($redemptionRepo);
+
+    $di = container();
+    $di['em'] = $emMock;
+    $serviceMock->setDi($di);
+
+    expect($serviceMock->transferReservedPromoRedemptionsForOrders([42, 42], $replacement))->toBe(1);
+    expect($carried->getInvoiceId())->toBe(11);
+});
+
+test('transferReservedPromoRedemptionsForOrders does nothing without orders', function (): void {
+    $replacement = createEntity(Invoice::class, ['id' => 11]);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldNotReceive('getPromoRedemptionRepository');
+
+    $serviceMock->setDi(container());
+
+    expect($serviceMock->transferReservedPromoRedemptionsForOrders([], $replacement))->toBe(0);
 });

@@ -126,7 +126,7 @@ test('sync never drops a column that exists in the database but has no entity me
 
 /*
  * Regression test for a real bug found wiring this into a live MySQL/MariaDB database: entity
- * metadata declares `cart.session_id_idx` as a UNIQUE index, but production schema (structure.sql)
+ * metadata declares `cart.session_id_idx` as a UNIQUE index, but the pre-cutover production schema
  * has always had it as a plain, non-unique index of the same name - reused-name drift, not a
  * missing index. Applying just the "added" half of that (without dropping the old one first, which
  * this class never does) fails outright on MySQL ("Duplicate key name") and would silently change
@@ -150,15 +150,15 @@ test('sync never applies an index whose name is reused with a different definiti
 
 /*
  * Regression test for a second real bug found against a live MySQL/MariaDB database: entity
- * metadata declares real ManyToOne relations (e.g. CartProduct -> Cart), but structure.sql has
- * never had a single FOREIGN KEY clause anywhere - production referential integrity has always
+ * metadata declares real ManyToOne relations (e.g. CartProduct -> Cart), but the pre-cutover schema
+ * has never had a single FOREIGN KEY clause anywhere - production referential integrity has always
  * been application-level only. Retrofitting a real FK constraint onto an *existing* table is
  * checked against every current row, which years of unconstrained data has no guarantee of
  * satisfying - so this must never happen automatically, even though it's technically additive.
  */
 /*
  * Regression test for a third real bug: several entities were renamed from a short,
- * per-table-scoped index name (matching legacy structure.sql, which an existing pre-cutover
+ * per-table-scoped index name (matching the legacy pre-cutover schema, which an existing pre-cutover
  * MySQL install upgrading through this change still has on disk) to a table-prefixed one, to
  * satisfy SQLite/PostgreSQL's database-wide index-name uniqueness requirement (invoice_item's
  * `invoice_id_idx` -> `invoice_item_invoice_id_idx` is one of seven such renames). Doctrine's own

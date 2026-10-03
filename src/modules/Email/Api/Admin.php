@@ -24,6 +24,9 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
     /**
      * Get list of sent emails.
      *
+     * @optional string $sort - sort column: 'id', 'sender', 'recipient', 'subject', 'created_at' or 'updated_at'
+     * @optional string $direction - sort direction: 'ASC' or 'DESC'
+     *
      * @return array
      */
     public function email_get_list($data)
@@ -126,6 +129,9 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
     /**
      * Return list of email templates.
      *
+     * @optional string $sort - sort column: 'code', 'category', 'subject', 'enabled' or 'id'
+     * @optional string $direction - sort direction: 'ASC' or 'DESC'
+     *
      * @return array
      */
     public function template_get_list($data)
@@ -198,7 +204,7 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
 
     /**
      * Create new email template. Creating new email template can be
-     * combined with custom event hook.
+     * combined with a typed event listener.
      *
      * @return int - newly created template id
      *
@@ -331,7 +337,9 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         $vars['_tpl'] = $data['_tpl'] ?? $t['content'];
         $systemService = $this->getDi()['mod_service']('System');
 
-        return $systemService->renderEmailTplString($vars['_tpl'], $vars);
+        // Preview-only output, which the modal re-escapes for display: decoded
+        // form keeps subject previews accurate, content previews unchanged.
+        return $systemService->renderEmailSubjectString($vars['_tpl'], $vars);
     }
 
     /**
@@ -419,8 +427,8 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
      * it will be created. Default email template file must exist at mod_example/templates/email/mod_example_code.html.twig file.
      *
      * @optional string $to_staff - True to send to all active staff members. Default false
-     * @optional string $to_client - Set client ID to send email to client. Default null
-     * @optional string $to - receivers email
+     * @optional string $to_client - Set client ID to send email to client. Default null. Cannot be combined with `to`.
+     * @optional string $to - receivers email. Only for non-client emails; ignored for client-bound sends.
      * @optional string $from - from email. Default - company email
      * @optional string $from_name - from name. Default - company name
      * @optional string $default_subject - Default email subject if template does not exist
@@ -437,6 +445,14 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
 
         if (!isset($data['to']) && !isset($data['to_staff']) && !isset($data['to_client'])) {
             throw new \FOSSBilling\Core\Exception\InformationException('Receiver is not defined. Define to or to_client or to_staff parameter');
+        }
+
+        if (isset($data['client_billing_email'])) {
+            throw new \FOSSBilling\Core\Exception\InformationException('client_billing_email cannot be set via the API');
+        }
+
+        if (!empty($data['to_client']) && !empty($data['to'])) {
+            throw new \FOSSBilling\Core\Exception\InformationException('Parameters `to` and `to_client` cannot be combined. Client-bound emails are always sent to the client\'s registered email address.');
         }
 
         return $this->getService()->sendTemplate($data);
@@ -477,6 +493,12 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         return true;
     }
 
+    /**
+     * Get paginated email queue list.
+     *
+     * @optional string $sort - sort column: 'subject', 'recipient', 'sender', 'to_name', 'status', 'priority', 'tries', 'created_at', 'updated_at' or 'id'
+     * @optional string $direction - sort direction: 'ASC' or 'DESC'
+     */
     public function get_queue(array $data)
     {
         $this->checkPermissions('email', 'view_email_history');

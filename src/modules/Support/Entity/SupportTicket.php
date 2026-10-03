@@ -97,7 +97,7 @@ class SupportTicket implements ArrayInterface, TimestampInterface
      * @var Collection<int, SupportTicketMessage>
      */
     #[ORM\OneToMany(mappedBy: 'ticket', targetEntity: SupportTicketMessage::class)]
-    #[ORM\OrderBy(['id' => 'ASC'])]
+    #[ORM\OrderBy(['id' => \SortDirection::Ascending])]
     private Collection $messages;
 
     /**

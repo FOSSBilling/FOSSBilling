@@ -11,12 +11,20 @@ declare(strict_types=1);
 
 namespace Box\Mod\Extension;
 
+use Box\Mod\Cron\Event\BeforeAdminCronRunEvent;
 use Box\Mod\Extension\Entity\Extension;
 use Box\Mod\Extension\Entity\ExtensionMeta;
+use Box\Mod\Extension\Event\AfterAdminActivateExtensionEvent;
+use Box\Mod\Extension\Event\AfterAdminExtensionConfigSaveEvent;
+use Box\Mod\Extension\Event\AfterExtensionActivatedEvent;
+use Box\Mod\Extension\Event\AfterExtensionDeactivatedEvent;
+use Box\Mod\Extension\Event\BeforeAdminActivateExtensionEvent;
+use Box\Mod\Extension\Event\BeforeAdminExtensionConfigSaveEvent;
 use Box\Mod\Extension\Repository\ExtensionMetaRepository;
 use Box\Mod\Extension\Repository\ExtensionRepository;
 use FOSSBilling\Core\Container\InjectionAwareInterface;
 use FOSSBilling\Core\System\Config;
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -95,18 +103,14 @@ class Service implements InjectionAwareInterface
         return $this->getExtensionRepository()->existsActiveByTypeAndName($type, $id);
     }
 
-    public static function onBeforeAdminCronRun(\FOSSBilling\Core\Event\Event $event): bool
+    #[AsEventListener]
+    public function refreshExtensionsOnCron(BeforeAdminCronRunEvent $event): void
     {
-        $di = $event->getDi();
-        $extensionService = $di['mod_service']('extension');
-
         try {
-            $extensionService->getExtensionsList([]);
+            $this->getExtensionsList([]);
         } catch (\Exception $e) {
-            $di['logger']->error($e->getMessage());
+            $this->di['logger']->error($e->getMessage());
         }
-
-        return true;
     }
 
     public function removeNotExistingModules(): int
@@ -277,6 +281,8 @@ class Service implements InjectionAwareInterface
      */
     public function getAdminNavigation($admin, $url = null): array
     {
+        $currentPath = is_string($url) ? parse_url($url, PHP_URL_PATH) : null;
+        $currentPath = is_string($currentPath) ? rtrim($currentPath, '/') : null;
         $staff_service = $this->di['mod_service']('staff');
         $nav = [];
         $subpages = [];
@@ -330,6 +336,9 @@ class Service implements InjectionAwareInterface
             $l = $page['location'];
             unset($page['location']);
             $page['uri'] = $this->normalizeNavigationUri($page['uri'] ?? null);
+            $page['active'] = $currentPath !== null && $page['uri'] !== null
+                && rtrim((string) parse_url($page['uri'], PHP_URL_PATH), '/') === $currentPath;
+            $nav[$l]['active'] = $nav[$l]['active'] || $page['active'];
             $nav[$l]['subpages'][] = $page;
         }
 
@@ -418,6 +427,13 @@ class Service implements InjectionAwareInterface
         $ext->setStatus(Extension::STATUS_INSTALLED);
         $this->di['em']->flush();
 
+        if ($this->di->offsetExists('event_dispatcher')) {
+            if ($ext->getType() === \FOSSBilling\Core\Remote\ExtensionManager::TYPE_MOD) {
+                $this->di['event_dispatcher']->refresh();
+            }
+            $this->di['event_dispatcher']->dispatch(new AfterExtensionActivatedEvent($ext->getId(), $ext->getType(), $ext->getName()));
+        }
+
         return $result;
     }
 
@@ -431,15 +447,6 @@ class Service implements InjectionAwareInterface
         $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('extension', 'manage_extensions');
 
         switch ($ext->getType()) {
-            case \FOSSBilling\Core\Remote\ExtensionManager::TYPE_HOOK:
-                $file = Path::changeExtension(ucfirst((string) $ext->getName()), '.php');
-                $destination = Path::join(PATH_LIBRARY, 'Hook', $file);
-                if ($this->filesystem->exists($destination)) {
-                    $this->filesystem->remove($destination);
-                }
-
-                break;
-
             case \FOSSBilling\Core\Remote\ExtensionManager::TYPE_MOD:
                 $mod = $ext->getName();
                 if ($this->isCoreModule($mod)) {
@@ -454,6 +461,13 @@ class Service implements InjectionAwareInterface
 
         $this->di['em']->remove($ext);
         $this->di['em']->flush();
+
+        if ($this->di->offsetExists('event_dispatcher')) {
+            if ($ext->getType() === \FOSSBilling\Core\Remote\ExtensionManager::TYPE_MOD) {
+                $this->di['event_dispatcher']->refresh();
+            }
+            $this->di['event_dispatcher']->dispatch(new AfterExtensionDeactivatedEvent($ext->getId(), $ext->getType(), $ext->getName()));
+        }
 
         return true;
     }
@@ -489,6 +503,8 @@ class Service implements InjectionAwareInterface
                 $mod->uninstall();
             } catch (\Exception $e) {
                 throw new \FOSSBilling\Core\Exception\BaseException('An exception was thrown by the :name module: :err', [':name' => $id, ':err' => $e->getMessage()]);
+            } finally {
+                $this->getExtensionRepository()->clearInstalledNamesCache();
             }
         }
 
@@ -618,6 +634,10 @@ class Service implements InjectionAwareInterface
 
     public function activateExistingExtension(array $data): array
     {
+        if (!isset($data['type'], $data['id']) || $data['type'] === '' || $data['id'] === '') {
+            throw new \FOSSBilling\Core\Exception\InformationException('Extension type and ID are required');
+        }
+
         $ext = $this->getExtensionRepository()->findOneByTypeAndName($data['type'], $data['id']);
         $persistedNewly = false;
         if (!$ext instanceof Extension) {
@@ -631,7 +651,7 @@ class Service implements InjectionAwareInterface
             $persistedNewly = true;
         }
         $ext_id = $ext->getId();
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminActivateExtension', 'params' => ['id' => $ext_id]]);
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminActivateExtensionEvent((int) $ext_id, $ext->getType(), $ext->getName()));
 
         try {
             $result = $this->activate($ext);
@@ -643,7 +663,7 @@ class Service implements InjectionAwareInterface
 
             throw $e;
         }
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminActivateExtension', 'params' => ['id' => $ext_id]]);
+        $this->di['event_dispatcher']->dispatch(new AfterAdminActivateExtensionEvent((int) $ext_id, $ext->getType(), $ext->getName()));
         $this->di['logger']->info('Activated extension "{data_id}"', ['data_id' => $data['id']]);
 
         return $result;
@@ -682,7 +702,12 @@ class Service implements InjectionAwareInterface
         $ext = $data['ext'];
         $this->getConfig($ext); // Creates new config if it does not exist in DB
 
-        $this->di['events_manager']->fire(['event' => 'onBeforeAdminExtensionConfigSave', 'params' => $data]);
+        $configurationKeys = array_values(array_filter(
+            array_keys($data),
+            static fn (int|string $key): bool => is_string($key) && $key !== 'ext',
+        ));
+        sort($configurationKeys);
+        $this->di['event_dispatcher']->dispatch(new BeforeAdminExtensionConfigSaveEvent($ext, $configurationKeys));
 
         $meta = $this->getExtensionMetaRepository()->findOneByExtensionAndScope($ext, 'config');
         $config = json_encode($data);
@@ -699,7 +724,7 @@ class Service implements InjectionAwareInterface
         }
         $this->di['em']->flush();
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminExtensionConfigSave', 'params' => $data]);
+        $this->di['event_dispatcher']->dispatch(new AfterAdminExtensionConfigSaveEvent($ext, $configurationKeys));
         $this->di['logger']->info("Updated extension {$ext} configuration.");
         $this->di['cache']->delete("config_{$ext}");
 

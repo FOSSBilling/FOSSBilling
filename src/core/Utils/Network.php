@@ -13,6 +13,7 @@ namespace FOSSBilling\Core\Utils;
 
 use FOSSBilling\Core\Container\InjectionAwareInterface;
 use FOSSBilling\Core\System\Config;
+use Symfony\Component\HttpFoundation\IpUtils;
 
 final class Network implements InjectionAwareInterface
 {
@@ -102,8 +103,8 @@ final class Network implements InjectionAwareInterface
                     'timeout' => 2,
                 ]);
 
-                $ip = filter_var($response->getContent(), FILTER_VALIDATE_IP);
-                if ($ip) {
+                $ip = filter_var(trim($response->getContent()), FILTER_VALIDATE_IP);
+                if ($ip && !IpUtils::checkIp($ip, IpUtils::PRIVATE_SUBNETS)) {
                     return $ip;
                 }
             } catch (\Exception $e) {

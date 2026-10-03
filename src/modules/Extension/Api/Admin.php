@@ -12,6 +12,14 @@ declare(strict_types=1);
 namespace Box\Mod\Extension\Api;
 
 use Box\Mod\Extension\Entity\Extension;
+use Box\Mod\Extension\Event\AfterAdminDeactivateExtensionEvent;
+use Box\Mod\Extension\Event\AfterAdminInstallExtensionEvent;
+use Box\Mod\Extension\Event\AfterAdminUninstallExtensionEvent;
+use Box\Mod\Extension\Event\AfterAdminUpdateExtensionEvent;
+use Box\Mod\Extension\Event\BeforeAdminDeactivateExtensionEvent;
+use Box\Mod\Extension\Event\BeforeAdminInstallExtensionEvent;
+use Box\Mod\Extension\Event\BeforeAdminUninstallExtensionEvent;
+use Box\Mod\Extension\Event\BeforeAdminUpdateExtensionEvent;
 use FOSSBilling\Core\Validation\Api\RequiredParams;
 
 class Admin extends \FOSSBilling\Core\Api\AbstractApi
@@ -140,6 +148,7 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
      *
      * @throws \FOSSBilling\Core\Exception\BaseException
      */
+    #[RequiredParams(['id' => 'Extension ID was not passed', 'type' => 'Extension type was not passed'])]
     public function update($data)
     {
         $this->checkPermissions('extension', 'manage_extensions');
@@ -147,9 +156,9 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         $ext = $this->_getExtension($data);
         $service = $this->getService();
 
-        $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminUpdateExtension', 'params' => $ext]);
+        $this->getDi()['event_dispatcher']->dispatch(new BeforeAdminUpdateExtensionEvent((int) $ext->getId(), $ext->getType(), $ext->getName()));
         $ext2 = $service->update($ext);
-        $this->getDi()['events_manager']->fire(['event' => 'onAfterAdminUpdateExtension', 'params' => $ext2]);
+        $this->getDi()['event_dispatcher']->dispatch(new AfterAdminUpdateExtensionEvent((int) $ext2->getId(), $ext2->getType(), $ext2->getName()));
 
         return $ext2;
     }
@@ -178,18 +187,19 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
      *
      * @throws \FOSSBilling\Core\Exception\BaseException
      */
+    #[RequiredParams(['id' => 'Extension ID was not passed', 'type' => 'Extension type was not passed'])]
     public function deactivate($data): bool
     {
         $this->checkPermissions('extension', 'manage_extensions');
 
         $ext = $this->_getExtension($data);
 
-        $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminDeactivateExtension', 'params' => ['id' => $ext->getId()]]);
+        $this->getDi()['event_dispatcher']->dispatch(new BeforeAdminDeactivateExtensionEvent((int) $ext->getId(), $ext->getType(), $ext->getName()));
 
         $service = $this->getService();
         $service->deactivate($ext);
 
-        $this->getDi()['events_manager']->fire(['event' => 'onAfterAdminDeactivateExtension', 'params' => ['id' => $data['id'], 'type' => $data['type']]]);
+        $this->getDi()['event_dispatcher']->dispatch(new AfterAdminDeactivateExtensionEvent((int) $ext->getId(), $ext->getType(), $ext->getName()));
 
         $this->getDi()['logger']->info('Deactivated extension "{extension}"', ['extension' => $data['type'] . ' ' . $data['id']]);
 
@@ -204,11 +214,11 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
     {
         $this->checkPermissions('extension', 'uninstall_extensions');
 
-        $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminUninstallExtension', 'params' => ['type' => $data['type'], 'id' => $data['id']]]);
+        $this->getDi()['event_dispatcher']->dispatch(new BeforeAdminUninstallExtensionEvent((string) $data['type'], (string) $data['id']));
 
         $this->getService()->uninstall($data['type'], $data['id']);
 
-        $this->getDi()['events_manager']->fire(['event' => 'onAfterAdminUninstallExtension', 'params' => ['type' => $data['type'], 'id' => $data['id']]]);
+        $this->getDi()['event_dispatcher']->dispatch(new AfterAdminUninstallExtensionEvent((string) $data['type'], (string) $data['id']));
 
         return true;
     }
@@ -223,12 +233,12 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
     {
         $this->checkPermissions('extension', 'manage_extensions');
 
-        $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminInstallExtension', 'params' => $data]);
+        $this->getDi()['event_dispatcher']->dispatch(new BeforeAdminInstallExtensionEvent((string) $data['type'], (string) $data['id']));
 
         $service = $this->getService();
         $service->downloadAndExtract($data['type'], $data['id']);
 
-        $this->getDi()['events_manager']->fire(['event' => 'onAfterAdminInstallExtension', 'params' => $data]);
+        $this->getDi()['event_dispatcher']->dispatch(new AfterAdminInstallExtensionEvent((string) $data['type'], (string) $data['id']));
 
         return [
             'success' => true,

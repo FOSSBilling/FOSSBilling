@@ -363,6 +363,14 @@ class ServicePayGateway implements InjectionAwareInterface
                 if (!empty($config['logo'])) {
                     $gateway['logo'] = $config['logo'];
                     $gateway['logo']['logo'] = $this->resolveGatewayLogo($config['logo']);
+                } else {
+                    // Templates read gtw.logo.logo/height/width unconditionally,
+                    // so always provide the key even when the adapter ships no logo.
+                    $gateway['logo'] = [
+                        'logo' => $this->resolveGatewayLogo([]),
+                        'height' => '50px',
+                        'width' => '50px',
+                    ];
                 }
 
                 $result[] = $gateway;
@@ -398,6 +406,27 @@ class ServicePayGateway implements InjectionAwareInterface
     public function canPerformSinglePayment(PayGateway $model): bool
     {
         return $model->isAllowSingle();
+    }
+
+    /**
+     * Whether the gateway settles payments through explicit admin approval
+     * instead of a verifiable gateway callback.
+     *
+     * Resolved from the adapter class without instantiating it, so a
+     * misconfigured automated gateway (missing API keys) still reports its
+     * capability. Unknown or legacy adapters default to automated handling.
+     */
+    public static function isManualApprovalGateway(?string $code): bool
+    {
+        if ($code === null || $code === '') {
+            return false;
+        }
+        $class = "Payment_Adapter_{$code}";
+        if (!class_exists($class) || !is_callable([$class, 'requiresManualApproval'])) {
+            return false;
+        }
+
+        return (bool) $class::requiresManualApproval();
     }
 
     public function getPaymentAdapter(PayGateway $pg, ?Invoice $model = null, $optional = []): object

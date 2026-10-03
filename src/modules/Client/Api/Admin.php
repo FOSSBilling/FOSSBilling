@@ -18,6 +18,13 @@ namespace Box\Mod\Client\Api;
 use Box\Mod\Client\Entity\Client;
 use Box\Mod\Client\Entity\ClientBalance;
 use Box\Mod\Client\Entity\ClientGroup;
+use Box\Mod\Client\Entity\ClientGroupMembership;
+use Box\Mod\Client\Event\AfterAdminClientDeleteEvent;
+use Box\Mod\Client\Event\AfterAdminClientPasswordChangeEvent;
+use Box\Mod\Client\Event\AfterAdminClientUpdateEvent;
+use Box\Mod\Client\Event\BeforeAdminClientDeleteEvent;
+use Box\Mod\Client\Event\BeforeAdminClientPasswordChangeEvent;
+use Box\Mod\Client\Event\BeforeAdminClientUpdateEvent;
 use FOSSBilling\Core\Exception\InformationException;
 use FOSSBilling\Core\Pagination\Options;
 use FOSSBilling\Core\Validation\Api\RequiredParams;
@@ -31,6 +38,9 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
      * Get a list of clients.
      *
      * @param array $data filtering options
+     *
+     * @optional string $sort - sort column: 'id', 'email', 'first_name', 'last_name', 'company', 'status', 'created_at' or 'updated_at'
+     * @optional string $direction - sort direction: 'ASC' or 'DESC'
      *
      * @return array list of clients in a paginated manner
      */
@@ -213,11 +223,7 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
             $validator->isPasswordStrong($data['password']);
         }
 
-        $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminClientCreate', 'params' => $data]);
-        $id = $service->adminCreateClient($data);
-        $this->getDi()['events_manager']->fire(['event' => 'onAfterAdminClientCreate', 'params' => $data]);
-
-        return $id;
+        return $service->adminCreateClient($data);
     }
 
     /**
@@ -230,12 +236,12 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
 
         $model = $this->getDi()['em']->getRepository(Client::class)->find($data['id']) ?? throw new InformationException('Client not found');
 
-        $clientId = $model->getId();
+        $clientId = (int) $model->getId();
 
-        $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminClientDelete', 'params' => ['id' => $clientId]]);
+        $this->getDi()['event_dispatcher']->dispatch(new BeforeAdminClientDeleteEvent($clientId));
 
         $this->getService()->remove($model);
-        $this->getDi()['events_manager']->fire(['event' => 'onAfterAdminClientDelete', 'params' => ['id' => $clientId]]);
+        $this->getDi()['event_dispatcher']->dispatch(new AfterAdminClientDeleteEvent($clientId));
 
         $this->getDi()['logger']->info('Removed client #{client_id}', ['client_id' => $clientId]);
 
@@ -268,6 +274,7 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
      * @optional string $lang - Client language
      * @optional string $timezone - IANA timezone identifier (e.g. "America/New_York"). Used to localize dates and times shown to the client.
      * @optional string $notes - Notes about client. Visible for admin only
+     * @optional bool $merge_renewals - Renewal merge preference: 1 to always merge, 0 to never merge, empty to inherit the global setting
      * @optional string $custom_1 - Custom field 1
      * @optional string $custom_2 - Custom field 2
      * @optional string $custom_3 - Custom field 3
@@ -325,7 +332,9 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
             $client->setCurrency($currency);
         }
 
-        $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminClientUpdate', 'params' => $data]);
+        $eventInput = $data;
+        unset($eventInput['password'], $eventInput['password_confirm']);
+        $this->getDi()['event_dispatcher']->dispatch(new BeforeAdminClientUpdateEvent((int) $client->getId(), $eventInput));
 
         // Special handling for the phone country codes
         $phoneCountryCode = $data['phone_cc'] ?? $client->getPhoneCc();
@@ -401,23 +410,18 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
             }
         }
 
-        $groupField = array_key_exists('group_id', $data)
-            ? 'group_id'
-            : (array_key_exists('client_group_id', $data) ? 'client_group_id' : null);
-        if ($groupField !== null) {
-            $groupValue = $data[$groupField];
-            if (empty($groupValue)) {
-                $client->setClientGroup(null);
-            } else {
-                $groupId = filter_var($groupValue, FILTER_VALIDATE_INT);
-                if ($groupId === false || $groupId <= 0) {
-                    throw new InformationException('Invalid client group ID: :id', [':id' => $groupValue]);
+        if (array_key_exists('group_ids', $data)) {
+            $groupIds = array_values(array_filter(
+                (array) ($data['group_ids'] ?? []),
+                static fn (mixed $groupId): bool => $groupId !== '' && $groupId !== null
+            ));
+            foreach ($groupIds as $groupId) {
+                if (filter_var($groupId, FILTER_VALIDATE_INT) === false || (int) $groupId <= 0) {
+                    throw new InformationException('Invalid client group ID: :id', [':id' => $groupId]);
                 }
-
-                $group = $this->getDi()['em']->getRepository(ClientGroup::class)->find($groupId)
-                    ?? throw new InformationException('Client group not found');
-                $client->setClientGroup($group);
             }
+
+            $this->getService()->setClientGroupIds($client, $groupIds);
         }
 
         if (array_key_exists('email_approved', $data)) {
@@ -426,6 +430,11 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
 
         if (array_key_exists('tax_exempt', $data)) {
             $client->setTaxExempt((bool) $data['tax_exempt']);
+        }
+
+        if (array_key_exists('merge_renewals', $data)) {
+            $mergeRenewals = $data['merge_renewals'];
+            $client->setMergeRenewals($mergeRenewals === null || $mergeRenewals === '' ? null : \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($mergeRenewals));
         }
 
         if (array_key_exists('birthday', $data) && $data['birthday'] !== null && $data['birthday'] !== '') {
@@ -456,7 +465,7 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
             $profileService->invalidateSessions('client', (int) $client->getId());
         }
 
-        $this->getDi()['events_manager']->fire(['event' => 'onAfterAdminClientUpdate', 'params' => ['id' => $client->getId()]]);
+        $this->getDi()['event_dispatcher']->dispatch(new AfterAdminClientUpdateEvent((int) $client->getId()));
 
         $this->getDi()['logger']->info('Updated client #{client_id} profile', ['client_id' => $client->getId()]);
 
@@ -477,7 +486,7 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
 
         $client = $this->getDi()['em']->getRepository(Client::class)->find($data['id']) ?? throw new InformationException('Client not found');
 
-        $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminClientPasswordChange', 'params' => ['id' => $client->getId()]]);
+        $this->getDi()['event_dispatcher']->dispatch(new BeforeAdminClientPasswordChangeEvent((int) $client->getId()));
 
         $client->setPass($this->getDi()['password']->hashIt($data['password']));
         $this->getDi()['em']->persist($client);
@@ -486,7 +495,7 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
         $profileService = $this->getDi()['mod_service']('profile');
         $profileService->invalidateSessions('client', (int) $data['id']);
 
-        $this->getDi()['events_manager']->fire(['event' => 'onAfterAdminClientPasswordChange', 'params' => ['id' => $client->getId()]]);
+        $this->getDi()['event_dispatcher']->dispatch(new AfterAdminClientPasswordChangeEvent((int) $client->getId()));
 
         $this->getDi()['logger']->info('Changed client #{client_id} password', ['client_id' => $client->getId()]);
 
@@ -495,6 +504,9 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
 
     /**
      * Returns list of client payments.
+     *
+     * @optional string $sort - sort column: 'id', 'amount', 'description', 'created_at' or 'updated_at'
+     * @optional string $direction - sort direction: 'ASC' or 'DESC'
      *
      * @return array
      */
@@ -583,6 +595,8 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
      * Get list of clients logins history.
      *
      * @optional int $client_id - filter by client
+     * @optional string $sort - sort by one of: id, ip, created_at
+     * @optional string $direction - sort direction: ASC or DESC
      *
      * @return array
      */
@@ -682,9 +696,9 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
 
         $model = $this->getDi()['em']->getRepository(ClientGroup::class)->find($data['id']) ?? throw new InformationException('Group not found');
 
-        $clients = $this->getDi()['em']->getRepository(Client::class)->findBy(['clientGroup' => $model]);
+        $memberships = $this->getDi()['em']->getRepository(ClientGroupMembership::class)->findBy(['clientGroup' => $model]);
 
-        if (\FOSSBilling\Core\Utils\Arr::safeCount($clients) > 0) {
+        if (\FOSSBilling\Core\Utils\Arr::safeCount($memberships) > 0) {
             throw new InformationException('Group has clients assigned. Please reassign them first.');
         }
 

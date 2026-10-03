@@ -43,7 +43,7 @@ class App
 
     public function __construct(array|object $options = [], ?StandardDebugBar $debugBar = null)
     {
-        $this->options = new \ArrayObject($options);
+        $this->options = new \ArrayObject((array) $options);
 
         if (!$debugBar) {
             $this->debugBar = new StandardDebugBar();
@@ -58,9 +58,10 @@ class App
         $this->request = $di['request'];
     }
 
-    public function setUrl(string $url): void
+    public function setUrl(?string $url): void
     {
-        $this->url = $url;
+        // Bot probes and legacy callers can pass null/empty. Fall back to '/'.
+        $this->url = ($url === null || $url === '') ? '/' : $url;
     }
 
     public function getDebugBar(): StandardDebugBar
@@ -86,8 +87,7 @@ class App
                 [$mod] = explode('/', $requestUri);
             }
         }
-        $mod = htmlspecialchars($mod);
-
+        // Kept raw: only used for routing and exception placeholders, never HTML.
         $this->mod = $mod;
         $this->uri = $requestUri;
     }
@@ -226,7 +226,7 @@ class App
     /**
      * Twig's FilesystemCache throws a raw \RuntimeException when it can't create or
      * write to the configured template cache directory - typically a host file
-     * permission issue outside our control. Convert it into a FOSSBilling\Exception
+     * permission issue outside our control. Convert it into a FOSSBilling\Core\Exception\BaseException
      * with error code 5002 (Cache category, report:false) so the visitor gets a
      * friendly error page instead of a fatal, and it isn't reported to Sentry as a
      * code bug. Any other \RuntimeException is rethrown unchanged.

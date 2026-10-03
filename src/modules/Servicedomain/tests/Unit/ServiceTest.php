@@ -61,7 +61,7 @@ test('gets cart product title', function (array $data, string $expected): void {
             'register_tld' => '.com',
             'register_sld' => 'example',
         ],
-        'Domain example.com registration',
+        'Domain registration (example.com)',
     ],
     [
         [
@@ -69,13 +69,73 @@ test('gets cart product title', function (array $data, string $expected): void {
             'transfer_tld' => '.com',
             'transfer_sld' => 'example',
         ],
-        'Domain example.com transfer',
+        'Domain transfer (example.com)',
+    ],
+    [
+        [
+            'action' => 'owndomain',
+            'owndomain_tld' => '.com',
+            'owndomain_sld' => 'example',
+        ],
+        'Domain (example.com)',
+    ],
+    [
+        [
+            'action' => 'owndomain',
+            'owndomain_tld' => '.' . str_repeat('a', 230),
+            'owndomain_sld' => 'example',
+        ],
+        'Example.com Registration',
     ],
     [
         [],
         'Example.com Registration',
     ],
 ]);
+
+test('generates order title with domain name', function (array $config, ?string $expected): void {
+    $service = new Service();
+
+    expect($service->generateOrderTitle($config))->toBe($expected);
+})->with([
+    [
+        ['action' => 'register', 'register_sld' => 'example', 'register_tld' => '.com'],
+        'Domain registration (example.com)',
+    ],
+    [
+        ['action' => 'transfer', 'transfer_sld' => 'example', 'transfer_tld' => '.com'],
+        'Domain transfer (example.com)',
+    ],
+    [
+        ['action' => 'owndomain', 'owndomain_sld' => 'example', 'owndomain_tld' => '.com'],
+        'Domain (example.com)',
+    ],
+    [
+        ['action' => 'owndomain', 'domain' => ['owndomain_sld' => 'example', 'owndomain_tld' => '.com']],
+        'Domain (example.com)',
+    ],
+    [
+        ['action' => 'owndomain', 'owndomain_sld' => 'example', 'owndomain_tld' => '.' . str_repeat('a', 230)],
+        null,
+    ],
+    [
+        ['action' => 'register'],
+        null,
+    ],
+]);
+
+test('gets renewal title with domain name', function (): void {
+    $service = new Service();
+
+    expect($service->getRenewalTitle(['action' => 'register', 'register_sld' => 'example', 'register_tld' => '.com']))
+        ->toBe('Domain renewal (example.com)');
+    expect($service->getRenewalTitle(['action' => 'transfer', 'transfer_sld' => 'example', 'transfer_tld' => '.com']))
+        ->toBe('Domain renewal (example.com)');
+    expect($service->getRenewalTitle(['action' => 'register']))
+        ->toBeNull();
+    expect($service->getRenewalTitle(['action' => 'owndomain', 'owndomain_sld' => 'example', 'owndomain_tld' => '.' . str_repeat('a', 230)]))
+        ->toBeNull();
+});
 
 test('throws exception for invalid order data action', function (): void {
     $service = new Service();
@@ -92,6 +152,24 @@ test('throws exception for invalid order data action', function (): void {
     ];
 
     expect(fn () => $service->validateOrderData($data))
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class);
+});
+
+test('validateOrderData accepts an optional product argument', function (): void {
+    $service = new Service();
+    $validatorMock = Mockery::mock(FOSSBilling\Core\Validation\Validator::class);
+    $validatorMock->shouldReceive('checkRequiredParamsForArray')
+        ->atLeast()->once();
+
+    $di = container();
+    $di['validator'] = $validatorMock;
+    $service->setDi($di);
+
+    $data = [
+        'action' => 'NonExistingAction',
+    ];
+
+    expect(fn () => $service->validateOrderData($data, new Box\Mod\Product\Entity\Product()))
         ->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
@@ -1267,23 +1345,17 @@ test('converts admin domain to api array without a registrar', function (): void
     expect($result['registrar'])->toBeNull();
 });
 
-test('handles on before admin cron run event', function (): void {
-    $service = new Service();
-    $di = container();
-    $serviceMock = Mockery::mock(Service::class);
+test('syncs domain expiration dates before admin cron through a typed event listener', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('batchSyncExpirationDates')
-        ->atLeast()->once()
+        ->once()
         ->andReturn(true);
-    $di['mod_service'] = $di->protect(fn ($serviceName): Mockery\MockInterface => $serviceMock);
+    $dispatcher = new FOSSBilling\Core\Events\EventDispatcher(
+        static fn (): array => ['servicedomain'],
+        static fn (string $module): object => $serviceMock,
+    );
 
-    $boxEventMock = Mockery::mock(FOSSBilling\Core\Event\Event::class);
-    $boxEventMock->shouldReceive('getDi')
-        ->atLeast()->once()
-        ->andReturn($di);
-
-    $result = $service->onBeforeAdminCronRun($boxEventMock);
-
-    expect($result)->toBeTrue();
+    $dispatcher->dispatch(new Box\Mod\Cron\Event\BeforeAdminCronRunEvent());
 });
 
 test('batch syncs expiration dates', function (): void {
@@ -1318,18 +1390,27 @@ test('batch syncs expiration dates', function (): void {
     expect($result)->toBeTrue();
 });
 
-test('does not advance the last sync marker when a domain sync fails', function (): void {
+test('advances the last sync marker when a domain sync fails', function (): void {
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('syncExpirationDate')
-        ->atLeast()->once()
+        ->once()
         ->andThrow(new Exception('registrar unavailable'));
 
+    $lastSync = null;
     $systemServiceMock = Mockery::mock(SystemService::class);
     $systemServiceMock->shouldReceive('getParamValue')
-        ->atLeast()->once()
-        ->andReturn(null);
+        ->twice()
+        ->andReturnUsing(static function () use (&$lastSync): ?string {
+            return $lastSync;
+        });
     $systemServiceMock->shouldReceive('setParamValue')
-        ->never();
+        ->once()
+        ->with('servicedomain_last_sync', Mockery::type('string'))
+        ->andReturnUsing(static function (string $key, string $value) use (&$lastSync): bool {
+            $lastSync = $value;
+
+            return true;
+        });
 
     $domainModel = new ServiceDomain();
     $domainRepo = Mockery::mock(DomainRepository::class);
@@ -1345,9 +1426,11 @@ test('does not advance the last sync marker when a domain sync fails', function 
     $di['logger'] = new Tests\Helpers\TestLogger();
     $serviceMock->setDi($di);
 
-    $result = $serviceMock->batchSyncExpirationDates();
+    $firstResult = $serviceMock->batchSyncExpirationDates();
+    $secondResult = $serviceMock->batchSyncExpirationDates();
 
-    expect($result)->toBeTrue();
+    expect($firstResult)->toBeTrue()
+        ->and($secondResult)->toBeFalse();
 });
 
 test('returns false when batch sync already run today', function (): void {
@@ -1375,7 +1458,8 @@ test('gets tld search query', function (array $data, array $expectedConditions):
         $query->shouldReceive('andWhere')->once()->with($condition)->andReturnSelf();
         $query->shouldReceive('setParameter')->once()->with($parameter, $value)->andReturnSelf();
     }
-    $query->shouldReceive('orderBy')->once()->with('t.id', 'ASC')->andReturnSelf();
+    $query->shouldReceive('orderBy')->once()->with('t.tld', SortDirection::Ascending)->andReturnSelf();
+    $query->shouldReceive('addOrderBy')->once()->with('t.id', SortDirection::Ascending)->andReturnSelf();
 
     $tldRepo = Mockery::mock(TldRepository::class);
     $tldRepo->shouldReceive('createQueryBuilder')->once()->with('t')->andReturn($query);
@@ -1422,6 +1506,61 @@ test('gets tld search query', function (array $data, array $expectedConditions):
             ['t.allowTransfer = :allowTransfer', 'allowTransfer', true],
         ],
     ],
+]);
+
+function tldServiceWithMockedQuery(Mockery\MockInterface $query): Service
+{
+    $tldRepo = Mockery::mock(TldRepository::class);
+    $tldRepo->shouldReceive('createQueryBuilder')->once()->with('t')->andReturn($query);
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->once()->with(Tld::class)->andReturn($tldRepo);
+
+    $di = container();
+    $di['em'] = $emMock;
+
+    $service = new Service();
+    $service->setDi($di);
+
+    return $service;
+}
+
+test('sorts tld search query', function (array $data, string $expectedOrder, SortDirection $expectedDirection, ?SortDirection $expectedTieBreakerDirection): void {
+    $query = Mockery::mock(QueryBuilder::class);
+    $query->shouldReceive('leftJoin')->never();
+    $query->shouldReceive('orderBy')->once()->with($expectedOrder, $expectedDirection)->andReturnSelf();
+    if ($expectedTieBreakerDirection !== null) {
+        $query->shouldReceive('addOrderBy')->once()->with('t.id', $expectedTieBreakerDirection)->andReturnSelf();
+    } else {
+        $query->shouldReceive('addOrderBy')->never();
+    }
+
+    $service = tldServiceWithMockedQuery($query);
+
+    expect($service->tldGetSearchQuery($data))->toBe($query);
+})->with([
+    'tld ascending' => [['sort' => 'tld'], 't.tld', SortDirection::Ascending, SortDirection::Ascending],
+    'tld descending' => [['sort' => 'tld', 'direction' => 'DESC'], 't.tld', SortDirection::Descending, SortDirection::Descending],
+    'registration price' => [['sort' => 'price_registration', 'direction' => 'desc'], 't.priceRegistration', SortDirection::Descending, SortDirection::Descending],
+    'renewal price' => [['sort' => 'price_renew'], 't.priceRenew', SortDirection::Ascending, SortDirection::Ascending],
+    'transfer price' => [['sort' => 'price_transfer', 'direction' => 'DESC'], 't.priceTransfer', SortDirection::Descending, SortDirection::Descending],
+    'id' => [['sort' => 'id'], 't.id', SortDirection::Ascending, null],
+    'invalid sort falls back to default' => [['sort' => 't.tld; DROP TABLE tld'], 't.tld', SortDirection::Ascending, SortDirection::Ascending],
+    'invalid direction falls back to ascending' => [['sort' => 'tld', 'direction' => 'sideways'], 't.tld', SortDirection::Ascending, SortDirection::Ascending],
+]);
+
+test('sorts tld search query by registrar name with a join', function (array $data, SortDirection $expectedDirection, SortDirection $expectedTieBreakerDirection): void {
+    $query = Mockery::mock(QueryBuilder::class);
+    $query->shouldReceive('leftJoin')->once()->with('t.registrar', 'r')->andReturnSelf();
+    $query->shouldReceive('orderBy')->once()->with('r.name', $expectedDirection)->andReturnSelf();
+    $query->shouldReceive('addOrderBy')->once()->with('t.id', $expectedTieBreakerDirection)->andReturnSelf();
+
+    $service = tldServiceWithMockedQuery($query);
+
+    expect($service->tldGetSearchQuery($data))->toBe($query);
+})->with([
+    'registrar ascending' => [['sort' => 'registrar'], SortDirection::Ascending, SortDirection::Ascending],
+    'registrar descending' => [['sort' => 'registrar', 'direction' => 'DESC'], SortDirection::Descending, SortDirection::Descending],
 ]);
 
 test('finds all active tlds', function (): void {
@@ -1686,7 +1825,8 @@ test('rejects invalid tlds', function (string $input): void {
 test('gets registrar search query', function (): void {
     $service = new Service();
     $query = Mockery::mock(QueryBuilder::class);
-    $query->shouldReceive('orderBy')->once()->with('tr.name', 'ASC')->andReturnSelf();
+    $query->shouldReceive('orderBy')->once()->with('tr.name', SortDirection::Ascending)->andReturnSelf();
+    $query->shouldReceive('addOrderBy')->once()->with('tr.id', SortDirection::Ascending)->andReturnSelf();
 
     $registrarRepo = Mockery::mock(TldRegistrarRepository::class);
     $registrarRepo->shouldReceive('createQueryBuilder')->once()->with('tr')->andReturn($query);
@@ -1700,6 +1840,35 @@ test('gets registrar search query', function (): void {
 
     expect($service->registrarGetSearchQuery([]))->toBe($query);
 });
+
+test('sorts registrar search query', function (array $data, string $expectedOrder, SortDirection $expectedDirection, ?SortDirection $expectedTieBreakerDirection): void {
+    $service = new Service();
+    $query = Mockery::mock(QueryBuilder::class);
+    $query->shouldReceive('orderBy')->once()->with($expectedOrder, $expectedDirection)->andReturnSelf();
+    if ($expectedTieBreakerDirection !== null) {
+        $query->shouldReceive('addOrderBy')->once()->with('tr.id', $expectedTieBreakerDirection)->andReturnSelf();
+    } else {
+        $query->shouldReceive('addOrderBy')->never();
+    }
+
+    $registrarRepo = Mockery::mock(TldRegistrarRepository::class);
+    $registrarRepo->shouldReceive('createQueryBuilder')->once()->with('tr')->andReturn($query);
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->once()->with(TldRegistrar::class)->andReturn($registrarRepo);
+
+    $di = container();
+    $di['em'] = $emMock;
+    $service->setDi($di);
+
+    expect($service->registrarGetSearchQuery($data))->toBe($query);
+})->with([
+    'title ascending' => [['sort' => 'title'], 'tr.name', SortDirection::Ascending, SortDirection::Ascending],
+    'title descending' => [['sort' => 'title', 'direction' => 'DESC'], 'tr.name', SortDirection::Descending, SortDirection::Descending],
+    'id' => [['sort' => 'id'], 'tr.id', SortDirection::Ascending, null],
+    'id descending' => [['sort' => 'id', 'direction' => 'DESC'], 'tr.id', SortDirection::Descending, null],
+    'invalid sort falls back to default' => [['sort' => 'name'], 'tr.name', SortDirection::Ascending, SortDirection::Ascending],
+]);
 
 test('gets available registrars', function (): void {
     $service = new Service();

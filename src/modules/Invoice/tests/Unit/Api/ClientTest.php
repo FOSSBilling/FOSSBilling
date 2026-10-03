@@ -48,7 +48,7 @@ test('gets invoice list', function (): void {
     $invoiceRepo = Mockery::mock(InvoiceRepository::class);
     $invoiceRepo->shouldReceive('getSearchQueryBuilder')
         ->once()
-        ->with(['client_id' => 7, 'approved' => true])
+        ->with(['client_id' => 7, 'issued' => true])
         ->andReturn(Mockery::mock(Doctrine\ORM\QueryBuilder::class));
 
     $paginatorMock = Mockery::mock(FOSSBilling\Core\Pagination\Service::class);
@@ -72,6 +72,12 @@ test('gets an invoice', function (): void {
     $api = apiEndpoint(new Client());
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('toApiArray')
+        ->atLeast()->once()
+        ->andReturn([]);
+    $serviceMock->shouldReceive('getDebitingInvoiceIds')
+        ->atLeast()->once()
+        ->andReturn([]);
+    $serviceMock->shouldReceive('getRelatedInvoiceReferences')
         ->atLeast()->once()
         ->andReturn([]);
 
@@ -123,7 +129,7 @@ test('creates renewal invoice', function (): void {
     $serviceMock->shouldReceive('generateForOrder')
         ->atLeast()->once()
         ->andReturn($model);
-    $serviceMock->shouldReceive('approveInvoice');
+    $serviceMock->shouldReceive('issueInvoice');
 
     $orderRepoMock = Mockery::mock(OrderRepository::class);
     $orderRepoMock->shouldReceive('findOneBy')
@@ -161,7 +167,7 @@ test('creates renewal invoice from a real invoice entity without accessing priva
     $serviceMock->shouldReceive('generateForOrder')
         ->atLeast()->once()
         ->andReturn($model);
-    $serviceMock->shouldReceive('approveInvoice');
+    $serviceMock->shouldReceive('issueInvoice');
 
     $orderRepoMock = Mockery::mock(OrderRepository::class);
     $orderRepoMock->shouldReceive('findOneBy')
@@ -193,7 +199,7 @@ test('creates renewal invoice for free order', function (): void {
     $serviceMock->shouldReceive('generateForOrder')
         ->atLeast()->once()
         ->andReturn($model);
-    $serviceMock->shouldReceive('approveInvoice');
+    $serviceMock->shouldReceive('issueInvoice');
 
     $orderRepoMock = Mockery::mock(OrderRepository::class);
     $orderRepoMock->shouldReceive('findOneBy')
@@ -245,7 +251,7 @@ test('creates funds invoice', function (): void {
     $serviceMock->shouldReceive('generateFundsInvoice')
         ->atLeast()->once()
         ->andReturn($model);
-    $serviceMock->shouldReceive('approveInvoice');
+    $serviceMock->shouldReceive('issueInvoice');
 
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
@@ -274,7 +280,7 @@ test('creates funds invoice from a real invoice entity without accessing private
     $serviceMock->shouldReceive('generateFundsInvoice')
         ->atLeast()->once()
         ->andReturn($model);
-    $serviceMock->shouldReceive('approveInvoice');
+    $serviceMock->shouldReceive('issueInvoice');
 
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
@@ -294,7 +300,7 @@ test('gets transaction list', function (): void {
     $transactionService = Mockery::mock(ServiceTransaction::class);
     $transactionService->shouldReceive('transactionResultToApiArray')
         ->once()
-        ->with(Mockery::on(fn ($t): bool => $t instanceof Transaction), 'Stripe')
+        ->with(Mockery::on(fn ($t): bool => $t instanceof Transaction), 'Stripe', 'Stripe')
         ->andReturn(['id' => 1, 'gateway' => 'Stripe']);
 
     $transactionRepo = Mockery::mock(TransactionRepository::class);
@@ -306,7 +312,7 @@ test('gets transaction list', function (): void {
     $paginatorMock = Mockery::mock(FOSSBilling\Core\Pagination\Service::class);
     $paginatorMock->shouldReceive('paginateMappedQuery')
         ->once()
-        ->andReturnUsing(fn ($qb, $pagination, $mapper): array => ['list' => [$mapper([0 => createEntity(Transaction::class, ['id' => 1]), 'gateway' => 'Stripe'])]]);
+        ->andReturnUsing(fn ($qb, $pagination, $mapper): array => ['list' => [$mapper([0 => createEntity(Transaction::class, ['id' => 1]), 'gateway' => 'Stripe', 'gateway_code' => 'Stripe'])]]);
 
     $di = container();
     $di['pager'] = $paginatorMock;

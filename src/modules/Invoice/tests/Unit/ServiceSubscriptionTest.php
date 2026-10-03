@@ -62,18 +62,30 @@ test('gets dependency injection container', function (): void {
         ->and($service->getSubscriptionRepository())->toBe($repo);
 });
 
-test('creates a subscription', function (): void {
+test('creates a subscription and dispatches its typed event', function (): void {
+    $calls = (object) ['entries' => []];
     $em = Mockery::mock(EntityManagerInterface::class);
-    $em->shouldReceive('persist')->atLeast()->once();
-    $em->shouldReceive('flush')->atLeast()->once();
+    $em->shouldReceive('persist')->once()->with(Mockery::type(Subscription::class))->andReturnUsing(function (Subscription $subscription): void {
+        (new ReflectionProperty(Subscription::class, 'id'))->setValue($subscription, 42);
+    });
+    $em->shouldReceive('flush')->once();
 
-    $eventsMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class);
-    $eventsMock->shouldReceive('fire')
-        ->atLeast()->once();
+    $eventDispatcher = new readonly class($calls) {
+        public function __construct(private object $calls)
+        {
+        }
+
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
+        {
+            $this->calls->entries[] = ['typed', $event];
+
+            return $event;
+        }
+    };
 
     $service = subscriptionService(em: $em);
     $service->getDi()['logger'] = new Tests\Helpers\TestLogger();
-    $service->getDi()['events_manager'] = $eventsMock;
+    $service->getDi()['event_dispatcher'] = $eventDispatcher;
 
     $data = [
         'client_id' => 1,
@@ -84,7 +96,11 @@ test('creates a subscription', function (): void {
     $pg = createEntity(PayGateway::class, ['id' => 2]);
 
     $result = $service->create($client, $pg, $data);
-    expect($result)->toBeInt();
+    expect($result)->toBe(42)
+        ->and($calls->entries)->toHaveCount(1)
+        ->and($calls->entries[0][0])->toBe('typed')
+        ->and($calls->entries[0][1])->toBeInstanceOf(Box\Mod\Invoice\Event\AfterAdminSubscriptionCreateEvent::class)
+        ->and($calls->entries[0][1]->subscriptionId)->toBe(42);
 });
 
 test('updates a subscription', function (): void {
@@ -107,7 +123,7 @@ test('updates a subscription', function (): void {
     expect($result)->toBeTrue();
 });
 
-test('cancels a subscription at the gateway when canceled status is saved', function (): void {
+test('cancels the stored subscription at the gateway when canceled status is saved', function (): void {
     $gatewayModel = createEntity(PayGateway::class, ['id' => 2]);
 
     $subscriptionModel = createEntity(Subscription::class, ['id' => 5, 'payGateway' => $gatewayModel]);
@@ -139,7 +155,8 @@ test('cancels a subscription at the gateway when canceled status is saved', func
 
     expect($service->update($subscriptionModel, ['status' => 'canceled', 'sid' => 'sub_new', 'skip_gateway' => true]))->toBeTrue()
         ->and($subscriptionModel->status)->toBe('canceled')
-        ->and($adapter->canceledSubscriptionId)->toBe('sub_new');
+        ->and($subscriptionModel->getSid())->toBe('sub_new')
+        ->and($adapter->canceledSubscriptionId)->toBe('sub_old');
 });
 
 test('does not call the gateway when canceling a subscription without a sid', function (): void {
@@ -308,6 +325,38 @@ test('reports end-of-period cancellation support for active gateway subscription
     expect($service->canCancelAtPeriodEndForOrder($order))->toBeTrue();
 });
 
+test('detects orders paid through an active gateway subscription', function (): void {
+    $subscription = createEntity(Subscription::class, ['id' => 7]);
+    $subscription->setSid('sub_123');
+
+    $subRepo = Mockery::mock(SubscriptionRepository::class);
+    $subRepo->shouldReceive('find')->with(7)->andReturn($subscription);
+
+    $service = subscriptionService(subRepo: $subRepo);
+    $service->getDi()['dbal'] = createSubscriptionDbal();
+
+    // Order 10 sits on invoice 25, which carries the active subscription.
+    // Order 99 has no subscription rows at all.
+    expect($service->hasActiveSubscriptionForOrder(createEntity(Order::class, ['id' => 10])))->toBeTrue()
+        ->and($service->hasActiveSubscriptionForOrder(createEntity(Order::class, ['id' => 99])))->toBeFalse();
+});
+
+test('ignores subscriptions without a gateway sid', function (): void {
+    $subscription = createEntity(Subscription::class, ['id' => 7]);
+    $subscription->setSid('');
+
+    $subRepo = Mockery::mock(SubscriptionRepository::class);
+    $subRepo->shouldReceive('find')->with(7)->andReturn($subscription);
+
+    $dbal = createSubscriptionDbal();
+    $dbal->executeStatement("UPDATE subscription SET sid = '' WHERE id = 7");
+
+    $service = subscriptionService(subRepo: $subRepo);
+    $service->getDi()['dbal'] = $dbal;
+
+    expect($service->hasActiveSubscriptionForOrder(createEntity(Order::class, ['id' => 10])))->toBeFalse();
+});
+
 test('finds a subscription ID by gateway SID without throwing for missing records', function (): void {
     $dbal = Mockery::mock();
     $dbal->shouldReceive('fetchOne')
@@ -372,23 +421,37 @@ test('converts to api array', function (): void {
     expect($result['gateway'])->toBeArray();
 });
 
-test('deletes a subscription', function (): void {
+test('deletes a subscription and dispatches its typed event', function (): void {
+    $calls = (object) ['entries' => []];
     $em = Mockery::mock(EntityManagerInterface::class);
-    $em->shouldReceive('remove')->atLeast()->once();
-    $em->shouldReceive('flush')->atLeast()->once();
+    $em->shouldReceive('remove')->once();
+    $em->shouldReceive('flush')->once();
 
-    $eventsMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class);
-    $eventsMock->shouldReceive('fire')
-        ->atLeast()->once();
+    $eventDispatcher = new readonly class($calls) {
+        public function __construct(private object $calls)
+        {
+        }
+
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
+        {
+            $this->calls->entries[] = ['typed', $event];
+
+            return $event;
+        }
+    };
 
     $service = subscriptionService(em: $em);
     $service->getDi()['logger'] = new Tests\Helpers\TestLogger();
-    $service->getDi()['events_manager'] = $eventsMock;
+    $service->getDi()['event_dispatcher'] = $eventDispatcher;
 
     $subscriptionModel = createEntity(Subscription::class, ['id' => 1]);
 
     $result = $service->delete($subscriptionModel);
-    expect($result)->toBeTrue();
+    expect($result)->toBeTrue()
+        ->and($calls->entries)->toHaveCount(1)
+        ->and($calls->entries[0][0])->toBe('typed')
+        ->and($calls->entries[0][1])->toBeInstanceOf(Box\Mod\Invoice\Event\AfterAdminSubscriptionDeleteEvent::class)
+        ->and($calls->entries[0][1]->subscriptionId)->toBe(1);
 });
 
 test('returns false when invoice is not subscribable', function (): void {

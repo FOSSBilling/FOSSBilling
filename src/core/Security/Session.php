@@ -60,13 +60,16 @@ class Session implements InjectionAwareInterface
 
         $this->configureCookieName();
         $this->restoreSessionFromRequest();
-        $this->canUseSession();
+        $fingerprint = Config::getProperty('security.perform_session_fingerprinting', true)
+            ? new Fingerprint($this->di['request'])
+            : null;
+        $this->canUseSession($fingerprint);
 
         $this->session->start();
         $this->expireLegacySessionCookies();
 
         $this->handleObsoleteSession();
-        $this->updateFingerprint();
+        $this->updateFingerprint($fingerprint);
     }
 
     public function getId(): string
@@ -129,7 +132,7 @@ class Session implements InjectionAwareInterface
      * Checks both the fingerprint and age of the current session to see if it can be used.
      * If the session can't be used, it's destroyed from the database, forcing a new one to be created.
      */
-    private function canUseSession(): void
+    private function canUseSession(?Fingerprint $currentFingerprint = null): void
     {
         $invalid = false;
         $sessionName = $this->session->getName();
@@ -162,7 +165,7 @@ class Session implements InjectionAwareInterface
         }
 
         if (Config::getProperty('security.perform_session_fingerprinting', true)) {
-            $fingerprint = new Fingerprint($this->di['request']);
+            $fingerprint = $currentFingerprint ?? new Fingerprint($this->di['request']);
             $storedFingerprint = json_decode((string) $session['fingerprint'], true);
             if (!is_array($storedFingerprint) || !$fingerprint->checkFingerprint($storedFingerprint, $sessionID)) {
                 $invalid = true;
@@ -191,7 +194,7 @@ class Session implements InjectionAwareInterface
     /**
      * Depending on the specifics, this will either set or update the fingerprint associated with the current session.
      */
-    private function updateFingerprint(): void
+    private function updateFingerprint(?Fingerprint $currentFingerprint = null): void
     {
         $sessionID = $this->resolveSessionId();
 
@@ -205,7 +208,7 @@ class Session implements InjectionAwareInterface
             $session = $connection->fetchAssociative('SELECT id FROM session WHERE id = :id', ['id' => $sessionID]);
 
             if (Config::getProperty('security.perform_session_fingerprinting', true)) {
-                $updatedFingerprint = (new Fingerprint($this->di['request']))->fingerprint();
+                $updatedFingerprint = ($currentFingerprint ?? new Fingerprint($this->di['request']))->fingerprint();
             } else {
                 $updatedFingerprint = [];
             }
@@ -231,11 +234,18 @@ class Session implements InjectionAwareInterface
             return $sessionID;
         }
 
-        return $_COOKIE[$this->session->getName()] ?? '';
+        $sessionID = $_COOKIE[$this->session->getName()] ?? '';
+
+        return is_string($sessionID) ? $sessionID : '';
     }
 
     private function configureCookieName(): void
     {
+        // The cookie name cannot be changed once output started; renaming now would only emit warnings.
+        if (headers_sent()) {
+            return;
+        }
+
         $previousName = $this->session->getName();
 
         $this->session->setName(CookieNames::SESSION);

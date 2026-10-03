@@ -54,6 +54,8 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
      *
      * @optional string $date_from - show only order places after this date
      * @optional string $date_to - show only order places till this date
+     * @optional string $sort - sort by one of: id, status, title, created_at, updated_at
+     * @optional string $direction - sort direction: ASC or DESC
      *
      * @return array
      */
@@ -91,6 +93,8 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
      * @optional string $transactionId - Custom transaction ID to use when the selected gateway is Custom
      * @optional string $created_at - date when order was created. Default: now
      * @optional string $updated_at - date when order was updated. Default: now
+     * @optional string $promo_code - promo code to apply to the order (takes precedence over promo_id)
+     * @optional int $promo_id - promo ID to apply to the order
      *
      * @return int
      */
@@ -101,6 +105,10 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
     public function create($data)
     {
         $this->checkPermissions('order', 'manage');
+
+        if ((isset($data['promo_code']) && trim((string) $data['promo_code']) !== '') || !empty($data['promo_id'])) {
+            $this->checkPermissions('product', 'manage_promos');
+        }
 
         $markInvoicePaid = \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['mark_invoice_paid'] ?? false);
         $data['mark_invoice_paid'] = $markInvoicePaid;
@@ -135,6 +143,7 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
      * @optional string $notes - order notes
      * @optional array  $meta - list of meta properties
      * @optional int $suspension_grace_days - per-order grace period override; empty inherits the product setting
+     * @optional bool $merge_renewals - per-order renewal merge override: 1 to always merge, 0 to never merge, absent inherits the client preference then the global setting
      *
      * @return bool
      */
@@ -185,7 +194,7 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
      * Suspend order.
      *
      * @optional string $reason - Suspension reason message
-     * @optional bool $skip_event - Skip calling event hooks
+     * @optional bool $skip_event - Skip dispatching lifecycle events
      *
      * @return bool
      */
@@ -221,7 +230,7 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
     /**
      * Cancel order.
      *
-     * @optional bool $skip_event - Skip calling event hooks
+     * @optional bool $skip_event - Skip dispatching lifecycle events
      * @optional bool $cancel_at_period_end - Keep the order active until its gateway subscription ends
      *
      * @return bool
@@ -277,6 +286,7 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
      * Delete order.
      *
      * @optional bool $delete_addons - Remove addons also. Default false.
+     * @optional bool $force_delete - remove the local service even if remote cancellation fails. Default false.
      *
      * @return bool
      */
@@ -384,6 +394,9 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
 
     /**
      * Get paginated order statuses history list.
+     *
+     * @optional string $sort - sort by one of: id, status, created_at
+     * @optional string $direction - sort direction: ASC or DESC
      *
      * @return array
      */

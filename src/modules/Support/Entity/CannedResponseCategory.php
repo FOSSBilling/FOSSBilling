@@ -39,7 +39,7 @@ class CannedResponseCategory implements ArrayInterface, TimestampInterface
      * @var Collection<int, CannedResponse>
      */
     #[ORM\OneToMany(mappedBy: 'category', targetEntity: CannedResponse::class)]
-    #[ORM\OrderBy(['title' => 'ASC'])]
+    #[ORM\OrderBy(['title' => \SortDirection::Ascending])]
     private Collection $responses;
 
     public function __construct()

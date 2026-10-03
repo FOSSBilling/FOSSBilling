@@ -175,6 +175,6 @@ class AdminGroupRepository extends EntityRepository
                 ->setParameter('search', '%' . $data['search'] . '%');
         }
 
-        return $qb->orderBy('g.id', 'ASC');
+        return $qb->orderBy('g.id', \SortDirection::Ascending);
     }
 }

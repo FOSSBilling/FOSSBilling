@@ -127,6 +127,42 @@ test('orderbutton product configuration renders a domain product', function (): 
     expect($html)->toBeString();
 });
 
+test('hosting order form collects a required domain transfer code', function (): void {
+    $html = (new StrictTemplateRenderer())->renderTemplate(
+        PATH_MODS . '/Servicehosting/templates/client/mod_servicehosting_order_form.html.twig',
+        [
+            'request' => edgeCaseRequest([
+                'transfer_sld' => 'example',
+                'transfer_code' => 'EPP-CODE',
+            ]),
+            'guest' => edgeCaseGuest([
+                'serviceDomain_tlds' => [
+                    [
+                        'tld' => '.com',
+                        'require_transfer_code' => true,
+                    ],
+                ],
+            ]),
+            'product' => [
+                'pricing' => [],
+                'config' => [
+                    'allow_domain_register' => false,
+                    'allow_domain_transfer' => true,
+                    'allow_domain_own' => false,
+                    'allow_subdomain' => false,
+                ],
+            ],
+            'product_details' => 'Hosting plan',
+        ],
+    );
+
+    expect($html)
+        ->toContain('data-require-transfer-code="1"')
+        ->toContain('name="domain[transfer_code]"')
+        ->toContain('value="EPP-CODE"')
+        ->toContain('id="transfer-code-hint"');
+});
+
 test('email template example renders without calling email globals in admin context', function (): void {
     $templateSource = file_get_contents(PATH_MODS . '/Email/templates/admin/mod_email_template.html.twig');
     expect($templateSource)->not()->toBeFalse();
@@ -420,6 +456,65 @@ test('security iplookup renders with no record (initial page load)', function ()
     );
 
     expect($html)->toBeString();
+});
+
+test('client manage page renders related-section footers with tab-level lists', function (): void {
+    // Regression test: the orders/invoices/tickets/balance/history/transactions
+    // lists were assigned inside their embed content blocks, invisible to the
+    // footer blocks under strict_variables ("Variable ... does not exist").
+    // They are assigned at tab level now, so the whole page renders.
+    $emptyList = ['list' => [], 'pages' => 1, 'per_page' => 25, 'page' => 1, 'total' => 0];
+
+    $html = (new StrictTemplateRenderer())->renderTemplate(
+        PATH_MODS . '/Client/templates/admin/mod_client_manage.html.twig',
+        [
+            'app_area' => 'admin',
+            'request' => edgeCaseRequest([
+                'order_page' => 1, 'order_per_page' => 25,
+                'invoice_page' => 1, 'invoice_per_page' => 25,
+                'ticket_page' => 1, 'ticket_per_page' => 25,
+                'balance_page' => 1, 'balance_per_page' => 25,
+                'login_page' => 1, 'login_per_page' => 25,
+                'email_page' => 1, 'email_per_page' => 25,
+                'txn_page' => 1, 'txn_per_page' => 25,
+            ]),
+            'admin' => edgeCaseAdmin([
+                'order_get_list' => $emptyList,
+                'invoice_get_list' => $emptyList,
+                'support_ticket_get_list' => $emptyList,
+                'client_balance_get_list' => $emptyList,
+                'client_login_history_get_list' => $emptyList,
+                'email_email_get_list' => $emptyList,
+                'invoice_transaction_get_list' => $emptyList,
+            ]),
+            'client' => new Tests\Support\PermissiveStub(['id' => 169]),
+        ],
+    );
+
+    expect($html)->toContain('Client Orders')
+        ->and($html)->toContain('Client Invoices');
+});
+
+test('invoice history tab renders translatable labels for every journal type', function (): void {
+    $types = ['created', 'issued', 'updated', 'paid', 'refunded', 'debited', 'canceled', 'reissued', 'order_attached', 'reminder'];
+    $journal = [];
+    foreach ($types as $i => $type) {
+        $journal[] = ['id' => $i + 1, 'type' => $type, 'admin_id' => null, 'client_id' => null, 'snapshot' => null, 'created_at' => '2026-01-01 00:00:00'];
+    }
+
+    $html = (new StrictTemplateRenderer())->renderTemplate(
+        PATH_MODS . '/Invoice/templates/admin/mod_invoice_invoice.html.twig',
+        [
+            'app_area' => 'admin',
+            'request' => edgeCaseRequest(['id' => 1]),
+            'admin' => edgeCaseAdmin(['invoice_journal' => $journal]),
+            'invoice' => new Tests\Support\PermissiveStub(['id' => 1]),
+        ],
+    );
+
+    expect($html)->toContain('Order attached')
+        ->and($html)->toContain('Reissued')
+        ->and($html)->not->toContain('order_attached');
 });
 
 test('support admin ticket renders with no notes and no rel', function (): void {

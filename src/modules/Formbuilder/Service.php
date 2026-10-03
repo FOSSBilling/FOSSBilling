@@ -267,6 +267,9 @@ class Service implements InjectionAwareInterface
         }
 
         $result['style'] = json_decode($result['style'] ?? '', true);
+        if (!is_array($result['style'])) {
+            $result['style'] = ['type' => 'default', 'show_title' => '1'];
+        }
         $result['fields'] = $this->fieldsJsonDecode($this->getFormFields($result['id']));
 
         return $result;

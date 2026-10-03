@@ -74,10 +74,10 @@ test('a bare "null" response is not silently treated as a scalar', function (): 
 });
 
 test('a non-JSON response (e.g. an HTML error/rate-limit page) throws a Registrar_Exception instead of leaking a JsonException', function (): void {
-    // Regression test for FOSSBILLING-N7M: a 2xx response whose body isn't valid JSON at all (an
-    // HTML error page, a WAF block page, a truncated response) made toArray() throw Symfony's raw
-    // JsonException uncaught - only the 4xx/5xx and bare-scalar cases were handled. See #4220 for
-    // the same class of issue fixed elsewhere (PSL download).
+    // A 2xx response whose body isn't valid JSON at all (an HTML error page,
+    // a WAF block page, a truncated response) made toArray() throw Symfony's
+    // raw JsonException uncaught - only the 4xx/5xx and bare-scalar cases were
+    // handled. See #4220 for the same class of issue fixed elsewhere (PSL download).
     $httpClient = new MockHttpClient(fn (): MockResponse => new MockResponse('<html>Rate limit exceeded</html>'));
     $adapter = createResellerclubAdapter($httpClient);
 
@@ -406,4 +406,27 @@ test('registerDomain sends the .fr registry consent attribute alongside the FrCo
     expect($body['billing-contact-id'])->toBe('-1');
     expect($body['attr-name1'])->toBe('tnc');
     expect($body['attr-value1'])->toBe('Y');
+});
+
+test('getDomainDetails tolerates a details response missing optional keys', function (): void {
+    $httpClient = new MockHttpClient([
+        new MockResponse('12345'),
+        new MockResponse(json_encode([
+            'admincontact' => [
+                'contactid' => '1', 'name' => 'Example', 'emailaddr' => 'admin@example.com',
+                'company' => 'Example', 'telno' => '123', 'telnocc' => '1',
+                'address1' => 'Street', 'city' => 'City', 'country' => 'US',
+                'state' => 'State', 'zip' => '12345',
+            ],
+        ])),
+    ]);
+    $adapter = createResellerclubAdapter($httpClient);
+    $domain = createResellerclubDomain();
+
+    $adapter->getDomainDetails($domain);
+
+    expect($domain->getRegistrationTime())->toBeNull()
+        ->and($domain->getExpirationTime())->toBeNull()
+        ->and($domain->getEpp())->toBeNull()
+        ->and($domain->getPrivacyEnabled())->toBeFalse();
 });

@@ -97,6 +97,7 @@ class Finalization implements InjectionAwareInterface
             'current_version' => Version::VERSION,
             'state' => $state,
             'pending_patches' => $this->getAvailablePatchCount(),
+            'schema_drift' => $this->getSchemaDriftStatus(),
         ];
     }
 
@@ -135,12 +136,53 @@ class Finalization implements InjectionAwareInterface
      */
     public function finalizePendingUpdate(): void
     {
-        $this->withFinalizationLock(function (): void {
+        $pending = $this->withFinalizationLock(function (): bool {
             $state = $this->ensureCurrentVersionFinalization();
             if (($state['status'] ?? null) === self::STATUS_PENDING) {
                 $this->finalizeUpdateLocked($state);
+
+                return true;
             }
+
+            // A previous finalize may have run against stale code (e.g. opcache
+            // still serving the pre-update UpdatePatcher, whose patch list ends
+            // at the old level) and stamped the state finalized without applying
+            // anything. That state has no other path back to pending, so heal it
+            // here instead of leaving the install wedged in maintenance mode.
+            if (($state['status'] ?? null) === self::STATUS_FINALIZED && $this->getAvailablePatchCount() > 0) {
+                $this->finalizeUpdateLocked($state);
+
+                return true;
+            }
+
+            return false;
         });
+
+        if ($pending) {
+            return;
+        }
+
+        $this->healSchemaDrift();
+    }
+
+    /**
+     * Brings the live schema up to date when entity metadata drifted without a
+     * version change (e.g. a code-only deploy adding an entity column).
+     *
+     * Safe to call from any entry point, including CLI/cron: the drift check
+     * runs outside the finalization lock, the sync runs inside it, and both
+     * halves never throw - an unreadable database simply reports "in sync".
+     *
+     * @see https://github.com/FOSSBilling/FOSSBilling/issues/4392
+     */
+    public function healSchemaDrift(): void
+    {
+        // No version change (e.g. a code-only deploy with new entity columns), so no
+        // finalization runs - check for schema drift outside the lock, sync inside it.
+        $patcher = $this->createPatcher();
+        if ($patcher->isSchemaOutOfSync()) {
+            $this->withFinalizationLock(static fn (): bool => $patcher->ensureSchemaInSync());
+        }
     }
 
     public function createPendingState(?string $fromVersion, string $targetVersion, array $context = []): array
@@ -247,9 +289,10 @@ class Finalization implements InjectionAwareInterface
             throw new InformationException('Update finalization must be run before it can be completed.');
         }
 
-        $pendingPatches = $this->getAvailablePatchCount();
+        $patchStatus = $this->getPatchStatus();
+        $pendingPatches = $patchStatus['pending'] ?? null;
         if ($pendingPatches !== null && $pendingPatches > 0) {
-            throw new InformationException('There are still pending update patches. Run finalization before completing the update.');
+            throw new InformationException('There are still :count: pending update patches (database level :current:, code level :latest:). Re-run finalization before completing the update.', [':count:' => $pendingPatches, ':current:' => $patchStatus['current'] ?? 'unknown', ':latest:' => $patchStatus['latest'] ?? 'unknown']);
         }
 
         $state['completed_at'] = date(DATE_ATOM);
@@ -354,12 +397,11 @@ class Finalization implements InjectionAwareInterface
 
     /**
      * Mirrors checkInstaller()'s guard in load.php: skipped for explicit dev/test
-     * environments and while debugging, so those instances keep the installer.
+     * environments, so those instances keep the installer.
      */
     private function shouldRemoveInstallDirectory(): bool
     {
-        // @phpstan-ignore booleanNot.alwaysTrue (DEBUG is a runtime constant)
-        return Environment::isProduction() && !DEBUG;
+        return Environment::isProduction();
     }
 
     private function getAvailablePatchCount(): ?int
@@ -373,7 +415,42 @@ class Finalization implements InjectionAwareInterface
         }
     }
 
-    private function createPatcher(): Patcher
+    private function getPatchStatus(): ?array
+    {
+        try {
+            // Same recoverability contract as getAvailablePatchCount(): an
+            // unreadable database reports unknown levels rather than blocking.
+            return $this->createPatcher()->patchStatus();
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    /**
+     * Lock-free schema-drift report for {@see self::getStatus()}. Never
+     * throws - an unreadable database reports "no drift", the same
+     * recoverability contract as getAvailablePatchCount().
+     *
+     * @return array{out_of_sync: bool, last_sync_failure: array{hash: string, attempted_at: string}|null}
+     */
+    private function getSchemaDriftStatus(): array
+    {
+        try {
+            $patcher = $this->createPatcher();
+
+            return [
+                'out_of_sync' => $patcher->isSchemaOutOfSyncIgnoringCooldown(),
+                'last_sync_failure' => $patcher->lastSchemaSyncFailure(),
+            ];
+        } catch (\Throwable) {
+            return [
+                'out_of_sync' => false,
+                'last_sync_failure' => null,
+            ];
+        }
+    }
+
+    protected function createPatcher(): Patcher
     {
         $patcher = new Patcher();
         if ($this->di instanceof \Pimple\Container) {

@@ -37,7 +37,7 @@ class SupportTicketNoteRepository extends EntityRepository
         return $this->createQueryBuilder('n')
             ->andWhere('n.ticket = :tid')
             ->setParameter('tid', $ticketId)
-            ->orderBy('n.id', 'ASC')
+            ->orderBy('n.id', \SortDirection::Ascending)
             ->getQuery()
             ->getResult();
     }

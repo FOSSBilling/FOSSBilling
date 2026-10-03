@@ -33,6 +33,8 @@ dataset('validQuantities', fn (): array => [
     'integer' => [5, 5],
     'numeric string' => ['3', 3],
     'one' => [1, 1],
+    'maximum integer' => [PHP_INT_MAX, PHP_INT_MAX],
+    'maximum integer string' => [(string) PHP_INT_MAX, PHP_INT_MAX],
 ]);
 
 dataset('flooredQuantities', fn (): array => [
@@ -50,6 +52,7 @@ dataset('invalidQuantities', fn (): array => [
     'null' => [null],
     'infinite' => [INF],
     'overflowed numeric string' => ['1e999'],
+    'maximum integer as float' => [(float) PHP_INT_MAX],
     'integer overflow' => [PHP_INT_MAX . '0'],
     'array' => [[]],
     'boolean' => [true],

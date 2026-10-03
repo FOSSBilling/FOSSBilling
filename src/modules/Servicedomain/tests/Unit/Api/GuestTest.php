@@ -152,6 +152,21 @@ test('throws exception when checking sld not valid', function (): void {
         ->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
+test('invalid sld error carries the raw domain value', function (): void {
+    $guestApi = apiEndpoint(new Guest());
+    $validatorMock = Mockery::mock(FOSSBilling\Core\Validation\Validator::class);
+    $validatorMock->shouldReceive('isSldValid')
+        ->atLeast()->once()
+        ->andReturn(false);
+
+    $di = container();
+    $di['validator'] = $validatorMock;
+    $guestApi->setDi($di);
+
+    expect(fn (): bool => $guestApi->check(['tld' => '.com', 'sld' => 'ex&ample']))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Domain ex&ample is invalid');
+});
+
 test('throws exception when checking tld not found', function (): void {
     $guestApi = apiEndpoint(new Guest());
     $api = apiEndpoint(new Guest());

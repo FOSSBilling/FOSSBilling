@@ -23,6 +23,9 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
      *
      * @param array $data Filtering and pagination parameters
      *
+     * @optional string $sort - sort column: 'code', 'conversion_rate', 'id', 'created_at' or 'updated_at'
+     * @optional string $direction - sort direction: 'ASC' or 'DESC'
+     *
      * @return array Paginated list of currencies
      */
     public function get_list(array $data): array

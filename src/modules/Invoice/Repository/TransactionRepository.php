@@ -16,6 +16,7 @@ use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Transaction;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
+use FOSSBilling\Core\SortOptions;
 
 class TransactionRepository extends EntityRepository
 {
@@ -35,10 +36,24 @@ class TransactionRepository extends EntityRepository
      * transaction is a real record of a payment attempt/event and, like
      * client_order.unpaid_invoice_id, shouldn't be destroyed just because the invoice it
      * once pointed to was.
+     *
+     * With $anonymize (client-erasure path only), personal data is scrubbed from the
+     * surviving rows - client IP, raw gateway payloads, free-text notes and error output -
+     * while the financial record (amounts, gateway, txn id, status, dates) is kept for the
+     * books. Ordinary invoice deletion leaves the rows untouched: the client still exists
+     * and the admin still needs them intact.
      */
-    public function detachFromInvoice(int $invoiceId): int
+    public function detachFromInvoice(int $invoiceId, bool $anonymize = false): int
     {
-        return (int) $this->getEntityManager()->getConnection()->update('transaction', ['invoice_id' => null], ['invoice_id' => $invoiceId]);
+        $connection = $this->getEntityManager()->getConnection();
+        $data = ['invoice_id' => null];
+        if ($anonymize) {
+            $data += ['ip' => null, 'ipn' => null, 'note' => null, 'error' => null, 'output' => null];
+        }
+
+        // `transaction` is a reserved word: Connection::update() does not quote the table, so
+        // the bare name is a syntax error on SQLite. Quote it portably instead.
+        return (int) $connection->update($connection->quoteSingleIdentifier('transaction'), $data, ['invoice_id' => $invoiceId]);
     }
 
     /**
@@ -46,18 +61,19 @@ class TransactionRepository extends EntityRepository
      *
      * Mirrors the legacy `Box\Mod\Invoice\ServiceTransaction::getSearchQuery`
      * filters and returns the Transaction entity together with the gateway
-     * name, so the caller can use `paginateMappedQuery` and skip the per-row
+     * name and code, so the caller can use `paginateMappedQuery` and skip the per-row
      * gateway lookup that `ServiceTransaction::toApiArray` would perform.
-     * Each result row hydrates as `[0 => Transaction, 'gateway' => string|null]`.
+     * Each result row hydrates as `[0 => Transaction, 'gateway' => string|null, 'gateway_code' => string|null]`.
      *
      * @param array $data optional filters: id, search, invoice_hash, invoice_id,
      *                    gateway_id, client_id, status, currency, type, txn_id,
-     *                    date_from, date_to
+     *                    date_from, date_to, sort, direction
      */
     public function getSearchQueryBuilder(array $data = []): QueryBuilder
     {
         $qb = $this->createQueryBuilder('t')
             ->addSelect('pg.name AS gateway')
+            ->addSelect('pg.gateway AS gateway_code')
             ->leftJoin('t.gateway', 'pg');
 
         $id = $data['id'] ?? null;
@@ -121,14 +137,32 @@ class TransactionRepository extends EntityRepository
 
         $search = $data['search'] ?? null;
         if ($search) {
-            $qb->andWhere('t.note LIKE :note OR IDENTITY(t.invoice) LIKE :search_invoice_id OR t.txnId LIKE :search_txn_id OR t.ipn LIKE :ipn')
+            $qb->andWhere('(t.note LIKE :note OR IDENTITY(t.invoice) LIKE :search_invoice_id OR t.txnId LIKE :search_txn_id OR t.ipn LIKE :ipn)')
                 ->setParameter('note', "%$search%")
                 ->setParameter('search_invoice_id', "%$search%")
                 ->setParameter('search_txn_id', "%$search%")
                 ->setParameter('ipn', "%$search%");
         }
 
-        $qb->orderBy('t.id', 'DESC');
+        $sort = SortOptions::fromArray($data, [
+            'id' => 't.id',
+            'status' => 't.status',
+            'currency' => 't.currency',
+            'type' => 't.type',
+            'txn_id' => 't.txnId',
+            'amount' => 't.amount',
+            'gateway' => 'pg.name',
+            'created_at' => 't.createdAt',
+            'updated_at' => 't.updatedAt',
+        ]);
+        if ($sort->isSorted()) {
+            $qb->orderBy($sort->expression, $sort->direction);
+            if ($sort->expression !== 't.id') {
+                $qb->addOrderBy('t.id', $sort->direction);
+            }
+        } else {
+            $qb->orderBy('t.id', \SortDirection::Descending);
+        }
 
         return $qb;
     }
@@ -151,17 +185,6 @@ class TransactionRepository extends EntityRepository
     public function findOneByGatewayIdAndIpnHash(int $gatewayId, string $ipnHash): ?Transaction
     {
         $transaction = $this->findOneBy(['gateway' => $this->getEntityManager()->getReference(PayGateway::class, $gatewayId), 'ipnHash' => $ipnHash]);
-
-        return $transaction instanceof Transaction ? $transaction : null;
-    }
-
-    /**
-     * Find a processed transaction by gateway transaction id.
-     * Mirrors the legacy `findOne('Transaction', 'status = "processed" and txn_id = ?', ...)`.
-     */
-    public function findOneProcessedByTxnId(string $txnId): ?Transaction
-    {
-        $transaction = $this->findOneBy(['status' => Transaction::STATUS_PROCESSED, 'txnId' => $txnId]);
 
         return $transaction instanceof Transaction ? $transaction : null;
     }

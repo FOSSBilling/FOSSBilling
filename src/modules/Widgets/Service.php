@@ -12,7 +12,10 @@ declare(strict_types=1);
 namespace Box\Mod\Widgets;
 
 use Box\Mod\Extension\Entity\Extension;
+use Box\Mod\Extension\Event\AfterExtensionActivatedEvent;
+use Box\Mod\Extension\Event\AfterExtensionDeactivatedEvent;
 use FOSSBilling\Core\Container\InjectionAwareInterface;
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Contracts\Cache\ItemInterface;
 
 class Service implements InjectionAwareInterface
@@ -202,34 +205,22 @@ class Service implements InjectionAwareInterface
     /**
      * Event handler: Invalidate cache when a module is activated.
      */
-    public static function onAfterAdminActivateExtension(\FOSSBilling\Core\Event\Event $event): void
+    #[AsEventListener]
+    public function onExtensionActivated(AfterExtensionActivatedEvent $event): void
     {
-        $params = $event->getParameters();
-
-        if (isset($params['id'])) {
-            $di = $event->getDi();
-            $ext = $di['em']->getRepository(Extension::class)->find((int) $params['id']);
-
-            if ($ext !== null && $ext->getType() === Extension::TYPE_MOD) {
-                $di['mod_service']('Widgets')->invalidateCache();
-            }
+        if ($event->type === Extension::TYPE_MOD) {
+            $this->invalidateCache();
         }
-
-        $event->setReturnValue(true);
     }
 
     /**
      * Event handler: Invalidate cache when a module is deactivated.
      */
-    public static function onAfterAdminDeactivateExtension(\FOSSBilling\Core\Event\Event $event): void
+    #[AsEventListener]
+    public function onExtensionDeactivated(AfterExtensionDeactivatedEvent $event): void
     {
-        $params = $event->getParameters();
-
-        if (($params['type'] ?? null) === 'mod') {
-            $di = $event->getDi();
-            $di['mod_service']('Widgets')->invalidateCache();
+        if ($event->type === Extension::TYPE_MOD) {
+            $this->invalidateCache();
         }
-
-        $event->setReturnValue(true);
     }
 }

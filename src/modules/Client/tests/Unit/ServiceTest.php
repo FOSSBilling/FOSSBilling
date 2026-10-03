@@ -10,6 +10,13 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Client\Event\AfterAdminClientCreateEvent;
+use Box\Mod\Client\Event\AfterClientSignUpEvent;
+use Box\Mod\Client\Event\BeforeAdminClientCreateEvent;
+use Box\Mod\Client\Event\BeforeClientPasswordResetEvent;
+use Box\Mod\Client\Event\BeforeClientSignUpEvent;
+use Box\Mod\Cron\Event\BeforeAdminCronRunEvent;
+
 use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
 use function Tests\Helpers\moduleService;
@@ -20,6 +27,58 @@ test('getDi returns dependency injection container', function (): void {
     $service->setDi($di);
     $getDi = $service->getDi();
     expect($getDi)->toEqual($di);
+});
+
+test('removes expired password reset requests on typed before cron event', function (): void {
+    $query = Mockery::mock(Doctrine\ORM\Query::class)->shouldIgnoreMissing();
+    $query->shouldReceive('execute')->once()->andReturn(1);
+
+    $queryBuilder = Mockery::mock(Doctrine\ORM\QueryBuilder::class)->shouldIgnoreMissing();
+    $queryBuilder->shouldReceive('delete')->once()->andReturnSelf();
+    $queryBuilder->shouldReceive('where')->once()->with('r.createdAt < :cutoff')->andReturnSelf();
+    $queryBuilder->shouldReceive('setParameter')->once()->with('cutoff', Mockery::type(DateTime::class))->andReturnSelf();
+    $queryBuilder->shouldReceive('getQuery')->once()->andReturn($query);
+
+    $di = container();
+    $passwordResetRepository = $di['em']->getRepository(Box\Mod\Client\Entity\ClientPasswordReset::class);
+    $passwordResetRepository->shouldReceive('createQueryBuilder')->once()->with('r')->andReturn($queryBuilder);
+
+    $service = new Box\Mod\Client\Service();
+    $service->setDi($di);
+    $service->removeExpiredPasswordResetRequests(new BeforeAdminCronRunEvent());
+});
+
+test('password_reset_valid dispatches a safe event without exposing the reset hash', function (): void {
+    $service = new Box\Mod\Client\Service();
+    $di = container();
+    $repository = $di['em']->getRepository(Box\Mod\Client\Entity\ClientPasswordReset::class);
+    $repository->shouldReceive('findOneByHash')->once()->with('private-reset-hash')->andReturn(null);
+
+    $events = [];
+    $eventDispatcher = new class($events) {
+        /** @param list<FOSSBilling\Core\Events\Event> $events */
+        public function __construct(private array &$events)
+        {
+        }
+
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
+        {
+            $this->events[] = $event;
+
+            return $event;
+        }
+    };
+
+    $di['request'] = Symfony\Component\HttpFoundation\Request::create('http://localhost/', server: ['REMOTE_ADDR' => '192.0.2.7']);
+    $di['event_dispatcher'] = $eventDispatcher;
+    $service->setDi($di);
+
+    expect(fn () => $service->password_reset_valid(['hash' => 'private-reset-hash']))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'The link has expired or you have already reset your password.');
+
+    expect($events)->toHaveCount(1);
+    expect($events[0])->toEqual(new BeforeClientPasswordResetEvent('192.0.2.7'));
+    expect(get_object_vars($events[0]))->toBe(['ip' => '192.0.2.7']);
 });
 
 test('approveClientEmailByHash returns true', function (): void {
@@ -70,109 +129,62 @@ test('generateEmailConfirmationLink returns string', function (): void {
     expect(str_contains((string) $result, '/client/confirm-email/'))->toBeTrue();
 });
 
-test('onAfterClientSignUp returns true', function (): void {
+test('sendSignupEmail sends the client signup email', function (): void {
     $service = new Box\Mod\Client\Service();
-    $eventParams = [
-        'password' => 'testPassword',
-        'id' => 1,
-    ];
-
-    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Event::class);
-    $eventMock->shouldReceive('getParameters')
-        ->atLeast()->once()
-        ->andReturn($eventParams);
 
     $emailService = Mockery::mock(Box\Mod\Email\Service::class);
     $emailService->shouldReceive('sendTemplate')
-        ->atLeast()->once()
-        ->andReturn(true);
+        ->once()
+        ->with([
+            'to_client' => 1,
+            'code' => 'mod_client_signup',
+            'require_email_confirmation' => false,
+        ]);
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $emailService);
     $di['mod_config'] = $di->protect(fn ($name): array => ['require_email_confirmation' => false]);
 
-    $eventMock->shouldReceive('getDi')
-        ->atLeast()->once()
-        ->andReturn($di);
-
     $service->setDi($di);
-    $result = $service->onAfterClientSignUp($eventMock);
-
-    expect($result)->toBeTrue();
+    $service->sendSignupEmail(new AfterClientSignUpEvent(1));
 });
 
-test('onAfterClientSignUp with email confirmation required returns true', function (): void {
-    $service = new Box\Mod\Client\Service();
-    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Event::class);
-    $eventParams = [
-        'password' => 'testPassword',
-        'id' => 1,
-        'require_email_confirmation' => true,
-    ];
-
-    $eventMock->shouldReceive('getParameters')
-        ->atLeast()->once()
-        ->andReturn($eventParams);
+test('sendSignupEmail includes a confirmation link when required', function (): void {
+    $service = Mockery::mock(Box\Mod\Client\Service::class)->makePartial();
+    $service->shouldReceive('generateEmailConfirmationLink')->once()->with(1)->andReturn('Link_string');
 
     $emailService = Mockery::mock(Box\Mod\Email\Service::class);
     $emailService->shouldReceive('sendTemplate')
-        ->atLeast()->once()
-        ->andReturn(true);
-
-    $clientServiceMock = Mockery::mock(Box\Mod\Client\Service::class)->makePartial();
-    $clientServiceMock->shouldReceive('generateEmailConfirmationLink')
-        ->atLeast()->once()
-        ->andReturn('Link_string');
+        ->once()
+        ->with([
+            'to_client' => 1,
+            'code' => 'mod_client_signup',
+            'require_email_confirmation' => true,
+            'email_confirmation_link' => 'Link_string',
+        ]);
 
     $di = container();
-    $di['mod_service'] = $di->protect(function ($serviceName) use ($emailService, $clientServiceMock) {
-        if ($serviceName == 'email') {
-            return $emailService;
-        }
-        if ($serviceName == 'client') {
-            return $clientServiceMock;
-        }
-    });
+    $di['mod_service'] = $di->protect(fn ($serviceName) => $serviceName === 'email' ? $emailService : $service);
     $di['mod_config'] = $di->protect(fn ($name): array => ['require_email_confirmation' => true]);
-    $eventMock->shouldReceive('getDi')
-        ->atLeast()->once()
-        ->andReturn($di);
 
-    $result = $service->onAfterClientSignUp($eventMock);
-
-    expect($result)->toBeTrue();
+    $service->setDi($di);
+    $service->sendSignupEmail(new AfterClientSignUpEvent(1));
 });
 
-test('onAfterClientSignUp handles exception gracefully', function (): void {
+test('sendSignupEmail handles email exceptions gracefully', function (): void {
     $service = new Box\Mod\Client\Service();
-    $eventParams = [
-        'password' => 'testPassword',
-        'id' => 1,
-    ];
-
-    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Event::class);
-    $eventMock->shouldReceive('getParameters')
-        ->atLeast()->once()
-        ->andReturn($eventParams);
 
     $emailService = Mockery::mock(Box\Mod\Email\Service::class);
     $emailService->shouldReceive('sendTemplate')
-        ->atLeast()->once()
+        ->once()
         ->andThrow(new Exception('exception created in unit test'));
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $emailService);
-    $di['mod_config'] = $di->protect(function ($name): void {
-        ['require_email_confirmation' => false];
-    });
-    $eventMock->shouldReceive('getDi')
-        ->atLeast()->once()
-        ->andReturn($di);
+    $di['mod_config'] = $di->protect(fn ($name): array => ['require_email_confirmation' => false]);
 
     $service->setDi($di);
-    $result = $service->onAfterClientSignUp($eventMock);
-
-    expect($result)->toBeTrue();
+    $service->sendSignupEmail(new AfterClientSignUpEvent(1));
 });
 
 dataset('searchQueryData', [
@@ -204,7 +216,7 @@ dataset('searchQueryData', [
     ],
     [
         ['group_id' => '1'],
-        'c.client_group_id = :group_id',
+        'EXISTS (SELECT 1 FROM client_group_members cgm WHERE cgm.client_id = c.id AND cgm.client_group_id = :group_id)',
         ['group_id' => '1'],
     ],
     [
@@ -268,6 +280,24 @@ test('getSearchQuery never selects sensitive client columns', function (): void 
     foreach (['pass', 'salt', 'api_token', 'hash', 'config'] as $sensitiveColumn) {
         expect(preg_match('/\b' . preg_quote($sensitiveColumn, '/') . '\b/', (string) $query))->toBe(0, "Query unexpectedly selects '$sensitiveColumn': $query");
     }
+});
+
+test('getSearchQuery applies allowlisted sort', function (): void {
+    $service = new Box\Mod\Client\Service();
+
+    [$query] = $service->getSearchQuery(['sort' => 'email', 'direction' => 'asc']);
+    expect($query)->toContain('ORDER BY c.email ASC, c.id ASC');
+
+    [$pkQuery] = $service->getSearchQuery(['sort' => 'id', 'direction' => 'asc']);
+    expect($pkQuery)->toContain('ORDER BY c.id ASC');
+    expect($pkQuery)->not->toContain('c.id ASC, c.id ASC');
+
+    [$defaultQuery] = $service->getSearchQuery([]);
+    expect($defaultQuery)->toContain('ORDER BY c.created_at desc');
+
+    [$invalidQuery] = $service->getSearchQuery(['sort' => 'pass', 'direction' => 'desc']);
+    expect($invalidQuery)->toContain('ORDER BY c.created_at desc');
+    expect($invalidQuery)->not->toContain('c.pass');
 });
 
 test('getPairs returns array', function (): void {
@@ -428,6 +458,27 @@ test('getBalanceSearchQuery returns correct query and params', function ($data, 
     expect(array_diff_key($params, $expectedParams))->toEqual([]);
 })->with('searchBalanceQueryData');
 
+test('getBalanceSearchQuery applies allowlisted sort', function (): void {
+    $di = container();
+
+    $clientBalanceService = new Box\Mod\Client\ServiceBalance();
+    $clientBalanceService->setDi($di);
+
+    [$sql] = $clientBalanceService->getSearchQuery(['sort' => 'amount', 'direction' => 'desc']);
+    expect($sql)->toContain('ORDER BY m.amount DESC, m.id DESC');
+
+    [$pkSql] = $clientBalanceService->getSearchQuery(['sort' => 'id', 'direction' => 'desc']);
+    expect($pkSql)->toContain('ORDER BY m.id DESC');
+    expect($pkSql)->not->toContain('m.id DESC, m.id DESC');
+
+    [$defaultSql] = $clientBalanceService->getSearchQuery([]);
+    expect($defaultSql)->toContain('ORDER BY m.id DESC');
+
+    [$invalidSql] = $clientBalanceService->getSearchQuery(['sort' => 'client_id; DROP TABLE client_balance']);
+    expect($invalidSql)->toContain('ORDER BY m.id DESC');
+    expect($invalidSql)->not->toContain('DROP TABLE');
+});
+
 test('addFunds returns true', function (): void {
     $service = new Box\Mod\Client\Service();
     $modelClient = createEntity(Box\Mod\Client\Entity\Client::class, ['currency' => 'USD']);
@@ -517,6 +568,26 @@ test('getHistorySearchQuery returns correct query and params', function ($data, 
     expect(str_contains((string) $sql, (string) $expectedStr))->toBeTrue($sql);
     expect(array_diff_key($params, $expectedParams))->toEqual([]);
 })->with('searchHistoryQueryData');
+
+test('getHistorySearchQuery applies allowlisted sort', function (): void {
+    $service = new Box\Mod\Client\Service();
+    $di = container();
+
+    $service->setDi($di);
+
+    [$sql] = $service->getHistorySearchQuery(['sort' => 'created_at', 'direction' => 'desc']);
+    expect($sql)->toContain('ORDER BY ach.created_at DESC, ach.id DESC');
+
+    [$pkSql] = $service->getHistorySearchQuery(['sort' => 'id', 'direction' => 'desc']);
+    expect($pkSql)->toContain('ORDER BY ach.id DESC');
+    expect($pkSql)->not->toContain('ach.id DESC, ach.id DESC');
+
+    [$defaultSql] = $service->getHistorySearchQuery([]);
+    expect($defaultSql)->toContain('ORDER BY ach.id desc');
+
+    [$invalidSql] = $service->getHistorySearchQuery(['sort' => 'client_id']);
+    expect($invalidSql)->toContain('ORDER BY ach.id desc');
+});
 
 test('counter returns array', function (): void {
     $service = new Box\Mod\Client\Service();
@@ -651,11 +722,23 @@ test('remove wraps client cleanup and flush in one transaction', function (): vo
     $di['mod_service'] = $di->protect(moduleService($services));
 
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $schemaManager = Mockery::mock(Doctrine\DBAL\Schema\AbstractSchemaManager::class);
+    $schemaManager->shouldReceive('listTableNames')->andReturn([
+        'service_hosting',
+        'service_domain',
+        'service_downloadable',
+        'service_license',
+        'service_custom',
+        'service_apikey',
+    ]);
+    $connection->shouldReceive('createSchemaManager')->andReturn($schemaManager);
     $query = Mockery::mock(Doctrine\DBAL\Query\QueryBuilder::class);
     $query->shouldReceive('delete')->once()->with('extension_meta')->andReturnSelf();
     $query->shouldReceive('where')->once()->with('client_id = :id')->andReturnSelf();
     $query->shouldReceive('setParameter')->once()->with('id', 1)->andReturnSelf();
     $query->shouldReceive('executeStatement')->once()->andReturn(1);
+    // No provisioned services remain: the erasure gate passes on all six tables.
+    $connection->shouldReceive('fetchOne')->times(6)->andReturn(false);
     $connection->shouldReceive('executeStatement')->once()
         ->with('DELETE FROM activity_client_history WHERE client_id = :id', ['id' => 1])
         ->andReturn(1);
@@ -666,7 +749,7 @@ test('remove wraps client cleanup and flush in one transaction', function (): vo
 
     $em = $di['em'];
     $em->shouldReceive('getRepository')->with(Box\Mod\Client\Entity\ClientPasswordReset::class)->andReturn($passwordRepository);
-    $em->shouldReceive('getConnection')->once()->andReturn($connection);
+    $em->shouldReceive('getConnection')->twice()->andReturn($connection);
     $em->shouldReceive('beginTransaction')->once();
     $em->shouldReceive('remove')->once()->with($reset);
     $em->shouldReceive('remove')->once()->with($client);
@@ -690,9 +773,21 @@ test('remove rolls back and rethrows cleanup failures', function (): void {
 
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
     $connection->shouldReceive('isTransactionActive')->once()->andReturnTrue();
+    $schemaManager = Mockery::mock(Doctrine\DBAL\Schema\AbstractSchemaManager::class);
+    $schemaManager->shouldReceive('listTableNames')->andReturn([
+        'service_hosting',
+        'service_domain',
+        'service_downloadable',
+        'service_license',
+        'service_custom',
+        'service_apikey',
+    ]);
+    $connection->shouldReceive('createSchemaManager')->andReturn($schemaManager);
+    // The erasure gate passes: no provisioned services remain.
+    $connection->shouldReceive('fetchOne')->times(6)->andReturn(false);
 
     $em = $di['em'];
-    $em->shouldReceive('getConnection')->once()->andReturn($connection);
+    $em->shouldReceive('getConnection')->twice()->andReturn($connection);
     $em->shouldReceive('beginTransaction')->once();
     $em->shouldReceive('rollback')->once();
     $em->shouldReceive('commit')->never();
@@ -702,11 +797,54 @@ test('remove rolls back and rethrows cleanup failures', function (): void {
     expect(fn () => $service->remove($client))->toThrow($exception);
 });
 
+test('remove refuses clients with provisioned services', function (): void {
+    $service = new Box\Mod\Client\Service();
+    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1]);
+
+    $orderService = Mockery::mock();
+    $orderService->shouldReceive('rmByClient')->never();
+
+    $di = container();
+    $di['mod_service'] = $di->protect(moduleService(['order' => $orderService]));
+
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $schemaManager = Mockery::mock(Doctrine\DBAL\Schema\AbstractSchemaManager::class);
+    // service_apikey was never activated on this install: the gate skips its
+    // missing table instead of querying it.
+    $schemaManager->shouldReceive('listTableNames')->andReturn([
+        'service_hosting',
+        'service_domain',
+        'service_downloadable',
+        'service_license',
+        'service_custom',
+    ]);
+    $connection->shouldReceive('createSchemaManager')->andReturn($schemaManager);
+    // Only hosting remains: the gate names it and stops before any cleanup.
+    $connection->shouldReceive('fetchOne')
+        ->times(5)
+        ->andReturnUsing(fn (string $sql): string|false => str_contains($sql, 'service_hosting') ? '1' : false);
+
+    $em = $di['em'];
+    $em->shouldReceive('getConnection')->once()->andReturn($connection);
+    $em->shouldReceive('beginTransaction')->never();
+
+    $service->setDi($di);
+
+    expect(fn () => $service->remove($client))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'hosting');
+});
+
 test('toApiArray returns array', function (): void {
     $service = new Box\Mod\Client\Service();
-    $clientGroup = createEntity(Box\Mod\Client\Entity\ClientGroup::class, ['id' => 1, 'title' => 'Group Title']);
     $model = createEntity(Box\Mod\Client\Entity\Client::class, [
-        'clientGroup' => $clientGroup,
+        'groupMemberships' => new Doctrine\Common\Collections\ArrayCollection([
+            createEntity(Box\Mod\Client\Entity\ClientGroupMembership::class, [
+                'clientGroup' => createEntity(Box\Mod\Client\Entity\ClientGroup::class, ['id' => 1, 'title' => 'Group Title']),
+            ]),
+            createEntity(Box\Mod\Client\Entity\ClientGroupMembership::class, [
+                'clientGroup' => createEntity(Box\Mod\Client\Entity\ClientGroup::class, ['id' => 2, 'title' => 'Second Group']),
+            ]),
+        ]),
         'custom_1' => 'custom field',
         'billing_email' => 'billing@example.com',
     ]);
@@ -717,8 +855,11 @@ test('toApiArray returns array', function (): void {
     $result = $service->toApiArray($model, true, createEntity(Box\Mod\Staff\Entity\Admin::class));
     expect($result)->toBeArray();
     expect($result['billing_email'])->toBe('billing@example.com');
-    expect($result['group'])->toBe('Group Title');
-    expect($result['client_group'])->toMatchArray(['id' => 1, 'title' => 'Group Title']);
+    expect($result['group'])->toBe('Group Title, Second Group');
+    expect($result['client_groups'])->toMatchArray([
+        ['id' => 1, 'title' => 'Group Title'],
+        ['id' => 2, 'title' => 'Second Group'],
+    ]);
 
     $publicResult = $service->toApiArray($model);
     expect($publicResult)->not->toHaveKey('billing_email');
@@ -783,11 +924,23 @@ test('adminCreateClient returns int', function (): void {
         'email' => 'test@unit.vm',
         'first_name' => 'test',
         'aid' => 'LEGACY-1001',
+        'password_confirm' => 'do-not-expose',
+        'send_welcome_email' => false,
     ];
 
-    $eventManagerMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class);
-    $eventManagerMock->shouldReceive('fire')
-        ->twice();
+    $dispatched = [];
+    $eventDispatcher = new class($dispatched) {
+        public function __construct(private array &$dispatched)
+        {
+        }
+
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
+        {
+            $this->dispatched[] = $event;
+
+            return $event;
+        }
+    };
 
     $passwordMock = Mockery::mock(FOSSBilling\Core\PasswordManager::class);
     $passwordMock->shouldReceive('hashIt')
@@ -800,15 +953,88 @@ test('adminCreateClient returns int', function (): void {
         ->andReturn([]);
 
     $di = container();
-    $di['events_manager'] = $eventManagerMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod'] = $di->protect(fn (): Mockery\MockInterface => $modMock);
     $di['password'] = $passwordMock;
+    $entityManager = $di['em'];
+    $entityManager->shouldReceive('persist')->atLeast()->once()->andReturnUsing(static function (object $entity): void {
+        if ($entity instanceof Box\Mod\Client\Entity\Client) {
+            (new ReflectionProperty(Box\Mod\Client\Entity\Client::class, 'id'))->setValue($entity, 42);
+        }
+    });
 
     $service->setDi($di);
 
     $result = $service->adminCreateClient($data);
     expect($result)->toBeInt();
+    expect($dispatched)->toHaveCount(2);
+    expect($dispatched[0])->toBeInstanceOf(BeforeAdminClientCreateEvent::class);
+    expect($dispatched[0]->input)->toBe([
+        'email' => 'test@unit.vm',
+        'first_name' => 'test',
+        'aid' => 'LEGACY-1001',
+        'send_welcome_email' => false,
+    ]);
+    expect($dispatched[1])->toEqual(new AfterAdminClientCreateEvent(42));
+});
+
+test('guestCreateClient dispatches sanitized signup input and the persisted client ID', function (): void {
+    $service = new Box\Mod\Client\Service();
+    $data = [
+        'email' => 'test@unit.vm',
+        'first_name' => 'test',
+        'password' => 'StrongPass123',
+        'password_confirm' => 'StrongPass123',
+        'g-recaptcha-response' => 'captcha-token',
+        'bio' => 'honeypot',
+    ];
+    $dispatched = [];
+    $eventDispatcher = new class($dispatched) {
+        public function __construct(private array &$dispatched)
+        {
+        }
+
+        public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
+        {
+            $this->dispatched[] = $event;
+
+            return $event;
+        }
+    };
+
+    $di = container();
+    $di['request'] = Symfony\Component\HttpFoundation\Request::create('http://localhost/', 'POST', server: ['REMOTE_ADDR' => '203.0.113.4']);
+    $di['event_dispatcher'] = $eventDispatcher;
+    $di['mod'] = $di->protect(static function (string $name): object {
+        $system = Mockery::mock(Box\Mod\System\Service::class);
+        $system->shouldReceive('getConfig')->once()->andReturn([]);
+
+        return $system;
+    });
+    $password = Mockery::mock(FOSSBilling\Core\Security\PasswordManager::class);
+    $password->shouldReceive('hashIt')->once()->with('StrongPass123')->andReturn('hashed');
+    $di['password'] = $password;
+    $entityManager = $di['em'];
+    $entityManager->shouldReceive('persist')->once()->andReturnUsing(static function (object $entity): void {
+        expect($entity)->toBeInstanceOf(Box\Mod\Client\Entity\Client::class);
+        (new ReflectionProperty(Box\Mod\Client\Entity\Client::class, 'id'))->setValue($entity, 43);
+    });
+
+    $service->setDi($di);
+    $client = $service->guestCreateClient($data);
+
+    expect($client->getId())->toBe(43);
+    expect($dispatched)->toHaveCount(2);
+    expect($dispatched[0])->toBeInstanceOf(BeforeClientSignUpEvent::class);
+    expect($dispatched[0]->input)->toBe([
+        'email' => 'test@unit.vm',
+        'first_name' => 'test',
+        'g-recaptcha-response' => 'captcha-token',
+        'bio' => 'honeypot',
+        'ip' => '203.0.113.4',
+    ]);
+    expect($dispatched[1])->toEqual(new AfterClientSignUpEvent(43));
 });
 
 test('deleteGroup returns true', function (): void {
@@ -824,20 +1050,63 @@ test('deleteGroup returns true', function (): void {
     expect($result)->toBeTrue();
 });
 
-test('deleteGroup throws exception when group has clients', function (): void {
+test('setClientGroupIds replaces memberships with the given groups', function (): void {
     $service = new Box\Mod\Client\Service();
-    $clientEntity = new Box\Mod\Client\Entity\Client();
-    $model = createEntity(Box\Mod\Client\Entity\ClientGroup::class, ['id' => 1]);
 
-    $clientRepoMock = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
-    $clientRepoMock->shouldReceive('findOneBy')
-        ->with(['clientGroup' => $model])
-        ->andReturn($clientEntity);
+    $di = container();
+    $service->setDi($di);
+
+    $client = new Box\Mod\Client\Entity\Client();
+    $service->setClientGroupIds($client, [3, 1, 3, 'invalid', 0, -2]);
+
+    expect($client->getGroupIds())->toBe([3, 1]);
+});
+
+test('setClientGroupIds clears memberships when given no groups', function (): void {
+    $service = new Box\Mod\Client\Service();
+
+    $di = container();
+    $service->setDi($di);
+
+    $client = new Box\Mod\Client\Entity\Client();
+    $service->setClientGroupIds($client, [1]);
+    $service->setClientGroupIds($client, []);
+
+    expect($client->getGroupIds())->toBe([]);
+});
+
+test('setClientGroupIds throws for an unknown group', function (): void {
+    $service = new Box\Mod\Client\Service();
+
+    $groupRepository = Mockery::mock(Box\Mod\Client\Repository\ClientGroupRepository::class);
+    $groupRepository->shouldReceive('find')->once()->with(99)->andReturn(null);
 
     $di = container();
     $di['em']->shouldReceive('getRepository')
-        ->with(Box\Mod\Client\Entity\Client::class)
-        ->andReturn($clientRepoMock);
+        ->with(Box\Mod\Client\Entity\ClientGroup::class)
+        ->andReturn($groupRepository);
+    $service->setDi($di);
+
+    $client = new Box\Mod\Client\Entity\Client();
+
+    expect(fn () => $service->setClientGroupIds($client, [99]))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Client group not found');
+});
+
+test('deleteGroup throws exception when group has clients', function (): void {
+    $service = new Box\Mod\Client\Service();
+    $model = createEntity(Box\Mod\Client\Entity\ClientGroup::class, ['id' => 1]);
+    $membership = createEntity(Box\Mod\Client\Entity\ClientGroupMembership::class);
+
+    $membershipRepoMock = Mockery::mock(Box\Mod\Client\Repository\ClientGroupMembershipRepository::class);
+    $membershipRepoMock->shouldReceive('findOneBy')
+        ->with(['clientGroup' => $model])
+        ->andReturn($membership);
+
+    $di = container();
+    $di['em']->shouldReceive('getRepository')
+        ->with(Box\Mod\Client\Entity\ClientGroupMembership::class)
+        ->andReturn($membershipRepoMock);
     $di['logger'] = new Tests\Helpers\TestLogger();
 
     $service->setDi($di);

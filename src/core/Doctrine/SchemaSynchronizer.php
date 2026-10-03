@@ -43,9 +43,9 @@ use Doctrine\ORM\Tools\SchemaTool;
  * One narrower exception to "additive is always safe": a foreign key constraint being added to an
  * *existing* table is never applied, even though it's technically additive. Unlike a new column or
  * index, MySQL/PostgreSQL both validate a new FK constraint against every existing row - and
- * FOSSBilling's schema has never had real FK constraints (`structure.sql` has none at all; it's
- * always been app-level referential integrity), so there's no guarantee years of production data
- * satisfy one. A brand-new table's own FK constraints are unaffected by this - those apply at
+ * while current metadata does declare FK relationships, the pre-cutover schema dump had none
+ * (it's always been app-level referential integrity), so existing tables hold years of
+ * production data with no guarantee of satisfying one. A brand-new table's own FK constraints are unaffected by this - those apply at
  * creation time, against zero rows, same as any fresh install.
  *
  * What this does NOT do: reproduce data migrations (patches that rewrite existing rows, split or
@@ -65,7 +65,7 @@ final class SchemaSynchronizer
      *
      * No current call site in this codebase actually wants that: a module materializing just its
      * own table(s) from its own `install()` hook, or the ambient per-module gating
-     * {@see \FOSSBilling\Core\UpdatePatcher::applyCorePatches()} needs (see {@see ModuleEntityScope}),
+     * {@see \FOSSBilling\Core\Update\Patcher::applyCorePatches()} needs (see {@see ModuleEntityScope}),
      * both use {@see self::syncEntities()} instead, which doesn't produce noise for every
      * unrelated table in the database - so this method is untouched production code today,
      * exercised only by its own tests. Kept anyway, deliberately, as the one API on this class
@@ -219,9 +219,9 @@ final class SchemaSynchronizer
 
             // Foreign keys being ADDED to an already-existing table are never applied here, name
             // collision or not. Unlike a new column or index, a new FK constraint is checked against
-            // every existing row: years-old data with no constraint enforcing it (structure.sql has
-            // never had a single FOREIGN KEY clause - the whole schema has always been app-level
-            // referential integrity only) can easily contain orphaned references, and even where it
+            // every existing row: years-old data created without the FK relationships current
+            // metadata declares (the pre-cutover schema dump had no FOREIGN KEY clauses - the
+            // whole schema has always been app-level referential integrity only) can easily contain orphaned references, and even where it
             // doesn't, retrofitting a constraint changes DELETE/UPDATE behavior the application was
             // never built expecting. A brand-new table's own FK constraints (via createdTables,
             // below) stay untouched - those are the safe case, same as any fresh install.
@@ -252,13 +252,18 @@ final class SchemaSynchronizer
             // existing rows, so it doesn't need the same caution as everything else this method
             // deliberately leaves untouched. Left unapplied, it's not just a cosmetic mismatch -
             // Doctrine's own comparator represents the rename as a drop+add pair internally
-            // (getRenamedIndexes(), not getAddedIndexes()/getDroppedIndexes()), so omitting it
-            // here means the new name is never created at all, silently, on every sync.
+            // (index renames, not added/dropped indexes), so omitting it here means the new
+            // name is never created at all, silently, on every sync.
+            $renamedIndexes = [];
+            foreach ($tableDiff->getIndexRenames() as $rename) {
+                $renamedIndexes[$rename->getOldName()->getIdentifier()->getValue()] = $rename->getNewIndex();
+            }
+
             $safeTableDiff = new TableDiff(
                 oldTable: $tableDiff->getOldTable(),
                 addedColumns: $safeAddedColumns,
                 addedIndexes: $safeAddedIndexes,
-                renamedIndexes: $tableDiff->getRenamedIndexes(),
+                renamedIndexes: $renamedIndexes,
             );
 
             if (!$safeTableDiff->isEmpty()) {

@@ -130,14 +130,10 @@ function container(): Container
 
         return $dbal;
     };
-    $di['events_manager'] = fn (): object => new class {
-        public array $events = [];
-
-        public function fire(array|string $event): void
-        {
-            $this->events[] = $event;
-        }
-    };
+    $di['event_dispatcher'] = fn (): \FOSSBilling\Core\Events\EventDispatcher => new \FOSSBilling\Core\Events\EventDispatcher(
+        static fn (): array => [],
+        static fn (string $module): object => throw new \LogicException('No module listeners are configured in the test container.'),
+    );
     $di['auth'] = fn (): object => \Mockery::mock()->shouldIgnoreMissing();
     $di['pager'] = fn (): object => new class {
         public function getDefaultPerPage(): int
@@ -211,6 +207,10 @@ function container(): Container
         $clientGroupRepository->shouldReceive('find')->byDefault()->andReturnUsing(static fn (int $id): ?object => createEntity(\Box\Mod\Client\Entity\ClientGroup::class, ['id' => $id]));
         $clientGroupRepository->shouldReceive('getIdTitlePairs')->byDefault()->andReturn([]);
 
+        $clientGroupMembershipRepository = \Mockery::mock(\Box\Mod\Client\Repository\ClientGroupMembershipRepository::class)->shouldIgnoreMissing();
+        $clientGroupMembershipRepository->shouldReceive('findOneBy')->byDefault()->andReturn(null);
+        $clientGroupMembershipRepository->shouldReceive('findBy')->byDefault()->andReturn([]);
+
         $clientPasswordResetRepository = \Mockery::mock(\Box\Mod\Client\Repository\ClientPasswordResetRepository::class)->shouldIgnoreMissing();
         $clientPasswordResetRepository->shouldReceive('find')->byDefault()->andReturn(null);
         $clientPasswordResetRepository->shouldReceive('findBy')->byDefault()->andReturn([]);
@@ -262,7 +262,6 @@ function container(): Container
         $transactionRepository->shouldReceive('findOneBy')->byDefault()->andReturn(null);
         $transactionRepository->shouldReceive('findOneByTxnIdAndGatewayId')->byDefault()->andReturn(null);
         $transactionRepository->shouldReceive('findOneByGatewayIdAndIpnHash')->byDefault()->andReturn(null);
-        $transactionRepository->shouldReceive('findOneProcessedByTxnId')->byDefault()->andReturn(null);
         $transactionRepository->shouldReceive('findActiveByTxnIdAndGatewayId')->byDefault()->andReturn(null);
         $transactionRepository->shouldReceive('findProcessingOrProcessedByTxnId')->byDefault()->andReturn(null);
         $transactionRepository->shouldReceive('competingTransactionQuery')->byDefault()->andReturn($payGatewayQueryBuilder);
@@ -278,7 +277,7 @@ function container(): Container
         $invoiceRepository->shouldReceive('findLatestWithNr')->byDefault()->andReturn(null);
         $invoiceRepository->shouldReceive('findPaid')->byDefault()->andReturn([]);
         $invoiceRepository->shouldReceive('findByClientId')->byDefault()->andReturn([]);
-        $invoiceRepository->shouldReceive('findUnpaidApprovedNotRemindedBefore')->byDefault()->andReturn([]);
+        $invoiceRepository->shouldReceive('findUnpaidIssuedNotRemindedBefore')->byDefault()->andReturn([]);
         $invoiceRepository->shouldReceive('findUnpaidOlderThan')->byDefault()->andReturn([]);
         $invoiceRepository->shouldReceive('findPaidByRelId')->byDefault()->andReturn([]);
 
@@ -310,6 +309,7 @@ function container(): Container
             \Box\Mod\Client\Entity\Client::class => $clientRepository,
             \Box\Mod\Client\Entity\ClientBalance::class => $clientBalanceRepository,
             \Box\Mod\Client\Entity\ClientGroup::class => $clientGroupRepository,
+            \Box\Mod\Client\Entity\ClientGroupMembership::class => $clientGroupMembershipRepository,
             \Box\Mod\Client\Entity\ClientPasswordReset::class => $clientPasswordResetRepository,
             \Box\Mod\Staff\Entity\AdminGroup::class => $adminGroupRepository,
             \Box\Mod\Staff\Entity\AdminGroupMember::class => $adminGroupMemberRepository,

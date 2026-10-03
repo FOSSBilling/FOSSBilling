@@ -41,7 +41,7 @@
                 <div class="col-12">
                     <label class="form-label">{{ 'Content'|trans }}</label>
                     <textarea class="editor-textarea" name="content" rows="10">{{ post.content }}</textarea>
-                    <small class="my-2 form-hint">{{ 'If the text is very long you can use <strong>&lt;!--more--&gt;</strong> tag. Inserting this tag within the post will create and excerpt of text (before the tag) to be displayed in posts list. Users will be able to see whole content when they click on "Read more" button.'|trans|raw }}</small>
+                    <small class="my-2 form-text">{{ 'If the text is very long you can use <strong>&lt;!--more--&gt;</strong> tag. Inserting this tag within the post will create and excerpt of text (before the tag) to be displayed in posts list. Users will be able to see whole content when they click on "Read more" button.'|trans|raw }}</small>
                 </div>
                 <div class="col-lg-6">
                     <label class="form-label">{{ 'Image'|trans }}</label>
@@ -68,7 +68,7 @@
                     <label class="form-label" for="post_created">{{ 'Post Created'|trans }}</label>
                     <div class="input-group">
                         <div class="input-icon w-100">
-                            <input class="form-control datepicker"
+                            <input class="form-control datepicker" data-clear-label="{{ 'Clear date'|trans }}" data-invalid-date-label="{{ 'Enter a valid date in YYYY-MM-DD format.'|trans }}"
                                    id="post_created"
                                    value="{{ post.created_at|date('Y-m-d') }}"
                                    name="created_at"
@@ -92,7 +92,7 @@
                     <label class="form-label" for="last_updated">{{ 'Last Update'|trans }}</label>
                     <div class="input-group">
                         <div class="input-icon w-100">
-                            <input class="form-control datepicker"
+                            <input class="form-control datepicker" data-clear-label="{{ 'Clear date'|trans }}" data-invalid-date-label="{{ 'Enter a valid date in YYYY-MM-DD format.'|trans }}"
                                    id="last_updated"
                                    value="{{ post.updated_at|date('Y-m-d') }}"
                                    name="updated_at"

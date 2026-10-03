@@ -78,9 +78,6 @@ class Transaction implements TimestampInterface
     #[ORM\Column(name: 'error_code', type: Types::INTEGER, nullable: true)]
     private ?int $errorCode = null;
 
-    #[ORM\Column(name: 'validate_ipn', type: Types::BOOLEAN, options: ['default' => true])]
-    private bool $validateIpn = true;
-
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $ipn = null;
 
@@ -250,18 +247,6 @@ class Transaction implements TimestampInterface
     public function setErrorCode(?int $errorCode): self
     {
         $this->errorCode = $errorCode;
-
-        return $this;
-    }
-
-    public function isValidateIpn(): bool
-    {
-        return $this->validateIpn;
-    }
-
-    public function setValidateIpn(bool $validateIpn): self
-    {
-        $this->validateIpn = $validateIpn;
 
         return $this;
     }

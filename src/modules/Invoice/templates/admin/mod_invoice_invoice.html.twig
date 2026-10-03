@@ -2,7 +2,9 @@
 
 {% import 'macro_functions.html.twig' as mf %}
 
-{% block meta_title %}{{ 'Invoice'|trans }} {{ invoice.serie }}{{ "%05s"|format(invoice.nr) }}{% endblock %}
+{% set number_label = invoice.issued ? invoice.serie_nr : ('Draft'|trans ~ ' #' ~ invoice.id) %}
+
+{% block meta_title %}{{ 'Invoice'|trans }} {{ number_label }}{% endblock %}
 
 {% set active_menu = 'invoice' %}
 
@@ -18,13 +20,13 @@
         <li class="breadcrumb-item">
             <a href="{{ 'invoice'|url }}">{{ 'Invoices'|trans }}</a>
         </li>
-        <li class="breadcrumb-item active" aria-current="page">{{ invoice.serie }}{{ '%05s'|format(invoice.nr) }}</li>
+        <li class="breadcrumb-item active" aria-current="page">{{ number_label }}</li>
     </ol>
 {% endblock %}
 
 {% block content %}
 {% embed 'partial_admin_detail_tabs.html.twig' with {
-    title: 'Invoice'|trans ~ ' ' ~ invoice.serie ~ ("%05s"|format(invoice.nr)),
+    title: 'Invoice'|trans ~ ' ' ~ number_label,
     subtitle: 'Review billing details, update invoice content, and adjust stored purchase records.'|trans,
     outer_card_class: 'mb-3'
 } %}
@@ -39,16 +41,13 @@
                         <a class="nav-link" href="#tab-texts" data-bs-toggle="tab" role="tab">{{ 'Texts'|trans }}</a>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <a class="nav-link" href="#tab-buyer-credentials" data-bs-toggle="tab" role="tab">{{ 'Client Credentials'|trans }}</a>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <a class="nav-link" href="#tab-seller-credentials" data-bs-toggle="tab" role="tab">{{ 'Company Credentials'|trans }}</a>
+                        <a class="nav-link" href="#tab-history" data-bs-toggle="tab" role="tab">{{ 'History'|trans }}</a>
                     </li>
     {% endblock %}
 
     {% block detail_tab_content %}
         {% import 'macro_functions.html.twig' as mf %}
-        <div class="tab-pane fade show active" id="tab-info" role="tabpanel">
+        <div class="tab-pane fade show active" id="tab-info" role="tabpanel" data-list-ns="">
             <div class="px-3 py-3 d-flex flex-column gap-3">
                 {% embed 'partial_admin_summary_card.html.twig' with {
                     title: 'Invoice Summary'|trans,
@@ -65,18 +64,46 @@
                                 </tr>
                                 <tr>
                                     <td class="text-end">{{ 'Number'|trans }}:</td>
-                                    <td>{{ invoice.serie }}{{ "%05s"|format(invoice.nr) }}</td>
+                                    <td>{{ number_label }}{% if not invoice.issued %} {{ mf.text_badge('Draft'|trans, 'text-bg-secondary') }}{% endif %}</td>
                                 </tr>
-                                <tr>
-                                    <td class="text-end">{{ 'Client'|trans }}:</td>
-                                    <td>
-                                        <a href='{{ "client/manage/#{invoice.client.id}"|url }}'>{{ invoice.client.first_name }} {{ invoice.client.last_name }}</a>
-                                    </td>
-                                </tr>
+                                    <tr>
+                                        <td class="text-end">{{ 'Client'|trans }}:</td>
+                                        <td>
+                                            {% if invoice.client %}
+                                            <a href='{{ "client/manage/#{invoice.client.id}"|url }}'>{{ invoice.client.first_name }} {{ invoice.client.last_name }}</a>
+                                            {% else %}
+                                            {{ 'Deleted client'|trans }}
+                                            {% endif %}
+                                        </td>
+                                    </tr>
                                 <tr>
                                     <td class="text-end">{{ 'Status'|trans }}:</td>
-                                    <td>{{ mf.status_badge(invoice.status, 'invoice') }}</td>
+                                    <td>{{ mf.status_badge(invoice.status, 'invoice') }}{% if not invoice.issued %} {{ mf.text_badge('Draft'|trans, 'text-bg-secondary') }}{% endif %}</td>
                                 </tr>
+                                {% if invoice.credit_note_for_invoice_id %}
+                                <tr>
+                                    <td class="text-end">{{ 'Credit note for'|trans }}:</td>
+                                    <td><a href="{{ 'invoice/manage'|url }}/{{ invoice.credit_note_for_invoice_id }}">{{ 'Invoice'|trans }} #{{ invoice.credit_note_for_invoice_id }}</a></td>
+                                </tr>
+                                {% endif %}
+                                {% if invoice.debit_note_for_invoice_id %}
+                                <tr>
+                                    <td class="text-end">{{ 'Debit note for'|trans }}:</td>
+                                    <td><a href="{{ 'invoice/manage'|url }}/{{ invoice.debit_note_for_invoice_id }}">{{ 'Invoice'|trans }} #{{ invoice.debit_note_for_invoice_id }}</a></td>
+                                </tr>
+                                {% endif %}
+                                {% if invoice.refunded_by_invoice_ids %}
+                                <tr>
+                                    <td class="text-end">{{ 'Refunded by'|trans }}:</td>
+                                    <td>{% for refunded_by_id in invoice.refunded_by_invoice_ids %}<a href="{{ 'invoice/manage'|url }}/{{ refunded_by_id }}">{{ 'Invoice'|trans }} #{{ refunded_by_id }}</a>{% if not loop.last %}, {% endif %}{% endfor %}</td>
+                                </tr>
+                                {% endif %}
+                                {% if invoice.debited_by_invoice_ids %}
+                                <tr>
+                                    <td class="text-end">{{ 'Debited by'|trans }}:</td>
+                                    <td>{% for debited_by_id in invoice.debited_by_invoice_ids %}<a href="{{ 'invoice/manage'|url }}/{{ debited_by_id }}">{{ 'Invoice'|trans }} #{{ debited_by_id }}</a>{% if not loop.last %}, {% endif %}{% endfor %}</td>
+                                </tr>
+                                {% endif %}
                                 {% if invoice.tax %}
                                 <tr>
                                     <td class="text-end">{{ invoice.taxname }} {{ invoice.taxrate }}%</td>
@@ -87,6 +114,12 @@
                                     <td class="text-end">{{ 'Total'|trans }}:</td>
                                     <td>{{ invoice.total|format_currency(invoice.currency ?? default_currency) }}</td>
                                 </tr>
+                                {% if invoice.refunded_total > 0 %}
+                                <tr>
+                                    <td class="text-end">{{ 'Refunded'|trans }}:</td>
+                                    <td>{{ invoice.refunded_total|format_currency(invoice.currency ?? default_currency) }}</td>
+                                </tr>
+                                {% endif %}
                                 <tr>
                                     <td class="text-end">{{ 'Currency'|trans }}:</td>
                                     <td>{{ invoice.currency|currency_name }}</td>
@@ -118,12 +151,35 @@
                     {% endblock %}
 
                     {% block summary_actions %}
+                        {% if not invoice.editable %}
+                        <div class="alert alert-warning w-100 mb-2" role="alert">
+                            {{ 'This invoice is locked. Issued invoices cannot be edited; correct them with a credit note or a replacement invoice.'|trans }}
+                        </div>
+                        {% endif %}
+                        {% if not invoice.issued %}
+                        <div class="alert alert-info w-100 mb-2" role="alert">
+                            {{ 'This is a draft. It has no invoice number yet - issuing assigns the next number in the sequence.'|trans }}
+                        </div>
+                        {% endif %}
+                        {% if invoice.replaced_by_invoice_id %}
+                        <div class="alert alert-info w-100 mb-2" role="alert">
+                            {{ 'This invoice was canceled and reissued as invoice #%id%.'|trans({'%id%': invoice.replaced_by_invoice_id}) }}
+                            <a href='{{ "invoice/manage/#{invoice.replaced_by_invoice_id}"|url }}'>{{ 'View replacement'|trans }}</a>
+                        </div>
+                        {% endif %}
+                        {% if invoice.replaces_invoice_id %}
+                        <div class="alert alert-info w-100 mb-2" role="alert">
+                            {{ 'This invoice replaces canceled invoice #%id%.'|trans({'%id%': invoice.replaces_invoice_id}) }}
+                            <a href='{{ "invoice/manage/#{invoice.replaces_invoice_id}"|url }}'>{{ 'View original'|trans }}</a>
+                        </div>
+                        {% endif %}
                         <a href='{{ "invoice/#{invoice.hash}"|url(area: 'client') }}' class="btn btn-primary" target="_blank">
                             <svg class="icon" width="24" height="24">
                                 <use href="#eye" />
                             </svg>
                             <span>{{ 'View as Client'|trans }}</span>
                         </a>
+                        {% if invoice.deletable %}
                         <a class="btn btn-danger"
                             {{ fb_api_link({href: 'invoice/delete'|api_url(query: {id: invoice.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'invoice'|url}) }}>
                             <svg class="icon" width="24" height="24">
@@ -131,6 +187,16 @@
                             </svg>
                             <span>{{ 'Delete'|trans }}</span>
                         </a>
+                        {% endif %}
+                        {% if invoice.cancellable %}
+                        <a class="btn btn-warning"
+                            {{ fb_api_link({href: 'invoice/cancel'|api_url(query: {id: invoice.id}), modal: {type: 'confirm', title: 'Cancel this invoice without a replacement?'|trans}, reload: true}) }}>
+                            <svg class="icon" width="24" height="24">
+                                <use href="#x" />
+                            </svg>
+                            <span>{{ 'Cancel'|trans }}</span>
+                        </a>
+                        {% endif %}
                         {% if invoice.status == 'unpaid' %}
                         <a class="btn btn-primary" {{ fb_api_link({href: 'invoice/send_reminder'|api_url(query: {id: invoice.id}), message: 'Payment Reminder Sent'|trans}) }}>
                             <svg class="icon" width="24" height="24">
@@ -148,40 +214,211 @@
                         <div class="modal-dialog">
                             <form class="modal-content" method="post" action="{{ 'invoice/mark_as_paid'|api_url(query: { 'id': invoice.id, 'execute': 1 }) }}" name="transactionForm" {{ fb_api_form({action: 'invoice/mark_as_paid'|api_url(query: {id: invoice.id, execute: 1}), reload: true}) }}>
                             <div class="modal-header">
-                                <h5 class="modal-title" id="transactionModalLabel">{{ 'Enter Custom Transaction ID'|trans }}:</h5>
+                                <h5 class="modal-title" id="transactionModalLabel">{{ 'Mark as Paid'|trans }}</h5>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
                             </div>
                             <div class="modal-body">
                                 <input type="hidden" name="id" value="{{ invoice.id }}">
                                 <input type="hidden" name="execute" value="1">
+                                {% set pay_gateways = guest.invoice_gateways %}
+                                {% if pay_gateways|length == 0 %}
+                                <div class="alert alert-warning" role="alert">
+                                    {{ 'No active payment gateways are configured. Configure one before recording a payment.'|trans }}
+                                    <a href="{{ 'invoice/gateways'|url }}">{{ 'Manage payment gateways'|trans }}</a>
+                                </div>
+                                {% else %}
                                 <div class="d-flex flex-column gap-3">
                                     <div>
+                                        <label class="form-label" for="mark-paid-gateway">{{ 'Payment Method'|trans }}</label>
+                                        <select class="form-select" name="gateway_id" id="mark-paid-gateway" onchange="onMarkPaidGatewayChange(this)">
+                                            {% for gtw in pay_gateways %}
+                                            <option value="{{ gtw.id }}" data-code="{{ gtw.code }}" {% if gtw.id == invoice.gateway_id %}selected{% endif %}>{{ gtw.title }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div id="mark-paid-transaction-row">
                                         <label class="form-label" for="transaction-id">{{ 'Transaction ID'|trans }}</label>
                                         <input class="form-control" type="text" name="transactionId" id="transaction-id">
+                                        <small class="form-text">{{ 'Required for the Custom gateway, e.g. the reference you use to reconcile your bank statement.'|trans }}</small>
                                     </div>
-                                    <p class="text-secondary mb-0">
-                                        {{ 'Add the transaction ID of the payment to mark the invoice as paid.'|trans }}<br />
-                                        {{ 'This should be the transaction ID you use to reconcile your bank statement.'|trans }}
-                                    </p>
+                                    <div>
+                                        <label class="form-label" for="mark-paid-date">{{ 'Payment Date'|trans }}</label>
+                                        <input class="form-control" type="datetime-local" name="paid_at" id="mark-paid-date" value="{{ 'now'|date('Y-m-d\\TH:i') }}">
+                                    </div>
                                 </div>
+                                {% endif %}
                             </div>
                             <div class="modal-footer">
                                 <a href="#" class="btn btn-link link-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</a>
-                                <input type="submit" class="btn btn-primary" value="{{ 'Submit'|trans }}">
+                                <input type="submit" class="btn btn-primary" value="{{ 'Submit'|trans }}"{% if pay_gateways|length == 0 %} disabled{% endif %}>
                             </div>
                             </form>
                         </div>
                         </div>
+                        <script>
+                            function onMarkPaidGatewayChange(select) {
+                                var row = document.getElementById('mark-paid-transaction-row');
+                                var code = select.options[select.selectedIndex].dataset.code;
+                                row.style.display = code === 'Custom' ? '' : 'none';
+                            }
+                            var gatewaySelect = document.getElementById('mark-paid-gateway');
+                            if (gatewaySelect) {
+                                onMarkPaidGatewayChange(gatewaySelect);
+                            }
+                        </script>
                         {% endif %}
 
                         {% if invoice.status == 'paid' %}
                         <a class="btn btn-primary"
-                            {{ fb_api_link({href: 'invoice/refund'|api_url(query: {'id': invoice.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'invoice'|url}) }}>
+                            {{ fb_api_link({href: 'invoice/refund'|api_url(query: {'id': invoice.id}), modal: {type: 'confirm', title: 'Refund the full remaining amount?'|trans}, redirect: 'invoice'|url}) }}>
                             <svg class="icon" width="24" height="24">
                                 <use href="#receipt-refund" />
                             </svg>
                             <span>{{ 'Refund'|trans }}</span>
                         </a>
+                        <a href="#" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#refundModal">
+                            <span>{{ 'Partial refund'|trans }}</span>
+                        </a>
+                        <div class="modal fade" id="refundModal" tabindex="-1" aria-labelledby="refundModalLabel" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <form class="modal-content" method="post" action="{{ 'invoice/refund'|api_url }}" {{ fb_api_form({redirect: 'invoice'|url}) }}>
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="refundModalLabel">{{ 'Partial refund'|trans }}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
+                            </div>
+                            <div class="modal-body">
+                                <input type="hidden" name="id" value="{{ invoice.id }}">
+                                <p class="text-secondary">
+                                    {{ 'Refund selected lines, up to the quantities still remaining from earlier refunds.'|trans }}
+                                </p>
+                                {% for i, item in invoice.lines %}
+                                <div class="row g-2 align-items-center mb-2">
+                                    <label class="col-7 col-form-label text-truncate" for="refund-item-{{ item.id }}">{{ item.title }}</label>
+                                    <div class="col-5">
+                                        <input class="form-control" type="number" id="refund-item-{{ item.id }}" name="items[{{ item.id }}]" value="{{ item.remaining_quantity|default(item.quantity) }}" min="0" max="{{ item.remaining_quantity|default(item.quantity) }}">
+                                    </div>
+                                </div>
+                                {% endfor %}
+                                <div>
+                                    <label class="form-label" for="refund-note">{{ 'Note'|trans }}</label>
+                                    <input class="form-control" type="text" name="note" id="refund-note">
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <a href="#" class="btn btn-link link-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</a>
+                                <input type="submit" class="btn btn-primary" value="{{ 'Refund'|trans }}">
+                            </div>
+                            </form>
+                        </div>
+                        </div>
+                        {% endif %}
+                        {% if invoice.issued and (invoice.status == 'unpaid' or invoice.status == 'paid') and not invoice.credit_note_for_invoice_id %}
+                        <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#debitModal">
+                            <svg class="icon" width="24" height="24">
+                                <use href="#receipt" />
+                            </svg>
+                            <span>{{ 'Debit'|trans }}</span>
+                        </a>
+                        <div class="modal fade" id="debitModal" tabindex="-1" aria-labelledby="debitModalLabel" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <form class="modal-content" method="post" action="{{ 'invoice/debit'|api_url }}" {{ fb_api_form({redirect: 'invoice'|url}) }}>
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="debitModalLabel">{{ 'Issue debit note'|trans }}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
+                            </div>
+                            <div class="modal-body">
+                                <input type="hidden" name="id" value="{{ invoice.id }}">
+                                <p class="text-secondary">
+                                    {{ 'Add charges the original invoice missed. A separate payable debit note is issued; the original is left untouched.'|trans }}
+                                </p>
+                                {% for n in 0..2 %}
+                                <div class="row g-2 align-items-center mb-2">
+                                    <div class="col-6">
+                                        <input class="form-control" type="text" name="items[{{ n }}][title]" placeholder="{{ 'Title'|trans }}">
+                                    </div>
+                                    <div class="col-3">
+                                        <input class="form-control" type="text" name="items[{{ n }}][price]" placeholder="{{ 'Price'|trans }}">
+                                    </div>
+                                    <div class="col-2">
+                                        <input class="form-control text-center" type="number" name="items[{{ n }}][quantity]" value="1" min="1" max="1000">
+                                    </div>
+                                    <div class="col-1 text-center">
+                                        <input class="form-check-input m-0 align-middle" type="checkbox" name="items[{{ n }}][taxed]" value="1" title="{{ 'Tax'|trans }}">
+                                    </div>
+                                </div>
+                                {% endfor %}
+                                <div>
+                                    <label class="form-label" for="debit-note">{{ 'Note'|trans }}</label>
+                                    <input class="form-control" type="text" name="note" id="debit-note">
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <a href="#" class="btn btn-link link-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</a>
+                                <input type="submit" class="btn btn-primary" value="{{ 'Issue'|trans }}">
+                            </div>
+                            </form>
+                        </div>
+                        </div>
+                        {% endif %}
+                        {% if invoice.issued and invoice.status == 'unpaid' and not invoice.credit_note_for_invoice_id and not invoice.debit_note_for_invoice_id and not invoice.replaced_by_invoice_id %}
+                        <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#reissueModal">
+                            <svg class="icon" width="24" height="24">
+                                <use href="#refresh" />
+                            </svg>
+                            <span>{{ 'Reissue'|trans }}</span>
+                        </a>
+                        <div class="modal fade" id="reissueModal" tabindex="-1" aria-labelledby="reissueModalLabel" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <form class="modal-content" method="post" action="{{ 'invoice/reissue'|api_url }}" {{ fb_api_form({callback: 'onAfterInvoiceReissued'}) }}>
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="reissueModalLabel">{{ 'Reissue invoice'|trans }}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
+                            </div>
+                            <div class="modal-body">
+                                <input type="hidden" name="id" value="{{ invoice.id }}">
+                                <p class="text-secondary">
+                                    {{ 'Cancel this invoice and issue a replacement carrying its lines forward. The replacement takes the next invoice number; the original number stays with the canceled record.'|trans }}
+                                </p>
+                                <div class="mb-3">
+                                    <label class="form-label" for="reissue-reason">{{ 'Reason'|trans }}</label>
+                                    <input class="form-control" type="text" name="reason" id="reissue-reason" placeholder="{{ 'e.g. client asked to add another product'|trans }}">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label" for="reissue-product">{{ 'Also attach product (optional)'|trans }}</label>
+                                    <select class="form-select" name="product_id" id="reissue-product">
+                                        <option value="">{{ 'None'|trans }}</option>
+                                        {% for id, label in admin.product_get_pairs %}
+                                        <option value="{{ id }}">{{ label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="row g-2">
+                                    <div class="col-4">
+                                        <label class="form-label" for="reissue-quantity">{{ 'Quantity'|trans }}</label>
+                                        <input class="form-control text-center" type="number" name="quantity" id="reissue-quantity" value="1" min="1" max="1000">
+                                    </div>
+                                    <div class="col-4">
+                                        <label class="form-label" for="reissue-price">{{ 'Price'|trans }}</label>
+                                        <input class="form-control" type="text" name="price" id="reissue-price" placeholder="{{ 'Catalog'|trans }}">
+                                    </div>
+                                    <div class="col-4">
+                                        <label class="form-label" for="reissue-period">{{ 'Period'|trans }}</label>
+                                        <input class="form-control" type="text" name="period" id="reissue-period" placeholder="{{ '1M'|trans }}">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <a href="#" class="btn btn-link link-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</a>
+                                <input type="submit" class="btn btn-primary" value="{{ 'Reissue'|trans }}">
+                            </div>
+                            </form>
+                        </div>
+                        </div>
+                        <script>
+                            function onAfterInvoiceReissued(id) {
+                                window.location = "{{ 'invoice/manage/'|url }}/" + id;
+                            }
+                        </script>
                         {% endif %}
                         <a href='{{ "invoice/pdf/#{invoice.hash}"|url(area: 'client') }}' class="btn btn-primary" target="_blank">
                             <svg class="icon" width="24" height="24">
@@ -194,11 +431,11 @@
 
             {% embed 'partial_admin_related_section.html.twig' with {
                 title: 'Invoice Items'|trans,
-                subtitle: 'Review line items, pricing, taxation, and approval-ready billing content for this invoice.'|trans,
+                subtitle: 'Review line items, pricing, taxation, and issue-ready billing content for this invoice.'|trans,
                 card_class: 'mb-3'
             } %}
                 {% block section_content %}
-                {% if not invoice.approved %}
+                {% if invoice.editable %}
                 <form method="post" action="{{ 'invoice/update'|api_url }}" {{ fb_api_form({reload: true}) }}>
                     <table class="table card-table table-vcenter table-striped text-nowrap">
                         <thead>
@@ -278,12 +515,12 @@
                     <div class="card-footer d-flex justify-content-end gap-2">
                         <input type="hidden" name="id" value="{{ invoice.id }}">
                         <input type="submit" value="{{ 'Update'|trans }}" class="btn btn-primary">
-                        {% if not invoice.approved %}
-                        <button class="btn btn-success" type="submit" name="approve" value="1">
+                        {% if not invoice.issued %}
+                        <button class="btn btn-success" type="submit" name="issue" value="1">
                             <svg class="icon">
                                 <use href="#check" />
                             </svg>
-                            {{ 'Approve'|trans }}
+                            {{ 'Issue'|trans }}
                         </button>
                         {% endif %}
                     </div>
@@ -336,8 +573,165 @@
                 {% endblock %}
             {% endembed %}
 
-            {% set transactions = admin.invoice_transaction_get_list({ 'invoice_id': invoice.id, 'per_page': 100 }).list %}
-            {% if transactions|length > 0 %}
+            {% if invoice.editable and has_permission('order', 'manage') %}
+            <div class="card mt-4">
+                <div class="card-header">
+                    <div>
+                        <h3 class="card-title">{{ 'Attach product'|trans }}</h3>
+                        <p class="card-subtitle">{{ 'Create an order for this client and add it as an order line, so paying the invoice provisions the service. The updated invoice is re-sent to the client.'|trans }}</p>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form method="get" action="{{ ('invoice/manage/' ~ invoice.id)|url }}" class="row g-3 align-items-end mb-4">
+                        <div class="col-lg-9">
+                            <label class="form-label" for="attach-product-picker">{{ 'Product'|trans }}</label>
+                            <select class="form-select" name="attach_product_id" id="attach-product-picker" onchange="this.form.submit()">
+                                <option value="">{{ 'Select a product to configure…'|trans }}</option>
+                                {% for id, label in admin.product_get_pairs %}
+                                <option value="{{ id }}"{% if attach_product and attach_product.id == id %} selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-lg-3">
+                            <noscript><button type="submit" class="btn btn-secondary">{{ 'Configure'|trans }}</button></noscript>
+                        </div>
+                    </form>
+                    {% if attach_product %}
+                    {% set product_order = 'mod_service' ~ attach_product.type ~ '_order.html.twig' %}
+                    <form method="post" action="{{ 'invoice/attach_order'|api_url }}" {{ fb_api_form({reload: true}) }}>
+                        <input type="hidden" name="id" value="{{ invoice.id }}">
+                        <input type="hidden" name="product_id" value="{{ attach_product.id }}">
+                        <h5 class="mb-3">{{ attach_product.title }}</h5>
+                        <div class="row g-3 mb-3">
+                            <div class="col-lg-4">
+                                <label class="form-label" for="attach-quantity">{{ 'Quantity'|trans }}</label>
+                                <input class="form-control text-center" type="number" name="quantity" id="attach-quantity" value="1" min="1" max="1000">
+                            </div>
+                            <div class="col-lg-4">
+                                <label class="form-label" for="attach-price">{{ 'Price override'|trans }}</label>
+                                <div class="input-group">
+                                    <input class="form-control" type="text" name="price" id="attach-price" placeholder="{{ 'Catalog'|trans }}">
+                                    <span class="input-group-text">{{ invoice.currency|currency_symbol }}</span>
+                                </div>
+                                <small class="form-text">{{ 'Leave blank for the catalog price. Zero is allowed.'|trans }}</small>
+                            </div>
+                            {% if attach_product.pricing.type is defined and attach_product.pricing.type == 'recurrent' %}
+                            <div class="col-lg-4">
+                                <label class="form-label" for="attach-period">{{ 'Period'|trans }}</label>
+                                <select class="form-select" name="period" id="attach-period" required>
+                                    {% for val, pricing in attach_product.pricing.recurrent %}
+                                    <option value="{{ val }}">{{ pricing.title|e }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            {% endif %}
+                            <div class="col-lg-4">
+                                <label class="form-label" for="attach-group">{{ 'Parent order group'|trans }}</label>
+                                <input class="form-control" type="text" name="group_id" id="attach-group" autocomplete="off">
+                                <small class="form-text">{{ 'Only for addons: the group of the parent order.'|trans }}</small>
+                            </div>
+                        </div>
+                        {% if admin.system_template_exists({ 'file': product_order }) %}
+                        <div class="mb-3">
+                            {{ include(product_order, { product: attach_product }) }}
+                        </div>
+                        {% endif %}
+                        <div class="d-flex justify-content-end">
+                            <input type="submit" value="{{ 'Attach to invoice'|trans }}" class="btn btn-primary">
+                        </div>
+                    </form>
+                    {% endif %}
+                    <form method="post" action="{{ 'invoice/attach_order'|api_url }}" {{ fb_api_form({reload: true}) }}>
+                        <input type="hidden" name="id" value="{{ invoice.id }}">
+                        <div class="row g-3 align-items-end">
+                            <div class="col-lg-9">
+                                <label class="form-label" for="attach-order-id">{{ 'Or attach an existing pending order'|trans }}</label>
+                                <input class="form-control" type="number" name="order_id" id="attach-order-id" min="1" placeholder="{{ 'Order ID'|trans }}" required>
+                                <small class="form-text">{{ 'The order must belong to this client and not be on another invoice.'|trans }}</small>
+                            </div>
+                            <div class="col-lg-3">
+                                <button type="submit" class="btn btn-secondary">{{ 'Attach order'|trans }}</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if invoice.editable and has_permission('product', 'manage_promos') %}
+            <div class="card mt-4">
+                <div class="card-header">
+                    <div>
+                        <h3 class="card-title">{{ 'Promotions'|trans }}</h3>
+                        <p class="card-subtitle">{{ 'Apply an existing promotion to an order on this invoice. Recorded promotions appear in promo reporting and carry to renewals when recurring.'|trans }}</p>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if invoice.promo_applications|default([])|length > 0 %}
+                    <div class="table-responsive mb-3">
+                        <table class="table card-table table-vcenter table-striped text-nowrap">
+                            <thead>
+                                <tr>
+                                    <th>{{ 'Promotion'|trans }}</th>
+                                    <th>{{ 'Order'|trans }}</th>
+                                    <th class="text-end">{{ 'Discount'|trans }}</th>
+                                    <th class="w-1"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for application in invoice.promo_applications %}
+                                <tr>
+                                    <td>{{ application.title|default(application.code) }}</td>
+                                    <td>{% if application.order_id %}<a href='{{ "order/manage/#{application.order_id}"|url }}'>#{{ application.order_id }}</a>{% else %}-{% endif %}</td>
+                                    <td class="text-end">-{{ application.discount_amount|format_currency(invoice.currency ?? default_currency) }}</td>
+                                    <td>
+                                        {% if application.removable %}
+                                        <a class="btn btn-icon" href="{{ 'invoice/promo_remove'|api_url(query: { 'id': invoice.id, 'promo_id': application.promo_id, 'order_id': application.order_id }) }}"
+                                            {{ fb_api_link({modal: {type: 'confirm', title: 'Remove this promotion?'|trans}, reload: true}) }}>
+                                            <svg class="icon">
+                                                <use href="#trash" />
+                                            </svg>
+                                        </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-secondary">{{ 'No promotions have been applied to this invoice yet.'|trans }}</p>
+                    {% endif %}
+                    <form method="post" action="{{ 'invoice/promo_add'|api_url }}" {{ fb_api_form({reload: true}) }}>
+                        <input type="hidden" name="id" value="{{ invoice.id }}">
+                        <div class="row g-3 align-items-end">
+                            <div class="col-lg-5">
+                                <label class="form-label" for="promo-code">{{ 'Promo Code'|trans }}</label>
+                                <input class="form-control" type="text" name="promo_code" id="promo-code" autocomplete="off" required>
+                            </div>
+                            {% if invoice.orders|default([])|length > 1 %}
+                            <div class="col-lg-4">
+                                <label class="form-label" for="promo-order">{{ 'Order'|trans }}</label>
+                                <select class="form-select" name="order_id" id="promo-order" required>
+                                    {% for order in invoice.orders %}
+                                    <option value="{{ order.id }}">#{{ order.id }} - {{ order.title }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            {% elseif invoice.orders|default([])|length == 1 %}
+                            <input type="hidden" name="order_id" value="{{ invoice.orders[0].id }}">
+                            {% endif %}
+                            <div class="col-lg-3">
+                                <button type="submit" class="btn btn-primary">{{ 'Apply Promotion'|trans }}</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+
+            {% set transactions = admin.invoice_transaction_get_list({ 'invoice_id': invoice.id, 'per_page': 25, 'page': request.page }|merge(request)) %}
+            {% if transactions.total > 0 %}
             {% embed 'partial_admin_related_section.html.twig' with {
                 title: 'Transactions'|trans,
                 subtitle: 'Inspect payment attempts and gateway callbacks linked to this invoice.'|trans,
@@ -348,18 +742,18 @@
                 <table class="table card-table table-vcenter table-striped text-nowrap">
                     <thead>
                         <tr>
-                            <th>{{ 'ID'|trans }}</th>
-                            <th>{{ 'Type'|trans }}</th>
-                            <th>{{ 'Gateway'|trans }}</th>
-                            <th>{{ 'Amount'|trans }}</th>
-                            <th>{{ 'Status'|trans }}</th>
-                            <th>{{ 'Date'|trans }}</th>
+                            {{ include('partial_sortable_th.html.twig', { 'label': 'ID'|trans, 'sort_key': 'txn_id', 'url': 'invoice/manage/' ~ invoice.id, 'hash': '#tab-info', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                            {{ include('partial_sortable_th.html.twig', { 'label': 'Type'|trans, 'sort_key': 'type', 'url': 'invoice/manage/' ~ invoice.id, 'hash': '#tab-info', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                            {{ include('partial_sortable_th.html.twig', { 'label': 'Gateway'|trans, 'sort_key': 'gateway', 'url': 'invoice/manage/' ~ invoice.id, 'hash': '#tab-info', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                            {{ include('partial_sortable_th.html.twig', { 'label': 'Amount'|trans, 'sort_key': 'amount', 'url': 'invoice/manage/' ~ invoice.id, 'hash': '#tab-info', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                            {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'invoice/manage/' ~ invoice.id, 'hash': '#tab-info', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                            {{ include('partial_sortable_th.html.twig', { 'label': 'Date'|trans, 'sort_key': 'created_at', 'url': 'invoice/manage/' ~ invoice.id, 'hash': '#tab-info', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
                             <th class="w-1"></th>
                         </tr>
                     </thead>
 
                     <tbody>
-                        {% for i, tx in transactions %}
+                        {% for i, tx in transactions.list %}
                         <tr>
                             <td>{{ tx.txn_id }}</td>
                             <td>{{ tx.type }}</td>
@@ -379,6 +773,12 @@
                     </tbody>
                 </table>
                 {% endblock %}
+
+                {% block section_footer %}
+                    <div class="d-flex align-items-center">
+                        {{ include('partial_pagination.html.twig', { 'list': transactions, 'url': 'invoice/manage/' ~ invoice.id, 'hash': '#tab-info', 'split_footer_controls': true }) }}
+                    </div>
+                {% endblock %}
             {% endembed %}
             {% endif %}
         </div>
@@ -387,55 +787,64 @@
         <div class="tab-pane fade" id="tab-manage" role="tabpanel">
             <div class="card-body">
                 <form method="post" action="{{ 'invoice/update'|api_url }}" {{ fb_api_form({ reload: true}) }}>
+                    <fieldset {% if not invoice.editable %}disabled{% endif %}>
                     {% embed 'partial_admin_form_card.html.twig' with {
                         title: 'Invoice Status and Numbering'|trans,
-                        subtitle: 'Control the invoice lifecycle, approval state, and displayed numbering.'|trans,
+                        subtitle: 'Control the invoice lifecycle, issue state, and displayed numbering.'|trans,
                         card_class: 'mb-4'
                     } %}
                         {% import 'macro_functions.html.twig' as mf %}
                         {% block form_content %}
+                            {% if invoice.issued %}
+                            <div class="alert alert-info" role="alert">
+                                {{ 'This invoice is issued: its number, status, and issue state are locked. Correct it with a payment, credit note, reissue, or cancel (void) instead.'|trans }}
+                            </div>
+                            {% endif %}
                             <div class="row g-3">
                                 <div class="col-12">
                                     <label class="form-label d-block">{{ 'Status'|trans }}</label>
                                     <div class="d-flex flex-wrap gap-3">
                                         <label class="form-check">
-                                            <input class="form-check-input" id="radioStatusPaid" type="radio" name="status" value="paid"{% if invoice.status == 'paid' %} checked{% endif %}>
+                                            <input class="form-check-input" id="radioStatusPaid" type="radio" name="status" value="paid"{% if invoice.status == 'paid' %} checked{% endif %}{% if invoice.issued %} disabled{% endif %}>
                                             <span class="form-check-label">{{ 'Paid'|trans }}</span>
                                         </label>
                                         <label class="form-check">
-                                            <input class="form-check-input" id="radioStatusUnpaid" type="radio" name="status" value="unpaid"{% if invoice.status == 'unpaid' %} checked{% endif %}>
+                                            <input class="form-check-input" id="radioStatusUnpaid" type="radio" name="status" value="unpaid"{% if invoice.status == 'unpaid' %} checked{% endif %}{% if invoice.issued %} disabled{% endif %}>
                                             <span class="form-check-label">{{ 'Unpaid'|trans }}</span>
                                         </label>
                                         <label class="form-check">
-                                            <input class="form-check-input" id="radioStatusRefunded" type="radio" name="status" value="refunded"{% if invoice.status == 'refunded' %} checked{% endif %}>
+                                            <input class="form-check-input" id="radioStatusRefunded" type="radio" name="status" value="refunded"{% if invoice.status == 'refunded' %} checked{% endif %}{% if invoice.issued %} disabled{% endif %}>
                                             <span class="form-check-label">{{ 'Refunded'|trans }}</span>
                                         </label>
                                         <label class="form-check">
-                                            <input class="form-check-input" id="radioStatusCanceled" type="radio" name="status" value="canceled"{% if invoice.status == 'canceled' %} checked{% endif %}>
+                                            <input class="form-check-input" id="radioStatusCanceled" type="radio" name="status" value="canceled"{% if invoice.status == 'canceled' %} checked{% endif %}{% if invoice.issued %} disabled{% endif %}>
                                             <span class="form-check-label">{{ 'Canceled'|trans }}</span>
                                         </label>
                                     </div>
                                 </div>
                                 <div class="col-12">
-                                    <label class="form-label d-block">{{ 'Approved'|trans }}</label>
+                                    <label class="form-label d-block">{{ 'Issued'|trans }}</label>
                                     <div class="d-flex flex-wrap gap-3">
                                         <label class="form-check">
-                                            <input class="form-check-input" id="radioApprovedYes" type="radio" name="approved" value="1"{% if invoice.approved  %} checked{% endif %}>
+                                            <input class="form-check-input" id="radioIssuedYes" type="radio" name="issued" value="1"{% if invoice.issued %} checked{% endif %} disabled>
                                             <span class="form-check-label">{{ 'Yes'|trans }}</span>
                                         </label>
                                         <label class="form-check">
-                                            <input class="form-check-input" id="radioApprovedNo" type="radio" name="approved" value="0"{% if not invoice.approved %} checked{% endif %}>
+                                            <input class="form-check-input" id="radioIssuedNo" type="radio" name="issued" value="0"{% if not invoice.issued %} checked{% endif %} disabled>
                                             <span class="form-check-label">{{ 'No'|trans }}</span>
                                         </label>
                                     </div>
+                                    {% if not invoice.issued %}
+                                    <div class="form-text">{{ 'Issue the invoice with the Issue button below; the issue state cannot be changed here.'|trans }}</div>
+                                    {% endif %}
                                 </div>
                                 <div class="col-lg-6">
                                     <label class="form-label" for="invoice_serie">{{ 'Serie'|trans }}</label>
-                                    <input class="form-control" id="invoice_serie" type="text" name="serie" value="{{ invoice.serie }}">
+                                    <input class="form-control" id="invoice_serie" type="text" name="serie" value="{{ invoice.serie }}"{% if invoice.issued %} disabled{% endif %}>
                                 </div>
                                 <div class="col-lg-6">
                                     <label class="form-label" for="invoice_number">{{ 'Number'|trans }}</label>
-                                    <input class="form-control" id="invoice_number" type="text" name="nr" value="{{ invoice.nr }}">
+                                    <input class="form-control" id="invoice_number" type="text" name="nr" value="{{ invoice.nr }}"{% if invoice.issued %} disabled{% endif %}>
                                 </div>
                             </div>
                         {% endblock %}
@@ -462,11 +871,14 @@
                                 <div class="col-lg-6">
                                     <label class="form-label">{{ 'Payment Method'|trans }}</label>
                                     {{ mf.selectbox('gateway_id', guest.invoice_gateways({ "format": "pairs" }), invoice.gateway_id, 0, 'Select Payment Method'|trans) }}
+                                    {% if invoice.issued and invoice.status == 'unpaid' %}
+                                    <div class="form-text">{{ 'Issued invoices are locked: to record an offline payment, choose the payment method in Mark as Paid instead.'|trans }}</div>
+                                    {% endif %}
                                 </div>
                                 <div class="col-lg-6">
                                     <label class="form-label" for="created_at">{{ 'Date Created'|trans }}</label>
                                     <div class="input-icon">
-                                        <input class="form-control datepicker" id="created_at" value="{{ invoice.created_at|date('Y-m-d') }}" name="created_at">
+                                        <input class="form-control datepicker" data-clear-label="{{ 'Clear date'|trans }}" data-invalid-date-label="{{ 'Enter a valid date in YYYY-MM-DD format.'|trans }}" id="created_at" value="{{ invoice.created_at|date('Y-m-d') }}" name="created_at">
                                         <span class="input-icon-addon">
                                             <svg class="icon">
                                                 <use href="#calendar" />
@@ -477,7 +889,7 @@
                                 <div class="col-lg-6">
                                     <label class="form-label" for="due_at">{{ 'Date Due'|trans }}</label>
                                     <div class="input-icon">
-                                        <input class="form-control datepicker" id="due_at" value="{% if invoice.due_at %}{{ invoice.due_at|date('Y-m-d') }}{% endif %}" name="due_at">
+                                        <input class="form-control datepicker" data-clear-label="{{ 'Clear date'|trans }}" data-invalid-date-label="{{ 'Enter a valid date in YYYY-MM-DD format.'|trans }}" id="due_at" value="{% if invoice.due_at %}{{ invoice.due_at|date('Y-m-d') }}{% endif %}" name="due_at">
                                         <span class="input-icon-addon">
                                             <svg class="icon">
                                                 <use href="#calendar" />
@@ -488,7 +900,7 @@
                                 <div class="col-lg-6">
                                     <label class="form-label" for="paid_at">{{ 'Date Paid'|trans }}</label>
                                     <div class="input-icon">
-                                        <input class="form-control datepicker" id="paid_at" value="{% if invoice.paid_at %}{{ invoice.paid_at|date('Y-m-d') }}{% endif %}" name="paid_at">
+                                        <input class="form-control datepicker" data-clear-label="{{ 'Clear date'|trans }}" data-invalid-date-label="{{ 'Enter a valid date in YYYY-MM-DD format.'|trans }}" id="paid_at" value="{% if invoice.paid_at %}{{ invoice.paid_at|date('Y-m-d') }}{% endif %}" name="paid_at">
                                         <span class="input-icon-addon">
                                             <svg class="icon">
                                                 <use href="#calendar" />
@@ -507,7 +919,7 @@
                         {% import 'macro_functions.html.twig' as mf %}
                         {% block form_content %}
                             <label class="form-label" for="invoice_notes">{{ 'Notes'|trans }}</label>
-                            <textarea class="form-control" id="invoice_notes" name="notes" rows="6">{{ invoice.notes }}</textarea>
+                            <textarea data-bs-toggle="autosize" class="form-control" id="invoice_notes" name="notes" rows="6">{{ invoice.notes }}</textarea>
                         {% endblock %}
 
                         {% block form_actions %}
@@ -515,6 +927,7 @@
                         {% endblock %}
                     {% endembed %}
                     <input type="hidden" name="id" value="{{ invoice.id }}">
+                    </fieldset>
                 </form>
             </div>
         </div>
@@ -522,6 +935,7 @@
         <div class="tab-pane fade" id="tab-texts" role="tabpanel">
             <div class="card-body">
                 <form method="post" action="{{ 'invoice/update'|api_url }}" {{ fb_api_form({message: 'Invoice Updated'|trans}) }}>
+                    <fieldset {% if not invoice.editable %}disabled{% endif %}>
                     {% embed 'partial_admin_form_card.html.twig' with {
                         title: 'Invoice Text Content'|trans,
                         subtitle: 'Edit the rich text shown above and below the invoice item table.'|trans
@@ -545,125 +959,197 @@
                         {% endblock %}
                     {% endembed %}
                     <input type="hidden" name="id" value="{{ invoice.id }}">
+                    </fieldset>
                 </form>
             </div>
         </div>
 
-        <div class="tab-pane fade" id="tab-seller-credentials" role="tabpanel">
+        <div class="tab-pane fade" id="tab-history" role="tabpanel">
             <div class="card-body">
-                {% set seller = invoice.seller %}
-                <form method="post" action="{{ 'invoice/update'|api_url }}" {{ fb_api_form({message: 'Invoice Updated'|trans}) }}>
-                    {% embed 'partial_admin_form_card.html.twig' with {
-                        title: 'Company Details at Time of Purchase'|trans,
-                        subtitle: 'Review and correct the seller details stored on this invoice.'|trans
-                    } %}
-                        {% import 'macro_functions.html.twig' as mf %}
-                        {% block form_content %}
-                            <div class="row g-3">
-                                <div class="col-lg-6">
-                                    <label class="form-label" for="seller_company">{{ 'Company Name'|trans }}</label>
-                                    <input class="form-control" id="seller_company" type="text" name="seller_company" value="{{ seller.company }}">
-                                </div>
-                                <div class="col-lg-6">
-                                    <label class="form-label" for="seller_company_vat">{{ 'Company VAT'|trans }}</label>
-                                    <input class="form-control" id="seller_company_vat" type="text" name="seller_company_vat" value="{{ seller.company_vat }}">
-                                </div>
-                                <div class="col-lg-6">
-                                    <label class="form-label" for="seller_company_number">{{ 'Company Number'|trans }}</label>
-                                    <input class="form-control" id="seller_company_number" type="text" name="seller_company_number" value="{{ seller.company_number }}">
-                                </div>
-                                <div class="col-lg-6">
-                                    <label class="form-label" for="seller_phone">{{ 'Phone'|trans }}</label>
-                                    <input class="form-control" id="seller_phone" type="text" name="seller_phone" value="{{ seller.phone }}">
-                                </div>
-                                <div class="col-12">
-                                    <label class="form-label" for="seller_address">{{ 'Address'|trans }}</label>
-                                    <input class="form-control" id="seller_address" type="text" name="seller_address" value="{{ seller.address }}">
-                                </div>
-                                <div class="col-lg-6">
-                                    <label class="form-label" for="seller_email">{{ 'Email'|trans }}</label>
-                                    <input class="form-control" id="seller_email" type="text" name="seller_email" value="{{ seller.email }}">
-                                </div>
+                {% set journal = admin.invoice_journal({'id': invoice.id}) %}
+                {% set journal_labels = {
+                    'created': 'Created'|trans,
+                    'issued': 'Issued'|trans,
+                    'updated': 'Updated'|trans,
+                    'paid': 'Paid'|trans,
+                    'refunded': 'Refunded'|trans,
+                    'debited': 'Debited'|trans,
+                    'canceled': 'Canceled'|trans,
+                    'reissued': 'Reissued'|trans,
+                    'order_attached': 'Order attached'|trans,
+                    'reminder': 'Reminder'|trans,
+                } %}
+                <p class="text-secondary mb-3">{{ 'Every lifecycle transition is recorded here with a snapshot of the invoice at that time, including past buyer and seller details.'|trans }}</p>
+                <table class="table card-table table-vcenter table-striped text-nowrap">
+                    <thead>
+                        <tr>
+                            <th>{{ 'Event'|trans }}</th>
+                            <th>{{ 'Actor'|trans }}</th>
+                            <th>{{ 'Date'|trans }}</th>
+                            <th class="w-1"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in journal %}
+                        <tr>
+                            <td>{{ mf.text_badge(journal_labels[entry.type]|default(entry.type|replace({'_': ' '})|title), 'text-bg-secondary') }}</td>
+                            <td>
+                                {% if entry.admin_id %}
+                                <a href='{{ "staff/manage/#{entry.admin_id}"|url }}'>{{ 'Admin'|trans }} #{{ entry.admin_id }}</a>
+                                {% elseif entry.client_id %}
+                                <a href='{{ "client/manage/#{entry.client_id}"|url }}'>{{ 'Client'|trans }} #{{ entry.client_id }}</a>
+                                {% else %}
+                                {{ 'System'|trans }}
+                                {% endif %}
+                            </td>
+                            <td>{{ entry.created_at|format_datetime }}</td>
+                            <td class="d-flex gap-2">
+                                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#journalModal{{ entry.id }}">{{ 'View'|trans }}</button>
+                                <a href="{{ 'invoice/manage'|url }}/{{ invoice.id }}/journal-download?event={{ entry.id }}" class="btn btn-sm btn-outline-secondary">{{ 'JSON'|trans }}</a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4">
+                                <div class="alert alert-info mb-0" role="alert">{{ 'History for this invoice is still being prepared — check back later.'|trans }}</div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% for entry in journal %}
+                <div class="modal fade" id="journalModal{{ entry.id }}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">{{ journal_labels[entry.type]|default(entry.type|replace({'_': ' '})|title) }} - {{ entry.created_at|format_datetime }}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
                             </div>
-                        {% endblock %}
-
-                        {% block form_actions %}
-                            <button type="submit" class="btn btn-primary">{{ 'Update Company Details'|trans }}</button>
-                        {% endblock %}
-                    {% endembed %}
-                    <input type="hidden" name="id" value="{{ invoice.id }}">
-                </form>
-            </div>
-        </div>
-
-        <div class="tab-pane fade" id="tab-buyer-credentials" role="tabpanel">
-            <div class="card-body">
-                {% set buyer = invoice.buyer %}
-                <form method="post" action="{{ 'invoice/update'|api_url }}" {{ fb_api_form({message: 'Invoice Updated'|trans}) }}>
-                    {% embed 'partial_admin_form_card.html.twig' with {
-                        title: 'Client Details at Time of Purchase'|trans,
-                        subtitle: 'Review and correct the stored buyer details for this invoice.'|trans
-                    } %}
-                        {% import 'macro_functions.html.twig' as mf %}
-                        {% block form_content %}
-                            <div class="row g-3">
-                                <div class="col-lg-6">
-                                    <label class="form-label" for="buyer_first_name">{{ 'First Name'|trans }}</label>
-                                    <input class="form-control" id="buyer_first_name" type="text" name="buyer_first_name" value="{{ buyer.first_name }}">
-                                </div>
-                                <div class="col-lg-6">
-                                    <label class="form-label" for="buyer_last_name">{{ 'Last Name'|trans }}</label>
-                                    <input class="form-control" id="buyer_last_name" type="text" name="buyer_last_name" value="{{ buyer.last_name }}">
-                                </div>
-                                <div class="col-lg-6">
-                                    <label class="form-label" for="buyer_company">{{ 'Company Name'|trans }}</label>
-                                    <input class="form-control" id="buyer_company" type="text" name="buyer_company" value="{{ buyer.company }}">
-                                </div>
-                                <div class="col-lg-6">
-                                    <label class="form-label" for="buyer_company_vat">{{ 'Company VAT'|trans }}</label>
-                                    <input class="form-control" id="buyer_company_vat" type="text" name="buyer_company_vat" value="{{ buyer.company_vat }}">
-                                </div>
-                                <div class="col-lg-6">
-                                    <label class="form-label" for="buyer_company_number">{{ 'Company Number'|trans }}</label>
-                                    <input class="form-control" id="buyer_company_number" type="text" name="buyer_company_number" value="{{ buyer.company_number }}">
-                                </div>
-                                <div class="col-lg-6">
-                                    <label class="form-label" for="buyer_phone">{{ 'Phone'|trans }}</label>
-                                    <input class="form-control" id="buyer_phone" type="text" name="buyer_phone" value="{{ buyer.phone }}">
-                                </div>
-                                <div class="col-12">
-                                    <label class="form-label" for="buyer_address">{{ 'Address'|trans }}</label>
-                                    <input class="form-control" id="buyer_address" type="text" name="buyer_address" value="{{ buyer.address }}">
-                                </div>
-                                <div class="col-lg-4">
-                                    <label class="form-label" for="buyer_city">{{ 'City'|trans }}</label>
-                                    <input class="form-control" id="buyer_city" type="text" name="buyer_city" value="{{ buyer.city }}">
-                                </div>
-                                <div class="col-lg-4">
-                                    <label class="form-label" for="buyer_state">{{ 'State'|trans }}</label>
-                                    <input class="form-control" id="buyer_state" type="text" name="buyer_state" value="{{ buyer.state }}">
-                                </div>
-                                <div class="col-lg-4">
-                                    <label class="form-label" for="buyer_zip">{{ 'Zip'|trans }}</label>
-                                    <input class="form-control" id="buyer_zip" type="text" name="buyer_zip" value="{{ buyer.zip }}">
-                                </div>
-                                <div class="col-lg-6">
-                                    <label class="form-label">{{ 'Country'|trans }}</label>
-                                    {{ mf.selectbox('buyer_country', country_names(), buyer.country, 0, 'Country'|trans) }}
-                                </div>
-                                <div class="col-lg-6">
-                                    <label class="form-label" for="buyer_email">{{ 'Email'|trans }}</label>
-                                    <input class="form-control" id="buyer_email" type="text" name="buyer_email" value="{{ buyer.email }}">
-                                </div>
+                            <div class="modal-body">
+                                {% set snapshot = entry.snapshot ?? {} %}
+                                <dl class="row small mb-0">
+                                    {% if snapshot.serie_nr is defined and snapshot.serie_nr %}
+                                    <dt class="col-sm-4 text-muted">{{ 'Number'|trans }}</dt>
+                                    <dd class="col-sm-8">{{ snapshot.serie_nr }}</dd>
+                                    {% endif %}
+                                    {% if snapshot.status is defined and snapshot.status %}
+                                    <dt class="col-sm-4 text-muted">{{ 'Status'|trans }}</dt>
+                                    <dd class="col-sm-8">{{ snapshot.status }}</dd>
+                                    {% endif %}
+                                    {% if snapshot.total is defined and snapshot.total %}
+                                    <dt class="col-sm-4 text-muted">{{ 'Total'|trans }}</dt>
+                                    <dd class="col-sm-8">{{ snapshot.total|format_currency(invoice.currency ?? default_currency) }}</dd>
+                                    {% endif %}
+                                    {% if snapshot.subtotal is defined and snapshot.subtotal is not null %}
+                                    <dt class="col-sm-4 text-muted">{{ 'Subtotal'|trans }}</dt>
+                                    <dd class="col-sm-8">{{ snapshot.subtotal|format_currency(invoice.currency ?? default_currency) }}</dd>
+                                    {% endif %}
+                                    {% if snapshot.tax is defined and snapshot.tax is not null %}
+                                    <dt class="col-sm-4 text-muted">{{ 'Tax'|trans }}</dt>
+                                    <dd class="col-sm-8">{{ snapshot.tax|format_currency(invoice.currency ?? default_currency) }}</dd>
+                                    {% endif %}
+                                    {% if snapshot.paid_at is defined and snapshot.paid_at %}
+                                    <dt class="col-sm-4 text-muted">{{ 'Paid at'|trans }}</dt>
+                                    <dd class="col-sm-8">{{ snapshot.paid_at|format_datetime }}</dd>
+                                    {% endif %}
+                                    {% if snapshot.due_at is defined and snapshot.due_at %}
+                                    <dt class="col-sm-4 text-muted">{{ 'Due at'|trans }}</dt>
+                                    <dd class="col-sm-8">{{ snapshot.due_at|format_datetime }}</dd>
+                                    {% endif %}
+                                    {% if snapshot.gateway is defined and snapshot.gateway %}
+                                    <dt class="col-sm-4 text-muted">{{ 'Payment method'|trans }}</dt>
+                                    <dd class="col-sm-8">{{ snapshot.gateway }}</dd>
+                                    {% endif %}
+                                    {% if snapshot.offline is defined and snapshot.offline %}
+                                    <dt class="col-sm-4 text-muted">{{ 'Refund type'|trans }}</dt>
+                                    <dd class="col-sm-8">{{ mf.text_badge('Offline'|trans, 'text-bg-warning') }} {{ 'The amount was returned outside FOSSBilling; the credit note below is its paper trail.'|trans }}</dd>
+                                    {% endif %}
+                                    {% if snapshot.changed_fields is defined and snapshot.changed_fields %}
+                                    <dt class="col-sm-4 text-muted">{{ 'Changed fields'|trans }}</dt>
+                                    <dd class="col-sm-8">{{ snapshot.changed_fields|join(', ') }}</dd>
+                                    {% endif %}
+                                    {% if snapshot.reason is defined and snapshot.reason %}
+                                    <dt class="col-sm-4 text-muted">{{ 'Reason'|trans }}</dt>
+                                    <dd class="col-sm-8">{{ snapshot.reason }}</dd>
+                                    {% endif %}
+                                    {% if snapshot.replacement_id is defined and snapshot.replacement_id %}
+                                    <dt class="col-sm-4 text-muted">{{ 'Replacement invoice'|trans }}</dt>
+                                    <dd class="col-sm-8"><a href='{{ "invoice/manage/#{snapshot.replacement_id}"|url }}'>#{{ snapshot.replacement_id }}</a></dd>
+                                    {% endif %}
+                                    {% if snapshot.order_id is defined and snapshot.order_id %}
+                                    <dt class="col-sm-4 text-muted">{{ 'Order'|trans }}</dt>
+                                    <dd class="col-sm-8">#{{ snapshot.order_id }}</dd>
+                                    {% endif %}
+                                    {% if snapshot.credit_note_id is defined and snapshot.credit_note_id %}
+                                    <dt class="col-sm-4 text-muted">{{ 'Credit note'|trans }}</dt>
+                                    <dd class="col-sm-8"><a href='{{ "invoice/manage/#{snapshot.credit_note_id}"|url }}'>#{{ snapshot.credit_note_id }}</a></dd>
+                                    {% endif %}
+                                    {% if snapshot.debit_note_id is defined and snapshot.debit_note_id %}
+                                    <dt class="col-sm-4 text-muted">{{ 'Debit note'|trans }}</dt>
+                                    <dd class="col-sm-8"><a href='{{ "invoice/manage/#{snapshot.debit_note_id}"|url }}'>#{{ snapshot.debit_note_id }}</a></dd>
+                                    {% endif %}
+                                </dl>
+                                {% if snapshot.buyer is defined and snapshot.buyer %}
+                                {% set party = snapshot.buyer %}
+                                <h6 class="mt-3">{{ 'Buyer'|trans }}</h6>
+                                <dl class="row small mb-0">
+                                    <dt class="col-sm-4 text-muted">{{ 'Name'|trans }}</dt>
+                                    <dd class="col-sm-8">{{ party.first_name }} {{ party.last_name }}</dd>
+                                    {% if party.company|default('')|trim %}
+                                    <dt class="col-sm-4 text-muted">{{ 'Company'|trans }}</dt>
+                                    <dd class="col-sm-8">{{ party.company }}</dd>
+                                    {% endif %}
+                                    {% if party.company_vat|default('')|trim %}
+                                    <dt class="col-sm-4 text-muted">{{ 'Company VAT'|trans }}</dt>
+                                    <dd class="col-sm-8">{{ party.company_vat }}</dd>
+                                    {% endif %}
+                                    {% if party.address|default('')|trim %}
+                                    <dt class="col-sm-4 text-muted">{{ 'Address'|trans }}</dt>
+                                    <dd class="col-sm-8">{{ party.address }}{% if party.city|default('')|trim %}, {{ party.city }}{% endif %}{% if party.zip|default('')|trim %} {{ party.zip }}{% endif %}{% if party.country|default('')|trim %}, {{ party.country }}{% endif %}</dd>
+                                    {% endif %}
+                                    {% if party.phone|default('')|trim %}
+                                    <dt class="col-sm-4 text-muted">{{ 'Phone'|trans }}</dt>
+                                    <dd class="col-sm-8">{{ party.phone }}</dd>
+                                    {% endif %}
+                                    {% if party.email|default('')|trim %}
+                                    <dt class="col-sm-4 text-muted">{{ 'Email'|trans }}</dt>
+                                    <dd class="col-sm-8">{{ party.email }}</dd>
+                                    {% endif %}
+                                </dl>
+                                {% endif %}
+                                {% if snapshot.seller is defined and snapshot.seller %}
+                                {% set party = snapshot.seller %}
+                                <h6 class="mt-3">{{ 'Seller'|trans }}</h6>
+                                <dl class="row small mb-0">
+                                    <dt class="col-sm-4 text-muted">{{ 'Company Name'|trans }}</dt>
+                                    <dd class="col-sm-8">{{ party.company }}</dd>
+                                    {% if party.company_vat|default('')|trim %}
+                                    <dt class="col-sm-4 text-muted">{{ 'Company VAT'|trans }}</dt>
+                                    <dd class="col-sm-8">{{ party.company_vat }}</dd>
+                                    {% endif %}
+                                    {% if party.address|default('')|trim %}
+                                    <dt class="col-sm-4 text-muted">{{ 'Address'|trans }}</dt>
+                                    <dd class="col-sm-8">{{ party.address }}</dd>
+                                    {% endif %}
+                                    {% if party.phone|default('')|trim %}
+                                    <dt class="col-sm-4 text-muted">{{ 'Phone'|trans }}</dt>
+                                    <dd class="col-sm-8">{{ party.phone }}</dd>
+                                    {% endif %}
+                                    {% if party.email|default('')|trim %}
+                                    <dt class="col-sm-4 text-muted">{{ 'Email'|trans }}</dt>
+                                    <dd class="col-sm-8">{{ party.email }}</dd>
+                                    {% endif %}
+                                </dl>
+                                {% endif %}
                             </div>
-                        {% endblock %}
-
-                        {% block form_actions %}
-                            <button type="submit" class="btn btn-primary">{{ 'Update Client Details'|trans }}</button>
-                        {% endblock %}
-                    {% endembed %}
-                    <input type="hidden" name="id" value="{{ invoice.id }}">
-                </form>
+                            <div class="modal-footer">
+                                <a href="{{ 'invoice/manage'|url }}/{{ invoice.id }}/journal-download?event={{ entry.id }}" class="btn btn-outline-secondary">{{ 'Download JSON'|trans }}</a>
+                                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">{{ 'Close'|trans }}</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
             </div>
         </div>
     </div>
@@ -680,7 +1166,7 @@
         </div>
         <div class="d-grid gap-2">
             <button class="btn btn-primary" type="button" onclick="window.print()">{{ 'Print'|trans }}</button>
-            {% if invoice.status == 'unpaid' %}
+            {% if invoice.deletable %}
                 <a class="btn btn-danger" href="{{ 'invoice/delete'|api_url(query: { 'id': invoice.id }) }}"
                     {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'invoice'|url}) }}>
                     {{ 'Delete'|trans }}

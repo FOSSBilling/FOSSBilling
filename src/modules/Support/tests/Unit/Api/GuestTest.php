@@ -87,6 +87,29 @@ test('ticket create message too short exception', function (): void {
     expect(fn (): string => $guestApi->ticket_create($data))->toThrow(FOSSBilling\Core\Exception\BaseException::class);
 });
 
+test('ticket create consumes the rate limit before validating the email', function (): void {
+    $guestApi = apiEndpoint(new Box\Mod\Support\Api\Guest());
+    $di = container();
+
+    $rateLimiterMock = Mockery::mock(FOSSBilling\Core\Security\RateLimiter::class);
+    $rateLimiterMock->shouldReceive('consumeOrThrow')
+        ->once()
+        ->with('guest_ticket_create', '');
+
+    $di['rate_limiter'] = $rateLimiterMock;
+    $guestApi->setDi($di);
+
+    $data = [
+        'name' => 'Name',
+        'email' => 'not-an-email',
+        'subject' => 'Subject',
+        'content' => 'Message',
+    ];
+
+    expect(fn (): string => $guestApi->ticket_create($data))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Email address is invalid');
+});
+
 test('ticket get', function (): void {
     $guestApi = apiEndpoint(new Box\Mod\Support\Api\Guest());
     $serviceMock = guestSupportServiceMock();

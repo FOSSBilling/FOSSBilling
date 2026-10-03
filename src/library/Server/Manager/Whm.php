@@ -223,7 +223,7 @@ class Server_Manager_Whm extends Server_Manager
         $acc = $result->acct[0];
 
         $new = clone $account;
-        $new->setSuspended($acc->suspended);
+        $new->setSuspended((bool) $acc->suspended);
         $new->setDomain($acc->domain);
         $new->setUsername($acc->user);
         $new->setIp($acc->ip);

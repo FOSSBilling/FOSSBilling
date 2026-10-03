@@ -45,7 +45,7 @@ class KbArticleCategory implements ArrayInterface, TimestampInterface
      * @var Collection<int, KbArticle>
      */
     #[ORM\OneToMany(mappedBy: 'category', targetEntity: KbArticle::class)]
-    #[ORM\OrderBy(['title' => 'ASC'])]
+    #[ORM\OrderBy(['title' => \SortDirection::Ascending])]
     private Collection $articles;
 
     public function __construct()

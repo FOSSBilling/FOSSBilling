@@ -83,4 +83,23 @@ final class Credential
 
         return $sessionId;
     }
+
+    public static function signCallbackParams(string|int $gatewayId, string|int $invoiceId): string
+    {
+        return hash_hmac('sha256', $gatewayId . '|' . $invoiceId, (string) Config::getProperty('info.salt'));
+    }
+
+    /**
+     * Verify a signature produced by signCallbackParams().
+     */
+    public static function verifyCallbackSignature(string|int $gatewayId, string|int $invoiceId, mixed $signature): bool
+    {
+        if (!is_string($signature) || $signature === '') {
+            return false;
+        }
+
+        $expectedSignature = self::signCallbackParams($gatewayId, $invoiceId);
+
+        return hash_equals($expectedSignature, $signature);
+    }
 }

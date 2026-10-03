@@ -170,7 +170,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         return true;
     }
 
-    public function action_delete(Order $order): bool
+    public function action_delete(Order $order, bool $forceDelete = false): bool
     {
         try {
             $model = $this->_getOrderService($order);
@@ -180,7 +180,14 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
             return true;
         }
 
-        $this->callOnAdapter($model, 'delete');
+        try {
+            $this->callOnAdapter($model, 'delete');
+        } catch (\Exception $e) {
+            if (!$forceDelete) {
+                throw $e;
+            }
+            $this->di['logger']->info('Remote delete failed during forced delete, removing local service: {message}', ['message' => $e->getMessage()]);
+        }
         $this->di['em']->remove($model);
         $this->di['em']->flush();
 

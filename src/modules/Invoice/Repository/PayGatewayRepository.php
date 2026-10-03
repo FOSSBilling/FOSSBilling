@@ -14,6 +14,7 @@ namespace Box\Mod\Invoice\Repository;
 use Box\Mod\Invoice\Entity\PayGateway;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
+use FOSSBilling\Core\SortOptions;
 
 class PayGatewayRepository extends EntityRepository
 {
@@ -39,7 +40,7 @@ class PayGatewayRepository extends EntityRepository
      * Build a QueryBuilder for the gateway search/listing.
      *
      * @param array $data optional filters: search, enabled, allow_single,
-     *                    allow_recurrent, test_mode
+     *                    allow_recurrent, test_mode, sort, direction
      */
     public function getSearchQueryBuilder(array $data = []): QueryBuilder
     {
@@ -75,7 +76,19 @@ class PayGatewayRepository extends EntityRepository
                 ->setParameter('test_mode', \FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($testMode));
         }
 
-        $qb->orderBy('pg.gateway', 'ASC');
+        $sort = SortOptions::fromArray($data, [
+            'id' => 'pg.id',
+            'title' => 'pg.name',
+            'code' => 'pg.gateway',
+        ]);
+        if ($sort->isSorted()) {
+            $qb->orderBy($sort->expression, $sort->direction);
+            if ($sort->expression !== 'pg.id') {
+                $qb->addOrderBy('pg.id', $sort->direction);
+            }
+        } else {
+            $qb->orderBy('pg.gateway', \SortDirection::Ascending);
+        }
 
         return $qb;
     }

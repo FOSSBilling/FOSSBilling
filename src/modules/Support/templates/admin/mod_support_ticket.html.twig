@@ -41,7 +41,7 @@
                     <li class="nav-item" role="presentation">
                         <a class="nav-link" href="#tab-notes" data-bs-toggle="tab" role="tab">{{ 'Notes'|trans }} {% if ticket.notes is defined and ticket.notes|length > 0 %}({{ ticket.notes|length }}){% endif %}</a>
                     </li>
-                    {% if ticket.author.role == 'client' %}
+                    {% if ticket.author.role|default('') == 'client' %}
                     <li class="nav-item" role="presentation">
                         <a class="nav-link" href="#tab-support" data-bs-toggle="tab" role="tab">{{ 'Client Tickets'|trans }}</a>
                     </li>
@@ -65,7 +65,7 @@
                             <table class="table card-table table-vcenter table-striped text-nowrap">
                                 <tbody>
                                     <tr><td class="w-25">{{ 'Ticket ID'|trans }}</td><td>#{{ ticket.id }}</td></tr>
-                                    {% if ticket.author.role == 'client' %}
+                                    {% if ticket.author.role|default('') == 'client' %}
                                         <tr><td>{{ 'Client'|trans }}</td><td><a href='{{ "client/manage/#{ticket.author.id }"|url }}'>{{ ticket.author.name }}</a> (#{{ ticket.author.id }})</td></tr>
                                     {% else %}
                                         <tr>
@@ -106,7 +106,7 @@
                             {{ 'Set Task Complete'|trans }}
                         </a>
                         {% endif %}
-                        {% if ticket.author.role == 'guest' and ticket.hash is defined %}
+                        {% if ticket.author.role|default('') == 'guest' and ticket.hash is defined %}
                         <a class="btn btn-secondary" href='{{ "support/ticket/#{ticket.hash}"|url(area: 'client') }}' target="_blank">
                             <svg class="icon"><use href="#eye" /></svg>
                             {{ 'View as Author'|trans }}
@@ -133,16 +133,16 @@
                     <div class="card-body pt-0">
                         <div class="conversation">
                             {% for i, message in ticket.messages %}
-                            <div class="card {% if loop.first %}mt-2 {% endif %}mb-3 col-md-10 {% if ticket.first.author.email != message.author.email %}offset-md-2{% endif %} {{ loop.last ? 'last' : '' }}" id="{{ message.id == request_message ? 'direct-msg' : '' }}">
+                            <div class="card {% if loop.first %}mt-2 {% endif %}mb-3 col-md-10 {% if ticket.first.author.email|default('') != message.author.email|default('') %}offset-md-2{% endif %} {{ loop.last ? 'last' : '' }}" id="{{ message.id == request_message ? 'direct-msg' : '' }}">
                                 <div class="card-header" style="cursor: pointer;">
-                                    {{ avatar(message.author.email, 24, 'avatar avatar-xs me-2') }}
-                                    {{ message.author.name }}
+                                    {{ avatar(message.author.email|default(''), 24, 'avatar avatar-xs me-2') }}
+                                    {{ message.author.name|default('') }}
                                     <a class="ms-2" href='{{ "support/ticket/#{ticket.id}/message/#{message.id}"|url }}'>
                                         <svg class="icon">
                                             <use href="#link" />
                                         </svg>
                                     </a>
-                                    {% if message.author.role == 'admin' %}
+                                    {% if message.author.role|default('') == 'admin' %}
                                     <a class="ms-2" href="#" title="{{ 'Edit'|trans }}" data-bs-toggle="modal" data-bs-target="#editMessage{{ message.id }}" onclick="event.stopPropagation()">
                                         <svg class="icon">
                                             <use href="#edit" />
@@ -318,7 +318,7 @@
                     } %}
                         {% block form_content %}
                             <label class="form-label" for="textareaNote">{{ 'Note'|trans }}</label>
-                            <textarea class="form-control" id="textareaNote" name="note" rows="3" required></textarea>
+                            <textarea data-bs-toggle="autosize" class="form-control" id="textareaNote" name="note" rows="3" required></textarea>
                             <input type="hidden" name="ticket_id" value="{{ ticket.id }}">
                         {% endblock %}
 

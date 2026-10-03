@@ -13,12 +13,20 @@ class Registrar_Exception extends FOSSBilling\Core\Exception\BaseException
     /**
      * Creates a new translated exception, using the FOSSBilling\Core\Exception\BaseException class.
      *
-     * @param string     $message   error message
-     * @param array|null $variables translation variables
-     * @param int        $code      the exception code
+     * @param string         $message   error message
+     * @param array|int|null $variables translation variables, or the exception code
+     *                                  (third-party adapters have been observed
+     *                                  passing the code here, so tolerate it
+     *                                  rather than fataling and hiding the error)
+     * @param int            $code      the exception code
      */
-    public function __construct(string $message, ?array $variables = null, int $code = 0)
+    public function __construct(string $message, array|int|null $variables = null, int $code = 0)
     {
+        if (is_int($variables)) {
+            $code = $variables;
+            $variables = null;
+        }
+
         parent::__construct($message, $variables, $code, true);
     }
 }

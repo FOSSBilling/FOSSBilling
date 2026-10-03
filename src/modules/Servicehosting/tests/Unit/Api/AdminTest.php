@@ -422,6 +422,11 @@ test('testServerDelete', function (): void {
     $serviceHostingRepo2 = Mockery::mock(ServiceHostingRepository::class);
     $serviceHostingRepo2->shouldReceive('count')->once()->with(['serviceHostingServer' => $serverEntity2])->andReturn(1);
 
+    $serviceMock
+        ->shouldReceive('getServerUsageStats')
+        ->once()->with($serverEntity2)
+        ->andReturn(['total' => 1, 'active' => 1, 'orphaned' => 0, 'orphanedIds' => []]);
+
     $emMock2 = serviceHostingAdminEmWith([
         ServiceHostingServer::class => $serverRepo2,
         ServiceHosting::class => $serviceHostingRepo2,
@@ -436,6 +441,99 @@ test('testServerDelete', function (): void {
     $this->expectExceptionCode(704);
 
     $api->server_delete($data);
+});
+
+test('testServerDeleteOrphanWithoutForce', function (): void {
+    $api = apiEndpoint(new Admin());
+    $serverEntity = new ServiceHostingServer();
+
+    $serverRepo = Mockery::mock(ServiceHostingServerRepository::class);
+    $serverRepo->shouldReceive('find')->andReturn($serverEntity);
+
+    $serviceHostingRepo = Mockery::mock(ServiceHostingRepository::class);
+    $serviceHostingRepo->shouldReceive('count')->once()->with(['serviceHostingServer' => $serverEntity])->andReturn(2);
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock
+        ->shouldReceive('getServerUsageStats')->once()->with($serverEntity)
+        ->andReturn(['total' => 2, 'active' => 0, 'orphaned' => 2, 'orphanedIds' => [1, 2]]);
+    $serviceMock->shouldNotReceive('detachOrphanedServerUsages');
+    $serviceMock->shouldNotReceive('deleteServer');
+
+    $emMock = serviceHostingAdminEmWith([
+        ServiceHostingServer::class => $serverRepo,
+        ServiceHosting::class => $serviceHostingRepo,
+    ]);
+
+    $di = container();
+    $di['em'] = $emMock;
+    $api->setDi($di);
+    $api->setService($serviceMock);
+
+    expect(fn (): bool => $api->server_delete(['id' => 1]))->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'orphaned');
+});
+
+test('testServerDeleteOrphanWithForce', function (): void {
+    $api = apiEndpoint(new Admin());
+    $serverEntity = new ServiceHostingServer();
+
+    $serverRepo = Mockery::mock(ServiceHostingServerRepository::class);
+    $serverRepo->shouldReceive('find')->andReturn($serverEntity);
+
+    $serviceHostingRepo = Mockery::mock(ServiceHostingRepository::class);
+    $serviceHostingRepo->shouldReceive('count')->once()->with(['serviceHostingServer' => $serverEntity])->andReturn(2);
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock
+        ->shouldReceive('getServerUsageStats')->once()->with($serverEntity)
+        ->andReturn(['total' => 2, 'active' => 0, 'orphaned' => 2, 'orphanedIds' => [1, 2]]);
+    $serviceMock
+        ->shouldReceive('detachOrphanedServerUsages')->once()->with($serverEntity)->andReturn(2);
+    $serviceMock
+        ->shouldReceive('deleteServer')->once()->with($serverEntity)->andReturn(true);
+
+    $emMock = serviceHostingAdminEmWith([
+        ServiceHostingServer::class => $serverRepo,
+        ServiceHosting::class => $serviceHostingRepo,
+    ]);
+
+    $di = container();
+    $di['em'] = $emMock;
+    $api->setDi($di);
+    $api->setService($serviceMock);
+
+    expect($api->server_delete(['id' => 1, 'force' => true]))->toBeTrue();
+});
+
+test('testServerDeleteActiveStillBlockedWithForce', function (): void {
+    $api = apiEndpoint(new Admin());
+    $serverEntity = new ServiceHostingServer();
+
+    $serverRepo = Mockery::mock(ServiceHostingServerRepository::class);
+    $serverRepo->shouldReceive('find')->andReturn($serverEntity);
+
+    $serviceHostingRepo = Mockery::mock(ServiceHostingRepository::class);
+    $serviceHostingRepo->shouldReceive('count')->once()->with(['serviceHostingServer' => $serverEntity])->andReturn(2);
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock
+        ->shouldReceive('getServerUsageStats')->once()->with($serverEntity)
+        ->andReturn(['total' => 2, 'active' => 1, 'orphaned' => 1, 'orphanedIds' => [2]]);
+    $serviceMock->shouldNotReceive('detachOrphanedServerUsages');
+    $serviceMock->shouldNotReceive('deleteServer');
+
+    $emMock = serviceHostingAdminEmWith([
+        ServiceHostingServer::class => $serverRepo,
+        ServiceHosting::class => $serviceHostingRepo,
+    ]);
+
+    $di = container();
+    $di['em'] = $emMock;
+    $api->setDi($di);
+    $api->setService($serviceMock);
+
+    expect(fn (): bool => $api->server_delete(['id' => 1, 'force' => true]))
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'used by 1 service hostings');
 });
 
 test('testServerUpdate', function (): void {
@@ -608,6 +706,68 @@ test('testHpDelete', function (): void {
         // If the function throws an exception, the test should fail
         $this->fail('Exception thrown: ' . $e->getMessage());
     }
+});
+
+test('testHpDeleteOrphanWithForce', function (): void {
+    $api = apiEndpoint(new Admin());
+    $hpEntity = new ServiceHostingHp();
+
+    $hpRepo = Mockery::mock(ServiceHostingHpRepository::class);
+    $hpRepo->shouldReceive('find')->andReturn($hpEntity);
+
+    $serviceHostingRepo = Mockery::mock(ServiceHostingRepository::class);
+    $serviceHostingRepo->shouldReceive('count')->once()->with(['serviceHostingHp' => $hpEntity])->andReturn(1);
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock
+        ->shouldReceive('getHpUsageStats')->once()->with($hpEntity)
+        ->andReturn(['total' => 1, 'active' => 0, 'orphaned' => 1, 'orphanedIds' => [5]]);
+    $serviceMock
+        ->shouldReceive('detachOrphanedHpUsages')->once()->with($hpEntity)->andReturn(1);
+    $serviceMock
+        ->shouldReceive('deleteHp')->once()->with($hpEntity)->andReturn(true);
+
+    $emMock = serviceHostingAdminEmWith([
+        ServiceHostingHp::class => $hpRepo,
+        ServiceHosting::class => $serviceHostingRepo,
+    ]);
+
+    $di = container();
+    $di['em'] = $emMock;
+    $api->setDi($di);
+    $api->setService($serviceMock);
+
+    expect($api->hp_delete(['id' => 1, 'force' => true]))->toBeTrue();
+});
+
+test('testHpDeleteOrphanWithoutForce', function (): void {
+    $api = apiEndpoint(new Admin());
+    $hpEntity = new ServiceHostingHp();
+
+    $hpRepo = Mockery::mock(ServiceHostingHpRepository::class);
+    $hpRepo->shouldReceive('find')->andReturn($hpEntity);
+
+    $serviceHostingRepo = Mockery::mock(ServiceHostingRepository::class);
+    $serviceHostingRepo->shouldReceive('count')->once()->with(['serviceHostingHp' => $hpEntity])->andReturn(1);
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock
+        ->shouldReceive('getHpUsageStats')->once()->with($hpEntity)
+        ->andReturn(['total' => 1, 'active' => 0, 'orphaned' => 1, 'orphanedIds' => [5]]);
+    $serviceMock->shouldNotReceive('detachOrphanedHpUsages');
+    $serviceMock->shouldNotReceive('deleteHp');
+
+    $emMock = serviceHostingAdminEmWith([
+        ServiceHostingHp::class => $hpRepo,
+        ServiceHosting::class => $serviceHostingRepo,
+    ]);
+
+    $di = container();
+    $di['em'] = $emMock;
+    $api->setDi($di);
+    $api->setService($serviceMock);
+
+    expect(fn (): bool => $api->hp_delete(['id' => 1]))->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'orphaned');
 });
 
 test('testHpGet', function (): void {

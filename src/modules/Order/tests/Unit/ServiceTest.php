@@ -45,6 +45,19 @@ function orderServiceCreateInvoiceModel(int $id): Invoice
     return $invoice;
 }
 
+final class OrderServiceTestEventRecorder
+{
+    /** @var list<FOSSBilling\Core\Events\Event> */
+    public array $events = [];
+
+    public function dispatch(FOSSBilling\Core\Events\Event $event): FOSSBilling\Core\Events\Event
+    {
+        $this->events[] = $event;
+
+        return $event;
+    }
+}
+
 test('counter returns status counts', function (): void {
     $service = new Service();
 
@@ -70,11 +83,103 @@ test('counter returns status counts', function (): void {
     expect($result)->toHaveKey(Order::STATUS_CANCELED);
 });
 
-test('onAfterAdminOrderActivate fires template', function (): void {
-    $params = ['id' => 1];
+test('batch order serialization does not expose admin-only client details', function (): void {
+    $client = createEntity(Box\Mod\Client\Entity\Client::class);
+    setEntityId($client, 7);
+    $admin = createEntity(Box\Mod\Staff\Entity\Admin::class);
 
-    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Event::class);
-    $eventMock->shouldReceive('getParameters')->atLeast()->once()->andReturn($params);
+    $clientRepository = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
+    $clientRepository->shouldReceive('findBy')->once()->with(['id' => [7]])->andReturn([$client]);
+
+    // Realistic non-admin client payload: the fields the admin order list UI needs
+    // (see mod_order_index.html.twig and partial_dashboard_orders_card.html.twig,
+    // which read order.client.email/first_name/last_name). An ID-only reference
+    // would break those templates, so the boundary must keep general fields while
+    // excluding admin-only ones.
+    $generalClient = [
+        'id' => 7,
+        'email' => 'jane@example.com',
+        'first_name' => 'Jane',
+        'last_name' => 'Doe',
+    ];
+
+    $clientService = Mockery::mock(Box\Mod\Client\Service::class);
+    $clientService->shouldReceive('toApiArray')
+        ->once()
+        ->withArgs(fn (...$args) => count($args) === 2 && $args[0] === $client && $args[1] === false)
+        ->andReturn($generalClient);
+
+    $productService = Mockery::mock(Box\Mod\Product\Service::class);
+    $productService->shouldReceive('getProductPluginMap')->once()->with([3])->andReturn([]);
+
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('fetchAllAssociative')
+        ->once()
+        ->with('SELECT * FROM client_order WHERE id IN (?)', [11])
+        ->andReturn([[
+            'id' => 11,
+            'client_id' => 7,
+            'product_id' => 3,
+            'config' => '{}',
+            'price' => 10,
+            'quantity' => 1,
+            'title' => 'Example order',
+        ]]);
+    $connection->shouldReceive('fetchAllAssociative')->twice()->andReturn([]);
+
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->andReturn($connection);
+    $em->shouldReceive('getRepository')
+        ->once()
+        ->with(Box\Mod\Client\Entity\Client::class)
+        ->andReturn($clientRepository);
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(fn (string $name) => match ($name) {
+        'client' => $clientService,
+        'product' => $productService,
+    });
+
+    $service = new Service();
+    $service->setDi($di);
+
+    $result = $service->getBatchForApi([11], $admin);
+
+    // The batch boundary forwards no identity, so the embedded client must be
+    // the general (non-admin) representation: UI fields present, admin-only
+    // fields absent.
+    expect($result[0]['client'])->toBe($generalClient);
+    foreach (['aid', 'status', 'notes', 'ip', 'billing_email', 'group', 'client_groups', 'api_token'] as $adminOnlyKey) {
+        expect($result[0]['client'])->not->toHaveKey($adminOnlyKey);
+    }
+});
+
+test('batch client serialization excludes admin-only fields on the real path', function (): void {
+    $client = createEntity(Box\Mod\Client\Entity\Client::class);
+    $client->setEmail('jane@example.com');
+    $client->setFirstName('Jane');
+    $client->setLastName('Doe');
+
+    $di = container();
+    $di['mod_config'] = $di->protect(fn (string $name) => []);
+
+    $clientService = new Box\Mod\Client\Service();
+    $clientService->setDi($di);
+
+    $admin = createEntity(Box\Mod\Staff\Entity\Admin::class);
+    $general = $clientService->toApiArray($client, false);
+    $adminView = $clientService->toApiArray($client, false, $admin);
+
+    expect($general['email'])->toBe('jane@example.com');
+    foreach (['aid', 'status', 'notes', 'ip', 'billing_email'] as $adminOnlyKey) {
+        expect($general)->not->toHaveKey($adminOnlyKey);
+        expect($adminView)->toHaveKey($adminOnlyKey);
+    }
+});
+
+test('typed order activate listener fires template', function (): void {
+    $eventMock = new Box\Mod\Order\Event\AfterAdminOrderActivateEvent(1);
 
     $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);
     $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once()->andReturn(true);
@@ -104,17 +209,13 @@ test('onAfterAdminOrderActivate fires template', function (): void {
         }
     });
 
-    $eventMock->shouldReceive('getDi')->atLeast()->once()->andReturn($di);
     $serviceMock->setDi($di);
 
-    $serviceMock->onAfterAdminOrderActivate($eventMock);
+    $serviceMock->sendOrderActivationEmail($eventMock);
 });
 
-test('onAfterAdminOrderActivate logs exceptions', function (): void {
-    $params = ['id' => 1];
-
-    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Event::class);
-    $eventMock->shouldReceive('getParameters')->atLeast()->once()->andReturn($params);
+test('typed order activate listener logs exceptions', function (): void {
+    $eventMock = new Box\Mod\Order\Event\AfterAdminOrderActivateEvent(1);
 
     $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);
     $emailServiceMock->shouldReceive('sendTemplate')
@@ -146,17 +247,13 @@ test('onAfterAdminOrderActivate logs exceptions', function (): void {
         }
     });
 
-    $eventMock->shouldReceive('getDi')->atLeast()->once()->andReturn($di);
     $serviceMock->setDi($di);
 
-    $serviceMock->onAfterAdminOrderActivate($eventMock);
+    $serviceMock->sendOrderActivationEmail($eventMock);
 });
 
-test('onAfterAdminOrderRenew fires template', function (): void {
-    $params = ['id' => 1];
-
-    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Event::class);
-    $eventMock->shouldReceive('getParameters')->atLeast()->once()->andReturn($params);
+test('typed order renew listener fires template', function (): void {
+    $eventMock = new Box\Mod\Order\Event\AfterAdminOrderRenewEvent(1);
 
     $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);
     $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once()->andReturn(true);
@@ -187,16 +284,12 @@ test('onAfterAdminOrderRenew fires template', function (): void {
     });
 
     $serviceMock->setDi($di);
-    $eventMock->shouldReceive('getDi')->atLeast()->once()->andReturn($di);
 
-    $serviceMock->onAfterAdminOrderRenew($eventMock);
+    $serviceMock->sendOrderRenewalEmail($eventMock);
 });
 
-test('onAfterAdminOrderRenew fires template without an admin session', function (): void {
-    $params = ['id' => 1];
-
-    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Event::class);
-    $eventMock->shouldReceive('getParameters')->once()->andReturn($params);
+test('typed order renew listener fires template without an admin session', function (): void {
+    $eventMock = new Box\Mod\Order\Event\AfterAdminOrderRenewEvent(1);
 
     $order = createEntity(Order::class, ['id' => 1]);
     $orderArr = [
@@ -230,16 +323,12 @@ test('onAfterAdminOrderRenew fires template without an admin session', function 
     });
 
     $serviceMock->setDi($di);
-    $eventMock->shouldReceive('getDi')->once()->andReturn($di);
 
-    $serviceMock->onAfterAdminOrderRenew($eventMock);
+    $serviceMock->sendOrderRenewalEmail($eventMock);
 });
 
-test('onAfterAdminOrderRenew logs exceptions', function (): void {
-    $params = ['id' => 1];
-
-    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Event::class);
-    $eventMock->shouldReceive('getParameters')->atLeast()->once()->andReturn($params);
+test('typed order renew listener logs exceptions', function (): void {
+    $eventMock = new Box\Mod\Order\Event\AfterAdminOrderRenewEvent(1);
 
     $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);
     $emailServiceMock->shouldReceive('sendTemplate')
@@ -272,16 +361,12 @@ test('onAfterAdminOrderRenew logs exceptions', function (): void {
     });
 
     $serviceMock->setDi($di);
-    $eventMock->shouldReceive('getDi')->atLeast()->once()->andReturn($di);
 
-    $serviceMock->onAfterAdminOrderRenew($eventMock);
+    $serviceMock->sendOrderRenewalEmail($eventMock);
 });
 
-test('onAfterAdminOrderSuspend fires template', function (): void {
-    $params = ['id' => 1];
-
-    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Event::class);
-    $eventMock->shouldReceive('getParameters')->atLeast()->once()->andReturn($params);
+test('typed order suspend listener fires template', function (): void {
+    $eventMock = new Box\Mod\Order\Event\AfterAdminOrderSuspendEvent(1);
 
     $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);
     $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once()->andReturn(true);
@@ -312,16 +397,12 @@ test('onAfterAdminOrderSuspend fires template', function (): void {
     });
 
     $serviceMock->setDi($di);
-    $eventMock->shouldReceive('getDi')->atLeast()->once()->andReturn($di);
 
-    $serviceMock->onAfterAdminOrderSuspend($eventMock);
+    $serviceMock->sendOrderSuspensionEmail($eventMock);
 });
 
-test('onAfterAdminOrderSuspend fires template without an admin session', function (): void {
-    $params = ['id' => 1];
-
-    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Event::class);
-    $eventMock->shouldReceive('getParameters')->once()->andReturn($params);
+test('typed order suspend listener fires template without an admin session', function (): void {
+    $eventMock = new Box\Mod\Order\Event\AfterAdminOrderSuspendEvent(1);
 
     $order = createEntity(Order::class, ['id' => 1]);
     $orderArr = [
@@ -355,16 +436,12 @@ test('onAfterAdminOrderSuspend fires template without an admin session', functio
     });
 
     $serviceMock->setDi($di);
-    $eventMock->shouldReceive('getDi')->once()->andReturn($di);
 
-    $serviceMock->onAfterAdminOrderSuspend($eventMock);
+    $serviceMock->sendOrderSuspensionEmail($eventMock);
 });
 
-test('onAfterAdminOrderSuspend logs exceptions', function (): void {
-    $params = ['id' => 1];
-
-    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Event::class);
-    $eventMock->shouldReceive('getParameters')->atLeast()->once()->andReturn($params);
+test('typed order suspend listener logs exceptions', function (): void {
+    $eventMock = new Box\Mod\Order\Event\AfterAdminOrderSuspendEvent(1);
 
     $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);
     $emailServiceMock->shouldReceive('sendTemplate')
@@ -397,16 +474,12 @@ test('onAfterAdminOrderSuspend logs exceptions', function (): void {
     });
 
     $serviceMock->setDi($di);
-    $eventMock->shouldReceive('getDi')->atLeast()->once()->andReturn($di);
 
-    $serviceMock->onAfterAdminOrderSuspend($eventMock);
+    $serviceMock->sendOrderSuspensionEmail($eventMock);
 });
 
-test('onAfterAdminOrderUnsuspend fires template', function (): void {
-    $params = ['id' => 1];
-
-    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Event::class);
-    $eventMock->shouldReceive('getParameters')->atLeast()->once()->andReturn($params);
+test('typed order unsuspend listener fires template', function (): void {
+    $eventMock = new Box\Mod\Order\Event\AfterAdminOrderUnsuspendEvent(1);
 
     $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);
     $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once()->andReturn(true);
@@ -437,16 +510,12 @@ test('onAfterAdminOrderUnsuspend fires template', function (): void {
     });
 
     $serviceMock->setDi($di);
-    $eventMock->shouldReceive('getDi')->atLeast()->once()->andReturn($di);
 
-    $serviceMock->onAfterAdminOrderUnsuspend($eventMock);
+    $serviceMock->sendOrderUnsuspensionEmail($eventMock);
 });
 
-test('onAfterAdminOrderUnsuspend fires template without an admin session', function (): void {
-    $params = ['id' => 1];
-
-    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Event::class);
-    $eventMock->shouldReceive('getParameters')->once()->andReturn($params);
+test('typed order unsuspend listener fires template without an admin session', function (): void {
+    $eventMock = new Box\Mod\Order\Event\AfterAdminOrderUnsuspendEvent(1);
 
     $order = createEntity(Order::class, ['id' => 1]);
     $orderArr = [
@@ -480,16 +549,12 @@ test('onAfterAdminOrderUnsuspend fires template without an admin session', funct
     });
 
     $serviceMock->setDi($di);
-    $eventMock->shouldReceive('getDi')->once()->andReturn($di);
 
-    $serviceMock->onAfterAdminOrderUnsuspend($eventMock);
+    $serviceMock->sendOrderUnsuspensionEmail($eventMock);
 });
 
-test('onAfterAdminOrderUnsuspend logs exceptions', function (): void {
-    $params = ['id' => 1];
-
-    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Event::class);
-    $eventMock->shouldReceive('getParameters')->atLeast()->once()->andReturn($params);
+test('typed order unsuspend listener logs exceptions', function (): void {
+    $eventMock = new Box\Mod\Order\Event\AfterAdminOrderUnsuspendEvent(1);
 
     $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);
     $emailServiceMock->shouldReceive('sendTemplate')
@@ -522,16 +587,12 @@ test('onAfterAdminOrderUnsuspend logs exceptions', function (): void {
     });
 
     $serviceMock->setDi($di);
-    $eventMock->shouldReceive('getDi')->atLeast()->once()->andReturn($di);
 
-    $serviceMock->onAfterAdminOrderUnsuspend($eventMock);
+    $serviceMock->sendOrderUnsuspensionEmail($eventMock);
 });
 
-test('onAfterAdminOrderCancel fires template', function (): void {
-    $params = ['id' => 1];
-
-    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Event::class);
-    $eventMock->shouldReceive('getParameters')->atLeast()->once()->andReturn($params);
+test('typed order cancel listener fires template', function (): void {
+    $eventMock = new Box\Mod\Order\Event\AfterAdminOrderCancelEvent(1);
 
     $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);
     $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once()->andReturn(true);
@@ -561,16 +622,12 @@ test('onAfterAdminOrderCancel fires template', function (): void {
     });
 
     $serviceMock->setDi($di);
-    $eventMock->shouldReceive('getDi')->atLeast()->once()->andReturn($di);
 
-    $serviceMock->onAfterAdminOrderCancel($eventMock);
+    $serviceMock->sendOrderCancellationEmail($eventMock);
 });
 
-test('onAfterAdminOrderCancel fires template without an admin session', function (): void {
-    $params = ['id' => 1];
-
-    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Event::class);
-    $eventMock->shouldReceive('getParameters')->once()->andReturn($params);
+test('typed order cancel listener fires template without an admin session', function (): void {
+    $eventMock = new Box\Mod\Order\Event\AfterAdminOrderCancelEvent(1);
 
     $order = createEntity(Order::class, ['id' => 1]);
     $orderArr = [
@@ -602,16 +659,12 @@ test('onAfterAdminOrderCancel fires template without an admin session', function
     });
 
     $serviceMock->setDi($di);
-    $eventMock->shouldReceive('getDi')->once()->andReturn($di);
 
-    $serviceMock->onAfterAdminOrderCancel($eventMock);
+    $serviceMock->sendOrderCancellationEmail($eventMock);
 });
 
-test('onAfterAdminOrderCancel logs exceptions', function (): void {
-    $params = ['id' => 1];
-
-    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Event::class);
-    $eventMock->shouldReceive('getParameters')->atLeast()->once()->andReturn($params);
+test('typed order cancel listener logs exceptions', function (): void {
+    $eventMock = new Box\Mod\Order\Event\AfterAdminOrderCancelEvent(1);
 
     $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);
     $emailServiceMock->shouldReceive('sendTemplate')
@@ -643,16 +696,12 @@ test('onAfterAdminOrderCancel logs exceptions', function (): void {
     });
 
     $serviceMock->setDi($di);
-    $eventMock->shouldReceive('getDi')->atLeast()->once()->andReturn($di);
 
-    $serviceMock->onAfterAdminOrderCancel($eventMock);
+    $serviceMock->sendOrderCancellationEmail($eventMock);
 });
 
-test('onAfterAdminOrderUncancel fires template', function (): void {
-    $params = ['id' => 1];
-
-    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Event::class);
-    $eventMock->shouldReceive('getParameters')->atLeast()->once()->andReturn($params);
+test('typed order uncancel listener fires template', function (): void {
+    $eventMock = new Box\Mod\Order\Event\AfterAdminOrderUncancelEvent(1);
 
     $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);
     $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once()->andReturn(true);
@@ -683,16 +732,12 @@ test('onAfterAdminOrderUncancel fires template', function (): void {
     });
 
     $serviceMock->setDi($di);
-    $eventMock->shouldReceive('getDi')->atLeast()->once()->andReturn($di);
 
-    $serviceMock->onAfterAdminOrderUncancel($eventMock);
+    $serviceMock->sendOrderUncancelEmail($eventMock);
 });
 
-test('onAfterAdminOrderUncancel fires template without an admin session', function (): void {
-    $params = ['id' => 1];
-
-    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Event::class);
-    $eventMock->shouldReceive('getParameters')->once()->andReturn($params);
+test('typed order uncancel listener fires template without an admin session', function (): void {
+    $eventMock = new Box\Mod\Order\Event\AfterAdminOrderUncancelEvent(1);
 
     $order = createEntity(Order::class, ['id' => 1]);
     $orderArr = [
@@ -726,16 +771,12 @@ test('onAfterAdminOrderUncancel fires template without an admin session', functi
     });
 
     $serviceMock->setDi($di);
-    $eventMock->shouldReceive('getDi')->once()->andReturn($di);
 
-    $serviceMock->onAfterAdminOrderUncancel($eventMock);
+    $serviceMock->sendOrderUncancelEmail($eventMock);
 });
 
-test('onAfterAdminOrderUncancel logs exceptions', function (): void {
-    $params = ['id' => 1];
-
-    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Event::class);
-    $eventMock->shouldReceive('getParameters')->atLeast()->once()->andReturn($params);
+test('typed order uncancel listener logs exceptions', function (): void {
+    $eventMock = new Box\Mod\Order\Event\AfterAdminOrderUncancelEvent(1);
 
     $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);
     $emailServiceMock->shouldReceive('sendTemplate')
@@ -768,9 +809,8 @@ test('onAfterAdminOrderUncancel logs exceptions', function (): void {
     });
 
     $serviceMock->setDi($di);
-    $eventMock->shouldReceive('getDi')->atLeast()->once()->andReturn($di);
 
-    $serviceMock->onAfterAdminOrderUncancel($eventMock);
+    $serviceMock->sendOrderUncancelEmail($eventMock);
 });
 
 test('getOrderService returns core service', function (): void {
@@ -1238,8 +1278,6 @@ test('orderStatusAdd records status history', function (): void {
 });
 
 test('getSoonExpiringActiveOrders executes query', function (): void {
-    $order = createEntity(Order::class);
-
     $connectionMock = Mockery::mock(Doctrine\DBAL\Connection::class);
     $connectionMock->shouldReceive('fetchAllAssociative')->atLeast()->once()->andReturn([[], []]);
     $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
@@ -1256,10 +1294,8 @@ test('getSoonExpiringActiveOrders executes query', function (): void {
     $serviceMock->getSoonExpiringActiveOrders();
 });
 
-test('getSoonExpiringActiveOrdersQuery builds expected SQL and bindings', function (): void {
+test('getSoonExpiringActiveOrdersQuery excludes orders with scheduled cancellations', function (): void {
     $randId = 1;
-
-    $orderStatus = createEntity(Box\Mod\Order\Entity\OrderStatus::class);
 
     $systemService = Mockery::mock(Box\Mod\System\Service::class);
     $systemService->shouldReceive('getParamValue')->atLeast()->once()->andReturn($randId);
@@ -1273,8 +1309,6 @@ test('getSoonExpiringActiveOrdersQuery builds expected SQL and bindings', functi
     $svc = new Service();
     $svc->setDi($di);
 
-    $order = createEntity(Order::class);
-
     $data = ['client_id' => $randId];
     $result = $svc->getSoonExpiringActiveOrdersQuery($data);
 
@@ -1286,6 +1320,13 @@ test('getSoonExpiringActiveOrdersQuery builds expected SQL and bindings', functi
                 AND co.period IS NOT NULL
                 AND co.expires_at IS NOT NULL
                 AND i.id IS NULL
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM client_order_meta cancellation_meta
+                    WHERE cancellation_meta.client_order_id = co.id
+                    AND cancellation_meta.name = :cancellation_meta_name
+                    AND cancellation_meta.value = :cancellation_meta_value
+                )
                 /* Pair non-executed renewal items with paid invoices to skip renewals already queued for activation. */
                 AND NOT EXISTS (
                     SELECT 1
@@ -1301,6 +1342,8 @@ test('getSoonExpiringActiveOrdersQuery builds expected SQL and bindings', functi
     $expectedBindings = [
         'client_id' => $randId,
         'unpaid_invoice_status' => Invoice::STATUS_UNPAID,
+        'cancellation_meta_name' => Service::META_CANCEL_AT_PERIOD_END,
+        'cancellation_meta_value' => '1',
         'pending_item_type' => Box\Mod\Invoice\Entity\InvoiceItem::TYPE_ORDER,
         'pending_item_task' => Box\Mod\Invoice\Entity\InvoiceItem::TASK_RENEW,
         'pending_item_status' => Box\Mod\Invoice\Entity\InvoiceItem::STATUS_EXECUTED,
@@ -1314,6 +1357,54 @@ test('getSoonExpiringActiveOrdersQuery builds expected SQL and bindings', functi
     expect($result[1])->toBeArray();
     expect($result[0])->toEqual($expectedQuery);
     expect($result[1])->toEqual($expectedBindings);
+});
+
+test('getSoonExpiringActiveOrders excludes orders with scheduled cancellation meta', function (): void {
+    $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $connection->executeStatement('CREATE TABLE client_order (id INTEGER PRIMARY KEY, status TEXT, invoice_option TEXT, period TEXT, expires_at TEXT, unpaid_invoice_id INTEGER, client_id INTEGER)');
+    $connection->executeStatement('CREATE TABLE invoice (id INTEGER PRIMARY KEY, status TEXT)');
+    $connection->executeStatement('CREATE TABLE invoice_item (id INTEGER PRIMARY KEY, rel_id INTEGER, invoice_id INTEGER, type TEXT, task TEXT, status TEXT)');
+    $connection->executeStatement('CREATE TABLE client_order_meta (id INTEGER PRIMARY KEY, client_order_id INTEGER, name TEXT, value TEXT)');
+
+    $expiresAt = (new DateTimeImmutable('tomorrow'))->format('Y-m-d H:i:s');
+    $eligibleOrder = [
+        'status' => Order::STATUS_ACTIVE,
+        'invoice_option' => 'issue-invoice',
+        'period' => '1M',
+        'expires_at' => $expiresAt,
+        'unpaid_invoice_id' => null,
+        'client_id' => 1,
+    ];
+    $connection->insert('client_order', ['id' => 1] + $eligibleOrder);
+    $connection->insert('client_order', ['id' => 2] + $eligibleOrder);
+    $connection->insert('client_order_meta', [
+        'client_order_id' => 2,
+        'name' => Service::META_CANCEL_AT_PERIOD_END,
+        'value' => '1',
+    ]);
+
+    $systemService = Mockery::mock(Box\Mod\System\Service::class);
+    $systemService->shouldReceive('getParamValue')->with('invoice_issue_days_before_expire', 14)->andReturn(14);
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getConnection')->andReturn($connection);
+    $emMock->shouldIgnoreMissing();
+
+    $di = container();
+    $di['em'] = $emMock;
+    $di['mod_service'] = $di->protect(fn (string $name): Mockery\MockInterface => match (strtolower($name)) {
+        'system' => $systemService,
+        default => Mockery::mock()->shouldIgnoreMissing(),
+    });
+
+    $svc = new Service();
+    $svc->setDi($di);
+
+    $result = $svc->getSoonExpiringActiveOrders();
+    $ids = array_map(static fn (array $row): int => (int) ($row['id'] ?? 0), $result);
+
+    expect($ids)->toContain(1)
+        ->and($ids)->not->toContain(2);
 });
 
 test('getRelatedOrderIdByType returns id', function (): void {
@@ -1640,6 +1731,48 @@ test('getSearchQuery keeps client scope when action required filter is used', fu
     expect($bindings['client_id'])->toBe(42);
 });
 
+test('getSearchQuery applies allowlisted sort', function (): void {
+    $di = container();
+
+    $svc = new Service();
+    $svc->setDi($di);
+
+    [$query] = $svc->getSearchQuery(['sort' => 'title', 'direction' => 'desc']);
+    expect($query)->toContain('ORDER BY co.title DESC, co.id DESC');
+
+    [$pkQuery] = $svc->getSearchQuery(['sort' => 'id', 'direction' => 'desc']);
+    expect($pkQuery)->toContain('ORDER BY co.id DESC');
+    expect($pkQuery)->not->toContain('co.id DESC, co.id DESC');
+
+    [$defaultQuery] = $svc->getSearchQuery([]);
+    expect($defaultQuery)->toContain('ORDER BY co.id DESC');
+
+    [$invalidQuery] = $svc->getSearchQuery(['sort' => 'config; DROP TABLE client_order', 'direction' => 'desc']);
+    expect($invalidQuery)->toContain('ORDER BY co.id DESC');
+    expect($invalidQuery)->not->toContain('DROP TABLE');
+});
+
+test('getOrderStatusSearchQuery applies allowlisted sort', function (): void {
+    $di = container();
+
+    $svc = new Service();
+    $svc->setDi($di);
+
+    [$query] = $svc->getOrderStatusSearchQuery(['sort' => 'created_at']);
+    expect($query)->toContain('ORDER BY created_at ASC, id ASC');
+
+    [$pkQuery] = $svc->getOrderStatusSearchQuery(['sort' => 'id', 'direction' => 'desc']);
+    expect($pkQuery)->toContain('ORDER BY id DESC');
+    expect($pkQuery)->not->toContain('id DESC, id DESC');
+
+    [$defaultQuery] = $svc->getOrderStatusSearchQuery([]);
+    expect($defaultQuery)->toContain('ORDER BY id DESC');
+
+    [$invalidQuery] = $svc->getOrderStatusSearchQuery(['sort' => 'notes; DELETE FROM client_order_status']);
+    expect($invalidQuery)->toContain('ORDER BY id DESC');
+    expect($invalidQuery)->not->toContain('DELETE FROM');
+});
+
 test('createOrder throws when no order currency is set', function (): void {
     $modelClient = createEntity(Box\Mod\Client\Entity\Client::class);
 
@@ -1684,8 +1817,7 @@ test('createOrder throws when out of stock', function (): void {
         ->with($modelProduct, Mockery::any())
         ->andReturn(false);
 
-    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class);
-    $eventMock->shouldReceive('fire')->atLeast()->once();
+    $eventDispatcher = new OrderServiceTestEventRecorder();
 
     $di = container();
     $di['mod_service'] = $di->protect(function ($serviceName) use ($currencyServiceMock, $cartServiceMock) {
@@ -1696,13 +1828,26 @@ test('createOrder throws when out of stock', function (): void {
             return $cartServiceMock;
         }
     });
-    $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $eventDispatcher;
 
     $svc = new Service();
     $svc->setDi($di);
 
-    expect(fn () => $svc->createOrder($modelClient, $modelProduct, []))
+    $input = [
+        'quantity' => 2,
+        'config' => ['password' => 'provisioning-secret'],
+        'transactionId' => 'payment-secret',
+        'gateway_id' => 7,
+        'promo_code' => 'private-code',
+        'meta' => ['access_token' => 'private-token'],
+    ];
+
+    expect(fn () => $svc->createOrder($modelClient, $modelProduct, $input))
         ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'Product 1 is out of stock.');
+
+    expect($eventDispatcher->events)->toHaveCount(1)
+        ->and($eventDispatcher->events[0])->toBeInstanceOf(Box\Mod\Order\Event\BeforeAdminOrderCreateEvent::class)
+        ->and($eventDispatcher->events[0]->input)->toBe(['quantity' => 2]);
 });
 
 test('createOrder throws when group id missing for addon', function (): void {
@@ -1725,8 +1870,7 @@ test('createOrder throws when group id missing for addon', function (): void {
         ->with($modelProduct, Mockery::any())
         ->andReturn(true);
 
-    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class);
-    $eventMock->shouldReceive('fire')->atLeast()->once();
+    $eventDispatcher = new OrderServiceTestEventRecorder();
 
     $di = container();
     $di['mod_service'] = $di->protect(function ($serviceName) use ($currencyServiceMock, $cartServiceMock) {
@@ -1737,7 +1881,7 @@ test('createOrder throws when group id missing for addon', function (): void {
             return $cartServiceMock;
         }
     });
-    $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $eventDispatcher;
 
     $svc = new Service();
     $svc->setDi($di);
@@ -1765,8 +1909,7 @@ test('createOrder throws when parent order not found', function (): void {
         ->with($modelProduct, Mockery::any())
         ->andReturn(true);
 
-    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class);
-    $eventMock->shouldReceive('fire')->atLeast()->once();
+    $eventDispatcher = new OrderServiceTestEventRecorder();
 
     $di = container();
     $di['mod_service'] = $di->protect(function ($serviceName) use ($currencyServiceMock, $cartServiceMock) {
@@ -1777,7 +1920,7 @@ test('createOrder throws when parent order not found', function (): void {
             return $cartServiceMock;
         }
     });
-    $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $eventDispatcher;
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldAllowMockingProtectedMethods();
@@ -1811,11 +1954,11 @@ test('createOrder creates order', function (): void {
         ->with($modelProduct, Mockery::any())
         ->andReturn(true);
 
-    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class);
-    $eventMock->shouldReceive('fire')->atLeast()->once();
+    $eventDispatcher = new OrderServiceTestEventRecorder();
 
     $productServiceMock = Mockery::mock(Box\Mod\Servicecustom\Service::class);
     $pricingServiceMock = Mockery::mock(Box\Mod\Product\Service::class);
+    $pricingServiceMock->shouldReceive('resolvePromoReference')->byDefault()->andReturn(null);
     $pricingServiceMock->shouldReceive('getProductOrderLineConfig')->never();
     $pricingServiceMock->shouldReceive('reserveStockForOrder')->once();
 
@@ -1875,7 +2018,7 @@ test('createOrder creates order', function (): void {
             return $productServiceMock;
         }
     });
-    $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['em'] = $emMock;
     $di['period'] = $di->protect(fn (): Mockery\MockInterface => $periodMock);
     $di['logger'] = new FOSSBilling\Core\Logging\Logger();
@@ -1885,7 +2028,12 @@ test('createOrder creates order', function (): void {
 
     $result = $svc->createOrder($modelClient, $modelProduct, ['period' => '1Y', 'price' => '10', 'notes' => 'test']);
 
-    expect($result)->toEqual($newId);
+    expect($result)->toEqual($newId)
+        ->and($eventDispatcher->events)->toHaveCount(2)
+        ->and($eventDispatcher->events[0])->toBeInstanceOf(Box\Mod\Order\Event\BeforeAdminOrderCreateEvent::class)
+        ->and($eventDispatcher->events[0]->productId)->toBe(1)
+        ->and($eventDispatcher->events[1])->toBeInstanceOf(Box\Mod\Order\Event\AfterAdminOrderCreateEvent::class)
+        ->and($eventDispatcher->events[1]->orderId)->toBe($newId);
 });
 
 test('createOrder sets form id from product', function (): void {
@@ -1908,11 +2056,11 @@ test('createOrder sets form id from product', function (): void {
         ->with($modelProduct, Mockery::any())
         ->andReturn(true);
 
-    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class);
-    $eventMock->shouldReceive('fire')->atLeast()->once();
+    $eventDispatcher = new OrderServiceTestEventRecorder();
 
     $productServiceMock = Mockery::mock(Box\Mod\Servicecustom\Service::class);
     $pricingServiceMock = Mockery::mock(Box\Mod\Product\Service::class);
+    $pricingServiceMock->shouldReceive('resolvePromoReference')->byDefault()->andReturn(null);
     $pricingServiceMock->shouldReceive('getProductOrderLineConfig')->never();
     $pricingServiceMock->shouldReceive('reserveStockForOrder')->once();
 
@@ -1972,7 +2120,7 @@ test('createOrder sets form id from product', function (): void {
             return $productServiceMock;
         }
     });
-    $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['em'] = $emMock;
     $di['period'] = $di->protect(fn (): Mockery\MockInterface => $periodMock);
     $di['logger'] = new FOSSBilling\Core\Logging\Logger();
@@ -2004,11 +2152,11 @@ test('createOrder returns success when invoice follow up fails', function (): vo
         ->with($modelProduct, Mockery::any())
         ->andReturn(true);
 
-    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class);
-    $eventMock->shouldReceive('fire')->atLeast()->once();
+    $eventDispatcher = new OrderServiceTestEventRecorder();
 
     $productServiceMock = Mockery::mock(Box\Mod\Servicecustom\Service::class);
     $pricingServiceMock = Mockery::mock(Box\Mod\Product\Service::class);
+    $pricingServiceMock->shouldReceive('resolvePromoReference')->byDefault()->andReturn(null);
     $pricingServiceMock->shouldReceive('getProductOrderLineConfig')->never();
     $pricingServiceMock->shouldReceive('reserveStockForOrder')->once();
 
@@ -2017,9 +2165,9 @@ test('createOrder returns success when invoice follow up fails', function (): vo
     $invoiceServiceMock = Mockery::mock();
     $invoiceServiceMock->shouldReceive('generateForOrder')
         ->once()
-        ->with(Mockery::any())
+        ->with(Mockery::any(), null, false)
         ->andReturn($invoiceModel);
-    $invoiceServiceMock->shouldReceive('approveInvoice')
+    $invoiceServiceMock->shouldReceive('issueInvoice')
         ->once()
         ->with($invoiceModel, ['id' => $invoiceModel->id, 'use_credits' => true])
         ->andReturn(true);
@@ -2096,7 +2244,7 @@ test('createOrder returns success when invoice follow up fails', function (): vo
             return $productServiceMock;
         }
     });
-    $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['em'] = $emMock;
     $di['period'] = $di->protect(fn (): Mockery\MockInterface => $periodMock);
     $di['logger'] = new FOSSBilling\Core\Logging\Logger();
@@ -2137,12 +2285,12 @@ test('createOrder uses product pricing service for domain orders', function (): 
         ->with($modelProduct, Mockery::any())
         ->andReturn(true);
 
-    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class);
-    $eventMock->shouldReceive('fire')->atLeast()->once();
+    $eventDispatcher = new OrderServiceTestEventRecorder();
 
     $domainServiceMock = Mockery::mock(Box\Mod\Servicedomain\Service::class)->shouldIgnoreMissing();
 
     $pricingServiceMock = Mockery::mock(Box\Mod\Product\Service::class);
+    $pricingServiceMock->shouldReceive('resolvePromoReference')->byDefault()->andReturn(null);
     $pricingServiceMock->shouldReceive('getProductOrderLineConfig')
         ->once()
         ->with(
@@ -2209,7 +2357,7 @@ test('createOrder uses product pricing service for domain orders', function (): 
             return $domainServiceMock;
         }
     });
-    $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['em'] = $emMock;
     $di['logger'] = new FOSSBilling\Core\Logging\Logger();
 
@@ -2432,12 +2580,11 @@ test('activateOrder activates pending order', function (): void {
     $emMock->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
     $emMock->shouldIgnoreMissing();
 
-    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class);
-    $eventMock->shouldReceive('fire')->atLeast()->once();
+    $eventDispatcher = new OrderServiceTestEventRecorder();
 
     $di = container();
     $di['em'] = $emMock;
-    $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = new FOSSBilling\Core\Logging\Logger();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
@@ -2449,7 +2596,12 @@ test('activateOrder activates pending order', function (): void {
 
     $result = $serviceMock->activateOrder($clientOrderModel);
 
-    expect($result)->toBeTrue();
+    expect($result)->toBeTrue()
+        ->and($eventDispatcher->events)->toHaveCount(2)
+        ->and($eventDispatcher->events[0])->toBeInstanceOf(Box\Mod\Order\Event\BeforeAdminOrderActivateEvent::class)
+        ->and($eventDispatcher->events[0]->orderId)->toBe(1)
+        ->and($eventDispatcher->events[1])->toBeInstanceOf(Box\Mod\Order\Event\AfterAdminOrderActivateEvent::class)
+        ->and($eventDispatcher->events[1]->orderId)->toBe(1);
 });
 
 test('activateOrder is a no-op when order was already activated by a stale reference', function (): void {
@@ -2506,12 +2658,11 @@ test('activateOrder force re-activates an already active order', function (): vo
     $emMock->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
     $emMock->shouldIgnoreMissing();
 
-    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class);
-    $eventMock->shouldReceive('fire')->atLeast()->once();
+    $eventDispatcher = new OrderServiceTestEventRecorder();
 
     $di = container();
     $di['em'] = $emMock;
-    $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = new FOSSBilling\Core\Logging\Logger();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
@@ -2523,7 +2674,10 @@ test('activateOrder force re-activates an already active order', function (): vo
 
     $result = $serviceMock->activateOrder($activeOrderModel, ['force' => true]);
 
-    expect($result)->toBeTrue();
+    expect($result)->toBeTrue()
+        ->and($eventDispatcher->events)->toHaveCount(2)
+        ->and($eventDispatcher->events[0])->toBeInstanceOf(Box\Mod\Order\Event\BeforeAdminOrderActivateEvent::class)
+        ->and($eventDispatcher->events[1])->toBeInstanceOf(Box\Mod\Order\Event\AfterAdminOrderActivateEvent::class);
 });
 
 test('activateOrderAddons activates addons', function (): void {
@@ -2541,17 +2695,19 @@ test('activateOrderAddons activates addons', function (): void {
         ->atLeast()->once()
         ->andReturn([$clientOrderModel]);
 
-    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class);
-    $eventMock->shouldReceive('fire')->atLeast()->once();
+    $eventDispatcher = new OrderServiceTestEventRecorder();
 
     $di = container();
-    $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $eventDispatcher;
 
     $serviceMock->setDi($di);
 
     $result = $serviceMock->activateOrderAddons($clientOrderModel);
 
-    expect($result)->toBeTrue();
+    expect($result)->toBeTrue()
+        ->and($eventDispatcher->events)->toHaveCount(2)
+        ->and($eventDispatcher->events[0])->toBeInstanceOf(Box\Mod\Order\Event\BeforeAdminOrderActivateEvent::class)
+        ->and($eventDispatcher->events[1])->toBeInstanceOf(Box\Mod\Order\Event\AfterAdminOrderActivateEvent::class);
 });
 
 test('getOrderAddonsList returns addons', function (): void {
@@ -2627,11 +2783,10 @@ test('stockSale throws when quantity would go negative', function (): void {
 test('updateOrder updates fields', function (): void {
     $clientOrderModel = createEntity(Order::class);
 
-    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class);
-    $eventMock->shouldReceive('fire')->atLeast()->once();
+    $eventDispatcher = new OrderServiceTestEventRecorder();
 
     $di = container();
-    $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['em'] = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
     $di['logger'] = new FOSSBilling\Core\Logging\Logger();
 
@@ -2647,7 +2802,8 @@ test('updateOrder updates fields', function (): void {
         'notes' => 'Empty note',
         'reason' => 'non',
         'suspension_grace_days' => 3,
-        'meta' => [],
+        'meta' => ['api_token' => 'private-token'],
+        'config' => ['password' => 'provisioning-secret'],
     ];
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
@@ -2660,19 +2816,24 @@ test('updateOrder updates fields', function (): void {
     $result = $serviceMock->updateOrder($clientOrderModel, $data);
 
     expect($result)->toBeTrue()
-        ->and($clientOrderModel->getSuspensionGraceDays())->toBe(3);
+        ->and($clientOrderModel->getSuspensionGraceDays())->toBe(3)
+        ->and($eventDispatcher->events)->toHaveCount(2)
+        ->and($eventDispatcher->events[0])->toBeInstanceOf(Box\Mod\Order\Event\BeforeAdminOrderUpdateEvent::class)
+        ->and($eventDispatcher->events[0]->orderId)->toBe((int) $clientOrderModel->getId())
+        ->and($eventDispatcher->events[0]->input)->not->toHaveKey('meta')
+        ->and($eventDispatcher->events[0]->input)->not->toHaveKey('config')
+        ->and($eventDispatcher->events[1])->toBeInstanceOf(Box\Mod\Order\Event\AfterAdminOrderUpdateEvent::class);
 });
 
 test('renewOrder renews order', function (): void {
-    $clientOrderModel = createEntity(Order::class);
+    $clientOrderModel = createEntity(Order::class, ['id' => 9]);
     $clientOrderModel->group_master = 1;
     $clientOrderModel->status = Order::STATUS_PENDING_SETUP;
 
-    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class);
-    $eventMock->shouldReceive('fire')->atLeast()->once();
+    $eventDispatcher = new OrderServiceTestEventRecorder();
 
     $di = container();
-    $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = new FOSSBilling\Core\Logging\Logger();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
@@ -2684,7 +2845,12 @@ test('renewOrder renews order', function (): void {
 
     $result = $serviceMock->renewOrder($clientOrderModel);
 
-    expect($result)->toBeTrue();
+    expect($result)->toBeTrue()
+        ->and($eventDispatcher->events)->toHaveCount(2)
+        ->and($eventDispatcher->events[0])->toBeInstanceOf(Box\Mod\Order\Event\BeforeAdminOrderRenewEvent::class)
+        ->and($eventDispatcher->events[0]->orderId)->toBe(9)
+        ->and($eventDispatcher->events[1])->toBeInstanceOf(Box\Mod\Order\Event\AfterAdminOrderRenewEvent::class)
+        ->and($eventDispatcher->events[1]->orderId)->toBe(9);
 });
 
 test('renewFromOrder extends expiration', function (): void {
@@ -2781,11 +2947,10 @@ test('suspendFromOrder throws for non-active order', function (): void {
     $clientOrderModel = createEntity(Order::class);
     $clientOrderModel->status = Order::STATUS_SUSPENDED;
 
-    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class);
-    $eventMock->shouldReceive('fire')->atLeast()->once();
+    $eventDispatcher = new OrderServiceTestEventRecorder();
 
     $di = container();
-    $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $eventDispatcher;
 
     $svc = new Service();
     $svc->setDi($di);
@@ -2795,14 +2960,13 @@ test('suspendFromOrder throws for non-active order', function (): void {
 });
 
 test('suspendFromOrder suspends active order', function (): void {
-    $clientOrderModel = createEntity(Order::class);
+    $clientOrderModel = createEntity(Order::class, ['id' => 11]);
     $clientOrderModel->status = Order::STATUS_ACTIVE;
 
-    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class);
-    $eventMock->shouldReceive('fire')->atLeast()->once();
+    $eventDispatcher = new OrderServiceTestEventRecorder();
 
     $di = container();
-    $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = new FOSSBilling\Core\Logging\Logger();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
@@ -2814,7 +2978,12 @@ test('suspendFromOrder suspends active order', function (): void {
 
     $result = $serviceMock->suspendFromOrder($clientOrderModel);
 
-    expect($result)->toBeTrue();
+    expect($result)->toBeTrue()
+        ->and($eventDispatcher->events)->toHaveCount(2)
+        ->and($eventDispatcher->events[0])->toBeInstanceOf(Box\Mod\Order\Event\BeforeAdminOrderSuspendEvent::class)
+        ->and($eventDispatcher->events[0]->orderId)->toBe(11)
+        ->and($eventDispatcher->events[1])->toBeInstanceOf(Box\Mod\Order\Event\AfterAdminOrderSuspendEvent::class)
+        ->and($eventDispatcher->events[1]->orderId)->toBe(11);
 });
 
 test('cancelFromOrder cancels linked subscriptions', function (): void {
@@ -2855,6 +3024,8 @@ test('cancelFromOrder cancels linked subscriptions', function (): void {
     $di = container();
     $di['em'] = $emMock;
     $di['dbal'] = $connectionMock;
+    $eventDispatcher = new OrderServiceTestEventRecorder();
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = new FOSSBilling\Core\Logging\Logger();
     $di['mod_service'] = $di->protect(function (string $module, string $service = '') use ($productService, $subscriptionService) {
         if ($module === 'Invoice' && $service === 'Subscription') {
@@ -2874,9 +3045,56 @@ test('cancelFromOrder cancels linked subscriptions', function (): void {
     $serviceMock->shouldReceive('saveStatusChange')->once();
     $serviceMock->setDi($di);
 
-    expect($serviceMock->cancelFromOrder($clientOrderModel, skipEvent: true))->toBeTrue()
+    expect($serviceMock->cancelFromOrder($clientOrderModel))->toBeTrue()
         ->and($clientOrderModel->getStatus())->toBe(Order::STATUS_CANCELED)
-        ->and($calls)->toBe(['service', 'subscriptions']);
+        ->and($calls)->toBe(['service', 'subscriptions'])
+        ->and($eventDispatcher->events)->toHaveCount(2)
+        ->and($eventDispatcher->events[0])->toBeInstanceOf(Box\Mod\Order\Event\BeforeAdminOrderCancelEvent::class)
+        ->and($eventDispatcher->events[0]->orderId)->toBe(10)
+        ->and($eventDispatcher->events[1])->toBeInstanceOf(Box\Mod\Order\Event\AfterAdminOrderCancelEvent::class)
+        ->and($eventDispatcher->events[1]->orderId)->toBe(10);
+});
+
+test('gateway finalized cancellation dispatches both lifecycle events', function (): void {
+    $order = createEntity(Order::class, [
+        'id' => 10,
+        'status' => Order::STATUS_ACTIVE,
+    ]);
+
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('executeStatement')
+        ->once()
+        ->with(
+            'DELETE FROM client_order_meta WHERE client_order_id = :order_id AND name = :name',
+            ['order_id' => 10, 'name' => Service::META_CANCEL_AT_PERIOD_END],
+        );
+
+    $productService = Mockery::mock(Box\Mod\Product\Service::class);
+    $productService->shouldReceive('releaseReservedPromoRedemptionsForOrder')
+        ->once()->with($order, 'order_canceled');
+    $productService->shouldReceive('releaseReservedStockForOrder')
+        ->once()->with($order, 'order_canceled');
+
+    $di = container();
+    $di['em'] = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
+    $di['dbal'] = $connection;
+    $di['mod_service'] = $di->protect(static fn (string $module): object => $productService);
+    $events = new OrderServiceTestEventRecorder();
+    $di['event_dispatcher'] = $events;
+
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldAllowMockingProtectedMethods();
+    $service->shouldReceive('_callOnService')->once();
+    $service->shouldReceive('saveStatusChange')->once()->with($order, 'Canceled order for Subscription ended');
+    $service->setDi($di);
+
+    expect($service->finalizeCancellationFromGateway($order, 'Subscription ended'))->toBeTrue()
+        ->and($order->getStatus())->toBe(Order::STATUS_CANCELED)
+        ->and($events->events)->toHaveCount(2)
+        ->and($events->events[0])->toBeInstanceOf(Box\Mod\Order\Event\BeforeAdminOrderCancelEvent::class)
+        ->and($events->events[0]->orderId)->toBe(10)
+        ->and($events->events[1])->toBeInstanceOf(Box\Mod\Order\Event\AfterAdminOrderCancelEvent::class)
+        ->and($events->events[1]->orderId)->toBe(10);
 });
 
 test('scheduleCancellationFromOrder keeps the service active', function (): void {
@@ -3304,6 +3522,53 @@ test('updateOrderMeta clears existing meta', function (): void {
     expect($result)->toEqual(1);
 });
 
+test('setMergeRenewalsOverride stores the opt-in and opt-out', function (mixed $value, string $expected): void {
+    $metaRepoMock = Mockery::mock(OrderMetaRepository::class)->shouldIgnoreMissing();
+    $metaRepoMock->shouldReceive('findOneByOrderIdAndName')->with(7, Service::META_MERGE_RENEWALS)->once()->andReturn(null);
+
+    $persisted = [];
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(Box\Mod\Order\Entity\OrderMeta::class)->andReturn($metaRepoMock);
+    $emMock->shouldReceive('persist')->once()->andReturnUsing(function ($entity) use (&$persisted): void {
+        $persisted[] = $entity;
+    });
+    $emMock->shouldReceive('flush')->once();
+    $emMock->shouldIgnoreMissing();
+
+    $di = container();
+    $di['em'] = $emMock;
+
+    $svc = new Service();
+    $svc->setDi($di);
+
+    $svc->setMergeRenewalsOverride(createEntity(Order::class, ['id' => 7]), $value);
+
+    expect($persisted)->toHaveCount(1)
+        ->and($persisted[0]->getName())->toBe(Service::META_MERGE_RENEWALS)
+        ->and($persisted[0]->getValue())->toBe($expected);
+})->with([
+    'truthy enables merging' => ['1', '1'],
+    'falsy disables merging' => [false, '0'],
+]);
+
+test('setMergeRenewalsOverride clears the override so the order inherits again', function (): void {
+    $metaRepoMock = Mockery::mock(OrderMetaRepository::class)->shouldIgnoreMissing();
+    $metaRepoMock->shouldReceive('deleteByOrderIdAndName')->once()->with(7, Service::META_MERGE_RENEWALS)->andReturn(1);
+
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')->with(Box\Mod\Order\Entity\OrderMeta::class)->andReturn($metaRepoMock);
+    $emMock->shouldNotReceive('persist');
+    $emMock->shouldIgnoreMissing();
+
+    $di = container();
+    $di['em'] = $emMock;
+
+    $svc = new Service();
+    $svc->setDi($di);
+
+    $svc->setMergeRenewalsOverride(createEntity(Order::class, ['id' => 7]), null);
+});
+
 test('updateOrderConfig succeeds when no form id is set', function (): void {
     $di = container();
     $di['logger'] = new FOSSBilling\Core\Logging\Logger();
@@ -3502,11 +3767,10 @@ test('createOrder rejects invalid price and quantity', function (array $data, st
 test('updateOrder rejects a negative price', function (): void {
     $order = createEntity(Order::class);
 
-    $events = Mockery::mock(FOSSBilling\Core\Event\Manager::class);
-    $events->shouldReceive('fire')->once();
+    $eventDispatcher = new OrderServiceTestEventRecorder();
 
     $di = container();
-    $di['events_manager'] = $events;
+    $di['event_dispatcher'] = $eventDispatcher;
 
     $service = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $service->shouldReceive('updatePeriod')->once();
@@ -3535,11 +3799,11 @@ test('createOrder generates an invoice for a zero-price order with issue-invoice
         ->with($modelProduct, Mockery::any())
         ->andReturn(true);
 
-    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class);
-    $eventMock->shouldReceive('fire')->atLeast()->once();
+    $eventDispatcher = new OrderServiceTestEventRecorder();
 
     $productServiceMock = Mockery::mock(Box\Mod\Servicecustom\Service::class);
     $pricingServiceMock = Mockery::mock(Box\Mod\Product\Service::class);
+    $pricingServiceMock->shouldReceive('resolvePromoReference')->byDefault()->andReturn(null);
     $pricingServiceMock->shouldReceive('getProductOrderLineConfig')->never();
     $pricingServiceMock->shouldReceive('reserveStockForOrder')->once();
 
@@ -3548,9 +3812,9 @@ test('createOrder generates an invoice for a zero-price order with issue-invoice
     $invoiceServiceMock = Mockery::mock();
     $invoiceServiceMock->shouldReceive('generateForOrder')
         ->once()
-        ->with(Mockery::any())
+        ->with(Mockery::any(), null, false)
         ->andReturn($invoiceModel);
-    $invoiceServiceMock->shouldReceive('approveInvoice')
+    $invoiceServiceMock->shouldReceive('issueInvoice')
         ->once()
         ->with($invoiceModel, ['id' => $invoiceModel->id, 'use_credits' => true])
         ->andReturn(true);
@@ -3614,7 +3878,7 @@ test('createOrder generates an invoice for a zero-price order with issue-invoice
             return $productServiceMock;
         }
     });
-    $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['em'] = $emMock;
     $di['period'] = $di->protect(fn (): Mockery\MockInterface => $periodMock);
     $di['logger'] = new FOSSBilling\Core\Logging\Logger();
@@ -3651,11 +3915,11 @@ test('createOrder does not roll back when invoice generation fails for a negativ
         ->with($modelProduct, Mockery::any())
         ->andReturn(true);
 
-    $eventMock = Mockery::mock(FOSSBilling\Core\Event\Manager::class);
-    $eventMock->shouldReceive('fire')->atLeast()->once();
+    $eventDispatcher = new OrderServiceTestEventRecorder();
 
     $productServiceMock = Mockery::mock(Box\Mod\Servicecustom\Service::class);
     $pricingServiceMock = Mockery::mock(Box\Mod\Product\Service::class);
+    $pricingServiceMock->shouldReceive('resolvePromoReference')->byDefault()->andReturn(null);
     $pricingServiceMock->shouldReceive('getProductOrderLineConfig')
         ->atLeast()->once()
         ->andReturn(['price' => -5.0, 'quantity' => 1]);
@@ -3664,9 +3928,9 @@ test('createOrder does not roll back when invoice generation fails for a negativ
     $invoiceServiceMock = Mockery::mock();
     $invoiceServiceMock->shouldReceive('generateForOrder')
         ->once()
-        ->with(Mockery::any())
+        ->with(Mockery::any(), null, false)
         ->andThrow(new FOSSBilling\Core\Exception\InformationException('Invoices are not generated for negative amount orders.'));
-    $invoiceServiceMock->shouldReceive('approveInvoice')->never();
+    $invoiceServiceMock->shouldReceive('issueInvoice')->never();
 
     $persistedEntities = [];
     $nextOrderId = 1;
@@ -3727,7 +3991,7 @@ test('createOrder does not roll back when invoice generation fails for a negativ
             return $productServiceMock;
         }
     });
-    $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['em'] = $emMock;
     $di['period'] = $di->protect(fn (): Mockery\MockInterface => $periodMock);
     $di['logger'] = new FOSSBilling\Core\Logging\Logger();
@@ -3763,9 +4027,10 @@ test('getExpiredOrders delegates grace-aware selection to the repository', funct
 
 test('batchCancelUnpaid returns false and does not query orders when auto removal is disabled', function (): void {
     $service = new Service();
+    $eventDispatcher = new OrderServiceTestEventRecorder();
 
     $di = container();
-    $di['events_manager'] = Mockery::mock(FOSSBilling\Core\Event\Manager::class)->shouldIgnoreMissing();
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['mod'] = $di->protect(fn (string $name): object => new class {
         public function getConfig(): array
         {
@@ -3775,7 +4040,59 @@ test('batchCancelUnpaid returns false and does not query orders when auto remova
 
     $service->setDi($di);
 
-    expect($service->batchCancelUnpaid())->toBeFalse();
+    expect($service->batchCancelUnpaid())->toBeFalse()
+        ->and($eventDispatcher->events)->toHaveCount(1)
+        ->and($eventDispatcher->events[0])->toBeInstanceOf(Box\Mod\Order\Event\BeforeAdminBatchCancelUnpaidOrdersEvent::class);
+});
+
+test('batchSuspendExpired dispatches typed lifecycle events when there are no expired orders', function (): void {
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('getExpiredOrders')->once()->andReturn([]);
+    $eventDispatcher = new OrderServiceTestEventRecorder();
+
+    $di = container();
+    $di['event_dispatcher'] = $eventDispatcher;
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
+    $di['mod'] = $di->protect(fn (string $name): object => new class {
+        public function getConfig(): array
+        {
+            return [];
+        }
+    });
+    $service->setDi($di);
+
+    expect($service->batchSuspendExpired())->toBeTrue()
+        ->and($eventDispatcher->events)->toHaveCount(2)
+        ->and($eventDispatcher->events[0])->toBeInstanceOf(Box\Mod\Order\Event\BeforeAdminBatchSuspendOrdersEvent::class)
+        ->and($eventDispatcher->events[1])->toBeInstanceOf(Box\Mod\Order\Event\AfterAdminBatchSuspendOrdersEvent::class);
+});
+
+test('batchCancelSuspended dispatches typed lifecycle events when there are no eligible orders', function (): void {
+    $eventDispatcher = new OrderServiceTestEventRecorder();
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('fetchAllAssociative')->once()->andReturn([]);
+
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('getConnection')->once()->andReturn($connection);
+
+    $di = container();
+    $di['event_dispatcher'] = $eventDispatcher;
+    $di['em'] = $em;
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
+    $di['mod'] = $di->protect(fn (string $name): object => new class {
+        public function getConfig(): array
+        {
+            return ['batch_cancel_suspended' => '1', 'batch_cancel_suspended_after_days' => 1];
+        }
+    });
+
+    $service = new Service();
+    $service->setDi($di);
+
+    expect($service->batchCancelSuspended())->toBeTrue()
+        ->and($eventDispatcher->events)->toHaveCount(2)
+        ->and($eventDispatcher->events[0])->toBeInstanceOf(Box\Mod\Order\Event\BeforeAdminBatchCancelSuspendedOrdersEvent::class)
+        ->and($eventDispatcher->events[1])->toBeInstanceOf(Box\Mod\Order\Event\AfterAdminBatchCancelSuspendedOrdersEvent::class);
 });
 
 test('deleteFromOrder removes client_order_meta rows before removing the order', function (): void {
@@ -3787,7 +4104,7 @@ test('deleteFromOrder removes client_order_meta rows before removing the order',
     $order = createEntity(Order::class, ['id' => 42, 'status' => Order::STATUS_ACTIVE]);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
-    $serviceMock->shouldReceive('_callOnService')->once()->with($order, Order::ACTION_DELETE);
+    $serviceMock->shouldReceive('_callOnService')->once()->with($order, Order::ACTION_DELETE, false);
 
     $orderMetaRepository = Mockery::mock(OrderMetaRepository::class);
     $orderMetaRepository->shouldReceive('deleteByOrderId')->once()->with(42);
@@ -3800,10 +4117,7 @@ test('deleteFromOrder removes client_order_meta rows before removing the order',
     $productService->shouldReceive('releaseReservedPromoRedemptionsForOrder')->once()->with($order, 'order_deleted');
     $productService->shouldReceive('releaseReservedStockForOrder')->once()->with($order, 'order_deleted');
 
-    $eventsManager = Mockery::mock(FOSSBilling\Core\Event\Manager::class)->shouldIgnoreMissing();
-
     $di = container();
-    $di['events_manager'] = $eventsManager;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod_service'] = $di->protect(fn (string $name): object => $productService);
 
@@ -3812,7 +4126,7 @@ test('deleteFromOrder removes client_order_meta rows before removing the order',
     expect($serviceMock->deleteFromOrder($order))->toBeTrue();
 });
 
-test('batchCancelUnpaid removes each stale unpaid order and fires events', function (): void {
+test('batchCancelUnpaid removes each stale unpaid order and dispatches typed events', function (): void {
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
 
     $orderA = createEntity(Order::class, ['id' => 1, 'status' => Order::STATUS_PENDING_SETUP]);
@@ -3828,13 +4142,11 @@ test('batchCancelUnpaid removes each stale unpaid order and fires events', funct
     $emMock->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepository);
     $emMock->shouldReceive('refresh')->twice();
 
-    $eventsManager = Mockery::mock(FOSSBilling\Core\Event\Manager::class);
-    $eventsManager->shouldReceive('fire')->once()->with(['event' => 'onBeforeAdminBatchCancelUnpaidOrders']);
-    $eventsManager->shouldReceive('fire')->once()->with(['event' => 'onAfterAdminBatchCancelUnpaidOrders']);
+    $eventDispatcher = new OrderServiceTestEventRecorder();
 
     $di = container();
     $di['em'] = $emMock;
-    $di['events_manager'] = $eventsManager;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod'] = $di->protect(fn (string $name): object => new class {
         public function getConfig(): array
@@ -3848,7 +4160,10 @@ test('batchCancelUnpaid removes each stale unpaid order and fires events', funct
 
     $serviceMock->setDi($di);
 
-    expect($serviceMock->batchCancelUnpaid())->toBeTrue();
+    expect($serviceMock->batchCancelUnpaid())->toBeTrue()
+        ->and($eventDispatcher->events)->toHaveCount(2)
+        ->and($eventDispatcher->events[0])->toBeInstanceOf(Box\Mod\Order\Event\BeforeAdminBatchCancelUnpaidOrdersEvent::class)
+        ->and($eventDispatcher->events[1])->toBeInstanceOf(Box\Mod\Order\Event\AfterAdminBatchCancelUnpaidOrdersEvent::class);
 });
 
 test('batchCancelUnpaid falls back to the 7 day default when the configured value is blank', function (): void {
@@ -3865,7 +4180,6 @@ test('batchCancelUnpaid falls back to the 7 day default when the configured valu
 
     $di = container();
     $di['em'] = $emMock;
-    $di['events_manager'] = Mockery::mock(FOSSBilling\Core\Event\Manager::class)->shouldIgnoreMissing();
     $di['mod'] = $di->protect(fn (string $name): object => new class {
         public function getConfig(): array
         {
@@ -3912,7 +4226,6 @@ test('batchCancelUnpaid removes the linked unpaid invoice before deleting the or
 
     $di = container();
     $di['em'] = $emMock;
-    $di['events_manager'] = Mockery::mock(FOSSBilling\Core\Event\Manager::class)->shouldIgnoreMissing();
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod'] = $di->protect(fn (string $name): object => new class {
         public function getConfig(): array
@@ -3958,7 +4271,6 @@ test('batchCancelUnpaid resolves a shared invoice once and still removes every s
 
     $di = container();
     $di['em'] = $emMock;
-    $di['events_manager'] = Mockery::mock(FOSSBilling\Core\Event\Manager::class)->shouldIgnoreMissing();
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod'] = $di->protect(fn (string $name): object => new class {
         public function getConfig(): array
@@ -4014,7 +4326,6 @@ test('batchCancelUnpaid does not delete a sibling order when removing the shared
 
     $di = container();
     $di['em'] = $emMock;
-    $di['events_manager'] = Mockery::mock(FOSSBilling\Core\Event\Manager::class)->shouldIgnoreMissing();
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod'] = $di->protect(fn (string $name): object => new class {
         public function getConfig(): array
@@ -4060,7 +4371,6 @@ test('batchCancelUnpaid leaves the order alone when its invoice was paid since s
 
     $di = container();
     $di['em'] = $emMock;
-    $di['events_manager'] = Mockery::mock(FOSSBilling\Core\Event\Manager::class)->shouldIgnoreMissing();
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod'] = $di->protect(fn (string $name): object => new class {
         public function getConfig(): array
@@ -4105,7 +4415,6 @@ test('batchCancelUnpaid removes the order without touching the invoice when it w
 
     $di = container();
     $di['em'] = $emMock;
-    $di['events_manager'] = Mockery::mock(FOSSBilling\Core\Event\Manager::class)->shouldIgnoreMissing();
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod'] = $di->protect(fn (string $name): object => new class {
         public function getConfig(): array
@@ -4139,7 +4448,6 @@ test('batchCancelUnpaid logs and continues when removing one stale order fails',
 
     $di = container();
     $di['em'] = $emMock;
-    $di['events_manager'] = Mockery::mock(FOSSBilling\Core\Event\Manager::class)->shouldIgnoreMissing();
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod'] = $di->protect(fn (string $name): object => new class {
         public function getConfig(): array
@@ -4182,7 +4490,6 @@ test('batchCancelUnpaid skips an order that changed status while the batch was r
 
     $di = container();
     $di['em'] = $emMock;
-    $di['events_manager'] = Mockery::mock(FOSSBilling\Core\Event\Manager::class)->shouldIgnoreMissing();
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['mod'] = $di->protect(fn (string $name): object => new class {
         public function getConfig(): array
@@ -4235,21 +4542,25 @@ test('batchSendSuspensionWarnings claims and queues each warning once', function
             && $email['order']['suspension_at'] === '2026-08-01 12:00:00'
     ))->andReturn(true);
 
-    $events = Mockery::mock(FOSSBilling\Core\Event\Manager::class);
-    $events->shouldReceive('fire')->times(4);
+    $eventDispatcher = new OrderServiceTestEventRecorder();
 
     $service = Mockery::mock(Service::class)->makePartial();
     $service->shouldReceive('toApiArray')->once()->with($order, false)->andReturn(['id' => 8]);
 
     $di = container();
     $di['em'] = $em;
-    $di['events_manager'] = $events;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = new FOSSBilling\Core\Logging\Logger();
     $di['mod_service'] = $di->protect(fn (string $name): Box\Mod\Email\Service => $emailService);
     $service->setDi($di);
 
     expect($service->batchSendSuspensionWarnings())->toBeTrue()
-        ->and($service->batchSendSuspensionWarnings())->toBeTrue();
+        ->and($service->batchSendSuspensionWarnings())->toBeTrue()
+        ->and($eventDispatcher->events)->toHaveCount(4)
+        ->and($eventDispatcher->events[0])->toBeInstanceOf(Box\Mod\Order\Event\BeforeAdminBatchSendSuspensionWarningsEvent::class)
+        ->and($eventDispatcher->events[1])->toBeInstanceOf(Box\Mod\Order\Event\AfterAdminBatchSendSuspensionWarningsEvent::class)
+        ->and($eventDispatcher->events[2])->toBeInstanceOf(Box\Mod\Order\Event\BeforeAdminBatchSendSuspensionWarningsEvent::class)
+        ->and($eventDispatcher->events[3])->toBeInstanceOf(Box\Mod\Order\Event\AfterAdminBatchSendSuspensionWarningsEvent::class);
 });
 
 test('batchSendSuspensionWarnings releases a failed claim so the warning can be retried', function (): void {
@@ -4286,22 +4597,26 @@ test('batchSendSuspensionWarnings releases a failed claim so the warning can be 
         return true;
     });
 
-    $events = Mockery::mock(FOSSBilling\Core\Event\Manager::class);
-    $events->shouldReceive('fire')->times(4);
+    $eventDispatcher = new OrderServiceTestEventRecorder();
 
     $service = Mockery::mock(Service::class)->makePartial();
     $service->shouldReceive('toApiArray')->twice()->with($order, false)->andReturn(['id' => 8]);
 
     $di = container();
     $di['em'] = $em;
-    $di['events_manager'] = $events;
+    $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = new FOSSBilling\Core\Logging\Logger();
     $di['mod_service'] = $di->protect(fn (string $name): Box\Mod\Email\Service => $emailService);
     $service->setDi($di);
 
     expect($service->batchSendSuspensionWarnings())->toBeTrue()
         ->and($service->batchSendSuspensionWarnings())->toBeTrue()
-        ->and($attempts)->toBe(2);
+        ->and($attempts)->toBe(2)
+        ->and($eventDispatcher->events)->toHaveCount(4)
+        ->and($eventDispatcher->events[0])->toBeInstanceOf(Box\Mod\Order\Event\BeforeAdminBatchSendSuspensionWarningsEvent::class)
+        ->and($eventDispatcher->events[1])->toBeInstanceOf(Box\Mod\Order\Event\AfterAdminBatchSendSuspensionWarningsEvent::class)
+        ->and($eventDispatcher->events[2])->toBeInstanceOf(Box\Mod\Order\Event\BeforeAdminBatchSendSuspensionWarningsEvent::class)
+        ->and($eventDispatcher->events[3])->toBeInstanceOf(Box\Mod\Order\Event\AfterAdminBatchSendSuspensionWarningsEvent::class);
 });
 
 test('exportCSV strips config from numeric-array headers', function (): void {
@@ -4350,4 +4665,173 @@ test('exportCSV falls back to defaults when only config is requested', function 
     expect($capturedHeaders)->toContain('id')
         ->and($capturedHeaders)->toContain('title')
         ->and($capturedHeaders)->not->toContain('config');
+});
+
+test('createOrder applies a promo code and records the discount', function (): void {
+    $modelClient = createEntity(Box\Mod\Client\Entity\Client::class, ['currency' => 'USD']);
+
+    $modelProduct = orderServiceCreateProductEntity(1, 'custom');
+
+    $currencyModel = Mockery::mock(Box\Mod\Currency\Entity\Currency::class)->shouldIgnoreMissing();
+    $currencyModel->shouldReceive('getCode')->andReturn('USD');
+
+    $currencyRepositoryMock = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
+    $currencyRepositoryMock->shouldReceive('findOneByCode')->atLeast()->once()->andReturn($currencyModel);
+    $currencyRepositoryMock->shouldReceive('getRateByCode')->atLeast()->once()->with('USD')->andReturn(1.0);
+
+    $currencyServiceMock = Mockery::mock(Box\Mod\Currency\Service::class);
+    $currencyServiceMock->shouldReceive('getCurrencyRepository')->atLeast()->once()->andReturn($currencyRepositoryMock);
+
+    $cartServiceMock = Mockery::mock(Box\Mod\Cart\Service::class);
+    $cartServiceMock->shouldReceive('isStockAvailable')
+        ->atLeast()->once()
+        ->with($modelProduct, Mockery::any())
+        ->andReturn(true);
+
+    $eventDispatcher = new OrderServiceTestEventRecorder();
+
+    $promo = new Box\Mod\Product\Entity\Promo();
+    $promoReflection = new ReflectionProperty($promo, 'id');
+    $promoReflection->setValue($promo, 7);
+    $promo->setCode('ADMIN10')->setRecurring(true);
+
+    $productServiceMock = Mockery::mock(Box\Mod\Servicecustom\Service::class);
+    $pricingServiceMock = Mockery::mock(Box\Mod\Product\Service::class);
+    $pricingServiceMock->shouldReceive('resolvePromoReference')->once()->with('ADMIN10', null)->andReturn($promo);
+    $pricingServiceMock->shouldReceive('promoCanBeApplied')->once()->with($promo)->andReturn(true);
+    $pricingServiceMock->shouldReceive('isPromoAvailableForClientGroup')->once()->with($promo, $modelClient)->andReturn(true);
+    $pricingServiceMock->shouldReceive('canClientUsePromo')->once()->with($modelClient, $promo)->andReturn(true);
+    $pricingServiceMock->shouldReceive('getProductOrderLineConfig')->never();
+    $pricingServiceMock->shouldReceive('isPromoApplicableToProduct')->once()->andReturn(true);
+    $pricingServiceMock->shouldReceive('clientHasActivePromoApplicationForUpdate')->once()->with($modelClient, $promo)->andReturn(false);
+    $pricingServiceMock->shouldReceive('getProductDiscount')->once()->andReturn(5.0);
+    $pricingServiceMock->shouldReceive('usePromo')->once()->with($promo);
+    $pricingServiceMock->shouldReceive('createPromoRedemption')
+        ->once()
+        ->with(
+            $promo,
+            $modelClient,
+            Mockery::type(Order::class),
+            Mockery::type(Invoice::class),
+            Box\Mod\Product\Entity\PromoRedemption::PHASE_CHECKOUT,
+            5.0,
+            'USD',
+            Mockery::any(),
+            Box\Mod\Product\Entity\PromoRedemption::STATUS_RESERVED
+        )
+        ->andReturn(1);
+    $pricingServiceMock->shouldReceive('reserveStockForOrder')->once();
+
+    $invoiceModel = orderServiceCreateInvoiceModel(10);
+
+    $invoiceServiceMock = Mockery::mock();
+    $invoiceServiceMock->shouldReceive('generateForOrder')
+        ->once()
+        ->with(Mockery::type(Order::class), null, false)
+        ->andReturn($invoiceModel);
+    $invoiceServiceMock->shouldReceive('issueInvoice')->once()->andReturn(true);
+
+    $clientServiceMock = Mockery::mock(Box\Mod\Client\Service::class);
+    $clientServiceMock->shouldReceive('isClientTaxable')->once()->with($modelClient)->andReturn(false);
+
+    $invoiceItemServiceMock = Mockery::mock();
+    $invoiceItemServiceMock->shouldReceive('addNew')
+        ->once()
+        ->with($invoiceModel, Mockery::on(fn (array $item): bool => $item['price'] == -5.0 && $item['unit'] === 'discount'))
+        ->andReturn(99);
+
+    $capturedOrder = null;
+    $persistedEntities = [];
+    $nextOrderId = 1;
+    $emMock = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $emMock->shouldReceive('persist')->atLeast()->once()->andReturnUsing(function ($entity) use (&$persistedEntities, &$capturedOrder): void {
+        $persistedEntities[] = $entity;
+        if ($entity instanceof Order && $capturedOrder === null) {
+            $capturedOrder = $entity;
+        }
+    });
+    $emMock->shouldReceive('flush')->atLeast()->once()->andReturnUsing(function () use (&$persistedEntities, &$nextOrderId): void {
+        foreach ($persistedEntities as $entity) {
+            $refl = new ReflectionClass($entity);
+            if ($refl->hasProperty('id')) {
+                $prop = $refl->getProperty('id');
+                if ($prop->getValue($entity) === null) {
+                    $prop->setValue($entity, $nextOrderId++);
+                }
+            }
+        }
+        $persistedEntities = [];
+    });
+    $emMock->shouldReceive('wrapInTransaction')->once()->andReturnUsing(fn (callable $callback) => $callback());
+    $emMock->shouldReceive('remove')->andReturnNull();
+    $orderRepoMock = Mockery::mock(OrderRepository::class)->shouldIgnoreMissing();
+    $orderRepoMock->shouldReceive('find')->andReturnUsing(function (?int $id): ?object {
+        if ($id === null) {
+            return null;
+        }
+        $order = new Order();
+        $prop = new ReflectionProperty($order, 'id');
+        $prop->setValue($order, $id);
+
+        return $order;
+    });
+    $orderRepoMock->shouldReceive('findOneByOrderIdAndName')->byDefault()->andReturn(null);
+    $emMock->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
+    $emMock->shouldReceive('getRepository')->with(Box\Mod\Order\Entity\OrderMeta::class)->andReturn(Mockery::mock(OrderMetaRepository::class)->shouldIgnoreMissing());
+    $emMock->shouldIgnoreMissing();
+
+    $periodMock = Mockery::mock(FOSSBilling\Core\Period::class);
+    $periodMock->shouldReceive('getCode')->atLeast()->once()->andReturn('1Y');
+
+    $di = container();
+    $di['mod_service'] = $di->protect(function ($serviceName, $sub = '') use ($currencyServiceMock, $cartServiceMock, $productServiceMock, $pricingServiceMock, $invoiceServiceMock, $clientServiceMock, $invoiceItemServiceMock) {
+        if ($serviceName == 'currency') {
+            return $currencyServiceMock;
+        }
+        if ($serviceName == 'cart') {
+            return $cartServiceMock;
+        }
+        if ($serviceName == 'Product') {
+            return $pricingServiceMock;
+        }
+        if ($serviceName == 'invoice' && $sub === 'InvoiceItem') {
+            return $invoiceItemServiceMock;
+        }
+        if ($serviceName == 'invoice') {
+            return $invoiceServiceMock;
+        }
+        if ($serviceName == 'Invoice' && $sub === 'InvoiceItem') {
+            return $invoiceItemServiceMock;
+        }
+        if ($serviceName == 'Invoice') {
+            return $invoiceServiceMock;
+        }
+        if ($serviceName == 'client') {
+            return $clientServiceMock;
+        }
+        if ($serviceName == 'servicecustom') {
+            return $productServiceMock;
+        }
+    });
+    $di['event_dispatcher'] = $eventDispatcher;
+    $di['em'] = $emMock;
+    $di['period'] = $di->protect(fn (): Mockery\MockInterface => $periodMock);
+    $di['logger'] = new FOSSBilling\Core\Logging\Logger();
+
+    $svc = new Service();
+    $svc->setDi($di);
+
+    $result = $svc->createOrder($modelClient, $modelProduct, [
+        'period' => '1Y',
+        'price' => '10',
+        'invoice_option' => 'issue-invoice',
+        'promo_code' => 'ADMIN10',
+    ]);
+
+    expect($result)->toBe(1);
+    expect($capturedOrder)->toBeInstanceOf(Order::class);
+    expect((float) $capturedOrder->getDiscount())->toEqual(5.0);
+    expect($capturedOrder->getPromoId())->toBe(7);
+    expect($capturedOrder->isPromoRecurring())->toBeTrue();
+    expect($capturedOrder->getPromoUsed())->toBe(1);
 });

@@ -70,7 +70,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
 
     public function getRedirects(): array
     {
-        $redirects = $this->getExtensionMetaRepository()->findByExtensionAndScope('mod_redirect', null, null, null, ['id' => 'ASC']);
+        $redirects = $this->getExtensionMetaRepository()->findByExtensionAndScope('mod_redirect', null, null, null, ['id' => \SortDirection::Ascending]);
 
         return array_map($this->toApiArray(...), $redirects);
     }

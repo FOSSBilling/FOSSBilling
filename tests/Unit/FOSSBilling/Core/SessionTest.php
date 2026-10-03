@@ -86,6 +86,14 @@ test('session validation ignores a missing database record', function (): void {
     invokePrivate($session, 'canUseSession');
 });
 
+test('session validation ignores a non-string session cookie', function (): void {
+    $connection = Mockery::mock(Connection::class);
+    [$session] = createDatabaseSession($connection);
+    $_COOKIE['PHPSESSID'] = ['malformed-session'];
+
+    expect(invokePrivate($session, 'canUseSession'))->toBeNull();
+});
+
 test('session validation tolerates a database lookup failure', function (): void {
     $connection = Mockery::mock(Connection::class);
     $connection->shouldReceive('fetchAssociative')
