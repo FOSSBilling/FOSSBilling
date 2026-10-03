@@ -596,6 +596,61 @@ an older branch snapshot after a source commit remains for normal subsequent
 runs; deliberate source-change invalidation was verified locally.
 
 
+### Prepared Apache integration image trial
+
+`.circleci/images/php-apache/Dockerfile` extends the exact pinned
+`cimg/php:8.5.10-node` integration base and installs only Apache with
+`--no-install-recommends`, then removes package indexes and restores the
+`circleci` user. It contains no checkout, dependencies, built frontend assets
+or credentials. Application configuration, module activation, PHP-FPM,
+virtual host setup and server startup remain in `start-native-app.sh`.
+That script installs Apache only when `apache2ctl` is absent, preserving
+the original-image fallback.
+
+Build the prototype locally:
+
+```sh
+docker build --platform linux/amd64 -t fossbilling-circleci-php-apache:trial \
+  .circleci/images/php-apache
+```
+
+The active integration executor still uses the existing upstream image.
+A prepared image must be published to an agreed registry and referenced by
+its resulting immutable digest before testing hosted pulls. Building it
+inside every validation job would put installation back on the critical
+path. Rebuild when the pinned base changes or Apache packages need updating;
+APT resolves Apache packages at build time, so the final published digest
+must identify the tested contents. Compare hosted pull/startup, app setup,
+whole-job elapsed time and credits before adopting it. The image should
+remain a separate CI tool image, outside application release packaging.
+
+Three alternating fresh-container trials per image used two CPUs, a fresh
+MariaDB database ready before timing, identical installed dependencies and
+built assets, and the same app startup script. Docker pulls, Composer
+installation and database readiness were excluded from app setup timing.
+The installer removes its own entry script, so that tracked fixture was
+restored between trials. Apache was `2.4.52-1ubuntu4.23` in this build.
+
+| Local diagnostic | Current base | Apache prepared |
+| --- | --- | --- |
+| App setup, three trials | 14.5s / 14.3s / 13.7s | 4.4s / 4.9s / 4.8s |
+| Median app setup | 14.3s | 4.8s |
+| Median runtime Apache package installation | 8.8s | omitted |
+
+The added filesystem layer is about 11.4 MB according to Docker history.
+All six setups passed rewritten-route and configuration-file protection
+checks. Separate fresh prepared-image environments passed all 91 live API
+tests and all 21 application browser tests, with exact baseline test
+identity/outcome parity, no browser retries and an HTML report. Image build,
+Bash syntax, config validation and spelling checks passed.
+
+This is a local feasibility result. Pipeline 56's hosted app setup was
+already 7.4s, and prepared-image pull/startup time is still unmeasured.
+Registry destination and publication must be agreed before a hosted image
+trial; active executor images are unchanged.
+
+
+
 ### MariaDB image comparison
 
 On 2026-10-03, the pinned upstream `mariadb:lts` image reported MariaDB

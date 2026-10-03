@@ -7,8 +7,10 @@ mkdir -p test-results/server src/data/cache src/data/log src/data/uploads
 rm -f src/config.php
 
 # PHP runs as the checkout owner; Apache serves static files and the real .htaccess.
-sudo apt-get update
-sudo apt-get install -y --no-install-recommends apache2
+if ! command -v apache2ctl >/dev/null 2>&1; then
+  sudo apt-get update
+  sudo apt-get install -y --no-install-recommends apache2
+fi
 sudo a2enmod rewrite proxy_fcgi setenvif
 sudo tee /etc/apache2/conf-available/fossbilling-ci.conf >/dev/null <<EOF
 ServerName localhost
