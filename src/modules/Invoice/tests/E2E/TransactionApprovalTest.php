@@ -39,6 +39,11 @@ test('offline payments settle through approval instead of processing', function 
         $created = Tests\Helpers\ApiClient::request('admin/invoice/transaction_create', [
             'invoice_id' => $invoiceId,
             'gateway_id' => approvePathCustomGatewayId(),
+            // Unique payload: admin-created transactions with identical
+            // envelopes share an IPN hash, and the hash dedupe would hand
+            // back a stale transaction from an earlier suite file instead.
+            'txn_id' => 'e2e-approve-' . uniqid(),
+            'post' => ['e2e_approval_test' => uniqid('', true)],
         ]);
         assertApiSuccess($created);
         assertApiResultIsInt($created);
@@ -55,6 +60,7 @@ test('offline payments settle through approval instead of processing', function 
         assertApiSuccess($pending);
         assertApiResultIsArray($pending);
         expect($pending->getResult()['status'])->toBe('received')
+            ->and($pending->getResult()['invoice_id'])->toBe($invoiceId)
             ->and($pending->getResult()['gateway_code'])->toBe('Custom')
             ->and($pending->getResult()['requires_manual_approval'])->toBeTrue();
 
