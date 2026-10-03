@@ -21,6 +21,19 @@ executors:
     resource_class: medium.gen2
 
 commands:
+  install-application-playwright-runner:
+    steps:
+      - node/install-packages:
+          app-dir: .circleci/playwright
+          pkg-manager: npm
+          cache-path: ~/.npm
+          cache-version: v1-application-playwright-node24
+          override-ci-command: npm ci --no-audit --no-fund --workspaces=false
+      - run:
+          name: Expose application Playwright runner to test imports
+          command: |
+            mkdir -p node_modules/@playwright
+            ln -s "$(pwd)/.circleci/playwright/node_modules/@playwright/test" node_modules/@playwright/test
   install-playwright-runner:
     steps:
       - node/install-packages:
@@ -181,13 +194,13 @@ jobs:
           condition:
             equal: [browser, << parameters.suite >>]
           steps:
-            - install-playwright-runner
+            - install-application-playwright-runner
             - run:
                 name: Install matching Chromium
-                command: /tmp/playwright-runner/node_modules/.bin/playwright install --with-deps chromium
+                command: .circleci/playwright/node_modules/.bin/playwright install --with-deps chromium
             - run:
                 name: Native Playwright tests
-                command: /tmp/playwright-runner/node_modules/.bin/playwright test --config=playwright.application.config.ts --reporter=line,junit,html
+                command: .circleci/playwright/node_modules/.bin/playwright test --config=playwright.application.config.ts --reporter=line,junit,html
             - store_test_results:
                 path: tests/E2E/Playwright/artifacts/junit
             - store_artifacts:

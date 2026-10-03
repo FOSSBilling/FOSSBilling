@@ -484,6 +484,41 @@ as a sustained improvement. Hosted failure-artifact uploads still need a
 dedicated failure trial; local retention has been verified.
 
 
+### Minimal application browser dependencies
+
+The 21 application browser tests import only Playwright and local helpers.
+They consume frontend outputs from the workspace rather than rebuilding
+assets. The separate widget job still needs the full frontend dependencies.
+
+Application jobs now use the Node orb against `.circleci/playwright`, a
+standalone manifest/lockfile containing `@playwright/test@1.62.1` and its
+locked transitive dependencies. `npm ci --workspaces=false` avoids installing
+the root frontend/workspace tree. A separate
+`v1-application-playwright-node24` namespace caches npm download archives
+using this lockfile. A root `@playwright/test` symlink lets the unchanged
+configuration, tests and helpers resolve that same runner. Chromium and
+application tests use the standalone CLI directly; there is no second
+runner installation in `/tmp` for this job.
+
+Root frontend dependencies, the widget job, default Actions/local commands,
+browser selection, retries and artifact paths are unchanged. The standalone
+runner preserves the recorded 1.62.1 comparison baseline; reconcile versions
+in both browser jobs separately when updating that baseline.
+
+Pipeline 55 spent 5.7 seconds installing all npm dependencies and another
+1.6 seconds installing its baseline runner in the application job. Compare
+total job/workflow time and credits after local parity verification, including
+creation of the new cache, before claiming a performance gain.
+
+Local execution of the expanded application job passed all 21 tests with
+exact identity/outcome parity against pipeline 55 and no retries. Its clean
+container had only `@playwright/test`, `playwright` and `playwright-core`
+installed; esbuild, CKEditor and Tabler dependencies were absent. The HTML
+report was present. A separate intentional failure retained JUnit, HTML,
+screenshot, video and a valid trace archive. Config validation/expansion,
+lockfile integrity/version checks and spelling checks passed.
+
+
 ### MariaDB image comparison
 
 On 2026-10-03, the pinned upstream `mariadb:lts` image reported MariaDB
