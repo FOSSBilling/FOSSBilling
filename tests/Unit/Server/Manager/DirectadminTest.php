@@ -133,3 +133,23 @@ test('modifyAccount honors explicit false DNS and system information permissions
     expect($fields['dnscontrol'])->toBe('OFF')
         ->and($fields['sysinfo'])->toBe('OFF');
 });
+
+test('suspendAccount forwards the suspension reason to DirectAdmin', function (): void {
+    $requests = [];
+    $httpClient = new MockHttpClient(function (string $method, string $url, array $options) use (&$requests): MockResponse {
+        $requests[] = $url;
+
+        return new MockResponse('suspended=no');
+    });
+    $manager = createDirectadminManager($httpClient);
+    $account = (new Server_Account())
+        ->setUsername('client1')
+        ->setNote('Non-payment');
+
+    expect($manager->suspendAccount($account))->toBeTrue();
+
+    parse_str((string) parse_url($requests[1], PHP_URL_QUERY), $fields);
+
+    expect($fields['reason'])->toBe('billing')
+        ->and($fields['details'])->toBe('Non-payment');
+});
