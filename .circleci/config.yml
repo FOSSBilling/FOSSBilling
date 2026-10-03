@@ -1,6 +1,11 @@
 # cspell:words cimg NFIZXNYMJ Gemqiihh
 version: 2.1
 
+parameters:
+  force-full-validation:
+    type: boolean
+    default: false
+
 orbs:
   php: circleci/php@3.0.0
   node: circleci/node@7.2.1
@@ -21,7 +26,16 @@ executors:
     resource_class: medium.gen2
 
 commands:
-  install-application-playwright-runner:
+  checkout-for-validation:
+    steps:
+      - checkout
+      - run:
+          name: Determine validation scope
+          environment:
+            VALIDATION_TRIGGER: << pipeline.trigger_source >>
+            FORCE_FULL_VALIDATION: << pipeline.parameters.force-full-validation >>
+          command: bash .circleci/scripts/check-validation-scope.sh
+  install-playwright-runner:
     steps:
       - node/install-packages:
           app-dir: .circleci/playwright
@@ -30,28 +44,14 @@ commands:
           cache-version: v1-application-playwright-node24
           override-ci-command: npm ci --no-audit --no-fund --workspaces=false
       - run:
-          name: Expose application Playwright runner to test imports
+          name: Expose Playwright runner to test imports
           command: |
+            node -e 'require("node:assert/strict").equal(require("./package.json").devDependencies["@playwright/test"], require("./.circleci/playwright/package.json").dependencies["@playwright/test"])'
             mkdir -p node_modules/@playwright
             ln -s "$(pwd)/.circleci/playwright/node_modules/@playwright/test" node_modules/@playwright/test
-  install-playwright-runner:
-    steps:
-      - node/install-packages:
-          pkg-manager: npm
-          cache-path: ~/.npm
-          cache-version: v1-native-node24
-          override-ci-command: npm ci --no-audit --no-fund
-      - run:
-          name: Install matching baseline Playwright runner
-          command: |
-            # Keep the recorded baseline runner version for parity.
-            mkdir -p /tmp/playwright-runner
-            npm install --prefix /tmp/playwright-runner --no-audit --no-fund @playwright/test@1.62.1
-            rm -rf node_modules/@playwright/test
-            ln -s /tmp/playwright-runner/node_modules/@playwright/test node_modules/@playwright/test
   native-app-install:
     steps:
-      - checkout
+      - checkout-for-validation
       - php/install_packages:
           vendor_dir: src/vendor
           cache_files_dir: /home/circleci/.cache/composer/files
@@ -74,7 +74,7 @@ jobs:
       APP_ENV: test
       COMPOSER_CACHE_DIR: /home/circleci/.cache/composer
     steps:
-      - checkout
+      - checkout-for-validation
       - run:
           name: Record PHP environment
           command: |
@@ -122,7 +122,7 @@ jobs:
       - image: cimg/node:24.9.0@sha256:4729cd041e58fd288a12475aa011b7b62c58d351703813e6b7e0746a701e9602
     resource_class: medium.gen2
     steps:
-      - checkout
+      - checkout-for-validation
       - run: node --version && npm --version && git rev-parse HEAD
       - node/install-packages:
           pkg-manager: npm
@@ -141,24 +141,26 @@ jobs:
             - src/public/assets
             - src/themes/default/admin/assets/build
             - src/themes/default/client/assets/build
+            - test-results/widgets/script.js
 
   frontend-browser-tests:
     docker:
-      - image: mcr.microsoft.com/playwright:v1.62.1-noble@sha256:dcc5531e97840b9b5e794f2814476b21571c5124a3fca2267d73041f56e7580e
+      - image: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
     resource_class: medium.gen2
     environment:
+      TABLER_WIDGET_SCRIPT: test-results/widgets/script.js
       PLAYWRIGHT_JUNIT_OUTPUT_FILE: tests/E2E/Playwright/artifacts/junit/results.xml
       PLAYWRIGHT_HTML_OUTPUT_DIR: tests/E2E/Playwright/artifacts/report
       PLAYWRIGHT_HTML_OPEN: never
     steps:
-      - checkout
+      - checkout-for-validation
       - run: node --version && npm --version && git rev-parse HEAD
       - attach_workspace:
           at: .
       - install-playwright-runner
       - run:
           name: Frontend widget browser tests
-          command: /tmp/playwright-runner/node_modules/.bin/playwright test --config=playwright.widgets.config.ts --reporter=line,junit,html
+          command: .circleci/playwright/node_modules/.bin/playwright test --config=playwright.widgets.config.ts --reporter=line,junit,html
       - store_test_results:
           path: tests/E2E/Playwright/artifacts/junit
       - store_artifacts:
@@ -206,7 +208,7 @@ jobs:
           condition:
             equal: [browser, << parameters.suite >>]
           steps:
-            - install-application-playwright-runner
+            - install-playwright-runner
             - run:
                 name: Install matching Chromium
                 command: .circleci/playwright/node_modules/.bin/playwright install --with-deps chromium

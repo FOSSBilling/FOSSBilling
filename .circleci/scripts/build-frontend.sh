@@ -25,3 +25,4 @@ if (( status != 0 )); then
   exit "$status"
 fi
 npm run pw:tsc
+node .circleci/scripts/build-widget-fixture.mts

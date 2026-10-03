@@ -62,9 +62,9 @@ References:
 - Collect Pest and Playwright JUnit reports, browser artifacts and server logs.
 
 PR quality checks and independent Docker packaging validation are not yet
-part of this pilot. Keep Playwright 1.62.1 and its matching browser
-for parity with the recorded baseline; reconcile the package-lock version
-separately so a dependency update is not mistaken for a migration effect.
+part of this pilot. Both CI systems now use Playwright 1.63.0, the latest
+stable version checked on 2026-10-03. Earlier recorded trials used 1.62.1;
+compare new image trials against the updated baseline.
 
 ## Baseline and acceptance
 
@@ -814,3 +814,31 @@ References:
 Later phases: move PR quality checks, cut over required validation checks,
 then migrate previews and assess releases separately. Keep GitHub labeling,
 merge-hold checks, CodeQL and repository housekeeping on Actions initially.
+
+## Further optimisation trials (2026-10-03)
+
+Playwright 1.63.0 is pinned in the root and standalone runner lockfiles.
+The Actions Docker wrapper now derives its version from the root manifest,
+and CircleCI checks that both manifests agree. The official widget image
+is pinned to the matching release digest.
+
+Widget fixture bundling moved to the frontend build, using the same shared
+helper as the default local/Actions test path. CircleCI passes this fixture
+through the workspace and installs only the standalone Playwright runner.
+The fixture SHA256 matches the previous bundler byte for byte. Both the
+minimal runner path and the default bundling path passed all 23 widget tests
+locally without retries on 1.63.0.
+
+Redundant-workflow auto-cancellation is already enabled on the active
+`gh/FOSSBilling/FOSSBilling` project; no setting was changed.
+
+Each existing job checks documentation-only branches after checkout, using
+`circleci-agent step halt` to preserve successful job checks. The allowlist
+is limited to root README/contribution/governance documents, this README,
+and Markdown under `docs/`. The entire branch diff from the merge base of
+freshly fetched `main` must qualify. Main, manual/API runs, empty diffs,
+failed comparisons and mixed/code/config changes always run full validation.
+Rename detection is disabled so deleted or moved executable paths remain
+visible. All 11 local Git-repository cases passed. The pipeline parameter
+`force-full-validation=true` explicitly overrides filtering. Actions checks,
+including spellcheck, remain authoritative.
