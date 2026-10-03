@@ -935,6 +935,7 @@ class UpdatePatcher implements InjectionAwareInterface
             }
 
             $result = SchemaSynchronizer::syncEntities($entityManager, $eagerEntityClasses);
+            $this->migrateClientGroupMemberships($connection);
             $this->storeSchemaMetadataHash(EntityManagerFactory::entityDefinitionsHash());
         } catch (\Throwable $e) {
             // Attach the metadata hash so the failure can be correlated with
@@ -973,6 +974,42 @@ class UpdatePatcher implements InjectionAwareInterface
         }
 
         return $result;
+    }
+
+    /**
+     * Run once: non-MySQL installs retain the legacy column, so replaying the
+     * copy would restore memberships removed by administrators.
+     */
+    private function migrateClientGroupMemberships(\Doctrine\DBAL\Connection $connection): void
+    {
+        $marker = 'client_group_memberships_migrated';
+        if ($connection->fetchOne('SELECT value FROM setting WHERE param = :param', ['param' => $marker]) !== false) {
+            return;
+        }
+
+        $schemaManager = $connection->createSchemaManager();
+        if (!$schemaManager->tablesExist(['client'])
+            || !$schemaManager->introspectTableByUnquotedName('client')->hasColumn('client_group_id')) {
+            return;
+        }
+
+        $connection->transactional(static function (\Doctrine\DBAL\Connection $connection) use ($marker): void {
+            $connection->executeStatement(
+                'INSERT INTO client_group_members (client_id, client_group_id) '
+                . 'SELECT c.id, c.client_group_id FROM client c '
+                . 'INNER JOIN client_group g ON g.id = c.client_group_id '
+                . 'WHERE NOT EXISTS (SELECT 1 FROM client_group_members m '
+                . 'WHERE m.client_id = c.id AND m.client_group_id = c.client_group_id)'
+            );
+            $now = date('Y-m-d H:i:s');
+            $connection->insert('setting', [
+                'param' => $marker,
+                'value' => '1',
+                'public' => 0,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+        });
     }
 
     /**
@@ -4573,8 +4610,8 @@ class UpdatePatcher implements InjectionAwareInterface
         // the column (which also drops its index). Only groups that still
         // exist are copied: orphaned IDs (e.g. deleted groups) must not
         // migrate. INSERT IGNORE plus guards make reruns no-ops. Non-MySQL
-        // drivers get the table from the portable schema sync; the data copy
-        // and column drop are MySQL-only, like all historical data migrations.
+        // drivers get the table and assignment copy from syncPortableSchema();
+        // only the legacy column drop remains MySQL-only.
         if (!$this->tableExists('client_group_members')) {
             $this->executeSql('CREATE TABLE `client_group_members` (`id` bigint(20) NOT NULL AUTO_INCREMENT, `client_id` bigint(20) NOT NULL, `client_group_id` bigint(20) NOT NULL, `created_at` datetime DEFAULT NULL, `updated_at` datetime DEFAULT NULL, PRIMARY KEY (`id`), UNIQUE KEY `client_group_members_client_group` (`client_id`, `client_group_id`), KEY `client_group_members_group_idx` (`client_group_id`)) ENGINE=InnoDB DEFAULT CHARSET=utf8');
         }

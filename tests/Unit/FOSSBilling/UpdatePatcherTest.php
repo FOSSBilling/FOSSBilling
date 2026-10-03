@@ -2023,6 +2023,64 @@ test('applyCorePatches runs a portable schema sync instead of legacy patches on 
     });
 });
 
+test('non-MySQL upgrades copy legacy groups after creating the membership table', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+        $entityManager = FOSSBilling\Doctrine\EntityManagerFactory::create($connection);
+        FOSSBilling\Doctrine\SchemaInstaller::createSchema($entityManager);
+        $connection->executeStatement('DROP TABLE client_group_members');
+        $connection->executeStatement('ALTER TABLE client ADD COLUMN client_group_id BIGINT DEFAULT NULL');
+        $connection->executeStatement("INSERT INTO client_group (id, title) VALUES (7, 'Legacy')");
+        $connection->executeStatement('INSERT INTO client (id, client_group_id) VALUES (1, 7), (2, 99), (3, NULL)');
+
+        $di = new Pimple\Container();
+        $di['pdo'] = mockPdoAllowingThemeMigrationCalls();
+        $di['em'] = $entityManager;
+        $di['logger'] = new Tests\Helpers\TestLogger();
+        $patcher = new UpdatePatcher();
+        $patcher->setDi($di);
+        $patcher->applyCorePatches(force: true);
+
+        expect($connection->fetchAllAssociative('SELECT client_id, client_group_id FROM client_group_members'))
+            ->toBe([['client_id' => 1, 'client_group_id' => 7]])
+            ->and($entityManager->find(Box\Mod\Client\Entity\Client::class, 1)->getGroupIds())->toBe([7]);
+
+        // The retained legacy column must not undo deliberate membership removal.
+        $connection->executeStatement('DELETE FROM client_group_members');
+        $patcher->applyCorePatches(force: true);
+        expect($connection->fetchOne('SELECT COUNT(*) FROM client_group_members'))->toBe(0)
+            ->and($connection->fetchOne('SELECT client_group_id FROM client WHERE id = 1'))->toBe(7);
+    });
+});
+
+test('client group migration rolls back and retries without duplicating memberships', function (): void {
+    $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $connection->executeStatement('CREATE TABLE client (id INTEGER PRIMARY KEY, client_group_id BIGINT)');
+    $connection->executeStatement('CREATE TABLE client_group (id INTEGER PRIMARY KEY)');
+    $connection->executeStatement('CREATE TABLE client_group_members (client_id BIGINT, client_group_id BIGINT, UNIQUE (client_id, client_group_id))');
+    $connection->executeStatement('CREATE TABLE setting (param TEXT UNIQUE, value TEXT, public INTEGER, created_at TEXT, updated_at TEXT)');
+    $connection->executeStatement('INSERT INTO client_group VALUES (7), (8)');
+    $connection->executeStatement('INSERT INTO client VALUES (1, 7), (2, 8)');
+    $connection->executeStatement('INSERT INTO client_group_members VALUES (1, 7), (1, 8)');
+    $connection->executeStatement("CREATE TRIGGER fail_marker BEFORE INSERT ON setting BEGIN SELECT RAISE(ABORT, 'marker failure'); END");
+
+    $patcher = new UpdatePatcher();
+    $migrate = (new ReflectionMethod($patcher, 'migrateClientGroupMemberships'))->getClosure($patcher);
+    expect(fn () => $migrate($connection))->toThrow('marker failure');
+    expect($connection->fetchOne('SELECT COUNT(*) FROM client_group_members'))->toBe(2)
+        ->and($connection->fetchOne('SELECT COUNT(*) FROM setting'))->toBe(0);
+
+    $connection->executeStatement('DROP TRIGGER fail_marker');
+    $migrate($connection);
+    expect($connection->fetchAllAssociative('SELECT client_id, client_group_id FROM client_group_members ORDER BY client_id, client_group_id'))
+        ->toBe([
+            ['client_id' => 1, 'client_group_id' => 7],
+            ['client_id' => 1, 'client_group_id' => 8],
+            ['client_id' => 2, 'client_group_id' => 8],
+        ])
+        ->and($connection->fetchOne('SELECT value FROM setting WHERE param = :param', ['param' => 'client_group_memberships_migrated']))->toBe('1');
+});
+
 test('applyCorePatches also runs a portable schema sync after legacy patches on a MySQL driver', function (): void {
     withMysqlDbDriver(function (): void {
         $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
