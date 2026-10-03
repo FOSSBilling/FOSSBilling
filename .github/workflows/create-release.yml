@@ -11,7 +11,7 @@ on:
         required: true
         type: string
       target_ref:
-        description: 'Git ref to build and tag'
+        description: 'Git ref to build and tag (target)'
         required: true
         type: string
       draft:
