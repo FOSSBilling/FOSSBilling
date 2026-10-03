@@ -100,7 +100,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
         // The invoice binding arrives through a buyer-editable callback URL,
         // so authenticate it before anything below trusts it. Runs outside
         // the test-mode bypass above: the binding must hold in every environment.
-        $verifiedInvoiceId = $this->verifyCallbackBinding($data, (int) $gateway_id, $tx['invoice_id'] ?? null, (int) $id);
+        $verifiedInvoiceId = $this->verifyCallbackBinding($data, $gateway_id, $tx['invoice_id'] ?? null, $id);
 
         $ipn = $post;
 

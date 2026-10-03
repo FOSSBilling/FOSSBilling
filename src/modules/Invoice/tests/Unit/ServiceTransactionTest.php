@@ -803,7 +803,7 @@ test('approveTransaction settles an offline payment', function (): void {
     $transactionModel->setError('stale error');
     $transactionModel->setErrorCode(9999);
 
-    $adapter = new class($transactionModel) {
+    $adapter = new readonly class($transactionModel) {
         public function __construct(private object $tx)
         {
         }

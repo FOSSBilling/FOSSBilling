@@ -103,7 +103,7 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\InjectionAwareInterfa
             throw new Payment_Exception('IPN is invalid');
         }
 
-        $tx = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\Transaction::class)->find((int) $id);
+        $tx = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\Transaction::class)->find($id);
 
         $invoiceModel = $tx?->getInvoice();
         $get = (isset($data['get']) && is_array($data['get'])) ? $data['get'] : [];
@@ -118,7 +118,7 @@ class Payment_Adapter_ClientBalance implements FOSSBilling\InjectionAwareInterfa
             throw new Payment_Exception('You are not authorized to pay this invoice with client balance.');
         }
 
-        if (($invoiceModel->getGateway()?->getId() ?? 0) !== (int) $gateway_id) {
+        if (($invoiceModel->getGateway()?->getId() ?? 0) !== $gateway_id) {
             throw new Payment_Exception('Invoice is not configured to use this payment gateway.');
         }
 
