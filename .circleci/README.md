@@ -403,6 +403,27 @@ retained its JUnit, HTML, screenshot, video and valid trace archive in the
 primary container. The probe is not part of the committed suite. Local
 execution does not establish hosted performance or artifact-upload behavior.
 
+Hosted pipeline [52](https://app.circleci.com/pipelines/github/FOSSBilling/FOSSBilling/52),
+revision `507765a85ebb4418655b8c2ef8ffdfb3aeb84104`, passed all six jobs.
+Downloaded browser JUnit matches all 44 baseline identities and outcomes,
+and the uploaded HTML report is present. Existing Actions CI, quality and
+CodeQL checks passed on this revision.
+
+| Measurement | Pipeline 25: install browser | Pipeline 52: official service |
+| --- | --- | --- |
+| Browser job elapsed | 101.2s | 99.2s |
+| Container startup | 1.4s | 14.1s |
+| Runner/browser installation | 18.8s | 1.5s (runner only) |
+| Playwright test execution | 59.1s | 62.8s |
+| Workflow duration (Insights) | 2m09s | 2m05s |
+| Workflow credits (Insights) | 61 | 57 |
+
+The larger image's startup cost largely offsets the installation saving in
+this single sample. Retain the official service for its prepared browser
+environment, but do not claim a material performance improvement from this
+run. Warm/cold repeats and hosted failure-artifact uploads remain separate
+validation work; the local probe proves transfer back to the runner only.
+
 
 References:
 
