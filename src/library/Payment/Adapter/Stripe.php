@@ -24,7 +24,7 @@ use FOSSBilling\Period;
 use Stripe\StripeClient;
 use Symfony\Component\Intl\Currencies;
 
-class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
+class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface, FOSSBilling\Payment\JsonWebhookAuthenticatorInterface
 {
     protected ?Pimple\Container $di = null;
 
@@ -650,7 +650,12 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         }
     }
 
-    private function processWebhookEvent($api_admin, Transaction $tx, array $data, int $gateway_id): void
+    public function authenticateJsonWebhook(array $data): void
+    {
+        $this->getVerifiedWebhookEvent($data);
+    }
+
+    private function getVerifiedWebhookEvent(array $data): Stripe\Event
     {
         $rawBody = $data['http_raw_post_data'] ?? '';
         $sigHeader = $data['server']['HTTP_STRIPE_SIGNATURE'] ?? '';
@@ -677,6 +682,13 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         } catch (Stripe\Exception\SignatureVerificationException) {
             throw new FOSSBilling\Exception('Invalid Stripe webhook signature');
         }
+
+        return $event;
+    }
+
+    private function processWebhookEvent($api_admin, Transaction $tx, array $data, int $gateway_id): void
+    {
+        $event = $this->getVerifiedWebhookEvent($data);
 
         $tx->setTxnId($event->id);
         $tx->setTxnStatus($event->type);
