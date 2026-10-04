@@ -81,6 +81,28 @@ describe('validateCurrency', function (): void {
 });
 
 describe('_isIpnValid receiver verification', function (): void {
+    test('rejects array fields without sending a verification request', function (string $body): void {
+        $adapter = new Payment_Adapter_PayPalEmail(['email' => 'merchant@example.com', 'test_mode' => false]);
+        $httpClient = Mockery::mock();
+        $httpClient->shouldNotReceive('withOptions');
+        $di = container();
+        $di['http_client'] = $httpClient;
+        $adapter->setDi($di);
+
+        set_error_handler(static function (int $severity, string $message): never {
+            throw new ErrorException($message, 0, $severity);
+        });
+
+        try {
+            expect(callIsIpnValid($adapter, $body))->toBeFalse();
+        } finally {
+            restore_error_handler();
+        }
+    })->with([
+        'array payee' => 'receiver_email[]=merchant%40example.com',
+        'nested field' => 'receiver_email=merchant%40example.com&custom[invoice][id]=7',
+    ]);
+
     test('accepts a payment made to the configured merchant account', function (): void {
         $adapter = buildPayPalEmailAdapter('merchant@example.com', 'VERIFIED');
 
