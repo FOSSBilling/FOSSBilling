@@ -371,10 +371,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
                 throw new \FOSSBilling\InformationException('The link has expired or you have already reset your password.');
             }
 
-            $client->setPass($this->getDi()['password']->hashIt($data['password']));
-            $em->persist($client);
-            $em->remove($reset);
-            $em->flush();
+            $em->getRepository(ClientPasswordReset::class)->changePassword($client, $this->getDi()['password']->hashIt($data['password']), $data['hash']);
 
             $profileService = $this->getDi()['mod_service']('profile');
             $profileService->invalidateSessions('client', (int) $client->getId());

@@ -49,11 +49,14 @@ class ExtensionManager implements InjectionAwareInterface
      */
     public function getExtension(string $id): array
     {
+        $this->assertValidIdentifier($id);
         $manifest = $this->makeRequest($id);
 
         if (empty($manifest)) {
             throw new Exception('Unable to fetch the extension details from the FOSSBilling extension directory.');
         }
+
+        $this->validateMetadata($manifest);
 
         return $manifest;
     }
@@ -120,7 +123,45 @@ class ExtensionManager implements InjectionAwareInterface
             $params['type'] = $type;
         }
 
-        return $this->makeRequest('list', $params);
+        $extensions = $this->makeRequest('list', $params);
+        foreach ($extensions as $extension) {
+            $this->validateMetadata($extension);
+        }
+
+        return $extensions;
+    }
+
+    private function assertValidIdentifier(string $id): void
+    {
+        if (preg_match('/\A[A-Za-z0-9_-]+\z/', $id) !== 1) {
+            throw new InformationException('Extension ID contains invalid characters.');
+        }
+    }
+
+    /** Validate after cache lookup so previously cached metadata is checked too. */
+    private function validateMetadata(mixed $extension): void
+    {
+        if (!is_array($extension) || !is_string($extension['id'] ?? null)
+            || preg_match('/\A[A-Za-z0-9_-]+\z/', $extension['id']) !== 1
+            || !is_string($extension['name'] ?? null)) {
+            throw new Exception('Invalid response from the FOSSBilling extension directory.', null, 746);
+        }
+
+        $author = $extension['author'] ?? [];
+        if (!is_array($author)) {
+            throw new Exception('Invalid response from the FOSSBilling extension directory.', null, 746);
+        }
+
+        $url = $author['URL'] ?? null;
+        if ($url === null || $url === '') {
+            return;
+        }
+
+        if (!is_string($url) || preg_match('/[\x00-\x20\x7f]/', $url) === 1
+            || filter_var($url, FILTER_VALIDATE_URL) === false
+            || !in_array(strtolower((string) parse_url($url, PHP_URL_SCHEME)), ['http', 'https'], true)) {
+            throw new Exception('Invalid response from the FOSSBilling extension directory.', null, 746);
+        }
     }
 
     /**

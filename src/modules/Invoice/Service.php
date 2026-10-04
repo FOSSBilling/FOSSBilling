@@ -4078,10 +4078,10 @@ class Service implements InjectionAwareInterface
         $sellerLines = 0;
         $buyerLines = 0;
         $logoSource = '';
+        $options->set('isRemoteEnabled', false);
 
         if (!empty($c['logo_url'])) {
-            [$logoSource, $remote] = $this->getPdfLogoSource($c['logo_url']);
-            $options->set('isRemoteEnabled', $remote);
+            [$logoSource] = $this->getPdfLogoSource($c['logo_url']);
         }
 
         $vars = [
@@ -4724,6 +4724,9 @@ class Service implements InjectionAwareInterface
     {
         $source = parse_url($originalUrl, PHP_URL_PATH);
         $remote = false;
+        if (!is_string($source) || $source === '') {
+            return [$this->fetchPdfLogo($originalUrl), false];
+        }
 
         // prevent openbasedir error from preventing pdf creation when debug mode is enabled
         if (@!$this->filesystem->exists($source)) {
@@ -4746,23 +4749,120 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        // Only permit http/https remote URLs. Other schemes such as file://, php://, or phar://
-        // could be passed to Dompdf with remote loading enabled, leading to local file disclosure
-        // or other server-side vulnerabilities. Malformed URLs (where parse_url returns non-string)
-        // are also rejected by skipping the logo entirely.
         if ($remote) {
-            $scheme = parse_url($source, PHP_URL_SCHEME);
-            if (!is_string($scheme) || !in_array(strtolower($scheme), ['http', 'https'], true)) {
-                return ['', false];
-            }
+            return [$this->fetchPdfLogo($originalUrl), false];
         }
 
-        if (!$remote && str_ends_with($source, '.svg')) {
+        if (str_ends_with($source, '.svg')) {
             $source = 'data:image/svg+xml;base64,' . base64_encode($this->filesystem->readFile($source));
             $remote = false;
         }
 
         return [$source, $remote];
+    }
+
+    /** Fetch logos without allowing the PDF renderer to access the network. */
+    private function fetchPdfLogo(string $url): string
+    {
+        $scheme = parse_url($url, PHP_URL_SCHEME);
+        if (!is_string($scheme) || !in_array(strtolower($scheme), ['http', 'https'], true)) {
+            return '';
+        }
+
+        $client = new \Symfony\Component\HttpClient\NoPrivateNetworkHttpClient($this->di['http_client']);
+        $response = null;
+
+        try {
+            $response = $client->request('GET', $url, [
+                'max_redirects' => 3,
+                'timeout' => 5,
+                'max_duration' => 10,
+                'on_progress' => static function (int $downloaded, int $size): void {
+                    if ($downloaded > 2 * 1024 * 1024 || $size > 2 * 1024 * 1024) {
+                        throw new \Symfony\Component\HttpClient\Exception\TransportException('Invoice logo is too large');
+                    }
+                },
+            ]);
+            if ($response->getStatusCode() !== 200) {
+                return '';
+            }
+            $mime = strtolower(trim(explode(';', $response->getHeaders()['content-type'][0] ?? '')[0]));
+            $mime = match ($mime) {
+                'image/x-png' => 'image/png',
+                'image/jpg', 'image/pjpeg' => 'image/jpeg',
+                'image/x-ms-bmp' => 'image/bmp',
+                default => $mime,
+            };
+            if (!in_array($mime, ['', 'application/octet-stream', 'image/png', 'image/jpeg', 'image/gif', 'image/bmp', 'image/webp', 'image/svg+xml'], true)) {
+                return '';
+            }
+            $bytes = '';
+            foreach ($client->stream($response) as $chunk) {
+                $bytes .= $chunk->getContent();
+                if (strlen($bytes) > 2 * 1024 * 1024) {
+                    return '';
+                }
+            }
+            $image = @getimagesizefromstring($bytes);
+            if ($image !== false && $image['mime'] !== 'image/svg+xml') {
+                if (!in_array($image['mime'], ['image/png', 'image/jpeg', 'image/gif', 'image/bmp', 'image/webp'], true)
+                    || !in_array($mime, ['', 'application/octet-stream', $image['mime']], true)
+                    || 16 * 1024 * 1024 < $image[0] * $image[1]) {
+                    return '';
+                }
+                $mime = $image['mime'];
+            } elseif (in_array($mime, ['', 'application/octet-stream', 'image/svg+xml'], true) && $this->isSelfContainedPdfSvg($bytes)) {
+                $mime = 'image/svg+xml';
+            } else {
+                return '';
+            }
+
+            return 'data:' . $mime . ';base64,' . base64_encode($bytes);
+        } catch (\Symfony\Contracts\HttpClient\Exception\ExceptionInterface) {
+            // An unavailable or unsafe logo must not prevent invoice generation.
+            return '';
+        } finally {
+            $response?->cancel();
+        }
+    }
+
+    /** Remote SVGs may use internal fragments, but may not load other resources. */
+    private function isSelfContainedPdfSvg(string $bytes): bool
+    {
+        $document = new \DOMDocument();
+        if (!@$document->loadXML($bytes, LIBXML_NONET) || $document->doctype !== null
+            || $document->documentElement?->localName !== 'svg') {
+            return false;
+        }
+        $content = $document->textContent;
+        foreach ($document->getElementsByTagName('*') as $element) {
+            foreach ($element->attributes as $attribute) {
+                $content .= "\n" . $attribute->value;
+                if ($attribute->localName === 'href' && !str_starts_with(trim($attribute->value), '#')) {
+                    if (!preg_match('~^data:(image/(?:png|jpeg|gif|bmp|webp));base64,([A-Za-z0-9+/=]+)$~D', $attribute->value, $data)) {
+                        return false;
+                    }
+                    $imageBytes = base64_decode($data[2], true);
+                    $image = $imageBytes === false ? false : @getimagesizefromstring($imageBytes);
+                    if ($image === false || $image['mime'] !== $data[1] || 16 * 1024 * 1024 < $image[0] * $image[1]) {
+                        return false;
+                    }
+                }
+            }
+        }
+        // Inspect decoded XML values so character references cannot hide CSS URLs.
+        if (str_contains($content, '\\') || stripos($content, '@import') !== false
+            || stripos($bytes, '<?xml-stylesheet') !== false) {
+            return false;
+        }
+        preg_match_all('/url\(([^)]*)\)/i', $content, $urls);
+        foreach ($urls[1] as $url) {
+            if (!str_starts_with(trim($url, " \t\r\n\"'"), '#')) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private function getSellerData(array $invoice, int &$lines): array

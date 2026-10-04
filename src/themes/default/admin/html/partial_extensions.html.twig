@@ -5,7 +5,7 @@
 {% endif %}
 
 <div class="table-responsive">
-    <div class="modal" id="extensionReadMe">
+    <div class="modal" id="extensionReadMe" data-fetching-message="{{ 'Fetching extension details.'|trans }}">
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
@@ -55,7 +55,7 @@
                     <a href="https://extensions.fossbilling.org/extension/{{ extension.id }}" target="_blank">{{ 'View on the extension directory'|trans }}</a>
                 </td>
                 <td class="text-nowrap" data-bs-toggle="tooltip" data-bs-title="{{ 'View extension README'|trans }}">
-                    <a class="btn btn-icon" data-bs-toggle="modal" data-bs-target="#extensionReadMe" onclick="getExtensionReadme('{{ extension.id }}', '{{ extension.name }}');">
+                    <a class="btn btn-icon" data-bs-toggle="modal" data-bs-target="#extensionReadMe" data-extension-id="{{ extension.id }}" data-extension-name="{{ extension.name }}">
                      <svg class="icon">
                          <use href="#eye" />
                      </svg>
@@ -82,17 +82,33 @@
     </table>
 
     <script>
-        function getExtensionReadme(extensionID, extensionName){
-            header = document.getElementById("extension-name");
-            header.innerText = extensionName;
+        (() => {
+            const modal = document.currentScript.parentElement.querySelector('#extensionReadMe');
+            modal.addEventListener('show.bs.modal', (event) => {
+                const trigger = event.relatedTarget;
+                if (!trigger || !trigger.dataset.extensionId) {
+                    return;
+                }
 
-            readme = document.getElementById("extension-readme");
-            readme.innerText = "{{ 'Fetching extension details.'|trans }}";
+                const header = modal.querySelector('#extension-name');
+                header.textContent = trigger.dataset.extensionName;
 
-            FOSSBilling.api.admin.post('extension/get_extension_readme', { extension_id: extensionID },
-                (result) => {
-                    readme.innerHTML = result;
-                });
-        }
+                const readme = modal.querySelector('#extension-readme');
+                readme.textContent = modal.dataset.fetchingMessage;
+
+                // Ignore stale responses: opening another extension before
+                // this request completes must not replace its README.
+                const requestedId = trigger.dataset.extensionId;
+                modal.dataset.currentExtensionId = requestedId;
+
+                FOSSBilling.api.admin.post('extension/get_extension_readme', { extension_id: requestedId },
+                    (result) => {
+                        if (modal.dataset.currentExtensionId !== requestedId) {
+                            return;
+                        }
+                        readme.innerHTML = result;
+                    });
+            });
+        })();
     </script>
 </div>

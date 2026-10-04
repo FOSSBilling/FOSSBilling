@@ -149,9 +149,6 @@ test('deletePreset removes a theme preset', function (): void {
 test('getThemePresets returns available presets', function (): void {
     $service = new Service();
     $serviceMock = Mockery::mock(Service::class)->makePartial();
-    $serviceMock->shouldReceive('updateSettings')
-        ->atLeast()
-        ->once();
 
     $repositoryMock = Mockery::mock(Box\Mod\Extension\Repository\ExtensionMetaRepository::class);
     $repositoryMock->shouldReceive('findByExtensionAndScope')
@@ -177,6 +174,8 @@ test('getThemePresets returns available presets', function (): void {
     $di = themeContainerWithRepository($repositoryMock);
     $di['theme'] = $di->protect(fn (): Mockery\MockInterface => $themeMock);
 
+    $di['mod_service']('Staff')->shouldNotReceive('checkPermissionsAndThrowException');
+    $di['em']->shouldReceive('persist')->twice()->with(Mockery::type(ExtensionMeta::class));
     $serviceMock->setDi($di);
     $result = $serviceMock->getThemePresets($themeMock, 'dark_blue');
     expect($result)->toBeArray();
@@ -332,7 +331,9 @@ test('updateSettings updates theme settings', function (): void {
     $di = themeContainerWithRepository($repositoryMock, $emMock);
 
     $service->setDi($di);
-    $params = [];
+    $params = ['inject_javascript' => '<script>window.themeControl = true;</script>'];
+    $emMock->shouldReceive('persist')->with(Mockery::on(fn (ExtensionMeta $meta): bool => $meta->getMetaValue() === json_encode($params)));
+    $di['mod_service']('Staff')->shouldReceive('checkPermissionsAndThrowException')->once()->with('theme', 'manage_settings');
     $result = $service->updateSettings($themeMock, 'default', $params);
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
@@ -587,4 +588,23 @@ test('getThemes still classifies a flat theme by its name, unaffected by the pac
     expect(array_column($serviceMock->getThemes(true), 'code'))->toBe(['my-client-theme']);
 
     (new Symfony\Component\Filesystem\Filesystem())->remove($root);
+});
+
+test('updateSettings denies unauthorized writes before persistence', function (): void {
+    $di = container();
+    $staff = $di['mod_service']('Staff');
+    $staff->shouldReceive('checkPermissionsAndThrowException')->once()->with('theme', 'manage_settings')
+        ->andThrow(new FOSSBilling\InformationException('Permission denied', null, 403));
+    $repository = Mockery::mock(Box\Mod\Extension\Repository\ExtensionMetaRepository::class);
+    $repository->shouldNotReceive('findOneByExtensionAndScope');
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->andReturn($repository);
+    $em->shouldNotReceive('persist');
+    $em->shouldNotReceive('flush');
+    $di['em'] = $em;
+    $service = new Service();
+    $service->setDi($di);
+
+    expect(fn () => $service->updateSettings(new Model\Theme('default/client'), 'Default', ['inject_javascript' => '<script>alert(1)</script>']))
+        ->toThrow(FOSSBilling\InformationException::class, 'Permission denied', 403);
 });

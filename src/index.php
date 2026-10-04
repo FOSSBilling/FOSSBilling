@@ -10,16 +10,22 @@ declare(strict_types=1);
  */
 
 require __DIR__ . DIRECTORY_SEPARATOR . 'load.php';
-global $di;
+global $di, $request;
 
 use DebugBar\DataCollector\TimeDataCollector;
+use FOSSBilling\Http\PaymentReturn;
 use FOSSBilling\Http\RequestFactory;
+
+// A cross-site payment return must not start a replacement session when the
+// browser withholds its Strict cookie. Resume through a same-site navigation.
+$paymentReturn = PaymentReturn::createResponse($request, $di['url']);
+if ($paymentReturn !== null) {
+    emitResponse($paymentReturn);
+}
 
 $config = FOSSBilling\Config::getConfig();
 $debugBar = null;
 $timeCollector = null;
-/* @var Symfony\Component\HttpFoundation\Request $request */
-global $request;
 
 if ((bool) ($config['debug_and_monitoring']['debug'] ?? false)) {
     // Setting up the debug bar

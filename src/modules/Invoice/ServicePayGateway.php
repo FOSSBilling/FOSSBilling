@@ -17,7 +17,6 @@ use Box\Mod\Invoice\Entity\Subscription;
 use Box\Mod\Invoice\Entity\Transaction;
 use Box\Mod\Invoice\Repository\PayGatewayRepository;
 use FOSSBilling\InjectionAwareInterface;
-use FOSSBilling\Tools;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Exception\DirectoryNotFoundException;
@@ -444,7 +443,7 @@ class ServicePayGateway implements InjectionAwareInterface
         $defaults['continue_shopping_url'] = $this->di['tools']->url('/order');
         $defaults['single_page'] = true;
         if ($model instanceof Invoice) {
-            $defaults['thankyou_url'] = $this->di['url']->link("/invoice/thank-you/{$model->getHash()}", ['restore_token' => Tools::createSessionRestoreToken($this->di['session']->getId())]);
+            $defaults['thankyou_url'] = $this->getPaymentReturnUrl($model, 'thankyou');
             $defaults['invoice_url'] = $this->di['tools']->url("/invoice/{$model->getHash()}");
         }
 
@@ -569,20 +568,22 @@ class ServicePayGateway implements InjectionAwareInterface
 
     private function getReturnUrl(PayGateway $pg, ?Invoice $model = null): string
     {
-        if ($model instanceof Invoice) {
-            return $this->di['url']->link("/invoice/{$model->getHash()}", ['status' => 'ok', 'restore_token' => Tools::createSessionRestoreToken($this->di['session']->getId())]);
-        }
-
-        return $this->di['url']->link('/invoice', ['status' => 'ok', 'restore_token' => Tools::createSessionRestoreToken($this->di['session']->getId())]);
+        return $this->getPaymentReturnUrl($model, 'ok');
     }
 
     private function getCancelUrl(PayGateway $pg, ?Invoice $model = null): string
     {
+        return $this->getPaymentReturnUrl($model, 'cancel');
+    }
+
+    private function getPaymentReturnUrl(?Invoice $model, string $status): string
+    {
+        $params = ['status' => $status];
         if ($model instanceof Invoice) {
-            return $this->di['url']->link("/invoice/{$model->getHash()}", ['status' => 'cancel', 'restore_token' => Tools::createSessionRestoreToken($this->di['session']->getId())]);
+            $params['hash'] = $model->getHash();
         }
 
-        return $this->di['url']->link('/invoice', ['status' => 'cancel', 'restore_token' => Tools::createSessionRestoreToken($this->di['session']->getId())]);
+        return $this->di['url']->link('/invoice/payment-return', $params);
     }
 
     private function getCallbackRedirect(PayGateway $pg, ?Invoice $model = null): string

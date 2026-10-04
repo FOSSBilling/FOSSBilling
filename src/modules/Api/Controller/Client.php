@@ -223,6 +223,7 @@ class Client implements InjectionAwareInterface
 
         $this->checkUpdateFinalization($role, $class, $method);
         $this->checkRateLimit($role, $method);
+        $this->checkGuestClientAuthentication($role, $method, $params);
 
         $api = $this->di['api_identity']($role);
         unset($params['CSRFToken']);
@@ -248,6 +249,34 @@ class Client implements InjectionAwareInterface
         }
 
         return $this->renderJson($result);
+    }
+
+    /** Login and signup can both replace the browser's client identity. */
+    private function checkGuestClientAuthentication(string $role, string $method, array $params): void
+    {
+        if ($role !== 'guest' || !in_array(strtolower($method), ['client_login', 'client_create'], true)) {
+            return;
+        }
+
+        $request = $this->di['request'];
+        if (!$request->isMethod('POST')) {
+            throw new \FOSSBilling\InformationException('Client authentication requires POST', null, 405);
+        }
+
+        // Use the pre-login session nonce, even when general API CSRF protection is disabled.
+        // Query parameters are deliberately excluded from the token sources.
+        $token = $params['CSRFToken'] ?? $request->headers->get('X-CSRF-TOKEN');
+        $sessionToken = $this->di['session']->get('csrf_token');
+        if (!is_string($token) || !is_string($sessionToken) || $sessionToken === '' || !hash_equals($sessionToken, $token)) {
+            throw new \FOSSBilling\InformationException('CSRF token invalid', null, 403);
+        }
+
+        $origin = $request->headers->get('Origin');
+        $expectedOrigin = \Symfony\Component\HttpFoundation\Request::create(SYSTEM_URL)->getSchemeAndHttpHost();
+        if (($origin !== null && strtolower($origin) !== strtolower($expectedOrigin))
+            || $request->headers->get('Sec-Fetch-Site') === 'cross-site') {
+            throw new \FOSSBilling\InformationException('Invalid request origin', null, 403);
+        }
     }
 
     private function getAuth(): array

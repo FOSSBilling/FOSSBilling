@@ -731,7 +731,7 @@ document.addEventListener('DOMContentLoaded', function() {
         $data['business'] = $this->config['email'];
 
         $data['cmd'] = '_xclick-subscriptions';
-        $data['rm'] = '2';
+        $data['rm'] = '1';
 
         $data['invoice'] = $invoice['id'];
 
@@ -774,7 +774,7 @@ document.addEventListener('DOMContentLoaded', function() {
         $data['no_shipping'] = '1';
         $data['no_note'] = '1';
         $data['currency_code'] = $invoice['currency'];
-        $data['rm'] = '2';
+        $data['rm'] = '1';
         $data['return'] = $this->config['thankyou_url'];
         $data['cancel_return'] = $this->config['cancel_url'];
         $data['notify_url'] = $this->signNotifyUrl($this->config['notify_url'], $invoice['id']);

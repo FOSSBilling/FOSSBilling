@@ -127,7 +127,7 @@ final class FOSSBilling_Installer
                 // Installer validation
                 try {
                     // Make sure we are not already installed. Prevents tampered requests from being able to trigger the installer.
-                    if (!$this->isDebug && $this->isAlreadyInstalled()) {
+                    if ($this->isAlreadyInstalled()) {
                         throw new Exception('FOSSBilling is already installed.');
                     }
 
@@ -474,7 +474,7 @@ final class FOSSBilling_Installer
      */
     public function isAlreadyInstalled(): bool
     {
-        return !$this->isDebug && $this->filesystem->exists(PATH_CONFIG);
+        return $this->filesystem->exists(PATH_CONFIG);
     }
 
     private function getExistingConfig(): ?array

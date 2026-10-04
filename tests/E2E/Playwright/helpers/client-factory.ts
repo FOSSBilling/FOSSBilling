@@ -23,9 +23,18 @@ export async function createTestClient(request: APIRequestContext): Promise<Test
     password: defaultClientPassword,
   };
 
+  // Establish the anonymous browser session before signup can authenticate it.
+  const loginPage = await request.get('/login');
+  const html = await loginPage.text();
+  const csrfToken = html.match(/name="CSRFToken" value="([^"]+)"/)?.[1];
+  if (!loginPage.ok() || !csrfToken) {
+    throw new Error('Could not obtain the pre-login CSRF token');
+  }
+
   const response = await request.post('/api/guest/client/create', {
     data: {
       ...client,
+      CSRFToken: csrfToken,
       password_confirm: client.password,
     },
   });

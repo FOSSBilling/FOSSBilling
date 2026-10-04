@@ -656,9 +656,7 @@ class Service implements InjectionAwareInterface
 
         $this->di['event_dispatcher']->dispatch(new BeforeAdminStaffPasswordChangeEvent((int) $model->getId()));
 
-        $model->setPass($this->di['password']->hashIt($password));
-        $this->di['em']->persist($model);
-        $this->di['em']->flush();
+        $this->adminPasswordResetRepository->changePassword($model, $this->di['password']->hashIt($password));
 
         $profileService = $this->di['mod_service']('profile');
         $profileService->invalidateSessions('admin', (int) $model->getId());

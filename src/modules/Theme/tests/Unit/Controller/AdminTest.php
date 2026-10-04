@@ -145,7 +145,7 @@ test('getTheme renders theme preset', function (): void {
     $controller->get_theme($boxAppMock, 'default/client');
 });
 
-test('save theme settings dispatches safe typed event and strips preset control keys', function (): void {
+test('save theme settings dispatches safe typed event and strips preset control keys', function (bool $newPreset): void {
     $controller = new Box\Mod\Theme\Controller\Admin();
     $di = container();
     $steps = [];
@@ -158,13 +158,17 @@ test('save theme settings dispatches safe typed event and strips preset control 
     $themeServiceMock = Mockery::mock(Box\Mod\Theme\Service::class);
     $themeServiceMock->shouldReceive('getTheme')->andReturn($themeMock);
     $themeServiceMock->shouldReceive('getCurrentThemePreset')->andReturn('default');
-    $themeServiceMock->shouldReceive('setCurrentThemePreset')
-        ->once()
-        ->with($themeMock, 'MyPreset');
+    if ($newPreset) {
+        $themeServiceMock->shouldReceive('setCurrentThemePreset')->once()->with($themeMock, 'MyPreset');
+    } else {
+        $themeServiceMock->shouldNotReceive('setCurrentThemePreset');
+    }
     $themeServiceMock->shouldReceive('updateSettings')
         ->once()
-        ->with($themeMock, 'MyPreset', Mockery::on(fn (array $body): bool => !array_key_exists('save-current-setting', $body)
+        ->with($themeMock, $newPreset ? 'MyPreset' : 'default', Mockery::on(fn (array $body): bool => !array_key_exists('save-current-setting', $body)
             && !array_key_exists('save-current-setting-preset', $body)
+            && !array_key_exists('CSRFToken', $body)
+            && $body['inject_javascript'] === '<script>window.themeControl = true;</script>'
             && $body['color'] === 'blue'
             && $body['api_key'] === 'never-expose-this-value'));
     $themeServiceMock->shouldReceive('regenerateThemeCssAndJsFiles');
@@ -188,6 +192,8 @@ test('save theme settings dispatches safe typed event and strips preset control 
     };
 
     $di['api_admin'] = Mockery::mock();
+    $di['session']->shouldReceive('get')->with('csrf_token')->andReturn('valid-token');
+    $di['mod_service']('Staff')->shouldReceive('checkPermissionsAndThrowException')->once()->with('theme', 'manage_settings');
     $di['is_admin_logged'] = true;
     $di['mod'] = $di->protect(function () use ($modMock, &$steps) {
         $steps[] = 'module';
@@ -198,9 +204,11 @@ test('save theme settings dispatches safe typed event and strips preset control 
     $controller->setDi($di);
 
     $request = Symfony\Component\HttpFoundation\Request::create('/theme/default/client', 'POST', [
+        'CSRFToken' => 'valid-token',
+        'inject_javascript' => '<script>window.themeControl = true;</script>',
         'color' => 'blue',
         'api_key' => 'never-expose-this-value',
-        'save-current-setting' => '1',
+        'save-current-setting' => $newPreset ? '1' : '0',
         'save-current-setting-preset' => 'My Preset',
     ]);
 
@@ -217,9 +225,9 @@ test('save theme settings dispatches safe typed event and strips preset control 
         ->and($events)->toHaveCount(1)
         ->and($events[0])->toBeInstanceOf(BeforeAdminThemeSettingsSaveEvent::class)
         ->and($events[0]->themeName)->toBe('default/client')
-        ->and($events[0]->settingNames)->toBe(['color', 'api_key'])
+        ->and($events[0]->settingNames)->toBe(['inject_javascript', 'color', 'api_key'])
         ->and($events[0]->settingNames)->not->toContain('never-expose-this-value');
-});
+})->with([true, false]);
 
 test('default/client footer link checkboxes submit canonical enabled values', function (): void {
     $checkboxes = renderClientThemeFooterLinkCheckboxes([]);
@@ -244,4 +252,110 @@ test('theme settings restore checkbox values saved with the browser default', fu
     foreach ($checkboxes as $checkbox) {
         expect($checkbox->hasAttribute('checked'))->toBeTrue();
     }
+});
+
+function themeStaffWithPermissions(Pimple\Container $di, array $permissions): Box\Mod\Staff\Service
+{
+    $member = Mockery::mock(Box\Mod\Staff\Entity\Admin::class);
+    $member->shouldReceive('getId')->andReturn(42);
+    $member->shouldReceive('isCron')->andReturn(false);
+    $di['loggedin_admin'] = $member;
+    $di['auth']->shouldReceive('isAdminLoggedIn')->andReturn(true);
+
+    $staff = Mockery::mock(Box\Mod\Staff\Service::class)->makePartial();
+    $staff->shouldReceive('isSuperAdministrator')->with(42)->andReturn(false);
+    $staff->shouldReceive('getPermissions')->with(42)->andReturn(['theme' => $permissions]);
+    $extension = Mockery::mock(Box\Mod\Extension\Service::class);
+    $extension->shouldReceive('getSpecificModulePermissions')->with('theme')->andReturn([]);
+    $di['mod_service'] = $di->protect(static fn (string $name): object => strtolower($name) === 'staff' ? $staff : $extension);
+    $staff->setDi($di);
+
+    return $staff;
+}
+
+test('theme save rejects restricted staff before any side effects', function (array $permissions): void {
+    $di = container();
+    $di['api_admin'] = Mockery::mock();
+    $staff = themeStaffWithPermissions($di, $permissions);
+    expect($staff->hasPermission(null, 'theme'))->toBeTrue();
+    $di['mod'] = $di->protect(static fn () => throw new LogicException('Module must not be resolved'));
+    $dispatcher = Mockery::mock();
+    $dispatcher->shouldNotReceive('dispatch');
+    $di['event_dispatcher'] = $dispatcher;
+    $app = Mockery::mock(Box_App::class);
+    $app->shouldNotReceive('getRequest');
+    $controller = new Box\Mod\Theme\Controller\Admin();
+    $controller->setDi($di);
+
+    expect(fn () => $controller->save_theme_settings($app, 'default/client'))
+        ->toThrow(FOSSBilling\InformationException::class, 'theme.manage_settings', 403);
+})->with([
+    'missing permission' => [['access' => true, 'view' => true]],
+    'false permission' => [['access' => true, 'view' => true, 'manage_settings' => false]],
+    'preset manager only' => [['access' => true, 'view' => true, 'manage' => true]],
+]);
+
+test('theme settings page requires view permission', function (): void {
+    $di = container();
+    $di['is_admin_logged'] = true;
+    themeStaffWithPermissions($di, ['access' => true]);
+    $controller = new Box\Mod\Theme\Controller\Admin();
+    $controller->setDi($di);
+    expect(fn () => $controller->get_theme(Mockery::mock(Box_App::class), 'default/client'))
+        ->toThrow(FOSSBilling\InformationException::class, 'theme.view', 403);
+});
+
+test('theme save rejects invalid CSRF tokens before any side effects', function (mixed $token, mixed $sessionToken): void {
+    $di = container();
+    $di['api_admin'] = Mockery::mock();
+    themeStaffWithPermissions($di, ['access' => true, 'manage_settings' => true]);
+    $di['session']->shouldReceive('get')->with('csrf_token')->andReturn($sessionToken);
+    $di['mod'] = $di->protect(static fn () => throw new LogicException('Module must not be resolved'));
+    $dispatcher = Mockery::mock();
+    $dispatcher->shouldNotReceive('dispatch');
+    $di['event_dispatcher'] = $dispatcher;
+    $request = Symfony\Component\HttpFoundation\Request::create('/theme/default/client', 'POST', [
+        'CSRFToken' => $token,
+        'inject_javascript' => '<script>alert(1)</script>',
+        'save-current-setting' => '1',
+        'save-current-setting-preset' => 'Malicious',
+    ]);
+    $app = Mockery::mock(Box_App::class);
+    $app->shouldReceive('getRequest')->once()->andReturn($request);
+    $controller = new Box\Mod\Theme\Controller\Admin();
+    $controller->setDi($di);
+
+    expect(fn () => $controller->save_theme_settings($app, 'default/client'))
+        ->toThrow(FOSSBilling\InformationException::class, 'CSRF token invalid', 403);
+})->with([
+    'missing' => [null, 'valid-token'],
+    'mismatch' => ['wrong-token', 'valid-token'],
+    'array' => [['valid-token'], 'valid-token'],
+    'empty session' => ['', ''],
+    'missing session' => ['valid-token', null],
+]);
+
+test('theme settings form renders the session CSRF token', function (): void {
+    $renderer = new Tests\Support\StrictTemplateRenderer();
+    $html = $renderer->renderTemplate(PATH_MODS . '/Theme/templates/admin/mod_theme_preset.html.twig', [
+        'info' => null,
+        'error' => null,
+        'theme_code' => 'default/client',
+        'settings_html' => new Twig\Markup('<input name="color">', 'UTF-8'),
+        'current_preset' => 'Default',
+        'presets' => ['Default'],
+        'settings' => [],
+        'uploaded' => [],
+        'snippets' => [],
+        'CSRFToken' => 'session-token',
+    ]);
+    $document = new DOMDocument();
+    $previous = libxml_use_internal_errors(true);
+    $document->loadHTML($html);
+    libxml_clear_errors();
+    libxml_use_internal_errors($previous);
+    $tokens = (new DOMXPath($document))->query('//form[@method="post"]/input[@type="hidden" and @name="CSRFToken"]');
+
+    expect($tokens->length)->toBe(1)
+        ->and($tokens->item(0)->getAttribute('value'))->toBe('session-token');
 });

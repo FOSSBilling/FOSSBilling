@@ -228,7 +228,7 @@ test('updatePassword invalidates existing sessions', function (): void {
     $eventDispatcher = staffGuestTestEventDispatcher();
 
     $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
-    $passwordMock->shouldReceive('hashIt')->atLeast()->once();
+    $passwordMock->shouldReceive('hashIt')->atLeast()->once()->andReturn('new-hash');
 
     $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);
     $emailServiceMock->shouldReceive('sendTemplate')->once()->andReturnUsing(function () use ($eventDispatcher): void {
@@ -241,12 +241,7 @@ test('updatePassword invalidates existing sessions', function (): void {
 
     $di = container();
     $di['em']->shouldReceive('getRepository')->with(Box\Mod\Staff\Entity\AdminPasswordReset::class)->andReturn($passwordResetRepository);
-    $di['em']->shouldReceive('persist')->once()->with($admin);
-    $di['em']->shouldReceive('remove')->once()->with($passwordReset)->andReturnUsing(function () use ($eventDispatcher): void {
-        expect($eventDispatcher->dispatched)->toHaveCount(2);
-        expect($eventDispatcher->dispatched[1])->toBeInstanceOf(Box\Mod\Staff\Event\AfterStaffPasswordResetEvent::class);
-    });
-    $di['em']->shouldReceive('flush')->atLeast()->once();
+    $passwordResetRepository->shouldReceive('changePassword')->once()->with($admin, 'new-hash', 'hashedString');
     $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['password'] = $passwordMock;

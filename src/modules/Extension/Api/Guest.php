@@ -46,7 +46,13 @@ class Guest extends \FOSSBilling\Api\AbstractApi
     public function settings($data): array
     {
         $service = $this->getService();
-        $config = $service->getConfig($data['ext']);
+        $ext = $data['ext'];
+        $module = str_starts_with($ext, 'mod_') ? substr($ext, 4) : $ext;
+        if (!in_array($module, $service->getCoreAndActiveModules(), true)) {
+            return [];
+        }
+
+        $config = $service->getConfig($ext);
 
         return (isset($config['public']) && is_array($config['public'])) ? $config['public'] : [];
     }

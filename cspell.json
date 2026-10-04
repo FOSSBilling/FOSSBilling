@@ -103,7 +103,9 @@
         "Petrov",
         "Okafor",
         "Bakker",
-        "Novakova"
+        "Novakova",
+        "nosniff",
+        "pjpeg"
     ],
 
     "ignoreWords": [
