@@ -84,6 +84,10 @@ class Box_Crypt implements FOSSBilling\InjectionAwareInterface
         }
 
         $ivsize = openssl_cipher_iv_length(self::METHOD);
+        if (strlen($decoded) <= $ivsize) {
+            return false;
+        }
+
         $iv = mb_substr($decoded, 0, $ivsize, '8bit');
         $ciphertext = mb_substr($decoded, $ivsize, null, '8bit');
 
