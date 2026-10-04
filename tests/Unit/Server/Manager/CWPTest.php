@@ -6,9 +6,9 @@ use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
-function createCwpManager(string $body): Server_Manager_CWP
+function createCwpManager(string $body, int $statusCode = 200): Server_Manager_CWP
 {
-    $client = new MockHttpClient(new MockResponse($body));
+    $client = new MockHttpClient(new MockResponse($body, ['http_code' => $statusCode]));
 
     return new class($client) extends Server_Manager_CWP {
         public function __construct(private readonly HttpClientInterface $httpClient)
@@ -54,6 +54,12 @@ test('CWP reports invalid JSON as a server error', function (string $body): void
 
     expect(fn () => $manager->testConnection())->toThrow(Server_Exception::class, 'The CWP server returned an invalid JSON response');
 })->with(['empty' => '', 'HTML' => '<html>Not found</html>']);
+
+test('CWP reports HTTP errors separately from invalid JSON', function (int $statusCode): void {
+    $manager = createCwpManager('<html>Request failed</html>', $statusCode);
+
+    expect(fn () => $manager->testConnection())->toThrow(Server_Exception::class, 'The CWP server returned HTTP status ' . $statusCode);
+})->with([403, 503]);
 
 test('CWP synchronizes valid account details', function (string $state, bool $suspended): void {
     $manager = createCwpManager(json_encode(['status' => 'OK', 'result' => ['account_info' => [

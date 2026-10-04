@@ -411,6 +411,8 @@ class Server_Manager_CWP extends Server_Manager
 
         try {
             $response = $request->toArray();
+        } catch (Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface $e) {
+            throw new Server_Exception('The CWP server returned HTTP status :status. Check server availability and API configuration.', [':status' => $e->getResponse()->getStatusCode()]);
         } catch (Symfony\Contracts\HttpClient\Exception\DecodingExceptionInterface) {
             throw new Server_Exception('The CWP server returned an invalid JSON response. Check the server address, port and API configuration.');
         }
