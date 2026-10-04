@@ -208,7 +208,6 @@ class Client implements InjectionAwareInterface
 
         $this->checkHttpReferer();
         $this->isRoleAllowed($role);
-        $this->checkGuestClientAuthentication($role, $method, $params);
 
         if ($role !== 'guest') {
             $this->checkPreAuthRateLimit($role, $method);
@@ -224,6 +223,7 @@ class Client implements InjectionAwareInterface
 
         $this->checkUpdateFinalization($role, $class, $method);
         $this->checkRateLimit($role, $method);
+        $this->checkGuestClientAuthentication($role, $method, $params);
 
         $api = $this->di['api_identity']($role);
         unset($params['CSRFToken']);

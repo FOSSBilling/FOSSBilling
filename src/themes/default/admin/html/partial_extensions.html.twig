@@ -96,8 +96,16 @@
                 const readme = modal.querySelector('#extension-readme');
                 readme.textContent = modal.dataset.fetchingMessage;
 
-                FOSSBilling.api.admin.post('extension/get_extension_readme', { extension_id: trigger.dataset.extensionId },
+                // Ignore stale responses: opening another extension before
+                // this request completes must not replace its README.
+                const requestedId = trigger.dataset.extensionId;
+                modal.dataset.currentExtensionId = requestedId;
+
+                FOSSBilling.api.admin.post('extension/get_extension_readme', { extension_id: requestedId },
                     (result) => {
+                        if (modal.dataset.currentExtensionId !== requestedId) {
+                            return;
+                        }
                         readme.innerHTML = result;
                     });
             });

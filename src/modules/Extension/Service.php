@@ -588,18 +588,28 @@ class Service implements InjectionAwareInterface
         }
 
         // Get the destination path for the extension (includes LC_MESSAGES for translations)
-        $destination = $this->getExtensionPath($type, $id, true);
-
-        if ($this->filesystem->exists($destination)) {
-            throw new \FOSSBilling\InformationException('Extension :id seems to be already installed.', [':id' => $id], 436);
-        }
+        // Staging is removed below unless the package was moved into place.
+        $moved = false;
 
         try {
-            // Restore the installed root's usual permissions after private staging.
-            $this->filesystem->chmod($extractedPath, 0o755);
-            $this->filesystem->rename($extractedPath, $destination);
-        } catch (IOException) {
-            throw new \FOSSBilling\Exception("Failed to move extension to it's final destination. Please check permissions for the destination folder. (:destination)", [':destination' => $destination], 437);
+            $destination = $this->getExtensionPath($type, $id, true);
+
+            if ($this->filesystem->exists($destination)) {
+                throw new \FOSSBilling\InformationException('Extension :id seems to be already installed.', [':id' => $id], 436);
+            }
+
+            try {
+                // Restore the installed root's usual permissions after private staging.
+                $this->filesystem->chmod($extractedPath, 0o755);
+                $this->filesystem->rename($extractedPath, $destination);
+                $moved = true;
+            } catch (IOException) {
+                throw new \FOSSBilling\Exception("Failed to move extension to it's final destination. Please check permissions for the destination folder. (:destination)", [':destination' => $destination], 437);
+            }
+        } finally {
+            if (!$moved) {
+                $this->filesystem->remove([$zipPath, $extractedPath]);
+            }
         }
 
         if ($this->filesystem->exists($zipPath)) {
