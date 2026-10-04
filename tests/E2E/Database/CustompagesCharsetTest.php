@@ -48,6 +48,7 @@ test('charset migration repairs legacy page text and preserves definitions, data
         slug VARCHAR(255) NOT NULL UNIQUE
     ) ENGINE=InnoDB ROW_FORMAT=COMPACT DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci");
     $insert = $this->pdo->prepare('INSERT INTO custom_pages (title, description, keywords, content, slug) VALUES (?, ?, ?, ?, ?)');
+    // cspell:ignore Zażółć gęślą jaźń
     $original = 'Zażółć gęślą jaźń';
     $insert->execute([$original, null, $original, $original, 'example']);
 
