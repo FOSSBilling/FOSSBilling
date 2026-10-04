@@ -206,6 +206,9 @@ test('marks invoice as paid', function (): void {
     $serviceMock->shouldReceive('markAsPaidByAdmin')
         ->atLeast()->once()
         ->andReturn(true);
+    $serviceMock->shouldReceive('isInvoiceTypeDeposit')
+        ->atLeast()->once()
+        ->andReturn(false);
 
     $gatewayServiceMock = Mockery::mock(ServicePayGateway::class);
     $gatewayServiceMock->shouldReceive('toApiArray')
@@ -228,6 +231,43 @@ test('marks invoice as paid', function (): void {
 
     $result = $api->mark_as_paid($data);
     expect($result)->toBeTrue();
+});
+
+test('marking a deposit invoice as paid requires the balance permission', function (): void {
+    $api = apiEndpoint(new Admin());
+    $data = [
+        'id' => 1,
+        'execute' => true,
+    ];
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('isInvoiceTypeDeposit')
+        ->once()
+        ->andReturn(true);
+    $serviceMock->shouldReceive('markAsPaidByAdmin')->never();
+
+    $invoiceModel = createEntity(Invoice::class);
+    $invoiceModel->gateway_id = '1';
+
+    $di = container();
+    $di['em']->getRepository(Invoice::class)->shouldReceive('find')->atLeast()->once()->andReturn($invoiceModel);
+    $di['mod_service'] = $di->protect(moduleService([
+        'invoice' => $serviceMock,
+    ]));
+    $staffServiceMock = $di['mod_service']('staff');
+    $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
+        ->byDefault()
+        ->andReturn(true);
+    $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
+        ->once()
+        ->with('client', 'manage_balance', null, Mockery::any())
+        ->andThrow(new FOSSBilling\InformationException('You need the "client.manage_balance" permission to perform this action', [], 403));
+    $api->setDi($di);
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($di['em']->getRepository(Invoice::class));
+    $api->setService($serviceMock);
+
+    expect(fn () => $api->mark_as_paid($data))
+        ->toThrow(FOSSBilling\InformationException::class, 'client.manage_balance');
 });
 
 test('prepares an invoice', function (): void {
@@ -784,6 +824,105 @@ test('processes a transaction', function (): void {
         ->and($steps[1])->toBe('process');
 });
 
+test('processing a manual transaction directs the admin to approve', function (): void {
+    $api = apiEndpoint(new Admin());
+
+    $transactionService = Mockery::mock(ServiceTransaction::class);
+    $transactionService->shouldNotReceive('preProcessTransaction');
+    $transactionService->shouldReceive('manualApprovalException')
+        ->once()
+        ->andReturnUsing(fn (PayGateway $gateway): Payment_Exception => new Payment_Exception('Custom payments must be approved by an administrator.', [], 7002));
+
+    $gateway = createEntity(PayGateway::class, ['id' => 1]);
+    $gateway->setGateway('Custom');
+    $model = createEntity(Transaction::class, ['id' => 1]);
+    $model->setGateway($gateway);
+    $model->setStatus(Transaction::STATUS_RECEIVED);
+
+    $transactionRepo = Mockery::mock(TransactionRepository::class);
+    $transactionRepo->shouldReceive('find')->atLeast()->once()->andReturn($model);
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($transactionRepo);
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(moduleService(['invoice:transaction' => $transactionService]));
+
+    $api->setDi($di);
+
+    expect(fn () => $api->transaction_process(['id' => 1]))
+        ->toThrow(Payment_Exception::class, 'approved by an administrator');
+});
+
+test('processing an already processed manual transaction stays a success', function (): void {
+    $api = apiEndpoint(new Admin());
+
+    $transactionService = Mockery::mock(ServiceTransaction::class);
+    $transactionService->shouldReceive('preProcessTransaction')
+        ->once()
+        ->andReturn(true);
+
+    $gateway = createEntity(PayGateway::class, ['id' => 1]);
+    $gateway->setGateway('Custom');
+    $model = createEntity(Transaction::class, ['id' => 1]);
+    $model->setGateway($gateway);
+    $model->setStatus(Transaction::STATUS_PROCESSED);
+
+    $transactionRepo = Mockery::mock(TransactionRepository::class);
+    $transactionRepo->shouldReceive('find')->atLeast()->once()->andReturn($model);
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($transactionRepo);
+
+    $dispatcher = new SymfonyEventDispatcher();
+
+    $di = container();
+    $di['em'] = $em;
+    $di['event_dispatcher'] = $dispatcher;
+    $di['mod_service'] = $di->protect(moduleService(['invoice:transaction' => $transactionService]));
+
+    $api->setDi($di);
+
+    expect($api->transaction_process(['id' => 1]))->toBeTrue();
+});
+
+test('approving a transaction delegates to the service', function (): void {
+    $api = apiEndpoint(new Admin());
+
+    $steps = [];
+    $transactionService = Mockery::mock(ServiceTransaction::class);
+    $transactionService->shouldReceive('approveTransaction')
+        ->once()
+        ->andReturnUsing(function () use (&$steps): bool {
+            $steps[] = 'approve';
+
+            return true;
+        });
+
+    $model = createEntity(Transaction::class, ['id' => 1]);
+    $transactionRepo = Mockery::mock(TransactionRepository::class);
+    $transactionRepo->shouldReceive('find')->atLeast()->once()->andReturn($model);
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($transactionRepo);
+
+    $dispatcher = new SymfonyEventDispatcher();
+    $dispatcher->addListener(BeforeAdminTransactionProcessEvent::class, static function (BeforeAdminTransactionProcessEvent $event) use (&$steps): void {
+        $steps[] = $event;
+    });
+
+    $di = container();
+    $di['em'] = $em;
+    $di['event_dispatcher'] = $dispatcher;
+    $di['mod_service'] = $di->protect(moduleService(['invoice:transaction' => $transactionService]));
+
+    $api->setDi($di);
+
+    $result = $api->transaction_approve(['id' => 1]);
+    expect($result)->toBeBool()->toBeTrue()
+        ->and($steps)->toHaveCount(2)
+        ->and($steps[0])->toBeInstanceOf(BeforeAdminTransactionProcessEvent::class)
+        ->and($steps[1])->toBe('approve');
+});
+
 test('updates a transaction', function (): void {
     $api = apiEndpoint(new Admin());
     $data = [
@@ -886,7 +1025,7 @@ test('gets transaction list', function (): void {
     $transactionService = Mockery::mock(ServiceTransaction::class);
     $transactionService->shouldReceive('transactionResultToApiArray')
         ->once()
-        ->with(Mockery::on(fn ($t): bool => $t instanceof Transaction), 'Stripe')
+        ->with(Mockery::on(fn ($t): bool => $t instanceof Transaction), 'Stripe', 'Stripe')
         ->andReturn(['id' => 1, 'gateway' => 'Stripe']);
 
     $transactionRepo = Mockery::mock(TransactionRepository::class);
@@ -898,7 +1037,7 @@ test('gets transaction list', function (): void {
     $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
     $paginatorMock->shouldReceive('paginateMappedQuery')
         ->once()
-        ->andReturnUsing(fn ($qb, $pagination, $mapper): array => ['list' => [$mapper([0 => createEntity(Transaction::class, ['id' => 1]), 'gateway' => 'Stripe'])]]);
+        ->andReturnUsing(fn ($qb, $pagination, $mapper): array => ['list' => [$mapper([0 => createEntity(Transaction::class, ['id' => 1]), 'gateway' => 'Stripe', 'gateway_code' => 'Stripe'])]]);
 
     $di = container();
     $di['pager'] = $paginatorMock;

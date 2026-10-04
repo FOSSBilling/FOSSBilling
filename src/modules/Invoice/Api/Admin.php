@@ -128,6 +128,12 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $invoice = $this->_getInvoice($data);
 
+        // Marking a deposit invoice as paid credits the client balance, so it
+        // requires the same permission as crediting the balance directly.
+        if ($this->getService()->isInvoiceTypeDeposit($invoice)) {
+            $this->checkPermissions('client', 'manage_balance');
+        }
+
         return $this->getService()->markAsPaidByAdmin($invoice, $data);
     }
 
@@ -556,9 +562,45 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
     /**
      * Process selected transaction.
+     *
+     * Automated gateways only: offline payments settle through the approve
+     * action instead.
      */
     #[RequiredParams(['id' => 'Transaction ID is missing'])]
     public function transaction_process($data): bool
+    {
+        $this->checkPermissions('invoice', 'manage_transactions');
+
+        $model = $this->getDi()['em']->getRepository(Transaction::class)->find((int) $data['id']);
+        if (!$model instanceof Transaction) {
+            throw new \FOSSBilling\Exception('Transaction not found');
+        }
+
+        $transactionService = $this->getDi()['mod_service']('Invoice', 'Transaction');
+        $gateway = $model->getGateway();
+        // Offline payments settle through approval, never callback retries.
+        // Processed rows stay idempotent: the claim below reports them as
+        // already handled instead of throwing.
+        if ($gateway instanceof PayGateway
+            && $model->getStatus() !== Transaction::STATUS_PROCESSED
+            && \Box\Mod\Invoice\ServicePayGateway::isManualApprovalGateway($gateway->getGateway())
+        ) {
+            throw $transactionService->manualApprovalException($gateway);
+        }
+
+        $this->getDi()['event_dispatcher']->dispatch(new BeforeAdminTransactionProcessEvent((int) $model->getId()));
+
+        return $transactionService->preProcessTransaction($model);
+    }
+
+    /**
+     * Approve an offline payment after confirming the money arrived.
+     *
+     * Only for gateways that settle through manual approval (e.g. Custom).
+     * Credits the client and marks the invoice paid.
+     */
+    #[RequiredParams(['id' => 'Transaction ID is missing'])]
+    public function transaction_approve($data): bool
     {
         $this->checkPermissions('invoice', 'manage_transactions');
 
@@ -571,7 +613,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $transactionService = $this->getDi()['mod_service']('Invoice', 'Transaction');
 
-        return $transactionService->preProcessTransaction($model);
+        return $transactionService->approveTransaction($model);
     }
 
     /**
@@ -585,7 +627,6 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional string $currency - Currency code. Must be available on FOSSBilling
      * @optional string $type - Currency code. Must be available on FOSSBilling
      * @optional string $status - Transaction status on FOSSBilling
-     * @optional bool $validate_ipn - Flag to enable and disable IPN validation for this transaction
      * @optional string $note - Custom note
      *
      * @return bool
@@ -686,7 +727,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         return $this->getDi()['pager']->paginateMappedQuery(
             $qb,
             PaginationOptions::fromArray($data),
-            static fn ($row): array => $transactionService->transactionResultToApiArray($row[0], $row['gateway'] ?? null),
+            static fn ($row): array => $transactionService->transactionResultToApiArray($row[0], $row['gateway'] ?? null, $row['gateway_code'] ?? null),
         );
     }
 

@@ -73,6 +73,11 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         return $this->di;
     }
 
+    public static function requiresManualApproval(): bool
+    {
+        return false;
+    }
+
     /**
      * Building this opens a genuinely separate database connection - see
      * cacheGatewayCustomer() for why isolation from $this->di['em'] is
@@ -315,6 +320,10 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         }
 
         $invoice = $this->resolveInvoice($tx, $data);
+
+        if (!isset($data['get']['payment_intent']) && !isset($data['get']['setup_intent'])) {
+            throw new Payment_Exception('Stripe payment data is missing.', [], 7020);
+        }
 
         try {
             if (isset($data['get']['payment_intent'])) {

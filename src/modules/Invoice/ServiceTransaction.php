@@ -65,6 +65,15 @@ class ServiceTransaction implements InjectionAwareInterface
                 continue;
             }
 
+            // Offline gateways settle through explicit admin approval, never
+            // through callback retries: the cron has no approval authority.
+            $gateway = $model->getGateway();
+            if ($gateway instanceof PayGateway && ServicePayGateway::isManualApprovalGateway($gateway->getGateway())) {
+                $this->di['logger']->info('Skipped processing transaction #{id}: manual approval required', ['id' => $model->getId()]);
+
+                continue;
+            }
+
             try {
                 $this->preProcessTransaction($model);
             } catch (\Throwable) {
@@ -114,7 +123,6 @@ class ServiceTransaction implements InjectionAwareInterface
         $model->setStatus($data['status'] ?? $model->getStatus());
         $model->setError($data['error'] ?? $model->getError());
         $model->setErrorCode(isset($data['error_code']) ? (int) $data['error_code'] : $model->getErrorCode());
-        $model->setValidateIpn(isset($data['validate_ipn']) ? (bool) $data['validate_ipn'] : $model->isValidateIpn());
         $model->setUpdatedAt(new \DateTime());
         $this->di['em']->flush();
         $this->di['event_dispatcher']->dispatch(new AfterAdminTransactionUpdateEvent($transactionId));
@@ -242,6 +250,10 @@ class ServiceTransaction implements InjectionAwareInterface
             }
         }
 
+        // Provenance metadata only: `source` records where the payload claims
+        // to come from, but it never authorizes settlement. Offline payments
+        // settle through explicit admin approval, automated ones through
+        // gateway-signed verification — never through this string.
         $ipn = [
             'source' => is_string($data['source'] ?? null) ? $data['source'] : null,
             'get' => (isset($data['get']) && is_array($data['get'])) ? $data['get'] : null,
@@ -417,9 +429,11 @@ class ServiceTransaction implements InjectionAwareInterface
     public function toApiArray(Transaction $model, $deep = false, $identity = null): array
     {
         $gateway = null;
+        $gatewayCode = null;
         $gtw = $model->getGateway();
         if ($gtw instanceof PayGateway) {
             $gateway = $gtw->getName();
+            $gatewayCode = $gtw->getGateway();
         }
 
         $result = [
@@ -429,12 +443,13 @@ class ServiceTransaction implements InjectionAwareInterface
             'txn_status' => $model->getTxnStatus(),
             'gateway_id' => $model->getGateway()?->getId(),
             'gateway' => $gateway,
+            'gateway_code' => $gatewayCode,
+            'requires_manual_approval' => ServicePayGateway::isManualApprovalGateway($gatewayCode),
             'amount' => (float) ($model->getAmount() ?? 0),
             'currency' => $model->getCurrency(),
             'type' => $model->getType(),
             'status' => $model->getStatus(),
             'ip' => $model->getIp(),
-            'validate_ipn' => $model->isValidateIpn(),
             'error' => $model->getError(),
             'error_code' => $model->getErrorCode(),
             'note' => $model->getNote(),
@@ -442,10 +457,39 @@ class ServiceTransaction implements InjectionAwareInterface
             'updated_at' => $model->getUpdatedAt()?->format('Y-m-d H:i:s'),
         ];
         if ($deep) {
-            $result['ipn'] = json_decode($model->getIpn() ?? '', true) ?? [];
+            $result['ipn'] = $this->getDecodedIpn($model);
         }
 
         return $result;
+    }
+
+    /**
+     * Decode the stored IPN payload into the array shape adapters consume.
+     *
+     * A missing, empty, or corrupt payload decodes to an empty array instead
+     * of null, so typed `array $data` adapter signatures never see a
+     * TypeError. Adapters validate the shape they need and throw
+     * Payment_Exception on anything they cannot process.
+     *
+     * @return array<string, mixed>
+     */
+    public function getDecodedIpn(Transaction $model): array
+    {
+        $raw = $model->getIpn();
+        if ($raw === null || $raw === '') {
+            return [];
+        }
+
+        $decoded = json_decode($raw, true);
+        if (!is_array($decoded)) {
+            if (isset($this->di['logger'])) {
+                $this->di['logger']->warning('Transaction #{id} has an invalid IPN payload; using an empty payload', ['id' => $model->getId()]);
+            }
+
+            return [];
+        }
+
+        return $decoded;
     }
 
     /**
@@ -455,7 +499,7 @@ class ServiceTransaction implements InjectionAwareInterface
      * The gateway name is provided by the list query itself (a LEFT JOIN to
      * `pay_gateway`), avoiding the per-row lookup that `toApiArray()` performs.
      */
-    public function transactionResultToApiArray(Transaction $transaction, ?string $gateway): array
+    public function transactionResultToApiArray(Transaction $transaction, ?string $gateway, ?string $gatewayCode = null): array
     {
         return [
             'id' => $transaction->getId(),
@@ -464,12 +508,13 @@ class ServiceTransaction implements InjectionAwareInterface
             'txn_status' => $transaction->getTxnStatus(),
             'gateway_id' => $transaction->getGateway()?->getId(),
             'gateway' => $gateway,
+            'gateway_code' => $gatewayCode,
+            'requires_manual_approval' => ServicePayGateway::isManualApprovalGateway($gatewayCode),
             'amount' => (float) ($transaction->getAmount() ?? 0),
             'currency' => $transaction->getCurrency(),
             'type' => $transaction->getType(),
             'status' => $transaction->getStatus(),
             'ip' => $transaction->getIp(),
-            'validate_ipn' => $transaction->isValidateIpn(),
             'error' => $transaction->getError(),
             'error_code' => $transaction->getErrorCode(),
             'note' => $transaction->getNote(),
@@ -573,9 +618,10 @@ class ServiceTransaction implements InjectionAwareInterface
      * workers attempt to process the same transaction simultaneously.
      *
      * Accepts 'received' status immediately, allows stale 'processing'
-     * transactions to be reclaimed after the recovery timeout, and allows
+     * transactions to be reclaimed after the recovery timeout, allows
      * 'error' transactions to be retried (e.g. via the admin Process button
-     * or PayPal IPN retries).
+     * or PayPal IPN retries), and accepts 'approved' offline payments moving
+     * to settlement.
      *
      * @param int $id Transaction ID
      *
@@ -588,13 +634,14 @@ class ServiceTransaction implements InjectionAwareInterface
         // syntax error on SQLite and no payment can complete there.
         $table = $connection->quoteSingleIdentifier('transaction');
         $affectedRows = $connection->executeStatement(
-            "UPDATE {$table} SET status = ?, updated_at = ? WHERE id = ? AND (status IN (?, ?) OR (status = ? AND (updated_at IS NULL OR updated_at <= ?)))",
+            "UPDATE {$table} SET status = ?, updated_at = ? WHERE id = ? AND (status IN (?, ?, ?) OR (status = ? AND (updated_at IS NULL OR updated_at <= ?)))",
             [
                 Transaction::STATUS_PROCESSING,
                 date('Y-m-d H:i:s'),
                 $id,
                 Transaction::STATUS_RECEIVED,
                 Transaction::STATUS_ERROR,
+                Transaction::STATUS_APPROVED,
                 Transaction::STATUS_PROCESSING,
                 $this->getProcessingRecoveryThreshold(),
             ]
@@ -667,6 +714,10 @@ class ServiceTransaction implements InjectionAwareInterface
      * invocations pass through, and every caller (preProcessTransaction, createAndProcess,
      * processAndCatchErrors) holds the processing claim on entry — adapters must not
      * re-claim the row, or the claim fails and the payment is silently skipped.
+     *
+     * Offline gateways never reach an adapter here: without a verifiable
+     * callback there is nothing to process, so they fail with a clear
+     * approval error instead of a TypeError on a missing payload.
      */
     public function processTransaction($id)
     {
@@ -680,15 +731,80 @@ class ServiceTransaction implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('Cannot handle transaction received from unknown payment gateway: :id', [':id' => $tx->getGateway()?->getId()], 704);
         }
 
+        if (ServicePayGateway::isManualApprovalGateway($gtw->getGateway())) {
+            throw $this->manualApprovalException($gtw);
+        }
+
         $payGatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
         $adapter = $payGatewayService->getPaymentAdapter($gtw);
         if (!method_exists($adapter, 'processTransaction')) {
             throw new \FOSSBilling\Exception('Payment adapter :adapter does not support action :action', [':adapter' => $gtw->getName(), ':action' => 'processTransaction'], 705);
         }
 
-        $ipn = json_decode($tx->getIpn() ?? '', true);
+        $ipn = $this->getDecodedIpn($tx);
 
         return $adapter->processTransaction($this->di['api_system'], (int) $id, $ipn, (int) $gtw->getId());
+    }
+
+    /**
+     * Approve an offline payment after an administrator confirmed the money arrived.
+     *
+     * Mirrors preProcessTransaction's claim-and-dispatch shape, but routes to
+     * the adapter's approval action instead of callback processing. Only
+     * reachable through the permission-checked admin approve action.
+     */
+    public function approveTransaction(Transaction $model): bool
+    {
+        $gtw = $model->getGateway();
+        if (!$gtw instanceof PayGateway || !ServicePayGateway::isManualApprovalGateway($gtw->getGateway())) {
+            throw new \FOSSBilling\Exception('This payment gateway does not require manual approval.', [], 7003);
+        }
+
+        $payGatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
+        $adapter = $payGatewayService->getPaymentAdapter($gtw);
+        if (!method_exists($adapter, 'approveTransaction')) {
+            throw new \FOSSBilling\Exception('Payment adapter :adapter does not support action :action', [':adapter' => $gtw->getName(), ':action' => 'approveTransaction'], 705);
+        }
+
+        // Serialize concurrent approvals the same way processing claims do:
+        // a double-clicked Approve button converges on a single approver.
+        if (!$this->claimForProcessing((int) $model->getId())) {
+            $this->di['logger']->info('Skipped approving transaction #{id}: already claimed by another worker', ['id' => $model->getId()]);
+
+            return true;
+        }
+
+        // Mirror the SQL claim in Doctrine and keep it until settlement finishes.
+        // Approved is claimable, so persisting it here would allow a second approver.
+        $model->setStatus(Transaction::STATUS_PROCESSING);
+        $model->setError(null);
+        $model->setErrorCode(null);
+        $model->setUpdatedAt(new \DateTime());
+        $this->di['em']->flush();
+
+        try {
+            $this->di['logger']->info('Confirmed offline payment for transaction #{id}: settling', ['id' => $model->getId()]);
+            $adapter->approveTransaction($this->di['api_system'], (int) $model->getId(), (int) $gtw->getId());
+        } catch (\Throwable $e) {
+            $this->markTransactionError((int) $model->getId(), $e);
+
+            throw $e;
+        }
+
+        $this->di['event_dispatcher']->dispatch(new AfterAdminTransactionProcessEvent((int) $model->getId()));
+        $this->di['logger']->info('Approved transaction #{model_id}', ['model_id' => $model->getId()]);
+
+        return true;
+    }
+
+    /** Builds the short approval error shown to admins. */
+    public function manualApprovalException(PayGateway $gateway): \Payment_Exception
+    {
+        if ($gateway->getGateway() === 'Custom') {
+            return new \Payment_Exception('Custom payments must be approved by an administrator.', [], 7002);
+        }
+
+        return new \Payment_Exception('This payment must be approved by an administrator.', [], 7002);
     }
 
     /**

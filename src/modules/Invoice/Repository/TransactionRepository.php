@@ -61,9 +61,9 @@ class TransactionRepository extends EntityRepository
      *
      * Mirrors the legacy `Box\Mod\Invoice\ServiceTransaction::getSearchQuery`
      * filters and returns the Transaction entity together with the gateway
-     * name, so the caller can use `paginateMappedQuery` and skip the per-row
+     * name and code, so the caller can use `paginateMappedQuery` and skip the per-row
      * gateway lookup that `ServiceTransaction::toApiArray` would perform.
-     * Each result row hydrates as `[0 => Transaction, 'gateway' => string|null]`.
+     * Each result row hydrates as `[0 => Transaction, 'gateway' => string|null, 'gateway_code' => string|null]`.
      *
      * @param array $data optional filters: id, search, invoice_hash, invoice_id,
      *                    gateway_id, client_id, status, currency, type, txn_id,
@@ -73,6 +73,7 @@ class TransactionRepository extends EntityRepository
     {
         $qb = $this->createQueryBuilder('t')
             ->addSelect('pg.name AS gateway')
+            ->addSelect('pg.gateway AS gateway_code')
             ->leftJoin('t.gateway', 'pg');
 
         $id = $data['id'] ?? null;
