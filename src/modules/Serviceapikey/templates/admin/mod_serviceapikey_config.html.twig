@@ -43,9 +43,9 @@
                 <div class="col-lg-4">
                     <label class="form-label">{{ 'API Key Capitalization'|trans }}</label>
                     <select class="form-select" aria-label="{{ 'API Key Capitalization Options'|trans }}" name="config[case]">
-                        <option{% if product.config.case is not defined or product.config.case == 'upper' %} selected{% endif %} value="upper">{{ 'Uppercase'|trans }}</option>
-                        <option{% if product.config.case == 'lower' %} selected{% endif %} value="lower">{{ 'Lowercase'|trans }}</option>
-                        <option{% if product.config.case == 'mixed' %} selected{% endif %} value="mixed">{{ 'Mixed'|trans }}</option>
+                        <option{% if product.config.case is not defined or product.config.case|default('upper') == 'upper' %} selected{% endif %} value="upper">{{ 'Uppercase'|trans }}</option>
+                        <option{% if product.config.case|default('upper') == 'lower' %} selected{% endif %} value="lower">{{ 'Lowercase'|trans }}</option>
+                        <option{% if product.config.case|default('upper') == 'mixed' %} selected{% endif %} value="mixed">{{ 'Mixed'|trans }}</option>
                     </select>
                     <div class="form-text">{{ 'Choose whether generated API keys use uppercase letters, lowercase letters, or a mix of both.'|trans }}</div>
                 </div>

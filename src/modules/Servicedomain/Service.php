@@ -793,8 +793,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $di = $event->getDi();
             $domainService = $di['mod_service']('servicedomain');
             $domainService->batchSyncExpirationDates();
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             error_log($e->getMessage());
+            if ($e instanceof \Error) {
+                \Sentry\captureException($e);
+            }
         }
 
         return true;
@@ -812,15 +815,23 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $list = $this->di['db']->find('ServiceDomain');
 
+        $hadProgrammingError = false;
         foreach ($list as $domain) {
             try {
                 $this->syncExpirationDate($domain);
-            } catch (\Exception $e) {
-                error_log($e->getMessage());
+            } catch (\Throwable $e) {
+                $this->di['logger']->error($e->getMessage(), ['domain_id' => $domain->id]);
+                // Caught programming errors still need to reach Sentry.
+                if ($e instanceof \Error) {
+                    $hadProgrammingError = true;
+                    \Sentry\captureException($e);
+                }
             }
         }
 
-        $ss->setParamValue($key, date('Y-m-d H:i:s'));
+        if (!$hadProgrammingError) {
+            $ss->setParamValue($key, date('Y-m-d H:i:s'));
+        }
 
         $this->di['logger']->info('Executed action to synchronize domain expiration dates with registrar');
 
