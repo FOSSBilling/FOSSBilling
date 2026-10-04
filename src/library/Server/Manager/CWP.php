@@ -72,12 +72,30 @@ class Server_Manager_CWP extends Server_Manager
      * @param Server_Account|null $account the account for which the login URL is generated
      *
      * @return string returns the login URL as a string
+     *
+     * @throws Server_Exception if the login session cannot be created
      */
     public function getLoginUrl(?Server_Account $account): string
     {
-        $host = $this->_config['host'];
+        if ($account === null) {
+            return 'https://' . $this->_config['host'] . ':2083';
+        }
 
-        return 'https://' . $host . ':2083';
+        $data = [
+            'action' => 'list',
+            'user' => $account->getUsername(),
+            'timer' => 2,
+        ];
+
+        $session = $this->request('user_session', $data);
+
+        if (!is_array($session) || empty($session['details'][0]['url'])) {
+            $placeholders = [':action:' => __trans('generate login URL'), ':type:' => 'CWP'];
+    
+            throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
+        }
+
+        return $session['details'][0]['url'];
     }
 
     /**
@@ -407,18 +425,18 @@ class Server_Manager_CWP extends Server_Manager
 
         // Get the status, result, and message from the response, with default values if they are not set
         $status = $response['status'] ?? 'Error';
-        $result = $response['result'] ?? null;
+        $result = $response['result'] ?? $response['msj'] ?? null;
         $msg = $response['msg'] ?? 'CWP did not return a message in it\'s response.';
 
         // If the status is not 'OK', log an error message and return false
         if ($status !== 'OK') {
-            $this->getLog()->error('CWP Server manager error. Status: ' . $status . '. Message: ' . $msg);
+            error_log('CWP Server manager error. Status: ' . $status . '. Message: ' . $msg);
 
             return false;
         }
 
-        // If the function called is 'accountdetail', return the result from the response
-        if ($func == 'accountdetail') {
+        // Functions that return data instead of a simple success flag
+        if (in_array($func, ['accountdetail', 'user_session'], true)) {
             return $result;
         }
 
