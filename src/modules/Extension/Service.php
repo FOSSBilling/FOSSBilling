@@ -536,11 +536,11 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\InformationException('This extension is not compatible with your version of FOSSBilling. Please update FOSSBilling to the latest version and try again.');
         }
 
-        $extractedPath = Path::join(PATH_CACHE, md5(uniqid()));
+        $extractedPath = Path::join(PATH_CACHE, bin2hex(random_bytes(16)));
         $zipPath = Path::join(PATH_CACHE, md5(uniqid()) . '.zip');
 
         // Create a temporary directory to extract the extension
-        $this->filesystem->mkdir($extractedPath, 0o755);
+        $this->filesystem->mkdir($extractedPath, 0o700);
 
         // Download the extension archive and save it to the cache folder
         $httpClient = $this->di['http_client'];
@@ -559,15 +559,32 @@ class Service implements InjectionAwareInterface
 
         // Extract the archive
         $zip = new \PhpZip\ZipFile();
+        $extracted = false;
 
         try {
             $zip->openFile($zipPath);
+            // Validate the complete archive before allowing any entry to be written.
+            foreach ($zip->getListFiles() as $entryName) {
+                $entry = $zip->getEntry($entryName);
+                $fileType = $entry->getUnixMode() & 0o170000;
+                if (!\FOSSBilling\Update::isSafeArchiveEntry($entryName)
+                    || str_contains($entryName, "\0")
+                    || str_contains($entryName, ':')
+                    || !in_array($fileType, [0, 0o040000, 0o100000], true)) {
+                    throw new \FOSSBilling\Exception('The extension archive contains an unsafe file path or file type and cannot be extracted.');
+                }
+            }
             $zip->extractTo($extractedPath);
-            $zip->close();
+            $extracted = true;
         } catch (\PhpZip\Exception\ZipException $e) {
             $this->di['logger']->error($e->getMessage());
 
             throw new \FOSSBilling\Exception('Failed to extract file, please check file and folder permissions. Further details are available in the error log.');
+        } finally {
+            $zip->close();
+            if (!$extracted) {
+                $this->filesystem->remove([$zipPath, $extractedPath]);
+            }
         }
 
         // Get the destination path for the extension (includes LC_MESSAGES for translations)
@@ -578,6 +595,8 @@ class Service implements InjectionAwareInterface
         }
 
         try {
+            // Restore the installed root's usual permissions after private staging.
+            $this->filesystem->chmod($extractedPath, 0o755);
             $this->filesystem->rename($extractedPath, $destination);
         } catch (IOException) {
             throw new \FOSSBilling\Exception("Failed to move extension to it's final destination. Please check permissions for the destination folder. (:destination)", [':destination' => $destination], 437);

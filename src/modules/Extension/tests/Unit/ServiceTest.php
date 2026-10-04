@@ -1251,3 +1251,99 @@ test('the typed cron listener refreshes the extension list', function (): void {
 
     $service->refreshExtensionsOnCron(new Box\Mod\Cron\Event\BeforeAdminCronRunEvent());
 });
+
+/** Run the real download/extraction boundary with a local archive response. */
+function extensionArchiveService(PhpZip\ZipFile $zip, string $destination, array &$stagingPaths, bool $safe = true): Service
+{
+    $filesystem = Mockery::mock(Symfony\Component\Filesystem\Filesystem::class)->makePartial();
+    $filesystem->shouldReceive('mkdir')->andReturnUsing(function (string $path, int $mode) use (&$stagingPaths): void {
+        $stagingPaths[] = $path;
+        (new Symfony\Component\Filesystem\Filesystem())->mkdir($path, $mode);
+    });
+    if (!$safe) {
+        $filesystem->shouldReceive('remove')->once()->andReturnUsing(function (array $paths) use (&$stagingPaths): void {
+            $entries = new Symfony\Component\Finder\Finder();
+            $entries->in($stagingPaths[0])->ignoreDotFiles(false);
+            expect(iterator_count($entries))->toBe(0);
+            (new Symfony\Component\Filesystem\Filesystem())->remove($paths);
+        });
+    }
+    $service = Mockery::mock(Service::class, [$filesystem])->makePartial();
+    if ($safe) {
+        $service->shouldReceive('getExtensionPath')->once()->andReturn($destination);
+    } else {
+        $service->shouldReceive('getExtensionPath')->never();
+    }
+    $manager = Mockery::mock(FOSSBilling\ExtensionManager::class);
+    $manager->shouldReceive('getLatestExtensionRelease')->once()->andReturn(['download_url' => 'https://example.test/package.zip']);
+    $manager->shouldReceive('isExtensionCompatible')->once()->andReturnTrue();
+    $staff = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staff->shouldReceive('checkPermissionsAndThrowException')->once()->with('extension', 'manage_extensions');
+    $di = container();
+    $di['em'] = extensionBuildEm();
+    $di['extension_manager'] = $manager;
+    $di['mod_service'] = $di->protect(fn () => $staff);
+    $di['http_client'] = new Symfony\Component\HttpClient\MockHttpClient(new Symfony\Component\HttpClient\Response\MockResponse($zip->outputAsString()));
+    $service->setDi($di);
+
+    return $service;
+}
+
+test('downloadAndExtract rejects unsafe archives before writing any entry', function (string $name, int $mode): void {
+    $zip = new PhpZip\ZipFile();
+    $zip->addFromString('valid.php', 'legitimate');
+    $zip->addFromString($name, 'malicious');
+    $zip->getEntry($name)->setUnixMode($mode);
+    $paths = [];
+    $destination = Symfony\Component\Filesystem\Path::join(PATH_CACHE, 'extension-test-' . bin2hex(random_bytes(16)));
+    $service = extensionArchiveService($zip, $destination, $paths, false);
+
+    // Rejection must happen before destination resolution or a single extraction write.
+    try {
+        expect(fn () => $service->downloadAndExtract('mod', 'example'))
+            ->toThrow(FOSSBilling\Exception::class, 'The extension archive contains an unsafe file path or file type');
+        expect($paths)->toHaveCount(1)
+            ->and(is_dir($paths[0]))->toBeFalse()
+            ->and(is_dir($destination))->toBeFalse();
+    } finally {
+        $zip->close();
+        (new Symfony\Component\Filesystem\Filesystem())->remove([...$paths, $destination]);
+    }
+})->with([
+    ['..\\..\\outside.php', 0o100644],
+    ['nested\\..\\..\\outside.php', 0o100644],
+    ['../outside.php', 0o100644],
+    ['.. .\\outside.php', 0o100644],
+    ['.../outside.php', 0o100644],
+    ['C:\\outside.php', 0o100644],
+    ['nested/C:outside.php', 0o100644],
+    ["nested/null\0.php", 0o100644],
+    ['link', 0o120777],
+    ['pipe', 0o010644],
+]);
+
+test('downloadAndExtract preserves ordinary package files and directories', function (): void {
+    $zip = new PhpZip\ZipFile();
+    $zip->addEmptyDir('nested');
+    $files = ['manifest.json' => '{}', 'nested/my file v1.2.txt' => 'content', '.hidden' => 'dotfile', 'nested/123' => 'numeric', 'nested/é.txt' => 'unicode'];
+    foreach ($files as $name => $content) {
+        $zip->addFromString((string) $name, $content);
+    }
+    $paths = [];
+    $destination = Symfony\Component\Filesystem\Path::join(PATH_CACHE, 'extension-test-' . bin2hex(random_bytes(16)));
+    $service = extensionArchiveService($zip, $destination, $paths);
+
+    try {
+        expect($service->downloadAndExtract('mod', 'example'))->toBeTrue();
+        foreach ($files as $name => $content) {
+            expect(file_get_contents(Symfony\Component\Filesystem\Path::join($destination, (string) $name)))->toBe($content);
+        }
+        expect(is_dir($destination . '/nested'))->toBeTrue();
+        if (DIRECTORY_SEPARATOR !== '\\') {
+            expect(fileperms($destination) & 0o777)->toBe(0o755);
+        }
+    } finally {
+        $zip->close();
+        (new Symfony\Component\Filesystem\Filesystem())->remove([...$paths, $destination]);
+    }
+});
