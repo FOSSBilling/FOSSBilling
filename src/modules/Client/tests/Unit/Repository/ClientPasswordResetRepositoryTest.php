@@ -126,7 +126,7 @@ test('password and recovery revocation roll back together if flushing fails', fu
     $em->flush();
     issueTestClientReset($em, $client, 'old-token');
     $em->getEventManager()->addEventListener(['preFlush'], new class {
-        public function preFlush(): void
+        public function preFlush(): never
         {
             throw new RuntimeException('forced flush failure');
         }

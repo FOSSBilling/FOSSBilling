@@ -78,7 +78,7 @@ it('renders quoted directory names as inert README data and text', function (): 
     $twig->addFilter(new TwigFilter('truncate', static fn (string $text): string => $text));
     $twig->addFilter(new TwigFilter('api_url', static fn (string $path, array $query = []): string => '/api/admin/' . $path));
     $twig->addFunction(new TwigFunction('fb_api_link', static fn (array $options): string => ''));
-    $admin = new class([$entry]) {
+    $admin = new readonly class([$entry]) {
         public function __construct(private array $entries)
         {
         }
