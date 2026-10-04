@@ -28,6 +28,7 @@ use Box\Mod\Client\Repository\ClientPasswordResetRepository;
 use Box\Mod\Client\Repository\ClientRepository;
 use Box\Mod\Cron\Event\BeforeAdminCronRunEvent;
 use Box\Mod\Staff\Entity\Admin;
+use FOSSBilling\Doctrine\RowLock;
 use FOSSBilling\i18n;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
@@ -169,28 +170,60 @@ class Service implements InjectionAwareInterface
     public function approveClientEmailByHash($hash): bool
     {
         $dbal = $this->di['dbal'];
-        $result = $dbal->fetchAssociative('SELECT id, client_id FROM extension_meta WHERE extension = "mod_client" AND meta_key = "confirm_email" AND meta_value = :hash', ['hash' => $hash]);
-        if (!$result) {
-            throw new InformationException('Invalid email confirmation link');
-        }
-        $dbal->executeStatement('UPDATE client SET email_approved = true WHERE id = :id', ['id' => $result['client_id']]);
-        $dbal->executeStatement('DELETE FROM extension_meta WHERE id = :id', ['id' => $result['id']]);
 
-        return true;
+        return $dbal->transactional(function () use ($dbal, $hash): bool {
+            $result = $dbal->fetchAssociative(
+                'SELECT id, client_id, rel_id FROM extension_meta WHERE extension = :extension AND meta_key = :key AND rel_type = :binding AND meta_value = :hash AND created_at > :cutoff',
+                ['extension' => 'mod_client', 'key' => 'confirm_email', 'binding' => 'email_confirmation_v1', 'hash' => $hash, 'cutoff' => date('Y-m-d H:i:s', time() - 86400)],
+            );
+            if (!$result) {
+                throw new InformationException('Invalid email confirmation link');
+            }
+
+            // Serialize redemption with client updates on every supported database.
+            // Do not rely on the affected count: MySQL may report zero for a no-op.
+            $dbal->executeStatement('UPDATE client SET email_approved = email_approved WHERE id = :id', ['id' => $result['client_id']]);
+            $email = $dbal->fetchOne('SELECT email FROM client WHERE id = :id' . RowLock::suffix($dbal), ['id' => $result['client_id']]);
+            if (!is_string($email) || !hash_equals(hash('sha256', $email), (string) $result['rel_id'])) {
+                throw new InformationException('Invalid email confirmation link');
+            }
+
+            // The row may have been consumed or revoked while waiting for the client lock.
+            if ($dbal->executeStatement('DELETE FROM extension_meta WHERE id = :id AND created_at > :cutoff', ['id' => $result['id'], 'cutoff' => date('Y-m-d H:i:s', time() - 86400)]) !== 1) {
+                throw new InformationException('Invalid email confirmation link');
+            }
+            $dbal->executeStatement('UPDATE client SET email_approved = true WHERE id = :id', ['id' => $result['client_id']]);
+            $this->revokeEmailConfirmations((int) $result['client_id']);
+
+            return true;
+        });
+    }
+
+    public function revokeEmailConfirmations(int $clientId): void
+    {
+        $this->di['dbal']->delete('extension_meta', ['extension' => 'mod_client', 'client_id' => $clientId, 'meta_key' => 'confirm_email']);
     }
 
     public function generateEmailConfirmationLink($client_id)
     {
+        // The managed client also reflects a profile email change before its flush.
+        $client = $this->clientRepository->find((int) $client_id) ?? throw new InformationException('Client not found');
         $hash = strtolower((string) $this->di['tools']->generatePassword(50));
-
-        $this->di['dbal']->insert('extension_meta', [
-            'extension' => 'mod_client',
-            'client_id' => $client_id,
-            'meta_key' => 'confirm_email',
-            'meta_value' => $hash,
-            'created_at' => date('Y-m-d H:i:s'),
-            'updated_at' => date('Y-m-d H:i:s'),
-        ]);
+        $dbal = $this->di['dbal'];
+        $dbal->transactional(function () use ($dbal, $client, $client_id, $hash): void {
+            $dbal->executeStatement('UPDATE client SET email_approved = email_approved WHERE id = :id', ['id' => $client_id]);
+            $this->revokeEmailConfirmations((int) $client_id);
+            $dbal->insert('extension_meta', [
+                'extension' => 'mod_client',
+                'client_id' => $client_id,
+                'meta_key' => 'confirm_email',
+                'meta_value' => $hash,
+                'rel_type' => 'email_confirmation_v1',
+                'rel_id' => hash('sha256', (string) $client->getEmail()),
+                'created_at' => date('Y-m-d H:i:s'),
+                'updated_at' => date('Y-m-d H:i:s'),
+            ]);
+        });
 
         return $this->di['tools']->url('/client/confirm-email/' . $hash);
     }

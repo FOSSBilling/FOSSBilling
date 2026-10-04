@@ -262,6 +262,7 @@ test('update returns true', function (): void {
 
     $serviceMock = Mockery::mock(Box\Mod\Client\Service::class);
     $serviceMock->shouldReceive('emailAlreadyRegistered')->atLeast()->once()->andReturn(false);
+    $serviceMock->shouldReceive('revokeEmailConfirmations')->once()->with(1);
     $serviceMock->shouldReceive('canChangeCurrency')->atLeast()->once()->andReturn(true);
 
     $dispatcher = new class {

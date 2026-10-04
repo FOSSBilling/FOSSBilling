@@ -405,6 +405,10 @@ class Admin extends \FOSSBilling\Api\AbstractApi
             'custom_20' => 'setCustom20',
         ];
 
+        if (isset($data['email']) && $client->getEmail() !== trim((string) $data['email'])) {
+            $service->revokeEmailConfirmations((int) $client->getId());
+        }
+
         foreach ($simpleFields as $field => $setter) {
             if (array_key_exists($field, $data)) {
                 $client->{$setter}($data[$field]);

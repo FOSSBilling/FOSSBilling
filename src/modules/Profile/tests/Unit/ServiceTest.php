@@ -157,8 +157,11 @@ test('updates client', function (): void {
     $clientServiceMock = Mockery::mock(Box\Mod\Client\Service::class);
     $clientServiceMock->shouldReceive('emailAlreadyRegistered')
         ->andReturn(false);
+    $clientServiceMock->shouldReceive('revokeEmailConfirmations')->once()->with(0);
 
     $di = container();
+    $di['dbal']->shouldReceive('transactional')->once()->andReturnUsing(fn (callable $operation): mixed => $operation());
+    $di['dbal']->shouldReceive('executeStatement')->once()->with('UPDATE client SET email_approved = false WHERE id = :id', ['id' => 0])->andReturn(1);
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['event_dispatcher'] = $eventDispatcher;
     $di['mod_service'] = $di->protect(fn ($name): Mockery\MockInterface => $clientServiceMock);
@@ -243,6 +246,7 @@ test('throws exception when email change is not allowed', function (): void {
         ->andReturn(false);
 
     $di = container();
+    $di['dbal']->shouldReceive('transactional')->once()->andReturnUsing(fn (callable $operation): mixed => $operation());
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['event_dispatcher'] = $eventDispatcher;
     $di['mod_service'] = $di->protect(fn ($name): Mockery\MockInterface => $clientServiceMock);
@@ -280,6 +284,7 @@ test('throws exception when email already registered', function (): void {
         ->andReturn(true);
 
     $di = container();
+    $di['dbal']->shouldReceive('transactional')->once()->andReturnUsing(fn (callable $operation): mixed => $operation());
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['event_dispatcher'] = $eventDispatcher;
     $di['mod_service'] = $di->protect(fn ($name): Mockery\MockInterface => $clientServiceMock);
