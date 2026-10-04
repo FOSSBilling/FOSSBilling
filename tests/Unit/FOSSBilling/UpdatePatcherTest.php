@@ -3449,3 +3449,8 @@ test('ensureSchemaInSync restores promo bundle and auto-apply columns missing fr
         (new Filesystem())->remove($dbFile);
     }
 });
+
+test('custom page charset repair follows the promotion patch', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 127);
+    expect($patches)->toHaveKey(128)->and($patches[128][1])->toBe('patch128');
+});

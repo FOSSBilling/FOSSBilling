@@ -1477,6 +1477,7 @@ class UpdatePatcher implements InjectionAwareInterface
             125 => 'patch125',
             126 => 'patch126',
             127 => 'patch127',
+            128 => 'patch128',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -4714,6 +4715,61 @@ class UpdatePatcher implements InjectionAwareInterface
 
         if (!$this->tableHasIndex('promo', 'auto_apply_index_idx')) {
             $this->executeSql('ALTER TABLE `promo` ADD INDEX `auto_apply_index_idx` (`auto_apply`)');
+        }
+    }
+
+    private function patch128(): void
+    {
+        if (!$this->tableExists('custom_pages')) {
+            return;
+        }
+
+        // QKM: widen user-authored page text without changing indexed slug equality or
+        // the size of TEXT columns (CONVERT TO CHARACTER SET can promote them to MEDIUMTEXT).
+        $indexedColumns = $this->fetchFirstColumn(
+            'SELECT DISTINCT COLUMN_NAME FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table',
+            ['table' => 'custom_pages'],
+        );
+        $collations = $this->fetchFirstColumn('SELECT COLLATION_NAME FROM information_schema.COLLATIONS WHERE CHARACTER_SET_NAME = :charset', ['charset' => 'utf8mb4']);
+        $changes = [];
+        foreach ($this->fetchAll('SHOW FULL COLUMNS FROM `custom_pages`') as $column) {
+            $name = $column['Field'];
+            if (!in_array($name, ['title', 'description', 'keywords', 'content'], true)) {
+                continue;
+            }
+
+            $collation = $column['Collation'] ?? '';
+            if (!preg_match('/^utf8(?:mb3)?_(.+)$/', $collation, $matches)) {
+                continue;
+            }
+            $targetCollation = 'utf8mb4_' . $matches[1];
+            if (in_array($name, $indexedColumns, true)
+                || $column['Extra'] !== ''
+                || $column['Default'] !== null
+                || !preg_match('/^(?:varchar\([0-9]+\)|tinytext|text|mediumtext|longtext)$/', $column['Type'])
+                || !in_array($targetCollation, $collations, true)) {
+                $this->logUpdate('warning', 'Skipped utf8mb4 conversion of custom_pages.' . $name . ': customized column or index requires manual review.');
+
+                continue;
+            }
+
+            $definition = sprintf('MODIFY COLUMN `%s` %s CHARACTER SET utf8mb4 COLLATE %s %s',
+                $this->quoteIdentifier($name),
+                $column['Type'],
+                $this->quoteIdentifier($targetCollation),
+                $column['Null'] === 'YES' ? 'NULL' : 'NOT NULL',
+            );
+            if ($column['Null'] === 'YES') {
+                $definition .= ' DEFAULT NULL';
+            }
+            $definition .= ' COMMENT ' . $this->di['dbal']->quote($column['Comment']);
+            $changes[] = $definition;
+        }
+
+        if ($changes !== []) {
+            // One ALTER avoids rebuilding the table for each column. DDL failures stop the
+            // patch sequence, leaving patch128 pending; successful reruns skip widened columns.
+            $this->executeSql('ALTER TABLE `custom_pages` ' . implode(', ', $changes));
         }
     }
 
