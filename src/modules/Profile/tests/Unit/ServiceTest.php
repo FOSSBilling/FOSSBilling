@@ -120,7 +120,7 @@ test('changes admin password', function (): void {
 
     $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
     $passwordMock->shouldReceive('hashIt')
-        ->with($password);
+        ->with($password)->andReturn('new-hash');
 
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
@@ -128,6 +128,10 @@ test('changes admin password', function (): void {
     $di['password'] = $passwordMock;
 
     $model = createEntity(Box\Mod\Staff\Entity\Admin::class);
+
+    $repository = Mockery::mock(Box\Mod\Staff\Repository\AdminPasswordResetRepository::class);
+    $repository->shouldReceive('changePassword')->once()->with($model, 'new-hash');
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\Staff\Entity\AdminPasswordReset::class)->andReturn($repository);
 
     $service = new Service();
     $service->setDi($di);

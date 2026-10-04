@@ -24,6 +24,7 @@ use Box\Mod\Profile\Event\BeforeAdminProfileUpdateEvent;
 use Box\Mod\Profile\Event\BeforeClientProfilePasswordChangeEvent;
 use Box\Mod\Profile\Event\BeforeClientProfileUpdateEvent;
 use Box\Mod\Staff\Entity\Admin;
+use Box\Mod\Staff\Entity\AdminPasswordReset;
 use FOSSBilling\i18n;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
@@ -70,9 +71,8 @@ class Service implements InjectionAwareInterface
         $adminId = (int) $admin->getId();
         $this->di['event_dispatcher']->dispatch(new BeforeAdminProfilePasswordChangeEvent($adminId));
 
-        $admin->setPass($this->di['password']->hashIt($new_password));
-        $this->di['em']->persist($admin);
-        $this->di['em']->flush();
+        $this->di['em']->getRepository(AdminPasswordReset::class)
+            ->changePassword($admin, $this->di['password']->hashIt($new_password));
 
         $this->di['event_dispatcher']->dispatch(new AfterAdminProfilePasswordChangeEvent($adminId));
 

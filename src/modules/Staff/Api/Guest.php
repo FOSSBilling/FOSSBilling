@@ -109,9 +109,8 @@ class Guest extends \FOSSBilling\Api\AbstractApi
                 throw new \FOSSBilling\InformationException('The link has expired or you have already confirmed the password reset.');
             }
 
-            $admin->setPass($this->getDi()['password']->hashIt($data['password']));
-            $this->getDi()['em']->persist($admin);
-            $this->getDi()['em']->flush();
+            $this->getDi()['em']->getRepository(AdminPasswordReset::class)
+                ->changePassword($admin, $this->getDi()['password']->hashIt($data['password']), $data['code']);
 
             $profileService = $this->getDi()['mod_service']('profile');
             $profileService->invalidateSessions('admin', (int) $admin->getId());
@@ -126,9 +125,6 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             $email['code'] = 'mod_staff_password_reset_approve';
             $emailService = $this->getDi()['mod_service']('email');
             $emailService->sendTemplate($email);
-
-            $this->getDi()['em']->remove($reset);
-            $this->getDi()['em']->flush();
         } finally {
             RandomizedTimeFloor::apply($startedAt, 300, 450);
         }
@@ -180,12 +176,9 @@ class Guest extends \FOSSBilling\Api\AbstractApi
 
             $hash = hash('sha256', random_bytes(32));
 
-            $reset = new AdminPasswordReset();
-            $reset->setAdmin($c);
-            $reset->setIp($this->ip);
-            $reset->setHash($hash);
-            $this->getDi()['em']->persist($reset);
-            $this->getDi()['em']->flush();
+            if (!$this->getDi()['em']->getRepository(AdminPasswordReset::class)->replaceReset($c, $hash, $this->ip)) {
+                return true;
+            }
 
             // send email
             $email = [];
