@@ -201,6 +201,39 @@ test('updateParams updates system parameters', function (): void {
     expect($result)->toBeTrue();
 });
 
+test('updateParams rejects invalid invoice counters before writing any settings', function (mixed $value): void {
+    $di = container();
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldNotReceive('setParamValue');
+    $service->setDi($di);
+
+    expect(fn () => $service->updateParams(['invoice_series' => 'NEW-', 'INVOICE_STARTING_NUMBER' => $value]))
+        ->toThrow(FOSSBilling\InformationException::class, 'Next invoice number must be a positive whole number');
+})->with([
+    'null' => [null],
+    'empty' => [''],
+    'blank' => ['   '],
+    'fraction' => ['5.5'],
+    'exponent' => ['1e3'],
+    'text' => ['INV-1'],
+    'zero' => [0],
+    'negative' => [-1],
+    'boolean' => [true],
+    'array' => [[]],
+    'float' => [1.0],
+    'maximum' => [(string) PHP_INT_MAX],
+    'overflow' => [PHP_INT_MAX . '0'],
+]);
+
+test('updateParams saves valid invoice counters', function (int|string $value): void {
+    $di = container();
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('setParamValue')->once()->with('invoice_starting_number', $value, true)->andReturnTrue();
+    $service->setDi($di);
+
+    expect($service->updateParams(['invoice_starting_number' => $value]))->toBeTrue();
+})->with([1, '42', PHP_INT_MAX - 1]);
+
 test('getMessages returns system messages', function (): void {
     $service = new Service();
     $latestVersion = '1.0.0';

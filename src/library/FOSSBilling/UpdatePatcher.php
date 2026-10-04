@@ -193,6 +193,20 @@ class UpdatePatcher implements InjectionAwareInterface
             call_user_func($patch);
             $this->setPatchLevel($patchLevel);
         }
+
+        $this->checkInvoiceNumberCounter();
+    }
+
+    private function checkInvoiceNumberCounter(): void
+    {
+        $counter = $this->fetchOne('SELECT value FROM setting WHERE param = :param', ['param' => 'invoice_starting_number']);
+        if (filter_var($counter, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => PHP_INT_MAX - 1]]) !== false) {
+            return;
+        }
+
+        // Stored invoice history may be incomplete or use custom numbering. Reseeding
+        // from it could reuse an issued number, so leave the choice to the administrator.
+        $this->di['logger']->setChannel('update')->warning('The next invoice number is missing or invalid. Review invoice history and set an unused positive whole number in Invoice Settings before issuing invoices.');
     }
 
     /**
