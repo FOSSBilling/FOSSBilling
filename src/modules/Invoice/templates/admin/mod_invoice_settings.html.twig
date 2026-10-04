@@ -120,7 +120,7 @@
                     </div>
                     <div class="col-lg-6">
                         <label class="form-label" for="invoice_starting_number">{{ 'Next Invoice Number'|trans }}</label>
-                        <input class="form-control" id="invoice_starting_number" type="text" name="invoice_starting_number" value="{{ params.invoice_starting_number|default('') }}">
+                        <input class="form-control" id="invoice_starting_number" type="number" min="1" step="1" max="{{ constant('PHP_INT_MAX') - 1 }}" required name="invoice_starting_number" value="{{ params.invoice_starting_number|default('') }}">
                     </div>
                 </div>
             </div>
