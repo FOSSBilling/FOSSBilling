@@ -180,10 +180,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $allowedPeriods = $this->getTldPeriodsArray($tld);
             if ($allowedPeriods !== null) {
                 if (!in_array($years, $allowedPeriods, true)) {
-                    throw new \FOSSBilling\Exception(':tld can only be registered for :periods years', [':tld' => $tld->tld, ':periods' => implode(', ', $allowedPeriods)]);
+                    throw new \FOSSBilling\InformationException(':tld can only be registered for :periods years', [':tld' => $tld->tld, ':periods' => implode(', ', $allowedPeriods)]);
                 }
             } elseif ($years < ($tld->min_years ?? 1)) {
-                throw new \FOSSBilling\Exception(':tld can be registered for at least :years years', [':tld' => $tld->tld, ':years' => $tld->min_years]);
+                throw new \FOSSBilling\InformationException(':tld can be registered for at least :years years', [':tld' => $tld->tld, ':years' => $tld->min_years]);
             }
 
             $domain = $data['register_sld'] . $tld->tld;
