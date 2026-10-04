@@ -162,6 +162,10 @@ return [
          * Database Port.
          */
         'port' => getenv('DB_PORT') ?: '3306',
+
+        // MySQL connections default to utf8mb4. An explicit legacy charset
+        // overrides the default; existing columns need a separate conversion.
+        // 'charset' => 'utf8mb4',
     ],
 
     /*

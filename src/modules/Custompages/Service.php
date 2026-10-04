@@ -61,7 +61,7 @@ class Service
                 `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
                 PRIMARY KEY (`id`),
                 UNIQUE KEY `uniq_custom_pages_slug` (`slug`)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8';
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4';
         $this->di['db']->exec($sql);
 
         return true;

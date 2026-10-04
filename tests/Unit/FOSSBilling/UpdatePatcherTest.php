@@ -32,7 +32,7 @@ test('invoice item attempts patch follows the manual currency rate patch', funct
 test('tld periods patch follows the invoice item attempts patch', function (): void {
     $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 97);
 
-    expect($patches)->toHaveCount(5)
+    expect($patches)->toHaveCount(6)
         ->toHaveKey(98)
         ->and($patches[98][1])->toBe('patch98')
         ->and($patches)->toHaveKey(117)
@@ -721,4 +721,9 @@ test('require transfer code patch is a no-op when the column already exists', fu
     $patcher = new UpdatePatcher();
     $patcher->setDi($di);
     (new ReflectionMethod($patcher, 'patch99'))->invoke($patcher);
+});
+
+test('custom page charset repair follows the entity decoding patch', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 118);
+    expect($patches)->toHaveKey(119)->and($patches[119][1])->toBe('patch119');
 });

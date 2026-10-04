@@ -92,9 +92,9 @@ class DriverManagerFactory
             throw new Exception('Unsupported database driver :driver. Supported drivers are: :supported.', [':driver' => $dbConfig['driver'], ':supported' => implode(', ', self::SUPPORTED_DRIVERS)]);
         }
 
-        $charset = $dbConfig['charset'] ?? 'utf8';
+        $charset = $dbConfig['charset'] ?? 'utf8mb4';
         if (!in_array($charset, self::SUPPORTED_CHARSETS, true)) {
-            $charset = 'utf8';
+            $charset = 'utf8mb4';
         }
 
         $connectionParams = [
