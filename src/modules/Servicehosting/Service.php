@@ -1481,8 +1481,15 @@ class Service implements InjectionAwareInterface
             $m = $this->getServerManager($model);
 
             return [$m->getLoginUrl(null), $m->getResellerLoginUrl(null)];
-        } catch (\Exception $e) {
-            $this->logInfo("Error while retrieving control panel url: {$e->getMessage()}.");
+        } catch (\Throwable $e) {
+            // Adapter messages and stack arguments may contain credentials.
+            $this->di['logger']->error('Failed to retrieve control panel URLs.', [
+                'server_id' => $model->getId(),
+                'manager' => $model->getManager(),
+                'exception_class' => $e::class,
+                'exception_file' => $e->getFile(),
+                'exception_line' => $e->getLine(),
+            ]);
         }
 
         return [false, false];
