@@ -4804,7 +4804,7 @@ class Service implements InjectionAwareInterface
                 }
             }
             $image = @getimagesizefromstring($bytes);
-            if ($image !== false && ($image['mime'] ?? null) !== 'image/svg+xml') {
+            if ($image !== false && $image['mime'] !== 'image/svg+xml') {
                 if (!in_array($image['mime'], ['image/png', 'image/jpeg', 'image/gif', 'image/bmp', 'image/webp'], true)
                     || !in_array($mime, ['', 'application/octet-stream', $image['mime']], true)
                     || 16 * 1024 * 1024 < $image[0] * $image[1]) {
