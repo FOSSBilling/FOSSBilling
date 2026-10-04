@@ -22,4 +22,9 @@ class AdminPasswordResetRepository extends EntityRepository
 
         return $reset instanceof AdminPasswordReset ? $reset : null;
     }
+
+    public function deleteResetsForAdmin(int $adminId): int
+    {
+        return (int) $this->getEntityManager()->getConnection()->delete('admin_password_reset', ['admin_id' => $adminId]);
+    }
 }

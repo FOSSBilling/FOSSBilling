@@ -24,8 +24,7 @@ test('getDi returns dependency injection container', function (): void {
 
 test('getList returns array', function (): void {
     $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
-    $identity = new Model_Admin();
-    $identity->loadBean(new Tests\Helpers\DummyBean());
+    $identity = \Tests\Helpers\admin();
     $adminClient->setIdentity($identity);
     $queryBuilder = Mockery::mock(Doctrine\ORM\QueryBuilder::class);
     $simpleResultArr = [
@@ -55,7 +54,7 @@ test('getList returns array', function (): void {
     $pagerMock
     ->shouldReceive('paginateDoctrineQuery')
     ->once()
-    ->with($queryBuilder, Mockery::type(FOSSBilling\PaginationOptions::class), Mockery::type(Model_Admin::class))
+    ->with($queryBuilder, Mockery::type(FOSSBilling\PaginationOptions::class), Mockery::type(Box\Mod\Staff\Entity\Admin::class))
     ->andReturn($simpleResultArr);
 
     $di = container();
@@ -143,14 +142,10 @@ test('create returns int', function (): void {
     $serviceMock->shouldReceive('emailAlreadyRegistered')->atLeast()->once()->andReturn(false);
     $serviceMock->shouldReceive('adminCreateClient')->atLeast()->once()->andReturn(1);
 
-    $eventMock = Mockery::mock('\Box_EventManager');
-    $eventMock->shouldReceive('fire')->atLeast()->once();
-
     $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
     $toolsMock->shouldReceive('validateAndSanitizeEmail')->atLeast()->once();
 
     $di = container();
-    $di['events_manager'] = $eventMock;
     $di['tools'] = $toolsMock;
 
     $adminClient->setDi($di);
@@ -187,14 +182,27 @@ test('delete returns true', function (): void {
     $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
     $data = ['id' => 1];
 
-    $eventMock = Mockery::mock('\Box_EventManager');
-    $eventMock->shouldReceive('fire')->atLeast()->once();
+    $calls = new ArrayObject();
+    $dispatcher = new readonly class($calls) {
+        public function __construct(private ArrayObject $calls)
+        {
+        }
+
+        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        {
+            $this->calls->append($event);
+
+            return $event;
+        }
+    };
 
     $serviceMock = Mockery::mock(Box\Mod\Client\Service::class)->makePartial();
-    $serviceMock->shouldReceive('remove')->atLeast()->once();
+    $serviceMock->shouldReceive('remove')->once()->andReturnUsing(static function () use ($calls): void {
+        $calls->append('remove');
+    });
 
     $di = container();
-    $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $dispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $validatorStub = $this->createStub(FOSSBilling\Validate::class);
     $di['validator'] = $validatorStub;
@@ -202,7 +210,13 @@ test('delete returns true', function (): void {
     $adminClient->setDi($di);
     $adminClient->setService($serviceMock);
     $result = $adminClient->delete($data);
+
     expect($result)->toBeTrue();
+    expect($calls->getArrayCopy())->toEqual([
+        new Box\Mod\Client\Event\BeforeAdminClientDeleteEvent(1),
+        'remove',
+        new Box\Mod\Client\Event\AfterAdminClientDeleteEvent(1),
+    ]);
 });
 
 test('update returns true', function (): void {
@@ -250,54 +264,45 @@ test('update returns true', function (): void {
     $serviceMock->shouldReceive('emailAlreadyRegistered')->atLeast()->once()->andReturn(false);
     $serviceMock->shouldReceive('canChangeCurrency')->atLeast()->once()->andReturn(true);
 
-    $eventMock = Mockery::mock('\Box_EventManager');
-    $eventMock->shouldReceive('fire')->atLeast()->once();
+    $dispatcher = new class {
+        public array $events = [];
+
+        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        {
+            $this->events[] = $event;
+
+            return $event;
+        }
+    };
 
     $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
     $toolsMock->shouldReceive('validateAndSanitizeEmail')->atLeast()->once();
 
     $di = container();
     $di['mod_service'] = $di->protect(moduleService(['client' => $serviceMock]));
-    $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $dispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['tools'] = $toolsMock;
 
     $adminClient->setDi($di);
     $result = $adminClient->update($data);
     expect($result)->toBeTrue();
+    expect($dispatcher->events)->toHaveCount(2);
+    expect($dispatcher->events[0])->toBeInstanceOf(Box\Mod\Client\Event\BeforeAdminClientUpdateEvent::class);
+    expect($dispatcher->events[0]->clientId)->toBe(1);
+    expect($dispatcher->events[0]->input)->not->toHaveKey('password');
+    expect($dispatcher->events[1])->toEqual(new Box\Mod\Client\Event\AfterAdminClientUpdateEvent(1));
 });
 
-test('update validates and assigns client_group_id through the group repository', function (): void {
+test('update assigns group_ids through the client service', function (): void {
     $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
-    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1, 'client_group_id' => 3]);
-    $group = createEntity(Box\Mod\Client\Entity\ClientGroup::class, ['id' => 7]);
+    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1]);
 
     $clientRepository = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
     $clientRepository->shouldReceive('find')->once()->with(1)->andReturn($client);
-    $groupRepository = Mockery::mock(Box\Mod\Client\Repository\ClientGroupRepository::class);
-    $groupRepository->shouldReceive('find')->once()->with(7)->andReturn($group);
 
-    $di = container();
-    $em = $di['em'];
-    $em->shouldReceive('getRepository')->with(Box\Mod\Client\Entity\Client::class)->andReturn($clientRepository);
-    $em->shouldReceive('getRepository')->with(Box\Mod\Client\Entity\ClientGroup::class)->andReturn($groupRepository);
-    $em->shouldReceive('persist')->once()->with($client);
-    $em->shouldReceive('flush')->once();
-    $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['mod_service'] = $di->protect(moduleService(['client' => Mockery::mock(Box\Mod\Client\Service::class)]));
-
-    $adminClient->setDi($di);
-
-    expect($adminClient->update(['id' => 1, 'client_group_id' => '7']))->toBeTrue()
-        ->and($client->getClientGroupId())->toBe(7);
-});
-
-test('update clears client_group_id when the alias is empty', function (): void {
-    $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
-    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1, 'client_group_id' => 3]);
-
-    $clientRepository = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
-    $clientRepository->shouldReceive('find')->once()->with(1)->andReturn($client);
+    $clientService = Mockery::mock(Box\Mod\Client\Service::class);
+    $clientService->shouldReceive('setClientGroupIds')->once()->with($client, ['7']);
 
     $di = container();
     $em = $di['em'];
@@ -305,15 +310,92 @@ test('update clears client_group_id when the alias is empty', function (): void 
     $em->shouldReceive('persist')->once()->with($client);
     $em->shouldReceive('flush')->once();
     $di['logger'] = new Tests\Helpers\TestLogger();
-    $di['mod_service'] = $di->protect(moduleService(['client' => Mockery::mock(Box\Mod\Client\Service::class)]));
+    $di['mod_service'] = $di->protect(moduleService(['client' => $clientService]));
 
     $adminClient->setDi($di);
+    $adminClient->setService($clientService);
 
-    expect($adminClient->update(['id' => 1, 'client_group_id' => '']))->toBeTrue()
-        ->and($client->getClientGroupId())->toBeNull();
+    expect($adminClient->update(['id' => 1, 'group_ids' => ['7']]))->toBeTrue();
 });
 
-test('update rejects a non-integer client_group_id alias', function (): void {
+test('update ignores the empty hidden group_ids input from unchecked boxes', function (): void {
+    $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
+    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1]);
+
+    $clientRepository = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
+    $clientRepository->shouldReceive('find')->once()->with(1)->andReturn($client);
+
+    $clientService = Mockery::mock(Box\Mod\Client\Service::class);
+    $clientService->shouldReceive('setClientGroupIds')->once()->with($client, ['7']);
+
+    $di = container();
+    $em = $di['em'];
+    $em->shouldReceive('getRepository')->with(Box\Mod\Client\Entity\Client::class)->andReturn($clientRepository);
+    $em->shouldReceive('persist')->once()->with($client);
+    $em->shouldReceive('flush')->once();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod_service'] = $di->protect(moduleService(['client' => $clientService]));
+
+    $adminClient->setDi($di);
+    $adminClient->setService($clientService);
+
+    expect($adminClient->update(['id' => 1, 'group_ids' => ['', '7']]))->toBeTrue();
+});
+
+test('update clears groups when group_ids is empty', function (): void {
+    $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
+    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1]);
+
+    $clientRepository = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
+    $clientRepository->shouldReceive('find')->once()->with(1)->andReturn($client);
+
+    $clientService = Mockery::mock(Box\Mod\Client\Service::class);
+    $clientService->shouldReceive('setClientGroupIds')->once()->with($client, []);
+
+    $di = container();
+    $em = $di['em'];
+    $em->shouldReceive('getRepository')->with(Box\Mod\Client\Entity\Client::class)->andReturn($clientRepository);
+    $em->shouldReceive('persist')->once()->with($client);
+    $em->shouldReceive('flush')->once();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod_service'] = $di->protect(moduleService(['client' => $clientService]));
+
+    $adminClient->setDi($di);
+    $adminClient->setService($clientService);
+
+    expect($adminClient->update(['id' => 1, 'group_ids' => []]))->toBeTrue();
+});
+
+test('update stores the tri-state merge_renewals preference', function (mixed $input, ?bool $expected): void {
+    $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
+    $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1]);
+
+    $clientRepository = Mockery::mock(Box\Mod\Client\Repository\ClientRepository::class);
+    $clientRepository->shouldReceive('find')->once()->with(1)->andReturn($client);
+
+    $clientService = Mockery::mock(Box\Mod\Client\Service::class);
+
+    $di = container();
+    $em = $di['em'];
+    $em->shouldReceive('getRepository')->with(Box\Mod\Client\Entity\Client::class)->andReturn($clientRepository);
+    $em->shouldReceive('persist')->once()->with($client);
+    $em->shouldReceive('flush')->once();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod_service'] = $di->protect(moduleService(['client' => $clientService]));
+
+    $adminClient->setDi($di);
+    $adminClient->setService($clientService);
+
+    expect($adminClient->update(['id' => 1, 'merge_renewals' => $input]))->toBeTrue()
+        ->and($client->getMergeRenewals())->toBe($expected);
+})->with([
+    'opt-in merges' => ['1', true],
+    'opt-out never merges' => ['0', false],
+    'string false never merges' => ['false', false],
+    'empty inherits the global setting' => ['', null],
+]);
+
+test('update rejects a non-integer group id', function (): void {
     $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
     $client = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1]);
 
@@ -327,7 +409,7 @@ test('update rejects a non-integer client_group_id alias', function (): void {
 
     $adminClient->setDi($di);
 
-    expect(fn () => $adminClient->update(['id' => 1, 'client_group_id' => 'invalid']))
+    expect(fn () => $adminClient->update(['id' => 1, 'group_ids' => ['invalid']]))
         ->toThrow(FOSSBilling\InformationException::class, 'Invalid client group ID');
 });
 
@@ -377,12 +459,8 @@ test('update throws exception when email is already registered', function (): vo
     $serviceMock = Mockery::mock(Box\Mod\Client\Service::class);
     $serviceMock->shouldReceive('emailAlreadyRegistered')->atLeast()->once()->andReturn(true);
 
-    $eventMock = Mockery::mock('\Box_EventManager');
-    $eventMock->shouldReceive('fire');
-
     $di = container();
     $di['mod_service'] = $di->protect(moduleService(['client' => $serviceMock]));
-    $di['events_manager'] = $eventMock;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['validator'] = new FOSSBilling\Validate();
 
@@ -419,8 +497,16 @@ test('changePassword returns true', function (): void {
         'password_confirm' => 'strongPass',
     ];
 
-    $eventMock = Mockery::mock('\Box_EventManager');
-    $eventMock->shouldReceive('fire')->atLeast()->once();
+    $dispatcher = new class {
+        public array $events = [];
+
+        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        {
+            $this->events[] = $event;
+
+            return $event;
+        }
+    };
 
     $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
     $passwordMock->shouldReceive('hashIt')->atLeast()->once()->with($data['password']);
@@ -429,7 +515,7 @@ test('changePassword returns true', function (): void {
     $profileService->shouldReceive('invalidateSessions')->atLeast()->once();
 
     $di = container();
-    $di['events_manager'] = $eventMock;
+    $di['event_dispatcher'] = $dispatcher;
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['password'] = $passwordMock;
     $validatorStub = $this->createStub(FOSSBilling\Validate::class);
@@ -440,6 +526,10 @@ test('changePassword returns true', function (): void {
 
     $result = $adminClient->change_password($data);
     expect($result)->toBeTrue();
+    expect($dispatcher->events)->toEqual([
+        new Box\Mod\Client\Event\BeforeAdminClientPasswordChangeEvent(1),
+        new Box\Mod\Client\Event\AfterAdminClientPasswordChangeEvent(1),
+    ]);
 });
 
 test('changePassword throws exception when passwords do not match', function (): void {
@@ -703,4 +793,56 @@ test('batchDelete returns true', function (): void {
 
     $result = $activityMock->batch_delete(['ids' => [1, 2, 3]]);
     expect($result)->toBeTrue();
+});
+
+test('export_csv requires both view and export permissions', function (): void {
+    $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
+
+    $serviceMock = Mockery::mock(Box\Mod\Client\Service::class);
+    $serviceMock->shouldReceive('exportCSV')->never();
+
+    $di = container();
+    $staffServiceMock = $di['mod_service']('staff');
+    $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')->byDefault()->andReturn(true);
+    $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
+        ->once()
+        ->with('client', 'view', null, Mockery::any())
+        ->andThrow(new FOSSBilling\InformationException('You need the "client.view" permission to perform this action', [], 403));
+
+    $adminClient->setDi($di);
+    $adminClient->setService($serviceMock);
+
+    expect(fn () => $adminClient->export_csv(['headers' => ['id']]))
+        ->toThrow(FOSSBilling\InformationException::class);
+});
+
+test('export_csv delegates to service when permissions granted', function (): void {
+    $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
+
+    $response = new Symfony\Component\HttpFoundation\Response('id,email', 200, ['Content-Type' => 'text/csv']);
+    $serviceMock = Mockery::mock(Box\Mod\Client\Service::class);
+    $serviceMock->shouldReceive('exportCSV')
+        ->once()
+        ->with(['email'])
+        ->andReturn($response);
+
+    $di = container();
+    $staffServiceMock = $di['mod_service']('staff');
+    $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
+        ->once()
+        ->with('client', 'view', null, Mockery::any())
+        ->andReturn(true)
+        ->ordered();
+    $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
+        ->once()
+        ->with('client', 'export', null, Mockery::any())
+        ->andReturn(true)
+        ->ordered();
+
+    $adminClient->setDi($di);
+    $adminClient->setService($serviceMock);
+
+    $result = $adminClient->export_csv(['headers' => ['email']]);
+
+    expect($result)->toBeInstanceOf(Symfony\Component\HttpFoundation\Response::class);
 });

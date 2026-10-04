@@ -29,7 +29,7 @@ use Symfony\Component\Filesystem\Path;
  * it breaks. Declaring them makes Composer refuse an incompatible extension
  * up front, with a resolver error naming the conflict.
  */
-final class DependencyInstaller
+final readonly class DependencyInstaller
 {
     /**
      * The generated manifest Composer is actually run against. The extension's
@@ -37,7 +37,7 @@ final class DependencyInstaller
      */
     private const string EFFECTIVE_MANIFEST = 'composer-effective.json';
 
-    public function __construct(private readonly Filesystem $filesystem)
+    public function __construct(private Filesystem $filesystem)
     {
     }
 

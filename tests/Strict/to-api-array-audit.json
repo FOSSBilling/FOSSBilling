@@ -1,0 +1,84 @@
+{
+    "modules/Order/Service.php": {
+        "top": [
+            "config",
+            "total",
+            "meta",
+            "active_tickets",
+            "client"
+        ],
+        "conditional": {
+            "plugin": [
+                "if"
+            ],
+            "product_suspension_grace_days": [
+                "if"
+            ]
+        }
+    },
+    "modules/Servicedomain/Service.php": {
+        "top": [],
+        "conditional": {
+            "transfer_code": [
+                "if"
+            ],
+            "registrar": [
+                "if"
+            ]
+        }
+    },
+    "modules/Support/Entity/KbArticle.php": {
+        "top": [],
+        "conditional": {
+            "content": [
+                "if"
+            ],
+            "status": [
+                "if"
+            ],
+            "kb_article_category_id": [
+                "if"
+            ]
+        }
+    },
+    "modules/Support/Entity/KbArticleCategory.php": {
+        "top": [],
+        "conditional": {
+            "articles": [
+                "loop"
+            ]
+        }
+    },
+    "modules/Support/Entity/SupportTicket.php": {
+        "top": [],
+        "conditional": {
+            "hash": [
+                "if"
+            ]
+        }
+    },
+    "modules/Support/Service.php": {
+        "top": [
+            "replies",
+            "first",
+            "helpdesk",
+            "author",
+            "client"
+        ],
+        "conditional": {
+            "messages": [
+                "loop"
+            ],
+            "rel": [
+                "if"
+            ],
+            "priority": [
+                "if"
+            ],
+            "notes": [
+                "if",
+                "loop"
+            ]
+        }
+    }
+}

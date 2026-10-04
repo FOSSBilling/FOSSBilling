@@ -1,0 +1,49 @@
+name: Report Release to Sentry
+
+on:
+  release:
+    types:
+      - published
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  report-release:
+    name: 'Report Release to Sentry'
+    permissions:
+      contents: read
+    # getsentry/action-release runs as a docker:// container action on Linux, which ubuntu-slim
+    # can't support (unprivileged, no Docker daemon).
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: 'Checkout Repository'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          ref: ${{ github.ref_name }}
+          persist-credentials: false
+
+      - name: 'Load Sentry Auth Token'
+        uses: 1password/load-secrets-action@70062d7a876d3eb6334754fa26efd2fbd90c32f2 # v5.0.1
+        with:
+          export-env: true
+          version: '2.39.0'
+        env:
+          OP_SERVICE_ACCOUNT_TOKEN: ${{ secrets.OP_SERVICE_ACCOUNT_TOKEN }}
+          # Sentry (GitHub CI/CD) credentials stored in 1Password.
+          SENTRY_AUTH_TOKEN: op://mkqkefntgcmjlgyxzeaekzuuvq/hw6jxytb2lqqjl5zzu4jjqztke/credential
+
+      - name: 'Report Release to Sentry'
+        id: sentry-release
+        uses: getsentry/action-release@ff07929a6537bac57790c3451cf4d364aca38528 # v3.7.0
+        env:
+          SENTRY_ORG: fossbilling
+          SENTRY_PROJECT: fossbilling
+        with:
+          # Must match SentryHelper::SENTRY_RELEASE_PACKAGE . '@' . Version::VERSION exactly.
+          release: fossbilling@${{ github.ref_name }}
+          set_commits: auto
+          finalize: true

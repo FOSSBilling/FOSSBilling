@@ -11,10 +11,12 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Http;
 
+use Doctrine\DBAL\Connection;
 use League\Csv\EscapeFormula;
 use League\Csv\Writer;
 use Symfony\Component\HttpFoundation\HeaderUtils;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 final readonly class CsvResponseFactory
 {
@@ -23,7 +25,7 @@ final readonly class CsvResponseFactory
      */
     private const array SENSITIVE_COLUMNS = ['pass', 'salt', 'api_token', 'hash', 'config'];
 
-    public function __construct(private \Box_Database $database)
+    public function __construct(private Connection $connection)
     {
     }
 
@@ -35,38 +37,56 @@ final readonly class CsvResponseFactory
             $headers = array_values(array_diff($headers, self::SENSITIVE_COLUMNS));
         }
 
+        $platform = $this->connection->getDatabasePlatform();
+        $sql = 'SELECT * FROM ' . $platform->quoteSingleIdentifier($table);
         if ($limit > 0) {
-            $beans = $this->database->findAll($table, 'LIMIT :limit', [':limit' => $limit]);
-        } else {
-            $beans = $this->database->findAll($table);
+            $sql = $platform->modifyLimitQuery($sql, $limit);
         }
 
-        $rows = array_map(static fn ($bean) => $bean->export(), $beans);
+        $response = new StreamedResponse(function () use ($sql, $headers, $headersRequested): void {
+            $output = fopen('php://output', 'w');
+            if ($output === false) {
+                throw new \RuntimeException('Unable to open the CSV output stream.');
+            }
 
-        if ($headers) {
-            $rows = array_map(static fn (array $row): array => array_intersect_key($row, array_flip($headers)), $rows);
-        } elseif (!$headersRequested && $rows !== []) {
-            $headers = array_values(array_diff(array_keys(reset($rows)), self::SENSITIVE_COLUMNS));
-            $rows = array_map(static fn (array $row): array => array_intersect_key($row, array_flip($headers)), $rows);
-        } elseif ($headersRequested) {
-            // All requested headers were stripped as sensitive — export nothing.
-            $rows = [];
-        }
+            $csv = Writer::from($output);
+            $csv->addFormatter((new EscapeFormula())->escapeRecord(...));
 
-        $csvFile = new \SplTempFileObject();
-        $csv = Writer::from($csvFile);
-        $escapeFormula = new EscapeFormula();
-        $csv->addFormatter($escapeFormula->escapeRecord(...));
-        $csv->insertOne($headers);
-        $csv->insertAll($rows);
+            // If every explicitly requested column was sensitive, produce an empty export
+            // without querying or exposing any fallback columns.
+            if ($headersRequested && $headers === []) {
+                fclose($output);
 
-        $csvFile->rewind();
-        $content = '';
-        while (!$csvFile->eof()) {
-            $content .= $csvFile->fgets();
-        }
+                return;
+            }
 
-        $response = new Response($content);
+            $rows = $this->connection->iterateAssociative($sql);
+            $headerMap = $headers === [] ? null : array_flip($headers);
+            $wroteHeaders = false;
+
+            foreach ($rows as $row) {
+                if ($headerMap === null) {
+                    $headers = array_values(array_diff(array_keys($row), self::SENSITIVE_COLUMNS));
+                    $headerMap = array_flip($headers);
+                }
+
+                if (!$wroteHeaders) {
+                    $csv->insertOne($headers);
+                    $wroteHeaders = true;
+                }
+                $csv->insertOne(array_map(
+                    static fn (string $header): mixed => $row[$header] ?? null,
+                    $headers,
+                ));
+            }
+
+            // Preserve an explicitly requested header row for an empty result set.
+            if (!$wroteHeaders && $headers !== []) {
+                $csv->insertOne($headers);
+            }
+
+            fclose($output);
+        });
         $response->headers->set('Content-Type', 'text/csv; charset=utf-8');
         $response->headers->set('Content-Disposition', HeaderUtils::makeDisposition(HeaderUtils::DISPOSITION_ATTACHMENT, $outputName));
         $response->headers->set('Cache-Control', 'no-cache, must-revalidate');

@@ -12,7 +12,7 @@ installer:
 library:
   - any:
     - changed-files:
-      - all-globs-to-any-file: ["src/library/**/*", "!src/library/Payment/Adapter/*", "!src/library/Registrar/Adapter/*", "!src/library/Server/Manager/*",]
+      - any-glob-to-any-file: ["src/library/**/*"]
 
 modules:
   - any:
@@ -23,22 +23,22 @@ modules:
 extensions:
   - any:
     - changed-files:
-      - any-glob-to-any-file: ["src/library/Payment/Adapter/*", "src/library/Registrar/Adapter/*", "src/library/Server/Manager/*",]
+      - any-glob-to-any-file: ["src/extensions/**/*"]
 
 payment-gateways:
   - any:
     - changed-files:
-      - any-glob-to-any-file: ["src/library/Payment/Adapter/*"]
+      - any-glob-to-any-file: ["src/extensions/gateways/**/*"]
 
 domain-registrars:
   - any:
     - changed-files:
-      - any-glob-to-any-file: ["src/library/Registrar/Adapter/*"]
+      - any-glob-to-any-file: ["src/extensions/registrars/**/*"]
 
 server-managers:
   - any:
     - changed-files:
-      - any-glob-to-any-file: ["src/library/Server/Manager/*"]
+      - any-glob-to-any-file: ["src/extensions/managers/**/*"]
 
 # Front-end/Themes.
 client-area:

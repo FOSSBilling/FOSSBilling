@@ -1,0 +1,90 @@
+name: Code Quality & Styling Check
+
+on:
+  pull_request:
+    branches: main
+    types: [opened, reopened, synchronize]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check-cs:
+    name: Rector & PHP-CS-Fixer
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          # Full history is needed so the merge-base diff below can reach
+          # the PR's base commit — the default shallow clone won't have it.
+          fetch-depth: 0
+
+      - name: Set Up PHP Quality Tools
+        uses: ./.github/actions/php-quality-setup
+        with:
+          php-version: 8.3
+
+      # The path list is written to a file, not a $GITHUB_OUTPUT string —
+      # ${{ }} is literal text substitution into the run: script before bash
+      # ever parses it, so interpolating a filename there is a script
+      # injection vector (and breaks on spaces regardless). Only the boolean
+      # below crosses the step boundary via outputs; every step that needs
+      # the actual paths reads them back into a real array with mapfile.
+      - name: Determine Changed PHP Files
+        id: changed_files
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          # Triple-dot diffs against the merge-base, not the base branch's
+          # current tip, so a PR isn't blamed for drift on main it never
+          # touched — matches what GitHub's own "Files changed" tab shows.
+          git diff -z --name-only --diff-filter=ACMR "$BASE_SHA...$HEAD_SHA" -- '*.php' > "$RUNNER_TEMP/changed-php-files.txt"
+          if [ -s "$RUNNER_TEMP/changed-php-files.txt" ]; then
+            echo "has_php_files=true" >> "$GITHUB_OUTPUT"
+            echo "Changed PHP files:"
+            xargs -0 -n1 printf '  %s\n' < "$RUNNER_TEMP/changed-php-files.txt"
+          else
+            echo "has_php_files=false" >> "$GITHUB_OUTPUT"
+            echo "No changed PHP files in this pull request — skipping style/quality checks."
+          fi
+
+      # Scoped to just the files this PR touches, not the whole repo — see
+      # https://cs.symfony.com/doc/usage.html#using-php-cs-fixer-on-ci. This
+      # also means pre-existing drift on main (only ever cleaned up by the
+      # scheduled sweep in auto-cs-fix.yml) can't fail an unrelated PR.
+      - name: Run Rector (dry-run)
+        id: rector
+        if: steps.changed_files.outputs.has_php_files == 'true'
+        run: |
+          mapfile -d '' -t files < "$RUNNER_TEMP/changed-php-files.txt"
+          composer rector:check -- --no-progress-bar -- "${files[@]}"
+
+      # --config is required here: PHP-CS-Fixer only auto-discovers
+      # .php-cs-fixer.dist.php when given a single (or zero) path argument,
+      # and refuses to run against multiple explicit paths without it.
+      - name: Run PHP-CS-Fixer (dry-run)
+        id: php_cs_fixer
+        if: steps.changed_files.outputs.has_php_files == 'true'
+        run: |
+          mapfile -d '' -t files < "$RUNNER_TEMP/changed-php-files.txt"
+          composer cs:check -- --config=.php-cs-fixer.dist.php -- "${files[@]}"
+
+      - name: Write Job Summary
+        if: always()
+        run: |
+          cat >> "${GITHUB_STEP_SUMMARY}" <<'EOF'
+          ## Code Quality and Styling Check
+
+          | Item | Value |
+          | --- | --- |
+          | PHP version | `8.3` |
+          | Rector | `${{ steps.rector.outcome }}` |
+          | PHP-CS-Fixer | `${{ steps.php_cs_fixer.outcome }}` |
+          EOF

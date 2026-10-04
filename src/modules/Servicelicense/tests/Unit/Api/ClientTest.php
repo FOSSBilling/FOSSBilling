@@ -16,6 +16,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 
 test('getDi returns dependency injection container', function (): void {
     $api = apiEndpoint(new Box\Mod\Servicelicense\Api\Client());
@@ -86,9 +87,7 @@ test('getService returns service license entity', function (): void {
 
     $api->setDi($di);
 
-    $clientModel = new Model_Client();
-    $clientModel->loadBean(new Tests\Helpers\DummyBean());
-    $clientModel->id = 1;
+    $clientModel = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1]);
     $api->setIdentity($clientModel);
 
     $result = $api->_getService($data);
@@ -128,9 +127,7 @@ test('getService throws exception when order not activated', function (): void {
 
     $api->setDi($di);
 
-    $clientModel = new Model_Client();
-    $clientModel->loadBean(new Tests\Helpers\DummyBean());
-    $clientModel->id = 1;
+    $clientModel = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1]);
     $api->setIdentity($clientModel);
 
     $api->_getService($data);
@@ -169,9 +166,7 @@ test('getService throws exception for expired order', function (): void {
 
     $api->setDi($di);
 
-    $clientModel = new Model_Client();
-    $clientModel->loadBean(new Tests\Helpers\DummyBean());
-    $clientModel->id = 1;
+    $clientModel = createEntity(Box\Mod\Client\Entity\Client::class, ['id' => 1]);
     $api->setIdentity($clientModel);
 
     expect(fn () => $api->_getService($data))

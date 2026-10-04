@@ -91,6 +91,8 @@ test('throws exception when adding field with missing type', function (): void {
     $api = apiEndpoint(new Admin());
     $data = [];
 
+    $api->setService(Mockery::mock(Service::class));
+
     expect(fn () => $api->add_field($data))
         ->toThrow(FOSSBilling\Exception::class, 'Form field type is invalid');
 });

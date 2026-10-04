@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Extension\Registrar\Namecheap;
 
-use GeoIp2\Model\Domain;
 use Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface;
 
 class Namecheap extends \FOSSBilling\Extension\Contract\Registrar\AdapterAbstract
@@ -70,6 +69,7 @@ class Namecheap extends \FOSSBilling\Extension\Contract\Registrar\AdapterAbstrac
                         'label' => 'API Key',
                         'description' => 'You can get this at Namecheap control panel.',
                         'required' => true,
+                        'secret' => true,
                     ],
                 ],
                 'username' => [
@@ -103,11 +103,8 @@ class Namecheap extends \FOSSBilling\Extension\Contract\Registrar\AdapterAbstrac
             throw new \FOSSBilling\Extension\Contract\Registrar\Exception('Premium domains cannot be registered.');
         }
 
-        if (isset($result->CommandResponse->DomainCheckResult['Available']) && $result->CommandResponse->DomainCheckResult['Available'] == 'true') {
-            return true;
-        }
-
-        return false;
+        return isset($result->CommandResponse->DomainCheckResult['Available'])
+            && $result->CommandResponse->DomainCheckResult['Available'] == 'true';
     }
 
     /**
@@ -154,14 +151,14 @@ class Namecheap extends \FOSSBilling\Extension\Contract\Registrar\AdapterAbstrac
         $result = simplexml_load_string($data);
 
         if (isset($result['status']) && strtolower((string) $result['status']) == 'error') {
-            error_log('Namecheap error: ' . PHP_EOL . $result['error']);
+            $this->getLog()->error('Namecheap error: ' . PHP_EOL . $result['error']);
             $placeholders = [':action:' => $params['Command'], ':type:' => 'Namecheap'];
 
             throw new \FOSSBilling\Extension\Contract\Registrar\Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
         }
 
         if (isset($result['status']) && strtolower((string) $result['status']) == 'failed') {
-            error_log('Namecheap error: ' . PHP_EOL . $result['actionstatusdesc']);
+            $this->getLog()->error('Namecheap error: ' . PHP_EOL . $result['actionstatusdesc']);
             $placeholders = [':action:' => $params['Command'], ':type:' => 'Namecheap'];
 
             throw new \FOSSBilling\Extension\Contract\Registrar\Exception('Failed to :action: with the :type: registrar, check the error logs for further details', $placeholders);
@@ -248,15 +245,15 @@ class Namecheap extends \FOSSBilling\Extension\Contract\Registrar\AdapterAbstrac
         foreach (['Registrant', 'Admin', 'Tech', 'AuxBilling'] as $contactType) {
             $c = $domain->getContactRegistrar();
 
-            if ($contactType == 'Admin' && $domain->getContactAdmin()) {
+            if ($contactType == 'Admin' && $domain->getContactAdmin() instanceof \FOSSBilling\Extension\Contract\Registrar\Domain\Contact) {
                 $c = $domain->getContactAdmin();
             }
 
-            if ($contactType == 'Tech' && $domain->getContactTech()) {
+            if ($contactType == 'Tech' && $domain->getContactTech() instanceof \FOSSBilling\Extension\Contract\Registrar\Domain\Contact) {
                 $c = $domain->getContactTech();
             }
 
-            if ($contactType == 'AuxBilling' && $domain->getContactBilling()) {
+            if ($contactType == 'AuxBilling' && $domain->getContactBilling() instanceof \FOSSBilling\Extension\Contract\Registrar\Domain\Contact) {
                 $c = $domain->getContactBilling();
             }
 
@@ -291,11 +288,9 @@ class Namecheap extends \FOSSBilling\Extension\Contract\Registrar\AdapterAbstrac
         ];
 
         $result = $this->_makeRequest($params);
-        if (isset($result->CommandResponse->DomainTransferCreateResult['Transfer']) && $result->CommandResponse->DomainTransferCreateResult['Transfer'] == 'true') {
-            return true;
-        }
 
-        return false;
+        return isset($result->CommandResponse->DomainTransferCreateResult['Transfer'])
+            && $result->CommandResponse->DomainTransferCreateResult['Transfer'] == 'true';
     }
 
     /**
@@ -313,8 +308,12 @@ class Namecheap extends \FOSSBilling\Extension\Contract\Registrar\AdapterAbstrac
 
         $result = $this->_makeRequest($params);
 
-        $domain->setRegistrationTime((string) $result->CommandResponse->DomainGetInfoResult->DomainDetails->CreatedDate);
-        $domain->setExpirationTime((string) $result->CommandResponse->DomainGetInfoResult->DomainDetails->ExpiredDate);
+        // Namecheap returns these as "MM/DD/YYYY" strings, not Unix timestamps.
+        $registrationTime = strtotime((string) $result->CommandResponse->DomainGetInfoResult->DomainDetails->CreatedDate);
+        $expirationTime = strtotime((string) $result->CommandResponse->DomainGetInfoResult->DomainDetails->ExpiredDate);
+
+        $domain->setRegistrationTime($registrationTime === false ? null : $registrationTime);
+        $domain->setExpirationTime($expirationTime === false ? null : $expirationTime);
         $domain->setPrivacyEnabled((string) $result->CommandResponse->DomainGetInfoResult->Whoisguard['Enabled']);
 
         $params = [
@@ -337,6 +336,8 @@ class Namecheap extends \FOSSBilling\Extension\Contract\Registrar\AdapterAbstrac
         // set SLD and TLD
         $newDomain->setSld($domain->getSld());
         $newDomain->setTld($domain->getTld());
+        $newDomain->setRegistrationTime($domain->getRegistrationTime());
+        $newDomain->setExpirationTime($domain->getExpirationTime());
 
         $registrarContact = new \FOSSBilling\Extension\Contract\Registrar\Domain\Contact();
         $adminContact = new \FOSSBilling\Extension\Contract\Registrar\Domain\Contact();
@@ -388,8 +389,7 @@ class Namecheap extends \FOSSBilling\Extension\Contract\Registrar\AdapterAbstrac
         $result = $this->_makeRequest($params);
 
         $NsArr = [];
-        $xmlNsList = $result->CommandResponse->DomainDNSGetListResult;
-        foreach ($xmlNsList->Nameserver as $Nameserver) {
+        foreach ($result->CommandResponse->DomainDNSGetListResult->Nameserver ?? [] as $Nameserver) {
             $NsArr[] = $Nameserver;
         }
 
@@ -441,15 +441,15 @@ class Namecheap extends \FOSSBilling\Extension\Contract\Registrar\AdapterAbstrac
         foreach (['Registrant', 'Admin', 'Tech', 'AuxBilling'] as $contactType) {
             $c = $domain->getContactRegistrar();
 
-            if ($contactType == 'Admin' && $domain->getContactAdmin()) {
+            if ($contactType == 'Admin' && $domain->getContactAdmin() instanceof \FOSSBilling\Extension\Contract\Registrar\Domain\Contact) {
                 $c = $domain->getContactAdmin();
             }
 
-            if ($contactType == 'Tech' && $domain->getContactTech()) {
+            if ($contactType == 'Tech' && $domain->getContactTech() instanceof \FOSSBilling\Extension\Contract\Registrar\Domain\Contact) {
                 $c = $domain->getContactTech();
             }
 
-            if ($contactType == 'AuxBilling' && $domain->getContactBilling()) {
+            if ($contactType == 'AuxBilling' && $domain->getContactBilling() instanceof \FOSSBilling\Extension\Contract\Registrar\Domain\Contact) {
                 $c = $domain->getContactBilling();
             }
 
@@ -520,7 +520,7 @@ class Namecheap extends \FOSSBilling\Extension\Contract\Registrar\AdapterAbstrac
     }
 
     /**
-     * TODO: Implement this correctly.
+     * Namecheap does not expose a domain deletion command through its API.
      *
      * @throws \FOSSBilling\Extension\Contract\Registrar\Exception
      */
@@ -530,11 +530,11 @@ class Namecheap extends \FOSSBilling\Extension\Contract\Registrar\AdapterAbstrac
     }
 
     /**
-     * @return string[]
+     * @return array{enabled: bool, id: string}
      *
      * @throws \FOSSBilling\Extension\Contract\Registrar\Exception
      */
-    private function getPrivacyInfo(\FOSSBilling\Extension\Contract\Registrar\Domain $domain)
+    private function getPrivacyInfo(\FOSSBilling\Extension\Contract\Registrar\Domain $domain): array
     {
         $params = [
             'DomainName' => $domain->getName(),

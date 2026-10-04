@@ -17,9 +17,14 @@ use Box\Mod\Activity\Entity\ActivitySystem;
 use Box\Mod\Activity\Repository\ActivityClientHistoryRepository;
 use Box\Mod\Activity\Repository\ActivitySystemRepository;
 use Box\Mod\Client\Entity\Client;
+use Box\Mod\Client\Event\AfterClientLoginEvent;
+use Box\Mod\Cron\Event\BeforeAdminCronRunEvent;
+use Box\Mod\Staff\Event\AfterAdminLoginEvent;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Types\Types;
 use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\SortOptions;
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 
 class Service implements InjectionAwareInterface
 {
@@ -57,11 +62,6 @@ class Service implements InjectionAwareInterface
         return $this->di['dbal'];
     }
 
-    private static function getDbalFromDi(\Pimple\Container $di): Connection
-    {
-        return $di['dbal'];
-    }
-
     public function logEvent($data): void
     {
         $extensionService = $this->di['mod_service']('extension');
@@ -80,42 +80,38 @@ class Service implements InjectionAwareInterface
         $this->di['em']->flush();
     }
 
-    public static function onAfterClientLogin(\Box_Event $event): void
+    #[AsEventListener]
+    public function recordClientLogin(AfterClientLoginEvent $event): void
     {
-        $params = $event->getParameters();
-        $di = $event->getDi();
-
-        $extensionService = $di['mod_service']('extension');
-        $ip = $extensionService->isExtensionActive('mod', 'demo') ? null : $params['ip'];
+        $extensionService = $this->di['mod_service']('extension');
+        $ip = $extensionService->isExtensionActive('mod', 'demo') ? null : $event->ip;
 
         $history = (new ActivityClientHistory())
-            ->setClientId((int) $params['id'])
+            ->setClientId($event->clientId)
             ->setIp($ip);
 
-        $di['em']->persist($history);
-        $di['em']->flush();
+        $this->di['em']->persist($history);
+        $this->di['em']->flush();
     }
 
-    public static function onAfterAdminLogin(\Box_Event $event): void
+    #[AsEventListener]
+    public function recordAdminLogin(AfterAdminLoginEvent $event): void
     {
-        $params = $event->getParameters();
-        $di = $event->getDi();
-
-        $extensionService = $di['mod_service']('extension');
-        $ip = $extensionService->isExtensionActive('mod', 'demo') ? null : $params['ip'];
+        $extensionService = $this->di['mod_service']('extension');
+        $ip = $extensionService->isExtensionActive('mod', 'demo') ? null : $event->ip;
 
         $history = (new ActivityAdminHistory())
-            ->setAdminId((int) $params['id'])
+            ->setAdminId($event->adminId)
             ->setIp($ip);
 
-        $di['em']->persist($history);
-        $di['em']->flush();
+        $this->di['em']->persist($history);
+        $this->di['em']->flush();
     }
 
-    public static function onBeforeAdminCronRun(\Box_Event $event): void
+    #[AsEventListener]
+    public function cleanupOldActivity(BeforeAdminCronRunEvent $event): void
     {
-        $di = $event->getDi();
-        $config = $di['mod_service']('extension')->getConfig('mod_activity');
+        $config = $this->di['mod_service']('extension')->getConfig('mod_activity');
 
         $retention = intval($config['max_age'] ?? 90);
         $emailRetention = intval($config['email_max_age'] ?? 0);
@@ -126,7 +122,7 @@ class Service implements InjectionAwareInterface
 
         $ageInSeconds = $retention * 86_400;
         $emailAgeInSeconds = $emailRetention * 86_400;
-        $dbal = self::getDbalFromDi($di);
+        $dbal = $this->getDbal();
 
         try {
             if ($retention !== 0) {
@@ -142,7 +138,7 @@ class Service implements InjectionAwareInterface
                 ]);
             }
         } catch (\Exception $e) {
-            error_log($e->getMessage());
+            $this->di['logger']->error($e->getMessage());
         }
     }
 
@@ -167,10 +163,10 @@ class Service implements InjectionAwareInterface
 
         if ($priority !== null && $priority !== '') {
             $where[] = 'm.priority = :priority';
-            $params[':priority'] = $priority;
+            $params['priority'] = $priority;
         } elseif ($min_priority !== null && $min_priority !== '') {
             $where[] = 'm.priority <= :min_priority';
-            $params[':min_priority'] = $min_priority;
+            $params['min_priority'] = $min_priority;
         }
 
         if ($user_filter === 'only_staff') {
@@ -181,39 +177,46 @@ class Service implements InjectionAwareInterface
 
         if ($admin_id) {
             $where[] = 'm.admin_id = :admin_id';
-            $params[':admin_id'] = $admin_id;
+            $params['admin_id'] = $admin_id;
         }
 
         if ($client_id) {
             $where[] = 'm.client_id = :client_id';
-            $params[':client_id'] = $client_id;
+            $params['client_id'] = $client_id;
         }
 
         if ($date_from) {
             $where[] = 'm.created_at >= :date_from';
-            $params[':date_from'] = date('Y-m-d 00:00:00', strtotime((string) $date_from));
+            $params['date_from'] = date('Y-m-d 00:00:00', strtotime((string) $date_from));
         }
 
         if ($date_to) {
             $where[] = 'm.created_at <= :date_to';
-            $params[':date_to'] = date('Y-m-d 23:59:59', strtotime((string) $date_to));
+            $params['date_to'] = date('Y-m-d 23:59:59', strtotime((string) $date_to));
         }
 
         if ($ip) {
             $where[] = 'm.ip = :ip';
-            $params[':ip'] = $ip;
+            $params['ip'] = $ip;
         }
 
         if ($search) {
             $where[] = 'm.message LIKE :search';
-            $params[':search'] = '%' . $search . '%';
+            $params['search'] = '%' . $search . '%';
         }
 
         if ($where !== []) {
             $sql .= ' WHERE ' . implode(' and ', $where);
         }
 
-        $sql .= ' ORDER by m.id desc';
+        $sort = SortOptions::fromArray($data, [
+            'id' => 'm.id',
+            'priority' => 'm.priority',
+            'ip' => 'm.ip',
+            'created_at' => 'm.created_at',
+        ]);
+        $orderBy = $sort->toOrderByClause('m.id') ?? 'm.id desc';
+        $sql .= " ORDER BY {$orderBy}";
 
         return [$sql, $params];
     }
@@ -262,19 +265,19 @@ class Service implements InjectionAwareInterface
         ];
     }
 
-    public function rmByClient(\Model_Client|Client $client): void
+    public function rmByClient(Client $client): void
     {
-        $clientId = $client instanceof Client ? $client->getId() : $client->id;
+        $clientId = $client->getId();
         if ($clientId === null) {
             return;
         }
 
         /** @var ActivityClientHistoryRepository $clientHistoryRepository */
         $clientHistoryRepository = $this->di['em']->getRepository(ActivityClientHistory::class);
-        $clientHistoryRepository->deleteByClientId((int) $clientId);
+        $clientHistoryRepository->deleteByClientId($clientId);
 
         /** @var ActivitySystemRepository $activitySystemRepository */
         $activitySystemRepository = $this->di['em']->getRepository(ActivitySystem::class);
-        $activitySystemRepository->deleteByClientId((int) $clientId);
+        $activitySystemRepository->deleteByClientId($clientId);
     }
 }

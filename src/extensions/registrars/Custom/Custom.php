@@ -11,19 +11,15 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Extension\Registrar\Custom;
 
-use Iodev\Whois\Factory;
-
 class Custom extends \FOSSBilling\Extension\Contract\Registrar\AdapterAbstract
 {
     public $config = [
-        'use_whois' => false,
+        'use_rdap' => false,
     ];
 
     public function __construct($options)
     {
-        if (isset($options['use_whois'])) {
-            $this->config['use_whois'] = (bool) $options['use_whois'];
-        }
+        $this->config['use_rdap'] = (bool) ($options['use_rdap'] ?? $options['use_whois'] ?? false);
     }
 
     public static function getConfig(): array
@@ -31,9 +27,9 @@ class Custom extends \FOSSBilling\Extension\Contract\Registrar\AdapterAbstract
         return [
             'label' => 'Custom Registrar always responds with positive results. Useful if no other registrar is suitable.',
             'form' => [
-                'use_whois' => ['radio', [
+                'use_rdap' => ['radio', [
                     'multiOptions' => ['1' => 'Yes', '0' => 'No'],
-                    'label' => 'Use WHOIS to Check for Domain Availability',
+                    'label' => 'Use RDAP Registry Lookups to Check for Domain Availability',
                 ],
                 ],
             ],
@@ -44,6 +40,14 @@ class Custom extends \FOSSBilling\Extension\Contract\Registrar\AdapterAbstract
     {
         $this->getLog()->debug('Checking if domain can be transferred: ' . $domain->getName());
 
+        if (!$this->config['use_rdap']) {
+            return true;
+        }
+
+        if ($this->getRdap()->isDomainAvailable($domain->getName()) ?? false) {
+            throw new \FOSSBilling\Extension\Contract\Registrar\Exception('Domain :domain is not registered, so it cannot be transferred. You may be able to register it instead.', [':domain' => $domain->getName()]);
+        }
+
         return true;
     }
 
@@ -51,13 +55,11 @@ class Custom extends \FOSSBilling\Extension\Contract\Registrar\AdapterAbstract
     {
         $this->getLog()->debug('Checking domain availability: ' . $domain->getName());
 
-        if ($this->config['use_whois']) {
-            $whois = Factory::get()->createWhois();
-
-            return $whois->isDomainAvailable($domain->getName());
+        if (!$this->config['use_rdap']) {
+            return true;
         }
 
-        return true;
+        return $this->getRdap()->isDomainAvailable($domain->getName()) ?? true;
     }
 
     public function modifyNs(\FOSSBilling\Extension\Contract\Registrar\Domain $domain): bool
@@ -81,7 +83,7 @@ class Custom extends \FOSSBilling\Extension\Contract\Registrar\AdapterAbstract
 
     public function getDomainDetails(\FOSSBilling\Extension\Contract\Registrar\Domain $domain)
     {
-        $this->getLog()->debug('Getting whois: ' . $domain->getName());
+        $this->getLog()->debug('Getting domain details: ' . $domain->getName());
 
         if (!$domain->getRegistrationTime()) {
             $domain->setRegistrationTime(time());

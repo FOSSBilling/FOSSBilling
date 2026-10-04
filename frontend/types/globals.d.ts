@@ -125,6 +125,7 @@ interface BootstrapRuntime {
 
 declare global {
   const bootstrap: BootstrapRuntime;
+  const tabler: BootstrapRuntime;
   const FOSSBilling: FOSSBillingRuntime;
   const Modals: ModalsRuntime | undefined;
 
@@ -139,6 +140,7 @@ declare global {
   }
 
   var bootstrap: BootstrapRuntime;
+  var tabler: BootstrapRuntime;
   var flashMessage: ((options: { message?: string; reload?: boolean | string; type?: string }) => void) | undefined;
   var FOSSBilling: FOSSBillingRuntime;
   var Modals: ModalsRuntime | undefined;

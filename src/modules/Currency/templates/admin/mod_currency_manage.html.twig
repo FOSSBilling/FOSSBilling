@@ -38,7 +38,7 @@
                 <div class="col-lg-6">
                     <label class="form-label">{{ 'Conversion Rate'|trans }}</label>
                     <input class="form-control" type="text" name="conversion_rate" value="{{ currency.conversion_rate }}" required>
-                    <div class="form-hint">{{ 'The value of one unit of the default currency in this currency.'|trans }}</div>
+                    <div class="form-text">{{ 'The value of one unit of the default currency in this currency.'|trans }}</div>
                 </div>
                 {% if not currency.default %}
                 <div class="col-lg-6 d-flex align-items-end">
@@ -46,7 +46,7 @@
                         <input type="hidden" name="is_rate_manual" value="0">
                         <input class="form-check-input" id="is-rate-manual" type="checkbox" name="is_rate_manual" value="1"{% if currency.is_rate_manual|default(false) %} checked{% endif %}>
                         <label class="form-check-label" for="is-rate-manual">{{ 'Manual rate override'|trans }}</label>
-                        <div class="form-hint">{{ 'Preserve this rate when scheduled or on-demand rate synchronization runs.'|trans }}</div>
+                        <div class="form-text">{{ 'Preserve this rate when scheduled or on-demand rate synchronization runs.'|trans }}</div>
                     </div>
                 </div>
                 {% endif %}
@@ -89,7 +89,7 @@
                                                     <option value="{{ digit }}"{% if currency.fraction_digits is same as(digit) %} selected{% endif %}>{{ digit }}</option>
                                                 {% endfor %}
                                             </select>
-                                            <div class="form-hint">{{ 'Overrides only the number of displayed decimal places.'|trans }}</div>
+                                            <div class="form-text">{{ 'Overrides only the number of displayed decimal places.'|trans }}</div>
                                         </div>
                                         <div class="col-lg-6">
                                             <label class="form-label" for="format-pattern">{{ 'Format Pattern'|trans }}</label>
@@ -102,7 +102,7 @@
                                                 maxlength="100"
                                                 placeholder="{{ currency.code }} {amount}"
                                             >
-                                            <div class="form-hint">{{ 'Plain text containing {amount} exactly once. Example: %code% {amount}'|trans({'%code%': currency.code}) }}</div>
+                                            <div class="form-text">{{ 'Plain text containing {amount} exactly once. Example: %code% {amount}'|trans({'%code%': currency.code}) }}</div>
                                         </div>
                                         <div class="col-12">
                                             <div class="rounded border p-3">

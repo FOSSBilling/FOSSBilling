@@ -19,7 +19,8 @@ use Symfony\Component\Filesystem\Path;
 
 class Monolog
 {
-    protected $logger;
+    /** @var array<string, Logger> */
+    protected array $logger = [];
     public string $dateFormat = 'd-M-Y H:i:s e';
     public string $outputFormat = "[%datetime%] %channel%.%level_name%: %message% %context% %extra%\n";
 
@@ -27,6 +28,7 @@ class Monolog
         'activity',
         'application',
         'cron',
+        'update',
         'database',
         'license',
         'mail',
@@ -37,28 +39,26 @@ class Monolog
         'email',
     ];
 
-    public function __construct()
-    {
-        $channels = $this->channels;
-
-        foreach ($channels as $channel) {
-            $path = Path::join(PATH_LOG, $channel, "{$channel}.log");
-
-            $this->logger[$channel] = new Logger($channel);
-            $rotatingHandler = new RotatingFileHandler($path, 90, Level::Debug);
-            $this->logger[$channel]->pushHandler($rotatingHandler);
-
-            $formatter = new LineFormatter($this->outputFormat, $this->dateFormat, true, true, true);
-            $this->logger[$channel]->getHandlers()[0]->setFormatter($formatter);
-        }
-    }
-
     /**
      * @return Logger The logger for the specified channel. If the channel does not exist, the default logger (the 'application' channel) is returned.
      */
     public function getChannel(string $channel = 'application'): Logger
     {
-        return $this->logger[$channel] ?? $this->logger['application'];
+        if (!in_array($channel, $this->channels, true)) {
+            $channel = 'application';
+        }
+
+        if (isset($this->logger[$channel])) {
+            return $this->logger[$channel];
+        }
+
+        $path = Path::join(PATH_LOG, $channel, "{$channel}.log");
+        $logger = new Logger($channel);
+        $handler = new RotatingFileHandler($path, 90, Level::Debug);
+        $handler->setFormatter(new LineFormatter($this->outputFormat, $this->dateFormat, true, true, true));
+        $logger->pushHandler($handler);
+
+        return $this->logger[$channel] = $logger;
     }
 
     /**
@@ -68,14 +68,14 @@ class Monolog
     {
         // Map numeric priority to Monolog Level
         return match ($priority) {
-            \Box_Log::EMERG => Level::Emergency,
-            \Box_Log::ALERT => Level::Alert,
-            \Box_Log::CRIT => Level::Critical,
-            \Box_Log::ERR => Level::Error,
-            \Box_Log::WARN => Level::Warning,
-            \Box_Log::NOTICE => Level::Notice,
-            \Box_Log::INFO => Level::Info,
-            \Box_Log::DEBUG => Level::Debug,
+            \FOSSBilling\Logger::EMERG => Level::Emergency,
+            \FOSSBilling\Logger::ALERT => Level::Alert,
+            \FOSSBilling\Logger::CRIT => Level::Critical,
+            \FOSSBilling\Logger::ERR => Level::Error,
+            \FOSSBilling\Logger::WARN => Level::Warning,
+            \FOSSBilling\Logger::NOTICE => Level::Notice,
+            \FOSSBilling\Logger::INFO => Level::Info,
+            \FOSSBilling\Logger::DEBUG => Level::Debug,
             default => Level::Debug,
         };
     }
@@ -88,8 +88,10 @@ class Monolog
 
         try {
             $this->getChannel($channel)->log($priority, $message, $context);
-        } catch (\Exception $e) {
-            error_log($e->getMessage());
+        } catch (\Throwable $e) {
+            // This is the final fallback when a Monolog handler itself fails;
+            // routing it through the application logger would recurse.
+            error_log(sprintf('[FOSSBilling\\Monolog] writer failure: %s at %s:%d', $e->getMessage(), $e->getFile(), $e->getLine()));
         }
     }
 }

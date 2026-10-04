@@ -14,6 +14,8 @@ namespace Box\Mod\Support\Repository;
 use Box\Mod\Support\Entity\SupportTicket;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
+use FOSSBilling\Doctrine\SqlExpr;
+use FOSSBilling\SortOptions;
 
 class SupportTicketRepository extends EntityRepository
 {
@@ -36,11 +38,12 @@ class SupportTicketRepository extends EntityRepository
      *  - `search`            (string)  LIKE on subject / author_email / author_name
      *  - `date_from`         (string)  created_at lower bound (Y-m-d)
      *  - `date_to`           (string)  created_at upper bound (Y-m-d)
+     *  - `sort`              (string)  sort column: 'id', 'status', 'priority', 'subject', 'created_at' or 'updated_at'
+     *  - `direction`         (string)  sort direction: 'ASC' or 'DESC'
      */
     public function getSearchQueryBuilder(array $data = []): QueryBuilder
     {
-        $qb = $this->createQueryBuilder('t')
-            ->orderBy('t.id', 'DESC');
+        $qb = $this->createQueryBuilder('t');
 
         if (!empty($data['id'])) {
             $qb->andWhere('t.id = :id')
@@ -127,6 +130,23 @@ class SupportTicketRepository extends EntityRepository
                 ->setParameter('date_to', new \DateTime($data['date_to'] . ' 23:59:59'));
         }
 
+        $sort = SortOptions::fromArray($data, [
+            'id' => 't.id',
+            'status' => 't.status',
+            'priority' => 't.priority',
+            'subject' => 't.subject',
+            'created_at' => 't.createdAt',
+            'updated_at' => 't.updatedAt',
+        ]);
+        if ($sort->isSorted()) {
+            $qb->orderBy($sort->expression, $sort->direction);
+            if ($sort->expression !== 't.id') {
+                $qb->addOrderBy('t.id', $sort->direction);
+            }
+        } else {
+            $qb->orderBy('t.id', \SortDirection::Descending);
+        }
+
         return $qb;
     }
 
@@ -210,7 +230,7 @@ class SupportTicketRepository extends EntityRepository
     public function findLatest(int $limit = 10): array
     {
         return $this->createQueryBuilder('t')
-            ->orderBy('t.id', 'DESC')
+            ->orderBy('t.id', \SortDirection::Descending)
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
@@ -298,18 +318,22 @@ class SupportTicketRepository extends EntityRepository
      */
     public function findExpiredOnHold(\DateTimeInterface $now): array
     {
-        $sql = 'SELECT st.*
+        $connection = $this->getEntityManager()->getConnection();
+        // sh.close_after is per-row (each helpdesk sets its own window), so it can't be reduced
+        // to a single bound parameter the way :now can - see SqlExpr::addHours().
+        $expiresAt = SqlExpr::addHours($connection, 'st.updated_at', 'sh.close_after');
+
+        $sql = "SELECT st.*
                 FROM support_ticket AS st
                     LEFT JOIN support_helpdesk sh ON sh.id = st.support_helpdesk_id
                 WHERE st.status = :status
-                  AND DATE_ADD(st.updated_at, INTERVAL sh.close_after HOUR) < :now
-                ORDER BY st.id ASC';
+                  AND {$expiresAt} < :now
+                ORDER BY st.id ASC";
 
-        return $this->getEntityManager()->getConnection()
-            ->fetchAllAssociative($sql, [
-                'status' => SupportTicket::STATUS_ONHOLD,
-                'now' => $now->format('Y-m-d H:i:s'),
-            ]);
+        return $connection->fetchAllAssociative($sql, [
+            'status' => SupportTicket::STATUS_ONHOLD,
+            'now' => $now->format('Y-m-d H:i:s'),
+        ]);
     }
 
     /**

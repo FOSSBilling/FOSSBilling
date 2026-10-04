@@ -7,21 +7,19 @@ namespace Box\Mod\Client;
 use Box\Mod\Client\Entity\Client;
 use Box\Mod\Client\Entity\ClientBalance;
 use Box\Mod\Client\Repository\ClientBalanceRepository;
-use Box\Mod\Client\Repository\ClientRepository;
 use Doctrine\ORM\QueryBuilder;
 use FOSSBilling\InjectionAwareInterface;
+use FOSSBilling\SortOptions;
 
 class ServiceBalance implements InjectionAwareInterface
 {
     protected ?\Pimple\Container $di = null;
     private ClientBalanceRepository $clientBalanceRepository;
-    private ClientRepository $clientRepository;
 
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
         $this->clientBalanceRepository = $di['em']->getRepository(ClientBalance::class);
-        $this->clientRepository = $di['em']->getRepository(Client::class);
     }
 
     public function getDi(): ?\Pimple\Container
@@ -29,22 +27,30 @@ class ServiceBalance implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function getClientBalance(Client|\Model_Client $c): float
+    public function getClientBalance(Client $c): float
     {
         return $this->clientTotal($c);
     }
 
-    public function clientTotal(Client|\Model_Client $c): float
+    /**
+     * Must be called within a transaction, held until the deduction has been written. The lock is
+     * released when the transaction ends, and the balance is unprotected from that point on.
+     */
+    public function getClientBalanceForUpdate(Client|int $c): float
     {
-        $clientId = $c instanceof Client ? $c->getId() : $c->id;
+        $clientId = $c instanceof Client ? $c->getId() : $c;
 
-        return $this->clientBalanceRepository->getClientBalanceSum((int) $clientId);
+        return $this->clientBalanceRepository->getClientBalanceSumForUpdate((int) $clientId);
     }
 
-    public function rmByClient(Client|\Model_Client $client): void
+    public function clientTotal(Client $c): float
     {
-        $clientId = $client instanceof Client ? $client->getId() : $client->id;
-        $balances = $this->clientBalanceRepository->findBy(['clientId' => (int) $clientId]);
+        return $this->clientBalanceRepository->getClientBalanceSum((int) $c->getId());
+    }
+
+    public function rmByClient(Client $client): void
+    {
+        $balances = $this->clientBalanceRepository->findBy(['client' => $client]);
         foreach ($balances as $balance) {
             $this->di['em']->remove($balance);
         }
@@ -61,8 +67,7 @@ class ServiceBalance implements InjectionAwareInterface
 
     public function toApiArray(ClientBalance $model, ?Client $client = null): array
     {
-        $clientId = $model->getClientId();
-        $client ??= $clientId !== null ? $this->clientRepository->find($clientId) : null;
+        $client ??= $model->getClient();
         if (!$client instanceof Client) {
             throw new \FOSSBilling\InformationException('Client not found');
         }
@@ -91,7 +96,7 @@ class ServiceBalance implements InjectionAwareInterface
         }
 
         if ($clientId !== null && $clientId !== '') {
-            $queryBuilder->andWhere('m.clientId = :client_id')
+            $queryBuilder->andWhere('IDENTITY(m.client) = :client_id')
                 ->setParameter('client_id', $clientId);
         }
 
@@ -105,7 +110,23 @@ class ServiceBalance implements InjectionAwareInterface
                 ->setParameter('date_to', new \DateTimeImmutable(date('Y-m-d H:i:s', strtotime((string) $dateTo))));
         }
 
-        return $queryBuilder->orderBy('m.id', 'DESC');
+        $sort = SortOptions::fromArray($data, [
+            'id' => 'm.id',
+            'amount' => 'm.amount',
+            'description' => 'm.description',
+            'created_at' => 'm.createdAt',
+            'updated_at' => 'm.updatedAt',
+        ]);
+        if ($sort->isSorted()) {
+            $queryBuilder->orderBy($sort->expression, $sort->direction);
+            if ($sort->expression !== 'm.id') {
+                $queryBuilder->addOrderBy('m.id', $sort->direction);
+            }
+        } else {
+            $queryBuilder->orderBy('m.id', \SortDirection::Descending);
+        }
+
+        return $queryBuilder;
     }
 
     public function getSearchQuery($data): array
@@ -124,58 +145,38 @@ class ServiceBalance implements InjectionAwareInterface
 
         if ($id !== null) {
             $where[] = 'm.id = :id';
-            $params[':id'] = $id;
+            $params['id'] = $id;
         }
 
         if ($client_id !== null) {
             $where[] = 'm.client_id = :client_id';
-            $params[':client_id'] = $client_id;
+            $params['client_id'] = $client_id;
         }
 
         if ($date_from !== null) {
             $where[] = 'm.created_at >= :date_from';
-            $params[':date_from'] = strtotime($date_from);
+            $params['date_from'] = strtotime($date_from);
         }
 
         if ($date_to !== null) {
             $where[] = 'm.created_at <= :date_to';
-            $params[':date_to'] = strtotime($date_to);
+            $params['date_to'] = strtotime($date_to);
         }
 
         if (!empty($where)) {
             $q .= ' WHERE ' . implode(' AND ', $where);
         }
-        $q .= ' ORDER by m.id DESC';
+
+        $sort = SortOptions::fromArray($data, [
+            'id' => 'm.id',
+            'amount' => 'm.amount',
+            'description' => 'm.description',
+            'created_at' => 'm.created_at',
+            'updated_at' => 'm.updated_at',
+        ]);
+        $orderBy = $sort->toOrderByClause('m.id') ?? 'm.id DESC';
+        $q .= " ORDER BY {$orderBy}";
 
         return [$q, $params];
-    }
-
-    /**
-     * @param float|string $amount
-     *
-     * @throws \FOSSBilling\InformationException
-     */
-    public function deductFunds(Client|\Model_Client $client, $amount, $description, ?array $data = null): ClientBalance
-    {
-        if (!is_numeric($amount)) {
-            throw new \FOSSBilling\InformationException('Funds amount is invalid');
-        }
-
-        if (strlen(trim((string) $description)) == 0) {
-            throw new \FOSSBilling\InformationException('Funds description is invalid');
-        }
-
-        $credit = new ClientBalance();
-        $clientId = $client instanceof Client ? $client->getId() : $client->id;
-        $credit->setClientId((int) $clientId);
-        $credit->setType($data['type'] ?? 'default');
-        $credit->setRelId(isset($data['rel_id']) ? (string) $data['rel_id'] : null);
-        $credit->setDescription($description);
-        $credit->setAmount((string) (-(float) $amount));
-
-        $this->di['em']->persist($credit);
-        $this->di['em']->flush();
-
-        return $credit;
     }
 }

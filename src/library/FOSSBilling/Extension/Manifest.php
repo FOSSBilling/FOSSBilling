@@ -59,6 +59,11 @@ final readonly class Manifest
         public array $settings = [],
         /** Whether this extension's rendered output may be embedded in an iframe. */
         public bool $embeddable = false,
+        /**
+         * Whether a payment gateway has no verifiable callback, so an administrator must
+         * confirm the money arrived before the payment is settled (e.g. bank transfer).
+         */
+        public bool $manualApproval = false,
     ) {
     }
 
@@ -119,6 +124,7 @@ final readonly class Manifest
             logo: $logo,
             settings: $settings,
             embeddable: isset($data['embeddable']) && (bool) $data['embeddable'],
+            manualApproval: isset($data['manual_approval']) && (bool) $data['manual_approval'],
         );
     }
 

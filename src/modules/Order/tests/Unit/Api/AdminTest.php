@@ -416,11 +416,7 @@ test('checks whether an order supports cancellation at period end', function ():
     $api->shouldReceive('_getOrder')->once()->andReturn($order);
 
     $subscriptionService = Mockery::mock(Box\Mod\Invoice\ServiceSubscription::class);
-    $legacyOrder = new Model_ClientOrder();
-    $legacyOrder->loadBean(new Tests\Helpers\DummyBean(['id' => 1]));
-    $service = Mockery::mock(Service::class);
-    $service->shouldReceive('getLegacyOrder')->once()->with($order)->andReturn($legacyOrder);
-    $subscriptionService->shouldReceive('canCancelAtPeriodEndForOrder')->once()->with($legacyOrder)->andReturn(true);
+    $subscriptionService->shouldReceive('canCancelAtPeriodEndForOrder')->once()->with($order)->andReturn(true);
 
     $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
     $staffService->shouldReceive('checkPermissionsAndThrowException')->once()->andReturn(true);
@@ -428,7 +424,7 @@ test('checks whether an order supports cancellation at period end', function ():
     $di = container();
     $di['mod_service'] = $di->protect(fn (string $module) => strtolower($module) === 'staff' ? $staffService : $subscriptionService);
     $api->setDi($di);
-    $api->setService($service);
+    $api->setService(Mockery::mock(Service::class));
 
     expect($api->can_cancel_at_period_end(['id' => 1]))->toBeTrue();
 });
@@ -543,6 +539,20 @@ test('batch cancels suspended orders', function (): void {
     expect($result)->toBeTrue();
 });
 
+test('batch cancels unpaid orders', function (): void {
+    $api = apiEndpoint(new Admin());
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('batchCancelUnpaid')->atLeast()->once()->andReturn(true);
+
+    $api->setService($serviceMock);
+
+    $data = [];
+    $result = $api->batch_cancel_unpaid($data);
+
+    expect($result)->toBeTrue();
+});
+
 test('updates order config', function (): void {
     $order = createEntity(Box\Mod\Order\Entity\Order::class);
 
@@ -588,8 +598,7 @@ test('gets order service', function (): void {
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('getOrderServiceData')->atLeast()->once()->andReturn([]);
 
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean(['id' => 1]));
+    $admin = \Tests\Helpers\admin(['id' => 1]);
 
     $apiMock->setService($serviceMock);
     $apiMock->setIdentity($admin);
@@ -738,4 +747,88 @@ test('batch deletes orders', function (): void {
     $result = $apiMock->batch_delete(['ids' => [1, 2, 3]]);
 
     expect($result)->toBeTrue();
+});
+
+test('export_csv requires both view and export permissions', function (): void {
+    $api = apiEndpoint(new Admin());
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('exportCSV')->never();
+
+    $di = container();
+    $staffServiceMock = $di['mod_service']('staff');
+    $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')->byDefault()->andReturn(true);
+    $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
+        ->once()
+        ->with('order', 'view', null, Mockery::any())
+        ->andThrow(new FOSSBilling\InformationException('You need the "order.view" permission to perform this action', [], 403));
+
+    $api->setDi($di);
+    $api->setService($serviceMock);
+
+    expect(fn () => $api->export_csv(['headers' => ['id']]))
+        ->toThrow(FOSSBilling\InformationException::class);
+});
+
+test('export_csv delegates to service when permissions granted', function (): void {
+    $api = apiEndpoint(new Admin());
+
+    $response = new Symfony\Component\HttpFoundation\Response('id,status', 200, ['Content-Type' => 'text/csv']);
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('exportCSV')
+        ->once()
+        ->with(['id'])
+        ->andReturn($response);
+
+    $di = container();
+    $staffServiceMock = $di['mod_service']('staff');
+    $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
+        ->once()
+        ->with('order', 'view', null, Mockery::any())
+        ->andReturn(true)
+        ->ordered();
+    $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
+        ->once()
+        ->with('order', 'export', null, Mockery::any())
+        ->andReturn(true)
+        ->ordered();
+
+    $api->setDi($di);
+    $api->setService($serviceMock);
+
+    $result = $api->export_csv(['headers' => ['id']]);
+
+    expect($result)->toBeInstanceOf(Symfony\Component\HttpFoundation\Response::class);
+});
+
+test('rejects order create with promo when product promo permission is missing', function (): void {
+    $api = apiEndpoint(new Admin());
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('createOrder')->never();
+
+    $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffServiceMock->shouldReceive('hasPermission')->byDefault()->andReturn(true);
+    $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
+        ->byDefault()
+        ->andReturn(true);
+    $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
+        ->once()
+        ->with('product', 'manage_promos', null, Mockery::any())
+        ->andThrow(new FOSSBilling\InformationException('Denied', [], 403));
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn (string $name): Mockery\MockInterface => match (strtolower($name)) {
+        'staff' => $staffServiceMock,
+        default => Mockery::mock()->shouldIgnoreMissing(),
+    });
+
+    $api->setDi($di);
+    $api->setService($serviceMock);
+
+    expect(fn () => $api->create([
+        'client_id' => 1,
+        'product_id' => 1,
+        'promo_code' => 'ADMIN10',
+    ]))->toThrow(FOSSBilling\InformationException::class);
 });

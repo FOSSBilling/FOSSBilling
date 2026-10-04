@@ -10,7 +10,9 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Order\Entity\Order;
 use Box\Mod\Order\Service as OrderService;
+use Box\Mod\Product\Entity\Product;
 use Box\Mod\Servicehosting\Entity\ServiceHosting;
 use Box\Mod\Servicehosting\Entity\ServiceHostingHp;
 use Box\Mod\Servicehosting\Entity\ServiceHostingServer;
@@ -18,10 +20,13 @@ use Box\Mod\Servicehosting\Repository\ServiceHostingHpRepository;
 use Box\Mod\Servicehosting\Repository\ServiceHostingRepository;
 use Box\Mod\Servicehosting\Repository\ServiceHostingServerRepository;
 use Box\Mod\Servicehosting\Service;
+use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 use function Tests\Helpers\moduleService;
+use function Tests\Helpers\setEntityId;
 
 afterEach(function (): void {
     Mockery::close();
@@ -43,18 +48,18 @@ test('batch enriches hosting accounts with orders and clients', function (): voi
         'updated_at' => '2026-07-19 10:01:00',
     ];
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAll')
+    $connection = Mockery::mock(Connection::class);
+    $connection->shouldReceive('fetchAllAssociative')
         ->once()
         ->with(Mockery::pattern('/FROM client_order/'), ['hosting', 10])
         ->andReturn([['id' => 50, 'service_id' => 10]]);
-    $dbMock->shouldNotReceive('findOne');
-    $dbMock->shouldNotReceive('dispense');
+    $connection->shouldNotReceive('fetchAssociative');
+    $connection->shouldNotReceive('fetchOne');
 
     $orderService = Mockery::mock(OrderService::class);
     $orderService->shouldReceive('getBatchForApi')
         ->once()
-        ->with([50], Mockery::type(Model_Admin::class))
+        ->with([50], Mockery::type(Box\Mod\Staff\Entity\Admin::class))
         ->andReturn([[
             'id' => 50,
             'service_id' => 10,
@@ -63,12 +68,11 @@ test('batch enriches hosting accounts with orders and clients', function (): voi
         ]]);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
     $di['mod_service'] = $di->protect(moduleService(['order' => $orderService]));
     $service->setDi($di);
 
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
+    $admin = \Tests\Helpers\admin();
     $result = $service->getAccountsBatchForApi([$account], $admin);
 
     expect($result[0])
@@ -84,11 +88,11 @@ test('batch enriches hosting accounts with orders and clients', function (): voi
 
 test('batch returns hosting accounts without orders', function (): void {
     $service = new Service();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAll')->once()->andReturn([]);
+    $connection = Mockery::mock(Connection::class);
+    $connection->shouldReceive('fetchAllAssociative')->once()->andReturn([]);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
     $service->setDi($di);
 
     $result = $service->getAccountsBatchForApi([[
@@ -132,9 +136,7 @@ test('validate order data', function (string $field, string $exceptionMessage, i
 
 test('action create', function (): void {
     $service = new Service();
-    $orderModel = new Model_ClientOrder();
-    $orderModel->loadBean(new Tests\Helpers\DummyBean());
-    $orderModel->client_id = 5;
+    $orderModel = createEntity(Order::class, ['client_id' => 5]);
     $confArr = [
         'server_id' => 1,
         'hosting_plan_id' => 2,
@@ -145,10 +147,10 @@ test('action create', function (): void {
     $orderServiceMock->shouldReceive('getConfig')->atLeast()->once()->andReturn($confArr);
 
     $hostingServerModel = new ServiceHostingServer();
-    $hostingServerModel->setId($confArr['server_id']);
+    setEntityId($hostingServerModel, $confArr['server_id']);
     $hostingServerModel->setIp('1.1.1.1');
     $hostingPlansModel = new ServiceHostingHp();
-    $hostingPlansModel->setId($confArr['hosting_plan_id']);
+    setEntityId($hostingPlansModel, $confArr['hosting_plan_id']);
 
     $serverRepo = Mockery::mock(ServiceHostingServerRepository::class);
     $serverRepo->shouldReceive('find')->atLeast()->once()->andReturn($hostingServerModel);
@@ -173,18 +175,17 @@ test('action create', function (): void {
     $result = $service->action_create($orderModel);
 
     expect($result)->toBeInstanceOf(ServiceHosting::class);
-    expect($result->getServiceHostingServerId())->toBe($confArr['server_id']);
-    expect($result->getServiceHostingHpId())->toBe($confArr['hosting_plan_id']);
+    expect($result->getServiceHostingServer()?->getId())->toBe($confArr['server_id']);
+    expect($result->getServiceHostingHp()?->getId())->toBe($confArr['hosting_plan_id']);
     expect($result->getSld())->toBe($confArr['sld']);
     expect($result->getTld())->toBe($confArr['tld']);
 });
 
 test('action activate creates the account when it has not been provisioned yet', function (): void {
-    $orderModel = new Model_ClientOrder();
-    $orderModel->loadBean(new Tests\Helpers\DummyBean());
+    $orderModel = createEntity(Order::class);
 
     $model = new ServiceHosting();
-    $model->setServiceHostingServerId(1);
+    $model->setServiceHostingServer(new ServiceHostingServer());
     $model->setSld('example');
     $model->setTld('.com');
 
@@ -203,11 +204,11 @@ test('action activate creates the account when it has not been provisioned yet',
     $di['em'] = $emMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
 
-    $serverManagerMock = Mockery::mock('\FOSSBilling\Extension\Manager\Custom\Custom');
+    $serverManagerMock = Mockery::mock(FOSSBilling\Extension\Manager\Custom\Custom::class);
     $serverManagerMock->shouldReceive('getPasswordLength')->atLeast()->once()->andReturn(12);
     $serverManagerMock->shouldReceive('generateUsername')->atLeast()->once()->with('example.com')->andReturn('example');
 
-    $adapterMock = Mockery::mock('\FOSSBilling\Extension\Manager\Custom\Custom');
+    $adapterMock = Mockery::mock(FOSSBilling\Extension\Manager\Custom\Custom::class);
     $adapterMock->shouldReceive('createAccount')->once();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
@@ -226,11 +227,10 @@ test('action activate does not recreate an account that was already provisioned'
     // account on the server (its username was persisted), retrying must not
     // call createAccount() again - the account already exists remotely and
     // doing so only fails with a duplicate-account server error.
-    $orderModel = new Model_ClientOrder();
-    $orderModel->loadBean(new Tests\Helpers\DummyBean());
+    $orderModel = createEntity(Order::class);
 
     $model = new ServiceHosting();
-    $model->setServiceHostingServerId(1);
+    $model->setServiceHostingServer(new ServiceHostingServer());
     $model->setSld('example');
     $model->setTld('.com');
     $model->setUsername('example');
@@ -250,7 +250,7 @@ test('action activate does not recreate an account that was already provisioned'
     $di['em'] = $emMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
 
-    $serverManagerMock = Mockery::mock('\FOSSBilling\Extension\Manager\Custom\Custom');
+    $serverManagerMock = Mockery::mock(FOSSBilling\Extension\Manager\Custom\Custom::class);
     $serverManagerMock->shouldReceive('getPasswordLength')->atLeast()->once()->andReturn(12);
     $serverManagerMock->shouldNotReceive('generateUsername');
 
@@ -266,8 +266,7 @@ test('action activate does not recreate an account that was already provisioned'
 
 test('action renew', function (): void {
     $service = new Service();
-    $orderModel = new Model_ClientOrder();
-    $orderModel->loadBean(new Tests\Helpers\DummyBean());
+    $orderModel = createEntity(Order::class);
 
     $hostingServiceModel = new ServiceHosting();
 
@@ -284,9 +283,7 @@ test('action renew', function (): void {
 
 test('action renew order without active service', function (): void {
     $service = new Service();
-    $orderModel = new Model_ClientOrder();
-    $orderModel->loadBean(new Tests\Helpers\DummyBean());
-    $orderModel->id = 1;
+    $orderModel = createEntity(Order::class, ['id' => 1]);
 
     $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturnNull();
@@ -301,8 +298,7 @@ test('action renew order without active service', function (): void {
 
 test('action suspend', function (): void {
     $service = new Service();
-    $orderModel = new Model_ClientOrder();
-    $orderModel->loadBean(new Tests\Helpers\DummyBean());
+    $orderModel = createEntity(Order::class);
 
     $model = new ServiceHosting();
 
@@ -318,7 +314,7 @@ test('action suspend', function (): void {
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
-    $serverManagerMock = Mockery::mock('\FOSSBilling\Extension\Manager\Custom\Custom');
+    $serverManagerMock = Mockery::mock(FOSSBilling\Extension\Manager\Custom\Custom::class);
     $serverManagerMock->shouldReceive('suspendAccount')->once()->with(Mockery::on(
         fn (FOSSBilling\Extension\Contract\Server\Account $account): bool => $account->getNote() === 'Non-payment'
     ));
@@ -332,9 +328,7 @@ test('action suspend', function (): void {
 
 test('action suspend order without active service', function (): void {
     $service = new Service();
-    $orderModel = new Model_ClientOrder();
-    $orderModel->loadBean(new Tests\Helpers\DummyBean());
-    $orderModel->id = 1;
+    $orderModel = createEntity(Order::class, ['id' => 1]);
 
     $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturnNull();
@@ -349,8 +343,7 @@ test('action suspend order without active service', function (): void {
 
 test('action unsuspend', function (): void {
     $service = new Service();
-    $orderModel = new Model_ClientOrder();
-    $orderModel->loadBean(new Tests\Helpers\DummyBean());
+    $orderModel = createEntity(Order::class);
 
     $model = new ServiceHosting();
 
@@ -366,7 +359,7 @@ test('action unsuspend', function (): void {
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
-    $serverManagerMock = Mockery::mock('\FOSSBilling\Extension\Manager\Custom\Custom');
+    $serverManagerMock = Mockery::mock(FOSSBilling\Extension\Manager\Custom\Custom::class);
     $serverManagerMock->shouldReceive('unsuspendAccount')->atLeast()->once();
     $AMresultArray = [$serverManagerMock, new FOSSBilling\Extension\Contract\Server\Account()];
     $serviceMock->shouldReceive('_getAM')->atLeast()->once()->andReturn($AMresultArray);
@@ -378,9 +371,7 @@ test('action unsuspend', function (): void {
 
 test('action unsuspend order without active service', function (): void {
     $service = new Service();
-    $orderModel = new Model_ClientOrder();
-    $orderModel->loadBean(new Tests\Helpers\DummyBean());
-    $orderModel->id = 1;
+    $orderModel = createEntity(Order::class, ['id' => 1]);
 
     $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturnNull();
@@ -395,8 +386,7 @@ test('action unsuspend order without active service', function (): void {
 
 test('action cancel', function (): void {
     $service = new Service();
-    $orderModel = new Model_ClientOrder();
-    $orderModel->loadBean(new Tests\Helpers\DummyBean());
+    $orderModel = createEntity(Order::class);
 
     $model = new ServiceHosting();
 
@@ -412,7 +402,7 @@ test('action cancel', function (): void {
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
-    $serverManagerMock = Mockery::mock('\FOSSBilling\Extension\Manager\Custom\Custom');
+    $serverManagerMock = Mockery::mock(FOSSBilling\Extension\Manager\Custom\Custom::class);
     $serverManagerMock->shouldReceive('cancelAccount')->atLeast()->once();
     $AMresultArray = [$serverManagerMock, new FOSSBilling\Extension\Contract\Server\Account()];
     $serviceMock->shouldReceive('_getAM')->atLeast()->once()->andReturn($AMresultArray);
@@ -424,9 +414,7 @@ test('action cancel', function (): void {
 
 test('action cancel order without active service', function (): void {
     $service = new Service();
-    $orderModel = new Model_ClientOrder();
-    $orderModel->loadBean(new Tests\Helpers\DummyBean());
-    $orderModel->id = 1;
+    $orderModel = createEntity(Order::class, ['id' => 1]);
 
     $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('getOrderService')->atLeast()->once()->andReturnNull();
@@ -441,9 +429,7 @@ test('action cancel order without active service', function (): void {
 
 test('action delete', function (): void {
     $service = new Service();
-    $orderModel = new Model_ClientOrder();
-    $orderModel->loadBean(new Tests\Helpers\DummyBean());
-    $orderModel->status = 'active';
+    $orderModel = createEntity(Order::class, ['status' => Order::STATUS_ACTIVE]);
 
     $model = new ServiceHosting();
 
@@ -466,15 +452,61 @@ test('action delete', function (): void {
     $serviceMock->action_delete($orderModel);
 });
 
+test('action delete with force removes local service when remote cancel fails', function (): void {
+    $orderModel = createEntity(Order::class, ['status' => Order::STATUS_ACTIVE]);
+    $model = new ServiceHosting();
+
+    $orderServiceMock = Mockery::mock(OrderService::class);
+    $orderServiceMock->shouldReceive('getOrderService')->andReturn($model);
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('remove')->once()->with($model);
+    $emMock->shouldReceive('flush')->once();
+    $emMock->shouldIgnoreMissing();
+
+    $di = container();
+    $di['em'] = $emMock;
+    $di['logger'] = new FOSSBilling\Logger();
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('action_cancel')->once()->andThrow(new FOSSBilling\Exception('WHM unreachable'));
+
+    $serviceMock->setDi($di);
+    $serviceMock->action_delete($orderModel, true);
+});
+
+test('action delete without force rethrows remote cancel failure', function (): void {
+    $orderModel = createEntity(Order::class, ['status' => Order::STATUS_ACTIVE]);
+    $model = new ServiceHosting();
+
+    $orderServiceMock = Mockery::mock(OrderService::class);
+    $orderServiceMock->shouldReceive('getOrderService')->andReturn($model);
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldNotReceive('remove');
+    $emMock->shouldIgnoreMissing();
+
+    $di = container();
+    $di['em'] = $emMock;
+    $di['logger'] = new FOSSBilling\Logger();
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
+
+    $serviceMock = Mockery::mock(Service::class)->makePartial();
+    $serviceMock->shouldReceive('action_cancel')->once()->andThrow(new FOSSBilling\Exception('WHM unreachable'));
+
+    $serviceMock->setDi($di);
+
+    expect(fn () => $serviceMock->action_delete($orderModel, false))->toThrow(FOSSBilling\Exception::class, 'WHM unreachable');
+});
+
 test('change account plan', function (): void {
     $service = new Service();
-    $orderModel = new Model_ClientOrder();
-    $orderModel->loadBean(new Tests\Helpers\DummyBean());
-    $orderModel->status = Model_ClientOrder::STATUS_ACTIVE;
+    $orderModel = createEntity(Order::class, ['status' => Order::STATUS_ACTIVE]);
 
     $model = new ServiceHosting();
     $modelHp = new ServiceHostingHp();
-    $modelHp->setId(2);
+    setEntityId($modelHp, 2);
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
     $emMock->shouldReceive('flush')->atLeast()->once();
@@ -482,10 +514,10 @@ test('change account plan', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
-    $serverManagerMock = Mockery::mock('\FOSSBilling\Extension\Manager\Custom\Custom');
+    $serverManagerMock = Mockery::mock(FOSSBilling\Extension\Manager\Custom\Custom::class);
     $serverManagerMock->shouldReceive('changeAccountPackage')->atLeast()->once();
     $AMresultArray = [$serverManagerMock, new FOSSBilling\Extension\Contract\Server\Account()];
     $serviceMock->shouldReceive('_getAM')->atLeast()->once()->andReturn($AMresultArray);
@@ -502,15 +534,13 @@ test('change account username', function (): void {
         'username' => 'u123456',
     ];
 
-    $orderModel = new Model_ClientOrder();
-    $orderModel->loadBean(new Tests\Helpers\DummyBean());
-    $orderModel->status = Model_ClientOrder::STATUS_ACTIVE;
+    $orderModel = createEntity(Order::class, ['status' => Order::STATUS_ACTIVE]);
 
     $model = new ServiceHosting();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
 
-    $serverManagerMock = Mockery::mock('\FOSSBilling\Extension\Manager\Custom\Custom');
+    $serverManagerMock = Mockery::mock(FOSSBilling\Extension\Manager\Custom\Custom::class);
     $serverManagerMock->shouldReceive('changeAccountUsername')->atLeast()->once();
 
     $AMresultArray = [$serverManagerMock, new FOSSBilling\Extension\Contract\Server\Account()];
@@ -522,7 +552,7 @@ test('change account username', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $serviceMock->setDi($di);
 
@@ -532,8 +562,7 @@ test('change account username', function (): void {
 
 test('change account username missing username', function (): void {
     $service = new Service();
-    $orderModel = new Model_ClientOrder();
-    $orderModel->loadBean(new Tests\Helpers\DummyBean());
+    $orderModel = createEntity(Order::class);
 
     $model = new ServiceHosting();
     $data = [];
@@ -548,15 +577,13 @@ test('change account ip', function (): void {
         'ip' => '1.1.1.1',
     ];
 
-    $orderModel = new Model_ClientOrder();
-    $orderModel->loadBean(new Tests\Helpers\DummyBean());
-    $orderModel->status = Model_ClientOrder::STATUS_ACTIVE;
+    $orderModel = createEntity(Order::class, ['status' => Order::STATUS_ACTIVE]);
 
     $model = new ServiceHosting();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
 
-    $serverManagerMock = Mockery::mock('\FOSSBilling\Extension\Manager\Custom\Custom');
+    $serverManagerMock = Mockery::mock(FOSSBilling\Extension\Manager\Custom\Custom::class);
     $serverManagerMock->shouldReceive('changeAccountIp')->atLeast()->once();
 
     $AMresultArray = [$serverManagerMock, new FOSSBilling\Extension\Contract\Server\Account()];
@@ -568,7 +595,7 @@ test('change account ip', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $serviceMock->setDi($di);
 
@@ -579,8 +606,7 @@ test('change account ip', function (): void {
 test('change account ip missing ip', function (): void {
     $service = new Service();
     $data = [];
-    $orderModel = new Model_ClientOrder();
-    $orderModel->loadBean(new Tests\Helpers\DummyBean());
+    $orderModel = createEntity(Order::class);
 
     $model = new ServiceHosting();
 
@@ -595,15 +621,13 @@ test('change account domain', function (): void {
         'sld' => 'testingSld',
     ];
 
-    $orderModel = new Model_ClientOrder();
-    $orderModel->loadBean(new Tests\Helpers\DummyBean());
-    $orderModel->status = Model_ClientOrder::STATUS_ACTIVE;
+    $orderModel = createEntity(Order::class, ['status' => Order::STATUS_ACTIVE]);
 
     $model = new ServiceHosting();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
 
-    $serverManagerMock = Mockery::mock('\FOSSBilling\Extension\Manager\Custom\Custom');
+    $serverManagerMock = Mockery::mock(FOSSBilling\Extension\Manager\Custom\Custom::class);
     $serverManagerMock->shouldReceive('changeAccountDomain')->atLeast()->once();
 
     $AMresultArray = [$serverManagerMock, new FOSSBilling\Extension\Contract\Server\Account()];
@@ -615,7 +639,7 @@ test('change account domain', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $serviceMock->setDi($di);
 
@@ -626,8 +650,7 @@ test('change account domain', function (): void {
 test('change account domain missing params', function (): void {
     $service = new Service();
     $data = [];
-    $orderModel = new Model_ClientOrder();
-    $orderModel->loadBean(new Tests\Helpers\DummyBean());
+    $orderModel = createEntity(Order::class);
 
     $model = new ServiceHosting();
 
@@ -642,15 +665,13 @@ test('change account password', function (): void {
         'password_confirm' => 'topsecret',
     ];
 
-    $orderModel = new Model_ClientOrder();
-    $orderModel->loadBean(new Tests\Helpers\DummyBean());
-    $orderModel->status = Model_ClientOrder::STATUS_ACTIVE;
+    $orderModel = createEntity(Order::class, ['status' => Order::STATUS_ACTIVE]);
 
     $model = new ServiceHosting();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
 
-    $serverManagerMock = Mockery::mock('\FOSSBilling\Extension\Manager\Custom\Custom');
+    $serverManagerMock = Mockery::mock(FOSSBilling\Extension\Manager\Custom\Custom::class);
     $serverManagerMock->shouldReceive('changeAccountPassword')->atLeast()->once();
 
     $AMresultArray = [$serverManagerMock, new FOSSBilling\Extension\Contract\Server\Account()];
@@ -662,7 +683,7 @@ test('change account password', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $serviceMock->setDi($di);
 
@@ -673,8 +694,7 @@ test('change account password', function (): void {
 test('change account password missing params', function (): void {
     $service = new Service();
     $data = [];
-    $orderModel = new Model_ClientOrder();
-    $orderModel->loadBean(new Tests\Helpers\DummyBean());
+    $orderModel = createEntity(Order::class);
 
     $model = new ServiceHosting();
 
@@ -684,8 +704,7 @@ test('change account password missing params', function (): void {
 
 test('sync', function (): void {
     $service = new Service();
-    $orderModel = new Model_ClientOrder();
-    $orderModel->loadBean(new Tests\Helpers\DummyBean());
+    $orderModel = createEntity(Order::class);
 
     $model = new ServiceHosting();
 
@@ -699,7 +718,7 @@ test('sync', function (): void {
     $accountObj2->setUsername('testUser2');
     $accountObj2->setIp('2.2.2.2');
 
-    $serverManagerMock = Mockery::mock('\FOSSBilling\Extension\Manager\Custom\Custom');
+    $serverManagerMock = Mockery::mock(FOSSBilling\Extension\Manager\Custom\Custom::class);
     $serverManagerMock->shouldReceive('synchronizeAccount')->atLeast()->once()->andReturn($accountObj2);
 
     $AMresultArray = [$serverManagerMock, $accountObj];
@@ -711,7 +730,7 @@ test('sync', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $serviceMock->setDi($di);
 
@@ -721,15 +740,16 @@ test('sync', function (): void {
 
 test('to api array', function (): void {
     $service = new Service();
-    $model = new ServiceHosting();
-    $model->setServiceHostingServerId(1);
-    $model->setServiceHostingHpId(2);
 
     $hostingServer = new ServiceHostingServer();
-    $hostingServer->setId(1);
+    setEntityId($hostingServer, 1);
     $hostingServer->setManager('Custom');
     $hostingHp = new ServiceHostingHp();
-    $hostingHp->setId(2);
+    setEntityId($hostingHp, 2);
+
+    $model = new ServiceHosting();
+    $model->setServiceHostingServer($hostingServer);
+    $model->setServiceHostingHp($hostingHp);
 
     $serverRepo = Mockery::mock(ServiceHostingServerRepository::class);
     $serverRepo->shouldReceive('find')->atLeast()->once()->andReturn($hostingServer);
@@ -747,7 +767,7 @@ test('to api array', function (): void {
     $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('getServiceOrder')->atLeast()->once();
 
-    $serverManagerCustomMock = Mockery::mock('\FOSSBilling\Extension\Manager\Custom\Custom')->shouldIgnoreMissing();
+    $serverManagerCustomMock = Mockery::mock(FOSSBilling\Extension\Manager\Custom\Custom::class)->shouldIgnoreMissing();
 
     $di = container();
     $di['em'] = $emMock;
@@ -756,7 +776,7 @@ test('to api array', function (): void {
 
     $service->setDi($di);
 
-    $result = $service->toApiArray($model, false, new Model_Admin());
+    $result = $service->toApiArray($model, false, \Tests\Helpers\admin());
     expect($result)->toBeArray();
 });
 
@@ -767,7 +787,7 @@ test('update', function (): void {
         'ip' => '1.1.1.1',
     ];
     $model = new ServiceHosting();
-    $model->setId(1);
+    setEntityId($model, 1);
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
     $emMock->shouldReceive('flush')->atLeast()->once();
@@ -775,7 +795,7 @@ test('update', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
     $service->setDi($di);
 
     $result = $service->update($model, $data);
@@ -787,6 +807,20 @@ test('get server managers', function (): void {
     $service->setDi(container());
     $result = $service->getServerManagers();
     expect($result)->toBeArray();
+});
+
+test('get server managers skips managers without a usable config', function (): void {
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->setDi(container());
+    $service->shouldReceive('getServerManagerConfig')->andReturnUsing(
+        fn ($manager) => $manager === 'Custom' ? [] : ['label' => $manager]
+    );
+
+    $result = $service->getServerManagers();
+
+    expect($result)->toBeArray();
+    expect($result)->not->toHaveKey('Custom');
+    expect($result)->not->toBeEmpty();
 });
 
 test('get server manager config', function (): void {
@@ -820,11 +854,11 @@ test('get server pairs', function (): void {
         ],
     ];
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAll')->atLeast()->once()->andReturn($queryResult);
+    $connection = Mockery::mock(Connection::class);
+    $connection->shouldReceive('fetchAllAssociative')->atLeast()->once()->andReturn($queryResult);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
     $service->setDi($di);
 
     $result = $service->getServerPairs();
@@ -840,13 +874,51 @@ test('get server search query', function (): void {
     expect($result[1])->toEqual([]);
 });
 
+test('get server search query applies allowlisted sort', function (): void {
+    $service = new Service();
+
+    [$query] = $service->getServersSearchQuery(['sort' => 'name', 'direction' => 'desc']);
+    expect($query)->toContain('ORDER BY name DESC, id DESC');
+
+    [$pkQuery] = $service->getServersSearchQuery(['sort' => 'id', 'direction' => 'desc']);
+    expect($pkQuery)->toContain('ORDER BY id DESC');
+    expect($pkQuery)->not->toContain('id DESC, id DESC');
+
+    [$defaultQuery] = $service->getServersSearchQuery([]);
+    expect($defaultQuery)->toContain('ORDER BY id ASC');
+
+    [$invalidQuery] = $service->getServersSearchQuery(['sort' => 'password']);
+    expect($invalidQuery)->toContain('ORDER BY id ASC');
+    expect($invalidQuery)->not->toContain('password');
+});
+
+test('get accounts search query applies allowlisted sort', function (): void {
+    $service = new Service();
+
+    [$query, $params] = $service->getAccountsSearchQuery(['server_id' => 3, 'sort' => 'username']);
+    expect($query)->toContain('WHERE service_hosting_server_id = :server_id');
+    expect($params)->toEqual(['server_id' => 3]);
+    expect($query)->toContain('ORDER BY username ASC, id ASC');
+
+    [$pkQuery] = $service->getAccountsSearchQuery(['sort' => 'id', 'direction' => 'desc']);
+    expect($pkQuery)->toContain('ORDER BY id DESC');
+    expect($pkQuery)->not->toContain('id DESC, id DESC');
+
+    [$defaultQuery] = $service->getAccountsSearchQuery([]);
+    expect($defaultQuery)->toContain('ORDER BY id ASC');
+
+    [$invalidQuery] = $service->getAccountsSearchQuery(['sort' => 'pass']);
+    expect($invalidQuery)->toContain('ORDER BY id ASC');
+    expect($invalidQuery)->not->toContain('pass');
+});
+
 test('create server', function (): void {
     $service = new Service();
     $newId = 1;
     $persistedServer = null;
     $emMock = Mockery::mock(EntityManagerInterface::class);
     $emMock->shouldReceive('persist')->atLeast()->once()->andReturnUsing(function (ServiceHostingServer $server) use ($newId, &$persistedServer): void {
-        $server->setId($newId);
+        setEntityId($server, $newId);
         $persistedServer = $server;
     });
     $emMock->shouldReceive('flush')->atLeast()->once();
@@ -854,7 +926,7 @@ test('create server', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $service->setDi($di);
 
@@ -877,7 +949,7 @@ test('create server', function (): void {
 test('delete server', function (): void {
     $service = new Service();
     $hostingServerModel = new ServiceHostingServer();
-    $hostingServerModel->setId(1);
+    setEntityId($hostingServerModel, 1);
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
     $emMock->shouldReceive('remove')->atLeast()->once();
@@ -886,7 +958,7 @@ test('delete server', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
     $service->setDi($di);
 
     $result = $service->deleteServer($hostingServerModel);
@@ -914,7 +986,7 @@ test('update server', function (): void {
     ];
 
     $hostingServerModel = new ServiceHostingServer();
-    $hostingServerModel->setId(1);
+    setEntityId($hostingServerModel, 1);
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
     $emMock->shouldReceive('flush')->atLeast()->once();
@@ -922,8 +994,8 @@ test('update server', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new Box_Log();
-    $di['loggedin_admin'] = (object) ['id' => 7];
+    $di['logger'] = new FOSSBilling\Logger();
+    $di['loggedin_admin'] = \Tests\Helpers\admin(['id' => 7]);
 
     $service->setDi($di);
 
@@ -939,14 +1011,14 @@ test('get server manager', function (): void {
     $hostingServerModel = new ServiceHostingServer();
     $hostingServerModel->setManager('Custom');
 
-    $serverManagerCustom = Mockery::mock('\FOSSBilling\Extension\Manager\Custom\Custom')->shouldIgnoreMissing();
+    $serverManagerCustom = Mockery::mock(FOSSBilling\Extension\Manager\Custom\Custom::class)->shouldIgnoreMissing();
 
     $di = container();
     $di['server_manager'] = $di->protect(fn ($manager, $config) => $serverManagerCustom);
     $service->setDi($di);
 
     $result = $service->getServerManager($hostingServerModel);
-    expect($result)->toBeInstanceOf('\FOSSBilling\Extension\Manager\Custom\Custom');
+    expect($result)->toBeInstanceOf(FOSSBilling\Extension\Manager\Custom\Custom::class);
 });
 
 test('get server manager manager not defined', function (): void {
@@ -971,7 +1043,7 @@ test('get server manager server manager invalid', function (): void {
 });
 
 test('test connection', function (): void {
-    $serverManagerMock = Mockery::mock('\FOSSBilling\Extension\Manager\Custom\Custom');
+    $serverManagerMock = Mockery::mock(FOSSBilling\Extension\Manager\Custom\Custom::class);
     $serverManagerMock->shouldReceive('testConnection')->atLeast()->once()->andReturn(true);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
@@ -1000,11 +1072,11 @@ test('get hp pairs', function (): void {
         ],
     ];
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAll')->atLeast()->once()->andReturn($queryResult);
+    $connection = Mockery::mock(Connection::class);
+    $connection->shouldReceive('fetchAllAssociative')->atLeast()->once()->andReturn($queryResult);
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
     $service->setDi($di);
 
     $result = $service->getHpPairs();
@@ -1020,16 +1092,37 @@ test('get hp search query', function (): void {
     expect($result[1])->toEqual([]);
 });
 
+test('get hp search query applies allowlisted sort', function (): void {
+    $service = new Service();
+
+    [$query] = $service->getHpSearchQuery(['sort' => 'name', 'direction' => 'desc']);
+    expect($query)->toContain('ORDER BY name DESC, id DESC');
+
+    [$pkQuery] = $service->getHpSearchQuery(['sort' => 'id', 'direction' => 'desc']);
+    expect($pkQuery)->toContain('ORDER BY id DESC');
+    expect($pkQuery)->not->toContain('id DESC, id DESC');
+
+    [$defaultQuery] = $service->getHpSearchQuery([]);
+    expect($defaultQuery)->toContain('ORDER BY id asc');
+
+    [$invalidQuery] = $service->getHpSearchQuery(['sort' => 'config']);
+    expect($invalidQuery)->toContain('ORDER BY id asc');
+});
+
 test('delete hp', function (): void {
     $service = new Service();
     $model = new ServiceHostingHp();
-    $model->setId(1);
+    setEntityId($model, 1);
+
+    $connectionMock = Mockery::mock(Connection::class);
+    $connectionMock->shouldReceive('fetchFirstColumn')->atLeast()->once()->andReturn([]);
 
     $repo = Mockery::mock(ServiceHostingRepository::class);
-    $repo->shouldReceive('findOneBy')->atLeast()->once()->andReturn(null);
+    $repo->shouldReceive('findOneBy')->andReturn(null);
     $repo->shouldIgnoreMissing();
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getConnection')->andReturn($connectionMock);
     $emMock->shouldReceive('getRepository')->with(ServiceHosting::class)->andReturn($repo);
     $emMock->shouldReceive('remove')->atLeast()->once();
     $emMock->shouldReceive('flush')->atLeast()->once();
@@ -1037,11 +1130,33 @@ test('delete hp', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
     $service->setDi($di);
 
     $result = $service->deleteHp($model);
     expect($result)->toBeTrue();
+});
+
+test('delete hp refuses orphaned usages without detaching', function (): void {
+    $service = new Service();
+    $model = new ServiceHostingHp();
+    setEntityId($model, 1);
+
+    $connectionMock = Mockery::mock(Connection::class);
+    $connectionMock->shouldReceive('fetchFirstColumn')->once()->andReturn([5]);
+    $connectionMock->shouldReceive('fetchFirstColumn')->once()->andReturn([]);
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getConnection')->andReturn($connectionMock);
+    $emMock->shouldNotReceive('remove');
+    $emMock->shouldIgnoreMissing();
+
+    $di = container();
+    $di['em'] = $emMock;
+    $di['logger'] = new FOSSBilling\Logger();
+    $service->setDi($di);
+
+    expect(fn () => $service->deleteHp($model))->toThrow(FOSSBilling\InformationException::class, 'orphaned');
 });
 
 test('to hosting hp api array', function (): void {
@@ -1068,7 +1183,7 @@ test('update hp', function (): void {
     ];
 
     $model = new ServiceHostingHp();
-    $model->setId(1);
+    setEntityId($model, 1);
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
     $emMock->shouldReceive('flush')->atLeast()->once();
@@ -1076,7 +1191,7 @@ test('update hp', function (): void {
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $service->setDi($di);
 
@@ -1091,7 +1206,7 @@ test('create hp', function (array $data, string $expectedBandwidth, string $expe
 
     $emMock = Mockery::mock(EntityManagerInterface::class);
     $emMock->shouldReceive('persist')->atLeast()->once()->andReturnUsing(function (ServiceHostingHp $hp) use ($newId, &$persistedHp): void {
-        $hp->setId($newId);
+        setEntityId($hp, $newId);
         $persistedHp = $hp;
     });
     $emMock->shouldReceive('flush')->atLeast()->once();
@@ -1099,7 +1214,7 @@ test('create hp', function (array $data, string $expectedBandwidth, string $expe
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new Box_Log();
+    $di['logger'] = new FOSSBilling\Logger();
 
     $service->setDi($di);
 
@@ -1140,59 +1255,92 @@ test('get server package', function (): void {
 
     $service->setDi($di);
     $result = $service->getServerPackage($model);
-    expect($result)->toBeInstanceOf('\FOSSBilling\Extension\Contract\Server\Package');
+    expect($result)->toBeInstanceOf(FOSSBilling\Extension\Contract\Server\Package::class);
 });
 
 test('get server manager with log', function (): void {
     $hostingServerModel = new ServiceHostingServer();
     $hostingServerModel->setManager('Custom');
 
-    $clientOrderModel = new Model_ClientOrder();
-    $clientOrderModel->loadBean(new Tests\Helpers\DummyBean());
+    $clientOrderModel = createEntity(Order::class);
 
-    $serverManagerMock = Mockery::mock('\FOSSBilling\Extension\Manager\Custom\Custom')->shouldIgnoreMissing();
+    $serverManagerMock = Mockery::mock(FOSSBilling\Extension\Manager\Custom\Custom::class)->shouldIgnoreMissing();
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('getServerManager')->atLeast()->once()->andReturn($serverManagerMock);
 
     $orderServiceMock = Mockery::mock(OrderService::class);
-    $orderServiceMock->shouldReceive('getLogger')->atLeast()->once()->andReturn(new Box_Log());
+    $orderServiceMock->shouldReceive('getLogger')->atLeast()->once()->andReturn(new FOSSBilling\Logger());
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
 
     $serviceMock->setDi($di);
     $result = $serviceMock->getServerManagerWithLog($hostingServerModel, $clientOrderModel);
-    expect($result)->toBeInstanceOf('\FOSSBilling\Extension\Manager\Custom\Custom');
+    expect($result)->toBeInstanceOf(FOSSBilling\Extension\Manager\Custom\Custom::class);
 });
 
 test('get manager urls', function (): void {
     $hostingServerModel = new ServiceHostingServer();
     $hostingServerModel->setManager('Custom');
 
-    $serverManagerMock = Mockery::mock('\FOSSBilling\Extension\Manager\Custom\Custom');
+    $serverManagerMock = Mockery::mock(FOSSBilling\Extension\Manager\Custom\Custom::class);
     $serverManagerMock->shouldReceive('getLoginUrl')->atLeast()->once()->andReturn('/login');
     $serverManagerMock->shouldReceive('getResellerLoginUrl')->atLeast()->once()->andReturn('/admin/login');
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('getServerManager')->atLeast()->once()->andReturn($serverManagerMock);
 
-    $result = $serviceMock->getManagerUrls($hostingServerModel);
-    expect($result)->toBeArray();
-    expect($result[0])->toBeString();
-    expect($result[1])->toBeString();
+    $di = container();
+    $serviceMock->setDi($di);
+
+    expect($serviceMock->getManagerUrls($hostingServerModel))->toBe(['/login', '/admin/login'])
+        ->and($di['logger']->calls)->toBe([]);
 });
 
-test('get manager urls exception', function (): void {
-    $hostingServerModel = new ServiceHostingServer();
+test('get manager urls logs adapter failures and returns unavailable links', function (Throwable $error): void {
+    $hostingServerModel = createEntity(ServiceHostingServer::class, ['id' => 42]);
     $hostingServerModel->setManager('Custom');
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
-    $serviceMock->shouldReceive('getServerManager')->atLeast()->once()->andThrow(new Exception('Controlled unit test exception'));
+    $serviceMock->shouldReceive('getServerManager')->once()->with($hostingServerModel)->andThrow($error);
 
-    $result = $serviceMock->getManagerUrls($hostingServerModel);
-    expect($result)->toBeArray();
-    expect($result[0])->toBeFalse();
-    expect($result[1])->toBeFalse();
+    $di = container();
+    $serviceMock->setDi($di);
+
+    expect($serviceMock->getManagerUrls($hostingServerModel))->toBe([false, false])
+        ->and($di['logger']->calls)->toBe([
+            [
+                'method' => 'error',
+                'params' => ['Failed to retrieve control panel URLs.', [
+                    'server_id' => 42,
+                    'manager' => 'Custom',
+                    'exception_class' => $error::class,
+                    'exception_file' => $error->getFile(),
+                    'exception_line' => $error->getLine(),
+                ]],
+            ],
+        ]);
+})->with([
+    'exception' => [new Exception('Adapter credentials: secret')],
+    'parse error' => [new ParseError('Adapter credentials: secret')],
+    'type error' => [new TypeError('Adapter credentials: secret')],
+]);
+
+test('get manager urls returns unavailable links when reseller URL generation fails', function (): void {
+    $server = new ServiceHostingServer();
+    $server->setManager('Custom');
+    $manager = Mockery::mock(FOSSBilling\Extension\Manager\Custom\Custom::class);
+    $manager->shouldReceive('getLoginUrl')->once()->with(null)->andReturn('/login');
+    $manager->shouldReceive('getResellerLoginUrl')->once()->with(null)->andThrow(new TypeError('Controlled URL failure'));
+
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('getServerManager')->once()->with($server)->andReturn($manager);
+    $di = container();
+    $service->setDi($di);
+
+    expect($service->getManagerUrls($server))->toBe([false, false])
+        ->and($di['logger']->calls)->toHaveCount(1)
+        ->and($di['logger']->calls[0]['method'])->toBe('error');
 });
 
 test('get free tlds free tlds are not set', function (): void {
@@ -1230,7 +1378,7 @@ test('get free tlds free tlds are not set', function (): void {
     });
 
     $service->setDi($di);
-    $product = new Box\Mod\Product\Entity\Product();
+    $product = new Product();
     $result = $service->getFreeTlds($product);
     expect($result)->toBeArray();
 });
@@ -1243,7 +1391,7 @@ test('get free tlds', function (): void {
     $di = container();
 
     $service->setDi($di);
-    $product = new Box\Mod\Product\Entity\Product();
+    $product = new Product();
     $product->setConfig(json_encode($config));
 
     $result = $service->getFreeTlds($product);
@@ -1275,11 +1423,10 @@ test('get server manager secret fields', function (string $manager, array $expec
 test('to hosting server api array masks secrets for an admin', function (): void {
     $service = new Service();
 
-    $identity = new Model_Admin();
-    $identity->loadBean(new Tests\Helpers\DummyBean());
+    $identity = \Tests\Helpers\admin();
 
     $hostingServerModel = new ServiceHostingServer();
-    $hostingServerModel->setId(1);
+    setEntityId($hostingServerModel, 1);
     $hostingServerModel->setName('Test');
     $hostingServerModel->setHostname('host.example.com');
     $hostingServerModel->setIp('127.0.0.1');
@@ -1305,11 +1452,10 @@ test('to hosting server api array masks secrets for an admin', function (): void
 test('to hosting server api array does not leak secrets to non-admin callers', function (): void {
     $service = new Service();
 
-    $identity = new Model_Client();
-    $identity->loadBean(new Tests\Helpers\DummyBean());
+    $identity = createEntity(Box\Mod\Client\Entity\Client::class);
 
     $hostingServerModel = new ServiceHostingServer();
-    $hostingServerModel->setId(1);
+    setEntityId($hostingServerModel, 1);
     $hostingServerModel->setName('Test');
     $hostingServerModel->setIp('127.0.0.1');
     $hostingServerModel->setManager('Whm');
@@ -1338,7 +1484,7 @@ test('updateServer keeps the existing secret when the incoming value is blank', 
     ];
 
     $hostingServerModel = new ServiceHostingServer();
-    $hostingServerModel->setId(1);
+    setEntityId($hostingServerModel, 1);
     $hostingServerModel->setName('Test');
     $hostingServerModel->setIp('127.0.0.1');
     $hostingServerModel->setManager('Whm');
@@ -1351,8 +1497,8 @@ test('updateServer keeps the existing secret when the incoming value is blank', 
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new Box_Log();
-    $di['loggedin_admin'] = (object) ['id' => 7];
+    $di['logger'] = new FOSSBilling\Logger();
+    $di['loggedin_admin'] = \Tests\Helpers\admin(['id' => 7]);
     $service->setDi($di);
 
     $result = $service->updateServer($hostingServerModel, $data);
@@ -1373,7 +1519,7 @@ test('updateServer replaces the stored secret when a new value is submitted', fu
     ];
 
     $hostingServerModel = new ServiceHostingServer();
-    $hostingServerModel->setId(1);
+    setEntityId($hostingServerModel, 1);
     $hostingServerModel->setName('Test');
     $hostingServerModel->setIp('127.0.0.1');
     $hostingServerModel->setManager('Whm');
@@ -1386,8 +1532,8 @@ test('updateServer replaces the stored secret when a new value is submitted', fu
 
     $di = container();
     $di['em'] = $emMock;
-    $di['logger'] = new Box_Log();
-    $di['loggedin_admin'] = (object) ['id' => 7];
+    $di['logger'] = new FOSSBilling\Logger();
+    $di['loggedin_admin'] = \Tests\Helpers\admin(['id' => 7]);
     $service->setDi($di);
 
     $result = $service->updateServer($hostingServerModel, $data);
@@ -1401,10 +1547,10 @@ test('_performOnService rejects expired active order', function (): void {
 
     $reflection = new ReflectionMethod($service, '_performOnService');
 
-    $expiredOrder = new Model_ClientOrder();
-    $expiredOrder->loadBean(new Tests\Helpers\DummyBean());
-    $expiredOrder->status = Model_ClientOrder::STATUS_ACTIVE;
-    $expiredOrder->expires_at = date('Y-m-d H:i:s', time() - 3600);
+    $expiredOrder = createEntity(Order::class, [
+        'status' => Order::STATUS_ACTIVE,
+        'expires_at' => date('Y-m-d H:i:s', time() - 3600),
+    ]);
 
     expect($reflection->invoke($service, $expiredOrder))->toBeFalse();
 });
@@ -1414,9 +1560,9 @@ test('_performOnService rejects suspended order', function (): void {
 
     $reflection = new ReflectionMethod($service, '_performOnService');
 
-    $suspendedOrder = new Model_ClientOrder();
-    $suspendedOrder->loadBean(new Tests\Helpers\DummyBean());
-    $suspendedOrder->status = Model_ClientOrder::STATUS_SUSPENDED;
+    $suspendedOrder = createEntity(Order::class, [
+        'status' => Order::STATUS_SUSPENDED,
+    ]);
 
     expect($reflection->invoke($service, $suspendedOrder))->toBeFalse();
 });
@@ -1426,10 +1572,10 @@ test('_performOnService accepts active order with future expires_at', function (
 
     $reflection = new ReflectionMethod($service, '_performOnService');
 
-    $activeOrder = new Model_ClientOrder();
-    $activeOrder->loadBean(new Tests\Helpers\DummyBean());
-    $activeOrder->status = Model_ClientOrder::STATUS_ACTIVE;
-    $activeOrder->expires_at = date('Y-m-d H:i:s', time() + 86400);
+    $activeOrder = createEntity(Order::class, [
+        'status' => Order::STATUS_ACTIVE,
+        'expires_at' => date('Y-m-d H:i:s', time() + 86400),
+    ]);
 
     expect($reflection->invoke($service, $activeOrder))->toBeTrue();
 });
@@ -1439,10 +1585,10 @@ test('_performOnService accepts one-time active order with null expires_at', fun
 
     $reflection = new ReflectionMethod($service, '_performOnService');
 
-    $oneTimeOrder = new Model_ClientOrder();
-    $oneTimeOrder->loadBean(new Tests\Helpers\DummyBean());
-    $oneTimeOrder->status = Model_ClientOrder::STATUS_ACTIVE;
-    $oneTimeOrder->expires_at = null;
+    $oneTimeOrder = createEntity(Order::class, [
+        'status' => Order::STATUS_ACTIVE,
+        'expires_at' => null,
+    ]);
 
     expect($reflection->invoke($service, $oneTimeOrder))->toBeTrue();
 });
@@ -1464,4 +1610,140 @@ test('clientSettableConfigKeys returns the hosting allowlist', function (): void
     expect($allowed)->not->toContain('hosting_plan_id');
     expect($allowed)->not->toContain('server_id');
     expect($allowed)->not->toContain('reseller');
+});
+
+test('validateOrderData rejects admin-controlled values differing from product config', function (string $field, mixed $injectedValue): void {
+    $service = new Service();
+    $product = createEntity(Product::class, [
+        'config' => json_encode(['server_id' => 1, 'hosting_plan_id' => 2, 'reseller' => false]),
+    ]);
+    $data = [
+        'server_id' => 1,
+        'hosting_plan_id' => 2,
+        'reseller' => false,
+        'sld' => 'great',
+        'tld' => 'com',
+    ];
+
+    $data[$field] = $injectedValue;
+
+    try {
+        $service->validateOrderData($data, $product);
+        expect(true)->toBeFalse('Expected FOSSBilling\InformationException was not thrown.');
+    } catch (FOSSBilling\InformationException $e) {
+        expect($e->getMessage())->toBe('The requested configuration does not match the selected product.');
+        expect($e->getCode())->toBe(705);
+    }
+})->with([
+    ['hosting_plan_id', 999],
+    ['server_id', 42],
+    ['reseller', true],
+]);
+
+test('validateOrderData accepts values matching product config', function (): void {
+    $service = new Service();
+    $product = createEntity(Product::class, [
+        'config' => json_encode(['server_id' => 1, 'hosting_plan_id' => 2, 'reseller' => false]),
+    ]);
+    $data = [
+        'server_id' => 1,
+        'hosting_plan_id' => 2,
+        'reseller' => false,
+        'sld' => 'great',
+        'tld' => 'com',
+    ];
+
+    $service->validateOrderData($data, $product);
+    expect(true)->toBeTrue();
+});
+
+test('getOrderableHpPairs returns only plans referenced by enabled products', function (): void {
+    $service = new Service();
+
+    $hostingProduct = createEntity(Product::class, [
+        'config' => json_encode(['server_id' => 1, 'hosting_plan_id' => 3]),
+    ]);
+    $unrelatedProduct = createEntity(Product::class, [
+        'config' => '{}',
+    ]);
+
+    $plan = new ServiceHostingHp();
+    setEntityId($plan, 3);
+    $plan->setName('Gold');
+
+    $productRepo = Mockery::mock(Box\Mod\Product\Repository\ProductRepository::class);
+    $productRepo->shouldReceive('findBy')
+        ->once()
+        ->with([
+            'type' => Box\Mod\Product\Service::HOSTING,
+            'active' => true,
+            'status' => 'enabled',
+            'isAddon' => false,
+        ])
+        ->andReturn([$hostingProduct, $unrelatedProduct]);
+
+    $hpRepo = Mockery::mock(ServiceHostingHpRepository::class);
+    $hpRepo->shouldReceive('findBy')
+        ->once()
+        ->with(['id' => [3]])
+        ->andReturn([$plan]);
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')
+        ->with(Product::class)
+        ->andReturn($productRepo);
+    $emMock->shouldReceive('getRepository')
+        ->with(ServiceHostingHp::class)
+        ->andReturn($hpRepo);
+
+    $di = container();
+    $di['em'] = $emMock;
+    $service->setDi($di);
+
+    expect($service->getOrderableHpPairs())->toBe([3 => 'Gold']);
+});
+
+test('getOrderableHpPairs returns empty array when no products reference plans', function (): void {
+    $service = new Service();
+
+    $productRepo = Mockery::mock(Box\Mod\Product\Repository\ProductRepository::class);
+    $productRepo->shouldReceive('findBy')->once()->andReturn([]);
+
+    $emMock = Mockery::mock(EntityManagerInterface::class);
+    $emMock->shouldReceive('getRepository')
+        ->with(Product::class)
+        ->andReturn($productRepo);
+
+    $di = container();
+    $di['em'] = $emMock;
+    $service->setDi($di);
+
+    expect($service->getOrderableHpPairs())->toBe([]);
+});
+
+test('get domain product from config returns false when no domain action is supplied', function (): void {
+    $service = new Service();
+    $service->setDi(container());
+
+    $product = createEntity(Product::class, [
+        'title' => 'Hosting',
+        'config' => json_encode(['server_id' => 1, 'hosting_plan_id' => 2]),
+    ]);
+    $data = ['server_id' => 1, 'hosting_plan_id' => 2, 'sld' => 'example', 'tld' => '.com'];
+
+    expect($service->getDomainProductFromConfig($product, $data))->toBeFalse();
+});
+
+test('cart product title falls back when owndomain fields are missing', function (): void {
+    $service = new Service();
+    $di = container();
+    $di['validator'] = new FOSSBilling\Validate();
+    $service->setDi($di);
+
+    $product = createEntity(Product::class, [
+        'title' => 'Hosting',
+        'config' => json_encode(['domain' => ['action' => 'owndomain']]),
+    ]);
+
+    expect($service->getCartProductTitle($product, []))->toBe('Hosting');
 });

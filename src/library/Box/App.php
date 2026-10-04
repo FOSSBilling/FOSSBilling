@@ -44,7 +44,7 @@ class Box_App
 
     public function __construct(array|object $options = [], ?StandardDebugBar $debugBar = null)
     {
-        $this->options = new ArrayObject($options);
+        $this->options = new ArrayObject((array) $options);
 
         if (!$debugBar) {
             $this->debugBar = new StandardDebugBar();
@@ -59,9 +59,10 @@ class Box_App
         $this->request = $di['request'];
     }
 
-    public function setUrl(string $url): void
+    public function setUrl(?string $url): void
     {
-        $this->url = $url;
+        // Bot probes and legacy callers can pass null/empty. Fall back to '/'.
+        $this->url = ($url === null || $url === '') ? '/' : $url;
     }
 
     public function getDebugBar(): StandardDebugBar
@@ -87,8 +88,7 @@ class Box_App
                 [$mod] = explode('/', $requestUri);
             }
         }
-        $mod = htmlspecialchars($mod);
-
+        // Kept raw: only used for routing and exception placeholders, never HTML.
         $this->mod = $mod;
         $this->uri = $requestUri;
     }
@@ -104,7 +104,7 @@ class Box_App
 
     public function show404(Exception $e): Response
     {
-        $this->di['logger']->setChannel('routing')->info($e->getMessage());
+        $this->di['logger']->withChannel('routing')->info($e->getMessage());
 
         return $this->errorResponse($e, 404);
     }
@@ -222,6 +222,36 @@ class Box_App
     public function render($fileName, $variableArray = []): string
     {
         return 'Rendering ' . $fileName;
+    }
+
+    /**
+     * Twig's FilesystemCache throws a raw \RuntimeException when it can't create or
+     * write to the configured template cache directory - typically a host file
+     * permission issue outside our control. Convert it into a FOSSBilling\Exception
+     * with error code 5002 (Cache category, report:false) so the visitor gets a
+     * friendly error page instead of a fatal, and it isn't reported to Sentry as a
+     * code bug. Any other \RuntimeException is rethrown unchanged.
+     */
+    protected function convertCacheWriteFailure(RuntimeException $e): never
+    {
+        // Twig\Cache\FilesystemCache::write() throws one of these three messages for what is
+        // always the same underlying problem: it couldn't create, or write into, the cache
+        // directory.
+        $cacheWriteFailurePrefixes = [
+            'Unable to create the cache directory',
+            'Unable to write in the cache directory',
+            'Failed to write cache file',
+        ];
+
+        foreach ($cacheWriteFailurePrefixes as $prefix) {
+            if (str_starts_with($e->getMessage(), $prefix)) {
+                $this->di['logger']->withChannel('routing')->error($e->getMessage());
+
+                throw new FOSSBilling\Exception('The template cache directory could not be written to. Please check the file permissions and available disk space for the "data/cache" directory.', null, 5002);
+            }
+        }
+
+        throw $e;
     }
 
     private function invokeSharedController(string $classname, string $methodName, array $params): mixed
@@ -399,7 +429,7 @@ class Box_App
     protected function checkAdminPrefix(): bool
     {
         $requestPath = $this->getRequestPath();
-        $realAdminUrl = rtrim(SYSTEM_URL, '/') . ADMIN_PREFIX;
+        $realAdminUrl = rtrim(SYSTEM_URL, '/') . '/' . ltrim(ADMIN_PREFIX, '/');
         $realAdminPath = parse_url($realAdminUrl, PHP_URL_PATH);
 
         if ($this->pathStartsWith($requestPath, $realAdminPath)) {

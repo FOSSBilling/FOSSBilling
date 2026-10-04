@@ -23,7 +23,9 @@ final readonly class ExceptionResponseFactory
 {
     public function create(\Throwable $exception): Response
     {
-        $message = htmlspecialchars($exception->getMessage());
+        // Kept raw: the JSON branch is escaped by json_encode and shown via
+        // textContent. Only the HTML error page below needs HTML escaping.
+        $message = $exception->getMessage();
 
         if (Environment::isTesting()) {
             return new Response($this->formatTestingMessage($exception), $this->getStatusCode($exception), [
@@ -41,7 +43,10 @@ final readonly class ExceptionResponseFactory
             return new Response($this->renderWhoops($exception), $this->getStatusCode($exception));
         }
 
-        return new Response((new ErrorPage())->renderPage($exception->getCode(), $message), $this->getStatusCode($exception));
+        // PDO exceptions can carry a string SQLSTATE instead of an application error code.
+        $code = $exception->getCode();
+
+        return new Response((new ErrorPage())->renderPage(is_int($code) ? $code : 0, htmlspecialchars($message)), $this->getStatusCode($exception));
     }
 
     public function formatTestingMessage(\Throwable $exception): string
@@ -68,8 +73,9 @@ final readonly class ExceptionResponseFactory
 
     private function getStatusCode(\Throwable $exception): int
     {
+        // getCode() is documented as int, but e.g. PDOException returns a string SQLSTATE.
         $code = $exception->getCode();
 
-        return $code >= 400 && $code <= 599 ? $code : Response::HTTP_INTERNAL_SERVER_ERROR;
+        return is_int($code) && $code >= 400 && $code <= 599 ? $code : Response::HTTP_INTERNAL_SERVER_ERROR;
     }
 }

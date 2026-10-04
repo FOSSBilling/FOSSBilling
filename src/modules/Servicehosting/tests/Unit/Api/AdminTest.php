@@ -10,6 +10,8 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Order\Entity\Order;
+use Box\Mod\Order\Repository\OrderRepository;
 use Box\Mod\Order\Service as OrderService;
 use Box\Mod\Servicehosting\Api\Admin;
 use Box\Mod\Servicehosting\Entity\ServiceHosting;
@@ -22,7 +24,9 @@ use Box\Mod\Servicehosting\Service;
 use Doctrine\ORM\EntityManagerInterface;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
 use function Tests\Helpers\moduleService;
+use function Tests\Helpers\setEntityId;
 
 /**
  * @param array<class-string, Mockery\MockInterface> $repositories
@@ -57,7 +61,7 @@ test('testChangePlan', function (): void {
         'plan_id' => 1,
     ];
 
-    $getServiceReturnValue = [new Model_ClientOrder(), new ServiceHosting()];
+    $getServiceReturnValue = [createEntity(Order::class), new ServiceHosting()];
     $apiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial());
 
     $apiMock
@@ -98,7 +102,7 @@ test('testChangePlanMissingPlanId', function (): void {
 
 test('testChangeUsername', function (): void {
     $api = apiEndpoint(new Admin());
-    $getServiceReturnValue = [new Model_ClientOrder(), new ServiceHosting()];
+    $getServiceReturnValue = [createEntity(Order::class), new ServiceHosting()];
     $apiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial());
 
     $apiMock
@@ -121,7 +125,7 @@ test('testChangeUsername', function (): void {
 
 test('testChangeIp', function (): void {
     $api = apiEndpoint(new Admin());
-    $getServiceReturnValue = [new Model_ClientOrder(), new ServiceHosting()];
+    $getServiceReturnValue = [createEntity(Order::class), new ServiceHosting()];
     $apiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial());
 
     $apiMock
@@ -144,7 +148,7 @@ test('testChangeIp', function (): void {
 
 test('testChangeDomain', function (): void {
     $api = apiEndpoint(new Admin());
-    $getServiceReturnValue = [new Model_ClientOrder(), new ServiceHosting()];
+    $getServiceReturnValue = [createEntity(Order::class), new ServiceHosting()];
     $apiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial());
 
     $apiMock
@@ -167,7 +171,7 @@ test('testChangeDomain', function (): void {
 
 test('testChangePassword', function (): void {
     $api = apiEndpoint(new Admin());
-    $getServiceReturnValue = [new Model_ClientOrder(), new ServiceHosting()];
+    $getServiceReturnValue = [createEntity(Order::class), new ServiceHosting()];
     $apiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial());
 
     $apiMock
@@ -190,7 +194,7 @@ test('testChangePassword', function (): void {
 
 test('testSync', function (): void {
     $api = apiEndpoint(new Admin());
-    $getServiceReturnValue = [new Model_ClientOrder(), new ServiceHosting()];
+    $getServiceReturnValue = [createEntity(Order::class), new ServiceHosting()];
     $apiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial());
 
     $apiMock
@@ -213,7 +217,7 @@ test('testSync', function (): void {
 
 test('testUpdate', function (): void {
     $api = apiEndpoint(new Admin());
-    $getServiceReturnValue = [new Model_ClientOrder(), new ServiceHosting()];
+    $getServiceReturnValue = [createEntity(Order::class), new ServiceHosting()];
     $apiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial());
 
     $apiMock
@@ -282,12 +286,9 @@ test('testAccountGetList', function (): void {
     ->andReturn(['list' => [['id' => 1]]]);
 
     $di = container();
-    $dbStub = Mockery::mock('Box_Database');
-    $dbStub->shouldNotReceive('dispense');
-    $dbStub->shouldNotReceive('findOne');
+    $di['em']->shouldReceive('getConnection')->never();
     $di['mod_service'] = $di->protect(moduleService());
     $di['pager'] = $pagerMock;
-    $di['db'] = $dbStub;
 
     $api->setDi($di);
     $api->setService($serviceMock);
@@ -298,7 +299,7 @@ test('testAccountGetList', function (): void {
 
 test('testServerGetList', function (): void {
     $api = apiEndpoint(new Admin());
-    $server = (new ServiceHostingServer())->setId(1);
+    $server = setEntityId(new ServiceHostingServer(), 1);
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock
     ->shouldReceive('getServersSearchQuery')
@@ -322,8 +323,6 @@ test('testServerGetList', function (): void {
     $di = container();
     $di['pager'] = $pagerMock;
     $di['em'] = serviceHostingAdminEmWith([ServiceHostingServer::class => $serverRepo]);
-    $dbStub = Mockery::mock('Box_Database');
-    $di['db'] = $dbStub;
 
     $api->setDi($di);
     $api->setService($serviceMock);
@@ -394,10 +393,11 @@ test('testServerDelete', function (): void {
     ->andReturn(true);
 
     $serverRepo = Mockery::mock(ServiceHostingServerRepository::class);
-    $serverRepo->shouldReceive('find')->atLeast()->once()->andReturn(new ServiceHostingServer());
+    $serverEntity = new ServiceHostingServer();
+    $serverRepo->shouldReceive('find')->atLeast()->once()->andReturn($serverEntity);
 
     $serviceHostingRepo = Mockery::mock(ServiceHostingRepository::class);
-    $serviceHostingRepo->shouldReceive('count')->once()->with(['serviceHostingServerId' => 1])->andReturn(0);
+    $serviceHostingRepo->shouldReceive('count')->once()->with(['serviceHostingServer' => $serverEntity])->andReturn(0);
 
     $emMock = serviceHostingAdminEmWith([
         ServiceHostingServer::class => $serverRepo,
@@ -416,10 +416,16 @@ test('testServerDelete', function (): void {
     $data['id'] = 2;
 
     $serverRepo2 = Mockery::mock(ServiceHostingServerRepository::class);
-    $serverRepo2->shouldReceive('find')->atLeast()->once()->andReturn(new ServiceHostingServer());
+    $serverEntity2 = new ServiceHostingServer();
+    $serverRepo2->shouldReceive('find')->atLeast()->once()->andReturn($serverEntity2);
 
     $serviceHostingRepo2 = Mockery::mock(ServiceHostingRepository::class);
-    $serviceHostingRepo2->shouldReceive('count')->once()->with(['serviceHostingServerId' => 2])->andReturn(1);
+    $serviceHostingRepo2->shouldReceive('count')->once()->with(['serviceHostingServer' => $serverEntity2])->andReturn(1);
+
+    $serviceMock
+        ->shouldReceive('getServerUsageStats')
+        ->once()->with($serverEntity2)
+        ->andReturn(['total' => 1, 'active' => 1, 'orphaned' => 0, 'orphanedIds' => []]);
 
     $emMock2 = serviceHostingAdminEmWith([
         ServiceHostingServer::class => $serverRepo2,
@@ -435,6 +441,99 @@ test('testServerDelete', function (): void {
     $this->expectExceptionCode(704);
 
     $api->server_delete($data);
+});
+
+test('testServerDeleteOrphanWithoutForce', function (): void {
+    $api = apiEndpoint(new Admin());
+    $serverEntity = new ServiceHostingServer();
+
+    $serverRepo = Mockery::mock(ServiceHostingServerRepository::class);
+    $serverRepo->shouldReceive('find')->andReturn($serverEntity);
+
+    $serviceHostingRepo = Mockery::mock(ServiceHostingRepository::class);
+    $serviceHostingRepo->shouldReceive('count')->once()->with(['serviceHostingServer' => $serverEntity])->andReturn(2);
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock
+        ->shouldReceive('getServerUsageStats')->once()->with($serverEntity)
+        ->andReturn(['total' => 2, 'active' => 0, 'orphaned' => 2, 'orphanedIds' => [1, 2]]);
+    $serviceMock->shouldNotReceive('detachOrphanedServerUsages');
+    $serviceMock->shouldNotReceive('deleteServer');
+
+    $emMock = serviceHostingAdminEmWith([
+        ServiceHostingServer::class => $serverRepo,
+        ServiceHosting::class => $serviceHostingRepo,
+    ]);
+
+    $di = container();
+    $di['em'] = $emMock;
+    $api->setDi($di);
+    $api->setService($serviceMock);
+
+    expect(fn (): bool => $api->server_delete(['id' => 1]))->toThrow(FOSSBilling\Exception::class, 'orphaned');
+});
+
+test('testServerDeleteOrphanWithForce', function (): void {
+    $api = apiEndpoint(new Admin());
+    $serverEntity = new ServiceHostingServer();
+
+    $serverRepo = Mockery::mock(ServiceHostingServerRepository::class);
+    $serverRepo->shouldReceive('find')->andReturn($serverEntity);
+
+    $serviceHostingRepo = Mockery::mock(ServiceHostingRepository::class);
+    $serviceHostingRepo->shouldReceive('count')->once()->with(['serviceHostingServer' => $serverEntity])->andReturn(2);
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock
+        ->shouldReceive('getServerUsageStats')->once()->with($serverEntity)
+        ->andReturn(['total' => 2, 'active' => 0, 'orphaned' => 2, 'orphanedIds' => [1, 2]]);
+    $serviceMock
+        ->shouldReceive('detachOrphanedServerUsages')->once()->with($serverEntity)->andReturn(2);
+    $serviceMock
+        ->shouldReceive('deleteServer')->once()->with($serverEntity)->andReturn(true);
+
+    $emMock = serviceHostingAdminEmWith([
+        ServiceHostingServer::class => $serverRepo,
+        ServiceHosting::class => $serviceHostingRepo,
+    ]);
+
+    $di = container();
+    $di['em'] = $emMock;
+    $api->setDi($di);
+    $api->setService($serviceMock);
+
+    expect($api->server_delete(['id' => 1, 'force' => true]))->toBeTrue();
+});
+
+test('testServerDeleteActiveStillBlockedWithForce', function (): void {
+    $api = apiEndpoint(new Admin());
+    $serverEntity = new ServiceHostingServer();
+
+    $serverRepo = Mockery::mock(ServiceHostingServerRepository::class);
+    $serverRepo->shouldReceive('find')->andReturn($serverEntity);
+
+    $serviceHostingRepo = Mockery::mock(ServiceHostingRepository::class);
+    $serviceHostingRepo->shouldReceive('count')->once()->with(['serviceHostingServer' => $serverEntity])->andReturn(2);
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock
+        ->shouldReceive('getServerUsageStats')->once()->with($serverEntity)
+        ->andReturn(['total' => 2, 'active' => 1, 'orphaned' => 1, 'orphanedIds' => [2]]);
+    $serviceMock->shouldNotReceive('detachOrphanedServerUsages');
+    $serviceMock->shouldNotReceive('deleteServer');
+
+    $emMock = serviceHostingAdminEmWith([
+        ServiceHostingServer::class => $serverRepo,
+        ServiceHosting::class => $serviceHostingRepo,
+    ]);
+
+    $di = container();
+    $di['em'] = $emMock;
+    $api->setDi($di);
+    $api->setService($serviceMock);
+
+    expect(fn (): bool => $api->server_delete(['id' => 1, 'force' => true]))
+        ->toThrow(FOSSBilling\Exception::class, 'used by 1 service hostings');
 });
 
 test('testServerUpdate', function (): void {
@@ -535,7 +634,7 @@ test('testHpGetPairs', function (): void {
 
 test('testHpGetList', function (): void {
     $api = apiEndpoint(new Admin());
-    $hp = (new ServiceHostingHp())->setId(1);
+    $hp = setEntityId(new ServiceHostingHp(), 1);
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock
     ->shouldReceive('getHpSearchQuery')
@@ -580,10 +679,11 @@ test('testHpDelete', function (): void {
     ->andReturn(true);
 
     $hpRepo = Mockery::mock(ServiceHostingHpRepository::class);
-    $hpRepo->shouldReceive('find')->atLeast()->once()->andReturn(new ServiceHostingHp());
+    $hpEntity = new ServiceHostingHp();
+    $hpRepo->shouldReceive('find')->atLeast()->once()->andReturn($hpEntity);
 
     $serviceHostingRepo = Mockery::mock(ServiceHostingRepository::class);
-    $serviceHostingRepo->shouldReceive('count')->once()->with(['serviceHostingHpId' => 1])->andReturn(0);
+    $serviceHostingRepo->shouldReceive('count')->once()->with(['serviceHostingHp' => $hpEntity])->andReturn(0);
 
     $emMock = serviceHostingAdminEmWith([
         ServiceHostingHp::class => $hpRepo,
@@ -606,6 +706,68 @@ test('testHpDelete', function (): void {
         // If the function throws an exception, the test should fail
         $this->fail('Exception thrown: ' . $e->getMessage());
     }
+});
+
+test('testHpDeleteOrphanWithForce', function (): void {
+    $api = apiEndpoint(new Admin());
+    $hpEntity = new ServiceHostingHp();
+
+    $hpRepo = Mockery::mock(ServiceHostingHpRepository::class);
+    $hpRepo->shouldReceive('find')->andReturn($hpEntity);
+
+    $serviceHostingRepo = Mockery::mock(ServiceHostingRepository::class);
+    $serviceHostingRepo->shouldReceive('count')->once()->with(['serviceHostingHp' => $hpEntity])->andReturn(1);
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock
+        ->shouldReceive('getHpUsageStats')->once()->with($hpEntity)
+        ->andReturn(['total' => 1, 'active' => 0, 'orphaned' => 1, 'orphanedIds' => [5]]);
+    $serviceMock
+        ->shouldReceive('detachOrphanedHpUsages')->once()->with($hpEntity)->andReturn(1);
+    $serviceMock
+        ->shouldReceive('deleteHp')->once()->with($hpEntity)->andReturn(true);
+
+    $emMock = serviceHostingAdminEmWith([
+        ServiceHostingHp::class => $hpRepo,
+        ServiceHosting::class => $serviceHostingRepo,
+    ]);
+
+    $di = container();
+    $di['em'] = $emMock;
+    $api->setDi($di);
+    $api->setService($serviceMock);
+
+    expect($api->hp_delete(['id' => 1, 'force' => true]))->toBeTrue();
+});
+
+test('testHpDeleteOrphanWithoutForce', function (): void {
+    $api = apiEndpoint(new Admin());
+    $hpEntity = new ServiceHostingHp();
+
+    $hpRepo = Mockery::mock(ServiceHostingHpRepository::class);
+    $hpRepo->shouldReceive('find')->andReturn($hpEntity);
+
+    $serviceHostingRepo = Mockery::mock(ServiceHostingRepository::class);
+    $serviceHostingRepo->shouldReceive('count')->once()->with(['serviceHostingHp' => $hpEntity])->andReturn(1);
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock
+        ->shouldReceive('getHpUsageStats')->once()->with($hpEntity)
+        ->andReturn(['total' => 1, 'active' => 0, 'orphaned' => 1, 'orphanedIds' => [5]]);
+    $serviceMock->shouldNotReceive('detachOrphanedHpUsages');
+    $serviceMock->shouldNotReceive('deleteHp');
+
+    $emMock = serviceHostingAdminEmWith([
+        ServiceHostingHp::class => $hpRepo,
+        ServiceHosting::class => $serviceHostingRepo,
+    ]);
+
+    $di = container();
+    $di['em'] = $emMock;
+    $api->setDi($di);
+    $api->setService($serviceMock);
+
+    expect(fn (): bool => $api->hp_delete(['id' => 1]))->toThrow(FOSSBilling\Exception::class, 'orphaned');
 });
 
 test('testHpGet', function (): void {
@@ -691,12 +853,11 @@ test('testGetService', function (): void {
         'order_id' => 1,
     ];
 
-    $clientOrderModel = new Model_ClientOrder();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn($clientOrderModel);
+    $clientOrderModel = createEntity(Order::class);
+    $orderRepoMock = Mockery::mock(OrderRepository::class);
+    $orderRepoMock->shouldReceive('find')
+        ->atLeast()->once()
+        ->andReturn($clientOrderModel);
 
     $model = new ServiceHosting();
     $orderServiceMock = Mockery::mock(OrderService::class);
@@ -706,14 +867,14 @@ test('testGetService', function (): void {
     ->andReturn($model);
 
     $di = container();
+    $di['em']->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
-    $di['db'] = $dbMock;
 
     $api->setDi($di);
 
     $result = $api->_getService($data);
     expect($result)->toBeArray();
-    expect($result[0])->toBeInstanceOf('\Model_ClientOrder');
+    expect($result[0])->toBeInstanceOf(Order::class);
     expect($result[1])->toBeInstanceOf(ServiceHosting::class);
 });
 
@@ -723,12 +884,11 @@ test('testGetServiceOrderNotActivated', function (): void {
         'order_id' => 1,
     ];
 
-    $clientOrderModel = new Model_ClientOrder();
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock
-    ->shouldReceive('getExistingModelById')
-    ->atLeast()->once()
-    ->andReturn($clientOrderModel);
+    $clientOrderModel = createEntity(Order::class);
+    $orderRepoMock = Mockery::mock(OrderRepository::class);
+    $orderRepoMock->shouldReceive('find')
+        ->atLeast()->once()
+        ->andReturn($clientOrderModel);
 
     $model = null;
     $orderServiceMock = Mockery::mock(OrderService::class);
@@ -738,8 +898,8 @@ test('testGetServiceOrderNotActivated', function (): void {
     ->andReturn($model);
 
     $di = container();
+    $di['em']->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
-    $di['db'] = $dbMock;
     $api->setDi($di);
 
     $this->expectException(FOSSBilling\Exception::class);

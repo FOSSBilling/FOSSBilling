@@ -93,7 +93,7 @@ abstract class AdapterAbstract
      *                    'http_raw_post_data'=>$HTTP_RAW_POST_DATA
      *                    );
      *
-     * @return int - invoice id
+     * @return int|null - invoice id, or null when the IPN names none
      */
     public function getInvoiceId($data)
     {

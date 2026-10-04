@@ -11,9 +11,14 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice;
 
+use Box\Mod\Client\Entity\Client;
+use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Subscription;
+use Box\Mod\Invoice\Event\AfterAdminSubscriptionCreateEvent;
+use Box\Mod\Invoice\Event\AfterAdminSubscriptionDeleteEvent;
 use Box\Mod\Invoice\Repository\SubscriptionRepository;
+use Box\Mod\Order\Entity\Order;
 use FOSSBilling\Extension\Contract\Payment\CancelsSubscriptions;
 use FOSSBilling\Extension\Contract\Payment\CancelsSubscriptionsAtPeriodEnd;
 use FOSSBilling\InjectionAwareInterface;
@@ -41,11 +46,11 @@ class ServiceSubscription implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function create(\Model_Client $client, PayGateway $pg, array $data): int
+    public function create(Client $client, PayGateway $pg, array $data): int
     {
         $model = new Subscription();
-        $model->setClientId($client->id ? (int) $client->id : null);
-        $model->setPayGatewayId($pg->getId());
+        $model->setClientId($client->getId() ? (int) $client->getId() : null);
+        $model->setPayGateway($pg);
 
         $model->setSid($data['sid'] ?? null);
         $model->setStatus($data['status'] ?? null);
@@ -58,9 +63,9 @@ class ServiceSubscription implements InjectionAwareInterface
         $this->di['em']->flush();
         $newId = (int) $model->getId();
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminSubscriptionCreate', 'params' => ['id' => $newId]]);
+        $this->di['event_dispatcher']->dispatch(new AfterAdminSubscriptionCreateEvent($newId));
 
-        $this->di['logger']->info('Created subscription %s', $newId);
+        $this->di['logger']->info('Created subscription {subscription_id}', ['subscription_id' => $newId]);
 
         return $newId;
     }
@@ -68,7 +73,7 @@ class ServiceSubscription implements InjectionAwareInterface
     public function update(Subscription $model, array $data): bool
     {
         if (($data['status'] ?? null) === 'canceled') {
-            $this->cancelAtGateway($model, (string) ($data['sid'] ?? $model->getSid()));
+            $this->cancelAtGateway($model);
         }
 
         return $this->persistUpdate($model, $data);
@@ -95,7 +100,7 @@ class ServiceSubscription implements InjectionAwareInterface
         $this->di['em']->flush();
         $newId = (int) $model->getId();
 
-        $this->di['logger']->info('Updated subscription %s', $newId);
+        $this->di['logger']->info('Updated subscription {subscription_id}', ['subscription_id' => $newId]);
 
         return true;
     }
@@ -112,15 +117,15 @@ class ServiceSubscription implements InjectionAwareInterface
             'created_at' => $model->getCreatedAt()?->format('Y-m-d H:i:s'),
             'updated_at' => $model->getUpdatedAt()?->format('Y-m-d H:i:s'),
         ];
-        $client = $this->di['db']->load('Client', $model->getClientId());
-        if ($client instanceof \Model_Client) {
+        $client = $this->di['em']->getRepository(Client::class)->find($model->getClientId());
+        if ($client instanceof Client) {
             $clientService = $this->di['mod_service']('Client');
             $result['client'] = $clientService->toApiArray($client, false, $identity);
         } else {
             $result['client'] = [];
         }
 
-        $gtw = $this->di['em']->getRepository(PayGateway::class)->find((int) $model->getPayGatewayId());
+        $gtw = $model->getPayGateway();
         if ($gtw instanceof PayGateway) {
             $payGatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
             $result['gateway'] = $payGatewayService->toApiArray($gtw, false, $identity);
@@ -137,86 +142,11 @@ class ServiceSubscription implements InjectionAwareInterface
         $this->di['em']->remove($model);
         $this->di['em']->flush();
 
-        $this->di['events_manager']->fire(['event' => 'onAfterAdminSubscriptionDelete', 'params' => ['id' => $id]]);
+        $this->di['event_dispatcher']->dispatch(new AfterAdminSubscriptionDeleteEvent((int) $id));
 
-        $this->di['logger']->info('Removed subscription %s', $id);
+        $this->di['logger']->info('Removed subscription {id}', ['id' => $id]);
 
         return true;
-    }
-
-    public function getSearchQuery(array $data): array
-    {
-        $sql = 'SELECT *
-            FROM subscription
-            WHERE 1 ';
-
-        $id = $data['id'] ?? null;
-        $sid = $data['sid'] ?? null;
-        $search = $data['search'] ?? null;
-        $invoice_id = $data['invoice_id'] ?? null;
-        $gateway_id = $data['gateway_id'] ?? null;
-        $client_id = $data['client_id'] ?? null;
-        $status = $data['status'] ?? null;
-        $currency = $data['currency'] ?? null;
-
-        $date_from = $data['date_from'] ?? null;
-        $date_to = $data['date_to'] ?? null;
-        $params = [];
-
-        if ($status) {
-            $sql .= ' AND status = :status';
-            $params[':status'] = $status;
-        }
-
-        if ($invoice_id) {
-            $sql .= ' AND invoice_id = :invoice_id';
-            $params[':invoice_id'] = $invoice_id;
-        }
-
-        if ($gateway_id) {
-            $sql .= ' AND gateway_id = :gateway_id';
-            $params[':gateway_id'] = $gateway_id;
-        }
-
-        if ($client_id) {
-            $sql .= ' AND client_id  = :client_id';
-            $params[':client_id'] = $client_id;
-        }
-
-        if ($currency) {
-            $sql .= ' AND currency =  :currency ';
-            $params[':currency'] = $currency;
-        }
-
-        if ($date_from) {
-            $sql .= ' AND UNIX_TIMESTAMP(created_at) >= :date_from';
-            $params[':date_from'] = ctype_digit((string) $date_from) ? $date_from : strtotime($date_from . ' 00:00:00');
-        }
-
-        if ($date_to) {
-            $sql .= ' AND UNIX_TIMESTAMP(created_at) <= :date_to';
-            $params[':date_to'] = ctype_digit((string) $date_to) ? $date_to : strtotime($date_to . ' 23:59:59');
-        }
-
-        if ($search) {
-            $sql .= ' AND (sid = :sid OR id = :mid) ';
-            $params[':sid'] = $search;
-            $params[':mid'] = $search;
-        }
-
-        if ($id) {
-            $sql .= ' AND id = :id';
-            $params[':id'] = $id;
-        }
-
-        if ($sid) {
-            $sql .= ' AND sid = :sid';
-            $params[':sid'] = $sid;
-        }
-
-        $sql .= ' ORDER BY id DESC';
-
-        return [$sql, $params];
     }
 
     public function isSubscribable($invoice_id): bool
@@ -224,9 +154,9 @@ class ServiceSubscription implements InjectionAwareInterface
         return $this->getSubscriptionPeriodByInvoiceId((int) $invoice_id) !== null;
     }
 
-    public function getSubscriptionPeriod(\Model_Invoice $invoice): ?string
+    public function getSubscriptionPeriod(Invoice $invoice): ?string
     {
-        return $this->getSubscriptionPeriodByInvoiceId((int) $invoice->id);
+        return $this->getSubscriptionPeriodByInvoiceId((int) $invoice->getId());
     }
 
     public function unsubscribe(Subscription $model): void
@@ -267,9 +197,9 @@ class ServiceSubscription implements InjectionAwareInterface
      * the way scheduleCancellation() already did, so the admin is told the
      * gateway cannot cancel remotely rather than being told it succeeded.
      */
-    private function cancelAtGateway(Subscription $model, ?string $subscriptionId = null): void
+    private function cancelAtGateway(Subscription $model): void
     {
-        $subscriptionId = trim($subscriptionId ?? (string) $model->getSid());
+        $subscriptionId = trim((string) $model->getSid());
         if ($subscriptionId === '') {
             return;
         }
@@ -285,7 +215,7 @@ class ServiceSubscription implements InjectionAwareInterface
 
     private function getGatewayAdapter(Subscription $model): object
     {
-        $gateway = $this->di['em']->getRepository(PayGateway::class)->find((int) $model->getPayGatewayId());
+        $gateway = $model->getPayGateway();
         if (!$gateway instanceof PayGateway) {
             throw new \FOSSBilling\Exception('Payment gateway not found');
         }
@@ -294,7 +224,7 @@ class ServiceSubscription implements InjectionAwareInterface
         return $payGatewayService->getPaymentAdapter($gateway);
     }
 
-    public function cancelForOrder(\Model_ClientOrder $order): int
+    public function cancelForOrder(Order $order): int
     {
         $canceledSubscriptions = 0;
         foreach ($this->getSubscriptionsForOrder($order) as $subscription) {
@@ -305,7 +235,7 @@ class ServiceSubscription implements InjectionAwareInterface
         return $canceledSubscriptions;
     }
 
-    public function scheduleCancellationForOrder(\Model_ClientOrder $order): int
+    public function scheduleCancellationForOrder(Order $order): int
     {
         $scheduledSubscriptions = 0;
         foreach ($this->getSubscriptionsForOrder($order, 'active') as $subscription) {
@@ -342,8 +272,11 @@ class ServiceSubscription implements InjectionAwareInterface
 
             $orderService = $this->di['mod_service']('Order');
             foreach ($orderIds as $orderId) {
-                $order = $this->di['db']->getExistingModelById('ClientOrder', (int) $orderId, 'Order not found');
-                if (in_array($order->status, [\Model_ClientOrder::STATUS_CANCELED, \Model_ClientOrder::STATUS_PENDING_SETUP, \Model_ClientOrder::STATUS_FAILED_SETUP], true)) {
+                $order = $this->di['em']->getRepository(Order::class)->find((int) $orderId);
+                if (!$order instanceof Order) {
+                    continue;
+                }
+                if (in_array($order->getStatus(), [Order::STATUS_CANCELED, Order::STATUS_PENDING_SETUP, Order::STATUS_FAILED_SETUP], true)) {
                     continue;
                 }
 
@@ -354,7 +287,7 @@ class ServiceSubscription implements InjectionAwareInterface
         return $this->persistUpdate($subscription, ['status' => 'canceled']);
     }
 
-    public function canCancelAtPeriodEndForOrder(\Model_ClientOrder $order): bool
+    public function canCancelAtPeriodEndForOrder(Order $order): bool
     {
         $subscriptions = $this->getSubscriptionsForOrder($order, 'active');
         if ($subscriptions === []) {
@@ -388,9 +321,26 @@ class ServiceSubscription implements InjectionAwareInterface
     }
 
     /**
+     * Whether the order is paid through an active gateway subscription.
+     * Such orders are renewed by the gateway's subscription payment flow and
+     * must keep their one-order-per-invoice shape, so the renewal batch
+     * excludes them from merging.
+     */
+    public function hasActiveSubscriptionForOrder(Order $order): bool
+    {
+        foreach ($this->getSubscriptionsForOrder($order, 'active') as $subscription) {
+            if (trim((string) $subscription->getSid()) !== '') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * @return list<Subscription>
      */
-    private function getSubscriptionsForOrder(\Model_ClientOrder $order, ?string $status = null): array
+    private function getSubscriptionsForOrder(Order $order, ?string $status = null): array
     {
         $query = $this->di['dbal']->createQueryBuilder();
         $query
@@ -402,7 +352,7 @@ class ServiceSubscription implements InjectionAwareInterface
             ->andWhere('ii.rel_id = :order_id')
             ->setParameter('rel_type', 'invoice')
             ->setParameter('item_type', Entity\InvoiceItem::TYPE_ORDER)
-            ->setParameter('order_id', $order->id);
+            ->setParameter('order_id', $order->getId());
 
         if ($status !== null) {
             $query->andWhere('s.status = :status')->setParameter('status', $status);
@@ -427,7 +377,7 @@ class ServiceSubscription implements InjectionAwareInterface
             FROM invoice_item
             WHERE invoice_id = :id
             ORDER BY id ASC';
-        $items = $this->di['db']->getAll($query, [':id' => $invoiceId]);
+        $items = $this->di['em']->getConnection()->fetchAllAssociative($query, ['id' => $invoiceId]);
 
         if (empty($items)) {
             return null;

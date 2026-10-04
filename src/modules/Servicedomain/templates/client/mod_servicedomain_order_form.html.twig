@@ -76,7 +76,7 @@
                                        placeholder="{{ 'Enter your domain name to transfer'|trans }}">
                                 <select class="form-select form-select-sm" name="transfer_tld" style="width: 30%; max-width: 120px;">
                                     {% for tld in transfer_tlds %}
-                                        <option value="{{ tld.tld }}" label="{{ tld.tld }}">{{ tld.tld }}</option>
+                                        <option value="{{ tld.tld }}" label="{{ tld.tld }}" data-require-transfer-code="{{ tld.require_transfer_code ? '1' : '0' }}">{{ tld.tld }}</option>
                                     {% endfor %}
                                 </select>
                             </div>
@@ -85,8 +85,9 @@
                     </div>
                     <div id="domain-transfer-config" style="display:none;">
                         <p class="fs-7 mt-2">{{ 'Transfer price is'|trans }}&nbsp;<span class="fw-bold" id="transfer-price"></span></p>
-                        <input class="form-control form-control-sm" type="text" name="transfer_code" value="{{ request.transfer_code }}"
-                               style="width: 200px" placeholder="{{ 'Enter domain transfer code'|trans }}">
+                        <input class="form-control form-control-sm" type="text" name="transfer_code" id="transfer-code"
+                               value="{{ request.transfer_code }}" style="width: 200px" placeholder="{{ 'Enter domain transfer code'|trans }}">
+                        <div class="form-hint" id="transfer-code-hint" style="display:none;">{{ 'This TLD requires a transfer code (EPP/auth code) to proceed.'|trans }}</div>
                     </div>
                 </div>
             </div>
@@ -163,11 +164,27 @@
             });
         };
 
+        function updateTransferCodeRequirement() {
+            const tldSelect = document.querySelector('select[name="transfer_tld"]');
+            const selectedOption = tldSelect && tldSelect.options[tldSelect.selectedIndex];
+            const requiresTransferCode = selectedOption && selectedOption.dataset.requireTransferCode === '1';
+            const transferCodeInput = document.getElementById('transfer-code');
+            const transferCodeHint = document.getElementById('transfer-code-hint');
+            if (transferCodeInput) transferCodeInput.required = requiresTransferCode;
+            if (transferCodeHint) transferCodeHint.style.display = requiresTransferCode ? '' : 'none';
+        }
+
+        const transferTldSelect = document.querySelector('select[name="transfer_tld"]');
+        if (transferTldSelect) {
+            transferTldSelect.addEventListener('change', updateTransferCodeRequirement);
+        }
+
         const transferCheck = document.getElementById('transfer-check');
         if (transferCheck) {
             transferCheck.addEventListener('click', function (event) {
+                const tldSelect = document.querySelector('select[name="transfer_tld"]');
                 const sld = document.querySelector('input[name="transfer_sld"]').value.toLowerCase();
-                const tld = document.querySelector('select[name="transfer_tld"]').value.toLowerCase();
+                const tld = tldSelect.value.toLowerCase();
                 document.getElementById('domain-action').value = 'transfer';
                 const domain = sld + tld;
 
@@ -185,6 +202,8 @@
 
                         const transferOrderButton = document.querySelector('#transfer .order-button');
                         if (transferOrderButton) transferOrderButton.style.display = '';
+
+                        updateTransferCodeRequirement();
                     },
                 );
 

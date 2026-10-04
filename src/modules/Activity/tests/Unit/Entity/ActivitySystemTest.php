@@ -19,8 +19,8 @@ test('maps the existing system activity table', function (): void {
         ->and($metadata->getColumnNames())->toBe([
             'id', 'priority', 'admin_id', 'client_id', 'message', 'ip', 'created_at',
         ])
-        ->and($metadata->table['indexes']['admin_id_idx']['columns'])->toBe(['admin_id'])
-        ->and($metadata->table['indexes']['client_id_idx']['columns'])->toBe(['client_id']);
+        ->and($metadata->table['indexes']['activity_system_admin_id_idx']['columns'])->toBe(['admin_id'])
+        ->and($metadata->table['indexes']['activity_system_client_id_idx']['columns'])->toBe(['client_id']);
 });
 
 test('stores system activity values and initializes its timestamp', function (): void {

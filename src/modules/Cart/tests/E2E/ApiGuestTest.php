@@ -87,9 +87,7 @@ function cartCreateClient(): int
         'password_confirm' => $password,
     ]);
     assertApiSuccess($result);
-    assertApiResultIsInt($result);
-
-    $clientId = (int) $result->getResult();
+    expect($result->getResult())->toBeTrue();
 
     $loginResult = Tests\Helpers\ApiClient::request('guest/client/login', [
         'email' => $email,
@@ -97,7 +95,13 @@ function cartCreateClient(): int
     ]);
     assertApiSuccess($loginResult);
 
-    return $clientId;
+    // guest/client/create no longer returns the new client's id (doing so
+    // would reopen the email-enumeration issue it was hardened against), so
+    // look the account up by the email we just registered instead.
+    $lookup = Tests\Helpers\ApiClient::request('admin/client/get', ['email' => $email]);
+    assertApiSuccess($lookup);
+
+    return (int) $lookup->getResult()['id'];
 }
 
 function cartCleanupClient(int $clientId): void

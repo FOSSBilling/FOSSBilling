@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace FOSSBilling;
 
 use FOSSBilling\Http\CookieNames;
+use Symfony\Component\HttpFoundation\Session\SessionInterface;
 
 class Session implements InjectionAwareInterface
 {
@@ -21,6 +22,7 @@ class Session implements InjectionAwareInterface
 
     private ?\Pimple\Container $di = null;
     private ?string $legacySessionCookie = null;
+    private readonly array $cookieParams;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -32,8 +34,19 @@ class Session implements InjectionAwareInterface
         return $this->di;
     }
 
-    public function __construct(private readonly \PdoSessionHandler $handler)
+    /**
+     * @param array{path?: string, domain?: string, secure?: bool, httponly?: bool, samesite?: string|null} $cookieParams
+     */
+    public function __construct(private readonly SessionInterface $session, array $cookieParams = [])
     {
+        $this->cookieParams = [
+            'path' => '/',
+            'domain' => '',
+            'secure' => false,
+            'httponly' => true,
+            'samesite' => '',
+            ...$cookieParams,
+        ];
     }
 
     public function setupSession(): void
@@ -43,71 +56,54 @@ class Session implements InjectionAwareInterface
         }
 
         $this->configureCookieName();
-        $this->canUseSession();
+        $this->restoreSessionFromRequest();
+        $fingerprint = Config::getProperty('security.perform_session_fingerprinting', true)
+            ? new Fingerprint($this->di['request'])
+            : null;
+        $this->canUseSession($fingerprint);
 
-        if (!headers_sent()) {
-            session_set_save_handler($this->handler);
-        }
-
-        $currentCookieParams = session_get_cookie_params();
-        $currentCookieParams['httponly'] = true;
-        $currentCookieParams['lifetime'] = 0;
-        $currentCookieParams['secure'] = $this->shouldBeSecure();
-
-        $cookieParams = [
-            'lifetime' => $currentCookieParams['lifetime'],
-            'path' => $currentCookieParams['path'],
-            'domain' => $currentCookieParams['domain'],
-            'secure' => $currentCookieParams['secure'],
-            'httponly' => $currentCookieParams['httponly'],
-        ];
-
-        if (Config::getProperty('security.mode', 'strict') === 'strict') {
-            $cookieParams['samesite'] = 'Strict';
-        }
-
-        session_set_cookie_params($cookieParams);
-        session_start();
+        $this->session->start();
         $this->expireLegacySessionCookies();
 
         $this->handleObsoleteSession();
-        $this->updateFingerprint();
+        $this->updateFingerprint($fingerprint);
     }
 
     public function getId(): string
     {
-        return session_id();
+        return $this->session->getId();
     }
 
     public function delete(string $key): void
     {
-        unset($_SESSION[$key]);
+        $this->session->remove($key);
     }
 
     public function get(string $key): mixed
     {
-        return $_SESSION[$key] ?? null;
+        return $this->session->get($key);
     }
 
     public function set(string $key, mixed $value): void
     {
-        $_SESSION[$key] = $value;
+        $this->session->set($key, $value);
     }
 
     public function regenerateId(?int $gracePeriod = null): void
     {
-        if (session_status() !== PHP_SESSION_ACTIVE) {
+        if (!$this->session->isStarted()) {
             return;
         }
 
         $gracePeriod ??= (int) Config::getProperty('security.session_regeneration_grace_period', self::DEFAULT_REGENERATION_GRACE_PERIOD);
         $gracePeriod = max(0, $gracePeriod);
-        $_SESSION[self::OBSOLETE_FLAG] = true;
-        $_SESSION[self::OBSOLETE_EXPIRES_AT] = time() + $gracePeriod;
+        $this->set(self::OBSOLETE_FLAG, true);
+        $this->set(self::OBSOLETE_EXPIRES_AT, time() + $gracePeriod);
 
         $this->rotateSessionId();
 
-        unset($_SESSION[self::OBSOLETE_FLAG], $_SESSION[self::OBSOLETE_EXPIRES_AT]);
+        $this->delete(self::OBSOLETE_FLAG);
+        $this->delete(self::OBSOLETE_EXPIRES_AT);
     }
 
     public function destroy(string $type = ''): bool
@@ -126,17 +122,17 @@ class Session implements InjectionAwareInterface
                 return true;
         }
 
-        return session_destroy();
+        return $this->session->invalidate();
     }
 
     /**
      * Checks both the fingerprint and age of the current session to see if it can be used.
      * If the session can't be used, it's destroyed from the database, forcing a new one to be created.
      */
-    private function canUseSession(): void
+    private function canUseSession(?Fingerprint $currentFingerprint = null): void
     {
         $invalid = false;
-        $sessionName = session_name();
+        $sessionName = $this->session->getName();
         $sessionID = $this->resolveSessionId();
 
         if ($sessionID === '') {
@@ -166,11 +162,14 @@ class Session implements InjectionAwareInterface
         }
 
         if (Config::getProperty('security.perform_session_fingerprinting', true)) {
-            $fingerprint = new Fingerprint($this->di['request']);
+            $fingerprint = $currentFingerprint ?? new Fingerprint($this->di['request']);
             $storedFingerprint = json_decode((string) $session['fingerprint'], true);
-            if (!is_array($storedFingerprint) || !$fingerprint->checkFingerprint($storedFingerprint)) {
+            if (!is_array($storedFingerprint) || !$fingerprint->checkFingerprint($storedFingerprint, $sessionID)) {
                 $invalid = true;
-                error_log("Session ID $sessionID has potentially been hijacked as it failed the fingerprint check. The session has automatically been destroyed.");
+                $this->di['logger']->withChannel('security')->warning(
+                    'A session failed the fingerprint check and was automatically destroyed.',
+                    ['session_id_sha256' => hash('sha256', $sessionID)],
+                );
             }
         }
 
@@ -184,17 +183,15 @@ class Session implements InjectionAwareInterface
             } catch (\Doctrine\DBAL\Exception) {
                 // The cookie is still expired below so the unusable session is not reused.
             }
-            if ($sessionName !== false) {
-                setcookie($sessionName, '', $this->getSessionCookieOptions(time() - 3600));
-                unset($_COOKIE[$sessionName]);
-            }
+            setcookie($sessionName, '', $this->getSessionCookieOptions(time() - 3600));
+            unset($_COOKIE[$sessionName]);
         }
     }
 
     /**
      * Depending on the specifics, this will either set or update the fingerprint associated with the current session.
      */
-    private function updateFingerprint(): void
+    private function updateFingerprint(?Fingerprint $currentFingerprint = null): void
     {
         $sessionID = $this->resolveSessionId();
 
@@ -208,7 +205,7 @@ class Session implements InjectionAwareInterface
             $session = $connection->fetchAssociative('SELECT id FROM session WHERE id = :id', ['id' => $sessionID]);
 
             if (Config::getProperty('security.perform_session_fingerprinting', true)) {
-                $updatedFingerprint = (new Fingerprint($this->di['request']))->fingerprint();
+                $updatedFingerprint = ($currentFingerprint ?? new Fingerprint($this->di['request']))->fingerprint();
             } else {
                 $updatedFingerprint = [];
             }
@@ -229,25 +226,29 @@ class Session implements InjectionAwareInterface
 
     private function resolveSessionId(): string
     {
-        $sessionID = session_id();
+        $sessionID = $this->session->getId();
         if ($sessionID !== '') {
             return $sessionID;
         }
 
-        $sessionName = session_name();
+        $sessionID = $_COOKIE[$this->session->getName()] ?? '';
 
-        return $sessionName !== false ? ($_COOKIE[$sessionName] ?? '') : '';
+        return is_string($sessionID) ? $sessionID : '';
     }
 
     private function configureCookieName(): void
     {
-        $previousName = session_name();
+        // The cookie name cannot be changed once output started; renaming now would only emit warnings.
+        if (headers_sent()) {
+            return;
+        }
 
-        session_name(CookieNames::SESSION);
+        $previousName = $this->session->getName();
+
+        $this->session->setName(CookieNames::SESSION);
 
         if (
-            $previousName === false
-            || $previousName === CookieNames::SESSION
+            $previousName === CookieNames::SESSION
             || !isset($_COOKIE[$previousName])
         ) {
             return;
@@ -264,7 +265,24 @@ class Session implements InjectionAwareInterface
             && $sessionId !== ''
             && preg_match('/^[A-Za-z0-9,-]+$/D', $sessionId) === 1
         ) {
-            session_id($sessionId);
+            $this->session->setId($sessionId);
+        }
+    }
+
+    private function restoreSessionFromRequest(): void
+    {
+        if ($this->di === null) {
+            return;
+        }
+
+        $restoreToken = $this->di['request']->query->get('restore_token');
+        if (!is_string($restoreToken)) {
+            return;
+        }
+
+        $sessionId = Tools::validateSessionRestoreToken($restoreToken);
+        if ($sessionId !== null) {
+            $this->session->setId($sessionId);
         }
     }
 
@@ -280,25 +298,25 @@ class Session implements InjectionAwareInterface
 
     private function handleObsoleteSession(): void
     {
-        if (!$this->isObsoleteSession($_SESSION)) {
+        $sessionData = $this->session->all();
+        if (!$this->isObsoleteSession($sessionData) || !$this->isObsoleteSessionExpired($sessionData)) {
             return;
         }
 
-        if ($this->isObsoleteSessionExpired($_SESSION)) {
-            $this->clearAuthenticationData();
-            unset($_SESSION[self::OBSOLETE_FLAG], $_SESSION[self::OBSOLETE_EXPIRES_AT]);
-            $this->rotateSessionId();
-
-            return;
-        }
+        $this->clearAuthenticationData();
+        $this->delete(self::OBSOLETE_FLAG);
+        $this->delete(self::OBSOLETE_EXPIRES_AT);
+        $this->rotateSessionId();
     }
 
     private function rotateSessionId(): void
     {
-        session_regenerate_id(false);
+        if (headers_sent() || !$this->session->migrate(false)) {
+            return;
+        }
 
-        $sessionName = session_name();
-        $sessionId = session_id();
+        $sessionName = $this->session->getName();
+        $sessionId = $this->session->getId();
         if ($sessionId !== '') {
             setcookie($sessionName, $sessionId, $this->getSessionCookieOptions(0));
 
@@ -311,21 +329,21 @@ class Session implements InjectionAwareInterface
      */
     private function getSessionCookieOptions(int $expires): array
     {
-        $params = session_get_cookie_params();
-
         return [
             'expires' => $expires,
-            'path' => $params['path'],
-            'domain' => $params['domain'],
-            'secure' => $params['secure'],
-            'httponly' => $params['httponly'],
-            'samesite' => $params['samesite'],
+            'path' => $this->cookieParams['path'],
+            'domain' => $this->cookieParams['domain'],
+            'secure' => $this->cookieParams['secure'],
+            'httponly' => $this->cookieParams['httponly'],
+            'samesite' => $this->cookieParams['samesite'] ?? '',
         ];
     }
 
     private function clearAuthenticationData(): void
     {
-        unset($_SESSION['admin'], $_SESSION['client'], $_SESSION['client_id']);
+        $this->delete('admin');
+        $this->delete('client');
+        $this->delete('client_id');
     }
 
     private function isObsoleteSession(array $sessionData): bool
@@ -343,10 +361,5 @@ class Session implements InjectionAwareInterface
         $now ??= time();
 
         return $expiresAt < $now;
-    }
-
-    private function shouldBeSecure(): bool
-    {
-        return Config::getProperty('security.force_https', true) || $this->di['request']->isSecure();
     }
 }

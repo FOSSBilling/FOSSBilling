@@ -192,7 +192,7 @@ test('gets order via getOrder', function (): void {
     $order = createEntity(Box\Mod\Order\Entity\Order::class);
 
     $serviceMock = Mockery::mock(Service::class);
-    $serviceMock->shouldReceive('findEntityForClientById')->atLeast()->once()->andReturn($order);
+    $serviceMock->shouldReceive('findForClientById')->atLeast()->once()->andReturn($order);
     $serviceMock->shouldReceive('toApiArray')->atLeast()->once()->andReturn([]);
 
     $client = createEntity(Box\Mod\Client\Entity\Client::class);
@@ -210,7 +210,7 @@ test('throws exception when order not found', function (): void {
     $api = apiEndpoint(new Client());
 
     $serviceMock = Mockery::mock(Service::class);
-    $serviceMock->shouldReceive('findEntityForClientById')->atLeast()->once()->andReturn(null);
+    $serviceMock->shouldReceive('findForClientById')->atLeast()->once()->andReturn(null);
     $serviceMock->shouldReceive('toApiArray')->never()->andReturn([]);
 
     $client = createEntity(Box\Mod\Client\Entity\Client::class);

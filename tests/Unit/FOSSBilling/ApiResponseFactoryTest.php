@@ -84,3 +84,14 @@ test('API response factory maps numeric string exception codes like their intege
 
     expect($response->getStatusCode())->toBe(Response::HTTP_FORBIDDEN);
 });
+
+test('API response factory substitutes invalid UTF-8 instead of failing to encode the response', function (): void {
+    // An invalid two-byte UTF-8 sequence, e.g. from a mis-encoded form field or a third-party API response.
+    $response = (new ApiResponseFactory())->create(['name' => "Caf\xE9"]);
+
+    expect($response->getStatusCode())->toBe(Response::HTTP_OK);
+
+    $decoded = json_decode((string) $response->getContent(), true);
+    expect($decoded['error'])->toBeNull()
+        ->and($decoded['result']['name'])->toContain('Caf');
+});

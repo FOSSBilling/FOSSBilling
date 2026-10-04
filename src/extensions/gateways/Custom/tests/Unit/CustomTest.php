@@ -65,7 +65,7 @@ function customInvoiceRequest(bool $subscription = false): CheckoutRequest
             gatewayId: 3,
             currency: 'USD',
             hash: 'hashString',
-            approved: true,
+            issued: true,
             serie: 'INV-',
             nr: 1001,
             total: 42.5,

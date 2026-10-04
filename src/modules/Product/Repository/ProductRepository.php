@@ -12,8 +12,10 @@ declare(strict_types=1);
 namespace Box\Mod\Product\Repository;
 
 use Box\Mod\Product\Entity\Product;
+use Box\Mod\Product\Entity\ProductCategory;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
+use FOSSBilling\SortOptions;
 
 class ProductRepository extends EntityRepository
 {
@@ -34,7 +36,7 @@ class ProductRepository extends EntityRepository
             ->select('p.id, p.title')
             ->where('p.isAddon = :isAddon')
             ->setParameter('isAddon', true)
-            ->orderBy('p.id', 'ASC')
+            ->orderBy('p.id', \SortDirection::Ascending)
             ->getQuery()
             ->getArrayResult();
 
@@ -69,7 +71,7 @@ class ProductRepository extends EntityRepository
                 ->setParameter('type', $data['type']);
         }
 
-        $rows = $qb->orderBy('p.id', 'ASC')
+        $rows = $qb->orderBy('p.id', \SortDirection::Ascending)
             ->getQuery()
             ->getArrayResult();
 
@@ -86,6 +88,8 @@ class ProductRepository extends EntityRepository
         $qb = $this->createQueryBuilder('p')
             ->where('p.isAddon = :isAddon')
             ->setParameter('isAddon', false);
+
+        $this->addPricingJoins($qb);
 
         if (!empty($data['type'])) {
             $qb->andWhere('p.type = :type')
@@ -107,7 +111,26 @@ class ProductRepository extends EntityRepository
                 ->setParameter('search', '%' . $data['search'] . '%');
         }
 
-        return $qb->orderBy('p.priority', 'ASC');
+        $sort = SortOptions::fromArray($data, [
+            'id' => 'p.id',
+            'title' => 'p.title',
+            'slug' => 'p.slug',
+            'status' => 'p.status',
+            'type' => 'p.type',
+            'priority' => 'p.priority',
+            'created_at' => 'p.createdAt',
+            'updated_at' => 'p.updatedAt',
+        ]);
+        if ($sort->isSorted()) {
+            $qb->orderBy($sort->expression, $sort->direction);
+            if ($sort->expression !== 'p.id') {
+                $qb->addOrderBy('p.id', $sort->direction);
+            }
+        } else {
+            $qb->orderBy('p.priority', \SortDirection::Ascending);
+        }
+
+        return $qb;
     }
 
     public function findActiveById(int $id): ?Product
@@ -142,7 +165,7 @@ class ProductRepository extends EntityRepository
     {
         $count = $this->createQueryBuilder('p')
             ->select('COUNT(p.id)')
-            ->where('p.productCategoryId = :categoryId')
+            ->where('IDENTITY(p.productCategory) = :categoryId')
             ->setParameter('categoryId', $categoryId)
             ->getQuery()
             ->getSingleScalarResult();
@@ -155,14 +178,20 @@ class ProductRepository extends EntityRepository
      */
     public function findEnabledVisibleByCategoryId(int $categoryId): array
     {
-        return $this->findBy([
-            'isAddon' => false,
-            'status' => 'enabled',
-            'hidden' => false,
-            'productCategoryId' => $categoryId,
-        ], [
-            'priority' => 'ASC',
-        ]);
+        $qb = $this->createQueryBuilder('p')
+            ->where('p.isAddon = :isAddon')
+            ->andWhere('p.status = :status')
+            ->andWhere('p.hidden = :hidden')
+            ->andWhere('p.productCategory = :category')
+            ->setParameter('isAddon', false)
+            ->setParameter('status', 'enabled')
+            ->setParameter('hidden', false)
+            ->setParameter('category', $this->getEntityManager()->getReference(ProductCategory::class, $categoryId))
+            ->orderBy('p.priority', \SortDirection::Ascending);
+
+        $this->addPricingJoins($qb);
+
+        return $qb->getQuery()->getResult();
     }
 
     /**
@@ -199,7 +228,9 @@ class ProductRepository extends EntityRepository
             ->setParameter('type', 'custom')
             ->setParameter('isAddon', true)
             ->setParameter('ids', $ids)
-            ->orderBy('p.id', 'ASC');
+            ->orderBy('p.id', \SortDirection::Ascending);
+
+        $this->addPricingJoins($qb);
 
         if (!$includeUnavailable) {
             $qb->andWhere('p.active = :active')
@@ -214,6 +245,31 @@ class ProductRepository extends EntityRepository
         }
 
         return $qb->getQuery()->getResult();
+    }
+
+    private function addPricingJoins(QueryBuilder $queryBuilder): void
+    {
+        $queryBuilder
+            ->leftJoin('p.productPayment', 'payment')
+            ->addSelect('payment')
+            ->leftJoin('payment.periods', 'paymentPeriod')
+            ->addSelect('paymentPeriod');
+    }
+
+    public function decrementStockIfAvailable(int $productId, int $quantity, \DateTimeInterface $updatedAt): int
+    {
+        return $this->getEntityManager()->getConnection()->executeStatement(
+            'UPDATE product SET quantity_in_stock = quantity_in_stock - ?, updated_at = ? WHERE id = ? AND quantity_in_stock >= ?',
+            [$quantity, $updatedAt->format('Y-m-d H:i:s'), $productId, $quantity]
+        );
+    }
+
+    public function incrementStock(int $productId, int $quantity, \DateTimeInterface $updatedAt): int
+    {
+        return $this->getEntityManager()->getConnection()->executeStatement(
+            'UPDATE product SET quantity_in_stock = quantity_in_stock + ?, updated_at = ? WHERE id = ?',
+            [$quantity, $updatedAt->format('Y-m-d H:i:s'), $productId]
+        );
     }
 
     public function findEnabledAddonById(int $id): ?Product

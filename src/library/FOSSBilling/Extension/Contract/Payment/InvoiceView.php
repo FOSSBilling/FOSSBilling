@@ -28,7 +28,7 @@ final readonly class InvoiceView
         public ?int $gatewayId,
         public string $currency,
         public string $hash,
-        public bool $approved,
+        public bool $issued,
         public ?string $status = null,
         public ?string $serie = null,
         public ?int $nr = null,

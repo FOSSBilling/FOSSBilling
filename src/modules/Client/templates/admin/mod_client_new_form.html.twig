@@ -37,6 +37,7 @@
                         <div class="col-12">
                             <label class="form-label" for="new-client-password">{{ 'Password'|trans }}</label>
                             <input id="new-client-password" type="password" name="password" class="form-control" placeholder="{{ 'Optional initial password'|trans }}">
+                            {{ include('partial_password_strength.html.twig', { input_id: 'new-client-password' }) }}
                             <div class="form-text">{{ 'Leave blank to let the client set a password from the welcome email.'|trans }}</div>
                         </div>
                         <div class="col-12">
@@ -143,8 +144,11 @@
                             </select>
                         </div>
                         <div class="col-sm-6">
-                            <label class="form-label" for="group_id">{{ 'Group'|trans }}</label>
-                            {{ mf.selectbox('group_id', admin.client_group_get_pairs, request.group_id, 0, 'Select Group'|trans) }}
+                            <label class="form-label">{{ 'Groups'|trans }}</label>
+                            <input type="hidden" name="group_ids[]" value=""/>
+                            <table class="table card-table table-vcenter table-striped text-nowrap">
+                                <tbody>{% set group_pairs = admin.client_group_get_pairs %}{% for id, title in group_pairs %}<tr><td class="w-1"><input type="checkbox" name="group_ids[]" value="{{ id }}" /></td><td>{{ title }}</td></tr>{% endfor %}</tbody>
+                            </table>
                         </div>
                         <div class="col-sm-6">
                             <label class="form-label" for="currency">{{ 'Currency'|trans }}</label>

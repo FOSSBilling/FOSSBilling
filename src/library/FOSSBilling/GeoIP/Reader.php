@@ -78,7 +78,7 @@ class Reader
 
                     return true;
                 } catch (\Exception $e) {
-                    error_log("There was an error while updating the IP address database: {$e->getMessage()}.");
+                    $this->di['logger']->error("There was an error while updating the IP address database: {$e->getMessage()}.");
                 }
             }
         }
@@ -101,9 +101,7 @@ class Reader
 
         $this->reader = new MaxMindReader($database);
 
-        if ($locale === null) {
-            $locale = Config::getProperty('i18n.locale', 'en_US');
-        }
+        $locale ??= Config::getProperty('i18n.locale', 'en_US');
 
         $original = $locale;
         if (str_contains((string) $locale, '_')) {

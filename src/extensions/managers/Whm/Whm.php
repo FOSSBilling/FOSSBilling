@@ -208,7 +208,7 @@ class Whm extends \FOSSBilling\Extension\Contract\Server\Manager
      */
     public function synchronizeAccount(\FOSSBilling\Extension\Contract\Server\Account $account): \FOSSBilling\Extension\Contract\Server\Account
     {
-        $this->getLog()->info(sprintf('Synchronizing account %s %s with server', $account->getDomain(), $account->getUsername()));
+        $this->getLog()->info('Synchronizing account {domain} {username} with server', ['domain' => $account->getDomain(), 'username' => $account->getUsername()]);
 
         $action = 'accountsummary';
         $varHash = [
@@ -217,7 +217,7 @@ class Whm extends \FOSSBilling\Extension\Contract\Server\Manager
 
         $result = $this->request($action, $varHash);
         if (!isset($result->acct[0])) {
-            error_log('Could not synchronize account with cPanel server. Account does not exist.');
+            $this->getLog()->error('Could not synchronize account with cPanel server. Account does not exist.');
 
             return $account;
         }
@@ -225,7 +225,7 @@ class Whm extends \FOSSBilling\Extension\Contract\Server\Manager
         $acc = $result->acct[0];
 
         $new = clone $account;
-        $new->setSuspended($acc->suspended);
+        $new->setSuspended((bool) $acc->suspended);
         $new->setDomain($acc->domain);
         $new->setUsername($acc->user);
         $new->setIp($acc->ip);
@@ -236,7 +236,8 @@ class Whm extends \FOSSBilling\Extension\Contract\Server\Manager
     /**
      * Creates a new account on the WHM server.
      * Sends a request to the WHM server to create a new account with the details provided in the \FOSSBilling\Extension\Contract\Server\Account object.
-     * If the account is a reseller account, it also sets up the reseller and assigns the appropriate ACL list.
+     * If the account is a reseller account, it also sets up the reseller and, if the hosting plan defines an
+     * 'acl' custom value, assigns that ACL list to it.
      *
      * @param \FOSSBilling\Extension\Contract\Server\Account $account The account to be created. This object should contain all the necessary details for the new account.
      *
@@ -276,7 +277,7 @@ class Whm extends \FOSSBilling\Extension\Contract\Server\Manager
         $json = $this->request($action, $varHash);
         $result = ($json->result[0]->status == 1);
 
-        // If the account is a reseller account and was successfully created, set up the reseller and assign the ACL list
+        // If the account is a reseller account and was successfully created, set up the reseller and, if the hosting plan defines a custom 'acl' value, assign that ACL list to it
         if ($result && $account->getReseller()) {
             $params = [
                 'user' => $account->getUsername(),
@@ -284,11 +285,14 @@ class Whm extends \FOSSBilling\Extension\Contract\Server\Manager
             ];
             $this->request('setupreseller', $params);
 
-            $params = [
-                'reseller' => $account->getUsername(),
-                'acllist' => $package->getAcllist(),
-            ];
-            $this->request('setacls', $params);
+            $acl = $package->getCustomValue('acl');
+            if (!empty($acl)) {
+                $params = [
+                    'reseller' => $account->getUsername(),
+                    'acllist' => $acl,
+                ];
+                $this->request('setacls', $params);
+            }
         }
 
         // Return the result of the account creation
@@ -601,7 +605,7 @@ class Whm extends \FOSSBilling\Extension\Contract\Server\Manager
             : 'Basic ' . $username . ':' . $password;
 
         // Log the request
-        $this->getLog()->debug(sprintf('Requesting WHM server action "%s" with params "%s" ', $action, print_r($params, true)));
+        $this->getLog()->debug('Requesting WHM server action "{action}" with params "{params}"', ['action' => $action, 'params' => print_r($params, true)]);
 
         // Send the request and handle any errors
         try {
@@ -631,28 +635,28 @@ class Whm extends \FOSSBilling\Extension\Contract\Server\Manager
         }
 
         if (isset($json->cpanelresult->error)) {
-            $this->getLog()->critical(sprintf('WHM server response error calling action %s: "%s"', $action, $json->cpanelresult->error));
+            $this->getLog()->critical('WHM server response error calling action {action}: "{error}"', ['action' => $action, 'error' => $json->cpanelresult->error]);
             $placeholders = ['action' => $action, 'type' => 'cPanel'];
 
             throw new \FOSSBilling\Extension\Contract\Server\Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }
 
         if (isset($json->data->result) && $json->data->result == '0') {
-            $this->getLog()->critical(sprintf('WHM server response error calling action %s: "%s"', $action, $json->data->reason));
+            $this->getLog()->critical('WHM server response error calling action {action}: "{error}"', ['action' => $action, 'error' => $json->data->reason]);
             $placeholders = [':action:' => $action, ':type:' => 'cPanel'];
 
             throw new \FOSSBilling\Extension\Contract\Server\Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }
 
         if (isset($json->result) && is_array($json->result) && $json->result[0]->status == 0) {
-            $this->getLog()->critical(sprintf('WHM server response error calling action %s: "%s"', $action, $json->result[0]->statusmsg));
+            $this->getLog()->critical('WHM server response error calling action {action}: "{error}"', ['action' => $action, 'error' => $json->result[0]->statusmsg]);
             $placeholders = [':action:' => $action, ':type:' => 'cPanel'];
 
             throw new \FOSSBilling\Extension\Contract\Server\Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }
 
         if (isset($json->status) && $json->status != '1') {
-            $this->getLog()->critical(sprintf('WHM server response error calling action %s: "%s"', $action, $json->statusmsg));
+            $this->getLog()->critical('WHM server response error calling action {action}: "{error}"', ['action' => $action, 'error' => $json->statusmsg]);
             $placeholders = [':action:' => $action, ':type:' => 'cPanel'];
 
             throw new \FOSSBilling\Extension\Contract\Server\Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
@@ -722,43 +726,5 @@ class Whm extends \FOSSBilling\Extension\Contract\Server\Manager
     private function getPackageName(\FOSSBilling\Extension\Contract\Server\Package $package): string
     {
         return $this->_config['username'] . '_' . $package->getName();
-    }
-
-    /**
-     * Modifies the package of an account on the WHM server.
-     *
-     * @param \FOSSBilling\Extension\Contract\Server\Account $a the account for which to modify the package
-     * @param \FOSSBilling\Extension\Contract\Server\Package $p the new package
-     *
-     * @return true if the package was successfully modified
-     *
-     * @throws \FOSSBilling\Extension\Contract\Server\Exception if an error occurs during the request
-     */
-    private function modifyAccountPackage(\FOSSBilling\Extension\Contract\Server\Account $a, \FOSSBilling\Extension\Contract\Server\Package $p): bool
-    {
-        // Log the modification
-        $this->getLog()->info('Modifying account ' . $a->getUsername());
-
-        // Prepare the parameters for the API request
-        $varHash = [
-            'user' => $a->getUsername(),
-            'domain' => $a->getDomain(),
-            'HASCGI' => $p->getHasCgi(),
-            'CPTHEME' => $p->getTheme(),
-            'LANG' => $p->getLanguage(),
-            'MAXPOP' => $p->getMaxPop(),
-            'MAXFTP' => $p->getMaxFtp(),
-            'MAXLST' => $p->getMaxEmailLists(),
-            'MAXSUB' => $p->getMaxSubdomains(),
-            'MAXPARK' => $p->getMaxParkedDomains(),
-            'MAXADDON' => $p->getMaxAddons(),
-            'MAXSQL' => $p->getMaxSql(),
-            'shell' => $p->getHasShell(),
-        ];
-
-        // Send a request to the WHM server to modify the account's package
-        $this->request('modifyacct', $varHash);
-
-        return true;
     }
 }

@@ -10,6 +10,8 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Order\Entity\Order;
+use Box\Mod\Order\Repository\OrderRepository;
 use Box\Mod\Order\Service as OrderService;
 use Box\Mod\Servicedomain\Api\Admin;
 use Box\Mod\Servicedomain\Entity\ServiceDomain;
@@ -22,6 +24,8 @@ use FOSSBilling\Pagination;
 use FOSSBilling\PaginationOptions;
 
 use function Tests\Helpers\container;
+use function Tests\Helpers\createEntity;
+use function Tests\Helpers\setEntityId;
 
 test('updates domain', function (): void {
     $adminApi = apiEndpoint(new Admin());
@@ -137,6 +141,54 @@ test('disables privacy protection', function (): void {
 
     expect($result)->toBeTrue();
 });
+
+test('synchronizes domain with registrar', function (): void {
+    $adminApi = apiEndpoint(new Admin());
+    $api = apiEndpoint(new Admin());
+    $model = new ServiceDomain();
+
+    $adminApiMock = apiEndpoint(Mockery::mock(Admin::class)->makePartial()->shouldAllowMockingProtectedMethods());
+    $adminApiMock->shouldReceive('_getService')
+        ->atLeast()->once()
+        ->andReturn($model);
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('synchronizeDomain')
+        ->atLeast()->once()
+        ->with($model);
+
+    $adminApiMock->setService($serviceMock);
+
+    $data = [];
+    $result = $adminApiMock->sync($data);
+
+    expect($result)->toBeTrue();
+});
+
+test('throws exception when synchronizing domain without order_id', function (): void {
+    $adminApi = apiEndpoint(new Admin());
+    $api = apiEndpoint(new Admin());
+    $dispatcher = new FOSSBilling\Api\Dispatcher();
+
+    expect(fn () => $dispatcher->validateRequiredParams($adminApi, 'sync', []))
+        ->toThrow(FOSSBilling\InformationException::class);
+});
+
+test('requires order_id on domain management endpoints', function ($method): void {
+    $adminApi = apiEndpoint(new Admin());
+    $dispatcher = new FOSSBilling\Api\Dispatcher();
+
+    expect(fn () => $dispatcher->validateRequiredParams($adminApi, $method, []))
+        ->toThrow(FOSSBilling\InformationException::class, 'Order ID is missing');
+})->with([
+    'update_nameservers',
+    'update_contacts',
+    'enable_privacy_protection',
+    'disable_privacy_protection',
+    'get_transfer_code',
+    'lock',
+    'unlock',
+]);
 
 test('gets transfer code', function (): void {
     $adminApi = apiEndpoint(new Admin());
@@ -591,7 +643,7 @@ test('copies registrar', function (): void {
     $adminApi = apiEndpoint(new Admin());
     $api = apiEndpoint(new Admin());
     $registrar = new TldRegistrar();
-    $registrar->setId(1);
+    setEntityId($registrar, 1);
 
     $trRepo = Mockery::mock(TldRegistrarRepository::class);
     $trRepo->shouldReceive('find')
@@ -639,7 +691,7 @@ test('gets registrar', function (): void {
     $adminApi = apiEndpoint(new Admin());
     $api = apiEndpoint(new Admin());
     $registrar = new TldRegistrar();
-    $registrar->setId(1);
+    setEntityId($registrar, 1);
 
     $trRepo = Mockery::mock(TldRegistrarRepository::class);
     $trRepo->shouldReceive('find')
@@ -716,7 +768,7 @@ test('updates registrar', function (): void {
     $adminApi = apiEndpoint(new Admin());
     $api = apiEndpoint(new Admin());
     $registrar = new TldRegistrar();
-    $registrar->setId(1);
+    setEntityId($registrar, 1);
 
     $trRepo = Mockery::mock(TldRegistrarRepository::class);
     $trRepo->shouldReceive('find')
@@ -784,10 +836,10 @@ test('gets service', function (): void {
 
     $adminApi->setService($serviceMock);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getExistingModelById')
+    $orderRepoMock = Mockery::mock(OrderRepository::class);
+    $orderRepoMock->shouldReceive('find')
         ->atLeast()->once()
-        ->andReturn(new Model_ClientOrder());
+        ->andReturn(createEntity(Order::class));
 
     $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('getOrderService')
@@ -799,7 +851,7 @@ test('gets service', function (): void {
         ->with('servicedomain', 'manage_domains', Mockery::any(), Mockery::any());
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
     $di['mod_service'] = $di->protect(fn (string $name = ''): Mockery\MockInterface => strtolower($name) === 'staff' ? $staffServiceMock : $orderServiceMock);
     $di['validator'] = new FOSSBilling\Validate();
 
@@ -822,10 +874,6 @@ test('throws exception when getting service without order_id', function (): void
 
     $adminApi->setService($serviceMock);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('load')
-        ->never();
-
     $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('getOrderService')
         ->never();
@@ -834,7 +882,7 @@ test('throws exception when getting service without order_id', function (): void
         ->never();
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getConnection')->never();
     $di['mod_service'] = $di->protect(fn (string $name = ''): Mockery\MockInterface => strtolower($name) === 'staff' ? $staffServiceMock : $orderServiceMock);
     $di['validator'] = new FOSSBilling\Validate();
 
@@ -857,10 +905,10 @@ test('throws exception when getting service for not activated order', function (
 
     $adminApi->setService($serviceMock);
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getExistingModelById')
+    $orderRepoMock = Mockery::mock(OrderRepository::class);
+    $orderRepoMock->shouldReceive('find')
         ->atLeast()->once()
-        ->andReturn(new Model_ClientOrder());
+        ->andReturn(createEntity(Order::class));
 
     $orderServiceMock = Mockery::mock(OrderService::class);
     $orderServiceMock->shouldReceive('getOrderService')
@@ -872,7 +920,7 @@ test('throws exception when getting service for not activated order', function (
         ->with('servicedomain', 'manage_domains', Mockery::any(), Mockery::any());
 
     $di = container();
-    $di['db'] = $dbMock;
+    $di['em']->shouldReceive('getRepository')->with(Order::class)->andReturn($orderRepoMock);
     $di['mod_service'] = $di->protect(fn (string $name = ''): Mockery\MockInterface => strtolower($name) === 'staff' ? $staffServiceMock : $orderServiceMock);
     $di['validator'] = new FOSSBilling\Validate();
 

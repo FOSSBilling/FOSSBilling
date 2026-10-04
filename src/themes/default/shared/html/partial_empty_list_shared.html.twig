@@ -1,0 +1,7 @@
+{#
+    Body of the `empty_list(colspan, message)` macro, byte-identical across
+    the default admin and client themes' own macro_functions.html.twig. See
+    partial_recaptcha_shared.html.twig for why this is an include rather
+    than a shared macro namespace.
+#}
+<td class="text-muted" colspan="{{ colspan|default(5) }}">{{ (message|default('The list is empty'))|trans }}</td>

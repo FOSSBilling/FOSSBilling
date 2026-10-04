@@ -79,7 +79,7 @@
     <div class="card-header">
         <div>
             <h3 class="card-title">{{ 'Transactions'|trans }}</h3>
-            <p class="card-subtitle">{{ 'Review invoice transactions, filter payment activity, and retry or remove transaction records.'|trans }}</p>
+            <p class="card-subtitle">{{ 'Review invoice transactions, filter payment activity, and approve or retry transaction records.'|trans }}</p>
         </div>
     </div>
 
@@ -133,7 +133,7 @@
                         <label class="form-label text-muted small mb-1" for="received_at">{{ 'Received At'|trans }}</label>
                         <div class="input-group">
                             <div class="input-icon w-100">
-                                <input class="form-control datepicker"
+                                <input class="form-control datepicker" data-clear-label="{{ 'Clear date'|trans }}" data-invalid-date-label="{{ 'Enter a valid date in YYYY-MM-DD format.'|trans }}"
                                        id="received_at"
                                        placeholder="{{ 'Select Date Range'|trans }}"
                                        value="{% if request.date_from %}{{ request.date_from|date('Y-m-d') }}{% endif %}{% if request.date_to %} to {{ request.date_to|date('Y-m-d') }}{% endif %}"
@@ -175,11 +175,11 @@
                     <input class="form-check-input m-0 align-middle batch-delete-master-checkbox" type="checkbox">
                 </th>
                 <th>{{ 'Invoice'|trans }}</th>
-                <th>{{ 'Type'|trans }}</th>
-                <th>{{ 'Status'|trans }}</th>
-                <th>{{ 'Gateway'|trans }}</th>
-                <th>{{ 'Amount'|trans }}</th>
-                <th>{{ 'Date'|trans }}</th>
+                {{ include('partial_sortable_th.html.twig', { 'label': 'Type'|trans, 'sort_key': 'type', 'url': 'invoice/transactions', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'invoice/transactions', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                {{ include('partial_sortable_th.html.twig', { 'label': 'Gateway'|trans, 'sort_key': 'gateway', 'url': 'invoice/transactions', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                {{ include('partial_sortable_th.html.twig', { 'label': 'Amount'|trans, 'sort_key': 'amount', 'url': 'invoice/transactions', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
+                {{ include('partial_sortable_th.html.twig', { 'label': 'Date'|trans, 'sort_key': 'created_at', 'url': 'invoice/transactions', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
                 <th class="w-1"></th>
             </tr>
         </thead>
@@ -215,17 +215,29 @@
                             <use href="#edit" />
                         </svg>
                     </a>
-                    <a class="btn btn-icon" href="{{ 'invoice/transaction_process'|api_url(query: { 'id': tx.id }) }}" title="{{ 'Process Again'|trans }}" {{ fb_api_link({message: 'Processed'|trans}) }}>
-                        <svg class="icon">
-                            <use href="#refresh" />
-                        </svg>
-                    </a>
-                    <a class="btn btn-icon" href="{{ 'invoice/transaction_delete'|api_url(query: { 'id': tx.id }) }}"
-                        {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
-                        <svg class="icon">
-                            <use href="#trash" />
-                        </svg>
-                    </a>
+                    {% if tx.requires_manual_approval %}
+                        {% if tx.status in ['received', 'error', 'approved'] %}
+                            <a class="btn btn-icon" href="{{ 'invoice/transaction_approve'|api_url(query: { 'id': tx.id }) }}" title="{{ 'Approve'|trans }}" {{ fb_api_link({modal: {type: 'confirm', title: 'Approve this payment?'|trans}, reload: true}) }}>
+                                <svg class="icon">
+                                    <use href="#check" />
+                                </svg>
+                            </a>
+                        {% endif %}
+                    {% elseif tx.status in ['received', 'error'] %}
+                        <a class="btn btn-icon" href="{{ 'invoice/transaction_process'|api_url(query: { 'id': tx.id }) }}" title="{{ 'Process Again'|trans }}" {{ fb_api_link({message: 'Processed'|trans}) }}>
+                            <svg class="icon">
+                                <use href="#refresh" />
+                            </svg>
+                        </a>
+                    {% endif %}
+                    {% if tx.status != 'processed' %}
+                        <a class="btn btn-icon" href="{{ 'invoice/transaction_delete'|api_url(query: { 'id': tx.id }) }}"
+                            {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
+                            <svg class="icon">
+                                <use href="#trash" />
+                            </svg>
+                        </a>
+                    {% endif %}
                 </td>
             </tr>
             {% else %}

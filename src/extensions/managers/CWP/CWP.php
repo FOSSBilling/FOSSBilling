@@ -136,14 +136,21 @@ class CWP extends \FOSSBilling\Extension\Contract\Server\Manager
         $new = clone $account;
         $acc = $this->request('accountdetail', $data);
 
-        if ($acc['account_info']['state'] == 'suspended') {
+        $info = $acc['account_info'] ?? null;
+        if (!is_array($info) || !is_string($info['state'] ?? null) || !is_string($info['package_name'] ?? null)) {
+            throw new \FOSSBilling\Extension\Contract\Server\Exception('CWP did not return valid account details. Check that the account exists and the API key has permission to view it.');
+        }
+
+        if ($info['state'] == 'suspended') {
             $new->setSuspended(true);
         } else {
             $new->setSuspended(false);
         }
 
-        $new->setPackage($acc['account_info']['package_name']);
-        $new->setReseller(\FOSSBilling\Tools::normalizeBoolean($acc['account_info']['reseller'] ?? false));
+        $package = new \FOSSBilling\Extension\Contract\Server\Package();
+        $package->setName($info['package_name']);
+        $new->setPackage($package);
+        $new->setReseller(\FOSSBilling\Tools::normalizeBoolean($info['reseller'] ?? false));
 
         return $new;
     }
@@ -403,7 +410,14 @@ class CWP extends \FOSSBilling\Extension\Contract\Server\Manager
         $request = $client->request('POST', $url, [
             'body' => $data,
         ]);
-        $response = $request->toArray();
+
+        try {
+            $response = $request->toArray();
+        } catch (\Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface $e) {
+            throw new \FOSSBilling\Extension\Contract\Server\Exception('The CWP server returned HTTP status :status. Check server availability and API configuration.', [':status' => $e->getResponse()->getStatusCode()]);
+        } catch (\Symfony\Contracts\HttpClient\Exception\DecodingExceptionInterface) {
+            throw new \FOSSBilling\Extension\Contract\Server\Exception('The CWP server returned an invalid JSON response. Check the server address, port and API configuration.');
+        }
 
         // Get the status, result, and message from the response, with default values if they are not set
         $status = $response['status'] ?? 'Error';
@@ -412,7 +426,7 @@ class CWP extends \FOSSBilling\Extension\Contract\Server\Manager
 
         // If the status is not 'OK', log an error message and return false
         if ($status !== 'OK') {
-            error_log('CWP Server manager error. Status: ' . $status . '. Message: ' . $msg);
+            $this->getLog()->error('CWP Server manager error. Status: ' . $status . '. Message: ' . $msg);
 
             return false;
         }

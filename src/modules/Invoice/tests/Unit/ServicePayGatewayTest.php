@@ -10,8 +10,14 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Invoice\Entity\Invoice;
 use Box\Mod\Invoice\Entity\PayGateway;
+use Box\Mod\Invoice\Entity\Subscription;
+use Box\Mod\Invoice\Entity\Transaction;
+use Box\Mod\Invoice\Repository\InvoiceRepository;
 use Box\Mod\Invoice\Repository\PayGatewayRepository;
+use Box\Mod\Invoice\Repository\SubscriptionRepository;
+use Box\Mod\Invoice\Repository\TransactionRepository;
 use Box\Mod\Invoice\ServicePayGateway;
 use Doctrine\ORM\EntityManagerInterface;
 
@@ -63,13 +69,13 @@ test('gets pairs', function (): void {
         ],
     ];
 
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAll')
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('fetchAllAssociative')
         ->atLeast()->once()
         ->andReturn($queryResult);
 
     $service = payGatewayService();
-    $service->getDi()['db'] = $dbMock;
+    $service->getDi()['em']->shouldReceive('getConnection')->andReturn($connection);
 
     $result = $service->getPairs();
     expect($result)->toBeArray();
@@ -77,13 +83,13 @@ test('gets pairs', function (): void {
 });
 
 test('gets available gateways', function (): void {
-    $dbMock = Mockery::mock('\Box_Database');
-    $dbMock->shouldReceive('getAll')
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('fetchAllAssociative')
         ->atLeast()->once()
         ->andReturn([]);
 
     $service = payGatewayService();
-    $service->getDi()['db'] = $dbMock;
+    $service->getDi()['em']->shouldReceive('getConnection')->andReturn($connection);
 
     $result = $service->getAvailable();
     expect($result)->toBeArray();
@@ -149,7 +155,7 @@ test('converts to api array', function (): void {
     $service = payGatewayService();
     $serviceMock->setDi($service->getDi());
 
-    $result = $serviceMock->toApiArray($payGateway, false, new Model_Admin());
+    $result = $serviceMock->toApiArray($payGateway, false, \Tests\Helpers\admin());
     expect($result)->toBeArray();
     expect($result['id'])->toBe(1);
     expect($result['code'])->toBe('Custom');
@@ -224,6 +230,100 @@ test('updates a gateway', function (): void {
     expect($payGateway->isEnabled())->toBeTrue();
 });
 
+test('converts to api array masks secrets for an admin', function (): void {
+    $payGateway = createEntity(PayGateway::class, [
+        'id' => 1,
+        'name' => 'Stripe',
+        'gateway' => 'Stripe',
+        'acceptedCurrencies' => json_encode(['USD']),
+        'enabled' => true,
+        'allowSingle' => true,
+        'allowRecurrent' => true,
+        'testMode' => false,
+        'config' => json_encode([
+            'pub_key' => 'pk_live_visible',
+            'api_key' => 'sk_live_secret',
+            'webhook_secret' => 'whsec_secret',
+        ]),
+    ]);
+
+    $service = payGatewayService();
+
+    $result = $service->toApiArray($payGateway, false, \Tests\Helpers\admin());
+
+    expect($result['secret_fields'])->toContain('api_key');
+    expect($result['secret_fields'])->toContain('webhook_secret');
+    expect($result['secret_fields'])->toContain('test_api_key');
+    expect($result['secret_fields'])->toContain('test_webhook_secret');
+    expect($result['secret_fields'])->not->toContain('pub_key');
+    expect($result['config']['pub_key'])->toBe('pk_live_visible');
+    expect($result['config']['api_key'])->toBeNull();
+    expect($result['config']['api_key_set'])->toBeTrue();
+    expect($result['config']['webhook_secret'])->toBeNull();
+    expect($result['config']['webhook_secret_set'])->toBeTrue();
+    expect($result['config']['test_api_key_set'])->toBeFalse();
+});
+
+test('update keeps the existing secret gateway value when the incoming value is blank', function (): void {
+    $payGateway = createEntity(PayGateway::class, [
+        'id' => 1,
+        'name' => 'Stripe',
+        'gateway' => 'Stripe',
+        'enabled' => false,
+        'config' => json_encode(['api_key' => 'sk_live_existing', 'pub_key' => 'pk_live_existing']),
+    ]);
+
+    $em = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
+    $repo = Mockery::mock(PayGatewayRepository::class);
+    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($repo);
+
+    $service = new ServicePayGateway();
+    $di = container();
+    $di['em'] = $em;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['loggedin_admin'] = \Tests\Helpers\admin(['id' => 7]);
+    $service->setDi($di);
+
+    $result = $service->update($payGateway, [
+        'config' => [
+            'api_key' => ServicePayGateway::CREDENTIAL_KEEP_SENTINEL,
+            'pub_key' => 'pk_live_new',
+        ],
+    ]);
+
+    expect($result)->toBeTrue();
+    $config = json_decode((string) $payGateway->getConfig(), true);
+    expect($config['api_key'])->toBe('sk_live_existing');
+    expect($config['pub_key'])->toBe('pk_live_new');
+});
+
+test('update rotates a secret gateway value when a new value is submitted', function (): void {
+    $payGateway = createEntity(PayGateway::class, [
+        'id' => 1,
+        'name' => 'Stripe',
+        'gateway' => 'Stripe',
+        'enabled' => false,
+        'config' => json_encode(['api_key' => 'sk_live_old']),
+    ]);
+
+    $em = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
+    $repo = Mockery::mock(PayGatewayRepository::class);
+    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($repo);
+
+    $service = new ServicePayGateway();
+    $di = container();
+    $di['em'] = $em;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['loggedin_admin'] = \Tests\Helpers\admin(['id' => 7]);
+    $service->setDi($di);
+
+    $result = $service->update($payGateway, ['config' => ['api_key' => 'sk_live_new']]);
+
+    expect($result)->toBeTrue();
+    $config = json_decode((string) $payGateway->getConfig(), true);
+    expect($config['api_key'])->toBe('sk_live_new');
+});
+
 test('deletes a gateway', function (): void {
     $payGateway = createEntity(PayGateway::class, ['id' => 7]);
 
@@ -233,6 +333,18 @@ test('deletes a gateway', function (): void {
     $repo = Mockery::mock(PayGatewayRepository::class);
     $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($repo);
 
+    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('existsByGatewayId')->with(7)->andReturn(false);
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
+
+    $subscriptionRepo = Mockery::mock(SubscriptionRepository::class);
+    $subscriptionRepo->shouldReceive('existsByGatewayId')->with(7)->andReturn(false);
+    $em->shouldReceive('getRepository')->with(Subscription::class)->andReturn($subscriptionRepo);
+
+    $transactionRepo = Mockery::mock(TransactionRepository::class);
+    $transactionRepo->shouldReceive('existsByGatewayId')->with(7)->andReturn(false);
+    $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($transactionRepo);
+
     $service = new ServicePayGateway();
     $di = container();
     $di['em'] = $em;
@@ -241,6 +353,109 @@ test('deletes a gateway', function (): void {
 
     $result = $service->delete($payGateway);
     expect($result)->toBeTrue();
+});
+
+test('refuses to delete a gateway with existing invoices', function (): void {
+    $payGateway = createEntity(PayGateway::class, ['id' => 7]);
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('remove')->never();
+    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn(Mockery::mock(PayGatewayRepository::class));
+
+    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('existsByGatewayId')->with(7)->andReturn(true);
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
+
+    $service = new ServicePayGateway();
+    $di = container();
+    $di['em'] = $em;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $service->setDi($di);
+
+    expect(fn () => $service->delete($payGateway))
+        ->toThrow(FOSSBilling\InformationException::class, 'Cannot remove payment gateway with existing invoices');
+});
+
+test('refuses to delete a gateway with existing subscriptions', function (): void {
+    $payGateway = createEntity(PayGateway::class, ['id' => 7]);
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('remove')->never();
+    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn(Mockery::mock(PayGatewayRepository::class));
+
+    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('existsByGatewayId')->with(7)->andReturn(false);
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
+
+    $subscriptionRepo = Mockery::mock(SubscriptionRepository::class);
+    $subscriptionRepo->shouldReceive('existsByGatewayId')->with(7)->andReturn(true);
+    $em->shouldReceive('getRepository')->with(Subscription::class)->andReturn($subscriptionRepo);
+
+    $service = new ServicePayGateway();
+    $di = container();
+    $di['em'] = $em;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $service->setDi($di);
+
+    expect(fn () => $service->delete($payGateway))
+        ->toThrow(FOSSBilling\InformationException::class, 'Cannot remove payment gateway with existing subscriptions');
+});
+
+test('refuses to delete a gateway with existing transactions', function (): void {
+    $payGateway = createEntity(PayGateway::class, ['id' => 7]);
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('remove')->never();
+    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn(Mockery::mock(PayGatewayRepository::class));
+
+    $invoiceRepo = Mockery::mock(InvoiceRepository::class);
+    $invoiceRepo->shouldReceive('existsByGatewayId')->with(7)->andReturn(false);
+    $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
+
+    $subscriptionRepo = Mockery::mock(SubscriptionRepository::class);
+    $subscriptionRepo->shouldReceive('existsByGatewayId')->with(7)->andReturn(false);
+    $em->shouldReceive('getRepository')->with(Subscription::class)->andReturn($subscriptionRepo);
+
+    $transactionRepo = Mockery::mock(TransactionRepository::class);
+    $transactionRepo->shouldReceive('existsByGatewayId')->with(7)->andReturn(true);
+    $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($transactionRepo);
+
+    $service = new ServicePayGateway();
+    $di = container();
+    $di['em'] = $em;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $service->setDi($di);
+
+    expect(fn () => $service->delete($payGateway))
+        ->toThrow(FOSSBilling\InformationException::class, 'Cannot remove payment gateway with existing transactions');
+});
+
+test('active gateways without an adapter logo get a default logo', function (): void {
+    $payGateway = createEntity(PayGateway::class, [
+        'id' => 9,
+        'gateway' => 'Custom',
+        'name' => 'Custom',
+        'acceptedCurrencies' => json_encode(['USD']),
+    ]);
+
+    $repo = Mockery::mock(PayGatewayRepository::class);
+    $repo->shouldReceive('findEnabledOrderedByIdDesc')
+        ->once()
+        ->andReturn([$payGateway]);
+
+    $service = Mockery::mock(ServicePayGateway::class)->makePartial();
+    $di = container();
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($repo);
+    $di['em'] = $em;
+    $service->setDi($di);
+    // A gateway whose manifest declares no logo.
+    $service->shouldReceive('getAdapterConfig')->once()->andReturn(['logo' => null, 'form' => []]);
+
+    $result = $service->getActive([]);
+
+    expect($result)->toHaveCount(1);
+    expect($result[0]['logo'])->toHaveKeys(['logo', 'height', 'width']);
 });
 
 test('gets active gateways as pairs', function (): void {
@@ -278,9 +493,9 @@ test('gets payment adapter for a Gateway-typed adapter without smuggling URLs in
         'config' => null,
         'testMode' => false,
     ]);
-    $invoiceModel = new Model_Invoice();
-    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
-    $expected = 'FOSSBilling\\Extension\\Gateway\\Custom\\Custom';
+    $invoiceModel = createEntity(Invoice::class);
+
+    $expected = FOSSBilling\Extension\Gateway\Custom\Custom::class;
 
     $serviceMock = Mockery::mock(ServicePayGateway::class)->makePartial();
     $serviceMock->shouldReceive('getAdapterClassName')
@@ -289,7 +504,7 @@ test('gets payment adapter for a Gateway-typed adapter without smuggling URLs in
 
     // Custom implements Gateway, so it receives merchant settings only —
     // no return/cancel/notify URLs, hence no calls into url/tools.
-    $urlMock = Mockery::mock('\Box_Url');
+    $urlMock = Mockery::mock(FOSSBilling\Url::class);
     $urlMock->shouldNotReceive('link');
 
     $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
@@ -314,16 +529,14 @@ test('gets payment adapter for a legacy adapter, smuggling return/cancel/notify 
         'config' => null,
         'testMode' => false,
     ]);
-    $invoiceModel = new Model_Invoice();
-    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
-    $invoiceModel->hash = 'hashString';
+    $invoiceModel = createEntity(Invoice::class, ['hash' => 'hashString']);
 
     $serviceMock = Mockery::mock(ServicePayGateway::class)->makePartial();
     $serviceMock->shouldReceive('getAdapterClassName')
         ->atLeast()->once()
         ->andReturn(ServicePayGatewayTestLegacyAdapter::class);
 
-    $urlMock = Mockery::mock('\Box_Url');
+    $urlMock = Mockery::mock(FOSSBilling\Url::class);
     $urlMock->shouldReceive('link')
         ->atLeast()->once()
         ->andReturn('http://example.com/invoice/hashString');
@@ -353,8 +566,7 @@ test('throws exception when payment gateway adapter class is missing', function 
         'config' => null,
         'testMode' => false,
     ]);
-    $invoiceModel = new Model_Invoice();
-    $invoiceModel->loadBean(new Tests\Helpers\DummyBean());
+    $invoiceModel = createEntity(Invoice::class);
 
     $serviceMock = Mockery::mock(ServicePayGateway::class)->makePartial();
     $serviceMock->shouldReceive('getAdapterClassName')
@@ -363,7 +575,7 @@ test('throws exception when payment gateway adapter class is missing', function 
 
     // The class doesn't exist, so getPaymentAdapter() throws before it
     // would ever need to build return/cancel/notify URLs.
-    $urlMock = Mockery::mock('\Box_Url');
+    $urlMock = Mockery::mock(FOSSBilling\Url::class);
     $urlMock->shouldNotReceive('link');
 
     $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
@@ -380,7 +592,7 @@ test('throws exception when payment gateway adapter class is missing', function 
 
 test('gets adapter config', function (): void {
     $payGateway = createEntity(PayGateway::class, ['gateway' => 'Custom']);
-    $expected = 'FOSSBilling\\Extension\\Gateway\\Custom\\Custom';
+    $expected = FOSSBilling\Extension\Gateway\Custom\Custom::class;
 
     $filesystemMock = Mockery::mock(Symfony\Component\Filesystem\Filesystem::class);
     $filesystemMock->shouldReceive('exists')
@@ -445,7 +657,7 @@ test('gets adapter class name', function (): void {
     $service->setDi(payGatewayService()->getDi());
     $payGateway = createEntity(PayGateway::class, ['gateway' => 'Custom']);
 
-    $expected = 'FOSSBilling\\Extension\\Gateway\\Custom\\Custom';
+    $expected = FOSSBilling\Extension\Gateway\Custom\Custom::class;
 
     $result = $service->getAdapterClassName($payGateway);
     expect($result)->toBeString()->toBe($expected);
@@ -522,4 +734,14 @@ test('returns null when description is empty', function (): void {
 
     $result = $serviceMock->getDescription($payGateway);
     expect($result)->toBeNull();
+});
+
+test('identifies manual approval gateways by adapter capability', function (): void {
+    expect(ServicePayGateway::isManualApprovalGateway('Custom'))->toBeTrue()
+        ->and(ServicePayGateway::isManualApprovalGateway('Stripe'))->toBeFalse()
+        ->and(ServicePayGateway::isManualApprovalGateway('PayPalEmail'))->toBeFalse()
+        ->and(ServicePayGateway::isManualApprovalGateway('ClientBalance'))->toBeFalse()
+        ->and(ServicePayGateway::isManualApprovalGateway(null))->toBeFalse()
+        ->and(ServicePayGateway::isManualApprovalGateway(''))->toBeFalse()
+        ->and(ServicePayGateway::isManualApprovalGateway('NoSuchGateway'))->toBeFalse();
 });

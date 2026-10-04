@@ -28,7 +28,7 @@ final readonly class ApiResponseFactory
             return $this->error($exception);
         }
 
-        return new JsonResponse(['result' => $data, 'error' => null], Response::HTTP_OK, self::NO_CACHE_HEADERS);
+        return $this->jsonResponse(['result' => $data, 'error' => null], Response::HTTP_OK, self::NO_CACHE_HEADERS);
     }
 
     public function error(\Exception $exception): JsonResponse
@@ -40,11 +40,30 @@ final readonly class ApiResponseFactory
             $headers['Retry-After'] = (string) $exception->getRetryAfterSeconds();
         }
 
-        return new JsonResponse(
+        return $this->jsonResponse(
             ['result' => null, 'error' => ['message' => $exception->getMessage(), 'code' => $code]],
             $this->getStatusCode($code),
             $headers,
         );
+    }
+
+    /**
+     * Data can carry invalid UTF-8 (user input, a stored third-party API response, etc.), which json_encode()
+     * otherwise rejects outright. Substitute it rather than losing the whole response to that.
+     */
+    private function jsonResponse(array $payload, int $status, array $headers): JsonResponse
+    {
+        $json = json_encode($payload, JsonResponse::DEFAULT_ENCODING_OPTIONS);
+
+        if ($json === false && json_last_error() === JSON_ERROR_UTF8) {
+            $json = json_encode($payload, JsonResponse::DEFAULT_ENCODING_OPTIONS | JSON_INVALID_UTF8_SUBSTITUTE);
+        }
+
+        if ($json === false) {
+            throw new \InvalidArgumentException(json_last_error_msg());
+        }
+
+        return JsonResponse::fromJsonString($json, $status, $headers);
     }
 
     private function getStatusCode(int|string $code): int

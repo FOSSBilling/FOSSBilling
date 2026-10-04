@@ -1,0 +1,15 @@
+{# Apply the saved preference before styles load to avoid a flash of the wrong theme. #}
+<script>
+    (() => {
+        let preference = 'system';
+        try {
+            preference = localStorage.getItem('theme') || 'system';
+            const sidebar = localStorage.getItem('tabler-sidebar');
+            if (sidebar === 'folded-hover') {
+                document.documentElement.setAttribute('data-bs-sidebar', sidebar);
+            }
+        } catch {}
+        const dark = preference === 'dark' || (preference !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.setAttribute('data-bs-theme', dark ? 'dark' : 'light');
+    })();
+</script>

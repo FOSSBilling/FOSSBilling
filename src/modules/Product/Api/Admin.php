@@ -24,6 +24,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Get paginated list of products.
      *
+     * @optional string $sort - sort column: 'id', 'title', 'slug', 'status', 'type', 'priority', 'created_at' or 'updated_at'
+     * @optional string $direction - sort direction: 'ASC' or 'DESC'
+     *
      * @return array
      */
     public function get_list($data)
@@ -111,7 +114,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * Update product settings.
      *
      * @optional array $pricing - product pricing configuration. Shape: {type: "free"|"once"|"recurrent", once: {price, setup}, recurrent: {"<PERIOD_CODE>": {price, setup, enabled}, ...}}.
-     *                             Each recurrent key is a Box_Period code (quantity + unit letter, e.g. "1M", "3Y", "45D"; D 1-90, W 1-52, M 1-24, Y 1-5).
+     *                             Each recurrent key is a billing period code (quantity + unit letter, e.g. "1M", "3Y", "45D"; D 1-90, W 1-52, M 1-24, Y 1-5).
      *                             Submitting recurrent replaces the product's full set of billing periods - omitted codes are removed, at least one must remain.
      * @optional array $config - product configuration options depending on type
      * @optional array $upgrades - array of upgradable products
@@ -133,6 +136,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['id' => 'Product ID was not passed'])]
     public function update($data)
     {
         $this->checkPermissions('product', 'manage_products');
@@ -171,6 +175,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      */
+    #[RequiredParams(['id' => 'Product ID was not passed'])]
     public function update_config($data)
     {
         $this->checkPermissions('product', 'manage_products');
@@ -242,7 +247,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * Addon update.
      *
      * @optional array $pricing - product pricing configuration. Shape: {type: "free"|"once"|"recurrent", once: {price, setup}, recurrent: {"<PERIOD_CODE>": {price, setup, enabled}, ...}}.
-     *                             Each recurrent key is a Box_Period code (quantity + unit letter, e.g. "1M", "3Y", "45D"; D 1-90, W 1-52, M 1-24, Y 1-5).
+     *                             Each recurrent key is a billing period code (quantity + unit letter, e.g. "1M", "3Y", "45D"; D 1-90, W 1-52, M 1-24, Y 1-5).
      *                             Submitting recurrent replaces the product's full set of billing periods - omitted codes are removed, at least one must remain.
      * @optional array $config - product configuration options depending on type
      * @optional array $upgrades - array of upgradable products
@@ -272,7 +277,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         if (!$model instanceof Product || !$model->isAddon()) {
             throw new \FOSSBilling\InformationException('Addon not found');
         }
-        $this->di['logger']->info('Updated addon #%s', $model->getId());
+        $this->di['logger']->info('Updated addon #{model_id}', ['model_id' => $model->getId()]);
 
         return $this->update($data);
     }
@@ -282,6 +287,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      */
+    #[RequiredParams(['id' => 'Addon ID was not passed'])]
     public function addon_delete($data)
     {
         $this->checkPermissions('product', 'manage_products');
@@ -294,6 +300,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      */
+    #[RequiredParams(['id' => 'Product ID was not passed'])]
     public function delete($data)
     {
         $this->checkPermissions('product', 'manage_products');
@@ -405,6 +412,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Get product promo codes list.
      *
+     * @optional string $sort - sort column: 'id', 'code', 'type', 'value', 'active', 'priority', 'start_at', 'end_at', 'created_at' or 'updated_at'
+     * @optional string $direction - sort direction: 'ASC' or 'DESC'
+     *
      * @return array
      */
     public function promo_get_list($data)
@@ -427,6 +437,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @optional array $products - list of product ids for which this promo code applies
      * @optional array $periods - list of period codes
+     * @optional array $requires_products - list of product ids that must all be in the cart (bundle condition)
      * @optional bool $active - flag to enable/disable promo code
      * @optional bool $freesetup - flag to enable/disable free setup price
      * @optional bool $once_per_client - flag to enable/disable promo code usage once per client
@@ -434,6 +445,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional int $maxuses - how many times this promo code can be used
      * @optional string $start_at - date (Y-m-d) when will this promo code be active
      * @optional string $end_at - date (Y-m-d) when this promo code expires
+     * @optional bool $auto_apply - apply automatically when targeting matches, without a code
+     * @optional int $priority - ordering for automatic application (higher wins ties)
+     * @optional bool $stackable - can combine with other automatic promos
      *
      * @return int - new promo code id
      *
@@ -461,9 +475,14 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         if (isset($data['client_groups']) && is_array($data['client_groups'])) {
             $clientGroups = $data['client_groups'];
         }
+
+        $requiresProducts = [];
+        if (isset($data['requires_products']) && is_array($data['requires_products'])) {
+            $requiresProducts = $data['requires_products'];
+        }
         $service = $this->getService();
 
-        return (int) $service->createPromo($data['code'], $data['type'], $data['value'], $products, $periods, $clientGroups, $data);
+        return (int) $service->createPromo($data['code'], $data['type'], $data['value'], $products, $periods, $clientGroups, $requiresProducts, $data);
     }
 
     /**
@@ -505,6 +524,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Get promo redemption history.
      *
+     * @optional string $sort - sort column: 'id', 'phase', 'status', 'discount_amount', 'committed_at', 'released_at', 'created_at' or 'updated_at'
+     * @optional string $direction - sort direction: 'ASC' or 'DESC'
+     *
      * @return array
      *
      * @throws \FOSSBilling\Exception
@@ -513,6 +535,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     public function promo_redemption_get_list($data)
     {
         $this->checkPermissions('product', 'view');
+        $this->checkPermissions('client', 'view');
+        $this->checkPermissions('order', 'view');
+        $this->checkPermissions('invoice', 'view');
 
         /** @var \Box\Mod\Product\Repository\PromoRedemptionRepository $repo */
         $repo = $this->getService()->getPromoRedemptionRepository();
@@ -535,6 +560,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional string $value - promo code value. Percents or discount amount in currency
      * @optional array $products - list of product ids for which this promo code applies
      * @optional array $periods - list of period codes
+     * @optional array $requires_products - list of product ids that must all be in the cart (bundle condition)
      * @optional bool $active - flag to enable/disable promo code
      * @optional bool $freesetup - flag to enable/disable free setup price
      * @optional bool $once_per_client - flag to enable/disable promo code usage once per client
@@ -543,6 +569,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional string $start_at - date (Y-m-d) when will this promo code be active
      * @optional string $end_at - date (Y-m-d) when this promo code expires
      * @optional int $used - how many times this promo code was already used
+     * @optional bool $auto_apply - apply automatically when targeting matches, without a code
+     * @optional int $priority - ordering for automatic application (higher wins ties)
+     * @optional bool $stackable - can combine with other automatic promos
      *
      * @return bool
      *
@@ -576,7 +605,6 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         return $this->getService()->deletePromo($model);
     }
 
-    #[RequiredParams(['id' => 'Product ID was not passed'])]
     private function _getProduct($data)
     {
         return $this->getService()->findProductById((int) $data['id']);

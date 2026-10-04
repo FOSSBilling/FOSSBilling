@@ -1,0 +1,20 @@
+{# Sortable table header cell: server-side sorting link, so ordering applies across pages.
+   default_sort/default_direction mirror the endpoint's backend default ordering. #}
+{% set sortParam = sort_param|default('sort') %}
+{% set directionParam = direction_param|default('direction') %}
+{% set pageParam = page_param|default('page') %}
+{% set requestedSort = request.(sortParam)|default(null) %}
+{% set requestedDirection = request.(directionParam)|default(null) %}
+{% set currentSort = requestedSort|default(default_sort|default(null)) %}
+{% if requestedSort %}
+    {% set rawDirection = requestedDirection|default('ASC')|upper %}
+{% else %}
+    {% set rawDirection = (default_direction|default('ASC'))|upper %}
+{% endif %}
+{% set currentDirection = rawDirection == 'DESC' ? 'DESC' : 'ASC' %}
+{% set isActive = currentSort == sort_key %}
+{% set nextDirection = isActive and currentDirection == 'ASC' ? 'DESC' : 'ASC' %}
+{% set linkQuery = request|merge({ (sortParam): sort_key, (directionParam): nextDirection, (pageParam): 1 }) %}
+<th{% if th_class|default('') %} class="{{ th_class }}"{% endif %}{% if isActive %} aria-sort="{{ currentDirection == 'ASC' ? 'ascending' : 'descending' }}"{% endif %}>
+    <a href="{{ url|url(query: linkQuery) ~ hash|default('') }}" class="text-reset text-decoration-none d-inline-flex align-items-center gap-1">{{ label }}{% if isActive %}<svg class="icon"><use href="#chevron-{{ currentDirection == 'ASC' ? 'up' : 'down' }}" /></svg>{% else %}<svg class="icon text-secondary"><use href="#selector" /></svg>{% endif %}</a>
+</th>

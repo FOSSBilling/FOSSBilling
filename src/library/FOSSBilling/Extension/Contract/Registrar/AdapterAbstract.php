@@ -19,6 +19,11 @@ abstract class AdapterAbstract
     private ?LoggerInterface $logger = null;
 
     /**
+     * Lazily created RDAP client, shared by all availability checks of the adapter.
+     */
+    private ?Rdap $rdap = null;
+
+    /**
      * Are we in test mode ?
      *
      * @var bool
@@ -208,6 +213,14 @@ abstract class AdapterAbstract
     public function getLog(): LoggerInterface
     {
         return $this->logger ??= new NullLogger();
+    }
+
+    /**
+     * Creates an RDAP client for registry-based domain availability lookups.
+     */
+    protected function getRdap(): Rdap
+    {
+        return $this->rdap ??= new Rdap($this->getHttpClient(), $this->getLog());
     }
 
     /**

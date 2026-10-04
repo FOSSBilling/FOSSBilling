@@ -63,6 +63,29 @@
                     </div>
                 </div>
 
+                <div class="row g-3 mt-1">
+                    <div class="col-lg-4">
+                        <input type="hidden" name="allow_quantity_select" value="0">
+                        <label class="form-label d-block">{{ 'Quantity Selection'|trans }}</label>
+                        <label class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="allow_quantity_select" value="1"{% if product.allow_quantity_select %} checked{% endif %}>
+                            <span class="form-check-label">{{ 'Allow customers to choose a quantity'|trans }}</span>
+                        </label>
+                    </div>
+                    <div class="col-lg-4">
+                        <input type="hidden" name="stock_control" value="0">
+                        <label class="form-label d-block">{{ 'Stock Control'|trans }}</label>
+                        <label class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="stock_control" value="1"{% if product.stock_control %} checked{% endif %}>
+                            <span class="form-check-label">{{ 'Track available stock for this addon'|trans }}</span>
+                        </label>
+                    </div>
+                    <div class="col-lg-4">
+                        <label class="form-label">{{ 'Quantity in Stock'|trans }}</label>
+                        <input class="form-control" type="text" name="quantity_in_stock" value="{{ product.quantity_in_stock }}">
+                    </div>
+                </div>
+
                 <div class="mt-4">
                     {{ include('partial_pricing.html.twig', { 'product': product }) }}
                 </div>

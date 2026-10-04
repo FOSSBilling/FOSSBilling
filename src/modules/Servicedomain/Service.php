@@ -11,6 +11,9 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicedomain;
 
+use Box\Mod\Client\Entity\Client;
+use Box\Mod\Cron\Event\BeforeAdminCronRunEvent;
+use Box\Mod\Order\Entity\Order;
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Servicedomain\Entity\ServiceDomain;
 use Box\Mod\Servicedomain\Entity\Tld;
@@ -21,9 +24,18 @@ use Box\Mod\Servicedomain\Repository\TldRepository;
 use Doctrine\ORM\QueryBuilder;
 use FOSSBilling\Extension\Contract\Registrar\AdapterAbstract;
 use FOSSBilling\Extension\ExtensionType;
+use FOSSBilling\SortOptions;
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 
 class Service implements \FOSSBilling\InjectionAwareInterface
 {
+    /**
+     * Sent by the admin UI in place of a secret registrar config field's value
+     * to mean "keep the currently stored value". Blank input means the same
+     * thing; this sentinel exists only for clients that can't send an empty string.
+     */
+    public const string REGISTRAR_CREDENTIAL_KEEP_SENTINEL = '__KEEP__';
+
     protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
@@ -59,24 +71,23 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function getCartProductTitle(Product $product, array $data): ?string
     {
-        if (
-            isset($data['action']) && $data['action'] == 'register'
-            && isset($data['register_tld']) && isset($data['register_sld'])
-        ) {
-            return __trans('Domain :domain registration', [':domain' => $data['register_sld'] . $data['register_tld']]);
-        }
+        $domain = $this->getDomainFromConfig($data);
+        if ($domain !== null) {
+            if (isset($data['action']) && $data['action'] == 'transfer') {
+                return __trans('Domain transfer (:domain)', [':domain' => $domain]);
+            }
 
-        if (
-            isset($data['action']) && $data['action'] == 'transfer'
-            && isset($data['transfer_tld']) && isset($data['transfer_sld'])
-        ) {
-            return __trans('Domain :domain transfer', [':domain' => $data['transfer_sld'] . $data['transfer_tld']]);
+            if (isset($data['action']) && $data['action'] == 'owndomain') {
+                return __trans('Domain (:domain)', [':domain' => $domain]);
+            }
+
+            return __trans('Domain registration (:domain)', [':domain' => $domain]);
         }
 
         return $product->getTitle();
     }
 
-    public function validateOrderData(&$data): void
+    public function validateOrderData(&$data, ?Product $product = null): void
     {
         $validator = $this->di['validator'];
 
@@ -98,9 +109,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
             if (!$validator->isSldValid($data['owndomain_sld'])) {
-                $safe_dom = htmlspecialchars((string) $data['owndomain_sld'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
-
-                throw new \FOSSBilling\InformationException('Domain name :domain is invalid', [':domain' => $safe_dom]);
+                throw new \FOSSBilling\InformationException('Domain name :domain is invalid', [':domain' => $data['owndomain_sld']]);
             }
 
             if (!$validator->isTldValid($data['owndomain_tld'])) {
@@ -118,9 +127,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
             if (!$validator->isSldValid($data['transfer_sld'])) {
-                $safe_dom = htmlspecialchars((string) $data['transfer_sld'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
-
-                throw new \FOSSBilling\InformationException('Domain name :domain is invalid', [':domain' => $safe_dom]);
+                throw new \FOSSBilling\InformationException('Domain name :domain is invalid', [':domain' => $data['transfer_sld']]);
             }
 
             $tld = $this->tldFindOneByTld($data['transfer_tld']);
@@ -137,6 +144,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 throw new \FOSSBilling\InformationException(':domain cannot be transferred!', [':domain' => $domain]);
             }
 
+            if ($tld->isRequireTransferCode() && trim((string) ($data['transfer_code'] ?? '')) === '') {
+                throw new \FOSSBilling\InformationException('A transfer code (EPP/auth code) is required to transfer :domain', [':domain' => $domain]);
+            }
+
             $data['period'] = '1Y';
             $data['quantity'] = 1;
         }
@@ -150,9 +161,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $this->di['validator']->checkRequiredParamsForArray($required, $data);
 
             if (!$validator->isSldValid($data['register_sld'])) {
-                $safe_dom = htmlspecialchars((string) $data['register_sld'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
-
-                throw new \FOSSBilling\InformationException('Domain name :domain is invalid', [':domain' => $safe_dom]);
+                throw new \FOSSBilling\InformationException('Domain name :domain is invalid', [':domain' => $data['register_sld']]);
             }
 
             $tld = $this->tldFindOneByTld($data['register_tld']);
@@ -189,14 +198,65 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function generateOrderTitle(array $config): ?string
     {
-        return match ($config['action']) {
-            'transfer' => $config['transfer_sld'] . $config['transfer_tld'],
-            'register' => $config['register_sld'] . $config['register_tld'],
-            default => null,
-        };
+        $domain = $this->getDomainFromConfig($config);
+        if ($domain === null) {
+            return null;
+        }
+
+        if (($config['action'] ?? null) === 'transfer') {
+            return __trans('Domain transfer (:domain)', [':domain' => $domain]);
+        }
+
+        if (($config['action'] ?? null) === 'owndomain') {
+            return __trans('Domain (:domain)', [':domain' => $domain]);
+        }
+
+        return __trans('Domain registration (:domain)', [':domain' => $domain]);
     }
 
-    public function action_create(\Model_ClientOrder $order): ServiceDomain
+    public function getRenewalTitle(array $config): ?string
+    {
+        $domain = $this->getDomainFromConfig($config);
+        if ($domain === null) {
+            return null;
+        }
+
+        return __trans('Domain renewal (:domain)', [':domain' => $domain]);
+    }
+
+    private function getDomainFromConfig(array $config): ?string
+    {
+        $action = $config['action'] ?? null;
+
+        if ($action === 'register' && isset($config['register_sld'], $config['register_tld'])) {
+            return $config['register_sld'] . $config['register_tld'];
+        }
+
+        if ($action === 'transfer' && isset($config['transfer_sld'], $config['transfer_tld'])) {
+            return $config['transfer_sld'] . $config['transfer_tld'];
+        }
+
+        if ($action === 'owndomain') {
+            $sld = $config['owndomain_sld'] ?? $config['domain']['owndomain_sld'] ?? null;
+            $tld = $config['owndomain_tld'] ?? $config['domain']['owndomain_tld'] ?? null;
+            if ($sld !== null && $tld !== null) {
+                $tld = str_contains((string) $tld, '.') ? (string) $tld : '.' . $tld;
+                $domain = $sld . $tld;
+
+                // Order and invoice item titles persist to 255-byte columns and the
+                // longest title format adds 22 bytes, so reject overlong domains here.
+                if (strlen($domain) > 233) {
+                    return null;
+                }
+
+                return $domain;
+            }
+        }
+
+        return null;
+    }
+
+    public function action_create(Order $order): ServiceDomain
     {
         $orderService = $this->di['mod_service']('order');
         $c = $orderService->getConfig($order);
@@ -204,7 +264,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->validateOrderData($c);
 
         [$sld, $tld] = $this->_getTuple($c);
-        $years = $c['register_years'] ?? 1;
+        $years = (int) ($c['register_years'] ?? 1);
 
         // @todo ?
         $systemService = $this->di['mod_service']('system');
@@ -216,8 +276,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $tldModel = $this->tldFindOneByTld($tld);
 
         $model = new ServiceDomain();
-        $model->setClientId((int) $order->client_id);
-        $model->setTldRegistrarId($tldModel instanceof Tld ? $tldModel->getTldRegistrarId() : null);
+        $model->setClientId((int) $order->getClientId());
+        $model->setRegistrar($tldModel instanceof Tld ? $tldModel->getRegistrar() : null);
         $model->setSld($sld);
         $model->setTld($tld);
         $model->setPeriod($years);
@@ -229,20 +289,21 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $model->setNs3(!empty($c['ns3']) ? $c['ns3'] : $ns['nameserver_3']);
         $model->setNs4(!empty($c['ns4']) ? $c['ns4'] : $ns['nameserver_4']);
 
-        $client = $this->di['db']->getExistingModelById('Client', $model->getClientId(), 'Client not found');
+        $client = $this->di['em']->getRepository(Client::class)->find($model->getClientId())
+            ?? throw new \FOSSBilling\Exception('Client not found');
 
-        $model->setContactFirstName($client->first_name);
-        $model->setContactLastName($client->last_name);
-        $model->setContactEmail($client->email);
-        $model->setContactCompany($client->company);
-        $model->setContactAddress1($client->address_1);
-        $model->setContactAddress2($client->address_2);
-        $model->setContactCountry($client->country);
-        $model->setContactCity($client->city);
-        $model->setContactState($client->state);
-        $model->setContactPostcode($client->postcode);
-        $model->setContactPhoneCc($client->phone_cc);
-        $model->setContactPhone($client->phone);
+        $model->setContactFirstName($client->getFirstName());
+        $model->setContactLastName($client->getLastName());
+        $model->setContactEmail($client->getEmail());
+        $model->setContactCompany($client->getCompany());
+        $model->setContactAddress1($client->getAddress1());
+        $model->setContactAddress2($client->getAddress2());
+        $model->setContactCountry($client->getCountry());
+        $model->setContactCity($client->getCity());
+        $model->setContactState($client->getState());
+        $model->setContactPostcode($client->getPostcode());
+        $model->setContactPhoneCc($client->getPhoneCc());
+        $model->setContactPhone($client->getPhone());
 
         $this->di['em']->persist($model);
         $this->di['em']->flush();
@@ -250,7 +311,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $model;
     }
 
-    public function action_activate(\Model_ClientOrder $order): ServiceDomain
+    public function action_activate(Order $order): ServiceDomain
     {
         $model = $this->_getOrderService($order);
 
@@ -271,13 +332,13 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         try {
             $this->syncWhois($model, $order);
         } catch (\Exception $e) {
-            error_log($e->getMessage());
+            $this->di['logger']->error($e->getMessage());
         }
 
         return $model;
     }
 
-    public function action_renew(\Model_ClientOrder $order): bool
+    public function action_renew(Order $order): bool
     {
         $model = $this->_getOrderService($order);
         // @adapterAction
@@ -292,7 +353,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     /**
      * @todo
      */
-    public function action_suspend(\Model_ClientOrder $order): bool
+    public function action_suspend(Order $order): bool
     {
         return true;
     }
@@ -300,12 +361,12 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     /**
      * @todo
      */
-    public function action_unsuspend(\Model_ClientOrder $order): bool
+    public function action_unsuspend(Order $order): bool
     {
         return true;
     }
 
-    public function action_cancel(\Model_ClientOrder $order): bool
+    public function action_cancel(Order $order): bool
     {
         $model = $this->_getOrderService($order);
         // @adapterAction
@@ -315,28 +376,35 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function action_uncancel(\Model_ClientOrder $order): bool
+    public function action_uncancel(Order $order): bool
     {
         $this->action_activate($order);
 
         return true;
     }
 
-    public function action_delete(\Model_ClientOrder $order): void
+    public function action_delete(Order $order, bool $forceDelete = false): void
     {
         $service = $this->_getOrderService($order, false);
 
         if ($service instanceof ServiceDomain) {
             // cancel if not canceled
-            if ($order->status != \Model_ClientOrder::STATUS_CANCELED) {
-                $this->action_cancel($order);
+            if ($order->getStatus() != Order::STATUS_CANCELED) {
+                try {
+                    $this->action_cancel($order);
+                } catch (\Exception $e) {
+                    if (!$forceDelete) {
+                        throw $e;
+                    }
+                    $this->di['logger']->info('Remote cancel failed during forced delete, removing local service: {message}', ['message' => $e->getMessage()]);
+                }
             }
             $this->di['em']->remove($service);
             $this->di['em']->flush();
         }
     }
 
-    public function syncWhois(ServiceDomain $model, \Model_ClientOrder $order): void
+    public function syncWhois(ServiceDomain $model, Order $order): void
     {
         // @adapterAction
         [$domain, $adapter] = $this->_getD($model);
@@ -373,8 +441,19 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $model->setDetails(serialize($whois));
         $model->setExpiresAt($this->formatRegistrarTimestamp($whois->getExpirationTime()));
         $model->setRegisteredAt($this->formatRegistrarTimestamp($whois->getRegistrationTime()));
+        $model->setSyncedAt(new \DateTime());
 
         $this->di['em']->flush();
+    }
+
+    public function synchronizeDomain(ServiceDomain $model): void
+    {
+        $order = $this->di['mod_service']('order')->getServiceOrder($model);
+        if (!$order instanceof Order) {
+            throw new \FOSSBilling\Exception('Domain order not found');
+        }
+
+        $this->syncWhois($model, $order);
     }
 
     public function updateNameservers(ServiceDomain $model, $data): bool
@@ -406,7 +485,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Updated domain #%s nameservers', $model->getId());
+        $this->di['logger']->info('Updated domain #{model_id} nameservers', ['model_id' => $model->getId()]);
 
         return true;
     }
@@ -453,7 +532,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Updated domain #%s WHOIS details', $model->getId());
+        $this->di['logger']->info('Updated domain #{model_id} WHOIS details', ['model_id' => $model->getId()]);
 
         return true;
     }
@@ -476,7 +555,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Locking domain #%s', $model->getId());
+        $this->di['logger']->info('Locking domain #{model_id}', ['model_id' => $model->getId()]);
 
         return true;
     }
@@ -491,7 +570,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Unlocking domain #%s', $model->getId());
+        $this->di['logger']->info('Unlocking domain #{model_id}', ['model_id' => $model->getId()]);
 
         return true;
     }
@@ -506,7 +585,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Enabled privacy protection of #%s domain', $model->getId());
+        $this->di['logger']->info('Enabled privacy protection of #{model_id} domain', ['model_id' => $model->getId()]);
 
         return true;
     }
@@ -521,7 +600,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Disabled privacy protection of #%s domain', $model->getId());
+        $this->di['logger']->info('Disabled privacy protection of #{model_id} domain', ['model_id' => $model->getId()]);
 
         return true;
     }
@@ -541,7 +620,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $domain->setTld($model->getTld());
         $domain->setSld($sld);
 
-        $tldRegistrar = $this->getExistingRegistrar($model->getTldRegistrarId());
+        $tldRegistrar = $this->getExistingRegistrar($model->getRegistrar());
         $this->registrarValidateConfiguration($tldRegistrar);
         $adapter = $this->registrarGetRegistrarAdapter($tldRegistrar);
 
@@ -556,9 +635,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $validator = $this->di['validator'];
         if (!$validator->isSldValid($sld)) {
-            $safe_dom = htmlspecialchars((string) $sld, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-
-            throw new \FOSSBilling\InformationException('Domain name :domain is invalid', [':domain' => $safe_dom]);
+            throw new \FOSSBilling\InformationException('Domain name :domain is invalid', [':domain' => $sld]);
         }
 
         if (!$model->isAllowRegister()) {
@@ -570,16 +647,26 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $domain->setTld($model->getTld());
         $domain->setSld($sld);
 
-        $tldRegistrar = $this->getExistingRegistrar($model->getTldRegistrarId());
+        $tldRegistrar = $this->getExistingRegistrar($model->getRegistrar());
         $this->registrarValidateConfiguration($tldRegistrar);
         $adapter = $this->registrarGetRegistrarAdapter($tldRegistrar);
 
         return $adapter->isDomainAvailable($domain);
     }
 
-    public function syncExpirationDate($model): void
+    public function syncExpirationDate(ServiceDomain $model): void
     {
-        // @todo
+        // @adapterAction
+        [$domain, $adapter] = $this->_getD($model);
+
+        $whois = $adapter->getDomainDetails($domain);
+
+        $expiresAt = $this->formatRegistrarTimestamp($whois->getExpirationTime());
+        if ($expiresAt !== null) {
+            $model->setExpiresAt($expiresAt);
+        }
+
+        $this->di['em']->flush();
     }
 
     public function toApiArray(ServiceDomain $model, $deep = false, $identity = null): array
@@ -597,6 +684,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             'locked' => $model->isLocked(),
             'registered_at' => $this->formatDateTime($model->getRegisteredAt()),
             'expires_at' => $this->formatDateTime($model->getExpiresAt()),
+            'synced_at' => $this->formatDateTime($model->getSyncedAt()),
             'contact' => [
                 'first_name' => $model->getContactFirstName(),
                 'last_name' => $model->getContactLastName(),
@@ -613,12 +701,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             ],
         ];
 
-        if ($identity instanceof \Model_Admin) {
+        if ($identity instanceof \Box\Mod\Staff\Entity\Admin) {
             $data['transfer_code'] = $model->getTransferCode();
 
-            $tldRegistrarId = $model->getTldRegistrarId();
-            $tldRegistrar = $tldRegistrarId !== null ? $this->getTldRegistrarRepository()->find($tldRegistrarId) : null;
-            $data['registrar'] = $tldRegistrar instanceof TldRegistrar ? $tldRegistrar->getName() : null;
+            $data['registrar'] = $model->getRegistrar()?->getName();
         }
 
         return $data;
@@ -630,8 +716,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         [$sld, $tld] = [null, null];
 
         if ($action == 'owndomain') {
-            $sld = $data['owndomain_sld'];
-            $tld = str_contains((string) $data['domain']['owndomain_tld'], '.') ? $data['domain']['owndomain_tld'] : '.' . $data['domain']['owndomain_tld'];
+            $sld = $data['owndomain_sld'] ?? $data['domain']['owndomain_sld'] ?? null;
+            $owndomain_tld = $data['owndomain_tld'] ?? $data['domain']['owndomain_tld'] ?? null;
+            $tld = str_contains((string) $owndomain_tld, '.') ? (string) $owndomain_tld : '.' . $owndomain_tld;
         }
 
         if ($action == 'transfer') {
@@ -652,9 +739,9 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $orderService = $this->di['mod_service']('order');
         $order = $orderService->getServiceOrder($model);
 
-        $tldRegistrar = $this->getExistingRegistrar($model->getTldRegistrarId());
+        $tldRegistrar = $this->getExistingRegistrar($model->getRegistrar());
 
-        if ($order instanceof \Model_ClientOrder) {
+        if ($order instanceof Order) {
             $adapter = $this->registrarGetRegistrarAdapter($tldRegistrar, $order);
         } else {
             $adapter = $this->registrarGetRegistrarAdapter($tldRegistrar);
@@ -669,22 +756,24 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $d->setNs4($model->getNs4());
 
         // merge info with current profile
-        $client = $this->di['db']->load('Client', $model->getClientId());
+        $client = $this->di['em']->getRepository(Client::class)->find($model->getClientId())
+            ?? throw new \FOSSBilling\Exception('Client not found');
 
-        $email = empty($model->getContactEmail()) ? $client->email : $model->getContactEmail();
-        $first_name = empty($model->getContactFirstName()) ? $client->first_name : $model->getContactFirstName();
-        $last_name = empty($model->getContactLastName()) ? $client->last_name : $model->getContactLastName();
-        $city = empty($model->getContactCity()) ? $client->city : $model->getContactCity();
-        $zip = empty($model->getContactPostcode()) ? $client->postcode : $model->getContactPostcode();
-        $country = empty($model->getContactCountry()) ? $client->country : $model->getContactCountry();
-        $state = empty($model->getContactState()) ? $client->state : $model->getContactState();
-        $phone = empty($model->getContactPhone()) ? $client->phone : $model->getContactPhone();
-        $phone_cc = empty($model->getContactPhoneCc()) ? $client->phone_cc : $model->getContactPhoneCc();
-        $company = empty($model->getContactCompany()) ? $client->company : $model->getContactCompany();
-        $address1 = empty($model->getContactAddress1()) ? $client->address_1 : $model->getContactAddress1();
-        $address2 = empty($model->getContactAddress2()) ? $client->address_2 : $model->getContactAddress2();
-        $birthday = !empty($client->birthday) ? $client->birthday : '';
-        $company_number = !empty($client->company_number) ? $client->company_number : '';
+        // Either side can be null, so coalesce to '' for the registrar adapters.
+        $email = (string) (empty($model->getContactEmail()) ? $client->getEmail() : $model->getContactEmail());
+        $first_name = (string) (empty($model->getContactFirstName()) ? $client->getFirstName() : $model->getContactFirstName());
+        $last_name = (string) (empty($model->getContactLastName()) ? $client->getLastName() : $model->getContactLastName());
+        $city = (string) (empty($model->getContactCity()) ? $client->getCity() : $model->getContactCity());
+        $zip = (string) (empty($model->getContactPostcode()) ? $client->getPostcode() : $model->getContactPostcode());
+        $country = (string) (empty($model->getContactCountry()) ? $client->getCountry() : $model->getContactCountry());
+        $state = (string) (empty($model->getContactState()) ? $client->getState() : $model->getContactState());
+        $phone = (string) (empty($model->getContactPhone()) ? $client->getPhone() : $model->getContactPhone());
+        $phone_cc = (string) (empty($model->getContactPhoneCc()) ? $client->getPhoneCc() : $model->getContactPhoneCc());
+        $company = (string) (empty($model->getContactCompany()) ? $client->getCompany() : $model->getContactCompany());
+        $address1 = (string) (empty($model->getContactAddress1()) ? $client->getAddress1() : $model->getContactAddress1());
+        $address2 = (string) (empty($model->getContactAddress2()) ? $client->getAddress2() : $model->getContactAddress2());
+        $birthday = !empty($client->getBirthday()) ? $client->getBirthday()->format('Y-m-d') : '';
+        $company_number = !empty($client->getCompanyNumber()) ? $client->getCompanyNumber() : '';
         $document_nr = (string) ($this->di['mod_service']('client')->resolveDocumentNumber($client) ?? '');
 
         $contact = new \FOSSBilling\Extension\Contract\Registrar\Domain\Contact();
@@ -727,17 +816,17 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return [$d, $adapter];
     }
 
-    public static function onBeforeAdminCronRun(\Box_Event $event): bool
+    #[AsEventListener]
+    public function syncExpirationDatesBeforeAdminCronRun(BeforeAdminCronRunEvent $event): void
     {
         try {
-            $di = $event->getDi();
-            $domainService = $di['mod_service']('servicedomain');
-            $domainService->batchSyncExpirationDates();
-        } catch (\Exception $e) {
-            error_log($e->getMessage());
+            $this->batchSyncExpirationDates();
+        } catch (\Throwable $e) {
+            $this->di['logger']->error($e->getMessage());
+            if ($e instanceof \Error) {
+                \Sentry\captureException($e);
+            }
         }
-
-        return true;
     }
 
     public function batchSyncExpirationDates(): bool
@@ -751,16 +840,25 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         $list = $this->getDomainRepository()->findAll();
+        $hadProgrammingError = false;
 
         foreach ($list as $domain) {
             try {
                 $this->syncExpirationDate($domain);
-            } catch (\Exception $e) {
-                error_log($e->getMessage());
+            } catch (\Throwable $e) {
+                $this->di['logger']->error($e->getMessage(), ['domain_id' => $domain->getId()]);
+                // Caught programming errors still need to reach Sentry.
+                if ($e instanceof \Error) {
+                    $hadProgrammingError = true;
+                    \Sentry\captureException($e);
+                }
             }
         }
 
-        $ss->setParamValue($key, date('Y-m-d H:i:s'));
+        if (!$hadProgrammingError) {
+            $ss->setParamValue($key, date('Y-m-d H:i:s'));
+        }
+
         $this->di['logger']->info('Executed action to synchronize domain expiration dates with registrar');
 
         return true;
@@ -770,12 +868,12 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         $data = $this->validateTldConfiguration($data);
         $normalizedTld = $this->normalizeTld($data['tld']);
-        $registrar = $this->getExistingRegistrar((int) $data['tld_registrar_id']);
+        $registrar = $this->getExistingRegistrar($this->findRegistrarById((int) $data['tld_registrar_id']));
         $this->registrarValidateConfiguration($registrar);
 
         $model = new Tld();
         $model->setTld($normalizedTld);
-        $model->setTldRegistrarId((int) $data['tld_registrar_id']);
+        $model->setRegistrar($registrar);
         $model->setPriceRegistration((string) $data['price_registration']);
         $model->setPriceRenew((string) $data['price_renew']);
         $model->setPriceTransfer((string) $data['price_transfer']);
@@ -783,12 +881,13 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $model->setPeriods(array_key_exists('periods', $data) ? $data['periods'] : null);
         $model->setAllowRegister(isset($data['allow_register']) ? (bool) $data['allow_register'] : true);
         $model->setAllowTransfer(isset($data['allow_transfer']) ? (bool) $data['allow_transfer'] : true);
+        $model->setRequireTransferCode(isset($data['require_transfer_code']) && (bool) $data['require_transfer_code']);
         $model->setActive(isset($data['active']) ? (bool) $data['active'] : true);
 
         $this->di['em']->persist($model);
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Created new top level domain %s', $model->getTld());
+        $this->di['logger']->info('Created new top level domain {model_tld}', ['model_tld' => $model->getTld()]);
 
         return $model->getId();
     }
@@ -799,11 +898,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $model->setTld($this->normalizeTld((string) $model->getTld()));
 
         if (array_key_exists('tld_registrar_id', $data)) {
-            $registrar = $this->getExistingRegistrar((int) $data['tld_registrar_id']);
+            $registrar = $this->getExistingRegistrar($this->findRegistrarById((int) $data['tld_registrar_id']));
             $this->registrarValidateConfiguration($registrar);
+            $model->setRegistrar($registrar);
         }
 
-        $model->setTldRegistrarId(isset($data['tld_registrar_id']) ? (int) $data['tld_registrar_id'] : $model->getTldRegistrarId());
         $model->setPriceRegistration(isset($data['price_registration']) ? (string) $data['price_registration'] : $model->getPriceRegistration());
         $model->setPriceRenew(isset($data['price_renew']) ? (string) $data['price_renew'] : $model->getPriceRenew());
         $model->setPriceTransfer(isset($data['price_transfer']) ? (string) $data['price_transfer'] : $model->getPriceTransfer());
@@ -811,11 +910,12 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $model->setPeriods(array_key_exists('periods', $data) ? $data['periods'] : $model->getPeriods());
         $model->setAllowRegister(array_key_exists('allow_register', $data) ? (bool) $data['allow_register'] : $model->isAllowRegister());
         $model->setAllowTransfer(array_key_exists('allow_transfer', $data) ? (bool) $data['allow_transfer'] : $model->isAllowTransfer());
+        $model->setRequireTransferCode(array_key_exists('require_transfer_code', $data) ? (bool) $data['require_transfer_code'] : $model->isRequireTransferCode());
         $model->setActive(array_key_exists('active', $data) ? (bool) $data['active'] : $model->isActive());
 
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Updated top level domain %s', $model->getTld());
+        $this->di['logger']->info('Updated top level domain {model_tld}', ['model_tld' => $model->getTld()]);
 
         return true;
     }
@@ -907,7 +1007,28 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 ->setParameter('allowTransfer', (bool) $allow_transfer);
         }
 
-        return $query->orderBy('t.id', 'ASC');
+        $sort = SortOptions::fromArray($data, [
+            'tld' => 't.tld',
+            'price_registration' => 't.priceRegistration',
+            'price_renew' => 't.priceRenew',
+            'price_transfer' => 't.priceTransfer',
+            'registrar' => 'r.name',
+            'id' => 't.id',
+        ]);
+        if ($sort->isSorted()) {
+            if ($sort->expression === 'r.name') {
+                $query->leftJoin('t.registrar', 'r');
+            }
+            $query->orderBy($sort->expression, $sort->direction);
+            if ($sort->expression !== 't.id') {
+                $query->addOrderBy('t.id', $sort->direction);
+            }
+        } else {
+            $query->orderBy('t.tld', \SortDirection::Ascending);
+            $query->addOrderBy('t.id', \SortDirection::Ascending);
+        }
+
+        return $query;
     }
 
     /**
@@ -941,7 +1062,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $id = $model->getId();
         $this->di['em']->remove($model);
         $this->di['em']->flush();
-        $this->di['logger']->info('Deleted top level domain %s', $id);
+        $this->di['logger']->info('Deleted top level domain {id}', ['id' => $id]);
 
         return true;
     }
@@ -957,17 +1078,17 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             'active' => $model->isActive(),
             'allow_register' => $model->isAllowRegister(),
             'allow_transfer' => $model->isAllowTransfer(),
+            'require_transfer_code' => $model->isRequireTransferCode(),
             'min_years' => $model->getMinYears(),
             'periods' => $model->getPeriodsArray(),
         ];
 
-        if ($identity instanceof \Model_Admin) {
-            $tldRegistrarId = $model->getTldRegistrarId();
-            $tldRegistrar = $tldRegistrarId !== null ? $this->getTldRegistrarRepository()->find($tldRegistrarId) : null;
+        if ($identity instanceof \Box\Mod\Staff\Entity\Admin) {
+            $tldRegistrar = $model->getRegistrar();
 
             $result['registrar'] = [
-                'id' => $tldRegistrarId,
-                'title' => $tldRegistrar instanceof TldRegistrar ? $tldRegistrar->getName() : null,
+                'id' => $tldRegistrar?->getId(),
+                'title' => $tldRegistrar?->getName(),
             ];
         }
 
@@ -1018,12 +1139,24 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function registrarGetSearchQuery($data): QueryBuilder
     {
-        // Registrar listings currently have no filters.
-        unset($data);
+        $query = $this->getTldRegistrarRepository()
+            ->createQueryBuilder('tr');
 
-        return $this->getTldRegistrarRepository()
-            ->createQueryBuilder('tr')
-            ->orderBy('tr.name', 'ASC');
+        $sort = SortOptions::fromArray($data, [
+            'title' => 'tr.name',
+            'id' => 'tr.id',
+        ]);
+        if ($sort->isSorted()) {
+            $query->orderBy($sort->expression, $sort->direction);
+            if ($sort->expression !== 'tr.id') {
+                $query->addOrderBy('tr.id', $sort->direction);
+            }
+        } else {
+            $query->orderBy('tr.name', \SortDirection::Ascending);
+            $query->addOrderBy('tr.id', \SortDirection::Ascending);
+        }
+
+        return $query;
     }
 
     /**
@@ -1073,7 +1206,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->di['extension_locator']->resolveClass(ExtensionType::Registrar, (string) $model->getRegistrar());
     }
 
-    public function registrarGetRegistrarAdapter(TldRegistrar $r, ?\Model_ClientOrder $order = null)
+    public function registrarGetRegistrarAdapter(TldRegistrar $r, ?Order $order = null)
     {
         $config = $this->registrarGetConfiguration($r);
         $class = $this->registrarGetRegistrarAdapterClassName($r);
@@ -1084,11 +1217,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         // The order is not handed to the adapter, but scoping the logger to it
         // keeps registrar activity attributable to the order it came from.
-        $registrar->setLog(
-            $order instanceof \Model_ClientOrder
-                ? new \FOSSBilling\PsrLogAdapter($this->di['mod_service']('order')->getLogger($order))
-                : $this->di['extension_logger']
-        );
+        $registrar->setLog($order instanceof Order ? $this->di['mod_service']('order')->getLogger($order) : $this->di['logger']);
 
         if ($r->isTestMode()) {
             $registrar->enableTestMode();
@@ -1145,7 +1274,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->di['em']->persist($model);
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Installed new domain registrar %s', $code);
+        $this->di['logger']->info('Installed new domain registrar {code}', ['code' => $code]);
 
         return true;
     }
@@ -1160,7 +1289,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->di['em']->persist($new);
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Copied domain registrar %s', $model->getRegistrar());
+        $this->di['logger']->info('Copied domain registrar {model_registrar}', ['model_registrar' => $model->getRegistrar()]);
 
         return $new->getId();
     }
@@ -1170,8 +1299,15 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $model->setName($data['title'] ?? $model->getName());
         $model->setTestMode(array_key_exists('test_mode', $data) ? (bool) $data['test_mode'] : $model->isTestMode());
         if (isset($data['config']) && is_array($data['config'])) {
-            $configuration = array_replace($this->registrarGetConfiguration($model), $data['config']);
+            $existingConfiguration = $this->registrarGetConfiguration($model);
+            $configuration = $existingConfiguration;
             $adapterConfiguration = $this->registrarGetRegistrarAdapterConfig($model);
+            $secretFields = $this->resolveRegistrarSecretFields($model, $adapterConfiguration);
+            foreach ($data['config'] as $key => $value) {
+                $configuration[$key] = in_array($key, $secretFields, true)
+                    ? $this->normalizeRegistrarSecretValue($key, $value, $existingConfiguration[$key] ?? null, $model)
+                    : $value;
+            }
 
             foreach ($adapterConfiguration['form'] ?? [] as $field => $element) {
                 $options = $element[1] ?? [];
@@ -1186,21 +1322,47 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Updated domain registrar %s configuration', $model->getRegistrar());
+        $this->di['logger']->info('Updated domain registrar {model_registrar} configuration', ['model_registrar' => $model->getRegistrar()]);
 
         return true;
     }
 
+    /**
+     * Returns the value to store for a secret registrar config field. Blank,
+     * whitespace-only or {@see REGISTRAR_CREDENTIAL_KEEP_SENTINEL} inputs preserve
+     * the existing value; everything else replaces it. A successful rotation is
+     * logged (the value itself is never logged).
+     */
+    private function normalizeRegistrarSecretValue(string $field, mixed $incoming, mixed $existing, TldRegistrar $model): mixed
+    {
+        if ($incoming === null || !is_scalar($incoming)) {
+            return $existing;
+        }
+
+        $incoming = (string) $incoming;
+
+        if (trim($incoming) === '' || $incoming === self::REGISTRAR_CREDENTIAL_KEEP_SENTINEL) {
+            return $existing;
+        }
+
+        if ($incoming !== $existing) {
+            $adminId = $this->di['loggedin_admin']->getId() ?? 'unknown';
+            $this->di['logger']->info('Rotated {field} for domain registrar {registrar_id} by admin {admin_id}', ['field' => $field, 'registrar_id' => (string) $model->getId(), 'admin_id' => (string) $adminId]);
+        }
+
+        return $incoming;
+    }
+
     public function registrarRm(TldRegistrar $model): bool
     {
-        $domains = $this->getDomainRepository()->findByTldRegistrarId((int) $model->getId());
+        $domains = $this->getDomainRepository()->findBy(['registrar' => $model]);
         $count = \FOSSBilling\Tools::safeCount($domains);
 
         if ($count > 0) {
             throw new \FOSSBilling\InformationException('Registrar is used by :count: domains', [':count:' => $count], 707);
         }
 
-        $tlds = $this->getTldRepository()->findBy(['tldRegistrarId' => (int) $model->getId()]);
+        $tlds = $this->getTldRepository()->findBy(['registrar' => $model]);
         $count = \FOSSBilling\Tools::safeCount($tlds);
 
         if ($count > 0) {
@@ -1212,7 +1374,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $this->di['em']->remove($model);
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Removed domain registrar %s', $name);
+        $this->di['logger']->info('Removed domain registrar {name}', ['name' => $name]);
 
         return true;
     }
@@ -1221,14 +1383,59 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         $c = $this->registrarGetRegistrarAdapterConfig($model);
 
+        $config = $this->registrarGetConfiguration($model);
+        $secretFields = $this->resolveRegistrarSecretFields($model, $c);
+        foreach ($secretFields as $field) {
+            $value = $config[$field] ?? null;
+            $config[$field] = null;
+            $config[$field . '_set'] = $value !== null && $value !== '';
+        }
+
         return [
             'id' => $model->getId(),
             'title' => $model->getName(),
             'label' => $c['label'],
-            'config' => $this->registrarGetConfiguration($model),
+            'config' => $config,
+            'secret_fields' => $secretFields,
             'form' => $c['form'],
             'test_mode' => $model->isTestMode(),
         ];
+    }
+
+    /**
+     * Config field names for this registrar's adapter whose stored values must
+     * be hidden in the API and admin UI: the adapter's own declared secrets
+     * plus any form field marked `'secret' => true`. Takes the already-resolved
+     * {@see registrarGetRegistrarAdapterConfig()} output so callers that need
+     * it anyway don't fetch it twice.
+     *
+     * @return string[]
+     */
+    private function resolveRegistrarSecretFields(TldRegistrar $model, array $adapterConfiguration): array
+    {
+        $secrets = [];
+
+        try {
+            $class = $this->registrarGetRegistrarAdapterClassName($model);
+            if (is_callable($class . '::getSecretFields')) {
+                $declared = $class::getSecretFields();
+                $secrets = array_merge($secrets, $declared);
+            }
+        } catch (\Throwable) {
+            // Registrar adapter could not be resolved; fall back to the form's own 'secret' flags below.
+        }
+
+        $form = $adapterConfiguration['form'] ?? [];
+        if (is_array($form)) {
+            foreach ($form as $name => $element) {
+                $options = $element[1] ?? [];
+                if (!empty($options['secret'])) {
+                    $secrets[] = (string) $name;
+                }
+            }
+        }
+
+        return array_values(array_unique($secrets));
     }
 
     public function updateDomain(ServiceDomain $s, $data): bool
@@ -1245,7 +1452,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         $this->di['em']->flush();
 
-        $this->di['logger']->info('Updated domain #%s without sending actions to server', $s->getId());
+        $this->di['logger']->info('Updated domain #{s_id} without sending actions to server', ['s_id' => $s->getId()]);
 
         return true;
     }
@@ -1264,9 +1471,8 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $dateTime?->format('Y-m-d H:i:s');
     }
 
-    private function getExistingRegistrar(?int $id): TldRegistrar
+    private function getExistingRegistrar(?TldRegistrar $registrar): TldRegistrar
     {
-        $registrar = $id === null ? null : $this->getTldRegistrarRepository()->find($id);
         if (!$registrar instanceof TldRegistrar) {
             throw new \FOSSBilling\Exception('Registrar not found');
         }
@@ -1274,7 +1480,14 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $registrar;
     }
 
-    private function _getOrderService(\Model_ClientOrder $order, bool $required = true): ?ServiceDomain
+    private function findRegistrarById(?int $id): ?TldRegistrar
+    {
+        $registrar = $id === null ? null : $this->getTldRegistrarRepository()->find($id);
+
+        return $registrar instanceof TldRegistrar ? $registrar : null;
+    }
+
+    private function _getOrderService(Order $order, bool $required = true): ?ServiceDomain
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);

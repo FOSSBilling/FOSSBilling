@@ -32,12 +32,12 @@
         <hr>
         <h4>{{ "While we're away, you can still reach us over other channels."|trans }}</h4>
         <ul style="list-style-type: none; padding: 0;">
-            <li>{{ company.name }}</li>
-            <li>{{ company.address_1 }}</li>
-            <li>{{ company.address_2 }}</li>
-            <li>{{ company.address_3 }}</li>
-            <li>{{ company.tel }}</li>
-            <li>{{ company.email }}</li>
+            <li>{{ company.name|default('') }}</li>
+            <li>{{ company.address_1|default('') }}</li>
+            <li>{{ company.address_2|default('') }}</li>
+            <li>{{ company.address_3|default('') }}</li>
+            <li>{{ company.tel|default('') }}</li>
+            <li>{{ company.email|default('') }}</li>
         </ul>
     </div>
 {% endblock %}

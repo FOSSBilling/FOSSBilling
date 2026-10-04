@@ -10,10 +10,15 @@
 
 declare(strict_types=1);
 
+use Box\Mod\Invoice\Entity\Invoice;
+use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Transaction;
 use Doctrine\DBAL\DriverManager;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\ORMSetup;
+use Doctrine\ORM\Tools\SchemaTool;
+use FOSSBilling\Pagination;
+use FOSSBilling\PaginationOptions;
 use Symfony\Component\Filesystem\Path;
 
 function transactionEntityManager(): EntityManager
@@ -23,6 +28,13 @@ function transactionEntityManager(): EntityManager
     $config->setProxyNamespace('FOSSBilling\\Tests\\DoctrineProxies');
 
     return new EntityManager(DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]), $config);
+}
+
+function transactionSearchQuery(array $data = []): object
+{
+    return transactionEntityManager()->getRepository(Transaction::class)
+        ->getSearchQueryBuilder($data)
+        ->getQuery();
 }
 
 test('competingTransactionQuery filters by txn id, gateway id, active statuses and excludes id', function (): void {
@@ -36,7 +48,7 @@ test('competingTransactionQuery filters by txn id, gateway id, active statuses a
     $dql = $query->getDQL();
 
     expect($dql)->toContain('t.txnId = :txn_id')
-        ->and($dql)->toContain('t.gatewayId = :gateway_id')
+        ->and($dql)->toContain('IDENTITY(t.gateway) = :gateway_id')
         ->and($dql)->toContain('t.id != :exclude_id')
         ->and($dql)->toContain('t.status IN (:statuses)');
     expect($query->getParameter('txn_id')->getValue())->toBe('pi_123')
@@ -60,7 +72,7 @@ test('competingTransactionQuery omits gateway and exclude filters when not provi
 
     expect($dql)->toContain('t.txnId = :txn_id')
         ->and($dql)->toContain('t.status IN (:statuses)')
-        ->and($dql)->not->toContain('t.gatewayId')
+        ->and($dql)->not->toContain('IDENTITY(t.gateway)')
         ->and($dql)->not->toContain('t.id !=');
     expect($query->getParameter('statuses')->getValue())->toBe([
         Transaction::STATUS_PROCESSING,
@@ -78,4 +90,206 @@ test('competingTransactionQuery applies gateway and exclude filters when provide
 
     expect($query->getParameter('gateway_id')->getValue())->toBe(3)
         ->and($query->getParameter('exclude_id')->getValue())->toBe(7);
+});
+
+test('getSearchQueryBuilder orders by id descending and selects the gateway name', function (): void {
+    $query = transactionSearchQuery([]);
+
+    expect($query->getDQL())->toContain('SELECT t, pg.name AS gateway, pg.gateway AS gateway_code FROM ' . Transaction::class . ' t LEFT JOIN t.gateway pg')
+        ->and($query->getDQL())->toContain('ORDER BY t.id DESC');
+});
+
+test('getSearchQueryBuilder filters by id, status, invoice_id, gateway_id, currency, type and txn_id', function (): void {
+    $query = transactionSearchQuery([
+        'id' => 5,
+        'status' => 'processed',
+        'invoice_id' => 12,
+        'gateway_id' => 3,
+        'currency' => 'USD',
+        'type' => 'payment',
+        'txn_id' => 'txn_abc',
+    ]);
+
+    $dql = $query->getDQL();
+    expect($dql)->toContain('t.id = :id')
+        ->and($dql)->toContain('t.status = :status')
+        ->and($dql)->toContain('IDENTITY(t.invoice) = :invoice_id')
+        ->and($dql)->toContain('IDENTITY(t.gateway) = :gateway_id')
+        ->and($dql)->toContain('t.currency = :currency')
+        ->and($dql)->toContain('t.type = :type')
+        ->and($dql)->toContain('t.txnId = :txn_id');
+
+    expect($query->getParameter('id')->getValue())->toBe(5)
+        ->and($query->getParameter('status')->getValue())->toBe('processed')
+        ->and($query->getParameter('invoice_id')->getValue())->toBe(12)
+        ->and($query->getParameter('gateway_id')->getValue())->toBe(3)
+        ->and($query->getParameter('currency')->getValue())->toBe('USD')
+        ->and($query->getParameter('type')->getValue())->toBe('payment')
+        ->and($query->getParameter('txn_id')->getValue())->toBe('txn_abc');
+});
+
+test('getSearchQueryBuilder uses Invoice subqueries for invoice_hash and client_id filters', function (): void {
+    $query = transactionSearchQuery(['invoice_hash' => 'abc123', 'client_id' => 7]);
+
+    $dql = $query->getDQL();
+    expect($dql)->toContain('SELECT i.id FROM ' . Invoice::class . ' i WHERE i.hash = :hash')
+        ->and($dql)->toContain('SELECT i.id FROM ' . Invoice::class . ' i WHERE i.clientId = :client_id');
+
+    expect($query->getParameter('hash')->getValue())->toBe('abc123')
+        ->and($query->getParameter('client_id')->getValue())->toBe(7);
+});
+
+test('getSearchQueryBuilder applies date_from and date_to with end-of-day date_to', function (): void {
+    $query = transactionSearchQuery(['date_from' => '2026-01-01', 'date_to' => '2026-01-15']);
+
+    $dql = $query->getDQL();
+    expect($dql)->toContain('t.createdAt >= :date_from')
+        ->and($dql)->toContain('t.createdAt <= :date_to');
+
+    expect($query->getParameter('date_from')->getValue())->toBe('2026-01-01 00:00:00')
+        ->and($query->getParameter('date_to')->getValue())->toBe('2026-01-15 23:59:59');
+});
+
+test('getSearchQueryBuilder applies the search filter on note, invoice id, txn id and ipn', function (): void {
+    $query = transactionSearchQuery(['search' => 'keyword']);
+
+    $dql = $query->getDQL();
+    expect($dql)->toContain('t.note LIKE :note')
+        ->and($dql)->toContain('IDENTITY(t.invoice) LIKE :search_invoice_id')
+        ->and($dql)->toContain('t.txnId LIKE :search_txn_id')
+        ->and($dql)->toContain('t.ipn LIKE :ipn');
+
+    expect($query->getParameter('note')->getValue())->toBe('%keyword%')
+        ->and($query->getParameter('search_invoice_id')->getValue())->toBe('%keyword%')
+        ->and($query->getParameter('search_txn_id')->getValue())->toBe('%keyword%')
+        ->and($query->getParameter('ipn')->getValue())->toBe('%keyword%');
+});
+
+test('paginateMappedQuery yields gateway-aware mixed rows', function (): void {
+    $config = ORMSetup::createAttributeMetadataConfig([Path::join(__DIR__, '..', '..', '..', 'Entity')], true);
+    $config->setProxyDir(sys_get_temp_dir());
+    $config->setProxyNamespace('FOSSBilling\\Tests\\DoctrineProxies');
+    $entityManager = new EntityManager(DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]), $config);
+
+    $metadata = array_map(
+        $entityManager->getClassMetadata(...),
+        [Transaction::class, PayGateway::class],
+    );
+    (new SchemaTool($entityManager))->createSchema($metadata);
+
+    $gateway = new PayGateway();
+    $gateway->setName('Stripe');
+    $entityManager->persist($gateway);
+
+    $withGateway = new Transaction();
+    $withGateway->setGateway($gateway);
+    $withGateway->setStatus(Transaction::STATUS_RECEIVED);
+    $entityManager->persist($withGateway);
+
+    $withoutGateway = new Transaction();
+    $withoutGateway->setStatus(Transaction::STATUS_RECEIVED);
+    $entityManager->persist($withoutGateway);
+
+    $entityManager->flush();
+
+    $qb = $entityManager->getRepository(Transaction::class)->getSearchQueryBuilder([]);
+    $result = (new Pagination())->paginateMappedQuery(
+        $qb,
+        new PaginationOptions(perPage: 25),
+        static fn ($row): array => [$row[0]::class, $row['gateway'] ?? null],
+    );
+
+    expect($result['total'])->toBe(2)
+        ->and($result['list'])->toHaveCount(2);
+
+    // ORDER BY t.id DESC: the second transaction (no gateway) comes first.
+    $noGatewayRow = $result['list'][0];
+    expect($noGatewayRow)->toBe([Transaction::class, null]);
+
+    $gatewayRow = $result['list'][1];
+    expect($gatewayRow)->toBe([Transaction::class, 'Stripe']);
+});
+
+test('getSearchQueryBuilder sorts by allowlisted columns', function (array $data, string $expectedOrderBy, bool $expectsTieBreak): void {
+    $dql = transactionSearchQuery($data)->getDQL();
+
+    expect($dql)->toContain($expectedOrderBy);
+    if ($expectsTieBreak) {
+        expect($dql)->toContain(', t.id');
+    } else {
+        expect($dql)->not->toContain(', t.id');
+    }
+})->with([
+    'id ascending' => [['sort' => 'id'], 'ORDER BY t.id ASC', false],
+    'id descending' => [['sort' => 'id', 'direction' => 'DESC'], 'ORDER BY t.id DESC', false],
+    'status' => [['sort' => 'status'], 'ORDER BY t.status ASC, t.id ASC', true],
+    'currency' => [['sort' => 'currency'], 'ORDER BY t.currency ASC, t.id ASC', true],
+    'type' => [['sort' => 'type', 'direction' => 'desc'], 'ORDER BY t.type DESC, t.id DESC', true],
+    'txn_id' => [['sort' => 'txn_id'], 'ORDER BY t.txnId ASC, t.id ASC', true],
+    'amount' => [['sort' => 'amount'], 'ORDER BY t.amount ASC, t.id ASC', true],
+    'gateway' => [['sort' => 'gateway'], 'ORDER BY pg.name ASC, t.id ASC', true],
+    'created_at' => [['sort' => 'created_at'], 'ORDER BY t.createdAt ASC, t.id ASC', true],
+    'updated_at' => [['sort' => 'updated_at', 'direction' => 'DESC'], 'ORDER BY t.updatedAt DESC, t.id DESC', true],
+    'invalid sort falls back to default' => [['sort' => 't.id; DROP TABLE transaction'], 'ORDER BY t.id DESC', false],
+    'invalid direction falls back to ascending' => [['sort' => 'status', 'direction' => 'sideways'], 'ORDER BY t.status ASC, t.id ASC', true],
+]);
+
+/*
+ * detachFromInvoice() runs raw SQL against a real table here (not a mocked
+ * connection): the anonymize flag is a data-preservation behavior, and only a
+ * real round trip proves which columns survive it.
+ */
+test('detachFromInvoice keeps personal data unless anonymizing', function (): void {
+    $em = transactionEntityManager();
+    (new SchemaTool($em))->createSchema([$em->getClassMetadata(Transaction::class)]);
+
+    $seed = function () use ($em): int {
+        $tx = (new Transaction())
+            ->setTxnId('gateway-txn-1')
+            ->setAmount(100.0)
+            ->setCurrency('EUR')
+            ->setIp('203.0.113.7')
+            ->setIpn('payer_email=client@example.com')
+            ->setNote('admin note')
+            ->setError('gateway said no')
+            ->setOutput('raw output');
+        $em->persist($tx);
+        $em->flush();
+        $id = $tx->getId();
+        $table = $em->getConnection()->quoteSingleIdentifier('transaction');
+        $em->getConnection()->update($table, ['invoice_id' => 7], ['id' => $id]);
+        $em->clear();
+
+        return $id;
+    };
+
+    $read = function (int $id) use ($em): Transaction {
+        $tx = $em->find(Transaction::class, $id);
+        expect($tx)->toBeInstanceOf(Transaction::class);
+
+        return $tx;
+    };
+
+    // Ordinary deletion: detached, everything intact.
+    $plainId = $seed();
+    $em->getRepository(Transaction::class)->detachFromInvoice(7);
+    $plain = $read($plainId);
+    expect($plain->getInvoice())->toBeNull()
+        ->and($plain->getIp())->toBe('203.0.113.7')
+        ->and($plain->getIpn())->toBe('payer_email=client@example.com')
+        ->and($plain->getNote())->toBe('admin note');
+
+    // Erasure: detached, personal data scrubbed, financial record kept.
+    $erasedId = $seed();
+    $em->getRepository(Transaction::class)->detachFromInvoice(7, true);
+    $erased = $read($erasedId);
+    expect($erased->getInvoice())->toBeNull()
+        ->and($erased->getIp())->toBeNull()
+        ->and($erased->getIpn())->toBeNull()
+        ->and($erased->getNote())->toBeNull()
+        ->and($erased->getError())->toBeNull()
+        ->and($erased->getOutput())->toBeNull()
+        ->and($erased->getTxnId())->toBe('gateway-txn-1')
+        ->and((float) $erased->getAmount())->toBe(100.0)
+        ->and($erased->getCurrency())->toBe('EUR');
 });

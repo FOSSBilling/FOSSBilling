@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Formbuilder\Repository;
 
+use Box\Mod\Formbuilder\Entity\Form;
 use Box\Mod\Formbuilder\Entity\FormField;
 use Doctrine\ORM\EntityRepository;
 
@@ -19,8 +20,8 @@ class FormFieldRepository extends EntityRepository
     /**
      * @return list<FormField>
      */
-    public function findByFormId(int $formId): array
+    public function findByForm(Form $form): array
     {
-        return $this->findBy(['formId' => $formId], ['id' => 'ASC']);
+        return $this->findBy(['form' => $form], ['id' => 'ASC']);
     }
 }

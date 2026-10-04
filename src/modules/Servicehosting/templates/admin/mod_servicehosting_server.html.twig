@@ -139,7 +139,7 @@
                 <div class="row g-3">
                     <div class="col-lg-6">
                         <label class="form-label">{{ 'Users Prefix'|trans }}</label>
-                        <input class="form-control" type="text" name="userprefix" value="{{ server.config.userprefix }}" placeholder="{{ 'Prefix for created users (especially for database)'|trans }}">
+                        <input class="form-control" type="text" name="userprefix" value="{{ server.config.userprefix|default('') }}" placeholder="{{ 'Prefix for created users (especially for database)'|trans }}">
                         <div class="form-text">{{ 'Some server managers may ignore this option due to limitations or requirements imposed by the control panel.'|trans }}</div>
                     </div>
                 </div>

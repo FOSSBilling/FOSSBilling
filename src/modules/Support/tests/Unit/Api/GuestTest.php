@@ -87,6 +87,35 @@ test('ticket create message too short exception', function (): void {
     expect(fn (): string => $guestApi->ticket_create($data))->toThrow(FOSSBilling\Exception::class);
 });
 
+test('ticket create consumes the rate limit before validating the email', function (): void {
+    $guestApi = apiEndpoint(new Box\Mod\Support\Api\Guest());
+    $di = container();
+
+    $rateLimiterMock = Mockery::mock(FOSSBilling\Security\RateLimiter::class);
+    $rateLimiterMock->shouldReceive('consumeOrThrow')
+        ->once()
+        ->with('guest_ticket_create', '');
+
+    $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
+    $toolsMock->shouldReceive('validateAndSanitizeEmail')
+        ->once()
+        ->andThrow(new FOSSBilling\InformationException('Email address is invalid'));
+
+    $di['rate_limiter'] = $rateLimiterMock;
+    $di['tools'] = $toolsMock;
+    $guestApi->setDi($di);
+
+    $data = [
+        'name' => 'Name',
+        'email' => 'email@invalid.example',
+        'subject' => 'Subject',
+        'content' => 'Message',
+    ];
+
+    expect(fn (): string => $guestApi->ticket_create($data))
+        ->toThrow(FOSSBilling\InformationException::class, 'Email address is invalid');
+});
+
 test('ticket get', function (): void {
     $guestApi = apiEndpoint(new Box\Mod\Support\Api\Guest());
     $serviceMock = guestSupportServiceMock();
@@ -120,7 +149,7 @@ test('ticket close', function (): void {
     $guestApi->setDi($di);
 
     $guestApi->setService($serviceMock);
-    $guestApi->setIdentity(new Model_Guest());
+    $guestApi->setIdentity(new FOSSBilling\Identity\Guest());
 
     $data = [
         'hash' => sha1(uniqid()),
@@ -171,7 +200,7 @@ test('kb article get list', function (): void {
     $repo = Mockery::mock(KbArticleRepository::class);
     $repo->shouldReceive('getSearchQueryBuilder')
         ->once()
-        ->with(KbArticle::ACTIVE, null, null)
+        ->with(['status' => KbArticle::ACTIVE, 'search' => null, 'kb_article_category_id' => null])
         ->andReturn($qb);
 
     $supportService = guestSupportServiceMock();

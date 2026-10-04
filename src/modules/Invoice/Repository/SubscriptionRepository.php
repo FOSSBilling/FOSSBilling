@@ -14,6 +14,7 @@ namespace Box\Mod\Invoice\Repository;
 use Box\Mod\Invoice\Entity\Subscription;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
+use FOSSBilling\SortOptions;
 
 class SubscriptionRepository extends EntityRepository
 {
@@ -28,11 +29,23 @@ class SubscriptionRepository extends EntityRepository
         return $subscription instanceof Subscription ? $subscription : null;
     }
 
+    public function existsByGatewayId(int $gatewayId): bool
+    {
+        return (bool) $this->createQueryBuilder('s')
+            ->select('1')
+            ->andWhere('IDENTITY(s.payGateway) = :gateway_id')
+            ->setParameter('gateway_id', $gatewayId)
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
     /**
      * Build a QueryBuilder for subscription searches/listings.
      *
      * @param array $data optional filters: search, id, sid, status, gateway_id,
-     *                    client_id, currency, invoice_id, date_from, date_to
+     *                    client_id, currency, invoice_id, date_from, date_to,
+     *                    sort, direction
      */
     public function getSearchQueryBuilder(array $data = []): QueryBuilder
     {
@@ -45,7 +58,7 @@ class SubscriptionRepository extends EntityRepository
 
         $gatewayId = $data['gateway_id'] ?? null;
         if ($gatewayId) {
-            $qb->andWhere('s.payGatewayId = :gateway_id')->setParameter('gateway_id', (int) $gatewayId);
+            $qb->andWhere('IDENTITY(s.payGateway) = :gateway_id')->setParameter('gateway_id', (int) $gatewayId);
         }
 
         $clientId = $data['client_id'] ?? null;
@@ -79,7 +92,7 @@ class SubscriptionRepository extends EntityRepository
 
         $search = $data['search'] ?? null;
         if ($search) {
-            $qb->andWhere('s.sid = :search OR s.id = :search_id')
+            $qb->andWhere('(s.sid = :search OR s.id = :search_id)')
                 ->setParameter('search', $search)
                 ->setParameter('search_id', (int) $search);
         }
@@ -94,7 +107,24 @@ class SubscriptionRepository extends EntityRepository
             $qb->andWhere('s.sid = :sid')->setParameter('sid', $sid);
         }
 
-        $qb->orderBy('s.id', 'DESC');
+        $sort = SortOptions::fromArray($data, [
+            'id' => 's.id',
+            'sid' => 's.sid',
+            'status' => 's.status',
+            'currency' => 's.currency',
+            'period' => 's.period',
+            'amount' => 's.amount',
+            'created_at' => 's.createdAt',
+            'updated_at' => 's.updatedAt',
+        ]);
+        if ($sort->isSorted()) {
+            $qb->orderBy($sort->expression, $sort->direction);
+            if ($sort->expression !== 's.id') {
+                $qb->addOrderBy('s.id', $sort->direction);
+            }
+        } else {
+            $qb->orderBy('s.id', \SortDirection::Descending);
+        }
 
         return $qb;
     }

@@ -33,8 +33,8 @@ if ((bool) ($config['debug_and_monitoring']['debug'] ?? false)) {
     // PDO collector
     $pdoCollector = new DebugBar\DataCollector\PDO\PDOCollector();
 
-    // RedBean
-    $pdoCollector->addConnection($di['pdo'], 'RedBeanPHP');
+    // PDO
+    $pdoCollector->addConnection($di['pdo'], 'PDO');
 
     // Doctrine
     $connection = $di['em']->getConnection();
@@ -58,18 +58,6 @@ $url = RequestFactory::normalizeRoutePath($request);
 $http_err_code = $request->query->get('_errcode');
 
 $timeCollector?->startMeasure('session_start', 'Starting / restoring the session');
-
-/*
- * Workaround: Session IDs get reset when using PGs like PayPal because of the `samesite=strict` cookie attribute, resulting in the client getting logged out.
- * The return and cancel URLs include a signed restore_token that contains the session ID. We validate and extract it here.
- */
-if ($request->query->has('restore_token')) {
-    $restoreToken = $request->query->get('restore_token');
-    $restoredSessionId = is_string($restoreToken) ? FOSSBilling\Tools::validateSessionRestoreToken($restoreToken) : null;
-    if ($restoredSessionId !== null) {
-        session_id($restoredSessionId);
-    }
-}
 
 $di['session']->getId();
 $timeCollector?->stopMeasure('session_start');

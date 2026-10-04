@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Box\Mod\Staff\Controller;
 
 use Box\Mod\Staff\Entity\AdminPasswordReset;
+use Box\Mod\Staff\Event\BeforeStaffPasswordResetConfirmationEvent;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Security\RandomizedTimeFloor;
 use Symfony\Component\HttpFoundation\Response;
@@ -120,7 +121,7 @@ class Admin implements InjectionAwareInterface
         }
 
         $data = [];
-        $this->di['events_manager']->fire(['event' => 'onBeforePasswordResetStaff']);
+        $this->di['event_dispatcher']->dispatch(new BeforeStaffPasswordResetConfirmationEvent($this->di['request']->getClientIp()));
 
         $mod = $this->di['mod']('staff');
         $config = $mod->getConfig();
@@ -136,10 +137,12 @@ class Admin implements InjectionAwareInterface
                 $expiresAt = strtotime((string) $reset->getCreatedAt()?->format('Y-m-d H:i:s')) + 900;
 
                 if ($expiresAt >= time()) {
-                    $admin = $this->di['db']->getExistingModelById('Admin', $reset->getAdminId(), 'User not found');
-                    $data['hash'] = $reset->getHash();
-                    $data['email'] = $admin->email;
-                    $isValidReset = true;
+                    $admin = $reset->getAdmin();
+                    if ($admin instanceof \Box\Mod\Staff\Entity\Admin) {
+                        $data['hash'] = $reset->getHash();
+                        $data['email'] = $admin->getEmail();
+                        $isValidReset = true;
+                    }
                 }
             }
         } finally {

@@ -38,6 +38,7 @@ class Resellbiz extends \FOSSBilling\Extension\Registrar\Resellerclub\Resellercl
                     'label' => 'Resell.biz API Key',
                     'description' => 'You can get this at Resell.biz control panel, go to Settings -> API',
                     'required' => false,
+                    'secret' => true,
                 ],
                 ],
             ],

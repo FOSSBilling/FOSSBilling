@@ -24,6 +24,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @param array $data Search parameters
      *
+     * @optional string $sort - sort by one of: id, priority, ip, created_at
+     * @optional string $direction - sort direction: ASC or DESC
+     *
      * @return array An array containing the list of activity messages and the pager information
      */
     public function log_get_list($data)

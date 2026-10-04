@@ -4,5 +4,17 @@
   "name": "PayPal",
   "description": "Accepts PayPal payments addressed to a PayPal account email.",
   "version": "1.0.0",
-  "api": 1
+  "api": 1,
+  "logo": {
+    "file": "paypal.png",
+    "width": "85px",
+    "height": "25px"
+  },
+  "settings": [
+    {
+      "name": "email",
+      "type": "text",
+      "label": "PayPal email address for payments"
+    }
+  ]
 }

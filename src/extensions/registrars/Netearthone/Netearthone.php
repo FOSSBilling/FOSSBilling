@@ -38,6 +38,7 @@ class Netearthone extends \FOSSBilling\Extension\Registrar\Resellerclub\Reseller
                     'label' => 'NetEarthOne API Key',
                     'description' => 'You can get this at NetEarthOne control panel, go to Settings -> API',
                     'required' => false,
+                    'secret' => true,
                 ],
                 ],
             ],

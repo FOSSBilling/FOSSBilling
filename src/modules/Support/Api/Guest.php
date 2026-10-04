@@ -36,8 +36,8 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             throw new \FOSSBilling\InformationException('Please enter your message');
         }
 
-        $data['email'] = $this->getDi()['tools']->validateAndSanitizeEmail($data['email']);
         $this->getDi()['rate_limiter']->consumeOrThrow('guest_ticket_create', (string) $this->getIp());
+        $data['email'] = $this->getDi()['tools']->validateAndSanitizeEmail($data['email']);
 
         $data['content'] = \FOSSBilling\Tools::sanitizeMarkdownContent($content);
 
@@ -84,7 +84,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
 
         $message = \FOSSBilling\Tools::sanitizeMarkdownContent($message);
 
-        return $this->getService()->ticketReply($guestTicket, new \Model_Guest(), $message);
+        return $this->getService()->ticketReply($guestTicket, new \FOSSBilling\Identity\Guest(), $message);
     }
 
     /**
@@ -152,7 +152,11 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         /** @var \Box\Mod\Support\Repository\KbArticleRepository $repo */
         $repo = $this->getService()->getKbArticleRepository();
 
-        $qb = $repo->getSearchQueryBuilder(KbArticle::ACTIVE, $search, $cat);
+        $qb = $repo->getSearchQueryBuilder([
+            'status' => KbArticle::ACTIVE,
+            'search' => $search,
+            'kb_article_category_id' => $cat,
+        ]);
 
         return $this->getDi()['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data), $this->getIdentity(), false, $this->getService()->kbArticleViewsEnabled());
     }

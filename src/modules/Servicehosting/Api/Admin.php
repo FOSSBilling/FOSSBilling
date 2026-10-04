@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicehosting\Api;
 
+use Box\Mod\Order\Entity\Order;
 use Box\Mod\Servicehosting\Entity\ServiceHosting;
 use Box\Mod\Servicehosting\Entity\ServiceHostingHp;
 use Box\Mod\Servicehosting\Entity\ServiceHostingServer;
@@ -148,6 +149,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Get a paginated list of servers.
      *
+     * @optional string $sort - sort by one of: id, name, ip, hostname
+     * @optional string $direction - sort direction: ASC or DESC
+     *
      * @return array
      */
     public function server_get_list($data)
@@ -180,6 +184,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * Get a paginated list of hosting accounts, along with the "order" and "client" information.
      *
      * @param $data array Accepts the optional "server_id" property
+     *
+     * @optional string $sort - sort by one of: id, username, sld, tld, ip, created_at
+     * @optional string $direction - sort direction: ASC or DESC
      *
      * @return array
      */
@@ -254,6 +261,8 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Delete server.
      *
+     * @optional bool $force - detach orphaned usages with no linked order and delete
+     *
      * @throws \FOSSBilling\Exception
      */
     #[RequiredParams(['id' => 'Server ID was not passed'])]
@@ -264,10 +273,20 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $model = $this->_getServer((int) $data['id']);
 
         $count = $this->getDi()['em']->getRepository(ServiceHosting::class)
-            ->count(['serviceHostingServerId' => (int) $data['id']]);
+            ->count(['serviceHostingServer' => $model]);
 
         if ($count > 0) {
-            throw new \FOSSBilling\InformationException('Hosting server is used by :count: service hostings', [':count:' => $count], 704);
+            $stats = $this->getService()->getServerUsageStats($model);
+            if ($stats['active'] > 0) {
+                throw new \FOSSBilling\InformationException('Hosting server is used by :count: service hostings', [':count:' => $stats['active']], 704);
+            }
+
+            $force = Tools::normalizeBoolean($data['force'] ?? false);
+            if (!$force) {
+                throw new \FOSSBilling\InformationException('Hosting server is used by :count: orphaned service hostings with no linked order. Re-run with force=true to detach them and delete the server.', [':count:' => $stats['orphaned']], 704);
+            }
+
+            $this->getService()->detachOrphanedServerUsages($model);
         }
 
         return (bool) $this->getService()->deleteServer($model);
@@ -355,6 +374,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Get hosting plans paginated list.
      *
+     * @optional string $sort - sort by one of: id, name
+     * @optional string $direction - sort direction: ASC or DESC
+     *
      * @return array
      */
     public function hp_get_list($data)
@@ -385,6 +407,8 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Delete hosting plan.
      *
+     * @optional bool $force - detach orphaned usages with no linked order and delete
+     *
      * @throws \FOSSBilling\InformationException
      */
     #[RequiredParams(['id' => 'Hosting plan ID was not passed'])]
@@ -395,9 +419,19 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $model = $this->_getHp((int) $data['id']);
 
         $count = $this->getDi()['em']->getRepository(ServiceHosting::class)
-            ->count(['serviceHostingHpId' => (int) $data['id']]);
+            ->count(['serviceHostingHp' => $model]);
         if ($count > 0) {
-            throw new \FOSSBilling\InformationException('Hosting plan is used by :count: service hostings', [':count:' => $count], 704);
+            $stats = $this->getService()->getHpUsageStats($model);
+            if ($stats['active'] > 0) {
+                throw new \FOSSBilling\InformationException('Hosting plan is used by :count: service hostings', [':count:' => $stats['active']], 704);
+            }
+
+            $force = Tools::normalizeBoolean($data['force'] ?? false);
+            if (!$force) {
+                throw new \FOSSBilling\InformationException('Hosting plan is used by :count: orphaned service hostings with no linked order. Re-run with force=true to detach them and delete the plan.', [':count:' => $stats['orphaned']], 704);
+            }
+
+            $this->getService()->detachOrphanedHpUsages($model);
         }
 
         return (bool) $this->getService()->deleteHp($model);
@@ -463,7 +497,10 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         ];
         $this->getDi()['validator']->checkRequiredParamsForArray($required, $data);
 
-        $order = $this->getDi()['db']->getExistingModelById('ClientOrder', $data['order_id'], 'Order not found');
+        $order = $this->getDi()['em']->getRepository(Order::class)->find($data['order_id']);
+        if (!$order instanceof Order) {
+            throw new \FOSSBilling\Exception('Order not found');
+        }
         $orderService = $this->getDi()['mod_service']('order');
         $s = $orderService->getOrderService($order);
         if (!$s instanceof ServiceHosting) {

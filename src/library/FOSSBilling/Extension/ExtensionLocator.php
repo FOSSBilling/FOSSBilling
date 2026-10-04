@@ -23,9 +23,9 @@ use Symfony\Component\Finder\Finder;
  * An extension is a directory named after its ID containing a like-named class
  * file, so gateways/Stripe/Stripe.php provides the "Stripe" payment gateway.
  */
-final class ExtensionLocator
+final readonly class ExtensionLocator
 {
-    public function __construct(private readonly Filesystem $filesystem)
+    public function __construct(private Filesystem $filesystem)
     {
     }
 

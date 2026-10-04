@@ -7,6 +7,7 @@ nodeBuildTimestamp="node_modules/package.stamp"
 
 # Composer vars
 composerVendorPath="src/vendor"
+composerJson="composer.json"
 composerLock="composer.lock"
 customVendorTimestamp="src/vendor/composer.stamp"
 
@@ -23,13 +24,14 @@ if [ ! -d "$nodeModulesPath" ] || [ ! -f "$nodeBuildTimestamp" ] || [ "$packageL
     npm ci --include=dev
     npmBuildNeeded=1
 elif [ ! -f "src/public/assets/manifest.json" ] \
-    || [ ! -f "src/themes/admin_default/assets/build/manifest.json" ] \
-    || [ ! -f "src/themes/huraga/assets/build/manifest.json" ]; then
+    || [ ! -f "src/themes/default/admin/assets/build/manifest.json" ] \
+    || [ ! -f "src/themes/default/client/assets/build/manifest.json" ]; then
     npmBuildNeeded=1
 fi
 
 # If the composer packages aren't installed or are outdated, install the locked versions
-if [ ! -d "$composerVendorPath" ] || [ ! -f "$customVendorTimestamp" ] || [ "$composerLock" -nt "$customVendorTimestamp" ]; then
+# composer.json is checked too: autoload-only changes don't touch the lock file.
+if [ ! -d "$composerVendorPath" ] || [ ! -f "$customVendorTimestamp" ] || [ "$composerJson" -nt "$customVendorTimestamp" ] || [ "$composerLock" -nt "$customVendorTimestamp" ]; then
     composer install
     echo "$now" > "$customVendorTimestamp"
 fi

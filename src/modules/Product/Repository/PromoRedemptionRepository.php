@@ -12,8 +12,12 @@ declare(strict_types=1);
 namespace Box\Mod\Product\Repository;
 
 use Box\Mod\Product\Entity\PromoRedemption;
+use Doctrine\DBAL\Platforms\PostgreSQLPlatform;
+use Doctrine\DBAL\Platforms\SQLitePlatform;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
+use FOSSBilling\Doctrine\RowLock;
+use FOSSBilling\SortOptions;
 
 class PromoRedemptionRepository extends EntityRepository
 {
@@ -49,7 +53,7 @@ class PromoRedemptionRepository extends EntityRepository
     public function findInvoiceSummary(int $invoiceId): ?array
     {
         $row = $this->getEntityManager()->getConnection()->fetchAssociative(
-            'SELECT id, serie_nr, status, created_at FROM invoice WHERE id = :id',
+            'SELECT id, serie, nr, status, created_at FROM invoice WHERE id = :id',
             ['id' => $invoiceId],
         );
 
@@ -60,8 +64,8 @@ class PromoRedemptionRepository extends EntityRepository
     {
         $qb = $this->createQueryBuilder('pr');
 
-        if (!empty($data['promo_id'])) {
-            $qb->andWhere('pr.promoId = :promoId')
+        if (array_key_exists('promo_id', $data)) {
+            $qb->andWhere('IDENTITY(pr.promo) = :promoId')
                 ->setParameter('promoId', $data['promo_id']);
         }
 
@@ -75,6 +79,11 @@ class PromoRedemptionRepository extends EntityRepository
                 ->setParameter('clientOrderId', $data['client_order_id']);
         }
 
+        if (!empty($data['invoice_id'])) {
+            $qb->andWhere('pr.invoiceId = :invoiceId')
+                ->setParameter('invoiceId', $data['invoice_id']);
+        }
+
         if (!empty($data['phase'])) {
             $qb->andWhere('pr.phase = :phase')
                 ->setParameter('phase', $data['phase']);
@@ -85,7 +94,24 @@ class PromoRedemptionRepository extends EntityRepository
                 ->setParameter('status', $data['status']);
         }
 
-        $qb->orderBy('pr.id', 'DESC');
+        $sort = SortOptions::fromArray($data, [
+            'id' => 'pr.id',
+            'phase' => 'pr.phase',
+            'status' => 'pr.status',
+            'discount_amount' => 'pr.discountAmount',
+            'committed_at' => 'pr.committedAt',
+            'released_at' => 'pr.releasedAt',
+            'created_at' => 'pr.createdAt',
+            'updated_at' => 'pr.updatedAt',
+        ]);
+        if ($sort->isSorted()) {
+            $qb->orderBy($sort->expression, $sort->direction);
+            if ($sort->expression !== 'pr.id') {
+                $qb->addOrderBy('pr.id', $sort->direction);
+            }
+        } else {
+            $qb->orderBy('pr.id', \SortDirection::Descending);
+        }
 
         return $qb;
     }
@@ -94,7 +120,7 @@ class PromoRedemptionRepository extends EntityRepository
     {
         $count = (int) $this->createQueryBuilder('pr')
             ->select('COUNT(pr.id)')
-            ->where('pr.promoId = :promoId')
+            ->where('IDENTITY(pr.promo) = :promoId')
             ->andWhere('pr.clientId = :clientId')
             ->andWhere('pr.phase = :phase')
             ->andWhere('pr.status IN (:statuses)')
@@ -108,11 +134,72 @@ class PromoRedemptionRepository extends EntityRepository
         return $count > 0;
     }
 
+    /**
+     * Locking variant of clientHasActiveCheckoutApplication(), for use inside the checkout
+     * transaction. Redemption rows are insert-only, so a plain COUNT cannot serialize concurrent
+     * checkouts against each other: lock the client row as the mutex instead, then re-read.
+     *
+     * Must be called within a transaction, held until the checkout's redemption rows are written.
+     */
+    public function clientHasActiveCheckoutApplicationForUpdate(int $promoId, int $clientId): bool
+    {
+        $connection = $this->getEntityManager()->getConnection();
+
+        if (!$connection->isTransactionActive()) {
+            throw new \FOSSBilling\Exception('Promo redemption cannot be locked outside of a transaction.');
+        }
+
+        $platform = $connection->getDatabasePlatform();
+
+        if ($platform instanceof SQLitePlatform) {
+            // SQLite has no SELECT ... FOR UPDATE, and a deferred transaction takes no lock at
+            // all until the first write. Two concurrent checkouts could otherwise both pass the
+            // read below under a shared lock before either takes a write lock. This no-op UPDATE
+            // changes no values but forces lock escalation immediately, so only one checkout can
+            // be mid-check at a time; the loser fails outright on the busy connection and rolls
+            // back instead of double-redeeming.
+            $connection->executeStatement(
+                'UPDATE client SET updated_at = updated_at WHERE id = :client_id',
+                ['client_id' => $clientId]
+            );
+        }
+
+        // The mutex: every checkout for this client collides here, checkouts for other clients
+        // do not.
+        $connection->fetchOne(
+            'SELECT id FROM client WHERE id = :client_id' . RowLock::suffix($connection),
+            ['client_id' => $clientId]
+        );
+
+        // PostgreSQL rejects locking clauses on aggregate queries outright, so the COUNT goes
+        // without FOR UPDATE there. That loses nothing: under PostgreSQL's default READ COMMITTED
+        // isolation every statement sees a fresh snapshot, so once the client-row mutex above is
+        // held, this read already reflects everything committed before it. The locking read only
+        // matters where the transaction snapshot can predate the mutex wait (MySQL/MariaDB
+        // REPEATABLE READ).
+        $countLock = ($platform instanceof SQLitePlatform || $platform instanceof PostgreSQLPlatform) ? '' : ' FOR UPDATE';
+
+        $count = (int) $connection->fetchOne(
+            'SELECT COUNT(pr.id) FROM promo_redemption pr'
+            . ' WHERE pr.promo_id = :promo_id AND pr.client_id = :client_id'
+            . ' AND pr.phase = :phase AND pr.status IN (:statuses)' . $countLock,
+            [
+                'promo_id' => $promoId,
+                'client_id' => $clientId,
+                'phase' => PromoRedemption::PHASE_CHECKOUT,
+                'statuses' => [PromoRedemption::STATUS_RESERVED, PromoRedemption::STATUS_COMMITTED],
+            ],
+            ['statuses' => \Doctrine\DBAL\ArrayParameterType::STRING]
+        );
+
+        return $count > 0;
+    }
+
     public function countByPromoId(int $promoId): int
     {
         return (int) $this->createQueryBuilder('pr')
             ->select('COUNT(pr.id)')
-            ->where('pr.promoId = :promoId')
+            ->where('IDENTITY(pr.promo) = :promoId')
             ->setParameter('promoId', $promoId)
             ->getQuery()
             ->getSingleScalarResult();
@@ -143,7 +230,7 @@ class PromoRedemptionRepository extends EntityRepository
             ->addSelect('SUM(CASE WHEN pr.status = :releasedStatus THEN 1 ELSE 0 END) AS released_applications')
             ->addSelect('COUNT(DISTINCT pr.clientId) AS distinct_clients')
             ->addSelect('COUNT(DISTINCT pr.clientOrderId) AS orders_using_promo')
-            ->where('pr.promoId = :promoId')
+            ->where('IDENTITY(pr.promo) = :promoId')
             ->setParameter('promoId', $promoId)
             ->setParameter('checkoutPhase', PromoRedemption::PHASE_CHECKOUT)
             ->setParameter('renewalPhase', PromoRedemption::PHASE_RENEWAL)

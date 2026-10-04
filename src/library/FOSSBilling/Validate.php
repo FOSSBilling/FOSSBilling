@@ -11,26 +11,16 @@ declare(strict_types=1);
 
 namespace FOSSBilling;
 
-use Symfony\Component\Filesystem\Filesystem;
-use Symfony\Component\Filesystem\Path;
 use Symfony\Contracts\Cache\ItemInterface;
+use Symfony\Contracts\HttpClient\Exception\ExceptionInterface;
 
 class Validate
 {
     protected ?\Pimple\Container $di = null;
-    private Filesystem $filesystem;
-
-    public function __construct()
-    {
-        $this->filesystem = new Filesystem();
-    }
 
     public function setDi(\Pimple\Container $di): void
     {
         $this->di = $di;
-        if (isset($di['filesystem'])) {
-            $this->filesystem = $di['filesystem'];
-        }
     }
 
     public function getDi(): ?\Pimple\Container
@@ -53,16 +43,14 @@ class Validate
         }
         $sld = strtolower($sld);
 
-        // allow punnycode
+        // allow punnycode, subject to the same single-label and length limits
         if (str_starts_with($sld, 'xn--')) {
-            return true;
+            return !str_contains($sld, '.') && strlen($sld) < 64;
         }
 
-        if (preg_match('/^[a-z0-9]+[a-z0-9\-]*[a-z0-9]+$/i', $sld) && strlen($sld) < 64 && substr($sld, 2, 2) != '--') {
-            return true;
-        }
-
-        return false;
+        return preg_match('/^[a-z0-9]+[a-z0-9\-]*[a-z0-9]+$/i', $sld) === 1
+            && strlen($sld) < 64
+            && substr($sld, 2, 2) !== '--';
     }
 
     /**
@@ -85,31 +73,38 @@ class Validate
             $item->expiresAfter(86400);
 
             $httpClient = $this->di['http_client'];
-            $response = $httpClient->request('GET', 'https://publicsuffix.org/list/public_suffix_list.dat');
-            $dbPath = Path::join(PATH_CACHE, 'tlds.txt');
 
-            if ($response->getStatusCode() === 200) {
-                $this->filesystem->dumpFile($dbPath, $response->getContent());
-            } else {
+            try {
+                $response = $httpClient->request('GET', 'https://publicsuffix.org/list/public_suffix_list.dat');
+                $content = $response->getStatusCode() === 200 ? $response->getContent() : null;
+            } catch (ExceptionInterface) {
+                // Network/transport failure (DNS, TLS, connection refused, unsupported address family, etc.)
+                // Fall back below instead of letting this bubble up and break the calling flow (e.g. checkout).
+                $content = null;
+            }
+
+            if ($content === null) {
                 $item->expiresAfter(3600);
 
                 return [];
             }
 
-            @$database = file($dbPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-            $this->filesystem->remove($dbPath);
+            $database = preg_split('/\R/', $content, -1, PREG_SPLIT_NO_EMPTY);
+
             if (!$database) {
                 $item->expiresAfter(3600);
 
                 return [];
             }
 
-            $validTlds = array_filter($database, fn ($tld): bool => !str_starts_with((string) $tld, '/'));
-
             $result = [];
-            foreach ($validTlds as $tld) {
+            foreach ($database as $tld) {
+                $tld = trim($tld);
                 if (str_contains($tld, 'END ICANN DOMAINS')) {
                     break;
+                }
+                if ($tld === '' || str_starts_with($tld, '//')) {
+                    continue;
                 }
                 $tld = idn_to_ascii($tld);
                 if ($tld !== false) {
@@ -129,11 +124,7 @@ class Validate
 
         if (!$validTlds) {
             // Fallback behavior if we fail to get a valid list
-            if (str_starts_with($tld, 'xn--') || preg_match('/^[a-z]+$/', $tld)) {
-                return true;
-            }
-
-            return false;
+            return str_starts_with($tld, 'xn--') || preg_match('/^[a-z]+$/', $tld) === 1;
         }
 
         return $validTlds[$tld] ?? false;

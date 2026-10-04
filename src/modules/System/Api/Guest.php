@@ -16,6 +16,7 @@ declare(strict_types=1);
 namespace Box\Mod\System\Api;
 
 use FOSSBilling\i18n;
+use FOSSBilling\Period;
 use FOSSBilling\Validation\Api\RequiredParams;
 use PrinsFrank\Standards\CountryCallingCode\CountryCallingCode;
 use Symfony\Component\Intl\Countries;
@@ -77,7 +78,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         }
 
         $countries = [];
-        foreach (preg_split('/\R/', $configuredCountries) as $line) {
+        foreach (preg_split('/\R/u', $configuredCountries) as $line) {
             $parts = explode('=', trim($line), 2);
             if (count($parts) !== 2) {
                 continue;
@@ -113,7 +114,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
      */
     public function periods()
     {
-        return \Box_Period::getPredefined();
+        return Period::getPredefined();
     }
 
     /**
@@ -175,16 +176,19 @@ class Guest extends \FOSSBilling\Api\AbstractApi
 
     /**
      * Check if passed file name template exists for client area.
-     *
-     * @return bool
      */
-    public function template_exists($data)
+    public function template_exists($data): bool
     {
-        if (!isset($data['file'])) {
+        if (!isset($data['file']) || !is_string($data['file'])) {
             return false;
         }
 
-        return $this->getService()->templateExists($data['file']);
+        $file = trim($data['file']);
+        if ($file === '' || str_contains($file, "\0")) {
+            return false;
+        }
+
+        return $this->getService()->templateExists($file);
     }
 
     /**

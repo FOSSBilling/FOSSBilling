@@ -54,7 +54,7 @@ class EmailTemplate implements ApiArrayInterface
         private string $actionCode,
         #[ORM\Id]
         #[ORM\GeneratedValue]
-        #[ORM\Column(type: Types::INTEGER)]
+        #[ORM\Column(type: Types::BIGINT)]
         private ?int $id = null,
     ) {
     }

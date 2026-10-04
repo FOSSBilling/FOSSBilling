@@ -40,6 +40,7 @@
     },
     "require": {
         "php": ">=8.3",
+        "php-64bit": "*",
         "ext-curl": "*",
         "ext-intl": "*",
         "ext-mbstring": "*",
@@ -49,11 +50,11 @@
         "composer/composer": "^2.8.12",
         "dicebear/core": "^10.0",
         "dicebear/styles": "^10.0",
-        "doctrine/orm": "^3.6",
+        "doctrine/dbal": "^4.5",
+        "doctrine/orm": "^3.7",
         "dompdf/dompdf": "^3.1.4",
         "egulias/email-validator": "^4.0.4",
         "filp/whoops": "^2.18.4",
-        "gabordemooij/redbean": "^5.7.5",
         "league/commonmark": "^2.8",
         "league/csv": "^9.28",
         "liborm85/composer-vendor-cleaner": "^1.7.1",
@@ -69,6 +70,7 @@
         "sentry/sentry": "^4.19.1",
         "symfony/cache": "^7.4.1",
         "symfony/console": "^7.4.1",
+        "symfony/event-dispatcher": "^7.4",
         "symfony/filesystem": "^7.4",
         "symfony/finder": "^7.4",
         "symfony/html-sanitizer": "^7.4",
@@ -97,6 +99,7 @@
     },
     "autoload": {
         "psr-4": {
+            "FOSSBilling\\": "src/library/FOSSBilling/",
             "Box\\Mod\\": "src/modules/"
         },
         "classmap": [
@@ -133,9 +136,6 @@
                 ".travis.yml",
                 ".github/",
                 ".devcontainer/"
-            ],
-            "gabordemooij/redbean": [
-                "testing/"
             ],
             "mattketmo/email-checker": [
                 "res/"

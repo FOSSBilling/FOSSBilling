@@ -1,0 +1,54 @@
+{% block subject %}[{{ guest.system_company.name }}] Invoice Voided{% endblock %}
+{% block content %}
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<style type="text/css">
+		body {
+			font-family: Arial, sans-serif;
+			font-size: 14px;
+			color: #333333;
+		}
+
+		h1 {
+			font-size: 24px;
+			font-weight: bold;
+			margin: 0 0 20px;
+		}
+
+		p {
+			margin: 0 0 10px;
+		}
+
+		strong {
+			font-weight: bold;
+		}
+
+		.signature {
+			font-style: italic;
+			color: #999999;
+			margin-top: 20px;
+			border-top: 1px solid #cccccc;
+			padding-top: 10px;
+		}
+	</style>
+</head>
+<body>
+	<h1>Invoice Voided</h1>
+	<p>Hello {{ c.first_name|default('') }} {{ c.last_name|default('') }},</p>
+	<p>Invoice <strong>{{ invoice.serie_nr|default('') }}</strong> has been voided and can no longer be paid.</p>
+	{% if reason|default('') %}
+	<p><strong>Reason:</strong> {{ reason }}</p>
+	{% endif %}
+	{% if replacement_invoice.serie_nr|default('') %}
+	<p>A replacement invoice <strong>{{ replacement_invoice.serie_nr }}</strong> has been issued. You may view it <a href='{{ "invoice/#{replacement_invoice.hash|default('')}"|url(area: 'client') }}' target="_blank">here.</a></p>
+	{% endif %}
+
+    <p>You may view the voided invoice <a href='{{ "invoice/#{invoice.hash|default('')}"|url(area: 'client') }}' target="_blank">here.</a></p>
+    <p>You can also <a href="{{ 'login'|url(query: { 'email': c.email|default('') }, area: 'client') }}" target="_blank">login</a>, or <a href="{{ 'client/profile'|url(area: 'client') }}" target="_blank">edit your profile.</a></p>
+
+	<div class="signature">{{ guest.system_email.signature }}</div>
+</body>
+</html>
+{% endblock %}

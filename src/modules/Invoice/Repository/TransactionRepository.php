@@ -11,19 +11,169 @@ declare(strict_types=1);
 
 namespace Box\Mod\Invoice\Repository;
 
+use Box\Mod\Invoice\Entity\Invoice;
+use Box\Mod\Invoice\Entity\PayGateway;
 use Box\Mod\Invoice\Entity\Transaction;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
+use FOSSBilling\SortOptions;
 
 class TransactionRepository extends EntityRepository
 {
+    public function existsByGatewayId(int $gatewayId): bool
+    {
+        return (bool) $this->createQueryBuilder('t')
+            ->select('1')
+            ->andWhere('IDENTITY(t.gateway) = :gateway_id')
+            ->setParameter('gateway_id', $gatewayId)
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
+    /**
+     * Detaches (rather than deletes) transactions from a soon-to-be-removed invoice - a
+     * transaction is a real record of a payment attempt/event and, like
+     * client_order.unpaid_invoice_id, shouldn't be destroyed just because the invoice it
+     * once pointed to was.
+     *
+     * With $anonymize (client-erasure path only), personal data is scrubbed from the
+     * surviving rows - client IP, raw gateway payloads, free-text notes and error output -
+     * while the financial record (amounts, gateway, txn id, status, dates) is kept for the
+     * books. Ordinary invoice deletion leaves the rows untouched: the client still exists
+     * and the admin still needs them intact.
+     */
+    public function detachFromInvoice(int $invoiceId, bool $anonymize = false): int
+    {
+        $connection = $this->getEntityManager()->getConnection();
+        $data = ['invoice_id' => null];
+        if ($anonymize) {
+            $data += ['ip' => null, 'ipn' => null, 'note' => null, 'error' => null, 'output' => null];
+        }
+
+        // `transaction` is a reserved word: Connection::update() does not quote the table, so
+        // the bare name is a syntax error on SQLite. Quote it portably instead.
+        return (int) $connection->update($connection->quoteSingleIdentifier('transaction'), $data, ['invoice_id' => $invoiceId]);
+    }
+
+    /**
+     * Build a QueryBuilder for transaction searches/listings.
+     *
+     * Mirrors the legacy `Box\Mod\Invoice\ServiceTransaction::getSearchQuery`
+     * filters and returns the Transaction entity together with the gateway
+     * name and code, so the caller can use `paginateMappedQuery` and skip the per-row
+     * gateway lookup that `ServiceTransaction::toApiArray` would perform.
+     * Each result row hydrates as `[0 => Transaction, 'gateway' => string|null, 'gateway_code' => string|null]`.
+     *
+     * @param array $data optional filters: id, search, invoice_hash, invoice_id,
+     *                    gateway_id, client_id, status, currency, type, txn_id,
+     *                    date_from, date_to, sort, direction
+     */
+    public function getSearchQueryBuilder(array $data = []): QueryBuilder
+    {
+        $qb = $this->createQueryBuilder('t')
+            ->addSelect('pg.name AS gateway')
+            ->addSelect('pg.gateway AS gateway_code')
+            ->leftJoin('t.gateway', 'pg');
+
+        $id = $data['id'] ?? null;
+        if ($id) {
+            $qb->andWhere('t.id = :id')->setParameter('id', (int) $id);
+        }
+
+        $status = $data['status'] ?? null;
+        if ($status) {
+            $qb->andWhere('t.status = :status')->setParameter('status', $status);
+        }
+
+        $invoiceHash = $data['invoice_hash'] ?? null;
+        if ($invoiceHash) {
+            $qb->andWhere('IDENTITY(t.invoice) IN (SELECT i.id FROM ' . Invoice::class . ' i WHERE i.hash = :hash)')
+                ->setParameter('hash', $invoiceHash);
+        }
+
+        $invoiceId = $data['invoice_id'] ?? null;
+        if ($invoiceId) {
+            $qb->andWhere('IDENTITY(t.invoice) = :invoice_id')->setParameter('invoice_id', (int) $invoiceId);
+        }
+
+        $gatewayId = $data['gateway_id'] ?? null;
+        if ($gatewayId) {
+            $qb->andWhere('IDENTITY(t.gateway) = :gateway_id')->setParameter('gateway_id', (int) $gatewayId);
+        }
+
+        $clientId = $data['client_id'] ?? null;
+        if ($clientId) {
+            $qb->andWhere('IDENTITY(t.invoice) IN (SELECT i.id FROM ' . Invoice::class . ' i WHERE i.clientId = :client_id)')
+                ->setParameter('client_id', (int) $clientId);
+        }
+
+        $currency = $data['currency'] ?? null;
+        if ($currency) {
+            $qb->andWhere('t.currency = :currency')->setParameter('currency', $currency);
+        }
+
+        $type = $data['type'] ?? null;
+        if ($type) {
+            $qb->andWhere('t.type = :type')->setParameter('type', $type);
+        }
+
+        $txnId = $data['txn_id'] ?? null;
+        if ($txnId) {
+            $qb->andWhere('t.txnId = :txn_id')->setParameter('txn_id', $txnId);
+        }
+
+        $dateFrom = $data['date_from'] ?? null;
+        if ($dateFrom) {
+            $qb->andWhere('t.createdAt >= :date_from')
+                ->setParameter('date_from', date('Y-m-d H:i:s', (int) strtotime((string) $dateFrom)));
+        }
+
+        $dateTo = $data['date_to'] ?? null;
+        if ($dateTo) {
+            $qb->andWhere('t.createdAt <= :date_to')
+                ->setParameter('date_to', date('Y-m-d H:i:s', (int) strtotime($dateTo . ' 23:59:59')));
+        }
+
+        $search = $data['search'] ?? null;
+        if ($search) {
+            $qb->andWhere('(t.note LIKE :note OR IDENTITY(t.invoice) LIKE :search_invoice_id OR t.txnId LIKE :search_txn_id OR t.ipn LIKE :ipn)')
+                ->setParameter('note', "%$search%")
+                ->setParameter('search_invoice_id', "%$search%")
+                ->setParameter('search_txn_id', "%$search%")
+                ->setParameter('ipn', "%$search%");
+        }
+
+        $sort = SortOptions::fromArray($data, [
+            'id' => 't.id',
+            'status' => 't.status',
+            'currency' => 't.currency',
+            'type' => 't.type',
+            'txn_id' => 't.txnId',
+            'amount' => 't.amount',
+            'gateway' => 'pg.name',
+            'created_at' => 't.createdAt',
+            'updated_at' => 't.updatedAt',
+        ]);
+        if ($sort->isSorted()) {
+            $qb->orderBy($sort->expression, $sort->direction);
+            if ($sort->expression !== 't.id') {
+                $qb->addOrderBy('t.id', $sort->direction);
+            }
+        } else {
+            $qb->orderBy('t.id', \SortDirection::Descending);
+        }
+
+        return $qb;
+    }
+
     /**
      * Find a transaction by gateway transaction id and gateway id.
      * Mirrors the legacy `findOne('Transaction', 'txn_id = ? AND gateway_id = ?', ...)`.
      */
     public function findOneByTxnIdAndGatewayId(string $txnId, int $gatewayId): ?Transaction
     {
-        $transaction = $this->findOneBy(['txnId' => $txnId, 'gatewayId' => $gatewayId]);
+        $transaction = $this->findOneBy(['txnId' => $txnId, 'gateway' => $this->getEntityManager()->getReference(PayGateway::class, $gatewayId)]);
 
         return $transaction instanceof Transaction ? $transaction : null;
     }
@@ -34,18 +184,7 @@ class TransactionRepository extends EntityRepository
      */
     public function findOneByGatewayIdAndIpnHash(int $gatewayId, string $ipnHash): ?Transaction
     {
-        $transaction = $this->findOneBy(['gatewayId' => $gatewayId, 'ipnHash' => $ipnHash]);
-
-        return $transaction instanceof Transaction ? $transaction : null;
-    }
-
-    /**
-     * Find a processed transaction by gateway transaction id.
-     * Mirrors the legacy `findOne('Transaction', 'status = "processed" and txn_id = ?', ...)`.
-     */
-    public function findOneProcessedByTxnId(string $txnId): ?Transaction
-    {
-        $transaction = $this->findOneBy(['status' => Transaction::STATUS_PROCESSED, 'txnId' => $txnId]);
+        $transaction = $this->findOneBy(['gateway' => $this->getEntityManager()->getReference(PayGateway::class, $gatewayId), 'ipnHash' => $ipnHash]);
 
         return $transaction instanceof Transaction ? $transaction : null;
     }
@@ -96,7 +235,7 @@ class TransactionRepository extends EntityRepository
             ->setMaxResults(1);
 
         if ($gatewayId !== null) {
-            $qb->andWhere('t.gatewayId = :gateway_id')
+            $qb->andWhere('IDENTITY(t.gateway) = :gateway_id')
                 ->setParameter('gateway_id', $gatewayId);
         }
 

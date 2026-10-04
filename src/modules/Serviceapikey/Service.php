@@ -61,13 +61,13 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * @param \Model_ClientOrder $order with client_id and config properties
+     * @param Order $order with client_id and config properties
      */
-    public function action_create(\Model_ClientOrder $order): ServiceApiKey
+    public function action_create(Order $order): ServiceApiKey
     {
         $model = new ServiceApiKey();
-        $model->setClientId((int) $order->client_id);
-        $model->setConfig($order->config);
+        $model->setClientId((int) $order->getClientId());
+        $model->setConfig($order->getConfig());
 
         $this->di['em']->persist($model);
         $this->di['em']->flush();
@@ -75,10 +75,10 @@ class Service implements InjectionAwareInterface
         return $model;
     }
 
-    public function action_activate(\Model_ClientOrder $order): bool
+    public function action_activate(Order $order): bool
     {
         $model = $this->_getService($order);
-        $config = json_decode($order->config ?? '', true);
+        $config = json_decode($order->getConfig() ?? '', true);
         $model->setApiKey($this->generateKey($config));
 
         $this->di['em']->flush();
@@ -86,31 +86,31 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function action_suspend(\Model_ClientOrder $order): bool
+    public function action_suspend(Order $order): bool
     {
         $this->_getService($order);
 
         return true;
     }
 
-    public function action_unsuspend(\Model_ClientOrder $order): bool
+    public function action_unsuspend(Order $order): bool
     {
         $this->_getService($order);
 
         return true;
     }
 
-    public function action_cancel(\Model_ClientOrder $order): bool
+    public function action_cancel(Order $order): bool
     {
         return $this->action_suspend($order);
     }
 
-    public function action_uncancel(\Model_ClientOrder $order): bool
+    public function action_uncancel(Order $order): bool
     {
         return $this->action_unsuspend($order);
     }
 
-    public function action_delete(\Model_ClientOrder $order): void
+    public function action_delete(Order $order, bool $forceDelete = false): void
     {
         $model = $this->_getService($order, false);
         if ($model instanceof ServiceApiKey) {
@@ -181,7 +181,7 @@ class Service implements InjectionAwareInterface
             $client = $this->di['loggedin_client'];
         }
 
-        if (!is_null($client) && $client->id !== $model->getClientId()) {
+        if (!is_null($client) && $client->getId() !== $model->getClientId()) {
             throw new \FOSSBilling\Exception('API key does not exist');
         }
 
@@ -238,17 +238,14 @@ class Service implements InjectionAwareInterface
      */
     public function install(): bool
     {
-        $sql = '
-        CREATE TABLE IF NOT EXISTS `service_apikey` (
-            `id` bigint(20) NOT NULL AUTO_INCREMENT UNIQUE,
-            `client_id` bigint(20) NOT NULL,
-            `api_key` varchar(255),
-            `config` text NOT NULL,
-            `created_at` datetime,
-            `updated_at` datetime,
-            PRIMARY KEY (`id`)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ;';
-        $this->di['db']->exec($sql);
+        // Raw MySQL-only DDL here (backticks, ENGINE=InnoDB) would fail outright on
+        // PostgreSQL/SQLite. On MySQL, the pre-cutover schema doesn't create service_apikey either -
+        // UpdatePatcher::patch111() does, as a startup-safety-net fix - so this hook is already
+        // redundant there and only load-bearing on PG/SQLite fresh installs where nothing else
+        // creates the table. SchemaSynchronizer::syncEntities() creates (or catches up) just
+        // this module's own table from current metadata, additively and safely, scoped so
+        // installing this one extension never reports every *other* table in the app as missing.
+        \FOSSBilling\Doctrine\SchemaSynchronizer::syncEntities($this->di['em'], [ServiceApiKey::class]);
 
         return true;
     }
@@ -258,7 +255,9 @@ class Service implements InjectionAwareInterface
      */
     public function uninstall(): bool
     {
-        $this->di['db']->exec('DROP TABLE IF EXISTS `service_apikey`');
+        // No backticks: PostgreSQL doesn't recognize them as identifier quoting (a parse error,
+        // not a no-op), unlike the install() hook above's now-portable path.
+        $this->di['em']->getConnection()->executeStatement('DROP TABLE IF EXISTS service_apikey');
 
         return true;
     }
@@ -347,7 +346,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    private function _getService(\Model_ClientOrder $order, bool $required = true): ?ServiceApiKey
+    private function _getService(Order $order, bool $required = true): ?ServiceApiKey
     {
         $orderService = $this->di['mod_service']('order');
         $model = $orderService->getOrderService($order);

@@ -24,7 +24,7 @@ test('builds a Doctrine client search with the legacy filters', function (): voi
 
         return $queryBuilder;
     });
-    $queryBuilder->shouldReceive('orderBy')->once()->with('c.createdAt', 'DESC')->andReturn($queryBuilder);
+    $queryBuilder->shouldReceive('orderBy')->once()->with('c.createdAt', SortDirection::Descending)->andReturn($queryBuilder);
 
     $repository = Mockery::mock(ClientRepository::class)->makePartial();
     $repository->shouldReceive('createQueryBuilder')->once()->with('c')->andReturn($queryBuilder);
@@ -86,6 +86,33 @@ test('builds filtered client name pairs from entities', function (): void {
     ]);
 });
 
+test('sorts client search query', function (array $data, string $expectedOrder, SortDirection $expectedDirection, ?SortDirection $expectedTieBreakerDirection): void {
+    $queryBuilder = Mockery::mock(QueryBuilder::class);
+    $queryBuilder->shouldReceive('orderBy')->once()->with($expectedOrder, $expectedDirection)->andReturn($queryBuilder);
+    if ($expectedTieBreakerDirection !== null) {
+        $queryBuilder->shouldReceive('addOrderBy')->once()->with('c.id', $expectedTieBreakerDirection)->andReturn($queryBuilder);
+    } else {
+        $queryBuilder->shouldReceive('addOrderBy')->never();
+    }
+
+    $repository = Mockery::mock(ClientRepository::class)->makePartial();
+    $repository->shouldReceive('createQueryBuilder')->once()->with('c')->andReturn($queryBuilder);
+
+    expect($repository->getSearchQueryBuilder($data))->toBe($queryBuilder);
+})->with([
+    'email ascending' => [['sort' => 'email'], 'c.email', SortDirection::Ascending, SortDirection::Ascending],
+    'email descending' => [['sort' => 'email', 'direction' => 'DESC'], 'c.email', SortDirection::Descending, SortDirection::Descending],
+    'first name' => [['sort' => 'first_name', 'direction' => 'desc'], 'c.firstName', SortDirection::Descending, SortDirection::Descending],
+    'last name' => [['sort' => 'last_name'], 'c.lastName', SortDirection::Ascending, SortDirection::Ascending],
+    'company' => [['sort' => 'company'], 'c.company', SortDirection::Ascending, SortDirection::Ascending],
+    'status' => [['sort' => 'status'], 'c.status', SortDirection::Ascending, SortDirection::Ascending],
+    'created at' => [['sort' => 'created_at'], 'c.createdAt', SortDirection::Ascending, SortDirection::Ascending],
+    'updated at' => [['sort' => 'updated_at', 'direction' => 'DESC'], 'c.updatedAt', SortDirection::Descending, SortDirection::Descending],
+    'id' => [['sort' => 'id'], 'c.id', SortDirection::Ascending, null],
+    'invalid sort falls back to default' => [['sort' => 'c.email; DROP TABLE client'], 'c.createdAt', SortDirection::Descending, null],
+    'invalid direction falls back to ascending' => [['sort' => 'email', 'direction' => 'sideways'], 'c.email', SortDirection::Ascending, SortDirection::Ascending],
+]);
+
 test('loads list balances and group titles in one batch', function (): void {
     $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
     $connection->shouldReceive('fetchAllAssociative')
@@ -96,18 +123,29 @@ test('loads list balances and group titles in one batch', function (): void {
             ['ids' => ArrayParameterType::INTEGER],
         )
         ->andReturn([
-            ['id' => '7', 'balance' => '12.50', 'group_title' => 'VIP'],
-            ['id' => '9', 'balance' => '0.00', 'group_title' => null],
+            ['id' => '7', 'balance' => '12.50'],
+            ['id' => '9', 'balance' => '0.00'],
+        ]);
+    $connection->shouldReceive('fetchAllAssociative')
+        ->once()
+        ->with(
+            Mockery::pattern('/FROM client_group_members cgm/'),
+            ['ids' => [7, 9]],
+            ['ids' => ArrayParameterType::INTEGER],
+        )
+        ->andReturn([
+            ['client_id' => '7', 'title' => 'Reseller'],
+            ['client_id' => '7', 'title' => 'VIP'],
         ]);
 
     $entityManager = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
-    $entityManager->shouldReceive('getConnection')->once()->andReturn($connection);
+    $entityManager->shouldReceive('getConnection')->twice()->andReturn($connection);
     $metadata = Mockery::mock(Doctrine\ORM\Mapping\ClassMetadata::class);
     $metadata->name = Client::class;
     $repository = new ClientRepository($entityManager, $metadata);
 
     expect($repository->getListContext([7, 9]))->toBe([
-        7 => ['balance' => 12.5, 'group' => 'VIP'],
+        7 => ['balance' => 12.5, 'group' => 'Reseller, VIP'],
         9 => ['balance' => 0.0, 'group' => null],
     ]);
 });

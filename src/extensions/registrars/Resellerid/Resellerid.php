@@ -38,6 +38,7 @@ class Resellerid extends \FOSSBilling\Extension\Registrar\Resellerclub\Resellerc
                     'label' => 'ResellerID API Key',
                     'description' => 'You can get this at ResellerID control panel, go to Settings -> API',
                     'required' => false,
+                    'secret' => true,
                 ],
                 ],
             ],

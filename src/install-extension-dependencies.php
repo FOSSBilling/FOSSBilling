@@ -39,7 +39,9 @@ define('PATH_EXTENSIONS', Path::join(PATH_ROOT, 'extensions'));
 define('PATH_CACHE', Path::join(PATH_ROOT, 'data', 'cache'));
 
 $failures = FOSSBilling\Extension\DependencyBootstrap::create()
-    ->installMissing(static fn (string $line) => print $line . PHP_EOL);
+    ->installMissing(static function (string $line): void {
+        echo $line . PHP_EOL;
+    });
 
 if ($failures !== []) {
     fwrite(STDERR, PHP_EOL . count($failures) . ' extension(s) could not be prepared.' . PHP_EOL);

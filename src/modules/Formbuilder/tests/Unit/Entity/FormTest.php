@@ -22,7 +22,7 @@ test('maps the existing form tables without changing their columns', function ()
         ])
         ->and($field->getTableName())->toBe('form_field')
         ->and($field->getColumnNames())->toBe([
-            'id', 'form_id', 'name', 'label', 'hide_label', 'description', 'type',
+            'id', 'name', 'label', 'hide_label', 'description', 'type',
             'default_value', 'required', 'hidden', 'readonly', 'is_unique', 'prefix',
             'suffix', 'options', 'show_initial', 'show_middle', 'show_prefix',
             'show_suffix', 'text_size', 'created_at', 'updated_at',

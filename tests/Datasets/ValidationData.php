@@ -54,6 +54,7 @@ function domainProvider(): array
         ['a1', true],
         ['123', true],
         ['xn--bcher-kva', true],  // Internationalized domain
+        ['xn--td' . str_repeat('a', 57), true], // 63 chars, the longest valid label
         ['subdomain', true],
         ['my-domain', true],
         // Invalid SLDs
@@ -63,6 +64,8 @@ function domainProvider(): array
         ['--asdasd()()', false],
         ['', false],
         ['sub.domain.example', false], // SLD cannot contain dots
+        ['xn--foo.bar', false], // ACE SLD cannot contain dots either
+        ['xn--' . str_repeat('a', 60), false], // 64 chars, exceeds the longest valid label
         ['-invalid', false],
         ['invalid-', false],
     ];

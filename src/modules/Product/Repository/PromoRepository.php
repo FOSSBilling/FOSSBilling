@@ -14,6 +14,8 @@ namespace Box\Mod\Product\Repository;
 use Box\Mod\Product\Entity\Promo;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
+use FOSSBilling\Doctrine\SqlExpr;
+use FOSSBilling\SortOptions;
 
 class PromoRepository extends EntityRepository
 {
@@ -30,6 +32,11 @@ class PromoRepository extends EntityRepository
         if (!empty($data['search'])) {
             $qb->andWhere('p.code LIKE :search')
                 ->setParameter('search', '%' . $data['search'] . '%');
+        }
+
+        if (array_key_exists('auto_apply', $data) && $data['auto_apply'] !== '' && $data['auto_apply'] !== null) {
+            $qb->andWhere('p.autoApply = :autoApply')
+                ->setParameter('autoApply', (bool) $data['auto_apply']);
         }
 
         switch ($data['status'] ?? null) {
@@ -57,7 +64,26 @@ class PromoRepository extends EntityRepository
                 break;
         }
 
-        $qb->orderBy('p.id', 'ASC');
+        $sort = SortOptions::fromArray($data, [
+            'id' => 'p.id',
+            'code' => 'p.code',
+            'type' => 'p.type',
+            'value' => 'p.value',
+            'active' => 'p.active',
+            'priority' => 'p.priority',
+            'start_at' => 'p.startAt',
+            'end_at' => 'p.endAt',
+            'created_at' => 'p.createdAt',
+            'updated_at' => 'p.updatedAt',
+        ]);
+        if ($sort->isSorted()) {
+            $qb->orderBy($sort->expression, $sort->direction);
+            if ($sort->expression !== 'p.id') {
+                $qb->addOrderBy('p.id', $sort->direction);
+            }
+        } else {
+            $qb->orderBy('p.id', \SortDirection::Ascending);
+        }
 
         return $qb;
     }
@@ -72,6 +98,27 @@ class PromoRepository extends EntityRepository
         ]);
     }
 
+    /**
+     * @return list<Promo>
+     */
+    public function findAutoApplyPromos(): array
+    {
+        $now = new \DateTimeImmutable();
+
+        return $this->createQueryBuilder('p')
+            ->where('p.active = :active')
+            ->andWhere('p.autoApply = :autoApply')
+            ->andWhere('(p.startAt IS NULL OR p.startAt <= :now)')
+            ->andWhere('(p.endAt IS NULL OR p.endAt >= :now)')
+            ->setParameter('active', true)
+            ->setParameter('autoApply', true)
+            ->setParameter('now', $now)
+            ->orderBy('p.priority', \SortDirection::Descending)
+            ->addOrderBy('p.id', \SortDirection::Ascending)
+            ->getQuery()
+            ->getResult();
+    }
+
     public function incrementUsageIfAvailable(int $promoId, \DateTimeInterface $updatedAt): int
     {
         return $this->getEntityManager()->getConnection()->executeStatement(
@@ -82,8 +129,11 @@ class PromoRepository extends EntityRepository
 
     public function decrementUsage(int $promoId, int $count, \DateTimeInterface $updatedAt): int
     {
-        return $this->getEntityManager()->getConnection()->executeStatement(
-            'UPDATE promo SET used = GREATEST(COALESCE(used, 0) - ?, 0), updated_at = ? WHERE id = ?',
+        $connection = $this->getEntityManager()->getConnection();
+        $newUsed = SqlExpr::greatestOfTwo($connection, 'COALESCE(used, 0) - ?', '0');
+
+        return $connection->executeStatement(
+            "UPDATE promo SET used = {$newUsed}, updated_at = ? WHERE id = ?",
             [$count, $updatedAt->format('Y-m-d H:i:s'), $promoId]
         );
     }

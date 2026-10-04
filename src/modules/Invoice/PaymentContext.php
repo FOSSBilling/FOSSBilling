@@ -21,9 +21,9 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
  * Every container access a gateway used to make itself now lives here, behind
  * the narrow surface declared by the Context interface.
  */
-final class PaymentContext implements Context
+final readonly class PaymentContext implements Context
 {
-    public function __construct(private readonly \Pimple\Container $di)
+    public function __construct(private \Pimple\Container $di)
     {
     }
 
@@ -34,7 +34,7 @@ final class PaymentContext implements Context
 
     public function logger(): LoggerInterface
     {
-        return $this->di['extension_logger'];
+        return $this->di['logger'];
     }
 
     public function httpClient(): HttpClientInterface

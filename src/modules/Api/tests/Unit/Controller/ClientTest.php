@@ -29,9 +29,9 @@ class ClientTestRateLimiterDouble
 
 class ClientTestDefaultApiDouble
 {
-    public function getIdentity(): Model_Client
+    public function getIdentity(): Box\Mod\Client\Entity\Client
     {
-        return new Model_Client();
+        return new Box\Mod\Client\Entity\Client();
     }
 }
 
@@ -296,9 +296,9 @@ test('raw response bypasses JSON rendering', function (): void {
         {
         }
 
-        public function getIdentity(): Model_Guest
+        public function getIdentity(): FOSSBilling\Identity\Guest
         {
-            return new Model_Guest();
+            return new FOSSBilling\Identity\Guest();
         }
     };
 
@@ -319,4 +319,103 @@ test('non-AJAX client login returns a redirect response', function (): void {
     expect($response)->toBeInstanceOf(Response::class)
         ->and($response->isRedirect())->toBeTrue()
         ->and($response->headers->get('Location'))->toBe('https://client.example.test/');
+});
+
+test('guest client login is throttled under the anti-brute-force api_login policy', function (): void {
+    [$controller, $rateLimitCalls] = createTestController();
+
+    invokeApiCall($controller, 'guest', 'client', 'client_login', []);
+
+    expect($rateLimitCalls->getArrayCopy())->toBe([['api_login', '127.0.0.1', 1]]);
+});
+
+test('admin impersonation of client login is not throttled under the guest api_login policy', function (): void {
+    [$controller, $rateLimitCalls] = createTestController(['admin' => ['id' => 7]]);
+    $controller->hasValidSession = true;
+
+    invokeApiCall($controller, 'admin', 'client', 'client_login', []);
+
+    expect($rateLimitCalls->getArrayCopy())->toBe([
+        ['api_authenticated_ip', '127.0.0.1', 1],
+        ['api_authenticated_account', 'admin:7', 1],
+    ]);
+});
+
+class ClientTestThrowingDispatcherDouble
+{
+    public function __construct(private readonly Throwable $error)
+    {
+    }
+
+    public function dispatch(object $identity, string $method, array $params): mixed
+    {
+        throw $this->error;
+    }
+}
+
+class ClientTestArrayLoggerDouble
+{
+    public array $errors = [];
+
+    public function error(string $message, array $context = []): void
+    {
+        $this->errors[] = ['message' => $message, 'context' => $context];
+    }
+}
+
+function invokeTryCall(TestableClient $controller, string $role, string $class, string $call, array $params)
+{
+    $reflection = new ReflectionMethod(Client::class, 'tryCall');
+
+    return $reflection->invoke($controller, $role, $class, $call, $params);
+}
+
+function createFailingController(Throwable $error, string $role = 'guest'): array
+{
+    [$controller] = createTestController();
+    if ($role !== 'guest') {
+        $controller->hasValidSession = true;
+    }
+    $di = $controller->getDi();
+    $di['api_dispatcher'] = new ClientTestThrowingDispatcherDouble($error);
+    $logger = new ClientTestArrayLoggerDouble();
+    $di['logger'] = $logger;
+
+    return [$controller, $logger];
+}
+
+test('guest internal errors return a generic message without leaking details', function (): void {
+    $internal = new RuntimeException("An exception occurred while executing a query: SQLSTATE[42S22]: Column not found: 1054 Unknown column 't0.locked' in 'SELECT'");
+    [$controller, $logger] = createFailingController($internal, 'guest');
+
+    invokeTryCall($controller, 'guest', 'servicedomain', 'servicedomain_check', []);
+
+    $rendered = $controller->renderedException;
+    expect($rendered)->toBeInstanceOf(InformationException::class)
+        ->and($rendered->getMessage())->toBe('An unexpected error occurred. Please try again later.')
+        ->and($rendered->getMessage())->not->toContain('t0.locked')
+        ->and($rendered->getMessage())->not->toContain('SQLSTATE');
+    expect($logger->errors)->toHaveCount(1)
+        ->and($logger->errors[0]['context']['exception_class'])->toBe(RuntimeException::class)
+        ->and($logger->errors[0]['context']['message'])->toContain('t0.locked');
+});
+
+test('guest application errors keep their user-facing message', function (): void {
+    [$controller, $logger] = createFailingController(new InformationException('Domain is not available.'), 'guest');
+
+    invokeTryCall($controller, 'guest', 'servicedomain', 'servicedomain_check', []);
+
+    expect($controller->renderedException)->toBeInstanceOf(InformationException::class)
+        ->and($controller->renderedException->getMessage())->toBe('Domain is not available.');
+    expect($logger->errors)->toBeEmpty();
+});
+
+test('authenticated internal errors keep their details for debugging', function (): void {
+    $internal = new RuntimeException("An exception occurred while executing a query: SQLSTATE[42S22]: Column not found: 1054 Unknown column 't0.locked' in 'SELECT'");
+    [$controller, $logger] = createFailingController($internal, 'admin');
+
+    invokeTryCall($controller, 'admin', 'servicedomain', 'servicedomain_get', []);
+
+    expect($controller->renderedException)->toBe($internal);
+    expect($logger->errors)->toBeEmpty();
 });

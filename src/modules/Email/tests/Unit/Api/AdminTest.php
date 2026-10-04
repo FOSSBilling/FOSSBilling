@@ -220,7 +220,7 @@ test('email delete', function (): void {
     $em->shouldReceive('remove')->atLeast()->once();
     $em->shouldReceive('flush')->atLeast()->once();
 
-    $loggerStub = $this->createStub('\Box_Log');
+    $loggerStub = $this->createStub(FOSSBilling\Logger::class);
 
     $di = container();
     $di['em'] = $em;
@@ -309,7 +309,7 @@ test('template delete', function (): void {
     $templateGroupRepo->shouldReceive('deleteAssociationsForTemplate')->atLeast()->once()->with(1);
     $emailService->shouldReceive('getTemplateGroupRepository')->andReturn($templateGroupRepo);
 
-    $loggerStub = $this->createStub('\Box_Log');
+    $loggerStub = $this->createStub(FOSSBilling\Logger::class);
     $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $em->shouldReceive('remove')->atLeast()->once()->with($model);
     $em->shouldReceive('flush')->atLeast()->once();
@@ -619,6 +619,40 @@ test('template send', function (): void {
 
     $result = $adminApi->template_send($data);
     expect($result)->toBeTrue();
+});
+
+test('template send rejects combining to with to_client', function (): void {
+    $adminApi = apiEndpoint(new Box\Mod\Email\Api\Admin());
+    $emailService = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
+    $emailService->shouldReceive('sendTemplate')->never();
+
+    $di = container();
+    $adminApi->setDi($di);
+    $adminApi->setService($emailService);
+
+    $this->expectException(FOSSBilling\InformationException::class);
+    $adminApi->template_send([
+        'code' => 'mod_client_signup',
+        'to_client' => 123,
+        'to' => 'attacker@evil.test',
+    ]);
+});
+
+test('template send rejects client_billing_email via the API', function (): void {
+    $adminApi = apiEndpoint(new Box\Mod\Email\Api\Admin());
+    $emailService = Mockery::mock(Box\Mod\Email\Service::class)->makePartial();
+    $emailService->shouldReceive('sendTemplate')->never();
+
+    $di = container();
+    $adminApi->setDi($di);
+    $adminApi->setService($emailService);
+
+    $this->expectException(FOSSBilling\InformationException::class);
+    $adminApi->template_send([
+        'code' => 'mod_invoice_created',
+        'to_client' => 123,
+        'client_billing_email' => 'attacker@evil.test',
+    ]);
 });
 
 test('template render', function (): void {

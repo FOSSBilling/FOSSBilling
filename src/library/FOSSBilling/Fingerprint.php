@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace FOSSBilling;
 
 use FOSSBilling\Http\CookieNames;
+use Symfony\Component\HttpFoundation\IpUtils;
 use Symfony\Component\HttpFoundation\Request;
 
 class Fingerprint
@@ -21,6 +22,8 @@ class Fingerprint
     public function __construct(private readonly Request $request)
     {
         $agentDetails = $this->extractAgentInfo();
+        $clientIp = $this->request->getClientIp();
+        $anonymizedIp = $clientIp === null ? '' : IpUtils::anonymize($clientIp);
 
         /*
          * Sets up the fingerprint info for the existing request.
@@ -47,15 +50,11 @@ class Fingerprint
                 'weight' => 100, // Always fail if this doesn't match.
             ],
             'ip' => [
-                'source' => $this->request->server->get('REMOTE_ADDR', ''),
+                'source' => $anonymizedIp,
                 'weight' => 2,
             ],
             'referrer' => [
                 'source' => $this->request->headers->get('Referer', ''),
-                'weight' => 1,
-            ],
-            'forwardedFor' => [
-                'source' => $this->request->headers->get('X-Forwarded-For', ''),
                 'weight' => 1,
             ],
             'language' => [
@@ -79,11 +78,11 @@ class Fingerprint
                 'weight' => 2,
             ],
             'geoIpCountry' => [
-                'source' => $this->getIpCountry(),
+                'source' => $this->getIpCountry($clientIp),
                 'weight' => 4,
             ],
             'asn' => [
-                'source' => $this->getIpAsn() ?? '',
+                'source' => $this->getIpAsn($clientIp) ?? '',
                 'weight' => 1, // Things like Cloudflare, VPNs, or failovers might cause the ASN to change. Otherwise this would be a really strong indicator.
             ],
         ];
@@ -114,7 +113,7 @@ class Fingerprint
      *
      * @return bool `true` if the fingerprint passes, `false` if it's considered invalid
      */
-    public function checkFingerprint(array $fingerprint): bool
+    public function checkFingerprint(array $fingerprint, ?string $sessionId = null): bool
     {
         $itemCount = 0;
         $scoreSubtract = 0;
@@ -170,7 +169,7 @@ class Fingerprint
 
         // If fingerprint debugging is enabled and it failed, print some debug info to the log
         if (!$valid && Config::getProperty('security.debug_fingerprint', false)) {
-            $ID = session_id() ?: $this->request->cookies->get(CookieNames::SESSION);
+            $ID = $sessionId ?: $this->request->cookies->get(CookieNames::SESSION);
             if (!$ID) {
                 return $valid;
             }
@@ -178,12 +177,16 @@ class Fingerprint
             $percentageWrong = round($percentageWrong * 100, 3);
             $failureThreshold = round($failureThreshold * 100, 3);
 
-            error_log("The session with the ID '$ID' failed its fingerprint check with a (weighted) difference of $percentageWrong% compared to the allowed $failureThreshold%. $itemCount properties were used in the check.");
-            $output = PHP_EOL;
-            foreach ($differing as $name) {
-                $output .= '    ' . $name . PHP_EOL;
-            }
-            error_log('The following properties differed:' . $output);
+            // Fingerprint is intentionally dependency-free, so retain PHP's
+            // fallback logger. Never write the session token itself to logs.
+            error_log(sprintf(
+                'Fingerprint check failed for session %s: weighted difference %.3f%% (allowed %.3f%%), %d properties compared; differing properties: %s',
+                hash('sha256', $ID),
+                $percentageWrong,
+                $failureThreshold,
+                $itemCount,
+                implode(', ', $differing),
+            ));
         }
 
         return $valid;
@@ -227,7 +230,7 @@ class Fingerprint
         ];
     }
 
-    private function getIpCountry(): string
+    private function getIpCountry(?string $clientIp): string
     {
         // Use the CF header if it is set.
         $cfIpCountry = $this->request->headers->get('CF-IPCountry');
@@ -238,32 +241,28 @@ class Fingerprint
         // Otherwise, instance the system's GeoIP reader and read the country from there.
         try {
             $reader = new GeoIP\Reader();
-            $remoteAddr = $this->request->server->get('REMOTE_ADDR', '');
-
-            if (empty($remoteAddr)) {
+            if ($clientIp === null) {
                 return '';
             }
 
-            return $reader->country($remoteAddr)->name;
-        } catch (\Exception) {
+            return $reader->country($clientIp)->name;
+        } catch (\Throwable) {
             return '';
         }
     }
 
-    private function getIpAsn()
+    private function getIpAsn(?string $clientIp)
     {
         try {
-            $remoteAddr = $this->request->server->get('REMOTE_ADDR', '');
-
-            if (empty($remoteAddr)) {
+            if ($clientIp === null) {
                 return '';
             }
 
             $asnDb = GeoIP\Reader::getAsnDatabase();
             $reader = new GeoIP\Reader($asnDb);
 
-            return $reader->asn($remoteAddr)->asnNumber;
-        } catch (\Exception) {
+            return $reader->asn($clientIp)->asnNumber;
+        } catch (\Throwable) {
             return '';
         }
     }

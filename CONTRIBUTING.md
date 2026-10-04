@@ -60,6 +60,48 @@ If you need to sell a new type of product you will implement a Service type modu
 
 Other modules extend the whole FOSSBilling API with any functionality needed. Check existing modules to get an idea of what is already shipped with the default structure of FOSSBilling.
 
+### Typed module events
+
+FOSSBilling modules use typed events for extension points. Event classes extend `FOSSBilling\Events\Event`, and each module keeps its event classes in `src/modules/<Module>/Event/`. The shared base event is in `src/library/FOSSBilling/Events/Event.php`.
+
+Define an event in the owning module's `Event/` directory and dispatch it from the code that owns the operation:
+
+```php
+namespace Box\Mod\Example\Event;
+
+use FOSSBilling\Events\Event;
+
+final class BeforeExampleOperationEvent extends Event
+{
+    public function __construct(public readonly int $entityId)
+    {
+    }
+}
+```
+
+```php
+use Box\Mod\Example\Event\BeforeExampleOperationEvent;
+
+$this->di['event_dispatcher']->dispatch(new BeforeExampleOperationEvent($entityId));
+```
+
+A module can listen from a public instance method on its `Service` class. Add Symfony's `#[AsEventListener]` attribute and type the first parameter as the event class. Listeners on active modules are registered when the dispatcher initializes.
+
+```php
+use Box\Mod\Support\Event\AfterTicketOpenedEvent;
+use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
+
+#[AsEventListener(priority: 10)]
+public function notifyTicketOpened(AfterTicketOpenedEvent $event): void
+{
+    // Handle the opened ticket using the event's documented data.
+}
+```
+
+Higher priority listeners run first. Event propagation follows Symfony's event behavior, including `stopPropagation()`. Listeners run synchronously as part of dispatch.
+
+Treat each event class as the contract for its extension point. Prefer readonly constructor properties for context listeners may inspect. Keep mutable data private and expose only the getters and setters listeners are meant to use. Do not include credentials or unrelated request data in an event payload. Name event classes for the operation and timing, such as `Before...Event` or `After...Event`.
+
 ## How can I contribute?
 
 There are a lot of different ways that you can get involved in the FOSSBilling project. Let's take a look at some of the main ones:
@@ -135,7 +177,7 @@ The process described here has several goals:
 
 Please follow these steps to have your contribution considered by the maintainers:
 
-1. Follow the [style guides](#styleguides)
+1. Follow the [style guides](#style-guides)
 2. After you submit your pull request, verify that all [status checks](https://help.github.com/articles/about-status-checks/) are passing <details><summary>What if the status checks are failing?</summary>If a status check is failing, and you believe that the failure is unrelated to your change, please leave a comment on the pull request explaining why you believe the failure is unrelated. A maintainer will re-run the status check for you. If we conclude that the failure was a false positive, then we will open an issue to track that problem with our status check suite.</details>
 
 Before a PR can be merged it must pass all of the automated tests and also be reviewed by two maintainers. All of the above requirements must be met before your pull request will be reviewed. Please be aware that the reviewers may ask you to complete additional design work, tests, or other changes before your pull request can be ultimately accepted.

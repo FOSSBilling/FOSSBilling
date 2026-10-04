@@ -28,6 +28,7 @@ use Symfony\Component\Filesystem\Path;
 class UpdateFinalization implements InjectionAwareInterface
 {
     public const string STATE_FILENAME = 'update-finalization.json';
+    private const string FINALIZATION_LOCK_FILENAME = 'update-finalization.lock';
 
     private const string STATUS_PENDING = 'pending';
     private const string STATUS_FINALIZED = 'finalized';
@@ -90,6 +91,7 @@ class UpdateFinalization implements InjectionAwareInterface
             'current_version' => Version::VERSION,
             'state' => $state,
             'pending_patches' => $this->getAvailablePatchCount(),
+            'schema_drift' => $this->getSchemaDriftStatus(),
         ];
     }
 
@@ -116,6 +118,65 @@ class UpdateFinalization implements InjectionAwareInterface
                 'branch' => Config::getProperty('update_branch', 'release'),
             ]
         );
+    }
+
+    /**
+     * Apply an outstanding update before the session service is constructed.
+     *
+     * The Symfony session handler reads the current table shape while it is
+     * being initialized. This must therefore happen before the first request
+     * resolves the session, including after a manually extracted update or an
+     * interrupted automatic update.
+     */
+    public function finalizePendingUpdate(): void
+    {
+        $pending = $this->withFinalizationLock(function (): bool {
+            $state = $this->ensureCurrentVersionFinalization();
+            if (($state['status'] ?? null) === self::STATUS_PENDING) {
+                $this->finalizeUpdateLocked($state);
+
+                return true;
+            }
+
+            // A previous finalize may have run against stale code (e.g. opcache
+            // still serving the pre-update UpdatePatcher, whose patch list ends
+            // at the old level) and stamped the state finalized without applying
+            // anything. That state has no other path back to pending, so heal it
+            // here instead of leaving the install wedged in maintenance mode.
+            if (($state['status'] ?? null) === self::STATUS_FINALIZED && $this->getAvailablePatchCount() > 0) {
+                $this->finalizeUpdateLocked($state);
+
+                return true;
+            }
+
+            return false;
+        });
+
+        if ($pending) {
+            return;
+        }
+
+        $this->healSchemaDrift();
+    }
+
+    /**
+     * Brings the live schema up to date when entity metadata drifted without a
+     * version change (e.g. a code-only deploy adding an entity column).
+     *
+     * Safe to call from any entry point, including CLI/cron: the drift check
+     * runs outside the finalization lock, the sync runs inside it, and both
+     * halves never throw - an unreadable database simply reports "in sync".
+     *
+     * @see https://github.com/FOSSBilling/FOSSBilling/issues/4392
+     */
+    public function healSchemaDrift(): void
+    {
+        // No version change (e.g. a code-only deploy with new entity columns), so no
+        // finalization runs - check for schema drift outside the lock, sync inside it.
+        $patcher = $this->createPatcher();
+        if ($patcher->isSchemaOutOfSync()) {
+            $this->withFinalizationLock(static fn (): bool => $patcher->ensureSchemaInSync());
+        }
     }
 
     public function createPendingState(?string $fromVersion, string $targetVersion, array $context = []): array
@@ -154,8 +215,11 @@ class UpdateFinalization implements InjectionAwareInterface
      */
     public function finalizeUpdate(): array
     {
-        $state = $this->ensureCurrentVersionFinalization();
+        return $this->withFinalizationLock(fn (): array => $this->finalizeUpdateLocked($this->ensureCurrentVersionFinalization()));
+    }
 
+    private function finalizeUpdateLocked(?array $state): array
+    {
         try {
             $this->clearCache();
 
@@ -163,10 +227,12 @@ class UpdateFinalization implements InjectionAwareInterface
             $patcher->applyConfigPatches(force: true);
             $patcher->applyCorePatches(force: true);
 
-            $this->filesystem->remove(Path::join(PATH_ROOT, 'install'));
+            if ($this->shouldRemoveInstallDirectory()) {
+                $this->filesystem->remove(Path::join(PATH_ROOT, 'install'));
+            }
             $this->clearCache();
         } catch (IOException $e) {
-            error_log($e->getMessage());
+            $this->logUpdateError($e->getMessage());
 
             throw new Exception('Unable to clear cache and/or remove install folder while finalizing the update. Further details are available in the error log.');
         }
@@ -178,6 +244,28 @@ class UpdateFinalization implements InjectionAwareInterface
         }
 
         return $this->getStatus(false);
+    }
+
+    private function withFinalizationLock(\Closure $callback): mixed
+    {
+        $this->filesystem->mkdir(PATH_DATA, 0o755);
+        $handle = fopen(Path::join(PATH_DATA, self::FINALIZATION_LOCK_FILENAME), 'c');
+        if ($handle === false) {
+            throw new Exception('Unable to acquire the update finalization lock.');
+        }
+
+        if (!flock($handle, LOCK_EX)) {
+            fclose($handle);
+
+            throw new Exception('Unable to acquire the update finalization lock.');
+        }
+
+        try {
+            return $callback();
+        } finally {
+            flock($handle, LOCK_UN);
+            fclose($handle);
+        }
     }
 
     public function completeFinalization(): void
@@ -195,9 +283,10 @@ class UpdateFinalization implements InjectionAwareInterface
             throw new InformationException('Update finalization must be run before it can be completed.');
         }
 
-        $pendingPatches = $this->getAvailablePatchCount();
+        $patchStatus = $this->getPatchStatus();
+        $pendingPatches = $patchStatus['pending'] ?? null;
         if ($pendingPatches !== null && $pendingPatches > 0) {
-            throw new InformationException('There are still pending update patches. Run finalization before completing the update.');
+            throw new InformationException('There are still :count: pending update patches (database level :current:, code level :latest:). Re-run finalization before completing the update.', [':count:' => $pendingPatches, ':current:' => $patchStatus['current'] ?? 'unknown', ':latest:' => $patchStatus['latest'] ?? 'unknown']);
         }
 
         $state['completed_at'] = date(DATE_ATOM);
@@ -300,6 +389,15 @@ class UpdateFinalization implements InjectionAwareInterface
         );
     }
 
+    /**
+     * Mirrors checkInstaller()'s guard in load.php: skipped for explicit dev/test
+     * environments, so those instances keep the installer.
+     */
+    private function shouldRemoveInstallDirectory(): bool
+    {
+        return Environment::isProduction();
+    }
+
     private function getAvailablePatchCount(): ?int
     {
         try {
@@ -311,7 +409,42 @@ class UpdateFinalization implements InjectionAwareInterface
         }
     }
 
-    private function createPatcher(): UpdatePatcher
+    private function getPatchStatus(): ?array
+    {
+        try {
+            // Same recoverability contract as getAvailablePatchCount(): an
+            // unreadable database reports unknown levels rather than blocking.
+            return $this->createPatcher()->patchStatus();
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    /**
+     * Lock-free schema-drift report for {@see self::getStatus()}. Never
+     * throws - an unreadable database reports "no drift", the same
+     * recoverability contract as getAvailablePatchCount().
+     *
+     * @return array{out_of_sync: bool, last_sync_failure: array{hash: string, attempted_at: string}|null}
+     */
+    private function getSchemaDriftStatus(): array
+    {
+        try {
+            $patcher = $this->createPatcher();
+
+            return [
+                'out_of_sync' => $patcher->isSchemaOutOfSyncIgnoringCooldown(),
+                'last_sync_failure' => $patcher->lastSchemaSyncFailure(),
+            ];
+        } catch (\Throwable) {
+            return [
+                'out_of_sync' => false,
+                'last_sync_failure' => null,
+            ];
+        }
+    }
+
+    protected function createPatcher(): UpdatePatcher
     {
         $patcher = new UpdatePatcher();
         if ($this->di instanceof \Pimple\Container) {
@@ -325,6 +458,22 @@ class UpdateFinalization implements InjectionAwareInterface
     {
         $this->filesystem->remove(PATH_CACHE);
         $this->filesystem->mkdir(PATH_CACHE, 0o755);
+    }
+
+    private function logUpdateError(string $message): void
+    {
+        try {
+            if ($this->di instanceof \Pimple\Container && $this->di->offsetExists('logger')) {
+                $this->di['logger']->withChannel('update')->error($message);
+
+                return;
+            }
+        } catch (\Throwable) {
+            // Logging must not prevent recovery when the old session schema
+            // makes normal dependency initialization unavailable.
+        }
+
+        error_log('FOSSBilling update: ' . $message);
     }
 
     private function stateRequiresFinalization(?array $state): bool

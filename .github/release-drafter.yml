@@ -2,43 +2,45 @@ name-template: '$RESOLVED_VERSION'
 tag-template: '$RESOLVED_VERSION'
 categories:
   - title: '⚠️ Potentially Breaking Changes'
-    labels:
-      - 'breaking change'
+    when:
+      label: 'breaking change'
   - title: '🔐 Security'
-    labels:
-      - 'security'
+    when:
+      label: 'security'
   - title: '📈 Enhancements'
-    labels:
-      - 'enhancement'
+    when:
+      label: 'enhancement'
   - title: '➕ New Features'
-    labels:
-      - 'feature'
+    when:
+      label: 'feature'
   - title: '🐛 Bug Fixes'
-    labels:
-      - 'bug'
+    when:
+      label: 'bug'
   - title: '📝 Changes'
-    labels:
-      - 'task'
-      - 'tests/CI'
+    when:
+      labels:
+        - 'task'
+        - 'tests/CI'
   - title: '📦 Dependencies'
-    labels:
-      - 'dependencies'
-      - 'composer'
-      - 'npm'
-exclude-labels:
-  - 'skip-changelog'
+    when:
+      labels:
+        - 'dependencies'
+        - 'composer'
+        - 'npm'
+  - type: 'pre-exclude'
+    when:
+      label: 'skip-changelog'
+  - type: 'version-resolver'
+    semver-increment: 'major'
+    when:
+      label: 'major'
+  - type: 'version-resolver'
+    semver-increment: 'minor'
+    when:
+      label: 'minor'
+  - type: 'version-resolver'
+    semver-increment: 'patch'
 change-template: '- $TITLE (@$AUTHOR, #$NUMBER)'
 change-title-escapes: '\<*_&'
-version-resolver:
-  major:
-    labels:
-      - 'major'
-  minor:
-    labels:
-      - 'minor'
-  patch:
-    labels:
-      - 'patch'
-  default: patch
 template: |
   $CHANGES

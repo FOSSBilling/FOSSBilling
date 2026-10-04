@@ -25,7 +25,7 @@ class ProductCategoryRepository extends EntityRepository
     {
         $rows = $this->createQueryBuilder('c')
             ->select('c.id, c.title')
-            ->orderBy('c.id', 'ASC')
+            ->orderBy('c.id', \SortDirection::Ascending)
             ->getQuery()
             ->getArrayResult();
 
@@ -63,13 +63,13 @@ class ProductCategoryRepository extends EntityRepository
             ->setParameter('hidden', false)
             ->setParameter('isAddon', false)
             ->addSelect(sprintf('(%s) AS HIDDEN maxPriority', $maximumPriority->getDQL()))
-            ->orderBy('maxPriority', 'ASC');
+            ->orderBy('maxPriority', \SortDirection::Ascending);
     }
 
     private function applyEnabledVisibleProductFilters(QueryBuilder $queryBuilder, string $alias): QueryBuilder
     {
         return $queryBuilder
-            ->andWhere(sprintf('%s.productCategoryId = c.id', $alias))
+            ->andWhere(sprintf('IDENTITY(%s.productCategory) = c.id', $alias))
             ->andWhere(sprintf('%s.status = :status', $alias))
             ->andWhere(sprintf('%s.hidden = :hidden', $alias))
             ->andWhere(sprintf('%s.isAddon = :isAddon', $alias));

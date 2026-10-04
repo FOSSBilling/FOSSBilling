@@ -15,6 +15,7 @@ use Box\Mod\Client\Entity\Client;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
+use FOSSBilling\SortOptions;
 
 class ClientRepository extends EntityRepository
 {
@@ -112,7 +113,7 @@ class ClientRepository extends EntityRepository
         }
 
         if ($groupId) {
-            $qb->andWhere('c.clientGroupId = :group_id')
+            $qb->andWhere('EXISTS (SELECT 1 FROM Box\Mod\Client\Entity\ClientGroupMembership m WHERE m.client = c AND IDENTITY(m.clientGroup) = :group_id)')
                 ->setParameter('group_id', $groupId);
         }
 
@@ -145,7 +146,26 @@ class ClientRepository extends EntityRepository
             }
         }
 
-        return $qb->orderBy('c.createdAt', 'DESC');
+        $sort = SortOptions::fromArray($data, [
+            'id' => 'c.id',
+            'email' => 'c.email',
+            'first_name' => 'c.firstName',
+            'last_name' => 'c.lastName',
+            'company' => 'c.company',
+            'status' => 'c.status',
+            'created_at' => 'c.createdAt',
+            'updated_at' => 'c.updatedAt',
+        ]);
+        if ($sort->isSorted()) {
+            $qb->orderBy($sort->expression, $sort->direction);
+            if ($sort->expression !== 'c.id') {
+                $qb->addOrderBy('c.id', $sort->direction);
+            }
+        } else {
+            $qb->orderBy('c.createdAt', \SortDirection::Descending);
+        }
+
+        return $qb;
     }
 
     /**
@@ -160,21 +180,36 @@ class ClientRepository extends EntityRepository
         }
 
         $rows = $this->getEntityManager()->getConnection()->fetchAllAssociative(
-            'SELECT c.id, COALESCE(SUM(cb.amount), 0) AS balance, cg.title AS group_title
+            'SELECT c.id, COALESCE(SUM(cb.amount), 0) AS balance
              FROM client c
              LEFT JOIN client_balance cb ON cb.client_id = c.id
-             LEFT JOIN client_group cg ON cg.id = c.client_group_id
              WHERE c.id IN (:ids)
-             GROUP BY c.id, cg.title',
+             GROUP BY c.id',
             ['ids' => $clientIds],
             ['ids' => ArrayParameterType::INTEGER],
         );
 
+        $groupRows = $this->getEntityManager()->getConnection()->fetchAllAssociative(
+            'SELECT cgm.client_id, cg.title
+             FROM client_group_members cgm
+             JOIN client_group cg ON cg.id = cgm.client_group_id
+             WHERE cgm.client_id IN (:ids)
+             ORDER BY cg.title ASC',
+            ['ids' => $clientIds],
+            ['ids' => ArrayParameterType::INTEGER],
+        );
+
+        $titles = [];
+        foreach ($groupRows as $groupRow) {
+            $titles[(int) $groupRow['client_id']][] = (string) $groupRow['title'];
+        }
+
         $context = [];
         foreach ($rows as $row) {
-            $context[(int) $row['id']] = [
+            $clientId = (int) $row['id'];
+            $context[$clientId] = [
                 'balance' => (float) $row['balance'],
-                'group' => $row['group_title'],
+                'group' => isset($titles[$clientId]) ? implode(', ', $titles[$clientId]) : null,
             ];
         }
 

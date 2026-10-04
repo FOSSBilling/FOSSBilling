@@ -23,7 +23,9 @@ beforeEach(function () use (&$originalAntispamConfig): void {
 });
 
 afterEach(function () use (&$originalAntispamConfig): void {
-    return;
+    if ($originalAntispamConfig === null) {
+        return;
+    }
 
     $result = ApiClient::request('admin/extension/config_save', array_merge(
         ['ext' => 'mod_antispam'],

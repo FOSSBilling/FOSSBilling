@@ -19,11 +19,11 @@ use Symfony\Component\Filesystem\Filesystem;
  * Run after core's own composer install, so that a fresh checkout ends up with
  * a working tree, and again after an extension is added to the disk by hand.
  */
-final class DependencyBootstrap
+final readonly class DependencyBootstrap
 {
     public function __construct(
-        private readonly ExtensionLocator $locator,
-        private readonly DependencyInstaller $installer,
+        private ExtensionLocator $locator,
+        private DependencyInstaller $installer,
     ) {
     }
 

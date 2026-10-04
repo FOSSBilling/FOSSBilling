@@ -1,6 +1,3 @@
-includes:
-	- phpstan-baseline.neon
-
 parameters:
 	level: 5
 	reportUnmatchedIgnoredErrors: false
@@ -15,8 +12,6 @@ parameters:
 		analyse:
 		- src/vendor
 		- src/extensions/*/*/vendor/*
-		- src/library/Model/Admin.php
-		- src/library/Model/Client.php
 		- src/extensions/managers/Custom/Custom.php
 		- src/extensions/managers/Whm/Whm.php
 		- src/data/cache (?)

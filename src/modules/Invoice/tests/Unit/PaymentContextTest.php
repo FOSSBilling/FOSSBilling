@@ -30,7 +30,7 @@ test('logger delegates to the extension logger', function (): void {
     $logger = Mockery::mock(Psr\Log\LoggerInterface::class);
 
     $di = container();
-    $di['extension_logger'] = $logger;
+    $di['logger'] = $logger;
 
     $context = new PaymentContext($di);
 

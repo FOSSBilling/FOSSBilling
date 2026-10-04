@@ -10,6 +10,12 @@
 
 declare(strict_types=1);
 
+use Box\Mod\System\Event\AfterAdminManualUpdateEvent;
+use Box\Mod\System\Event\AfterAdminUpdateCoreEvent;
+use Box\Mod\System\Event\BeforeAdminManualUpdateEvent;
+use Box\Mod\System\Event\BeforeAdminUpdateCoreEvent;
+use FOSSBilling\Config;
+
 use function Tests\Helpers\container;
 
 test('dependency injection', function (): void {
@@ -51,6 +57,266 @@ test('update params', function (): void {
     $result = $api->update_params($data);
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
+});
+
+test('update core dispatches its before event before the updater runs', function (): void {
+    $api = apiEndpoint(new Box\Mod\System\Api\Admin());
+    $admin = Tests\Helpers\admin(['id' => 1]);
+    $api->setIdentity($admin);
+
+    $sequence = [];
+    $eventDispatcher = new class($sequence) {
+        public array $events = [];
+
+        public function __construct(private array &$sequence)
+        {
+        }
+
+        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        {
+            $this->events[] = $event;
+            $this->sequence[] = 'before-event';
+
+            return $event;
+        }
+    };
+
+    $updater = Mockery::mock();
+    $updater->shouldReceive('getUpdateBranch')->once()->andReturn('stable');
+    $updater->shouldReceive('isUpdateAvailable')->once()->andReturn(true);
+    $updater->shouldReceive('getLatestVersion')->once()->andReturn('next-version');
+    $updater->shouldReceive('performUpdate')->once()->andReturnUsing(static function () use (&$sequence): void {
+        $sequence[] = 'perform-update';
+    });
+
+    $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffService->shouldReceive('checkPermissionsAndThrowException')
+        ->once()
+        ->with('system', 'system_update', null, $admin);
+
+    $di = container();
+    $di['event_dispatcher'] = $eventDispatcher;
+    $di['updater'] = $updater;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod_service'] = $di->protect(fn (string $serviceName): mixed => $serviceName === 'Staff' ? $staffService : false);
+    $api->setDi($di);
+
+    expect($api->update_core([]))->toBeTrue()
+        ->and($sequence)->toBe(['before-event', 'perform-update'])
+        ->and($eventDispatcher->events)->toHaveCount(1)
+        ->and($eventDispatcher->events[0])->toBeInstanceOf(BeforeAdminUpdateCoreEvent::class);
+});
+
+test('finalize update dispatches its after event after finalization', function (): void {
+    $api = apiEndpoint(new Box\Mod\System\Api\Admin());
+    $admin = Tests\Helpers\admin(['id' => 1]);
+    $api->setIdentity($admin);
+
+    $sequence = [];
+    $eventDispatcher = new class($sequence) {
+        public array $events = [];
+
+        public function __construct(private array &$sequence)
+        {
+        }
+
+        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        {
+            $this->events[] = $event;
+            $this->sequence[] = 'after-event';
+
+            return $event;
+        }
+    };
+
+    $updateFinalization = Mockery::mock();
+    $updateFinalization->shouldReceive('isRequired')->once()->andReturn(false);
+    $updateFinalization->shouldReceive('finalizeUpdate')->once()->andReturnUsing(static function () use (&$sequence): void {
+        $sequence[] = 'finalize-update';
+    });
+
+    $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffService->shouldReceive('checkPermissionsAndThrowException')
+        ->once()
+        ->with('system', 'system_update', null, $admin);
+
+    $di = container();
+    $di['event_dispatcher'] = $eventDispatcher;
+    $di['update_finalization'] = $updateFinalization;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod_service'] = $di->protect(fn (string $serviceName): mixed => $serviceName === 'Staff' ? $staffService : false);
+    $api->setDi($di);
+
+    expect($api->finalize_update())->toBeTrue()
+        ->and($sequence)->toBe(['finalize-update', 'after-event'])
+        ->and($eventDispatcher->events)->toHaveCount(1)
+        ->and($eventDispatcher->events[0])->toBeInstanceOf(AfterAdminUpdateCoreEvent::class);
+});
+
+test('manual update dispatches before and after events around the update', function (): void {
+    $api = apiEndpoint(new Box\Mod\System\Api\Admin());
+    $admin = Tests\Helpers\admin(['id' => 1]);
+    $api->setIdentity($admin);
+
+    $sequence = [];
+    $eventDispatcher = new class($sequence) {
+        public array $events = [];
+
+        public function __construct(private array &$sequence)
+        {
+        }
+
+        public function dispatch(FOSSBilling\Events\Event $event): FOSSBilling\Events\Event
+        {
+            $this->events[] = $event;
+            $this->sequence[] = $event instanceof BeforeAdminManualUpdateEvent ? 'before-event' : 'after-event';
+
+            return $event;
+        }
+    };
+
+    $updater = Mockery::mock();
+    $updater->shouldReceive('performManualUpdate')->once()->andReturnUsing(static function () use (&$sequence): void {
+        $sequence[] = 'perform-manual-update';
+    });
+
+    $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffService->shouldReceive('checkPermissionsAndThrowException')
+        ->once()
+        ->with('system', 'system_update', null, $admin);
+
+    $di = container();
+    $di['event_dispatcher'] = $eventDispatcher;
+    $di['updater'] = $updater;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $di['mod_service'] = $di->protect(fn (string $serviceName): mixed => $serviceName === 'Staff' ? $staffService : false);
+    $api->setDi($di);
+
+    expect($api->manual_update())->toBeTrue()
+        ->and($sequence)->toBe(['before-event', 'perform-manual-update', 'after-event'])
+        ->and($eventDispatcher->events)->toHaveCount(2)
+        ->and($eventDispatcher->events[0])->toBeInstanceOf(BeforeAdminManualUpdateEvent::class)
+        ->and($eventDispatcher->events[1])->toBeInstanceOf(AfterAdminManualUpdateEvent::class);
+});
+
+test('update cache settings clears the saved redis password only when explicitly requested', function (): void {
+    $api = apiEndpoint(new Box\Mod\System\Api\Admin());
+    $originalConfig = Config::getConfig();
+
+    try {
+        // Saving a password stores it.
+        $api->update_cache_settings(['driver' => 'filesystem', 'redis_password' => 'secret']);
+        expect(Config::getProperty('cache.redis.password'))->toBe('secret');
+
+        // Leaving the field blank on a later save keeps the existing password.
+        $api->update_cache_settings(['driver' => 'filesystem']);
+        expect(Config::getProperty('cache.redis.password'))->toBe('secret');
+
+        // The explicit "clear" checkbox is what actually removes it.
+        $api->update_cache_settings(['driver' => 'filesystem', 'redis_password_clear' => '1']);
+        expect(Config::getProperty('cache.redis.password'))->toBeNull();
+    } finally {
+        Config::setConfig($originalConfig, false);
+    }
+});
+
+test('update cache settings rejects a remote driver when no installation identifier is configured', function (): void {
+    $api = apiEndpoint(new Box\Mod\System\Api\Admin());
+    $originalConfig = Config::getConfig();
+
+    try {
+        $config = Config::getConfig();
+        $config['info']['instance_id'] = '';
+        Config::setConfig($config, false);
+
+        expect(fn () => $api->update_cache_settings(['driver' => 'redis']))
+            ->toThrow(FOSSBilling\Exception::class, 'installation identifier');
+    } finally {
+        Config::setConfig($originalConfig, false);
+    }
+});
+
+test('update cache settings clears the previously configured backend, not just the new one', function (): void {
+    if (hasRedisExtension()) {
+        $this->markTestSkipped('This test requires an environment without the redis/relay extension.');
+    }
+
+    $api = apiEndpoint(new Box\Mod\System\Api\Admin());
+    $originalConfig = Config::getConfig();
+
+    try {
+        // Seed a redis config directly (bypassing the API's own eager-connect check on save,
+        // since no redis server is reachable in this test environment).
+        $config = Config::getConfig();
+        $config['cache'] = ['driver' => 'redis', 'redis' => ['host' => '127.0.0.1', 'port' => 6379]];
+        Config::setConfig($config, false);
+
+        // Switching back to filesystem must not throw even though clearing the previous
+        // (unreachable) redis backend is attempted as part of the switch.
+        expect(fn () => $api->update_cache_settings(['driver' => 'filesystem']))->not->toThrow(Throwable::class);
+        expect(Config::getProperty('cache.driver'))->toBe('filesystem');
+    } finally {
+        Config::setConfig($originalConfig, false);
+    }
+});
+
+test('update cache settings saves and reads back the redis TLS options', function (): void {
+    $api = apiEndpoint(new Box\Mod\System\Api\Admin());
+    $originalConfig = Config::getConfig();
+
+    try {
+        $api->update_cache_settings([
+            'driver' => 'filesystem',
+            'redis_tls_enabled' => '1',
+            'redis_tls_verify_peer' => '0',
+            'redis_tls_verify_peer_name' => '0',
+            'redis_tls_allow_self_signed' => '1',
+            'redis_tls_cafile' => '/etc/ssl/certs/redis-ca.pem',
+        ]);
+
+        $settings = $api->cache_settings();
+        expect($settings['redis_tls_enabled'])->toBeTrue();
+        expect($settings['redis_tls_verify_peer'])->toBeFalse();
+        expect($settings['redis_tls_verify_peer_name'])->toBeFalse();
+        expect($settings['redis_tls_allow_self_signed'])->toBeTrue();
+        expect($settings['redis_tls_cafile'])->toBe('/etc/ssl/certs/redis-ca.pem');
+
+        // The template pairs every TLS checkbox with a hidden "0" input (same trick already used
+        // for redis_password_clear), so an unchecked box still submits explicit "0" rather than
+        // being left out of the request entirely - this is what that resulting request looks like.
+        $api->update_cache_settings([
+            'driver' => 'filesystem',
+            'redis_tls_enabled' => '0',
+            'redis_tls_verify_peer' => '0',
+            'redis_tls_verify_peer_name' => '0',
+            'redis_tls_allow_self_signed' => '0',
+            'redis_tls_cafile' => '',
+        ]);
+
+        $settings = $api->cache_settings();
+        expect($settings['redis_tls_enabled'])->toBeFalse();
+        expect($settings['redis_tls_verify_peer'])->toBeFalse();
+        expect($settings['redis_tls_verify_peer_name'])->toBeFalse();
+        expect($settings['redis_tls_allow_self_signed'])->toBeFalse();
+        expect($settings['redis_tls_cafile'])->toBe('');
+    } finally {
+        Config::setConfig($originalConfig, false);
+    }
+});
+
+test('update cache settings rejects a redis password on a non-loopback host with TLS disabled', function (): void {
+    $api = apiEndpoint(new Box\Mod\System\Api\Admin());
+    $originalConfig = Config::getConfig();
+
+    try {
+        expect(fn (): bool => $api->update_cache_settings([
+            'driver' => 'redis',
+            'redis_host' => 'redis.example.com',
+            'redis_password' => 'secret',
+        ]))->toThrow(FOSSBilling\Exception::class, 'without TLS enabled');
+    } finally {
+        Config::setConfig($originalConfig, false);
+    }
 });
 
 test('messages', function (): void {
@@ -144,10 +410,7 @@ test('is allowed', function (): void {
 test('update finalization status allows super administrator while pending', function (): void {
     $api = apiEndpoint(new Box\Mod\System\Api\Admin());
 
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
-    $admin->id = 1;
-    $admin->role = 'staff';
+    $admin = \Tests\Helpers\admin(['id' => 1, 'role' => 'staff']);
     $api->setIdentity($admin);
 
     $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
@@ -168,9 +431,7 @@ test('update finalization status allows super administrator while pending', func
 test('update finalization status falls back to legacy admin while pending', function (): void {
     $api = apiEndpoint(new Box\Mod\System\Api\Admin());
 
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
-    $admin->id = 1;
+    $admin = \Tests\Helpers\admin(['id' => 1]);
     $api->setIdentity($admin);
 
     $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
@@ -180,14 +441,14 @@ test('update finalization status falls back to legacy admin while pending', func
     $updateFinalization->shouldReceive('isRequired')->once()->andReturn(true);
     $updateFinalization->shouldReceive('getStatus')->once()->withNoArgs()->andReturn(['required' => true]);
 
-    $db = Mockery::mock(Box_Database::class);
-    $db->shouldReceive('getCell')->once()->with("SHOW COLUMNS FROM `admin` LIKE 'role'")->andReturn('role');
-    $db->shouldReceive('getCell')->once()->with('SELECT role FROM admin WHERE id = :id', ['id' => 1])->andReturn('admin');
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('fetchOne')->once()->with("SHOW COLUMNS FROM `admin` LIKE 'role'")->andReturn('role');
+    $connection->shouldReceive('fetchOne')->once()->with('SELECT role FROM admin WHERE id = :id', ['id' => 1])->andReturn('admin');
 
     $di = container();
     $di['update_finalization'] = $updateFinalization;
     $di['mod_service'] = $di->protect(fn (string $serviceName): mixed => $serviceName === 'Staff' ? $staffService : false);
-    $di['db'] = $db;
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
     $api->setDi($di);
 
     expect($api->update_finalization_status())->toBe(['required' => true]);
@@ -196,9 +457,7 @@ test('update finalization status falls back to legacy admin while pending', func
 test('update finalization status rejects legacy non-admin while pending', function (): void {
     $api = apiEndpoint(new Box\Mod\System\Api\Admin());
 
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
-    $admin->id = 1;
+    $admin = \Tests\Helpers\admin(['id' => 1]);
     $api->setIdentity($admin);
 
     $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
@@ -207,14 +466,14 @@ test('update finalization status rejects legacy non-admin while pending', functi
     $updateFinalization = Mockery::mock();
     $updateFinalization->shouldReceive('isRequired')->once()->andReturn(true);
 
-    $db = Mockery::mock(Box_Database::class);
-    $db->shouldReceive('getCell')->once()->with("SHOW COLUMNS FROM `admin` LIKE 'role'")->andReturn('role');
-    $db->shouldReceive('getCell')->once()->with('SELECT role FROM admin WHERE id = :id', ['id' => 1])->andReturn('staff');
+    $connection = Mockery::mock(Doctrine\DBAL\Connection::class);
+    $connection->shouldReceive('fetchOne')->once()->with("SHOW COLUMNS FROM `admin` LIKE 'role'")->andReturn('role');
+    $connection->shouldReceive('fetchOne')->once()->with('SELECT role FROM admin WHERE id = :id', ['id' => 1])->andReturn('staff');
 
     $di = container();
     $di['update_finalization'] = $updateFinalization;
     $di['mod_service'] = $di->protect(fn (string $serviceName): mixed => $serviceName === 'Staff' ? $staffService : false);
-    $di['db'] = $db;
+    $di['em']->shouldReceive('getConnection')->andReturn($connection);
     $api->setDi($di);
 
     expect(fn (): array => $api->update_finalization_status())
@@ -224,9 +483,7 @@ test('update finalization status rejects legacy non-admin while pending', functi
 test('update finalization status does not mask unrelated errors from isSuperAdministrator while pending', function (): void {
     $api = apiEndpoint(new Box\Mod\System\Api\Admin());
 
-    $admin = new Model_Admin();
-    $admin->loadBean(new Tests\Helpers\DummyBean());
-    $admin->id = 1;
+    $admin = \Tests\Helpers\admin(['id' => 1]);
     $api->setIdentity($admin);
 
     $staffService = Mockery::mock(Box\Mod\Staff\Service::class);

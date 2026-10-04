@@ -11,7 +11,10 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicedomain\Api;
 
+use Box\Mod\Order\Entity\Order;
 use Box\Mod\Servicedomain\Entity\ServiceDomain;
+use Box\Mod\Servicedomain\Event\AfterClientChangeNameserversEvent;
+use Box\Mod\Servicedomain\Event\BeforeClientChangeNameserversEvent;
 
 /**
  * Domain service management.
@@ -30,11 +33,30 @@ class Client extends \FOSSBilling\Api\AbstractApi
     {
         $s = $this->_getService($data);
 
-        $this->getDi()['events_manager']->fire(['event' => 'onBeforeClientChangeNameservers', 'params' => $data]);
+        $nameservers = [];
+        foreach (['ns1', 'ns2', 'ns3', 'ns4'] as $key) {
+            $nameservers[$key] = isset($data[$key]) && is_string($data[$key]) ? $data[$key] : null;
+        }
+
+        $this->getDi()['event_dispatcher']->dispatch(new BeforeClientChangeNameserversEvent(
+            $s->getId(),
+            $s->getClientId(),
+            $nameservers['ns1'],
+            $nameservers['ns2'],
+            $nameservers['ns3'],
+            $nameservers['ns4'],
+        ));
 
         $this->getService()->updateNameservers($s, $data);
 
-        $this->getDi()['events_manager']->fire(['event' => 'onAfterClientChangeNameservers', 'params' => $data]);
+        $this->getDi()['event_dispatcher']->dispatch(new AfterClientChangeNameserversEvent(
+            $s->getId(),
+            $s->getClientId(),
+            $nameservers['ns1'],
+            $nameservers['ns2'],
+            $nameservers['ns3'],
+            $nameservers['ns4'],
+        ));
 
         return true;
     }
@@ -73,6 +95,19 @@ class Client extends \FOSSBilling\Api\AbstractApi
         $s = $this->_getService($data);
 
         return $this->getService()->disablePrivacyProtection($s);
+    }
+
+    /**
+     * Synchronize domain registration details with the registrar.
+     *
+     * @return true
+     */
+    public function sync($data): bool
+    {
+        $s = $this->_getService($data);
+        $this->getService()->synchronizeDomain($s);
+
+        return true;
     }
 
     /**
@@ -119,14 +154,14 @@ class Client extends \FOSSBilling\Api\AbstractApi
         $orderService = $this->getDi()['mod_service']('order');
 
         $order = $orderService->findForClientById($this->getIdentity(), $data['order_id']);
-        if (!$order instanceof \Model_ClientOrder) {
+        if (!$order instanceof Order) {
             throw new \FOSSBilling\InformationException('Order not found');
         }
 
         $orderService->assertOrderUsable($order);
 
         $s = $orderService->getOrderService($order);
-        if (!$s instanceof ServiceDomain || $order->status !== \Model_ClientOrder::STATUS_ACTIVE) {
+        if (!$s instanceof ServiceDomain || $order->getStatus() !== Order::STATUS_ACTIVE) {
             throw new \FOSSBilling\Exception('Order is not activated');
         }
 

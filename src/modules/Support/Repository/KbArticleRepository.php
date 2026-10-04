@@ -12,16 +12,22 @@ declare(strict_types=1);
 namespace Box\Mod\Support\Repository;
 
 use Box\Mod\Support\Entity\KbArticle;
+use Box\Mod\Support\KbSearch;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
+use FOSSBilling\SortOptions;
 
 class KbArticleRepository extends EntityRepository
 {
-    public function getSearchQueryBuilder(?string $status = null, ?string $search = null, int|string|null $categoryId = null): QueryBuilder
+    public function getSearchQueryBuilder(array $data = []): QueryBuilder
     {
         $qb = $this->createQueryBuilder('a')
             ->leftJoin('a.category', 'c')
             ->addSelect('c');
+
+        $categoryId = $data['kb_article_category_id'] ?? null;
+        $status = $data['status'] ?? null;
+        $search = $data['search'] ?? null;
 
         if ($categoryId !== null && $categoryId !== '') {
             $qb->andWhere('IDENTITY(a.category) = :categoryId')
@@ -34,10 +40,7 @@ class KbArticleRepository extends EntityRepository
         }
 
         if ($search !== null && trim($search) !== '') {
-            $search = mb_strtolower(trim($search));
-            $terms = preg_split('/\s+/', $search, -1, PREG_SPLIT_NO_EMPTY) ?: [];
-
-            foreach ($terms as $index => $term) {
+            foreach (KbSearch::terms($search) as $index => $term) {
                 $qb->andWhere(sprintf(
                     '(LOWER(a.title) LIKE :searchTerm%s OR LOWER(a.content) LIKE :searchTerm%s OR LOWER(c.title) LIKE :searchTerm%s OR LOWER(c.description) LIKE :searchTerm%s)',
                     $index,
@@ -49,7 +52,26 @@ class KbArticleRepository extends EntityRepository
             }
         }
 
-        return $qb->orderBy('a.title', 'ASC');
+        $sort = SortOptions::fromArray($data, [
+            'id' => 'a.id',
+            'title' => 'a.title',
+            'slug' => 'a.slug',
+            'status' => 'a.status',
+            'views' => 'a.views',
+            'category' => 'c.title',
+            'created_at' => 'a.createdAt',
+            'updated_at' => 'a.updatedAt',
+        ]);
+        if ($sort->isSorted()) {
+            $qb->orderBy($sort->expression, $sort->direction);
+            if ($sort->expression !== 'a.id') {
+                $qb->addOrderBy('a.id', $sort->direction);
+            }
+        } else {
+            $qb->orderBy('a.title', \SortDirection::Ascending);
+        }
+
+        return $qb;
     }
 
     public function findOneActiveById(int $id): ?KbArticle

@@ -32,6 +32,8 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional string status - filter tickets by status
      * @optional string date_from - show tickets created since this day. Can be any string parsable by strtotime()
      * @optional string date_to - show tickets created until this day. Can be any string parsable by strtotime()
+     * @optional string $sort - sort column: 'id', 'status', 'priority', 'subject', 'created_at' or 'updated_at'
+     * @optional string $direction - sort direction: 'ASC' or 'DESC'
      */
     public function ticket_get_list(array $data): array
     {
@@ -199,7 +201,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         foreach ($expiredArr as $ticketArr) {
             $ticketModel = $this->getService()->getTicketById((int) $ticketArr['id']);
             if (!$this->getService()->autoClose($ticketModel)) {
-                $this->getDi()['logger']->info('Ticket %s was not closed', $ticketModel->getId());
+                $this->getDi()['logger']->info('Ticket {ticket_id} was not closed', ['ticket_id' => $ticketModel->getId()]);
             }
         }
 
@@ -222,6 +224,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
     /**
      * Get helpdesk list.
+     *
+     * @optional string $sort - sort column: 'id', 'name', 'email', 'created_at' or 'updated_at'
+     * @optional string $direction - sort direction: 'ASC' or 'DESC'
      */
     public function helpdesk_get_list(array $data): array
     {
@@ -336,6 +341,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
     /**
      * Get list of canned responses.
+     *
+     * @optional string $sort - sort column: 'id', 'title', 'category', 'created_at' or 'updated_at'
+     * @optional string $direction - sort direction: 'ASC' or 'DESC'
      */
     public function canned_get_list(array $data): array
     {
@@ -608,6 +616,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      */
     /**
      * Get paginated list of knowledge base articles.
+     *
+     * @optional string $sort - sort column: 'id', 'title', 'slug', 'status', 'views', 'category', 'created_at' or 'updated_at'
+     * @optional string $direction - sort direction: 'ASC' or 'DESC'
      */
     public function kb_article_get_list(array $data): array
     {
@@ -620,7 +631,13 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         /** @var \Box\Mod\Support\Repository\KbArticleRepository $repo */
         $repo = $this->getService()->getKbArticleRepository();
 
-        $qb = $repo->getSearchQueryBuilder($status, $search, $cat);
+        $qb = $repo->getSearchQueryBuilder([
+            'status' => $status,
+            'search' => $search,
+            'kb_article_category_id' => $cat,
+            'sort' => $data['sort'] ?? null,
+            'direction' => $data['direction'] ?? null,
+        ]);
 
         return $this->getDi()['pager']->paginateDoctrineQuery($qb, PaginationOptions::fromArray($data), $this->getIdentity());
     }
@@ -714,6 +731,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
     /**
      * Get paginated list of knowledge base categories.
+     *
+     * @optional string $sort - sort column: 'id', 'title', 'slug', 'created_at' or 'updated_at'
+     * @optional string $direction - sort direction: 'ASC' or 'DESC'
      */
     public function kb_category_get_list(array $data): array
     {

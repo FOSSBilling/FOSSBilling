@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicedomain\Api;
 
+use Box\Mod\Order\Entity\Order;
 use Box\Mod\Servicedomain\Entity\ServiceDomain;
 use Box\Mod\Servicedomain\Entity\Tld;
 use Box\Mod\Servicedomain\Entity\TldRegistrar;
@@ -56,6 +57,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      */
+    #[RequiredParams(['order_id' => 'Order ID is missing'])]
     public function update_nameservers($data)
     {
         $this->checkPermissions('servicedomain', 'manage_domains');
@@ -70,6 +72,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      */
+    #[RequiredParams(['order_id' => 'Order ID is missing'])]
     public function update_contacts($data)
     {
         $this->checkPermissions('servicedomain', 'manage_domains');
@@ -84,6 +87,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      */
+    #[RequiredParams(['order_id' => 'Order ID is missing'])]
     public function enable_privacy_protection($data)
     {
         $this->checkPermissions('servicedomain', 'manage_domains');
@@ -98,6 +102,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      */
+    #[RequiredParams(['order_id' => 'Order ID is missing'])]
     public function disable_privacy_protection($data)
     {
         $this->checkPermissions('servicedomain', 'manage_domains');
@@ -108,10 +113,25 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
+     * Synchronize domain registration details with the registrar.
+     */
+    #[RequiredParams(['order_id' => 'Order ID is missing'])]
+    public function sync($data): bool
+    {
+        $this->checkPermissions('servicedomain', 'manage_domains');
+
+        $s = $this->_getService($data);
+        $this->getService()->synchronizeDomain($s);
+
+        return true;
+    }
+
+    /**
      * Get domain transfer code.
      *
      * @return bool
      */
+    #[RequiredParams(['order_id' => 'Order ID is missing'])]
     public function get_transfer_code($data)
     {
         $this->checkPermissions('servicedomain', 'manage_domains');
@@ -126,6 +146,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      */
+    #[RequiredParams(['order_id' => 'Order ID is missing'])]
     public function lock($data)
     {
         $this->checkPermissions('servicedomain', 'manage_domains');
@@ -140,6 +161,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      */
+    #[RequiredParams(['order_id' => 'Order ID is missing'])]
     public function unlock($data)
     {
         $this->checkPermissions('servicedomain', 'manage_domains');
@@ -151,6 +173,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
     /**
      * Get paginated top level domains list.
+     *
+     * @optional string $sort - sort column: 'tld', 'price_registration', 'price_renew', 'price_transfer', 'registrar' or 'id'
+     * @optional string $direction - sort direction: 'ASC' or 'DESC'
      *
      * @return array
      */
@@ -299,6 +324,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     /**
      * Get paginated registrars list.
      *
+     * @optional string $sort - sort column: 'title' or 'id'
+     * @optional string $direction - sort direction: 'ASC' or 'DESC'
+     *
      * @return array
      */
     public function registrar_get_list($data)
@@ -436,7 +464,10 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $orderId = $data['order_id'];
 
-        $order = $this->getDi()['db']->getExistingModelById('ClientOrder', $orderId, 'Order not found');
+        $order = $this->getDi()['em']->getRepository(Order::class)->find($orderId);
+        if (!$order instanceof Order) {
+            throw new \FOSSBilling\Exception('Order not found');
+        }
 
         $orderService = $this->getDi()['mod_service']('order');
         $s = $orderService->getOrderService($order);

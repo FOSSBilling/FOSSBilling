@@ -36,7 +36,7 @@ test('core mod', function (): void {
 
 test('manifest', function (): void {
     $di = container();
-    $di['url'] = new Box_Url();
+    $di['url'] = new FOSSBilling\Url();
 
     $mod = new Module('Cookieconsent');
     $mod->setDi($di);

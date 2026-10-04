@@ -65,8 +65,9 @@ test('phone number length validation', function (): void {
 function clientCreateClient(): int
 {
     $password = 'A1a' . bin2hex(random_bytes(6));
+    $email = 'client_' . uniqid() . '@example.com';
     $result = Tests\Helpers\ApiClient::request('guest/client/create', [
-        'email' => 'client_' . uniqid() . '@example.com',
+        'email' => $email,
         'first_name' => 'Test',
         'password' => $password,
         'password_confirm' => $password,
@@ -74,7 +75,13 @@ function clientCreateClient(): int
         'phone' => '(216) 245-2368',
     ]);
     expect($result->wasSuccessful())->toBeTrue();
-    expect($result->getResult())->toBeInt();
+    expect($result->getResult())->toBeTrue();
 
-    return (int) $result->getResult();
+    // guest/client/create no longer returns the new client's id (doing so
+    // would reopen the email-enumeration issue it was hardened against), so
+    // look the account up by the email we just registered instead.
+    $lookup = Tests\Helpers\ApiClient::request('admin/client/get', ['email' => $email]);
+    expect($lookup->wasSuccessful())->toBeTrue();
+
+    return (int) $lookup->getResult()['id'];
 }

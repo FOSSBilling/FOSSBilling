@@ -4,5 +4,70 @@
   "name": "Stripe",
   "description": "Accepts card payments and subscriptions through Stripe.",
   "version": "1.0.0",
-  "api": 1
+  "api": 1,
+  "logo": {
+    "file": "stripe.png",
+    "width": "65px",
+    "height": "30px"
+  },
+  "settings": [
+    {
+      "name": "pub_key",
+      "type": "text",
+      "label": "Live Publishable Key:",
+      "required_when": {
+        "enabled": true,
+        "test_mode": false
+      }
+    },
+    {
+      "name": "api_key",
+      "type": "password",
+      "label": "Live Secret Key:",
+      "required_when": {
+        "enabled": true,
+        "test_mode": false
+      },
+      "secret": true
+    },
+    {
+      "name": "webhook_secret",
+      "type": "password",
+      "label": "Live Webhook signing secret:",
+      "required_when": {
+        "enabled": true,
+        "test_mode": false
+      },
+      "secret": true
+    },
+    {
+      "name": "test_pub_key",
+      "type": "text",
+      "label": "Test Publishable Key:",
+      "required_when": {
+        "enabled": true,
+        "test_mode": true
+      }
+    },
+    {
+      "name": "test_api_key",
+      "type": "password",
+      "label": "Test Secret Key:",
+      "required_when": {
+        "enabled": true,
+        "test_mode": true
+      },
+      "secret": true
+    },
+    {
+      "name": "test_webhook_secret",
+      "type": "password",
+      "label": "Test Webhook signing secret:",
+      "required_when": {
+        "enabled": true,
+        "test_mode": true
+      },
+      "secret": true
+    }
+  ]
 }

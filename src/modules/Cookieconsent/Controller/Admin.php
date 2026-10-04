@@ -31,7 +31,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
             'subpages' => [
                 [
                     'location' => 'extensions',
-                    'label' => __trans('Cookie consent'),
+                    'label' => __trans('Cookie Consent'),
                     'index' => 2000,
                     'uri' => $this->di['url']->adminLink('cookieconsent'),
                     'class' => '',
