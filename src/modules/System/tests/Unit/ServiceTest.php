@@ -398,7 +398,7 @@ test('updateParams rejects invalid invoice counters before writing any settings'
     'array' => [[]],
     'float' => [1.0],
     'maximum' => [(string) PHP_INT_MAX],
-    'overflow' => [(string) PHP_INT_MAX . '0'],
+    'overflow' => [PHP_INT_MAX . '0'],
 ]);
 
 test('updateParams saves valid invoice counters', function (int|string $value): void {
