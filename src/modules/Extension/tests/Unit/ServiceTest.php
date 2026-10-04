@@ -879,7 +879,7 @@ test('getConfig returns extension config', function (): void {
     expect($result)->toBeArray();
 });
 
-test('getConfig creates new ExtensionMeta when not found', function (): void {
+test('getConfig returns defaults without writing when not found', function (): void {
     $service = new Service();
     $data = [
         'ext' => 'extensionName',
@@ -892,8 +892,8 @@ test('getConfig creates new ExtensionMeta when not found', function (): void {
         ->andReturn(null);
 
     $em = extensionBuildEm(null, $metaRepo);
-    $em->shouldReceive('persist')->atLeast()->once();
-    $em->shouldReceive('flush')->atLeast()->once();
+    $em->shouldNotReceive('persist');
+    $em->shouldNotReceive('flush');
 
     $di = container();
     $di['em'] = $em;
@@ -904,6 +904,70 @@ test('getConfig creates new ExtensionMeta when not found', function (): void {
 
     expect($result)->toBeArray();
     expect($result)->toBe(['ext' => 'extensionName']);
+});
+
+test('configuration reads do not create rows and authorized writes preserve public settings', function (): void {
+    $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $em = EntityManagerFactory::create($connection);
+    (new SchemaTool($em))->createSchema([
+        $em->getClassMetadata(Extension::class),
+        $em->getClassMetadata(ExtensionMeta::class),
+    ]);
+
+    $installed = (new Extension())
+        ->setType('mod')
+        ->setName('cookieconsent')
+        ->setStatus(Extension::STATUS_INSTALLED);
+    $em->persist($installed);
+    $em->flush();
+
+    $module = Mockery::mock(FOSSBilling\Module::class);
+    $module->shouldReceive('getCoreModules')->andReturn(['index', 'staff']);
+    $cache = new Symfony\Component\Cache\Adapter\ArrayAdapter();
+    $di = container();
+    $di['em'] = $em;
+    $di['mod'] = $di->protect(static fn (string $name): object => $module);
+    $di['cache'] = $cache;
+    $di['crypt'] = new FOSSBilling\Crypt();
+    $di['event_dispatcher'] = new SymfonyEventDispatcher();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('hasManagePermission')->with('mod_staff')->twice();
+    $service->setDi($di);
+    $api = new Box\Mod\Extension\Api\Guest();
+    $api->setService($service);
+
+    // Arbitrary identifiers must not populate either persistent store.
+    foreach (['probe_001', 'probe_002', 'mod_probe_001', 'mod_mod_staff', 'MOD_staff', 'mod_staff/../probe', str_repeat('x', 255)] as $ext) {
+        expect($api->settings(['ext' => $ext]))->toBe([])
+            ->and($connection->fetchOne('SELECT COUNT(*) FROM extension_meta'))->toBe(0);
+    }
+    expect($cache->getValues())->toBe([])
+        ->and($connection->fetchOne('SELECT COUNT(*) FROM extension_meta'))->toBe(0);
+
+    // Core, installed, and legacy migration reads retain their empty defaults.
+    foreach (['index', 'mod_staff', 'mod_cookieconsent'] as $ext) {
+        expect($api->settings(['ext' => $ext]))->toBe([]);
+    }
+    foreach (['mod_spamchecker', 'probe_003'] as $ext) {
+        expect($service->getConfig($ext))->toBe(['ext' => $ext]);
+        expect($service->getConfig($ext))->toBe(['ext' => $ext]);
+    }
+    expect($connection->fetchOne('SELECT COUNT(*) FROM extension_meta'))->toBe(0);
+
+    $data = ['ext' => 'mod_staff', 'public' => ['login_note' => 'Welcome'], 'private_key' => 'secret'];
+    expect($service->setConfig($data))->toBeTrue()
+        ->and($connection->fetchOne('SELECT COUNT(*) FROM extension_meta'))->toBe(1)
+        ->and($service->getConfig('mod_staff'))->toBe($data)
+        ->and($api->settings(['ext' => 'mod_staff']))->toBe($data['public']);
+    $meta = $em->getRepository(ExtensionMeta::class)->findOneByExtensionAndScope('mod_staff', 'config');
+    expect($meta->getMetaValue())->not->toContain('secret');
+
+    $data['public']['login_note'] = 'Updated';
+    expect($service->setConfig($data))->toBeTrue()
+        ->and($connection->fetchOne('SELECT COUNT(*) FROM extension_meta'))->toBe(1)
+        ->and($api->settings(['ext' => 'mod_staff']))->toBe($data['public']);
 });
 
 test('setConfig sets extension config', function (): void {
@@ -922,10 +986,7 @@ test('setConfig sets extension config', function (): void {
         ->atLeast()
         ->once()
         ->andReturn(null);
-    $serviceMock->shouldReceive('getConfig')
-        ->atLeast()
-        ->once()
-        ->andReturn([]);
+    $serviceMock->shouldNotReceive('getConfig');
 
     $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
 

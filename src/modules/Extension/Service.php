@@ -673,12 +673,6 @@ class Service implements InjectionAwareInterface
 
             $meta = $this->getExtensionMetaRepository()->findOneByExtensionAndScope($ext, 'config');
             if ($meta === null) {
-                $meta = new ExtensionMeta();
-                $meta->setExtension($ext);
-                $meta->setMetaKey('config');
-                $meta->setMetaValue(null);
-                $this->di['em']->persist($meta);
-                $this->di['em']->flush();
                 $config = [];
             } else {
                 $decrypted = $this->di['crypt']->decrypt($meta->getMetaValue(), $this->_getSalt());
@@ -697,7 +691,6 @@ class Service implements InjectionAwareInterface
         // so authorization is enforced here independently of any caller-side checks.
         $this->hasManagePermission($data['ext']);
         $ext = $data['ext'];
-        $this->getConfig($ext); // Creates new config if it does not exist in DB
 
         $configurationKeys = array_values(array_filter(
             array_keys($data),
