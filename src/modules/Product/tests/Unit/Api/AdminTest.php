@@ -125,6 +125,22 @@ test('updates a product', function (): void {
     expect($api->update($data))->toBeTrue();
 });
 
+test('product mutations reject missing IDs during API validation', function (string $method, string $message, array $data): void {
+    $dispatcher = new FOSSBilling\Api\Dispatcher();
+
+    expect(fn () => $dispatcher->validateRequiredParams(new Admin(), $method, $data))
+        ->toThrow(FOSSBilling\InformationException::class, $message);
+})->with([
+    ['update', 'Product ID was not passed'],
+    ['update_config', 'Product ID was not passed'],
+    ['delete', 'Product ID was not passed'],
+    ['addon_delete', 'Addon ID was not passed'],
+])->with([
+    'omitted' => [[]],
+    'null' => [['id' => null]],
+    'blank' => [['id' => '   ']],
+]);
+
 test('throws exception when updating priority without priority param', function (): void {
     $api = apiEndpoint(new Admin());
     $api->setDi(container());
