@@ -2351,7 +2351,7 @@ class Service implements InjectionAwareInterface
             return $this->getEnabledProductPaymentPeriod($pp, (string) ($config['period'] ?? ''))->getSetupPrice();
         }
 
-        throw new \FOSSBilling\Exception('Unknown period selected for setup price');
+        throw new \FOSSBilling\InformationException('Product :id has an invalid pricing type. Please contact the administrator.', [':id' => $product->getId()]);
     }
 
     public function getProductPrice(Product $product, ?array $config = null): float|int|string
@@ -2378,7 +2378,7 @@ class Service implements InjectionAwareInterface
             return $this->getEnabledProductPaymentPeriod($pp, (string) $config['period'])->getPrice();
         }
 
-        throw new \FOSSBilling\Exception('Unknown Period selected for price');
+        throw new \FOSSBilling\InformationException('Product :id has an invalid pricing type. Please contact the administrator.', [':id' => $product->getId()]);
     }
 
     private function getEnabledProductPaymentPeriod(ProductPayment $pp, string $code): ProductPaymentPeriod

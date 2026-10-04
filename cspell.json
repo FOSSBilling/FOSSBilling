@@ -491,6 +491,7 @@
         "iplookup",
         "DDEV",
         "Playwright",
+        "domcontentloaded",
         "CSRF",
         "undismissed",
         "unmigrated",
