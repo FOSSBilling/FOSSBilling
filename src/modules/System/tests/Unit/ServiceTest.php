@@ -373,6 +373,48 @@ test('updateParams updates system parameters in a single flush', function (): vo
     expect($eventDispatcher->events[1])->toBeInstanceOf(Box\Mod\System\Event\AfterAdminSettingsUpdateEvent::class);
 });
 
+test('updateParams rejects invalid invoice counters before writing any settings', function (mixed $value): void {
+    $repository = Mockery::mock(Box\Mod\System\Repository\SettingRepository::class);
+    $repository->shouldNotReceive('findOneByParam');
+    $di = container();
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\System\Entity\Setting::class)->andReturn($repository);
+    $di['em']->shouldNotReceive('persist');
+    $di['em']->shouldNotReceive('flush');
+    $service = new Service();
+    $service->setDi($di);
+
+    expect(fn () => $service->updateParams(['invoice_series' => 'NEW-', 'INVOICE_STARTING_NUMBER' => $value]))
+        ->toThrow(FOSSBilling\InformationException::class, 'Next invoice number must be a positive whole number');
+})->with([
+    'null' => [null],
+    'empty' => [''],
+    'blank' => ['   '],
+    'fraction' => ['5.5'],
+    'exponent' => ['1e3'],
+    'text' => ['INV-1'],
+    'zero' => [0],
+    'negative' => [-1],
+    'boolean' => [true],
+    'array' => [[]],
+    'float' => [1.0],
+    'maximum' => [(string) PHP_INT_MAX],
+    'overflow' => [PHP_INT_MAX . '0'],
+]);
+
+test('updateParams saves valid invoice counters', function (int|string $value): void {
+    $setting = Tests\Helpers\createEntity(Box\Mod\System\Entity\Setting::class, ['param' => 'invoice_starting_number', 'value' => '7']);
+    $repository = Mockery::mock(Box\Mod\System\Repository\SettingRepository::class);
+    $repository->shouldReceive('findOneByParam')->once()->with('invoice_starting_number')->andReturn($setting);
+    $di = container();
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\System\Entity\Setting::class)->andReturn($repository);
+    $di['em']->shouldReceive('flush')->once();
+    $service = new Service();
+    $service->setDi($di);
+
+    expect($service->updateParams(['invoice_starting_number' => $value]))->toBeTrue()
+        ->and($setting->getValue())->toBe((string) $value);
+})->with([1, '42', PHP_INT_MAX - 1]);
+
 test('updateParams denies a mixed-case guarded key without the company permission', function (): void {
     $service = new Service();
 

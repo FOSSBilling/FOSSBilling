@@ -293,6 +293,12 @@ class Service
             if (!$this->canUpdateParam($key)) {
                 throw new \FOSSBilling\InformationException('You do not have permission to update the parameter :param', [':param' => $key]);
             }
+
+            if (strtolower((string) $key) === 'invoice_starting_number'
+                && ((!is_int($val) && !is_string($val))
+                    || filter_var($val, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => PHP_INT_MAX - 1]]) === false)) {
+                throw new \FOSSBilling\InformationException('Next invoice number must be a positive whole number no greater than :max.', [':max' => PHP_INT_MAX - 1]);
+            }
         }
 
         foreach ($data as $key => $val) {
