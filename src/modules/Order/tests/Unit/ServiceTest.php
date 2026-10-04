@@ -97,7 +97,7 @@ test('batch order serialization does not expose admin-only client details', func
     $clientService = Mockery::mock(Box\Mod\Client\Service::class);
     $clientService->shouldReceive('toApiArray')
         ->once()
-        ->withArgs(fn (...$args) => count($args) === 2 && $args[0] === $client && $args[1] === false)
+        ->withArgs(fn (...$args): bool => count($args) === 2 && $args[0] === $client && $args[1] === false)
         ->andReturn($generalClient);
 
     $productService = Mockery::mock(Box\Mod\Product\Service::class);
@@ -153,7 +153,7 @@ test('batch client serialization excludes admin-only fields on the real path', f
     $client->setLastName('Doe');
 
     $di = container();
-    $di['mod_config'] = $di->protect(fn (string $name) => []);
+    $di['mod_config'] = $di->protect(fn (string $name): array => []);
 
     $clientService = new Box\Mod\Client\Service();
     $clientService->setDi($di);
@@ -3204,10 +3204,26 @@ test('updateOrderConfig succeeds with valid form data', function (): void {
 
     $order = createEntity(Order::class);
     $order->form_id = 11;
+    $order->setConfig(json_encode([
+        'period' => '1M',
+        'price' => 12.5,
+        'quantity' => 2,
+        'service_options' => ['region' => 'eu'],
+        'hostname' => 'old.example.com',
+        'addons' => ['backup', 'ssl'],
+    ]));
 
-    $result = $svc->updateOrderConfig($order, ['hostname' => 'myhost.example.com', 'plan' => 'pro', 'addons' => ['backup', 'ssl']]);
+    $result = $svc->updateOrderConfig($order, ['hostname' => 'myhost.example.com', 'plan' => 'pro']);
 
-    expect($result)->toBeTrue();
+    expect($result)->toBeTrue()
+        ->and($svc->getConfig($order))->toBe([
+            'period' => '1M',
+            'price' => 12.5,
+            'quantity' => 2,
+            'service_options' => ['region' => 'eu'],
+            'hostname' => 'myhost.example.com',
+            'plan' => 'pro',
+        ]);
 });
 
 test('createOrder rejects invalid price and quantity', function (array $data, string $message): void {
