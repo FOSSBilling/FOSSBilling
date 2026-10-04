@@ -1390,19 +1390,23 @@ test('batch syncs expiration dates', function (): void {
     expect($result)->toBeTrue();
 });
 
-test('continues domain sync after a failure and advances the last sync marker', function (Throwable $failure): void {
+test('handles domain sync failures without blocking other domains', function (Throwable $failure): void {
+    $retryAfterFailure = $failure instanceof Error;
     $failedDomain = new ServiceDomain();
     $healthyDomain = new ServiceDomain();
+    $attempts = 0;
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('syncExpirationDate')
-        ->once()
+        ->times($retryAfterFailure ? 2 : 1)
         ->with($failedDomain)
-        ->ordered()
-        ->andThrow($failure);
+        ->andReturnUsing(static function () use (&$attempts, $failure): void {
+            if (++$attempts === 1) {
+                throw $failure;
+            }
+        });
     $serviceMock->shouldReceive('syncExpirationDate')
-        ->once()
-        ->with($healthyDomain)
-        ->ordered();
+        ->times($retryAfterFailure ? 2 : 1)
+        ->with($healthyDomain);
 
     $previousHub = Sentry\SentrySdk::getCurrentHub();
     $hub = Mockery::mock(Sentry\State\HubInterface::class);
@@ -1415,7 +1419,7 @@ test('continues domain sync after a failure and advances the last sync marker', 
     $lastSync = null;
     $systemServiceMock = Mockery::mock(SystemService::class);
     $systemServiceMock->shouldReceive('getParamValue')
-        ->twice()
+        ->times(3)
         ->andReturnUsing(static function () use (&$lastSync): ?string {
             return $lastSync;
         });
@@ -1429,7 +1433,7 @@ test('continues domain sync after a failure and advances the last sync marker', 
         });
 
     $domainRepo = Mockery::mock(DomainRepository::class);
-    $domainRepo->shouldReceive('findAll')->once()->andReturn([$failedDomain, $healthyDomain]);
+    $domainRepo->shouldReceive('findAll')->times($retryAfterFailure ? 2 : 1)->andReturn([$failedDomain, $healthyDomain]);
     $domainRepo->shouldIgnoreMissing();
 
     $emMock = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
@@ -1445,13 +1449,19 @@ test('continues domain sync after a failure and advances the last sync marker', 
 
     try {
         $firstResult = $serviceMock->batchSyncExpirationDates();
+        expect($lastSync === null)->toBe($retryAfterFailure);
+
         $secondResult = $serviceMock->batchSyncExpirationDates();
+        expect($lastSync)->not->toBeNull();
+
+        $thirdResult = $serviceMock->batchSyncExpirationDates();
     } finally {
         Sentry\SentrySdk::setCurrentHub($previousHub);
     }
 
     expect($firstResult)->toBeTrue()
-        ->and($secondResult)->toBeFalse();
+        ->and($secondResult)->toBe($retryAfterFailure)
+        ->and($thirdResult)->toBeFalse();
 })->with([
     'registrar exception' => [new Exception('registrar unavailable')],
     'adapter type error' => [new TypeError('broken registrar adapter')],

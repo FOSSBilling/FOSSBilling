@@ -850,6 +850,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         $list = $this->getDomainRepository()->findAll();
+        $hadProgrammingError = false;
 
         foreach ($list as $domain) {
             try {
@@ -858,12 +859,15 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 $this->di['logger']->error($e->getMessage(), ['domain_id' => $domain->getId()]);
                 // Caught programming errors still need to reach Sentry.
                 if ($e instanceof \Error) {
+                    $hadProgrammingError = true;
                     \Sentry\captureException($e);
                 }
             }
         }
 
-        $ss->setParamValue($key, date('Y-m-d H:i:s'));
+        if (!$hadProgrammingError) {
+            $ss->setParamValue($key, date('Y-m-d H:i:s'));
+        }
 
         $this->di['logger']->info('Executed action to synchronize domain expiration dates with registrar');
 
