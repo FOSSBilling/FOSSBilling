@@ -2282,6 +2282,31 @@ test('get product category search query builder', function (): void {
     expect($result)->toBe($qb);
 });
 
+test('product pricing reports invalid stored payment types as configuration errors', function (?string $type): void {
+    $service = new Service();
+    $payment = productTestCreateProductPaymentEntity(15)->setType($type);
+    $product = productTestCreateProductEntity(9)
+        ->setType(Service::CUSTOM)
+        ->setProductPaymentId(15);
+
+    $paymentRepo = Mockery::mock(ProductPaymentRepository::class);
+    $paymentRepo->shouldReceive('find')->twice()->with(15)->andReturn($payment);
+    $di = container();
+    $di['em'] = productTestCreateProductPaymentEntityManager($paymentRepo);
+    $service->setDi($di);
+
+    expect(fn (): float|int|string => $service->getProductPrice($product, ['period' => '1M']))
+        ->toThrow(FOSSBilling\InformationException::class, 'Product 9 has an invalid pricing type. Please contact the administrator.');
+    expect(fn (): float => $service->getProductSetupPrice($product, ['period' => '1M']))
+        ->toThrow(FOSSBilling\InformationException::class, 'Product 9 has an invalid pricing type. Please contact the administrator.');
+
+    expect($payment->getType())->toBe($type);
+})->with([
+    'missing type' => [null],
+    'empty type' => [''],
+    'unknown type' => ['invalid'],
+]);
+
 test('get starting from price type free', function (): void {
     $service = new Service();
     $productModel = productTestCreateProductEntity(1)->setProductPaymentId(1);
