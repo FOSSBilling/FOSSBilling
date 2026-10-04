@@ -40,14 +40,21 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
      */
     public function save_theme_settings(\Box_App $app, $theme): Response
     {
+        $api = $this->di['api_admin'];
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('theme', 'manage_settings');
+
         $body = $app->getRequest()->request->all();
+        $token = $body['CSRFToken'] ?? null;
+        $sessionToken = $this->di['session']->get('csrf_token');
+        if (!is_string($token) || !is_string($sessionToken) || $sessionToken === '' || !hash_equals($sessionToken, $token)) {
+            throw new \FOSSBilling\InformationException('CSRF token invalid', null, 403);
+        }
+        unset($body['CSRFToken']);
         $settingNames = array_values(array_diff(
             array_map(static fn (int|string $key): string => (string) $key, array_keys($body)),
             ['save-current-setting', 'save-current-setting-preset'],
         ));
         $this->di['event_dispatcher']->dispatch(new BeforeAdminThemeSettingsSaveEvent((string) $theme, $settingNames));
-
-        $api = $this->di['api_admin'];
 
         $mod = $this->di['mod']('theme');
         $service = $mod->getService();
@@ -94,6 +101,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
     public function get_theme(\Box_App $app, $theme): string
     {
         $this->di['is_admin_logged'];
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('theme', 'view');
 
         $mod = $this->di['mod']('theme');
         $service = $mod->getService();
