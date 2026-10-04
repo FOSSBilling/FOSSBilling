@@ -176,9 +176,9 @@ class DriverManagerFactory
         ];
 
         if ($driver === 'pdo_mysql') {
-            $charset = $dbConfig['charset'] ?? 'utf8';
+            $charset = $dbConfig['charset'] ?? 'utf8mb4';
             if (!in_array($charset, self::SUPPORTED_CHARSETS, true)) {
-                $charset = 'utf8';
+                $charset = 'utf8mb4';
             }
             $params['charset'] = $charset;
         } elseif (isset($dbConfig['charset'])) {
@@ -202,9 +202,6 @@ class DriverManagerFactory
         if (($dbConfig['driver'] ?? null) !== 'pdo_mysql') {
             return;
         }
-
-        // Set server default charset for newly created tables. Connection charset is handled by DBAL via DSN.
-        $connection->executeStatement('SET character_set_server = utf8');
 
         // Only override session timeouts when explicitly configured, otherwise preserve server defaults.
         if (isset($dbConfig['interactive_timeout'])) {
