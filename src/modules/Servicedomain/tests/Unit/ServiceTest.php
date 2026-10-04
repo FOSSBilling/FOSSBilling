@@ -317,7 +317,7 @@ test('throws exception for register order data with invalid tld', function (arra
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->validateOrderData($data))
-        ->toThrow(FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\InformationException::class);
 })->with(function () {
     $tldModel = new Tld();
     $tldModel->setTld('.com');
@@ -387,7 +387,7 @@ test('rejects a registration period outside the tld allowed periods list', funct
     $serviceMock->setDi($di);
 
     expect(fn () => $serviceMock->validateOrderData($data))
-        ->toThrow(FOSSBilling\Exception::class);
+        ->toThrow(FOSSBilling\InformationException::class);
 });
 
 test('accepts a registration period within the tld allowed periods list', function (): void {
