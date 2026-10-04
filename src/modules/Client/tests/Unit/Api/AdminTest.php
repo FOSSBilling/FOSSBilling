@@ -510,7 +510,7 @@ test('changePassword returns true', function (): void {
     };
 
     $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
-    $passwordMock->shouldReceive('hashIt')->atLeast()->once()->with($data['password']);
+    $passwordMock->shouldReceive('hashIt')->atLeast()->once()->with($data['password'])->andReturn('new-password-hash');
 
     $profileService = Mockery::mock(Box\Mod\Profile\Service::class);
     $profileService->shouldReceive('invalidateSessions')->atLeast()->once();
@@ -525,6 +525,7 @@ test('changePassword returns true', function (): void {
 
     $adminClient->setDi($di);
 
+    $di['em']->getRepository(Box\Mod\Client\Entity\ClientPasswordReset::class)->shouldReceive('changePassword')->once()->with(Mockery::type(Box\Mod\Client\Entity\Client::class), 'new-password-hash');
     $result = $adminClient->change_password($data);
     expect($result)->toBeTrue();
     expect($dispatcher->events)->toEqual([

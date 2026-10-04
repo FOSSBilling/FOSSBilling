@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Box\Mod\Profile;
 
 use Box\Mod\Client\Entity\Client;
+use Box\Mod\Client\Entity\ClientPasswordReset;
 use Box\Mod\Profile\Event\AfterAdminApiKeyChangeEvent;
 use Box\Mod\Profile\Event\AfterAdminProfilePasswordChangeEvent;
 use Box\Mod\Profile\Event\AfterAdminProfileUpdateEvent;
@@ -282,9 +283,7 @@ class Service implements InjectionAwareInterface
         $clientId = (int) $client->getId();
         $this->di['event_dispatcher']->dispatch(new BeforeClientProfilePasswordChangeEvent($clientId));
 
-        $client->setPass($this->di['password']->hashIt($new_password));
-        $this->di['em']->persist($client);
-        $this->di['em']->flush();
+        $this->di['em']->getRepository(ClientPasswordReset::class)->changePassword($client, $this->di['password']->hashIt($new_password));
 
         $this->di['event_dispatcher']->dispatch(new AfterClientProfilePasswordChangeEvent($clientId));
 

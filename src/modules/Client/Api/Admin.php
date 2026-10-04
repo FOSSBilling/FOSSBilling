@@ -19,6 +19,7 @@ use Box\Mod\Client\Entity\Client;
 use Box\Mod\Client\Entity\ClientBalance;
 use Box\Mod\Client\Entity\ClientGroup;
 use Box\Mod\Client\Entity\ClientGroupMembership;
+use Box\Mod\Client\Entity\ClientPasswordReset;
 use Box\Mod\Client\Event\AfterAdminClientDeleteEvent;
 use Box\Mod\Client\Event\AfterAdminClientPasswordChangeEvent;
 use Box\Mod\Client\Event\AfterAdminClientUpdateEvent;
@@ -493,9 +494,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $this->getDi()['event_dispatcher']->dispatch(new BeforeAdminClientPasswordChangeEvent((int) $client->getId()));
 
-        $client->setPass($this->getDi()['password']->hashIt($data['password']));
-        $this->getDi()['em']->persist($client);
-        $this->getDi()['em']->flush();
+        $this->getDi()['em']->getRepository(ClientPasswordReset::class)->changePassword($client, $this->getDi()['password']->hashIt($data['password']));
 
         $profileService = $this->getDi()['mod_service']('profile');
         $profileService->invalidateSessions('client', (int) $data['id']);

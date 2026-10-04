@@ -329,7 +329,7 @@ test('changes client password', function (): void {
 
     $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
     $passwordMock->shouldReceive('hashIt')
-        ->with($password);
+        ->with($password)->andReturn('new-password-hash');
 
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
@@ -340,6 +340,7 @@ test('changes client password', function (): void {
 
     $service = new Service();
     $service->setDi($di);
+    $di['em']->getRepository(Box\Mod\Client\Entity\ClientPasswordReset::class)->shouldReceive('changePassword')->once()->with($model, 'new-password-hash');
     $result = $service->changeClientPassword($model, $password);
     expect($result)->toBeTrue();
     expect($eventDispatcher->events)->toHaveCount(2);
