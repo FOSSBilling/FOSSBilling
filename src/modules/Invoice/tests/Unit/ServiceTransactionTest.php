@@ -850,6 +850,95 @@ test('approveTransaction settles an offline payment', function (): void {
         ->and($events[0]->transactionId)->toBe(5);
 });
 
+test('offline approval rejects overlapping requests and processed retries', function (string $status): void {
+    $filesystem = new Symfony\Component\Filesystem\Filesystem();
+    $database = $filesystem->tempnam(sys_get_temp_dir(), 'approval-race-');
+    $config = Doctrine\ORM\ORMSetup::createAttributeMetadataConfig([], true);
+    $config->setProxyDir(sys_get_temp_dir());
+    $config->setProxyNamespace('FOSSBilling\\Tests\\DoctrineProxies');
+    $firstEm = new Doctrine\ORM\EntityManager(
+        Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $database]),
+        $config
+    );
+    $secondEm = new Doctrine\ORM\EntityManager(
+        Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $database]),
+        $config
+    );
+
+    try {
+        (new Doctrine\ORM\Tools\SchemaTool($firstEm))->createSchema([
+            $firstEm->getClassMetadata(PayGateway::class),
+            $firstEm->getClassMetadata(Transaction::class),
+        ]);
+        $gateway = (new PayGateway())->setGateway('Custom');
+        $tx = (new Transaction())->setGateway($gateway)->setStatus($status)
+            ->setError('previous failure')->setErrorCode(9999);
+        $firstEm->persist($gateway);
+        $firstEm->persist($tx);
+        $firstEm->flush();
+        $id = (int) $tx->getId();
+        // Both requests load the transaction before either claims it.
+        $secondTx = $secondEm->find(Transaction::class, $id);
+        $secondService = new ServiceTransaction();
+        $dispatches = 0;
+        $adapter = new readonly class(function () use ($firstEm, $secondEm, $secondService, $secondTx, $tx, $id, &$dispatches): void {
+            ++$dispatches;
+            if ($dispatches > 1) {
+                throw new RuntimeException('overlapping approval reached settlement');
+            }
+            // Run the competing approval after the first request's flush.
+            expect($secondService->approveTransaction($secondTx))->toBeTrue();
+            expect($secondEm->getConnection()->fetchOne('SELECT status FROM "transaction" WHERE id = ?', [$id]))
+                ->toBe(Transaction::STATUS_PROCESSING);
+            expect($tx->getStatus())->toBe(Transaction::STATUS_PROCESSING)
+                ->and($tx->getError())->toBeNull()
+                ->and($tx->getErrorCode())->toBeNull();
+            $tx->setStatus(Transaction::STATUS_PROCESSED);
+            $firstEm->flush();
+        }) {
+            public function __construct(private Closure $settle)
+            {
+            }
+
+            public function approveTransaction($api, int $id, int $gatewayId): bool
+            {
+                ($this->settle)();
+
+                return true;
+            }
+        };
+        $payGatewayService = Mockery::mock(ServicePayGateway::class);
+        $payGatewayService->shouldReceive('getPaymentAdapter')->andReturn($adapter);
+        $dispatcher = new SymfonyEventDispatcher();
+        $events = [];
+        $dispatcher->addListener(AfterAdminTransactionProcessEvent::class, static function ($event) use (&$events): void {
+            $events[] = $event;
+        });
+        $firstService = new ServiceTransaction();
+        foreach ([[$firstService, $firstEm], [$secondService, $secondEm]] as [$service, $em]) {
+            $di = container();
+            $di['em'] = $em;
+            $di['api_system'] = new stdClass();
+            $di['logger'] = new Tests\Helpers\TestLogger();
+            $di['event_dispatcher'] = $dispatcher;
+            $di['mod_service'] = $di->protect(static fn (): object => $payGatewayService);
+            $service->setDi($di);
+        }
+
+        expect($firstService->approveTransaction($tx))->toBeTrue();
+        // Retry using the second request's stale entity after settlement.
+        expect($secondService->approveTransaction($secondTx))->toBeTrue()
+            ->and($dispatches)->toBe(1)
+            ->and($events)->toHaveCount(1)
+            ->and($secondEm->getConnection()->fetchOne('SELECT status FROM "transaction" WHERE id = ?', [$id]))
+            ->toBe(Transaction::STATUS_PROCESSED);
+    } finally {
+        $firstEm->getConnection()->close();
+        $secondEm->getConnection()->close();
+        $filesystem->remove($database);
+    }
+})->with([Transaction::STATUS_RECEIVED, Transaction::STATUS_ERROR, Transaction::STATUS_APPROVED]);
+
 test('approveTransaction refuses automated gateways', function (): void {
     $gateway = createEntity(PayGateway::class, ['id' => 2]);
     $gateway->setGateway('Stripe');

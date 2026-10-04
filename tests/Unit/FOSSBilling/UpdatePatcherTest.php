@@ -23,6 +23,38 @@ test('currency formatting patch follows the client balance gateway repair', func
         ->and($patches[93][1])->toBe('patch93');
 });
 
+test('upgrade checks report invalid invoice counters without changing stored values', function (?string $counter, bool $warning): void {
+    $pdo = new PDO('sqlite::memory:');
+    $pdo->exec('CREATE TABLE setting (param TEXT PRIMARY KEY, value TEXT)');
+    if ($counter !== null) {
+        $pdo->prepare('INSERT INTO setting (param, value) VALUES (?, ?)')->execute(['invoice_starting_number', $counter]);
+    }
+
+    $logger = Mockery::mock(FOSSBilling\Logger::class);
+    if ($warning) {
+        $logger->shouldReceive('withChannel')->once()->with('update')->andReturnSelf();
+        $logger->shouldReceive('log')->once()->with('warning', Mockery::pattern('/Review invoice history and set an unused positive whole number/'), []);
+    } else {
+        $logger->shouldNotReceive('log');
+    }
+    $patcher = new UpdatePatcher();
+    $patcher->setDi(new Pimple\Container(['pdo' => $pdo, 'logger' => $logger]));
+    $before = $pdo->query('SELECT * FROM setting')->fetchAll(PDO::FETCH_ASSOC);
+
+    (new ReflectionMethod($patcher, 'checkInvoiceNumberCounter'))->invoke($patcher);
+
+    expect($pdo->query('SELECT * FROM setting')->fetchAll(PDO::FETCH_ASSOC))->toBe($before);
+})->with([
+    'missing' => [null, true],
+    'empty' => ['', true],
+    'fraction' => ['5.5', true],
+    'text' => ['INV-1', true],
+    'zero' => ['0', true],
+    'maximum' => [(string) PHP_INT_MAX, true],
+    'valid' => ['42', false],
+    'largest valid' => [(string) (PHP_INT_MAX - 1), false],
+]);
+
 test('stock reservation backfill patch follows the TLD periods patch', function (): void {
     $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 99);
 
@@ -3448,4 +3480,9 @@ test('ensureSchemaInSync restores promo bundle and auto-apply columns missing fr
     } finally {
         (new Filesystem())->remove($dbFile);
     }
+});
+
+test('custom page charset repair follows the promotion patch', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 127);
+    expect($patches)->toHaveKey(128)->and($patches[128][1])->toBe('patch128');
 });

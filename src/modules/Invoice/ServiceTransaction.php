@@ -809,16 +809,16 @@ class ServiceTransaction implements InjectionAwareInterface
             return true;
         }
 
-        // Record the approval itself, so the audit trail shows the payment
-        // was confirmed before settlement even if settlement then fails.
-        // A previous processing error is cleared: approval supersedes it.
-        $model->setStatus(Transaction::STATUS_APPROVED);
+        // Mirror the SQL claim in Doctrine and keep it until settlement finishes.
+        // Approved is claimable, so persisting it here would allow a second approver.
+        $model->setStatus(Transaction::STATUS_PROCESSING);
         $model->setError(null);
         $model->setErrorCode(null);
         $model->setUpdatedAt(new \DateTime());
         $this->di['em']->flush();
 
         try {
+            $this->di['logger']->info('Confirmed offline payment for transaction #{id}: settling', ['id' => $model->getId()]);
             $adapter->approveTransaction($this->di['api_system'], (int) $model->getId(), (int) $gtw->getId());
         } catch (\Throwable $e) {
             $this->markTransactionError((int) $model->getId(), $e);
