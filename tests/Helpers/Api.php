@@ -57,6 +57,11 @@ class ApiClient
 
         $url = rtrim($baseUrl, '/') . '/api/' . ltrim($endpoint, '/');
 
+        if (in_array(strtolower(trim($endpoint, '/')), ['guest/client/login', 'guest/client/create'], true)
+            && !isset($payload['CSRFToken'])) {
+            $payload['CSRFToken'] = self::getPreLoginToken($baseUrl);
+        }
+
         $ch = curl_init();
         curl_setopt_array($ch, [
             CURLOPT_URL => $url,
@@ -84,6 +89,31 @@ class ApiClient
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
         return new ApiResponse($httpCode, $output);
+    }
+
+    private static function getPreLoginToken(string $baseUrl): string
+    {
+        $ch = curl_init($baseUrl . '/login');
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_COOKIEJAR => self::getCookiePath(),
+            CURLOPT_COOKIEFILE => self::getCookiePath(),
+        ]);
+
+        try {
+            $html = curl_exec($ch);
+            $status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            if (!is_string($html) || $status !== 200
+                || !preg_match('/name="CSRFToken" value="([^"]+)"/', $html, $matches)) {
+                throw new \RuntimeException('Could not obtain the pre-login CSRF token');
+            }
+
+            return $matches[1];
+        } finally {
+            // Flush the anonymous session cookie before the following API request.
+            curl_close($ch);
+        }
     }
 
     public static function resetCookies(): void

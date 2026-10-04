@@ -311,22 +311,14 @@ test('raw response bypasses JSON rendering', function (): void {
     expect($controller->renderedException)->toBeNull();
 });
 
-test('non-AJAX client login returns a redirect response', function (): void {
-    [$controller] = createTestController();
-
-    $response = invokeApiCall($controller, 'guest', 'client', 'login', []);
-
-    expect($response)->toBeInstanceOf(Response::class)
-        ->and($response->isRedirect())->toBeTrue()
-        ->and($response->headers->get('Location'))->toBe('https://client.example.test/');
-});
-
 test('guest client login is throttled under the anti-brute-force api_login policy', function (): void {
-    [$controller, $rateLimitCalls] = createTestController();
+    [$controller, $rateLimitCalls] = createTestController(['csrf_token' => 'browser-nonce']);
+    $controller->getDi()['request'] = Request::create('/api/guest/client/login', 'POST');
 
-    invokeApiCall($controller, 'guest', 'client', 'client_login', []);
+    invokeApiCall($controller, 'guest', 'client', 'client_login', ['CSRFToken' => 'browser-nonce']);
 
-    expect($rateLimitCalls->getArrayCopy())->toBe([['api_login', '127.0.0.1', 1]]);
+    expect($controller->renderedData)->toBe(['ok' => true])
+        ->and($rateLimitCalls->getArrayCopy())->toBe([['api_login', '127.0.0.1', 1]]);
 });
 
 test('admin impersonation of client login is not throttled under the guest api_login policy', function (): void {
@@ -419,3 +411,106 @@ test('authenticated internal errors keep their details for debugging', function 
     expect($controller->renderedException)->toBe($internal);
     expect($logger->errors)->toBeEmpty();
 });
+
+function createGuestAuthenticationController(Request $request, mixed $sessionToken = 'browser-nonce'): TestableClient
+{
+    [$controller] = createTestController(['csrf_token' => $sessionToken, 'client_id' => 123]);
+    $controller->getDi()['request'] = $request;
+
+    return $controller;
+}
+
+test('guest authentication rejects unsafe requests before dispatch and preserves identity', function (string $class, string $method, string $verb, array $params, array $headers, mixed $sessionToken, int $code): void {
+    $request = Request::create('/api/guest/' . $class . '/' . $method, $verb, $params);
+    $request->headers->add($headers);
+    $controller = createGuestAuthenticationController($request, $sessionToken);
+    $dispatcher = Mockery::mock();
+    $dispatcher->shouldNotReceive('dispatch');
+    $controller->getDi()['api_dispatcher'] = $dispatcher;
+    $app = Mockery::mock(Box_App::class);
+    $app->shouldReceive('getRequest')->andReturn($request);
+
+    $verb === 'GET'
+        ? $controller->get_method($app, 'guest', $class, $method)
+        : $controller->post_method($app, 'guest', $class, $method);
+
+    expect($controller->renderedException)->toBeInstanceOf(InformationException::class)
+        ->and($controller->renderedException->getCode())->toBe($code)
+        ->and($controller->getDi()['session']->get('client_id'))->toBe(123);
+})->with(function (): iterable {
+    foreach ([['client', 'login'], ['CLIENT', 'LoGiN'], ['client', 'create'], ['CLIENT', 'CrEaTe']] as [$class, $method]) {
+        $credentials = ['email' => 'attacker@example.test', 'password' => 'attacker-password'];
+        $valid = $credentials + ['CSRFToken' => 'browser-nonce'];
+        $cases = [
+            'GET' => ['GET', $valid, [], 'browser-nonce', 405],
+            'missing nonce' => ['POST', $credentials, [], 'browser-nonce', 403],
+            'wrong nonce' => ['POST', $credentials + ['CSRFToken' => 'attacker-nonce'], [], 'browser-nonce', 403],
+            'array nonce' => ['POST', $credentials + ['CSRFToken' => ['browser-nonce']], [], 'browser-nonce', 403],
+            'no session' => ['POST', $valid, [], null, 403],
+            'empty nonce' => ['POST', $credentials + ['CSRFToken' => ''], [], '', 403],
+            'foreign origin' => ['POST', $valid, ['Origin' => 'https://attacker.example'], 'browser-nonce', 403],
+            'opaque origin' => ['POST', $valid, ['Origin' => 'null'], 'browser-nonce', 403],
+            'origin prefix' => ['POST', $valid, ['Origin' => Request::create(SYSTEM_URL)->getSchemeAndHttpHost() . '.attacker.example'], 'browser-nonce', 403],
+            'cross-site' => ['POST', $valid, ['Sec-Fetch-Site' => 'cross-site'], 'browser-nonce', 403],
+        ];
+        foreach ($cases as $label => $case) {
+            yield $class . '/' . $method . ': ' . $label => [$class, $method, ...$case];
+        }
+    }
+});
+
+test('guest authentication accepts session-bound form JSON and header tokens', function (string $method, string $encoding, bool $originHeaders): void {
+    $params = ['email' => 'client@example.test', 'password' => 'legitimate-password'];
+    $headers = $originHeaders ? ['Origin' => Request::create(SYSTEM_URL)->getSchemeAndHttpHost(), 'Sec-Fetch-Site' => 'same-origin'] : [];
+    if ($encoding === 'header') {
+        $headers['X-CSRF-TOKEN'] = 'browser-nonce';
+    } else {
+        $params['CSRFToken'] = 'browser-nonce';
+    }
+    $request = $encoding === 'json'
+        ? Request::create('/api/guest/client/' . $method, 'POST', [], [], [], ['CONTENT_TYPE' => 'application/json'], json_encode($params, JSON_THROW_ON_ERROR))
+        : Request::create('/api/guest/client/' . $method, 'POST', $params);
+    $request->headers->add($headers);
+    $controller = createGuestAuthenticationController($request);
+    $dispatcher = Mockery::mock();
+    unset($params['CSRFToken']);
+    $dispatcher->shouldReceive('dispatch')->once()->with(Mockery::type('object'), 'client_' . $method, $params)->andReturn(['ok' => true]);
+    $controller->getDi()['api_dispatcher'] = $dispatcher;
+    $app = Mockery::mock(Box_App::class);
+    $app->shouldReceive('getRequest')->andReturn($request);
+
+    $controller->post_method($app, 'guest', 'client', $method);
+
+    expect($controller->renderedException)->toBeNull()
+        ->and($controller->renderedData)->toBe(['ok' => true]);
+})->with(['login', 'create'])->with(['form', 'json', 'header'])->with([true, false]);
+
+test('guest login cannot take its nonce or credentials from the query string', function (): void {
+    $request = Request::create('/api/guest/client/login?CSRFToken=browser-nonce&email=attacker&password=attacker', 'POST');
+    $controller = createGuestAuthenticationController($request);
+    $dispatcher = Mockery::mock();
+    $dispatcher->shouldNotReceive('dispatch');
+    $controller->getDi()['api_dispatcher'] = $dispatcher;
+    $app = Mockery::mock(Box_App::class);
+    $app->shouldReceive('getRequest')->andReturn($request);
+
+    $controller->post_method($app, 'guest', 'client', 'login');
+
+    expect($controller->renderedException?->getCode())->toBe(403);
+});
+
+test('shipped client authentication forms submit the pre-login session nonce', function (string $template, int $formCount): void {
+    $renderer = new Tests\Support\StrictTemplateRenderer();
+    $html = $renderer->renderTemplate(PATH_MODS . '/' . $template, ['CSRFToken' => 'browser-nonce']);
+    $dom = new DOMDocument();
+    @$dom->loadHTML($html);
+    $xpath = new DOMXPath($dom);
+    $tokens = $xpath->query('//form//input[@name="CSRFToken" and @value="browser-nonce"]');
+
+    expect($tokens->length)->toBe($formCount);
+})->with([
+    ['Page/templates/client/mod_page_login.html.twig', 1],
+    ['Page/templates/client/mod_page_signup.html.twig', 1],
+    ['Orderbutton/templates/client/mod_orderbutton_client.html.twig', 2],
+    ['Embed/templates/client/mod_embed_loginform.html.twig', 1],
+]);
