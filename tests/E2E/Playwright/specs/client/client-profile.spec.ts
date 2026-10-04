@@ -1,4 +1,4 @@
-import { openClientSession, expect, test } from '../../fixtures/e2e';
+import { csrfToken, openClientSession, expect, test } from '../../fixtures/e2e';
 import { submitForm, waitForApiResponse } from '../../helpers/forms';
 
 test('updates profile details', async ({ clientPage }) => {
@@ -72,6 +72,9 @@ test('changes the client password', async ({ browser, clientPage, testClient }) 
     data: {
       email: testClient.email,
       password: oldPassword,
+      // A real login form submits the pre-login session nonce; without it the
+      // request is rejected before credentials are even checked.
+      CSRFToken: await csrfToken(clientPage.context()),
     },
   });
   const staleLoginBody = await staleLogin.json();
