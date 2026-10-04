@@ -191,10 +191,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $allowedPeriods = $tld->getPeriodsArray();
             if ($allowedPeriods !== null) {
                 if (!in_array($years, $allowedPeriods, true)) {
-                    throw new \FOSSBilling\Exception(':tld can only be registered for :periods years', [':tld' => $tld->getTld(), ':periods' => implode(', ', $allowedPeriods)]);
+                    throw new \FOSSBilling\InformationException(':tld can only be registered for :periods years', [':tld' => $tld->getTld(), ':periods' => implode(', ', $allowedPeriods)]);
                 }
             } elseif ($years < ($tld->getMinYears() ?? 1)) {
-                throw new \FOSSBilling\Exception(':tld can be registered for at least :years years', [':tld' => $tld->getTld(), ':years' => $tld->getMinYears()]);
+                throw new \FOSSBilling\InformationException(':tld can be registered for at least :years years', [':tld' => $tld->getTld(), ':years' => $tld->getMinYears()]);
             }
 
             $domain = $data['register_sld'] . $tld->getTld();
