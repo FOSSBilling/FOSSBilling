@@ -831,8 +831,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         try {
             $this->batchSyncExpirationDates();
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->di['logger']->error($e->getMessage());
+            if ($e instanceof \Error) {
+                \Sentry\captureException($e);
+            }
         }
     }
 
@@ -851,8 +854,12 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         foreach ($list as $domain) {
             try {
                 $this->syncExpirationDate($domain);
-            } catch (\Exception $e) {
-                $this->di['logger']->error($e->getMessage());
+            } catch (\Throwable $e) {
+                $this->di['logger']->error($e->getMessage(), ['domain_id' => $domain->getId()]);
+                // Caught programming errors still need to reach Sentry.
+                if ($e instanceof \Error) {
+                    \Sentry\captureException($e);
+                }
             }
         }
 
