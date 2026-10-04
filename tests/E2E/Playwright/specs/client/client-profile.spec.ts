@@ -68,18 +68,22 @@ test('changes the client password', async ({ browser, clientPage, testClient }) 
   // The stale-login and fresh-login checks below prove the password change server-side.
   expect((await passwordChange).status()).toBe(200);
 
-  const staleLogin = await clientPage.context().request.post('/api/guest/client/login', {
+  // A password change invalidates every session including this one, so the
+  // stale-password check runs from a fresh anonymous context (with its own
+  // pre-login session nonce, like a real login form would submit).
+  const staleContext = await browser.newContext();
+  await staleContext.request.get('/login');
+  const staleLogin = await staleContext.request.post('/api/guest/client/login', {
     data: {
       email: testClient.email,
       password: oldPassword,
-      // A real login form submits the pre-login session nonce; without it the
-      // request is rejected before credentials are even checked.
-      CSRFToken: await csrfToken(clientPage.context()),
+      CSRFToken: await csrfToken(staleContext),
     },
   });
   const staleLoginBody = await staleLogin.json();
   expect(staleLoginBody.result).toBeNull();
   expect(staleLoginBody.error.message).toBe('Please check your login details.');
+  await staleContext.close();
 
   const context = await openClientSession(browser, { ...testClient, password: newPassword });
   await context.close();
