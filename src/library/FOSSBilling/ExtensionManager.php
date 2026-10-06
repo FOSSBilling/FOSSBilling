@@ -65,15 +65,14 @@ class ExtensionManager implements InjectionAwareInterface
     public function getExtension(string $id): array
     {
         $this->assertValidIdentifier($id);
-        $manifest = $this->makeRequest($id);
 
-        if (empty($manifest)) {
-            throw new Exception('Unable to fetch the extension details from the FOSSBilling extension directory.');
-        }
+        return $this->makeRequest($id, [], function (array $manifest): void {
+            if (empty($manifest)) {
+                throw new Exception('Unable to fetch the extension details from the FOSSBilling extension directory.');
+            }
 
-        $this->validateMetadata($manifest);
-
-        return $manifest;
+            $this->validateMetadata($manifest);
+        });
     }
 
     /**
@@ -138,12 +137,11 @@ class ExtensionManager implements InjectionAwareInterface
             $params['type'] = $type;
         }
 
-        $extensions = $this->makeRequest('list', $params);
-        foreach ($extensions as $extension) {
-            $this->validateMetadata($extension);
-        }
-
-        return $extensions;
+        return $this->makeRequest('list', $params, function (array $extensions): void {
+            foreach ($extensions as $extension) {
+                $this->validateMetadata($extension);
+            }
+        });
     }
 
     private function assertValidIdentifier(string $id): void
@@ -207,14 +205,18 @@ class ExtensionManager implements InjectionAwareInterface
      * further refresh attempts are suppressed for a few minutes so an
      * unreachable directory doesn't slow down every admin page load.
      *
-     * @param string $endpoint The API endpoint to call (e.g. list)
-     * @param array  $params   The array of parameters to pass to the API endpoint
+     * @param string        $endpoint       The API endpoint to call (e.g. list)
+     * @param array         $params         The array of parameters to pass to the API endpoint
+     * @param callable|null $validateResult Optional check receiving the decoded result; must throw
+     *                                      when it isn't usable. Applied to cached hits as well as
+     *                                      fresh responses, so invalid data never replaces the
+     *                                      last-known-good copy.
      *
      * @return array The API response
      *
      * @throws Exception when the directory can't be reached and nothing usable is cached
      */
-    public function makeRequest(string $endpoint, array $params = []): array
+    public function makeRequest(string $endpoint, array $params = [], ?callable $validateResult = null): array
     {
         $url = $this->apiUrl . $endpoint;
         $query = [...$params, 'fossbilling_version' => Version::VERSION];
@@ -225,7 +227,18 @@ class ExtensionManager implements InjectionAwareInterface
 
         $fresh = $cache->getItem($key);
         if ($fresh->isHit() && is_array($fresh->get())) {
-            return $fresh->get();
+            $result = $fresh->get();
+            if ($validateResult === null) {
+                return $result;
+            }
+
+            try {
+                $validateResult($result);
+
+                return $result;
+            } catch (\Exception) {
+                // Cached data no longer validates: fall through and refresh it.
+            }
         }
 
         if ($cache->getItem($key . '-unavailable')->isHit()) {
@@ -234,6 +247,9 @@ class ExtensionManager implements InjectionAwareInterface
 
         try {
             $result = $this->fetchDirectoryResult($url, $query);
+            if ($validateResult !== null) {
+                $validateResult($result);
+            }
         } catch (\Exception $e) {
             $unavailable = $cache->getItem($key . '-unavailable');
             $unavailable->set(true);

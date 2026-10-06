@@ -185,6 +185,34 @@ it('treats a corrupted fresh entry as a miss and falls back to stale data', func
     expect($manager->getExtensionList())->toBe([$entry]);
 });
 
+it('keeps serving the last-known-good copy when a refresh returns invalid metadata', function (): void {
+    $entry = catalogEntry();
+    $cache = new ArrayAdapter();
+    $stale = $cache->getItem(catalogCacheKey('list') . '-stale');
+    $stale->set([$entry]);
+    $stale->expiresAfter(3600);
+    $cache->save($stale);
+
+    $requests = 0;
+    $invalid = catalogEntry();
+    $invalid['id'] = '../Traversal';
+    $di = new Pimple\Container();
+    $di['cache'] = $cache;
+    $di['http_client'] = new MockHttpClient(function () use (&$requests, $invalid) {
+        ++$requests;
+
+        return new MockResponse(json_encode(['result' => [$invalid]], JSON_THROW_ON_ERROR));
+    });
+    $manager = new ExtensionManager();
+    $manager->setDi($di);
+
+    // The invalid refresh is rejected before either cache slot is written,
+    // so the previous response keeps being served instead of poisoning it.
+    expect($manager->getExtensionList())->toBe([$entry]);
+    expect($manager->getExtensionList())->toBe([$entry]);
+    expect($requests)->toBe(1);
+});
+
 it('throws without retrying while the directory is marked unavailable', function (): void {
     $requests = 0;
     $di = new Pimple\Container();
