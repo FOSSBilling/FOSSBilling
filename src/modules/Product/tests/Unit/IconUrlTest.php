@@ -25,7 +25,7 @@ test('oversized icon URLs are rejected before product writes', function (string 
     $product = (new Product())->setTitle('Original')->setIconUrl('original.svg');
     $category = (new ProductCategory())->setTitle('Original')->setIconUrl('original.svg');
 
-    expect(fn () => match ($operation) {
+    expect(fn (): int|bool|null => match ($operation) {
         'addon' => $service->createAddon('Addon', iconUrl: $iconUrl),
         'product' => $service->updateProduct($product, ['title' => 'Changed', 'icon_url' => $iconUrl]),
         'category create' => $service->createCategory('Category', icon_url: $iconUrl),
