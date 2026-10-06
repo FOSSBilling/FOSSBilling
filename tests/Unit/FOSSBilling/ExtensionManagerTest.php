@@ -213,6 +213,33 @@ it('keeps serving the last-known-good copy when a refresh returns invalid metada
     expect($requests)->toBe(1);
 });
 
+it('never serves stale data that fails validation', function (): void {
+    $cache = new ArrayAdapter();
+    $healthy = true;
+    $requests = 0;
+    $invalid = catalogEntry();
+    $invalid['id'] = '../Traversal';
+    $di = new Pimple\Container();
+    $di['cache'] = $cache;
+    $di['http_client'] = new MockHttpClient(function () use (&$requests, &$healthy, $invalid) {
+        ++$requests;
+        if (!$healthy) {
+            throw new TransportException('Connection refused.');
+        }
+
+        return new MockResponse(json_encode(['result' => [$invalid]], JSON_THROW_ON_ERROR));
+    });
+    $manager = new ExtensionManager();
+    $manager->setDi($di);
+
+    // A direct call without validation caches the invalid payload in both slots.
+    expect($manager->makeRequest('list'))->toBe([$invalid]);
+
+    // The validating reader still rejects it everywhere instead of serving it.
+    $healthy = false;
+    expect(fn () => $manager->getExtensionList())->toThrow(FOSSBilling\Exception::class);
+});
+
 it('throws without retrying while the directory is marked unavailable', function (): void {
     $requests = 0;
     $di = new Pimple\Container();

@@ -242,7 +242,7 @@ class ExtensionManager implements InjectionAwareInterface
         }
 
         if ($cache->getItem($key . '-unavailable')->isHit()) {
-            return $this->staleOrThrow($cache, $key, new Exception('The FOSSBilling extension directory is temporarily unreachable.', null, 746));
+            return $this->staleOrThrow($cache, $key, new Exception('The FOSSBilling extension directory is temporarily unreachable.', null, 746), $validateResult);
         }
 
         try {
@@ -263,7 +263,7 @@ class ExtensionManager implements InjectionAwareInterface
                 ]);
             }
 
-            return $this->staleOrThrow($cache, $key, $e instanceof Exception ? $e : new Exception('Unable to fetch the extension details from the FOSSBilling extension directory: :reason.', [':reason' => $e->getMessage()], 746));
+            return $this->staleOrThrow($cache, $key, $e instanceof Exception ? $e : new Exception('Unable to fetch the extension details from the FOSSBilling extension directory: :reason.', [':reason' => $e->getMessage()], 746), $validateResult);
         }
 
         $fresh->set($result);
@@ -308,11 +308,20 @@ class ExtensionManager implements InjectionAwareInterface
      *
      * @throws Exception the given fallback when there is no stale response
      */
-    private function staleOrThrow(CacheItemPoolInterface $cache, string $key, Exception $fallback): array
+    private function staleOrThrow(CacheItemPoolInterface $cache, string $key, Exception $fallback, ?callable $validateResult): array
     {
         $stale = $cache->getItem($key . '-stale');
         if ($stale->isHit() && is_array($stale->get())) {
-            return $stale->get();
+            $result = $stale->get();
+            if ($validateResult !== null) {
+                try {
+                    $validateResult($result);
+                } catch (\Exception) {
+                    throw $fallback;
+                }
+            }
+
+            return $result;
         }
 
         throw $fallback;
