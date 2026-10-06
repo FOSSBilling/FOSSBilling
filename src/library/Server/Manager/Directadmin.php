@@ -550,9 +550,6 @@ class Server_Manager_Directadmin extends Server_Manager
         // Determine the protocol based on the 'secure' configuration option
         $protocol = $this->_config['secure'] ? 'https://' : 'http://';
 
-        // Build the field string for the request
-        $field_string = http_build_query($fields);
-
         // Support login-as for non-admin functions
         $username = $this->_config['username'];
         if ($asUser) {
@@ -568,7 +565,10 @@ class Server_Manager_Directadmin extends Server_Manager
         ]);
 
         // Construct the URL for the request
-        $url = $protocol . $host . ':' . $this->getPort() . '/CMD_' . $command . '?' . $field_string;
+        $url = $protocol . $host . ':' . $this->getPort() . '/CMD_' . $command;
+        if (!$post) {
+            $url .= '?' . http_build_query($fields);
+        }
 
         // Log the URL for debugging purposes
         $this->getLog()->debug($url);
