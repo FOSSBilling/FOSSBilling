@@ -33,38 +33,40 @@
         <tbody>
         {% set extensions = admin.extension_get_latest({ "type": type|default('mod')}) %}
         {% for extension in extensions %}
-        {% set latest = extension.releases|first %}
+        {% set latest = extension.releases|default([])|first|default({}) %}
             <tr>
                 <td class="text-nowrap">
                     {% if extension.icon_url|default('') %}
-                        <img src="{{ extension.icon_url }}" alt="{{ extension.name }}" style="width: 32px; height: 32px;">
+                        <img src="{{ extension.icon_url }}" alt="{{ extension.name|default('Extension') }}" style="width: 32px; height: 32px;">
                     {% else %}
                         <svg class="icon" style="width: 32px; height: 32px;"><use href="#settings" /></svg>
                     {% endif %}
                 </td>
                 <td class="text-wrap">
-                    <strong>{{ extension.name }}</strong> {{ latest.tag }}<br>
-                    {% if extension.author.URL is defined and extension.author.URL %}
-                    <span>by <a href="{{ extension.author.URL }}" target="_blank">{{ extension.author.id }}</a></span>
+                    <strong>{{ extension.name|default('Unknown extension') }}</strong> {{ latest.tag|default('') }}<br>
+                    {% set author = extension.author|default({}) %}
+                    {% set author_name = author.id|default(author.name|default('Unknown')) %}
+                    {% if author.URL|default('') %}
+                    <span>by <a href="{{ author.URL }}" target="_blank">{{ author_name }}</a></span>
                     {% else %}
-                    <span>by {{ extension.author.id }}</span>
+                    <span>by {{ author_name }}</span>
                     {% endif %}
                 </td>
                 <td class="text-wrap">
-                    {{ extension.description|truncate(150) }}<br>
-                    <a href="https://extensions.fossbilling.org/extension/{{ extension.id }}" target="_blank">{{ 'View on the extension directory'|trans }}</a>
+                    {{ extension.description|default('')|truncate(150) }}<br>
+                    <a href="https://extensions.fossbilling.org/extension/{{ extension.id|default('') }}" target="_blank">{{ 'View on the extension directory'|trans }}</a>
                 </td>
                 <td class="text-nowrap" data-bs-toggle="tooltip" data-bs-title="{{ 'View extension README'|trans }}">
-                    <a class="btn btn-icon" data-bs-toggle="modal" data-bs-target="#extensionReadMe" data-extension-id="{{ extension.id }}" data-extension-name="{{ extension.name }}">
+                    <a class="btn btn-icon" data-bs-toggle="modal" data-bs-target="#extensionReadMe" data-extension-id="{{ extension.id|default('') }}" data-extension-name="{{ extension.name|default('') }}">
                      <svg class="icon">
                          <use href="#eye" />
                      </svg>
                     </a>
                 </td>
                 <td class="text-nowrap">
-                    <a class="btn btn-icon" href="{{ 'extension/install'|api_url(query: { 'type': extension.type, 'id': extension.id }) }}"
+                    <a class="btn btn-icon" href="{{ 'extension/install'|api_url(query: { 'type': extension.type|default('mod'), 'id': extension.id|default('') }) }}"
                         data-bs-toggle="tooltip" data-bs-title="{{ 'Install extension'|trans }}"
-                        {{ fb_api_link({ message: 'By installing "' ~ extension.name ~ '", you agree with terms and conditions. Only install extensions you trust. You also might want to have a full backup ready in case something goes wrong.'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true }) }}>
+                        {{ fb_api_link({ message: 'By installing "' ~ extension.name|default('this extension') ~ '", you agree with terms and conditions. Only install extensions you trust. You also might want to have a full backup ready in case something goes wrong.'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true }) }}>
                         <svg class="icon">
                             <use href="#download" />
                         </svg>
