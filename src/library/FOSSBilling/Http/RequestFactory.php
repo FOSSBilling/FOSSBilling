@@ -70,7 +70,7 @@ final class RequestFactory
 
     public static function normalizeRoutePath(Request $request): string
     {
-        $rawPath = $request->query->get('_url');
+        $rawPath = $request->query->all()['_url'] ?? null;
         if (!is_string($rawPath)) {
             $rawPath = $request->getPathInfo();
         }
@@ -97,6 +97,18 @@ final class RequestFactory
         }
 
         return self::normalizeRoutePath($request);
+    }
+
+    public static function getHttpErrorCode(Request $request): ?int
+    {
+        $value = $request->query->all()['_errcode'] ?? null;
+        if (!is_string($value) && !is_int($value)) {
+            return null;
+        }
+
+        $code = filter_var($value, FILTER_VALIDATE_INT, ['options' => ['min_range' => 400, 'max_range' => 599]]);
+
+        return $code === false ? null : $code;
     }
 
     private static function getProxyConfigFromAppConfig(): array
