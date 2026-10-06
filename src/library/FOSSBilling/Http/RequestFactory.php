@@ -169,8 +169,6 @@ final class RequestFactory
 
     private static function getForwardedUrlSuggestion(array $server, string $headerMode): ?string
     {
-        $scheme = null;
-
         if ($headerMode === 'forwarded') {
             $forwardedValues = self::parseForwardedHeader((string) ($server['HTTP_FORWARDED'] ?? ''));
             $scheme = $forwardedValues['proto'] ?? null;
