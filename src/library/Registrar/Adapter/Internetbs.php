@@ -415,7 +415,7 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
         if (!array_key_exists($type . 'organization', $result)) {
             $result[$type . 'organization'] = '';
         }
-        if ($domain->getTld() == 'fr') {
+        if ($domain->getTld(false) == 'fr') {
             $name = $result[$type . 'dotfrcontactentityname'] ?? $name;
         }
         if ($domain->getTld() == 'it') {
