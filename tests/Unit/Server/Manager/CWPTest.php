@@ -55,6 +55,16 @@ test('CWP reports invalid JSON as a server error', function (string $body): void
     expect(fn () => $manager->testConnection())->toThrow(Server_Exception::class, 'The CWP server returned an invalid JSON response');
 })->with(['empty' => '', 'HTML' => '<html>Not found</html>']);
 
+test('CWP substitutes the action and server name when suspension fails', function (): void {
+    $manager = createCwpManager(json_encode(['status' => 'Error', 'msg' => 'Account unavailable']));
+    $account = (new Server_Account())->setUsername('example');
+
+    expect(fn () => $manager->suspendAccount($account))->toThrow(
+        Server_Exception::class,
+        'Failed to suspend account on the CWP server, check the error logs for further details',
+    );
+});
+
 test('CWP reports HTTP errors separately from invalid JSON', function (int $statusCode): void {
     $manager = createCwpManager('<html>Request failed</html>', $statusCode);
 

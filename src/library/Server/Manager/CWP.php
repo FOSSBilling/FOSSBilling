@@ -214,7 +214,7 @@ class Server_Manager_CWP extends Server_Manager
         ];
 
         if (!$this->request('account', $data)) {
-            $placeholders = ['action' => __trans('suspend account'), 'type' => 'CWP'];
+            $placeholders = [':action:' => __trans('suspend account'), ':type:' => 'CWP'];
 
             throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
         }
