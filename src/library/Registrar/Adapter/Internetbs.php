@@ -401,7 +401,7 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
     private function _createDomainObj($result, Registrar_Domain $domain)
     {
         $type = 'contacts_registrant_';
-        $tel = explode('.', (string) $result[$type . 'phonenumber']);
+        $tel = explode('.', (string) ($result[$type . 'phonenumber'] ?? ''), 2);
         $name = '';
 
         // domain specific
@@ -416,7 +416,7 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
             $result[$type . 'organization'] = '';
         }
         if ($domain->getTld() == 'fr') {
-            $name = $result[$type . 'dotfrcontactentityname'];
+            $name = $result[$type . 'dotfrcontactentityname'] ?? $name;
         }
         if ($domain->getTld() == 'it') {
             $result['transferauthinfo'] = '';
@@ -424,16 +424,16 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
 
         $c = new Registrar_Domain_Contact();
         $c->setName($name)
-          ->setEmail($result[$type . 'email'])
+          ->setEmail($result[$type . 'email'] ?? '')
           ->setCompany($result[$type . 'organization'])
-          ->setTel($tel[1])
+          ->setTel($tel[1] ?? '')
           ->setTelCc($tel[0])
-          ->setAddress1($result[$type . 'street'])
-          ->setAddress2($result[$type . 'street2'])
-          ->setAddress3($result[$type . 'street3'])
-          ->setCity($result[$type . 'city'])
-          ->setCountry($result[$type . 'country'])
-          ->setZip($result[$type . 'postalcode']);
+          ->setAddress1($result[$type . 'street'] ?? '')
+          ->setAddress2($result[$type . 'street2'] ?? '')
+          ->setAddress3($result[$type . 'street3'] ?? '')
+          ->setCity($result[$type . 'city'] ?? '')
+          ->setCountry($result[$type . 'country'] ?? '')
+          ->setZip($result[$type . 'postalcode'] ?? '');
 
         if (isset($result['nameserver_0'])) {
             $domain->setNs1($result['nameserver_0']);
