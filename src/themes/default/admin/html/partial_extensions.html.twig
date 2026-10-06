@@ -64,7 +64,7 @@
                     </a>
                 </td>
                 <td class="text-nowrap">
-                    <a class="btn btn-icon" href="{{ 'extension/install'|api_url(query: { 'type': extension.type|default('mod'), 'id': extension.id|default('') }) }}"
+                    <a class="btn btn-icon" href="{{ 'extension/install'|api_url(query: { 'type': extension.type|default(type|default('mod')), 'id': extension.id|default('') }) }}"
                         data-bs-toggle="tooltip" data-bs-title="{{ 'Install extension'|trans }}"
                         {{ fb_api_link({ message: 'By installing "' ~ extension.name|default('this extension') ~ '", you agree with terms and conditions. Only install extensions you trust. You also might want to have a full backup ready in case something goes wrong.'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true }) }}>
                         <svg class="icon">

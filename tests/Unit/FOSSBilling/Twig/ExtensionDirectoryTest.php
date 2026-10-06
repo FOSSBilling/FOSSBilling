@@ -104,9 +104,8 @@ test('extension directory degrades gracefully with sparse directory metadata', f
         ['Example Extension', 'by Example Author', 'href="#settings"'],
         ['<img'],
     ],
-    'missing releases key and missing id' => [
+    'missing releases, id, and type' => [
         [
-            'type' => 'mod',
             'name' => 'Example Extension',
             'description' => 'An extension.',
             'author' => ['id' => 'Example Author'],
