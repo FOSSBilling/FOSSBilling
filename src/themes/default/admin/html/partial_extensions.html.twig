@@ -36,7 +36,7 @@
         {% set latest = extension.releases|first %}
             <tr>
                 <td class="text-nowrap">
-                    {% if extension.icon_url %}
+                    {% if extension.icon_url|default('') %}
                         <img src="{{ extension.icon_url }}" alt="{{ extension.name }}" style="width: 32px; height: 32px;">
                     {% else %}
                         <svg class="icon" style="width: 32px; height: 32px;"><use href="#settings" /></svg>
