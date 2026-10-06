@@ -492,7 +492,7 @@ class Tools
             throw new InformationException('Please use the separate field for the phone country code.');
         }
 
-        return $number;
+        return (string) $digitsOnly;
     }
 
     /**
