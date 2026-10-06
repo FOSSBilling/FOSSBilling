@@ -11,7 +11,7 @@ declare(strict_types=1);
 
 namespace FOSSBilling;
 
-use Symfony\Contracts\Cache\ItemInterface;
+use Psr\Cache\CacheItemPoolInterface;
 
 class ExtensionManager implements InjectionAwareInterface
 {
@@ -25,6 +25,21 @@ class ExtensionManager implements InjectionAwareInterface
     final public const string TYPE_TRANSLATION = 'translation';
 
     private string $apiUrl = 'https://api.fossbilling.net/extensions/v1/';
+
+    /**
+     * How long a fetched directory response is served as-is.
+     */
+    private const int DIRECTORY_CACHE_TTL = 3600;
+
+    /**
+     * How long the last-known-good response is kept as a fallback for directory outages.
+     */
+    private const int DIRECTORY_STALE_TTL = 7 * 24 * 3600;
+
+    /**
+     * How long a failed refresh suppresses further directory requests.
+     */
+    private const int DIRECTORY_UNAVAILABLE_TTL = 5 * 60;
 
     public function setDi(\Pimple\Container $di): void
     {
@@ -50,15 +65,14 @@ class ExtensionManager implements InjectionAwareInterface
     public function getExtension(string $id): array
     {
         $this->assertValidIdentifier($id);
-        $manifest = $this->makeRequest($id);
 
-        if (empty($manifest)) {
-            throw new Exception('Unable to fetch the extension details from the FOSSBilling extension directory.');
-        }
+        return $this->makeRequest($id, [], function (array $manifest): void {
+            if (empty($manifest)) {
+                throw new Exception('Unable to fetch the extension details from the FOSSBilling extension directory.');
+            }
 
-        $this->validateMetadata($manifest);
-
-        return $manifest;
+            $this->validateMetadata($manifest);
+        });
     }
 
     /**
@@ -123,12 +137,11 @@ class ExtensionManager implements InjectionAwareInterface
             $params['type'] = $type;
         }
 
-        $extensions = $this->makeRequest('list', $params);
-        foreach ($extensions as $extension) {
-            $this->validateMetadata($extension);
-        }
-
-        return $extensions;
+        return $this->makeRequest('list', $params, function (array $extensions): void {
+            foreach ($extensions as $extension) {
+                $this->validateMetadata($extension);
+            }
+        });
     }
 
     private function assertValidIdentifier(string $id): void
@@ -187,38 +200,130 @@ class ExtensionManager implements InjectionAwareInterface
     /**
      * Make a request to the FOSSBilling extension directory.
      *
-     * @param string $endpoint The API endpoint to call (e.g. list)
-     * @param array  $params   The array of parameters to pass to the API endpoint
+     * Successful responses are cached for an hour. When a refresh fails, the
+     * last-known-good response is served instead (up to a week old), and
+     * further refresh attempts are suppressed for a few minutes so an
+     * unreachable directory doesn't slow down every admin page load.
+     *
+     * @param string        $endpoint       The API endpoint to call (e.g. list)
+     * @param array         $params         The array of parameters to pass to the API endpoint
+     * @param callable|null $validateResult Optional check receiving the decoded result; must throw
+     *                                      when it isn't usable. Applied to cached hits as well as
+     *                                      fresh responses, so invalid data never replaces the
+     *                                      last-known-good copy.
      *
      * @return array The API response
      *
-     * @throws Exception
+     * @throws Exception when the directory can't be reached and nothing usable is cached
      */
-    public function makeRequest(string $endpoint, array $params = []): array
+    public function makeRequest(string $endpoint, array $params = [], ?callable $validateResult = null): array
     {
         $url = $this->apiUrl . $endpoint;
-        $key = 'extension-manager-' . hash('xxh3', $endpoint . serialize($params));
+        $query = [...$params, 'fossbilling_version' => Version::VERSION];
+        // The installed version is part of the key: the directory filters results by it,
+        // so a response cached before an upgrade must not be served afterwards.
+        $key = 'extension-manager-' . hash('xxh3', $endpoint . serialize($query));
+        $cache = $this->di['cache'];
 
-        return $this->di['cache']->get($key, function (ItemInterface $item) use ($url, $params) {
-            $item->expiresAfter(60 * 60);
-
-            $httpClient = $this->di['http_client'];
-            $response = $httpClient->request('GET', $url, [
-                'timeout' => 5,
-                'query' => [...$params, 'fossbilling_version' => Version::VERSION],
-            ]);
-
-            $json = $response->toArray();
-
-            if (isset($json['error']) && is_array($json['error'])) {
-                throw new Exception($json['error']['message'], null, 746);
+        $fresh = $cache->getItem($key);
+        if ($fresh->isHit() && is_array($fresh->get())) {
+            $result = $fresh->get();
+            if ($validateResult === null) {
+                return $result;
             }
 
-            if (!isset($json['result']) || !is_array($json['result'])) {
-                throw new Exception('Invalid response from the FOSSBilling extension directory.', null, 746);
+            try {
+                $validateResult($result);
+
+                return $result;
+            } catch (\Exception) {
+                // Cached data no longer validates: fall through and refresh it.
+            }
+        }
+
+        if ($cache->getItem($key . '-unavailable')->isHit()) {
+            return $this->staleOrThrow($cache, $key, new Exception('The FOSSBilling extension directory is temporarily unreachable.', null, 746), $validateResult);
+        }
+
+        try {
+            $result = $this->fetchDirectoryResult($url, $query);
+            if ($validateResult !== null) {
+                $validateResult($result);
+            }
+        } catch (\Exception $e) {
+            $unavailable = $cache->getItem($key . '-unavailable');
+            $unavailable->set(true);
+            $unavailable->expiresAfter(self::DIRECTORY_UNAVAILABLE_TTL);
+            $cache->save($unavailable);
+
+            if (isset($this->di['logger'])) {
+                $this->di['logger']->warning('Extension directory refresh for "{endpoint}" failed: {error}', [
+                    'endpoint' => $endpoint,
+                    'error' => $e->getMessage(),
+                ]);
             }
 
-            return $json['result'];
-        });
+            return $this->staleOrThrow($cache, $key, $e instanceof Exception ? $e : new Exception('Unable to fetch the extension details from the FOSSBilling extension directory: :reason.', [':reason' => $e->getMessage()], 746), $validateResult);
+        }
+
+        $fresh->set($result);
+        $fresh->expiresAfter(self::DIRECTORY_CACHE_TTL);
+        $cache->save($fresh);
+
+        $stale = $cache->getItem($key . '-stale');
+        $stale->set($result);
+        $stale->expiresAfter(self::DIRECTORY_STALE_TTL);
+        $cache->save($stale);
+
+        return $result;
+    }
+
+    /**
+     * Perform the directory HTTP request and validate the response shape.
+     *
+     * @throws \Exception when the request fails or the response is unusable
+     */
+    private function fetchDirectoryResult(string $url, array $query): array
+    {
+        $response = $this->di['http_client']->request('GET', $url, [
+            'timeout' => 5,
+            'query' => $query,
+        ]);
+
+        $json = $response->toArray();
+
+        if (isset($json['error']) && is_array($json['error'])) {
+            throw new Exception((string) ($json['error']['message'] ?? 'Unknown error'), null, 746);
+        }
+
+        if (!isset($json['result']) || !is_array($json['result'])) {
+            throw new Exception('Invalid response from the FOSSBilling extension directory.', null, 746);
+        }
+
+        return $json['result'];
+    }
+
+    /**
+     * Serve the last-known-good response, or throw when nothing usable is cached yet.
+     *
+     * @throws Exception the given fallback when there is no stale response
+     */
+    private function staleOrThrow(CacheItemPoolInterface $cache, string $key, Exception $fallback, ?callable $validateResult): array
+    {
+        $stale = $cache->getItem($key . '-stale');
+        if ($stale->isHit() && is_array($stale->get())) {
+            $result = $stale->get();
+            if ($validateResult !== null) {
+                try {
+                    $validateResult($result);
+                } catch (\Exception) {
+                    throw $fallback;
+                }
+            }
+
+            return $result;
+        }
+
+        throw $fallback;
     }
 }
