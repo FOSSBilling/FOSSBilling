@@ -2277,7 +2277,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function isPromoLinkedToProduct(Promo $promo, Product $product)
+    public function isPromoLinkedToProduct(Promo $promo, Product $product): bool
     {
         if ($product->isAddon()) {
             return false;

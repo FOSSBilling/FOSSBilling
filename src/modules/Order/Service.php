@@ -1262,7 +1262,7 @@ class Service implements InjectionAwareInterface
             $period = $order->getPeriod();
             $expiresAt = $order->getExpiresAt();
             if (!empty($period)) {
-                $from_time = $expiresAt === null ? time() : $expiresAt->getTimestamp();
+                $from_time = $expiresAt?->getTimestamp() ?? time();
 
                 $periodObj = $this->di['period']($period);
                 $newExpires = date('Y-m-d H:i:s', $periodObj->getExpirationTime($from_time));
@@ -1543,7 +1543,7 @@ class Service implements InjectionAwareInterface
         $period = $order->getPeriod();
         $expiresAt = $order->getExpiresAt();
         if (!empty($period)) {
-            $from_time = $expiresAt === null ? time() : $expiresAt->getTimestamp();
+            $from_time = $expiresAt?->getTimestamp() ?? time();
 
             $config = $this->di['mod_config']('order');
             $logic = $config['order_renewal_logic'] ?? '';
@@ -1551,7 +1551,7 @@ class Service implements InjectionAwareInterface
             if ($logic == 'from_today') {
                 $from_time = time();
             } elseif ($logic == 'from_greater') {
-                $expiresTimestamp = $expiresAt === null ? time() : $expiresAt->getTimestamp();
+                $expiresTimestamp = $expiresAt?->getTimestamp() ?? time();
                 if ($expiresTimestamp > time()) {
                     $from_time = $expiresTimestamp;
                 } else {

@@ -552,11 +552,9 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
     }
 
     /**
-     * @return bool
-     *
      * @throws Registrar_Exception
      */
-    public function enablePrivacyProtection(Registrar_Domain $domain)
+    public function enablePrivacyProtection(Registrar_Domain $domain): bool
     {
         $privacyInfo = $this->getPrivacyInfo($domain);
 
@@ -577,11 +575,9 @@ class Registrar_Adapter_Namecheap extends Registrar_AdapterAbstract
     }
 
     /**
-     * @return bool
-     *
      * @throws Registrar_Exception
      */
-    public function disablePrivacyProtection(Registrar_Domain $domain)
+    public function disablePrivacyProtection(Registrar_Domain $domain): bool
     {
         $privacyInfo = $this->getPrivacyInfo($domain);
 
