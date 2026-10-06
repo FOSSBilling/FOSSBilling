@@ -105,7 +105,7 @@
                                     </label>
                                     <div class="form-text">{{ 'Hidden products remain usable for existing orders and direct links, but they will not appear in normal product listings.'|trans }}</div>
                                 </div>
-                                {% if guest.extension_is_on({ 'mod': 'formbuilder' }) %}
+                                {% if guest.extension_is_on({ 'mod': 'formbuilder' }) and has_permission('formbuilder', 'view') %}
                                 <div class="col-12">
                                     <label class="form-label">{{ 'Order Form'|trans }}</label>
                                     {% set tpl = 'mod_service' ~ product.type ~ '_order_form.html.twig' %}
