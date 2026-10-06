@@ -37,7 +37,7 @@ test('oversized icon URLs are rejected before product writes', function (string 
         ->and($category->getTitle())->toBe('Original')
         ->and($category->getIconUrl())->toBe('original.svg');
 })->with(['addon', 'product', 'category create', 'category update'])
-    ->with(['ASCII' => str_repeat('a', 256), 'multibyte' => str_repeat('é', 256)]);
+    ->with(['ASCII' => str_repeat('a', 256), 'Unicode' => str_repeat('é', 256)]);
 
 test('category icon URLs within the column limit are preserved', function (?string $iconUrl): void {
     $em = new class {
