@@ -13,6 +13,20 @@ declare(strict_types=1);
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
 
+test('phone validation returns normalized digits without losing leading zeroes', function (string $number): void {
+    expect(FOSSBilling\Tools::validatePhoneNumber($number))->toBe('0100000000');
+})->with([
+    'plain' => '0100000000',
+    'formatted' => '(010) 000-0000',
+    'direction marks' => "\u{202A}0100000000\u{202C}",
+    'non-breaking spaces' => "010\u{00A0}000\u{00A0}0000",
+]);
+
+test('phone validation rejects invalid numbers', function (string $number): void {
+    expect(fn (): string => FOSSBilling\Tools::validatePhoneNumber($number))
+        ->toThrow(FOSSBilling\InformationException::class);
+})->with(['', 'no digits', '1234567890123', '+2250100000000']);
+
 dataset('sanitizeContentProvider', fn (): array => [
     // [input, expected_output, allowSafeHtml]
     ['', '', false],

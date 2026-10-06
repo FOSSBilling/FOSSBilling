@@ -105,7 +105,7 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
             $params[$contactType . '_FirstName'] = $c->getFirstName();
             $params[$contactType . '_LastName'] = $c->getLastName();
             $params[$contactType . '_Email'] = $c->getEmail();
-            $params[$contactType . '_PhoneNumber'] = '+' . $c->getTelCc() . '.' . $c->getTel();
+            $params[$contactType . '_PhoneNumber'] = '+' . $c->getTelCc() . '.' . FOSSBilling\Tools::validatePhoneNumber((string) $c->getTel());
             $params[$contactType . '_Street'] = $c->getAddress1();
             $params[$contactType . '_Street2'] = $c->getAddress2();
             $params[$contactType . '_Street3'] = $c->getAddress3();
@@ -134,7 +134,7 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
             $params[$contactType . '_FirstName'] = $c->getFirstName();
             $params[$contactType . '_LastName'] = $c->getLastName();
             $params[$contactType . '_Email'] = $c->getEmail();
-            $params[$contactType . '_PhoneNumber'] = '+' . $c->getTelCc() . '.' . $c->getTel();
+            $params[$contactType . '_PhoneNumber'] = '+' . $c->getTelCc() . '.' . FOSSBilling\Tools::validatePhoneNumber((string) $c->getTel());
             $params[$contactType . '_Street'] = $c->getAddress1();
             $params[$contactType . '_Street2'] = $c->getAddress2();
             $params[$contactType . '_Street3'] = $c->getAddress3();
@@ -199,7 +199,7 @@ class Registrar_Adapter_Internetbs extends Registrar_AdapterAbstract
             $params[$contactType . '_FirstName'] = $c->getFirstName();
             $params[$contactType . '_LastName'] = $c->getLastName();
             $params[$contactType . '_Email'] = $c->getEmail();
-            $params[$contactType . '_PhoneNumber'] = '+' . $c->getTelCc() . '.' . $c->getTel();
+            $params[$contactType . '_PhoneNumber'] = '+' . $c->getTelCc() . '.' . FOSSBilling\Tools::validatePhoneNumber((string) $c->getTel());
             $params[$contactType . '_Street'] = $c->getAddress1();
             $params[$contactType . '_Street2'] = $c->getAddress2();
             $params[$contactType . '_Street3'] = $c->getAddress3();
