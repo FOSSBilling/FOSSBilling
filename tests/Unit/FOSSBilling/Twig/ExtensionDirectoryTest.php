@@ -13,8 +13,8 @@ test('extension directory renders optional icons under strict variables', functi
         'author' => ['id' => 'Example Author'],
         'releases' => [['tag' => '1.0.0']],
     ], $iconFields);
-    $admin = new class($extension) {
-        public function __construct(private readonly array $extension)
+    $admin = new readonly class($extension) {
+        public function __construct(private array $extension)
         {
         }
 
