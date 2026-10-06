@@ -165,6 +165,26 @@ it('serves stale directory data when a refresh fails', function (): void {
     expect($requests)->toBe($failedAttempts);
 });
 
+it('treats a corrupted fresh entry as a miss and falls back to stale data', function (): void {
+    $entry = catalogEntry();
+    $cache = new ArrayAdapter();
+    $cache->get(catalogCacheKey('list'), static fn () => 'corrupted');
+    $stale = $cache->getItem(catalogCacheKey('list') . '-stale');
+    $stale->set([$entry]);
+    $stale->expiresAfter(3600);
+    $cache->save($stale);
+
+    $di = new Pimple\Container();
+    $di['cache'] = $cache;
+    $di['http_client'] = new MockHttpClient(static function (): never {
+        throw new TransportException('Connection refused.');
+    });
+    $manager = new ExtensionManager();
+    $manager->setDi($di);
+
+    expect($manager->getExtensionList())->toBe([$entry]);
+});
+
 it('throws without retrying while the directory is marked unavailable', function (): void {
     $requests = 0;
     $di = new Pimple\Container();

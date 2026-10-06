@@ -224,7 +224,7 @@ class ExtensionManager implements InjectionAwareInterface
         $cache = $this->di['cache'];
 
         $fresh = $cache->getItem($key);
-        if ($fresh->isHit()) {
+        if ($fresh->isHit() && is_array($fresh->get())) {
             return $fresh->get();
         }
 
