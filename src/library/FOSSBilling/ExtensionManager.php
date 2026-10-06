@@ -65,13 +65,15 @@ class ExtensionManager implements InjectionAwareInterface
      */
     public function getExtension(string $id): array
     {
-        $manifest = $this->makeRequest($id);
+        $this->assertValidIdentifier($id);
 
-        if (empty($manifest)) {
-            throw new Exception('Unable to fetch the extension details from the FOSSBilling extension directory.');
-        }
+        return $this->makeRequest($id, [], function (array $manifest): void {
+            if (empty($manifest)) {
+                throw new Exception('Unable to fetch the extension details from the FOSSBilling extension directory.');
+            }
 
-        return $manifest;
+            $this->validateMetadata($manifest);
+        });
     }
 
     /**
@@ -136,7 +138,44 @@ class ExtensionManager implements InjectionAwareInterface
             $params['type'] = $type;
         }
 
-        return $this->makeRequest('list', $params);
+        return $this->makeRequest('list', $params, function (array $extensions): void {
+            foreach ($extensions as $extension) {
+                $this->validateMetadata($extension);
+            }
+        });
+    }
+
+    private function assertValidIdentifier(string $id): void
+    {
+        if (preg_match('/\A[A-Za-z0-9_-]+\z/', $id) !== 1) {
+            throw new InformationException('Extension ID contains invalid characters.');
+        }
+    }
+
+    /** Validate after cache lookup so previously cached metadata is checked too. */
+    private function validateMetadata(mixed $extension): void
+    {
+        if (!is_array($extension) || !is_string($extension['id'] ?? null)
+            || preg_match('/\A[A-Za-z0-9_-]+\z/', $extension['id']) !== 1
+            || !is_string($extension['name'] ?? null)) {
+            throw new Exception('Invalid response from the FOSSBilling extension directory.', null, 746);
+        }
+
+        $author = $extension['author'] ?? [];
+        if (!is_array($author)) {
+            throw new Exception('Invalid response from the FOSSBilling extension directory.', null, 746);
+        }
+
+        $url = $author['URL'] ?? null;
+        if ($url === null || $url === '') {
+            return;
+        }
+
+        if (!is_string($url) || preg_match('/[\x00-\x20\x7f]/', $url) === 1
+            || filter_var($url, FILTER_VALIDATE_URL) === false
+            || !in_array(strtolower((string) parse_url($url, PHP_URL_SCHEME)), ['http', 'https'], true)) {
+            throw new Exception('Invalid response from the FOSSBilling extension directory.', null, 746);
+        }
     }
 
     /**
@@ -167,14 +206,18 @@ class ExtensionManager implements InjectionAwareInterface
      * further refresh attempts are suppressed for a few minutes so an
      * unreachable directory doesn't slow down every admin page load.
      *
-     * @param string $endpoint The API endpoint to call (e.g. list)
-     * @param array  $params   The array of parameters to pass to the API endpoint
+     * @param string        $endpoint       The API endpoint to call (e.g. list)
+     * @param array         $params         The array of parameters to pass to the API endpoint
+     * @param callable|null $validateResult Optional check receiving the decoded result; must throw
+     *                                      when it isn't usable. Applied to cached hits as well as
+     *                                      fresh responses, so invalid data never replaces the
+     *                                      last-known-good copy.
      *
      * @return array The API response
      *
      * @throws Exception when the directory can't be reached and nothing usable is cached
      */
-    public function makeRequest(string $endpoint, array $params = []): array
+    public function makeRequest(string $endpoint, array $params = [], ?callable $validateResult = null): array
     {
         $url = $this->apiUrl . $endpoint;
         $query = [...$params, 'fossbilling_version' => Version::VERSION];
@@ -185,15 +228,29 @@ class ExtensionManager implements InjectionAwareInterface
 
         $fresh = $cache->getItem($key);
         if ($fresh->isHit() && is_array($fresh->get())) {
-            return $fresh->get();
+            $result = $fresh->get();
+            if ($validateResult === null) {
+                return $result;
+            }
+
+            try {
+                $validateResult($result);
+
+                return $result;
+            } catch (\Exception) {
+                // Cached data no longer validates: fall through and refresh it.
+            }
         }
 
         if ($cache->getItem($key . '-unavailable')->isHit()) {
-            return $this->staleOrThrow($cache, $key, new Exception('The FOSSBilling extension directory is temporarily unreachable.', null, 746));
+            return $this->staleOrThrow($cache, $key, new Exception('The FOSSBilling extension directory is temporarily unreachable.', null, 746), $validateResult);
         }
 
         try {
             $result = $this->fetchDirectoryResult($url, $query);
+            if ($validateResult !== null) {
+                $validateResult($result);
+            }
         } catch (\Exception $e) {
             $unavailable = $cache->getItem($key . '-unavailable');
             $unavailable->set(true);
@@ -207,7 +264,7 @@ class ExtensionManager implements InjectionAwareInterface
                 ]);
             }
 
-            return $this->staleOrThrow($cache, $key, $e instanceof Exception ? $e : new Exception('Unable to fetch the extension details from the FOSSBilling extension directory: :reason.', [':reason' => $e->getMessage()], 746));
+            return $this->staleOrThrow($cache, $key, $e instanceof Exception ? $e : new Exception('Unable to fetch the extension details from the FOSSBilling extension directory: :reason.', [':reason' => $e->getMessage()], 746), $validateResult);
         }
 
         $fresh->set($result);
@@ -252,11 +309,20 @@ class ExtensionManager implements InjectionAwareInterface
      *
      * @throws Exception the given fallback when there is no stale response
      */
-    private function staleOrThrow(CacheItemPoolInterface $cache, string $key, Exception $fallback): array
+    private function staleOrThrow(CacheItemPoolInterface $cache, string $key, Exception $fallback, ?callable $validateResult): array
     {
         $stale = $cache->getItem($key . '-stale');
         if ($stale->isHit() && is_array($stale->get())) {
-            return $stale->get();
+            $result = $stale->get();
+            if ($validateResult !== null) {
+                try {
+                    $validateResult($result);
+                } catch (\Exception) {
+                    throw $fallback;
+                }
+            }
+
+            return $result;
         }
 
         throw $fallback;
