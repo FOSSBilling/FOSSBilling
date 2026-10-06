@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+// cspell:words expirationdate phonenumber postalcode
+
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -45,7 +47,7 @@ test('Internetbs normalizes stored phone numbers for every contact role', functi
 })->with(['registerDomain', 'transferDomain', 'modifyContact']);
 
 test('Internetbs reads expiration dates when registrant fields are missing', function (array $contactFields): void {
-    $response = "status=SUCCESS\nexpirationdate=2030-10-06\nnameserver_0=ns1.example.com";
+    $response = implode("\n", ['status=SUCCESS', 'expirationdate=2030-10-06', 'nameserver_0=ns1.example.com']);
     foreach ($contactFields as $field => $value) {
         $response .= "\ncontacts_registrant_{$field}={$value}";
     }
