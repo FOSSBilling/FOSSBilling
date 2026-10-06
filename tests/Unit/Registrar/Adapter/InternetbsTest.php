@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-// cspell:words expirationdate phonenumber postalcode
+// cspell:words dotfrcontactentityname expirationdate phonenumber postalcode
 
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
@@ -22,6 +22,22 @@ function createInternetbsAdapter(HttpClientInterface $httpClient): Registrar_Ada
         }
     };
 }
+
+test('Internetbs reads French registrant names with and without leading TLD dots', function (string $tld, ?string $entityName, string $expectedName): void {
+    $fields = ['status=SUCCESS', 'expirationdate=2030-10-06', 'contacts_registrant_firstname=Test', 'contacts_registrant_lastname=Registrant'];
+    if ($entityName !== null) {
+        $fields[] = 'contacts_registrant_dotfrcontactentityname=' . $entityName;
+    }
+    $adapter = createInternetbsAdapter(new MockHttpClient(new MockResponse(implode("\n", $fields))));
+    $domain = (new Registrar_Domain())->setSld('example')->setTld($tld);
+
+    expect($adapter->getDomainDetails($domain)->getContactRegistrar()->getName())->toBe($expectedName);
+})->with([
+    'dotted French TLD' => ['.fr', 'French Entity', 'French Entity'],
+    'French TLD without leading dot' => ['fr', 'French Entity', 'French Entity'],
+    'missing French entity name' => ['.fr', null, 'Test Registrant'],
+    'other TLD uses ordinary name' => ['.com', 'French Entity', 'Test Registrant'],
+]);
 
 test('Internetbs normalizes stored phone numbers for every contact role', function (string $operation): void {
     $httpClient = new MockHttpClient(function (string $method, string $url, array $options): MockResponse {
