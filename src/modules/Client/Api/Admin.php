@@ -229,7 +229,12 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     {
         $this->checkPermissions('client', 'delete');
 
-        $model = $this->getDi()['em']->getRepository(Client::class)->find($data['id']) ?? throw new InformationException('Client not found');
+        $id = $data['id'];
+        if ((!is_int($id) && !is_string($id)) || filter_var($id, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) === false) {
+            throw new InformationException('Invalid client ID');
+        }
+
+        $model = $this->getDi()['em']->getRepository(Client::class)->find((int) $id) ?? throw new InformationException('Client not found');
 
         $clientId = $model->getId();
 

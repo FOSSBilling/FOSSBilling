@@ -183,9 +183,33 @@ test('create throws exception when email is already registered', function (): vo
     $adminClient->create($data);
 })->throws(FOSSBilling\Exception::class, 'This email address is already registered.');
 
-test('delete returns true', function (): void {
+test('delete rejects malformed client IDs before accessing the repository', function (mixed $id): void {
     $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
-    $data = ['id' => 1];
+    $di = container();
+    $entityManager = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $entityManager->shouldNotReceive('getRepository');
+    $di['em'] = $entityManager;
+    $adminClient->setDi($di);
+
+    (new FOSSBilling\Api\Dispatcher())->validateRequiredParams($adminClient, 'delete', ['id' => $id]);
+
+    expect(fn () => $adminClient->delete(['id' => $id]))
+        ->toThrow(FOSSBilling\InformationException::class, 'Invalid client ID');
+})->with([
+    'array without identifier' => [['unexpected' => 1]],
+    'identifier array' => [['id' => 1]],
+    'boolean' => [true],
+    'fraction' => [1.5],
+    'fraction string' => ['1.5'],
+    'zero' => [0],
+    'negative' => [-1],
+    'text' => ['invalid'],
+    'overflow' => ['9223372036854775808'],
+]);
+
+test('delete returns true', function (int|string $id): void {
+    $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
+    $data = ['id' => $id];
 
     $eventMock = Mockery::mock('\Box_EventManager');
     $eventMock->shouldReceive('fire')->atLeast()->once();
@@ -203,7 +227,7 @@ test('delete returns true', function (): void {
     $adminClient->setService($serviceMock);
     $result = $adminClient->delete($data);
     expect($result)->toBeTrue();
-});
+})->with([1, '1']);
 
 test('update returns true', function (): void {
     $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
