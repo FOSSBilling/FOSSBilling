@@ -465,6 +465,8 @@ class Service implements InjectionAwareInterface
 
     public function updateProduct(Product $model, $data): bool
     {
+        $this->validateIconUrl($data['icon_url'] ?? $model->getIconUrl());
+
         if (array_key_exists('suspension_grace_days', $data)) {
             $graceDays = NonNegativeIntegerValidator::validate(
                 $data['suspension_grace_days'],
@@ -597,6 +599,8 @@ class Service implements InjectionAwareInterface
 
     public function createAddon($title, $description = null, $setup = null, $status = null, $iconUrl = null): ?int
     {
+        $this->validateIconUrl($iconUrl);
+
         $productPayment = $this->createDefaultProductPayment();
 
         $slug = $this->generateUniqueProductSlug($title);
@@ -656,6 +660,8 @@ class Service implements InjectionAwareInterface
 
     public function updateCategory(ProductCategory $productCategory, $title = null, $description = null, $icon_url = null): bool
     {
+        $this->validateIconUrl($icon_url);
+
         $productCategory
             ->setTitle($title)
             ->setIconUrl($icon_url)
@@ -669,6 +675,8 @@ class Service implements InjectionAwareInterface
 
     public function createCategory($title, $description = null, $icon_url = null): ?int
     {
+        $this->validateIconUrl($icon_url);
+
         $model = (new ProductCategory())
             ->setTitle($title)
             ->setDescription($description)
@@ -2405,6 +2413,13 @@ class Service implements InjectionAwareInterface
         }
 
         return $productPayment;
+    }
+
+    private function validateIconUrl(?string $iconUrl): void
+    {
+        if ($iconUrl !== null && mb_strlen($iconUrl, 'UTF-8') > 255) {
+            throw new \FOSSBilling\InformationException('Icon URL must not exceed 255 characters.');
+        }
     }
 
     private function createDefaultProductPayment(): ProductPayment
