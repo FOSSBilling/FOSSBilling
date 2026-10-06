@@ -71,8 +71,6 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
 
         $invoiceService = $this->di['mod_service']('Invoice');
         $invoice = $invoiceService->toApiArray($invoiceModel, true);
-
-        $data = [];
         if ($subscription) {
             $data = $this->getSubscriptionFields($invoice);
         } else {
