@@ -35,7 +35,7 @@ class ExtensionManager implements InjectionAwareInterface
     /**
      * How long the last-known-good response is kept as a fallback for directory outages.
      */
-    private const int DIRECTORY_STALE_TTL = 7 * 24 * 3600;
+    private const int DIRECTORY_STALE_TTL = 48 * 3600;
 
     /**
      * How long a failed refresh suppresses further directory requests.
@@ -202,7 +202,7 @@ class ExtensionManager implements InjectionAwareInterface
      * Make a request to the FOSSBilling extension directory.
      *
      * Successful responses are cached for an hour. When a refresh fails, the
-     * last-known-good response is served instead (up to a week old), and
+     * last-known-good response is served instead (up to two days old), and
      * further refresh attempts are suppressed for a few minutes so an
      * unreachable directory doesn't slow down every admin page load.
      *
