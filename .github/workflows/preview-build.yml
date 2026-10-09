@@ -9,19 +9,19 @@ on:
 
 jobs:
   preview-build:
-    name: 'Create Preview Build'
+    name: Create Preview Build
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - name: 'Checkout Repository'
+      - name: Checkout Repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
 
-      - name: 'Set Registry Cache Image'
+      - name: Set Registry Cache Image
         run: echo "CACHE_IMAGE=ghcr.io/${GITHUB_REPOSITORY@L}-build-cache" >> "${GITHUB_ENV}"
 
-      - name: 'Login to GitHub Container Registry'
+      - name: Login to GitHub Container Registry
         if: inputs.write-cache
         uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
         with:
@@ -29,10 +29,10 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 'Set up Docker Buildx'
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
 
-      - name: 'Build Release Artifact'
+      - name: Build Release Artifact
         id: build_read_cache
         if: ${{ !inputs.write-cache }}
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
@@ -47,7 +47,7 @@ jobs:
           outputs: type=local,dest=./release-tree
           provenance: false
 
-      - name: 'Build Release Artifact'
+      - name: Build Release Artifact
         id: build_write_cache
         if: inputs.write-cache
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
@@ -63,13 +63,13 @@ jobs:
           outputs: type=local,dest=./release-tree
           provenance: false
 
-      - name: 'Create Preview Build Archive'
+      - name: Create Preview Build Archive
         id: archive
         run: |
           rm -f ./release-tree/provenance.json
           tar -cf /tmp/build.tar -C ./release-tree ./
 
-      - name: 'Upload Preview Build Archive'
+      - name: Upload Preview Build Archive
         id: upload
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
@@ -78,7 +78,7 @@ jobs:
           path: /tmp/build.tar
           retention-days: 1
 
-      - name: 'Write Job Summary'
+      - name: Write Job Summary
         if: always()
         run: |
           cat >> "${GITHUB_STEP_SUMMARY}" <<'EOF'
