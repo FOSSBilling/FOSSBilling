@@ -1,0 +1,35 @@
+{% if has_permission('totp', 'manage') %}
+<section class="card card-sm mt-3" id="admin-client-totp-controls">
+    <div class="card-body">
+        <h6 class="card-title mb-1">{{ 'Two-Factor Authentication'|trans }}</h6>
+        <p id="admin-client-totp-profile-status" class="text-secondary mb-3">{{ 'Loading two-factor authentication status...'|trans }}</p>
+        <label class="form-check mb-3 d-none" id="admin-client-totp-profile-confirmation">
+            <input class="form-check-input" id="admin-client-totp-profile-confirmed" type="checkbox">
+            <span class="form-check-label">{{ 'I confirm that this client requested TOTP to be disabled.'|trans }}</span>
+        </label>
+        <button class="btn btn-outline-danger d-none" id="admin-client-totp-profile-disable" type="button" disabled>{{ 'Disable Two-Factor Authentication'|trans }}</button>
+    </div>
+</section>
+<script>
+    (() => {
+        const status = document.getElementById('admin-client-totp-profile-status');
+        const disable = document.getElementById('admin-client-totp-profile-disable');
+        const confirmation = document.getElementById('admin-client-totp-profile-confirmation');
+        const confirmed = document.getElementById('admin-client-totp-profile-confirmed');
+        const clientId = {{ client.id }};
+        FOSSBilling.api.admin.get('totp/client_status', { id: clientId }, (result) => {
+            if (!result.allowed) {
+                status.textContent = '{{ 'Two-factor authentication is disabled for client accounts.'|trans }}';
+            } else if (result.enabled) {
+                status.textContent = '{{ 'Two-factor authentication is enabled for this client.'|trans }}';
+                confirmation.classList.remove('d-none');
+                disable.classList.remove('d-none');
+            } else {
+                status.textContent = '{{ 'Two-factor authentication is not enabled for this client.'|trans }}';
+            }
+        });
+        confirmed.addEventListener('change', () => { disable.disabled = !confirmed.checked; });
+        disable.addEventListener('click', () => FOSSBilling.api.admin.post('totp/client_disable', { id: clientId }, () => window.location.reload()));
+    })();
+</script>
+{% endif %}

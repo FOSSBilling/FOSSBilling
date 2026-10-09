@@ -158,6 +158,7 @@
                                         <td>{{ client.api_token|default('-') }}</td>
                                     </tr>
                                     {% endif %}
+                                    {{ render_widgets('admin.client.summary.rows', { client: client }) }}
                                     <tr>
                                         <td class="text-end">{{ 'Address'|trans }}:</td>
                                         <td>
@@ -484,6 +485,7 @@
                     {% endembed %}
                 </form>
                 {% endif %}
+                {{ render_widgets('admin.client.profile.actions', { client: client }) }}
                 {% if can_edit_profile %}
                 <form method="post" action="{{ 'client/update'|api_url }}" {{ fb_api_form({ message: 'Client Profile Custom Fields Updated'|trans}) }}>
                     {% embed 'partial_admin_form_card.html.twig' with {
