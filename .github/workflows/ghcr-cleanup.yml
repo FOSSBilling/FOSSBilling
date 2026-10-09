@@ -15,12 +15,12 @@ concurrency:
 
 jobs:
   cleanup:
-    name: 'Delete Untagged GHCR Versions'
+    name: Delete Untagged GHCR Versions
     if: ${{ github.repository == 'FOSSBilling/FOSSBilling' }}
     runs-on: ubuntu-slim
     timeout-minutes: 10
     steps:
-      - name: 'Delete Untagged GHCR Versions'
+      - name: Delete Untagged GHCR Versions
         env:
           GH_TOKEN: ${{ github.token }}
           OWNER: FOSSBilling

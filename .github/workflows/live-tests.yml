@@ -5,34 +5,34 @@ on:
 
 jobs:
   live-tests:
-    name: 'Live Tests'
+    name: Live Tests
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - name: 'Checkout Repository'
+      - name: Checkout Repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
 
-      - name: 'Set up Docker Compose'
+      - name: Set up Docker Compose
         uses: docker/setup-compose-action@54042514f505b273907334ae2b9cdbb9a0213c1a # v2.4.0
 
-      # Reuses the image already built once in the PHP Build and Test (8.5) job.
-      - name: 'Download Test Image Artifact'
+      # Reuse the image already built once in the PHP Build and Test (8.5) job.
+      - name: Download Test Image Artifact
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: test-image-8.5.tar.zst
           path: /tmp
 
-      - name: 'Load Test Image'
+      - name: Load Test Image
         id: build
         run: zstd --decompress --stdout /tmp/test-image-8.5.tar.zst | docker load
 
-      - name: 'Run Live Tests'
+      - name: Run Live Tests
         id: live_tests
         run: bash ./.github/scripts/run-docker-live-tests.sh fossbilling:test-8.5
 
-      - name: 'Write Job Summary'
+      - name: Write Job Summary
         if: always()
         run: |
           cat >> "${GITHUB_STEP_SUMMARY}" <<'EOF'
