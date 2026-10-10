@@ -1,0 +1,11 @@
+{
+  "name": "fossbilling-application-browser-tests",
+  "private": true,
+  "dependencies": {
+    "@playwright/test": "1.63.0"
+  },
+  "engines": {
+    "node": ">=24",
+    "npm": ">=11"
+  }
+}
