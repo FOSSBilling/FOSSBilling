@@ -79,11 +79,9 @@ final readonly class ApiResponseFactory
 
         return match (true) {
             in_array($code, [201, 202, 203, 204, 205, 206, 1002, 1004], true) => Response::HTTP_UNAUTHORIZED,
-            $code === 403 => Response::HTTP_FORBIDDEN,
-            $code === 740 => Response::HTTP_NOT_FOUND,
-            $code === 429 => Response::HTTP_TOO_MANY_REQUESTS,
-            $code === 503 => Response::HTTP_SERVICE_UNAVAILABLE,
             in_array($code, [701, 879], true) => Response::HTTP_BAD_REQUEST,
+            $code === 740 => Response::HTTP_NOT_FOUND,
+            $code >= 400 && $code <= 599 => $code,
             default => Response::HTTP_OK,
         };
     }
