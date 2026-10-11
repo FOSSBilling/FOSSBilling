@@ -72,14 +72,15 @@ class Module implements InjectionAwareInterface
 
         $contents = $this->filesystem->readFile(Path::join($this->getModulePath(), self::MANIFEST_FILENAME));
 
+        $decoded = json_decode($contents);
+        if (!$decoded instanceof \stdClass) {
+            throw new InformationException('Invalid manifest file for the :mod module. Please check file syntax and permissions.', [':mod' => $this->module], 5897);
+        }
+
         try {
             $json = json_decode($contents, true, 512, JSON_THROW_ON_ERROR);
         } catch (\JsonException) {
-            throw new InformationException('Invalid manifest file for the :mod module. Please check file syntax and permissions.', [':mod' => $this->module]);
-        }
-
-        if (!is_array($json) || array_is_list($json)) {
-            throw new InformationException('Invalid manifest file for the :mod module. Please check file syntax and permissions.', [':mod' => $this->module]);
+            throw new InformationException('Invalid manifest file for the :mod module. Please check file syntax and permissions.', [':mod' => $this->module], 5897);
         }
 
         $info = [
