@@ -854,11 +854,11 @@ test('activateExistingExtension throws exception on activation failure', functio
         ->and($events[0]->extensionRecordId)->toBe(1);
 });
 
-test('activateExistingExtension rejects mod with missing manifest before persisting', function (): void {
+test('activateExistingExtension rejects mod with missing or invalid manifest before persisting', function (string $manifestError): void {
     $service = new Service();
 
     $modMock = Mockery::mock(FOSSBilling\Module::class);
-    $modMock->shouldReceive('hasManifest')->once()->andReturnFalse();
+    $modMock->shouldReceive('getManifest')->once()->andThrow(new FOSSBilling\InformationException($manifestError));
 
     $extensionRepository = Mockery::mock(ExtensionRepository::class);
     $extensionRepository->shouldNotReceive('findOneByTypeAndName');
@@ -874,8 +874,11 @@ test('activateExistingExtension rejects mod with missing manifest before persist
     $service->setDi($di);
 
     expect(fn () => $service->activateExistingExtension(['type' => 'mod', 'id' => 'nonexistent']))
-        ->toThrow(FOSSBilling\InformationException::class);
-});
+        ->toThrow(FOSSBilling\InformationException::class, 'its manifest file is missing or invalid');
+})->with([
+    'missing manifest' => 'Missing manifest file for the nonexistent module.',
+    'invalid manifest' => 'Invalid manifest file for the nonexistent module. Please check file syntax and permissions.',
+]);
 
 test('activate rejects mod with missing manifest', function (): void {
     $service = new Service();

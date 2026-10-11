@@ -669,12 +669,9 @@ class Service implements InjectionAwareInterface
 
         if ($data['type'] === \FOSSBilling\ExtensionManager::TYPE_MOD) {
             try {
-                $hasManifest = $this->di['mod']($data['id'])->hasManifest();
+                $this->di['mod']($data['id'])->getManifest();
             } catch (\Exception) {
-                $hasManifest = false;
-            }
-            if (!$hasManifest) {
-                throw new \FOSSBilling\InformationException('Cannot activate the :mod module: its manifest file is missing. The extension files may be incomplete, please reinstall the extension.', [':mod' => $data['id']], 5897);
+                throw new \FOSSBilling\InformationException('Cannot activate the :mod module: its manifest file is missing or invalid. The extension files may be incomplete, please reinstall the extension.', [':mod' => $data['id']], 5897);
             }
         }
 
