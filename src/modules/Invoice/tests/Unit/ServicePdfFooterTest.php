@@ -133,7 +133,7 @@ test('invoice PDF seller data tolerates null and missing fields without deprecat
     $invoice = [
         'seller' => [
             'company' => null,
-            'address_1' => null,
+            'address_1' => ' ',
             'address_2' => null,
             'address_3' => null,
             'phone' => null,
