@@ -849,6 +849,53 @@ test('activateExistingExtension throws exception on activation failure', functio
         ->and($events[0]->extensionRecordId)->toBe(1);
 });
 
+test('activateExistingExtension rejects mod with missing manifest before persisting', function (): void {
+    $service = new Service();
+
+    $modMock = Mockery::mock(FOSSBilling\Module::class);
+    $modMock->shouldReceive('hasManifest')->once()->andReturnFalse();
+
+    $extensionRepository = Mockery::mock(ExtensionRepository::class);
+    $extensionRepository->shouldNotReceive('findOneByTypeAndName');
+
+    $em = extensionBuildEm($extensionRepository);
+    $em->shouldNotReceive('persist');
+    $em->shouldNotReceive('flush');
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod'] = $di->protect(fn ($name): Mockery\MockInterface => $modMock);
+
+    $service->setDi($di);
+
+    expect(fn () => $service->activateExistingExtension(['type' => 'mod', 'id' => 'missingmod']))
+        ->toThrow(FOSSBilling\InformationException::class);
+});
+
+test('activate rejects mod with missing manifest', function (): void {
+    $service = new Service();
+    $ext = extensionCreateEntity(1, 'mod', 'missingmod', Extension::STATUS_DEACTIVATED);
+
+    $modMock = Mockery::mock(FOSSBilling\Module::class);
+    $modMock->shouldReceive('hasManifest')->once()->andReturnFalse();
+    $modMock->shouldNotReceive('getManifest');
+
+    $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffService->shouldReceive('checkPermissionsAndThrowException')
+        ->with('extension', 'manage_extensions')
+        ->once();
+
+    $di = container();
+    $di['em'] = extensionBuildEm();
+    $di['mod'] = $di->protect(fn ($name): Mockery\MockInterface => $modMock);
+    $di['mod_service'] = $di->protect(fn ($name): Mockery\MockInterface => $staffService);
+
+    $service->setDi($di);
+
+    expect(fn () => $service->activate($ext))
+        ->toThrow(FOSSBilling\InformationException::class);
+});
+
 test('getConfig returns extension config', function (): void {
     $service = new Service();
     $data = [
