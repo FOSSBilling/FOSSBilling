@@ -873,13 +873,13 @@ test('activateExistingExtension rejects mod with missing manifest before persist
 
     $service->setDi($di);
 
-    expect(fn () => $service->activateExistingExtension(['type' => 'mod', 'id' => 'missingmod']))
+    expect(fn () => $service->activateExistingExtension(['type' => 'mod', 'id' => 'nonexistent']))
         ->toThrow(FOSSBilling\InformationException::class);
 });
 
 test('activate rejects mod with missing manifest', function (): void {
     $service = new Service();
-    $ext = extensionCreateEntity(1, 'mod', 'missingmod', Extension::STATUS_DEACTIVATED);
+    $ext = extensionCreateEntity(1, 'mod', 'nonexistent', Extension::STATUS_DEACTIVATED);
 
     $modMock = Mockery::mock(FOSSBilling\Module::class);
     $modMock->shouldReceive('hasManifest')->once()->andReturnFalse();
