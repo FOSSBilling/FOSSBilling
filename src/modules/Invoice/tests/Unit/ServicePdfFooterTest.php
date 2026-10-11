@@ -181,7 +181,7 @@ test('invoice PDF party data keeps non-empty values and counts lines', function 
     $result = invokePdfPartyData($method, $service, $invoice, $lines);
 
     expect($result)->toHaveKeys(['Company', 'Name', 'State', 'Country'])
-        ->and($result)->not->toHaveKeys(['Address', 'City', 'Zip', 'Phone', 'VAT Number'])
+        ->and(array_keys($result))->toBe(['Company', 'Name', 'State', 'Country'])
         ->and($result['Name'])->toBe('Ada Lovelace')
         ->and($lines)->toBe(4);
 });
