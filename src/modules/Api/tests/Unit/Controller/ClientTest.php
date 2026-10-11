@@ -412,6 +412,31 @@ test('authenticated internal errors keep their details for debugging', function 
     expect($logger->errors)->toBeEmpty();
 });
 
+test('tryCall only reports unexpected failures to Sentry', function (Throwable $error, bool $shouldReport): void {
+    [$controller] = createFailingController($error, 'admin');
+
+    $previousHub = Sentry\SentrySdk::getCurrentHub();
+    $hub = Mockery::mock(Sentry\State\HubInterface::class);
+    if ($shouldReport) {
+        $hub->shouldReceive('captureException')->once()->with($error, null)->andReturn(null);
+    } else {
+        $hub->shouldNotReceive('captureException');
+    }
+    Sentry\SentrySdk::setCurrentHub($hub);
+
+    try {
+        invokeTryCall($controller, 'admin', 'email', 'template_update', []);
+    } finally {
+        Sentry\SentrySdk::setCurrentHub($previousHub);
+    }
+
+    expect($controller->renderedException)->toBe($error);
+})->with([
+    'sandbox rejection (InformationException) is not reported' => [new InformationException('Email template contains disallowed Twig syntax: Function "attribute" is not allowed.'), false],
+    'missing API service (base Exception) is reported' => [new FOSSBilling\Exception('Service object is not set for the API'), true],
+    'unexpected runtime failure is reported' => [new RuntimeException('Twig runtime failure'), true],
+]);
+
 function createGuestAuthenticationController(Request $request, mixed $sessionToken = 'browser-nonce'): TestableClient
 {
     [$controller] = createTestController(['csrf_token' => $sessionToken, 'client_id' => 123]);
