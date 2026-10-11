@@ -93,8 +93,13 @@ class Client implements InjectionAwareInterface
         } catch (EmailValidationRequiredException $exc) {
             return $this->renderJson(null, new \FOSSBilling\InformationException($exc->getMessage(), null, 403));
         } catch (\Exception $exc) {
-            // Sentry by default only captures unhandled exceptions, so we need to manually capture these.
-            \Sentry\captureException($exc);
+            // User-facing validation errors (e.g. sandbox rejections of scanner
+            // probes) are expected, so only other failures go to Sentry. The
+            // base Exception hierarchy stays reportable: it carries operational
+            // failures such as a missing API service object.
+            if (!$exc instanceof \FOSSBilling\InformationException) {
+                \Sentry\captureException($exc);
+            }
 
             return $this->renderJson(null, $this->sanitizeGuestError($role, $class, $call, $exc));
         }
