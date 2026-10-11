@@ -78,7 +78,7 @@ class Module implements InjectionAwareInterface
             throw new InformationException('Invalid manifest file for the :mod module. Please check file syntax and permissions.', [':mod' => $this->module]);
         }
 
-        if (!is_array($json)) {
+        if (!is_array($json) || array_is_list($json)) {
             throw new InformationException('Invalid manifest file for the :mod module. Please check file syntax and permissions.', [':mod' => $this->module]);
         }
 
