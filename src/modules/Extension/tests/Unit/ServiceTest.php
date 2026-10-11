@@ -163,6 +163,7 @@ test('real extension activation and deactivation invalidate cached module names'
 
     $module = Mockery::mock(FOSSBilling\Module::class);
     $module->shouldReceive('getCoreModules')->andReturn([]);
+    $module->shouldReceive('hasManifest')->andReturnTrue();
     $module->shouldReceive('getManifest')->andReturn(['version' => '1.0']);
     $module->shouldReceive('isCore')->andReturnFalse();
     $module->shouldReceive('install');
@@ -418,6 +419,10 @@ test('activate activates an extension', function (): void {
     $staffService->shouldReceive('checkPermissionsAndThrowException')->atLeast()->once();
 
     $modMock = Mockery::mock(FOSSBilling\Module::class);
+    $modMock->shouldReceive('hasManifest')
+        ->atLeast()
+        ->once()
+        ->andReturnTrue();
     $modMock->shouldReceive('getManifest')
         ->atLeast()
         ->once()
