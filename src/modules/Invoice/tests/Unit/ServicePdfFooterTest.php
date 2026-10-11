@@ -91,3 +91,116 @@ test('default invoice PDF footer renders with strict variables when addresses ar
     expect($html)->toContain('InvoiceFooter')
         ->and($html)->not->toContain('address_1');
 });
+
+test('invoice PDF buyer data tolerates null and missing fields without deprecation', function (): void {
+    $service = new Service();
+
+    // Mirrors Sentry FOSSBILLING-QT8: buyer fields are null / whitespace-only
+    // on the invoice PDF path and must not reach trim() as null.
+    $invoice = [
+        'buyer' => [
+            'company' => null,
+            'first_name' => null,
+            'last_name' => null,
+            'address' => ' ',
+            'city' => null,
+            'state' => null,
+            'zip' => null,
+            'country' => null,
+            'phone' => null,
+            'company_vat' => null,
+        ],
+    ];
+
+    $method = new ReflectionMethod(Service::class, 'getBuyerData');
+
+    $lines = 0;
+    $result = invokePdfPartyData($method, $service, $invoice, $lines);
+
+    expect($result)->toBe([])
+        ->and($lines)->toBe(0);
+
+    $lines = 0;
+    $result = invokePdfPartyData($method, $service, [], $lines);
+
+    expect($result)->toBe([])
+        ->and($lines)->toBe(0);
+});
+
+test('invoice PDF seller data tolerates null and missing fields without deprecation', function (): void {
+    $service = new Service();
+
+    $invoice = [
+        'seller' => [
+            'company' => null,
+            'address_1' => null,
+            'address_2' => null,
+            'address_3' => null,
+            'phone' => null,
+            'email' => null,
+            'company_vat' => null,
+        ],
+    ];
+
+    $method = new ReflectionMethod(Service::class, 'getSellerData');
+
+    $lines = 0;
+    $result = invokePdfPartyData($method, $service, $invoice, $lines);
+
+    expect($result)->toBe([])
+        ->and($lines)->toBe(0);
+
+    $lines = 0;
+    $result = invokePdfPartyData($method, $service, [], $lines);
+
+    expect($result)->toBe([])
+        ->and($lines)->toBe(0);
+});
+
+test('invoice PDF party data keeps non-empty values and counts lines', function (): void {
+    $service = new Service();
+
+    $invoice = [
+        'buyer' => [
+            'company' => 'Acme',
+            'first_name' => 'Ada',
+            'last_name' => 'Lovelace',
+            'address' => ' ',
+            'city' => null,
+            'state' => 'CA',
+            'zip' => '  ',
+            'country' => 'US',
+            'phone' => null,
+            'company_vat' => '',
+        ],
+    ];
+
+    $method = new ReflectionMethod(Service::class, 'getBuyerData');
+
+    $lines = 0;
+    $result = invokePdfPartyData($method, $service, $invoice, $lines);
+
+    expect($result)->toHaveKeys(['Company', 'Name', 'State', 'Country'])
+        ->and($result)->not->toHaveKeys(['Address', 'City', 'Zip', 'Phone', 'VAT Number'])
+        ->and($result['Name'])->toBe('Ada Lovelace')
+        ->and($lines)->toBe(4);
+});
+
+// Promotes PHP deprecations/warnings (e.g. trim(null)) to failures,
+// mirroring the FOSSBilling error handler that surfaced FOSSBILLING-QT8.
+function invokePdfPartyData(ReflectionMethod $method, Service $service, array $invoice, int &$lines): array
+{
+    set_error_handler(static function (int $severity, string $message, string $file, int $line) {
+        if ($severity === E_DEPRECATED || $severity === E_USER_DEPRECATED || $severity === E_WARNING || $severity === E_USER_WARNING) {
+            throw new ErrorException($message, 0, $severity, $file, $line);
+        }
+
+        return false;
+    });
+
+    try {
+        return $method->invokeArgs($service, [$invoice, &$lines]);
+    } finally {
+        restore_error_handler();
+    }
+}
