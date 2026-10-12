@@ -1050,3 +1050,46 @@ test('reserveNextNumericParamValue gives up and rethrows once contention exhaust
     expect(fn () => $service->reserveNextNumericParamValue('invoice_starting_number'))
         ->toThrow(Doctrine\DBAL\Exception\LockWaitTimeoutException::class);
 });
+
+test('updateParams rejects an invalid reminder send time', function (mixed $value): void {
+    $repository = Mockery::mock(Box\Mod\System\Repository\SettingRepository::class);
+    $repository->shouldNotReceive('findOneByParam');
+    $di = container();
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\System\Entity\Setting::class)->andReturn($repository);
+    $di['em']->shouldNotReceive('persist');
+    $di['em']->shouldNotReceive('flush');
+    $service = new Service();
+    $service->setDi($di);
+
+    expect(fn () => $service->updateParams(['invoice_reminder_send_time' => $value]))
+        ->toThrow(FOSSBilling\InformationException::class, 'Reminder send time must be empty or a valid 24-hour time');
+})->with([
+    'text' => ['morning'],
+    'hour too high' => ['24:00'],
+    'minute too high' => ['09:60'],
+    'missing minute' => ['9'],
+    'seconds included' => ['09:00:00'],
+    'single digit hour' => ['9:05'],
+    'array' => [[]],
+    'boolean' => [true],
+]);
+
+test('updateParams accepts an empty or valid reminder send time', function (mixed $value, mixed $expected): void {
+    $setting = Tests\Helpers\createEntity(Box\Mod\System\Entity\Setting::class, ['param' => 'invoice_reminder_send_time', 'value' => '']);
+    $repository = Mockery::mock(Box\Mod\System\Repository\SettingRepository::class);
+    $repository->shouldReceive('findOneByParam')->once()->with('invoice_reminder_send_time')->andReturn($setting);
+    $di = container();
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\System\Entity\Setting::class)->andReturn($repository);
+    $di['em']->shouldReceive('flush')->once();
+    $service = new Service();
+    $service->setDi($di);
+
+    expect($service->updateParams(['invoice_reminder_send_time' => $value]))->toBeTrue()
+        ->and($setting->getValue())->toBe($expected);
+})->with([
+    'empty disables' => ['', ''],
+    'null disables' => [null, null],
+    'morning' => ['09:00', '09:00'],
+    'midnight' => ['00:00', '00:00'],
+    'late evening' => ['23:59', '23:59'],
+]);
