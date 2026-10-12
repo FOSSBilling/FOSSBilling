@@ -30,6 +30,23 @@ function gatewayLogoAvif(): string
     return base64_decode('AAAAIGZ0eXBhdmlmAAAAAGF2aWZtaWYxbWlhZk1BMUIAAADrbWV0YQAAAAAAAAAhaGRscgAAAAAAAAAAcGljdAAAAAAAAAAAAAAAAAAAAAAOcGl0bQAAAAAAAQAAAB5pbG9jAAAAAEQAAAEAAQAAAAEAAAETAAAAIgAAAChpaW5mAAAAAAABAAAAGmluZmUCAAAAAAEAAGF2MDFDb2xvcgAAAABqaXBycAAAAEtpcGNvAAAAFGlzcGUAAAAAAAAAAgAAAAIAAAAQcGl4aQAAAAADCAgIAAAADGF2MUOBAAwAAAAAE2NvbHJuY2x4AAEADQABgAAAABdpcG1hAAAAAAAAAAEAAQQBAoMEAAAAKm1kYXQSAAoIGAA2iAhoDCAyFBeHh4YhhJJJJlAAAABIVDZhrGGr');
 }
 
+function gatewayLogoCanNormalize(string $extension): bool
+{
+    if (!function_exists('imagecreatefromstring') || !function_exists('imagepng')) {
+        return false;
+    }
+    $support = gd_info();
+    $format = match ($extension) {
+        'png' => 'PNG Support',
+        'jpg' => 'JPEG Support',
+        'webp' => 'WebP Support',
+        'avif' => 'AVIF Support',
+        default => '',
+    };
+
+    return ($support['PNG Support'] ?? false) && ($support[$format] ?? false);
+}
+
 function gatewayLogoService(MockHttpClient $client, Filesystem $filesystem): ServicePayGateway
 {
     $di = container();
@@ -125,6 +142,7 @@ test('gateway image rejects unsuccessful or unsafe downloads', function (string 
 })->with([
     'HTML' => ['<html>not an image</html>', 200],
     'invalid SVG' => ['<svg><path></svg>', 200],
+    // cspell:disable-next-line
     'GIF' => [base64_decode('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'), 200],
     'oversized' => [str_repeat('x', 2 * 1024 * 1024 + 1), 200],
     'not found' => ['', 404],
@@ -223,7 +241,7 @@ test('gateway image upload detects the format from bytes rather than the filenam
 
         expect($service->update($gateway, ['title' => 'Cards', 'logo_url' => 'ignored because a file is selected'], $file))->toBeTrue();
         expect($gateway->getName())->toBe('Cards');
-        $outputExtension = $extension !== 'svg' && function_exists('imagecreatefromstring') ? 'png' : $extension;
+        $outputExtension = gatewayLogoCanNormalize($extension) ? 'png' : $extension;
         expect($gateway->getCustomLogo())->toBe(hash('sha256', $stored->bytes) . '.' . $outputExtension);
         if ($extension === 'svg') {
             expect($stored->bytes)->not->toContain('<script');
@@ -231,7 +249,7 @@ test('gateway image upload detects the format from bytes rather than the filenam
         } else {
             $original = getimagesizefromstring($bytes);
             $processed = getimagesizefromstring($stored->bytes);
-            expect($processed[0])->toBe($original[0])->and($processed[1])->toBe($original[1])->and($processed['mime'])->toBe(function_exists('imagecreatefromstring') ? 'image/png' : $original['mime']);
+            expect($processed[0])->toBe($original[0])->and($processed[1])->toBe($original[1])->and($processed['mime'])->toBe(gatewayLogoCanNormalize($extension) ? 'image/png' : $original['mime']);
         }
     } finally {
         $realFilesystem->remove($path);
@@ -264,6 +282,7 @@ test('gateway image upload rejects errors, GIFs, and oversized files without cha
         $realFilesystem->remove($path);
     }
 })->with([
+    // cspell:disable-next-line
     'GIF' => [base64_decode('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'), UPLOAD_ERR_OK],
     'too large' => [str_repeat('x', 2 * 1024 * 1024 + 1), UPLOAD_ERR_OK],
     'failed upload' => [gatewayLogoPng(), UPLOAD_ERR_PARTIAL],
@@ -276,12 +295,12 @@ test('gateway URL import supports AVIF and sanitizes SVG before storing it', fun
     $gateway = createEntity(PayGateway::class, ['enabled' => false]);
 
     $service->update($gateway, ['logo_url' => 'https://8.8.8.8/logo']);
-    $outputExtension = $extension !== 'svg' && function_exists('imagecreatefromstring') ? 'png' : $extension;
+    $outputExtension = gatewayLogoCanNormalize($extension) ? 'png' : $extension;
     expect($gateway->getCustomLogo())->toBe(hash('sha256', $stored->bytes) . '.' . $outputExtension);
     if ($extension === 'svg') {
         expect($stored->bytes)->not->toContain('<script')->toContain('<path');
     } else {
-        expect(getimagesizefromstring($stored->bytes)['mime'])->toBe(function_exists('imagecreatefromstring') ? 'image/png' : 'image/avif');
+        expect(getimagesizefromstring($stored->bytes)['mime'])->toBe(gatewayLogoCanNormalize('avif') ? 'image/png' : 'image/avif');
     }
 })->with([
     'AVIF' => [gatewayLogoAvif(), 'avif'],

@@ -3486,3 +3486,25 @@ test('custom page charset repair follows the promotion patch', function (): void
     $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 127);
     expect($patches)->toHaveKey(128)->and($patches[128][1])->toBe('patch128');
 });
+
+test('custom gateway image migration adds the column and skips already migrated gateways', function (bool $migrated): void {
+    $columns = Mockery::mock(PDOStatement::class);
+    $columns->expects('execute')->with([])->andReturnTrue();
+    $columns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn($migrated ? [['Field' => 'custom_logo']] : [['Field' => 'id']]);
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `pay_gateway`')->andReturn($columns);
+    $sql = 'ALTER TABLE `pay_gateway` ADD COLUMN `custom_logo` VARCHAR(255) DEFAULT NULL';
+    if ($migrated) {
+        $pdo->shouldNotReceive('prepare')->with($sql);
+    } else {
+        $statement = Mockery::mock(PDOStatement::class);
+        $statement->expects('execute')->with([])->andReturnTrue();
+        $pdo->expects('prepare')->with($sql)->andReturn($statement);
+    }
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+
+    (new ReflectionMethod($patcher, 'patch129'))->invoke($patcher);
+})->with([false, true]);

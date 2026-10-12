@@ -1492,6 +1492,7 @@ class UpdatePatcher implements InjectionAwareInterface
             126 => 'patch126',
             127 => 'patch127',
             128 => 'patch128',
+            129 => 'patch129',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -4784,6 +4785,13 @@ class UpdatePatcher implements InjectionAwareInterface
             // One ALTER avoids rebuilding the table for each column. DDL failures stop the
             // patch sequence, leaving patch128 pending; successful reruns skip widened columns.
             $this->executeSql('ALTER TABLE `custom_pages` ' . implode(', ', $changes));
+        }
+    }
+
+    private function patch129(): void
+    {
+        if (!$this->tableHasColumn('pay_gateway', 'custom_logo')) {
+            $this->executeSql('ALTER TABLE `pay_gateway` ADD COLUMN `custom_logo` VARCHAR(255) DEFAULT NULL');
         }
     }
 
