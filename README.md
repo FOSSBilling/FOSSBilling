@@ -64,11 +64,11 @@ If you prefer to start a conversation first, drop by the [forum](https://forum.f
 
 ## Star History
 
-<a href="https://www.star-history.com/?repos=FOSSBilling%2FFOSSBilling&type=date&legend=top-left">
+<a href="https://www.star-history.com/?repos=fossbilling%2Ffossbilling&type=date&legend=top-left">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=FOSSBilling/FOSSBilling&type=date&theme=dark&legend=top-left&sealed_token=Imt45TQsmOl2wo97NTmR7vsrH9SbJ1R5OvbXL3zLgFfc6f_rrzAxDDqgxSmD-EowpNbyzjx0vFfBWCU-VN5HNlE67V6MN-Ssc7LrlZRPkdHSbw1V3NeImFQU3carSCrPm1Af3jbXZjqukrKLkqYii4bXvG_9006YdjIjWzbbGByUhXZOXgv7zH_fphhz" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=FOSSBilling/FOSSBilling&type=date&legend=top-left&sealed_token=Imt45TQsmOl2wo97NTmR7vsrH9SbJ1R5OvbXL3zLgFfc6f_rrzAxDDqgxSmD-EowpNbyzjx0vFfBWCU-VN5HNlE67V6MN-Ssc7LrlZRPkdHSbw1V3NeImFQU3carSCrPm1Af3jbXZjqukrKLkqYii4bXvG_9006YdjIjWzbbGByUhXZOXgv7zH_fphhz" />
-   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=FOSSBilling/FOSSBilling&type=date&legend=top-left&sealed_token=Imt45TQsmOl2wo97NTmR7vsrH9SbJ1R5OvbXL3zLgFfc6f_rrzAxDDqgxSmD-EowpNbyzjx0vFfBWCU-VN5HNlE67V6MN-Ssc7LrlZRPkdHSbw1V3NeImFQU3carSCrPm1Af3jbXZjqukrKLkqYii4bXvG_9006YdjIjWzbbGByUhXZOXgv7zH_fphhz" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=fossbilling/fossbilling&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=fossbilling/fossbilling&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=fossbilling/fossbilling&type=date&legend=top-left" />
  </picture>
 </a>
 
