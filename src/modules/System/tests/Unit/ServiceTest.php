@@ -1069,6 +1069,7 @@ test('updateParams rejects an invalid reminder send time', function (mixed $valu
     'minute too high' => ['09:60'],
     'missing minute' => ['9'],
     'seconds included' => ['09:00:00'],
+    'single digit hour' => ['9:05'],
     'array' => [[]],
     'boolean' => [true],
 ]);
@@ -1090,5 +1091,5 @@ test('updateParams accepts an empty or valid reminder send time', function (mixe
     'null disables' => [null, null],
     'morning' => ['09:00', '09:00'],
     'midnight' => ['00:00', '00:00'],
-    'single digit hour' => ['9:05', '9:05'],
+    'late evening' => ['23:59', '23:59'],
 ]);
