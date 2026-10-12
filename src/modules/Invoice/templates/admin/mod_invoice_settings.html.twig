@@ -91,6 +91,11 @@
                         <input class="form-control" id="invoice_reminder_after_due_days" type="text" name="invoice_reminder_after_due_days" value="{{ params.invoice_reminder_after_due_days is defined ? params.invoice_reminder_after_due_days : '5' }}" placeholder="1, 7">
                         <small class="form-text">{{ 'Comma-separated day intervals. Leave empty to disable automatic reminders after the invoice due date.'|trans }}</small>
                     </div>
+                    <div class="col-lg-6">
+                        <label class="form-label" for="invoice_reminder_send_time">{{ 'Send Payment Reminders At'|trans }}</label>
+                        <input class="form-control" id="invoice_reminder_send_time" type="time" name="invoice_reminder_send_time" value="{{ params.invoice_reminder_send_time|default('') }}">
+                        <small class="form-text">{{ 'Time of day automatic reminders are sent, using your configured timezone. Reminders go out on the first cron run at or after this time. Leave empty to send on the first cron run after midnight.'|trans }}</small>
+                    </div>
                 </div>
                 <div class="mt-3">
                     <label class="form-label" for="invoice_default_note">{{ 'Default Invoice Note'|trans }}</label>
