@@ -4222,7 +4222,7 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * Whether automatic reminders may be sent yet today. Empty/unparseable
+     * Whether automatic reminders may be sent yet today. An empty or invalid
      * `invoice_reminder_send_time` means disabled (legacy behavior); otherwise
      * true once local time reaches `HH:MM`, so the first cron at/after the
      * configured time sends.
