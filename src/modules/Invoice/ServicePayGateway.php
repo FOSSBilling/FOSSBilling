@@ -31,7 +31,7 @@ use Symfony\Contracts\HttpClient\Exception\ExceptionInterface;
 class ServicePayGateway implements InjectionAwareInterface
 {
     private const int MAX_LOGO_BYTES = 2 * 1024 * 1024;
-    private const int MAX_LOGO_PIXELS = 16 * 1024 * 1024;
+    private const int MAX_LOGO_PIXELS = 4_000_000;
 
     /**
      * Sent by the admin UI in place of a secret config field's value to mean
@@ -496,7 +496,7 @@ class ServicePayGateway implements InjectionAwareInterface
             $bytes = GatewaySvgSanitizer::sanitize($bytes);
             $extension = 'svg';
         } elseif ($extension === null || $image[0] <= 0 || $image[1] <= 0 || $image[0] * $image[1] > self::MAX_LOGO_PIXELS) {
-            throw new \FOSSBilling\Exception('Use a PNG, JPEG, WebP, AVIF, or SVG image with no more than 16 million pixels.');
+            throw new \FOSSBilling\Exception('Use a PNG, JPEG, WebP, AVIF, or SVG image with no more than 4 million pixels.');
         } else {
             [$bytes, $extension, $avif] = $this->normalizeRasterLogo($bytes, $extension);
         }

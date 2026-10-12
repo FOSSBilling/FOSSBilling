@@ -437,3 +437,22 @@ test('payment selectors render AVIF with one PNG fallback and support images wit
     ['Orderbutton/templates/client/mod_orderbutton_checkout.html.twig', true],
     ['Orderbutton/templates/client/mod_orderbutton_checkout.html.twig', false],
 ]);
+
+test('gateway images above four million pixels are rejected before decoding or changing settings', function (): void {
+    $bytes = gatewayLogoPng();
+    // Change the PNG header dimensions without allocating a large decoded image.
+    $header = substr($bytes, 12, 4) . pack('NN', 2000, 2001) . substr($bytes, 24, 5);
+    $bytes = substr($bytes, 0, 12) . $header . hash('crc32b', $header, true) . substr($bytes, 33);
+    expect(getimagesizefromstring($bytes)[0])->toBe(2000);
+    expect(getimagesizefromstring($bytes)[1])->toBe(2001);
+
+    $filesystem = Mockery::mock(Filesystem::class);
+    $filesystem->shouldReceive('dumpFile')->never();
+    $service = gatewayLogoService(new MockHttpClient(new MockResponse($bytes)), $filesystem);
+    $service->getDi()['em']->shouldReceive('flush')->never();
+    $gateway = createEntity(PayGateway::class, ['enabled' => false, 'name' => 'Original', 'customLogo' => 'original.png']);
+
+    expect(fn () => $service->update($gateway, ['title' => 'Changed', 'logo_url' => 'https://8.8.8.8/logo.png']))
+        ->toThrow(FOSSBilling\Exception::class, 'no more than 4 million pixels');
+    expect($gateway->getName())->toBe('Original')->and($gateway->getCustomLogo())->toBe('original.png');
+});
