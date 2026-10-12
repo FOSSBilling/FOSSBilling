@@ -1,0 +1,26 @@
+{% extends 'layout_public.html.twig' %}
+
+{% block meta_title %}{{ 'Two-Factor Authentication'|trans }}{% endblock %}
+{% block body_class %}totp-challenge{% endblock %}
+{% block body %}
+<div class="container h-100">
+    <div class="row h-75 justify-content-center align-items-center">
+        <div class="col-md-6 col-lg-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="text-center m-4">{{ 'Two-Factor Authentication'|trans }}</h5>
+                    <p class="text-muted">{{ 'Enter the code from your authenticator app or use a recovery code.'|trans }}</p>
+                    <form method="post" action="{{ 'totp/challenge'|api_url(role: 'guest') }}" {{ fb_api_form({redirect: '/'|url}) }}>
+                        <div class="mb-3">
+                            <label class="form-label" for="totp-challenge-code">{{ 'Verification code'|trans }}</label>
+                            <input class="form-control" id="totp-challenge-code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" required autofocus>
+                        </div>
+                        <button class="btn btn-primary w-100" type="submit">{{ 'Continue'|trans }}</button>
+                        <a class="btn btn-link w-100 mt-2" href="{{ 'support/contact-us'|url }}">{{ 'Lost your authenticator and recovery codes?'|trans }}</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

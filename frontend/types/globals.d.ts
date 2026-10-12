@@ -35,6 +35,9 @@ interface FOSSBillingEditorRegistry {
 }
 
 interface FOSSBillingRuntime {
+  qrCode?: {
+    toCanvas: (canvas: HTMLCanvasElement, value: string, options?: Record<string, unknown>) => Promise<void>;
+  };
   api?: {
     admin: FOSSBillingApiNamespace;
     client: FOSSBillingApiNamespace;

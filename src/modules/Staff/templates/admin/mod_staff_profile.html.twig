@@ -14,6 +14,7 @@
                     <li class="nav-item" role="presentation">
                         <a class="nav-link" href="#tab-password" data-bs-toggle="tab" role="tab">{{ 'Change Password'|trans }}</a>
                     </li>
+                    {{ render_widgets('admin.staff.profile.tabs') }}
                     <li class="nav-item" role="presentation">
                         <a class="nav-link" href="#tab-api" data-bs-toggle="tab" role="tab">API</a>
                     </li>
@@ -98,6 +99,8 @@
                 </form>
             </div>
         </div>
+
+        {{ render_widgets('admin.staff.profile.tab_content') }}
 
         <div class="tab-pane fade" id="tab-api" role="tabpanel">
             <div class="p-3">

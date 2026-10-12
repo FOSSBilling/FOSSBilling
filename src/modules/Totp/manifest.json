@@ -1,0 +1,8 @@
+{
+  "id": "totp",
+  "type": "mod",
+  "name": "TOTP Multi-factor Authentication",
+  "description": "Time-based one-time passwords and recovery codes for client and staff accounts.",
+  "icon_url": "icon.svg",
+  "version": "1.0.0"
+}

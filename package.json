@@ -54,5 +54,8 @@
   "allowScripts": {
     "@parcel/watcher": true,
     "esbuild": true
+  },
+  "dependencies": {
+    "qrcode": "^1.5.4"
   }
 }

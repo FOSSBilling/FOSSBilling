@@ -1,0 +1,14 @@
+{% if has_permission('totp', 'manage') %}
+<tr>
+    <td class="text-end">{{ '2FA enabled?'|trans }}:</td>
+    <td id="admin-client-totp-summary-status">{{ 'Loading...'|trans }}</td>
+</tr>
+<script>
+    (() => {
+        const status = document.getElementById('admin-client-totp-summary-status');
+        FOSSBilling.api.admin.get('totp/client_status', { id: {{ client.id }} }, (result) => {
+            status.textContent = result.enabled ? '{{ 'Yes'|trans }}' : '{{ 'No'|trans }}';
+        });
+    })();
+</script>
+{% endif %}
