@@ -168,11 +168,12 @@ test('copies a gateway', function (): void {
         'acceptedCurrencies' => null,
         'testMode' => false,
         'config' => null,
+        'customLogo' => str_repeat('a', 64) . '.png',
     ]);
 
     $serviceMock = Mockery::mock(ServicePayGateway::class)->makePartial();
     $em = Mockery::mock(EntityManagerInterface::class);
-    $em->shouldReceive('persist')->once();
+    $em->shouldReceive('persist')->once()->with(Mockery::on(fn (PayGateway $copy): bool => $copy->getCustomLogo() === $payGateway->getCustomLogo()));
     $em->shouldReceive('flush')->once();
     $repo = Mockery::mock(PayGatewayRepository::class);
     $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($repo);

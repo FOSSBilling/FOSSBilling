@@ -48,6 +48,9 @@ class PayGateway
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $config = null;
 
+    #[ORM\Column(name: 'custom_logo', type: Types::STRING, length: 255, nullable: true)]
+    private ?string $customLogo = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -145,6 +148,18 @@ class PayGateway
     public function setConfig(?string $config): self
     {
         $this->config = $config;
+
+        return $this;
+    }
+
+    public function getCustomLogo(): ?string
+    {
+        return $this->customLogo;
+    }
+
+    public function setCustomLogo(?string $customLogo): self
+    {
+        $this->customLogo = $customLogo;
 
         return $this;
     }
