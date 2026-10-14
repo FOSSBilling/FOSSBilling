@@ -36,6 +36,13 @@ test('branding migration updates default paths and preserves custom settings on 
     $filesystem = Mockery::mock(Filesystem::class);
     foreach (['logo.svg', 'favicon.ico'] as $filename) {
         $path = Path::join(PATH_ROOT, 'public', 'branding', $filename);
+        if ($expected === 'public/branding/' . $filename) {
+            $filesystem->shouldNotReceive('exists')->with($path);
+            $filesystem->shouldNotReceive('remove')->with($path);
+
+            continue;
+        }
+
         $filesystem->shouldReceive('exists')->with($path)->andReturn(true, false);
         $filesystem->expects('remove')->with($path)->once();
     }
@@ -56,6 +63,8 @@ test('branding migration updates default paths and preserves custom settings on 
     'current logo' => ['company_logo', 'public/branding/logo-light.svg', 'public/branding/logo-light.svg'],
     'current favicon' => ['company_favicon', 'public/branding/favicon.svg', 'public/branding/favicon.svg'],
     'dark logo' => ['company_logo_dark', 'public/branding/logo-dark.svg', 'public/branding/logo-dark.svg'],
+    'old logo used in dark mode' => ['company_logo_dark', 'public/branding/logo.svg', 'public/branding/logo.svg'],
+    'old favicon used as a logo' => ['company_logo_dark', 'public/branding/favicon.ico', 'public/branding/favicon.ico'],
     'custom logo' => ['company_logo', 'data/uploads/logo.svg', 'data/uploads/logo.svg'],
     'custom favicon' => ['company_favicon', 'https://example.com/favicon.ico', 'https://example.com/favicon.ico'],
     'unrelated setting' => ['custom_asset', 'public/branding/logo.svg', 'public/branding/logo.svg'],

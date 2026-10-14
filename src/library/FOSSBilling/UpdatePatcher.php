@@ -4143,10 +4143,14 @@ class UpdatePatcher implements InjectionAwareInterface
             }
         }
 
-        $this->executeFileActions([
-            Path::join(PATH_ROOT, 'public', 'branding', 'logo.svg') => 'unlink',
-            Path::join(PATH_ROOT, 'public', 'branding', 'favicon.ico') => 'unlink',
-        ]);
+        foreach (['public/branding/logo.svg', 'public/branding/favicon.ico'] as $path) {
+            // A custom setting may still use an old asset, such as the light logo in dark mode.
+            if ($this->fetchOne('SELECT value FROM setting WHERE value = :value LIMIT 1', ['value' => $path]) !== false) {
+                continue;
+            }
+
+            $this->executeFileActions([Path::join(PATH_ROOT, $path) => 'unlink']);
+        }
     }
 
     private function migrateGatewayAssetsToPublicDirectory(): void
