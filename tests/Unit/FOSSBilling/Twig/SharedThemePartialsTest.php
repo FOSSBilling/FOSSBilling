@@ -134,7 +134,7 @@ test('shared company logo partial renders admin-style params: no height, inline 
         PATH_THEMES . '/default/shared/html/partial_company_logo.html.twig',
         [
             'company' => new Tests\Support\PermissiveStub(['name' => 'Acme Hosting']),
-            'logo_url' => 'https://example.com/logo.png',
+            'logo_url' => 'https://example.com/logo-light.png',
             'dark_logo_url' => 'https://example.com/logo-dark.png',
             'link_url' => '/',
             'image_style' => 'height: 60px; width: auto;',
@@ -176,7 +176,7 @@ test('shared company logo partial renders client-style params: height, target, r
         PATH_THEMES . '/default/shared/html/partial_company_logo.html.twig',
         [
             'company' => new Tests\Support\PermissiveStub(['name' => 'Acme Hosting']),
-            'logo_url' => 'https://example.com/logo.png',
+            'logo_url' => 'https://example.com/logo-light.png',
             'dark_logo_url' => 'https://example.com/logo-dark.png',
             'link_url' => '/',
             'link_target' => '_blank',
@@ -197,7 +197,7 @@ test('shared company logo partial renders the mobile name span only when show_mo
         PATH_THEMES . '/default/shared/html/partial_company_logo.html.twig',
         [
             'company' => new Tests\Support\PermissiveStub(['name' => 'Acme Hosting']),
-            'logo_url' => 'https://example.com/logo.png',
+            'logo_url' => 'https://example.com/logo-light.png',
             'dark_logo_url' => 'https://example.com/logo-dark.png',
             'link_url' => '/',
             'show_mobile_name' => true,

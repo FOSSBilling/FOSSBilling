@@ -308,7 +308,7 @@ VALUES
 	(2,'company_name','Company Name',0,NULL,NULL,NOW(),NOW()),
 	(3,'company_email','support@yourcompany.com',0,NULL,NULL,NOW(),NOW()),
 	(4,'company_signature','FOSSBilling.org - Client Management, Invoicing and Support Software',0,NULL,NULL,NOW(),NOW()),
-	(5,'company_logo','public/branding/logo.svg',0,NULL,NULL,NOW(),NOW()),
+	(5,'company_logo','public/branding/logo-light.svg',0,NULL,NULL,NOW(),NOW()),
 	(6,'company_logo_dark','public/branding/logo-dark.svg',0,NULL,NULL,NOW(),NOW()),
 	(7,'company_address_1','Demo address line 1',0,NULL,NULL,NOW(),NOW()),
 	(8,'company_address_2','Demo address line 2',0,NULL,NULL,NOW(),NOW()),
@@ -335,7 +335,7 @@ VALUES
 	(29,'nameserver_4',NULL,0,NULL,NULL,NOW(),NOW()),
 	(30,'funds_min_amount','10',0,NULL,NULL,NOW(),NOW()),
 	(31,'funds_max_amount','200',0,NULL,NULL,NOW(),NOW()),
-	(32,'company_favicon','public/branding/favicon.ico',0,NULL,NULL,NOW(),NOW()),
+	(32,'company_favicon','public/branding/favicon.svg',0,NULL,NULL,NOW(),NOW()),
 	(33,'hide_company_public','1',0,NULL,NULL,NOW(),NOW()),
 	(34,'invoice_hash_lifetime_days','90',0,NULL,NULL,NOW(),NOW());
 
