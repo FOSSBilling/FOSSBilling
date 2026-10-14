@@ -240,6 +240,9 @@ class UpdatePatcher implements InjectionAwareInterface
         // forever.
         $this->migrateThemePackageLayout();
 
+        // Branding paths and obsolete files need migrating on every database driver.
+        $this->migrateDefaultBrandingAssetsToPublicDirectory();
+
         // Retired hook packages and listener registrations have no runtime consumer. Remove
         // their records on every driver so old installs do not retain invisible extensions.
         $this->removeRetiredHookData();
@@ -1493,6 +1496,7 @@ class UpdatePatcher implements InjectionAwareInterface
             127 => 'patch127',
             128 => 'patch128',
             129 => 'patch129',
+            130 => 'patch130',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -4108,6 +4112,7 @@ class UpdatePatcher implements InjectionAwareInterface
     {
         $settings = [
             'company_logo' => [
+                'public/branding/logo-light.svg',
                 'public/branding/logo.svg',
                 'themes/huraga/assets/img/logo.svg',
                 'themes/huraga/assets/build/img/logo.svg',
@@ -4118,6 +4123,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 'themes/huraga/assets/build/img/logo_white.svg',
             ],
             'company_favicon' => [
+                'public/branding/favicon.svg',
                 'public/branding/favicon.ico',
                 'themes/huraga/assets/favicon.ico',
                 'themes/huraga/assets/build/favicon.ico',
@@ -4135,6 +4141,15 @@ class UpdatePatcher implements InjectionAwareInterface
                     'old_value' => $oldValue,
                 ]);
             }
+        }
+
+        foreach (['public/branding/logo.svg', 'public/branding/favicon.ico'] as $path) {
+            // A custom setting may still use an old asset, such as the light logo in dark mode.
+            if ($this->fetchOne('SELECT value FROM setting WHERE value = :value LIMIT 1', ['value' => $path]) !== false) {
+                continue;
+            }
+
+            $this->executeFileActions([Path::join(PATH_ROOT, $path) => 'unlink']);
         }
     }
 
@@ -4793,6 +4808,11 @@ class UpdatePatcher implements InjectionAwareInterface
         if (!$this->tableHasColumn('pay_gateway', 'custom_logo')) {
             $this->executeSql('ALTER TABLE `pay_gateway` ADD COLUMN `custom_logo` VARCHAR(255) DEFAULT NULL');
         }
+    }
+
+    private function patch130(): void
+    {
+        $this->migrateDefaultBrandingAssetsToPublicDirectory();
     }
 
     /**
