@@ -87,7 +87,7 @@ test('PDF logo rejects unsafe response content', function (string $body, string 
 
 test('PDF logo preserves the shipped local SVG without network access', function (): void {
     $client = new MockHttpClient(static fn () => throw new LogicException('Network must not be reached'));
-    [$source, $remote] = pdfLogoService($client)->logo('https://billing.example/public/branding/logo.svg');
+    [$source, $remote] = pdfLogoService($client)->logo('https://billing.example/public/branding/logo-light.svg');
     expect($source)->toStartWith('data:image/svg+xml;base64,')->and($remote)->toBeFalse();
 });
 

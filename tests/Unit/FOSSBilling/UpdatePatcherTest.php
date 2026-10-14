@@ -23,6 +23,63 @@ test('currency formatting patch follows the client balance gateway repair', func
         ->and($patches[93][1])->toBe('patch93');
 });
 
+test('branding filename migration runs for installs past the original branding patch', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 129);
+
+    expect($patches)->toHaveKey(130)->and($patches[130][1])->toBe('patch130');
+});
+
+test('branding migration updates default paths and preserves custom settings on repeated upgrades', function (string $param, string $oldValue, string $expected): void {
+    $pdo = new PDO('sqlite::memory:');
+    $pdo->exec('CREATE TABLE setting (param TEXT PRIMARY KEY, value TEXT)');
+    $pdo->prepare('INSERT INTO setting (param, value) VALUES (?, ?)')->execute([$param, $oldValue]);
+    $filesystem = Mockery::mock(Filesystem::class);
+    foreach (['logo.svg', 'favicon.ico'] as $filename) {
+        $path = Path::join(PATH_ROOT, 'public', 'branding', $filename);
+        $filesystem->shouldReceive('exists')->with($path)->andReturn(true, false);
+        $filesystem->expects('remove')->with($path)->once();
+    }
+    $patcher = new UpdatePatcher();
+    $patcher->setDi(new Pimple\Container(['pdo' => $pdo, 'filesystem' => $filesystem]));
+
+    for ($run = 0; $run < 2; ++$run) {
+        (new ReflectionMethod($patcher, 'patch130'))->invoke($patcher);
+        expect($pdo->query('SELECT value FROM setting')->fetchColumn())->toBe($expected);
+    }
+})->with([
+    'public logo' => ['company_logo', 'public/branding/logo.svg', 'public/branding/logo-light.svg'],
+    'legacy logo' => ['company_logo', 'themes/huraga/assets/img/logo.svg', 'public/branding/logo-light.svg'],
+    'built legacy logo' => ['company_logo', 'themes/huraga/assets/build/img/logo.svg', 'public/branding/logo-light.svg'],
+    'public favicon' => ['company_favicon', 'public/branding/favicon.ico', 'public/branding/favicon.svg'],
+    'legacy favicon' => ['company_favicon', 'themes/huraga/assets/favicon.ico', 'public/branding/favicon.svg'],
+    'built legacy favicon' => ['company_favicon', 'themes/huraga/assets/build/favicon.ico', 'public/branding/favicon.svg'],
+    'current logo' => ['company_logo', 'public/branding/logo-light.svg', 'public/branding/logo-light.svg'],
+    'current favicon' => ['company_favicon', 'public/branding/favicon.svg', 'public/branding/favicon.svg'],
+    'dark logo' => ['company_logo_dark', 'public/branding/logo-dark.svg', 'public/branding/logo-dark.svg'],
+    'custom logo' => ['company_logo', 'data/uploads/logo.svg', 'data/uploads/logo.svg'],
+    'custom favicon' => ['company_favicon', 'https://example.com/favicon.ico', 'https://example.com/favicon.ico'],
+    'unrelated setting' => ['custom_asset', 'public/branding/logo.svg', 'public/branding/logo.svg'],
+]);
+
+test('branding migration runs during non-MySQL update finalization', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        $pdo = new PDO('sqlite::memory:');
+        $pdo->exec('CREATE TABLE setting (param TEXT PRIMARY KEY, value TEXT, public INTEGER, created_at TEXT, updated_at TEXT)');
+        $pdo->exec('CREATE TABLE extension_meta (extension TEXT, rel_type TEXT, rel_id TEXT, meta_key TEXT)');
+        $pdo->exec('CREATE TABLE extension (type TEXT)');
+        $pdo->exec("INSERT INTO setting (param, value) VALUES ('company_logo', 'public/branding/logo.svg'), ('company_favicon', 'public/branding/favicon.ico')");
+        $filesystem = Mockery::mock(Filesystem::class);
+        $filesystem->shouldReceive('exists')->andReturn(false);
+        $patcher = new UpdatePatcher();
+        $patcher->setDi(new Pimple\Container(['pdo' => $pdo, 'filesystem' => $filesystem]));
+
+        $patcher->applyCorePatches(force: true);
+
+        expect($pdo->query("SELECT value FROM setting WHERE param = 'company_logo'")->fetchColumn())->toBe('public/branding/logo-light.svg')
+            ->and($pdo->query("SELECT value FROM setting WHERE param = 'company_favicon'")->fetchColumn())->toBe('public/branding/favicon.svg');
+    });
+});
+
 test('upgrade checks report invalid invoice counters without changing stored values', function (?string $counter, bool $warning): void {
     $pdo = new PDO('sqlite::memory:');
     $pdo->exec('CREATE TABLE setting (param TEXT PRIMARY KEY, value TEXT)');
@@ -1933,22 +1990,23 @@ test('migrateThemePackageLayout does nothing on a fresh install where neither ol
 
 test('applyCorePatches migrates the theme setting values on a non-MySQL driver, since patch115 never runs there', function (): void {
     withNonMysqlDbDriver(function (): void {
-        $adminThemeStatement = Mockery::mock(PDOStatement::class);
-        $adminThemeStatement->expects('execute')
+        $settingStatement = Mockery::mock(PDOStatement::class);
+        $settingStatement->expects('execute')
             ->with(['new_value' => 'default/admin', 'param' => 'admin_theme', 'old_value' => 'admin_default'])
             ->andReturnTrue();
-        $clientThemeStatement = Mockery::mock(PDOStatement::class);
-        $clientThemeStatement->expects('execute')
+        $settingStatement->expects('execute')
             ->with(['new_value' => 'default/client', 'param' => 'theme', 'old_value' => 'huraga'])
+            ->andReturnTrue();
+        $settingStatement->shouldReceive('execute')
+            ->with(Mockery::on(fn (array $params): bool => in_array($params['param'], ['company_logo', 'company_logo_dark', 'company_favicon'], true)))
             ->andReturnTrue();
         $extensionMetaStatement = Mockery::mock(PDOStatement::class);
         $extensionMetaStatement->shouldReceive('execute')->andReturnTrue();
 
         $pdo = Mockery::mock(PDO::class);
-        $pdo->expects('prepare')
+        $pdo->shouldReceive('prepare')
             ->with('UPDATE setting SET value = :new_value WHERE param = :param AND value = :old_value')
-            ->twice()
-            ->andReturn($adminThemeStatement, $clientThemeStatement);
+            ->andReturn($settingStatement);
         $pdo->shouldReceive('prepare')
             ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'UPDATE extension_meta')))
             ->andReturn($extensionMetaStatement);
