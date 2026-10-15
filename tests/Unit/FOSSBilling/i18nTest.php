@@ -213,7 +213,12 @@ test('getActiveLocale returns the configured default when no cookie and no Accep
 test('getActiveLocale falls back to config default with auto-detect and no Accept-Language header (cron/CLI)', function (): void {
     Config::setProperty('i18n.locale', 'de_DE');
 
-    expect(i18n::getActiveLocale(Request::create('/'), true))->toBe('de_DE');
+    // Symfony's Request::create() seeds a default Accept-Language header,
+    // so strip it to simulate a header-less CLI/cron request.
+    $request = Request::create('/');
+    $request->headers->remove('Accept-Language');
+
+    expect(i18n::getActiveLocale($request, true))->toBe('de_DE');
 });
 
 test('getActiveLocale falls back to config default with auto-detect and an unparsable Accept-Language header', function (): void {
@@ -228,8 +233,10 @@ test('getActiveLocale with auto-detect and no header does not queue a locale coo
     Config::setProperty('i18n.locale', 'de_DE');
 
     $cookies = new CookieQueue();
+    $request = Request::create('/');
+    $request->headers->remove('Accept-Language');
 
-    expect(i18n::getActiveLocale(Request::create('/'), true, $cookies))->toBe('de_DE');
+    expect(i18n::getActiveLocale($request, true, $cookies))->toBe('de_DE');
 
     $response = new Response();
     $cookies->applyToResponse($response);
