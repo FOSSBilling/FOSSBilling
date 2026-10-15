@@ -93,23 +93,34 @@ class i18n
             return null;
         }
 
-        $header = $request->headers->get('Accept-Language', '');
+        $header = trim((string) $request->headers->get('Accept-Language', ''));
+
+        // CLI/cron requests and header-less clients send no Accept-Language.
+        // Without this guard, Locale::lookup() with an empty detected locale
+        // returns the first enabled locale (e.g. en_US) instead of null,
+        // overriding the configured i18n.locale default.
+        if ($header === '') {
+            return null;
+        }
 
         try {
-            $detectedLocale = @\Locale::acceptFromHttp($header);
-            $detectedLocale = @\Locale::canonicalize($detectedLocale . '.utf8');
+            $acceptedLocale = @\Locale::acceptFromHttp($header);
+            if (empty($acceptedLocale)) {
+                return null;
+            }
+            $detectedLocale = @\Locale::canonicalize($acceptedLocale . '.utf8');
         } catch (\Throwable) {
-            $detectedLocale = '';
+            return null;
         }
 
         if (empty($detectedLocale)) {
-            $detectedLocale = '';
+            return null;
         }
 
         try {
             $matchingLocale = \Locale::lookup(self::getLocales(), $detectedLocale, false, null);
         } catch (\Throwable) {
-            $matchingLocale = null;
+            return null;
         }
 
         /* The system was unable to match the browser locale to one of our local ones.
@@ -128,6 +139,8 @@ class i18n
                     return $locale;
                 }
             }
+
+            return null;
         }
 
         $cookies?->queue(CookieNames::LOCALE, (string) $matchingLocale, strtotime('+1 month'), '/');
