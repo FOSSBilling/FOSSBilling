@@ -528,6 +528,10 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
      * about to be credited (defense in depth behind the callback signature).
      * Only enforced when PayPal echoes the field; several notification
      * types omit these references, and that must never fail a payment.
+     *
+     * item_number is frozen at signup while the invoice number can change
+     * (renumbering, issuing), so a stale echo only warns; the stable
+     * invoice id below remains enforced.
      */
     private function verifyIpnEcho(array $ipn, Invoice $invoice): void
     {
@@ -535,7 +539,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
         if ($echoedNr !== '') {
             $expectedNr = trim((string) $invoice->getNr());
             if ($expectedNr !== '' && $echoedNr !== $expectedNr) {
-                throw new Payment_Exception('PayPal item_number does not match invoice ' . $invoice->getId());
+                $this->di['logger']->warning('PayPal item_number ' . $echoedNr . ' does not match invoice ' . $invoice->getId() . ' (expected ' . $expectedNr . '); proceeding with payment');
             }
         }
 

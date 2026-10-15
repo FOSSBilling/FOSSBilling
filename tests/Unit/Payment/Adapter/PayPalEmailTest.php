@@ -1468,7 +1468,61 @@ describe('PayPal callback invoice binding', function (): void {
         ], 2);
     })->throws(Payment_Exception::class, 'PayPal transaction is not associated with an invoice');
 
-    test('rejects a completed payment whose echoed item_number names a different invoice', function (): void {
+    test('accepts a completed payment whose echoed item_number is stale and logs a warning', function (): void {
+        $funds = [];
+        $apiAdmin = Mockery::mock();
+        $apiAdmin->shouldReceive('invoice_transaction_get')->twice()->with(['id' => 42])->andReturn(
+            ['invoice_id' => 16, 'type' => null, 'txn_id' => null, 'txn_status' => null, 'amount' => null, 'currency' => null, 'status' => 'received'],
+            ['invoice_id' => 16, 'type' => 'web_accept', 'txn_id' => 'TXN-9', 'txn_status' => 'Completed', 'amount' => '120.00', 'currency' => 'USD', 'status' => 'processing']
+        );
+        $apiAdmin->shouldNotReceive('invoice_transaction_claim_for_processing');
+        $apiAdmin->shouldReceive('invoice_get')->once()->with(['id' => 16])->andReturn([
+            'id' => 16, 'currency' => 'USD', 'client' => ['id' => 9],
+        ]);
+        $apiAdmin->shouldReceive('invoice_transaction_update')->byDefault()->andReturnTrue();
+        $apiAdmin->shouldReceive('client_balance_add_funds')->once()->withArgs(function (array $data) use (&$funds): bool {
+            $funds[] = $data;
+
+            return true;
+        });
+        $apiAdmin->shouldReceive('invoice_pay_with_credits')->once()->with(['id' => 16]);
+
+        $invoiceModel = Mockery::mock(Box\Mod\Invoice\Entity\Invoice::class);
+        $invoiceModel->shouldReceive('getId')->byDefault()->andReturn(16);
+        $invoiceModel->shouldReceive('getNr')->byDefault()->andReturn('00042');
+        $invoiceModel->shouldReceive('getStatus')->byDefault()->andReturn(Box\Mod\Invoice\Entity\Invoice::STATUS_UNPAID);
+        $invoiceModel->shouldReceive('isIssued')->byDefault()->andReturn(true);
+
+        $invoiceService = Mockery::mock();
+        $invoiceService->shouldReceive('getTotalWithTax')->once()->andReturn(120.00);
+        $invoiceService->shouldReceive('validatePaymentAmount')->once()->with(120.00, 120.00)->andReturnNull();
+        $invoiceService->shouldReceive('isInvoiceTypeDeposit')->once()->andReturn(false);
+
+        $di = container();
+        $di['em'] = paypalEmMocks($invoiceModel);
+        $logger = new Tests\Helpers\TestLogger();
+        $di['logger'] = $logger;
+        $di['mod_service'] = $di->protect(static fn (): object => $invoiceService);
+
+        paypalProcessAdapter($di)->processTransaction($apiAdmin, 42, [
+            'post' => [
+                'txn_type' => 'web_accept',
+                'payment_status' => 'Completed',
+                'txn_id' => 'TXN-9',
+                'mc_gross' => '120.00',
+                'mc_currency' => 'USD',
+                'item_number' => '99999',
+            ],
+            'get' => signedPayPalGet(16, 2),
+        ], 2);
+
+        expect($funds)->toHaveCount(1);
+        $warnings = array_values(array_filter($logger->calls, fn (array $c): bool => $c['method'] === 'warning'));
+        expect($warnings)->toHaveCount(1)
+            ->and($warnings[0]['params'][0])->toContain('PayPal item_number 99999 does not match invoice 16');
+    });
+
+    test('rejects a completed payment whose echoed invoice reference names a different invoice', function (): void {
         $apiAdmin = Mockery::mock();
         $apiAdmin->shouldReceive('invoice_transaction_get')->twice()->with(['id' => 42])->andReturn(
             ['invoice_id' => 16, 'type' => null, 'txn_id' => null, 'txn_status' => null, 'amount' => null, 'currency' => null, 'status' => 'received'],
@@ -1496,11 +1550,12 @@ describe('PayPal callback invoice binding', function (): void {
                 'txn_id' => 'TXN-9',
                 'mc_gross' => '120.00',
                 'mc_currency' => 'USD',
-                'item_number' => '99999',
+                'item_number' => '00042',
+                'invoice' => '99999',
             ],
             'get' => signedPayPalGet(16, 2),
         ], 2);
-    })->throws(Payment_Exception::class, 'PayPal item_number does not match invoice 16');
+    })->throws(Payment_Exception::class, 'PayPal invoice reference does not match invoice 16');
 
     test('accepts a completed payment whose echoed references match the invoice', function (): void {
         $funds = [];
