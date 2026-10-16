@@ -26,6 +26,8 @@ use Symfony\Component\Intl\Currencies;
 
 class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface, FOSSBilling\Payment\JsonWebhookAuthenticatorInterface
 {
+    private const array STRIPE_ZERO_DECIMAL_CURRENCIES = ['BIF', 'CLP', 'DJF', 'GNF', 'JPY', 'KMF', 'KRW', 'MGA', 'PYG', 'RWF', 'VND', 'VUV', 'XAF', 'XOF', 'XPF'];
+
     protected ?Pimple\Container $di = null;
 
     private StripeClient $stripe;
@@ -259,11 +261,22 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface, FOS
         return $amount / $divisor;
     }
 
+    /**
+     * Stripe's own decimal rules, not CLDR's: Stripe's zero-decimal currencies are sent as-is, three-decimal ones
+     * keep three digits, and every other currency (including COP, HUF, IDR, ISK, PKR and UGX, which CLDR lists with
+     * no decimals) is sent ×100. See https://docs.stripe.com/currencies.
+     */
     private function getCurrencyFractionDigits(string $currency): int
     {
         $currency = strtoupper($currency);
+        if (in_array($currency, self::STRIPE_ZERO_DECIMAL_CURRENCIES, true)) {
+            return 0;
+        }
+        if (Currencies::exists($currency) && Currencies::getFractionDigits($currency) === 3) {
+            return 3;
+        }
 
-        return Currencies::exists($currency) ? Currencies::getFractionDigits($currency) : 2;
+        return 2;
     }
 
     public function getInvoiceTitle(Invoice $invoice): string
