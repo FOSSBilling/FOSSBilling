@@ -935,16 +935,21 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface, FOS
             $this->di['em']->flush();
         }
 
-        $isInitialPayment = ($stripeInvoice->billing_reason ?? '') === 'subscription_create';
+        $billingReason = (string) ($stripeInvoice->billing_reason ?? '');
+        $isInitialPayment = $billingReason === 'subscription_create';
 
-        // Single DB fetch covers: (a) skip if already paid, (b) billing_reason fallback.
+        // The early link above already fetched the invoice, so this second find
+        // hits the identity map. It covers: (a) skip if already paid,
+        // (b) billing_reason fallback.
         if ($invoiceId) {
             $existingInvoice = $this->di['em']->getRepository(Invoice::class)->find((int) $invoiceId);
             if ($existingInvoice instanceof Invoice) {
                 // Skip if already paid — redirect flow may have processed it first. Only for the initial payment:
                 // the subscription metadata always points at the first invoice, so for a renewal it is paid by
-                // design and the payment goes to a renewal invoice below.
-                if ($existingInvoice->getStatus() === Invoice::STATUS_PAID && $isInitialPayment) {
+                // design and the payment goes to a renewal invoice below. An inconclusive (missing)
+                // billing_reason with a paid original is also skipped: minting a renewal there would
+                // double-credit a duplicate initial webhook.
+                if ($existingInvoice->getStatus() === Invoice::STATUS_PAID && ($isInitialPayment || $billingReason === '')) {
                     return false;
                 }
                 // Fallback: billing_reason inconclusive but original invoice still unpaid.
