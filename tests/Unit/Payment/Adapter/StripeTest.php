@@ -927,8 +927,8 @@ describe('handleInvoicePaymentSucceeded renewal after the first invoice was paid
         $tx->id = 62;
 
         $stripeInvoice = new stdClass();
-        $stripeInvoice->id = 'in_noreason';
-        $stripeInvoice->subscription = 'sub_noreason';
+        $stripeInvoice->id = 'in_missing_reason';
+        $stripeInvoice->subscription = 'sub_missing_reason';
         $stripeInvoice->amount_paid = 1500;
         $stripeInvoice->currency = 'usd';
 
@@ -936,7 +936,7 @@ describe('handleInvoicePaymentSucceeded renewal after the first invoice was paid
         $event->data = (object) ['object' => $stripeInvoice];
 
         $stripeSubscription = new stdClass();
-        $stripeSubscription->id = 'sub_noreason';
+        $stripeSubscription->id = 'sub_missing_reason';
         $stripeSubscription->metadata = (object) ['invoice_id' => '99', 'client_id' => '5'];
 
         $subscriptionsMock = Mockery::mock();
@@ -959,11 +959,11 @@ describe('handleInvoicePaymentSucceeded renewal after the first invoice was paid
         ['em' => $em, 'txRepo' => $txRepo, 'invoiceRepo' => $invoiceRepo] = buildEntityManagerMocks();
         $invoiceRepo->shouldReceive('find')->with(99)->andReturn($originalInvoice);
         $txRepo->shouldReceive('findProcessingOrProcessedByTxnId')
-            ->with('in_noreason', null, 62)
+            ->with('in_missing_reason', null, 62)
             ->andReturn(null);
 
         $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
-        expectStripeObjectLock($dbalMock, 'in_noreason', 1);
+        expectStripeObjectLock($dbalMock, 'in_missing_reason', 1);
         $di = container();
         $di['dbal'] = $dbalMock;
         $di['em'] = $em;
