@@ -941,8 +941,10 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface, FOS
         if ($invoiceId) {
             $existingInvoice = $this->di['em']->getRepository(Invoice::class)->find((int) $invoiceId);
             if ($existingInvoice instanceof Invoice) {
-                // Skip if already paid — redirect flow may have processed it first.
-                if ($existingInvoice->getStatus() === Invoice::STATUS_PAID) {
+                // Skip if already paid — redirect flow may have processed it first. Only for the initial payment:
+                // the subscription metadata always points at the first invoice, so for a renewal it is paid by
+                // design and the payment goes to a renewal invoice below.
+                if ($existingInvoice->getStatus() === Invoice::STATUS_PAID && $isInitialPayment) {
                     return false;
                 }
                 // Fallback: billing_reason inconclusive but original invoice still unpaid.
