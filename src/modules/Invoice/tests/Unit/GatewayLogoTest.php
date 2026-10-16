@@ -179,6 +179,49 @@ test('active gateways use the imported local image and fall back if it is missin
     expect($logo['logo'])->toBe(SYSTEM_URL . ($exists ? 'public/gateways/custom/' . $filename : 'public/gateways/default.png'));
 })->with([true, false]);
 
+test('active gateways keep the adapter display size for custom logos', function (array $adapterLogo, string $expectedHeight, string $expectedWidth): void {
+    $filename = str_repeat('a', 64) . '.png';
+    $gateway = createEntity(PayGateway::class, ['gateway' => 'Custom', 'customLogo' => $filename, 'acceptedCurrencies' => '["USD"]']);
+    $filesystem = Mockery::mock(Filesystem::class);
+    $filesystem->shouldReceive('exists')->byDefault()->andReturn(false);
+    $filesystem->shouldReceive('exists')->with(Path::join(PATH_ROOT, 'public', 'gateways', 'custom', $filename))->andReturn(true);
+    $filesystem->shouldReceive('exists')->with(Path::join(PATH_ROOT, 'public', 'gateways', 'custom', str_repeat('a', 64) . '.avif'))->andReturn(false);
+
+    $service = Mockery::mock(ServicePayGateway::class)->makePartial();
+    $di = container();
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $repo = Mockery::mock(PayGatewayRepository::class);
+    $repo->shouldReceive('findEnabledOrderedByIdDesc')->once()->andReturn([$gateway]);
+    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($repo);
+    $di['em'] = $em;
+    $di['http_client'] = new MockHttpClient();
+    $di['filesystem'] = $filesystem;
+    $service->setDi($di);
+    $service->shouldReceive('getPaymentAdapter')->once()->andReturn(new readonly class($adapterLogo) {
+        public function __construct(private array $logo)
+        {
+        }
+
+        public function getConfig(): array
+        {
+            return $this->logo === [] ? [] : ['logo' => $this->logo];
+        }
+    });
+    if ($adapterLogo === []) {
+        $filesystem->shouldReceive('exists')->with(Path::join(PATH_LIBRARY, 'Payment', 'Adapter', 'default.png'))->andReturn(false);
+        $filesystem->shouldReceive('exists')->with(Path::join(PATH_ROOT, 'public', 'gateways', 'default.png'))->andReturn(true);
+    }
+
+    $logo = $service->getActive([])[0]['logo'];
+    expect($logo['logo'])->toContain('public/gateways/custom/' . $filename)
+        ->and($logo['height'])->toBe($expectedHeight)
+        ->and($logo['width'])->toBe($expectedWidth);
+})->with([
+    'tall Stripe-style logo keeps its portrait box' => [['logo' => 'stripe.png', 'height' => '86px', 'width' => '65px'], '86px', '65px'],
+    'default Stripe logo keeps its configured size' => [['logo' => 'stripe.png', 'height' => '30px', 'width' => '65px'], '30px', '65px'],
+    'adapter without a logo falls back to the square default' => [[], '50px', '50px'],
+]);
+
 test('gateway image imports through a public redirect', function (): void {
     $bytes = gatewayLogoPng();
     $filesystem = Mockery::mock(Filesystem::class);
