@@ -197,7 +197,7 @@ test('active gateways keep the adapter display size for custom logos', function 
     $di['http_client'] = new MockHttpClient();
     $di['filesystem'] = $filesystem;
     $service->setDi($di);
-    $service->shouldReceive('getPaymentAdapter')->once()->andReturn(new class($adapterLogo) {
+    $service->shouldReceive('getPaymentAdapter')->once()->andReturn(new readonly class($adapterLogo) {
         public function __construct(private array $logo)
         {
         }
