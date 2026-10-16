@@ -52,7 +52,7 @@
                         <div class="col-12">
                             <label class="form-label" for="gateway_logo_file">{{ 'Custom Image'|trans }}</label>
                             <input class="form-control" id="gateway_logo_file" type="file" name="logo_file" accept=".png,.jpg,.jpeg,.webp,.avif,.svg">
-                            <div class="form-text">{{ 'PNG, JPEG, WebP, AVIF, or SVG, up to 2 MB. Leave empty to keep the current image. SVG sanitization may remove unsupported elements or styles.'|trans }}</div>
+                            <div class="form-text">{{ 'PNG, JPEG, WebP, AVIF, or SVG, up to 2 MB. Leave empty to keep the current image. SVG sanitization may remove unsupported elements or styles. Custom images are displayed at the configured logo size for this gateway.'|trans }}</div>
                             <label class="form-label mt-2" for="gateway_logo_url">{{ 'Or Import from URL'|trans }}</label>
                             <input class="form-control" id="gateway_logo_url" type="url" name="logo_url" maxlength="2048" placeholder="https://example.com/payment-methods.png">
                             <div class="form-text">{{ 'Use a publicly accessible image URL. Images are saved locally and preserved during updates.'|trans }}</div>

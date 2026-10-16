@@ -396,7 +396,10 @@ class ServicePayGateway implements InjectionAwareInterface
                 }
 
                 if (($customLogoUrl = $this->getCustomLogoUrl($gtw)) !== null) {
-                    $gateway['logo'] = ['logo' => $customLogoUrl, 'avif' => $this->getCustomLogoUrl($gtw, true), 'height' => '50px', 'width' => '150px'];
+                    // Custom images reuse the adapter's display size.
+                    $height = $gateway['logo']['height'] ?? '50px';
+                    $width = $gateway['logo']['width'] ?? '150px';
+                    $gateway['logo'] = ['logo' => $customLogoUrl, 'avif' => $this->getCustomLogoUrl($gtw, true), 'height' => $height, 'width' => $width];
                 }
 
                 $result[] = $gateway;
