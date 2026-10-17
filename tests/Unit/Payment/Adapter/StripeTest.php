@@ -2664,9 +2664,9 @@ describe('processTransaction payload handling', function (): void {
 });
 
 describe('getAmountInMinorUnits follows Stripe currency rules', function (): void {
-    // Stripe's zero-decimal list is "BIF CLP DJF GNF JPY KMF KRW MGA PYG RWF UGX VND VUV XAF XOF XPF", and ISK and UGX must
-    // be sent as two-decimal values (https://docs.stripe.com/currencies). Symfony Intl reports COP, HUF, IDR, ISK, PKR, UGX
-    // and others with no decimals, but Stripe expects them ×100.
+    // Stripe lists "BIF CLP DJF GNF JPY KMF KRW MGA PYG RWF UGX VND VUV XAF XOF XPF" as zero-decimal, but its
+    // special-cases row requires UGX charges ×100, like ISK (https://docs.stripe.com/currencies). Symfony Intl
+    // reports COP, HUF, IDR, ISK, PKR, UGX and others with no decimals, but Stripe expects them ×100.
     test('sends the invoice total in the unit Stripe expects', function (string $currency, int $expected): void {
         $invoice = createEntity(Invoice::class);
         $invoice->id = 5;
