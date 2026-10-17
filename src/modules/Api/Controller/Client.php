@@ -20,7 +20,6 @@ use Box\Mod\Staff\Entity\Admin;
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
 use FOSSBilling\Http\ApiResponseFactory;
-use FOSSBilling\Http\ResponseFactory;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Security\AuthenticationRequiredException;
 use FOSSBilling\Security\EmailValidationRequiredException;
@@ -228,7 +227,7 @@ class Client implements InjectionAwareInterface
 
         $this->checkUpdateFinalization($role, $class, $method);
         $this->checkRateLimit($role, $method);
-        $this->checkGuestClientAuthentication($role, $method, $params);
+        $this->checkGuestAuthentication($role, $method, $params);
 
         $api = $this->di['api_identity']($role);
         unset($params['CSRFToken']);
@@ -238,34 +237,19 @@ class Client implements InjectionAwareInterface
             return $this->sendResponse($result);
         }
 
-        $isAjax = $this->di['request']->isXmlHttpRequest();
-        $isLoginMethod = ($method === 'login');
-        $isStaffLogin = ($class === 'staff');
-        $isClientLogin = ($class === 'client');
-
-        if ($isLoginMethod && !$isAjax && ($isStaffLogin || $isClientLogin)) {
-            if ($isStaffLogin) {
-                $redirectUrl = $this->di['url']->adminLink('');
-            } else {
-                $redirectUrl = $this->di['url']->link('');
-            }
-
-            return (new ResponseFactory())->redirect($redirectUrl);
-        }
-
         return $this->renderJson($result);
     }
 
-    /** Login and signup can both replace the browser's client identity. */
-    private function checkGuestClientAuthentication(string $role, string $method, array $params): void
+    /** Login, signup, and staff login can all replace the browser's authenticated identity. */
+    private function checkGuestAuthentication(string $role, string $method, array $params): void
     {
-        if ($role !== 'guest' || !in_array(strtolower($method), ['client_login', 'client_create'], true)) {
+        if ($role !== 'guest' || !in_array(strtolower($method), ['client_login', 'client_create', 'staff_login'], true)) {
             return;
         }
 
         $request = $this->di['request'];
         if (!$request->isMethod('POST')) {
-            throw new \FOSSBilling\InformationException('Client authentication requires POST', null, 405);
+            throw new \FOSSBilling\InformationException('Authentication requires POST', null, 405);
         }
 
         // Use the pre-login session nonce, even when general API CSRF protection is disabled.

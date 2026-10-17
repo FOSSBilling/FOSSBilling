@@ -463,7 +463,7 @@ test('guest authentication rejects unsafe requests before dispatch and preserves
         ->and($controller->renderedException->getCode())->toBe($code)
         ->and($controller->getDi()['session']->get('client_id'))->toBe(123);
 })->with(function (): iterable {
-    foreach ([['client', 'login'], ['CLIENT', 'LoGiN'], ['client', 'create'], ['CLIENT', 'CrEaTe']] as [$class, $method]) {
+    foreach ([['client', 'login'], ['CLIENT', 'LoGiN'], ['client', 'create'], ['CLIENT', 'CrEaTe'], ['staff', 'login'], ['STAFF', 'LoGiN']] as [$class, $method]) {
         $credentials = ['email' => 'attacker@example.test', 'password' => 'attacker-password'];
         $valid = $credentials + ['CSRFToken' => 'browser-nonce'];
         $cases = [
@@ -484,8 +484,8 @@ test('guest authentication rejects unsafe requests before dispatch and preserves
     }
 });
 
-test('guest authentication accepts session-bound form JSON and header tokens', function (string $method, string $encoding, bool $originHeaders): void {
-    $params = ['email' => 'client@example.test', 'password' => 'legitimate-password'];
+test('guest authentication accepts session-bound form JSON and header tokens', function (string $class, string $method, string $encoding, bool $originHeaders): void {
+    $params = ['email' => $class === 'staff' ? 'staff@example.test' : 'client@example.test', 'password' => 'legitimate-password'];
     $headers = $originHeaders ? ['Origin' => Request::create(SYSTEM_URL)->getSchemeAndHttpHost(), 'Sec-Fetch-Site' => 'same-origin'] : [];
     if ($encoding === 'header') {
         $headers['X-CSRF-TOKEN'] = 'browser-nonce';
@@ -493,22 +493,22 @@ test('guest authentication accepts session-bound form JSON and header tokens', f
         $params['CSRFToken'] = 'browser-nonce';
     }
     $request = $encoding === 'json'
-        ? Request::create('/api/guest/client/' . $method, 'POST', [], [], [], ['CONTENT_TYPE' => 'application/json'], json_encode($params, JSON_THROW_ON_ERROR))
-        : Request::create('/api/guest/client/' . $method, 'POST', $params);
+        ? Request::create('/api/guest/' . $class . '/' . $method, 'POST', [], [], [], ['CONTENT_TYPE' => 'application/json'], json_encode($params, JSON_THROW_ON_ERROR))
+        : Request::create('/api/guest/' . $class . '/' . $method, 'POST', $params);
     $request->headers->add($headers);
     $controller = createGuestAuthenticationController($request);
     $dispatcher = Mockery::mock();
     unset($params['CSRFToken']);
-    $dispatcher->shouldReceive('dispatch')->once()->with(Mockery::type('object'), 'client_' . $method, $params)->andReturn(['ok' => true]);
+    $dispatcher->shouldReceive('dispatch')->once()->with(Mockery::type('object'), $class . '_' . $method, $params)->andReturn(['ok' => true]);
     $controller->getDi()['api_dispatcher'] = $dispatcher;
     $app = Mockery::mock(Box_App::class);
     $app->shouldReceive('getRequest')->andReturn($request);
 
-    $controller->post_method($app, 'guest', 'client', $method);
+    $controller->post_method($app, 'guest', $class, $method);
 
     expect($controller->renderedException)->toBeNull()
         ->and($controller->renderedData)->toBe(['ok' => true]);
-})->with(['login', 'create'])->with(['form', 'json', 'header'])->with([true, false]);
+})->with([['client', 'login'], ['client', 'create'], ['staff', 'login']])->with(['form', 'json', 'header'])->with([true, false]);
 
 test('guest login cannot take its nonce or credentials from the query string', function (): void {
     $request = Request::create('/api/guest/client/login?CSRFToken=browser-nonce&email=attacker&password=attacker', 'POST');
@@ -538,4 +538,5 @@ test('shipped client authentication forms submit the pre-login session nonce', f
     ['Page/templates/client/mod_page_signup.html.twig', 1],
     ['Orderbutton/templates/client/mod_orderbutton_client.html.twig', 2],
     ['Embed/templates/client/mod_embed_loginform.html.twig', 1],
+    ['Staff/templates/admin/mod_staff_login.html.twig', 1],
 ]);
