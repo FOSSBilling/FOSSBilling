@@ -22,11 +22,22 @@ use FOSSBilling\Doctrine\EntityManagerFactory;
 use FOSSBilling\Doctrine\NamedLock;
 use FOSSBilling\Period;
 use Stripe\StripeClient;
-use Symfony\Component\Intl\Currencies;
 
 class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface, FOSSBilling\Payment\JsonWebhookAuthenticatorInterface
 {
-    private const array STRIPE_ZERO_DECIMAL_CURRENCIES = ['BIF', 'CLP', 'DJF', 'GNF', 'JPY', 'KMF', 'KRW', 'MGA', 'PYG', 'RWF', 'VND', 'VUV', 'XAF', 'XOF', 'XPF'];
+    /**
+     * Stripe's zero-decimal currencies for charges (https://docs.stripe.com/currencies).
+     * UGX is on Stripe's published zero-decimal list, but its special-case row requires charge amounts ×100,
+     * so it is deliberately excluded here. ISK was never on the list and likewise uses two decimals for
+     * charges; HUF and TWD are zero-decimal for payouts only, so they stay ×100 here. This helper is
+     * charge-side only (PaymentIntents, Prices) and must not be reused for payouts.
+     */
+    private const array STRIPE_ZERO_DECIMAL_CHARGE_CURRENCIES = ['BIF', 'CLP', 'DJF', 'GNF', 'JPY', 'KMF', 'KRW', 'MGA', 'PYG', 'RWF', 'VND', 'VUV', 'XAF', 'XOF', 'XPF'];
+
+    /**
+     * Stripe's three-decimal currencies for charges (https://docs.stripe.com/currencies).
+     */
+    private const array STRIPE_THREE_DECIMAL_CURRENCIES = ['BHD', 'JOD', 'KWD', 'OMR', 'TND'];
 
     protected ?Pimple\Container $di = null;
 
@@ -262,17 +273,18 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface, FOS
     }
 
     /**
-     * Stripe's own decimal rules, not CLDR's: Stripe's zero-decimal currencies are sent as-is, three-decimal ones
-     * keep three digits, and every other currency (including COP, HUF, IDR, ISK, PKR and UGX, which CLDR lists with
-     * no decimals) is sent ×100. See https://docs.stripe.com/currencies.
+     * Stripe's own decimal rules, not CLDR's: the currencies in STRIPE_ZERO_DECIMAL_CHARGE_CURRENCIES are sent
+     * as-is, the ones in STRIPE_THREE_DECIMAL_CURRENCIES keep three digits, and every other currency
+     * (including COP, HUF, IDR, ISK, PKR and UGX, which CLDR lists with no decimals) is sent ×100.
+     * See https://docs.stripe.com/currencies.
      */
     private function getCurrencyFractionDigits(string $currency): int
     {
         $currency = strtoupper($currency);
-        if (in_array($currency, self::STRIPE_ZERO_DECIMAL_CURRENCIES, true)) {
+        if (in_array($currency, self::STRIPE_ZERO_DECIMAL_CHARGE_CURRENCIES, true)) {
             return 0;
         }
-        if (Currencies::exists($currency) && Currencies::getFractionDigits($currency) === 3) {
+        if (in_array($currency, self::STRIPE_THREE_DECIMAL_CURRENCIES, true)) {
             return 3;
         }
 

@@ -2664,9 +2664,9 @@ describe('processTransaction payload handling', function (): void {
 });
 
 describe('getAmountInMinorUnits follows Stripe currency rules', function (): void {
-    // Stripe's zero-decimal list is "BIF CLP DJF GNF JPY KMF KRW MGA PYG RWF UGX VND VUV XAF XOF XPF", and ISK and UGX must
-    // be sent as two-decimal values (https://docs.stripe.com/currencies). Symfony Intl reports COP, HUF, IDR, ISK, PKR, UGX
-    // and others with no decimals, but Stripe expects them ×100.
+    // Stripe lists "BIF CLP DJF GNF JPY KMF KRW MGA PYG RWF UGX VND VUV XAF XOF XPF" as zero-decimal, but its
+    // special-cases row requires UGX charges ×100, like ISK (https://docs.stripe.com/currencies). Symfony Intl
+    // reports COP, HUF, IDR, ISK, PKR, UGX and others with no decimals, but Stripe expects them ×100.
     test('sends the invoice total in the unit Stripe expects', function (string $currency, int $expected): void {
         $invoice = createEntity(Invoice::class);
         $invoice->id = 5;
@@ -2683,11 +2683,30 @@ describe('getAmountInMinorUnits follows Stripe currency rules', function (): voi
         'USD' => ['USD', 100000],
         'JPY (zero-decimal)' => ['JPY', 1000],
         'KWD (three-decimal)' => ['KWD', 1000000],
+        'BHD (three-decimal)' => ['BHD', 1000000],
         'COP' => ['COP', 100000],
         'HUF' => ['HUF', 100000],
         'IDR' => ['IDR', 100000],
         'ISK (two-decimal representation)' => ['ISK', 100000],
         'PKR' => ['PKR', 100000],
         'UGX (two-decimal representation)' => ['UGX', 100000],
+        'AFN' => ['AFN', 100000],
+        'YER' => ['YER', 100000],
+        'TWD (two-decimal for charges)' => ['TWD', 100000],
+        'unknown code falls back to two decimals' => ['XXX', 100000],
+        'lowercase USD' => ['usd', 100000],
+        'lowercase JPY' => ['jpy', 1000],
+    ]);
+
+    test('reads Stripe amounts back in the same unit', function (string $currency, int $minorUnits, float $expected): void {
+        expect(invokePrivateMethod($this->adapter, 'getAmountFromMinorUnits', [$minorUnits, $currency]))->toBe($expected);
+    })->with([
+        'USD' => ['USD', 100000, 1000.0],
+        'JPY (zero-decimal)' => ['JPY', 1000, 1000.0],
+        'KWD (three-decimal)' => ['KWD', 1000000, 1000.0],
+        'HUF' => ['HUF', 100000, 1000.0],
+        'UGX (two-decimal representation)' => ['UGX', 100000, 1000.0],
+        'unknown code falls back to two decimals' => ['XXX', 100000, 1000.0],
+        'lowercase currency' => ['usd', 100000, 1000.0],
     ]);
 });
