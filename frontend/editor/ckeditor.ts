@@ -102,7 +102,7 @@ window.FOSSBilling.editor.registerAdapter('ckeditor', {
 
     const config = { ...editorOptions, attachTo: element };
     if (initialData !== undefined) {
-      config.root = { ...(config.root || {}), initialData };
+      config.root = { ...config.root, initialData };
     }
 
     return FOSSBillingCKEditor.create(config);
