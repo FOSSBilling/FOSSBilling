@@ -563,6 +563,8 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $ticket = $this->getService()->getTicketById((int) $data['ticket_id']);
 
+        $data['note'] = \FOSSBilling\Tools::sanitizePlainText($data['note']);
+
         return $this->getService()->noteCreate($ticket, $this->getIdentity(), $data['note']);
     }
 
