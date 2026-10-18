@@ -924,6 +924,27 @@ test('note create strips html from the note content', function (): void {
     expect($result)->toBeInt();
 });
 
+test('note create rejects notes that are empty after sanitization', function (): void {
+    $api = apiEndpoint(new Box\Mod\Support\Api\Admin());
+    $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
+    $serviceMock->shouldNotReceive('noteCreate');
+    $serviceMock->shouldReceive('getTicketById')->atLeast()->once()
+        ->andReturn(new SupportTicket());
+
+    $di = container();
+    $api->setDi($di);
+
+    $api->setService($serviceMock);
+    $api->setIdentity(\Tests\Helpers\admin());
+
+    $data = [
+        'ticket_id' => 1,
+        'note' => '<b></b>',
+    ];
+
+    expect(fn (): int => $api->note_create($data))->toThrow(FOSSBilling\InformationException::class);
+});
+
 test('note delete', function (): void {
     $api = apiEndpoint(new Box\Mod\Support\Api\Admin());
     $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
