@@ -18,7 +18,6 @@ namespace Box\Mod\Api\Controller;
 use FOSSBilling\Config;
 use FOSSBilling\Environment;
 use FOSSBilling\Http\ApiResponseFactory;
-use FOSSBilling\Http\ResponseFactory;
 use FOSSBilling\InjectionAwareInterface;
 use FOSSBilling\Security\AuthenticationRequiredException;
 use FOSSBilling\Security\EmailValidationRequiredException;
@@ -228,6 +227,7 @@ class Client implements InjectionAwareInterface
 
         $this->checkUpdateFinalization($role, $class, $method);
         $this->checkRateLimit($role, $method);
+        $this->checkGuestAuthentication($role, $method, $params);
 
         $api = $this->di['api_identity']($role);
         unset($params['CSRFToken']);
@@ -237,22 +237,35 @@ class Client implements InjectionAwareInterface
             return $this->sendResponse($result);
         }
 
-        $isAjax = $this->di['request']->isXmlHttpRequest();
-        $isLoginMethod = ($method === 'login');
-        $isStaffLogin = ($class === 'staff');
-        $isClientLogin = ($class === 'client');
+        return $this->renderJson($result);
+    }
 
-        if ($isLoginMethod && !$isAjax && ($isStaffLogin || $isClientLogin)) {
-            if ($isStaffLogin) {
-                $redirectUrl = $this->di['url']->adminLink('');
-            } else {
-                $redirectUrl = $this->di['url']->link('');
-            }
-
-            return (new ResponseFactory())->redirect($redirectUrl);
+    /** Login, signup, and staff login can all replace the browser's authenticated identity. */
+    private function checkGuestAuthentication(string $role, string $method, array $params): void
+    {
+        if ($role !== 'guest' || !in_array(strtolower($method), ['client_login', 'client_create', 'staff_login'], true)) {
+            return;
         }
 
-        return $this->renderJson($result);
+        $request = $this->di['request'];
+        if (!$request->isMethod('POST')) {
+            throw new \FOSSBilling\InformationException('Authentication requires POST', null, 405);
+        }
+
+        // Use the pre-login session nonce, even when general API CSRF protection is disabled.
+        // Query parameters are deliberately excluded from the token sources.
+        $token = $params['CSRFToken'] ?? $request->headers->get('X-CSRF-TOKEN');
+        $sessionToken = $this->di['session']->get('csrf_token');
+        if (!is_string($token) || !is_string($sessionToken) || $sessionToken === '' || !hash_equals($sessionToken, $token)) {
+            throw new \FOSSBilling\InformationException('CSRF token invalid', null, 403);
+        }
+
+        $origin = $request->headers->get('Origin');
+        $expectedOrigin = \Symfony\Component\HttpFoundation\Request::create(SYSTEM_URL)->getSchemeAndHttpHost();
+        if (($origin !== null && strtolower($origin) !== strtolower($expectedOrigin))
+            || $request->headers->get('Sec-Fetch-Site') === 'cross-site') {
+            throw new \FOSSBilling\InformationException('Invalid request origin', null, 403);
+        }
     }
 
     private function getAuth(): array

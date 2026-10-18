@@ -80,17 +80,22 @@ describe('client profile', () => {
       expect(response.body.result).to.eq(true);
     });
 
-    cy.request({
-      method: 'POST',
-      url: '/api/guest/client/login',
-      body: {
-        email: client.email,
-        password: oldPassword,
-      },
-      failOnStatusCode: false,
-    }).then((response) => {
-      expect(response.body.result).to.eq(null);
-      expect(response.body.error.message).to.eq('Please check your login details.');
+    // Guest logins require the pre-login session nonce, so submit the
+    // double-submit cookie value like the real login form does.
+    cy.getCookie('fossbilling_csrf').then((csrfCookie) => {
+      cy.request({
+        method: 'POST',
+        url: '/api/guest/client/login',
+        body: {
+          email: client.email,
+          password: oldPassword,
+          CSRFToken: csrfCookie.value,
+        },
+        failOnStatusCode: false,
+      }).then((response) => {
+        expect(response.body.result).to.eq(null);
+        expect(response.body.error.message).to.eq('Please check your login details.');
+      });
     });
 
     cy.clearCookies();
