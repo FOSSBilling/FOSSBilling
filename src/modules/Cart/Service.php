@@ -949,7 +949,7 @@ class Service implements InjectionAwareInterface
                     $orders[] = $order;
 
                     // Reserve promo capacity at order creation time.
-                    if ($promo instanceof Promo && $promoProductService !== null) {
+                    if ($promo instanceof Promo) {
                         $promoProductService->reservePromoForOrder($promo, $order);
                         $reservedOrderIds[] = $order->getId();
                         ++$reservedCount;
@@ -1020,7 +1020,7 @@ class Service implements InjectionAwareInterface
                     }
                 }
 
-                if ($promo instanceof Promo && $promoProductService !== null) {
+                if ($promo instanceof Promo) {
                     $redemptionStatus = $invoiceModel instanceof \Model_Invoice
                         && $invoiceModel->status === \Model_Invoice::STATUS_UNPAID
                         ? \Box\Mod\Product\Entity\PromoRedemption::STATUS_RESERVED
