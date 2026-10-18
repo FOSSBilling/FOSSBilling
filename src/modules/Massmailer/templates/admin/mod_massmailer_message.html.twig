@@ -127,7 +127,13 @@
                                         <h5 class="card-title mb-1" id="preview-title"></h5>
                                         <p class="text-secondary mb-0">{{ 'Rendered message body using the current template and recipient filter context.'|trans }}</p>
                                     </div>
-                                    <div class="card-body" id="preview-content"></div>
+                                    <div class="card-body">
+                                        <iframe
+                                            id="preview-content"
+                                            style="width: 100%; min-height: 400px; border: none; display: block; background: white;"
+                                            sandbox="allow-popups"
+                                        ></iframe>
+                                    </div>
                                 </div>
                             </div>
                             <div class="tab-pane fade" id="tab-recipients" role="tabpanel">
@@ -176,7 +182,7 @@
                 document.querySelector('#recipients').classList.remove('d-none');
                 document.querySelector('#preview').classList.remove('d-none');
                 document.querySelector('#preview-title').textContent = result.subject;
-                document.querySelector('#preview-content').innerHTML = result.content;
+                document.querySelector('#preview-content').srcdoc = result.content;
                 document.getElementById('recipient-list').innerHTML = '';
 
                 result.recipients.forEach(function(recipient) {
