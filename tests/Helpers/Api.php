@@ -83,6 +83,7 @@ class ApiClient
             // GET requests carrying a nonce (e.g. guarded cart mutations) need
             // it in the query string; the payload is otherwise unused on GET.
             $url .= (str_contains($url, '?') ? '&' : '?') . http_build_query($payload);
+            curl_setopt($ch, CURLOPT_URL, $url);
         }
 
         $output = curl_exec($ch);
