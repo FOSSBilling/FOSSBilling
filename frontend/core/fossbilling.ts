@@ -175,6 +175,14 @@ import {
 
   function registerEditorInstance(element, adapter, options, rawEditor) {
     const editor = normalizeEditor(element, rawEditor);
+    // Normal destruction must also drop the crash-recovery bookkeeping, so
+    // the page-level error registry does not retain the editor.
+    const destroy = editor.destroy;
+    editor.destroy = () => {
+      crashRecords.get(element)?.off?.();
+      crashRecords.delete(element);
+      return destroy();
+    };
 
     syncElementData(element, editor);
     editor.onChange(() => syncElementData(element, editor));
@@ -273,6 +281,15 @@ import {
     writeElementData(element, data);
 
     const rawEditor = await record.adapter.create(element, { ...record.options, initialData: data });
+
+    // Reuse the existing wrapper so references callers hold stay valid;
+    // replaceRaw() re-attaches their change listeners to the new instance.
+    if (previous) {
+      previous.replaceRaw(rawEditor);
+      syncElementData(element, previous);
+      attachCrashRecovery(element, record.adapter, record.options, rawEditor);
+      return previous;
+    }
 
     return registerEditorInstance(element, record.adapter, record.options, rawEditor);
   }
