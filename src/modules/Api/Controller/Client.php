@@ -240,15 +240,25 @@ class Client implements InjectionAwareInterface
         return $this->renderJson($result);
     }
 
-    /** Login, signup, and staff login can all replace the browser's authenticated identity. */
+    /**
+     * Login, signup, and staff login replace the browser's authenticated identity
+     * and require POST, so their nonce never travels in the query string. Cart
+     * changes act on the browser's session-bound cart and accept GET, reading the
+     * nonce from the query like _checkCSRFToken() does. All require the session
+     * nonce and a same-origin context.
+     */
     private function checkGuestAuthentication(string $role, string $method, array $params): void
     {
-        if ($role !== 'guest' || !in_array(strtolower($method), ['client_login', 'client_create', 'staff_login'], true)) {
+        if ($role !== 'guest' || !in_array(strtolower($method), [
+            'client_login', 'client_create', 'staff_login',
+            'cart_add_item', 'cart_remove_item', 'cart_apply_promo',
+            'cart_remove_promo', 'cart_reset', 'cart_set_currency',
+        ], true)) {
             return;
         }
 
         $request = $this->di['request'];
-        if (!$request->isMethod('POST')) {
+        if (in_array(strtolower($method), ['client_login', 'client_create', 'staff_login'], true) && !$request->isMethod('POST')) {
             throw new \FOSSBilling\InformationException('Authentication requires POST', null, 405);
         }
 
