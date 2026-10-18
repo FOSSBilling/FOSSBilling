@@ -1,5 +1,13 @@
 // @ts-nocheck -- Runtime DOM/widget integration; converted to TS without changing behavior.
 import { formatCurrencyAmount } from './currency-format.mts';
+import {
+  EDITOR_CRASH_LIMIT,
+  EDITOR_CRASH_WINDOW_MS,
+  normalizeEditor,
+  readElementData,
+  recordEditorCrash,
+  writeElementData,
+} from './editor-helpers.mts';
 
 /**
  * FOSSBilling browser runtime.
@@ -14,6 +22,9 @@ import { formatCurrencyAmount } from './currency-format.mts';
   const editorsByElement = new WeakMap();
   const editorsByName = new Map();
   const adapters = new Map();
+  // Per-element crash-recovery bookkeeping: adapter, options, crash history,
+  // and the unregister function for the adapter's error reporting.
+  const crashRecords = new WeakMap();
   const cookieNames = Object.freeze({
     locale: 'fossbilling_locale',
     timezone: 'fossbilling_timezone',
@@ -158,58 +169,112 @@ import { formatCurrencyAmount } from './currency-format.mts';
 
   FOSSBilling.initTimezone = initTimezone;
 
-  function getEditorName(element) {
-    return element.getAttribute('name') || element.id || null;
-  }
-
   function syncElementData(element, editor) {
-    const data = editor.getData();
-    if ('value' in element) {
-      element.value = data;
-    } else {
-      element.textContent = data;
-    }
+    writeElementData(element, editor.getData());
   }
 
-  function normalizeEditor(element, editor) {
-    if (!editor || typeof editor.getData !== 'function' || typeof editor.setData !== 'function') {
-      throw new Error('Editor adapters must return getData() and setData() methods.');
+  function registerEditorInstance(element, adapter, options, rawEditor) {
+    const editor = normalizeEditor(element, rawEditor);
+
+    syncElementData(element, editor);
+    editor.onChange(() => syncElementData(element, editor));
+
+    editorsByElement.set(element, editor);
+    if (editor.name) {
+      editorsByName.set(editor.name, editor);
     }
 
-    return {
-      raw: editor.raw || editor,
-      getData: () => editor.getData(),
-      setData: (value) => editor.setData(value),
-      focus: () => {
-        if (typeof editor.focus === 'function') {
-          editor.focus();
-          return;
-        }
+    element.editor = editor;
+    element.setAttribute('data-editor', 'true');
 
-        if (editor.editing?.view?.focus) {
-          editor.editing.view.focus();
-        }
-      },
-      destroy: () => {
-        if (typeof editor.destroy === 'function') {
-          return editor.destroy();
-        }
+    attachCrashRecovery(element, adapter, options, rawEditor);
 
-        return Promise.resolve();
-      },
-      onChange: (callback) => {
-        if (typeof editor.onChange === 'function') {
-          return editor.onChange(callback);
-        }
+    return editor;
+  }
 
-        if (editor.model?.document?.on) {
-          editor.model.document.on('change:data', callback);
-        }
-      },
-      element,
-      name: getEditorName(element),
-      required: element.dataset.editorRequired === 'true',
+  function attachCrashRecovery(element, adapter, options, rawEditor) {
+    if (typeof adapter.onFatalError !== 'function') {
+      return;
+    }
+
+    const previous = crashRecords.get(element);
+    previous?.off?.();
+
+    const record = {
+      adapter,
+      options,
+      // Crash history survives recreations of the same element; a fresh
+      // registration after a permanent lock starts over.
+      times: previous && !previous.locked ? previous.times : [],
+      recovering: false,
+      locked: false,
+      off: null,
     };
+
+    record.off = adapter.onFatalError(rawEditor, (error) => {
+      handleFatalError(element, error);
+    });
+
+    crashRecords.set(element, record);
+  }
+
+  function handleFatalError(element, error) {
+    const record = crashRecords.get(element);
+    if (!record || record.recovering || record.locked) {
+      return;
+    }
+
+    const decision = recordEditorCrash(record.times, Date.now(), {
+      limit: EDITOR_CRASH_LIMIT,
+      windowMs: EDITOR_CRASH_WINDOW_MS,
+    });
+    record.times = decision.times;
+
+    if (!decision.shouldRecover) {
+      record.locked = true;
+      record.off?.();
+      record.adapter.lock?.(editorsByElement.get(element)?.raw);
+      console.error(
+        'FOSSBilling editor crashed repeatedly and is now read-only. Its content is kept in the form field - reload the page to get a fresh editor.',
+        error,
+      );
+      return;
+    }
+
+    record.recovering = true;
+    recreateEditor(element, record)
+      .catch((recoveryError) => {
+        record.locked = true;
+        record.off?.();
+        console.error(
+          'FOSSBilling editor recovery failed. Its last content is kept in the form field - reload the page to get a fresh editor.',
+          recoveryError,
+        );
+      })
+      .finally(() => {
+        record.recovering = false;
+      });
+  }
+
+  async function recreateEditor(element, record) {
+    // Read the content from the synced form element, not editor.getData():
+    // the element holds the last known-good copy of the content.
+    const previous = editorsByElement.get(element);
+    const data = readElementData(element);
+
+    try {
+      await previous?.raw?.destroy?.();
+    } catch (destroyError) {
+      console.error('FOSSBilling editor could not destroy the crashed instance:', destroyError);
+    }
+
+    // The destroyed editor may write its own state back to the element
+    // (updateSourceElementOnDestroy), so restore the captured copy.
+    writeElementData(element, data);
+
+    const rawEditor = await record.adapter.create(element, { ...record.options, initialData: data });
+
+    return registerEditorInstance(element, record.adapter, record.options, rawEditor);
   }
 
   FOSSBilling.editor = Object.assign({
@@ -238,20 +303,8 @@ import { formatCurrencyAmount } from './currency-format.mts';
       }
 
       const rawEditor = await adapter.create(element, options);
-      const editor = normalizeEditor(element, rawEditor);
 
-      syncElementData(element, editor);
-      editor.onChange(() => syncElementData(element, editor));
-
-      editorsByElement.set(element, editor);
-      if (editor.name) {
-        editorsByName.set(editor.name, editor);
-      }
-
-      element.editor = editor;
-      element.setAttribute('data-editor', 'true');
-
-      return editor;
+      return registerEditorInstance(element, adapter, options, rawEditor);
     },
 
     init(selector, options = {}) {

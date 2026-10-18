@@ -311,14 +311,6 @@ class FOSSBillingExtension
                 <script>
                     FOSSBilling.ready(function () {
                         FOSSBilling.editor.init({$selectorJson}, {$optionsJson});
-
-                        if (document.documentElement.getAttribute('data-bs-theme') === 'dark' || localStorage.getItem('theme') === 'dark') {
-                            setTimeout(function () {
-                                document.querySelectorAll('.ck-editor__main').forEach(function (element) {
-                                    element.style.color = '#1d273b';
-                                });
-                            }, 1000);
-                        }
                     });
                 </script>
                 HTML,
