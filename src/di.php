@@ -223,9 +223,12 @@ $di['session'] = function () use ($di) {
         'domain' => $currentCookieParams['domain'],
         'secure' => Config::getProperty('security.force_https', true) || $di['request']->isSecure(),
         'httponly' => true,
+        // Non-strict mode still pins an explicit SameSite: an unset attribute
+        // leaves the behavior to each browser's default, and some (Safari) send
+        // cookies on cross-site requests when it is missing.
         'samesite' => Config::getProperty('security.mode', 'strict') === 'strict'
             ? 'Strict'
-            : $currentCookieParams['samesite'],
+            : 'Lax',
     ];
     $storage = new NativeSessionStorage([
         'cache_limiter' => '',
