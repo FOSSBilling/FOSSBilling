@@ -57,8 +57,11 @@ class ApiClient
 
         $url = rtrim($baseUrl, '/') . '/api/' . ltrim($endpoint, '/');
 
-        if (in_array(strtolower(trim($endpoint, '/')), ['guest/client/login', 'guest/client/create'], true)
-            && !isset($payload['CSRFToken'])) {
+        // Guarded guest endpoints (login, signup, staff login, and the
+        // session-bound cart) require the pre-login nonce; the dispatcher strips
+        // the parameter for calls that ignore it, so attach it to every guest
+        // request rather than keep a second copy of the guard's endpoint list.
+        if (str_starts_with(trim($endpoint, '/'), 'guest/') && !isset($payload['CSRFToken'])) {
             $payload['CSRFToken'] = self::getPreLoginToken($baseUrl);
         }
 
@@ -76,6 +79,10 @@ class ApiClient
         if (strcasecmp($method, 'POST') === 0) {
             curl_setopt($ch, CURLOPT_POST, true);
             curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($payload));
+        } elseif (str_starts_with(trim($endpoint, '/'), 'guest/') && $payload !== []) {
+            // GET requests carrying a nonce (e.g. guarded cart mutations) need
+            // it in the query string; the payload is otherwise unused on GET.
+            $url .= (str_contains($url, '?') ? '&' : '?') . http_build_query($payload);
         }
 
         $output = curl_exec($ch);
