@@ -41,13 +41,22 @@ Cypress.Commands.add('testClient', (overrides = {}) => {
     password: overrides.password || defaultClientPassword,
   };
 
-  return cy.request({
-    method: 'POST',
-    url: '/api/guest/client/create',
-    body: {
-      ...client,
-      password_confirm: client.password,
-    },
+  // Signup is a guest identity-replacing call and requires the pre-login
+  // session nonce, so establish the anonymous session first and reuse the
+  // nonce from the rendered login form.
+  return cy.request('/login').then((loginPage) => {
+    const csrfToken = loginPage.body.match(/name="CSRFToken" value="([^"]+)"/)?.[1];
+    expect(csrfToken, 'pre-login CSRF token').to.be.a('string');
+
+    return cy.request({
+      method: 'POST',
+      url: '/api/guest/client/create',
+      body: {
+        ...client,
+        password_confirm: client.password,
+        CSRFToken: csrfToken,
+      },
+    });
   }).then((response) => {
     expect(response.status).to.eq(200);
     expect(response.body.error).to.eq(null);

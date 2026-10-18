@@ -80,16 +80,22 @@ describe('client profile', () => {
       expect(response.body.result).to.eq(true);
     });
 
-    // Guest logins require the pre-login session nonce, so submit the
-    // double-submit cookie value like the real login form does.
-    cy.getCookie('fossbilling_csrf').then((csrfCookie) => {
+    // Changing a password invalidates every session including the current
+    // one, so the old browser session can no longer pass CSRF validation.
+    // Run the stale-password login from a fresh anonymous session with its
+    // own pre-login nonce, like a real login attempt.
+    cy.clearCookies();
+    cy.request('/login').then((loginPage) => {
+      const csrfToken = loginPage.body.match(/name="CSRFToken" value="([^"]+)"/)?.[1];
+      expect(csrfToken, 'pre-login CSRF token').to.be.a('string');
+
       cy.request({
         method: 'POST',
         url: '/api/guest/client/login',
         body: {
           email: client.email,
           password: oldPassword,
-          CSRFToken: csrfCookie.value,
+          CSRFToken: csrfToken,
         },
         failOnStatusCode: false,
       }).then((response) => {
