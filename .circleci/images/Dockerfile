@@ -1,5 +1,16 @@
 # cspell:words cimg
-FROM docker.io/fossbilling/circleci-php-apache:php8.5.10-node-apache-25434d4@sha256:acfccef40b6fdd3f274e0bad1c28661e2393ee48beefd62f6ebe3181804033aa
+FROM cimg/php:8.5.10-node@sha256:c60f1384d1eda0bd1a57c60e23a55c4a87b8fcd59cc2ea89c6d1c687d9d64fca AS apache
+
+LABEL org.opencontainers.image.source="https://github.com/FOSSBilling/FOSSBilling" \
+    org.opencontainers.image.description="CircleCI PHP integration executor with Apache preinstalled"
+
+USER root
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends apache2 \
+    && rm -rf /var/lib/apt/lists/*
+USER circleci
+
+FROM apache AS browser
 
 LABEL org.opencontainers.image.source="https://github.com/FOSSBilling/FOSSBilling" \
     org.opencontainers.image.description="CircleCI PHP integration executor with Apache and Chromium preinstalled"

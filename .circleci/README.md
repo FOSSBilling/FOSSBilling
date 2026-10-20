@@ -92,9 +92,9 @@ publishing, so its rename or split should be considered during that migration.
 
 Remaining work before cutover:
 
-- Measure prepared-image building, publishing and updating before choosing one
-  unified image or separate variants. Image maintenance automation is deferred
-  until the workflow is settled; it must be ready before cutover.
+- Implement and verify the trusted image maintenance workflow before cutover.
+  Local build trials support separate outputs from one shared definition; hosted
+  cache transfer, Docker Hub publication and maintenance credits still need measurement.
 - Verify cold/warm and dependency-changing runs, fork/internal PR check
   association, checkout revisions and deliberate hosted failure artifacts.
 - Plan migration of PHP quality checks and independent Docker packaging coverage,
@@ -109,27 +109,41 @@ a fresh application/database and the minimal runner. Production asset builds,
 type checks and the 61 JavaScript tests also passed. These checks include the
 latest merged main; hosted verification is still pending.
 
-Image build definitions are under `images/php-apache/` and `images/php-apache-playwright/`.
-The browser image extends the exact pinned Apache-only base. Rebuild with new,
+Image build definitions are under `images/Dockerfile` and `images/docker-bake.hcl`.
+The browser target extends the Apache stage in the shared definition. Rebuild with new,
 immutable tags, validate locally, publish to Docker Hub, and update digest pins
-when required. A base update must also rebuild and repin its browser extension.
+when required. A base update must also rebuild and repin its browser extension. Published runtime
+pins remain unchanged during the opt-in maintenance trial.
 For a Playwright upgrade, update the root and standalone runner lock files,
 the official widget image and the browser image together. The runner checks that
 both package versions agree; the Actions wrapper derives its version from the
 root manifest. Application code, dependencies and secrets are not baked into
 these prepared images. Publishing them is separate from application releases.
 
-The latest full verification was [pipeline 75](https://app.circleci.com/pipelines/github/FOSSBilling/FOSSBilling/75):
-55s / 40 credits, compared with 5m09s for equivalent Actions validation on the
-same revision. Prepared-image full-run samples ranged from 54–62s; this does
-not establish sustained cold-cache performance.
+The latest full verification was [pipeline 471](https://app.circleci.com/pipelines/github/FOSSBilling/FOSSBilling/471)
+on `32914c250`: 82s / 63 credits. Its same-commit repeat passed in 74s / 45 credits
+with restored dependency/PHPStan caches and mixed image caching. Both passed all
+seven jobs with identical test outcomes. Earlier Playwright 1.63.0 full runs
+ranged from 54–62s on older source with fewer tests; they are historical context,
+not isolated comparisons with the latest revision.
 
 [Pipeline 85](https://app.circleci.com/pipelines/github/FOSSBilling/FOSSBilling/85)
 compared three paired live API jobs with separate versus unified images.
 Both passed identical tests. Unified added about five seconds when browser
 layers were downloaded and was effectively equal when fully cached. Its extra
 layers total about 212 MB compressed / 747 MB unpacked. Retain separate variants
-provisionally until their build/update costs have also been measured.
+with a shared build definition: the local maintenance trial below found little
+extra build cost for two outputs.
+
+The [two-target maintenance workflow](images/README.md) removes
+intermediate publishing and duplicated build definitions. Its local full refresh
+was 65.0s for separate outputs versus 64.1s for unified, with about 22 KB extra
+registry metadata and no extra shared layer blobs. Browser-only changes build the
+same single target in both designs. See its limitations before treating those
+local timings as hosted cost evidence. The shared definition is adopted. Run the opt-in `image-maintenance` trial with
+`run-image-maintenance=true` to measure cold, warm and browser-refresh publication.
+It uses the restricted `docker-hub` context and does not promote candidate images
+into validation; see the image guide for credential and artifact details.
 
 See [the experiment history](experiments.md) for configurations, revisions,
 individual timings, credit totals and limitations of each comparison.

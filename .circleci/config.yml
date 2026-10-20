@@ -2,6 +2,9 @@
 version: 2.1
 
 parameters:
+  run-image-maintenance:
+    type: boolean
+    default: false
   force-full-validation:
     type: boolean
     default: false
@@ -9,6 +12,7 @@ parameters:
 orbs:
   php: circleci/php@3.0.0
   node: circleci/node@7.2.1
+  docker: circleci/docker@4.0.1
 
 # GitHub Actions remain authoritative until the migration is verified.
 executors:
@@ -245,8 +249,48 @@ jobs:
           path: src/data/log
           destination: application-logs
 
+  image-maintenance:
+    parameters:
+      phase:
+        type: enum
+        enum: [cold, warm, browser-refresh]
+    docker:
+      - image: cimg/base:2026.10@sha256:64becfab2860932391d834a770033665874e287a655dbef26e38df060414a79a
+    resource_class: medium.gen2
+    environment:
+      IMAGE_REPOSITORY: docker.io/fossbilling/circleci-php-apache
+      MAINTENANCE_PHASE: << parameters.phase >>
+      MAINTENANCE_TRIAL_ID: << pipeline.number >>
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: false
+      - docker/check:
+          docker_username: DOCKERHUB_USERNAME
+          docker_password: DOCKERHUB_TOKEN
+      - run:
+          name: Prepare isolated image builder
+          command: python3 .circleci/scripts/maintain-images.py prepare --phase "$MAINTENANCE_PHASE" --trial-id "$MAINTENANCE_TRIAL_ID"
+      - run:
+          name: Build and publish both prepared images
+          command: python3 .circleci/scripts/maintain-images.py build --phase "$MAINTENANCE_PHASE" --trial-id "$MAINTENANCE_TRIAL_ID"
+      - run:
+          name: Export shared registry cache
+          command: python3 .circleci/scripts/maintain-images.py cache --phase "$MAINTENANCE_PHASE" --trial-id "$MAINTENANCE_TRIAL_ID"
+      - run:
+          name: Verify image relationship and runtime
+          command: python3 .circleci/scripts/maintain-images.py verify --phase "$MAINTENANCE_PHASE" --trial-id "$MAINTENANCE_TRIAL_ID"
+      - run:
+          name: Remove isolated image builder
+          when: always
+          command: python3 .circleci/scripts/maintain-images.py cleanup --phase "$MAINTENANCE_PHASE" --trial-id "$MAINTENANCE_TRIAL_ID"
+      - store_artifacts:
+          path: test-results/image-maintenance
+          destination: image-maintenance-<< parameters.phase >>
+
 workflows:
   validation:
+    unless: << pipeline.parameters.run-image-maintenance >>
     jobs:
       - php-tests:
           name: PHP tests (8.<< matrix.php-minor >>)
@@ -269,3 +313,26 @@ workflows:
             name: integration
             image: docker.io/fossbilling/circleci-php-apache:php8.5.10-node-apache-playwright1.64.1-0110d6ff@sha256:586d691db108172bde30af8ae7369ec44d5d1bce354d8397b3e3fc1864ca917b
           requires: [Frontend (Build)]
+  image-maintenance:
+    when:
+      and:
+        - << pipeline.parameters.run-image-maintenance >>
+        - equal: [api, << pipeline.trigger_source >>]
+        - or:
+            - equal: [main, << pipeline.git.branch >>]
+            - equal: [codex/circleci-validation-pilot, << pipeline.git.branch >>]
+    jobs:
+      - image-maintenance:
+          name: Images (Cold publish)
+          phase: cold
+          context: docker-hub
+      - image-maintenance:
+          name: Images (Warm publish)
+          phase: warm
+          context: docker-hub
+          requires: [Images (Cold publish)]
+      - image-maintenance:
+          name: Images (Browser refresh)
+          phase: browser-refresh
+          context: docker-hub
+          requires: [Images (Warm publish)]

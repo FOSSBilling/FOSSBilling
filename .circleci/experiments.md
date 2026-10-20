@@ -973,3 +973,68 @@ and pinned by verified registry digest
 The tag suffix fingerprints the Dockerfile and standalone manifest/lock inputs.
 The original image tag remains available for rollback. Image build/publish
 performance remains a separate comparison to perform.
+
+## Image maintenance comparison (2026-10-20)
+
+Tested one multi-stage Dockerfile with `apache` and `browser` targets and a
+Docker Bake group for each layout. Separate builds publish both outputs from
+one shared build graph; unified builds publish only the browser target. The
+base is the existing pinned `cimg/php:8.5.10-node` digest and Playwright is 1.64.1.
+The tested [proposal](images/README.md) is not an active pipeline.
+Existing image definitions, published images and validation digest pins are unchanged.
+
+Two dedicated Docker-container BuildKit builders had independent caches, each
+limited to two CPUs and 4 GB. Each layout used its own private local registry
+so one could not benefit from the other's published blobs. Builds ran sequentially.
+This measures building, compression and local registry publication, not remote
+executor startup, Docker Hub network latency, cache export/import or credits.
+
+| Scenario | Separate outputs | Unified output | Sampling |
+| --- | ---: | ---: | --- |
+| Unchanged cached rebuild | 0.605s median | 0.527s median | Three each, alternating order |
+| Forced browser refresh, Apache cached | 56.481s | 51.456s | One each, same single browser target |
+| Forced Apache and browser refresh | 65.004s | 64.081s | One each, all stages uncached |
+
+Unchanged ranges were 0.591–0.765s and 0.482–0.665s. Independent cold-cache
+initialization runs took 93.619s and 103.791s, including pulling/extracting the
+upstream base; these are context, not a controlled cold-pull comparison. Forced
+refreshes reran the same pinned inputs, not a version upgrade or new base digest.
+The browser-only flow is identical for both layouts, so its 5s sample difference
+cannot establish an inherent separate-image penalty. Broader refresh sampling
+is needed to estimate stable averages.
+
+All Apache runtime layers were an exact prefix of its browser image. In the
+valid full-refresh separate build, compressed layers totaled 618,217,237 bytes
+for Apache and 838,413,834 for browser. Their union was still 838,413,834 bytes:
+there were no additional runtime layer blobs to publish for the smaller output.
+Including both outputs' manifests, configs and attestations added only 22,275
+bytes beyond browser alone. Runtime browser pulls still need about 220 MB more
+compressed layers than Apache when those layers are absent. Unpacked sizes
+were 2,476,509,508 versus 3,251,961,814 bytes (about 775 MB extra).
+
+The first attempted base refresh used only `no-cache-filter=apache`. Apache
+rebuilt, but the browser RUN result was reused and its layers no longer extended
+that freshly exported Apache image. The prefix assertion rejected this sample
+(10.498s); it is excluded from the table. Repeating with `--no-cache` for both
+stages passed. This is a freshness check the maintenance workflow must retain,
+not a performance optimization to accept stale descendants.
+
+Final Apache and both browser outputs passed smoke tests as the `circleci` user:
+PHP 8.5.10, Node 24.20.0, Apache configuration syntax, and Chromium 156.0.8078.4
+launch for browser outputs. No application behavior changed and full application
+suites were not repeated for this build-definition prototype. The separate
+variant contained no `/ms-playwright` directory.
+
+Recommendation: retain separate API/browser images, but maintain one Dockerfile
+and one build job. Browser-only changes rebuild one target in either design;
+base changes publish two outputs without rebuilding shared work or uploading
+duplicate runtime layers. This removes the current intermediate publication and
+manual FROM-digest repinning step. A unified image would save one metadata entry
+and runtime pin, at the cost of browser layers in every API environment.
+
+Next verify the proposed trusted publishing job with real remote cache transfer
+and Docker Hub publication. No hosted maintenance credits were spent or measured
+in this local trial. Automating schedules, publishing contexts and pin updates
+remains separate work. The temporary builders, registries, cache volumes and
+loaded trial images are removed after inspection; existing Docker resources are
+preserved.
