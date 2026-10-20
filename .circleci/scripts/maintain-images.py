@@ -25,6 +25,7 @@ def run(args, name, capture=False):
     text = ''.join(chunks)
     report['operations'][name] = {
         'seconds': round(time.monotonic() - started, 3), 'exit_code': returncode,
+        'command': args,
     }
     save()
     if returncode:
@@ -65,9 +66,9 @@ def build_metrics(log):
               'push_layer_seconds': {}, 'push_manifest_seconds': {}}
     cache_vertices = set()
     for line in log.splitlines():
-        match = re.match(r'#(\d+) \[(apache|browser)\] exporting to image', line)
+        match = re.match(r'#(\d+) (?:\[(apache|browser)\] )?exporting to image', line)
         if match:
-            targets[match[1]] = match[2]
+            targets[match[1]] = match[2] or 'browser'
         match = re.match(r'#(\d+) (?:\[[^\]]+\] )?importing cache manifest from ', line)
         if match:
             cache_vertices.add(match[1])
@@ -153,12 +154,18 @@ else:
         extra = ['--set', '*.output=type=registry', '--metadata-file', str(output / 'images-metadata.json')]
         if args.phase == 'cold':
             extra += ['--no-cache']
-        elif args.phase == 'browser-refresh':
-            extra += ['--set', 'browser.no-cache-filter=browser']
-        # Isolate the forced target: a concurrent unfiltered solve can reuse its
-        # cached result and defeat the refresh in a multi-target invocation.
-        target = 'browser' if args.phase == 'browser-refresh' else 'default'
-        log = bake('build-and-publish', extra + [target])
+        if args.phase == 'browser-refresh':
+            # Bake's stage-filter override is ignored by the pinned hosted client.
+            # The native single-target build flag is verified with that client.
+            log = run(['docker', 'buildx', 'build', '--builder', state['builder'],
+                       '--file', '.circleci/images/Dockerfile', '--target', 'browser',
+                       '--progress', 'plain', '--metadata-file', str(output / 'images-metadata.json'),
+                       '--cache-from', 'type=registry,ref=' + state['cache_from'],
+                       '--no-cache-filter', 'browser', '--tag', state['repository'] + ':' +
+                       state['release'] + '-browser', '--output', 'type=registry', '.'],
+                      'build-and-publish')
+        else:
+            log = bake('build-and-publish', extra + ['default'])
         report['build_metrics'] = build_metrics(log)
         if args.phase == 'browser-refresh':
             vertices = re.findall(r'^#(\d+) \[[^\]]+\] RUN cd /tmp/playwright-runner', log, re.M)

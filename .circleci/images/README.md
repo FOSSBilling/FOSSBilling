@@ -39,8 +39,8 @@ VMs (`medium.gen2`), with CircleCI DLC disabled:
    publish both outputs again and export a separate warm cache.
 3. **Images (Browser refresh):** import the warm cache into another fresh builder,
    rebuild and publish only the browser target, and verify it against the warm
-   job's Apache image passed through a small workspace. A concurrent unfiltered
-   Apache solve could defeat the forced refresh, so the target is isolated.
+   job's Apache image passed through a small workspace. The hosted client's Bake stage-filter override was ignored, so this path
+   uses native `buildx build --no-cache-filter browser` with the shared Dockerfile.
 
 Start a trial explicitly after pushing the reviewed source:
 
