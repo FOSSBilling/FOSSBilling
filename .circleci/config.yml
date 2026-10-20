@@ -2,6 +2,12 @@
 version: 2.1
 
 parameters:
+  integration-api-image:
+    type: string
+    default: docker.io/fossbilling/circleci-php-apache:php8.5.10-node-apache-25434d4@sha256:acfccef40b6fdd3f274e0bad1c28661e2393ee48beefd62f6ebe3181804033aa
+  integration-browser-image:
+    type: string
+    default: docker.io/fossbilling/circleci-php-apache:php8.5.10-node-apache-playwright1.64.1-0110d6ff@sha256:586d691db108172bde30af8ae7369ec44d5d1bce354d8397b3e3fc1864ca917b
   run-image-maintenance:
     type: boolean
     default: false
@@ -41,7 +47,7 @@ executors:
     parameters:
       image:
         type: string
-        default: docker.io/fossbilling/circleci-php-apache:php8.5.10-node-apache-25434d4@sha256:acfccef40b6fdd3f274e0bad1c28661e2393ee48beefd62f6ebe3181804033aa
+        default: << pipeline.parameters.integration-api-image >>
     docker:
       - image: << parameters.image >>
       - image: mariadb:lts@sha256:805c8e104bd563d5bfa24fadd3f31cd419ea859cb5277f32b5dbf2db714f9ed1
@@ -337,7 +343,7 @@ workflows:
           suite: browser
           executor:
             name: integration
-            image: docker.io/fossbilling/circleci-php-apache:php8.5.10-node-apache-playwright1.64.1-0110d6ff@sha256:586d691db108172bde30af8ae7369ec44d5d1bce354d8397b3e3fc1864ca917b
+            image: << pipeline.parameters.integration-browser-image >>
           requires: [Frontend (Build)]
   image-maintenance:
     when:

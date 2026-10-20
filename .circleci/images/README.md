@@ -95,6 +95,10 @@ Both images must pass PHP/Node/Apache smoke tests
 as `circleci`; the browser image must also launch matching Chromium using the
 locked standalone runner. The hosted trial stops before pin promotion: full
 API/browser suites must validate candidates before a reviewed pin update.
+Trigger ordinary validation with `force-full-validation=true` and supply
+`integration-api-image` and `integration-browser-image` as candidate references
+including immutable digests. These optional overrides leave the default runtime
+pins unchanged and do not grant access to the publishing context.
 
 No periodic schedule or automated pin PR has been enabled. Publishing contexts,
 cache retention and update triggers remain to be finalized after this trial.
