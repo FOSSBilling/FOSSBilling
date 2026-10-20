@@ -95,7 +95,7 @@ test('competingTransactionQuery applies gateway and exclude filters when provide
 test('getSearchQueryBuilder orders by id descending and selects the gateway name', function (): void {
     $query = transactionSearchQuery([]);
 
-    expect($query->getDQL())->toContain('SELECT t, pg.name AS gateway FROM ' . Transaction::class . ' t LEFT JOIN t.gateway pg')
+    expect($query->getDQL())->toContain('SELECT t, pg.name AS gateway, pg.gateway AS gateway_code FROM ' . Transaction::class . ' t LEFT JOIN t.gateway pg')
         ->and($query->getDQL())->toContain('ORDER BY t.id DESC');
 });
 

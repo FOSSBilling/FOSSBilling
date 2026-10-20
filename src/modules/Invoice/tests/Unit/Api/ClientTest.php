@@ -300,7 +300,7 @@ test('gets transaction list', function (): void {
     $transactionService = Mockery::mock(ServiceTransaction::class);
     $transactionService->shouldReceive('transactionResultToApiArray')
         ->once()
-        ->with(Mockery::on(fn ($t): bool => $t instanceof Transaction), 'Stripe')
+        ->with(Mockery::on(fn ($t): bool => $t instanceof Transaction), 'Stripe', 'Stripe')
         ->andReturn(['id' => 1, 'gateway' => 'Stripe']);
 
     $transactionRepo = Mockery::mock(TransactionRepository::class);
@@ -312,7 +312,7 @@ test('gets transaction list', function (): void {
     $paginatorMock = Mockery::mock(FOSSBilling\Pagination::class);
     $paginatorMock->shouldReceive('paginateMappedQuery')
         ->once()
-        ->andReturnUsing(fn ($qb, $pagination, $mapper): array => ['list' => [$mapper([0 => createEntity(Transaction::class, ['id' => 1]), 'gateway' => 'Stripe'])]]);
+        ->andReturnUsing(fn ($qb, $pagination, $mapper): array => ['list' => [$mapper([0 => createEntity(Transaction::class, ['id' => 1]), 'gateway' => 'Stripe', 'gateway_code' => 'Stripe'])]]);
 
     $di = container();
     $di['pager'] = $paginatorMock;

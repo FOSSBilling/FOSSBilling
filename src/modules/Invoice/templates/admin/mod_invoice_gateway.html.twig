@@ -36,7 +36,7 @@
             </div>
         {% endif %}
 
-        <form method="post" action="{{ 'invoice/gateway_update'|api_url }}" {{ fb_api_form({message: 'Gateway Updated'|trans}) }}>
+        <form method="post" action="{{ 'invoice/gateway_update'|api_url }}" enctype="multipart/form-data" {{ fb_api_form({message: 'Gateway Updated'|trans, reload: true}) }}>
             {% embed 'partial_admin_form_card.html.twig' with {
                 title: 'Gateway Basics'|trans,
                 subtitle: 'Define the display title and choose which currencies can use this gateway.'|trans,
@@ -48,6 +48,26 @@
                         <div class="col-12">
                             <label class="form-label" for="gateway_title">{{ 'Payment Gateway Title'|trans }}</label>
                             <input class="form-control" id="gateway_title" type="text" name="title" value="{{ gateway.title }}">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label" for="gateway_logo_file">{{ 'Custom Image'|trans }}</label>
+                            <input class="form-control" id="gateway_logo_file" type="file" name="logo_file" accept=".png,.jpg,.jpeg,.webp,.avif,.svg">
+                            <div class="form-text">{{ 'PNG, JPEG, WebP, AVIF, or SVG, up to 2 MB. Leave empty to keep the current image. SVG sanitization may remove unsupported elements or styles. Custom images are displayed at the configured logo size for this gateway.'|trans }}</div>
+                            <label class="form-label mt-2" for="gateway_logo_url">{{ 'Or Import from URL'|trans }}</label>
+                            <input class="form-control" id="gateway_logo_url" type="url" name="logo_url" maxlength="2048" placeholder="https://example.com/payment-methods.png">
+                            <div class="form-text">{{ 'Use a publicly accessible image URL. Images are saved locally and preserved during updates.'|trans }}</div>
+                            {% if gateway.custom_logo_url %}
+                                <picture>
+                                    {% if gateway.custom_logo_avif_url %}
+                                        <source srcset="{{ gateway.custom_logo_avif_url }}" type="image/avif">
+                                    {% endif %}
+                                    <img class="mt-2" src="{{ gateway.custom_logo_url }}" alt="{{ 'Custom payment gateway image'|trans }}" style="max-width: 150px; max-height: 50px;">
+                                </picture>
+                            {% endif %}
+                            <label class="form-check mt-2">
+                                <input class="form-check-input" type="checkbox" name="remove_custom_logo" value="1">
+                                <span class="form-check-label">{{ 'Restore Default Image'|trans }}</span>
+                            </label>
                         </div>
                         <div class="col-12">
                             <label class="form-label" for="gateway_accepted_currencies">{{ 'Accepted Currencies'|trans }}</label>
@@ -200,6 +220,18 @@
 {% block js %}
 <script>
     (function () {
+        const removeLogo = document.querySelector('input[name="remove_custom_logo"]');
+        const logoUrl = document.getElementById('gateway_logo_url');
+        const logoFile = document.getElementById('gateway_logo_file');
+        if (removeLogo && logoUrl && logoFile) {
+            const updateImageInputs = () => {
+                logoUrl.disabled = removeLogo.checked || logoFile.files.length > 0;
+                logoFile.disabled = removeLogo.checked;
+            };
+            removeLogo.addEventListener('change', updateImageInputs);
+            logoFile.addEventListener('change', updateImageInputs);
+            updateImageInputs();
+        }
         const enabledCheckbox = document.querySelector('input[type="checkbox"][name="enabled"]');
         const testModeCheckbox = document.querySelector('input[type="checkbox"][name="test_mode"]');
 

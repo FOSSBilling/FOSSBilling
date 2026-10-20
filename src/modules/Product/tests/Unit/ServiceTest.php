@@ -2753,6 +2753,25 @@ test('get product price resolves a custom period by exact code', function (): vo
     expect($service->getProductPrice($product, ['period' => '45D']))->toBe(7.5);
 });
 
+test('product pricing reports invalid stored payment types as configuration errors', function (?string $type): void {
+    $service = new Service();
+    $payment = productTestCreateProductPaymentEntity(15)->setType($type);
+    $product = productTestCreateProductEntity(9)
+        ->setType(Service::CUSTOM)
+        ->setProductPayment($payment);
+
+    expect(fn (): float|int|string => $service->getProductPrice($product, ['period' => '1M']))
+        ->toThrow(FOSSBilling\InformationException::class, 'Product 9 has an invalid pricing type. Please contact the administrator.');
+    expect(fn (): float => $service->getProductSetupPrice($product, ['period' => '1M']))
+        ->toThrow(FOSSBilling\InformationException::class, 'Product 9 has an invalid pricing type. Please contact the administrator.');
+
+    expect($payment->getType())->toBe($type);
+})->with([
+    'missing type' => [null],
+    'empty type' => [''],
+    'unknown type' => ['invalid'],
+]);
+
 test('get product price rejects a period that is not configured for the product', function (): void {
     $service = new Service();
     $productPayment = productTestCreateProductPaymentEntity(15)

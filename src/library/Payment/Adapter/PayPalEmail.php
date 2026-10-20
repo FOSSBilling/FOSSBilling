@@ -27,6 +27,11 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
         return $this->di;
     }
 
+    public static function requiresManualApproval(): bool
+    {
+        return false;
+    }
+
     public function __construct(private $config)
     {
         if (!isset($this->config['email'])) {
@@ -66,8 +71,6 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
 
         $invoiceService = $this->di['mod_service']('Invoice');
         $invoice = $invoiceService->toApiArray($invoiceModel, true);
-
-        $data = [];
         if ($subscription) {
             $data = $this->getSubscriptionFields($invoice);
         } else {
@@ -79,8 +82,13 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
         return $this->_generateForm($url, $data);
     }
 
-    public function processTransaction($api_admin, $id, $data, $gateway_id): void
+    public function processTransaction($api_admin, int $id, array $data, int $gateway_id): void
     {
+        $post = (isset($data['post']) && is_array($data['post'])) ? $data['post'] : [];
+        if ($post === []) {
+            throw new Payment_Exception('PayPal payment data is missing.', [], 7021);
+        }
+
         if (!Environment::isTesting() && !$this->_isIpnValid($data)) {
             throw new Payment_Exception('IPN is invalid');
         }
@@ -90,9 +98,9 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
         // The invoice binding arrives through a buyer-editable callback URL,
         // so authenticate it before anything below trusts it. Runs outside
         // the test-mode bypass above: the binding must hold in every environment.
-        $verifiedInvoiceId = $this->verifyCallbackBinding($data, (int) $gateway_id, $tx['invoice_id'] ?? null, (int) $id);
+        $verifiedInvoiceId = $this->verifyCallbackBinding($data, $gateway_id, $tx['invoice_id'] ?? null, $id);
 
-        $ipn = $data['post'] ?? [];
+        $ipn = $post;
 
         // PayPal's newer subscription flow uses recurring_payment* names for the
         // same concepts: normalize them once so every path below just works.
@@ -434,9 +442,14 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
     /**
      * Resolve the invoice id from callback data, authenticating the binding.
      * Used by flows that read the invoice from the IPN before processing it.
+     *
+     * @param mixed $data raw callback input, which callers may not have validated yet
      */
     public function getInvoiceId($data): ?int
     {
+        if (!is_array($data)) {
+            return null;
+        }
         $invoiceId = $data['invoice_id'] ?? $data['get']['invoice_id'] ?? null;
         if (empty($invoiceId)) {
             return null;
@@ -515,6 +528,10 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
      * about to be credited (defense in depth behind the callback signature).
      * Only enforced when PayPal echoes the field; several notification
      * types omit these references, and that must never fail a payment.
+     *
+     * item_number is frozen at signup while the invoice number can change
+     * (renumbering, issuing), so a stale echo only warns; the stable
+     * invoice id below remains enforced.
      */
     private function verifyIpnEcho(array $ipn, Invoice $invoice): void
     {
@@ -522,7 +539,7 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
         if ($echoedNr !== '') {
             $expectedNr = trim((string) $invoice->getNr());
             if ($expectedNr !== '' && $echoedNr !== $expectedNr) {
-                throw new Payment_Exception('PayPal item_number does not match invoice ' . $invoice->getId());
+                $this->di['logger']->warning('PayPal item_number ' . $echoedNr . ' does not match invoice ' . $invoice->getId() . ' (expected ' . $expectedNr . '); proceeding with payment');
             }
         }
 
@@ -570,12 +587,16 @@ class Payment_Adapter_PayPalEmail extends Payment_AdapterAbstract implements FOS
         return 'https://www.paypal.com/cgi-bin/webscr';
     }
 
-    private function _isIpnValid($data): bool
+    private function _isIpnValid(array $data): bool
     {
         // use http_raw_post_data instead of post due to encoding
         parse_str((string) $data['http_raw_post_data'], $post);
         $req = 'cmd=_notify-validate';
         foreach ($post as $key => $value) {
+            if (is_array($value)) {
+                return false;
+            }
+
             // No stripslashes() here: that undid PHP's long-removed magic_quotes_gpc
             // escaping. Applied unconditionally it corrupts any value containing a
             // backslash, so the re-posted request no longer matches what PayPal sent.
@@ -712,7 +733,7 @@ document.addEventListener('DOMContentLoaded', function() {
         $data['business'] = $this->config['email'];
 
         $data['cmd'] = '_xclick-subscriptions';
-        $data['rm'] = '2';
+        $data['rm'] = '1';
 
         $data['invoice'] = $invoice['id'];
 
@@ -755,7 +776,7 @@ document.addEventListener('DOMContentLoaded', function() {
         $data['no_shipping'] = '1';
         $data['no_note'] = '1';
         $data['currency_code'] = $invoice['currency'];
-        $data['rm'] = '2';
+        $data['rm'] = '1';
         $data['return'] = $this->config['thankyou_url'];
         $data['cancel_return'] = $this->config['cancel_url'];
         $data['notify_url'] = $this->signNotifyUrl($this->config['notify_url'], $invoice['id']);

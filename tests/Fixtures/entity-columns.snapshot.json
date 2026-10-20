@@ -366,6 +366,7 @@
     "pay_gateway.allow_recurrent",
     "pay_gateway.allow_single",
     "pay_gateway.config",
+    "pay_gateway.custom_logo",
     "pay_gateway.enabled",
     "pay_gateway.gateway",
     "pay_gateway.id",
@@ -755,6 +756,5 @@
     "transaction.txn_id",
     "transaction.txn_status",
     "transaction.type",
-    "transaction.updated_at",
-    "transaction.validate_ipn"
+    "transaction.updated_at"
 ]

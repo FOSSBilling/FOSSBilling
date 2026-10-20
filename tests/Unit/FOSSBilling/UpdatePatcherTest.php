@@ -23,6 +23,104 @@ test('currency formatting patch follows the client balance gateway repair', func
         ->and($patches[93][1])->toBe('patch93');
 });
 
+test('branding filename migration runs for installs past the original branding patch', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 129);
+
+    expect($patches)->toHaveKey(130)->and($patches[130][1])->toBe('patch130');
+});
+
+test('branding migration updates default paths and preserves custom settings on repeated upgrades', function (string $param, string $oldValue, string $expected): void {
+    $pdo = new PDO('sqlite::memory:');
+    $pdo->exec('CREATE TABLE setting (param TEXT PRIMARY KEY, value TEXT)');
+    $pdo->prepare('INSERT INTO setting (param, value) VALUES (?, ?)')->execute([$param, $oldValue]);
+    $filesystem = Mockery::mock(Filesystem::class);
+    foreach (['logo.svg', 'favicon.ico'] as $filename) {
+        $path = Path::join(PATH_ROOT, 'public', 'branding', $filename);
+        if ($expected === 'public/branding/' . $filename) {
+            $filesystem->shouldNotReceive('exists')->with($path);
+            $filesystem->shouldNotReceive('remove')->with($path);
+
+            continue;
+        }
+
+        $filesystem->shouldReceive('exists')->with($path)->andReturn(true, false);
+        $filesystem->expects('remove')->with($path)->once();
+    }
+    $patcher = new UpdatePatcher();
+    $patcher->setDi(new Pimple\Container(['pdo' => $pdo, 'filesystem' => $filesystem]));
+
+    for ($run = 0; $run < 2; ++$run) {
+        (new ReflectionMethod($patcher, 'patch130'))->invoke($patcher);
+        expect($pdo->query('SELECT value FROM setting')->fetchColumn())->toBe($expected);
+    }
+})->with([
+    'public logo' => ['company_logo', 'public/branding/logo.svg', 'public/branding/logo-light.svg'],
+    'legacy logo' => ['company_logo', 'themes/huraga/assets/img/logo.svg', 'public/branding/logo-light.svg'],
+    'built legacy logo' => ['company_logo', 'themes/huraga/assets/build/img/logo.svg', 'public/branding/logo-light.svg'],
+    'public favicon' => ['company_favicon', 'public/branding/favicon.ico', 'public/branding/favicon.svg'],
+    'legacy favicon' => ['company_favicon', 'themes/huraga/assets/favicon.ico', 'public/branding/favicon.svg'],
+    'built legacy favicon' => ['company_favicon', 'themes/huraga/assets/build/favicon.ico', 'public/branding/favicon.svg'],
+    'current logo' => ['company_logo', 'public/branding/logo-light.svg', 'public/branding/logo-light.svg'],
+    'current favicon' => ['company_favicon', 'public/branding/favicon.svg', 'public/branding/favicon.svg'],
+    'dark logo' => ['company_logo_dark', 'public/branding/logo-dark.svg', 'public/branding/logo-dark.svg'],
+    'old logo used in dark mode' => ['company_logo_dark', 'public/branding/logo.svg', 'public/branding/logo.svg'],
+    'old favicon used as a logo' => ['company_logo_dark', 'public/branding/favicon.ico', 'public/branding/favicon.ico'],
+    'custom logo' => ['company_logo', 'data/uploads/logo.svg', 'data/uploads/logo.svg'],
+    'custom favicon' => ['company_favicon', 'https://example.com/favicon.ico', 'https://example.com/favicon.ico'],
+    'unrelated setting' => ['custom_asset', 'public/branding/logo.svg', 'public/branding/logo.svg'],
+]);
+
+test('branding migration runs during non-MySQL update finalization', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        $pdo = new PDO('sqlite::memory:');
+        $pdo->exec('CREATE TABLE setting (param TEXT PRIMARY KEY, value TEXT, public INTEGER, created_at TEXT, updated_at TEXT)');
+        $pdo->exec('CREATE TABLE extension_meta (extension TEXT, rel_type TEXT, rel_id TEXT, meta_key TEXT)');
+        $pdo->exec('CREATE TABLE extension (type TEXT)');
+        $pdo->exec("INSERT INTO setting (param, value) VALUES ('company_logo', 'public/branding/logo.svg'), ('company_favicon', 'public/branding/favicon.ico')");
+        $filesystem = Mockery::mock(Filesystem::class);
+        $filesystem->shouldReceive('exists')->andReturn(false);
+        $patcher = new UpdatePatcher();
+        $patcher->setDi(new Pimple\Container(['pdo' => $pdo, 'filesystem' => $filesystem]));
+
+        $patcher->applyCorePatches(force: true);
+
+        expect($pdo->query("SELECT value FROM setting WHERE param = 'company_logo'")->fetchColumn())->toBe('public/branding/logo-light.svg')
+            ->and($pdo->query("SELECT value FROM setting WHERE param = 'company_favicon'")->fetchColumn())->toBe('public/branding/favicon.svg');
+    });
+});
+
+test('upgrade checks report invalid invoice counters without changing stored values', function (?string $counter, bool $warning): void {
+    $pdo = new PDO('sqlite::memory:');
+    $pdo->exec('CREATE TABLE setting (param TEXT PRIMARY KEY, value TEXT)');
+    if ($counter !== null) {
+        $pdo->prepare('INSERT INTO setting (param, value) VALUES (?, ?)')->execute(['invoice_starting_number', $counter]);
+    }
+
+    $logger = Mockery::mock(FOSSBilling\Logger::class);
+    if ($warning) {
+        $logger->shouldReceive('withChannel')->once()->with('update')->andReturnSelf();
+        $logger->shouldReceive('log')->once()->with('warning', Mockery::pattern('/Review invoice history and set an unused positive whole number/'), []);
+    } else {
+        $logger->shouldNotReceive('log');
+    }
+    $patcher = new UpdatePatcher();
+    $patcher->setDi(new Pimple\Container(['pdo' => $pdo, 'logger' => $logger]));
+    $before = $pdo->query('SELECT * FROM setting')->fetchAll(PDO::FETCH_ASSOC);
+
+    (new ReflectionMethod($patcher, 'checkInvoiceNumberCounter'))->invoke($patcher);
+
+    expect($pdo->query('SELECT * FROM setting')->fetchAll(PDO::FETCH_ASSOC))->toBe($before);
+})->with([
+    'missing' => [null, true],
+    'empty' => ['', true],
+    'fraction' => ['5.5', true],
+    'text' => ['INV-1', true],
+    'zero' => ['0', true],
+    'maximum' => [(string) PHP_INT_MAX, true],
+    'valid' => ['42', false],
+    'largest valid' => [(string) (PHP_INT_MAX - 1), false],
+]);
+
 test('stock reservation backfill patch follows the TLD periods patch', function (): void {
     $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 99);
 
@@ -323,8 +421,32 @@ test('multi-group membership patch copies assignments then drops the column', fu
     $copyAssignments = Mockery::mock(PDOStatement::class);
     $copyAssignments->expects('execute')->with([])->andReturnTrue();
 
+    $legacyForeignKeys = Mockery::mock(PDOStatement::class);
+    $legacyForeignKeys->expects('execute')->with(['table' => 'client', 'column' => 'client_group_id'])->andReturnTrue();
+    $legacyForeignKeys->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([]);
+
     $dropColumn = Mockery::mock(PDOStatement::class);
     $dropColumn->expects('execute')->with([])->andReturnTrue();
+
+    $deleteOrphanClients = Mockery::mock(PDOStatement::class);
+    $deleteOrphanClients->expects('execute')->with([])->andReturnTrue();
+
+    $deleteOrphanGroups = Mockery::mock(PDOStatement::class);
+    $deleteOrphanGroups->expects('execute')->with([])->andReturnTrue();
+
+    $missingClientFk = Mockery::mock(PDOStatement::class);
+    $missingClientFk->expects('execute')->with(['table' => 'client_group_members', 'constraint' => 'client_group_members_client_fk', 'type' => 'FOREIGN KEY'])->andReturnTrue();
+    $missingClientFk->expects('fetchColumn')->andReturn(false);
+
+    $missingGroupFk = Mockery::mock(PDOStatement::class);
+    $missingGroupFk->expects('execute')->with(['table' => 'client_group_members', 'constraint' => 'client_group_members_group_fk', 'type' => 'FOREIGN KEY'])->andReturnTrue();
+    $missingGroupFk->expects('fetchColumn')->andReturn(false);
+
+    $addClientFk = Mockery::mock(PDOStatement::class);
+    $addClientFk->expects('execute')->with([])->andReturnTrue();
+
+    $addGroupFk = Mockery::mock(PDOStatement::class);
+    $addGroupFk->expects('execute')->with([])->andReturnTrue();
 
     $pdo = Mockery::mock(PDO::class);
     $pdo->expects('prepare')
@@ -338,8 +460,108 @@ test('multi-group membership patch copies assignments then drops the column', fu
         ->with('INSERT IGNORE INTO `client_group_members` (`client_id`, `client_group_id`) SELECT c.`id`, c.`client_group_id` FROM `client` c INNER JOIN `client_group` g ON g.`id` = c.`client_group_id`')
         ->andReturn($copyAssignments);
     $pdo->expects('prepare')
+        ->with('SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table AND COLUMN_NAME = :column AND REFERENCED_TABLE_NAME IS NOT NULL')
+        ->andReturn($legacyForeignKeys);
+    $pdo->expects('prepare')
         ->with('ALTER TABLE `client` DROP COLUMN `client_group_id`')
         ->andReturn($dropColumn);
+    $pdo->expects('prepare')
+        ->with('DELETE FROM `client_group_members` WHERE `client_id` NOT IN (SELECT `id` FROM `client`)')
+        ->andReturn($deleteOrphanClients);
+    $pdo->expects('prepare')
+        ->with('DELETE FROM `client_group_members` WHERE `client_group_id` NOT IN (SELECT `id` FROM `client_group`)')
+        ->andReturn($deleteOrphanGroups);
+    $pdo->expects('prepare')
+        ->twice()
+        ->with('SELECT 1 FROM information_schema.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table AND CONSTRAINT_NAME = :constraint AND CONSTRAINT_TYPE = :type LIMIT 1')
+        ->andReturn($missingClientFk, $missingGroupFk);
+    $pdo->expects('prepare')
+        ->with('ALTER TABLE `client_group_members` ADD CONSTRAINT `client_group_members_client_fk` FOREIGN KEY (`client_id`) REFERENCES `client` (`id`) ON DELETE CASCADE')
+        ->andReturn($addClientFk);
+    $pdo->expects('prepare')
+        ->with('ALTER TABLE `client_group_members` ADD CONSTRAINT `client_group_members_group_fk` FOREIGN KEY (`client_group_id`) REFERENCES `client_group` (`id`) ON DELETE CASCADE')
+        ->andReturn($addGroupFk);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch125'))->invoke($patcher);
+});
+
+test('multi-group membership patch drops legacy foreign keys before dropping the column', function (): void {
+    $tableExists = Mockery::mock(PDOStatement::class);
+    $tableExists->expects('execute')->with(['table' => 'client_group_members'])->andReturnTrue();
+    $tableExists->expects('fetchColumn')->andReturn('1');
+
+    $clientColumns = Mockery::mock(PDOStatement::class);
+    $clientColumns->expects('execute')->with([])->andReturnTrue();
+    $clientColumns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['Field' => 'id'],
+        ['Field' => 'client_group_id'],
+    ]);
+
+    $copyAssignments = Mockery::mock(PDOStatement::class);
+    $copyAssignments->expects('execute')->with([])->andReturnTrue();
+
+    $legacyForeignKeys = Mockery::mock(PDOStatement::class);
+    $legacyForeignKeys->expects('execute')->with(['table' => 'client', 'column' => 'client_group_id'])->andReturnTrue();
+    $legacyForeignKeys->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([
+        ['CONSTRAINT_NAME' => 'legacy_client_group_fk'],
+    ]);
+
+    $dropForeignKey = Mockery::mock(PDOStatement::class);
+    $dropForeignKey->expects('execute')->with([])->andReturnTrue();
+
+    $dropColumn = Mockery::mock(PDOStatement::class);
+    $dropColumn->expects('execute')->with([])->andReturnTrue();
+
+    $deleteOrphanClients = Mockery::mock(PDOStatement::class);
+    $deleteOrphanClients->expects('execute')->with([])->andReturnTrue();
+
+    $deleteOrphanGroups = Mockery::mock(PDOStatement::class);
+    $deleteOrphanGroups->expects('execute')->with([])->andReturnTrue();
+
+    $presentClientFk = Mockery::mock(PDOStatement::class);
+    $presentClientFk->expects('execute')->with(['table' => 'client_group_members', 'constraint' => 'client_group_members_client_fk', 'type' => 'FOREIGN KEY'])->andReturnTrue();
+    $presentClientFk->expects('fetchColumn')->andReturn('1');
+
+    $presentGroupFk = Mockery::mock(PDOStatement::class);
+    $presentGroupFk->expects('execute')->with(['table' => 'client_group_members', 'constraint' => 'client_group_members_group_fk', 'type' => 'FOREIGN KEY'])->andReturnTrue();
+    $presentGroupFk->expects('fetchColumn')->andReturn('1');
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')
+        ->with('SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table LIMIT 1')
+        ->andReturn($tableExists);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `client`')->andReturn($clientColumns);
+    $pdo->expects('prepare')
+        ->with('INSERT IGNORE INTO `client_group_members` (`client_id`, `client_group_id`) SELECT c.`id`, c.`client_group_id` FROM `client` c INNER JOIN `client_group` g ON g.`id` = c.`client_group_id`')
+        ->andReturn($copyAssignments);
+    $pdo->expects('prepare')
+        ->with('SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table AND COLUMN_NAME = :column AND REFERENCED_TABLE_NAME IS NOT NULL')
+        ->andReturn($legacyForeignKeys);
+    $pdo->expects('prepare')
+        ->with('ALTER TABLE `client` DROP FOREIGN KEY `legacy_client_group_fk`')
+        ->ordered()
+        ->andReturn($dropForeignKey);
+    $pdo->expects('prepare')
+        ->with('ALTER TABLE `client` DROP COLUMN `client_group_id`')
+        ->ordered()
+        ->andReturn($dropColumn);
+    $pdo->expects('prepare')
+        ->with('DELETE FROM `client_group_members` WHERE `client_id` NOT IN (SELECT `id` FROM `client`)')
+        ->andReturn($deleteOrphanClients);
+    $pdo->expects('prepare')
+        ->with('DELETE FROM `client_group_members` WHERE `client_group_id` NOT IN (SELECT `id` FROM `client_group`)')
+        ->andReturn($deleteOrphanGroups);
+    $pdo->expects('prepare')
+        ->twice()
+        ->with('SELECT 1 FROM information_schema.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table AND CONSTRAINT_NAME = :constraint AND CONSTRAINT_TYPE = :type LIMIT 1')
+        ->andReturn($presentClientFk, $presentGroupFk);
+    $pdo->shouldNotReceive('prepare')->with(Mockery::pattern('/^CREATE TABLE `client_group_members`/'));
+    $pdo->shouldNotReceive('prepare')->with(Mockery::pattern('/^ALTER TABLE `client_group_members` ADD CONSTRAINT/'));
 
     $di = new Pimple\Container();
     $di['pdo'] = $pdo;
@@ -358,14 +580,39 @@ test('multi-group membership patch is a no-op once migrated', function (): void 
     $clientColumns->expects('execute')->with([])->andReturnTrue();
     $clientColumns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([['Field' => 'id']]);
 
+    $deleteOrphanClients = Mockery::mock(PDOStatement::class);
+    $deleteOrphanClients->expects('execute')->with([])->andReturnTrue();
+
+    $deleteOrphanGroups = Mockery::mock(PDOStatement::class);
+    $deleteOrphanGroups->expects('execute')->with([])->andReturnTrue();
+
+    $presentClientFk = Mockery::mock(PDOStatement::class);
+    $presentClientFk->expects('execute')->with(['table' => 'client_group_members', 'constraint' => 'client_group_members_client_fk', 'type' => 'FOREIGN KEY'])->andReturnTrue();
+    $presentClientFk->expects('fetchColumn')->andReturn('1');
+
+    $presentGroupFk = Mockery::mock(PDOStatement::class);
+    $presentGroupFk->expects('execute')->with(['table' => 'client_group_members', 'constraint' => 'client_group_members_group_fk', 'type' => 'FOREIGN KEY'])->andReturnTrue();
+    $presentGroupFk->expects('fetchColumn')->andReturn('1');
+
     $pdo = Mockery::mock(PDO::class);
     $pdo->expects('prepare')
         ->with('SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table LIMIT 1')
         ->andReturn($tableExists);
     $pdo->expects('prepare')->with('SHOW COLUMNS FROM `client`')->andReturn($clientColumns);
+    $pdo->expects('prepare')
+        ->with('DELETE FROM `client_group_members` WHERE `client_id` NOT IN (SELECT `id` FROM `client`)')
+        ->andReturn($deleteOrphanClients);
+    $pdo->expects('prepare')
+        ->with('DELETE FROM `client_group_members` WHERE `client_group_id` NOT IN (SELECT `id` FROM `client_group`)')
+        ->andReturn($deleteOrphanGroups);
+    $pdo->expects('prepare')
+        ->twice()
+        ->with('SELECT 1 FROM information_schema.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table AND CONSTRAINT_NAME = :constraint AND CONSTRAINT_TYPE = :type LIMIT 1')
+        ->andReturn($presentClientFk, $presentGroupFk);
     $pdo->shouldNotReceive('prepare')->with(Mockery::pattern('/^CREATE TABLE `client_group_members`/'));
     $pdo->shouldNotReceive('prepare')->with(Mockery::pattern('/^INSERT IGNORE INTO `client_group_members`/'));
-    $pdo->shouldNotReceive('prepare')->with('ALTER TABLE `client` DROP COLUMN `client_group_id`');
+    $pdo->shouldNotReceive('prepare')->with(Mockery::pattern('/^ALTER TABLE `client` DROP/'));
+    $pdo->shouldNotReceive('prepare')->with(Mockery::pattern('/^ALTER TABLE `client_group_members` ADD CONSTRAINT/'));
 
     $di = new Pimple\Container();
     $di['pdo'] = $pdo;
@@ -1752,22 +1999,23 @@ test('migrateThemePackageLayout does nothing on a fresh install where neither ol
 
 test('applyCorePatches migrates the theme setting values on a non-MySQL driver, since patch115 never runs there', function (): void {
     withNonMysqlDbDriver(function (): void {
-        $adminThemeStatement = Mockery::mock(PDOStatement::class);
-        $adminThemeStatement->expects('execute')
+        $settingStatement = Mockery::mock(PDOStatement::class);
+        $settingStatement->expects('execute')
             ->with(['new_value' => 'default/admin', 'param' => 'admin_theme', 'old_value' => 'admin_default'])
             ->andReturnTrue();
-        $clientThemeStatement = Mockery::mock(PDOStatement::class);
-        $clientThemeStatement->expects('execute')
+        $settingStatement->expects('execute')
             ->with(['new_value' => 'default/client', 'param' => 'theme', 'old_value' => 'huraga'])
+            ->andReturnTrue();
+        $settingStatement->shouldReceive('execute')
+            ->with(Mockery::on(fn (array $params): bool => in_array($params['param'], ['company_logo', 'company_logo_dark', 'company_favicon'], true)))
             ->andReturnTrue();
         $extensionMetaStatement = Mockery::mock(PDOStatement::class);
         $extensionMetaStatement->shouldReceive('execute')->andReturnTrue();
 
         $pdo = Mockery::mock(PDO::class);
-        $pdo->expects('prepare')
+        $pdo->shouldReceive('prepare')
             ->with('UPDATE setting SET value = :new_value WHERE param = :param AND value = :old_value')
-            ->twice()
-            ->andReturn($adminThemeStatement, $clientThemeStatement);
+            ->andReturn($settingStatement);
         $pdo->shouldReceive('prepare')
             ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'UPDATE extension_meta')))
             ->andReturn($extensionMetaStatement);
@@ -1872,6 +2120,64 @@ test('applyCorePatches runs a portable schema sync instead of legacy patches on 
 
         expect($connection->createSchemaManager()->tablesExist(['currency']))->toBeTrue();
     });
+});
+
+test('non-MySQL upgrades copy legacy groups after creating the membership table', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+        $entityManager = FOSSBilling\Doctrine\EntityManagerFactory::create($connection);
+        FOSSBilling\Doctrine\SchemaInstaller::createSchema($entityManager);
+        $connection->executeStatement('DROP TABLE client_group_members');
+        $connection->executeStatement('ALTER TABLE client ADD COLUMN client_group_id BIGINT DEFAULT NULL');
+        $connection->executeStatement("INSERT INTO client_group (id, title) VALUES (7, 'Legacy')");
+        $connection->executeStatement('INSERT INTO client (id, client_group_id) VALUES (1, 7), (2, 99), (3, NULL)');
+
+        $di = new Pimple\Container();
+        $di['pdo'] = mockPdoAllowingThemeMigrationCalls();
+        $di['em'] = $entityManager;
+        $di['logger'] = new Tests\Helpers\TestLogger();
+        $patcher = new UpdatePatcher();
+        $patcher->setDi($di);
+        $patcher->applyCorePatches(force: true);
+
+        expect($connection->fetchAllAssociative('SELECT client_id, client_group_id FROM client_group_members'))
+            ->toBe([['client_id' => 1, 'client_group_id' => 7]])
+            ->and($entityManager->find(Box\Mod\Client\Entity\Client::class, 1)->getGroupIds())->toBe([7]);
+
+        // The retained legacy column must not undo deliberate membership removal.
+        $connection->executeStatement('DELETE FROM client_group_members');
+        $patcher->applyCorePatches(force: true);
+        expect($connection->fetchOne('SELECT COUNT(*) FROM client_group_members'))->toBe(0)
+            ->and($connection->fetchOne('SELECT client_group_id FROM client WHERE id = 1'))->toBe(7);
+    });
+});
+
+test('client group migration rolls back and retries without duplicating memberships', function (): void {
+    $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $connection->executeStatement('CREATE TABLE client (id INTEGER PRIMARY KEY, client_group_id BIGINT)');
+    $connection->executeStatement('CREATE TABLE client_group (id INTEGER PRIMARY KEY)');
+    $connection->executeStatement('CREATE TABLE client_group_members (client_id BIGINT, client_group_id BIGINT, UNIQUE (client_id, client_group_id))');
+    $connection->executeStatement('CREATE TABLE setting (param TEXT UNIQUE, value TEXT, public INTEGER, created_at TEXT, updated_at TEXT)');
+    $connection->executeStatement('INSERT INTO client_group VALUES (7), (8)');
+    $connection->executeStatement('INSERT INTO client VALUES (1, 7), (2, 8)');
+    $connection->executeStatement('INSERT INTO client_group_members VALUES (1, 7), (1, 8)');
+    $connection->executeStatement("CREATE TRIGGER fail_marker BEFORE INSERT ON setting BEGIN SELECT RAISE(ABORT, 'marker failure'); END");
+
+    $patcher = new UpdatePatcher();
+    $migrate = (new ReflectionMethod($patcher, 'migrateClientGroupMemberships'))->getClosure($patcher);
+    expect(fn () => $migrate($connection))->toThrow('marker failure');
+    expect($connection->fetchOne('SELECT COUNT(*) FROM client_group_members'))->toBe(2)
+        ->and($connection->fetchOne('SELECT COUNT(*) FROM setting'))->toBe(0);
+
+    $connection->executeStatement('DROP TRIGGER fail_marker');
+    $migrate($connection);
+    expect($connection->fetchAllAssociative('SELECT client_id, client_group_id FROM client_group_members ORDER BY client_id, client_group_id'))
+        ->toBe([
+            ['client_id' => 1, 'client_group_id' => 7],
+            ['client_id' => 1, 'client_group_id' => 8],
+            ['client_id' => 2, 'client_group_id' => 8],
+        ])
+        ->and($connection->fetchOne('SELECT value FROM setting WHERE param = :param', ['param' => 'client_group_memberships_migrated']))->toBe('1');
 });
 
 test('applyCorePatches also runs a portable schema sync after legacy patches on a MySQL driver', function (): void {
@@ -3242,3 +3548,30 @@ test('ensureSchemaInSync restores promo bundle and auto-apply columns missing fr
         (new Filesystem())->remove($dbFile);
     }
 });
+
+test('custom page charset repair follows the promotion patch', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 127);
+    expect($patches)->toHaveKey(128)->and($patches[128][1])->toBe('patch128');
+});
+
+test('custom gateway image migration adds the column and skips already migrated gateways', function (bool $migrated): void {
+    $columns = Mockery::mock(PDOStatement::class);
+    $columns->expects('execute')->with([])->andReturnTrue();
+    $columns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn($migrated ? [['Field' => 'custom_logo']] : [['Field' => 'id']]);
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `pay_gateway`')->andReturn($columns);
+    $sql = 'ALTER TABLE `pay_gateway` ADD COLUMN `custom_logo` VARCHAR(255) DEFAULT NULL';
+    if ($migrated) {
+        $pdo->shouldNotReceive('prepare')->with($sql);
+    } else {
+        $statement = Mockery::mock(PDOStatement::class);
+        $statement->expects('execute')->with([])->andReturnTrue();
+        $pdo->expects('prepare')->with($sql)->andReturn($statement);
+    }
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+
+    (new ReflectionMethod($patcher, 'patch129'))->invoke($patcher);
+})->with([false, true]);

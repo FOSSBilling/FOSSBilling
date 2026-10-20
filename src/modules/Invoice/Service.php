@@ -848,6 +848,12 @@ class Service implements InjectionAwareInterface
         $claimed = false;
 
         try {
+            // Defer until the configured send time; returning before the claim
+            // leaves reminded_at untouched so a later cron retries.
+            if (!$this->isReminderSendTimeReached()) {
+                return;
+            }
+
             if (!$this->isInvoiceReminderIntervalEnabled('invoice_reminder_before_due_days', $event->daysLeft, '', $event->reminderIntervals)) {
                 return;
             }
@@ -955,6 +961,11 @@ class Service implements InjectionAwareInterface
         $claimed = false;
 
         try {
+            // Same deferral as the before-due handler; no claim is made yet.
+            if (!$this->isReminderSendTimeReached()) {
+                return;
+            }
+
             if (!$this->isInvoiceReminderIntervalEnabled('invoice_reminder_after_due_days', $event->daysPassed, '5', $event->reminderIntervals)) {
                 return;
             }
@@ -1187,6 +1198,9 @@ class Service implements InjectionAwareInterface
                 }
 
                 $result = $this->markAsPaid($invoice, false, false, true, $paidAt, $actuallyPaid);
+                if ($actuallyPaid ?? $result) {
+                    $this->creditDepositBalanceIfNeeded($invoice, $payGateway, $transactionId, $invoiceTotal);
+                }
                 if ($result) {
                     $transaction->setAmount((string) $invoiceTotal);
                     $transaction->setCurrency($invoice->getCurrency());
@@ -1223,10 +1237,19 @@ class Service implements InjectionAwareInterface
 
         // Payment runs first so the paid journal row commits atomically with
         // it (carrying the admin-supplied paid_at date via the override
-        // below); notifications follow. Gated on the payment having happened
+        // below); a deposit credit commits in the same transaction so a
+        // crash cannot leave a paid Add Funds invoice without its balance.
+        // Notifications follow. Gated on the payment having happened
         // in this call, as above.
         $actuallyPaid = null;
-        $paid = $this->markAsPaid($invoice, false, false, true, $paidAt, $actuallyPaid);
+        $paid = $this->di['em']->wrapInTransaction(function () use ($invoice, $payGateway, $transactionId, $paidAt, &$actuallyPaid): bool {
+            $result = $this->markAsPaid($invoice, false, false, true, $paidAt, $actuallyPaid);
+            if ($actuallyPaid ?? $result) {
+                $this->creditDepositBalanceIfNeeded($invoice, $payGateway, $transactionId);
+            }
+
+            return $result;
+        });
         if ($paid && ($actuallyPaid ?? true)) {
             $this->firePaymentReceivedEvent($invoice);
             if ($execute) {
@@ -1262,6 +1285,61 @@ class Service implements InjectionAwareInterface
         }
 
         return $payGateway;
+    }
+
+    /**
+     * Credit the client balance for an Add Funds (deposit) invoice paid by an admin.
+     *
+     * No-op for ordinary invoices. Must only be called when the payment
+     * happened in this call (gated on $actuallyPaid by the caller) and
+     * inside the payment transaction so the credit commits atomically
+     * with the paid-marking. Only deposit lines are credited: a draft
+     * deposit invoice can gain non-deposit lines before issuance, and
+     * those charges must not become spendable balance.
+     */
+    private function creditDepositBalanceIfNeeded(Invoice $invoice, PayGateway $payGateway, ?string $transactionId, ?float $invoiceTotal = null): void
+    {
+        if (!$this->isInvoiceTypeDeposit($invoice)) {
+            return;
+        }
+
+        $items = $this->getInvoiceItemRepository()->findByInvoiceId((int) $invoice->getId());
+        $hasOtherItems = false;
+        foreach ($items as $item) {
+            if ($item->getType() != InvoiceItem::TYPE_DEPOSIT) {
+                $hasOtherItems = true;
+
+                break;
+            }
+        }
+
+        if ($hasOtherItems) {
+            $invoiceItemService = $this->di['mod_service']('Invoice', 'InvoiceItem');
+            $amount = 0.0;
+            foreach ($items as $item) {
+                if ($item->getType() == InvoiceItem::TYPE_DEPOSIT) {
+                    $amount += $invoiceItemService->getTotalWithTax($item);
+                }
+            }
+        } else {
+            $amount = $invoiceTotal ?? $this->getTotalWithTax($invoice);
+        }
+
+        $client = $this->di['em']->getRepository(Client::class)->find($invoice->getClientId());
+        if (!$client instanceof Client) {
+            throw new InformationException('Client not found');
+        }
+
+        $gatewayTitle = $payGateway->getName() ?: $payGateway->getGateway();
+        $reference = trim((string) $transactionId);
+        $description = $reference !== ''
+            ? sprintf('%s transaction No: %s', $gatewayTitle, $reference)
+            : sprintf('%s manual payment', $gatewayTitle);
+
+        $this->di['mod_service']('client')->addFunds($client, $amount, $description, [
+            'type' => 'invoice',
+            'rel_id' => (string) $invoice->getId(),
+        ]);
     }
 
     /**
@@ -4011,10 +4089,10 @@ class Service implements InjectionAwareInterface
         $sellerLines = 0;
         $buyerLines = 0;
         $logoSource = '';
+        $options->set('isRemoteEnabled', false);
 
         if (!empty($c['logo_url'])) {
-            [$logoSource, $remote] = $this->getPdfLogoSource($c['logo_url']);
-            $options->set('isRemoteEnabled', $remote);
+            [$logoSource] = $this->getPdfLogoSource($c['logo_url']);
         }
 
         $vars = [
@@ -4141,6 +4219,41 @@ class Service implements InjectionAwareInterface
         sort($days);
 
         return $days;
+    }
+
+    /**
+     * Whether automatic reminders may be sent yet today. An empty or invalid
+     * `invoice_reminder_send_time` means disabled (legacy behavior); otherwise
+     * true once local time reaches `HH:MM`, so the first cron at/after the
+     * configured time sends.
+     */
+    public function isReminderSendTimeReached(?\DateTimeImmutable $now = null): bool
+    {
+        try {
+            $systemService = $this->di['mod_service']('system');
+            $configured = $systemService->getParamValue('invoice_reminder_send_time', '');
+        } catch (\Throwable) {
+            return true;
+        }
+
+        $configured = trim((string) ($configured ?? ''));
+        if ($configured === '') {
+            return true;
+        }
+
+        if (!preg_match('/^(\d{1,2}):(\d{2})$/', $configured, $matches)) {
+            return true;
+        }
+
+        $hour = (int) $matches[1];
+        $minute = (int) $matches[2];
+        if ($hour > 23 || $minute > 59) {
+            return true;
+        }
+
+        $now ??= new \DateTimeImmutable();
+
+        return ((int) $now->format('H')) * 60 + ((int) $now->format('i')) >= $hour * 60 + $minute;
     }
 
     private function _isAutoIssued(): bool
@@ -4657,6 +4770,9 @@ class Service implements InjectionAwareInterface
     {
         $source = parse_url($originalUrl, PHP_URL_PATH);
         $remote = false;
+        if (!is_string($source) || $source === '') {
+            return [$this->fetchPdfLogo($originalUrl), false];
+        }
 
         // prevent openbasedir error from preventing pdf creation when debug mode is enabled
         if (@!$this->filesystem->exists($source)) {
@@ -4679,23 +4795,120 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        // Only permit http/https remote URLs. Other schemes such as file://, php://, or phar://
-        // could be passed to Dompdf with remote loading enabled, leading to local file disclosure
-        // or other server-side vulnerabilities. Malformed URLs (where parse_url returns non-string)
-        // are also rejected by skipping the logo entirely.
         if ($remote) {
-            $scheme = parse_url($source, PHP_URL_SCHEME);
-            if (!is_string($scheme) || !in_array(strtolower($scheme), ['http', 'https'], true)) {
-                return ['', false];
-            }
+            return [$this->fetchPdfLogo($originalUrl), false];
         }
 
-        if (!$remote && str_ends_with($source, '.svg')) {
+        if (str_ends_with($source, '.svg')) {
             $source = 'data:image/svg+xml;base64,' . base64_encode($this->filesystem->readFile($source));
             $remote = false;
         }
 
         return [$source, $remote];
+    }
+
+    /** Fetch logos without allowing the PDF renderer to access the network. */
+    private function fetchPdfLogo(string $url): string
+    {
+        $scheme = parse_url($url, PHP_URL_SCHEME);
+        if (!is_string($scheme) || !in_array(strtolower($scheme), ['http', 'https'], true)) {
+            return '';
+        }
+
+        $client = new \Symfony\Component\HttpClient\NoPrivateNetworkHttpClient($this->di['http_client']);
+        $response = null;
+
+        try {
+            $response = $client->request('GET', $url, [
+                'max_redirects' => 3,
+                'timeout' => 5,
+                'max_duration' => 10,
+                'on_progress' => static function (int $downloaded, int $size): void {
+                    if ($downloaded > 2 * 1024 * 1024 || $size > 2 * 1024 * 1024) {
+                        throw new \Symfony\Component\HttpClient\Exception\TransportException('Invoice logo is too large');
+                    }
+                },
+            ]);
+            if ($response->getStatusCode() !== 200) {
+                return '';
+            }
+            $mime = strtolower(trim(explode(';', $response->getHeaders()['content-type'][0] ?? '')[0]));
+            $mime = match ($mime) {
+                'image/x-png' => 'image/png',
+                'image/jpg', 'image/pjpeg' => 'image/jpeg',
+                'image/x-ms-bmp' => 'image/bmp',
+                default => $mime,
+            };
+            if (!in_array($mime, ['', 'application/octet-stream', 'image/png', 'image/jpeg', 'image/gif', 'image/bmp', 'image/webp', 'image/svg+xml'], true)) {
+                return '';
+            }
+            $bytes = '';
+            foreach ($client->stream($response) as $chunk) {
+                $bytes .= $chunk->getContent();
+                if (strlen($bytes) > 2 * 1024 * 1024) {
+                    return '';
+                }
+            }
+            $image = @getimagesizefromstring($bytes);
+            if ($image !== false && $image['mime'] !== 'image/svg+xml') {
+                if (!in_array($image['mime'], ['image/png', 'image/jpeg', 'image/gif', 'image/bmp', 'image/webp'], true)
+                    || !in_array($mime, ['', 'application/octet-stream', $image['mime']], true)
+                    || 16 * 1024 * 1024 < $image[0] * $image[1]) {
+                    return '';
+                }
+                $mime = $image['mime'];
+            } elseif (in_array($mime, ['', 'application/octet-stream', 'image/svg+xml'], true) && $this->isSelfContainedPdfSvg($bytes)) {
+                $mime = 'image/svg+xml';
+            } else {
+                return '';
+            }
+
+            return 'data:' . $mime . ';base64,' . base64_encode($bytes);
+        } catch (\Symfony\Contracts\HttpClient\Exception\ExceptionInterface) {
+            // An unavailable or unsafe logo must not prevent invoice generation.
+            return '';
+        } finally {
+            $response?->cancel();
+        }
+    }
+
+    /** Remote SVGs may use internal fragments, but may not load other resources. */
+    private function isSelfContainedPdfSvg(string $bytes): bool
+    {
+        $document = new \DOMDocument();
+        if (!@$document->loadXML($bytes, LIBXML_NONET) || $document->doctype !== null
+            || $document->documentElement?->localName !== 'svg') {
+            return false;
+        }
+        $content = $document->textContent;
+        foreach ($document->getElementsByTagName('*') as $element) {
+            foreach ($element->attributes as $attribute) {
+                $content .= "\n" . $attribute->value;
+                if ($attribute->localName === 'href' && !str_starts_with(trim($attribute->value), '#')) {
+                    if (!preg_match('~^data:(image/(?:png|jpeg|gif|bmp|webp));base64,([A-Za-z0-9+/=]+)$~D', $attribute->value, $data)) {
+                        return false;
+                    }
+                    $imageBytes = base64_decode($data[2], true);
+                    $image = $imageBytes === false ? false : @getimagesizefromstring($imageBytes);
+                    if ($image === false || $image['mime'] !== $data[1] || 16 * 1024 * 1024 < $image[0] * $image[1]) {
+                        return false;
+                    }
+                }
+            }
+        }
+        // Inspect decoded XML values so character references cannot hide CSS URLs.
+        if (str_contains($content, '\\') || stripos($content, '@import') !== false
+            || stripos($bytes, '<?xml-stylesheet') !== false) {
+            return false;
+        }
+        preg_match_all('/url\(([^)]*)\)/i', $content, $urls);
+        foreach ($urls[1] as $url) {
+            if (!str_starts_with(trim($url, " \t\r\n\"'"), '#')) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private function getSellerData(array $invoice, int &$lines): array

@@ -168,11 +168,12 @@ test('copies a gateway', function (): void {
         'acceptedCurrencies' => null,
         'testMode' => false,
         'config' => null,
+        'customLogo' => str_repeat('a', 64) . '.png',
     ]);
 
     $serviceMock = Mockery::mock(ServicePayGateway::class)->makePartial();
     $em = Mockery::mock(EntityManagerInterface::class);
-    $em->shouldReceive('persist')->once();
+    $em->shouldReceive('persist')->once()->with(Mockery::on(fn (PayGateway $copy): bool => $copy->getCustomLogo() === $payGateway->getCustomLogo()));
     $em->shouldReceive('flush')->once();
     $repo = Mockery::mock(PayGatewayRepository::class);
     $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($repo);
@@ -712,3 +713,60 @@ test('returns null when description is empty', function (): void {
     $result = $serviceMock->getDescription($payGateway);
     expect($result)->toBeNull();
 });
+
+test('identifies manual approval gateways by adapter capability', function (): void {
+    expect(ServicePayGateway::isManualApprovalGateway('Custom'))->toBeTrue()
+        ->and(ServicePayGateway::isManualApprovalGateway('Stripe'))->toBeFalse()
+        ->and(ServicePayGateway::isManualApprovalGateway('PayPalEmail'))->toBeFalse()
+        ->and(ServicePayGateway::isManualApprovalGateway('ClientBalance'))->toBeFalse()
+        ->and(ServicePayGateway::isManualApprovalGateway(null))->toBeFalse()
+        ->and(ServicePayGateway::isManualApprovalGateway(''))->toBeFalse()
+        ->and(ServicePayGateway::isManualApprovalGateway('NoSuchGateway'))->toBeFalse();
+});
+
+test('PayPal handoffs contain no session capability and retain invoice and callback context', function (bool $withInvoice): void {
+    $gateway = createEntity(PayGateway::class, [
+        'id' => 2,
+        'gateway' => 'PayPalEmail',
+        'testMode' => false,
+        'config' => json_encode(['email' => 'merchant@example.com']),
+    ]);
+    $invoice = $withInvoice ? createEntity(Invoice::class, ['id' => 16, 'hash' => 'abc123']) : null;
+    $service = payGatewayService();
+    $url = new FOSSBilling\Url();
+    $url->setBaseUri('https://billing.example/subdir/');
+    $service->getDi()['url'] = $url;
+    $tools = Mockery::mock(FOSSBilling\Tools::class);
+    $tools->shouldReceive('url')->andReturnUsing(fn (string $path): string => $url->link($path));
+    $service->getDi()['tools'] = $tools;
+    // No payment URL generation may read or export the active session ID.
+    $session = Mockery::mock(FOSSBilling\Session::class);
+    $session->shouldNotReceive('getId');
+    $service->getDi()['session'] = $session;
+    $adapter = $service->getPaymentAdapter($gateway, $invoice);
+    $config = (new ReflectionClass($adapter))->getProperty('config')->getValue($adapter);
+    foreach (['return_url' => 'ok', 'cancel_url' => 'cancel'] as $key => $status) {
+        parse_str((string) parse_url($config[$key], PHP_URL_QUERY), $params);
+        expect(parse_url($config[$key], PHP_URL_PATH))->toBe('/subdir/invoice/payment-return')
+            ->and($params)->toBe($withInvoice ? ['status' => $status, 'hash' => 'abc123'] : ['status' => $status]);
+    }
+    if (!$withInvoice) {
+        return;
+    }
+
+    $data = [
+        'id' => 16, 'nr' => '42', 'serie' => 'FB', 'currency' => 'USD',
+        'subtotal' => '100.00', 'tax' => '0.00', 'total' => '100.00',
+        'lines' => [['title' => 'Hosting']],
+        'subscription' => ['cycle' => 1, 'unit' => 'M'],
+        'buyer' => ['address' => '', 'city' => '', 'email' => 'client@example.com', 'first_name' => '', 'last_name' => '', 'zip' => '', 'country' => 'US', 'state' => ''],
+    ];
+    foreach ([$adapter->getOneTimePaymentFields($data), $adapter->getSubscriptionFields($data)] as $fields) {
+        parse_str((string) parse_url($fields['return'], PHP_URL_QUERY), $params);
+        expect($params)->toBe(['status' => 'thankyou', 'hash' => 'abc123'])
+            ->and($fields['cancel_return'])->toBe($config['cancel_url'])
+            ->and($fields['rm'])->toBe('1');
+        parse_str((string) parse_url($fields['notify_url'], PHP_URL_QUERY), $callback);
+        expect(FOSSBilling\Tools::verifyCallbackSignature(2, 16, $callback['sig'] ?? null))->toBeTrue();
+    }
+})->with([true, false]);

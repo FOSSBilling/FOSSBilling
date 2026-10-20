@@ -240,6 +240,9 @@ class UpdatePatcher implements InjectionAwareInterface
         // forever.
         $this->migrateThemePackageLayout();
 
+        // Branding paths and obsolete files need migrating on every database driver.
+        $this->migrateDefaultBrandingAssetsToPublicDirectory();
+
         // Retired hook packages and listener registrations have no runtime consumer. Remove
         // their records on every driver so old installs do not retain invisible extensions.
         $this->removeRetiredHookData();
@@ -264,6 +267,20 @@ class UpdatePatcher implements InjectionAwareInterface
         // first would find no table and leave existing invoices without baseline entries.
         // Deliberately outside the drift healer: a large backlog must not stall page loads.
         $this->backfillInvoiceJournal();
+
+        $this->checkInvoiceNumberCounter();
+    }
+
+    private function checkInvoiceNumberCounter(): void
+    {
+        $counter = $this->fetchOne('SELECT value FROM setting WHERE param = :param', ['param' => 'invoice_starting_number']);
+        if (filter_var($counter, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => PHP_INT_MAX - 1]]) !== false) {
+            return;
+        }
+
+        // Stored invoice history may be incomplete or use custom numbering. Reseeding
+        // from it could reuse an issued number, so leave the choice to the administrator.
+        $this->logUpdate('warning', 'The next invoice number is missing or invalid. Review invoice history and set an unused positive whole number in Invoice Settings before issuing invoices.');
     }
 
     /**
@@ -548,6 +565,11 @@ class UpdatePatcher implements InjectionAwareInterface
         // structural sync only ever adds - so without this the column lingers
         // on existing installs forever.
         $this->dropInvoiceBuyerPhoneCcColumn();
+
+        // Same story for the dead transaction.validate_ipn flag: nothing ever
+        // read it, the entity no longer maps it, and the additive sync would
+        // otherwise leave it behind on existing installs forever.
+        $this->dropTransactionValidateIpnColumn();
     }
 
     /**
@@ -691,6 +713,30 @@ class UpdatePatcher implements InjectionAwareInterface
         $this->executeSql($this->isMysqlDriver()
             ? 'ALTER TABLE `invoice` DROP COLUMN `buyer_phone_cc`'
             : 'ALTER TABLE invoice DROP COLUMN buyer_phone_cc');
+    }
+
+    /**
+     * Drops the dead transaction.validate_ipn column, which nothing ever
+     * read and the entity no longer maps. Portable across drivers via the
+     * DBAL schema manager for the existence check; every supported driver
+     * accepts DROP COLUMN. Idempotent: fresh installs never have it,
+     * migrated ones no longer do.
+     */
+    private function dropTransactionValidateIpnColumn(): void
+    {
+        if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('dbal')) {
+            return;
+        }
+
+        if (!$this->di['dbal']->createSchemaManager()->introspectTableByUnquotedName('transaction')->hasColumn('validate_ipn')) {
+            return;
+        }
+
+        // `transaction` is reserved on every driver: quote it, or the ALTER
+        // is a syntax error outside MySQL's backticks.
+        $this->executeSql($this->isMysqlDriver()
+            ? 'ALTER TABLE `transaction` DROP COLUMN `validate_ipn`'
+            : 'ALTER TABLE "transaction" DROP COLUMN "validate_ipn"');
     }
 
     /**
@@ -935,6 +981,7 @@ class UpdatePatcher implements InjectionAwareInterface
             }
 
             $result = SchemaSynchronizer::syncEntities($entityManager, $eagerEntityClasses);
+            $this->migrateClientGroupMemberships($connection);
             $this->storeSchemaMetadataHash(EntityManagerFactory::entityDefinitionsHash());
         } catch (\Throwable $e) {
             // Attach the metadata hash so the failure can be correlated with
@@ -973,6 +1020,42 @@ class UpdatePatcher implements InjectionAwareInterface
         }
 
         return $result;
+    }
+
+    /**
+     * Run once: non-MySQL installs retain the legacy column, so replaying the
+     * copy would restore memberships removed by administrators.
+     */
+    private function migrateClientGroupMemberships(\Doctrine\DBAL\Connection $connection): void
+    {
+        $marker = 'client_group_memberships_migrated';
+        if ($connection->fetchOne('SELECT value FROM setting WHERE param = :param', ['param' => $marker]) !== false) {
+            return;
+        }
+
+        $schemaManager = $connection->createSchemaManager();
+        if (!$schemaManager->tablesExist(['client'])
+            || !$schemaManager->introspectTableByUnquotedName('client')->hasColumn('client_group_id')) {
+            return;
+        }
+
+        $connection->transactional(static function (\Doctrine\DBAL\Connection $connection) use ($marker): void {
+            $connection->executeStatement(
+                'INSERT INTO client_group_members (client_id, client_group_id) '
+                . 'SELECT c.id, c.client_group_id FROM client c '
+                . 'INNER JOIN client_group g ON g.id = c.client_group_id '
+                . 'WHERE NOT EXISTS (SELECT 1 FROM client_group_members m '
+                . 'WHERE m.client_id = c.id AND m.client_group_id = c.client_group_id)'
+            );
+            $now = date('Y-m-d H:i:s');
+            $connection->insert('setting', [
+                'param' => $marker,
+                'value' => '1',
+                'public' => 0,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+        });
     }
 
     /**
@@ -1157,6 +1240,43 @@ class UpdatePatcher implements InjectionAwareInterface
         }
 
         return false;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function getColumnForeignKeys(string $table, string $column): array
+    {
+        $rows = $this->fetchAll(
+            'SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table AND COLUMN_NAME = :column AND REFERENCED_TABLE_NAME IS NOT NULL',
+            ['table' => $table, 'column' => $column],
+        );
+
+        return array_values(array_unique(array_map(static fn (array $row): string => (string) $row['CONSTRAINT_NAME'], $rows)));
+    }
+
+    private function tableHasForeignKey(string $table, string $constraintName): bool
+    {
+        return (bool) $this->fetchOne(
+            'SELECT 1 FROM information_schema.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table AND CONSTRAINT_NAME = :constraint AND CONSTRAINT_TYPE = :type LIMIT 1',
+            ['table' => $table, 'constraint' => $constraintName, 'type' => 'FOREIGN KEY'],
+        );
+    }
+
+    private function addForeignKeyIfMissing(string $table, string $constraintName, string $column, string $referencedTable, string $referencedColumn): void
+    {
+        if ($this->tableHasForeignKey($table, $constraintName)) {
+            return;
+        }
+
+        $this->executeSql(sprintf(
+            'ALTER TABLE `%s` ADD CONSTRAINT `%s` FOREIGN KEY (`%s`) REFERENCES `%s` (`%s`) ON DELETE CASCADE',
+            $this->quoteIdentifier($table),
+            $this->quoteIdentifier($constraintName),
+            $this->quoteIdentifier($column),
+            $this->quoteIdentifier($referencedTable),
+            $this->quoteIdentifier($referencedColumn),
+        ));
     }
 
     private function quoteIdentifier(string $identifier): string
@@ -1374,6 +1494,9 @@ class UpdatePatcher implements InjectionAwareInterface
             125 => 'patch125',
             126 => 'patch126',
             127 => 'patch127',
+            128 => 'patch128',
+            129 => 'patch129',
+            130 => 'patch130',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -3989,6 +4112,7 @@ class UpdatePatcher implements InjectionAwareInterface
     {
         $settings = [
             'company_logo' => [
+                'public/branding/logo-light.svg',
                 'public/branding/logo.svg',
                 'themes/huraga/assets/img/logo.svg',
                 'themes/huraga/assets/build/img/logo.svg',
@@ -3999,6 +4123,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 'themes/huraga/assets/build/img/logo_white.svg',
             ],
             'company_favicon' => [
+                'public/branding/favicon.svg',
                 'public/branding/favicon.ico',
                 'themes/huraga/assets/favicon.ico',
                 'themes/huraga/assets/build/favicon.ico',
@@ -4016,6 +4141,15 @@ class UpdatePatcher implements InjectionAwareInterface
                     'old_value' => $oldValue,
                 ]);
             }
+        }
+
+        foreach (['public/branding/logo.svg', 'public/branding/favicon.ico'] as $path) {
+            // A custom setting may still use an old asset, such as the light logo in dark mode.
+            if ($this->fetchOne('SELECT value FROM setting WHERE value = :value LIMIT 1', ['value' => $path]) !== false) {
+                continue;
+            }
+
+            $this->executeFileActions([Path::join(PATH_ROOT, $path) => 'unlink']);
         }
     }
 
@@ -4531,14 +4665,13 @@ class UpdatePatcher implements InjectionAwareInterface
     private function patch125(): void
     {
         // Client groups went multi-membership (#4387): the single
-        // `client.client_group_id` FK is replaced by the `client_group_members`
+        // `client.client_group_id` column is replaced by the `client_group_members`
         // join table. Create it, copy existing assignments across, then drop
         // the column (which also drops its index). Only groups that still
-        // exist are copied: the legacy column had no enforced foreign key,
-        // so orphaned IDs (e.g. deleted groups) must not migrate. INSERT
-        // IGNORE plus guards make reruns no-ops. Non-MySQL drivers get the
-        // table from the portable schema sync; the data copy and column drop
-        // are MySQL-only, like all historical data migrations.
+        // exist are copied: orphaned IDs (e.g. deleted groups) must not
+        // migrate. INSERT IGNORE plus guards make reruns no-ops. Non-MySQL
+        // drivers get the table and assignment copy from syncPortableSchema();
+        // only the legacy column drop remains MySQL-only.
         if (!$this->tableExists('client_group_members')) {
             $this->executeSql('CREATE TABLE `client_group_members` (`id` bigint(20) NOT NULL AUTO_INCREMENT, `client_id` bigint(20) NOT NULL, `client_group_id` bigint(20) NOT NULL, `created_at` datetime DEFAULT NULL, `updated_at` datetime DEFAULT NULL, PRIMARY KEY (`id`), UNIQUE KEY `client_group_members_client_group` (`client_id`, `client_group_id`), KEY `client_group_members_group_idx` (`client_group_id`)) ENGINE=InnoDB DEFAULT CHARSET=utf8');
         }
@@ -4549,8 +4682,29 @@ class UpdatePatcher implements InjectionAwareInterface
                 . 'SELECT c.`id`, c.`client_group_id` FROM `client` c '
                 . 'INNER JOIN `client_group` g ON g.`id` = c.`client_group_id`'
             );
+
+            // Installs created fresh while the legacy column was still mapped as
+            // a Doctrine ManyToOne carry a real foreign key on it (SchemaTool
+            // materializes JoinColumns, with an auto-generated name per install),
+            // while long-upgraded installs have none. MariaDB/MySQL refuse to drop
+            // a column whose index backs a foreign key (error 1553), so drop those
+            // constraints first, looking the names up instead of assuming them.
+            foreach ($this->getColumnForeignKeys('client', 'client_group_id') as $foreignKey) {
+                $this->executeSql(sprintf('ALTER TABLE `client` DROP FOREIGN KEY `%s`', $this->quoteIdentifier($foreignKey)));
+            }
+
             $this->executeSql('ALTER TABLE `client` DROP COLUMN `client_group_id`');
         }
+
+        // Bring upgraded installs in line with fresh installs, whose SchemaTool-built
+        // join table carries both foreign keys with cascade deletes: drop memberships
+        // orphaned by later client/group deletions (which no constraint could stop),
+        // then add any missing constraint. Rows from the copy above always satisfy
+        // both keys by construction, so this cannot fail on migrated data.
+        $this->executeSql('DELETE FROM `client_group_members` WHERE `client_id` NOT IN (SELECT `id` FROM `client`)');
+        $this->executeSql('DELETE FROM `client_group_members` WHERE `client_group_id` NOT IN (SELECT `id` FROM `client_group`)');
+        $this->addForeignKeyIfMissing('client_group_members', 'client_group_members_client_fk', 'client_id', 'client', 'id');
+        $this->addForeignKeyIfMissing('client_group_members', 'client_group_members_group_fk', 'client_group_id', 'client_group', 'id');
     }
 
     private function patch126(): void
@@ -4592,6 +4746,73 @@ class UpdatePatcher implements InjectionAwareInterface
         if (!$this->tableHasIndex('promo', 'auto_apply_index_idx')) {
             $this->executeSql('ALTER TABLE `promo` ADD INDEX `auto_apply_index_idx` (`auto_apply`)');
         }
+    }
+
+    private function patch128(): void
+    {
+        if (!$this->tableExists('custom_pages')) {
+            return;
+        }
+
+        // QKM: widen user-authored page text without changing indexed slug equality or
+        // the size of TEXT columns (CONVERT TO CHARACTER SET can promote them to MEDIUMTEXT).
+        $indexedColumns = $this->fetchFirstColumn(
+            'SELECT DISTINCT COLUMN_NAME FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table',
+            ['table' => 'custom_pages'],
+        );
+        $collations = $this->fetchFirstColumn('SELECT COLLATION_NAME FROM information_schema.COLLATIONS WHERE CHARACTER_SET_NAME = :charset', ['charset' => 'utf8mb4']);
+        $changes = [];
+        foreach ($this->fetchAll('SHOW FULL COLUMNS FROM `custom_pages`') as $column) {
+            $name = $column['Field'];
+            if (!in_array($name, ['title', 'description', 'keywords', 'content'], true)) {
+                continue;
+            }
+
+            $collation = $column['Collation'] ?? '';
+            if (!preg_match('/^utf8(?:mb3)?_(.+)$/', $collation, $matches)) {
+                continue;
+            }
+            $targetCollation = 'utf8mb4_' . $matches[1];
+            if (in_array($name, $indexedColumns, true)
+                || $column['Extra'] !== ''
+                || $column['Default'] !== null
+                || !preg_match('/^(?:varchar\([0-9]+\)|tinytext|text|mediumtext|longtext)$/', $column['Type'])
+                || !in_array($targetCollation, $collations, true)) {
+                $this->logUpdate('warning', 'Skipped utf8mb4 conversion of custom_pages.' . $name . ': customized column or index requires manual review.');
+
+                continue;
+            }
+
+            $definition = sprintf('MODIFY COLUMN `%s` %s CHARACTER SET utf8mb4 COLLATE %s %s',
+                $this->quoteIdentifier($name),
+                $column['Type'],
+                $this->quoteIdentifier($targetCollation),
+                $column['Null'] === 'YES' ? 'NULL' : 'NOT NULL',
+            );
+            if ($column['Null'] === 'YES') {
+                $definition .= ' DEFAULT NULL';
+            }
+            $definition .= ' COMMENT ' . $this->di['dbal']->quote($column['Comment']);
+            $changes[] = $definition;
+        }
+
+        if ($changes !== []) {
+            // One ALTER avoids rebuilding the table for each column. DDL failures stop the
+            // patch sequence, leaving patch128 pending; successful reruns skip widened columns.
+            $this->executeSql('ALTER TABLE `custom_pages` ' . implode(', ', $changes));
+        }
+    }
+
+    private function patch129(): void
+    {
+        if (!$this->tableHasColumn('pay_gateway', 'custom_logo')) {
+            $this->executeSql('ALTER TABLE `pay_gateway` ADD COLUMN `custom_logo` VARCHAR(255) DEFAULT NULL');
+        }
+    }
+
+    private function patch130(): void
+    {
+        $this->migrateDefaultBrandingAssetsToPublicDirectory();
     }
 
     /**

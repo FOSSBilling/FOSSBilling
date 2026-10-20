@@ -26,7 +26,7 @@ export function adminCredentials(): Credentials {
   return { email, password };
 }
 
-async function csrfToken(context: BrowserContext): Promise<string> {
+export async function csrfToken(context: BrowserContext): Promise<string> {
   const cookie = (await context.cookies()).find(({ name }) => name === 'fossbilling_csrf');
 
   if (!cookie) {

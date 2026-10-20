@@ -107,7 +107,7 @@
                                     <label class="form-label" for="textarea-width">{{ 'Width'|trans }}</label>
                                 <div class="input-group">
                                     <input type="hidden" name="textarea_option[]" value="width">
-                                    <input class="form-control" type="text" name="textarea_size[]" value="{{field.options.width}}" id="textarea-width">
+                                    <input class="form-control" type="text" name="textarea_size[]" value="{{ field.options.width|default('300') }}" id="textarea-width">
                                     <span class="input-group-text">{{ 'px'|trans }}</span>
                                 </div>
                                 </div>
@@ -115,7 +115,7 @@
                                     <label class="form-label" for="textarea-height">{{ 'Height'|trans }}</label>
                                 <div class="input-group">
                                     <input type="hidden" name="textarea_option[]" value="height">
-                                    <input class="form-control" type="text" name="textarea_size[]" value="{{field.options.height}}" id="textarea-height">
+                                    <input class="form-control" type="text" name="textarea_size[]" value="{{ field.options.height|default('100') }}" id="textarea-height">
                                     <span class="input-group-text">{{ 'px'|trans }}</span>
                                 </div>
                                 </div>
@@ -199,7 +199,7 @@
                                     {% endfor %}
                                 </select>
                             {% elseif field.type == "textarea" %}
-                                <textarea class="form-control" name="default_value" style="width: {{ field.options.width }}px; height: {{ field.options.height }}px;">{{ field.default_value }}</textarea>
+                                <textarea class="form-control" name="default_value" style="width: {{ field.options.width|default('300') }}px; height: {{ field.options.height|default('100') }}px;">{{ field.default_value }}</textarea>
                             {% endif %}
                         </div>
                     </section>

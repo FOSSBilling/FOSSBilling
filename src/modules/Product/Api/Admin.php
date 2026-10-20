@@ -136,6 +136,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @throws \FOSSBilling\Exception
      */
+    #[RequiredParams(['id' => 'Product ID was not passed'])]
     public function update($data)
     {
         $this->checkPermissions('product', 'manage_products');
@@ -174,6 +175,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      */
+    #[RequiredParams(['id' => 'Product ID was not passed'])]
     public function update_config($data)
     {
         $this->checkPermissions('product', 'manage_products');
@@ -285,6 +287,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      */
+    #[RequiredParams(['id' => 'Addon ID was not passed'])]
     public function addon_delete($data)
     {
         $this->checkPermissions('product', 'manage_products');
@@ -297,6 +300,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @return bool
      */
+    #[RequiredParams(['id' => 'Product ID was not passed'])]
     public function delete($data)
     {
         $this->checkPermissions('product', 'manage_products');
@@ -601,7 +605,6 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         return $this->getService()->deletePromo($model);
     }
 
-    #[RequiredParams(['id' => 'Product ID was not passed'])]
     private function _getProduct($data)
     {
         return $this->getService()->findProductById((int) $data['id']);

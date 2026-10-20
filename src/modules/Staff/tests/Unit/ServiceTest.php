@@ -1481,7 +1481,7 @@ test('changePassword updates admin password', function (): void {
 
     $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
     $passwordMock->shouldReceive('hashIt')->atLeast()->once()
-        ->with($plainTextPassword);
+        ->with($plainTextPassword)->andReturn('new-hash');
 
     $profileServiceStub = $this->createStub(Box\Mod\Profile\Service::class);
 
@@ -1492,8 +1492,9 @@ test('changePassword updates admin password', function (): void {
     $di = container();
     $di['event_dispatcher'] = $eventDispatcher;
     $di['logger'] = $logStub;
-    $di['em']->shouldReceive('persist')->atLeast()->once();
-    $di['em']->shouldReceive('flush')->atLeast()->once();
+    $repository = Mockery::mock(AdminPasswordResetRepository::class);
+    $repository->shouldReceive('changePassword')->once()->with($adminModel, 'new-hash');
+    $di['em']->shouldReceive('getRepository')->with(AdminPasswordReset::class)->andReturn($repository);
     $di['password'] = $passwordMock;
     $di['mod_service'] = $di->protect(fn () => $profileServiceStub);
     $di['loggedin_admin'] = staffHierarchyBypassAdmin();

@@ -337,6 +337,35 @@ test('addNew refuses locked invoices unless bypassed for internal flows', functi
     expect($service->addNew($invoiceModel, ['title' => 'Discount', 'price' => -5], true))->toBeInt();
 });
 
+test('addNew rejects deposit line types', function (): void {
+    $invoiceModel = createEntity(Invoice::class);
+
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldNotReceive('persist', 'flush');
+    $repo = Mockery::mock(InvoiceItemRepository::class);
+    $em->shouldReceive('getRepository')->with(InvoiceItem::class)->andReturn($repo);
+
+    $service = new ServiceInvoiceItem();
+    $di = container();
+    $di['em'] = $em;
+    $service->setDi($di);
+
+    expect(fn () => $service->addNew($invoiceModel, ['title' => 'Add funds', 'price' => 10, 'type' => InvoiceItem::TYPE_DEPOSIT]))
+        ->toThrow(FOSSBilling\InformationException::class, 'Add Funds flow');
+
+    // Order lines stay allowed: cart checkout builds them through prepareInvoice.
+    $orderEm = Mockery::mock(EntityManagerInterface::class);
+    $orderEm->shouldReceive('persist')->once();
+    $orderEm->shouldReceive('flush')->once();
+    $orderEm->shouldReceive('getRepository')->with(InvoiceItem::class)->andReturn($repo);
+    $invoiceServiceMock = Mockery::mock(InvoiceService::class);
+    $invoiceServiceMock->shouldReceive('isInvoiceEditable')->andReturn(true);
+    $di['mod_service'] = $di->protect(moduleService(['invoice' => $invoiceServiceMock]));
+    $di['em'] = $orderEm;
+
+    expect($service->addNew($invoiceModel, ['title' => 'Hosting', 'price' => 10, 'type' => InvoiceItem::TYPE_ORDER]))->toBeInt();
+});
+
 test('update and remove refuse locked invoices', function (): void {
     $invoiceModel = createEntity(Invoice::class);
     $invoiceModel->setIssued(true);

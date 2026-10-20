@@ -151,7 +151,7 @@ test('buildConnectionParams falls back to a supported charset for pdo_mysql', fu
         'charset' => 'not-a-real-charset',
     ]);
 
-    expect($params['charset'])->toBe('utf8');
+    expect($params['charset'])->toBe('utf8mb4');
 });
 
 test('buildConnectionParams builds a path-based param set for pdo_sqlite', function (): void {
@@ -201,3 +201,11 @@ test('getConnection actually connects for a file-based pdo_sqlite database', fun
         (new Filesystem())->remove($path);
     }
 });
+
+test('MySQL connections default to full Unicode and retain explicit supported charsets', function (?string $charset, string $expected): void {
+    $config = ['driver' => 'pdo_mysql', 'host' => 'localhost', 'port' => 3306, 'name' => 'db', 'user' => 'u', 'password' => 'p'];
+    if ($charset !== null) {
+        $config['charset'] = $charset;
+    }
+    expect(buildConnectionParams($config)['charset'])->toBe($expected);
+})->with([[null, 'utf8mb4'], ['utf8mb4', 'utf8mb4'], ['utf8', 'utf8'], ['latin1', 'latin1']]);
