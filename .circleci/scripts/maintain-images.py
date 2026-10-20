@@ -40,10 +40,10 @@ def save():
     (output / 'report.json').write_text(json.dumps(report, indent=2) + '\n')
 
 
-def bake(name, extra):
+def bake(name, extra, import_cache=True):
     args = ['docker', 'buildx', 'bake', '--builder', state['builder'], '-f',
             '.circleci/images/docker-bake.hcl', '--progress', 'plain']
-    if state['cache_from']:
+    if import_cache and state['cache_from']:
         args += ['--set', '*.cache-from=type=registry,ref=' + state['cache_from']]
     return run(args + extra, name)
 
@@ -113,6 +113,19 @@ if args.operation == 'prepare':
              'release': release, 'builder': 'ci-images-' + build_id,
              'cache_from': cache_prefix + '-' + previous if previous else '',
              'cache_to': cache_prefix + '-' + args.phase}
+    if args.phase == 'browser-refresh':
+        state['cache_from'] = os.environ.get('MAINTENANCE_CACHE_SOURCE') or state['cache_from']
+        parent = os.environ.get('MAINTENANCE_APACHE_PARENT')
+        if not parent:
+            parent_file = Path('/tmp/image-parent/apache-parent.json')
+            if not parent_file.exists():
+                raise RuntimeError('Browser refresh requires the warm job Apache parent reference')
+            parent = json.loads(parent_file.read_text())['reference']
+        if not parent.startswith(args.repository + ':ci-'):
+            raise ValueError('Apache parent must be a candidate in the configured repository')
+        if not state['cache_from'].startswith(args.repository + ':ci-cache-'):
+            raise ValueError('Cache source must belong to the configured repository')
+        state['apache_reference'] = parent
     state_path.write_text(json.dumps(state, indent=2) + '\n')
     report['state'] = state
     save()
@@ -142,13 +155,25 @@ else:
             extra += ['--no-cache']
         elif args.phase == 'browser-refresh':
             extra += ['--set', 'browser.no-cache-filter=browser']
-        log = bake('build-and-publish', extra + ['default'])
+        # Isolate the forced target: a concurrent unfiltered solve can reuse its
+        # cached result and defeat the refresh in a multi-target invocation.
+        target = 'browser' if args.phase == 'browser-refresh' else 'default'
+        log = bake('build-and-publish', extra + [target])
         report['build_metrics'] = build_metrics(log)
+        if args.phase == 'browser-refresh':
+            vertices = re.findall(r'^#(\d+) \[[^\]]+\] RUN cd /tmp/playwright-runner', log, re.M)
+            executed = any(re.search(r'^#' + vertex + r' \d+\.\d+ ', log, re.M)
+                           and not re.search(r'^#' + vertex + r' CACHED$', log, re.M)
+                           for vertex in vertices)
+            report['browser_refresh_executed'] = bool(executed)
+            save()
+            if not executed:
+                raise RuntimeError('Browser refresh did not execute its installation step')
         save()
     elif args.operation == 'cache':
         bake('cache-export', ['--set', '*.output=type=cacheonly', '--set',
                               'browser.cache-to=type=registry,ref=' + state['cache_to'] + ',mode=max',
-                              'browser'])
+                              'browser'], import_cache=False)
         cache = json.loads(run(['docker', 'buildx', 'imagetools', 'inspect', '--raw',
                                state['cache_to']], 'cache-manifest', True))
         (output / 'cache-descriptors.json').write_text(json.dumps(cache, indent=2) + '\n')
@@ -158,11 +183,19 @@ else:
     elif args.operation == 'verify':
         images = {target: state['repository'] + ':' + state['release'] + '-' + target
                   for target in ['apache', 'browser']}
+        if args.phase == 'browser-refresh':
+            images['apache'] = state['apache_reference']
         manifests = {target: inspect(ref, target + '-manifest') for target, ref in images.items()}
         apache_layers = manifests['apache']['layers']
         browser_layers = manifests['browser']['layers']
         if apache_layers != browser_layers[:len(apache_layers)]:
             raise RuntimeError('Browser output does not extend the exact published Apache layers')
+        cache = json.loads((output / 'cache-descriptors.json').read_text())
+        cached = {layer['digest'] for layer in cache['layers']}
+        if not all(layer['digest'] in cached for layer in browser_layers):
+            raise RuntimeError('Exported cache does not contain the published browser layers')
+        report['cache_matches_published_image'] = True
+        (output / 'apache-parent.json').write_text(json.dumps({'reference': images['apache']}) + '\n')
         report['exact_parent_verified'] = True
         report['published_references'] = images
         report['image_compressed_bytes'] = {t: sum(x['size'] for x in m['layers'])

@@ -38,8 +38,9 @@ VMs (`medium.gen2`), with CircleCI DLC disabled:
 2. **Images (Warm publish):** import that registry cache into a fresh builder,
    publish both outputs again and export a separate warm cache.
 3. **Images (Browser refresh):** import the warm cache into another fresh builder,
-   rebuild browser instructions, and publish/verify the pair again. Apache
-   remains cached; publishing its new trial tag adds metadata, not another build.
+   rebuild and publish only the browser target, and verify it against the warm
+   job's Apache image passed through a small workspace. A concurrent unfiltered
+   Apache solve could defeat the forced refresh, so the target is isolated.
 
 Start a trial explicitly after pushing the reviewed source:
 
@@ -57,6 +58,12 @@ It needs `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` with write access to
 `fossbilling/circleci-php-apache`. Credentials are not project variables and are
 not attached to contributor validation jobs. The Docker orb authenticates;
 Bake handles the shared multi-target build graph.
+
+To resume just a browser refresh against an existing warm trial, additionally set
+`image-maintenance-refresh-only=true`, `image-maintenance-cache-source` to its
+registry cache reference and `image-maintenance-apache-parent` to its published
+Apache candidate. This starts one job and avoids repeating the successful cold
+and warm work. Both references must belong to the configured image repository.
 
 Each job stores phase timings, BuildKit logs, OCI metadata, cache descriptors,
 published references and smoke-test output under `image-maintenance-<phase>`.
@@ -81,8 +88,10 @@ Future production flow may combine it with publication after costs are known.
 | Full installed-package refresh on unchanged inputs | `--no-cache` for both stages | Both together |
 
 Invalidating only the Apache stage reused an older browser result in the local
-trial. Every published pair must pass the assertion that Apache's layer list is
-an exact prefix of browser's. Both images must pass PHP/Node/Apache smoke tests
+trial. Refresh jobs must also prove the browser installation step actually executed.
+Every published pair must pass the assertion that Apache's layer list is
+an exact prefix of browser's. The exported cache must contain the published browser layers.
+Both images must pass PHP/Node/Apache smoke tests
 as `circleci`; the browser image must also launch matching Chromium using the
 locked standalone runner. The hosted trial stops before pin promotion: full
 API/browser suites must validate candidates before a reviewed pin update.

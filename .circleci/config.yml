@@ -5,6 +5,15 @@ parameters:
   run-image-maintenance:
     type: boolean
     default: false
+  image-maintenance-refresh-only:
+    type: boolean
+    default: false
+  image-maintenance-cache-source:
+    type: string
+    default: ''
+  image-maintenance-apache-parent:
+    type: string
+    default: ''
   force-full-validation:
     type: boolean
     default: false
@@ -260,9 +269,19 @@ jobs:
     environment:
       IMAGE_REPOSITORY: docker.io/fossbilling/circleci-php-apache
       MAINTENANCE_PHASE: << parameters.phase >>
+      MAINTENANCE_CACHE_SOURCE: << pipeline.parameters.image-maintenance-cache-source >>
+      MAINTENANCE_APACHE_PARENT: << pipeline.parameters.image-maintenance-apache-parent >>
       MAINTENANCE_TRIAL_ID: << pipeline.number >>
     steps:
       - checkout
+      - when:
+          condition:
+            and:
+              - equal: [browser-refresh, << parameters.phase >>]
+              - not: << pipeline.parameters.image-maintenance-refresh-only >>
+          steps:
+            - attach_workspace:
+                at: /tmp/image-parent
       - setup_remote_docker:
           docker_layer_caching: false
       - docker/check:
@@ -272,7 +291,7 @@ jobs:
           name: Prepare isolated image builder
           command: python3 .circleci/scripts/maintain-images.py prepare --phase "$MAINTENANCE_PHASE" --trial-id "$MAINTENANCE_TRIAL_ID"
       - run:
-          name: Build and publish both prepared images
+          name: Build and publish prepared images
           command: python3 .circleci/scripts/maintain-images.py build --phase "$MAINTENANCE_PHASE" --trial-id "$MAINTENANCE_TRIAL_ID"
       - run:
           name: Export shared registry cache
@@ -280,6 +299,13 @@ jobs:
       - run:
           name: Verify image relationship and runtime
           command: python3 .circleci/scripts/maintain-images.py verify --phase "$MAINTENANCE_PHASE" --trial-id "$MAINTENANCE_TRIAL_ID"
+      - when:
+          condition:
+            equal: [warm, << parameters.phase >>]
+          steps:
+            - persist_to_workspace:
+                root: test-results/image-maintenance
+                paths: [apache-parent.json]
       - run:
           name: Remove isolated image builder
           when: always
@@ -317,6 +343,7 @@ workflows:
     when:
       and:
         - << pipeline.parameters.run-image-maintenance >>
+        - not: << pipeline.parameters.image-maintenance-refresh-only >>
         - equal: [api, << pipeline.trigger_source >>]
         - or:
             - equal: [main, << pipeline.git.branch >>]
@@ -336,3 +363,17 @@ workflows:
           phase: browser-refresh
           context: docker-hub
           requires: [Images (Warm publish)]
+  image-maintenance-refresh:
+    when:
+      and:
+        - << pipeline.parameters.run-image-maintenance >>
+        - << pipeline.parameters.image-maintenance-refresh-only >>
+        - equal: [api, << pipeline.trigger_source >>]
+        - or:
+            - equal: [main, << pipeline.git.branch >>]
+            - equal: [codex/circleci-validation-pilot, << pipeline.git.branch >>]
+    jobs:
+      - image-maintenance:
+          name: Images (Browser refresh)
+          phase: browser-refresh
+          context: docker-hub
