@@ -93,8 +93,8 @@ publishing, so its rename or split should be considered during that migration.
 Remaining work before cutover:
 
 - Finalize image maintenance retention, update triggers and candidate promotion.
-  The restricted hosted publishing trial passed; full API/browser validation is
-  still required before promoting its candidate image digests.
+  The restricted hosted publishing trial and full API/browser candidate
+  validation passed; runtime digest promotion remains a separate step.
 - Verify cold/warm and dependency-changing runs, fork/internal PR check
   association, checkout revisions and deliberate hosted failure artifacts.
 - Plan migration of PHP quality checks and independent Docker packaging coverage,

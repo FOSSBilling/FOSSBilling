@@ -1118,3 +1118,38 @@ references, metadata, logs and reports. Runtime validation pins remain unchanged
 full API/browser candidate validation must precede promotion. No periodic
 schedule or automated pin-update PR has been enabled. Local diagnostic builders
 and containers were removed.
+
+
+## Candidate image application validation (2026-10-20)
+
+[Pipeline 475](https://app.circleci.com/pipelines/github/FOSSBilling/FOSSBilling/475)
+on `c95bb69ee` ran the complete seven-job validation workflow with
+`force-full-validation=true` and immutable candidate image overrides. All jobs
+passed in **80 seconds / 54 credits** (CircleCI Insights). Both integration
+executors downloaded the candidate images and MariaDB on their hosts; dependency
+caches were restored. This is one mixed-cache observation, not an isolated
+performance comparison against prior runtime pins.
+
+| Suite | Result |
+| --- | --- |
+| Live API, candidate Apache | 92 passed, 4 existing skips; 1,325 assertions; 29.62s |
+| Application browser, candidate browser | 21 passed; 18.4s; no retries |
+| Frontend widget browser | 23 passed |
+| PHP 8.3 / 8.4 / 8.5 and frontend build | All passed |
+
+The four live API skips require `CHARSET_TEST_MYSQL_PORT` for an isolated
+MySQL/MariaDB server; that optional configuration remains absent. Existing PHP
+8.5 `curl_close()` deprecation messages remain visible in the test helper.
+The prepared browser's matching preinstalled Chromium check also passed.
+
+Actual spin-up logs confirm these exact image references:
+
+- API: `docker.io/fossbilling/circleci-php-apache:ci-0ea71f6a-472-warm-165-apache@sha256:0b54905044a70080d6d99af634ab9a3d8f2404c85eaf28d1ea49975c5bd08a07`
+- Browser: `docker.io/fossbilling/circleci-php-apache:ci-0eb82696-474-browser-refresh-168-browser@sha256:677bd49a63c208c0663d5e96ff156564c02d82a7de19ae49662788a412f8409c`
+
+The new `integration-api-image` and `integration-browser-image` pipeline
+parameters default to the existing runtime pins. Local config validation and
+expansion verified the full graph with candidate overrides before the hosted
+run. Candidate validation requires no publishing context. Runtime defaults have
+not been promoted; these results provide the application verification needed
+for a subsequent reviewed pin update.

@@ -100,6 +100,11 @@ Trigger ordinary validation with `force-full-validation=true` and supply
 including immutable digests. These optional overrides leave the default runtime
 pins unchanged and do not grant access to the publishing context.
 
+[Candidate validation](../experiments.md#candidate-image-application-validation-2026-10-20)
+subsequently passed all seven jobs in pipeline 475, including 92 live API tests
+(with four existing isolated-database skips) and all 21 application browser tests.
+Runtime defaults still use the previous pins pending promotion.
+
 No periodic schedule or automated pin PR has been enabled. Publishing contexts,
 cache retention and update triggers remain to be finalized after this trial.
 Trial image/cache tags are retained for inspection; local builder state is removed.
