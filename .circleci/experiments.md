@@ -1038,3 +1038,83 @@ in this local trial. Automating schedules, publishing contexts and pin updates
 remains separate work. The temporary builders, registries, cache volumes and
 loaded trial images are removed after inspection; existing Docker resources are
 preserved.
+
+
+## Hosted image maintenance trial (2026-10-20)
+
+The restricted `docker-hub` context successfully authenticated publication to
+`docker.io/fossbilling/circleci-php-apache`. The opt-in workflow uses the shared
+Dockerfile, Playwright 1.64.1 and `medium.gen2`, with fresh remote Docker/BuildKit
+environments and CircleCI DLC disabled. Cold and warm publication passed in
+[pipeline 472](https://app.circleci.com/pipelines/github/FOSSBilling/FOSSBilling/472)
+on `0ea71f6a39`; the genuine browser-only refresh passed in
+[pipeline 474](https://app.circleci.com/pipelines/github/FOSSBilling/FOSSBilling/474)
+on `0eb826968a` using pipeline 472's warm cache and Apache candidate.
+
+| Valid phase | Build and publish | Separate cache export | Full job duration | Credits |
+| --- | ---: | ---: | ---: | ---: |
+| Cold, both outputs | 69.977s | 2.646s | 129s | 32 |
+| Warm, both outputs | 5.059s | 2.636s | 53s | 12 |
+| Browser refresh only | 61.972s | 2.724s | 113s | 30 |
+
+Build/publish and cache-export times are script wall times. Full job durations
+and credits come from CircleCI Insights and include setup, verification and
+artifact work; the job API's shorter top-level duration omits part of VM setup.
+These are single samples, not stable averages or a hosted unified-image comparison.
+
+The cold/warm cache described 838,418,067 compressed layer bytes. Warm cache
+metadata imported in 0.3s, but blobs can remain lazy or be reused server-side;
+this does not mean 838 MB traversed the network in that time. Cache export reused
+layers already published in the same repository, so its roughly 2.6s cost was
+mostly metadata, not another full image upload. Cold image push-layer timings
+were 0.9s for Apache and 4.6s for browser; manifest pushes were 2.1s and 2.2s.
+Warm pushes took 0.9s per image and manifests 1.7s/1.9s. Exporters overlap, so
+these component timings must not be summed.
+
+The browser refresh downloaded/extracted 618,217,263 compressed bytes of cached
+Apache layers. Cache materialization completed in 12.7s, attributed by BuildKit
+to the cached Apache RUN vertex; the Apache command itself did not execute.
+The runner manifest/lock COPY took 0.5s, browser installation actually executed
+for 24.9s and image export took 22.8s (including 15.8s compression, 4.7s layer
+push and 2.2s manifest push). Cache metadata import took 0.2s. The new browser
+image contained 838,420,392 compressed layer bytes.
+
+Verification added about 23–24s per job, mostly fresh daemon pulls: about 14s for
+Apache and another 5.4–5.8s for browser, then about 0.6s for the locked runner
+install and 0.5s for Chromium launch. PHP 8.5.10, Node 24.20.0, Apache syntax and
+Chromium 156.0.8078.4 passed as `circleci`. The final refresh report also confirmed
+that browser installation executed, Apache layers were an exact browser prefix,
+and the exported cache contained the newly published browser layers. Full
+application suites have not been run against these candidate digests.
+
+The initial browser-refresh job in pipeline 472 incorrectly reused its browser
+RUN cache: its 12 credits are excluded from refresh results. A guarded retry in
+[pipeline 473](https://app.circleci.com/pipelines/github/FOSSBilling/FOSSBilling/473)
+failed that execution assertion before cache export, costing 5 credits. The
+pinned hosted `cimg/base` client has Buildx 0.37.1; its Bake stage-filter override
+was ignored even for a single target. This reproduced locally with the exact
+hosted client, whereas the desktop client (0.38.0) honored the override. Native
+`buildx build --no-cache-filter browser --target browser` executed correctly with
+the hosted client and is now used for forced browser refreshes. Cold/warm still
+use the shared Bake graph. Cache export reads the new local build records without
+re-importing the previous registry cache, and cache membership is checked.
+
+Valid measurements cost **74 credits**. Actual experiment spend was **91 credits**,
+including the 17 credits for the cached attempt and rejected retry. Pipeline 472
+cost 56 credits, pipeline 473 cost 5 and pipeline 474 cost 30.
+
+Retain separate runtime images with one shared build definition. The prior local
+comparison found only 22,275 extra metadata bytes and no additional runtime layer
+blobs for the Apache output; the hosted trial demonstrates inexpensive shared
+publication and warm reuse. It does not directly establish hosted credit savings
+versus unified images. Keeping Apache separate avoids about 220 MB compressed /
+775 MB unpacked browser layers in API environments at Playwright 1.64.1.
+
+Candidates and trial cache tags remain available for inspection. The successful
+refresh is `ci-0eb82696-474-browser-refresh-168-browser`, using Apache candidate
+`ci-0ea71f6a-472-warm-165-apache` and cache `ci-cache-474-browser-refresh`, all in
+`docker.io/fossbilling/circleci-php-apache`. Per-job artifacts retain exact
+references, metadata, logs and reports. Runtime validation pins remain unchanged;
+full API/browser candidate validation must precede promotion. No periodic
+schedule or automated pin-update PR has been enabled. Local diagnostic builders
+and containers were removed.

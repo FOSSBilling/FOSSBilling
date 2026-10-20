@@ -92,9 +92,9 @@ publishing, so its rename or split should be considered during that migration.
 
 Remaining work before cutover:
 
-- Implement and verify the trusted image maintenance workflow before cutover.
-  Local build trials support separate outputs from one shared definition; hosted
-  cache transfer, Docker Hub publication and maintenance credits still need measurement.
+- Finalize image maintenance retention, update triggers and candidate promotion.
+  The restricted hosted publishing trial passed; full API/browser validation is
+  still required before promoting its candidate image digests.
 - Verify cold/warm and dependency-changing runs, fork/internal PR check
   association, checkout revisions and deliberate hosted failure artifacts.
 - Plan migration of PHP quality checks and independent Docker packaging coverage,
@@ -107,7 +107,7 @@ prepared application browser image now target **1.64.1**. Local validation on
 2026-10-20 passed all 21 application and 23 widget tests without retries, using
 a fresh application/database and the minimal runner. Production asset builds,
 type checks and the 61 JavaScript tests also passed. These checks include the
-latest merged main; hosted verification is still pending.
+latest merged main; subsequent hosted verification passed as recorded below.
 
 Image build definitions are under `images/Dockerfile` and `images/docker-bake.hcl`.
 The browser target extends the Apache stage in the shared definition. Rebuild with new,
@@ -140,10 +140,14 @@ intermediate publishing and duplicated build definitions. Its local full refresh
 was 65.0s for separate outputs versus 64.1s for unified, with about 22 KB extra
 registry metadata and no extra shared layer blobs. Browser-only changes build the
 same single target in both designs. See its limitations before treating those
-local timings as hosted cost evidence. The shared definition is adopted. Run the opt-in `image-maintenance` trial with
-`run-image-maintenance=true` to measure cold, warm and browser-refresh publication.
-It uses the restricted `docker-hub` context and does not promote candidate images
-into validation; see the image guide for credential and artifact details.
+local timings as hosted cost evidence. The shared definition is adopted. The
+[hosted maintenance trial](experiments.md#hosted-image-maintenance-trial-2026-10-20)
+measured cold publication at 129s / 32 credits, warm publication at 53s / 12 credits
+and a genuine browser refresh at 113s / 30 credits, including setup and smoke
+verification. These measure separate outputs; no hosted unified comparison was
+run. The opt-in workflow uses the restricted `docker-hub` context and does not
+promote candidate images into validation; see the image guide for credential
+and artifact details.
 
 See [the experiment history](experiments.md) for configurations, revisions,
 individual timings, credit totals and limitations of each comparison.

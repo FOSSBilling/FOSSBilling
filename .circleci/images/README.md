@@ -97,8 +97,16 @@ locked standalone runner. The hosted trial stops before pin promotion: full
 API/browser suites must validate candidates before a reviewed pin update.
 
 No periodic schedule or automated pin PR has been enabled. Publishing contexts,
-cache retention and update triggers can be finalized after hosted measurements.
+cache retention and update triggers remain to be finalized after this trial.
 Trial image/cache tags are retained for inspection; local builder state is removed.
+
+The [hosted trial](../experiments.md#hosted-image-maintenance-trial-2026-10-20)
+passed cold, warm and forced browser-refresh publication and smoke verification.
+Full job costs were 32, 12 and 30 credits respectively. An additional 17 credits
+were spent diagnosing an ignored Bake stage-filter override; those attempts are
+excluded from valid refresh measurements. The pinned hosted client uses Buildx
+0.37.1: the issue reproduced with that exact client, while native
+`buildx build --no-cache-filter browser` executed the refresh correctly.
 
 See [the local comparison](../experiments.md#image-maintenance-comparison-2026-10-20)
 for measurements and limitations. References:
