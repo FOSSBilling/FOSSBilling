@@ -71,8 +71,8 @@ curl --fail --silent --show-error \
   -F admin_api_token=AW6qEQCa7U7FG96J9NFIZXNYMJ79M8LH \
   'http://localhost/install/install.php?a=install' >/dev/null
 
-# Match the browser pilot's session configuration.
-if [[ "${NATIVE_SUITE:-}" == browser ]]; then
+# Use the browser test suite's session configuration.
+if [[ "${INTEGRATION_SUITE:-}" == browser ]]; then
   php -r '$path = "src/config.php"; $config = require $path; $config["security"]["perform_session_fingerprinting"] = false; file_put_contents($path, "<?php\nreturn " . var_export($config, true) . ";\n");'
 fi
 

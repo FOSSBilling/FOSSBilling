@@ -24,17 +24,13 @@ executors:
     docker:
       - image: cimg/php:8.5.10@sha256:7c7ba12e0204ec9b291019a738b4cab3bae2167aaa70c594d6608ec21085c8fe
     resource_class: medium.gen2
-  native-live:
+  integration:
+    parameters:
+      image:
+        type: string
+        default: docker.io/fossbilling/circleci-php-apache:php8.5.10-node-apache-25434d4@sha256:acfccef40b6fdd3f274e0bad1c28661e2393ee48beefd62f6ebe3181804033aa
     docker:
-      - image: docker.io/fossbilling/circleci-php-apache:php8.5.10-node-apache-25434d4@sha256:acfccef40b6fdd3f274e0bad1c28661e2393ee48beefd62f6ebe3181804033aa
-      - image: mariadb:lts@sha256:805c8e104bd563d5bfa24fadd3f31cd419ea859cb5277f32b5dbf2db714f9ed1
-        environment:
-          MARIADB_DATABASE: fossbilling
-          MARIADB_ROOT_PASSWORD: root
-    resource_class: medium.gen2
-  native-browser:
-    docker:
-      - image: docker.io/fossbilling/circleci-php-apache:php8.5.10-node-apache-playwright1.63.0-0c8c3451@sha256:c9509b7da4ef07e75629b93a27571f286428aa886950bd79be0e587232508dff
+      - image: << parameters.image >>
       - image: mariadb:lts@sha256:805c8e104bd563d5bfa24fadd3f31cd419ea859cb5277f32b5dbf2db714f9ed1
         environment:
           MARIADB_DATABASE: fossbilling
@@ -65,19 +61,20 @@ commands:
             node -e 'require("node:assert/strict").equal(require("./package.json").devDependencies["@playwright/test"], require("./.circleci/playwright/package.json").dependencies["@playwright/test"])'
             mkdir -p node_modules/@playwright
             ln -s "$(pwd)/.circleci/playwright/node_modules/@playwright/test" node_modules/@playwright/test
-  native-app-install:
+  install-integration-app:
     steps:
       - checkout-for-validation
       - php/install_packages:
           vendor_dir: src/vendor
           cache_files_dir: /home/circleci/.cache/composer/files
+          # Preserve the established cache namespace across naming changes.
           cache_version: v2-native-php8.5
           install_flags: --prefer-dist --optimize-autoloader --no-interaction --no-progress
       - attach_workspace:
           at: .
       - run:
-          name: Install app with native Apache, PHP-FPM and database service
-          command: bash .circleci/scripts/start-native-app.sh
+          name: Install application with Apache, PHP-FPM and MariaDB
+          command: bash .circleci/scripts/start-integration-app.sh
 
 jobs:
   php-tests:
@@ -117,7 +114,7 @@ jobs:
                   - phpstan-v1-php8.3-{{ arch }}-{{ checksum "composer.lock" }}-{{ checksum "phpstan.neon" }}-{{ checksum ".circleci/phpstan.neon" }}-{{ .Branch }}-{{ .Revision }}
                   - phpstan-v1-php8.3-{{ arch }}-{{ checksum "composer.lock" }}-{{ checksum "phpstan.neon" }}-{{ checksum ".circleci/phpstan.neon" }}-{{ .Branch }}-
             - run:
-                name: PHPStan tests
+                name: PHPStan static analysis
                 command: ./src/vendor/bin/phpstan analyse --configuration .circleci/phpstan.neon --memory-limit=512M --no-progress -vv
             # Result caches need a new snapshot per revision: CircleCI caches are immutable.
             - save_cache:
@@ -139,12 +136,17 @@ jobs:
     resource_class: medium.gen2
     steps:
       - checkout-for-validation
-      - run: node --version && npm --version && git rev-parse HEAD
+      - run:
+          name: Record Node environment
+          command: node --version && npm --version && git rev-parse HEAD
       - node/install-packages:
           pkg-manager: npm
           cache-path: ~/.npm
           cache-version: v1-native-node24
           override-ci-command: npm ci --no-audit --no-fund
+      - run:
+          name: JavaScript unit tests
+          command: npm run test:js
       - run:
           name: Build production assets and typecheck browser tests
           command: NODE_ENV=production bash .circleci/scripts/build-frontend.sh
@@ -161,7 +163,7 @@ jobs:
 
   frontend-browser-tests:
     docker:
-      - image: mcr.microsoft.com/playwright:v1.63.0-noble@sha256:eff16c30e6f3f4af0a03fa4b706120d5e9b0891c344a27d64559aff5900a4a27
+      - image: mcr.microsoft.com/playwright:v1.64.1-noble@sha256:7852dc5a7d72f5fe458a597d690f6c42fbc8e9e26ddfa95f8e6ef552558d9bbf
     resource_class: medium.gen2
     environment:
       TABLER_WIDGET_SCRIPT: test-results/widgets/script.js
@@ -170,7 +172,9 @@ jobs:
       PLAYWRIGHT_HTML_OPEN: never
     steps:
       - checkout-for-validation
-      - run: node --version && npm --version && git rev-parse HEAD
+      - run:
+          name: Record Node environment
+          command: node --version && npm --version && git rev-parse HEAD
       - attach_workspace:
           at: .
       - install-playwright-runner
@@ -185,10 +189,13 @@ jobs:
 
   integration-tests:
     parameters:
+      executor:
+        type: executor
+        default: integration
       suite:
         type: enum
         enum: [live, browser]
-    executor: native-<< parameters.suite >>
+    executor: << parameters.executor >>
     environment:
       APP_ENV: test
       COMPOSER_CACHE_DIR: /home/circleci/.cache/composer
@@ -200,15 +207,15 @@ jobs:
       PLAYWRIGHT_JUNIT_OUTPUT_FILE: tests/E2E/Playwright/artifacts/junit/results.xml
       PLAYWRIGHT_HTML_OUTPUT_DIR: tests/E2E/Playwright/artifacts/report
       PLAYWRIGHT_HTML_OPEN: never
-      NATIVE_SUITE: << parameters.suite >>
+      INTEGRATION_SUITE: << parameters.suite >>
     steps:
-      - native-app-install
+      - install-integration-app
       - when:
           condition:
             equal: [live, << parameters.suite >>]
           steps:
             - run:
-                name: Native live API tests
+                name: Live API tests
                 command: |
                   mkdir -p test-results/live
                   ./src/vendor/bin/pest --test-directory ../tests --testsuite=E2E --ci --log-junit test-results/live/live.xml
@@ -224,19 +231,19 @@ jobs:
                 command: |
                   node -e 'const {chromium}=require("./.circleci/playwright/node_modules/playwright"); (async()=>{const browser=await chromium.launch(); console.log(browser.version()); await browser.close()})().catch(error=>{console.error(error);process.exit(1)})'
             - run:
-                name: Native Playwright tests
+                name: Application browser tests
                 command: .circleci/playwright/node_modules/.bin/playwright test --config=playwright.application.config.ts --reporter=line,junit,html
             - store_test_results:
                 path: tests/E2E/Playwright/artifacts/junit
             - store_artifacts:
                 path: tests/E2E/Playwright/artifacts
-                destination: native-playwright
+                destination: application-playwright
       - store_artifacts:
           path: test-results
-          destination: native-test-results
+          destination: integration-test-results
       - store_artifacts:
           path: src/data/log
-          destination: native-app-logs
+          destination: application-logs
 
 workflows:
   validation:
@@ -246,15 +253,19 @@ workflows:
           matrix:
             parameters:
               php-minor: ['3', '4', '5']
-      - frontend-build
+      - frontend-build:
+          name: Frontend (Build)
       - frontend-browser-tests:
-          name: Frontend (browser tests)
-          requires: [frontend-build]
+          name: Frontend (Widget tests)
+          requires: [Frontend (Build)]
       - integration-tests:
           name: Integration (Live API tests)
           suite: live
-          requires: [frontend-build]
+          requires: [Frontend (Build)]
       - integration-tests:
           name: Integration (Browser tests)
           suite: browser
-          requires: [frontend-build]
+          executor:
+            name: integration
+            image: docker.io/fossbilling/circleci-php-apache:php8.5.10-node-apache-playwright1.64.1-0110d6ff@sha256:586d691db108172bde30af8ae7369ec44d5d1bce354d8397b3e3fc1864ca917b
+          requires: [Frontend (Build)]
