@@ -1153,3 +1153,14 @@ expansion verified the full graph with candidate overrides before the hosted
 run. Candidate validation requires no publishing context. Runtime defaults have
 not been promoted; these results provide the application verification needed
 for a subsequent reviewed pin update.
+
+
+## Validated runtime pin promotion (2026-10-20)
+
+Promoted the exact Apache and browser digests tested in pipeline 475 to the
+`integration-api-image` and `integration-browser-image` defaults. No image was
+rebuilt and no registry tags changed. Ordinary validation now uses those verified candidates
+without pipeline overrides. The prior digest references remain recorded above
+for rollback. Config validation and default expansion confirm both integration
+jobs resolve to the tested digests; the full suites already passed against
+these immutable artifacts in pipeline 475.

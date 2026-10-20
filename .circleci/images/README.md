@@ -5,8 +5,9 @@ One Dockerfile builds two images: `apache` contains PHP/Node and Apache;
 `browser` extends that exact stage with the Chromium headless shell selected by
 the standalone Playwright lock file. Docker Bake builds both targets together.
 The old intermediate Docker Hub FROM-digest update is no longer needed.
-Validation still uses its existing published image digests until new candidates
-have passed API and browser verification and their pins are reviewed.
+Validation now defaults to the candidate digests verified by the full API and
+browser suites in pipeline 475. Future candidates require the same verification
+before their runtime pins are promoted.
 
 Preview or build locally from the repository root (the default exporter loads
 images locally and does not publish):
@@ -103,7 +104,7 @@ pins unchanged and do not grant access to the publishing context.
 [Candidate validation](../experiments.md#candidate-image-application-validation-2026-10-20)
 subsequently passed all seven jobs in pipeline 475, including 92 live API tests
 (with four existing isolated-database skips) and all 21 application browser tests.
-Runtime defaults still use the previous pins pending promotion.
+Both verified candidate digests have now been promoted to runtime defaults.
 
 No periodic schedule or automated pin PR has been enabled. Publishing contexts,
 cache retention and update triggers remain to be finalized after this trial.

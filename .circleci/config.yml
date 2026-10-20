@@ -4,10 +4,10 @@ version: 2.1
 parameters:
   integration-api-image:
     type: string
-    default: docker.io/fossbilling/circleci-php-apache:php8.5.10-node-apache-25434d4@sha256:acfccef40b6fdd3f274e0bad1c28661e2393ee48beefd62f6ebe3181804033aa
+    default: docker.io/fossbilling/circleci-php-apache:ci-0ea71f6a-472-warm-165-apache@sha256:0b54905044a70080d6d99af634ab9a3d8f2404c85eaf28d1ea49975c5bd08a07
   integration-browser-image:
     type: string
-    default: docker.io/fossbilling/circleci-php-apache:php8.5.10-node-apache-playwright1.64.1-0110d6ff@sha256:586d691db108172bde30af8ae7369ec44d5d1bce354d8397b3e3fc1864ca917b
+    default: docker.io/fossbilling/circleci-php-apache:ci-0eb82696-474-browser-refresh-168-browser@sha256:677bd49a63c208c0663d5e96ff156564c02d82a7de19ae49662788a412f8409c
   run-image-maintenance:
     type: boolean
     default: false

@@ -92,9 +92,9 @@ publishing, so its rename or split should be considered during that migration.
 
 Remaining work before cutover:
 
-- Finalize image maintenance retention, update triggers and candidate promotion.
+- Finalize image maintenance retention and update triggers.
   The restricted hosted publishing trial and full API/browser candidate
-  validation passed; runtime digest promotion remains a separate step.
+  validation passed; both validated digests are now the runtime defaults.
 - Verify cold/warm and dependency-changing runs, fork/internal PR check
   association, checkout revisions and deliberate hosted failure artifacts.
 - Plan migration of PHP quality checks and independent Docker packaging coverage,
@@ -112,8 +112,9 @@ latest merged main; subsequent hosted verification passed as recorded below.
 Image build definitions are under `images/Dockerfile` and `images/docker-bake.hcl`.
 The browser target extends the Apache stage in the shared definition. Rebuild with new,
 immutable tags, validate locally, publish to Docker Hub, and update digest pins
-when required. A base update must also rebuild and repin its browser extension. Published runtime
-pins remain unchanged during the opt-in maintenance trial.
+when required. A base update must also rebuild and repin its browser extension.
+The candidates verified in pipeline 475 are now the default runtime pins.
+Future opt-in maintenance trials publish candidates without changing those defaults.
 For a Playwright upgrade, update the root and standalone runner lock files,
 the official widget image and the browser image together. The runner checks that
 both package versions agree; the Actions wrapper derives its version from the
