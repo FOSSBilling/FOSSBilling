@@ -1304,8 +1304,11 @@ test('create category', function (): void {
     $service = new Service();
     $newCategoryId = 1;
 
+    $categoryRepo = Mockery::mock(ProductCategoryRepository::class);
+    $categoryRepo->shouldReceive('getMaxPriority')->once()->andReturn(0);
+
     $di = container();
-    $di['em'] = productTestCreateEntityManagerWithRepositories(null, null, null, null, null, productTestCreateProductCategoryEntity($newCategoryId));
+    $di['em'] = productTestCreateEntityManagerWithRepositories(null, null, null, null, $categoryRepo, productTestCreateProductCategoryEntity($newCategoryId));
     $di['logger'] = new FOSSBilling\Logger();
 
     $service->setDi($di);
@@ -1314,6 +1317,43 @@ test('create category', function (): void {
 
     expect($result)->toBeInt();
     expect($result)->toEqual($newCategoryId);
+});
+
+test('create category with explicit priority', function (): void {
+    $service = new Service();
+    $newCategoryId = 2;
+
+    $categoryRepo = Mockery::mock(ProductCategoryRepository::class);
+    $categoryRepo->shouldReceive('getMaxPriority')->never();
+
+    $di = container();
+    $di['em'] = productTestCreateEntityManagerWithRepositories(null, null, null, null, $categoryRepo, productTestCreateProductCategoryEntity($newCategoryId));
+    $di['logger'] = new FOSSBilling\Logger();
+
+    $service->setDi($di);
+
+    $result = $service->createCategory('title', null, null, 30);
+
+    expect($result)->toEqual($newCategoryId);
+});
+
+test('update category priority', function (): void {
+    $service = new Service();
+    $model = productTestCreateProductCategoryEntity(1);
+
+    $categoryRepo = Mockery::mock(ProductCategoryRepository::class);
+    $categoryRepo->shouldReceive('find')->once()->with(1)->andReturn($model);
+
+    $di = container();
+    $di['em'] = productTestCreateEntityManagerWithRepositories(null, null, null, null, $categoryRepo);
+    $di['logger'] = new FOSSBilling\Logger();
+
+    $service->setDi($di);
+
+    $result = $service->updateCategoryPriority(['priority' => [1 => 20]]);
+
+    expect($result)->toBeTrue();
+    expect($model->getPriority())->toEqual(20);
 });
 
 test('remove product category category has products exception', function (): void {

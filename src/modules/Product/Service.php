@@ -658,7 +658,7 @@ class Service implements InjectionAwareInterface
         return $this->getProductCategoryRepository()->getPairs();
     }
 
-    public function updateCategory(ProductCategory $productCategory, $title = null, $description = null, $icon_url = null): bool
+    public function updateCategory(ProductCategory $productCategory, $title = null, $description = null, $icon_url = null, $priority = null): bool
     {
         $this->validateIconUrl($icon_url);
 
@@ -666,6 +666,10 @@ class Service implements InjectionAwareInterface
             ->setTitle($title)
             ->setIconUrl($icon_url)
             ->setDescription($description);
+        if ($priority !== null && $priority !== '') {
+            $productCategory->setPriority((int) $priority);
+        }
+        $productCategory->setUpdatedAt(new \DateTime());
         $this->di['em']->flush();
 
         $this->di['logger']->info('Updated product category #{category_id}', ['category_id' => $productCategory->getId()]);
@@ -673,14 +677,36 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function createCategory($title, $description = null, $icon_url = null): ?int
+    public function updateCategoryPriority($data): bool
+    {
+        foreach ($data['priority'] as $id => $p) {
+            $model = $this->getProductCategoryRepository()->find((int) $id);
+            if ($model instanceof ProductCategory) {
+                $model->setPriority((int) $p);
+                $model->setUpdatedAt(new \DateTime());
+            }
+        }
+
+        $this->di['em']->flush();
+
+        $this->di['logger']->info('Changed product category priorities');
+
+        return true;
+    }
+
+    public function createCategory($title, $description = null, $icon_url = null, $priority = null): ?int
     {
         $this->validateIconUrl($icon_url);
+
+        if ($priority === null || $priority === '') {
+            $priority = $this->getProductCategoryRepository()->getMaxPriority() + 10;
+        }
 
         $model = (new ProductCategory())
             ->setTitle($title)
             ->setDescription($description)
-            ->setIconUrl($icon_url);
+            ->setIconUrl($icon_url)
+            ->setPriority((int) $priority);
         $this->di['em']->persist($model);
         $this->di['em']->flush();
         $id = $model->getId();
@@ -736,6 +762,7 @@ class Service implements InjectionAwareInterface
             'title' => $model->getTitle(),
             'description' => $model->getDescription(),
             'icon_url' => $model->getIconUrl(),
+            'priority' => $model->getPriority(),
             'created_at' => $this->formatDateTimeValue($model->getCreatedAt()),
             'updated_at' => $this->formatDateTimeValue($model->getUpdatedAt()),
             'price_starting_from' => $min_price,
@@ -764,6 +791,15 @@ class Service implements InjectionAwareInterface
     {
         return $this->di['pager']->paginateMappedQuery(
             $this->getProductCategorySearchQueryBuilder($data),
+            PaginationOptions::fromArray($data),
+            fn (ProductCategory $category): array => $this->toProductCategoryApiArray($category, true, $identity),
+        );
+    }
+
+    public function getPaginatedProductCategoriesForAdmin(array $data, $identity = null): array
+    {
+        return $this->di['pager']->paginateMappedQuery(
+            $this->getProductCategoryRepository()->getAdminSearchQueryBuilder($data),
             PaginationOptions::fromArray($data),
             fn (ProductCategory $category): array => $this->toProductCategoryApiArray($category, true, $identity),
         );

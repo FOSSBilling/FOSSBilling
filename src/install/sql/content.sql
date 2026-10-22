@@ -229,9 +229,9 @@ UNLOCK TABLES;
 LOCK TABLES `product_category` WRITE;
 /*!40000 ALTER TABLE `product_category` DISABLE KEYS */;
 
-INSERT INTO `product_category` (`id`, `title`, `description`, `icon_url`, `created_at`, `updated_at`)
+INSERT INTO `product_category` (`id`, `title`, `description`, `icon_url`, `priority`, `created_at`, `updated_at`)
 VALUES
-	(1,'Default category',NULL,NULL,NOW(),NOW());
+	(1,'Default category',NULL,NULL,10,NOW(),NOW());
 
 /*!40000 ALTER TABLE `product_category` ENABLE KEYS */;
 UNLOCK TABLES;

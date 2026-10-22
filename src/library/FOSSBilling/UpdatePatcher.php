@@ -1497,6 +1497,7 @@ class UpdatePatcher implements InjectionAwareInterface
             128 => 'patch128',
             129 => 'patch129',
             130 => 'patch130',
+            131 => 'patch131',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -4813,6 +4814,19 @@ class UpdatePatcher implements InjectionAwareInterface
     private function patch130(): void
     {
         $this->migrateDefaultBrandingAssetsToPublicDirectory();
+    }
+
+    private function patch131(): void
+    {
+        // Product category priority (#4499). Mirrors product.priority so categories
+        // can be ordered explicitly instead of by insertion id. Guarded so reruns
+        // are no-ops; non-MySQL drivers get the column from the portable schema sync.
+        if (!$this->tableHasColumn('product_category', 'priority')) {
+            $this->executeSql('ALTER TABLE `product_category` ADD COLUMN `priority` BIGINT DEFAULT NULL');
+        }
+
+        // Preserve the current insertion-order display for existing installs.
+        $this->executeSql('UPDATE `product_category` SET `priority` = `id` * 10 WHERE `priority` IS NULL');
     }
 
     /**

@@ -282,6 +282,34 @@ test('updates a category', function (): void {
     expect($api->category_update($data))->toBeTrue();
 });
 
+test('gets category list', function (): void {
+    $api = apiEndpoint(new Admin());
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('getPaginatedProductCategoriesForAdmin')->once()->andReturn(['list' => []]);
+
+    $api->setService($serviceMock);
+    $api->setDi(container());
+
+    expect($api->category_get_list([]))->toBeArray();
+});
+
+test('throws exception when updating category priority without priority param', function (): void {
+    $api = apiEndpoint(new Admin());
+    $api->setDi(container());
+
+    expect(fn () => $api->category_update_priority([]))
+        ->toThrow(FOSSBilling\Exception::class, 'priority params is missing');
+});
+
+test('updates category priority', function (): void {
+    $api = apiEndpoint(new Admin());
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('updateCategoryPriority')->atLeast()->once()->andReturn(true);
+
+    $api->setService($serviceMock);
+    expect($api->category_update_priority(['priority' => []]))->toBeTrue();
+});
+
 test('gets a category', function (): void {
     $api = apiEndpoint(new Admin());
     $data = ['id' => 1];
