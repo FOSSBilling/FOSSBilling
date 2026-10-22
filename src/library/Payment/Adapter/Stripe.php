@@ -287,15 +287,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface, FOS
             'reason' => 'requested_by_customer',
         ];
 
-        if (str_starts_with($txnId, 'pi_')) {
-            $params['payment_intent'] = $txnId;
-        } elseif (str_starts_with($txnId, 'ch_')) {
-            $params['charge'] = $txnId;
-        } elseif (str_starts_with($txnId, 'in_')) {
-            $params += $this->resolveRefundTargetForStripeInvoice($txnId);
-        } else {
-            throw new Payment_Exception('Stripe transaction :txn cannot be refunded automatically. Refund it in the Stripe dashboard instead.', [':txn' => $txnId]);
-        }
+        $params += $this->resolveRefundTarget($txnId);
 
         $idempotencyKey = 'refund_' . hash('sha256', implode('|', [$txnId, (string) $minorUnits, strtoupper($currency), json_encode($params['metadata'])]));
 
@@ -324,15 +316,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface, FOS
      */
     public function listRefundsForTransaction(string $txnId, string $currency): array
     {
-        if (str_starts_with($txnId, 'pi_')) {
-            $filter = ['payment_intent' => $txnId];
-        } elseif (str_starts_with($txnId, 'ch_')) {
-            $filter = ['charge' => $txnId];
-        } elseif (str_starts_with($txnId, 'in_')) {
-            $filter = $this->resolveRefundTargetForStripeInvoice($txnId);
-        } else {
-            throw new Payment_Exception('Stripe transaction :txn cannot be refunded automatically. Refund it in the Stripe dashboard instead.', [':txn' => $txnId]);
-        }
+        $filter = $this->resolveRefundTarget($txnId);
         $filter['limit'] = 100;
 
         try {
@@ -357,6 +341,27 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface, FOS
         }
 
         return $result;
+    }
+
+    /**
+     * Map a stored transaction ID onto the charge or payment intent a Stripe
+     * refund must target.
+     *
+     * @return array{payment_intent?: string, charge?: string}
+     */
+    private function resolveRefundTarget(string $txnId): array
+    {
+        if (str_starts_with($txnId, 'pi_')) {
+            return ['payment_intent' => $txnId];
+        }
+        if (str_starts_with($txnId, 'ch_')) {
+            return ['charge' => $txnId];
+        }
+        if (str_starts_with($txnId, 'in_')) {
+            return $this->resolveRefundTargetForStripeInvoice($txnId);
+        }
+
+        throw new Payment_Exception('Stripe transaction :txn cannot be refunded automatically. Refund it in the Stripe dashboard instead.', [':txn' => $txnId]);
     }
 
     /**

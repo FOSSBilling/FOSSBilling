@@ -205,7 +205,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         if (array_key_exists('gateway_refund', $data)) {
             $options['gateway_refund'] = $gatewayRefund;
         }
-        if (!empty($data['gateway_returned'])) {
+        if (array_key_exists('gateway_returned', $data) && Tools::normalizeBoolean($data['gateway_returned'])) {
             $options['gateway_returned'] = true;
         }
 
