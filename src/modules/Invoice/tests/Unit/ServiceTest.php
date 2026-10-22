@@ -9304,14 +9304,14 @@ test('refundInvoice issues distinct Stripe refunds for repeated identical partia
     $stripeTx->setStatus(Transaction::STATUS_PROCESSED);
 
     $persisted = [];
-    $metadatas = [];
+    $capturedMetadata = [];
     $adapter = Mockery::mock('Payment_Adapter_Stripe');
     $adapter->shouldReceive('supportsRefunds')->andReturn(true);
     $adapter->shouldReceive('listRefundsForTransaction')->twice()->andReturn([]);
-    $adapter->shouldReceive('refundPayment')->twice()->andReturnUsing(function (string $txnId, float $amount, string $currency, array $metadata) use (&$persisted, &$metadatas): string {
-        $metadatas[] = $metadata;
+    $adapter->shouldReceive('refundPayment')->twice()->andReturnUsing(function (string $txnId, float $amount, string $currency, array $metadata) use (&$persisted, &$capturedMetadata): string {
+        $capturedMetadata[] = $metadata;
 
-        return 're_' . count($metadatas);
+        return 're_' . count($capturedMetadata);
     });
 
     $payGatewayService = Mockery::mock(ServicePayGateway::class);
@@ -9388,11 +9388,11 @@ test('refundInvoice issues distinct Stripe refunds for repeated identical partia
 
     // The same selection refunded twice must move money twice: distinct
     // idempotency scopes produce distinct Stripe refunds, each recorded once.
-    expect($metadatas)->toHaveCount(2)
-        ->and($metadatas[0]['lines'])->toBe('12:1')
-        ->and($metadatas[1]['lines'])->toBe('12:1')
-        ->and($metadatas[0]['attempt'] ?? null)->not->toBeNull()
-        ->and($metadatas[0]['attempt'] ?? null)->not->toBe($metadatas[1]['attempt'] ?? null);
+    expect($capturedMetadata)->toHaveCount(2)
+        ->and($capturedMetadata[0]['lines'])->toBe('12:1')
+        ->and($capturedMetadata[1]['lines'])->toBe('12:1')
+        ->and($capturedMetadata[0]['attempt'] ?? null)->not->toBeNull()
+        ->and($capturedMetadata[0]['attempt'] ?? null)->not->toBe($capturedMetadata[1]['attempt'] ?? null);
 
     $refundRows = array_values(array_filter($persisted, fn ($e): bool => $e instanceof Transaction && $e->getType() === Payment_Transaction::TXTYPE_REFUND));
     expect(array_map(fn ($tx): ?string => $tx->getTxnId(), $refundRows))->toBe(['re_1', 're_2']);
