@@ -427,10 +427,19 @@ class Server_Manager_CWP extends Server_Manager
         $url = 'https://' . $host . ':' . $port . '/v1/' . $func;
 
         // Get the HTTP client with TLS verification options from server configuration
-        $client = $this->getHttpClient()->withOptions([
+        $clientOptions = [
             'verify_peer' => $verifyTls,
             'verify_host' => $verifyTls,
-        ]);
+        ];
+
+        if ($func === 'user_session') {
+            // Bound the interactive login request so a hung panel fails fast
+            // to the manual login URL instead of stalling the page load.
+            $clientOptions['timeout'] = 10;
+            $clientOptions['max_duration'] = 20;
+        }
+
+        $client = $this->getHttpClient()->withOptions($clientOptions);
 
         // Make the request and convert the response to an array
         try {

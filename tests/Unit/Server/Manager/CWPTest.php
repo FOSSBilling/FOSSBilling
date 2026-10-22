@@ -134,6 +134,21 @@ test('CWP falls back to the plain panel URL when the server cannot be reached', 
     expect($manager->getLoginUrl($account))->toBe('https://cwp.example.com:2083');
 });
 
+test('CWP bounds the session request duration', function (): void {
+    $seenOptions = null;
+    $ssoUrl = 'https://cwp.example.com:2083/example/?user_session=abc123';
+    $manager = createCwpManager(function (string $method, string $url, array $options) use (&$seenOptions, $ssoUrl): MockResponse {
+        $seenOptions = $options;
+
+        return new MockResponse(json_encode(['status' => 'OK', 'msj' => ['accounts' => 1, 'details' => [['url' => $ssoUrl]]]]));
+    });
+    $account = (new Server_Account())->setUsername('example');
+
+    expect($manager->getLoginUrl($account))->toBe($ssoUrl)
+        ->and($seenOptions['timeout'] ?? null)->toBe(10.0)
+        ->and($seenOptions['max_duration'] ?? null)->toBe(20.0);
+});
+
 test('CWP requests the session with the account username and timer', function (): void {
     $seenBody = null;
     $ssoUrl = 'https://cwp.example.com:2083/example/?user_session=abc123';
