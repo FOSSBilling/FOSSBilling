@@ -9121,3 +9121,18 @@ test('refundInvoice stamps the refunded lines into the gateway refund metadata',
     $serviceMock->setDi($di);
     expect($serviceMock->refundInvoice($invoiceModel, null, [12 => 1]))->toBe(7);
 });
+
+test('refundInvoice fails closed when another refund holds the invoice lock', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('withInvoiceRefundLock')->once()->andThrow(new FOSSBilling\InformationException('Another refund for this invoice is already in progress. Please retry.'));
+
+    $invoiceModel = createEntity(Invoice::class);
+    $invoiceModel->setStatus(Invoice::STATUS_PAID);
+    setEntityId($invoiceModel, 19);
+
+    $di = container();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $serviceMock->setDi($di);
+
+    expect(fn (): mixed => $serviceMock->refundInvoice($invoiceModel))->toThrow(FOSSBilling\InformationException::class, 'already in progress');
+});

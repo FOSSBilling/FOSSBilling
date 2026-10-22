@@ -52,6 +52,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use FOSSBilling\Doctrine\EntityManagerFactory;
+use FOSSBilling\Doctrine\NamedLock;
 use FOSSBilling\Doctrine\RowLock;
 use FOSSBilling\Doctrine\SqlExpr;
 use FOSSBilling\Environment;
@@ -1770,6 +1771,60 @@ class Service implements InjectionAwareInterface
             throw new InformationException('Only paid invoices can be refunded');
         }
 
+        $new = $this->withInvoiceRefundLock($invoice, fn (): Invoice => $this->createRefundDocument($invoice, $note, $items, $options));
+
+        try {
+            $this->sendRefundEmail($invoice, $new);
+        } catch (\Throwable $exception) {
+            $this->di['logger']->withChannel('email')->error('Failed to send refund email', [
+                'invoice_id' => $invoice->getId(),
+                'credit_note_id' => $new->getId(),
+                'exception' => $exception,
+            ]);
+        }
+
+        $this->di['event_dispatcher']->dispatch(new AfterAdminInvoiceRefundEvent((int) $invoice->getId()));
+
+        $this->di['logger']->info('Refunded invoice #{invoice_id}', ['invoice_id' => $invoice->getId()]);
+
+        return (int) $new->getId();
+    }
+
+    /**
+     * Serialize refunds of one invoice across processes. The gateway call in
+     * createRefundDocument runs before the credit-note transaction takes the
+     * invoice row lock, so without this, two concurrent refunds with
+     * different line selections would both reach Stripe with distinct
+     * idempotency keys before either books its credit note; the loser's
+     * rollback would then orphan its already-issued refund. Holding the lock
+     * makes the second attempt see the first one's committed state before
+     * Stripe is touched, so overlapping lines fail fast with nothing moved.
+     * Split out so tests can simulate a busy lock without a real database
+     * lock manager.
+     */
+    protected function withInvoiceRefundLock(Invoice $invoice, callable $callback): Invoice
+    {
+        $lockName = 'fb:invoice-refund:' . (int) $invoice->getId();
+        if (!NamedLock::acquire($this->di['dbal'], $lockName, 30)) {
+            $this->di['logger']->warning('Timed out waiting for invoice refund lock for invoice #{id}', ['id' => $invoice->getId()]);
+
+            throw new InformationException('Another refund for this invoice is already in progress. Please retry.');
+        }
+
+        try {
+            return $callback();
+        } finally {
+            NamedLock::release($this->di['dbal'], $lockName);
+        }
+    }
+
+    /**
+     * Build and persist the credit-note (or negative-invoice) document for a
+     * refund, moving the gateway money first. Runs under the per-invoice
+     * named lock held by refundInvoice so concurrent attempts serialize.
+     */
+    private function createRefundDocument(Invoice $invoice, $note, ?array $items, array $options): Invoice
+    {
         $gatewayRefundRequested = (bool) ($options['gateway_refund'] ?? true);
         $gatewayReturned = (bool) ($options['gateway_returned'] ?? false);
 
@@ -1933,17 +1988,6 @@ class Service implements InjectionAwareInterface
 
                     return $new;
                 });
-                $result = (int) $new->getId();
-
-                try {
-                    $this->sendRefundEmail($invoice, $new);
-                } catch (\Throwable $exception) {
-                    $this->di['logger']->withChannel('email')->error('Failed to send refund email', [
-                        'invoice_id' => $invoice->getId(),
-                        'credit_note_id' => $new->getId(),
-                        'exception' => $exception,
-                    ]);
-                }
 
                 break;
 
@@ -1951,11 +1995,7 @@ class Service implements InjectionAwareInterface
                 throw new InformationException('Unknown invoice refund logic: :logic', [':logic' => $logic]);
         }
 
-        $this->di['event_dispatcher']->dispatch(new AfterAdminInvoiceRefundEvent((int) $invoice->getId()));
-
-        $this->di['logger']->info('Refunded invoice #{invoice_id}', ['invoice_id' => $invoice->getId()]);
-
-        return $result;
+        return $new;
     }
 
     /**
