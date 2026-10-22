@@ -2193,11 +2193,11 @@ class Service implements InjectionAwareInterface
             static fn (array $r): bool => ($r['invoice_id'] ?? null) === (string) $invoice->getId() && !in_array($r['id'], $recordedIds, true)
         ));
         foreach ($unrecorded as $candidate) {
-            // Refunds stamped before the line selection was tracked carry no
-            // lines marker and still match by amount; newer ones must match
-            // the requested selection, so a same-amount orphan from different
-            // lines is rejected below instead of misattributed.
-            $linesMatch = ($candidate['lines'] ?? null) === null || $candidate['lines'] === $lines;
+            // The selection must match exactly: a refund stamped without a
+            // line selection cannot be attributed to specific lines, so
+            // unknown selections never reuse and fall through to manual
+            // reconciliation below instead of being misattributed.
+            $linesMatch = ($candidate['lines'] ?? null) === $lines;
             if ($linesMatch && abs((float) $candidate['amount'] - $amount) <= 0.005) {
                 $this->di['logger']->info('Reusing unrecorded Stripe refund {refund} for invoice #{id}', ['refund' => $candidate['id'], 'id' => $invoice->getId()]);
 
