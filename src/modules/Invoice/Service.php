@@ -1760,9 +1760,25 @@ class Service implements InjectionAwareInterface
         return (float) $total;
     }
 
-    public function refundInvoice(Invoice $invoice, $note = null, ?array $items = null): int
+    public function refundInvoice(Invoice $invoice, $note = null, ?array $items = null, array $options = []): int
     {
         $this->di['event_dispatcher']->dispatch(new BeforeAdminInvoiceRefundEvent((int) $invoice->getId()));
+
+        // The locked read inside the credit-note transaction below stays
+        // authoritative, but don't move money for a clearly unpaid invoice.
+        if ($invoice->getStatus() !== Invoice::STATUS_PAID) {
+            throw new InformationException('Only paid invoices can be refunded');
+        }
+
+        $gatewayRefundRequested = (bool) ($options['gateway_refund'] ?? true);
+        $gatewayRefundId = null;
+        $gatewayName = null;
+
+        if ($gatewayRefundRequested) {
+            $preview = $this->previewGatewayRefund($invoice, $items);
+            $gatewayRefundId = $preview['refund_id'] ?? null;
+            $gatewayName = $preview['gateway'] ?? null;
+        }
 
         $systemService = $this->di['mod_service']('system');
         $logic = $systemService->getParamValue('invoice_refund_logic', 'manual');
@@ -1776,7 +1792,7 @@ class Service implements InjectionAwareInterface
         switch ($documentLogic) {
             case 'credit_note':
             case 'negative_invoice':
-                $new = $this->di['em']->wrapInTransaction(function () use ($invoice, $items, $documentLogic, $note, $systemService, $offline): Invoice {
+                $new = $this->di['em']->wrapInTransaction(function () use ($invoice, $items, $documentLogic, $note, $systemService, $offline, $gatewayRefundId, $gatewayName): Invoice {
                     // Reserve the number before any invoice reads. SQLite must acquire its write
                     // lock before the locking read; the outer transaction rolls this back on failure.
                     $nextNumber = $documentLogic === 'negative_invoice'
@@ -1883,13 +1899,19 @@ class Service implements InjectionAwareInterface
                     if (!empty($note)) {
                         $this->addNote($new, $note);
                     }
-                    if ($offline) {
+                    if ($gatewayRefundId !== null) {
+                        $gatewayLabel = $gatewayName ?? 'Stripe';
+                        $this->addNote($new, "Gateway refund {$gatewayRefundId} issued via {$gatewayLabel} for {$creditAmount} {$invoice->getCurrency()}.");
+                        $this->addNote($invoice, "Gateway refund {$gatewayRefundId} issued via {$gatewayLabel}.");
+                        $this->recordGatewayRefundTransaction($invoice, $gatewayRefundId, $creditAmount);
+                    } elseif ($offline) {
                         $this->addNote($new, 'Offline refund: the amount was returned outside FOSSBilling; this credit note records it.');
                     }
 
                     // Commits atomically with the credit note above.
                     $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_REFUNDED, array_filter([
-                        'offline' => $offline ?: null,
+                        'offline' => $offline && $gatewayRefundId === null ? true : null,
+                        'gateway_refund_id' => $gatewayRefundId,
                         'credit_note_id' => (int) $new->getId(),
                     ]));
 
@@ -1918,6 +1940,220 @@ class Service implements InjectionAwareInterface
         $this->di['logger']->info('Refunded invoice #{invoice_id}', ['invoice_id' => $invoice->getId()]);
 
         return $result;
+    }
+
+    /**
+     * Move the money in the payment gateway before the credit note is created.
+     * Returns the gateway refund id, or nothing when there is nothing to
+     * refund remotely, so the caller falls back to the offline paper trail.
+     * Throws when the gateway refund itself fails, so no credit note is
+     * created for money that never moved.
+     *
+     * @return array{refund_id?: ?string, gateway?: ?string}
+     */
+    private function previewGatewayRefund(Invoice $invoice, ?array $items): array
+    {
+        $gateway = $invoice->getGateway();
+        if (!$gateway instanceof PayGateway) {
+            return [];
+        }
+
+        $payGatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
+
+        try {
+            $adapter = $payGatewayService->getPaymentAdapter($gateway);
+        } catch (\Throwable $e) {
+            $this->di['logger']->warning('Skipping gateway refund for invoice #{id}: cannot load adapter: {error}', ['id' => $invoice->getId(), 'error' => $e->getMessage()]);
+
+            return [];
+        }
+
+        if (!method_exists($adapter, 'refundPayment') || (method_exists($adapter, 'supportsRefunds') && !$adapter::supportsRefunds())) {
+            return [];
+        }
+
+        $paymentTx = $this->findRefundablePaymentTransaction($invoice);
+        if (!$paymentTx instanceof Transaction) {
+            $this->di['logger']->info('No refundable gateway transaction for invoice #{id}; recording offline refund only', ['id' => $invoice->getId()]);
+
+            return [];
+        }
+
+        $amount = $this->previewRefundAmount($invoice, $items);
+        if ($amount <= 0) {
+            return [];
+        }
+
+        if (method_exists($adapter, 'listRefundsForTransaction')) {
+            $reused = $this->reuseUnrecordedStripeRefund($adapter, $paymentTx, $invoice, $amount, $gateway);
+            if ($reused !== null) {
+                return $reused;
+            }
+        }
+
+        try {
+            $refundId = $adapter->refundPayment(
+                (string) $paymentTx->getTxnId(),
+                $amount,
+                (string) ($invoice->getCurrency() ?? $paymentTx->getCurrency()),
+                [
+                    'invoice_id' => (string) $invoice->getId(),
+                    'gateway_id' => (string) $gateway->getId(),
+                ]
+            );
+        } catch (\Payment_Exception $e) {
+            throw new InformationException('Gateway refund failed: :error', [':error' => $e->getMessage()]);
+        } catch (\Throwable $e) {
+            $this->di['logger']->error('Gateway refund failed for invoice #{id}: {error}', ['id' => $invoice->getId(), 'error' => $e->getMessage()]);
+
+            throw new InformationException('Gateway refund failed: :error', [':error' => $e->getMessage()]);
+        }
+
+        $this->di['logger']->info('Issued gateway refund {refund} for invoice #{id}', ['refund' => $refundId, 'id' => $invoice->getId()]);
+
+        return ['refund_id' => $refundId, 'gateway' => $gateway->getName() ?: $gateway->getGateway()];
+    }
+
+    /**
+     * Most recent processed payment transaction that can be refunded remotely.
+     * Skips setup-intent rows (seti_...), which authorize but move no money.
+     */
+    private function findRefundablePaymentTransaction(Invoice $invoice): ?Transaction
+    {
+        $rows = $this->di['em']->getRepository(Transaction::class)->findBy(
+            ['invoice' => $this->di['em']->getReference(Invoice::class, $invoice->getId()), 'status' => Transaction::STATUS_PROCESSED],
+            ['id' => 'DESC']
+        );
+        foreach ($rows as $tx) {
+            if (!$tx instanceof Transaction) {
+                continue;
+            }
+            $txnId = (string) ($tx->getTxnId() ?? '');
+            if ($txnId === '' || str_starts_with($txnId, 'seti_')) {
+                continue;
+            }
+            $code = $tx->getGateway()?->getGateway();
+            if ($code !== 'Stripe' && $tx->getGateway()?->getId() !== $invoice->getGateway()?->getId()) {
+                continue;
+            }
+            if (!str_starts_with($txnId, 'pi_') && !str_starts_with($txnId, 'ch_') && !str_starts_with($txnId, 'in_')) {
+                continue;
+            }
+
+            return $tx;
+        }
+
+        return null;
+    }
+
+    /**
+     * Reuse a Stripe refund a previous attempt already moved but failed to
+     * record, so a retry doesn't move the money twice. Only refunds stamped
+     * with this invoice's ID qualify; anything else is someone else's money.
+     * A same-amount orphan is reused, a divergent one aborts with its IDs so
+     * the admin reconciles deliberately instead of stacking another refund.
+     *
+     * @return ?array{refund_id: string, gateway: string}
+     */
+    private function reuseUnrecordedStripeRefund(object $adapter, Transaction $paymentTx, Invoice $invoice, float $amount, PayGateway $gateway): ?array
+    {
+        try {
+            $stripeRefunds = $adapter->listRefundsForTransaction(
+                (string) $paymentTx->getTxnId(),
+                (string) ($invoice->getCurrency() ?? $paymentTx->getCurrency())
+            );
+        } catch (\Throwable $e) {
+            $this->di['logger']->error('Could not list previous Stripe refunds for invoice #{id}; aborting instead of risking a duplicate refund: {error}', ['id' => $invoice->getId(), 'error' => $e->getMessage()]);
+
+            throw new InformationException('Could not verify previous gateway refunds: :error. Please retry.', [':error' => $e->getMessage()]);
+        }
+
+        $recordedIds = $this->getRecordedGatewayRefundIds($invoice);
+        $unrecorded = array_values(array_filter(
+            $stripeRefunds,
+            static fn (array $r): bool => ($r['invoice_id'] ?? null) === (string) $invoice->getId() && !in_array($r['id'], $recordedIds, true)
+        ));
+        foreach ($unrecorded as $candidate) {
+            if (abs((float) $candidate['amount'] - $amount) <= 0.005) {
+                $this->di['logger']->info('Reusing unrecorded Stripe refund {refund} for invoice #{id}', ['refund' => $candidate['id'], 'id' => $invoice->getId()]);
+
+                return ['refund_id' => $candidate['id'], 'gateway' => $gateway->getName() ?: $gateway->getGateway()];
+            }
+        }
+        if ($unrecorded !== []) {
+            $ids = implode(', ', array_column($unrecorded, 'id'));
+
+            throw new InformationException('Stripe already shows refunds (:ids) for this invoice that FOSSBilling has not recorded. Retry with matching lines to reuse them, or record them manually.', [':ids' => $ids]);
+        }
+
+        return null;
+    }
+
+    /**
+     * Stripe refund IDs already recorded against the invoice.
+     *
+     * @return list<string>
+     */
+    private function getRecordedGatewayRefundIds(Invoice $invoice): array
+    {
+        $rows = $this->di['em']->getRepository(Transaction::class)->findBy([
+            'invoice' => $this->di['em']->getReference(Invoice::class, $invoice->getId()),
+            'type' => \Payment_Transaction::TXTYPE_REFUND,
+        ]);
+        $ids = [];
+        foreach ($rows as $row) {
+            if ($row instanceof Transaction && is_string($row->getTxnId()) && $row->getTxnId() !== '') {
+                $ids[] = $row->getTxnId();
+            }
+        }
+
+        return $ids;
+    }
+
+    /**
+     * Preview the credit-note total for the requested lines without persisting
+     * anything, mirroring how refundInvoice prices the note it is about to
+     * create (negative line prices plus tax on taxed lines).
+     */
+    private function previewRefundAmount(Invoice $invoice, ?array $items): float
+    {
+        $creditLines = $this->resolveRefundLines($invoice, $items);
+        $subtotal = 0.0;
+        $taxable = 0.0;
+        foreach ($creditLines as [$item, $qty]) {
+            $line = (float) ($item->getPrice() ?? 0) * $qty;
+            $subtotal += $line;
+            if ($item->getTaxed()) {
+                $taxable += $line;
+            }
+        }
+        $tax = 0.0;
+        if ((float) ($invoice->getTaxrate() ?? 0) > 0 && $taxable != 0.0) {
+            $tax = round($taxable * (float) $invoice->getTaxrate() / 100, 2);
+        }
+
+        return round(abs($subtotal + $tax), 2);
+    }
+
+    /**
+     * Persist an audit trail for money returned through the gateway. Runs
+     * inside the same database transaction as the credit note above.
+     */
+    private function recordGatewayRefundTransaction(Invoice $invoice, string $refundId, float $amount): void
+    {
+        $tx = new Transaction();
+        $tx->setInvoice($invoice);
+        $tx->setGateway($invoice->getGateway());
+        $tx->setTxnId($refundId);
+        $tx->setTxnStatus('refunded');
+        $tx->setAmount((string) $amount);
+        $tx->setCurrency($invoice->getCurrency());
+        $tx->setType(\Payment_Transaction::TXTYPE_REFUND);
+        $tx->setStatus(Transaction::STATUS_PROCESSED);
+        $tx->setNote('Gateway refund for invoice #' . $invoice->getId());
+        $tx->setUpdatedAt(new \DateTime());
+        $this->di['em']->persist($tx);
+        $this->di['em']->flush();
     }
 
     /**

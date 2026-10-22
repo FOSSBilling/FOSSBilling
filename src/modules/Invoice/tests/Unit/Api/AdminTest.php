@@ -339,7 +339,7 @@ test('refunds an invoice', function (): void {
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('refundInvoice')
         ->once()
-        ->with(Mockery::type(Invoice::class), null, [5 => 2])
+        ->with(Mockery::type(Invoice::class), null, [5 => 2], [])
         ->andReturn($newNegativeInvoiceId);
 
     $model = createEntity(Invoice::class);
@@ -353,6 +353,30 @@ test('refunds an invoice', function (): void {
 
     $result = $api->refund($data);
     expect($result)->toBeInt()->toBe($newNegativeInvoiceId);
+});
+
+test('refunds an invoice without a gateway refund when requested', function (): void {
+    $api = apiEndpoint(new Admin());
+    $data = [
+        'id' => 1,
+        'gateway_refund' => false,
+    ];
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('refundInvoice')
+        ->once()
+        ->with(Mockery::type(Invoice::class), null, null, ['gateway_refund' => false])
+        ->andReturn(3);
+
+    $model = createEntity(Invoice::class);
+
+    $di = container();
+    $di['em']->getRepository(Invoice::class)->shouldReceive('find')->atLeast()->once()->andReturn($model);
+
+    $api->setDi($di);
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($di['em']->getRepository(Invoice::class));
+    $api->setService($serviceMock);
+
+    expect($api->refund($data))->toBe(3);
 });
 
 test('issues a debit note', function (): void {
