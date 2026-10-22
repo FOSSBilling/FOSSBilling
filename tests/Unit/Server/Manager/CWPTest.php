@@ -6,9 +6,9 @@ use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
-function createCwpManager(string $body, int $statusCode = 200): Server_Manager_CWP
+function createCwpManager(string|callable $body, int $statusCode = 200): Server_Manager_CWP
 {
-    $client = new MockHttpClient(new MockResponse($body, ['http_code' => $statusCode]));
+    $client = new MockHttpClient(is_string($body) ? new MockResponse($body, ['http_code' => $statusCode]) : $body);
 
     return new class($client) extends Server_Manager_CWP {
         public function __construct(private readonly HttpClientInterface $httpClient)
@@ -124,29 +124,18 @@ test('CWP falls back to the plain panel URL when the session request fails', fun
 
 test('CWP requests the session with the account username and timer', function (): void {
     $seenBody = null;
-    $client = new MockHttpClient(function (string $method, string $url, array $options) use (&$seenBody): MockResponse {
+    $ssoUrl = 'https://cwp.example.com:2083/example/?user_session=abc123';
+    $manager = createCwpManager(function (string $method, string $url, array $options) use (&$seenBody, $ssoUrl): MockResponse {
         $seenBody = $options['body'] ?? null;
-        $ssoUrl = 'https://cwp.example.com:2083/example/?user_session=abc123';
 
         return new MockResponse(json_encode(['status' => 'OK', 'msj' => ['accounts' => 1, 'details' => [['url' => $ssoUrl]]]]));
     });
-    $manager = new class($client) extends Server_Manager_CWP {
-        public function __construct(private readonly HttpClientInterface $httpClient)
-        {
-            parent::__construct(['ip' => '127.0.0.1', 'host' => 'cwp.example.com', 'accesshash' => 'test-key']);
-            $this->setLog(new Psr\Log\NullLogger());
-        }
-
-        public function getHttpClient(): HttpClientInterface
-        {
-            return $this->httpClient;
-        }
-    };
     $account = (new Server_Account())->setUsername('example');
 
     $manager->getLoginUrl($account);
 
-    parse_str(is_string($seenBody) ? $seenBody : http_build_query($seenBody ?? []), $parsed);
+    $body = is_array($seenBody) ? http_build_query($seenBody) : (string) $seenBody;
+    parse_str($body, $parsed);
 
     expect($parsed['user'] ?? null)->toBe('example')
         ->and($parsed['timer'] ?? null)->toBe('5');
