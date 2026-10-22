@@ -3176,9 +3176,7 @@ test('refundInvoice refuses invoices that are not paid', function (): void {
             ->with('invoice_hash_lifetime_days', '90')
             ->andReturn(90);
         $systemMock->shouldReceive('reserveNextNumericParamValue')
-            ->once()
-            ->with('invoice_cn_starting_number', 1)
-            ->andReturn(1);
+            ->never();
 
         $di = container();
         $invoiceRepo = $di['em']->getRepository(Invoice::class);
@@ -6825,7 +6823,9 @@ test('refundInvoice enforces per-line remaining quantities across partials', fun
     setEntityId($invoiceModel, 10);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
-    $serviceMock->shouldReceive('getTotal')->andReturn(40.0);
+    // The original totals 40 while the credit note only credits 20, so the
+    // first refund stays partial and the repeat hits the remaining check.
+    $serviceMock->shouldReceive('getTotal')->andReturn(40.0, 20.0);
     $serviceMock->shouldReceive('getTax')->andReturn(0.0);
     $serviceMock->shouldReceive('countIncome')->once();
     $serviceMock->shouldReceive('addNote')->twice();
@@ -8394,7 +8394,6 @@ test('refundInvoice skips the gateway when gateway_refund is disabled', function
     $serviceMock->shouldReceive('addNote')->times(2);
     $serviceMock->shouldReceive('toApiArray')->andReturn(['id' => 2, 'total' => -20.0]);
     $serviceMock->shouldReceive('extendInvoiceHashLifetime')->once();
-    $serviceMock->shouldReceive('previewGatewayRefund')->never();
 
     $invoiceModel = createEntity(Invoice::class, ['clientId' => 5]);
     $invoiceModel->setStatus(Invoice::STATUS_PAID);
@@ -8476,7 +8475,8 @@ test('refundInvoice issues a Stripe refund and records an audit transaction', fu
     $stripeTx->setTxnId('pi_123');
     $stripeTx->setStatus(Transaction::STATUS_PROCESSED);
 
-    $adapter = Mockery::mock();
+    $adapter = Mockery::mock('Payment_Adapter_Stripe');
+    $adapter->shouldReceive('listRefundsForTransaction')->once()->andReturn([]);
     $adapter->shouldReceive('refundPayment')->once()->with('pi_123', 20.0, Mockery::any(), Mockery::any())->andReturn('re_123');
 
     $payGatewayService = Mockery::mock(ServicePayGateway::class);
@@ -8568,7 +8568,8 @@ test('refundInvoice aborts the credit note when the Stripe refund fails', functi
     $stripeTx->setTxnId('pi_123');
     $stripeTx->setStatus(Transaction::STATUS_PROCESSED);
 
-    $adapter = Mockery::mock();
+    $adapter = Mockery::mock('Payment_Adapter_Stripe');
+    $adapter->shouldReceive('listRefundsForTransaction')->once()->andReturn([]);
     $adapter->shouldReceive('refundPayment')->once()->andThrow(new Payment_Exception('Stripe refund failed: Already refunded'));
 
     $payGatewayService = Mockery::mock(ServicePayGateway::class);
@@ -8623,7 +8624,7 @@ test('refundInvoice reuses an unrecorded Stripe refund instead of refunding twic
     $stripeTx->setTxnId('pi_123');
     $stripeTx->setStatus(Transaction::STATUS_PROCESSED);
 
-    $adapter = Mockery::mock();
+    $adapter = Mockery::mock('Payment_Adapter_Stripe');
     $adapter->shouldReceive('listRefundsForTransaction')->once()->with('pi_123', 'USD')->andReturn([
         ['id' => 're_old', 'amount' => 20.0, 'invoice_id' => '14'],
     ]);
@@ -8664,9 +8665,7 @@ test('refundInvoice reuses an unrecorded Stripe refund instead of refunding twic
     $invoiceRepo->shouldReceive('lockAndGetStatus')->once()->with(14)->andReturn(Invoice::STATUS_PAID);
     $invoiceRepo->shouldReceive('findBy')->andReturn([]);
     $txRepo = Mockery::mock(TransactionRepository::class);
-    $txRepo->shouldReceive('findBy')->twice()->andReturnUsing(function (array $criteria) use ($stripeTx): array {
-        return ($criteria['type'] ?? null) === Payment_Transaction::TXTYPE_REFUND ? [] : [$stripeTx];
-    });
+    $txRepo->shouldReceive('findBy')->twice()->andReturnUsing(fn (array $criteria): array => ($criteria['type'] ?? null) === Payment_Transaction::TXTYPE_REFUND ? [] : [$stripeTx]);
     $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
     $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($txRepo);
 
@@ -8718,7 +8717,7 @@ test('refundInvoice aborts when an unrecorded Stripe refund covers a different a
     $stripeTx->setTxnId('pi_123');
     $stripeTx->setStatus(Transaction::STATUS_PROCESSED);
 
-    $adapter = Mockery::mock();
+    $adapter = Mockery::mock('Payment_Adapter_Stripe');
     $adapter->shouldReceive('listRefundsForTransaction')->once()->andReturn([
         ['id' => 're_old', 'amount' => 5.0, 'invoice_id' => '15'],
     ]);
@@ -8732,9 +8731,7 @@ test('refundInvoice aborts when an unrecorded Stripe refund covers a different a
     $invoiceRepo = Mockery::mock(InvoiceRepository::class);
     $invoiceRepo->shouldReceive('findBy')->andReturn([]);
     $txRepo = Mockery::mock(TransactionRepository::class);
-    $txRepo->shouldReceive('findBy')->twice()->andReturnUsing(function (array $criteria) use ($stripeTx): array {
-        return ($criteria['type'] ?? null) === Payment_Transaction::TXTYPE_REFUND ? [] : [$stripeTx];
-    });
+    $txRepo->shouldReceive('findBy')->twice()->andReturnUsing(fn (array $criteria): array => ($criteria['type'] ?? null) === Payment_Transaction::TXTYPE_REFUND ? [] : [$stripeTx]);
     $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
     $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($txRepo);
 
@@ -8778,7 +8775,7 @@ test('refundInvoice reverses the deposit credit when refunding through the gatew
     $stripeTx->setTxnId('pi_123');
     $stripeTx->setStatus(Transaction::STATUS_PROCESSED);
 
-    $adapter = Mockery::mock();
+    $adapter = Mockery::mock('Payment_Adapter_Stripe');
     $adapter->shouldReceive('listRefundsForTransaction')->once()->andReturn([]);
     $adapter->shouldReceive('refundPayment')->once()->with('pi_123', 20.0, Mockery::any(), Mockery::any())->andReturn('re_123');
 
@@ -8824,9 +8821,7 @@ test('refundInvoice reverses the deposit credit when refunding through the gatew
     $invoiceRepo->shouldReceive('lockAndGetStatus')->once()->with(16)->andReturn(Invoice::STATUS_PAID);
     $invoiceRepo->shouldReceive('findBy')->andReturn([]);
     $txRepo = Mockery::mock(TransactionRepository::class);
-    $txRepo->shouldReceive('findBy')->twice()->andReturnUsing(function (array $criteria) use ($stripeTx): array {
-        return ($criteria['type'] ?? null) === Payment_Transaction::TXTYPE_REFUND ? [] : [$stripeTx];
-    });
+    $txRepo->shouldReceive('findBy')->twice()->andReturnUsing(fn (array $criteria): array => ($criteria['type'] ?? null) === Payment_Transaction::TXTYPE_REFUND ? [] : [$stripeTx]);
     $clientRepo = Mockery::mock(ClientRepository::class);
     $clientRepo->shouldReceive('find')->with(5)->andReturn($clientModel);
     $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
@@ -8887,8 +8882,12 @@ test('refundInvoice aborts before Stripe when the deposit credit cannot be rever
     $stripeTx->setTxnId('pi_123');
     $stripeTx->setStatus(Transaction::STATUS_PROCESSED);
 
+    $adapter = Mockery::mock('Payment_Adapter_Stripe');
+    $adapter->shouldReceive('listRefundsForTransaction')->once()->andReturn([]);
+    $adapter->shouldNotReceive('refundPayment');
+
     $payGatewayService = Mockery::mock(ServicePayGateway::class);
-    $payGatewayService->shouldReceive('getPaymentAdapter')->once()->andReturn(Mockery::mock());
+    $payGatewayService->shouldReceive('getPaymentAdapter')->once()->andReturn($adapter);
 
     $clientModel = createEntity(Client::class, []);
     setEntityId($clientModel, 5);

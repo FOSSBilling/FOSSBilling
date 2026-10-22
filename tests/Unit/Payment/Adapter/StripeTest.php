@@ -16,6 +16,7 @@ use Stripe\StripeClient;
 
 use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
+use function Tests\Helpers\setEntityId;
 
 const TEST_WEBHOOK_SECRET = 'whsec_test_dummy';
 

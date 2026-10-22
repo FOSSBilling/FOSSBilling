@@ -2050,7 +2050,7 @@ class Service implements InjectionAwareInterface
             if (!$tx instanceof Transaction) {
                 continue;
             }
-            $txnId = (string) ($tx->getTxnId() ?? '');
+            $txnId = $tx->getTxnId() ?? '';
             if ($txnId === '' || str_starts_with($txnId, 'seti_')) {
                 continue;
             }
