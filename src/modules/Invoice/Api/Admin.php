@@ -25,6 +25,7 @@ use Box\Mod\Order\Entity\Order;
 use FOSSBilling\InformationException;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Response;
 
 class Admin extends \FOSSBilling\Api\AbstractApi
@@ -934,6 +935,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * Change gateway settings.
      *
      * @optional string $title - gateway title
+     * @optional string $logo_url - public HTTP(S) image URL to download and store locally; blank keeps the current image
+     * @optional file $logo_file - custom image uploaded in a multipart request; takes precedence over logo_url
+     * @optional bool $remove_custom_logo - restore the adapter's default image
      * @optional array $config - gateway config array
      * @optional array $accepted_currencies - list of currencies this gateway supports
      * @optional bool $enabled - flag to enable or disable gateway
@@ -956,7 +960,12 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         }
         $gatewayService = $this->getDi()['mod_service']('Invoice', 'PayGateway');
 
-        return $gatewayService->update($model, $data);
+        $file = $this->getDi()['request']->files->get('logo_file');
+        if ($file !== null && !$file instanceof UploadedFile) {
+            throw new \FOSSBilling\Exception('Payment gateway image upload failed.');
+        }
+
+        return $gatewayService->update($model, $data, $file);
     }
 
     /**

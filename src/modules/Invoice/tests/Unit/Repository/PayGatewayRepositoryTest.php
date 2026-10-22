@@ -14,6 +14,8 @@ use Box\Mod\Invoice\Entity\PayGateway;
 use Doctrine\DBAL\DriverManager;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\ORMSetup;
+use Doctrine\ORM\Tools\SchemaTool;
+use FOSSBilling\Doctrine\SchemaSynchronizer;
 use Symfony\Component\Filesystem\Path;
 
 function payGatewayEntityManager(): EntityManager
@@ -24,6 +26,32 @@ function payGatewayEntityManager(): EntityManager
 
     return new EntityManager(DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]), $config);
 }
+
+test('custom gateway image persists independently of adapter credentials', function (): void {
+    $em = payGatewayEntityManager();
+    (new SchemaTool($em))->createSchema([$em->getClassMetadata(PayGateway::class)]);
+    $gateway = (new PayGateway())->setGateway('Custom')->setConfig('{"api_key":"secret"}')->setCustomLogo(str_repeat('a', 64) . '.png');
+    $em->persist($gateway);
+    $em->flush();
+    $id = $gateway->getId();
+    $em->clear();
+
+    $stored = $em->find(PayGateway::class, $id);
+    expect($stored->getCustomLogo())->toBe(str_repeat('a', 64) . '.png')
+        ->and($stored->getConfig())->toBe('{"api_key":"secret"}');
+});
+
+test('schema synchronization adds custom images to existing gateways', function (): void {
+    $em = payGatewayEntityManager();
+    (new SchemaTool($em))->createSchema([$em->getClassMetadata(PayGateway::class)]);
+    $em->getConnection()->executeStatement('ALTER TABLE pay_gateway DROP COLUMN custom_logo');
+    $em->getConnection()->insert('pay_gateway', ['name' => 'Existing', 'enabled' => 1, 'allow_single' => 1, 'allow_recurrent' => 0, 'test_mode' => 0]);
+
+    SchemaSynchronizer::syncEntities($em, [PayGateway::class]);
+
+    $row = $em->getConnection()->fetchAssociative('SELECT name, custom_logo FROM pay_gateway');
+    expect($row)->toBe(['name' => 'Existing', 'custom_logo' => null]);
+});
 
 test('getSearchQueryBuilder orders by gateway ascending by default', function (): void {
     $repository = payGatewayEntityManager()->getRepository(PayGateway::class);

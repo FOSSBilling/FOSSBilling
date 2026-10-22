@@ -22,10 +22,23 @@ use FOSSBilling\Doctrine\EntityManagerFactory;
 use FOSSBilling\Doctrine\NamedLock;
 use FOSSBilling\Period;
 use Stripe\StripeClient;
-use Symfony\Component\Intl\Currencies;
 
-class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
+class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface, FOSSBilling\Payment\JsonWebhookAuthenticatorInterface
 {
+    /**
+     * Stripe's zero-decimal currencies for charges (https://docs.stripe.com/currencies).
+     * UGX is on Stripe's published zero-decimal list, but its special-case row requires charge amounts ×100,
+     * so it is deliberately excluded here. ISK was never on the list and likewise uses two decimals for
+     * charges; HUF and TWD are zero-decimal for payouts only, so they stay ×100 here. This helper is
+     * charge-side only (PaymentIntents, Prices) and must not be reused for payouts.
+     */
+    private const array STRIPE_ZERO_DECIMAL_CHARGE_CURRENCIES = ['BIF', 'CLP', 'DJF', 'GNF', 'JPY', 'KMF', 'KRW', 'MGA', 'PYG', 'RWF', 'VND', 'VUV', 'XAF', 'XOF', 'XPF'];
+
+    /**
+     * Stripe's three-decimal currencies for charges (https://docs.stripe.com/currencies).
+     */
+    private const array STRIPE_THREE_DECIMAL_CURRENCIES = ['BHD', 'JOD', 'KWD', 'OMR', 'TND'];
+
     protected ?Pimple\Container $di = null;
 
     private StripeClient $stripe;
@@ -259,11 +272,23 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         return $amount / $divisor;
     }
 
+    /**
+     * Stripe's own decimal rules, not CLDR's: the currencies in STRIPE_ZERO_DECIMAL_CHARGE_CURRENCIES are sent
+     * as-is, the ones in STRIPE_THREE_DECIMAL_CURRENCIES keep three digits, and every other currency
+     * (including COP, HUF, IDR, ISK, PKR and UGX, which CLDR lists with no decimals) is sent ×100.
+     * See https://docs.stripe.com/currencies.
+     */
     private function getCurrencyFractionDigits(string $currency): int
     {
         $currency = strtoupper($currency);
+        if (in_array($currency, self::STRIPE_ZERO_DECIMAL_CHARGE_CURRENCIES, true)) {
+            return 0;
+        }
+        if (in_array($currency, self::STRIPE_THREE_DECIMAL_CURRENCIES, true)) {
+            return 3;
+        }
 
-        return Currencies::exists($currency) ? Currencies::getFractionDigits($currency) : 2;
+        return 2;
     }
 
     public function getInvoiceTitle(Invoice $invoice): string
@@ -650,7 +675,12 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         }
     }
 
-    private function processWebhookEvent($api_admin, Transaction $tx, array $data, int $gateway_id): void
+    public function authenticateJsonWebhook(array $data): void
+    {
+        $this->getVerifiedWebhookEvent($data);
+    }
+
+    private function getVerifiedWebhookEvent(array $data): Stripe\Event
     {
         $rawBody = $data['http_raw_post_data'] ?? '';
         $sigHeader = $data['server']['HTTP_STRIPE_SIGNATURE'] ?? '';
@@ -677,6 +707,13 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         } catch (Stripe\Exception\SignatureVerificationException) {
             throw new FOSSBilling\Exception('Invalid Stripe webhook signature');
         }
+
+        return $event;
+    }
+
+    private function processWebhookEvent($api_admin, Transaction $tx, array $data, int $gateway_id): void
+    {
+        $event = $this->getVerifiedWebhookEvent($data);
 
         $tx->setTxnId($event->id);
         $tx->setTxnStatus($event->type);
@@ -923,14 +960,21 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             $this->di['em']->flush();
         }
 
-        $isInitialPayment = ($stripeInvoice->billing_reason ?? '') === 'subscription_create';
+        $billingReason = (string) ($stripeInvoice->billing_reason ?? '');
+        $isInitialPayment = $billingReason === 'subscription_create';
 
-        // Single DB fetch covers: (a) skip if already paid, (b) billing_reason fallback.
+        // The early link above already fetched the invoice, so this second find
+        // hits the identity map. It covers: (a) skip if already paid,
+        // (b) billing_reason fallback.
         if ($invoiceId) {
             $existingInvoice = $this->di['em']->getRepository(Invoice::class)->find((int) $invoiceId);
             if ($existingInvoice instanceof Invoice) {
-                // Skip if already paid — redirect flow may have processed it first.
-                if ($existingInvoice->getStatus() === Invoice::STATUS_PAID) {
+                // Skip if already paid — redirect flow may have processed it first. Only for the initial payment:
+                // the subscription metadata always points at the first invoice, so for a renewal it is paid by
+                // design and the payment goes to a renewal invoice below. An inconclusive (missing)
+                // billing_reason with a paid original is also skipped: minting a renewal there would
+                // double-credit a duplicate initial webhook.
+                if ($existingInvoice->getStatus() === Invoice::STATUS_PAID && ($isInitialPayment || $billingReason === '')) {
                     return false;
                 }
                 // Fallback: billing_reason inconclusive but original invoice still unpaid.

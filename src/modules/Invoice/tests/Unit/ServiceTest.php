@@ -8310,3 +8310,80 @@ test('getJournalForInvoice returns mapped entries oldest first', function (): vo
         ->and($result[1]['admin_id'])->toBe(2)
         ->and($result[1]['snapshot'])->toBe(['total' => 25.0]);
 });
+
+test('reminder send time is reached for empty, missing, and invalid values', function (mixed $configured): void {
+    $service = new Service();
+
+    $systemService = Mockery::mock(SystemService::class);
+    $systemService->shouldReceive('getParamValue')
+        ->once()
+        ->with('invoice_reminder_send_time', '')
+        ->andReturn($configured);
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $systemService);
+    $service->setDi($di);
+
+    expect($service->isReminderSendTimeReached(new DateTimeImmutable('2026-01-01 00:01:00')))->toBeTrue();
+})->with([
+    'empty string' => [''],
+    'whitespace' => ['   '],
+    'null' => [null],
+    'invalid text' => ['morning'],
+    'invalid hour' => ['24:00'],
+    'invalid minute' => ['09:60'],
+]);
+
+test('reminder send time gates on the first cron at or after the configured time', function (): void {
+    $service = new Service();
+
+    $systemService = Mockery::mock(SystemService::class);
+    $systemService->shouldReceive('getParamValue')
+        ->with('invoice_reminder_send_time', '')
+        ->andReturn('09:00');
+
+    $di = container();
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $systemService);
+    $service->setDi($di);
+
+    expect($service->isReminderSendTimeReached(new DateTimeImmutable('2026-01-01 08:59:00')))->toBeFalse()
+        ->and($service->isReminderSendTimeReached(new DateTimeImmutable('2026-01-01 09:00:00')))->toBeTrue()
+        ->and($service->isReminderSendTimeReached(new DateTimeImmutable('2026-01-01 09:05:00')))->toBeTrue();
+});
+
+test('before-due reminder is deferred without claiming when send time is not reached', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('isReminderSendTimeReached')->once()->andReturnFalse();
+    $serviceMock->shouldReceive('sendInvoiceReminder')->never();
+
+    $di = container();
+    $di['em']->shouldReceive('getConnection')->never();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $serviceMock->setDi($di);
+    $serviceMock->onEventBeforeInvoiceIsDue(new BeforeInvoiceIsDueEvent(1, 7, [7]));
+});
+
+test('after-due reminder is deferred without claiming when send time is not reached', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldReceive('isReminderSendTimeReached')->once()->andReturnFalse();
+    $serviceMock->shouldReceive('toApiArray')->never();
+
+    $emailService = Mockery::mock(EmailService::class);
+    $emailService->shouldReceive('sendTemplate')->never();
+
+    $di = container();
+    $di['mod_service'] = $di->protect(function ($serviceName) use ($emailService, $serviceMock) {
+        if ($serviceName == 'invoice') {
+            return $serviceMock;
+        }
+        if ($serviceName == 'email') {
+            return $emailService;
+        }
+    });
+    $di['em']->shouldReceive('getConnection')->never();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $serviceMock->setDi($di);
+    $serviceMock->onEventAfterInvoiceIsDue(new AfterInvoiceIsDueEvent(1, 5, [5]));
+});

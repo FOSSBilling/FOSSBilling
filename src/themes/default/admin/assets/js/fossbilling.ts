@@ -77,6 +77,20 @@ globalThis.FOSSBilling = Object.assign(globalThis.FOSSBilling || {}, {
   }
 });
 
+  document.addEventListener('click', (event) => {
+    if (!(event.target instanceof Element)) {
+      return;
+    }
+
+    const trigger = event.target.closest('a[data-transaction-error]');
+    if (!trigger) {
+      return;
+    }
+
+    event.preventDefault();
+    FOSSBilling.message(trigger.dataset.transactionError, trigger.dataset.transactionErrorCode);
+  });
+
   document.addEventListener('DOMContentLoaded', function() {
     // Global error handler for unhandled Promise rejections (API-related only)
     window.addEventListener('unhandledrejection', function(event) {

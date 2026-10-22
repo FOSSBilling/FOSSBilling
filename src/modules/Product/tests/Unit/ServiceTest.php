@@ -1304,8 +1304,11 @@ test('create category', function (): void {
     $service = new Service();
     $newCategoryId = 1;
 
+    $categoryRepo = Mockery::mock(ProductCategoryRepository::class);
+    $categoryRepo->shouldReceive('getMaxPriority')->once()->andReturn(0);
+
     $di = container();
-    $di['em'] = productTestCreateEntityManagerWithRepositories(null, null, null, null, null, productTestCreateProductCategoryEntity($newCategoryId));
+    $di['em'] = productTestCreateEntityManagerWithRepositories(null, null, null, null, $categoryRepo, productTestCreateProductCategoryEntity($newCategoryId));
     $di['logger'] = new FOSSBilling\Logger();
 
     $service->setDi($di);
@@ -1314,6 +1317,114 @@ test('create category', function (): void {
 
     expect($result)->toBeInt();
     expect($result)->toEqual($newCategoryId);
+});
+
+test('create category with explicit priority', function (): void {
+    $service = new Service();
+    $newCategoryId = 2;
+
+    $categoryRepo = Mockery::mock(ProductCategoryRepository::class);
+    $categoryRepo->shouldReceive('getMaxPriority')->never();
+
+    $di = container();
+    $di['em'] = productTestCreateEntityManagerWithRepositories(null, null, null, null, $categoryRepo, productTestCreateProductCategoryEntity($newCategoryId));
+    $di['logger'] = new FOSSBilling\Logger();
+
+    $service->setDi($di);
+
+    $result = $service->createCategory('title', null, null, 30);
+
+    expect($result)->toEqual($newCategoryId);
+});
+
+test('update category priority', function (): void {
+    $service = new Service();
+    $model = productTestCreateProductCategoryEntity(1);
+
+    $categoryRepo = Mockery::mock(ProductCategoryRepository::class);
+    $categoryRepo->shouldReceive('find')->once()->with(1)->andReturn($model);
+
+    $di = container();
+    $di['em'] = productTestCreateEntityManagerWithRepositories(null, null, null, null, $categoryRepo);
+    $di['logger'] = new FOSSBilling\Logger();
+
+    $service->setDi($di);
+
+    $result = $service->updateCategoryPriority(['priority' => [1 => 20]]);
+
+    expect($result)->toBeTrue();
+    expect($model->getPriority())->toEqual(20);
+});
+
+test('update category preserves omitted fields on a priority-only update', function (): void {
+    $service = new Service();
+    $model = productTestCreateProductCategoryEntity(1)
+        ->setTitle('Original')
+        ->setDescription('Original description')
+        ->setIconUrl('http://urltoimg.com/original.jpg');
+
+    $di = container();
+    $di['em'] = productTestCreateEntityManagerWithRepositories();
+    $di['logger'] = new FOSSBilling\Logger();
+
+    $service->setDi($di);
+
+    $result = $service->updateCategory($model, null, null, null, 30);
+
+    expect($result)->toBeTrue();
+    expect($model->getTitle())->toBe('Original')
+        ->and($model->getDescription())->toBe('Original description')
+        ->and($model->getIconUrl())->toBe('http://urltoimg.com/original.jpg')
+        ->and($model->getPriority())->toEqual(30);
+});
+
+test('update category priority rejects non-integer values without changing anything', function (mixed $badValue): void {
+    $service = new Service();
+    $model = productTestCreateProductCategoryEntity(1);
+    $model->setPriority(10);
+
+    $categoryRepo = Mockery::mock(ProductCategoryRepository::class);
+    $categoryRepo->shouldReceive('find')->never();
+
+    $di = container();
+    $di['em'] = productTestCreateEntityManagerWithRepositories(null, null, null, null, $categoryRepo);
+    $di['logger'] = new FOSSBilling\Logger();
+
+    $service->setDi($di);
+
+    expect(fn (): bool => $service->updateCategoryPriority(['priority' => [1 => 20, 2 => $badValue]]))
+        ->toThrow(FOSSBilling\InformationException::class, 'Priority must be an integer.');
+    expect($model->getPriority())->toEqual(10);
+})->with([
+    'non-numeric string' => ['high'],
+    'boolean' => [true],
+    'float' => [1.0],
+    'empty string' => [''],
+]);
+
+test('admin category list returns lean rows without loading products', function (): void {
+    $service = new Service();
+    $category = productTestCreateProductCategoryEntity(1)
+        ->setTitle('Category')
+        ->setPriority(10);
+
+    $query = Mockery::mock(Doctrine\ORM\Query::class);
+    $query->shouldReceive('getResult')->once()->andReturn([$category]);
+
+    $qb = Mockery::mock(Doctrine\ORM\QueryBuilder::class);
+    $qb->shouldReceive('getQuery')->once()->andReturn($query);
+
+    $categoryRepo = Mockery::mock(ProductCategoryRepository::class);
+    $categoryRepo->shouldReceive('getAdminSearchQueryBuilder')->once()->with([])->andReturn($qb);
+
+    $di = container();
+    $di['em'] = productTestCreateEntityManagerWithRepositories(null, null, null, null, $categoryRepo);
+
+    $service->setDi($di);
+
+    expect($service->getAdminCategoryList([]))->toEqual([
+        ['id' => 1, 'title' => 'Category', 'priority' => 10],
+    ]);
 });
 
 test('remove product category category has products exception', function (): void {
@@ -2752,6 +2863,25 @@ test('get product price resolves a custom period by exact code', function (): vo
 
     expect($service->getProductPrice($product, ['period' => '45D']))->toBe(7.5);
 });
+
+test('product pricing reports invalid stored payment types as configuration errors', function (?string $type): void {
+    $service = new Service();
+    $payment = productTestCreateProductPaymentEntity(15)->setType($type);
+    $product = productTestCreateProductEntity(9)
+        ->setType(Service::CUSTOM)
+        ->setProductPayment($payment);
+
+    expect(fn (): float|int|string => $service->getProductPrice($product, ['period' => '1M']))
+        ->toThrow(FOSSBilling\InformationException::class, 'Product 9 has an invalid pricing type. Please contact the administrator.');
+    expect(fn (): float => $service->getProductSetupPrice($product, ['period' => '1M']))
+        ->toThrow(FOSSBilling\InformationException::class, 'Product 9 has an invalid pricing type. Please contact the administrator.');
+
+    expect($payment->getType())->toBe($type);
+})->with([
+    'missing type' => [null],
+    'empty type' => [''],
+    'unknown type' => ['invalid'],
+]);
 
 test('get product price rejects a period that is not configured for the product', function (): void {
     $service = new Service();

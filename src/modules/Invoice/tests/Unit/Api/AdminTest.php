@@ -1285,6 +1285,37 @@ test('updates a gateway', function (): void {
     expect($result)->toBeBool()->toBeTrue();
 });
 
+test('uploads a gateway image from the multipart request', function (): void {
+    $api = apiEndpoint(new Admin());
+    $model = createEntity(PayGateway::class, ['id' => 1]);
+    $file = Mockery::mock(Symfony\Component\HttpFoundation\File\UploadedFile::class);
+    $service = Mockery::mock(ServicePayGateway::class);
+    $service->shouldReceive('update')->once()->with($model, ['id' => 1, 'title' => 'Cards'], $file)->andReturn(true);
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $repo = Mockery::mock(PayGatewayRepository::class);
+    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($repo);
+    $repo->shouldReceive('find')->with(1)->andReturn($model);
+    $di = container();
+    $di['em'] = $em;
+    $di['request']->files->set('logo_file', $file);
+    $di['mod_service'] = $di->protect(moduleService(['invoice:paygateway' => $service]));
+    $api->setDi($di);
+
+    expect($api->gateway_update(['id' => 1, 'title' => 'Cards']))->toBeTrue();
+});
+
+test('gateway image upload requires gateway management permission before processing the file', function (): void {
+    $api = apiEndpoint(new Admin());
+    $staff = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staff->shouldReceive('checkPermissionsAndThrowException')->once()->with('invoice', 'manage_gateways', null, null)
+        ->andThrow(new FOSSBilling\Exception('Denied'));
+    $di = container();
+    $di['mod_service'] = $di->protect(moduleService(['staff' => $staff]));
+    $api->setDi($di);
+
+    expect(fn () => $api->gateway_update(['id' => 1]))->toThrow(FOSSBilling\Exception::class, 'Denied');
+});
+
 test('deletes a gateway', function (): void {
     $api = apiEndpoint(new Admin());
     $data = [

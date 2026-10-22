@@ -1287,23 +1287,57 @@ test('get manager urls', function (): void {
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('getServerManager')->atLeast()->once()->andReturn($serverManagerMock);
 
-    $result = $serviceMock->getManagerUrls($hostingServerModel);
-    expect($result)->toBeArray();
-    expect($result[0])->toBeString();
-    expect($result[1])->toBeString();
+    $di = container();
+    $serviceMock->setDi($di);
+
+    expect($serviceMock->getManagerUrls($hostingServerModel))->toBe(['/login', '/admin/login'])
+        ->and($di['logger']->calls)->toBe([]);
 });
 
-test('get manager urls exception', function (): void {
-    $hostingServerModel = new ServiceHostingServer();
+test('get manager urls logs adapter failures and returns unavailable links', function (Throwable $error): void {
+    $hostingServerModel = createEntity(ServiceHostingServer::class, ['id' => 42]);
     $hostingServerModel->setManager('Custom');
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
-    $serviceMock->shouldReceive('getServerManager')->atLeast()->once()->andThrow(new Exception('Controlled unit test exception'));
+    $serviceMock->shouldReceive('getServerManager')->once()->with($hostingServerModel)->andThrow($error);
 
-    $result = $serviceMock->getManagerUrls($hostingServerModel);
-    expect($result)->toBeArray();
-    expect($result[0])->toBeFalse();
-    expect($result[1])->toBeFalse();
+    $di = container();
+    $serviceMock->setDi($di);
+
+    expect($serviceMock->getManagerUrls($hostingServerModel))->toBe([false, false])
+        ->and($di['logger']->calls)->toBe([
+            [
+                'method' => 'error',
+                'params' => ['Failed to retrieve control panel URLs.', [
+                    'server_id' => 42,
+                    'manager' => 'Custom',
+                    'exception_class' => $error::class,
+                    'exception_file' => $error->getFile(),
+                    'exception_line' => $error->getLine(),
+                ]],
+            ],
+        ]);
+})->with([
+    'exception' => [new Exception('Adapter credentials: secret')],
+    'parse error' => [new ParseError('Adapter credentials: secret')],
+    'type error' => [new TypeError('Adapter credentials: secret')],
+]);
+
+test('get manager urls returns unavailable links when reseller URL generation fails', function (): void {
+    $server = new ServiceHostingServer();
+    $server->setManager('Custom');
+    $manager = Mockery::mock('\Server_Manager_Custom');
+    $manager->shouldReceive('getLoginUrl')->once()->with(null)->andReturn('/login');
+    $manager->shouldReceive('getResellerLoginUrl')->once()->with(null)->andThrow(new TypeError('Controlled URL failure'));
+
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('getServerManager')->once()->with($server)->andReturn($manager);
+    $di = container();
+    $service->setDi($di);
+
+    expect($service->getManagerUrls($server))->toBe([false, false])
+        ->and($di['logger']->calls)->toHaveCount(1)
+        ->and($di['logger']->calls[0]['method'])->toBe('error');
 });
 
 test('get free tlds free tlds are not set', function (): void {

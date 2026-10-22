@@ -75,6 +75,7 @@ test('get page by id returns api array when found', function (): void {
         'content' => 'body',
         'slug' => 'about',
         'created_at' => null,
+        'updated_at' => null,
     ]);
 });
 
@@ -94,6 +95,7 @@ test('get page by slug uses slug finder', function (): void {
         'content' => 'C',
         'slug' => 'docs',
         'created_at' => null,
+        'updated_at' => null,
     ]);
 });
 

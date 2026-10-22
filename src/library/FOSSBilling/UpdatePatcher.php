@@ -240,6 +240,9 @@ class UpdatePatcher implements InjectionAwareInterface
         // forever.
         $this->migrateThemePackageLayout();
 
+        // Branding paths and obsolete files need migrating on every database driver.
+        $this->migrateDefaultBrandingAssetsToPublicDirectory();
+
         // Retired hook packages and listener registrations have no runtime consumer. Remove
         // their records on every driver so old installs do not retain invisible extensions.
         $this->removeRetiredHookData();
@@ -264,6 +267,20 @@ class UpdatePatcher implements InjectionAwareInterface
         // first would find no table and leave existing invoices without baseline entries.
         // Deliberately outside the drift healer: a large backlog must not stall page loads.
         $this->backfillInvoiceJournal();
+
+        $this->checkInvoiceNumberCounter();
+    }
+
+    private function checkInvoiceNumberCounter(): void
+    {
+        $counter = $this->fetchOne('SELECT value FROM setting WHERE param = :param', ['param' => 'invoice_starting_number']);
+        if (filter_var($counter, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => PHP_INT_MAX - 1]]) !== false) {
+            return;
+        }
+
+        // Stored invoice history may be incomplete or use custom numbering. Reseeding
+        // from it could reuse an issued number, so leave the choice to the administrator.
+        $this->logUpdate('warning', 'The next invoice number is missing or invalid. Review invoice history and set an unused positive whole number in Invoice Settings before issuing invoices.');
     }
 
     /**
@@ -965,6 +982,10 @@ class UpdatePatcher implements InjectionAwareInterface
 
             $result = SchemaSynchronizer::syncEntities($entityManager, $eagerEntityClasses);
             $this->migrateClientGroupMemberships($connection);
+            // Data backfill gated on the hash below: like the membership copy above,
+            // a throw here fails the sync (recorded with cooldown for retry) instead
+            // of leaving NULL priorities behind a stored hash.
+            $this->backfillProductCategoryPriorities($connection);
             $this->storeSchemaMetadataHash(EntityManagerFactory::entityDefinitionsHash());
         } catch (\Throwable $e) {
             // Attach the metadata hash so the failure can be correlated with
@@ -1477,6 +1498,11 @@ class UpdatePatcher implements InjectionAwareInterface
             125 => 'patch125',
             126 => 'patch126',
             127 => 'patch127',
+            128 => 'patch128',
+            129 => 'patch129',
+            130 => 'patch130',
+            131 => 'patch131',
+            132 => 'patch132',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -4092,6 +4118,7 @@ class UpdatePatcher implements InjectionAwareInterface
     {
         $settings = [
             'company_logo' => [
+                'public/branding/logo-light.svg',
                 'public/branding/logo.svg',
                 'themes/huraga/assets/img/logo.svg',
                 'themes/huraga/assets/build/img/logo.svg',
@@ -4102,6 +4129,7 @@ class UpdatePatcher implements InjectionAwareInterface
                 'themes/huraga/assets/build/img/logo_white.svg',
             ],
             'company_favicon' => [
+                'public/branding/favicon.svg',
                 'public/branding/favicon.ico',
                 'themes/huraga/assets/favicon.ico',
                 'themes/huraga/assets/build/favicon.ico',
@@ -4119,6 +4147,15 @@ class UpdatePatcher implements InjectionAwareInterface
                     'old_value' => $oldValue,
                 ]);
             }
+        }
+
+        foreach (['public/branding/logo.svg', 'public/branding/favicon.ico'] as $path) {
+            // A custom setting may still use an old asset, such as the light logo in dark mode.
+            if ($this->fetchOne('SELECT value FROM setting WHERE value = :value LIMIT 1', ['value' => $path]) !== false) {
+                continue;
+            }
+
+            $this->executeFileActions([Path::join(PATH_ROOT, $path) => 'unlink']);
         }
     }
 
@@ -4715,6 +4752,123 @@ class UpdatePatcher implements InjectionAwareInterface
         if (!$this->tableHasIndex('promo', 'auto_apply_index_idx')) {
             $this->executeSql('ALTER TABLE `promo` ADD INDEX `auto_apply_index_idx` (`auto_apply`)');
         }
+    }
+
+    private function patch128(): void
+    {
+        if (!$this->tableExists('custom_pages')) {
+            return;
+        }
+
+        // QKM: widen user-authored page text without changing indexed slug equality or
+        // the size of TEXT columns (CONVERT TO CHARACTER SET can promote them to MEDIUMTEXT).
+        $indexedColumns = $this->fetchFirstColumn(
+            'SELECT DISTINCT COLUMN_NAME FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table',
+            ['table' => 'custom_pages'],
+        );
+        $collations = $this->fetchFirstColumn('SELECT COLLATION_NAME FROM information_schema.COLLATIONS WHERE CHARACTER_SET_NAME = :charset', ['charset' => 'utf8mb4']);
+        $changes = [];
+        foreach ($this->fetchAll('SHOW FULL COLUMNS FROM `custom_pages`') as $column) {
+            $name = $column['Field'];
+            if (!in_array($name, ['title', 'description', 'keywords', 'content'], true)) {
+                continue;
+            }
+
+            $collation = $column['Collation'] ?? '';
+            if (!preg_match('/^utf8(?:mb3)?_(.+)$/', $collation, $matches)) {
+                continue;
+            }
+            $targetCollation = 'utf8mb4_' . $matches[1];
+            if (in_array($name, $indexedColumns, true)
+                || $column['Extra'] !== ''
+                || $column['Default'] !== null
+                || !preg_match('/^(?:varchar\([0-9]+\)|tinytext|text|mediumtext|longtext)$/', $column['Type'])
+                || !in_array($targetCollation, $collations, true)) {
+                $this->logUpdate('warning', 'Skipped utf8mb4 conversion of custom_pages.' . $name . ': customized column or index requires manual review.');
+
+                continue;
+            }
+
+            $definition = sprintf('MODIFY COLUMN `%s` %s CHARACTER SET utf8mb4 COLLATE %s %s',
+                $this->quoteIdentifier($name),
+                $column['Type'],
+                $this->quoteIdentifier($targetCollation),
+                $column['Null'] === 'YES' ? 'NULL' : 'NOT NULL',
+            );
+            if ($column['Null'] === 'YES') {
+                $definition .= ' DEFAULT NULL';
+            }
+            $definition .= ' COMMENT ' . $this->di['dbal']->quote($column['Comment']);
+            $changes[] = $definition;
+        }
+
+        if ($changes !== []) {
+            // One ALTER avoids rebuilding the table for each column. DDL failures stop the
+            // patch sequence, leaving patch128 pending; successful reruns skip widened columns.
+            $this->executeSql('ALTER TABLE `custom_pages` ' . implode(', ', $changes));
+        }
+    }
+
+    private function patch129(): void
+    {
+        if (!$this->tableHasColumn('pay_gateway', 'custom_logo')) {
+            $this->executeSql('ALTER TABLE `pay_gateway` ADD COLUMN `custom_logo` VARCHAR(255) DEFAULT NULL');
+        }
+    }
+
+    private function patch130(): void
+    {
+        $this->migrateDefaultBrandingAssetsToPublicDirectory();
+    }
+
+    private function patch131(): void
+    {
+        // Custom pages gained an updated_at column (TimestampTrait) without which
+        // sitemap <lastmod> falls back to omitting the tag on installs the portable
+        // sync never healed - same pattern as patch119/patch120 (see #4392, #4553).
+        // The table only exists when the extension was activated (install() creates
+        // it), so skip absent tables; guards make reruns no-ops. Non-MySQL drivers
+        // get the column from the portable schema sync.
+        if (!$this->tableExists('custom_pages')) {
+            return;
+        }
+
+        if (!$this->tableHasColumn('custom_pages', 'updated_at')) {
+            $this->executeSql('ALTER TABLE `custom_pages` ADD COLUMN `updated_at` datetime DEFAULT NULL');
+        }
+    }
+
+    private function patch132(): void
+    {
+        // Product category priority (#4499). Mirrors product.priority so categories
+        // can be ordered explicitly instead of by insertion id. MySQL/MariaDB DDL
+        // only - the data backfill lives in backfillProductCategoryPriorities(),
+        // which runs portably on every driver. Guarded so reruns are no-ops;
+        // non-MySQL drivers get the column from the portable schema sync.
+        if (!$this->tableHasColumn('product_category', 'priority')) {
+            $this->executeSql('ALTER TABLE `product_category` ADD COLUMN `priority` BIGINT DEFAULT NULL');
+        }
+    }
+
+    /**
+     * Assigns an initial priority to product categories that don't have one yet
+     * (#4499). Plain portable SQL and idempotent: only NULL priorities are
+     * touched, so administrator-set values are preserved. Runs inside
+     * {@see syncPortableSchema()}'s error boundary, before the metadata hash
+     * is stored - like {@see migrateClientGroupMemberships()}, a throw fails
+     * the sync (recorded with cooldown for retry) instead of leaving NULL
+     * priorities behind a stored hash. No-ops when the table or column
+     * doesn't exist yet.
+     */
+    private function backfillProductCategoryPriorities(\Doctrine\DBAL\Connection $connection): void
+    {
+        $schemaManager = $connection->createSchemaManager();
+        if (!$schemaManager->tablesExist(['product_category'])
+            || !$schemaManager->introspectTableByUnquotedName('product_category')->hasColumn('priority')) {
+            return;
+        }
+
+        $connection->executeStatement('UPDATE product_category SET priority = id * 10 WHERE priority IS NULL');
     }
 
     /**

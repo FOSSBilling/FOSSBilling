@@ -320,6 +320,7 @@ test('signup renders country options with one default-country lookup', function 
         'settings' => new PermissiveStub(['signup_tos' => 'disabled']),
         'public_logo_url' => false,
         'public_dark_logo_url' => false,
+        'CSRFToken' => 'test-token',
     ]);
 
     expect($html)

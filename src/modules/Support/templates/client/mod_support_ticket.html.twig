@@ -98,7 +98,7 @@
                                                 </span>
                                         {% endif %}
                                     </div>
-                                    <span class="text-muted fs-7">on {{ message.created_at|format_date }}</span>
+                                    <span class="text-muted fs-7">{{ 'on :date'|trans({':date': message.created_at|format_date}) }}</span>
                                 </div>
                                 {% if can_reply %}
                                     <div class="d-flex gap-3 align-items-center">

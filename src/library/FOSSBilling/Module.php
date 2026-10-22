@@ -67,15 +67,20 @@ class Module implements InjectionAwareInterface
     public function getManifest(): array
     {
         if (!$this->hasManifest()) {
-            throw new Exception('Missing manifest file for the :mod module.', [':mod' => $this->module], 5897);
+            throw new InformationException('Missing manifest file for the :mod module.', [':mod' => $this->module], 5897);
         }
 
         $contents = $this->filesystem->readFile(Path::join($this->getModulePath(), self::MANIFEST_FILENAME));
 
+        $decoded = json_decode($contents);
+        if (!$decoded instanceof \stdClass) {
+            throw new InformationException('Invalid manifest file for the :mod module. Please check file syntax and permissions.', [':mod' => $this->module], 5897);
+        }
+
         try {
             $json = json_decode($contents, true, 512, JSON_THROW_ON_ERROR);
         } catch (\JsonException) {
-            throw new Exception('Invalid manifest file for the :mod module. Please check file syntax and permissions.', [':mod' => $this->module]);
+            throw new InformationException('Invalid manifest file for the :mod module. Please check file syntax and permissions.', [':mod' => $this->module], 5897);
         }
 
         $info = [
