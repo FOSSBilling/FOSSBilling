@@ -1497,6 +1497,7 @@ class UpdatePatcher implements InjectionAwareInterface
             128 => 'patch128',
             129 => 'patch129',
             130 => 'patch130',
+            131 => 'patch131',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -4813,6 +4814,23 @@ class UpdatePatcher implements InjectionAwareInterface
     private function patch130(): void
     {
         $this->migrateDefaultBrandingAssetsToPublicDirectory();
+    }
+
+    private function patch131(): void
+    {
+        // Custom pages gained an updated_at column (TimestampTrait) without which
+        // sitemap <lastmod> falls back to omitting the tag on installs the portable
+        // sync never healed - same pattern as patch119/patch120 (see #4392, #4553).
+        // The table only exists when the extension was activated (install() creates
+        // it), so skip absent tables; guards make reruns no-ops. Non-MySQL drivers
+        // get the column from the portable schema sync.
+        if (!$this->tableExists('custom_pages')) {
+            return;
+        }
+
+        if (!$this->tableHasColumn('custom_pages', 'updated_at')) {
+            $this->executeSql('ALTER TABLE `custom_pages` ADD COLUMN `updated_at` datetime DEFAULT NULL');
+        }
     }
 
     /**
