@@ -324,11 +324,30 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
+     * Get list of all product categories for the admin panel, ordered by priority.
+     * Returns lean id/title/priority rows (not paginated) so every category is
+     * visible for bulk reordering. Use category_get for full category details.
+     *
+     * @optional string $search - filter by category title
+     * @optional string $sort - sort column: 'id', 'title', 'priority', 'created_at' or 'updated_at'
+     * @optional string $direction - sort direction: 'ASC' or 'DESC'
+     *
+     * @return list<array{id: int|null, title: string|null, priority: int|null}>
+     */
+    public function category_get_list($data)
+    {
+        $this->checkPermissions('product', 'view');
+
+        return $this->getService()->getAdminCategoryList($data);
+    }
+
+    /**
      * Method to update category.
      *
      * @optional string $title - category title
      * @optional string $icon_url - icon url
      * @optional string $description - description
+     * @optional int $priority - category priority, lower values are shown first
      *
      * @return bool
      *
@@ -344,10 +363,32 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $title = $data['title'] ?? null;
         $description = $data['description'] ?? null;
         $icon_url = $data['icon_url'] ?? null;
+        $priority = $data['priority'] ?? null;
 
         $service = $this->getService();
 
-        return $service->updateCategory($model, $title, $description, $icon_url);
+        return $service->updateCategory($model, $title, $description, $icon_url, $priority);
+    }
+
+    /**
+     * Change product categories sorting order.
+     *
+     * @return bool
+     *
+     * @throws \FOSSBilling\Exception
+     */
+    #[RequiredParams(['priority' => 'priority params is missing'])]
+    public function category_update_priority($data)
+    {
+        $this->checkPermissions('product', 'manage_categories');
+
+        if (!is_array($data['priority'] ?? null)) {
+            throw new \FOSSBilling\Exception('priority params is missing');
+        }
+
+        $service = $this->getService();
+
+        return $service->updateCategoryPriority($data);
     }
 
     /**
@@ -372,6 +413,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @optional string $icon_url - icon url
      * @optional string $description - description
+     * @optional int $priority - category priority, lower values are shown first
      *
      * @return int - new category id
      *
@@ -387,8 +429,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $title = $data['title'] ?? null;
         $description = $data['description'] ?? null;
         $icon_url = $data['icon_url'] ?? null;
+        $priority = $data['priority'] ?? null;
 
-        return (int) $service->createCategory($title, $description, $icon_url);
+        return (int) $service->createCategory($title, $description, $icon_url, $priority);
     }
 
     /**

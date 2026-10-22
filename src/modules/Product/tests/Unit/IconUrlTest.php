@@ -9,6 +9,7 @@ declare(strict_types=1);
 
 use Box\Mod\Product\Entity\Product;
 use Box\Mod\Product\Entity\ProductCategory;
+use Box\Mod\Product\Repository\ProductCategoryRepository;
 use Box\Mod\Product\Service;
 use FOSSBilling\InformationException;
 
@@ -40,8 +41,19 @@ test('oversized icon URLs are rejected before product writes', function (string 
     ->with(['ASCII' => str_repeat('a', 256), 'Unicode' => str_repeat('é', 256)]);
 
 test('category icon URLs within the column limit are preserved', function (?string $iconUrl): void {
-    $em = new class {
+    $categoryRepo = Mockery::mock(ProductCategoryRepository::class);
+    $categoryRepo->shouldReceive('getMaxPriority')->andReturn(0);
+    $em = new class($categoryRepo) {
         public ?ProductCategory $category = null;
+
+        public function __construct(private readonly object $categoryRepo)
+        {
+        }
+
+        public function getRepository(string $class): object
+        {
+            return $this->categoryRepo;
+        }
 
         public function persist(ProductCategory $category): void
         {

@@ -661,14 +661,27 @@ class Service implements InjectionAwareInterface
         return $this->getProductCategoryRepository()->getPairs();
     }
 
-    public function updateCategory(ProductCategory $productCategory, $title = null, $description = null, $icon_url = null): bool
+    public function updateCategory(ProductCategory $productCategory, $title = null, $description = null, $icon_url = null, $priority = null): bool
     {
         $this->validateIconUrl($icon_url);
 
-        $productCategory
-            ->setTitle($title)
-            ->setIconUrl($icon_url)
-            ->setDescription($description);
+        // Only touch supplied fields so a priority-only update (or any partial
+        // API call) never erases the rest - matches updateProduct(), which
+        // falls back to current values for omitted fields. The admin form
+        // always submits every field, so clearing one still works via ''.
+        if ($title !== null) {
+            $productCategory->setTitle($title);
+        }
+        if ($icon_url !== null) {
+            $productCategory->setIconUrl($icon_url);
+        }
+        if ($description !== null) {
+            $productCategory->setDescription($description);
+        }
+        if ($priority !== null && $priority !== '') {
+            $productCategory->setPriority((int) $priority);
+        }
+        $productCategory->setUpdatedAt(new \DateTime());
         $this->di['em']->flush();
 
         $this->di['logger']->info('Updated product category #{category_id}', ['category_id' => $productCategory->getId()]);
@@ -676,14 +689,48 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function createCategory($title, $description = null, $icon_url = null): ?int
+    public function updateCategoryPriority($data): bool
+    {
+        // Validate everything up front so one bad value can't half-apply a
+        // reorder: non-integer input is rejected instead of casting to 0.
+        // The is_int/is_string guards come first because filter_var() would
+        // otherwise coerce booleans and floats (true and 1.0 both validate as 1).
+        $priorities = [];
+        foreach ($data['priority'] as $id => $p) {
+            if (!is_int($p) && (!is_string($p) || filter_var($p, FILTER_VALIDATE_INT) === false)) {
+                throw new \FOSSBilling\InformationException('Priority must be an integer.');
+            }
+            $priorities[(int) $id] = (int) $p;
+        }
+
+        foreach ($priorities as $id => $p) {
+            $model = $this->getProductCategoryRepository()->find($id);
+            if ($model instanceof ProductCategory) {
+                $model->setPriority($p);
+                $model->setUpdatedAt(new \DateTime());
+            }
+        }
+
+        $this->di['em']->flush();
+
+        $this->di['logger']->info('Changed product category priorities');
+
+        return true;
+    }
+
+    public function createCategory($title, $description = null, $icon_url = null, $priority = null): ?int
     {
         $this->validateIconUrl($icon_url);
+
+        if ($priority === null || $priority === '') {
+            $priority = $this->getProductCategoryRepository()->getMaxPriority() + 10;
+        }
 
         $model = (new ProductCategory())
             ->setTitle($title)
             ->setDescription($description)
-            ->setIconUrl($icon_url);
+            ->setIconUrl($icon_url)
+            ->setPriority((int) $priority);
         $this->di['em']->persist($model);
         $this->di['em']->flush();
         $id = $model->getId();
@@ -739,6 +786,7 @@ class Service implements InjectionAwareInterface
             'title' => $model->getTitle(),
             'description' => $model->getDescription(),
             'icon_url' => $model->getIconUrl(),
+            'priority' => $model->getPriority(),
             'created_at' => $this->formatDateTimeValue($model->getCreatedAt()),
             'updated_at' => $this->formatDateTimeValue($model->getUpdatedAt()),
             'price_starting_from' => $min_price,
@@ -770,6 +818,26 @@ class Service implements InjectionAwareInterface
             PaginationOptions::fromArray($data),
             fn (ProductCategory $category): array => $this->toProductCategoryApiArray($category, true, $identity),
         );
+    }
+
+    /**
+     * Lean id/title/priority rows for the admin category table, ordered by
+     * priority. Deliberately not paginated and without product details - every
+     * category must be visible for bulk reordering, and the table only needs
+     * these three fields. Use toProductCategoryApiArray()/category_get for
+     * full category details.
+     *
+     * @return list<array{id: int|null, title: string|null, priority: int|null}>
+     */
+    public function getAdminCategoryList(array $data = []): array
+    {
+        $categories = $this->getProductCategoryRepository()->getAdminSearchQueryBuilder($data)->getQuery()->getResult();
+
+        return array_map(static fn (ProductCategory $category): array => [
+            'id' => $category->getId(),
+            'title' => $category->getTitle(),
+            'priority' => $category->getPriority(),
+        ], $categories);
     }
 
     public function getStartingFromPrice(Product $model)
