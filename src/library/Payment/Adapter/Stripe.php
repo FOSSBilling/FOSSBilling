@@ -384,10 +384,22 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface, FOS
 
         $candidates = [$stripeInvoice->payment_intent ?? null, $stripeInvoice->charge ?? null];
         foreach ($stripeInvoice->payments->data ?? [] as $payment) {
-            $candidates[] = $payment->payment ?? null;
-            if (is_object($payment->payment ?? null)) {
-                $candidates[] = $payment->payment->id ?? null;
+            // Entries that never completed carry no usable refund target.
+            if ($payment->status !== 'paid') {
+                continue;
             }
+            $nested = $payment->payment ?? null;
+            if (!is_object($nested)) {
+                continue;
+            }
+            // The payment reference is wrapped: the charge or payment intent
+            // sits under its own key, either as an ID or an expanded object.
+            foreach (['payment_intent', 'charge'] as $field) {
+                $ref = $nested->{$field} ?? null;
+                $candidates[] = is_object($ref) ? ($ref->id ?? null) : $ref;
+            }
+            // Fallback for a directly expanded payment object.
+            $candidates[] = $nested->id ?? null;
         }
         foreach ($candidates as $candidate) {
             $target = $this->refundTargetFromId($candidate);
@@ -1544,10 +1556,17 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface, FOS
     {
         $transactionRepository = $this->di['em']->getRepository(Transaction::class);
 
+        $paymentIntentId = null;
+        $chargeId = null;
         foreach (['payment_intent', 'charge'] as $field) {
             $candidate = $refund->{$field} ?? null;
             if (!is_string($candidate) || $candidate === '') {
                 continue;
+            }
+            if ($field === 'payment_intent') {
+                $paymentIntentId = $candidate;
+            } else {
+                $chargeId = $candidate;
             }
             $paymentTx = $transactionRepository->findOneByTxnIdAndGatewayId($candidate, $gateway_id);
             if ($paymentTx instanceof Transaction && $paymentTx->getInvoice() instanceof Invoice) {
@@ -1555,25 +1574,63 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface, FOS
             }
         }
 
-        $chargeId = is_string($refund->charge ?? null) ? $refund->charge : null;
-        if ($chargeId === null || $chargeId === '') {
+        $charge = null;
+        if ($chargeId !== null) {
+            try {
+                $charge = $this->stripe->charges->retrieve($chargeId, []);
+            } catch (Stripe\Exception\ApiErrorException) {
+                $charge = null;
+            }
+        }
+
+        if ($charge !== null) {
+            if ($paymentIntentId === null) {
+                $paymentIntent = $charge->payment_intent ?? null;
+                if (is_object($paymentIntent)) {
+                    $paymentIntent = $paymentIntent->id ?? null;
+                }
+                if (is_string($paymentIntent) && $paymentIntent !== '') {
+                    $paymentIntentId = $paymentIntent;
+                }
+            }
+
+            // Legacy accounts still return the invoice on the charge; newer API
+            // versions removed it, so fall through to the invoice-payment lookup.
+            $stripeInvoiceId = is_string($charge->invoice ?? null) && $charge->invoice !== '' ? $charge->invoice : null;
+            if ($stripeInvoiceId !== null) {
+                $paymentTx = $transactionRepository->findOneByTxnIdAndGatewayId($stripeInvoiceId, $gateway_id);
+                if ($paymentTx instanceof Transaction && $paymentTx->getInvoice() instanceof Invoice) {
+                    return $paymentTx->getInvoice();
+                }
+            }
+        }
+
+        if ($paymentIntentId === null) {
             return null;
         }
 
         try {
-            $charge = $this->stripe->charges->retrieve($chargeId, []);
+            $invoicePayments = $this->stripe->invoicePayments->all([
+                'payment' => ['type' => 'payment_intent', 'payment_intent' => $paymentIntentId],
+                'limit' => 1,
+            ]);
         } catch (Stripe\Exception\ApiErrorException) {
             return null;
         }
 
-        $stripeInvoiceId = is_string($charge->invoice ?? null) ? $charge->invoice : null;
-        if ($stripeInvoiceId === null || $stripeInvoiceId === '') {
-            return null;
+        foreach ($invoicePayments->data ?? [] as $invoicePayment) {
+            $linked = $invoicePayment->invoice ?? null;
+            $linkedId = is_object($linked) ? ($linked->id ?? null) : $linked;
+            if (!is_string($linkedId) || $linkedId === '') {
+                continue;
+            }
+            $paymentTx = $transactionRepository->findOneByTxnIdAndGatewayId($linkedId, $gateway_id);
+            if ($paymentTx instanceof Transaction && $paymentTx->getInvoice() instanceof Invoice) {
+                return $paymentTx->getInvoice();
+            }
         }
 
-        $paymentTx = $transactionRepository->findOneByTxnIdAndGatewayId($stripeInvoiceId, $gateway_id);
-
-        return $paymentTx instanceof Transaction ? $paymentTx->getInvoice() : null;
+        return null;
     }
 
     /**
