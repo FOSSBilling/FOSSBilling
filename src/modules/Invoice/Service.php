@@ -2016,9 +2016,10 @@ class Service implements InjectionAwareInterface
      * Stripe refund when one matches. Moves no money; when a new refund is
      * needed the returned pending plan is executed inside the credit-note
      * transaction by executeGatewayRefund, after the deposit credit is
-     * reversed under lock. Throws when a gateway refund was requested but no
-     * refundable payment exists, instead of silently recording an offline
-     * refund the admin did not ask for.
+     * reversed under lock. Throws when a gateway refund was requested but the
+     * gateway adapter cannot be loaded or no refundable payment exists,
+     * instead of silently recording an offline refund the admin did not ask
+     * for.
      *
      * @return array{refund_id: string, gateway: string}|array{pending: array{adapter: object, txn_id: string, amount: float, currency: string, metadata: array<string, string>, gateway: string, recorded: list<string>}}|array{}
      */
@@ -2034,9 +2035,7 @@ class Service implements InjectionAwareInterface
         try {
             $adapter = $payGatewayService->getPaymentAdapter($gateway);
         } catch (\Throwable $e) {
-            $this->di['logger']->warning('Skipping gateway refund for invoice #{id}: cannot load adapter: {error}', ['id' => $invoice->getId(), 'error' => $e->getMessage()]);
-
-            return [];
+            throw new InformationException('Could not load the payment gateway for invoice #:id: :error. Return the payment in the gateway dashboard, or record an offline-only refund.', [':id' => $invoice->getId(), ':error' => $e->getMessage()]);
         }
 
         if (!method_exists($adapter, 'refundPayment') || (method_exists($adapter, 'supportsRefunds') && !$adapter::supportsRefunds())) {

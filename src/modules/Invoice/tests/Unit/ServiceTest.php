@@ -9668,3 +9668,38 @@ test('refundInvoice fails when a requested gateway refund has no refundable paym
     $serviceMock->setDi($di);
     expect(fn () => $serviceMock->refundInvoice($invoiceModel))->toThrow(FOSSBilling\InformationException::class, 'No refundable gateway payment');
 });
+
+test('refundInvoice fails when the payment adapter cannot load', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldNotReceive('countIncome');
+
+    $invoiceModel = createEntity(Invoice::class, ['clientId' => 5]);
+    $invoiceModel->setStatus(Invoice::STATUS_PAID);
+    $invoiceModel->setCurrency('USD');
+    $invoiceModel->setTaxrate('0');
+    setEntityId($invoiceModel, 27);
+
+    $payGateway = createEntity(PayGateway::class, []);
+    setEntityId($payGateway, 7);
+    $invoiceModel->setGateway($payGateway);
+
+    $payGatewayService = Mockery::mock(ServicePayGateway::class);
+    $payGatewayService->shouldReceive('getPaymentAdapter')->once()->with($payGateway)->andThrow(new Exception('Stripe API key is not configured'));
+
+    [$em] = invoiceItemEmAndRepo();
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(function ($name, $sub = '') use ($payGatewayService) {
+        if ($name === 'Invoice' && $sub === 'PayGateway') {
+            return $payGatewayService;
+        }
+
+        return Mockery::mock()->shouldIgnoreMissing();
+    });
+    $di['event_dispatcher'] = Mockery::mock()->shouldIgnoreMissing();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $serviceMock->setDi($di);
+    expect(fn () => $serviceMock->refundInvoice($invoiceModel))->toThrow(FOSSBilling\InformationException::class, 'Could not load the payment gateway');
+});
