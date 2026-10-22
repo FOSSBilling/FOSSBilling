@@ -339,8 +339,11 @@ test('refunds an invoice', function (): void {
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('refundInvoice')
         ->once()
-        ->with(Mockery::type(Invoice::class), null, [5 => 2])
+        ->with(Mockery::type(Invoice::class), null, [5 => 2], [])
         ->andReturn($newNegativeInvoiceId);
+    $serviceMock->shouldReceive('isInvoiceTypeDeposit')
+        ->once()
+        ->andReturn(false);
 
     $model = createEntity(Invoice::class);
 
@@ -353,6 +356,30 @@ test('refunds an invoice', function (): void {
 
     $result = $api->refund($data);
     expect($result)->toBeInt()->toBe($newNegativeInvoiceId);
+});
+
+test('refunds an invoice without a gateway refund when requested', function (): void {
+    $api = apiEndpoint(new Admin());
+    $data = [
+        'id' => 1,
+        'gateway_refund' => false,
+    ];
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('refundInvoice')
+        ->once()
+        ->with(Mockery::type(Invoice::class), null, null, ['gateway_refund' => false])
+        ->andReturn(3);
+
+    $model = createEntity(Invoice::class);
+
+    $di = container();
+    $di['em']->getRepository(Invoice::class)->shouldReceive('find')->atLeast()->once()->andReturn($model);
+
+    $api->setDi($di);
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($di['em']->getRepository(Invoice::class));
+    $api->setService($serviceMock);
+
+    expect($api->refund($data))->toBe(3);
 });
 
 test('issues a debit note', function (): void {
@@ -1895,4 +1922,63 @@ test('promo endpoints require a promo reference', function (): void {
         ->toThrow(FOSSBilling\InformationException::class, 'Promo code or promo ID was not passed');
     expect(fn () => $api->promo_remove(['id' => 10]))
         ->toThrow(FOSSBilling\InformationException::class, 'Promo code or promo ID was not passed');
+});
+
+test('refunding a deposit invoice as a gateway refund requires the balance permission', function (): void {
+    $api = apiEndpoint(new Admin());
+    $data = ['id' => 1];
+
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('isInvoiceTypeDeposit')
+        ->once()
+        ->andReturn(true);
+    $serviceMock->shouldReceive('refundInvoice')->never();
+
+    $model = createEntity(Invoice::class);
+
+    $di = container();
+    $di['em']->getRepository(Invoice::class)->shouldReceive('find')->atLeast()->once()->andReturn($model);
+    $di['mod_service'] = $di->protect(moduleService([
+        'invoice' => $serviceMock,
+    ]));
+    $staffServiceMock = $di['mod_service']('staff');
+    $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
+        ->byDefault()
+        ->andReturn(true);
+    $staffServiceMock->shouldReceive('checkPermissionsAndThrowException')
+        ->once()
+        ->with('client', 'manage_balance', null, Mockery::any())
+        ->andThrow(new FOSSBilling\InformationException('You need the "client.manage_balance" permission to perform this action', [], 403));
+    $api->setDi($di);
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($di['em']->getRepository(Invoice::class));
+    $api->setService($serviceMock);
+
+    expect(fn () => $api->refund($data))
+        ->toThrow(FOSSBilling\InformationException::class, 'client.manage_balance');
+});
+
+test('ignores the gateway_returned flag from API callers', function (): void {
+    $api = apiEndpoint(new Admin());
+    $data = [
+        'id' => 1,
+        'gateway_refund' => false,
+        'gateway_returned' => true,
+    ];
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('refundInvoice')
+        ->once()
+        ->with(Mockery::type(Invoice::class), null, null, ['gateway_refund' => false])
+        ->andReturn(3);
+    $serviceMock->shouldReceive('isInvoiceTypeDeposit')->never();
+
+    $model = createEntity(Invoice::class);
+
+    $di = container();
+    $di['em']->getRepository(Invoice::class)->shouldReceive('find')->atLeast()->once()->andReturn($model);
+
+    $api->setDi($di);
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($di['em']->getRepository(Invoice::class));
+    $api->setService($serviceMock);
+
+    expect($api->refund($data))->toBe(3);
 });

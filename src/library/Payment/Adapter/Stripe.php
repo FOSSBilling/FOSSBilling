@@ -74,6 +74,8 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface, FOS
         'payment_intent.payment_failed',
         'setup_intent.succeeded',
         'setup_intent.setup_failed',
+        'charge.refunded',
+        'refund.created',
     ];
 
     public function setDi(Pimple\Container $di): void
@@ -249,6 +251,188 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface, FOS
         }
 
         $this->stripe->subscriptions->update($subscriptionId, ['cancel_at_period_end' => true]);
+    }
+
+    public static function supportsRefunds(): bool
+    {
+        return true;
+    }
+
+    /**
+     * Issue a refund in Stripe for a previous payment.
+     *
+     * @param string               $txnId    PaymentIntent (pi_), charge (ch_), or Stripe invoice (in_) ID
+     * @param float                $amount   Refund amount in major units
+     * @param string               $currency ISO currency code of the original payment
+     * @param array<string,string> $metadata Stamped onto the Stripe refund
+     *
+     * @return string The created Stripe refund ID (re_...)
+     */
+    public function refundPayment(string $txnId, float $amount, string $currency, array $metadata = []): string
+    {
+        $txnId = trim($txnId);
+        if ($txnId === '') {
+            throw new Payment_Exception('Cannot issue a Stripe refund without the original Stripe transaction ID.');
+        }
+
+        $fractionDigits = $this->getCurrencyFractionDigits($currency);
+        $minorUnits = (int) round($amount * (10 ** $fractionDigits));
+        if ($minorUnits <= 0) {
+            throw new Payment_Exception('Refund amount must be greater than zero.');
+        }
+
+        $params = [
+            'amount' => $minorUnits,
+            'metadata' => array_map(strval(...), $metadata),
+            'reason' => 'requested_by_customer',
+        ];
+
+        $params += $this->resolveRefundTarget($txnId);
+
+        $idempotencyKey = 'refund_' . hash('sha256', implode('|', [$txnId, (string) $minorUnits, strtoupper($currency), json_encode($params['metadata'])]));
+
+        try {
+            $refund = $this->stripe->refunds->create($params, ['idempotency_key' => $idempotencyKey]);
+        } catch (Stripe\Exception\ApiErrorException $e) {
+            $this->debugLog('Stripe refund failed for ' . $txnId . ': ' . $e->getMessage());
+
+            throw new Payment_Exception('Stripe refund failed: :error', [':error' => $e->getMessage()]);
+        }
+
+        if (empty($refund->id)) {
+            throw new Payment_Exception('Stripe did not return a refund ID.');
+        }
+
+        return $refund->id;
+    }
+
+    /**
+     * List refunds Stripe holds against the same charge or payment intent.
+     * Used to spot money a previous FOSSBilling attempt already moved before
+     * its credit note was recorded, so a retry reuses it instead of refunding
+     * twice. Only actionable refunds (succeeded or pending) are returned.
+     *
+     * @return list<array{id: string, amount: float, invoice_id: ?string, lines: ?string}>
+     */
+    public function listRefundsForTransaction(string $txnId, string $currency): array
+    {
+        $filter = $this->resolveRefundTarget($txnId);
+        $filter['limit'] = 100;
+
+        try {
+            $refunds = $this->stripe->refunds->all($filter);
+        } catch (Stripe\Exception\ApiErrorException $e) {
+            throw new Payment_Exception('Could not list Stripe refunds: :error', [':error' => $e->getMessage()]);
+        }
+
+        $result = [];
+        foreach ($refunds->data ?? [] as $refund) {
+            if (in_array($refund->status ?? '', ['failed', 'canceled'], true)) {
+                continue;
+            }
+            if (!is_string($refund->id ?? null) || $refund->id === '') {
+                continue;
+            }
+            $lines = $refund->metadata->lines ?? null;
+            $result[] = [
+                'id' => $refund->id,
+                'amount' => $this->getAmountFromMinorUnits((int) ($refund->amount ?? 0), $currency),
+                'invoice_id' => is_string($refund->metadata->invoice_id ?? null) ? $refund->metadata->invoice_id : null,
+                'lines' => is_string($lines) && $lines !== '' ? $lines : null,
+            ];
+        }
+
+        return $result;
+    }
+
+    /**
+     * Map a stored transaction ID onto the charge or payment intent a Stripe
+     * refund must target.
+     *
+     * @return array{payment_intent?: string, charge?: string}
+     */
+    private function resolveRefundTarget(string $txnId): array
+    {
+        if (str_starts_with($txnId, 'pi_')) {
+            return ['payment_intent' => $txnId];
+        }
+        if (str_starts_with($txnId, 'ch_')) {
+            return ['charge' => $txnId];
+        }
+        if (str_starts_with($txnId, 'in_')) {
+            return $this->resolveRefundTargetForStripeInvoice($txnId);
+        }
+
+        throw new Payment_Exception('Stripe transaction :txn cannot be refunded automatically. Refund it in the Stripe dashboard instead.', [':txn' => $txnId]);
+    }
+
+    /**
+     * Resolve a Stripe invoice (in_...) to a charge/payment_intent refund target.
+     *
+     * @return array{payment_intent?: string, charge?: string}
+     */
+    private function resolveRefundTargetForStripeInvoice(string $stripeInvoiceId): array
+    {
+        try {
+            // Newer Stripe API versions only populate the payments list, so
+            // expand it; legacy payment_intent/charge fields are checked first
+            // for accounts that still return them.
+            $stripeInvoice = $this->stripe->invoices->retrieve($stripeInvoiceId, ['expand' => ['payments']]);
+        } catch (Stripe\Exception\ApiErrorException $e) {
+            throw new Payment_Exception('Could not load the Stripe invoice :invoice: :error', [':invoice' => $stripeInvoiceId, ':error' => $e->getMessage()]);
+        }
+
+        $candidates = [$stripeInvoice->payment_intent ?? null, $stripeInvoice->charge ?? null];
+        foreach ($stripeInvoice->payments->data ?? [] as $payment) {
+            // Entries that never completed carry no usable refund target, but
+            // entries without a status predate it, so only skip known misses.
+            $status = $payment->status ?? null;
+            if ($status !== null && $status !== 'paid') {
+                continue;
+            }
+            $nested = $payment->payment ?? null;
+            if (!is_object($nested)) {
+                continue;
+            }
+            // The payment reference is wrapped: the charge or payment intent
+            // sits under its own key, either as an ID or an expanded object.
+            foreach (['payment_intent', 'charge'] as $field) {
+                $ref = $nested->{$field} ?? null;
+                $candidates[] = is_object($ref) ? ($ref->id ?? null) : $ref;
+            }
+            // Fallback for a directly expanded payment object.
+            $candidates[] = $nested->id ?? null;
+        }
+        foreach ($candidates as $candidate) {
+            $target = $this->refundTargetFromId($candidate);
+            if ($target !== null) {
+                return $target;
+            }
+        }
+
+        throw new Payment_Exception('Stripe invoice :invoice has no refundable payment. Refund it in the Stripe dashboard instead.', [':invoice' => $stripeInvoiceId]);
+    }
+
+    /**
+     * Map a Stripe object ID onto the charge or payment intent a refund
+     * targets, using the ID prefix. Anything else (setup intents, invoice
+     * IDs) cannot be refunded directly.
+     *
+     * @return array{payment_intent?: string, charge?: string}|null
+     */
+    private function refundTargetFromId(mixed $candidate): ?array
+    {
+        if (!is_string($candidate) || $candidate === '') {
+            return null;
+        }
+        if (str_starts_with($candidate, 'pi_')) {
+            return ['payment_intent' => $candidate];
+        }
+        if (str_starts_with($candidate, 'ch_')) {
+            return ['charge' => $candidate];
+        }
+
+        return null;
     }
 
     public function getAmountInCents(Invoice $invoice): int
@@ -735,11 +919,14 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface, FOS
         $keepTransaction = false;
 
         try {
+            // Refund notifications self-route: dashboard refunds carry no
+            // gateway metadata, so ownership is resolved inside their handler.
+            $isRefundNotification = $event->type === 'charge.refunded' || $event->type === 'refund.created';
             // A Stripe account can deliver the same event to multiple webhook
             // endpoints. Only the FOSSBilling gateway which created the Stripe
             // object may process it; otherwise two gateway records configured
             // for one Stripe account can both credit the same payment.
-            if (!$this->eventBelongsToGateway($event, $gateway_id)) {
+            if (!$isRefundNotification && !$this->eventBelongsToGateway($event, $gateway_id)) {
                 $this->di['em']->remove($tx);
                 $this->di['em']->flush();
 
@@ -759,6 +946,8 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface, FOS
                 'payment_intent.payment_failed' => $this->handlePaymentIntentFailedWebhook($api_admin, $tx, $event),
                 'setup_intent.succeeded' => $this->handleSetupIntentSucceededWebhook($api_admin, $tx, $event, $gateway_id),
                 'setup_intent.setup_failed' => $this->handleSetupIntentFailedWebhook($api_admin, $tx, $event),
+                'charge.refunded' => $this->handleRefundWebhook($tx, $event),
+                'refund.created' => $this->handleRefundCreatedWebhook($tx, $event, $gateway_id),
             };
         } catch (Stripe\Exception\CardException|Stripe\Exception\InvalidRequestException|Stripe\Exception\AuthenticationException|Stripe\Exception\ApiConnectionException|Stripe\Exception\ApiErrorException $e) {
             $this->logError($e, $tx);
@@ -1257,6 +1446,194 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface, FOS
         $tx->setError('Setup Intent failed via webhook');
 
         return true;
+    }
+
+    /**
+     * Acknowledge Stripe refund notifications without moving money: outbound
+     * refunds already recorded their credit note synchronously, and inbound
+     * ones are recorded by the admin via the Refund action. Returning false
+     * deletes the placeholder transaction to keep the list clean.
+     */
+    private function handleRefundWebhook(Transaction $tx, object $event): bool
+    {
+        $refund = $event->data->object;
+        $refundId = is_string($refund->id ?? null) ? $refund->id : $event->id;
+        $tx->setTxnId($refundId);
+        $tx->setTxnStatus($event->type);
+        $this->debugLog('Stripe refund webhook acknowledged: ' . $refundId);
+
+        return false;
+    }
+
+    /**
+     * Record a refund made in the Stripe dashboard as a credit note.
+     * Refunds stamped with our gateway metadata originated here and already
+     * have theirs, so only metadata-less refunds are recorded. Partial
+     * dashboard refunds are left for the admin: mapping an amount back onto
+     * invoice lines is a judgment call, not something to guess.
+     */
+    private function handleRefundCreatedWebhook(Transaction $tx, object $event, int $gateway_id): bool
+    {
+        $refund = $event->data->object;
+        $refundId = is_string($refund->id ?? null) ? $refund->id : $event->id;
+
+        if (is_numeric($refund->metadata->gateway_id ?? null)) {
+            return false;
+        }
+
+        return $this->withStripeObjectLock(
+            $refundId,
+            $gateway_id,
+            fn (): bool => $this->recordDashboardRefund($tx, $event, $refund, $refundId, $gateway_id)
+        );
+    }
+
+    private function recordDashboardRefund(Transaction $tx, object $event, object $refund, string $refundId, int $gateway_id): bool
+    {
+        $tx->setTxnId($refundId);
+        $tx->setTxnStatus($event->type);
+
+        $invoice = $this->findInvoiceForDashboardRefund($refund, $gateway_id);
+        if (!$invoice instanceof Invoice) {
+            $this->debugLog('Stripe dashboard refund ' . $refundId . ' matches no local invoice; ignoring');
+
+            return false;
+        }
+        if ((int) $invoice->getGateway()?->getId() !== $gateway_id) {
+            return false;
+        }
+
+        $fresh = $this->di['em']->getRepository(Invoice::class)->find($invoice->getId());
+        if ($fresh instanceof Invoice) {
+            $invoice = $fresh;
+        }
+        if ($invoice->getStatus() !== Invoice::STATUS_PAID) {
+            return false;
+        }
+
+        $invoiceService = $this->di['mod_service']('Invoice');
+        $remaining = round($invoiceService->getTotalWithTax($invoice) - (float) ($invoice->getRefund() ?? 0), 2);
+        if ($remaining <= 0.005) {
+            return false;
+        }
+
+        $refundedAmount = $this->getAmountFromMinorUnits((int) ($refund->amount ?? 0), (string) ($refund->currency ?? $invoice->getCurrency()));
+        if (abs($refundedAmount - $remaining) > 0.005) {
+            $this->di['logger']->info('Partial Stripe dashboard refund {refund} for invoice #{id} needs manual recording', ['refund' => $refundId, 'id' => $invoice->getId()]);
+
+            return false;
+        }
+
+        try {
+            $invoiceService->refundInvoice($invoice, 'Recorded from Stripe dashboard refund ' . $refundId, null, [
+                'gateway_refund' => false,
+                'gateway_returned' => true,
+            ]);
+        } catch (Throwable $e) {
+            // A concurrent admin refund may have settled the invoice first:
+            // the credit note exists, so there is nothing left to record.
+            $settled = $this->di['em']->getRepository(Invoice::class)->find($invoice->getId());
+            if ($settled instanceof Invoice && $settled->getStatus() !== Invoice::STATUS_PAID) {
+                $this->debugLog('Stripe dashboard refund ' . $refundId . ' already recorded by a concurrent refund; ignoring');
+
+                return false;
+            }
+            $tx->setStatus(Transaction::STATUS_ERROR);
+            $tx->setError($e->getMessage());
+            $this->debugLog('Could not record Stripe dashboard refund ' . $refundId . ': ' . $e->getMessage());
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Find the local invoice a dashboard refund belongs to: first by the
+     * refund's charge or payment intent matching a processed transaction,
+     * then via the charge's Stripe invoice or the invoice-payment list for
+     * subscription payments, whose local transactions are stored under the
+     * Stripe invoice ID.
+     */
+    private function findInvoiceForDashboardRefund(object $refund, int $gateway_id): ?Invoice
+    {
+        $transactionRepository = $this->di['em']->getRepository(Transaction::class);
+
+        $paymentIntentId = null;
+        $chargeId = null;
+        foreach (['payment_intent', 'charge'] as $field) {
+            $candidate = $refund->{$field} ?? null;
+            if (!is_string($candidate) || $candidate === '') {
+                continue;
+            }
+            if ($field === 'payment_intent') {
+                $paymentIntentId = $candidate;
+            } else {
+                $chargeId = $candidate;
+            }
+            $paymentTx = $transactionRepository->findOneByTxnIdAndGatewayId($candidate, $gateway_id);
+            if ($paymentTx instanceof Transaction && $paymentTx->getInvoice() instanceof Invoice) {
+                return $paymentTx->getInvoice();
+            }
+        }
+
+        $charge = null;
+        if ($chargeId !== null) {
+            try {
+                $charge = $this->stripe->charges->retrieve($chargeId, []);
+            } catch (Stripe\Exception\ApiErrorException) {
+                $charge = null;
+            }
+        }
+
+        if ($charge !== null) {
+            if ($paymentIntentId === null) {
+                $paymentIntent = $charge->payment_intent ?? null;
+                if (is_object($paymentIntent)) {
+                    $paymentIntent = $paymentIntent->id ?? null;
+                }
+                if (is_string($paymentIntent) && $paymentIntent !== '') {
+                    $paymentIntentId = $paymentIntent;
+                }
+            }
+
+            // Legacy accounts still return the invoice on the charge; newer API
+            // versions removed it, so fall through to the invoice-payment lookup.
+            $stripeInvoiceId = is_string($charge->invoice ?? null) && $charge->invoice !== '' ? $charge->invoice : null;
+            if ($stripeInvoiceId !== null) {
+                $paymentTx = $transactionRepository->findOneByTxnIdAndGatewayId($stripeInvoiceId, $gateway_id);
+                if ($paymentTx instanceof Transaction && $paymentTx->getInvoice() instanceof Invoice) {
+                    return $paymentTx->getInvoice();
+                }
+            }
+        }
+
+        if ($paymentIntentId === null) {
+            return null;
+        }
+
+        try {
+            $invoicePayments = $this->stripe->invoicePayments->all([
+                'payment' => ['type' => 'payment_intent', 'payment_intent' => $paymentIntentId],
+                'limit' => 1,
+            ]);
+        } catch (Stripe\Exception\ApiErrorException) {
+            return null;
+        }
+
+        foreach ($invoicePayments->data ?? [] as $invoicePayment) {
+            $linked = $invoicePayment->invoice ?? null;
+            $linkedId = is_object($linked) ? ($linked->id ?? null) : $linked;
+            if (!is_string($linkedId) || $linkedId === '') {
+                continue;
+            }
+            $paymentTx = $transactionRepository->findOneByTxnIdAndGatewayId($linkedId, $gateway_id);
+            if ($paymentTx instanceof Transaction && $paymentTx->getInvoice() instanceof Invoice) {
+                return $paymentTx->getInvoice();
+            }
+        }
+
+        return null;
     }
 
     /**

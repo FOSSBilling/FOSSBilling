@@ -16,6 +16,7 @@ use Stripe\StripeClient;
 
 use function Tests\Helpers\container;
 use function Tests\Helpers\createEntity;
+use function Tests\Helpers\setEntityId;
 
 const TEST_WEBHOOK_SECRET = 'whsec_test_dummy';
 
@@ -2709,4 +2710,560 @@ describe('getAmountInMinorUnits follows Stripe currency rules', function (): voi
         'unknown code falls back to two decimals' => ['XXX', 100000, 1000.0],
         'lowercase currency' => ['usd', 100000, 1000.0],
     ]);
+});
+
+describe('Stripe refunds', function (): void {
+    test('advertises refund support', function (): void {
+        expect(Payment_Adapter_Stripe::supportsRefunds())->toBeTrue();
+    });
+
+    test('refunds a PaymentIntent with converted minor units', function (): void {
+        $refunds = Mockery::mock();
+        $refunds->shouldReceive('create')
+            ->once()
+            ->with(
+                Mockery::on(fn (array $p): bool => $p['payment_intent'] === 'pi_123' && $p['amount'] === 1050 && ($p['metadata']['invoice_id'] ?? null) === '5'),
+                Mockery::on(fn (array $o): bool => str_starts_with((string) ($o['idempotency_key'] ?? ''), 'refund_'))
+            )
+            ->andReturn((object) ['id' => 're_123']);
+
+        $stripe = Mockery::mock(StripeClient::class);
+        $stripe->refunds = $refunds;
+        setPrivateProperty($this->adapter, 'stripe', $stripe);
+
+        expect($this->adapter->refundPayment('pi_123', 10.50, 'USD', ['invoice_id' => '5']))->toBe('re_123');
+    });
+
+    test('refunds a charge directly and respects zero-decimal currencies', function (): void {
+        $refunds = Mockery::mock();
+        $refunds->shouldReceive('create')
+            ->once()
+            ->with(
+                Mockery::on(fn (array $p): bool => ($p['charge'] ?? null) === 'ch_123' && $p['amount'] === 1000),
+                Mockery::any())
+            ->andReturn((object) ['id' => 're_456']);
+
+        $stripe = Mockery::mock(StripeClient::class);
+        $stripe->refunds = $refunds;
+        setPrivateProperty($this->adapter, 'stripe', $stripe);
+
+        expect($this->adapter->refundPayment('ch_123', 1000, 'JPY'))->toBe('re_456');
+    });
+
+    test('resolves a Stripe invoice to its payment intent', function (): void {
+        $invoices = Mockery::mock();
+        $invoices->shouldReceive('retrieve')->once()->with('in_123', ['expand' => ['payments']])->andReturn((object) ['payment_intent' => 'pi_inv', 'charge' => null]);
+
+        $refunds = Mockery::mock();
+        $refunds->shouldReceive('create')
+            ->once()
+            ->with(Mockery::on(fn (array $p): bool => ($p['payment_intent'] ?? null) === 'pi_inv' && $p['amount'] === 2000), Mockery::any())
+            ->andReturn((object) ['id' => 're_789']);
+
+        $stripe = Mockery::mock(StripeClient::class);
+        $stripe->invoices = $invoices;
+        $stripe->refunds = $refunds;
+        setPrivateProperty($this->adapter, 'stripe', $stripe);
+
+        expect($this->adapter->refundPayment('in_123', 20.00, 'USD'))->toBe('re_789');
+    });
+
+    test('rejects transaction ids that cannot be refunded', function (): void {
+        expect(fn () => $this->adapter->refundPayment('seti_123', 5.00, 'USD'))->toThrow(Payment_Exception::class);
+        expect(fn () => $this->adapter->refundPayment('pi_123', 0, 'USD'))->toThrow(Payment_Exception::class);
+    });
+
+    test('wraps Stripe API failures', function (): void {
+        $refunds = Mockery::mock();
+        $refunds->shouldReceive('create')->once()->andThrow(new Stripe\Exception\InvalidRequestException('Already refunded', 400));
+
+        $stripe = Mockery::mock(StripeClient::class);
+        $stripe->refunds = $refunds;
+        setPrivateProperty($this->adapter, 'stripe', $stripe);
+
+        expect(fn () => $this->adapter->refundPayment('pi_123', 5.00, 'USD'))->toThrow(Payment_Exception::class, 'Stripe refund failed');
+    });
+
+    test('refund webhooks are acknowledged without keeping a transaction', function (): void {
+        expect(Payment_Adapter_Stripe::HANDLED_EVENT_TYPES)->toContain('charge.refunded')
+            ->and(Payment_Adapter_Stripe::HANDLED_EVENT_TYPES)->toContain('refund.created');
+
+        $tx = buildTransaction();
+        $event = (object) ['id' => 'evt_1', 'type' => 'refund.created', 'data' => (object) ['object' => (object) ['id' => 're_1']]];
+        expect(invokePrivateMethod($this->adapter, 'handleRefundWebhook', [$tx, $event]))->toBeFalse()
+            ->and($tx->getTxnId())->toBe('re_1');
+    });
+});
+
+describe('listRefundsForTransaction', function (): void {
+    test('maps actionable refunds and skips failed ones', function (): void {
+        $refunds = Mockery::mock();
+        $refunds->shouldReceive('all')
+            ->once()
+            ->with(['payment_intent' => 'pi_123', 'limit' => 100])
+            ->andReturn((object) ['data' => [
+                (object) ['id' => 're_1', 'amount' => 1050, 'currency' => 'usd', 'status' => 'succeeded', 'metadata' => (object) ['invoice_id' => '5', 'lines' => '12:1']],
+                (object) ['id' => 're_2', 'amount' => 500, 'currency' => 'usd', 'status' => 'failed', 'metadata' => (object) []],
+                (object) ['id' => 're_3', 'amount' => 200, 'currency' => 'usd', 'status' => 'pending', 'metadata' => (object) []],
+            ]]);
+
+        $stripe = Mockery::mock(StripeClient::class);
+        $stripe->refunds = $refunds;
+        setPrivateProperty($this->adapter, 'stripe', $stripe);
+
+        expect($this->adapter->listRefundsForTransaction('pi_123', 'USD'))->toBe([
+            ['id' => 're_1', 'amount' => 10.5, 'invoice_id' => '5', 'lines' => '12:1'],
+            ['id' => 're_3', 'amount' => 2.0, 'invoice_id' => null, 'lines' => null],
+        ]);
+    });
+
+    test('resolves a Stripe invoice before listing', function (): void {
+        $invoices = Mockery::mock();
+        $invoices->shouldReceive('retrieve')->once()->with('in_123', ['expand' => ['payments']])->andReturn((object) ['payment_intent' => 'pi_inv', 'charge' => null]);
+
+        $refunds = Mockery::mock();
+        $refunds->shouldReceive('all')->once()->with(['payment_intent' => 'pi_inv', 'limit' => 100])->andReturn((object) ['data' => []]);
+
+        $stripe = Mockery::mock(StripeClient::class);
+        $stripe->invoices = $invoices;
+        $stripe->refunds = $refunds;
+        setPrivateProperty($this->adapter, 'stripe', $stripe);
+
+        expect($this->adapter->listRefundsForTransaction('in_123', 'USD'))->toBe([]);
+    });
+});
+
+describe('handleRefundCreatedWebhook', function (): void {
+    test('ignores refunds that originated in FOSSBilling', function (): void {
+        $tx = buildTransaction();
+        $refund = (object) [
+            'id' => 're_1',
+            'amount' => 2000,
+            'currency' => 'usd',
+            'charge' => 'ch_1',
+            'payment_intent' => 'pi_1',
+            'metadata' => (object) ['gateway_id' => '1', 'invoice_id' => '5'],
+        ];
+        $event = (object) ['id' => 'evt_1', 'type' => 'refund.created', 'data' => (object) ['object' => $refund]];
+
+        $this->adapter->setDi(container());
+
+        $result = invokePrivateMethod($this->adapter, 'handleRefundCreatedWebhook', [$tx, $event, 1]);
+
+        expect($result)->toBeFalse();
+    });
+
+    test('records a full dashboard refund as a credit note', function (): void {
+        $tx = buildTransaction();
+        $refund = (object) [
+            'id' => 're_9',
+            'amount' => 2000,
+            'currency' => 'usd',
+            'charge' => 'ch_9',
+            'payment_intent' => 'pi_9',
+            'metadata' => (object) [],
+        ];
+        $event = (object) ['id' => 'evt_9', 'type' => 'refund.created', 'data' => (object) ['object' => $refund]];
+
+        $payGateway = createEntity(PayGateway::class);
+        setEntityId($payGateway, 1);
+
+        $invoiceModel = createEntity(Invoice::class);
+        $invoiceModel->id = 5;
+        $invoiceModel->currency = 'USD';
+        $invoiceModel->setStatus(Invoice::STATUS_PAID);
+        $invoiceModel->setGateway($payGateway);
+
+        $paymentTx = buildTransaction();
+        $paymentTx->setTxnId('pi_9');
+        $paymentTx->setGateway($payGateway);
+        $paymentTx->setInvoice($invoiceModel);
+
+        ['em' => $em, 'txRepo' => $txRepo, 'invoiceRepo' => $invoiceRepo] = buildEntityManagerMocks();
+        $txRepo->shouldReceive('findOneByTxnIdAndGatewayId')->once()->with('pi_9', 1)->andReturn($paymentTx);
+        $invoiceRepo->shouldReceive('find')->once()->with(5)->andReturn($invoiceModel);
+
+        $invoiceService = Mockery::mock();
+        $invoiceService->shouldReceive('getTotalWithTax')->once()->with($invoiceModel)->andReturn(20.0);
+        $invoiceService->shouldReceive('refundInvoice')
+            ->once()
+            ->with($invoiceModel, 'Recorded from Stripe dashboard refund re_9', null, ['gateway_refund' => false, 'gateway_returned' => true])
+            ->andReturn(7);
+
+        $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+        expectStripeObjectLock($dbalMock, 're_9', 1);
+
+        $di = container();
+        $di['dbal'] = $dbalMock;
+        $di['em'] = $em;
+        $di['logger'] = new Tests\Helpers\TestLogger();
+        $di['mod_service'] = $di->protect(fn ($module, $service = null) => $invoiceService);
+        $this->adapter->setDi($di);
+
+        $result = invokePrivateMethod($this->adapter, 'handleRefundCreatedWebhook', [$tx, $event, 1]);
+
+        expect($result)->toBeFalse();
+    });
+
+    test('leaves partial dashboard refunds for the admin', function (): void {
+        $tx = buildTransaction();
+        $refund = (object) [
+            'id' => 're_9',
+            'amount' => 500,
+            'currency' => 'usd',
+            'charge' => 'ch_9',
+            'payment_intent' => 'pi_9',
+            'metadata' => (object) [],
+        ];
+        $event = (object) ['id' => 'evt_9', 'type' => 'refund.created', 'data' => (object) ['object' => $refund]];
+
+        $payGateway = createEntity(PayGateway::class);
+        setEntityId($payGateway, 1);
+
+        $invoiceModel = createEntity(Invoice::class);
+        $invoiceModel->id = 5;
+        $invoiceModel->currency = 'USD';
+        $invoiceModel->setStatus(Invoice::STATUS_PAID);
+        $invoiceModel->setGateway($payGateway);
+
+        $paymentTx = buildTransaction();
+        $paymentTx->setTxnId('pi_9');
+        $paymentTx->setGateway($payGateway);
+        $paymentTx->setInvoice($invoiceModel);
+
+        ['em' => $em, 'txRepo' => $txRepo, 'invoiceRepo' => $invoiceRepo] = buildEntityManagerMocks();
+        $txRepo->shouldReceive('findOneByTxnIdAndGatewayId')->once()->with('pi_9', 1)->andReturn($paymentTx);
+        $invoiceRepo->shouldReceive('find')->once()->with(5)->andReturn($invoiceModel);
+
+        $invoiceService = Mockery::mock();
+        $invoiceService->shouldReceive('getTotalWithTax')->once()->andReturn(20.0);
+        $invoiceService->shouldNotReceive('refundInvoice');
+
+        $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+        expectStripeObjectLock($dbalMock, 're_9', 1);
+
+        $di = container();
+        $di['dbal'] = $dbalMock;
+        $di['em'] = $em;
+        $di['logger'] = new Tests\Helpers\TestLogger();
+        $di['mod_service'] = $di->protect(fn ($module, $service = null) => $invoiceService);
+        $this->adapter->setDi($di);
+
+        $result = invokePrivateMethod($this->adapter, 'handleRefundCreatedWebhook', [$tx, $event, 1]);
+
+        expect($result)->toBeFalse();
+    });
+});
+
+describe('handleRefundCreatedWebhook races', function (): void {
+    test('ignores the webhook when a concurrent refund settled the invoice first', function (): void {
+        $tx = buildTransaction();
+        $refund = (object) [
+            'id' => 're_9',
+            'amount' => 2000,
+            'currency' => 'usd',
+            'charge' => 'ch_9',
+            'payment_intent' => 'pi_9',
+            'metadata' => (object) [],
+        ];
+        $event = (object) ['id' => 'evt_9', 'type' => 'refund.created', 'data' => (object) ['object' => $refund]];
+
+        $payGateway = createEntity(PayGateway::class);
+        setEntityId($payGateway, 1);
+
+        $invoiceModel = createEntity(Invoice::class);
+        $invoiceModel->id = 5;
+        $invoiceModel->currency = 'USD';
+        $invoiceModel->setStatus(Invoice::STATUS_PAID);
+        $invoiceModel->setGateway($payGateway);
+
+        $settledInvoice = createEntity(Invoice::class);
+        $settledInvoice->id = 5;
+        $settledInvoice->currency = 'USD';
+        $settledInvoice->setStatus(Invoice::STATUS_REFUNDED);
+        $settledInvoice->setGateway($payGateway);
+
+        $paymentTx = buildTransaction();
+        $paymentTx->setTxnId('pi_9');
+        $paymentTx->setGateway($payGateway);
+        $paymentTx->setInvoice($invoiceModel);
+
+        ['em' => $em, 'txRepo' => $txRepo, 'invoiceRepo' => $invoiceRepo] = buildEntityManagerMocks();
+        $txRepo->shouldReceive('findOneByTxnIdAndGatewayId')->once()->with('pi_9', 1)->andReturn($paymentTx);
+        $invoiceRepo->shouldReceive('find')->twice()->with(5)->andReturn($invoiceModel, $settledInvoice);
+
+        $invoiceService = Mockery::mock();
+        $invoiceService->shouldReceive('getTotalWithTax')->once()->andReturn(20.0);
+        $invoiceService->shouldReceive('refundInvoice')
+            ->once()
+            ->andThrow(new FOSSBilling\InformationException('Only paid invoices can be refunded'));
+
+        $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+        expectStripeObjectLock($dbalMock, 're_9', 1);
+
+        $di = container();
+        $di['dbal'] = $dbalMock;
+        $di['em'] = $em;
+        $di['logger'] = new Tests\Helpers\TestLogger();
+        $di['mod_service'] = $di->protect(fn ($module, $service = null) => $invoiceService);
+        $this->adapter->setDi($di);
+
+        $result = invokePrivateMethod($this->adapter, 'handleRefundCreatedWebhook', [$tx, $event, 1]);
+
+        expect($result)->toBeFalse()->and($tx->getStatus())->toBe(Transaction::STATUS_RECEIVED);
+    });
+});
+
+describe('resolveRefundTargetForStripeInvoice', function (): void {
+    test('resolves through the payments list when legacy fields are absent', function (): void {
+        $invoices = Mockery::mock();
+        $invoices->shouldReceive('retrieve')->once()->with('in_456', ['expand' => ['payments']])->andReturn((object) [
+            'payment_intent' => null,
+            'charge' => null,
+            'payments' => (object) ['data' => [(object) ['status' => 'paid', 'payment' => (object) ['type' => 'payment_intent', 'payment_intent' => 'pi_from_list']]]],
+        ]);
+
+        $refunds = Mockery::mock();
+        $refunds->shouldReceive('create')
+            ->once()
+            ->with(
+                Mockery::on(fn (array $p): bool => ($p['payment_intent'] ?? null) === 'pi_from_list'),
+                Mockery::any())
+            ->andReturn((object) ['id' => 're_1']);
+
+        $stripe = Mockery::mock(StripeClient::class);
+        $stripe->invoices = $invoices;
+        $stripe->refunds = $refunds;
+        setPrivateProperty($this->adapter, 'stripe', $stripe);
+
+        expect($this->adapter->refundPayment('in_456', 20.00, 'USD'))->toBe('re_1');
+    });
+
+    test('resolves an expanded payment object through its id', function (): void {
+        $invoices = Mockery::mock();
+        $invoices->shouldReceive('retrieve')->once()->with('in_789', ['expand' => ['payments']])->andReturn((object) [
+            'payments' => (object) ['data' => [(object) ['payment' => (object) ['id' => 'ch_expanded', 'object' => 'charge']]]],
+        ]);
+
+        $refunds = Mockery::mock();
+        $refunds->shouldReceive('create')
+            ->once()
+            ->with(
+                Mockery::on(fn (array $p): bool => ($p['charge'] ?? null) === 'ch_expanded'),
+                Mockery::any())
+            ->andReturn((object) ['id' => 're_2']);
+
+        $stripe = Mockery::mock(StripeClient::class);
+        $stripe->invoices = $invoices;
+        $stripe->refunds = $refunds;
+        setPrivateProperty($this->adapter, 'stripe', $stripe);
+
+        expect($this->adapter->refundPayment('in_789', 20.00, 'USD'))->toBe('re_2');
+    });
+
+    test('resolves the wrapped payment reference and skips unpaid entries', function (): void {
+        $invoices = Mockery::mock();
+        $invoices->shouldReceive('retrieve')->once()->with('in_321', ['expand' => ['payments']])->andReturn((object) [
+            'payment_intent' => null,
+            'charge' => null,
+            'payments' => (object) ['data' => [
+                (object) ['status' => 'open', 'payment' => (object) ['type' => 'payment_intent', 'payment_intent' => 'pi_open']],
+                (object) ['status' => 'canceled', 'payment' => (object) ['type' => 'charge', 'charge' => 'ch_dead']],
+                (object) ['status' => 'paid', 'payment' => (object) ['type' => 'payment_intent', 'payment_intent' => 'pi_wrap']],
+            ]],
+        ]);
+
+        $refunds = Mockery::mock();
+        $refunds->shouldReceive('create')
+            ->once()
+            ->with(
+                Mockery::on(fn (array $p): bool => ($p['payment_intent'] ?? null) === 'pi_wrap'),
+                Mockery::any())
+            ->andReturn((object) ['id' => 're_3']);
+
+        $stripe = Mockery::mock(StripeClient::class);
+        $stripe->invoices = $invoices;
+        $stripe->refunds = $refunds;
+        setPrivateProperty($this->adapter, 'stripe', $stripe);
+
+        expect($this->adapter->refundPayment('in_321', 20.00, 'USD'))->toBe('re_3');
+    });
+
+    test('resolves an expanded object nested in the payment wrapper', function (): void {
+        $invoices = Mockery::mock();
+        $invoices->shouldReceive('retrieve')->once()->with('in_654', ['expand' => ['payments']])->andReturn((object) [
+            'payment_intent' => null,
+            'charge' => null,
+            'payments' => (object) ['data' => [
+                (object) ['status' => 'paid', 'payment' => (object) ['type' => 'payment_intent', 'payment_intent' => (object) ['id' => 'pi_nested', 'object' => 'payment_intent']]],
+            ]],
+        ]);
+
+        $refunds = Mockery::mock();
+        $refunds->shouldReceive('create')
+            ->once()
+            ->with(
+                Mockery::on(fn (array $p): bool => ($p['payment_intent'] ?? null) === 'pi_nested'),
+                Mockery::any())
+            ->andReturn((object) ['id' => 're_4']);
+
+        $stripe = Mockery::mock(StripeClient::class);
+        $stripe->invoices = $invoices;
+        $stripe->refunds = $refunds;
+        setPrivateProperty($this->adapter, 'stripe', $stripe);
+
+        expect($this->adapter->refundPayment('in_654', 20.00, 'USD'))->toBe('re_4');
+    });
+
+    test('throws when only unpaid invoice payments exist', function (): void {
+        $invoices = Mockery::mock();
+        $invoices->shouldReceive('retrieve')->once()->with('in_987', ['expand' => ['payments']])->andReturn((object) [
+            'payment_intent' => null,
+            'charge' => null,
+            'payments' => (object) ['data' => [
+                (object) ['status' => 'open', 'payment' => (object) ['type' => 'payment_intent', 'payment_intent' => 'pi_open']],
+            ]],
+        ]);
+
+        $stripe = Mockery::mock(StripeClient::class);
+        $stripe->invoices = $invoices;
+        setPrivateProperty($this->adapter, 'stripe', $stripe);
+
+        expect(fn (): string => $this->adapter->refundPayment('in_987', 20.00, 'USD'))->toThrow(Payment_Exception::class, 'has no refundable payment');
+    });
+});
+
+describe('refund idempotency keys', function (): void {
+    test('issues distinct keys per refunded line selection', function (): void {
+        $capturedKeys = [];
+        $refunds = Mockery::mock();
+        $refunds->shouldReceive('create')->times(3)->andReturnUsing(function (array $params, array $opts) use (&$capturedKeys): object {
+            $capturedKeys[] = $opts['idempotency_key'] ?? null;
+
+            return (object) ['id' => 're_x'];
+        });
+
+        $stripe = Mockery::mock(StripeClient::class);
+        $stripe->refunds = $refunds;
+        setPrivateProperty($this->adapter, 'stripe', $stripe);
+
+        $base = ['invoice_id' => '5', 'gateway_id' => '1'];
+        $this->adapter->refundPayment('pi_1', 10.00, 'USD', $base + ['lines' => '12:1']);
+        $this->adapter->refundPayment('pi_1', 10.00, 'USD', $base + ['lines' => '13:1']);
+        $this->adapter->refundPayment('pi_1', 10.00, 'USD', $base + ['lines' => '12:1']);
+
+        expect($capturedKeys)->toHaveCount(3)
+            ->and($capturedKeys[0])->not->toBe($capturedKeys[1])
+            ->and($capturedKeys[0])->toBe($capturedKeys[2]);
+    });
+});
+
+describe('handleRefundCreatedWebhook invoice payment fallback', function (): void {
+    test('records a subscription dashboard refund resolved through the invoice payment list', function (): void {
+        $tx = buildTransaction();
+        $refund = (object) [
+            'id' => 're_9',
+            'amount' => 2000,
+            'currency' => 'usd',
+            'charge' => 'ch_sub',
+            'payment_intent' => 'pi_sub',
+            'metadata' => (object) [],
+        ];
+        $event = (object) ['id' => 'evt_9', 'type' => 'refund.created', 'data' => (object) ['object' => $refund]];
+
+        $payGateway = createEntity(PayGateway::class);
+        setEntityId($payGateway, 1);
+
+        $invoiceModel = createEntity(Invoice::class);
+        $invoiceModel->id = 5;
+        $invoiceModel->currency = 'USD';
+        $invoiceModel->setStatus(Invoice::STATUS_PAID);
+        $invoiceModel->setGateway($payGateway);
+
+        $paymentTx = buildTransaction();
+        $paymentTx->setTxnId('in_9');
+        $paymentTx->setGateway($payGateway);
+        $paymentTx->setInvoice($invoiceModel);
+
+        ['em' => $em, 'txRepo' => $txRepo, 'invoiceRepo' => $invoiceRepo] = buildEntityManagerMocks();
+        $txRepo->shouldReceive('findOneByTxnIdAndGatewayId')->times(3)->andReturnUsing(
+            fn (string $txnId, int $gatewayId): ?object => $txnId === 'in_9' ? $paymentTx : null
+        );
+        $invoiceRepo->shouldReceive('find')->once()->with(5)->andReturn($invoiceModel);
+
+        $charges = Mockery::mock();
+        $charges->shouldReceive('retrieve')->once()->with('ch_sub', [])->andReturn((object) ['payment_intent' => 'pi_sub']);
+
+        $invoicePayments = Mockery::mock();
+        $invoicePayments->shouldReceive('all')
+            ->once()
+            ->with(['payment' => ['type' => 'payment_intent', 'payment_intent' => 'pi_sub'], 'limit' => 1])
+            ->andReturn((object) ['data' => [(object) ['invoice' => 'in_9']]]);
+
+        $invoiceService = Mockery::mock();
+        $invoiceService->shouldReceive('getTotalWithTax')->once()->with($invoiceModel)->andReturn(20.0);
+        $invoiceService->shouldReceive('refundInvoice')
+            ->once()
+            ->with($invoiceModel, 'Recorded from Stripe dashboard refund re_9', null, ['gateway_refund' => false, 'gateway_returned' => true])
+            ->andReturn(7);
+
+        $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+        expectStripeObjectLock($dbalMock, 're_9', 1);
+
+        $stripe = Mockery::mock(StripeClient::class);
+        $stripe->charges = $charges;
+        $stripe->invoicePayments = $invoicePayments;
+        setPrivateProperty($this->adapter, 'stripe', $stripe);
+
+        $di = container();
+        $di['dbal'] = $dbalMock;
+        $di['em'] = $em;
+        $di['logger'] = new Tests\Helpers\TestLogger();
+        $di['mod_service'] = $di->protect(fn ($module, $service = null) => $invoiceService);
+        $this->adapter->setDi($di);
+
+        expect(invokePrivateMethod($this->adapter, 'handleRefundCreatedWebhook', [$tx, $event, 1]))->toBeFalse();
+    });
+
+    test('ignores the refund when the invoice payment list is empty', function (): void {
+        $tx = buildTransaction();
+        $refund = (object) [
+            'id' => 're_9',
+            'amount' => 2000,
+            'currency' => 'usd',
+            'charge' => 'ch_sub',
+            'payment_intent' => 'pi_unknown',
+            'metadata' => (object) [],
+        ];
+        $event = (object) ['id' => 'evt_9', 'type' => 'refund.created', 'data' => (object) ['object' => $refund]];
+
+        ['em' => $em, 'txRepo' => $txRepo] = buildEntityManagerMocks();
+        $txRepo->shouldReceive('findOneByTxnIdAndGatewayId')->twice()->andReturn(null);
+
+        $charges = Mockery::mock();
+        $charges->shouldReceive('retrieve')->once()->with('ch_sub', [])->andReturn((object) ['payment_intent' => 'pi_unknown']);
+
+        $invoicePayments = Mockery::mock();
+        $invoicePayments->shouldReceive('all')->once()->andReturn((object) ['data' => []]);
+
+        $invoiceService = Mockery::mock();
+        $invoiceService->shouldNotReceive('refundInvoice');
+
+        $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
+        expectStripeObjectLock($dbalMock, 're_9', 1);
+
+        $stripe = Mockery::mock(StripeClient::class);
+        $stripe->charges = $charges;
+        $stripe->invoicePayments = $invoicePayments;
+        setPrivateProperty($this->adapter, 'stripe', $stripe);
+
+        $di = container();
+        $di['dbal'] = $dbalMock;
+        $di['em'] = $em;
+        $di['logger'] = new Tests\Helpers\TestLogger();
+        $di['mod_service'] = $di->protect(fn ($module, $service = null) => $invoiceService);
+        $this->adapter->setDi($di);
+
+        expect(invokePrivateMethod($this->adapter, 'handleRefundCreatedWebhook', [$tx, $event, 1]))->toBeFalse();
+    });
 });
