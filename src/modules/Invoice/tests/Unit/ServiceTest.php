@@ -9706,7 +9706,7 @@ test('refundInvoice fails when the payment adapter cannot load', function (): vo
 
 test('refundInvoice reuses an unrecorded Stripe refund with matching partial lines', function (): void {
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
-    $serviceMock->shouldReceive('getTotal')->andReturn(40.0);
+    $serviceMock->shouldReceive('getTotal')->andReturnUsing(fn (Invoice $invoice): float => (int) $invoice->getId() === 28 ? 40.0 : -20.0);
     $serviceMock->shouldReceive('getTax')->andReturn(0.0);
     $serviceMock->shouldReceive('countIncome')->once();
     $serviceMock->shouldReceive('addNote')->atLeast()->times(4);
@@ -9802,7 +9802,11 @@ test('refundInvoice reuses an unrecorded Stripe refund with matching partial lin
     expect($serviceMock->refundInvoice($invoiceModel, null, [12 => 1]))->toBe(8);
 
     $refundRows = array_values(array_filter($persisted, fn ($e): bool => $e instanceof Transaction && $e->getType() === Payment_Transaction::TXTYPE_REFUND));
-    expect($refundRows)->toHaveCount(1)->and($refundRows[0]->getTxnId())->toBe('re_part');
+    expect($refundRows)->toHaveCount(1)
+        ->and($refundRows[0]->getTxnId())->toBe('re_part')
+        ->and((float) $refundRows[0]->getAmount())->toBe(20.0);
+    expect((float) $invoiceModel->getRefund())->toBe(20.0)
+        ->and($invoiceModel->getStatus())->toBe(Invoice::STATUS_PAID);
 });
 
 test('refundInvoice aborts when an unrecorded Stripe refund has no line selection', function (): void {
