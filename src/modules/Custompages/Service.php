@@ -59,6 +59,7 @@ class Service
                 `content` text NOT NULL,
                 `slug` varchar(255) NOT NULL,
                 `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+                `updated_at` timestamp NULL DEFAULT NULL,
                 PRIMARY KEY (`id`),
                 UNIQUE KEY `uniq_custom_pages_slug` (`slug`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4';

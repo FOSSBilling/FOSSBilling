@@ -18,6 +18,8 @@ use Symfony\Component\Intl\Currencies;
 
 class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
 {
+    private const array STRIPE_ZERO_DECIMAL_CURRENCIES = ['BIF', 'CLP', 'DJF', 'GNF', 'JPY', 'KMF', 'KRW', 'MGA', 'PYG', 'RWF', 'VND', 'VUV', 'XAF', 'XOF', 'XPF'];
+
     protected ?Pimple\Container $di = null;
 
     private StripeClient $stripe;
@@ -236,11 +238,22 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
         return $amount / $divisor;
     }
 
+    /**
+     * Stripe's own decimal rules, not CLDR's: Stripe's zero-decimal currencies are sent as-is, three-decimal ones
+     * keep three digits, and every other currency (including COP, HUF, IDR, ISK, PKR and UGX, which CLDR lists with
+     * no decimals) is sent ×100. See https://docs.stripe.com/currencies.
+     */
     private function getCurrencyFractionDigits(string $currency): int
     {
         $currency = strtoupper($currency);
+        if (in_array($currency, self::STRIPE_ZERO_DECIMAL_CURRENCIES, true)) {
+            return 0;
+        }
+        if (Currencies::exists($currency) && Currencies::getFractionDigits($currency) === 3) {
+            return 3;
+        }
 
-        return Currencies::exists($currency) ? Currencies::getFractionDigits($currency) : 2;
+        return 2;
     }
 
     public function getInvoiceTitle(Model_Invoice $invoice): string
@@ -895,14 +908,19 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface
             $this->di['db']->store($tx);
         }
 
-        $isInitialPayment = ($stripeInvoice->billing_reason ?? '') === 'subscription_create';
+        $billingReason = (string) ($stripeInvoice->billing_reason ?? '');
+        $isInitialPayment = $billingReason === 'subscription_create';
 
         // Single DB fetch covers: (a) skip if already paid, (b) billing_reason fallback.
         if ($invoiceId) {
             $existingInvoice = $this->di['db']->findOne('Invoice', 'id = :id', [':id' => (int) $invoiceId]);
             if ($existingInvoice instanceof Model_Invoice) {
-                // Skip if already paid — redirect flow may have processed it first.
-                if ($existingInvoice->status === Model_Invoice::STATUS_PAID) {
+                // Skip if already paid — redirect flow may have processed it first. Only for the initial payment:
+                // the subscription metadata always points at the first invoice, so for a renewal it is paid by
+                // design and the payment goes to a renewal invoice below. An inconclusive (missing)
+                // billing_reason with a paid original is also skipped: minting a renewal there would
+                // double-credit a duplicate initial webhook.
+                if ($existingInvoice->status === Model_Invoice::STATUS_PAID && ($isInitialPayment || $billingReason === '')) {
                     return false;
                 }
                 // Fallback: billing_reason inconclusive but original invoice still unpaid.

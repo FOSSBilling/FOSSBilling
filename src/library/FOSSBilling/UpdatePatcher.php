@@ -564,6 +564,7 @@ class UpdatePatcher implements InjectionAwareInterface
             // Charset repair is main's patch128. Keep release numbering contiguous:
             // main's patch119 only adds columns/indexes also covered by its schema sync.
             119 => 'patch119',
+            120 => 'patch120',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -3048,6 +3049,21 @@ class UpdatePatcher implements InjectionAwareInterface
             // One ALTER avoids rebuilding the table for each column. DDL failures stop the
             // patch sequence, leaving patch119 pending; successful reruns skip widened columns.
             $this->executeSql('ALTER TABLE `custom_pages` ' . implode(', ', $changes));
+        }
+    }
+
+    private function patch120(): void
+    {
+        // Custom pages gained an updated_at column (TimestampTrait) without which
+        // sitemap <lastmod> falls back to omitting the tag on installs the portable
+        // sync never healed. The table only exists when the extension was activated
+        // (install() creates it), so skip absent tables; guards make reruns no-ops.
+        if (!$this->tableExists('custom_pages')) {
+            return;
+        }
+
+        if (!$this->tableHasColumn('custom_pages', 'updated_at')) {
+            $this->executeSql('ALTER TABLE `custom_pages` ADD COLUMN `updated_at` datetime DEFAULT NULL');
         }
     }
 }

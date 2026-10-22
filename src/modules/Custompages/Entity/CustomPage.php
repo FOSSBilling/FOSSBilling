@@ -13,14 +13,18 @@ namespace Box\Mod\Custompages\Entity;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use FOSSBilling\Doctrine\TimestampTrait;
 use FOSSBilling\Interfaces\ApiArrayInterface;
+use FOSSBilling\Interfaces\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Custompages\Repository\CustomPageRepository::class)]
 #[ORM\Table(name: 'custom_pages')]
 #[ORM\UniqueConstraint(name: 'uniq_custom_pages_slug', columns: ['slug'])]
 #[ORM\HasLifecycleCallbacks]
-class CustomPage implements ApiArrayInterface
+class CustomPage implements ApiArrayInterface, TimestampInterface
 {
+    use TimestampTrait;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: Types::INTEGER)]
@@ -42,15 +46,6 @@ class CustomPage implements ApiArrayInterface
     #[ORM\Column(type: Types::STRING, length: 255)]
     private string $slug;
 
-    #[ORM\Column(name: 'created_at', type: Types::DATETIME_MUTABLE)]
-    private ?\DateTime $createdAt = null;
-
-    #[ORM\PrePersist]
-    public function onPrePersist(): void
-    {
-        $this->createdAt ??= new \DateTime();
-    }
-
     public function toApiArray(): array
     {
         return [
@@ -61,6 +56,7 @@ class CustomPage implements ApiArrayInterface
             'content' => $this->getContent(),
             'slug' => $this->getSlug(),
             'created_at' => $this->getCreatedAt()?->format('Y-m-d H:i:s'),
+            'updated_at' => $this->getUpdatedAt()?->format('Y-m-d H:i:s'),
         ];
     }
 
@@ -94,11 +90,6 @@ class CustomPage implements ApiArrayInterface
         return $this->slug;
     }
 
-    public function getCreatedAt(): ?\DateTime
-    {
-        return $this->createdAt;
-    }
-
     public function setTitle(string $title): self
     {
         $this->title = $title;
@@ -130,13 +121,6 @@ class CustomPage implements ApiArrayInterface
     public function setSlug(string $slug): self
     {
         $this->slug = $slug;
-
-        return $this;
-    }
-
-    public function setCreatedAt(?\DateTime $createdAt): self
-    {
-        $this->createdAt = $createdAt;
 
         return $this;
     }

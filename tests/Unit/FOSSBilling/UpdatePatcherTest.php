@@ -64,13 +64,17 @@ test('invoice item attempts patch follows the manual currency rate patch', funct
 test('tld periods patch follows the invoice item attempts patch', function (): void {
     $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 97);
 
-    expect($patches)->toHaveCount(6)
+    expect($patches)->toHaveCount(7)
         ->toHaveKey(98)
         ->and($patches[98][1])->toBe('patch98')
         ->and($patches)->toHaveKey(117)
         ->and($patches[117][1])->toBe('patch117')
         ->and($patches)->toHaveKey(118)
-        ->and($patches[118][1])->toBe('patch118');
+        ->and($patches[118][1])->toBe('patch118')
+        ->and($patches)->toHaveKey(119)
+        ->and($patches[119][1])->toBe('patch119')
+        ->and($patches)->toHaveKey(120)
+        ->and($patches[120][1])->toBe('patch120');
 });
 
 test('tld periods patch adds the column for existing installs', function (): void {
@@ -758,4 +762,62 @@ test('require transfer code patch is a no-op when the column already exists', fu
 test('custom page charset repair follows the entity decoding patch', function (): void {
     $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 118);
     expect($patches)->toHaveKey(119)->and($patches[119][1])->toBe('patch119');
+});
+
+test('custom pages updated_at patch follows the charset repair', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 119);
+    expect($patches)->toHaveKey(120)->and($patches[120][1])->toBe('patch120');
+});
+
+test('custom pages updated_at patch adds the column for existing installs', function (): void {
+    $tableExists = Mockery::mock(PDOStatement::class);
+    $tableExists->expects('execute')->with(['table' => 'custom_pages'])->andReturnTrue();
+    $tableExists->expects('fetchColumn')->andReturn('1');
+
+    $columns = Mockery::mock(PDOStatement::class);
+    $columns->expects('execute')->with([])->andReturnTrue();
+    $columns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([['Field' => 'id'], ['Field' => 'created_at']]);
+
+    $addColumn = Mockery::mock(PDOStatement::class);
+    $addColumn->expects('execute')->with([])->andReturnTrue();
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')
+        ->with('SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table LIMIT 1')
+        ->andReturn($tableExists);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `custom_pages`')->andReturn($columns);
+    $pdo->expects('prepare')
+        ->with('ALTER TABLE `custom_pages` ADD COLUMN `updated_at` datetime DEFAULT NULL')
+        ->andReturn($addColumn);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch120'))->invoke($patcher);
+});
+
+test('custom pages updated_at patch is a no-op when the column already exists', function (): void {
+    $tableExists = Mockery::mock(PDOStatement::class);
+    $tableExists->expects('execute')->with(['table' => 'custom_pages'])->andReturnTrue();
+    $tableExists->expects('fetchColumn')->andReturn('1');
+
+    $columns = Mockery::mock(PDOStatement::class);
+    $columns->expects('execute')->with([])->andReturnTrue();
+    $columns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([['Field' => 'id'], ['Field' => 'updated_at']]);
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')
+        ->with('SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table LIMIT 1')
+        ->andReturn($tableExists);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `custom_pages`')->andReturn($columns);
+    $pdo->shouldNotReceive('prepare')->with('ALTER TABLE `custom_pages` ADD COLUMN `updated_at` datetime DEFAULT NULL');
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch120'))->invoke($patcher);
 });

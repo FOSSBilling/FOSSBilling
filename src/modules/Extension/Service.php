@@ -400,6 +400,9 @@ class Service implements InjectionAwareInterface
         switch ($ext->getType()) {
             case \FOSSBilling\ExtensionManager::TYPE_MOD:
                 $mod = $this->di['mod']($ext->getName());
+                if (!$mod->hasManifest()) {
+                    throw new \FOSSBilling\InformationException('Cannot activate the :mod module: its manifest file is missing. The extension files may be incomplete, please reinstall the extension.', [':mod' => $ext->getName()], 5897);
+                }
                 $manifest = $mod->getManifest();
                 $this->installModule($ext);
                 $ext->setVersion($manifest['version'] !== null ? (string) $manifest['version'] : null);
@@ -617,6 +620,14 @@ class Service implements InjectionAwareInterface
     {
         if (!isset($data['type'], $data['id']) || $data['type'] === '' || $data['id'] === '') {
             throw new \FOSSBilling\InformationException('Extension type and ID are required');
+        }
+
+        if ($data['type'] === \FOSSBilling\ExtensionManager::TYPE_MOD) {
+            try {
+                $this->di['mod']($data['id'])->getManifest();
+            } catch (\Exception) {
+                throw new \FOSSBilling\InformationException('Cannot activate the :mod module: its manifest file is missing or invalid. The extension files may be incomplete, please reinstall the extension.', [':mod' => $data['id']], 5897);
+            }
         }
 
         $ext = $this->getExtensionRepository()->findOneByTypeAndName($data['type'], $data['id']);

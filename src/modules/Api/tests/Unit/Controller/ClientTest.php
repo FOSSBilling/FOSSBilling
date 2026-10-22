@@ -522,7 +522,46 @@ test('guest authentication accepts session-bound form JSON and header tokens', f
 
     expect($controller->renderedException)->toBeNull()
         ->and($controller->renderedData)->toBe(['ok' => true]);
-})->with([['client', 'login'], ['client', 'create'], ['staff', 'login']])->with(['form', 'json', 'header'])->with([true, false]);
+})->with([['client', 'login'], ['client', 'create'], ['staff', 'login'], ['cart', 'apply_promo']])->with(['form', 'json', 'header'])->with([true, false]);
+
+test('guest cart mutations accept same-origin GET with the session nonce', function (): void {
+    $request = Request::create('/api/guest/cart/remove_item', 'GET', ['id' => 5, 'CSRFToken' => 'browser-nonce']);
+    $controller = createGuestAuthenticationController($request);
+    $dispatcher = Mockery::mock();
+    $dispatcher->shouldReceive('dispatch')->once()->with(Mockery::type('object'), 'cart_remove_item', ['id' => 5])->andReturn(['ok' => true]);
+    $controller->getDi()['api_dispatcher'] = $dispatcher;
+    $app = Mockery::mock(Box_App::class);
+    $app->shouldReceive('getRequest')->andReturn($request);
+
+    $controller->get_method($app, 'guest', 'cart', 'remove_item');
+
+    expect($controller->renderedException)->toBeNull()
+        ->and($controller->renderedData)->toBe(['ok' => true]);
+});
+
+test('guest cart mutations reject requests without the session nonce or from a cross-site context', function (string $verb, array $params, array $headers, mixed $sessionToken, int $code): void {
+    $request = Request::create('/api/guest/cart/remove_item', $verb, $params);
+    $request->headers->add($headers);
+    $controller = createGuestAuthenticationController($request, $sessionToken);
+    $dispatcher = Mockery::mock();
+    $dispatcher->shouldNotReceive('dispatch');
+    $controller->getDi()['api_dispatcher'] = $dispatcher;
+    $app = Mockery::mock(Box_App::class);
+    $app->shouldReceive('getRequest')->andReturn($request);
+
+    $verb === 'GET'
+        ? $controller->get_method($app, 'guest', 'cart', 'remove_item')
+        : $controller->post_method($app, 'guest', 'cart', 'remove_item');
+
+    expect($controller->renderedException)->toBeInstanceOf(InformationException::class)
+        ->and($controller->renderedException->getCode())->toBe($code);
+})->with([
+    'POST without nonce' => ['POST', ['id' => 5], [], 'browser-nonce', 403],
+    'POST with wrong nonce' => ['POST', ['id' => 5, 'CSRFToken' => 'attacker-nonce'], [], 'browser-nonce', 403],
+    'GET without nonce' => ['GET', ['id' => 5], [], 'browser-nonce', 403],
+    'cross-site GET with nonce' => ['GET', ['id' => 5, 'CSRFToken' => 'browser-nonce'], ['Sec-Fetch-Site' => 'cross-site'], 'browser-nonce', 403],
+    'foreign origin POST with nonce' => ['POST', ['id' => 5, 'CSRFToken' => 'browser-nonce'], ['Origin' => 'https://attacker.example'], 'browser-nonce', 403],
+]);
 
 test('guest login cannot take its nonce or credentials from the query string', function (): void {
     $request = Request::create('/api/guest/client/login?CSRFToken=browser-nonce&email=attacker&password=attacker', 'POST');

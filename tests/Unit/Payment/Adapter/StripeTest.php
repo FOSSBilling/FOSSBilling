@@ -2105,3 +2105,234 @@ test('checkout buyer details are encoded as JS string literals', function (): vo
         ->and(json_decode($encoded))->toBe("O'Brien & <Sons>")
         ->and($encoded)->not->toContain('</script>');
 });
+
+describe('getAmountInMinorUnits follows Stripe currency rules', function (): void {
+    // Stripe's zero-decimal list is "BIF CLP DJF GNF JPY KMF KRW MGA PYG RWF UGX VND VUV XAF XOF XPF", and ISK and UGX must
+    // be sent as two-decimal values (https://docs.stripe.com/currencies). Symfony Intl reports COP, HUF, IDR, ISK, PKR, UGX
+    // and others with no decimals, but Stripe expects them ×100.
+    test('sends the invoice total in the unit Stripe expects', function (string $currency, int $expected): void {
+        $invoice = new Model_Invoice();
+        $invoice->loadBean(new DummyBean());
+        $invoice->id = 5;
+        $invoice->currency = $currency;
+
+        $invoiceService = Mockery::mock();
+        $invoiceService->shouldReceive('getTotalWithTax')->with($invoice)->andReturn(1000.0);
+        $di = container();
+        $di['mod_service'] = $di->protect(fn ($module) => $invoiceService);
+        $this->adapter->setDi($di);
+
+        expect($this->adapter->getAmountInMinorUnits($invoice))->toBe($expected);
+    })->with([
+        'USD' => ['USD', 100000],
+        'JPY (zero-decimal)' => ['JPY', 1000],
+        'KWD (three-decimal)' => ['KWD', 1000000],
+        'COP' => ['COP', 100000],
+        'HUF' => ['HUF', 100000],
+        'IDR' => ['IDR', 100000],
+        'ISK (two-decimal representation)' => ['ISK', 100000],
+        'PKR' => ['PKR', 100000],
+        'UGX (two-decimal representation)' => ['UGX', 100000],
+    ]);
+});
+
+describe('handleInvoicePaymentSucceeded renewal after the first invoice was paid', function (): void {
+    test('credits a renewal payment and settles the renewal invoice', function (): void {
+        // A subscription's metadata always points at the first FOSSBilling invoice, which is paid by the time the
+        // first renewal is charged. The renewal payment must still be credited and applied to the renewal invoice.
+        $tx = buildTransaction();
+        $tx->id = 60;
+
+        $stripeInvoice = new stdClass();
+        $stripeInvoice->id = 'in_renewal_1';
+        $stripeInvoice->subscription = 'sub_renew';
+        $stripeInvoice->billing_reason = 'subscription_cycle';
+        $stripeInvoice->amount_paid = 2500;
+        $stripeInvoice->currency = 'usd';
+
+        $event = new stdClass();
+        $event->data = (object) ['object' => $stripeInvoice];
+
+        $stripeSubscription = new stdClass();
+        $stripeSubscription->id = 'sub_renew';
+        $stripeSubscription->metadata = (object) ['invoice_id' => '77', 'client_id' => '8'];
+
+        $subscriptionsMock = Mockery::mock();
+        $subscriptionsMock->shouldReceive('retrieve')->andReturn($stripeSubscription);
+        $stripeMock = Mockery::mock(StripeClient::class);
+        $stripeMock->subscriptions = $subscriptionsMock;
+        setPrivateProperty($this->adapter, 'stripe', $stripeMock);
+
+        $originalInvoice = new Model_Invoice();
+        $originalInvoice->loadBean(new DummyBean());
+        $originalInvoice->id = 77;
+        $originalInvoice->status = Model_Invoice::STATUS_PAID;
+
+        $renewalInvoice = new Model_Invoice();
+        $renewalInvoice->loadBean(new DummyBean());
+        $renewalInvoice->id = 88;
+        $renewalInvoice->status = Model_Invoice::STATUS_UNPAID;
+        $renewalInvoice->approved = 1;
+
+        $transactionService = Mockery::mock();
+        $transactionService->shouldReceive('claimForProcessing')->andReturn(true);
+
+        $invoiceService = Mockery::mock();
+        $invoiceService->shouldReceive('generateRenewalInvoiceForSubscriptionPayment')
+            ->with('sub_renew', 8)
+            ->andReturn($renewalInvoice);
+        $invoiceService->shouldReceive('isInvoiceTypeDeposit')->andReturn(false);
+        $invoiceService->shouldReceive('payInvoiceWithCredits')->andReturn(true);
+
+        $apiAdmin = Mockery::mock();
+        $apiAdmin->shouldReceive('client_balance_add_funds')->once();
+
+        $dbMock = Mockery::mock('\Box_Database');
+        $dbMock->shouldReceive('store')->andReturn($tx->id);
+        $dbMock->shouldReceive('findOne')
+            ->with('Transaction', Mockery::any(), Mockery::any())
+            ->andReturn(null);
+        $dbMock->shouldReceive('findOne')
+            ->with('Invoice', 'id = :id', [':id' => 77])
+            ->andReturn($originalInvoice);
+
+        $dbalMock = Mockery::mock();
+        expectPaymentIntentLock($dbalMock, 'in_renewal_1', 1);
+
+        $di = container();
+        $di['db'] = $dbMock;
+        $di['dbal'] = $dbalMock;
+        $di['mod_service'] = $di->protect(fn ($module, $service = null) => match ($service) {
+            'Transaction' => $transactionService,
+            default => $invoiceService,
+        });
+        $this->adapter->setDi($di);
+
+        $processed = invokePrivateMethod($this->adapter, 'handleInvoicePaymentSucceeded', [$apiAdmin, $tx, $event, 1]);
+
+        expect($processed)->toBeTrue();
+        expect($tx->invoice_id)->toBe(88);
+    });
+
+    test('skips a duplicate initial payment when the original invoice is already paid', function (): void {
+        // The redirect flow pays the first invoice immediately, so when the
+        // invoice.paid webhook for the initial payment arrives the original
+        // invoice is already paid. It must not be credited a second time and
+        // must not mint a renewal invoice.
+        $tx = buildTransaction();
+        $tx->id = 61;
+
+        $stripeInvoice = new stdClass();
+        $stripeInvoice->id = 'in_init_dup';
+        $stripeInvoice->subscription = 'sub_dup';
+        $stripeInvoice->billing_reason = 'subscription_create';
+        $stripeInvoice->amount_paid = 1500;
+        $stripeInvoice->currency = 'usd';
+
+        $event = new stdClass();
+        $event->data = (object) ['object' => $stripeInvoice];
+
+        $stripeSubscription = new stdClass();
+        $stripeSubscription->id = 'sub_dup';
+        $stripeSubscription->metadata = (object) ['invoice_id' => '99', 'client_id' => '5'];
+
+        $subscriptionsMock = Mockery::mock();
+        $subscriptionsMock->shouldReceive('retrieve')->andReturn($stripeSubscription);
+        $stripeMock = Mockery::mock(StripeClient::class);
+        $stripeMock->subscriptions = $subscriptionsMock;
+        setPrivateProperty($this->adapter, 'stripe', $stripeMock);
+
+        $originalInvoice = new Model_Invoice();
+        $originalInvoice->loadBean(new DummyBean());
+        $originalInvoice->id = 99;
+        $originalInvoice->status = Model_Invoice::STATUS_PAID;
+
+        $invoiceService = Mockery::mock();
+        $invoiceService->shouldNotReceive('generateRenewalInvoiceForSubscriptionPayment', 'payInvoiceWithCredits');
+
+        $apiAdmin = Mockery::mock();
+        $apiAdmin->shouldNotReceive('client_balance_add_funds');
+
+        $dbMock = Mockery::mock('\Box_Database');
+        $dbMock->shouldReceive('store')->andReturn($tx->id);
+        $dbMock->shouldReceive('findOne')
+            ->with('Transaction', Mockery::any(), Mockery::any())
+            ->andReturn(null);
+        $dbMock->shouldReceive('findOne')
+            ->with('Invoice', 'id = :id', [':id' => 99])
+            ->andReturn($originalInvoice);
+
+        $dbalMock = Mockery::mock();
+        expectPaymentIntentLock($dbalMock, 'in_init_dup', 1);
+
+        $di = container();
+        $di['db'] = $dbMock;
+        $di['dbal'] = $dbalMock;
+        $di['mod_service'] = $di->protect(fn ($module, $service = null) => $invoiceService);
+        $this->adapter->setDi($di);
+
+        $processed = invokePrivateMethod($this->adapter, 'handleInvoicePaymentSucceeded', [$apiAdmin, $tx, $event, 1]);
+
+        expect($processed)->toBeFalse();
+    });
+
+    test('skips an inconclusive billing_reason when the original invoice is already paid', function (): void {
+        // A missing billing_reason with a paid original is ambiguous: it could
+        // be a duplicate initial webhook or a renewal. Skipping avoids
+        // double-crediting the initial payment and minting a spurious renewal.
+        $tx = buildTransaction();
+        $tx->id = 62;
+
+        $stripeInvoice = new stdClass();
+        $stripeInvoice->id = 'in_missing_reason';
+        $stripeInvoice->subscription = 'sub_missing_reason';
+        $stripeInvoice->amount_paid = 1500;
+        $stripeInvoice->currency = 'usd';
+
+        $event = new stdClass();
+        $event->data = (object) ['object' => $stripeInvoice];
+
+        $stripeSubscription = new stdClass();
+        $stripeSubscription->id = 'sub_missing_reason';
+        $stripeSubscription->metadata = (object) ['invoice_id' => '99', 'client_id' => '5'];
+
+        $subscriptionsMock = Mockery::mock();
+        $subscriptionsMock->shouldReceive('retrieve')->andReturn($stripeSubscription);
+        $stripeMock = Mockery::mock(StripeClient::class);
+        $stripeMock->subscriptions = $subscriptionsMock;
+        setPrivateProperty($this->adapter, 'stripe', $stripeMock);
+
+        $originalInvoice = new Model_Invoice();
+        $originalInvoice->loadBean(new DummyBean());
+        $originalInvoice->id = 99;
+        $originalInvoice->status = Model_Invoice::STATUS_PAID;
+
+        $invoiceService = Mockery::mock();
+        $invoiceService->shouldNotReceive('generateRenewalInvoiceForSubscriptionPayment', 'payInvoiceWithCredits');
+
+        $apiAdmin = Mockery::mock();
+        $apiAdmin->shouldNotReceive('client_balance_add_funds');
+
+        $dbMock = Mockery::mock('\Box_Database');
+        $dbMock->shouldReceive('store')->andReturn($tx->id);
+        $dbMock->shouldReceive('findOne')
+            ->with('Transaction', Mockery::any(), Mockery::any())
+            ->andReturn(null);
+        $dbMock->shouldReceive('findOne')
+            ->with('Invoice', 'id = :id', [':id' => 99])
+            ->andReturn($originalInvoice);
+
+        $dbalMock = Mockery::mock();
+        expectPaymentIntentLock($dbalMock, 'in_missing_reason', 1);
+
+        $di = container();
+        $di['db'] = $dbMock;
+        $di['dbal'] = $dbalMock;
+        $di['mod_service'] = $di->protect(fn ($module, $service = null) => $invoiceService);
+        $this->adapter->setDi($di);
+
+        $processed = invokePrivateMethod($this->adapter, 'handleInvoicePaymentSucceeded', [$apiAdmin, $tx, $event, 1]);
+
+        expect($processed)->toBeFalse();
+    });
+});

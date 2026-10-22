@@ -1,36 +1,133 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-    {# products #}
-    {% for i, product in guest.product_get_list({"per_page": 50}).list %}
+    {# homepage - always publicly accessible, no reliable modification date so <lastmod> is omitted #}
+    <url>
+        <loc>{{ ''|url }}</loc>
+        <priority>1.0</priority>
+        <changefreq>daily</changefreq>
+    </url>
+
+    {# products - paginated so large catalogs are not truncated at the first page #}
+    {% set products = guest.product_get_list({"per_page": 500}) %}
+    {% for i, product in products.list %}
     <url>
         <loc>{{ "order/#{product.slug}"|url }}</loc>
-        <lastmod>{{product.updated_at|default('now')|date('Y-m-d')}}</lastmod>
+        {% set lastmod = product.updated_at ?? product.created_at ?? null %}
+        {% if lastmod %}<lastmod>{{ lastmod|date('Y-m-d') }}</lastmod>{% endif %}
         <priority>0.9</priority>
         <changefreq>weekly</changefreq>
     </url>
     {% endfor %}
+    {% if products.pages > 1 %}
+    {% for page_number in 2..products.pages %}
+    {% set products_page = guest.product_get_list({"per_page": 500, "page": page_number}) %}
+    {% for i, product in products_page.list %}
+    <url>
+        <loc>{{ "order/#{product.slug}"|url }}</loc>
+        {% set lastmod = product.updated_at ?? product.created_at ?? null %}
+        {% if lastmod %}<lastmod>{{ lastmod|date('Y-m-d') }}</lastmod>{% endif %}
+        <priority>0.9</priority>
+        <changefreq>weekly</changefreq>
+    </url>
+    {% endfor %}
+    {% endfor %}
+    {% endif %}
 
     {# news items #}
     {% if guest.extension_is_on({"mod":'news'}) %}
-    {% for i, article in guest.news_get_list({"per_page": 50}).list %}
+    {% set news = guest.news_get_list({"per_page": 500}) %}
+    {% if news.total > 0 %}
+    <url>
+        <loc>{{ 'news'|url }}</loc>
+        <priority>0.8</priority>
+        <changefreq>weekly</changefreq>
+    </url>
+    {% endif %}
+    {% for i, article in news.list %}
     <url>
         <loc>{{ "news/#{article.slug}"|url }}</loc>
-        <lastmod>{{article.updated_at|date('Y-m-d')}}</lastmod>
+        {% set lastmod = article.updated_at ?? article.created_at ?? null %}
+        {% if lastmod %}<lastmod>{{ lastmod|date('Y-m-d') }}</lastmod>{% endif %}
         <priority>0.9</priority>
         <changefreq>weekly</changefreq>
     </url>
     {% endfor %}
+    {% if news.pages > 1 %}
+    {% for page_number in 2..news.pages %}
+    {% set news_page = guest.news_get_list({"per_page": 500, "page": page_number}) %}
+    {% for i, article in news_page.list %}
+    <url>
+        <loc>{{ "news/#{article.slug}"|url }}</loc>
+        {% set lastmod = article.updated_at ?? article.created_at ?? null %}
+        {% if lastmod %}<lastmod>{{ lastmod|date('Y-m-d') }}</lastmod>{% endif %}
+        <priority>0.9</priority>
+        <changefreq>weekly</changefreq>
+    </url>
+    {% endfor %}
+    {% endfor %}
+    {% endif %}
     {% endif %}
 
     {# knowledge base items #}
     {% if guest.support_kb_enabled() %}
-    {% for i, article in guest.support_kb_article_get_list({"per_page":50}).list %}
+    {% set kb = guest.support_kb_article_get_list({"per_page": 500}) %}
+    {% if kb.total > 0 %}
+    <url>
+        <loc>{{ 'support/kb'|url }}</loc>
+        <priority>0.8</priority>
+        <changefreq>weekly</changefreq>
+    </url>
+    {% endif %}
+    {% for i, article in kb.list %}
     <url>
         <loc>{{ "support/kb/#{article.category.slug}/#{article.slug}"|url }}</loc>
-        <lastmod>{{article.updated_at|date('Y-m-d')}}</lastmod>
+        {% set lastmod = article.updated_at ?? article.created_at ?? null %}
+        {% if lastmod %}<lastmod>{{ lastmod|date('Y-m-d') }}</lastmod>{% endif %}
         <priority>0.9</priority>
         <changefreq>weekly</changefreq>
     </url>
     {% endfor %}
+    {% if kb.pages > 1 %}
+    {% for page_number in 2..kb.pages %}
+    {% set kb_page = guest.support_kb_article_get_list({"per_page": 500, "page": page_number}) %}
+    {% for i, article in kb_page.list %}
+    <url>
+        <loc>{{ "support/kb/#{article.category.slug}/#{article.slug}"|url }}</loc>
+        {% set lastmod = article.updated_at ?? article.created_at ?? null %}
+        {% if lastmod %}<lastmod>{{ lastmod|date('Y-m-d') }}</lastmod>{% endif %}
+        <priority>0.9</priority>
+        <changefreq>weekly</changefreq>
+    </url>
+    {% endfor %}
+    {% endfor %}
+    {% endif %}
+    {% endif %}
+
+    {# custom pages - public alias is /page/:slug (rewritten to /custompages/:slug) #}
+    {% if guest.extension_is_on({"mod":'custompages'}) %}
+    {% set pages = guest.custompages_get_list({"per_page": 500}) %}
+    {% for i, page in pages.list %}
+    <url>
+        <loc>{{ "page/#{page.slug}"|url }}</loc>
+        {% set lastmod = page.updated_at ?? page.created_at ?? null %}
+        {% if lastmod %}<lastmod>{{ lastmod|date('Y-m-d') }}</lastmod>{% endif %}
+        <priority>0.8</priority>
+        <changefreq>weekly</changefreq>
+    </url>
+    {% endfor %}
+    {% if pages.pages > 1 %}
+    {% for page_number in 2..pages.pages %}
+    {% set pages_page = guest.custompages_get_list({"per_page": 500, "page": page_number}) %}
+    {% for i, page in pages_page.list %}
+    <url>
+        <loc>{{ "page/#{page.slug}"|url }}</loc>
+        {% set lastmod = page.updated_at ?? page.created_at ?? null %}
+        {% if lastmod %}<lastmod>{{ lastmod|date('Y-m-d') }}</lastmod>{% endif %}
+        <priority>0.8</priority>
+        <changefreq>weekly</changefreq>
+    </url>
+    {% endfor %}
+    {% endfor %}
+    {% endif %}
     {% endif %}
 </urlset>

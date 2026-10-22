@@ -28,6 +28,7 @@ use FOSSBilling\Twig\Markdown\FOSSBillingMarkdown;
 use FOSSBilling\Version;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Intl\Currencies;
+use Symfony\Component\Intl\Locales;
 use Twig\Environment;
 use Twig\Extension\AttributeExtension;
 use Twig\Extension\CoreExtension;
@@ -198,17 +199,23 @@ class TwigFactory
      * Used for database-stored templates (email templates, mass mailer).
      *
      * The env is built per-call (not memoized) so each email can be rendered
-     * with the recipient's timezone.
+     * with the recipient's timezone and locale.
      *
      * @param string|null $timezone IANA timezone to use for date formatting;
      *                              pass the recipient's timezone so emails
      *                              render in their local time. Defaults to
      *                              the active user's timezone / config.
+     * @param string|null $locale   ICU locale to use for date formatting;
+     *                              pass the recipient's language so emails
+     *                              render in their language. An explicit
+     *                              recipient language outranks browser
+     *                              auto-detection. Defaults to the active
+     *                              locale / config.
      */
-    public function createEmailEnvironment(?string $timezone = null): Environment
+    public function createEmailEnvironment(?string $timezone = null, ?string $locale = null): Environment
     {
         // Get internationalisation settings from config
-        $locale = i18n::getActiveLocale($this->di['request'], true, $this->di['cookie_queue']);
+        $locale = $this->resolveLocale($locale);
         $timezone ??= $this->resolveTimezoneForActiveUser();
         $dateFormat = strtoupper((string) Config::getProperty('i18n.date_format', 'MEDIUM'));
         $timeFormat = strtoupper((string) Config::getProperty('i18n.time_format', 'SHORT'));
@@ -276,6 +283,23 @@ class TwigFactory
         $twig->addGlobal('FOSSBillingVersion', Version::VERSION);
 
         return $twig;
+    }
+
+    /**
+     * Resolve the locale date filters should render in.
+     *
+     * An explicit recipient language outranks browser auto-detection. Any
+     * valid ICU locale is accepted (date formatting needs no FOSSBilling
+     * translation files); anything else falls back to the active locale,
+     * which itself falls back to the configured `i18n.locale` default.
+     */
+    private function resolveLocale(?string $locale): string
+    {
+        if (!empty($locale) && Locales::exists($locale)) {
+            return $locale;
+        }
+
+        return i18n::getActiveLocale($this->di['request'], true, $this->di['cookie_queue']);
     }
 
     /**

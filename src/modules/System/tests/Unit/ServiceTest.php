@@ -140,7 +140,7 @@ test('renderEmailSubjectString decodes the HTML autoescape pass', function (): v
     $service = Mockery::mock(Service::class)->makePartial();
     $service->shouldReceive('renderEmailTplString')
         ->once()
-        ->with('[A & B Ltd] Invoice', [], null)
+        ->with('[A & B Ltd] Invoice', [], null, null)
         ->andReturn('[A &amp; B Ltd] Invoice');
 
     expect($service->renderEmailSubjectString('[A & B Ltd] Invoice', []))->toBe('[A & B Ltd] Invoice');

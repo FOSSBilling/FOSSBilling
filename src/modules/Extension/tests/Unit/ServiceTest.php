@@ -354,6 +354,10 @@ test('activate activates an extension', function (): void {
     $staffService->shouldReceive('checkPermissionsAndThrowException')->atLeast()->once();
 
     $modMock = Mockery::mock(FOSSBilling\Module::class);
+    $modMock->shouldReceive('hasManifest')
+        ->atLeast()
+        ->once()
+        ->andReturnTrue();
     $modMock->shouldReceive('getManifest')
         ->atLeast()
         ->once()
@@ -995,4 +999,54 @@ test('setConfig denies inactive module configuration without touching storage wh
 
     expect(fn () => $serviceMock->setConfig(['ext' => 'mod_support']))
         ->toThrow(new FOSSBilling\InformationException('You need the "extension.manage_extensions" permission to perform this action', [], 403));
+});
+
+test('activateExistingExtension rejects mod with missing or invalid manifest before persisting', function (string $manifestError): void {
+    $service = new Service();
+
+    $modMock = Mockery::mock(FOSSBilling\Module::class);
+    $modMock->shouldReceive('getManifest')->once()->andThrow(new FOSSBilling\InformationException($manifestError));
+
+    $extensionRepository = Mockery::mock(ExtensionRepository::class);
+    $extensionRepository->shouldNotReceive('findOneByTypeAndName');
+
+    $em = extensionBuildEm($extensionRepository);
+    $em->shouldNotReceive('persist');
+    $em->shouldNotReceive('flush');
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod'] = $di->protect(fn ($name): Mockery\MockInterface => $modMock);
+
+    $service->setDi($di);
+
+    expect(fn () => $service->activateExistingExtension(['type' => 'mod', 'id' => 'nonexistent']))
+        ->toThrow(FOSSBilling\InformationException::class, 'its manifest file is missing or invalid');
+})->with([
+    'missing manifest' => 'Missing manifest file for the nonexistent module.',
+    'invalid manifest' => 'Invalid manifest file for the nonexistent module. Please check file syntax and permissions.',
+]);
+
+test('activate rejects mod with missing manifest', function (): void {
+    $service = new Service();
+    $ext = extensionCreateEntity(1, 'mod', 'nonexistent', Extension::STATUS_DEACTIVATED);
+
+    $modMock = Mockery::mock(FOSSBilling\Module::class);
+    $modMock->shouldReceive('hasManifest')->once()->andReturnFalse();
+    $modMock->shouldNotReceive('getManifest');
+
+    $staffService = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffService->shouldReceive('checkPermissionsAndThrowException')
+        ->with('extension', 'manage_extensions')
+        ->once();
+
+    $di = container();
+    $di['em'] = extensionBuildEm();
+    $di['mod'] = $di->protect(fn ($name): Mockery\MockInterface => $modMock);
+    $di['mod_service'] = $di->protect(fn ($name): Mockery\MockInterface => $staffService);
+
+    $service->setDi($di);
+
+    expect(fn () => $service->activate($ext))
+        ->toThrow(FOSSBilling\InformationException::class);
 });

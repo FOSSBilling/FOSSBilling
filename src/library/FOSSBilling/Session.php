@@ -62,9 +62,12 @@ class Session implements InjectionAwareInterface
             'httponly' => $currentCookieParams['httponly'],
         ];
 
-        if (Config::getProperty('security.mode', 'strict') === 'strict') {
-            $cookieParams['samesite'] = 'Strict';
-        }
+        // Non-strict mode still pins an explicit SameSite: an unset attribute
+        // leaves the behavior to each browser's default, and some (Safari) send
+        // cookies on cross-site requests when it is missing.
+        $cookieParams['samesite'] = Config::getProperty('security.mode', 'strict') === 'strict'
+            ? 'Strict'
+            : 'Lax';
 
         session_set_cookie_params($cookieParams);
         session_start();
