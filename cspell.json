@@ -108,7 +108,17 @@
         "pjpeg",
         "imageavif",
         "webp",
-        "webmoney"
+        "webmoney",
+        "autocapitalize",
+        "autohide",
+        "bday",
+        "bgcolor",
+        "dropend",
+        "dropstart",
+        "enterkeyhint",
+        "minlength",
+        "referrerpolicy",
+        "WCAG"
     ],
 
     "ignoreWords": [

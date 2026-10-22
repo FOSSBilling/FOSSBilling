@@ -7,6 +7,8 @@
 
 declare(strict_types=1);
 
+// cspell:ignore unpaidhash otherclient
+
 use Box\Mod\Index\Service as IndexService;
 use Box\Mod\Order\Service as OrderService;
 use Doctrine\DBAL\DriverManager;

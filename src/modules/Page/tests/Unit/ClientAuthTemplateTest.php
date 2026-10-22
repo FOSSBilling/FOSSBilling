@@ -78,7 +78,7 @@ test('registration honours configured required and custom fields while retaining
         ->and($html)->not->toContain('name="custom_2"');
 });
 
-test('minimal registration leaves unrequired fields out and supports implicit terms', function (): void {
+test('minimal registration leaves optional fields out and supports implicit terms', function (): void {
     $html = renderClientAuth('signup', ['settings' => ['signup_tos' => 'implicit']]);
     expect($html)->toContain('By creating an account', 'Already have an account?', 'autocomplete="new-password"', 'Registration submitted.')
         ->and($html)->not->toContain('name="address_1"', 'id="flexCheckDefault"');

@@ -43,7 +43,7 @@ function renderClientServiceDetails(array $orderOverrides = [], array $service =
     $client = new class($service) {
         public int $serviceLookups = 0;
 
-        public function __construct(private array $service)
+        public function __construct(private readonly array $service)
         {
         }
 
@@ -85,7 +85,7 @@ function renderClientServiceDetails(array $orderOverrides = [], array $service =
     return [$html, $client];
 }
 
-test('service details prioritise the correct next action for each state', function (array $state, string $message, bool $pay, bool $renew, bool $cancel): void {
+test('service details prioritize the correct next action for each state', function (array $state, string $message, bool $pay, bool $renew, bool $cancel): void {
     [$html, $client] = renderClientServiceDetails($state, ['marker' => 'Service controls loaded']);
     $dom = new DOMDocument();
     @$dom->loadHTML($html);

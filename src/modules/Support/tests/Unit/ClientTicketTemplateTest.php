@@ -7,6 +7,8 @@
 
 declare(strict_types=1);
 
+// cspell:ignore guesthash
+
 use Symfony\Component\Filesystem\Filesystem;
 use Twig\Environment;
 use Twig\Loader\ArrayLoader;
@@ -48,7 +50,7 @@ test('ticket views distinguish replies from support updates and preserve explici
     $client = new class($empty) {
         public array $queries = [];
 
-        public function __construct(private bool $empty)
+        public function __construct(private readonly bool $empty)
         {
         }
 

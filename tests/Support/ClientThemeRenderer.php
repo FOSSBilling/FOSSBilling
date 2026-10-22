@@ -7,6 +7,8 @@
 
 declare(strict_types=1);
 
+// cspell:ignore Deutsch
+
 namespace Tests\Support;
 
 use FOSSBilling\Twig\Enum\AppArea;

@@ -9,7 +9,7 @@ $mobile-touch-target: 2.75rem;
     max-width: 5.5rem;
 }
 
-// Fit branding, gateway and extension assets without cropping or recolouring them.
+// Fit branding, gateway and extension assets without cropping or recoloring them.
 .fb-image-contain {
     max-width: 100%;
     object-fit: contain;
@@ -25,7 +25,7 @@ $mobile-touch-target: 2.75rem;
 }
 
 // Both Tabler themes use the shared CKEditor bundle. Set its palette on the
-// theme root so floating toolbars and dialogs inherit the same colours.
+// theme root so floating toolbars and dialogs inherit the same colors.
 :root[data-bs-theme] {
     --ck-color-base-background: var(--tblr-bg-surface);
     --ck-color-base-foreground: var(--tblr-secondary-bg);
@@ -65,14 +65,14 @@ $mobile-touch-target: 2.75rem;
     --tblr-alert-color: var(--tblr-danger-text-emphasis);
 }
 
-// Error-summary links inherit Tabler's alert colour in either theme mode.
+// Error-summary links inherit Tabler's alert color in either theme mode.
 [data-fb-form-error] a,
 [data-client-form-error] a {
     color: inherit;
     text-decoration: underline;
 }
 
-// Sort links share keyboard and touch affordances; table layouts stay theme-specific.
+// Sort links share keyboard and touch cues; table layouts stay theme-specific.
 .fb-table-sort:focus-visible {
     outline: 2px solid var(--tblr-primary);
     outline-offset: 2px;
@@ -116,7 +116,7 @@ $mobile-touch-target: 2.75rem;
     }
 }
 
-// Shared notice copy uses emphasis colours on Tabler's tinted alert surfaces.
+// Shared notice copy uses emphasis colors on Tabler's tinted alert surfaces.
 @each $type in danger, warning, info, success {
     [data-fb-notice].alert-#{$type} {
         --tblr-alert-color: var(--tblr-#{$type}-text-emphasis);

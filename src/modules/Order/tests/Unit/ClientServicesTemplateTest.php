@@ -7,6 +7,8 @@
 
 declare(strict_types=1);
 
+// cspell:ignore demohash
+
 use Symfony\Component\Filesystem\Filesystem;
 use Twig\Environment;
 use Twig\Loader\ArrayLoader;
@@ -31,7 +33,7 @@ test('service views show the appropriate payment, renewal and management actions
     $twig->addFilter(new TwigFilter('period_title', static fn (string $period): string => $period));
     $twig->addFilter(new TwigFilter('format_currency', static fn (mixed $amount, string $currency): string => $amount . ' ' . $currency));
     $twig->addFunction(new TwigFunction('fb_api_link', static fn (array $config): string => 'href="' . htmlspecialchars($config['href']) . '"', ['is_safe' => ['html']]));
-    $client = new class($empty) {
+    $client = new readonly class($empty) {
         public function __construct(private bool $empty)
         {
         }

@@ -181,7 +181,7 @@ test('pdf download returns the response, redirects on denial, and rejects garbag
     expect($controller->get_pdf($app, 'abc'))->toBeInstanceOf(RedirectResponse::class);
 });
 
-test('payment handoff does not call a gateway for a settled or unpayable invoice', function (array $state): void {
+test('payment handoff does not call a gateway for a settled or not payable invoice', function (array $state): void {
     $invoice = array_replace(['id' => 7, 'status' => 'unpaid', 'issued' => true, 'total' => 25], $state);
     $api = Mockery::mock();
     $api->shouldReceive('invoice_get')->once()->with(Mockery::subset(['hash' => 'abc']))->andReturn($invoice);

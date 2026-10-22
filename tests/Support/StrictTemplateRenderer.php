@@ -210,6 +210,22 @@ final class StrictTemplateRenderer
         $traverser = new NodeTraverser($twig, [$visitor]);
         $traverser->traverse($nodes);
 
+        // Compatibility entrypoints include shared components whose required
+        // context is supplied by callers. Collect that context only for isolated
+        // partials; full-page renders must still catch missing caller variables.
+        if (str_starts_with(basename($templatePath), 'partial_')) {
+            $visited = [$this->relativeTemplateName($templatePath) => true];
+            for ($index = 0; $index < count($visitor->templates); ++$index) {
+                $name = $visitor->templates[$index];
+                if (isset($visited[$name])) {
+                    continue;
+                }
+                $visited[$name] = true;
+                $source = $twig->getLoader()->getSourceContext($name);
+                $traverser->traverse($twig->parse($twig->tokenize($source)));
+            }
+        }
+
         $stub = new PermissiveStub();
         foreach ($visitor->getVariableNames() as $name) {
             // Don't overwrite globals already provided in the context.

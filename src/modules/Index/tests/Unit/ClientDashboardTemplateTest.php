@@ -43,7 +43,7 @@ test('client dashboard profile is available to its inherited layout', function (
     $twig->addFunction(new TwigFunction('render_widgets', static fn (string $name, array $context = []): string => ''));
 
     $client = new class($overrides) {
-        public function __construct(private array $overrides)
+        public function __construct(private readonly array $overrides)
         {
         }
         public int $dashboardCalls = 0;

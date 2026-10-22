@@ -7,7 +7,7 @@ icon manifest.
 
 Use Tabler components and `--tblr-*` tokens for new styles. The shared shell
 keeps client navigation, branding settings, mobile behaviour and extension
-blocks separate from framework component styles. Both colour modes use the
+blocks separate from framework component styles. Both color modes use the
 shared `data-bs-theme` preference controller. The client Appearance menu offers
 System, Light and Dark; System follows device changes. Saved preferences are
 shared with admin. With no saved choice, the configured client theme remains the
@@ -27,7 +27,7 @@ vendor integration styles. Phone-input styles and the theme's flag assets remain
 part of the client build.
 
 Build with `NODE_ENV=production npm run build-huraga` from the repository root.
-Check both colour modes, narrow screens, dropdowns, tabs and modals after changing
+Check both color modes, narrow screens, dropdowns, tabs and modals after changing
 framework dependencies or component styles.
 
 Custom CSS is limited to the client shell, branding geometry, phone/flag
@@ -37,8 +37,8 @@ component appearance, focus styling, heading sizes and Tom Select integration.
 Use `btn-primary` for the next step in the current task, such as paying, saving
 or sending a reply. Keep navigation, optional tools and fallback links secondary
 with `btn-outline-secondary`. Separate forms and tabs can each have their own
-primary action. After payment, emphasise the next destination; if payment cannot
-start, emphasise invoice recovery. Destructive triggers use `btn-outline-danger`
+primary action. After payment, emphasize the next destination; if payment cannot
+start, emphasize invoice recovery. Destructive triggers use `btn-outline-danger`
 and their final confirmation uses `btn-danger`. Preserve API attributes,
 callbacks, extension slots and branding tokens when changing presentation.
 Wrap related client-owned buttons in `client-action-group` to keep touch sizing
@@ -118,7 +118,7 @@ handler to the same form. Password widgets can be initialized again safely.
 Accessibility: keep the skip link and labelled navigation landmarks, use native
 Tabler keyboard behaviour, and return focus when a disclosure or dialog closes.
 The client adds Escape handling to its mobile navigation and keeps focus on the
-visible appearance toggle when switching colour mode. Existing modal libraries
+visible appearance toggle when switching color mode. Existing modal libraries
 and explicit editor accessible names supplied by extensions take precedence.
 
 The client exposes optional `FOSSBilling.ui.formError`, `clearFormError`,
@@ -226,10 +226,10 @@ a configured provider sandbox. This demo's Custom gateway has no payment
 instructions; its startup-failure recovery was verified. Native screen-reader
 speech testing remains pending as recorded above.
 
-CKEditor colours are mapped to Tabler tokens in the shared theme stylesheet,
+CKEditor colors are mapped to Tabler tokens in the shared theme stylesheet,
 including floating UI and source editing. Keep these variables on the theme
-root so admin and client editors respond to the same colour-mode attribute.
+root so admin and client editors respond to the same color-mode attribute.
 Email previews keep their sandbox and authored styles. Unstyled HTML and the
-plain-text fallback support both colour schemes; messages with authored colours
+plain-text fallback support both color schemes; messages with authored colors
 or stylesheets keep their original presentation unless they explicitly declare
 support for dark mode.

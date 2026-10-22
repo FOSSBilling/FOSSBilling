@@ -58,7 +58,7 @@ test('ordering opens the appropriate stage and keeps payment hidden until checko
         'product' => $product ? ['id' => 1] : null,
         'client' => true,
         'request' => ['product' => null, 'checkout' => $checkout],
-        'guest' => new class($items) {
+        'guest' => new readonly class($items) {
             public function __construct(private bool $items)
             {
             }

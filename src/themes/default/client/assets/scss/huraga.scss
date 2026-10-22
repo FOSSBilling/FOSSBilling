@@ -259,6 +259,75 @@
         background: var(--tblr-body-bg);
         border-radius: var(--tblr-border-radius);
     }
+
+    .client-header-actions {
+        flex-shrink: 0;
+    }
+
+    .client-notification-count {
+        position: absolute;
+        top: 0;
+        inset-inline-end: 0;
+        min-width: 1rem;
+        padding: 0.2rem 0.3rem;
+        font-size: 0.625rem;
+        pointer-events: none;
+    }
+
+    .client-header .client-notification-menu {
+        z-index: var(--tblr-dropdown-zindex);
+        width: min(24rem, calc(100vw - 1.5rem));
+
+        .btn {
+            min-height: 0;
+        }
+    }
+
+    .client-header .client-notifications .client-notification-list {
+        max-height: min(28rem, 60vh);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+
+        .dropdown-item {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 7rem;
+            align-items: start;
+            column-gap: .75rem;
+            overflow-wrap: anywhere;
+        }
+
+        .client-notification-time {
+            font-variant-numeric: tabular-nums;
+        }
+
+        [data-notification-read="0"] {
+            --tblr-secondary: var(--tblr-body-color);
+
+            &:not(:hover):not(:focus) {
+                background-color: var(--tblr-primary-bg-subtle);
+            }
+        }
+
+        [data-notification-read="1"] .client-notification-subject {
+            color: var(--tblr-secondary-color);
+        }
+
+        .client-notification-new-reply,
+        .client-notification-read-reply {
+            display: none;
+        }
+
+        [data-notification-read="0"] .client-notification-new-reply,
+        [data-notification-read="1"] .client-notification-read-reply {
+            display: block;
+        }
+
+    }
+
+    [id^="message-"] {
+        scroll-margin-top: 1rem;
+    }
+
 }
 
 @media (max-width: 991.98px) {
@@ -343,75 +412,6 @@
 
     .client-shell .client-header .navbar-brand {
         max-width: 16rem;
-    }
-}
-
-.client-shell {
-    .client-header-actions {
-        flex-shrink: 0;
-    }
-
-    .client-notification-count {
-        position: absolute;
-        top: 0;
-        inset-inline-end: 0;
-        min-width: 1rem;
-        padding: 0.2rem 0.3rem;
-        font-size: 0.625rem;
-        pointer-events: none;
-    }
-
-    .client-notification-menu {
-        width: min(24rem, calc(100vw - 1.5rem));
-
-        .btn {
-            min-height: 0;
-        }
-    }
-
-    .client-header .client-notifications .client-notification-list {
-        max-height: min(28rem, 60vh);
-        overflow-y: auto;
-        overscroll-behavior: contain;
-
-        .dropdown-item {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) 7rem;
-            align-items: start;
-            column-gap: .75rem;
-            overflow-wrap: anywhere;
-        }
-
-        .client-notification-time {
-            font-variant-numeric: tabular-nums;
-        }
-
-        [data-notification-read="0"] {
-            --tblr-secondary: var(--tblr-body-color);
-
-            &:not(:hover):not(:focus) {
-                background-color: var(--tblr-primary-bg-subtle);
-            }
-        }
-
-        [data-notification-read="1"] .client-notification-subject {
-            color: var(--tblr-secondary-color);
-        }
-
-        .client-notification-new-reply,
-        .client-notification-read-reply {
-            display: none;
-        }
-
-        [data-notification-read="0"] .client-notification-new-reply,
-        [data-notification-read="1"] .client-notification-read-reply {
-            display: block;
-        }
-
-    }
-
-    [id^="message-"] {
-        scroll-margin-top: 1rem;
     }
 }
 
@@ -1243,6 +1243,7 @@
 @media (max-width: 991.98px) {
     .client-shell .client-header .client-theme-picker .dropdown-menu {
         // Override inline navbar submenus for the compact appearance picker.
+        z-index: var(--tblr-dropdown-zindex);
         position: absolute;
         top: 100%;
         right: 0;

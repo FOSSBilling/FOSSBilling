@@ -41,8 +41,8 @@ test('client logo resolved by the production loader supports configured theme va
     $html = $twig->render('partial_company_logo.html.twig', $context + [
         'logo_url' => '/custom-light.svg', 'dark_logo_url' => '/custom-dark.svg',
     ]);
-    expect($html)->toContain('class="hide-theme-light brand-image" src="/custom-dark.svg"')
-        ->toContain('class="hide-theme-dark brand-image" src="/custom-light.svg"')
+    expect($html)->toContain('class="fb-image-contain hide-theme-light brand-image" src="/custom-dark.svg"')
+        ->toContain('class="fb-image-contain hide-theme-dark brand-image" src="/custom-light.svg"')
         ->toContain('href="/account"');
 
     foreach (['logo_url', 'dark_logo_url'] as $variant) {

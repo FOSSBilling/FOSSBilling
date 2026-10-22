@@ -1,3 +1,4 @@
+// cspell:ignore Chargement
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 const testGlobal = globalThis as any;

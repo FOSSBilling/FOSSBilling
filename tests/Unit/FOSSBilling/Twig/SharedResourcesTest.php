@@ -31,7 +31,7 @@ test('feedback labels share translated values while retaining client dataset ali
     expect($html)->not->toContain('<Translated>');
 })->with(['admin', 'client']);
 
-test('shared status palette still accepts extension colour overrides', function (): void {
+test('shared status palette still accepts extension color overrides', function (): void {
     $twig = new Environment(new FilesystemLoader(PATH_THEMES . '/default/shared/html'), ['strict_variables' => true, 'autoescape' => 'html']);
     $twig->addFilter(new TwigFilter('trans', static fn (string $text): string => $text));
     $html = $twig->render('partial_status_badge_shared.html.twig', ['status' => 'active', 'type' => 'order', 'badge_variant' => 'subtle', 'badge_palette' => ['success' => 'extension-active']]);

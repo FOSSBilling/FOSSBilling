@@ -100,7 +100,7 @@ test('adapters can preserve legacy IDs selectors and translated fallback message
   assert.equal(summary.children[0].textContent, 'Client Problem');
 }));
 
-test('shared initialisation preserves extension hooks and binds listeners only once', () => fixture(f => {
+test('shared initialization preserves extension hooks and binds listeners only once', () => fixture(f => {
   const hooks = {formError() {}, clearFormError() {}, fieldError() {}, clearFieldError() {}};
   Object.assign(f.runtime.ui, hooks);
   f.presenter.initFormErrors();

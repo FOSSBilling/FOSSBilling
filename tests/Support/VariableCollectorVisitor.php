@@ -12,15 +12,17 @@ declare(strict_types=1);
 
 namespace Tests\Support;
 
-use Twig\EmbedNode;
 use Twig\Environment;
+use Twig\Node\EmbedNode;
 use Twig\Node\Expression\ArrayExpression;
 use Twig\Node\Expression\AssignNameExpression;
 use Twig\Node\Expression\ConstantExpression;
 use Twig\Node\Expression\Variable\ContextVariable;
 use Twig\Node\Expression\Variable\TemplateVariable;
 use Twig\Node\IncludeNode;
+use Twig\Node\ModuleNode;
 use Twig\Node\Node;
+use Twig\NodeTraverser;
 use Twig\NodeVisitor\NodeVisitorInterface;
 
 /**
@@ -42,8 +44,12 @@ final class VariableCollectorVisitor implements NodeVisitorInterface
     /** @var array<string, true> Set of discovered variable names. */
     public array $variables = [];
 
+    /** @var list<string> Static includes used when rendering a partial in isolation. */
+    public array $templates = [];
+
     public function enterNode(Node $node, Environment $env): Node
     {
+        $this->collectTemplateReferences($node, $env);
         if ($node instanceof ContextVariable || $node instanceof TemplateVariable) {
             $name = $node->getAttribute('name');
             if (is_string($name) && $name !== '' && !str_starts_with($name, '_')) {
@@ -72,6 +78,26 @@ final class VariableCollectorVisitor implements NodeVisitorInterface
         }
 
         return $node;
+    }
+
+    private function collectTemplateReferences(Node $node, Environment $env): void
+    {
+        if ($node instanceof ModuleNode) {
+            if ($node->hasNode('parent')) {
+                $this->collectTemplateName($node->getNode('parent'));
+            }
+            // Twig stores embedded blocks outside the ordinary child-node tree.
+            (new NodeTraverser($env, [$this]))->traverse($node->getAttribute('embedded_templates'));
+        } elseif ($node instanceof IncludeNode && !$node instanceof EmbedNode) {
+            $this->collectTemplateName($node->getNode('expr'));
+        }
+    }
+
+    private function collectTemplateName(Node $expression): void
+    {
+        if ($expression instanceof ConstantExpression && is_string($expression->getAttribute('value'))) {
+            $this->templates[] = $expression->getAttribute('value');
+        }
     }
 
     public function leaveNode(Node $node, Environment $env): ?Node

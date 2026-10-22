@@ -7,6 +7,8 @@
 
 declare(strict_types=1);
 
+// cspell:ignore demohash
+
 use Symfony\Component\Filesystem\Filesystem;
 use Twig\Environment;
 use Twig\Loader\ArrayLoader;
@@ -33,7 +35,7 @@ function clientInvoiceListTemplate(): Environment
     return $twig;
 }
 
-test('client invoice list prioritises due payments and preserves separate history pagination', function (): void {
+test('client invoice list prioritizes due payments and preserves separate history pagination', function (): void {
     $client = new class {
         public array $queries = [];
 

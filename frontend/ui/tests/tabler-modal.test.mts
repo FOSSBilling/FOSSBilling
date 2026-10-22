@@ -138,7 +138,7 @@ test('action callback errors still hide and delayed actions close after cleanup'
   });
 });
 
-test('hideAll and closeAll adapters can safely skip uninitialised modals', () => fixture(f => {
+test('hideAll and closeAll adapters can safely skip uninitialized modals', () => fixture(f => {
   hideModals(f.library as any);
   assert.deepEqual(f.events, ['hide']);
   hideModals({getInstance: () => null});

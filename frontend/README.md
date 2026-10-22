@@ -116,7 +116,7 @@ belongs outside responsive tables.
   tooltips/popovers; do not add another initialization loop. Legacy extension
   popovers retain their outside-click policy.
 - `email-preview.ts` prepares documents inertly: plain messages may follow the
-  theme; authored styles and explicit colour schemes remain authoritative.
+  theme; authored styles and explicit color schemes remain authoritative.
   Keep iframe sandbox permissions, existing preview entrypoints and helper overrides.
 
 `_createLoader()` stays in the API. Preserve its `spinner-border` class, 250ms
@@ -127,7 +127,7 @@ translated status text. Configured Orderbutton loader images remain supported.
 
 Vendor CSS belongs in each theme's `assets/css/vendor.css`; local layout rules
 belong in its Sass entrypoint. Both themes load Tabler, including its Tom Select
-integration after the plugin preset. Use theme tokens for colour and spacing.
+integration after the plugin preset. Use theme tokens for color and spacing.
 Do not replace branding fonts, invert uploaded images or add light-only surfaces.
 
 Use `.icon` and `.btn.btn-icon` with native link/button semantics and a translated
@@ -136,7 +136,7 @@ cannot be their only label. Shared mobile targets are 2.75rem; Tabler owns glyph
 size and interaction styling. Shared spinners respect reduced motion.
 
 Use `avatar()` with `.avatar` and an adjacent visible name. Its generated
-`.db-avatar` class stays safelisted during production cleanup. `.fb-image-contain`
+`.db-avatar` class is preserved during production cleanup. `.fb-image-contain`
 fits branding, gateway and extension assets; content images use `.img-fluid`.
 Markdown inherits surrounding typography; client reader widths/line spacing and
 admin's denser body scale stay local.

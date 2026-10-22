@@ -1,7 +1,7 @@
-/** Let unstyled email documents follow the embedding theme's colour scheme. */
+/** Let unstyled email documents follow the embedding theme's color scheme. */
 export function prepareEmailPreview(source: string): string {
   const document = new DOMParser().parseFromString(source, 'text/html');
-  // An email may deliberately declare its own supported colour schemes.
+  // An email may deliberately declare its own supported color schemes.
   if (document.querySelector('meta[name="color-scheme" i]')) return source;
   // Authored styles may rely on a light canvas (for example black text without
   // an explicit background). Keep those messages intact rather than inverting
