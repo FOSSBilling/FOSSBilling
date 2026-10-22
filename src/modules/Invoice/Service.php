@@ -2016,7 +2016,9 @@ class Service implements InjectionAwareInterface
      * Stripe refund when one matches. Moves no money; when a new refund is
      * needed the returned pending plan is executed inside the credit-note
      * transaction by executeGatewayRefund, after the deposit credit is
-     * reversed under lock.
+     * reversed under lock. Throws when a gateway refund was requested but no
+     * refundable payment exists, instead of silently recording an offline
+     * refund the admin did not ask for.
      *
      * @return array{refund_id: string, gateway: string}|array{pending: array{adapter: object, txn_id: string, amount: float, currency: string, metadata: array<string, string>, gateway: string, recorded: list<string>}}|array{}
      */
@@ -2043,9 +2045,7 @@ class Service implements InjectionAwareInterface
 
         $paymentTx = $this->findRefundablePaymentTransaction($invoice);
         if (!$paymentTx instanceof Transaction) {
-            $this->di['logger']->info('No refundable gateway transaction for invoice #{id}; recording offline refund only', ['id' => $invoice->getId()]);
-
-            return [];
+            throw new InformationException('No refundable gateway payment found for invoice #:id. Return the payment in the gateway dashboard, or record an offline-only refund.', ['id' => $invoice->getId()]);
         }
 
         $amount = $this->previewRefundAmount($invoice, $items);

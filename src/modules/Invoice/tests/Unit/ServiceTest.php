@@ -9625,3 +9625,46 @@ test('refundInvoice rejects a Stripe refund ID that is already recorded', functi
     $serviceMock->setDi($di);
     expect(fn () => $serviceMock->refundInvoice($invoiceModel))->toThrow(FOSSBilling\InformationException::class, 'already recorded');
 });
+
+test('refundInvoice fails when a requested gateway refund has no refundable payment', function (): void {
+    $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
+    $serviceMock->shouldNotReceive('countIncome');
+
+    $invoiceModel = createEntity(Invoice::class, ['clientId' => 5]);
+    $invoiceModel->setStatus(Invoice::STATUS_PAID);
+    $invoiceModel->setCurrency('USD');
+    $invoiceModel->setTaxrate('0');
+    setEntityId($invoiceModel, 26);
+
+    $payGateway = createEntity(PayGateway::class, []);
+    setEntityId($payGateway, 7);
+    $invoiceModel->setGateway($payGateway);
+
+    $adapter = Mockery::mock('Payment_Adapter_Stripe');
+    $adapter->shouldReceive('supportsRefunds')->andReturn(true);
+    $adapter->shouldNotReceive('listRefundsForTransaction');
+    $adapter->shouldNotReceive('refundPayment');
+
+    $payGatewayService = Mockery::mock(ServicePayGateway::class);
+    $payGatewayService->shouldReceive('getPaymentAdapter')->once()->with($payGateway)->andReturn($adapter);
+
+    [$em, $invoiceItemRepo] = invoiceItemEmAndRepo();
+    $txRepo = Mockery::mock(TransactionRepository::class);
+    $txRepo->shouldReceive('findBy')->once()->andReturn([]);
+    $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($txRepo);
+
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(function ($name, $sub = '') use ($payGatewayService) {
+        if ($name === 'Invoice' && $sub === 'PayGateway') {
+            return $payGatewayService;
+        }
+
+        return Mockery::mock()->shouldIgnoreMissing();
+    });
+    $di['event_dispatcher'] = Mockery::mock()->shouldIgnoreMissing();
+    $di['logger'] = new Tests\Helpers\TestLogger();
+
+    $serviceMock->setDi($di);
+    expect(fn () => $serviceMock->refundInvoice($invoiceModel))->toThrow(FOSSBilling\InformationException::class, 'No refundable gateway payment');
+});
