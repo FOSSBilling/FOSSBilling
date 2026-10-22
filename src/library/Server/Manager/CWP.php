@@ -68,6 +68,8 @@ class Server_Manager_CWP extends Server_Manager
 
     /**
      * Returns the login URL for the CWP server manager.
+     * Requests a single-use auto-login URL and falls back to the
+     * standard panel URL when SSO is unavailable.
      *
      * @param Server_Account|null $account the account for which the login URL is generated
      *
@@ -75,9 +77,35 @@ class Server_Manager_CWP extends Server_Manager
      */
     public function getLoginUrl(?Server_Account $account): string
     {
-        $host = $this->_config['host'];
+        $fallback = 'https://' . $this->_config['host'] . ':2083';
 
-        return 'https://' . $host . ':2083';
+        if ($account === null) {
+            return $fallback;
+        }
+
+        // `timer` is undocumented by CWP and controls how long the generated
+        // session URL stays valid. CWP's own WHMCS module uses 5.
+        $data = [
+            'action' => 'list',
+            'user' => $account->getUsername(),
+            'timer' => 5,
+        ];
+
+        try {
+            $session = $this->request('user_session', $data);
+            $url = is_array($session) ? ($session['details'][0]['url'] ?? null) : null;
+
+            if (is_string($url) && $url !== '') {
+                return $url;
+            }
+
+            // Log the username only: the payload may contain single-use tokens and URLs.
+            $this->getLog()->error('CWP did not return a login URL for account {username}', ['username' => $account->getUsername()]);
+        } catch (Server_Exception $e) {
+            $this->getLog()->error('Failed to generate CWP login URL for account {username}: {error}', ['username' => $account->getUsername(), 'error' => $e->getMessage()]);
+        }
+
+        return $fallback;
     }
 
     /**
@@ -399,27 +427,37 @@ class Server_Manager_CWP extends Server_Manager
         $url = 'https://' . $host . ':' . $port . '/v1/' . $func;
 
         // Get the HTTP client with TLS verification options from server configuration
-        $client = $this->getHttpClient()->withOptions([
+        $clientOptions = [
             'verify_peer' => $verifyTls,
             'verify_host' => $verifyTls,
-        ]);
+        ];
+
+        if ($func === 'user_session') {
+            // Bound the interactive login request so a hung panel fails fast
+            // to the manual login URL instead of stalling the page load.
+            $clientOptions['timeout'] = 10;
+            $clientOptions['max_duration'] = 20;
+        }
+
+        $client = $this->getHttpClient()->withOptions($clientOptions);
 
         // Make the request and convert the response to an array
-        $request = $client->request('POST', $url, [
-            'body' => $data,
-        ]);
-
         try {
+            $request = $client->request('POST', $url, [
+                'body' => $data,
+            ]);
             $response = $request->toArray();
         } catch (Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface $e) {
             throw new Server_Exception('The CWP server returned HTTP status :status. Check server availability and API configuration.', [':status' => $e->getResponse()->getStatusCode()]);
         } catch (Symfony\Contracts\HttpClient\Exception\DecodingExceptionInterface) {
             throw new Server_Exception('The CWP server returned an invalid JSON response. Check the server address, port and API configuration.');
+        } catch (Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface) {
+            throw new Server_Exception('The CWP server could not be reached. Check the server address, port and API configuration.');
         }
 
         // Get the status, result, and message from the response, with default values if they are not set
         $status = $response['status'] ?? 'Error';
-        $result = $response['result'] ?? null;
+        $result = $response['result'] ?? $response['msj'] ?? null;
         $msg = $response['msg'] ?? 'CWP did not return a message in it\'s response.';
 
         // If the status is not 'OK', log an error message and return false
@@ -429,8 +467,8 @@ class Server_Manager_CWP extends Server_Manager
             return false;
         }
 
-        // If the function called is 'accountdetail', return the result from the response
-        if ($func == 'accountdetail') {
+        // Functions that return data instead of a simple success flag
+        if (in_array($func, ['accountdetail', 'user_session'], true)) {
             return $result;
         }
 
