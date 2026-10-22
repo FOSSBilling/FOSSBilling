@@ -207,6 +207,7 @@
     "custom_pages.keywords",
     "custom_pages.slug",
     "custom_pages.title",
+    "custom_pages.updated_at",
     "email_queue.admin_id",
     "email_queue.attachment_content",
     "email_queue.attachment_mime",
