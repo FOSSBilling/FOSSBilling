@@ -8476,6 +8476,7 @@ test('refundInvoice issues a Stripe refund and records an audit transaction', fu
     $stripeTx->setStatus(Transaction::STATUS_PROCESSED);
 
     $adapter = Mockery::mock('Payment_Adapter_Stripe');
+    $adapter->shouldReceive('supportsRefunds')->andReturn(true);
     $adapter->shouldReceive('listRefundsForTransaction')->once()->andReturn([]);
     $adapter->shouldReceive('refundPayment')->once()->with('pi_123', 20.0, Mockery::any(), Mockery::any())->andReturn('re_123');
 
@@ -8569,6 +8570,7 @@ test('refundInvoice aborts the credit note when the Stripe refund fails', functi
     $stripeTx->setStatus(Transaction::STATUS_PROCESSED);
 
     $adapter = Mockery::mock('Payment_Adapter_Stripe');
+    $adapter->shouldReceive('supportsRefunds')->andReturn(true);
     $adapter->shouldReceive('listRefundsForTransaction')->once()->andReturn([]);
     $adapter->shouldReceive('refundPayment')->once()->andThrow(new Payment_Exception('Stripe refund failed: Already refunded'));
 
@@ -8625,6 +8627,7 @@ test('refundInvoice reuses an unrecorded Stripe refund instead of refunding twic
     $stripeTx->setStatus(Transaction::STATUS_PROCESSED);
 
     $adapter = Mockery::mock('Payment_Adapter_Stripe');
+    $adapter->shouldReceive('supportsRefunds')->andReturn(true);
     $adapter->shouldReceive('listRefundsForTransaction')->once()->with('pi_123', 'USD')->andReturn([
         ['id' => 're_old', 'amount' => 20.0, 'invoice_id' => '14'],
     ]);
@@ -8718,6 +8721,7 @@ test('refundInvoice aborts when an unrecorded Stripe refund covers a different a
     $stripeTx->setStatus(Transaction::STATUS_PROCESSED);
 
     $adapter = Mockery::mock('Payment_Adapter_Stripe');
+    $adapter->shouldReceive('supportsRefunds')->andReturn(true);
     $adapter->shouldReceive('listRefundsForTransaction')->once()->andReturn([
         ['id' => 're_old', 'amount' => 5.0, 'invoice_id' => '15'],
     ]);
@@ -8776,6 +8780,7 @@ test('refundInvoice reverses the deposit credit when refunding through the gatew
     $stripeTx->setStatus(Transaction::STATUS_PROCESSED);
 
     $adapter = Mockery::mock('Payment_Adapter_Stripe');
+    $adapter->shouldReceive('supportsRefunds')->andReturn(true);
     $adapter->shouldReceive('listRefundsForTransaction')->once()->andReturn([]);
     $adapter->shouldReceive('refundPayment')->once()->with('pi_123', 20.0, Mockery::any(), Mockery::any())->andReturn('re_123');
 
@@ -8883,6 +8888,7 @@ test('refundInvoice aborts before Stripe when the deposit credit cannot be rever
     $stripeTx->setStatus(Transaction::STATUS_PROCESSED);
 
     $adapter = Mockery::mock('Payment_Adapter_Stripe');
+    $adapter->shouldReceive('supportsRefunds')->andReturn(true);
     $adapter->shouldReceive('listRefundsForTransaction')->once()->andReturn([]);
     $adapter->shouldNotReceive('refundPayment');
 

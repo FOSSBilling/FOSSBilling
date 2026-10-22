@@ -2768,7 +2768,7 @@ describe('Stripe refunds', function (): void {
         expect($this->adapter->refundPayment('in_123', 20.00, 'USD'))->toBe('re_789');
     });
 
-    test('rejects unrefundable transaction ids', function (): void {
+    test('rejects transaction ids that cannot be refunded', function (): void {
         expect(fn () => $this->adapter->refundPayment('seti_123', 5.00, 'USD'))->toThrow(Payment_Exception::class);
         expect(fn () => $this->adapter->refundPayment('pi_123', 0, 'USD'))->toThrow(Payment_Exception::class);
     });
