@@ -49,9 +49,16 @@
                                 <div class="invoice-gateway rounded-2 p-2">
                                     <input type="radio" class="btn-check border-0" name="gateway_id" gateway_id="{{ gtw.id }}" id="{{ gtw.id }}" autocomplete="off">
                                     <label class="btn" for="{{ gtw.id }}"
-                                        style="background: transparent url('{{gtw.logo.logo}}') no-repeat center center; background-size: contain; height:{{gtw.logo.height}}; width:{{gtw.logo.width}};"
+                                        style="height:{{ gtw.logo.height }}; width:{{ gtw.logo.width }}; padding: 0;"
                                         onclick="paymentPrompt('{{ gtw.id }}', {{ gtw.allow_recurrent ? 'true' : 'false' }}, {{ gtw.allow_single ? 'true' : 'false' }}, `{{ gtw.title }}`)"
-                                        data-bs-toggle="tooltip" data-bs-title="{{ gtw.title }}"></label>
+                                        data-bs-toggle="tooltip" data-bs-title="{{ gtw.title }}">
+                                        <picture class="d-block h-100">
+                                            {% if gtw.logo.avif|default(null) %}
+                                                <source srcset="{{ gtw.logo.avif }}" type="image/avif">
+                                            {% endif %}
+                                            <img src="{{ gtw.logo.logo }}" alt="{{ gtw.title }}" style="width: 100%; height: 100%; object-fit: contain;">
+                                        </picture>
+                                    </label>
                                     </div>
                                 {% endif %}
                             {% endfor %}

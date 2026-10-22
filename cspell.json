@@ -2,6 +2,8 @@
     "version": "0.2",
     "language": "en",
     "words": [
+        "TINYTEXT",
+        "MEDIUMTEXT",
         "dropup",
         "focusable",
         "NOCASE",
@@ -101,7 +103,12 @@
         "Petrov",
         "Okafor",
         "Bakker",
-        "Novakova"
+        "Novakova",
+        "nosniff",
+        "pjpeg",
+        "imageavif",
+        "webp",
+        "webmoney"
     ],
 
     "ignoreWords": [
@@ -489,6 +496,7 @@
         "iplookup",
         "DDEV",
         "Playwright",
+        "domcontentloaded",
         "CSRF",
         "undismissed",
         "unmigrated",
@@ -614,9 +622,11 @@
         "unemailml",
         "listpkgs",
         "addpkg",
+        "editpkg",
         "createacct",
         "setupreseller",
         "setacls",
+        "statusmsg",
         "acllist",
         "creationtime",
         "domsecret",

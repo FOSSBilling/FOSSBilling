@@ -56,7 +56,6 @@ class Session implements InjectionAwareInterface
         }
 
         $this->configureCookieName();
-        $this->restoreSessionFromRequest();
         $fingerprint = Config::getProperty('security.perform_session_fingerprinting', true)
             ? new Fingerprint($this->di['request'])
             : null;
@@ -265,23 +264,6 @@ class Session implements InjectionAwareInterface
             && $sessionId !== ''
             && preg_match('/^[A-Za-z0-9,-]+$/D', $sessionId) === 1
         ) {
-            $this->session->setId($sessionId);
-        }
-    }
-
-    private function restoreSessionFromRequest(): void
-    {
-        if ($this->di === null) {
-            return;
-        }
-
-        $restoreToken = $this->di['request']->query->get('restore_token');
-        if (!is_string($restoreToken)) {
-            return;
-        }
-
-        $sessionId = Tools::validateSessionRestoreToken($restoreToken);
-        if ($sessionId !== null) {
             $this->session->setId($sessionId);
         }
     }

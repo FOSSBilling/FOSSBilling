@@ -273,7 +273,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         return strtolower((string) $result['status']) == 'success';
     }
 
-    public function registerDomain(Registrar_Domain $domain)
+    public function registerDomain(Registrar_Domain $domain): bool
     {
         if ($this->_hasCompletedOrder($domain)) {
             return true;
@@ -563,7 +563,7 @@ class Registrar_Adapter_Resellerclub extends Registrar_AdapterAbstract
         return $this->_makeRequest('contacts/default', $params, 'POST');
     }
 
-    private function _hasCompletedOrder(Registrar_Domain $domain)
+    private function _hasCompletedOrder(Registrar_Domain $domain): bool
     {
         try {
             $orderid = $this->_getDomainOrderId($domain);

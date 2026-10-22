@@ -205,11 +205,14 @@ class Service implements InjectionAwareInterface
 
             // Exposed publicly so the order form can be fetched during guest checkout.
             'form_id' => $model->getFormId(),
+
+            // Exposed publicly so the XML sitemap can render accurate <lastmod>
+            // values without falling back to the current date.
+            'created_at' => $this->formatDateTimeValue($model->getCreatedAt()),
+            'updated_at' => $this->formatDateTimeValue($model->getUpdatedAt()),
         ];
 
         if ($isAdmin) {
-            $result['created_at'] = $this->formatDateTimeValue($model->getCreatedAt());
-            $result['updated_at'] = $this->formatDateTimeValue($model->getUpdatedAt());
             $result['suspension_grace_days'] = $model->getSuspensionGraceDays();
             $result['addons'] = $addons;
             $result['quantity_in_stock'] = $model->getQuantityInStock();
@@ -465,6 +468,8 @@ class Service implements InjectionAwareInterface
 
     public function updateProduct(Product $model, $data): bool
     {
+        $this->validateIconUrl($data['icon_url'] ?? $model->getIconUrl());
+
         if (array_key_exists('suspension_grace_days', $data)) {
             $graceDays = NonNegativeIntegerValidator::validate(
                 $data['suspension_grace_days'],
@@ -597,6 +602,8 @@ class Service implements InjectionAwareInterface
 
     public function createAddon($title, $description = null, $setup = null, $status = null, $iconUrl = null): ?int
     {
+        $this->validateIconUrl($iconUrl);
+
         $productPayment = $this->createDefaultProductPayment();
 
         $slug = $this->generateUniqueProductSlug($title);
@@ -654,12 +661,27 @@ class Service implements InjectionAwareInterface
         return $this->getProductCategoryRepository()->getPairs();
     }
 
-    public function updateCategory(ProductCategory $productCategory, $title = null, $description = null, $icon_url = null): bool
+    public function updateCategory(ProductCategory $productCategory, $title = null, $description = null, $icon_url = null, $priority = null): bool
     {
-        $productCategory
-            ->setTitle($title)
-            ->setIconUrl($icon_url)
-            ->setDescription($description);
+        $this->validateIconUrl($icon_url);
+
+        // Only touch supplied fields so a priority-only update (or any partial
+        // API call) never erases the rest - matches updateProduct(), which
+        // falls back to current values for omitted fields. The admin form
+        // always submits every field, so clearing one still works via ''.
+        if ($title !== null) {
+            $productCategory->setTitle($title);
+        }
+        if ($icon_url !== null) {
+            $productCategory->setIconUrl($icon_url);
+        }
+        if ($description !== null) {
+            $productCategory->setDescription($description);
+        }
+        if ($priority !== null && $priority !== '') {
+            $productCategory->setPriority((int) $priority);
+        }
+        $productCategory->setUpdatedAt(new \DateTime());
         $this->di['em']->flush();
 
         $this->di['logger']->info('Updated product category #{category_id}', ['category_id' => $productCategory->getId()]);
@@ -667,12 +689,48 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function createCategory($title, $description = null, $icon_url = null): ?int
+    public function updateCategoryPriority($data): bool
     {
+        // Validate everything up front so one bad value can't half-apply a
+        // reorder: non-integer input is rejected instead of casting to 0.
+        // The is_int/is_string guards come first because filter_var() would
+        // otherwise coerce booleans and floats (true and 1.0 both validate as 1).
+        $priorities = [];
+        foreach ($data['priority'] as $id => $p) {
+            if (!is_int($p) && (!is_string($p) || filter_var($p, FILTER_VALIDATE_INT) === false)) {
+                throw new \FOSSBilling\InformationException('Priority must be an integer.');
+            }
+            $priorities[(int) $id] = (int) $p;
+        }
+
+        foreach ($priorities as $id => $p) {
+            $model = $this->getProductCategoryRepository()->find($id);
+            if ($model instanceof ProductCategory) {
+                $model->setPriority($p);
+                $model->setUpdatedAt(new \DateTime());
+            }
+        }
+
+        $this->di['em']->flush();
+
+        $this->di['logger']->info('Changed product category priorities');
+
+        return true;
+    }
+
+    public function createCategory($title, $description = null, $icon_url = null, $priority = null): ?int
+    {
+        $this->validateIconUrl($icon_url);
+
+        if ($priority === null || $priority === '') {
+            $priority = $this->getProductCategoryRepository()->getMaxPriority() + 10;
+        }
+
         $model = (new ProductCategory())
             ->setTitle($title)
             ->setDescription($description)
-            ->setIconUrl($icon_url);
+            ->setIconUrl($icon_url)
+            ->setPriority((int) $priority);
         $this->di['em']->persist($model);
         $this->di['em']->flush();
         $id = $model->getId();
@@ -728,6 +786,7 @@ class Service implements InjectionAwareInterface
             'title' => $model->getTitle(),
             'description' => $model->getDescription(),
             'icon_url' => $model->getIconUrl(),
+            'priority' => $model->getPriority(),
             'created_at' => $this->formatDateTimeValue($model->getCreatedAt()),
             'updated_at' => $this->formatDateTimeValue($model->getUpdatedAt()),
             'price_starting_from' => $min_price,
@@ -759,6 +818,26 @@ class Service implements InjectionAwareInterface
             PaginationOptions::fromArray($data),
             fn (ProductCategory $category): array => $this->toProductCategoryApiArray($category, true, $identity),
         );
+    }
+
+    /**
+     * Lean id/title/priority rows for the admin category table, ordered by
+     * priority. Deliberately not paginated and without product details - every
+     * category must be visible for bulk reordering, and the table only needs
+     * these three fields. Use toProductCategoryApiArray()/category_get for
+     * full category details.
+     *
+     * @return list<array{id: int|null, title: string|null, priority: int|null}>
+     */
+    public function getAdminCategoryList(array $data = []): array
+    {
+        $categories = $this->getProductCategoryRepository()->getAdminSearchQueryBuilder($data)->getQuery()->getResult();
+
+        return array_map(static fn (ProductCategory $category): array => [
+            'id' => $category->getId(),
+            'title' => $category->getTitle(),
+            'priority' => $category->getPriority(),
+        ], $categories);
     }
 
     public function getStartingFromPrice(Product $model)
@@ -2277,7 +2356,7 @@ class Service implements InjectionAwareInterface
         return true;
     }
 
-    public function isPromoLinkedToProduct(Promo $promo, Product $product)
+    public function isPromoLinkedToProduct(Promo $promo, Product $product): bool
     {
         if ($product->isAddon()) {
             return false;
@@ -2351,7 +2430,7 @@ class Service implements InjectionAwareInterface
             return $this->getEnabledProductPaymentPeriod($pp, (string) ($config['period'] ?? ''))->getSetupPrice();
         }
 
-        throw new \FOSSBilling\Exception('Unknown period selected for setup price');
+        throw new \FOSSBilling\InformationException('Product :id has an invalid pricing type. Please contact the administrator.', [':id' => $product->getId()]);
     }
 
     public function getProductPrice(Product $product, ?array $config = null): float|int|string
@@ -2378,7 +2457,7 @@ class Service implements InjectionAwareInterface
             return $this->getEnabledProductPaymentPeriod($pp, (string) $config['period'])->getPrice();
         }
 
-        throw new \FOSSBilling\Exception('Unknown Period selected for price');
+        throw new \FOSSBilling\InformationException('Product :id has an invalid pricing type. Please contact the administrator.', [':id' => $product->getId()]);
     }
 
     private function getEnabledProductPaymentPeriod(ProductPayment $pp, string $code): ProductPaymentPeriod
@@ -2405,6 +2484,13 @@ class Service implements InjectionAwareInterface
         }
 
         return $productPayment;
+    }
+
+    private function validateIconUrl(?string $iconUrl): void
+    {
+        if ($iconUrl !== null && mb_strlen($iconUrl, 'UTF-8') > 255) {
+            throw new \FOSSBilling\InformationException('Icon URL must not exceed 255 characters.');
+        }
     }
 
     private function createDefaultProductPayment(): ProductPayment
