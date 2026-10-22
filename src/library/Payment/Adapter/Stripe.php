@@ -1504,7 +1504,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface, FOS
         }
 
         $refundedAmount = $this->getAmountFromMinorUnits((int) ($refund->amount ?? 0), (string) ($refund->currency ?? $invoice->getCurrency()));
-        if ($refundedAmount + 0.005 < $remaining) {
+        if (abs($refundedAmount - $remaining) > 0.005) {
             $this->di['logger']->info('Partial Stripe dashboard refund {refund} for invoice #{id} needs manual recording', ['refund' => $refundId, 'id' => $invoice->getId()]);
 
             return false;
