@@ -692,10 +692,12 @@ class Service implements InjectionAwareInterface
     public function updateCategoryPriority($data): bool
     {
         // Validate everything up front so one bad value can't half-apply a
-        // reorder: non-numeric input is rejected instead of casting to 0.
+        // reorder: non-integer input is rejected instead of casting to 0.
+        // The is_int/is_string guards come first because filter_var() would
+        // otherwise coerce booleans and floats (true and 1.0 both validate as 1).
         $priorities = [];
         foreach ($data['priority'] as $id => $p) {
-            if (filter_var($p, FILTER_VALIDATE_INT) === false) {
+            if (!is_int($p) && (!is_string($p) || filter_var($p, FILTER_VALIDATE_INT) === false)) {
                 throw new \FOSSBilling\InformationException('Priority must be an integer.');
             }
             $priorities[(int) $id] = (int) $p;

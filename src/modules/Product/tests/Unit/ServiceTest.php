@@ -1378,7 +1378,7 @@ test('update category preserves omitted fields on a priority-only update', funct
         ->and($model->getPriority())->toEqual(30);
 });
 
-test('update category priority rejects non-numeric values without changing anything', function (): void {
+test('update category priority rejects non-integer values without changing anything', function (mixed $badValue): void {
     $service = new Service();
     $model = productTestCreateProductCategoryEntity(1);
     $model->setPriority(10);
@@ -1392,10 +1392,15 @@ test('update category priority rejects non-numeric values without changing anyth
 
     $service->setDi($di);
 
-    expect(fn (): bool => $service->updateCategoryPriority(['priority' => [1 => 20, 2 => 'high']]))
+    expect(fn (): bool => $service->updateCategoryPriority(['priority' => [1 => 20, 2 => $badValue]]))
         ->toThrow(FOSSBilling\InformationException::class, 'Priority must be an integer.');
     expect($model->getPriority())->toEqual(10);
-});
+})->with([
+    'non-numeric string' => ['high'],
+    'boolean' => [true],
+    'float' => [1.0],
+    'empty string' => [''],
+]);
 
 test('admin category list returns lean rows without loading products', function (): void {
     $service = new Service();
