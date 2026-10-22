@@ -312,7 +312,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface, FOS
      * its credit note was recorded, so a retry reuses it instead of refunding
      * twice. Only actionable refunds (succeeded or pending) are returned.
      *
-     * @return list<array{id: string, amount: float, invoice_id: ?string}>
+     * @return list<array{id: string, amount: float, invoice_id: ?string, lines: ?string}>
      */
     public function listRefundsForTransaction(string $txnId, string $currency): array
     {
@@ -333,10 +333,12 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface, FOS
             if (!is_string($refund->id ?? null) || $refund->id === '') {
                 continue;
             }
+            $lines = $refund->metadata->lines ?? null;
             $result[] = [
                 'id' => $refund->id,
                 'amount' => $this->getAmountFromMinorUnits((int) ($refund->amount ?? 0), $currency),
                 'invoice_id' => is_string($refund->metadata->invoice_id ?? null) ? $refund->metadata->invoice_id : null,
+                'lines' => is_string($lines) && $lines !== '' ? $lines : null,
             ];
         }
 

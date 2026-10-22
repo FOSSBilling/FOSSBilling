@@ -1969,6 +1969,12 @@ class Service implements InjectionAwareInterface
                     $executed = $this->executeGatewayRefund($gatewayPlan['pending']);
                     $gatewayRefundId = $executed['refund_id'];
                     $gatewayName = $executed['gateway'];
+                    // Stripe replays the cached refund when a request repeats
+                    // an idempotency key. Refusing an already-recorded ID
+                    // keeps one Stripe refund from backing two credit notes.
+                    if (in_array($gatewayRefundId, $gatewayPlan['pending']['recorded'], true)) {
+                        throw new InformationException('Stripe refund :refund is already recorded for this invoice; the duplicate was not recorded again.', [':refund' => $gatewayRefundId]);
+                    }
                 }
 
                 $invoice->setRefund(round((float) ($invoice->getRefund() ?? 0) + $creditAmount, 2));
@@ -2012,7 +2018,7 @@ class Service implements InjectionAwareInterface
      * transaction by executeGatewayRefund, after the deposit credit is
      * reversed under lock.
      *
-     * @return array{refund_id: string, gateway: string}|array{pending: array{adapter: object, txn_id: string, amount: float, currency: string, metadata: array<string, string>, gateway: string}}|array{}
+     * @return array{refund_id: string, gateway: string}|array{pending: array{adapter: object, txn_id: string, amount: float, currency: string, metadata: array<string, string>, gateway: string, recorded: list<string>}}|array{}
      */
     private function planGatewayRefund(Invoice $invoice, ?array $items): array
     {
@@ -2054,10 +2060,13 @@ class Service implements InjectionAwareInterface
         }
 
         if (method_exists($adapter, 'listRefundsForTransaction')) {
-            $reused = $this->reuseUnrecordedStripeRefund($adapter, $paymentTx, $invoice, $amount, $gateway);
+            $recordedIds = $this->getRecordedGatewayRefundIds($invoice);
+            $reused = $this->reuseUnrecordedStripeRefund($adapter, $paymentTx, $invoice, $amount, $gateway, $recordedIds, $this->refundItemsFingerprint($items));
             if ($reused !== null) {
                 return $reused;
             }
+        } else {
+            $recordedIds = [];
         }
 
         return ['pending' => [
@@ -2065,16 +2074,23 @@ class Service implements InjectionAwareInterface
             'txn_id' => (string) $paymentTx->getTxnId(),
             'amount' => $amount,
             'currency' => (string) ($invoice->getCurrency() ?? $paymentTx->getCurrency()),
-            // The line selection identifies the attempt: two distinct
-            // partial refunds of the same amount must not share a Stripe
-            // idempotency key, while a retry of the same selection
-            // reuses it.
+            // The attempt nonce makes every refund its own idempotency scope:
+            // repeating the same line selection is a new refund (a new Stripe
+            // ID), while a retry of the same attempt reuses the unrecorded
+            // refund above instead of minting another. The line selection
+            // stays in the key so two distinct same-amount partials never
+            // share one either.
             'metadata' => [
                 'invoice_id' => (string) $invoice->getId(),
                 'gateway_id' => (string) $gateway->getId(),
                 'lines' => $this->refundItemsFingerprint($items),
+                'attempt' => bin2hex(random_bytes(16)),
             ],
             'gateway' => $gateway->getName() ?: $gateway->getGateway(),
+            // Recorded IDs seen during planning, carried for the duplicate
+            // check after execution: under the per-invoice lock no same-
+            // invoice refund can record between planning and execution.
+            'recorded' => $recordedIds,
         ]];
     }
 
@@ -2084,7 +2100,7 @@ class Service implements InjectionAwareInterface
      * failure rolls the reversal back with it and no credit note is created
      * for money that never moved.
      *
-     * @param array{adapter: object, txn_id: string, amount: float, currency: string, metadata: array<string, string>, gateway: string} $pending
+     * @param array{adapter: object, txn_id: string, amount: float, currency: string, metadata: array<string, string>, gateway: string, recorded: list<string>} $pending
      *
      * @return array{refund_id: string, gateway: string}
      */
@@ -2152,12 +2168,15 @@ class Service implements InjectionAwareInterface
      * Reuse a Stripe refund a previous attempt already moved but failed to
      * record, so a retry doesn't move the money twice. Only refunds stamped
      * with this invoice's ID qualify; anything else is someone else's money.
-     * A same-amount orphan is reused, a divergent one aborts with its IDs so
-     * the admin reconciles deliberately instead of stacking another refund.
+     * A same-amount orphan for the same line selection is reused, a divergent
+     * one aborts with its IDs so the admin reconciles deliberately instead of
+     * stacking another refund.
+     *
+     * @param list<string> $recordedIds
      *
      * @return ?array{refund_id: string, gateway: string}
      */
-    private function reuseUnrecordedStripeRefund(object $adapter, Transaction $paymentTx, Invoice $invoice, float $amount, PayGateway $gateway): ?array
+    private function reuseUnrecordedStripeRefund(object $adapter, Transaction $paymentTx, Invoice $invoice, float $amount, PayGateway $gateway, array $recordedIds, string $lines): ?array
     {
         try {
             $stripeRefunds = $adapter->listRefundsForTransaction(
@@ -2170,13 +2189,17 @@ class Service implements InjectionAwareInterface
             throw new InformationException('Could not verify previous gateway refunds: :error. Please retry.', [':error' => $e->getMessage()]);
         }
 
-        $recordedIds = $this->getRecordedGatewayRefundIds($invoice);
         $unrecorded = array_values(array_filter(
             $stripeRefunds,
             static fn (array $r): bool => ($r['invoice_id'] ?? null) === (string) $invoice->getId() && !in_array($r['id'], $recordedIds, true)
         ));
         foreach ($unrecorded as $candidate) {
-            if (abs((float) $candidate['amount'] - $amount) <= 0.005) {
+            // Refunds stamped before the line selection was tracked carry no
+            // lines marker and still match by amount; newer ones must match
+            // the requested selection, so a same-amount orphan from different
+            // lines is rejected below instead of misattributed.
+            $linesMatch = ($candidate['lines'] ?? null) === null || $candidate['lines'] === $lines;
+            if ($linesMatch && abs((float) $candidate['amount'] - $amount) <= 0.005) {
                 $this->di['logger']->info('Reusing unrecorded Stripe refund {refund} for invoice #{id}', ['refund' => $candidate['id'], 'id' => $invoice->getId()]);
 
                 return ['refund_id' => $candidate['id'], 'gateway' => $gateway->getName() ?: $gateway->getGateway()];

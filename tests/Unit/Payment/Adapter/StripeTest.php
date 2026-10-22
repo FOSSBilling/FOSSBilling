@@ -2802,7 +2802,7 @@ describe('listRefundsForTransaction', function (): void {
             ->once()
             ->with(['payment_intent' => 'pi_123', 'limit' => 100])
             ->andReturn((object) ['data' => [
-                (object) ['id' => 're_1', 'amount' => 1050, 'currency' => 'usd', 'status' => 'succeeded', 'metadata' => (object) ['invoice_id' => '5']],
+                (object) ['id' => 're_1', 'amount' => 1050, 'currency' => 'usd', 'status' => 'succeeded', 'metadata' => (object) ['invoice_id' => '5', 'lines' => '12:1']],
                 (object) ['id' => 're_2', 'amount' => 500, 'currency' => 'usd', 'status' => 'failed', 'metadata' => (object) []],
                 (object) ['id' => 're_3', 'amount' => 200, 'currency' => 'usd', 'status' => 'pending', 'metadata' => (object) []],
             ]]);
@@ -2812,8 +2812,8 @@ describe('listRefundsForTransaction', function (): void {
         setPrivateProperty($this->adapter, 'stripe', $stripe);
 
         expect($this->adapter->listRefundsForTransaction('pi_123', 'USD'))->toBe([
-            ['id' => 're_1', 'amount' => 10.5, 'invoice_id' => '5'],
-            ['id' => 're_3', 'amount' => 2.0, 'invoice_id' => null],
+            ['id' => 're_1', 'amount' => 10.5, 'invoice_id' => '5', 'lines' => '12:1'],
+            ['id' => 're_3', 'amount' => 2.0, 'invoice_id' => null, 'lines' => null],
         ]);
     });
 
