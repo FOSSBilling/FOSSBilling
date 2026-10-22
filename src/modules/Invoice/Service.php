@@ -2018,9 +2018,14 @@ class Service implements InjectionAwareInterface
                 (string) $paymentTx->getTxnId(),
                 $amount,
                 (string) ($invoice->getCurrency() ?? $paymentTx->getCurrency()),
+                // The line selection identifies the attempt: two distinct
+                // partial refunds of the same amount must not share a Stripe
+                // idempotency key, while a retry of the same selection
+                // reuses it.
                 [
                     'invoice_id' => (string) $invoice->getId(),
                     'gateway_id' => (string) $gateway->getId(),
+                    'lines' => $this->refundItemsFingerprint($items),
                 ]
             );
         } catch (\Payment_Exception $e) {
@@ -2199,6 +2204,30 @@ class Service implements InjectionAwareInterface
         }
 
         return round(abs($subtotal + $tax), 2);
+    }
+
+    /**
+     * Canonical fingerprint of the refunded lines for the gateway refund's
+     * idempotency key. Keys are strings here (form posts decode quantities
+     * as strings) while the API also accepts ints, so both normalize to
+     * the same value.
+     */
+    private function refundItemsFingerprint(?array $items): string
+    {
+        if (empty($items)) {
+            return 'full';
+        }
+        $pairs = [];
+        foreach ($items as $id => $qty) {
+            $pairs[(int) $id] = (int) $qty;
+        }
+        ksort($pairs);
+        $parts = [];
+        foreach ($pairs as $id => $qty) {
+            $parts[] = $id . ':' . $qty;
+        }
+
+        return implode(',', $parts);
     }
 
     /**

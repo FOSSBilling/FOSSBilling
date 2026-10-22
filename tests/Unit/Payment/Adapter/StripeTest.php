@@ -2752,7 +2752,7 @@ describe('Stripe refunds', function (): void {
 
     test('resolves a Stripe invoice to its payment intent', function (): void {
         $invoices = Mockery::mock();
-        $invoices->shouldReceive('retrieve')->once()->with('in_123', [])->andReturn((object) ['payment_intent' => 'pi_inv', 'charge' => null]);
+        $invoices->shouldReceive('retrieve')->once()->with('in_123', ['expand' => ['payments']])->andReturn((object) ['payment_intent' => 'pi_inv', 'charge' => null]);
 
         $refunds = Mockery::mock();
         $refunds->shouldReceive('create')
@@ -2819,7 +2819,7 @@ describe('listRefundsForTransaction', function (): void {
 
     test('resolves a Stripe invoice before listing', function (): void {
         $invoices = Mockery::mock();
-        $invoices->shouldReceive('retrieve')->once()->with('in_123', [])->andReturn((object) ['payment_intent' => 'pi_inv', 'charge' => null]);
+        $invoices->shouldReceive('retrieve')->once()->with('in_123', ['expand' => ['payments']])->andReturn((object) ['payment_intent' => 'pi_inv', 'charge' => null]);
 
         $refunds = Mockery::mock();
         $refunds->shouldReceive('all')->once()->with(['payment_intent' => 'pi_inv', 'limit' => 100])->andReturn((object) ['data' => []]);
@@ -3011,5 +3011,78 @@ describe('handleRefundCreatedWebhook races', function (): void {
         $result = invokePrivateMethod($this->adapter, 'handleRefundCreatedWebhook', [$tx, $event, 1]);
 
         expect($result)->toBeFalse()->and($tx->getStatus())->toBe(Transaction::STATUS_RECEIVED);
+    });
+});
+
+describe('resolveRefundTargetForStripeInvoice', function (): void {
+    test('resolves through the payments list when legacy fields are absent', function (): void {
+        $invoices = Mockery::mock();
+        $invoices->shouldReceive('retrieve')->once()->with('in_456', ['expand' => ['payments']])->andReturn((object) [
+            'payment_intent' => null,
+            'charge' => null,
+            'payments' => (object) ['data' => [(object) ['payment' => 'pi_from_list']]],
+        ]);
+
+        $refunds = Mockery::mock();
+        $refunds->shouldReceive('create')
+            ->once()
+            ->with(
+                Mockery::on(fn (array $p): bool => ($p['payment_intent'] ?? null) === 'pi_from_list'),
+                Mockery::any())
+            ->andReturn((object) ['id' => 're_1']);
+
+        $stripe = Mockery::mock(StripeClient::class);
+        $stripe->invoices = $invoices;
+        $stripe->refunds = $refunds;
+        setPrivateProperty($this->adapter, 'stripe', $stripe);
+
+        expect($this->adapter->refundPayment('in_456', 20.00, 'USD'))->toBe('re_1');
+    });
+
+    test('resolves an expanded payment object through its id', function (): void {
+        $invoices = Mockery::mock();
+        $invoices->shouldReceive('retrieve')->once()->with('in_789', ['expand' => ['payments']])->andReturn((object) [
+            'payments' => (object) ['data' => [(object) ['payment' => (object) ['id' => 'ch_expanded', 'object' => 'charge']]]],
+        ]);
+
+        $refunds = Mockery::mock();
+        $refunds->shouldReceive('create')
+            ->once()
+            ->with(
+                Mockery::on(fn (array $p): bool => ($p['charge'] ?? null) === 'ch_expanded'),
+                Mockery::any())
+            ->andReturn((object) ['id' => 're_2']);
+
+        $stripe = Mockery::mock(StripeClient::class);
+        $stripe->invoices = $invoices;
+        $stripe->refunds = $refunds;
+        setPrivateProperty($this->adapter, 'stripe', $stripe);
+
+        expect($this->adapter->refundPayment('in_789', 20.00, 'USD'))->toBe('re_2');
+    });
+});
+
+describe('refund idempotency keys', function (): void {
+    test('issues distinct keys per refunded line selection', function (): void {
+        $capturedKeys = [];
+        $refunds = Mockery::mock();
+        $refunds->shouldReceive('create')->times(3)->andReturnUsing(function (array $params, array $opts) use (&$capturedKeys): object {
+            $capturedKeys[] = $opts['idempotency_key'] ?? null;
+
+            return (object) ['id' => 're_x'];
+        });
+
+        $stripe = Mockery::mock(StripeClient::class);
+        $stripe->refunds = $refunds;
+        setPrivateProperty($this->adapter, 'stripe', $stripe);
+
+        $base = ['invoice_id' => '5', 'gateway_id' => '1'];
+        $this->adapter->refundPayment('pi_1', 10.00, 'USD', $base + ['lines' => '12:1']);
+        $this->adapter->refundPayment('pi_1', 10.00, 'USD', $base + ['lines' => '13:1']);
+        $this->adapter->refundPayment('pi_1', 10.00, 'USD', $base + ['lines' => '12:1']);
+
+        expect($capturedKeys)->toHaveCount(3)
+            ->and($capturedKeys[0])->not->toBe($capturedKeys[1])
+            ->and($capturedKeys[0])->toBe($capturedKeys[2]);
     });
 });

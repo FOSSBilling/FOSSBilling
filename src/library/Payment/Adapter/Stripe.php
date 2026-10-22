@@ -372,31 +372,51 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface, FOS
     private function resolveRefundTargetForStripeInvoice(string $stripeInvoiceId): array
     {
         try {
-            $stripeInvoice = $this->stripe->invoices->retrieve($stripeInvoiceId, []);
+            // Newer Stripe API versions only populate the payments list, so
+            // expand it; legacy payment_intent/charge fields are checked first
+            // for accounts that still return them.
+            $stripeInvoice = $this->stripe->invoices->retrieve($stripeInvoiceId, ['expand' => ['payments']]);
         } catch (Stripe\Exception\ApiErrorException $e) {
             throw new Payment_Exception('Could not load the Stripe invoice :invoice: :error', [':invoice' => $stripeInvoiceId, ':error' => $e->getMessage()]);
         }
 
-        $paymentIntent = $stripeInvoice->payment_intent ?? null;
-        if (is_string($paymentIntent) && $paymentIntent !== '') {
-            return ['payment_intent' => $paymentIntent];
+        $candidates = [$stripeInvoice->payment_intent ?? null, $stripeInvoice->charge ?? null];
+        foreach ($stripeInvoice->payments->data ?? [] as $payment) {
+            $candidates[] = $payment->payment ?? null;
+            if (is_object($payment->payment ?? null)) {
+                $candidates[] = $payment->payment->id ?? null;
+            }
         }
-
-        $charge = $stripeInvoice->charge ?? null;
-        if (is_string($charge) && $charge !== '') {
-            return ['charge' => $charge];
-        }
-
-        $latestCharge = $stripeInvoice->payments->data[0]->payment->charge ?? null;
-        if (is_string($latestCharge) && $latestCharge !== '') {
-            return ['charge' => $latestCharge];
-        }
-        $latestPaymentIntent = $stripeInvoice->payments->data[0]->payment->payment_intent ?? null;
-        if (is_string($latestPaymentIntent) && $latestPaymentIntent !== '') {
-            return ['payment_intent' => $latestPaymentIntent];
+        foreach ($candidates as $candidate) {
+            $target = $this->refundTargetFromId($candidate);
+            if ($target !== null) {
+                return $target;
+            }
         }
 
         throw new Payment_Exception('Stripe invoice :invoice has no refundable payment. Refund it in the Stripe dashboard instead.', [':invoice' => $stripeInvoiceId]);
+    }
+
+    /**
+     * Map a Stripe object ID onto the charge or payment intent a refund
+     * targets, using the ID prefix. Anything else (setup intents, invoice
+     * IDs) cannot be refunded directly.
+     *
+     * @return array{payment_intent?: string, charge?: string}|null
+     */
+    private function refundTargetFromId(mixed $candidate): ?array
+    {
+        if (!is_string($candidate) || $candidate === '') {
+            return null;
+        }
+        if (str_starts_with($candidate, 'pi_')) {
+            return ['payment_intent' => $candidate];
+        }
+        if (str_starts_with($candidate, 'ch_')) {
+            return ['charge' => $candidate];
+        }
+
+        return null;
     }
 
     public function getAmountInCents(Invoice $invoice): int
