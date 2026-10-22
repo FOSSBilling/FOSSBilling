@@ -15,9 +15,18 @@ use Box\Mod\Product\Entity\Product;
 use Box\Mod\Product\Entity\ProductCategory;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\QueryBuilder;
+use FOSSBilling\SortOptions;
 
 class ProductCategoryRepository extends EntityRepository
 {
+    public function getMaxPriority(): int
+    {
+        return (int) $this->createQueryBuilder('c')
+            ->select('MAX(c.priority)')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
     /**
      * @return array<int, string|null>
      */
@@ -25,7 +34,8 @@ class ProductCategoryRepository extends EntityRepository
     {
         $rows = $this->createQueryBuilder('c')
             ->select('c.id, c.title')
-            ->orderBy('c.id', \SortDirection::Ascending)
+            ->orderBy('c.priority', \SortDirection::Ascending)
+            ->addOrderBy('c.id', \SortDirection::Ascending)
             ->getQuery()
             ->getArrayResult();
 
@@ -63,7 +73,38 @@ class ProductCategoryRepository extends EntityRepository
             ->setParameter('hidden', false)
             ->setParameter('isAddon', false)
             ->addSelect(sprintf('(%s) AS HIDDEN maxPriority', $maximumPriority->getDQL()))
-            ->orderBy('maxPriority', \SortDirection::Ascending);
+            ->orderBy('c.priority', \SortDirection::Ascending)
+            ->addOrderBy('maxPriority', \SortDirection::Ascending)
+            ->addOrderBy('c.id', \SortDirection::Ascending);
+    }
+
+    public function getAdminSearchQueryBuilder(array $data = []): QueryBuilder
+    {
+        $qb = $this->createQueryBuilder('c');
+
+        if (!empty($data['search'])) {
+            $qb->andWhere('c.title LIKE :search')
+                ->setParameter('search', '%' . $data['search'] . '%');
+        }
+
+        $sort = SortOptions::fromArray($data, [
+            'id' => 'c.id',
+            'title' => 'c.title',
+            'priority' => 'c.priority',
+            'created_at' => 'c.createdAt',
+            'updated_at' => 'c.updatedAt',
+        ]);
+        if ($sort->isSorted()) {
+            $qb->orderBy($sort->expression, $sort->direction);
+            if ($sort->expression !== 'c.id') {
+                $qb->addOrderBy('c.id', $sort->direction);
+            }
+        } else {
+            $qb->orderBy('c.priority', \SortDirection::Ascending)
+                ->addOrderBy('c.id', \SortDirection::Ascending);
+        }
+
+        return $qb;
     }
 
     private function applyEnabledVisibleProductFilters(QueryBuilder $queryBuilder, string $alias): QueryBuilder

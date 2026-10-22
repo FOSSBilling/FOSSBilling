@@ -982,6 +982,10 @@ class UpdatePatcher implements InjectionAwareInterface
 
             $result = SchemaSynchronizer::syncEntities($entityManager, $eagerEntityClasses);
             $this->migrateClientGroupMemberships($connection);
+            // Data backfill gated on the hash below: like the membership copy above,
+            // a throw here fails the sync (recorded with cooldown for retry) instead
+            // of leaving NULL priorities behind a stored hash.
+            $this->backfillProductCategoryPriorities($connection);
             $this->storeSchemaMetadataHash(EntityManagerFactory::entityDefinitionsHash());
         } catch (\Throwable $e) {
             // Attach the metadata hash so the failure can be correlated with
@@ -1498,6 +1502,7 @@ class UpdatePatcher implements InjectionAwareInterface
             129 => 'patch129',
             130 => 'patch130',
             131 => 'patch131',
+            132 => 'patch132',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -4831,6 +4836,39 @@ class UpdatePatcher implements InjectionAwareInterface
         if (!$this->tableHasColumn('custom_pages', 'updated_at')) {
             $this->executeSql('ALTER TABLE `custom_pages` ADD COLUMN `updated_at` datetime DEFAULT NULL');
         }
+    }
+
+    private function patch132(): void
+    {
+        // Product category priority (#4499). Mirrors product.priority so categories
+        // can be ordered explicitly instead of by insertion id. MySQL/MariaDB DDL
+        // only - the data backfill lives in backfillProductCategoryPriorities(),
+        // which runs portably on every driver. Guarded so reruns are no-ops;
+        // non-MySQL drivers get the column from the portable schema sync.
+        if (!$this->tableHasColumn('product_category', 'priority')) {
+            $this->executeSql('ALTER TABLE `product_category` ADD COLUMN `priority` BIGINT DEFAULT NULL');
+        }
+    }
+
+    /**
+     * Assigns an initial priority to product categories that don't have one yet
+     * (#4499). Plain portable SQL and idempotent: only NULL priorities are
+     * touched, so administrator-set values are preserved. Runs inside
+     * {@see syncPortableSchema()}'s error boundary, before the metadata hash
+     * is stored - like {@see migrateClientGroupMemberships()}, a throw fails
+     * the sync (recorded with cooldown for retry) instead of leaving NULL
+     * priorities behind a stored hash. No-ops when the table or column
+     * doesn't exist yet.
+     */
+    private function backfillProductCategoryPriorities(\Doctrine\DBAL\Connection $connection): void
+    {
+        $schemaManager = $connection->createSchemaManager();
+        if (!$schemaManager->tablesExist(['product_category'])
+            || !$schemaManager->introspectTableByUnquotedName('product_category')->hasColumn('priority')) {
+            return;
+        }
+
+        $connection->executeStatement('UPDATE product_category SET priority = id * 10 WHERE priority IS NULL');
     }
 
     /**
