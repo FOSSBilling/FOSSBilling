@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Symfony\Component\HttpClient\Exception\TransportException;
 use Symfony\Component\HttpClient\MockHttpClient;
 use Symfony\Component\HttpClient\Response\MockResponse;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -110,6 +111,8 @@ test('CWP falls back to the plain panel URL when SSO is unavailable', function (
     'missing details' => [['status' => 'OK', 'msj' => ['accounts' => 1]]],
     'empty details' => [['status' => 'OK', 'msj' => ['accounts' => 1, 'details' => []]]],
     'missing URL' => [['status' => 'OK', 'msj' => ['accounts' => 1, 'details' => [['user' => 'example']]]]],
+    'empty URL' => [['status' => 'OK', 'msj' => ['accounts' => 1, 'details' => [['url' => '']]]]],
+    'non-string URL' => [['status' => 'OK', 'msj' => ['accounts' => 1, 'details' => [['url' => ['https://cwp.example.com:2083/example/']]]]]],
 ]);
 
 test('CWP falls back to the plain panel URL when the session request fails', function (string $body, int $statusCode): void {
@@ -121,6 +124,15 @@ test('CWP falls back to the plain panel URL when the session request fails', fun
     'invalid JSON' => ['<html>Not found</html>', 200],
     'HTTP error' => ['<html>Request failed</html>', 503],
 ]);
+
+test('CWP falls back to the plain panel URL when the server cannot be reached', function (): void {
+    $manager = createCwpManager(function (): MockResponse {
+        throw new TransportException('Connection refused');
+    });
+    $account = (new Server_Account())->setUsername('example');
+
+    expect($manager->getLoginUrl($account))->toBe('https://cwp.example.com:2083');
+});
 
 test('CWP requests the session with the account username and timer', function (): void {
     $seenBody = null;

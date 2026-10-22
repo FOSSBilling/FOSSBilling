@@ -93,9 +93,10 @@ class Server_Manager_CWP extends Server_Manager
 
         try {
             $session = $this->request('user_session', $data);
+            $url = is_array($session) ? ($session['details'][0]['url'] ?? null) : null;
 
-            if (is_array($session) && !empty($session['details'][0]['url'])) {
-                return $session['details'][0]['url'];
+            if (is_string($url) && $url !== '') {
+                return $url;
             }
 
             // Log the username only: the payload may contain single-use tokens and URLs.
@@ -432,16 +433,17 @@ class Server_Manager_CWP extends Server_Manager
         ]);
 
         // Make the request and convert the response to an array
-        $request = $client->request('POST', $url, [
-            'body' => $data,
-        ]);
-
         try {
+            $request = $client->request('POST', $url, [
+                'body' => $data,
+            ]);
             $response = $request->toArray();
         } catch (Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface $e) {
             throw new Server_Exception('The CWP server returned HTTP status :status. Check server availability and API configuration.', [':status' => $e->getResponse()->getStatusCode()]);
         } catch (Symfony\Contracts\HttpClient\Exception\DecodingExceptionInterface) {
             throw new Server_Exception('The CWP server returned an invalid JSON response. Check the server address, port and API configuration.');
+        } catch (Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface) {
+            throw new Server_Exception('The CWP server could not be reached. Check the server address, port and API configuration.');
         }
 
         // Get the status, result, and message from the response, with default values if they are not set
