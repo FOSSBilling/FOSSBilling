@@ -4862,14 +4862,32 @@ class UpdatePatcher implements InjectionAwareInterface
 
     /**
      * Assigns an initial priority to product categories that don't have one yet
-     * (#4499). Plain portable SQL and idempotent, so it runs unconditionally
-     * from applyCorePatches() on every platform - patch132() only ever runs on
+     * (#4499). Portable and idempotent, so it runs unconditionally from
+     * applyCorePatches() on every driver - patch132() only ever runs on
      * MySQL/MariaDB, and other drivers only gain the column from the additive
-     * schema sync, which never touches data.
+     * schema sync, which never touches data. No-ops when the table or column
+     * doesn't exist yet, and only NULL priorities are touched, so
+     * administrator-set values are preserved.
      */
     private function backfillProductCategoryPriorities(): void
     {
-        $this->executeSql('UPDATE product_category SET priority = id * 10 WHERE priority IS NULL');
+        if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('dbal')) {
+            return;
+        }
+
+        $dbal = $this->di['dbal'];
+        $schemaManager = $dbal->createSchemaManager();
+        if (!$schemaManager->tablesExist(['product_category'])) {
+            return;
+        }
+
+        foreach ($schemaManager->listTableColumns('product_category') as $column) {
+            if (strtolower($column->getName()) === 'priority') {
+                $dbal->executeStatement('UPDATE product_category SET priority = id * 10 WHERE priority IS NULL');
+
+                return;
+            }
+        }
     }
 
     /**
