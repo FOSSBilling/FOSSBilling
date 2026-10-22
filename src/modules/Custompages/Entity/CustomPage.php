@@ -13,16 +13,17 @@ namespace Box\Mod\Custompages\Entity;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use FOSSBilling\Doctrine\CreatedAtTrait;
+use FOSSBilling\Doctrine\TimestampTrait;
 use FOSSBilling\Interfaces\ApiArrayInterface;
+use FOSSBilling\Interfaces\TimestampInterface;
 
 #[ORM\Entity(repositoryClass: \Box\Mod\Custompages\Repository\CustomPageRepository::class)]
 #[ORM\Table(name: 'custom_pages')]
 #[ORM\UniqueConstraint(name: 'uniq_custom_pages_slug', columns: ['slug'])]
 #[ORM\HasLifecycleCallbacks]
-class CustomPage implements ApiArrayInterface
+class CustomPage implements ApiArrayInterface, TimestampInterface
 {
-    use CreatedAtTrait;
+    use TimestampTrait;
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -55,6 +56,7 @@ class CustomPage implements ApiArrayInterface
             'content' => $this->getContent(),
             'slug' => $this->getSlug(),
             'created_at' => $this->getCreatedAt()?->format('Y-m-d H:i:s'),
+            'updated_at' => $this->getUpdatedAt()?->format('Y-m-d H:i:s'),
         ];
     }
 
