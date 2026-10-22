@@ -185,6 +185,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * @optional string $note - note for refund
      * @optional array $items - line id => quantity map for a partial refund; omit for a full refund
      * @optional bool $gateway_refund - also return the money through the payment gateway when it supports refunds (default true). Pass false to record an offline-only refund.
+     * @optional bool $gateway_returned - the card payment was already returned outside FOSSBilling (e.g. a dashboard refund being recorded). Never calls the gateway; deposit credits are still reversed.
      *
      * @return int $id - newly generated refund document ID
      */
@@ -199,9 +200,19 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         if ($items !== null && (!is_array($items) || $items === [])) {
             throw new InformationException('Refund lines are invalid');
         }
+        $gatewayRefund = !array_key_exists('gateway_refund', $data) || Tools::normalizeBoolean($data['gateway_refund'], true);
         $options = [];
         if (array_key_exists('gateway_refund', $data)) {
-            $options['gateway_refund'] = Tools::normalizeBoolean($data['gateway_refund'], true);
+            $options['gateway_refund'] = $gatewayRefund;
+        }
+        if (!empty($data['gateway_returned'])) {
+            $options['gateway_returned'] = true;
+        }
+
+        // Refunding a deposit returns wallet credit as card money, so it
+        // needs the same permission as crediting the balance directly.
+        if ($gatewayRefund && $this->getService()->isInvoiceTypeDeposit($model)) {
+            $this->checkPermissions('client', 'manage_balance');
         }
 
         return $this->getService()->refundInvoice($model, $note, $items, $options);

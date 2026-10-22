@@ -1488,6 +1488,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface, FOS
                 'id' => $invoice->getId(),
                 'note' => 'Recorded from Stripe dashboard refund ' . $refundId,
                 'gateway_refund' => false,
+                'gateway_returned' => true,
             ]);
         } catch (Throwable $e) {
             // A concurrent admin refund may have settled the invoice first:

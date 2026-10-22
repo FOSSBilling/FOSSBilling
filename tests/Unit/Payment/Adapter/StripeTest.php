@@ -2884,7 +2884,7 @@ describe('handleRefundCreatedWebhook', function (): void {
         $apiAdmin = Mockery::mock();
         $apiAdmin->shouldReceive('invoice_refund')
             ->once()
-            ->withArgs(fn (array $data): bool => $data['id'] === 5 && ($data['gateway_refund'] ?? null) === false)
+            ->withArgs(fn (array $data): bool => $data['id'] === 5 && ($data['gateway_refund'] ?? null) === false && ($data['gateway_returned'] ?? null) === true)
             ->andReturn(7);
 
         ['em' => $em, 'txRepo' => $txRepo, 'invoiceRepo' => $invoiceRepo] = buildEntityManagerMocks();

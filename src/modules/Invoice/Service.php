@@ -1771,6 +1771,14 @@ class Service implements InjectionAwareInterface
         }
 
         $gatewayRefundRequested = (bool) ($options['gateway_refund'] ?? true);
+        $gatewayReturned = (bool) ($options['gateway_returned'] ?? false);
+
+        // A dashboard refund already returned the card payment, so a deposit
+        // invoice's wallet credit must be reversed when recording it.
+        if ($gatewayReturned && $this->isInvoiceTypeDeposit($invoice)) {
+            $this->assertDepositReversalAvailable($invoice, $this->previewRefundAmount($invoice, $items));
+        }
+
         $gatewayRefundId = null;
         $gatewayName = null;
 
@@ -1779,6 +1787,10 @@ class Service implements InjectionAwareInterface
             $gatewayRefundId = $preview['refund_id'] ?? null;
             $gatewayName = $preview['gateway'] ?? null;
         }
+
+        // Offline-only refunds of deposits keep the pre-existing paper trail:
+        // no card money moves, so there is no credit to reverse.
+        $reverseDeposit = ($gatewayRefundId !== null || $gatewayReturned) && $this->isInvoiceTypeDeposit($invoice);
 
         $systemService = $this->di['mod_service']('system');
         $logic = $systemService->getParamValue('invoice_refund_logic', 'manual');
@@ -1792,7 +1804,7 @@ class Service implements InjectionAwareInterface
         switch ($documentLogic) {
             case 'credit_note':
             case 'negative_invoice':
-                $new = $this->di['em']->wrapInTransaction(function () use ($invoice, $items, $documentLogic, $note, $systemService, $offline, $gatewayRefundId, $gatewayName): Invoice {
+                $new = $this->di['em']->wrapInTransaction(function () use ($invoice, $items, $documentLogic, $note, $systemService, $offline, $gatewayRefundId, $gatewayName, $reverseDeposit): Invoice {
                     // Reserve the number before any invoice reads. SQLite must acquire its write
                     // lock before the locking read; the outer transaction rolls this back on failure.
                     $nextNumber = $documentLogic === 'negative_invoice'
@@ -1886,6 +1898,10 @@ class Service implements InjectionAwareInterface
                     $remaining = round($total - (float) ($invoice->getRefund() ?? 0), 2);
                     if ($creditAmount - $remaining > 0.005) {
                         throw new InformationException('Refund amount exceeds the remaining refundable amount of :amount', [':amount' => $remaining]);
+                    }
+
+                    if ($reverseDeposit) {
+                        $this->reverseDepositCredit($invoice, $creditAmount);
                     }
 
                     $invoice->setRefund(round((float) ($invoice->getRefund() ?? 0) + $creditAmount, 2));
@@ -1982,6 +1998,12 @@ class Service implements InjectionAwareInterface
         $amount = $this->previewRefundAmount($invoice, $items);
         if ($amount <= 0) {
             return [];
+        }
+
+        // A deposit's wallet credit is reversed under the credit-note lock
+        // below; confirm it exists before moving card money.
+        if ($this->isInvoiceTypeDeposit($invoice)) {
+            $this->assertDepositReversalAvailable($invoice, $amount);
         }
 
         if (method_exists($adapter, 'listRefundsForTransaction')) {
@@ -2108,6 +2130,50 @@ class Service implements InjectionAwareInterface
         }
 
         return $ids;
+    }
+
+    /**
+     * Fail fast when the wallet credit a deposit refund must reverse exceeds
+     * the client's balance. The locked re-check inside reverseDepositCredit
+     * stays authoritative; this only avoids pointless Stripe calls.
+     */
+    private function assertDepositReversalAvailable(Invoice $invoice, float $amount): void
+    {
+        $client = $this->di['em']->getRepository(Client::class)->find((int) $invoice->getClientId());
+        if (!$client instanceof Client) {
+            throw new InformationException('Client not found');
+        }
+        $available = $this->di['mod_service']('Client', 'Balance')->getClientBalance($client);
+        if (round($available, 2) < round($amount, 2)) {
+            throw new InformationException('Client balance of :balance is insufficient to reverse the deposit credit of :amount for this refund.', [':balance' => $available, ':amount' => $amount]);
+        }
+    }
+
+    /**
+     * Debit the wallet credit a deposit invoice created, so returning the
+     * card payment cannot leave spendable credit behind. Runs inside the
+     * refund's database transaction: the balance row is locked until the
+     * credit note commits, and a shortfall rolls everything back.
+     */
+    private function reverseDepositCredit(Invoice $invoice, float $amount): void
+    {
+        if ($amount <= 0) {
+            return;
+        }
+        $clientId = (int) $invoice->getClientId();
+        $available = $this->di['mod_service']('Client', 'Balance')->getClientBalanceForUpdate($clientId);
+        if (round($available, 2) < round($amount, 2)) {
+            throw new InformationException('Client balance of :balance is insufficient to reverse the deposit credit of :amount for this refund.', [':balance' => $available, ':amount' => $amount]);
+        }
+
+        $debit = new ClientBalance();
+        $debit->setClient($this->di['em']->getReference(Client::class, $clientId));
+        $debit->setType('invoice');
+        $debit->setRelId((string) $invoice->getId());
+        $debit->setDescription('Reversal of deposit credit for refunded invoice #' . ($invoice->getNr() ?: $invoice->getId()) . '.');
+        $debit->setAmount((string) (-$amount));
+        $this->di['em']->persist($debit);
+        $this->di['em']->flush();
     }
 
     /**
