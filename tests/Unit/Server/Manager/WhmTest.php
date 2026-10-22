@@ -242,5 +242,23 @@ test('createAccount rethrows addpkg failures unrelated to already-exists', funct
     $manager = createWhmManager($client);
     $account = createWhmAccount(new Server_Package(), false);
 
-    expect(fn () => $manager->createAccount($account))->toThrow(Server_Exception::class, 'Invalid quota value');
+    // The WHM reason stays in the logs; API callers only see the generic message.
+    expect(fn () => $manager->createAccount($account))->toThrow(Server_Exception::class, 'Failed to addpkg on the cPanel server');
+});
+
+test('addpkg already-exists does not leak the WHM reason to callers', function (): void {
+    $client = new MockHttpClient(fn (string $method, string $url): MockResponse => new MockResponse(json_encode(['result' => [['status' => 0, 'statusmsg' => '(XID n25fcu) The package "admin_FOSSBilling" already exists.']]])));
+    $manager = createWhmManager($client);
+
+    // Directly verify the typed exception carries the generic message, not the WHM reason.
+    $ref = new ReflectionMethod($manager, 'request');
+    $ref->setAccessible(true);
+
+    try {
+        $ref->invoke($manager, 'addpkg', ['name' => 'admin_FOSSBilling']);
+        expect(false)->toBeTrue('Expected Server_PackageExistsException was not thrown');
+    } catch (Server_PackageExistsException $e) {
+        expect($e->getMessage())->not->toContain('already exists')
+            ->and($e->getMessage())->toContain('Failed to addpkg');
+    }
 });

@@ -641,38 +641,53 @@ class Server_Manager_Whm extends Server_Manager
 
         if (isset($json->cpanelresult->error)) {
             $reason = (string) $json->cpanelresult->error;
-            $this->getLog()->critical('WHM server response error calling action {action}: "{error}"', ['action' => $action, 'error' => $reason]);
-            $placeholders = [':action:' => $action, ':type:' => 'cPanel', ':reason:' => $reason];
 
-            throw new Server_Exception('Failed to :action: on the :type: server: :reason:. Check the error logs for further details', $placeholders);
+            $this->throwWhmError($action, $reason);
         }
 
         if (isset($json->data->result) && $json->data->result == '0') {
             $reason = (string) ($json->data->reason ?? 'Unknown error');
-            $this->getLog()->critical('WHM server response error calling action {action}: "{error}"', ['action' => $action, 'error' => $reason]);
-            $placeholders = [':action:' => $action, ':type:' => 'cPanel', ':reason:' => $reason];
 
-            throw new Server_Exception('Failed to :action: on the :type: server: :reason:. Check the error logs for further details', $placeholders);
+            $this->throwWhmError($action, $reason);
         }
 
         if (isset($json->result) && is_array($json->result) && $json->result[0]->status == 0) {
             $reason = (string) ($json->result[0]->statusmsg ?? 'Unknown error');
-            $this->getLog()->critical('WHM server response error calling action {action}: "{error}"', ['action' => $action, 'error' => $reason]);
-            $placeholders = [':action:' => $action, ':type:' => 'cPanel', ':reason:' => $reason];
 
-            throw new Server_Exception('Failed to :action: on the :type: server: :reason:. Check the error logs for further details', $placeholders);
+            $this->throwWhmError($action, $reason);
         }
 
         if (isset($json->status) && $json->status != '1') {
             $reason = (string) ($json->statusmsg ?? 'Unknown error');
-            $this->getLog()->critical('WHM server response error calling action {action}: "{error}"', ['action' => $action, 'error' => $reason]);
-            $placeholders = [':action:' => $action, ':type:' => 'cPanel', ':reason:' => $reason];
 
-            throw new Server_Exception('Failed to :action: on the :type: server: :reason:. Check the error logs for further details', $placeholders);
+            $this->throwWhmError($action, $reason);
         }
 
         // Return the response
         return $json;
+    }
+
+    /**
+     * Logs the WHM failure reason and throws a generic exception.
+     *
+     * The full WHM reason stays in the logs and is never exposed to API
+     * callers or stored in order history. An "already exists" WHM response
+     * is translated to a dedicated exception so callers can handle it
+     * without matching on message text.
+     *
+     * @throws Server_Exception
+     */
+    private function throwWhmError(string $action, string $reason): never
+    {
+        $this->getLog()->critical('WHM server response error calling action {action}: "{error}"', ['action' => $action, 'error' => $reason]);
+        $placeholders = [':action:' => $action, ':type:' => 'cPanel'];
+        $message = 'Failed to :action: on the :type: server, check the error logs for further details';
+
+        if (str_contains(strtolower($reason), 'already exists')) {
+            throw new Server_PackageExistsException($message, $placeholders);
+        }
+
+        throw new Server_Exception($message, $placeholders);
     }
 
     /**
@@ -710,16 +725,12 @@ class Server_Manager_Whm extends Server_Manager
 
             try {
                 $this->request('addpkg', $varHash);
-            } catch (Server_Exception $e) {
+            } catch (Server_PackageExistsException $e) {
                 // listpkgs only returns packages visible to the API user, while
                 // addpkg fails globally when the name is taken. When the
                 // package already exists (e.g. created manually or by another
                 // user), sync its limits via editpkg instead of aborting the
                 // account creation. See #4560.
-                if (!str_contains(strtolower($e->getMessage()), 'already exists')) {
-                    throw $e;
-                }
-
                 try {
                     $this->request('editpkg', $varHash);
                     $this->getLog()->info('Updated existing WHM package {package}', ['package' => $name]);
