@@ -1490,6 +1490,14 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface, FOS
                 'gateway_refund' => false,
             ]);
         } catch (Throwable $e) {
+            // A concurrent admin refund may have settled the invoice first:
+            // the credit note exists, so there is nothing left to record.
+            $settled = $this->di['em']->getRepository(Invoice::class)->find($invoice->getId());
+            if ($settled instanceof Invoice && $settled->getStatus() !== Invoice::STATUS_PAID) {
+                $this->debugLog('Stripe dashboard refund ' . $refundId . ' already recorded by a concurrent refund; ignoring');
+
+                return false;
+            }
             $tx->setStatus(Transaction::STATUS_ERROR);
             $tx->setError($e->getMessage());
             $this->debugLog('Could not record Stripe dashboard refund ' . $refundId . ': ' . $e->getMessage());
