@@ -205,11 +205,14 @@ class Service implements InjectionAwareInterface
 
             // Exposed publicly so the order form can be fetched during guest checkout.
             'form_id' => $model->getFormId(),
+
+            // Exposed publicly so the XML sitemap can render accurate <lastmod>
+            // values without falling back to the current date.
+            'created_at' => $this->formatDateTimeValue($model->getCreatedAt()),
+            'updated_at' => $this->formatDateTimeValue($model->getUpdatedAt()),
         ];
 
         if ($isAdmin) {
-            $result['created_at'] = $this->formatDateTimeValue($model->getCreatedAt());
-            $result['updated_at'] = $this->formatDateTimeValue($model->getUpdatedAt());
             $result['suspension_grace_days'] = $model->getSuspensionGraceDays();
             $result['addons'] = $addons;
             $result['quantity_in_stock'] = $model->getQuantityInStock();
