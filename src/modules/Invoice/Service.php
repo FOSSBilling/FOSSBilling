@@ -1791,16 +1791,16 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * Serialize refunds of one invoice across processes. The gateway call in
-     * createRefundDocument runs before the credit-note transaction takes the
-     * invoice row lock, so without this, two concurrent refunds with
-     * different line selections would both reach Stripe with distinct
-     * idempotency keys before either books its credit note; the loser's
+     * Serialize refunds of one invoice across processes. The gateway refund
+     * executes inside the credit-note transaction below, but that transaction
+     * starts with the invoice row lock, so without this outer lock two
+     * concurrent refunds with different line selections could both pass
+     * their read-only preparation before either commits; the loser's
      * rollback would then orphan its already-issued refund. Holding the lock
      * makes the second attempt see the first one's committed state before
-     * Stripe is touched, so overlapping lines fail fast with nothing moved.
-     * Split out so tests can simulate a busy lock without a real database
-     * lock manager.
+     * anything is prepared, so overlapping lines fail fast with nothing
+     * moved. Split out so tests can simulate a busy lock without a real
+     * database lock manager.
      */
     protected function withInvoiceRefundLock(Invoice $invoice, callable $callback): Invoice
     {
@@ -1834,18 +1834,19 @@ class Service implements InjectionAwareInterface
             $this->assertDepositReversalAvailable($invoice, $this->previewRefundAmount($invoice, $items));
         }
 
-        $gatewayRefundId = null;
-        $gatewayName = null;
-
-        if ($gatewayRefundRequested) {
-            $preview = $this->previewGatewayRefund($invoice, $items);
-            $gatewayRefundId = $preview['refund_id'] ?? null;
-            $gatewayName = $preview['gateway'] ?? null;
+        $gatewayPlan = [];
+        if ($gatewayRefundRequested && !$gatewayReturned) {
+            // Read-only preparation: adapter, transaction, amount and any
+            // already-issued but unrecorded refund. The money-moving
+            // refundPayment call itself runs inside the credit-note
+            // transaction below, after the deposit credit is reversed under
+            // lock, so a shortfall aborts before Stripe is touched.
+            $gatewayPlan = $this->planGatewayRefund($invoice, $items);
         }
 
         // Offline-only refunds of deposits keep the pre-existing paper trail:
         // no card money moves, so there is no credit to reverse.
-        $reverseDeposit = ($gatewayRefundId !== null || $gatewayReturned) && $this->isInvoiceTypeDeposit($invoice);
+        $reverseDeposit = ($gatewayPlan !== [] || $gatewayReturned) && $this->isInvoiceTypeDeposit($invoice);
 
         $systemService = $this->di['mod_service']('system');
         $logic = $systemService->getParamValue('invoice_refund_logic', 'manual');
@@ -1857,7 +1858,7 @@ class Service implements InjectionAwareInterface
         $documentLogic = $offline ? 'credit_note' : $logic;
 
         return match ($documentLogic) {
-            'credit_note', 'negative_invoice' => $this->di['em']->wrapInTransaction(function () use ($invoice, $items, $documentLogic, $note, $systemService, $offline, $gatewayRefundId, $gatewayName, $reverseDeposit): Invoice {
+            'credit_note', 'negative_invoice' => $this->di['em']->wrapInTransaction(function () use ($invoice, $items, $documentLogic, $note, $systemService, $offline, $gatewayPlan, $reverseDeposit): Invoice {
                 // Reserve the number before any invoice reads. SQLite must acquire its write
                 // lock before the locking read; the outer transaction rolls this back on failure.
                 $nextNumber = $documentLogic === 'negative_invoice'
@@ -1957,6 +1958,19 @@ class Service implements InjectionAwareInterface
                     $this->reverseDepositCredit($invoice, $creditAmount);
                 }
 
+                // The deposit credit above is locked and debited before the
+                // gateway moves money: a concurrent spend either committed
+                // first (and this locked recheck already threw) or waits on
+                // the balance lock, so a shortfall can never orphan an
+                // already-issued Stripe refund.
+                $gatewayRefundId = $gatewayPlan['refund_id'] ?? null;
+                $gatewayName = $gatewayPlan['gateway'] ?? null;
+                if (isset($gatewayPlan['pending'])) {
+                    $executed = $this->executeGatewayRefund($gatewayPlan['pending']);
+                    $gatewayRefundId = $executed['refund_id'];
+                    $gatewayName = $executed['gateway'];
+                }
+
                 $invoice->setRefund(round((float) ($invoice->getRefund() ?? 0) + $creditAmount, 2));
                 if (round($total - (float) $invoice->getRefund(), 2) <= 0.005) {
                     $invoice->setStatus(Invoice::STATUS_REFUNDED);
@@ -1991,15 +2005,16 @@ class Service implements InjectionAwareInterface
     }
 
     /**
-     * Move the money in the payment gateway before the credit note is created.
-     * Returns the gateway refund id, or nothing when there is nothing to
-     * refund remotely, so the caller falls back to the offline paper trail.
-     * Throws when the gateway refund itself fails, so no credit note is
-     * created for money that never moved.
+     * Read-only gateway refund preparation: finds the adapter, the refundable
+     * transaction and the amount, and reuses an already-issued but unrecorded
+     * Stripe refund when one matches. Moves no money; when a new refund is
+     * needed the returned pending plan is executed inside the credit-note
+     * transaction by executeGatewayRefund, after the deposit credit is
+     * reversed under lock.
      *
-     * @return array{refund_id?: ?string, gateway?: ?string}
+     * @return array{refund_id: string, gateway: string}|array{pending: array{adapter: object, txn_id: string, amount: float, currency: string, metadata: array<string, string>, gateway: string}}|array{}
      */
-    private function previewGatewayRefund(Invoice $invoice, ?array $items): array
+    private function planGatewayRefund(Invoice $invoice, ?array $items): array
     {
         $gateway = $invoice->getGateway();
         if (!$gateway instanceof PayGateway) {
@@ -2033,7 +2048,7 @@ class Service implements InjectionAwareInterface
         }
 
         // A deposit's wallet credit is reversed under the credit-note lock
-        // below; confirm it exists before moving card money.
+        // below; confirm it exists before preparing the gateway call.
         if ($this->isInvoiceTypeDeposit($invoice)) {
             $this->assertDepositReversalAvailable($invoice, $amount);
         }
@@ -2045,32 +2060,60 @@ class Service implements InjectionAwareInterface
             }
         }
 
+        return ['pending' => [
+            'adapter' => $adapter,
+            'txn_id' => (string) $paymentTx->getTxnId(),
+            'amount' => $amount,
+            'currency' => (string) ($invoice->getCurrency() ?? $paymentTx->getCurrency()),
+            // The line selection identifies the attempt: two distinct
+            // partial refunds of the same amount must not share a Stripe
+            // idempotency key, while a retry of the same selection
+            // reuses it.
+            'metadata' => [
+                'invoice_id' => (string) $invoice->getId(),
+                'gateway_id' => (string) $gateway->getId(),
+                'lines' => $this->refundItemsFingerprint($items),
+            ],
+            'gateway' => $gateway->getName() ?: $gateway->getGateway(),
+        ]];
+    }
+
+    /**
+     * Issue the prepared gateway refund. Runs inside the credit-note
+     * transaction after the deposit credit is reversed under lock, so a
+     * failure rolls the reversal back with it and no credit note is created
+     * for money that never moved.
+     *
+     * @param array{adapter: object, txn_id: string, amount: float, currency: string, metadata: array<string, string>, gateway: string} $pending
+     *
+     * @return array{refund_id: string, gateway: string}
+     */
+    private function executeGatewayRefund(array $pending): array
+    {
+        $adapter = $pending['adapter'];
+        if (!method_exists($adapter, 'refundPayment')) {
+            throw new InformationException('Gateway refund failed: payment adapter cannot issue refunds');
+        }
+        $invoiceId = $pending['metadata']['invoice_id'] ?? '?';
+
         try {
             $refundId = $adapter->refundPayment(
-                (string) $paymentTx->getTxnId(),
-                $amount,
-                (string) ($invoice->getCurrency() ?? $paymentTx->getCurrency()),
-                // The line selection identifies the attempt: two distinct
-                // partial refunds of the same amount must not share a Stripe
-                // idempotency key, while a retry of the same selection
-                // reuses it.
-                [
-                    'invoice_id' => (string) $invoice->getId(),
-                    'gateway_id' => (string) $gateway->getId(),
-                    'lines' => $this->refundItemsFingerprint($items),
-                ]
+                $pending['txn_id'],
+                $pending['amount'],
+                $pending['currency'],
+                $pending['metadata']
             );
         } catch (\Payment_Exception $e) {
             throw new InformationException('Gateway refund failed: :error', [':error' => $e->getMessage()]);
         } catch (\Throwable $e) {
-            $this->di['logger']->error('Gateway refund failed for invoice #{id}: {error}', ['id' => $invoice->getId(), 'error' => $e->getMessage()]);
+            $this->di['logger']->error('Gateway refund failed for invoice #{id}: {error}', ['id' => $invoiceId, 'error' => $e->getMessage()]);
 
             throw new InformationException('Gateway refund failed: :error', [':error' => $e->getMessage()]);
         }
 
-        $this->di['logger']->info('Issued gateway refund {refund} for invoice #{id}', ['refund' => $refundId, 'id' => $invoice->getId()]);
+        $this->di['logger']->info('Issued gateway refund {refund} for invoice #{id}', ['refund' => $refundId, 'id' => $invoiceId]);
 
-        return ['refund_id' => $refundId, 'gateway' => $gateway->getName() ?: $gateway->getGateway()];
+        return ['refund_id' => $refundId, 'gateway' => $pending['gateway']];
     }
 
     /**
