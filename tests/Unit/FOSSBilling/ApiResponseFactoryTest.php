@@ -110,8 +110,25 @@ test('API response factory maps standard HTTP status codes and custom applicatio
     [429, Response::HTTP_TOO_MANY_REQUESTS],
     [500, Response::HTTP_INTERNAL_SERVER_ERROR],
     [503, Response::HTTP_SERVICE_UNAVAILABLE],
+    // Application codes colliding with the HTTP range map to 400.
+    [413, Response::HTTP_BAD_REQUEST],
+    [436, Response::HTTP_BAD_REQUEST],
+    [437, Response::HTTP_BAD_REQUEST],
+    [498, Response::HTTP_BAD_REQUEST],
     [701, Response::HTTP_BAD_REQUEST],
     [740, Response::HTTP_NOT_FOUND],
     [879, Response::HTTP_BAD_REQUEST],
 ]);
 
+test('API response factory preserves the application code for colliding codes', function (): void {
+    $response = (new ApiResponseFactory())->create(null, new FOSSBilling\Exception('Domain product exists', null, 413));
+
+    expect($response->getStatusCode())->toBe(Response::HTTP_BAD_REQUEST)
+        ->and(json_decode((string) $response->getContent(), true))->toBe([
+            'result' => null,
+            'error' => [
+                'message' => 'Domain product exists',
+                'code' => 413,
+            ],
+        ]);
+});

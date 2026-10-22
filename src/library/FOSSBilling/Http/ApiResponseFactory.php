@@ -79,7 +79,9 @@ final readonly class ApiResponseFactory
 
         return match (true) {
             in_array($code, [201, 202, 203, 204, 205, 206, 1002, 1004], true) => Response::HTTP_UNAUTHORIZED,
-            in_array($code, [701, 879], true) => Response::HTTP_BAD_REQUEST,
+            // Application codes colliding with the HTTP range must stay 400
+            // while keeping their original code in the JSON envelope.
+            in_array($code, [413, 436, 437, 498, 701, 879], true) => Response::HTTP_BAD_REQUEST,
             $code === 740 => Response::HTTP_NOT_FOUND,
             $code >= 400 && $code <= 599 => $code,
             default => Response::HTTP_OK,
