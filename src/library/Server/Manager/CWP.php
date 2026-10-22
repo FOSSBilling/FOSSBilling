@@ -68,34 +68,43 @@ class Server_Manager_CWP extends Server_Manager
 
     /**
      * Returns the login URL for the CWP server manager.
+     * Requests a single-use auto-login URL and falls back to the
+     * standard panel URL when SSO is unavailable.
      *
      * @param Server_Account|null $account the account for which the login URL is generated
      *
      * @return string returns the login URL as a string
-     *
-     * @throws Server_Exception if the login session cannot be created
      */
     public function getLoginUrl(?Server_Account $account): string
     {
+        $fallback = 'https://' . $this->_config['host'] . ':2083';
+
         if ($account === null) {
-            return 'https://' . $this->_config['host'] . ':2083';
+            return $fallback;
         }
 
+        // `timer` is undocumented by CWP and controls how long the generated
+        // session URL stays valid. CWP's own WHMCS module uses 5.
         $data = [
             'action' => 'list',
             'user' => $account->getUsername(),
-            'timer' => 2,
+            'timer' => 5,
         ];
 
-        $session = $this->request('user_session', $data);
+        try {
+            $session = $this->request('user_session', $data);
 
-        if (!is_array($session) || empty($session['details'][0]['url'])) {
-            $placeholders = [':action:' => __trans('generate login URL'), ':type:' => 'CWP'];
-    
-            throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
+            if (is_array($session) && !empty($session['details'][0]['url'])) {
+                return $session['details'][0]['url'];
+            }
+
+            // Log the username only: the payload may contain single-use tokens and URLs.
+            $this->getLog()->error('CWP did not return a login URL for account {username}', ['username' => $account->getUsername()]);
+        } catch (Server_Exception $e) {
+            $this->getLog()->error('Failed to generate CWP login URL for account {username}: {error}', ['username' => $account->getUsername(), 'error' => $e->getMessage()]);
         }
 
-        return $session['details'][0]['url'];
+        return $fallback;
     }
 
     /**

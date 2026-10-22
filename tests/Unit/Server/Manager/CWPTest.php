@@ -84,3 +84,70 @@ test('CWP synchronizes valid account details', function (string $state, bool $su
         ->and($updated->getPackage()->getName())->toBe('basic')
         ->and($updated->getReseller())->toBeTrue();
 })->with([['active', false], ['suspended', true]]);
+
+test('CWP returns the SSO login URL when CWP provides one', function (): void {
+    $url = 'https://cwp.example.com:2083/example/?user_session=abc123';
+    $manager = createCwpManager(json_encode(['status' => 'OK', 'msj' => ['accounts' => 1, 'details' => [['user' => 'example', 'token' => 'abc123', 'url' => $url]]]]));
+    $account = (new Server_Account())->setUsername('example');
+
+    expect($manager->getLoginUrl($account))->toBe($url);
+});
+
+test('CWP returns the plain panel URL when no account is given', function (): void {
+    $manager = createCwpManager(json_encode(['status' => 'OK', 'msj' => []]));
+
+    expect($manager->getLoginUrl(null))->toBe('https://cwp.example.com:2083');
+});
+
+test('CWP falls back to the plain panel URL when SSO is unavailable', function (array $response): void {
+    $manager = createCwpManager(json_encode($response));
+    $account = (new Server_Account())->setUsername('example');
+
+    expect($manager->getLoginUrl($account))->toBe('https://cwp.example.com:2083');
+})->with([
+    'API error' => [['status' => 'Error', 'msg' => 'Permission denied']],
+    'null payload' => [['status' => 'OK', 'msj' => null]],
+    'missing details' => [['status' => 'OK', 'msj' => ['accounts' => 1]]],
+    'empty details' => [['status' => 'OK', 'msj' => ['accounts' => 1, 'details' => []]]],
+    'missing URL' => [['status' => 'OK', 'msj' => ['accounts' => 1, 'details' => [['user' => 'example']]]]],
+]);
+
+test('CWP falls back to the plain panel URL when the session request fails', function (string $body, int $statusCode): void {
+    $manager = createCwpManager($body, $statusCode);
+    $account = (new Server_Account())->setUsername('example');
+
+    expect($manager->getLoginUrl($account))->toBe('https://cwp.example.com:2083');
+})->with([
+    'invalid JSON' => ['<html>Not found</html>', 200],
+    'HTTP error' => ['<html>Request failed</html>', 503],
+]);
+
+test('CWP requests the session with the account username and timer', function (): void {
+    $seenBody = null;
+    $client = new MockHttpClient(function (string $method, string $url, array $options) use (&$seenBody): MockResponse {
+        $seenBody = $options['body'] ?? null;
+        $ssoUrl = 'https://cwp.example.com:2083/example/?user_session=abc123';
+
+        return new MockResponse(json_encode(['status' => 'OK', 'msj' => ['accounts' => 1, 'details' => [['url' => $ssoUrl]]]]));
+    });
+    $manager = new class($client) extends Server_Manager_CWP {
+        public function __construct(private readonly HttpClientInterface $httpClient)
+        {
+            parent::__construct(['ip' => '127.0.0.1', 'host' => 'cwp.example.com', 'accesshash' => 'test-key']);
+            $this->setLog(new Psr\Log\NullLogger());
+        }
+
+        public function getHttpClient(): HttpClientInterface
+        {
+            return $this->httpClient;
+        }
+    };
+    $account = (new Server_Account())->setUsername('example');
+
+    $manager->getLoginUrl($account);
+
+    parse_str(is_string($seenBody) ? $seenBody : http_build_query($seenBody ?? []), $parsed);
+
+    expect($parsed['user'] ?? null)->toBe('example')
+        ->and($parsed['timer'] ?? null)->toBe('5');
+});
