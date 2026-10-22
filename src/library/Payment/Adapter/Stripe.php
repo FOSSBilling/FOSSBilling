@@ -384,8 +384,10 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface, FOS
 
         $candidates = [$stripeInvoice->payment_intent ?? null, $stripeInvoice->charge ?? null];
         foreach ($stripeInvoice->payments->data ?? [] as $payment) {
-            // Entries that never completed carry no usable refund target.
-            if ($payment->status !== 'paid') {
+            // Entries that never completed carry no usable refund target, but
+            // entries without a status predate it, so only skip known misses.
+            $status = $payment->status ?? null;
+            if ($status !== null && $status !== 'paid') {
                 continue;
             }
             $nested = $payment->payment ?? null;
