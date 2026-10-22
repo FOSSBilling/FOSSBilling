@@ -43,7 +43,7 @@
     {% block js %}{% endblock %}
 </head>
 
-<body class="{% block body_class %}{% endblock %}">
+<body class="client-shell {% block body_class %}{% endblock %}">
 
 <div class="d-none">{{ svg_sprite() }}</div>
 
@@ -81,31 +81,33 @@
 {% set guest_support_url = guest.support_guest_tickets_enabled() ? 'support/contact-us'|url : 'login'|url %}
 {% set support_url = client ? 'support'|url : guest_support_url %}
 
-<div class="container">
-    <header>
+<a class="visually-hidden-focusable client-skip-link" href="#main-content">{{ 'Skip to Content'|trans }}</a>
+<div class="container client-container" id="top">
+    <header class="client-header">
         {{ render_widgets('client.theme.header.start') }}
-        <nav class="navbar navbar-expand-md py-4">
-            <div class="container-fluid">
+        <nav class="navbar navbar-expand-lg py-3" aria-label="{{ 'Main Navigation'|trans }}">
+            <div class="container-fluid px-0">
                 {{ include('partial_company_logo.html.twig', {
                     company: company,
                     logo_url: settings.show_company_logo ? company.logo_url : null,
                     dark_logo_url: settings.show_company_logo ? company.logo_url_dark : null,
                     link_class: 'navbar-brand',
-                    image_class: 'd-none d-sm-block',
-                    image_height: '45px',
-                    show_mobile_name: true
+                    image_height: '45px'
                 }) }}
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
-                        data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="{{ 'Toggle navigation'|trans }}">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                    <ul class="navbar-nav me-auto mb-2 mb-lg-0 w-100 d-flex justify-content-end align-items-md-center">
+                <div class="client-header-actions d-flex d-lg-none align-items-center ms-auto">
+                    <button class="navbar-toggler btn btn-icon btn-ghost-secondary client-header-icon" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
+                            aria-expanded="false" aria-label="{{ 'Toggle Navigation'|trans }}">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                </div>
+                <div class="collapse navbar-collapse flex-lg-grow-0 ms-lg-2" id="navbarSupportedContent">
+                    <ul class="navbar-nav me-auto mb-0 w-100 justify-content-lg-end align-items-lg-center client-header-menu">
                         {% set languages = guest.extension_languages(true) %}
                         {% if languages|length > 1 %}
-                            <li class="nav-item">
-                                <select name="lang" class="form-select js-locale-selector">
+                            <li class="nav-item client-language-menu">
+                                <label class="visually-hidden" for="client-language">{{ 'Language'|trans }}</label>
+                                <select id="client-language" name="lang" class="form-select js-locale-selector">
                                     {% for lang in languages %}
                                         <option value="{{ lang.locale }}" data-custom-properties="&lt;span class=&quot;fi fi-{{ lang.locale|split('_')[1]|lower }}&quot;&gt;&lt;/span&gt;"{% if lang.locale == guest.system_locale %} selected{% endif %}>{{ lang.title }}</option>
                                     {% endfor %}
@@ -113,98 +115,77 @@
                             </li>
                         {% endif %}
 
-                        <li class="nav-item d-md-flex">
-                            <a class="nav-link px-0 hide-theme-dark js-theme-toggler"
-                               href="?theme=dark"
-                               data-bs-toggle="tooltip"
-                               data-bs-placement="bottom"
-                               data-bs-original-title="{{ 'Enable dark mode'|trans }}">
-                                <svg class="icon text-dark"><use href="#moon" /></svg>
-                            </a>
-                            <a class="nav-link px-0 hide-theme-light js-theme-toggler"
-                               href="?theme=light"
-                               data-bs-toggle="tooltip"
-                               data-bs-placement="bottom"
-                               data-bs-original-title="{{ 'Enable light mode'|trans }}">
-                                <svg class="icon text-white"><use href="#sun" /></svg>
-                            </a>
-                        </li>
-
-                        {% if settings.top_menu_dashboard %}
-                            <li class="nav-item d-md-flex">
-                                <a class="nav-link{% if current_active_menu == 'dashboard' %} active{% endif %}" href="{{ ''|url }}"{% if current_active_menu == 'dashboard' %} aria-current="page"{% endif %}>{{ 'Dashboard'|trans }}</a>
-                            </li>
-                        {% endif %}
-
-                        {% if settings.top_menu_order %}
-                            <li class="nav-item d-md-flex">
-                                <a class="nav-link{% if current_active_menu == 'order' %} active{% endif %}" href="{{ 'order'|url }}"{% if current_active_menu == 'order' %} aria-current="page"{% endif %}>{{ 'Order'|trans }}</a>
-                            </li>
-                        {% endif %}
-
                         {% if settings.top_menu_profile and not client %}
-                            <li class="nav-item d-md-flex">
-                                <a class="nav-link{% if current_active_menu == 'login' %} active{% endif %}" href="{{ 'login'|url }}"{% if current_active_menu == 'login' %} aria-current="page"{% endif %}>{{ 'Login'|trans }}</a>
+                            <li class="nav-item d-lg-flex">
+                                <a class="nav-link{% if current_active_menu == 'login' %} active{% endif %}" href="{{ 'login'|url }}"{% if current_active_menu == 'login' %} aria-current="page"{% endif %}>{{ 'Sign In'|trans }}</a>
                             </li>
                         {% endif %}
 
                         {% if settings.top_menu_signout %}
-                            <li class="nav-item d-md-flex">
+                            <li class="nav-item d-lg-flex{% if client %} client-account-menu-item order-1 order-lg-1{% endif %}">
                                 {% if client %}
                                     <div class="dropdown client-dropdown">
-                                        <button class="nav-link dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                            {% set avatar_size = 25 %}
-                                            {{ avatar(profile.email, avatar_size, 'rounded-circle d-inline-block', null, 'div') }}
-                                            <span class="ms-1">{% if profile.company %}{{ profile.first_name }} {{ profile.last_name }} ({{ profile.company }}){% else %}{{ profile.first_name }} {{ profile.last_name }}{% endif %}</span>
+                                        <button class="nav-link dropdown-toggle" id="client-account-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-controls="client-account-menu">
+                                            {% set avatar_size = 28 %}
+                                            {{ avatar(profile.email, avatar_size, 'avatar rounded-circle d-inline-block flex-shrink-0', null, 'div') }}
+                                            <span class="client-account-name">{% if profile.company %}{{ profile.first_name }} {{ profile.last_name }} ({{ profile.company }}){% else %}{{ profile.first_name }} {{ profile.last_name }}{% endif %}</span>
                                         </button>
-                                        <ul class="dropdown-menu">
-                                            <li><a class="dropdown-item"
-                                                   href="{{ 'client/profile'|url }}">{{ 'Profile'|trans }}</a></li>
+                                        <ul class="dropdown-menu dropdown-menu-lg-end" id="client-account-menu" aria-labelledby="client-account-toggle">
+                                            <li><a class="dropdown-item{{ current_active_menu == 'profile' ? ' active' : '' }}"
+                                                   href="{{ 'client/profile'|url }}"{% if current_active_menu == 'profile' %} aria-current="page"{% endif %}>{{ 'Profile'|trans }}</a></li>
                                             <li><a class="dropdown-item"
                                                    href="{{ 'client/logout'|url }}">{{ 'Sign Out'|trans }}</a></li>
                                         </ul>
                                     </div>
                                 {% else %}
-                                    <a class="ms-2 btn btn-outline-primary d-none d-md-block"
-                                       href="{{ 'signup'|url }}">{{ 'Register'|trans }}</a>
+                                    <a class="btn btn-outline-primary"
+                                       href="{{ 'signup'|url }}">{{ 'Create an Account'|trans }}</a>
                                 {% endif %}
                             </li>
                         {% endif %}
 
-                        <li class="d-md-none list-unstyled">
-                            <ul class="navbar-nav">
-                                {{ include('mobile_menu.html.twig') }}
-                            </ul>
+                        <li class="nav-item d-flex client-appearance-menu order-2 order-lg-0">
+                            {{ include('partial_client_theme_picker.html.twig') }}
                         </li>
+
+                        {% if client %}
+                            <li class="nav-item d-flex client-notification-item order-3 order-lg-0">
+                                {{ include('partial_client_notifications.html.twig') }}
+                            </li>
+                        {% endif %}
+
+                        {% if client or not settings.hide_menu %}
+                            <li class="d-lg-none client-mobile-menu order-4">
+                                {{ include('mobile_menu.html.twig') }}
+                            </li>
+                        {% endif %}
                     </ul>
                 </div>
             </div>
         </nav>
         {{ render_widgets('client.theme.header.end') }}
     </header>
-    <div class="container">
-        <div class="row">
+    <div class="client-layout">
+            <div class="row gy-4">
         {% if client or not settings.hide_menu %}
-            <div class="col-3 d-none d-md-block">
+            <div class="col-lg-auto d-none d-lg-block client-sidebar-column">
                 {{ include('partial_menu.html.twig') }}
             </div>
         {% endif %}
-            <div class="col-12 col-md-9{% if not client and settings.hide_menu %} mx-auto{% endif %}">
+            <div class="col-12{% if client or not settings.hide_menu %} col-lg{% endif %} client-main-column">
                 <div id="wrapper">
-                    <section role="main">
+                    <main id="main-content" tabindex="-1">
                         {% block content_before %}{% endblock %}
-                        <div class="content-block" role="main">
+                        <div class="content-block">
                             {% if settings.show_breadcrumb %}
                                 {% block breadcrumbs %}
-                                    <nav aria-label="{{ 'breadcrumb'|trans }}">
-                                        <ol class="breadcrumb d-none d-md-flex">
-                                            <li class="breadcrumb-item"><a href="{{ '/'|url }}">{{ 'Home'|trans }}</a>
-                                            </li>
-                                            {% block breadcrumb %}
-                                                <li class="active breadcrumb-item">{{ 'Dashboard'|trans }}</li>
-                                            {% endblock %}
-                                        </ol>
-                                    </nav>
+                                    {% set breadcrumb_items %}
+                                        <li class="breadcrumb-item"><a href="{{ '/'|url }}">{{ 'Home'|trans }}</a></li>
+                                        {% block breadcrumb %}
+                                            <li class="active breadcrumb-item" aria-current="page">{{ 'Dashboard'|trans }}</li>
+                                        {% endblock %}
+                                    {% endset %}
+                                    {{ include('partial_breadcrumbs.html.twig', {breadcrumb_items: breadcrumb_items, breadcrumb_class: 'mb-3'}) }}
                                 {% endblock %}
                             {% endif %}
 
@@ -216,15 +197,15 @@
 
                             {% block content_after %}{% endblock %}
                         </div>
-                    </section>
+                    </main>
                     <div id="push"></div>
                 </div>
 
                 {% if settings.footer_enabled %}
-                    <footer id="footer" class="small text-muted mt-2 mb-3">
+                    <footer id="footer" class="small text-secondary client-footer">
                         <div class="d-flex flex-column">
                             {{ render_widgets('client.theme.footer.start') }}
-                            <div class="d-flex justify-content-center">
+                            <div class="d-flex justify-content-center flex-wrap text-center">
                                 <span>&copy; {{ 'now'|date('Y') }} {{ settings.footer_signature|default(company.signature) }}
                                     {% if company.bank_info_pagebottom == 1 %}
                                         <br/>
@@ -232,7 +213,7 @@
                                     {% endif %}
                                 </span>
                             </div>
-                            <div class="d-flex justify-content-center">
+                            <div class="d-flex justify-content-center flex-wrap text-center">
                                 {% set first_link_rendered = false %}
                                 {% for i in 1..5 %}
                                     {% set enabled_key = 'footer_link_' ~ i ~ '_enabled' %}
@@ -261,10 +242,14 @@
             </div>
         </div>
     </div>
-    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1070;"></div>
+    {{ include('partial_client_announcements.html.twig') }}
+    {{ include('partial_ui_feedback.html.twig', {feedback_area: 'client'}) }}
     {% if settings.footer_to_top_enabled %}
-        <a href="#top" class="position-fixed btn btn-primary bottom-0 end-0 m-3">
-            <svg class="icon"><use href="#arrow-up" /></svg> {{ 'Top'|trans }}</a>
+        <div class="d-flex justify-content-end my-3">
+            <a href="#top" class="btn btn-outline-secondary">
+                <svg class="icon" aria-hidden="true"><use href="#arrow-up" /></svg> {{ 'Back to Top'|trans }}
+            </a>
+        </div>
     {% endif %}
     <div class="wait" style="display:none" onclick="this.style.display='none'">
         <div class="spinner-border"

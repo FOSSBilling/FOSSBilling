@@ -1,85 +1,169 @@
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        document.querySelectorAll('.accordion-body').forEach(accordionBody => {
+        document.querySelectorAll('#orderManager .accordion-collapse').forEach(accordionBody => {
             accordionBody.addEventListener('shown.bs.collapse', function() {
-                document.getElementById('popup-iframe').height = document.body.clientHeight;
+                const iframe = document.getElementById('popup-iframe');
+                if (iframe) iframe.height = document.body.clientHeight;
             });
         });
 
-        document.getElementById('show-promo-field')?.addEventListener('click', function() {
+        document.getElementById('show-promo-field')?.addEventListener('click', function(event) {
+            event.preventDefault();
             document.getElementById('apply-promo').style.display = 'block';
+            this.setAttribute('aria-expanded', 'true');
             this.style.display = 'none';
             document.getElementById('promocode')?.focus();
         });
 
-        document.querySelectorAll('.register-login a').forEach(link => {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                const tabId = this.getAttribute('href');
-                const tabElement = document.querySelector(tabId);
-                const bsTab = new bootstrap.Tab(this);
-                bsTab.show();
+        document.querySelectorAll('[data-product-catalogue]').forEach(catalogue => {
+            const search = catalogue.querySelector('#product-search');
+            const category = catalogue.querySelector('#product-category');
+            const empty = catalogue.querySelector('[data-catalogue-empty]');
+            if (!search || !category) return;
+            catalogue.querySelector('[data-catalogue-controls]').hidden = false;
+            const sections = [...catalogue.querySelectorAll('[data-product-category]')];
+            const filter = () => {
+                const query = search.value.trim().toLocaleLowerCase();
+                let count = 0;
+                sections.forEach(section => {
+                    let matches = 0;
+                    section.querySelectorAll('[data-product-entry]').forEach(entry => {
+                        const text = entry.querySelector('.client-product-description').textContent.toLocaleLowerCase();
+                        entry.hidden = (category.value && section.dataset.productCategory !== category.value) || !text.includes(query);
+                        if (!entry.hidden) matches++;
+                    });
+                    section.hidden = matches === 0;
+                    count += matches;
+                });
+                empty.hidden = count !== 0;
+            };
+            search.addEventListener('input', filter);
+            category.addEventListener('change', filter);
+            catalogue.querySelector('[data-catalogue-reset]').addEventListener('click', () => {
+                search.value = '';
+                category.value = '';
+                filter();
+                search.focus();
             });
         });
 
+
     });
 
-    function onOrderCheckout(result){
-        if (result.invoice_hash) {
-            FOSSBilling.api.guest.post('invoice/payment', { hash: result.invoice_hash, gateway_id: result.gateway_id, auto_redirect: true },
-                (r) => {
-                    let checkoutEl = document.getElementById('checkout');
-                    let paymentHtmlEl = document.getElementById('payment-html');
-                    if (r.iframe) {
-                        document.getElementById('payment-html-inner').innerHTML = r.result;
-                        bootstrap.Collapse.getOrCreateInstance(checkoutEl).hide();
-                        if (checkoutEl) {
-                            checkoutEl.remove();
-                        }
-                        bootstrap.Collapse.getOrCreateInstance(paymentHtmlEl).show();
-                    } else {
-                        const link = '{{ "invoice/banklink"|url }}' + '/' + result.invoice_hash + '/' + result.gateway_id;
-                        document.getElementById('payment-html-inner').innerHTML = '<a href="' + link + '" target="_parent" id="redirect-to-gateway">Redirect to Payment Gateway</a>';
-                        bootstrap.Collapse.getOrCreateInstance(checkoutEl).hide();
-                        document.getElementById('checkout-inner').remove();
-                        bootstrap.Collapse.getOrCreateInstance(paymentHtmlEl).show();
-                        document.getElementById('redirect-to-gateway').click();
-                    }
-                });
-        } else {
+    function onOrderCheckout(result) {
+        if (!result.invoice_hash) {
             window.top.location.href = ('{{ "order/service/manage"|url }}' + '/' + result.order_id);
+            return;
+        }
+
+        // Checkout has already created the order. Never offer to submit it again
+        // when starting payment fails; the invoice is the recovery point.
+        const checkoutEl = document.getElementById('checkout');
+        document.getElementById('checkoutButton')?.closest('form').remove();
+        document.querySelector('[data-bs-target="#checkout"]')?.setAttribute('disabled', '');
+        const paymentStep = document.getElementById('payment-step');
+        const paymentHtmlEl = document.getElementById('payment-html');
+        const paymentInner = document.getElementById('payment-html-inner');
+        const status = document.createElement('p');
+        status.id = 'checkout-payment-status';
+        status.setAttribute('role', 'status');
+        status.textContent = {{ 'Your order has been placed. Opening payment options.'|trans|json_encode|raw }};
+        const invoiceLink = document.createElement('a');
+        invoiceLink.className = 'btn btn-outline-secondary mb-3 client-payment-action';
+        invoiceLink.href = '{{ "invoice"|url }}' + '/' + encodeURIComponent(result.invoice_hash);
+        invoiceLink.target = '_parent';
+        invoiceLink.textContent = {{ 'View Invoice and Payment Options'|trans|json_encode|raw }};
+        invoiceLink.setAttribute('aria-describedby', status.id);
+        const gatewayContent = document.createElement('div');
+        gatewayContent.setAttribute('aria-busy', 'true');
+        paymentInner.replaceChildren(status, invoiceLink, gatewayContent);
+        paymentStep.hidden = false;
+        // The submitting form is gone. Move focus only after the payment panel is visible.
+        paymentHtmlEl.addEventListener('shown.bs.collapse', () => invoiceLink.focus(), {once: true});
+        tabler.Collapse.getOrCreateInstance(checkoutEl, {toggle: false}).hide();
+        tabler.Collapse.getOrCreateInstance(paymentHtmlEl, {toggle: false}).show();
+        paymentStep.scrollIntoView({block: 'start'});
+        const recoverPayment = () => {
+            invoiceLink.classList.replace('btn-outline-secondary', 'btn-primary');
+            gatewayContent.setAttribute('aria-busy', 'false');
+            status.textContent = {{ 'Your order has been placed, but payment could not be started. Open your invoice to try again or choose another payment method.'|trans|json_encode|raw }};
+            if (paymentHtmlEl.classList.contains('show')) invoiceLink.focus();
+        };
+        if (!result.gateway_id) {
+            recoverPayment();
+            return;
+        }
+        try {
+            FOSSBilling.api.guest.post('invoice/payment', {hash: result.invoice_hash, gateway_id: result.gateway_id, auto_redirect: true}, r => {
+                gatewayContent.setAttribute('aria-busy', 'false');
+                if (!r || typeof r !== 'object') {
+                    recoverPayment();
+                    return;
+                }
+                if (r.iframe) {
+                    if (typeof r.result !== 'string' || !r.result.trim()) {
+                        recoverPayment();
+                        return;
+                    }
+                    gatewayContent.innerHTML = r.result;
+                    status.textContent = {{ 'Your order has been placed. Complete payment to finish your purchase.'|trans|json_encode|raw }};
+                } else {
+                    status.textContent = {{ 'Opening the payment provider. If you stay on this page, use Continue to Payment.'|trans|json_encode|raw }};
+                    const redirectLink = document.createElement('a');
+                    redirectLink.className = 'btn btn-primary client-payment-action';
+                    redirectLink.href = '{{ "invoice/banklink"|url }}' + '/' + encodeURIComponent(result.invoice_hash) + '/' + encodeURIComponent(result.gateway_id);
+                    redirectLink.target = '_parent';
+                    redirectLink.textContent = {{ 'Continue to Payment'|trans|json_encode|raw }};
+                    gatewayContent.replaceChildren(redirectLink);
+                    redirectLink.click();
+                }
+            }, recoverPayment);
+        } catch (error) {
+            recoverPayment();
         }
     }
 
     function onLogin(result){
-        FOSSBilling.message("{{ 'You logged in successfully'|trans }}");
-        let registerEl = document.getElementById('register');
-        let checkoutEl = document.getElementById('checkout');
-        bootstrap.Collapse.getOrCreateInstance(registerEl).hide();
-        document.querySelector("#checkoutButton").hidden = false;
-        document.querySelector("#loginMessage").hidden = true;
-        setTimeout(() => {
-            registerEl.parentElement.remove();
-            bootstrap.Collapse.getOrCreateInstance(checkoutEl).show();
-        }, 500);
+        // Re-render authenticated pricing, tax and account credit before order review.
+        const reviewUrl = new URL(window.location.href);
+        reviewUrl.searchParams.set('checkout', '1');
+        reviewUrl.hash = '';
+        window.location.assign(reviewUrl);
     }
 
     function onAccountCreate(result){
+        const form = document.getElementById('reg-email').form;
         const login_details = {
             email: document.getElementById('reg-email').value,
             password: document.getElementById('reg-password').value
         };
-        FOSSBilling.api.guest.post('client/login', login_details,
-            () => {
-                FOSSBilling.message("{{ 'You logged in successfully'|trans }}");
-                let registerEl = document.getElementById('register');
-                bootstrap.Collapse.getOrCreateInstance(registerEl).hide();
-                document.querySelector("#checkoutButton").hidden = false;
-                document.querySelector("#loginMessage").hidden = true;
-                setTimeout(() => {
-                    registerEl.parentElement.remove();
-                    bootstrap.Collapse.getOrCreateInstance(document.getElementById('checkout')).show();
-                    }, 500);
+        // Account creation succeeded. A sign-in failure must not invite registration again.
+        form.hidden = true;
+        const status = document.createElement('div');
+        status.className = 'alert alert-info';
+        status.setAttribute('role', 'status');
+        status.tabIndex = -1;
+        status.textContent = {{ 'Your account has been created. Signing you in to continue your order.'|trans|json_encode|raw }};
+        form.before(status);
+        const recoverSignIn = () => {
+            status.className = 'alert alert-warning';
+            status.textContent = {{ 'Your account has been created, but automatic sign-in did not complete. Sign in below to continue. Your cart has been kept.'|trans|json_encode|raw }};
+            const link = document.createElement('button');
+            link.type = 'button';
+            link.className = 'btn btn-primary d-block mt-3';
+            link.textContent = {{ 'Sign In to Continue'|trans|json_encode|raw }};
+            link.addEventListener('click', () => {
+                document.getElementById('email').value = login_details.email;
+                tabler.Tab.getOrCreateInstance(document.getElementById('in-tab')).show();
+                document.getElementById('password').focus();
             });
+            status.append(link);
+            status.focus();
+        };
+        try {
+            FOSSBilling.api.guest.post('client/login', login_details, onLogin, recoverSignIn);
+        } catch (error) {
+            recoverSignIn();
+        }
     }
 </script>

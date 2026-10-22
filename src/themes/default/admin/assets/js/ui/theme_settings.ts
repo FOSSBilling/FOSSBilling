@@ -1,46 +1,42 @@
 export default function initThemeSettings() {
 
-  document.querySelectorAll('#theme-settings fieldset').forEach((el, index) => {
-    let show = '', collapsed = '';
-    index === 0 ? show = 'show' : collapsed = 'collapsed';
-    let heading = el.querySelector('legend').textContent; // use textContent
-  
-    // Create accordion-button
-    let accordionBtn = document.createElement('button');
-    accordionBtn.className = `accordion-button ${collapsed}`;
-    accordionBtn.type = 'button';
-    accordionBtn.setAttribute('data-bs-toggle', 'collapse');
-    accordionBtn.setAttribute('data-bs-target', `#collapse-body-${index}`);
-    accordionBtn.setAttribute('aria-expanded', 'true');
-    accordionBtn.setAttribute('aria-controls', `collapse-${index}`);
-    accordionBtn.textContent = heading; // set the text content
-  
-    // Create accordion-collapse and its child accordion-body
-    let accordionContent = document.createElement('div');
-    accordionContent.id = `collapse-body-${index}`;
-    accordionContent.className = `accordion-collapse collapse ${show}`;
-  
-    let accordionBody = document.createElement('div');
-    accordionBody.className = 'accordion-body pt-0';
-    accordionBody.innerHTML = el.innerHTML; // This is okay since el.innerHTML is from the DOM already
-    accordionContent.appendChild(accordionBody);
-  
-    // Create wrap button with accordion-header class
-    let wrapBtn = document.createElement('h2');
-    wrapBtn.classList.add('accordion-header');
-    wrapBtn.appendChild(accordionBtn); // append the button
-  
-    // Create accordion-item and combine all parts
-    let accordionItem = document.createElement('div');
-    accordionItem.classList.add('accordion-item');
-    accordionItem.appendChild(wrapBtn);
-    accordionItem.appendChild(accordionContent);
-  
-    // Replace the original element with the new structure
-    el.after(accordionItem);
-    el.remove();
+  document.querySelectorAll<HTMLFieldSetElement>('#theme-settings fieldset').forEach((el, index) => {
+    if (el.dataset.fbAccordionInitialized) return;
+    const legend = el.querySelector('legend');
+    if (!legend) return;
+    el.dataset.fbAccordionInitialized = 'true';
+    const open = index === 0;
+    const panelId = `collapse-body-${index}`;
+    const headingId = `theme-settings-heading-${index}`;
+    const button = document.createElement('button');
+    button.className = `accordion-button${open ? '' : ' collapsed'}`;
+    button.type = 'button';
+    button.id = headingId;
+    button.setAttribute('data-bs-toggle', 'collapse');
+    button.setAttribute('data-bs-target', `#${panelId}`);
+    button.setAttribute('aria-expanded', String(open));
+    button.setAttribute('aria-controls', panelId);
+    button.textContent = legend.textContent;
+
+    const panel = document.createElement('div');
+    panel.id = panelId;
+    panel.className = `accordion-collapse collapse${open ? ' show' : ''}`;
+    panel.setAttribute('aria-labelledby', headingId);
+    const body = document.createElement('div');
+    body.className = 'accordion-body pt-0';
+    panel.append(body);
+    const heading = document.createElement('h2');
+    heading.className = 'accordion-header';
+    heading.append(button);
+    const item = document.createElement('div');
+    item.className = 'accordion-item';
+    item.append(heading, panel);
+    el.before(item);
+    // Move the original fields so IDs, values and extension listeners survive.
+    legend.classList.add('visually-hidden');
+    el.classList.add('border-0', 'p-0', 'm-0');
+    body.append(el);
   });
-  
 
   document.querySelectorAll('#theme-settings table').forEach((el) => {
     el.classList.add('w-100');

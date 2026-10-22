@@ -55,7 +55,13 @@ export default function initPhoneInput() {
 
     input.addEventListener('countrychange', syncFields);
     input.addEventListener('input', syncFields);
-    input.form?.addEventListener('submit', syncFields, true);
+    const syncAutofill = () => {
+      // Autofill may emit change without input, or populate the value just before submit.
+      if (input.value.trim().startsWith('+')) iti.setNumber(input.value.trim());
+      syncFields();
+    };
+    input.addEventListener('change', syncAutofill);
+    input.form?.addEventListener('submit', syncAutofill, true);
 
     syncFields();
   });

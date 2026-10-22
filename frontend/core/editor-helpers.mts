@@ -90,6 +90,16 @@ export function normalizeEditor(element, editor) {
     get raw() {
       return current.raw || current;
     },
+    getAccessibleElement: () => current.getAccessibleElement?.() || current.ui?.getEditableElement?.() || element,
+    setAccessibilityAttribute(name, value) {
+      if (typeof current.setAccessibilityAttribute === 'function') {
+        current.setAccessibilityAttribute(name, value);
+      } else {
+        const target = normalized.getAccessibleElement();
+        if (value === null) target.removeAttribute(name);
+        else target.setAttribute(name, value);
+      }
+    },
     getData: () => current.getData(),
     setData: (value) => current.setData(value),
     focus: () => {
@@ -134,4 +144,29 @@ export function normalizeEditor(element, editor) {
   };
 
   return normalized;
+}
+
+let nextEditorLabelId = 0;
+
+/** Carry source form semantics to the editable surface created by an adapter. */
+export function applyEditorAccessibility(source, editable, setAttribute = (name, value) => editable.setAttribute(name, value)) {
+  if (!editable) return;
+  const labels = Array.from(source.labels || []) as HTMLLabelElement[];
+  if (labels.length && !editable.getAttribute('aria-labelledby')) {
+    for (const label of labels) {
+      if (!label.id) {
+        let id;
+        do { id = `fb-editor-label-${++nextEditorLabelId}`; }
+        while (source.ownerDocument?.getElementById(id));
+        label.id = id;
+      }
+    }
+    setAttribute('aria-labelledby', labels.map(label => label.id).join(' '));
+  }
+  if (source.hasAttribute('required') || source.dataset.editorRequired === 'true') {
+    setAttribute('aria-required', 'true');
+  }
+  const ids = [editable.getAttribute('aria-describedby'), source.getAttribute('aria-describedby')]
+    .filter(Boolean).join(' ').split(/\s+/).filter(Boolean);
+  if (ids.length) setAttribute('aria-describedby', [...new Set(ids)].join(' '));
 }

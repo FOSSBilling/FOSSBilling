@@ -1503,6 +1503,7 @@ class UpdatePatcher implements InjectionAwareInterface
             130 => 'patch130',
             131 => 'patch131',
             132 => 'patch132',
+            133 => 'patch133',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -4869,6 +4870,27 @@ class UpdatePatcher implements InjectionAwareInterface
         }
 
         $connection->executeStatement('UPDATE product_category SET priority = id * 10 WHERE priority IS NULL');
+    }
+
+    private function patch133(): void
+    {
+        if ($this->tableExists('support_ticket_notification')) {
+            return;
+        }
+
+        // Fresh installs use entity metadata; existing MySQL installs also need an explicit upgrade patch.
+        $this->executeSql('CREATE TABLE `support_ticket_notification` (
+            `id` BIGINT NOT NULL AUTO_INCREMENT,
+            `client_id` BIGINT NOT NULL,
+            `message_id` BIGINT NOT NULL,
+            `read_at` DATETIME DEFAULT NULL,
+            `created_at` DATETIME DEFAULT NULL,
+            `updated_at` DATETIME DEFAULT NULL,
+            PRIMARY KEY (`id`),
+            UNIQUE KEY `ticket_notification_message_idx` (`message_id`),
+            KEY `ticket_notification_client_read_idx` (`client_id`, `read_at`, `id`),
+            CONSTRAINT `ticket_notification_message_fk` FOREIGN KEY (`message_id`) REFERENCES `support_ticket_message` (`id`) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci');
     }
 
     /**

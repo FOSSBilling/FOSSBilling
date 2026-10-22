@@ -35,7 +35,9 @@ class Client extends \FOSSBilling\Api\AbstractApi
         $clientId = $this->getClientId($identity);
         $data['client_id'] = $clientId;
 
-        if (isset($data['expiring'])) {
+        if (!empty($data['review'])) {
+            [$query, $bindings] = $this->getService()->getReviewOrdersQuery($clientId);
+        } elseif (isset($data['expiring'])) {
             [$query, $bindings] = $this->getService()->getSoonExpiringActiveOrdersQuery($data);
         } else {
             [$query, $bindings] = $this->getService()->getSearchQuery($data);
@@ -47,6 +49,10 @@ class Client extends \FOSSBilling\Api\AbstractApi
             array_column($pager['list'], 'id'),
             $identity
         );
+
+        if (!empty($data['with_actions'])) {
+            $pager['list'] = $this->getService()->getClientServiceActions($pager['list'], $clientId);
+        }
 
         return $pager;
     }
@@ -60,7 +66,12 @@ class Client extends \FOSSBilling\Api\AbstractApi
     {
         $model = $this->_getOrder($data);
 
-        return $this->getService()->toApiArray($model);
+        $order = $this->getService()->toApiArray($model);
+        if (!empty($data['with_actions'])) {
+            return $this->getService()->getClientServiceActions([$order], $this->getClientId($this->getIdentity()))[0];
+        }
+
+        return $order;
     }
 
     /**

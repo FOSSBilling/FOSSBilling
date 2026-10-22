@@ -1040,7 +1040,7 @@ test('createFromCart aborts inside the transaction when the once-per-client guar
         ->toThrow(FOSSBilling\InformationException::class, 'You have already used this promo code. Please remove the promo code and checkout again.');
 });
 
-test('createFromCart sets the unpaid invoice id on orders when checkout produces an unpaid invoice', function (): void {
+test('createFromCart sets the unpaid invoice id and checks credit against the final invoice total', function (float $balance, float $invoiceTotal, bool $useCredits): void {
     $cart = createEntity(Cart::class);
     $cart->id = 3;
     $cart->currency_id = 2;
@@ -1086,10 +1086,11 @@ test('createFromCart sets the unpaid invoice id on orders when checkout produces
 
     $invoiceService = Mockery::mock(Box\Mod\Invoice\Service::class);
     $invoiceService->shouldReceive('prepareInvoice')->once()->with($client, Mockery::type('array'))->andReturn($invoice);
-    $invoiceService->shouldReceive('issueInvoice')->once()->with($invoice, Mockery::type('array'))->andReturn(true);
+    $invoiceService->shouldReceive('getTotalWithTax')->once()->with($invoice)->andReturn($invoiceTotal);
+    $invoiceService->shouldReceive('issueInvoice')->once()->with($invoice, ['id' => 555, 'use_credits' => $useCredits])->andReturn(true);
 
     $clientBalanceService = Mockery::mock(Box\Mod\Client\ServiceBalance::class);
-    $clientBalanceService->shouldReceive('getClientBalance')->once()->with($client)->andReturn(0.0);
+    $clientBalanceService->shouldReceive('getClientBalance')->once()->with($client)->andReturn($balance);
 
     $orderService = Mockery::mock(Box\Mod\Order\Service::class)->makePartial();
     $orderService->shouldReceive('saveStatusChange')->once()->with(Mockery::type(Order::class), 'Order Created');
@@ -1145,7 +1146,13 @@ test('createFromCart sets the unpaid invoice id on orders when checkout produces
     expect($invoiceModel)->toBe($invoice);
     expect($masterOrder->getUnpaidInvoiceId())->toBe(555);
     expect($ids)->toBeArray()->toHaveCount(1);
-});
+})->with([
+    'no credit' => [0.0, 100.0, false],
+    'converted invoice costs less than base cart' => [60.0, 50.0, true],
+    'converted invoice costs more than base cart' => [120.0, 200.0, false],
+    'tax pushes invoice above balance' => [100.0, 120.0, false],
+    'exact credit at monetary precision' => [120.0, 120.00000000001, true],
+]);
 
 test('createFromCart keeps every non-addon order visible in legacy multi-item carts (GH-4333)', function (): void {
     // Carts built before family stamping carry no __cart_family token: each

@@ -19,6 +19,7 @@ describe('purgeCssFile', () => {
         '.page{margin:0}',
         '.tab-content>.tab-pane{display:none}',
         '.never-referenced{color:red}',
+        '.fb-request-loader{animation:none}',
       ].join(''),
     );
 
@@ -28,6 +29,7 @@ describe('purgeCssFile', () => {
     assert.match(purged, /\.page\{/);
     assert.match(purged, /\.tab-content>\.tab-pane/);
     assert.doesNotMatch(purged, /never-referenced/);
+    assert.match(purged, /\.fb-request-loader/);
   });
 
   test('keeps runtime calendar attribute states with a theme-specific safelist', async () => {
@@ -48,5 +50,22 @@ describe('purgeCssFile', () => {
     assert.match(purged, /data-vc-calendar-hidden/);
     assert.doesNotMatch(purged, /\.unused/);
   });
+
+  for (const area of ['client', 'admin'] as const) {
+    test(`keeps PHP-generated avatar geometry and surfaces for ${area}`, async () => {
+      const themePath = await mkdtemp(join(tmpdir(), 'fb-avatar-'));
+      await mkdir(join(themePath, 'html'), { recursive: true });
+      await writeFile(join(themePath, 'html', 'layout.twig'), "{{ avatar(profile.email) }}");
+      const cssPath = join(themePath, 'theme.css');
+      await writeFile(cssPath, '.db-avatar{flex-shrink:0;background-color:var(--tblr-secondary-bg)}.unused-avatar-example{color:red}');
+
+      await purgeCssFile(cssPath, { themePath, enabled: true, area });
+
+      const purged = await readFile(cssPath, 'utf8');
+      assert.match(purged, /\.db-avatar\{/);
+      assert.match(purged, /flex-shrink:0/);
+      assert.doesNotMatch(purged, /unused-avatar-example/);
+    });
+  }
 
 });

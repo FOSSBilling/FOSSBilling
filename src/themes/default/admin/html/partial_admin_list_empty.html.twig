@@ -1,0 +1,25 @@
+{#
+    Main admin list recovery. Keep empty states outside horizontally scrolling
+    tables. Creation actions remain in each page header with its permissions.
+#}
+{% if empty_list.total|default(0) > 0 %}
+    {% set pageParam = page_param|default('page') %}
+    {% include 'partial_empty.html.twig' with {
+        empty_title: 'No Results on This Page'|trans,
+        empty_description: 'Return to the first page to see the available results.'|trans,
+        empty_action_label: 'Back to First Page'|trans,
+        empty_action_url: empty_list_url|url(query: request|merge({(pageParam): 1}))
+    } only %}
+{% elseif request_has_filters|default(false) %}
+    {% include 'partial_empty.html.twig' with {
+        empty_title: 'No Matching Results'|trans,
+        empty_description: 'Try different filters or clear them to see all results.'|trans,
+        empty_action_label: 'Clear Filters'|trans,
+        empty_action_url: empty_list_url|url
+    } only %}
+{% else %}
+    {% include 'partial_empty.html.twig' with {
+        empty_title: empty_title,
+        empty_description: empty_description|default('')
+    } only %}
+{% endif %}

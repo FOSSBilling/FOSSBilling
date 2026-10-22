@@ -49,12 +49,12 @@
             {% block before_content %}{% endblock %}
             <main class="page-body" id="main-content" tabindex="-1">
                 <div class="container-fluid px-lg-4">
-                    <nav class="mb-3 mb-lg-4" aria-label="breadcrumb">
+                    {% set breadcrumb_list %}
                         {% block breadcrumbs %}
                         <ol class="breadcrumb">
                             <li class="breadcrumb-item">
                                 <a href="{{ '/'|url }}" aria-label="{{ 'Dashboard'|trans }}">
-                                    <svg class="icon">
+                                    <svg class="icon" aria-hidden="true">
                                         <use href="#home" />
                                     </svg>
                                 </a>
@@ -62,7 +62,8 @@
                             <li class="breadcrumb-item active" aria-current="page">{{ block('meta_title') }}</li>
                         </ol>
                         {% endblock %}
-                    </nav>
+                    {% endset %}
+                    {{ include('partial_breadcrumbs.html.twig', {breadcrumb_list: breadcrumb_list, breadcrumb_class: 'mb-3 mb-lg-4'}) }}
                     {{ render_widgets('admin.theme.content.before') }}
                     {% block top_content %}{% endblock %}
                     {% block content %}{% endblock %}
@@ -104,7 +105,6 @@
 
     {{ debug_bar_render() }}
 
-    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1070;">
-    </div>
+    {{ include('partial_ui_feedback.html.twig', {feedback_area: 'admin'}) }}
 </body>
 </html>

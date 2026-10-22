@@ -11,7 +11,7 @@
                     <hr/>
                 {% endif %}
 
-                <p>{{ 'Total price:'|trans }}</p>
+                <p>{{ 'Total Price:'|trans }}</p>
                 <div class="currency">{{ 0|format_currency(cart_currency.code) }}</div>
             {% endif %}
 
@@ -23,7 +23,7 @@
                     <hr/>
                 {% endif %}
 
-                <p>{{ 'Total price:'|trans }}</p>
+                <p>{{ 'Total Price:'|trans }}</p>
                 <div class="currency">{{ ((pricing.once.price + pricing.once.setup) * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</div>
             {% endif %}
 
@@ -66,7 +66,7 @@
         {% endfor %}
 
         <hr/>
-        <p>{{ 'Total price:'|trans }}</p>
+        <p>{{ 'Total Price:'|trans }}</p>
         {% for code,prices in pricing.recurrent %}
         <div class="currency period {{ code }}">{{ ((prices.price + prices.setup) * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</div>
         {% endfor %}
@@ -77,7 +77,7 @@
         {% if product.addons|length > 0 %}
         <button class="btn btn-primary btn-big" type="submit" id="order-button">{{ 'Continue'|trans }}</button>
         {% else %}
-        <button class="btn btn-primary btn-big" type="submit" id="order-button">{{ 'Order now'|trans }}</button>
+        <button class="btn btn-primary btn-big" type="submit" id="order-button">{{ 'Order Now'|trans }}</button>
         {% endif %}
         </div>
     </div>

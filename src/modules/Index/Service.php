@@ -151,6 +151,7 @@ class Service implements InjectionAwareInterface
             'total' => 0,
             'active' => 0,
             'expiring' => 0,
+            'needs_review' => 0,
         ];
 
         foreach ($results as $row) {
@@ -163,32 +164,14 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        $systemService = $this->di['mod_service']('system');
-        $daysUntilExpiration = $systemService->getParamValue('invoice_issue_days_before_expire', 14);
-
-        // expires_at < :expires_before is a portable stand-in for MySQL's
-        // DATEDIFF(expires_at, NOW()) <= :days - DATEDIFF compares calendar dates only
-        // (ignoring time-of-day), so "at most N days from today" means expires_at falls on or
-        // before N days from now, i.e. before the start of day N+1.
-        $expiringSql = "SELECT COUNT(*) as total
-                        FROM client_order
-                        WHERE client_id = :client_id
-                        AND group_master = 1
-                        AND status = 'active'
-                        AND invoice_option = 'issue-invoice'
-                        AND period IS NOT NULL
-                        AND expires_at IS NOT NULL
-                        AND unpaid_invoice_id IS NULL
-                        AND expires_at < :expires_before";
-
-        $expiringResult = $this->di['em']->getConnection()->fetchOne($expiringSql, [
-            'client_id' => $data['client_id'],
-            'expires_before' => (new \DateTimeImmutable('today'))
-                ->modify('+' . ((int) $daysUntilExpiration + 1) . ' days')
-                ->format('Y-m-d H:i:s'),
-        ]);
-
-        $counts['expiring'] = (int) $expiringResult;
+        $orderService = $this->di['mod_service']('order');
+        [$renewalsQuery, $bindings] = $orderService->getSoonExpiringActiveOrdersQuery(
+            ['client_id' => $data['client_id'], 'hide_addons' => true],
+            sort: false,
+        );
+        $counts['expiring'] = (int) $this->di['em']->getConnection()->fetchOne('SELECT COUNT(*) FROM (' . $renewalsQuery . ') dashboard_renewals', $bindings);
+        [$reviewQuery, $reviewBindings] = $orderService->getReviewOrdersQuery((int) $data['client_id'], sort: false);
+        $counts['needs_review'] = (int) $this->di['em']->getConnection()->fetchOne('SELECT COUNT(*) FROM (' . $reviewQuery . ') dashboard_review', $reviewBindings);
 
         return $counts;
     }

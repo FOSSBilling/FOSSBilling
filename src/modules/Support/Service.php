@@ -22,6 +22,7 @@ use Box\Mod\Support\Entity\SupportTicket;
 use Box\Mod\Support\Entity\SupportTicketMessage;
 use Box\Mod\Support\Entity\SupportTicketMessageHistory;
 use Box\Mod\Support\Entity\SupportTicketNote;
+use Box\Mod\Support\Entity\TicketNotification;
 use Box\Mod\Support\Event\AfterTicketClosedEvent;
 use Box\Mod\Support\Event\AfterTicketOpenedEvent;
 use Box\Mod\Support\Event\AfterTicketRepliedEvent;
@@ -972,6 +973,14 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $result;
     }
 
+    private function persistTicketNotification(SupportTicketMessage $message): void
+    {
+        $clientId = $message->getTicket()?->getClientId();
+        if ($message->getAdminId() !== null && $clientId !== null) {
+            $this->di['em']->persist(new TicketNotification($clientId, $message));
+        }
+    }
+
     public function ticketReply(SupportTicket $ticket, \Box\Mod\Staff\Entity\Admin|Client|\FOSSBilling\Identity\Guest $identity, string $content): int
     {
         $em = $this->di['em'];
@@ -985,6 +994,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $msg->setContent($content);
         $msg->setIp($this->di['request']->getClientIp());
         $em->persist($msg);
+        $this->persistTicketNotification($msg);
         $em->flush();
 
         if ($identity instanceof \Box\Mod\Staff\Entity\Admin) {
@@ -1028,6 +1038,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $msg->setContent($data['content']);
         $msg->setIp($this->di['request']->getClientIp());
         $em->persist($msg);
+        $this->persistTicketNotification($msg);
         $em->flush();
 
         $this->di['event_dispatcher']->dispatch(new AfterTicketOpenedEvent((int) $ticket->getId(), TicketActorRole::ADMIN));
@@ -1083,6 +1094,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $msg->setContent($ticketEvent->getMessage());
         $msg->setIp($this->di['request']->getClientIp());
         $em->persist($msg);
+        $this->persistTicketNotification($msg);
         $em->flush();
 
         $this->di['event_dispatcher']->dispatch(new AfterTicketOpenedEvent((int) $ticket->getId(), TicketActorRole::GUEST));
@@ -1257,6 +1269,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $msg->setContent($content);
         $msg->setIp($this->di['request']->getClientIp());
         $em->persist($msg);
+        $this->persistTicketNotification($msg);
         $em->flush();
 
         return (int) $msg->getId();

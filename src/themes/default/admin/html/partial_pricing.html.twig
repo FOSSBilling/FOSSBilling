@@ -108,8 +108,8 @@
                     <td><input class="form-control total price" type="text" readonly disabled></td>
                     <td class="text-center"><input class="form-check-input" type="checkbox" name="pricing[recurrent][{{ code }}][enabled]" value="1"{% if prices.enabled %} checked{% endif %}></td>
                     <td class="text-center">
-                        <button type="button" class="btn btn-icon pp-remove-period" title="{{ 'Remove this billing period'|trans }}">
-                            <svg class="icon">
+                        <button type="button" class="btn btn-icon pp-remove-period" aria-label="{{ 'Remove this billing period'|trans }}" title="{{ 'Remove this billing period'|trans }}">
+                            <svg class="icon" aria-hidden="true" focusable="false">
                                 <use href="#trash" />
                             </svg>
                         </button>
@@ -133,7 +133,7 @@
                     <option value="Y" data-min="1" data-max="5" data-singular="{{ 'year'|trans }}" data-plural="{{ 'years'|trans }}">{{ 'Year(s)'|trans }}</option>
                 </select>
                 <button type="button" class="btn btn-outline-primary" id="pp-add-period-btn">
-                    <svg class="icon">
+                    <svg class="icon" aria-hidden="true" focusable="false">
                         <use href="#plus" />
                     </svg>
                     {{ 'Add'|trans }}
@@ -233,7 +233,7 @@
                     '<td><input class="form-control price bill_price" type="text" value="0.00"></td>' +
                     '<td><input class="form-control total price" type="text" readonly disabled></td>' +
                     '<td class="text-center"><input class="form-check-input" type="checkbox" checked></td>' +
-                    '<td class="text-center"><button type="button" class="btn btn-icon pp-remove-period" title="{{ 'Remove this billing period'|trans|e('js') }}"><svg class="icon"><use href="#trash" /></svg></button></td>';
+                    '<td class="text-center"><button type="button" class="btn btn-icon pp-remove-period" aria-label="{{ 'Remove this billing period'|trans|e('js') }}" title="{{ 'Remove this billing period'|trans|e('js') }}"><svg class="icon" aria-hidden="true" focusable="false"><use href="#trash" /></svg></button></td>';
 
                 row.querySelector('td').textContent = title;
                 row.querySelector('.setup_price').name = 'pricing[recurrent][' + code + '][setup]';

@@ -1,11 +1,11 @@
 {% if order.status == 'active' %}
 <div class="card mb-4">
     <div class="card-header">
-        <h1>{{ order.title }}</h1>
+        <h2 class="h3 mb-0">{{ 'License Details'|trans }}</h2>
     </div>
     <div class="card-body">
-        <h2>{{ 'License Details'|trans }}</h2>
-        <table class="table table-striped table-bordered table-sm">
+
+        <div class="table-responsive"><table class="table table-vcenter table-striped table-sm client-service-properties">
             <tbody>
             <tr>
                 <td>{{ 'Key'|trans }}</td>
@@ -75,13 +75,13 @@
             {% endif %}
 
             </tbody>
-        </table>
+        </table></div>
 
-        <h2>{{ 'Reset License'|trans }}</h2>
+        <h3 class="h4">{{ 'Reset License'|trans }}</h3>
         <p>{{ 'Resetting the license will clear saved validation data (IP addresses, domains, versions, and installation paths). Use this if you moved servers; the license must then be activated again from the new environment.'|trans }}</p>
         <div class="block">
             <p>
-                <a class="btn btn-primary" {{ fb_api_link({href: 'servicelicense/reset'|api_url(query: {order_id: order.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, message: 'License was reset'|trans}) }}>{{ 'Reset'|trans }}</a>
+                <a class="btn btn-outline-danger" {{ fb_api_link({href: 'servicelicense/reset'|api_url(query: {order_id: order.id}), modal: {type: 'confirm', title: 'Reset License'|trans, content: 'This clears saved validation data for "%service%". You will need to activate the license again from your new environment.'|trans({'%service%': order.title}), button: 'Reset License'|trans, buttonColor: 'danger', cancelButton: 'Keep License Settings'|trans}, loading: {button: 'Resetting License…'|trans}, message: 'License was reset'|trans}) }}>{{ 'Reset License'|trans }}</a>
             </p>
         </div>
     </div>

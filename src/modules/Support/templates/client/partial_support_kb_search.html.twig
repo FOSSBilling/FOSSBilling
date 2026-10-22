@@ -1,0 +1,6 @@
+{% include 'partial_client_search.html.twig' with {
+    search_action: 'support/kb'|url, search_clear_url: 'support/kb'|url,
+    search_id: 'kb-search', search_name: 'q', search_label: 'Search Help Articles'|trans,
+    search_value: request.q|default('')|trim,
+    search_placeholder: 'Describe your question or enter keywords'|trans
+} only %}

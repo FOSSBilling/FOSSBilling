@@ -1,0 +1,13 @@
+{# Shared translated feedback labels; client aliases remain for integrations. #}
+{% set labels = {
+    'request-loading': 'Loading. Please wait.'|trans,
+    'loading': 'Submitting. Please wait.'|trans,
+    'form-error': 'There Was a Problem'|trans,
+    'required': 'This field is required.'|trans,
+    'form-updated': 'Changes Saved'|trans,
+    'message': 'System Message'|trans,
+    'confirm': 'Confirm'|trans,
+    'cancel': 'Cancel'|trans,
+    'close': 'Close'|trans
+} %}
+<div{% for key, label in labels %} data-{{ key }}="{{ label }}"{% endfor %}{% if feedback_area|default('admin') == 'client' %}{% for key in ['loading', 'message', 'form-error', 'required', 'confirm', 'cancel', 'close'] %} data-client-{{ key }}="{{ labels[key] }}"{% endfor %}{% endif %} class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1070;"></div>

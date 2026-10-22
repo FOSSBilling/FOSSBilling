@@ -1,18 +1,20 @@
 {% if product is not defined or not product %}
-    {% set product = request.product ? guest.product_get({"id":request.product}) : null %}
+    {% set selected_product = request.product|default(request.order|default(null)) %}
+    {% set product = selected_product ? guest.product_get({'id': selected_product}) : null %}
 {% endif %}
+{% set order_stage = order_stage|default(product ? 'configure' : 'browse') %}
 <div class="accordion-item">
-    <h3 class="accordion-header">
-        <button class="accordion-button {% if not product %}collapsed{%endif%}" type="button" data-bs-toggle="collapse" data-bs-target="#order" aria-expanded="true" aria-controls="order">
+    <h2 class="accordion-header">
+        <button class="accordion-button{{ order_stage != 'configure' ? ' collapsed' : '' }}" type="button" data-bs-toggle="collapse" data-bs-target="#order" aria-expanded="{{ order_stage == 'configure' ? 'true' : 'false' }}" aria-controls="order"{% if not product %} disabled{% endif %}>
             <svg class="icon me-2"><use href="#settings" /></svg>
-            {{ 'Product Configuration'|trans }}
+            {{ 'Configure Product'|trans }}
         </button>
-    </h3>
+    </h2>
     {% if product %}
-    <div id="order" class="accordion-collapse collapse {% if product %}show{%endif%}" data-bs-parent="#orderManager">
+    <div id="order" class="accordion-collapse collapse {{ order_stage == 'configure' ? 'show' : '' }}" data-bs-parent="#orderManager">
         <div class="accordion-body">
             <div class="accordion-inner">
-                <form method="post" action="{{ 'cart/add_item'|api_url(role: 'guest') }}" style="background:none;" class="form-{{ product.form_id ? guest.formbuilder_get( {"id":product.form_id}).style.type : 0 }}"
+                <form data-unsaved-changes method="post" action="{{ 'cart/add_item'|api_url(role: 'guest') }}" style="background:none;" class="form-{{ product.form_id ? guest.formbuilder_get( {"id":product.form_id}).style.type : 0 }}"
                     {{ fb_api_form({message: 'Product Added to Shopping Cart'|trans, redirect: ('order'|url(query: { 'checkout' : 1 }) ~ (request.show_custom_form_values ? '&show_custom_form_values=1' : ''))}) }}>
                     {% set product_details %}
                         <div class="well">
@@ -29,9 +31,9 @@
                                 <div class="row">
                                     <div class="col-12 col-md-4 col-xl-3">
                                         {% if product.pricing.type == 'recurrent' %}
-                                        <span>{{ 'Billing Cycle'|trans }}</span>
+                                        <label for="period-selector">{{ 'Billing Cycle'|trans }}</label>
                                         {% else %}
-                                        <span>{{ 'One-time payment'|trans }}</span>
+                                        <span>{{ product.pricing.type == 'free' ? 'Free'|trans : 'One-Time Payment'|trans }}</span>
                                         {% endif %}
                                     </div>
                                     <div class="col">
@@ -40,14 +42,15 @@
                                         <select class="form-select" name="period" id="period-selector">
                                             {% for code,prices in product.pricing.recurrent %}
                                                 {% if prices.enabled %}
-                                                    <option value="{{ code }}"{% if request.period == code %} selected="selected"{% endif %}>{{ (prices.price * cart_currency.conversion_rate)|format_currency(cart_currency.code) }} ({{ prices.title }})</option>
+                                                    <option value="{{ code }}"{% if request.period == code %} selected="selected"{% endif %}>{{ (prices.price * cart_currency.conversion_rate)|format_currency(cart_currency.code) }} ({{ prices.title }}){% if prices.setup|default(0) != 0 %} + {{ (prices.setup * cart_currency.conversion_rate)|format_currency(cart_currency.code) }} {{ 'setup fee'|trans }}{% endif %}</option>
                                                 {% endif %}
                                             {% endfor %}
                                         </select>
                                         {% elseif product.pricing.type == 'free' %}
                                         <span class="badge text-bg-success">{{ 0|format_currency(cart_currency.code) }}</span>
                                         {% else %}
-                                        <span class="badge text-bg-success">{{ (product.pricing.once.price * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</span>
+                                        <span class="fw-semibold">{{ (product.pricing.once.price * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</span>
+                                        {% if product.pricing.once.setup|default(0) != 0 %}<span class="small">+ {{ (product.pricing.once.setup * cart_currency.conversion_rate)|format_currency(cart_currency.code) }} {{ 'setup fee'|trans }}</span>{% endif %}
                                         {% endif %}
                                     </div>
                                 </div>
@@ -55,12 +58,12 @@
                             {% if product.allow_quantity_select %}
                             <div class="row mt-3">
                                 <div class="col-12 col-md-4 col-xl-3">
-                                    <span>{{ 'Quantity'|trans }}</span>
+                                    <label for="product-quantity">{{ 'Quantity'|trans }}</label>
                                 </div>
                                 <div class="col">
                                     <input
                                         type="number"
-                                        name="quantity"
+                                        name="quantity" id="product-quantity"
                                         value="1"
                                         min="1"
                                         {% if product.stock_control %}max="{{ product.quantity_in_stock }}"{% endif %}
@@ -89,7 +92,7 @@
                     <input type="hidden" name="multiple" value="1" />
                     <input type="hidden" name="id" value="{{ product.id }}" />
                     <div class="mt-2 mb-0">
-                        <button type="submit" class="btn btn-primary" id="config-next">{{ 'Next'|trans }}</button>
+                        <button type="submit" class="btn btn-primary" id="config-next">{{ 'Add to Cart and Review'|trans }}</button>
                     </div>
                 </form>
             </div>

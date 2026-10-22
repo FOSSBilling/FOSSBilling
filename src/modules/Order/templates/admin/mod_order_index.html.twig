@@ -90,14 +90,12 @@
 {% block content %}
     <div class="card">
         <div class="card-header">
-            <div>
-                <h3 class="card-title">{{ 'Orders'|trans }}</h3>
-                <p class="card-subtitle">{{ 'Manage orders, filter order records, and create new orders for clients.'|trans }}</p>
-            </div>
+            {{ include('partial_page_heading.html.twig', {title: 'Orders'|trans, page_title_class: 'card-title mb-0'}) }}
         </div>
         <div class="card-body pt-0 pb-0 px-0">
             <div class="card border-0 shadow-none rounded-0">
                 {{ include('partial_search.html.twig', {
+                    search_preserve_fields: ['id', 'title', 'promo_id', 'status', 'type', 'product_id', 'period', 'invoice_option', 'date_from', 'date_to', 'sort', 'direction', 'per_page'],
                     search_body_class: filter_panel_open ? 'pb-2 border-bottom-0' : '',
                     search_toolbar_actions: new_order_action
                 }) }}
@@ -194,25 +192,27 @@
                         </div>
                     </form>
                 </section>
+                {% set orders = admin.order_get_list({ 'per_page': 25, 'page': request.page }|merge(request)) %}
+                {% if orders.list %}
                 <div class="table-responsive">
                     <table class="table card-table table-vcenter table-striped text-nowrap">
                         <thead>
                             <tr>
-                                <th class="w-1">
-                                    <input class="form-check-input m-0 align-middle batch-delete-master-checkbox" type="checkbox">
+                                <th scope="col" class="w-1">
+                                    <input class="form-check-input m-0 align-middle batch-delete-master-checkbox" type="checkbox" aria-label="{{ 'Select All'|trans }}">
                                 </th>
                                 {{ include('partial_sortable_th.html.twig', { 'label': '#'|trans, 'sort_key': 'id', 'url': 'order', 'th_class': 'w-1', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
-                                <th class="w-1"></th>
-                                <th>{{ 'Name'|trans }}</th>
+                                <th scope="col" class="w-1"></th>
+                                <th scope="col">{{ 'Name'|trans }}</th>
                                 {{ include('partial_sortable_th.html.twig', { 'label': 'Title'|trans, 'sort_key': 'title', 'url': 'order', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
-                                <th class="text-center">{{ 'Period'|trans }}</th>
-                                <th class="text-center">{{ 'Amount'|trans }}</th>
+                                <th scope="col" class="text-center">{{ 'Period'|trans }}</th>
+                                <th scope="col" class="text-center">{{ 'Amount'|trans }}</th>
                                 {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'order', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
-                                <th class="w-1"></th>
+                                <th scope="col" class="w-1"><span class="visually-hidden">{{ 'Actions'|trans }}</span></th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% set orders = admin.order_get_list({ 'per_page': 25, 'page': request.page }|merge(request)) %}
+
                             {% for i, order in orders.list %}
                             <tr>
                                 <td>
@@ -240,28 +240,33 @@
                                         </svg>
                                     </a>
                                     <a class="btn btn-icon" href="{{ 'order/delete'|api_url(query: { 'id': order.id }) }}"
-                                        {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'order'|url}) }}>
-                                        <svg class="icon">
+                                        {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'order'|url}) }} aria-label="{{ 'Delete Order'|trans }}" title="{{ 'Delete Order'|trans }}">
+                                        <svg class="icon" aria-hidden="true" focusable="false">
                                             <use href="#trash" />
                                         </svg>
                                     </a>
                                 </td>
                             </tr>
-                            {% else %}
-                            <tr>
-                                <td class="text-muted" colspan="8">{{ 'The list is empty'|trans }}</td>
-                            </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
+                {% else %}
+                    <div class="card-body">
+                        {% include 'partial_admin_list_empty.html.twig' with {
+                            empty_list: orders, empty_list_url: 'order',
+                            empty_title: 'No Orders Yet'|trans,
+                            empty_description: 'Orders will appear here when clients place them or you create them.'|trans
+                        } %}
+                    </div>
+                {% endif %}
 
                 <div class="card-footer d-flex align-items-center justify-content-between">
                     <div>
                         {% include 'partial_batch_delete.html.twig' with { 'action': 'order/batch_delete' } %}
                     </div>
                     <div class="d-flex align-items-center gap-2 ms-auto">
-                        {% include 'partial_pagination.html.twig' with { 'list': orders, 'url': 'order' } %}
+                        {% if orders.list %}{% include 'partial_pagination.html.twig' with { 'list': orders, 'url': 'order' } %}{% endif %}
                         <a class="btn btn-secondary" href="{{ 'order/export_csv'|api_url(query: { CSRFToken: CSRFToken }) }}" title="{{ 'Export Orders'|trans }}">
                             <svg class="icon">
                                 <use href="#download" />

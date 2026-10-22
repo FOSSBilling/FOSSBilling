@@ -5,6 +5,7 @@
  * CKEditor is intentionally kept behind the FOSSBilling.editor adapter
  * contract so themes and modules do not depend on CKEditor directly.
  */
+import { applyEditorAccessibility } from '../core/editor-helpers.mts';
 import { Autoformat } from '@ckeditor/ckeditor5-autoformat/dist/index.js';
 import { AutoImage, Image, ImageStyle, ImageInsertViaUrl, ImageToolbar } from '@ckeditor/ckeditor5-image/dist/index.js';
 import { BlockQuote } from '@ckeditor/ckeditor5-block-quote/dist/index.js';
@@ -105,7 +106,19 @@ window.FOSSBilling.editor.registerAdapter('ckeditor', {
       config.root = { ...config.root, initialData };
     }
 
-    return FOSSBillingCKEditor.create(config);
+    return FOSSBillingCKEditor.create(config).then(editor => {
+      editor.getAccessibleElement = () => editor.ui.getEditableElement();
+      editor.setAccessibilityAttribute = (name, value) => {
+        // View attributes survive CKEditor's focus and content redraws.
+        editor.editing.view.change(writer => {
+          const root = editor.editing.view.document.getRoot();
+          if (value === null) writer.removeAttribute(name, root);
+          else writer.setAttribute(name, value, root);
+        });
+      };
+      applyEditorAccessibility(element, editor.getAccessibleElement(), editor.setAccessibilityAttribute);
+      return editor;
+    });
   },
 
   // Reports runtime errors that escape the given editor instance so the

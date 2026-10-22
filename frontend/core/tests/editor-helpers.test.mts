@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 
 import {
+  applyEditorAccessibility,
   EDITOR_CRASH_LIMIT,
   EDITOR_CRASH_WINDOW_MS,
   normalizeEditor,
@@ -215,4 +216,54 @@ describe('normalizeEditor', () => {
       true,
     );
   });
+});
+
+
+test('editor accessibility carries field labels, hints and required state to its editable surface', () => {
+  const attrs = new Map([['aria-describedby', 'editor-help']]);
+  const label = {id: ''};
+  const source = {labels: [label], dataset: {editorRequired: 'true'}, hasAttribute: () => false, getAttribute: () => 'field-help editor-help'};
+  const editable = {getAttribute: (name: string) => attrs.get(name), setAttribute: (name: string, value: string) => attrs.set(name, value)};
+  applyEditorAccessibility(source, editable);
+  assert.equal(attrs.get('aria-labelledby'), label.id);
+  assert.ok(label.id);
+  assert.equal(attrs.get('aria-required'), 'true');
+  assert.equal(attrs.get('aria-describedby'), 'editor-help field-help');
+  applyEditorAccessibility(source, editable);
+  assert.equal(attrs.get('aria-describedby'), 'editor-help field-help');
+});
+
+test('editor accessibility preserves an explicitly supplied accessible name', () => {
+  const attrs = new Map([['aria-labelledby', 'extension-label']]);
+  const editable = {getAttribute: (name: string) => attrs.get(name), setAttribute: (name: string, value: string) => attrs.set(name, value)};
+  applyEditorAccessibility({labels: [{id: 'field-label'}], dataset: {}, hasAttribute: () => false, getAttribute: () => null}, editable);
+  assert.equal(attrs.get('aria-labelledby'), 'extension-label');
+  assert.equal(attrs.has('aria-required'), false);
+});
+
+
+test('editor label IDs are checked for collisions before assigning them to live labels', () => {
+  const label = {id: ''};
+  let lookups = 0;
+  const source = {labels: [label], dataset: {}, hasAttribute: () => false, getAttribute: () => null, ownerDocument: {
+    getElementById(id: string) {assert.ok(++lookups < 3); return label.id === id ? label : null;},
+  }};
+  applyEditorAccessibility(source, {getAttribute: () => null, setAttribute() {}});
+  assert.equal(lookups, 1);
+  assert.ok(label.id);
+});
+
+test('normalized editors delegate accessibility updates through adapters across replacement', () => {
+  const changes: unknown[] = [];
+  const surface = {};
+  const raw = {getData: () => '', setData() {}, getAccessibleElement: () => surface, setAccessibilityAttribute: (name, value) => changes.push([name, value])};
+  const editor = normalizeEditor(makeElement(), raw);
+  assert.equal(editor.getAccessibleElement(), surface);
+  editor.setAccessibilityAttribute('aria-invalid', 'true');
+  editor.setAccessibilityAttribute('aria-invalid', null);
+  assert.deepEqual(changes, [['aria-invalid', 'true'], ['aria-invalid', null]]);
+  const next = {getData: () => '', setData() {}, setAccessibilityAttribute: (name, value) => changes.push(['next', name, value])};
+  editor.replaceRaw(next);
+  editor.setAccessibilityAttribute('aria-required', 'true');
+  assert.deepEqual(changes.at(-1), ['next', 'aria-required', 'true']);
 });

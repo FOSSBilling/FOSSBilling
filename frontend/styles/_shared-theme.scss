@@ -1,7 +1,7 @@
-// Rules genuinely identical between the default admin and client themes.
-// Deliberately small and conservative: most component styling is
-// framework-specific (Tabler vs Bootstrap custom properties) and stays
-// duplicated on purpose rather than forcing a shared abstraction here.
+// Shared presentation for the default admin and client themes, both using Tabler.
+// Keep layout and workflow rules in their respective theme entrypoints.
+
+$mobile-touch-target: 2.75rem;
 
 .fb-phone-country-code {
     width: 5.5rem;
@@ -9,17 +9,245 @@
     max-width: 5.5rem;
 }
 
-// Every property here was identical between the two themes except
-// background-color, which is genuinely framework-specific (Tabler's
-// --tblr-bg-surface vs Bootstrap's --bs-secondary-bg) - each theme's own
-// stylesheet still sets that one property itself, after @use-ing this file.
+// Fit branding, gateway and extension assets without cropping or recolouring them.
+.fb-image-contain {
+    max-width: 100%;
+    object-fit: contain;
+}
+
+// Avatar geometry is shared; each theme chooses its own surface token.
 .db-avatar {
     display: inline-block;
     flex-shrink: 0;
     vertical-align: middle;
-    background-size: 100% 100%;
-    background-position: center;
-    background-repeat: no-repeat;
     border-radius: 50%;
     overflow: hidden;
+}
+
+// Both Tabler themes use the shared CKEditor bundle. Set its palette on the
+// theme root so floating toolbars and dialogs inherit the same colours.
+:root[data-bs-theme] {
+    --ck-color-base-background: var(--tblr-bg-surface);
+    --ck-color-base-foreground: var(--tblr-secondary-bg);
+    --ck-color-base-border: var(--tblr-border-color);
+    --ck-color-base-border-light: var(--tblr-border-color);
+    --ck-color-base-text: var(--tblr-body-color);
+    --ck-color-base-text-light: var(--tblr-secondary-color);
+    --ck-content-font-color: var(--tblr-body-color);
+    --ck-color-base-action: var(--tblr-primary);
+    --ck-color-base-action-hover: color-mix(in srgb, var(--tblr-primary), black 10%);
+    --ck-color-base-action-muted: var(--tblr-primary-bg-subtle);
+    --ck-color-base-action-disabled: var(--tblr-secondary-bg);
+    --ck-color-base-focus: var(--tblr-primary);
+    --ck-focus-border-color: var(--tblr-primary);
+    --ck-color-base-focus-shadow: color-mix(in srgb, var(--tblr-primary) 25%, transparent);
+    --ck-color-base-focus-shadow-faded: color-mix(in srgb, var(--tblr-primary) 10%, transparent);
+    --ck-color-base-hover: var(--tblr-tertiary-bg);
+    --ck-color-base-hover-strong: var(--tblr-secondary-bg);
+    --ck-color-base-active: var(--tblr-link-color);
+    --ck-color-base-active-focus: var(--tblr-link-hover-color);
+    --ck-color-base-selected: var(--tblr-primary-bg-subtle);
+    --ck-color-base-selected-hover: var(--tblr-tertiary-bg);
+    --ck-color-interactive-primary-text: var(--tblr-primary-fg);
+    --ck-color-text-inverse: var(--tblr-primary-fg);
+    --ck-color-engine-placeholder-text: var(--tblr-secondary-color);
+    --ck-color-link-default: var(--tblr-link-color);
+    --ck-input-disabled-background-color: var(--tblr-secondary-bg);
+
+    .ck-source-editing-area textarea {
+        background: var(--ck-color-base-background);
+        color: var(--ck-color-text);
+    }
+}
+
+// Use theme-aware emphasis text for the shared error summary in both modes.
+[data-fb-form-error] {
+    --tblr-alert-color: var(--tblr-danger-text-emphasis);
+}
+
+// Error-summary links inherit Tabler's alert colour in either theme mode.
+[data-fb-form-error] a,
+[data-client-form-error] a {
+    color: inherit;
+    text-decoration: underline;
+}
+
+// Sort links share keyboard and touch affordances; table layouts stay theme-specific.
+.fb-table-sort:focus-visible {
+    outline: 2px solid var(--tblr-primary);
+    outline-offset: 2px;
+    border-radius: var(--tblr-border-radius-sm);
+}
+
+.fb-table-sort:hover,
+.fb-table-sort:focus-visible {
+    text-decoration: underline !important;
+}
+
+// Search controls shrink within cards; mobile actions remain easy to tap.
+.fb-search-form {
+    min-width: 0;
+
+    input.form-control {
+        min-width: 0;
+    }
+}
+
+@media (max-width: 991.98px) {
+    .fb-search-form {
+        .input-group-text {
+            padding: 0;
+        }
+
+        .search-submit-toggle,
+        .search-filter-toggle {
+            min-width: $mobile-touch-target;
+            margin: 0;
+        }
+    }
+}
+
+// Navigation menus share touch targets; Tom Select keeps its own option layout.
+@media (max-width: 991.98px) {
+    .navbar .dropdown-menu:not(.ts-dropdown) > .dropdown-item,
+    .navbar .dropdown-menu:not(.ts-dropdown) > li > .dropdown-item {
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+}
+
+// Shared notice copy uses emphasis colours on Tabler's tinted alert surfaces.
+@each $type in danger, warning, info, success {
+    [data-fb-notice].alert-#{$type} {
+        --tblr-alert-color: var(--tblr-#{$type}-text-emphasis);
+    }
+}
+
+[data-fb-notice] {
+    .fb-notice-content {
+        min-width: 0;
+    }
+
+    pre {
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+    }
+
+    .alert-action,
+    .fb-notice-content .btn {
+        max-width: 100%;
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+}
+
+@media (max-width: 991.98px) {
+    [data-fb-notice] {
+        .btn-close {
+            min-width: $mobile-touch-target;
+            padding: 0;
+        }
+
+        .fb-notice-actions a {
+            display: inline-flex;
+            align-items: center;
+        }
+    }
+}
+
+@media (max-width: 991.98px) {
+    [data-fb-notice].alert-dismissible {
+        min-height: 56px;
+        --tblr-alert-padding-inline-end: 3.5rem;
+    }
+}
+
+// Titles can shrink and wrap; actions stay at the trailing edge until they wrap.
+.fb-card-heading-content {
+    flex: 1 1 16rem;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.fb-card-heading-actions {
+    min-width: 0;
+    max-width: 100%;
+
+    .btn {
+        max-width: 100%;
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+}
+
+// Compact summary asides (for example avatars) stay beside a wrapping title.
+.fb-card-summary-heading {
+    flex-basis: 0;
+}
+
+// Tabler retains icon sizing, currentColor, hover, focus and disabled styling.
+// Only the touch target grows; the glyph stays the same size as on desktop.
+@media (max-width: 991.98px) {
+    .btn.btn-icon {
+        min-width: $mobile-touch-target;
+        flex-shrink: 0;
+    }
+}
+
+// Shared components use one mobile touch-size rule; theme-specific layouts stay local.
+@media (max-width: 991.98px) {
+    [data-fb-empty-state] .empty-action .btn,
+    .fb-table-sort,
+    .fb-search-form .form-control,
+    .fb-search-form .btn,
+    .fb-search-form .search-submit-toggle,
+    .fb-search-form .search-filter-toggle,
+    .navbar .dropdown-menu:not(.ts-dropdown) > .dropdown-item,
+    .navbar .dropdown-menu:not(.ts-dropdown) > li > .dropdown-item,
+    .btn.btn-icon,
+    [data-fb-notice] .btn-close,
+    [data-fb-notice] .fb-notice-actions a,
+    [data-fb-notice] .fb-notice-content .btn,
+    .fb-card-heading-actions .btn {
+        min-height: $mobile-touch-target;
+    }
+}
+
+// Breadcrumb text, including extension-supplied subjects, can wrap at any width.
+.fb-breadcrumbs {
+    min-width: 0;
+
+    .breadcrumb {
+        margin-bottom: 0;
+        align-items: center;
+    }
+
+    .breadcrumb-item {
+        min-width: 0;
+        max-width: 100%;
+        overflow-wrap: anywhere;
+    }
+
+    .breadcrumb-item > a {
+        display: inline-block;
+        max-width: 100%;
+    }
+}
+
+// Keep numeric progress readable even when the filled segment is very short.
+.fb-progress {
+    min-width: 0;
+
+    .progress {
+        min-width: 0;
+    }
+}
+
+// A static Tabler ring and readable status still indicate work without motion.
+@media (prefers-reduced-motion: reduce) {
+    .fb-request-loader,
+    .btn.btn-loading::after {
+        animation: none !important;
+        transition: none !important;
+    }
 }

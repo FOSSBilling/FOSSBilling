@@ -20,7 +20,7 @@ use Twig\TwigFunction;
  *
  * @return array{0: string, 1: object}
  */
-function renderOrderbuttonCheckoutForBalance(array $contextOverrides = []): array
+function renderOrderbuttonCheckoutForBalance(array $contextOverrides = [], array $cartOverrides = []): array
 {
     $template = file_get_contents(PATH_MODS . '/Orderbutton/templates/client/mod_orderbutton_checkout.html.twig');
     if ($template === false) {
@@ -84,6 +84,8 @@ function renderOrderbuttonCheckoutForBalance(array $contextOverrides = []): arra
         ],
     ], $contextOverrides);
 
+    $context['guest']['cart_get'] = array_replace($context['guest']['cart_get'], $cartOverrides);
+
     return [$twig->render('checkout', $context), $client];
 }
 
@@ -116,7 +118,65 @@ test('checkout falls back to the balance API when profile is missing', function 
 test('guest checkout never requests a client balance', function (): void {
     [$html] = renderOrderbuttonCheckoutForBalance(['client' => null, 'profile' => null]);
 
-    expect($html)->toContain('You must first login / create an account before you can checkout.')
+    expect($html)->toContain('Sign in or create an account below to confirm tax and complete your order.')
         ->and($html)->not->toContain('Total amount will be deducted from account balance')
         ->and($html)->toContain('EUR 20.00');
+});
+
+test('checkout includes tax before deciding whether account credit covers the order', function (): void {
+    $client = new class {
+        public bool $client_is_taxable = true;
+        public int $invoice_get_tax_rate = 20;
+    };
+    [$html] = renderOrderbuttonCheckoutForBalance(['client' => $client, 'profile' => ['balance' => 10]]);
+
+    expect($html)->toContain('EUR 24.00', 'Choose a payment method to continue with your order.', 'No payment methods are currently available')
+        ->and($html)->not->toContain('Total amount will be deducted from account balance');
+});
+
+test('checkout compares credit with the converted total including tax', function (): void {
+    [$html] = renderOrderbuttonCheckoutForBalance(['profile' => ['balance' => 15]]);
+
+    expect($html)->toContain('EUR 20.00', 'Choose a payment method to continue with your order.')
+        ->not->toContain('Total amount will be deducted from account balance');
+});
+
+test('guest order review is expanded and distinguishes tax estimates from a payable total', function (): void {
+    [$html] = renderOrderbuttonCheckoutForBalance(['client' => null]);
+
+    expect($html)->toContain('id="checkout" class="accordion-collapse collapse show"', 'Total Before Tax', 'Any applicable tax will be calculated')
+        ->not->toContain('Choose a payment method to continue with your order.');
+});
+
+test('checkout blocks an account and cart currency mismatch before creating an order', function (): void {
+    [$html] = renderOrderbuttonCheckoutForBalance(['profile' => ['balance' => 200, 'currency' => 'USD']]);
+    $dom = new DOMDocument();
+    @$dom->loadHTML($html);
+    expect($dom->getElementById('checkoutButton')->hasAttribute('disabled'))->toBeTrue()
+        ->and($html)->toContain('Your account uses %currency%. Select that currency above')
+        ->not->toContain('Total amount will be deducted from account balance');
+});
+
+test('free checkout does not need credit or a payment gateway', function (): void {
+    [$html] = renderOrderbuttonCheckoutForBalance(['profile' => ['balance' => 0]], ['total' => 0, 'subtotal' => 0]);
+    $dom = new DOMDocument();
+    @$dom->loadHTML($html);
+    expect($dom->getElementById('checkoutButton')->hasAttribute('disabled'))->toBeFalse()
+        ->and($html)->toContain('Place Free Order')
+        ->not->toContain('Choose a Payment Method', 'Total amount will be deducted from account balance');
+});
+
+test('an empty checkout offers a way back to products', function (): void {
+    [$html] = renderOrderbuttonCheckoutForBalance([], ['items' => []]);
+    expect($html)->toContain('Your cart is empty.', 'Browse Products')
+        ->not->toContain('id="checkoutButton"');
+});
+
+test('checkout gives payment choices a group name and associates totals with row headers', function (): void {
+    [$html] = renderOrderbuttonCheckoutForBalance(['profile' => ['balance' => 0]]);
+    $dom = new DOMDocument();
+    @$dom->loadHTML($html);
+    $xpath = new DOMXPath($dom);
+    expect($xpath->query('//fieldset[legend="Payment Method"]'))->toHaveCount(1)
+        ->and($xpath->query('//table[caption[contains(.,"Order Total")]]//th[@scope="row"]'))->toHaveCount(2);
 });

@@ -65,6 +65,11 @@ class Payment_Adapter_Custom
      */
     public function getHtml(FOSSBilling\Api\Proxy $api_admin, int $invoice_id, bool $subscription): string
     {
+        $tpl = $this->config[$subscription ? 'recurrent' : 'single'] ?? null;
+        if (!is_string($tpl) || trim($tpl) === '') {
+            throw new Payment_Exception('Payment instructions are not configured for this payment method.');
+        }
+
         $invoiceModel = $this->di['em']->getRepository(Box\Mod\Invoice\Entity\Invoice::class)->find($invoice_id);
         if (!$invoiceModel instanceof Box\Mod\Invoice\Entity\Invoice) {
             throw new Payment_Exception('Invoice not found');
@@ -72,7 +77,6 @@ class Payment_Adapter_Custom
         $invoiceService = $this->di['mod_service']('Invoice');
         $invoice = $invoiceService->toApiArray($invoiceModel, true);
 
-        $tpl = $subscription ? ($this->config['recurrent'] ?? '"Custom" payment adapter is not fully configured.') : ($this->config['single'] ?? '"Custom" payment adapter is not fully configured.');
         $vars = [
             'invoice' => $invoice,
         ];

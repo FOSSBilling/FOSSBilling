@@ -1,174 +1,122 @@
 {% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
 {% set active_menu = 'invoices' %}
 
-{% block meta_title %}{{ 'Invoice Management'|trans }}{% endblock %}
-{% block page_header %}{{ 'Invoice Management'|trans }}{% endblock %}
-
+{% block meta_title %}{{ 'Invoices'|trans }}{% endblock %}
+{% block page_header %}{{ 'Invoices'|trans }}{% endblock %}
 {% block body_class %}invoice-index{% endblock %}
 {% block breadcrumb %}
     <li class="breadcrumb-item active" aria-current="page">{{ 'Invoices'|trans }}</li>
 {% endblock %}
 
 {% block content %}
-    {% set unpaid_invoices = client.invoice_get_list({"status":"unpaid", "per_page":10, "page":request.page}) %}
-    {% set paid_invoices = client.invoice_get_list({"per_page":10, "page":request.page, "status":"paid"}) %}
-    {% set refunded_invoices = client.invoice_get_list({"per_page":10, "page":request.page, "status":"refunded"}) %}
-    {% set canceled_invoices = client.invoice_get_list({"per_page":10, "page":request.page, "status":"canceled"}) %}
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card mb-4">
-                <div class="card-header py-3 py-3">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h1 class="mb-1">{{ 'Invoices'|trans }}</h1>
-                            <span class="small text-muted">
-                                {{ 'All of your invoices can be found here. You can choose to see unpaid, paid, refunded, or canceled invoices by clicking the corresponding button.'|trans }}
-                            </span>
-                        </div>
-                    </div>
+    {% set statuses = {
+        'unpaid': {'label': 'To Pay'|trans, 'empty': 'No Unpaid Invoices'|trans},
+        'paid': {'label': 'Paid'|trans, 'empty': 'No Paid Invoices Yet'|trans},
+        'refunded': {'label': 'Refunded'|trans, 'empty': 'No Refunded Invoices'|trans},
+        'canceled': {'label': 'Canceled'|trans, 'empty': 'No Canceled Invoices'|trans}
+    } %}
+    {% set lists = {} %}
+    {% for status, section in statuses %}
+        {% set page_param = status == 'unpaid' ? 'page' : status ~ '_page' %}
+        {% set lists = lists|merge({(status): client.invoice_get_list({
+            'status': status, 'per_page': 10, 'page': attribute(request, page_param)|default(1),
+            'sort': status == 'unpaid' ? 'due_at' : 'id', 'direction': status == 'unpaid' ? 'ASC' : 'DESC'
+        })}) %}
+    {% endfor %}
+    {{ include('partial_page_heading.html.twig', {title: 'Invoices'|trans, heading_class: 'mb-4'}) }}
+    <div class="card mb-4">
+        <div class="card-header">
+            <nav class="flex-fill" aria-label="{{ 'Invoice Status'|trans }}">
+                <div class="nav nav-tabs card-header-tabs" role="tablist">
+                    {% for status, section in statuses %}
+                        <button class="nav-link{{ loop.first ? ' active' : '' }}" id="{{ status }}-tab"
+                                data-bs-toggle="tab" data-bs-target="#nav-{{ status }}" type="button" role="tab"
+                                aria-controls="nav-{{ status }}" aria-selected="{{ loop.first ? 'true' : 'false' }}">
+                            {{ section.label }}
+                            {% if status == 'unpaid' and lists.unpaid.total %}
+                                <span class="badge text-bg-danger ms-1">{{ lists.unpaid.total }}</span>
+                            {% endif %}
+                        </button>
+                    {% endfor %}
                 </div>
-                <div class="card-body">
-                    <nav>
-                        <div class="nav nav-tabs" id="invoice-tab" role="tablist">
-                            <button class="nav-link active" id="unpaid-tab" data-bs-toggle="tab"
-                                    data-bs-target="#nav-unpaid" type="button" role="tab" aria-controls="nav-unpaid"
-                                    aria-selected="true">{{ 'Unpaid'|trans }}{% if unpaid_invoices.total %}&nbsp;<span
-                                    class="badge text-bg-danger">{{ unpaid_invoices.total }}</span>{% endif %}</button>
-                            <button class="nav-link" id="paid-tab" data-bs-toggle="tab" data-bs-target="#nav-paid"
-                                    type="button" role="tab" aria-controls="nav-paid"
-                                    aria-selected="false">{{ 'Paid'|trans }}{% if paid_invoices.total %}&nbsp;<span
-                                    class="badge text-bg-secondary">{{ paid_invoices.total }}</span>{% endif %}</button>
-                            <button class="nav-link" id="refunded-tab" data-bs-toggle="tab" data-bs-target="#nav-refunded"
-                                    type="button" role="tab" aria-controls="nav-refunded"
-                                    aria-selected="false">{{ 'Refunded'|trans }}{% if refunded_invoices.total %}&nbsp;<span
-                                    class="badge text-bg-info">{{ refunded_invoices.total }}</span>{% endif %}</button>
-                            <button class="nav-link" id="canceled-tab" data-bs-toggle="tab" data-bs-target="#nav-canceled"
-                                    type="button" role="tab" aria-controls="nav-canceled"
-                                    aria-selected="false">{{ 'Canceled'|trans }}{% if canceled_invoices.total %}&nbsp;<span
-                                    class="badge text-bg-secondary">{{ canceled_invoices.total }}</span>{% endif %}</button>
-                        </div>
-                    </nav>
-                    <div class="tab-content" id="nav-tabContent">
-                        <div class="tab-pane fade show active table-responsive" id="nav-unpaid" role="tabpanel"
-                             aria-labelledby="nav-home-tab" tabindex="0">
-                            <table class="table table-bordered table-hover">
+            </nav>
+        </div>
+        <div class="card-body tab-content">
+            {% for status, section in statuses %}
+                {% set invoices = lists[status] %}
+                <div class="tab-pane fade{{ loop.first ? ' show active' : '' }}" id="nav-{{ status }}"
+                     role="tabpanel" aria-labelledby="{{ status }}-tab" tabindex="0">
+                    {% if invoices.total %}
+                        {% if status == 'unpaid' %}
+                            <p class="mb-4">{{ invoices.total == 1 ? '1 invoice awaiting payment'|trans : '%count% invoices awaiting payment'|trans({'%count%': invoices.total}) }}</p>
+                        {% endif %}
+                        <div class="table-responsive">
+                            <table class="table table-vcenter table-hover client-invoice-list mb-0" aria-label="{{ 'Invoices'|trans ~ ': ' ~ section.label }}">
                                 <thead>
-                                <tr>
-                                    <th>{{ 'Title'|trans }}</th>
-                                    <th>{{ 'Invoice Date'|trans }}</th>
-                                    <th>{{ 'Due Date'|trans }}</th>
-                                    <th>{{ 'Total'|trans }}</th>
-                                    <th>{{ 'Actions'|trans }}</th>
-                                </tr>
+                                    <tr>
+                                        <th scope="col">{{ 'Invoice'|trans }}</th>
+                                        <th scope="col">{{ status == 'paid' ? 'Paid On'|trans : (status == 'unpaid' ? 'Due Date'|trans : 'Invoice Date'|trans) }}</th>
+                                        <th scope="col" class="text-end">{{ status == 'unpaid' ? 'Amount Due'|trans : 'Total'|trans }}</th>
+                                        <th scope="col"><span class="visually-hidden">{{ 'Actions'|trans }}</span></th>
+                                    </tr>
                                 </thead>
                                 <tbody>
-                                {% for i, invoice in unpaid_invoices.list %}
-                                    <tr>
-                                        <td>{% if invoice.debit_note_for_invoice_id %}{{ 'Debit Note'|trans }}{% else %}{{ 'Invoice'|trans }}{% endif %} #{{ invoice.serie_nr }}</td>
-                                        <td>{{ invoice.created_at|format_date }}</td>
-                                        <td>{{ invoice.due_at|format_date }}</td>
-                                        <td>{{ invoice.total|format_currency(invoice.currency ?? default_currency) }}</td>
-                                        <td><a class="btn btn-sm btn-success" href='{{ "invoice/#{invoice.hash}"|url }}'>{{ 'Pay'|trans }}</a>
-                                        </td>
-                                    </tr>
-                                {% else %}
-                                    <tr>
-                                        <td colspan="5">{{ 'The list is empty'|trans }}</td>
-                                    </tr>
-                                {% endfor %}
+                                    {% for invoice in invoices.list %}
+                                        {% set invoice_url = "invoice/#{invoice.hash}"|url %}
+                                        {% set label = invoice.credit_note_for_invoice_id ? 'Credit Note'|trans : (invoice.debit_note_for_invoice_id ? 'Debit Note'|trans : 'Invoice'|trans) %}
+                                        <tr>
+                                            <td class="invoice-reference">
+                                                <a href="{{ invoice_url }}" class="fw-semibold">{{ label }} #{{ invoice.serie_nr }}</a>
+                                                {% if invoice.lines|first %}
+                                                    <div class="small text-secondary">{{ (invoice.lines|first).title }}</div>
+                                                {% endif %}
+                                            </td>
+                                            <td class="invoice-date">
+                                                <span class="d-block d-md-none small text-secondary" aria-hidden="true">{{ status == 'paid' ? 'Paid On'|trans : (status == 'unpaid' ? 'Due Date'|trans : 'Invoice Date'|trans) }}</span>
+                                                {% if status == 'unpaid' %}
+                                                    {% if invoice.due_at %}
+                                                        <span>{{ invoice.due_at|format_date }}</span>
+                                                        {% if invoice.due_at|date('Y-m-d') < 'now'|date('Y-m-d') %}
+                                                            <span class="d-block small text-danger-emphasis fw-semibold">{{ 'Overdue'|trans }}</span>
+                                                        {% elseif invoice.due_at|date('Y-m-d') == 'now'|date('Y-m-d') %}
+                                                            <span class="d-block small fw-semibold">{{ 'Due Today'|trans }}</span>
+                                                        {% endif %}
+                                                    {% else %}
+                                                        <span class="text-secondary">{{ 'No Due Date'|trans }}</span>
+                                                    {% endif %}
+                                                {% else %}
+                                                    {{ (status == 'paid' ? invoice.paid_at : invoice.created_at)|format_date }}
+                                                {% endif %}
+                                            </td>
+                                            <td class="invoice-amount text-end fw-semibold">
+                                                <span class="d-block d-md-none small text-secondary fw-normal" aria-hidden="true">{{ status == 'unpaid' ? 'Amount Due'|trans : 'Total'|trans }}</span>
+                                                {{ invoice.total|format_currency(invoice.currency ?? default_currency) }}
+                                            </td>
+                                            <td class="invoice-action text-end">
+                                                <a class="btn btn-sm {{ status == 'unpaid' ? 'btn-primary' : 'btn-outline-secondary' }}"
+                                                   href="{{ invoice_url }}" aria-label="{{ status == 'unpaid' ? 'Pay Invoice #%number%'|trans({'%number%': invoice.serie_nr}) : 'View Invoice #%number%'|trans({'%number%': invoice.serie_nr}) }}">
+                                                    {{ status == 'unpaid' ? 'Pay Invoice'|trans : 'View'|trans }}
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
                                 </tbody>
                             </table>
-                            {{ include('partial_pagination.html.twig', { 'list': unpaid_invoices, 'url': 'invoice' }) }}
                         </div>
-                        <div class="tab-pane fade table-responsive" id="nav-paid" role="tabpanel" aria-labelledby="nav-profile-tab"
-                             tabindex="0">
-                            <table class="table table-bordered table-hover">
-                                <thead>
-                                <tr>
-                                    <th>{{ 'Title'|trans }}</th>
-                                    <th>{{ 'Invoice Date'|trans }}</th>
-                                    <th>{{ 'Paid Date'|trans }}</th>
-                                    <th>{{ 'Total'|trans }}</th>
-                                    <th>{{ 'Actions'|trans }}</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                {% for i, invoice in paid_invoices.list %}
-                                    <tr>
-                                        <td>{% if invoice.debit_note_for_invoice_id %}{{ 'Debit Note'|trans }}{% else %}{{ 'Invoice'|trans }}{% endif %} #{{ invoice.serie_nr }}</td>
-                                        <td>{{ invoice.created_at|format_date }}</td>
-                                        <td>{{ invoice.paid_at|format_date }}</td>
-                                        <td>{{ invoice.total|format_currency(invoice.currency ?? default_currency) }}</td>
-                                        <td><a href='{{ "invoice/#{invoice.hash}"|url }}' class="btn btn-outline-secondary btn-sm">{{ 'View'|trans }}</a></td>
-                                    </tr>
-                                {% else %}
-                                    <tr>
-                                        <td colspan="7">{{ 'The list is empty'|trans }}</td>
-                                    </tr>
-                                {% endfor %}
-                                </tbody>
-                            </table>
-                            {{ include('partial_pagination.html.twig', { 'list': paid_invoices, 'url': 'invoice', 'hash': '#nav-paid' }) }}
+                        <div class="mt-3">
+                            {{ include('partial_pagination.html.twig', {
+                                'list': invoices, 'url': 'invoice', 'hash': '#nav-' ~ status,
+                                'page_param': status == 'unpaid' ? 'page' : status ~ '_page'
+                            }) }}
                         </div>
-                        <div class="tab-pane fade table-responsive" id="nav-refunded" role="tabpanel" aria-labelledby="nav-refunded-tab"
-                             tabindex="0">
-                            <table class="table table-bordered table-hover">
-                                <thead>
-                                <tr>
-                                    <th>{{ 'Title'|trans }}</th>
-                                    <th>{{ 'Invoice Date'|trans }}</th>
-                                    <th>{{ 'Total'|trans }}</th>
-                                    <th>{{ 'Actions'|trans }}</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                {% for i, invoice in refunded_invoices.list %}
-                                    <tr>
-                                        <td>{% if invoice.credit_note_for_invoice_id %}{{ 'Credit Note'|trans }}{% elseif invoice.debit_note_for_invoice_id %}{{ 'Debit Note'|trans }}{% else %}{{ 'Invoice'|trans }}{% endif %} #{{ invoice.serie_nr }}</td>
-                                        <td>{{ invoice.created_at|format_date }}</td>
-                                        <td>{{ invoice.total|format_currency(invoice.currency ?? default_currency) }}</td>
-                                        <td><a href='{{ "invoice/#{invoice.hash}"|url }}' class="btn btn-outline-secondary btn-sm">{{ 'View'|trans }}</a></td>
-                                    </tr>
-                                {% else %}
-                                    <tr>
-                                        <td colspan="4">{{ 'The list is empty'|trans }}</td>
-                                    </tr>
-                                {% endfor %}
-                                </tbody>
-                            </table>
-                            {{ include('partial_pagination.html.twig', { 'list': refunded_invoices, 'url': 'invoice', 'hash': '#nav-refunded' }) }}
-                        </div>
-                        <div class="tab-pane fade table-responsive" id="nav-canceled" role="tabpanel" aria-labelledby="nav-canceled-tab"
-                             tabindex="0">
-                            <table class="table table-bordered table-hover">
-                                <thead>
-                                <tr>
-                                    <th>{{ 'Title'|trans }}</th>
-                                    <th>{{ 'Invoice Date'|trans }}</th>
-                                    <th>{{ 'Total'|trans }}</th>
-                                    <th>{{ 'Actions'|trans }}</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                {% for i, invoice in canceled_invoices.list %}
-                                    <tr>
-                                        <td>{% if invoice.credit_note_for_invoice_id %}{{ 'Credit Note'|trans }}{% elseif invoice.debit_note_for_invoice_id %}{{ 'Debit Note'|trans }}{% else %}{{ 'Invoice'|trans }}{% endif %} #{{ invoice.serie_nr }}</td>
-                                        <td>{{ invoice.created_at|format_date }}</td>
-                                        <td>{{ invoice.total|format_currency(invoice.currency ?? default_currency) }}</td>
-                                        <td><a href='{{ "invoice/#{invoice.hash}"|url }}' class="btn btn-outline-secondary btn-sm">{{ 'View'|trans }}</a></td>
-                                    </tr>
-                                {% else %}
-                                    <tr>
-                                        <td colspan="4">{{ 'The list is empty'|trans }}</td>
-                                    </tr>
-                                {% endfor %}
-                                </tbody>
-                            </table>
-                            {{ include('partial_pagination.html.twig', { 'list': canceled_invoices, 'url': 'invoice', 'hash': '#nav-canceled' }) }}
-                        </div>
-                    </div>
+                    {% else %}
+                        {{ include('partial_client_empty.html.twig', {
+                            'empty_title': section.empty,
+                            'empty_description': status == 'unpaid' ? 'There is nothing to pay right now. Your payment history is available under Paid.'|trans : ''
+                        }, with_context: false) }}
+                    {% endif %}
                 </div>
-            </div>
+            {% endfor %}
         </div>
     </div>
 {% endblock %}

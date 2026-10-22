@@ -1,0 +1,25 @@
+{# Shared light/dark logo and text fallback. Explicit null URLs keep logo visibility settings authoritative.
+   Keep caller classes, link options, dimensions and inline styles for extension compatibility. #}
+{% set logo_url = logo_url|default(null) %}
+{% set dark_logo_url = dark_logo_url|default(null) %}
+{% set link_url = link_url|default('/'|url) %}
+{% set link_class = link_class|default('') %}
+{% set link_rel = link_rel|default(null) %}
+{% set image_class = image_class|default('') %}
+{% set image_width = image_width|default(null) %}
+{% set image_height = image_height|default(null) %}
+{% set image_style = image_style|default(null) %}
+{% set fallback_class = fallback_class|default('') %}
+{% set show_mobile_name = show_mobile_name|default(false) %}
+
+<a{% if link_class %} class="{{ link_class }}"{% endif %} href="{{ link_url }}"{% if link_target is defined %} target="{{ link_target }}"{% endif %}{% if link_rel %} rel="{{ link_rel }}"{% endif %}>
+    {% if logo_url or dark_logo_url %}
+        <img class="fb-image-contain hide-theme-light{% if image_class %} {{ image_class }}{% endif %}" src="{{ dark_logo_url|default(logo_url) }}" alt="{{ company.name }}" title="{{ company.name }}"{% if image_width %} width="{{ image_width }}"{% endif %}{% if image_height %} height="{{ image_height }}"{% endif %}{% if image_style %} style="{{ image_style }}"{% endif %}>
+        <img class="fb-image-contain hide-theme-dark{% if image_class %} {{ image_class }}{% endif %}" src="{{ logo_url|default(dark_logo_url) }}" alt="{{ company.name }}" title="{{ company.name }}"{% if image_width %} width="{{ image_width }}"{% endif %}{% if image_height %} height="{{ image_height }}"{% endif %}{% if image_style %} style="{{ image_style }}"{% endif %}>
+        {% if show_mobile_name %}
+            <span class="d-sm-none">{{ company.name }}</span>
+        {% endif %}
+    {% else %}
+        <span{% if fallback_class %} class="{{ fallback_class }}"{% endif %}>{{ company.name }}</span>
+    {% endif %}
+</a>

@@ -1,0 +1,11 @@
+{#
+    Shared pagination context. Theme entrypoints own their page ranges, layout
+    and record selector. Embed so the calculated context reaches their block.
+#}
+{% set pageParam = page_param|default('page') %}
+{% set currentPageRaw = request.(pageParam)|default(1) %}
+{% set currentPage = currentPageRaw is not iterable and currentPageRaw matches '/^\\d+$/' ? max(1, min(currentPageRaw + 0, list.pages)) : 1 %}
+{% set hash = hash|default('') %}
+{% set filteredRequest = request|merge({(pageParam): null})|filter(v => v is not null) %}
+{% set paginationQuery = filteredRequest %}
+{% block pagination_content %}{% endblock %}

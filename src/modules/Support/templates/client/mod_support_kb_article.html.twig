@@ -1,86 +1,54 @@
 {% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
 {% set active_menu = 'kb' %}
+{% set query = request.q|default('')|trim %}
+{% set category_url = "support/kb/#{article.category.slug}"|url %}
+{% set return_url = query ? 'support/kb'|url(query: {'q': query, 'page': request.page|default(1)}) : "support/kb/#{article.category.slug}"|url(query: {'page': request.page|default(1)}) %}
 
 {% block meta_title %}{{ article.title }}{% endblock %}
 {% block meta_description %}{{ (article.content ?? '')|markdown_to_html|striptags|trim|truncate(160) }}{% endblock %}
-
 {% block body_class %}kb-article{% endblock %}
-{% block head %}{{ 'css/markdown.css' | public_asset_url | stylesheet_tag }}{% endblock %}
+{% block head %}{{ 'css/markdown.css'|public_asset_url|stylesheet_tag }}{% endblock %}
 {% block breadcrumb %}
-<li class="breadcrumb-item">
-    <a href="{{ 'support/kb'|url }}">{{ 'Knowledge Base'|trans }}</a>
-</li>
-<li class="breadcrumb-item">
-    <a href='{{ "support/kb/#{article.category.slug}"|url }}'>{{ article.category.title }}</a>
-</li>
-<li class="breadcrumb-item active" aria-current="page">{{ article.title }}</li>
+    <li class="breadcrumb-item"><a href="{{ 'support/kb'|url }}">{{ 'Knowledge Base'|trans }}</a></li>
+    <li class="breadcrumb-item"><a href="{{ category_url }}">{{ article.category.title }}</a></li>
+    <li class="breadcrumb-item active" aria-current="page">{{ article.title }}</li>
 {% endblock %}
 
 {% block content %}
-{% set related_articles = guest.support_kb_article_get_list({ 'kb_article_category_id': article.category.id, 'per_page': 6 }).list|filter(related_article => related_article.id != article.id)|slice(0, 5) %}
-<div class="row g-4 justify-content-center">
-    <article class="col-lg-9">
-        <div class="mb-4">
-            <h1 class="display-6 mt-2 mb-3">{{ article.title }}</h1>
-            <div class="d-flex flex-wrap gap-3 text-muted small">
-                {% if article.updated_at %}
-                    <span>{{ 'Updated'|trans }} {{ '%time% ago'|trans({ '%time%': article.updated_at|timeago }) }}</span>
-                {% endif %}
-                {% if guest.support_kb_article_views_enabled %}
-                    <span>{{ article.views }} {{ 'views'|trans }}</span>
-                {% endif %}
-            </div>
-        </div>
-
-        <div class="card border-0 shadow-sm mb-4">
-            <div class="card-body p-4 p-lg-5">
-                <article class="kb-article-content markdown-body bg-transparent text-reset">
+    {% set related_articles = guest.support_kb_article_get_list({'kb_article_category_id': article.category.id, 'per_page': 6}).list|filter(related => related.id != article.id)|slice(0, 5) %}
+    <div class="client-kb-reader mx-auto">
+        <a class="d-inline-flex align-items-center client-content-link mb-3" href="{{ return_url }}">{{ query ? 'Back to Search Results'|trans : 'Back to Category'|trans }}</a>
+        <article class="card mb-4">
+            <div class="card-body p-3 p-md-4">
+                <header class="mb-4">
+                    <p class="small text-secondary mb-2">{{ article.category.title }}</p>
+                    <h1 class="h2 mb-3">{{ article.title }}</h1>
+                    <div class="d-flex flex-wrap gap-3 text-secondary small">
+                        {% if article.updated_at %}<span>{{ 'Updated'|trans }} <time datetime="{{ article.updated_at|date('c') }}">{{ article.updated_at|format_date }}</time></span>{% endif %}
+                        {% if guest.support_kb_article_views_enabled %}<span>{{ article.views == 1 ? '1 view'|trans : '%count% views'|trans({'%count%': article.views}) }}</span>{% endif %}
+                    </div>
+                </header>
+                <div class="kb-article-content markdown-body bg-transparent text-reset">
                     {{ (article.content ?? '')|markdown_to_html }}
-                </article>
-            </div>
-        </div>
-
-        <div class="card bg-light border-0 mb-4">
-            <div class="card-body p-4 d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
-                <div>
-                    <h2 class="h5 mb-1">{{ 'Still need help?'|trans }}</h2>
-                    <p class="text-muted mb-0">{{ 'If this article did not answer your question, our support team can help.'|trans }}</p>
                 </div>
-                <a href="{{ 'support/contact-us'|url }}" class="btn btn-primary">{{ 'Contact support'|trans }}</a>
             </div>
-        </div>
-
-        <div class="d-flex flex-wrap gap-2 mb-4">
-            <a href="{{ 'support/kb'|url }}" class="btn btn-outline-secondary">{{ 'Browse all articles'|trans }}</a>
-            <a href='{{ "support/kb/#{article.category.slug}"|url }}' class="btn btn-outline-secondary">{{ 'More in this category'|trans }}</a>
-        </div>
-    </article>
-
-    <aside class="col-lg-3">
-        <div class="position-sticky" style="top: 1rem;">
-            <div class="card mb-4">
+        </article>
+        {% if related_articles %}
+            <section class="card mb-4" aria-labelledby="kb-related-heading">
                 <div class="card-body">
-                    <div class="text-muted small mb-1">{{ 'Category'|trans }}</div>
-                    <a class="h5 d-block mb-3 text-decoration-none" href='{{ "support/kb/#{article.category.slug}"|url }}'>{{ article.category.title }}</a>
-                    <a class="btn btn-outline-secondary btn-sm w-100" href="{{ 'support/kb'|url }}">{{ 'Knowledge Base'|trans }}</a>
-                </div>
-            </div>
-
-            <div class="card mb-4">
-                <div class="card-header py-3">
-                    <h2 class="h5 mb-0">{{ 'Related articles'|trans }}</h2>
-                </div>
-                <div class="list-group list-group-flush">
-                    {% if related_articles %}
-                        {% for related_article in related_articles %}
-                            <a class="list-group-item list-group-item-action" href='{{ "support/kb/#{related_article.category.slug}/#{related_article.slug}"|url }}'>{{ related_article.title }}</a>
+                    <h2 class="h3 mb-2" id="kb-related-heading">{{ 'Related Articles'|trans }}</h2>
+                    <div class="list-group list-group-flush client-kb-articles">
+                        {% for related in related_articles %}
+                            <a class="list-group-item list-group-item-action px-0" href="{{ "support/kb/#{related.category.slug}/#{related.slug}"|url }}">{{ related.title }}</a>
                         {% endfor %}
-                    {% else %}
-                        <div class="list-group-item text-muted">{{ 'No related articles yet.'|trans }}</div>
-                    {% endif %}
+                    </div>
                 </div>
-            </div>
+            </section>
+        {% endif %}
+        <div class="d-flex flex-wrap gap-3 mb-4">
+            <a class="client-content-link" href="{{ category_url }}">{{ 'More in This Category'|trans }}</a>
+            <a class="client-content-link" href="{{ 'support/kb'|url }}">{{ 'All Categories'|trans }}</a>
         </div>
-    </aside>
-</div>
+        {{ include('partial_support_kb_help.html.twig') }}
+    </div>
 {% endblock %}

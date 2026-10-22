@@ -1,0 +1,10 @@
+<div class="dropdown client-theme-picker" data-theme-picker>
+    <button class="btn btn-icon btn-ghost-secondary client-header-icon" type="button" data-bs-toggle="dropdown" aria-label="{{ 'Appearance'|trans }}" aria-expanded="false" aria-controls="client-theme-menu" title="{{ 'Appearance'|trans }}">
+        <svg class="icon" aria-hidden="true" data-theme-icon="system"><use href="#device-desktop" /></svg>
+        <svg class="icon d-none" aria-hidden="true" data-theme-icon="light"><use href="#sun" /></svg>
+        <svg class="icon d-none" aria-hidden="true" data-theme-icon="dark"><use href="#moon" /></svg>
+    </button>
+    <div class="dropdown-menu dropdown-menu-end" id="client-theme-menu" role="group" aria-label="{{ 'Appearance'|trans }}">
+        {{ include('partial_theme_preferences.html.twig', {theme_choice_class: 'dropdown-item d-flex align-items-center gap-2', theme_choice_labels: true}, with_context: false) }}
+    </div>
+</div>

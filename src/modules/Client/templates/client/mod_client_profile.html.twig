@@ -1,138 +1,134 @@
 {% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
-
-{% block meta_title %}{{ 'Profile Details'|trans }}{% endblock %}
-{% block page_header %}{{ 'User Profile Settings'|trans }}{% endblock %}
-{% block breadcrumb %}
-    <li class="breadcrumb-item active" aria-current="page">{{ 'Profile'|trans }}</li>{% endblock %}
-
+{% set active_menu = 'profile' %}
+{% block meta_title %}{{ 'Profile'|trans }}{% endblock %}
+{% block breadcrumb %}<li class="breadcrumb-item active" aria-current="page">{{ 'Profile'|trans }}</li>{% endblock %}
 {% block body_class %}client-profile{% endblock %}
 {% set required = guest.client_required %}
-{% block content %}
-    {% if (guest.client_is_email_validation_required) and (not profile.email_approved) %}
-        <div class="alert alert-block alert-danger">
-            <div class="row">
-                <span>{{ 'You must verify your email address before you may access our services.'|trans }}</span>
-            </div>
-            <a class="btn btn-primary" href="{{ 'client/resend_email_verification'|api_url }}"
-               {{ fb_api_link({message: 'Verification Email Re-sent'|trans}) }}>{{ 'Resend Verification Email'|trans }}</a>
-        </div>
-    {% endif %}
 
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card">
-                <div class="card-header">
-                    <nav class="nav nav-tabs card-header-tabs">
-                        <a class="nav-link active" id="details-tab" data-bs-toggle="tab"
-                           data-bs-target="#details-tab-pane" href="#details-tab-pane">{{ 'Details'|trans }}</a>
-                        <a class="nav-link" id="pass-tab" data-bs-toggle="tab" data-bs-target="#pass-tab-pane"
-                           href="#pass-tab-pane">{{ 'Change Password'|trans }}</a>
-                        <a class="nav-link" id="apikey-tab" data-bs-toggle="tab"
-                           data-bs-target="#apikey-tab-pane" href="#apikey-tab-pane">{{ 'API Key'|trans }}</a>
-                        <a class="nav-link" id="currency-tab" data-bs-toggle="tab"
-                           data-bs-target="#currency-tab-pane" href="#currency-tab-pane">{{ 'Currency'|trans }}</a>
-                    </nav>
+{% block content %}
+    <h1 class="mb-4">{{ 'Profile'|trans }}</h1>
+    {% if guest.client_is_email_validation_required and not profile.email_approved %}
+        {% embed 'partial_notice.html.twig' with {notice_type: 'warning'} %}
+            {% block notice_content %}
+                <h2 class="h3">{{ 'Verify Your Email Address'|trans }}</h2>
+                <p>{{ 'Check your inbox at %email% and follow the verification link to access our services.'|trans({'%email%': profile.email}) }}</p>
+                <a class="btn btn-outline-primary" href="{{ 'client/resend_email_verification'|api_url }}" {{ fb_api_link({message: 'Verification email resent'|trans}) }}>{{ 'Resend Verification Email'|trans }}</a>
+            {% endblock %}
+        {% endembed %}
+    {% endif %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <nav class="flex-fill" aria-label="{{ 'Profile Settings'|trans }}">
+                <div class="nav nav-tabs card-header-tabs" role="tablist">
+                    {% for id, label in {'details': 'Account Details'|trans, 'pass': 'Password'|trans, 'apikey': 'API Key'|trans, 'currency': 'Currency'|trans} %}
+                        <button class="nav-link{{ loop.first ? ' active' : '' }}" id="{{ id }}-tab" data-bs-toggle="tab" data-bs-target="#{{ id }}-tab-pane" type="button" role="tab" aria-controls="{{ id }}-tab-pane" aria-selected="{{ loop.first ? 'true' : 'false' }}">{{ label }}</button>
+                    {% endfor %}
                 </div>
-                <div class="tab-content">
-                    <div class="card-body tab-pane active" id="details-tab-pane" role="tabpanel" tabindex="0">
-                        <h5 class="card-title mb-1">{{ 'Update Details'|trans }}</h5>
-                        <p class="card-text fs-7 text-muted">{{ 'Keep your personal data up to date.'|trans }}</p>
-                        <form method="post" action="client/profile/update" id="profile-update" {{ fb_api_form({message: 'Profile Updated'|trans}) }}>
-                            <div class="row mb-4 d-flex justify-content-center">
-                                <div class="col-md-2">
-                                    {{ avatar(profile.email, 100, 'img-thumbnail', null, 'div') }}
-                                </div>
-                                <div class="col-md-10 d-flex align-items-center">
-                                    {{ 'Avatar is derived deterministically from your email address.'|trans }}
-                                </div>
-                            </div>
+            </nav>
+        </div>
+        <div class="card-body tab-content">
+            <div class="tab-pane active" id="details-tab-pane" role="tabpanel" aria-labelledby="details-tab" tabindex="0">
+                <p class="small text-secondary">{{ 'Fields marked * are required.'|trans }}</p>
+                <form action="{{ 'profile/update'|api_url }}" id="profile-update" data-unsaved-changes class="client-profile-form" {{ fb_api_form({callback: 'onClientProfileSaved'}) }}>
+                            <fieldset class="mb-4">
+                                <legend class="h3 mb-3">{{ 'Contact Details'|trans }}</legend>
                             <div class="row">
-                                <div class="mb-3 col-md-5">
+                                <div class="mb-3 col-md-6">
                                     <label class="form-label" for="first_name">{{ 'First Name'|trans }}</label>
-                                    <input type="text" class="form-control" name="first_name" id="first_name" value="{{ profile.first_name }}" required>
+                                    <input type="text" class="form-control" name="first_name" id="first_name" autocomplete="given-name" value="{{ profile.first_name }}" required>
                                 </div>
-                                <div class="mb-3 col-md-5">
+                                <div class="mb-3 col-md-6">
                                     <label class="form-label" for="last_name">{{ 'Last Name'|trans }}</label>
-                                    <input type="text" class="form-control" id="last_name" name="last_name" value="{{ profile.last_name }}" {% if "last_name" in required %} required {% endif %}>
+                                    <input type="text" class="form-control" id="last_name" autocomplete="family-name" name="last_name" value="{{ profile.last_name }}" {% if "last_name" in required %} required {% endif %}>
                                 </div>
                             </div>
                             <div class="row">
-                                <div class="mb-3 col-md-5">
+                                <div class="mb-3 col-md-6">
                                     <label class="form-label" for="email">{{ 'Email Address'|trans }}</label>
-                                    <input type="email" class="form-control" id="email" name="email" value="{{ profile.email }}" required>
+                                    <input type="email" autocapitalize="none" spellcheck="false" enterkeyhint="next" class="form-control" id="email" autocomplete="email" aria-describedby="profile-email-help" name="email" value="{{ profile.email }}" required>
+                                    <small id="profile-email-help" class="form-hint">{{ 'Used to sign in and receive account messages.'|trans }}{% if guest.client_is_email_validation_required %} {{ 'Changing this address requires email verification again.'|trans }}{% endif %}</small>
                                 </div>
-                                <div class="mb-3 col-md-5">
-                                    <label class="form-label" for="phone">{{ 'Phone Number'|trans }}</label>
+                                <div class="mb-3 col-md-6">
+                                    <label class="form-label" for="phone">{{ 'Phone Number'|trans }}{% if 'phone' in required %} <span class="text-danger" aria-hidden="true">*</span>{% endif %}</label>
                                     <input type="hidden" name="phone_cc" id="phone_cc" value="{{ profile.phone_cc }}">
                                     <input type="tel" class="form-control js-phone-input" name="phone" id="phone" value="{{ profile.phone }}" autocomplete="tel" data-initial-country="{{ profile.country|lower }}" {% if "phone" in required %} required {% endif %}>
                                 </div>
                             </div>
                             <div class="row">
-                                <div class="mb-3 col-md-10">
+                                <div class="mb-3 col-12">
                                     <label class="form-label" for="billing_email">{{ 'Billing Email Address'|trans }}</label>
-                                    <input type="email" class="form-control" id="billing_email" name="billing_email" value="{{ profile.billing_email }}" placeholder="{{ profile.email }}">
-                                    <small class="form-hint text-muted">{{ 'Invoice notifications are sent here. Leave blank to use your account email.'|trans }}</small>
+                                    <input type="email" autocapitalize="none" spellcheck="false" enterkeyhint="next" class="form-control" id="billing_email" autocomplete="billing email" aria-describedby="billing-email-help" name="billing_email" value="{{ profile.billing_email }}" placeholder="{{ profile.email }}">
+                                    <small id="billing-email-help" class="form-hint">{{ 'Invoice notifications are sent here. Leave blank to use your account email.'|trans }}</small>
                                 </div>
                             </div>
+                            </fieldset>
+                            <fieldset class="mb-4">
+                                <legend class="h3 mb-3">{{ 'Personal Details'|trans }}</legend>
                             <div class="row">
-                                <div class="mb-3 col-md-5">
+                                <div class="mb-3 col-md-6">
                                     <label class="form-label" for="birthday">{{ 'Birthdate'|trans }}</label>
-                                    <input type="date" class="form-control" id="birthday" name="birthday"
+                                    <input type="date" class="form-control" id="birthday" autocomplete="bday" name="birthday"
                                            value="{{ profile.birthday }}" {% if "birthday" in required %} required {% endif %}>
                                 </div>
-                                <div class="mb-3 col-md-5">
-                                    <label class="form-label" for="gender">{{ 'Gender'|trans }}</label>
+                                <div class="mb-3 col-md-6">
+                                    <label class="form-label" for="gender">{{ 'Gender'|trans }}{% if 'gender' in required %} <span class="text-danger" aria-hidden="true">*</span>{% endif %}</label>
                                     <select class="form-select" name="gender" id="gender" {% if "gender" in required %} required {% endif %}>
-                                        <option value="male" {{ profile.gender == 'male' ? 'selected' : '' }}>Male
-                                        </option>
+                                        <option value="" {{ not profile.gender ? 'selected' : '' }}>{{ 'Select Gender'|trans }}</option>
+                                        <option value="male" {{ profile.gender == 'male' ? 'selected' : '' }}>{{ 'Male'|trans }}</option>
                                         <option value="female" {{ profile.gender == 'female' ? 'selected' : '' }}>
-                                            Female
+                                            {{ 'Female'|trans }}
                                         </option>
                                         <option
                                             value="nonbinary" {{ profile.gender == 'nonbinary' ? 'selected' : '' }}>
-                                            Non-binary
+                                            {{ 'Non-binary'|trans }}
                                         </option>
                                         <option
-                                            value="other" {% if profile.gender not in ['male', 'female', 'nonbinary'] %} selected {% endif %}>
-                                            Other
+                                            value="other" {{ profile.gender == 'other' ? 'selected' : '' }}>
+                                            {{ 'Other'|trans }}
                                         </option>
                                     </select>
                                 </div>
                             </div>
+                            </fieldset>
+                            <fieldset class="mb-4">
+                                <legend class="h3 mb-3">{{ 'Company Details'|trans }}</legend>
                             <div class="row">
-                                <div class="mb-3 col-md-10">
+                                <div class="mb-3 col-12">
                                     <label class="form-label" for="company">{{ 'Company Name'|trans }}</label>
-                                    <input type="text" class="form-control" name="company" id="company" value="{{ profile.company }}" {% if "company" in required %} required {% endif %}>
+                                    <input type="text" class="form-control" name="company" id="company" autocomplete="organization" value="{{ profile.company }}" {% if "company" in required %} required {% endif %}>
                                 </div>
                             </div>
                             <div class="row">
-                                <div class="mb-3 col-md-5">
+                                <div class="mb-3 col-md-6">
                                     <label class="form-label" for="company_vat">{{ 'Company VAT'|trans }}</label>
                                     <input type="text" class="form-control" name="company_vat" id="company_vat" value="{{ profile.company_vat }}">
                                 </div>
-                                <div class="mb-3 col-md-5">
+                                <div class="mb-3 col-md-6">
                                     <label class="form-label" for="company_number">{{ 'Company Number'|trans }}</label>
                                     <input type="text" class="form-control" name="company_number" id="company_number" value="{{ profile.company_number }}">
                                 </div>
                             </div>
+                            </fieldset>
+                            <fieldset class="mb-4">
+                                <legend class="h3 mb-3">{{ 'Billing Address'|trans }}</legend>
                             <div class="row">
-                                <div class="mb-3 col-md-5">
+                                <div class="mb-3 col-md-6">
                                     <label class="form-label" for="address_1">{{ 'Address'|trans }}</label>
-                                    <input type="text" class="form-control" name="address_1" id="address_1" value="{{ profile.address_1 }}" {% if "address_1" in required %} required {% endif %}>
+                                    <input type="text" class="form-control" name="address_1" id="address_1" autocomplete="address-line1" value="{{ profile.address_1 }}" {% if "address_1" in required %} required {% endif %}>
                                 </div>
-                                <div class="mb-3 col-md-5">
+                                <div class="mb-3 col-md-6">
                                     <label class="form-label" for="address_2">{{ 'Address 2'|trans }}</label>
-                                    <input type="text" class="form-control" name="address_2" id="address_2" value="{{ profile.address_2 }}" {% if "address_2" in required %} required {% endif %}>
+                                    <input type="text" class="form-control" name="address_2" id="address_2" autocomplete="address-line2" value="{{ profile.address_2 }}" {% if "address_2" in required %} required {% endif %}>
                                 </div>
                             </div>
                             <div class="row">
-                                <div class="mb-3 col-md-5">
+                                <div class="mb-3 col-md-6">
                                     <label class="form-label" for="city">{{ 'City'|trans }}</label>
-                                    <input type="text" class="form-control" name="city" id="city" value="{{ profile.city }}" {% if "city" in required %} required {% endif %}>
+                                    <input type="text" class="form-control" name="city" id="city" autocomplete="address-level2" value="{{ profile.city }}" {% if "city" in required %} required {% endif %}>
                                 </div>
-                                <div class="mb-3 col-md-5">
-                                    <label class="form-label" for="country">{{ 'Country'|trans }}</label>
-                                    <select class="form-select" id="country" name="country" {% if "country" in required %} required {% endif %}>
+                                <div class="mb-3 col-md-6">
+                                    <label class="form-label" for="country">{{ 'Country'|trans }}{% if 'country' in required %} <span class="text-danger" aria-hidden="true">*</span>{% endif %}</label>
+                                    <select class="form-select" id="country" autocomplete="country" name="country" {% if "country" in required %} required {% endif %}>
                                         <option value="">{{ '-- Select Country --'|trans }}</option>
                                         {% for val,label in guest.system_countries %}
                                             <option value="{{ val }}" label="{{ label|e }}"
@@ -142,19 +138,22 @@
                                 </div>
                             </div>
                             <div class="row">
-                                <div class="mb-3 col-md-5">
+                                <div class="mb-3 col-md-6">
                                     <label class="form-label" for="state">{{ 'State'|trans }}</label>
-                                    <input type="text" class="form-control" name="state" id="state" value="{{ profile.state }}" {% if "state" in required %} required {% endif %}>
+                                    <input type="text" class="form-control" name="state" id="state" autocomplete="address-level1" value="{{ profile.state }}" {% if "state" in required %} required {% endif %}>
                                 </div>
-                                <div class="mb-3 col-md-5">
+                                <div class="mb-3 col-md-6">
                                     <label class="form-label" for="postcode">{{ 'Zip/Postal Code'|trans }}</label>
-                                    <input type="text" class="form-control" id="postcode" name="postcode" value="{{ profile.postcode }}" {% if "postcode" in required %} required {% endif %}>
+                                    <input type="text" class="form-control" id="postcode" autocomplete="postal-code" name="postcode" value="{{ profile.postcode }}" {% if "postcode" in required %} required {% endif %}>
                                 </div>
                             </div>
+                            </fieldset>
+                            <fieldset class="mb-4">
+                                <legend class="h3 mb-3">{{ 'Preferences and Additional Details'|trans }}</legend>
                             <div class="row">
-                                <div class="mb-3 col-md-10">
+                                <div class="mb-3 col-12">
                                     <label class="form-label" for="timezone">{{ 'Timezone'|trans }}</label>
-                                    <select class="form-select" name="timezone" id="timezone" data-timezone-select>
+                                    <select class="form-select" name="timezone" id="timezone" aria-describedby="timezone-help" data-timezone-select>
                                         <option value="">{{ '-- Use system default --'|trans }}</option>
                                         {% for region, identifiers in guest.system_timezones %}
                                             <optgroup label="{{ region }}">
@@ -164,7 +163,7 @@
                                             </optgroup>
                                         {% endfor %}
                                     </select>
-                                    <small class="form-hint text-muted">{{ 'Used to display dates and times in your local time across tickets, invoices, and order history.'|trans }}</small>
+                                    <small id="timezone-help" class="form-hint">{{ 'Used to display dates and times in your local time across tickets, invoices, and order history.'|trans }}</small>
                                 </div>
                             </div>
                             {% for custom, current in guest.client_custom_fields|default({}) %}
@@ -175,63 +174,79 @@
                                     </div>
                                 {% endif %}
                             {% endfor %}
-                            <button class="btn btn-primary" type="submit">{{ 'Update Profile'|trans }}</button>
-                        </form>
+                            </fieldset>
+                    <button class="btn btn-primary" type="submit">{{ 'Save Account Details'|trans }}</button>
+                </form>
+            </div>
+            <div class="tab-pane" id="pass-tab-pane" role="tabpanel" aria-labelledby="pass-tab" tabindex="0">
+                <h2 class="h3">{{ 'Change Password'|trans }}</h2>
+                <p class="text-secondary">{{ 'Use your current password to set a new one. You will need to sign in again afterwards.'|trans }}</p>
+                <form action="{{ 'profile/change_password'|api_url }}" id="profile-password" data-unsaved-changes data-auth-passwords data-password-mismatch="{{ 'The new passwords do not match.'|trans }}" class="client-password-form" {{ fb_api_form({callback: 'onClientPasswordChanged'}) }}>
+                    <div class="mb-3">
+                        <label class="form-label" for="current_password">{{ 'Current Password'|trans }}</label>
+                        <input class="form-control" type="password" name="current_password" data-auth-password id="current_password" autocomplete="current-password" required>
                     </div>
-                    <div class="card-body tab-pane" id="pass-tab-pane" role="tabpanel" tabindex="0">
-                        <h5 class="card-title mb-1">{{ 'Change Password'|trans }}</h5>
-                        <p class="card-text fs-7 text-muted">{{ 'Enter your new password twice to avoid mistakes. '|trans }}</p>
-                        <form method="post" action="{{ 'profile/change_password'|api_url }}" {{ fb_api_form() }}>
-                            <div class="mb-3">
-                                <label class="form-label" for="current_password">{{ 'Current Password'|trans }}</label>
-                                <input class="form-control" type="password" name="current_password"
-                                       id="current_password" required>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label" for="new_password">{{ 'New Password'|trans }}</label>
-                                <input class="form-control" type="password" name="new_password" id="new_password"
-                                       required>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label" for="confirm_password">{{ 'Confirm Password'|trans }}</label>
-                                <input class="form-control" type="password" name="confirm_password"
-                                       id="confirm_password" required>
-                            </div>
-                            <button class="btn btn-primary" type="submit">{{ 'Change Password'|trans }}</button>
-                        </form>
+                    <div class="mb-3">
+                        <label class="form-label" for="new_password">{{ 'New Password'|trans }}</label>
+                        <input class="form-control" type="password" name="new_password" data-auth-password data-auth-new-password id="new_password" autocomplete="new-password" minlength="8" aria-describedby="password-help" required>
+                        <small class="form-hint" id="password-help">{{ 'Use at least 8 characters, including uppercase and lowercase letters and a number.'|trans }}</small>
                     </div>
-                    <div class="card-body tab-pane" id="apikey-tab-pane" role="tabpanel" tabindex="0">
-                        <h5 class="card-title mb-1">{{ 'API Key'|trans }}</h5>
-                        <p class="card-text fs-7 text-muted">{{ 'API key allows integration with external applications. You will need this key for authentication.'|trans }}</p>
-                        <form method="post" action="client/profile/api_key_reset" id="change-api-key" {{ fb_api_form({message: 'API Key Changed'|trans}) }}>
-                            {% if client.profile_api_key_get %}
-                                <div class="alert alert-warning" role="alert">
-                                    <strong>{{ 'Warning!'|trans }}</strong>&nbsp;{{ 'Resetting the key will break existing applications using it!'|trans }}
-                                </div>
-                            {% endif %}
-                            <div class="mb-3">
-                                <label for="api-key" class="form-label">{{ 'Your API Key'|trans }}</label>
-                                <input class="form-control" readonly type="text"
-                                       value="{{ client.profile_api_key_get }}" id="api-key">
-                            </div>
-                            <button class="btn btn-primary" type="submit">{{ 'Generate a New Key'|trans }}</button>
-                        </form>
+                    <div class="mb-3">
+                        <label class="form-label" for="confirm_password">{{ 'Confirm New Password'|trans }}</label>
+                        <input class="form-control" type="password" name="confirm_password" data-auth-password data-auth-confirm-password id="confirm_password" autocomplete="new-password" required>
                     </div>
-                    <div class="card-body tab-pane" id="currency-tab-pane" role="tabpanel" tabindex="0">
-                        <h5 class="card-title mb-1">{{ 'Currency'|trans }}</h5>
-                        <p class="card-text fs-7 text-muted">{{ 'Your profile currency is defined after your first order. Once your currency is set, all your profile accounting will be managed in that currency and cannot be changed.'|trans }}</p>
-                        {% if profile.currency %}
-                            <p>{{ 'Your profile currency is'|trans }} <strong>{{ profile.currency|currency_name }}</strong></p>
-                            <p>{{ 'You will need to create a new client profile to use an alternative currency.'|trans }}</p>
-                        {% else %}
-                            <div class="alert alert-info" role="alert">
-                                {{ 'You do not yet have a currency associated with your profile. You can select the correct one when making your first order.'|trans }}
-                            </div>
-                        {% endif %}
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="show-profile-passwords" data-auth-show-passwords>
+                        <label class="form-check-label" for="show-profile-passwords">{{ 'Show Passwords'|trans }}</label>
                     </div>
-                </div>
+                    <button class="btn btn-primary" type="submit">{{ 'Change Password'|trans }}</button>
+                </form>
+            </div>
+            <div class="tab-pane" id="apikey-tab-pane" role="tabpanel" aria-labelledby="apikey-tab" tabindex="0">
+                {% set api_key = client.profile_api_key_get %}
+                <h2 class="h3">{{ 'API Key'|trans }}</h2>
+                <p class="text-secondary">{{ 'Use this key to connect external applications to your account.'|trans }}</p>
+                <form action="{{ 'profile/api_key_reset'|api_url }}" class="client-profile-form" id="change-api-key" {{ fb_api_form({callback: 'onClientApiKeyChanged'}) }}>
+                    {% if api_key %}<p class="alert alert-warning">{{ 'Generating a new key stops applications using your current key from connecting. You will need to update them.'|trans }}</p>{% endif %}
+                    <div class="mb-3">
+                        <label class="form-label" for="api-key">{{ 'Your API Key'|trans }}</label>
+                        <input class="form-control" readonly type="password" autocomplete="off" value="{{ api_key }}" id="api-key">
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="show-profile-api-key">
+                        <label class="form-check-label" for="show-profile-api-key">{{ 'Show API Key'|trans }}</label>
+                    </div>
+                    <button class="btn {{ api_key ? 'btn-outline-danger' : 'btn-primary' }}" type="submit">{{ 'Generate a New Key'|trans }}</button>
+                </form>
+            </div>
+            <div class="tab-pane" id="currency-tab-pane" role="tabpanel" aria-labelledby="currency-tab" tabindex="0">
+                <h2 class="h3">{{ 'Account Currency'|trans }}</h2>
+                {% if profile.currency %}
+                    <p class="fw-semibold">{{ profile.currency }} — {{ profile.currency|currency_name }}</p>
+                    <p class="text-secondary mb-0">{{ 'Your currency was set with your first order and cannot be changed for this account.'|trans }}</p>
+                {% else %}
+                    <p class="text-secondary mb-0">{{ 'Your currency will be set when you place your first order. Choose the currency you want to use before ordering.'|trans }}</p>
+                {% endif %}
             </div>
         </div>
-
     </div>
+{% endblock %}
+
+{% block js %}
+<script>
+    function onClientProfileSaved() {
+        flashMessage({message: {{ 'Account details saved'|trans|json_encode|raw }}, reload: true, type: 'success'});
+    }
+    function onClientPasswordChanged() {
+        flashMessage({message: {{ 'Password changed. Sign in with your new password.'|trans|json_encode|raw }}, reload: {{ 'login'|url|json_encode|raw }}, type: 'success'});
+    }
+    function onClientApiKeyChanged() {
+        flashMessage({message: {{ 'API key updated'|trans|json_encode|raw }}, reload: true, type: 'success'});
+    }
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('show-profile-api-key').addEventListener('change', (event) => {
+            document.getElementById('api-key').type = event.target.checked ? 'text' : 'password';
+        });
+    });
+</script>
 {% endblock %}

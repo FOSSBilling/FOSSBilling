@@ -1,0 +1,8 @@
+{# Captured Twig blocks retain module and extension markup without rebuilding routes. #}
+<nav class="fb-breadcrumbs{% if breadcrumb_class|default('') %} {{ breadcrumb_class }}{% endif %}" aria-label="{{ 'Breadcrumb'|trans }}">
+    {% if breadcrumb_list|default('') %}
+        {{ breadcrumb_list }}
+    {% else %}
+        <ol class="breadcrumb mb-0">{{ breadcrumb_items|default('') }}</ol>
+    {% endif %}
+</nav>

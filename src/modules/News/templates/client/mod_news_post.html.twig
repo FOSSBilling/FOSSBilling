@@ -1,12 +1,14 @@
 {% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
 {% set active_menu = 'news' %}
+{% set history_url = 'news'|url(query: {'search': request.search|default(''), 'page': request.page|default(1)}) %}
 
 {% block meta_title %}{{ post.title }}{% endblock %}
 {% block meta_description %}{{ post.description }}{% endblock %}
 
 {% block body_class %}news-post{% endblock %}
+{% block head %}{{ 'css/markdown.css'|public_asset_url|stylesheet_tag }}{% endblock %}
 {% block breadcrumb %}
-<li class="breadcrumb-item"><a href="{{ 'news'|url }}">{{ 'News'|trans }}</a></li>
+<li class="breadcrumb-item"><a href="{{ history_url }}">{{ 'News'|trans }}</a></li>
 <li class="breadcrumb-item active" aria-current="page">{{post.title}}</li>
 {% endblock %}
 
@@ -26,23 +28,28 @@
 {% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-12">
-        <div class="card ms-0 ms-md-3 w-100">
-            <div class="card-header">
-                <h3 class="link-body-emphasis mb-1">{{ post.title }}</h3>
-                <span class="text-muted">{{ post.updated_at|format_datetime }} {{ 'by'|trans }} {{ post.author.name }}</span>
-            </div>
-            <div class="card-body">
-                <div class="pt-3 px-2">
-                    {% if post.image %}<img src="{{ post.image }}" alt="{{ post.title }}">{% endif %}
+    {% set published = post.published_at ?: post.created_at %}
+    <div class="client-news-reader mx-auto">
+        <a class="d-inline-flex align-items-center client-content-link mb-3" href="{{ history_url }}">{{ 'Back to Announcements'|trans }}</a>
+        <article class="card mb-4">
+            <div class="card-body p-3 p-md-4">
+                <header class="mb-4">
+                    {% if post.section %}<p class="small text-secondary fw-semibold mb-2">{{ post.section }}</p>{% endif %}
+                    <h1 class="h2 mb-3">{{ post.title }}</h1>
+                    <div class="small text-secondary">
+                        {% if published %}<span class="d-block">{{ 'Published'|trans }} <time datetime="{{ published|date('c') }}">{{ published|format_date }}</time></span>{% endif %}
+                        {% if post.updated_at and published and post.updated_at|date('Y-m-d') > published|date('Y-m-d') %}
+                            <span class="d-block">{{ 'Updated'|trans }} <time datetime="{{ post.updated_at|date('c') }}">{{ post.updated_at|format_date }}</time></span>
+                        {% endif %}
+                        {% if post.author.name|default('') %}<span class="d-block">{{ 'By'|trans }} {{ post.author.name }}</span>{% endif %}
+                    </div>
+                </header>
+                {% if post.image %}<img class="img-fluid rounded mb-4" src="{{ post.image }}" alt="{{ post.title }}">{% endif %}
+                <div class="client-news-content markdown-body bg-transparent text-reset">
                     {{ (post.content ?? '')|markdown_to_html }}
                 </div>
             </div>
-            <div class="card-footer">
-                <a href="{{ 'news'|url }}" class="btn btn-primary">{{ 'Back to the List'|trans }}</a>
-            </div>
-        </div>
+        </article>
+        <a class="d-inline-flex align-items-center client-content-link mb-4" href="{{ history_url }}">{{ 'Back to Announcements'|trans }}</a>
     </div>
-</div>
 {% endblock %}

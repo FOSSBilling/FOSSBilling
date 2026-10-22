@@ -53,6 +53,7 @@ export function dispatchLinkAction(apiData, rawHref, modalsLib, onRequest) {
       content: modal.content ?? '',
       confirmButton: modal.button ?? 'Confirm',
       confirmButtonColor: modal.buttonColor ?? 'primary',
+      ...(modal.cancelButton ? {cancelButton: modal.cancelButton} : {}),
       confirmCallback: () => {
         onRequest('GET', rawHref);
       },

@@ -1,12 +1,7 @@
 {#
-    Body of the `status_name(status)` macro. Admin's version was a strict
-    superset of client's - every status client handled plus more, and a
-    null/empty guard client lacked - and client's own copy turned out to
-    have zero callers anywhere (not even client's own status_badge() macro,
-    which duplicates similar logic inline instead of calling this), so
-    standardizing on admin's fuller version carries no real behavior change
-    for any existing caller. See partial_recaptcha_shared.html.twig for why
-    this is an include rather than a shared macro namespace.
+    Translated status labels shared by status_name() and status_badge() in
+    both themes. Unknown extension statuses are humanised and escaped.
+    Includes preserve the existing macro entrypoints and invocation styles.
 #}
 {% if status is same as(null) or (status is empty and status != '0') %}
     -

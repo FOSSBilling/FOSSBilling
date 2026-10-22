@@ -10,6 +10,7 @@
  */
 
 import { parseDataAttr } from './parse-data-attr.mts';
+import { completeApiAction } from './api-completion.ts';
 import {
   injectCSRFToken,
   buildRequestBody,
@@ -325,40 +326,7 @@ const API = {
       return;
     }
 
-    if (apiData.hasOwnProperty('callback') && typeof window[apiData.callback] === 'function') {
-      return window[apiData.callback](result);
-    } else if (apiData.hasOwnProperty('callback')) {
-      console.warn('Invalid callback function:', apiData.callback);
-    }
-
-    if (apiData.hasOwnProperty('redirect')) {
-      const redirectUrl = new URL(apiData.redirect, window.location.href);
-
-      if (redirectUrl.href === window.location.href) {
-        window.location.reload();
-      } else {
-        window.location = redirectUrl.href;
-      }
-
-      return;
-    }
-
-    if (apiData.hasOwnProperty('reload')) {
-      window.location.reload();
-      return;
-    }
-
-    if (apiData.hasOwnProperty('message')) {
-      FOSSBilling.ui.notify(apiData.message, "success");
-      return;
-    }
-
-    if (result) {
-      FOSSBilling.ui.notify("Form Updated", "success");
-      return;
-    }
-
-    console.warn('Unhandled API response in _afterComplete:', apiData);
+    return completeApiAction(apiData, result);
   },
 
   /**
@@ -368,16 +336,18 @@ const API = {
    */
   _createLoader: function() {
     const loader = document.createElement('div');
-    loader.classList.add('spinner-border');
+    loader.className = 'spinner-border fb-request-loader';
     loader.setAttribute('role', 'status');
+    loader.setAttribute('aria-atomic', 'true');
+    const status = document.createElement('span');
+    status.className = 'visually-hidden';
+    const labels = document.querySelector('.toast-container')?.dataset;
+    status.textContent = labels?.requestLoading || 'Loading. Please wait.';
+    loader.appendChild(status);
     Object.assign(loader.style, {
-      width: '4rem',
-      height: '4rem',
-      left: '50%',
-      top: '50%',
-      position: 'fixed',
-      opacity: '0',
-      transition: 'opacity 250ms'
+      width: '4rem', height: '4rem', left: '50%', top: '50%',
+      position: 'fixed', translate: '-50% -50%', zIndex: '1090', pointerEvents: 'none',
+      opacity: '0', transition: 'opacity 250ms',
     });
     document.body.appendChild(loader);
     loader._fadeInTimeout = setTimeout(() => { loader.style.opacity = '1'; }, 250);
@@ -397,8 +367,12 @@ const API = {
         }
 
         formElement.dataset.fbApiBound = 'true';
+        let requestInProgress = false;
         formElement.addEventListener('submit', function (event) {
+          // Capture-phase validators and extension handlers may cancel submission.
+          if (event.defaultPrevented) return;
           event.preventDefault();
+          if (requestInProgress) return;
 
           const formData = new FormData(formElement);
           const submitter = event.submitter;
@@ -408,7 +382,9 @@ const API = {
 
           if (FOSSBilling.editor) {
             if (!FOSSBilling.editor.validateForm(formElement)) {
-              return FOSSBilling.ui.notify('At least one of the required fields are empty.', 'error');
+              const message = 'At least one of the required fields are empty.';
+              if (FOSSBilling.ui.formError) return FOSSBilling.ui.formError(formElement, message);
+              return FOSSBilling.ui.notify(message, 'error');
             }
 
             FOSSBilling.editor.syncForm(formElement, formData);
@@ -419,33 +395,60 @@ const API = {
             ? (formElement.enctype === 'multipart/form-data' ? formData : Tools.serializeFormDataToJSON(formData))
             : Tools.serializeFormData(formData);
 
-          const buttons = formElement.querySelectorAll('button:not([disabled])');
+          const buttons = [...formElement.elements].filter(control =>
+            control.matches('button, input[type="submit"], input[type="image"], input[type="button"], input[type="reset"]')
+            && !control.disabled);
           const toggleButtons = (disable) => {
             buttons.forEach(button => button.disabled = disable);
           };
-          toggleButtons(true);
+          const originalBusy = formElement.getAttribute('aria-busy');
+          let resetComplete = false;
+          const reset = () => {
+            if (resetComplete) return;
+            resetComplete = true;
+            requestInProgress = false;
+            toggleButtons(false);
+            if (originalBusy === null) formElement.removeAttribute('aria-busy');
+            else formElement.setAttribute('aria-busy', originalBusy);
+            FOSSBilling.ui.formLoading?.(formElement, false, submitter);
+          };
 
           const action = formElement.getAttribute('action');
           if (!action) {
-            toggleButtons(false);
             console.warn('Missing form action attribute. Skipping API call.');
             return;
           }
 
-          API.makeRequest(
-            formMethod,
-            Tools.getBaseURL(action),
-            data,
-            (result) => {
-              toggleButtons(false);
-              API._afterComplete(formElement, result);
-              return result;
-            },
-            (error) => {
-              toggleButtons(false);
-              FOSSBilling.ui.notify(`${error.message} (${error.code})`, 'error');
-            }
-          );
+          FOSSBilling.ui.clearFormError?.(formElement);
+          requestInProgress = true;
+          formElement.setAttribute('aria-busy', 'true');
+          try {
+            FOSSBilling.ui.formLoading?.(formElement, true, submitter);
+            toggleButtons(true);
+            API.makeRequest(
+              formMethod,
+              Tools.getBaseURL(action),
+              data,
+              (result) => {
+                try {
+                  FOSSBilling.ui.formSaved?.(formElement);
+                } finally {
+                  reset();
+                }
+                API._afterComplete(formElement, result);
+                return result;
+              },
+              (error) => {
+                reset();
+                if (FOSSBilling.ui.formError) FOSSBilling.ui.formError(formElement, error.message);
+                else FOSSBilling.ui.notify(`${error.message} (${error.code})`, 'error');
+              },
+              !FOSSBilling.ui.formLoading
+            );
+          } catch (error) {
+            reset();
+            throw error;
+          }
         });
       });
     }

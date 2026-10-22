@@ -96,6 +96,8 @@ class Client implements \FOSSBilling\InjectionAwareInterface
 
         try {
             $result = $service->password_reset_valid($data);
+        } catch (\FOSSBilling\InformationException) {
+            $result = false;
         } finally {
             RandomizedTimeFloor::apply($startedAt);
         }
@@ -104,7 +106,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
             return $app->render('mod_client_set_new_password', ['hash' => $hash]);
         }
 
-        return $app->redirect('/');
+        return $app->redirect('password-reset?expired=1');
     }
 
     private function checkPageRateLimit(\Box_App $app, string $policy): ?Response

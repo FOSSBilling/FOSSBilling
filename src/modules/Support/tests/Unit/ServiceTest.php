@@ -2125,7 +2125,7 @@ test('ticket create for admin', function (): void {
     expect($events[1])->toBeInstanceOf(AfterTicketOpenedEvent::class);
     expect($events[1]->ticketId)->toBe(1);
     expect($events[1]->actor)->toBe(TicketActorRole::ADMIN);
-    expect($steps)->toBe(['before', 'persist', 'flush', 'persist', 'flush', 'opened']);
+    expect($steps)->toBe(['before', 'persist', 'flush', 'persist', 'persist', 'flush', 'opened']);
 });
 
 test('ticket create for client', function (): void {

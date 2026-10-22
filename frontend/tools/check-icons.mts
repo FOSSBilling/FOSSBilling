@@ -13,6 +13,7 @@ const themes = [
     area: 'client',
     themePath: resolve(rootDir, 'src/themes/default/client'),
     scanPaths: [
+      resolve(rootDir, 'src/themes/default/shared/html'),
       resolve(rootDir, 'src/themes/default/client/html'),
       resolve(rootDir, 'src/themes/default/client/assets'),
       resolve(rootDir, 'src/modules'),
@@ -24,6 +25,7 @@ const themes = [
     area: 'admin',
     themePath: resolve(rootDir, 'src/themes/default/admin'),
     scanPaths: [
+      resolve(rootDir, 'src/themes/default/shared/html'),
       resolve(rootDir, 'src/themes/default/admin/html'),
       resolve(rootDir, 'src/themes/default/admin/assets'),
       resolve(rootDir, 'src/modules'),

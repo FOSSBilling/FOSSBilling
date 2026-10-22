@@ -1,0 +1,7 @@
+{# Tabler controls shared by the admin group and client dropdown. #}
+{% for preference, label in {'system': 'System'|trans, 'light': 'Light'|trans, 'dark': 'Dark'|trans} %}
+    <button type="button" class="{{ theme_choice_class|default('btn btn-icon') }}" data-theme-preference="{{ preference }}" aria-label="{{ label }}" aria-pressed="false"{% if theme_choice_tooltips|default(false) %} data-bs-toggle="tooltip" title="{{ label }}"{% endif %}>
+        <svg class="icon" aria-hidden="true">{% if preference == 'system' %}<use href="#device-desktop" />{% elseif preference == 'light' %}<use href="#sun" />{% else %}<use href="#moon" />{% endif %}</svg>
+        {% if theme_choice_labels|default(false) %}<span>{{ label }}</span>{% endif %}
+    </button>
+{% endfor %}

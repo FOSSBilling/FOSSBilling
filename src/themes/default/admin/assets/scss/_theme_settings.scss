@@ -5,10 +5,14 @@
 
     fieldset {
         display: none;
+
+        &[data-fb-accordion-initialized] {
+            display: block;
+        }
     }
 
     .accordion-item {
-        legend {
+        legend:not(.visually-hidden) {
             display: none;
         }
     }

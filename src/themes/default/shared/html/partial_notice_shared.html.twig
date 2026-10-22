@@ -1,0 +1,20 @@
+{# Static notices are not live regions. Callers opt into alert/status for feedback. #}
+{% set noticeType = notice_type|default('info') %}
+{% set noticeType = noticeType == 'error' ? 'danger' : noticeType %}
+<div class="alert alert-{{ noticeType }} text-break{% if notice_dismissible|default(false) %} alert-dismissible fade show{% endif %}{% if notice_class|default('') %} {{ notice_class }}{% endif %}" data-fb-notice{% if notice_role|default('') in ['alert', 'status'] %} role="{{ notice_role }}"{% endif %}>
+    {% if notice_icon|default(false) %}
+        <div class="alert-icon"><svg class="icon" aria-hidden="true">{% if noticeType in ['danger', 'warning'] %}<use href="#alert-triangle" />{% elseif noticeType == 'success' %}<use href="#circle-check" />{% else %}<use href="#info-circle" />{% endif %}</svg></div>
+    {% endif %}
+    <div class="fb-notice-content">
+        {% block notice_content %}
+            {% if notice_title|default('') %}<div class="alert-heading">{{ notice_title }}</div>{% endif %}
+            {{ notice_message|default('') }}
+        {% endblock %}
+        {% if notice_actions|default([]) %}
+            <div class="fb-notice-actions d-flex flex-wrap gap-2 mt-2">
+                {% for action in notice_actions %}<a class="alert-action ms-0" href="{{ action.link }}">{{ action.text }}</a>{% endfor %}
+            </div>
+        {% endif %}
+    </div>
+    {% if notice_dismissible|default(false) %}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="{{ 'Close'|trans }}"></button>{% endif %}
+</div>

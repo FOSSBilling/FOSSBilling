@@ -1,229 +1,211 @@
-{% extends "layout_public.html.twig" %}
-
+{% extends "layout_auth.html.twig" %}
 {% import "macro_functions.html.twig" as mf %}
-
-{% block meta_title %}{{ 'Register'|trans }}{% endblock %}
+{% block meta_title %}{{ 'Create an Account'|trans }}{% endblock %}
 {% block meta_description %}{{ 'Create an account to order services, manage billing, and track support requests online.'|trans }}{% endblock %}
-
 {% block body_class %}page-signup{% endblock %}
-{% block body %}
-    <div class="container h-100">
-        <div class="row h-75 justify-content-center align-items-center">
-            <div class="col-md-6 col-lg-4">
-                {% if (public_logo_url or public_dark_logo_url) and settings.login_page_show_logo %}
-                    <div class="d-flex justify-content-center">
-                        {{ include('partial_company_logo.html.twig', {
-                            company: company,
-                            logo_url: public_logo_url,
-                            dark_logo_url: public_dark_logo_url,
-                            link_url: settings.login_page_logo_url|default('/'),
-                            link_target: '_blank',
-                            link_rel: 'noopener noreferrer',
-                            image_class: 'my-4',
-                            image_height: '50px'
-                        }) }}
-                    </div>
-                {% endif %}
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="text-center m-4">{{ 'Create a new account'|trans }}</h5>
-                        <form method="post" action="{{ 'client/create'|api_url(role: 'guest') }}" class="auth" {{ fb_api_form({redirect: '/'|url}) }}>
-                            <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
-                            {% set r = guest.client_required %}
+{% block auth_width %}client-auth-wide{% endblock %}
 
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label" for="first-name">{{ 'First Name'|trans }}</label>
-                                    <input class="form-control" id="first-name" type="text" name="first_name"
-                                           value="{{ request.first_name }}" required="required"/>
-                                </div>
+{% block auth_content %}
+    <h1 class="h3 mb-2">{{ 'Create an Account'|trans }}</h1>
+    <p class="text-secondary mb-3">{{ 'Manage your services, payments and support in one place.'|trans }}</p>
+    <p class="small text-secondary mb-4">{{ 'Fields marked * are required.'|trans }}</p>
+    <form action="{{ 'client/create'|api_url(role: 'guest') }}" class="auth" data-auth-passwords data-password-mismatch="{{ 'The new passwords do not match.'|trans }}" {{ fb_api_form({callback: 'onClientRegistrationSubmitted'}) }}>
+        <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
+        {% set r = guest.client_required %}
 
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label" for="last_name">{{ 'Last Name'|trans }}</label>
-                                    <input class="form-control" id="last_name" type="text" name="last_name"
-                                           value="{{ request.last_name }}"{% if 'last_name' in r %} required="required"{% endif %}/>
-                                </div>
-                            </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label" for="first-name">{{ 'First Name'|trans }} <span class="text-danger" aria-hidden="true">*</span></label>
+                <input class="form-control" id="first-name" autocomplete="given-name" type="text" name="first_name"
+                       value="{{ request.first_name|default('') }}" required="required"/>
+            </div>
 
-                            <div class="mb-3">
-                                <label class="form-label" for="reg-email">{{ 'Email Address'|trans }}</label>
-                                <input class="form-control" id="reg-email" type="email" name="email"
-                                       value="{{ request.email }}" required="required"/>
-                            </div>
-
-                            {% if 'company' in r %}
-                                <div class="mb-3">
-                                    <label class="form-label" for="company">{{ 'Company'|trans }}</label>
-                                    <input class="form-control" id="company" type="text" name="company"
-                                           value="{{ request.company }}" required="required"/>
-                                </div>
-                            {% endif %}
-
-                            {% if 'birthday' in r %}
-                                <div class="mb-3">
-                                    <label class="form-label" for="birthday">{{ 'Birthday'|trans }}</label>
-                                    <input class="form-control" id="birthday" type="date" name="birthday" value=""/>
-                                </div>
-                            {% endif %}
-
-                            {% if 'gender' in r %}
-                                <div class="mb-3">
-                                    <label class="form-label" for="gender">{{ 'Gender'|trans }}</label>
-                                    <select class="form-select" id="gender" name="gender">
-                                        <option value="male">{{ 'Male'|trans }}</option>
-                                        <option value="female">{{ 'Female'|trans }}</option>
-                                        <option value="nonbinary">{{ 'Non-binary'|trans }}</option>
-                                        <option value="other">{{ 'Other'|trans }}</option>
-                                    </select>
-                                </div>
-                            {% endif %}
-
-                            {% if 'address_1' in r %}
-                                <div class="mb-3">
-                                    <label class="form-label" for="address_1">{{ 'Address'|trans }}</label>
-                                    <input class="form-control" id="address_1" type="text" name="address_1"
-                                           value="{{ request.address_1 }}"/>
-                                </div>
-                            {% endif %}
-
-                            {% if 'address_2' in r %}
-                                <div class="mb-3">
-                                    <label class="form-label" for="address_2">{{ 'Address 2'|trans }}</label>
-                                    <input class="form-control" id="address_2" type="text" name="address_2"
-                                           value="{{ request.address_2 }}"/>
-                                </div>
-                            {% endif %}
-
-                            {% if 'city' in r %}
-                                <div class="mb-3">
-                                    <label class="form-label" for="city">{{ 'City'|trans }}</label>
-                                    <input class="form-control" id="city" type="text" name="city"
-                                           value="{{ request.city }}"/>
-                                </div>
-                            {% endif %}
-
-                            {% if 'country' in r %}
-                                {% set selected_country = request.country|default(guest.system_default_country) %}
-                                <div class="mb-3">
-                                    <label class="form-label" for="country">{{ 'Country'|trans }}</label>
-                                    <select class="form-select" id="country" name="country" required="required">
-                                        <option value="">{{ '-- Select Country --'|trans }}</option>
-                                        {% for val,label in guest.system_countries %}
-                                            <option value="{{ val }}" label="{{ label|e }}" {% if selected_country == val %}selected{% endif %}>{{ label|e }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                            {% endif %}
-
-                            {% if 'state' in r %}
-                                <div class="mb-3">
-                                    <label class="form-label" for="state">{{ 'State'|trans }}</label>
-                                    <input class="form-control" id="state" type="text" name="state"
-                                           value="{{ request.state }}"/>
-                                </div>
-                            {% endif %}
-
-                            {% if 'postcode' in r %}
-                                <div class="mb-3">
-                                    <label class="form-label" for="postcode">{{ 'Zip/Postal Code'|trans }}</label>
-                                    <input class="form-control" id="postcode" type="text" name="postcode"
-                                           value="{{ request.postcode }}"/>
-                                </div>
-                            {% endif %}
-
-                            {% if 'phone' in r %}
-                                <div class="mb-3">
-                                    <label class="form-label" for="phone">{{ 'Phone Number'|trans }}</label>
-                                    <input type="hidden" id="phone_cc" name="phone_cc" value="{{ request.phone_cc }}">
-                                    <input class="form-control js-phone-input" id="phone" type="tel" name="phone" value="{{ request.phone }}" autocomplete="tel" data-initial-country="{{ request.country|default(guest.system_default_country)|lower }}" required="required"/>
-                                </div>
-                            {% endif %}
-
-                            <div class="mb-3">
-                                <label class="form-label" for="reg-timezone">{{ 'Timezone'|trans }}</label>
-                                <select class="form-select" id="reg-timezone" name="timezone" data-timezone-select>
-                                    <option value="">{{ '-- Use system default --'|trans }}</option>
-                                    {% for region, identifiers in guest.system_timezones %}
-                                        <optgroup label="{{ region }}">
-                                            {% for identifier in identifiers %}
-                                                <option value="{{ identifier }}" {% if request.timezone|default('') == identifier %}selected="selected"{% endif %}>{{ identifier }}</option>
-                                            {% endfor %}
-                                        </optgroup>
-                                    {% endfor %}
-                                </select>
-                                <small class="form-hint text-muted">{{ 'Pre-selected from your browser. Used to display dates and times in your local time.'|trans }}</small>
-                            </div>
-
-                            {% set custom_fields = guest.client_custom_fields %}
-                            {% for field_name, field in custom_fields %}
-                                {% if field.active|default(false) %}
-                                    <div class="mb-3">
-                                        <label class="form-label"
-                                               for="{{ field_name }}">{{ field.title|default(field_name|capitalize) }}</label>
-                                        <input class="form-control" id="{{ field_name }}" type="text"
-                                               name="{{ field_name }}" value="{{ request.(field_name)|default('') }}"
-                                               {% if field.required|default(false) %}required="required"{% endif %} />
-                                    </div>
-                                {% endif %}
-                            {% endfor %}
-
-{% set honeypot = antispam_honeypot() %}
-{% if honeypot.enabled %}
-{% set honeypot_field = honeypot.field %}
-<div class="mb-3" style="position: absolute; left: -9999px;">
-<label class="form-label" for="{{ honeypot_field }}">{{ honeypot_field }}</label>
-<input class="form-control" id="{{ honeypot_field }}" type="text" name="{{ honeypot_field }}" value="" tabindex="-1" autocomplete="off"/>
-</div>
-{% endif %}
-
-<div class="mb-3">
-<label class="form-label" for="reg-password">{{ 'Password'|trans }}</label>
-                                <input class="form-control" id="reg-password" type="password" name="password" value=""
-                                       required="required"/>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label" for="password-confirm">{{ 'Password Confirm'|trans }}</label>
-                                <input class="form-control" id="password-confirm" type="password" name="password_confirm" value="" required="required"/>
-                            </div>
-
-                            {{ mf.recaptcha }}
-
-                            {% if settings.signup_tos|default('0') == 'explicit' %}
-                                <div class="form-check mb-1">
-                                    <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault" required>
-                                    <label class="form-check-label" for="flexCheckDefault">
-                                        {# TODO: Make this translatable once support for placeholders is implemented #}
-                                        <span>I agree to the <a href="{{ 'tos'|url }}" target="_blank">{{ 'Terms of Service'|trans }}</a> and <a href="{{ 'privacy-policy'|url }}" target="_blank">{{ 'Privacy Policy'|trans }}</a>.</span>
-                                    </label>
-                                </div>
-                            {% endif %}
-
-                            <div class="form-actions mb-3">
-                                <button class="btn btn-primary w-100" type="submit">{{ 'Register'|trans }}</button>
-                            </div>
-
-                            {% if settings.signup_tos|default('0') == 'implicit' %}
-                                <div class="mb-1">
-                                    {# TODO: Make this translatable once support for placeholders is implemented #}
-                                    <span class="text-muted mb-1">By creating an account, you agree to our <a href="{{ 'tos'|url }}" target="_blank">{{ 'Terms of Service'|trans }}</a> and <a href="{{ 'privacy-policy'|url }}" target="_blank">{{ 'Privacy Policy'|trans }}</a>.</span>
-                                </div>
-                            {% endif %}
-                        </form>
-                        <div class="row">
-                            <div class="col">
-                                <a class="btn btn-outline-primary mb-2 w-100"
-                                   href="{{ 'login'|url }}">{{ 'Already a User?'|trans }}</a>
-                            </div>
-                            {% if settings.show_password_reset_link %}
-                                <div class="col">
-                                    <a class="btn btn-outline-primary mb-2 w-100" href="{{ 'password-reset'|url }}">{{ 'Forgot password?'|trans }}</a>
-                                </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label" for="last_name">{{ 'Last Name'|trans }} {% if 'last_name' in r %}<span class="text-danger" aria-hidden="true">*</span>{% endif %}</label>
+                <input class="form-control" id="last_name" autocomplete="family-name" type="text" name="last_name"
+                       value="{{ request.last_name|default('') }}"{% if 'last_name' in r %} required="required"{% endif %}/>
             </div>
         </div>
-    </div>
+
+        <div class="mb-3">
+            <label class="form-label" for="reg-email">{{ 'Email Address'|trans }} <span class="text-danger" aria-hidden="true">*</span></label>
+            <input class="form-control" id="reg-email" autocomplete="username" enterkeyhint="next" autocapitalize="none" spellcheck="false" type="email" name="email"
+                   value="{{ request.email|default('') }}" required="required"/>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label" for="reg-password">{{ 'Password'|trans }} <span class="text-danger" aria-hidden="true">*</span></label>
+            <input class="form-control" id="reg-password" type="password" name="password" autocomplete="new-password" minlength="8" aria-describedby="password-help" data-auth-password data-auth-new-password
+                   required="required"/>
+            {{ include('partial_auth_password_help.html.twig') }}
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label" for="password-confirm">{{ 'Confirm Password'|trans }} <span class="text-danger" aria-hidden="true">*</span></label>
+            <input class="form-control" id="password-confirm" type="password" name="password_confirm" autocomplete="new-password" data-auth-password data-auth-confirm-password required="required"/>
+        </div>
+
+        <div class="form-check mb-4">
+            <input class="form-check-input" type="checkbox" id="show-passwords" data-auth-show-passwords>
+            <label class="form-check-label" for="show-passwords">{{ 'Show Passwords'|trans }}</label>
+        </div>
+        {% if 'company' in r %}
+            <div class="mb-3">
+                <label class="form-label" for="company">{{ 'Company'|trans }} <span class="text-danger" aria-hidden="true">*</span></label>
+                <input class="form-control" id="company" autocomplete="organization" type="text" name="company"
+                       value="{{ request.company|default('') }}" required="required"/>
+            </div>
+        {% endif %}
+
+        {% if 'birthday' in r %}
+            <div class="mb-3">
+                <label class="form-label" for="birthday">{{ 'Birthday'|trans }} <span class="text-danger" aria-hidden="true">*</span></label>
+                <input class="form-control" id="birthday" autocomplete="bday" type="date" name="birthday" value="{{ request.birthday|default('') }}" required/>
+            </div>
+        {% endif %}
+
+        {% if 'gender' in r %}
+            <div class="mb-3">
+                <label class="form-label" for="gender">{{ 'Gender'|trans }} <span class="text-danger" aria-hidden="true">*</span></label>
+                <select class="form-select" id="gender" name="gender" required>
+                    <option value="">{{ 'Select Gender'|trans }}</option>
+                    <option value="male" {{ request.gender|default('') == 'male' ? 'selected' : '' }}>{{ 'Male'|trans }}</option>
+                    <option value="female" {{ request.gender|default('') == 'female' ? 'selected' : '' }}>{{ 'Female'|trans }}</option>
+                    <option value="nonbinary" {{ request.gender|default('') == 'nonbinary' ? 'selected' : '' }}>{{ 'Non-binary'|trans }}</option>
+                    <option value="other" {{ request.gender|default('') == 'other' ? 'selected' : '' }}>{{ 'Other'|trans }}</option>
+                </select>
+            </div>
+        {% endif %}
+
+        {% if 'address_1' in r %}
+            <div class="mb-3">
+                <label class="form-label" for="address_1">{{ 'Address'|trans }} <span class="text-danger" aria-hidden="true">*</span></label>
+                <input class="form-control" id="address_1" autocomplete="address-line1" type="text" name="address_1"
+                       value="{{ request.address_1|default('') }}" required/>
+            </div>
+        {% endif %}
+
+        {% if 'address_2' in r %}
+            <div class="mb-3">
+                <label class="form-label" for="address_2">{{ 'Address 2'|trans }} <span class="text-danger" aria-hidden="true">*</span></label>
+                <input class="form-control" id="address_2" autocomplete="address-line2" type="text" name="address_2"
+                       value="{{ request.address_2|default('') }}" required/>
+            </div>
+        {% endif %}
+
+        {% if 'city' in r %}
+            <div class="mb-3">
+                <label class="form-label" for="city">{{ 'City'|trans }} <span class="text-danger" aria-hidden="true">*</span></label>
+                <input class="form-control" id="city" autocomplete="address-level2" type="text" name="city"
+                       value="{{ request.city|default('') }}" required/>
+            </div>
+        {% endif %}
+
+        {% if 'country' in r %}
+            {% set selected_country = request.country|default(guest.system_default_country) %}
+            <div class="mb-3">
+                <label class="form-label" for="country">{{ 'Country'|trans }} <span class="text-danger" aria-hidden="true">*</span></label>
+                <select class="form-select" id="country" autocomplete="country" name="country" required="required">
+                    <option value="">{{ '-- Select Country --'|trans }}</option>
+                    {% for val,label in guest.system_countries %}
+                        <option value="{{ val }}" label="{{ label|e }}" {% if selected_country == val %}selected{% endif %}>{{ label|e }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        {% endif %}
+
+        {% if 'state' in r %}
+            <div class="mb-3">
+                <label class="form-label" for="state">{{ 'State'|trans }} <span class="text-danger" aria-hidden="true">*</span></label>
+                <input class="form-control" id="state" autocomplete="address-level1" type="text" name="state"
+                       value="{{ request.state|default('') }}" required/>
+            </div>
+        {% endif %}
+
+        {% if 'postcode' in r %}
+            <div class="mb-3">
+                <label class="form-label" for="postcode">{{ 'Zip/Postal Code'|trans }} <span class="text-danger" aria-hidden="true">*</span></label>
+                <input class="form-control" id="postcode" autocomplete="postal-code" type="text" name="postcode"
+                       value="{{ request.postcode|default('') }}" required/>
+            </div>
+        {% endif %}
+
+        {% if 'phone' in r %}
+            <div class="mb-3">
+                <label class="form-label" for="phone">{{ 'Phone Number'|trans }} <span class="text-danger" aria-hidden="true">*</span></label>
+                <input type="hidden" id="phone_cc" name="phone_cc" value="{{ request.phone_cc|default('') }}">
+                <input class="form-control js-phone-input" id="phone" type="tel" name="phone" value="{{ request.phone|default('') }}" autocomplete="tel" data-initial-country="{{ request.country|default(guest.system_default_country)|lower }}" required="required"/>
+            </div>
+        {% endif %}
+
+        <details class="mb-4">
+            <summary class="mb-3">{{ 'Time Display Preferences (optional)'|trans }}</summary>
+        <div class="mb-3">
+            <label class="form-label" for="reg-timezone">{{ 'Timezone'|trans }}</label>
+            <select class="form-select" id="reg-timezone" name="timezone" data-timezone-select>
+                <option value="">{{ '-- Use system default --'|trans }}</option>
+                {% for region, identifiers in guest.system_timezones %}
+                    <optgroup label="{{ region }}">
+                        {% for identifier in identifiers %}
+                            <option value="{{ identifier }}" {% if request.timezone|default('') == identifier %}selected="selected"{% endif %}>{{ identifier }}</option>
+                        {% endfor %}
+                    </optgroup>
+                {% endfor %}
+            </select>
+            <small class="form-hint text-secondary">{{ 'Pre-selected from your browser. Used to display dates and times in your local time.'|trans }}</small>
+        </div>
+
+        </details>
+        {% set custom_fields = guest.client_custom_fields %}
+        {% for field_name, field in custom_fields %}
+            {% if field.active|default(false) %}
+                <div class="mb-3">
+                    <label class="form-label"
+                           for="{{ field_name }}">{{ field.title|default(field_name|capitalize) }}{% if field.required|default(false) %} <span class="text-danger" aria-hidden="true">*</span>{% endif %}</label>
+                    <input class="form-control" id="{{ field_name }}" type="text"
+                           name="{{ field_name }}" value="{{ request.(field_name)|default('') }}"
+                           {% if field.required|default(false) %}required="required"{% endif %} />
+                </div>
+            {% endif %}
+        {% endfor %}
+
+        {% set honeypot = antispam_honeypot() %}
+        {% if honeypot.enabled %}
+        {% set honeypot_field = honeypot.field %}
+        <div class="mb-3" style="position: absolute; left: -9999px;">
+        <label class="form-label" for="{{ honeypot_field }}">{{ honeypot_field }}</label>
+        <input class="form-control" id="{{ honeypot_field }}" type="text" name="{{ honeypot_field }}" value="" tabindex="-1" autocomplete="off"/>
+        </div>
+        {% endif %}
+
+
+        {{ mf.recaptcha }}
+
+        {% if settings.signup_tos|default('0') == 'explicit' %}
+            <div class="form-check mb-1">
+                <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault" required>
+                <label class="form-check-label" for="flexCheckDefault">
+                    <span>{{ 'I agree to the'|trans }} <a href="{{ 'tos'|url }}" target="_blank" rel="noopener noreferrer">{{ 'Terms of Service'|trans }}</a> {{ 'and'|trans }} <a href="{{ 'privacy-policy'|url }}" target="_blank" rel="noopener noreferrer">{{ 'Privacy Policy'|trans }}</a>.</span>
+                </label>
+            </div>
+        {% endif %}
+
+        <div class="form-actions mb-3">
+            <button class="btn btn-primary w-100" type="submit">{{ 'Create Account'|trans }}</button>
+        </div>
+
+        {% if settings.signup_tos|default('0') == 'implicit' %}
+            <div class="mb-1">
+                <span class="text-secondary mb-1">{{ 'By creating an account, you agree to our'|trans }} <a href="{{ 'tos'|url }}" target="_blank" rel="noopener noreferrer">{{ 'Terms of Service'|trans }}</a> {{ 'and'|trans }} <a href="{{ 'privacy-policy'|url }}" target="_blank" rel="noopener noreferrer">{{ 'Privacy Policy'|trans }}</a>.</span>
+            </div>
+        {% endif %}
+    </form>
+    <p class="mt-4 mb-0">{{ 'Already have an account?'|trans }} <a href="{{ 'login'|url }}">{{ 'Sign In'|trans }}</a></p>
+{% endblock %}
+{% block js %}
+<script>
+    function onClientRegistrationSubmitted() {
+        flashMessage({message: {{ 'Registration submitted. Check your email for any next steps, or sign in to your account.'|trans|json_encode|raw }}, reload: {{ '/'|url|json_encode|raw }}, type: 'success'});
+    }
+</script>
 {% endblock %}

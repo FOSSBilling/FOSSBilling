@@ -96,13 +96,16 @@ describe('dispatchLinkAction', () => {
     const requests: unknown[] = [];
 
     dispatchLinkAction(
-      { modal: { type: 'confirm', title: 'Delete', button: 'Delete', buttonColor: 'danger' } },
+      { modal: { type: 'confirm', title: 'Delete', button: 'Delete', buttonColor: 'danger', cancelButton: 'Keep Email' } },
       '/delete',
       modals,
       (...args) => requests.push(args),
     );
     assert.equal(created[0].type, 'small-confirm');
     assert.equal(created[0].confirmButton, 'Delete');
+    assert.equal(created[0].confirmButtonColor, 'danger');
+    assert.equal(created[0].cancelButton, 'Keep Email');
+    assert.equal(requests.length, 0);
     created[0].confirmCallback();
 
     dispatchLinkAction(

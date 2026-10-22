@@ -1,6 +1,14 @@
 // @ts-nocheck -- Runtime DOM/widget integration; converted to TS without changing behavior.
+import { initEmailPreviewSupport } from '../../../../../frontend/ui/email-preview.ts';
+import initNoticeDismissal from '../../../../../frontend/ui/notice-dismissal.ts';
+import initFloatingHelp from '../../../../../frontend/ui/floating-help.ts';
+import initDropdownFocus from '../../../../../frontend/ui/dropdown-focus.ts';
+import initNavigation from './js/ui/navigation.ts';
 import './js/ui/modals.ts';
 import initClipboard from './js/clipboard.ts';
+import initFormErrors from './js/ui/form-errors.ts';
+import initFormLoading from './js/ui/form-loading.ts';
+import flashMessage from './js/ui/flash.ts';
 import initThemePreference from './js/ui/theme.ts';
 import initDebugBarLayout from './js/ui/debugBar.ts';
 import * as tabler from '@tabler/core';
@@ -17,6 +25,12 @@ function loadAdminFeature(loader, name) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  initEmailPreviewSupport();
+  initNoticeDismissal();
+  initFloatingHelp(tabler);
+  initDropdownFocus();
+  initFormErrors();
+  initFormLoading();
   initDebugBarLayout();
   if (document.querySelector('.datepicker')) {
     loadAdminFeature(async () => {
@@ -45,17 +59,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 'theme settings');
   }
 
+  initNavigation();
   initThemePreference();
-
-  /**
-   * Enable Bootstrap Tooltip
-   */
-  const tooltipTriggerList = Array.from(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-  tooltipTriggerList.forEach(function (tooltipTriggerEl) {
-    tabler.Tooltip.getOrCreateInstance(tooltipTriggerEl, {
-      'trigger': 'hover focus'
-    });
-  });
+  globalThis.flashMessage ||= flashMessage;
+  globalThis.flashMessage({});
 
   initClipboard();
 });

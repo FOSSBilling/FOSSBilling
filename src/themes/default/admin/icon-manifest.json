@@ -13,6 +13,8 @@
     "selector",
     "chevron-left",
     "chevron-right",
+    "chevrons-left",
+    "chevrons-right",
     { "name": "circle-check", "dynamic": true },
     "x",
     { "name": "settings", "dynamic": true },

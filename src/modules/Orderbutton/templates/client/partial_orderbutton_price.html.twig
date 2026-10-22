@@ -1,0 +1,24 @@
+{% set pricing = product.pricing %}
+{% if product.type == 'domain' %}
+    <div class="fw-semibold">{{ 'From'|trans }} {{ (product.price_starting_from * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</div>
+    <div class="small text-secondary">{{ 'Select a domain to see its price and renewal terms.'|trans }}</div>
+{% elseif pricing.type == 'free' %}
+    <div class="fw-semibold">{{ 'Free'|trans }}</div>
+{% elseif pricing.type == 'once' %}
+    <div class="fw-semibold">{{ (pricing.once.price * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</div>
+    <div class="small text-secondary">{{ 'One-Time Payment'|trans }}</div>
+    {% if pricing.once.setup|default(0) != 0 %}<div class="small">{{ 'Setup Fee'|trans }}: {{ (pricing.once.setup * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</div>{% endif %}
+{% elseif pricing.type == 'recurrent' %}
+    {% set cycles = pricing.recurrent|filter(prices => prices.enabled) %}
+    {% if cycles %}
+        {% set price = cycles|first %}
+        <div class="fw-semibold">{{ (price.price * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</div>
+        <div class="small text-secondary">{{ price.title }}</div>
+        {% if price.setup|default(0) != 0 %}<div class="small">{{ 'Setup Fee'|trans }}: {{ (price.setup * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</div>{% endif %}
+        {% if cycles|length > 1 %}<div class="small text-secondary">{{ 'Other billing cycles available'|trans }}</div>{% endif %}
+    {% else %}
+        <div class="small text-secondary">{{ 'Pricing Unavailable'|trans }}</div>
+    {% endif %}
+{% else %}
+    <div class="small text-secondary">{{ 'Choose options to see pricing'|trans }}</div>
+{% endif %}

@@ -26,7 +26,6 @@
     <div class="d-none">
         {{ svg_sprite() }}
     </div>
-    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1070;">
-    </div>
+    {{ include('partial_ui_feedback.html.twig', {feedback_area: 'admin'}) }}
 </body>
 </html>

@@ -1,0 +1,6 @@
+{# Reuse card heading geometry for page titles, without imposing a card surface. #}
+{% extends 'partial_card_heading_shared.html.twig' %}
+{% block card_heading_content %}
+    <h1 class="{{ page_title_class|default('mb-0') }}">{{ title }}</h1>
+    {% if subtitle|default('') %}<p class="{{ page_subtitle_class|default('text-secondary mb-0 mt-2') }}">{{ subtitle }}</p>{% endif %}
+{% endblock %}

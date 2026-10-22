@@ -19,6 +19,7 @@ test('transaction clicks render stored errors as text, including dynamically ins
     parent: Element | null = null;
     classList = { add() {} };
     appendChild(child: Element) { this.children.push(child); }
+    append(...children: Element[]) { children.forEach(child => this.appendChild(child)); }
     setAttribute() {}
     addEventListener() {}
     closest(selector: string): Element | null {
@@ -36,7 +37,7 @@ test('transaction clicks render stored errors as text, including dynamically ins
       querySelector: () => container,
       createElement: () => new Element(),
     },
-    tabler: { Toast: class { show() {} } },
+    tabler: { Toast: { getOrCreateInstance: () => ({show() {}}) } },
   };
   runInNewContext(runtime, context);
   const click = listeners.get('click')!;

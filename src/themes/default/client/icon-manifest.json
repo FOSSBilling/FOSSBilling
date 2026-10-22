@@ -1,6 +1,7 @@
 {
   "defaultVariant": "outline",
   "icons": [
+    "bell",
     "layout-grid",
     "shopping-cart",
     "lifebuoy",
@@ -11,13 +12,13 @@
     "news",
     "book",
     "settings",
+    "search",
+    "info-circle",
+    "alert-triangle",
+    "circle-check",
     "credit-card",
     "user",
     "quote",
-    "search",
-    "eye",
-    "trash",
-    "check",
     "x",
     "lock",
     "lock-open",
@@ -25,13 +26,19 @@
     "arrow-up",
     "chevron-left",
     "chevron-right",
-    { "name": "chevron-up", "dynamic": true },
-    { "name": "chevron-down", "dynamic": true },
+    {
+      "name": "chevron-up",
+      "dynamic": true
+    },
+    {
+      "name": "chevron-down",
+      "dynamic": true
+    },
     "selector",
     "chevrons-left",
     "chevrons-right",
-    "arrows-exchange",
     "moon",
-    "sun"
+    "sun",
+    "device-desktop"
   ]
 }

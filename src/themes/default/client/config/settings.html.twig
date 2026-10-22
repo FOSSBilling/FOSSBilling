@@ -5,8 +5,9 @@
     <div class="mb-3">
         <label class="form-label" for="theme">{{ 'Theme'|trans }}</label>
         <select class="form-select" name="theme" id="theme">
-            <option value="light" selected>{{ 'Bootstrap Light'|trans }}</option>
-            <option value="dark">{{ 'Bootstrap Dark'|trans }}</option>
+            <option value="system">{{ 'System'|trans }}</option>
+            <option value="light" selected>{{ 'Light'|trans }}</option>
+            <option value="dark">{{ 'Dark'|trans }}</option>
         </select>
     </div>
 </section>
@@ -37,8 +38,6 @@
     <div>
         <h5 class="mb-2">{{ 'Menu Items Visible in the Top Right Menu'|trans }}</h5>
         <div class="d-flex flex-column gap-2">
-            <label class="form-check"><input class="form-check-input" type="checkbox" name="top_menu_dashboard" value="1" id="top_menu_dashboard"><span class="form-check-label">{{ 'Show Dashboard Link'|trans }}</span></label>
-            <label class="form-check"><input class="form-check-input" type="checkbox" name="top_menu_order" value="1" id="top_menu_order"><span class="form-check-label">{{ 'Show Order Link'|trans }}</span></label>
             <label class="form-check"><input class="form-check-input" type="checkbox" name="top_menu_profile" value="1" id="top_menu_profile"><span class="form-check-label">{{ 'Show Profile Link'|trans }}</span></label>
             <label class="form-check"><input class="form-check-input" type="checkbox" name="top_menu_signout" value="1" id="top_menu_signout"><span class="form-check-label">{{ 'Show Sign Out Link'|trans }}</span></label>
         </div>

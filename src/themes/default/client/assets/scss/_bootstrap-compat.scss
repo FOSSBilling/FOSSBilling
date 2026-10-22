@@ -1,0 +1,22 @@
+// Token aliases for Bootstrap-based plugins and existing extensions. Tabler owns
+// the components and runtime; this does not load a second framework stylesheet.
+:root,
+[data-bs-theme] {
+    @each $token in (
+        body-font-family, body-font-size, body-font-weight, body-line-height,
+        body-color, body-color-rgb, body-bg, body-bg-rgb,
+        primary, primary-rgb, secondary, secondary-rgb, success, success-rgb,
+        info, info-rgb, warning, warning-rgb, danger, danger-rgb,
+        light, light-rgb, dark, dark-rgb,
+        secondary-color, secondary-color-rgb, secondary-bg, secondary-bg-rgb,
+        tertiary-color, tertiary-color-rgb, tertiary-bg, tertiary-bg-rgb,
+        emphasis-color, emphasis-color-rgb,
+        border-color, border-color-translucent, border-width, border-style,
+        border-radius, border-radius-sm, border-radius-lg, border-radius-xl,
+        border-radius-xxl, border-radius-pill,
+        link-color, link-color-rgb, link-hover-color, link-hover-color-rgb,
+        box-shadow, box-shadow-sm, box-shadow-lg, box-shadow-inset
+    ) {
+        --bs-#{$token}: var(--tblr-#{$token});
+    }
+}

@@ -1,0 +1,6 @@
+{# Short supplementary text, opened by a native button on keyboard, touch or mouse. #}
+{% if help_text|default('') %}
+<button type="button" class="btn btn-icon btn-sm btn-ghost-secondary fb-help-popover" data-fb-help-popover data-bs-toggle="popover" data-bs-placement="{{ help_placement|default('auto') }}" data-bs-title="{{ help_label }}" data-bs-content="{{ help_text }}" aria-label="{{ help_label }}" aria-expanded="false">
+    <svg class="icon" aria-hidden="true"><use href="#info-circle" /></svg>
+</button>
+{% endif %}
