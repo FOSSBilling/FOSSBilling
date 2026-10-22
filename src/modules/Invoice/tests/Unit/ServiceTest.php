@@ -8515,7 +8515,7 @@ test('refundInvoice issues a Stripe refund and records an audit transaction', fu
     $invoiceRepo->shouldReceive('lockAndGetStatus')->once()->with(12)->andReturn(Invoice::STATUS_PAID);
     $invoiceRepo->shouldReceive('findBy')->andReturn([]);
     $txRepo = Mockery::mock(TransactionRepository::class);
-    $txRepo->shouldReceive('findBy')->once()->andReturn([$stripeTx]);
+    $txRepo->shouldReceive('findBy')->twice()->andReturnUsing(fn (array $criteria): array => ($criteria['type'] ?? null) === \Payment_Transaction::TXTYPE_REFUND ? [] : [$stripeTx]);
     $em->shouldReceive('getRepository')->with(Invoice::class)->andReturn($invoiceRepo);
     $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($txRepo);
 
@@ -8580,7 +8580,7 @@ test('refundInvoice aborts the credit note when the Stripe refund fails', functi
     [$em, $invoiceItemRepo] = invoiceItemEmAndRepo();
     $invoiceItemRepo->shouldReceive('findByInvoiceId')->andReturn([createEntity(InvoiceItem::class, ['price' => 20.0, 'quantity' => 1, 'taxed' => false])]);
     $txRepo = Mockery::mock(TransactionRepository::class);
-    $txRepo->shouldReceive('findBy')->once()->andReturn([$stripeTx]);
+    $txRepo->shouldReceive('findBy')->twice()->andReturnUsing(fn (array $criteria): array => ($criteria['type'] ?? null) === \Payment_Transaction::TXTYPE_REFUND ? [] : [$stripeTx]);
     $em->shouldReceive('getRepository')->with(Transaction::class)->andReturn($txRepo);
     $invoiceRepo = Mockery::mock(InvoiceRepository::class);
     $invoiceRepo->shouldReceive('findBy')->andReturn([]);
@@ -8889,7 +8889,7 @@ test('refundInvoice aborts before Stripe when the deposit credit cannot be rever
 
     $adapter = Mockery::mock('Payment_Adapter_Stripe');
     $adapter->shouldReceive('supportsRefunds')->andReturn(true);
-    $adapter->shouldReceive('listRefundsForTransaction')->once()->andReturn([]);
+    $adapter->shouldReceive('listRefundsForTransaction')->never();
     $adapter->shouldNotReceive('refundPayment');
 
     $payGatewayService = Mockery::mock(ServicePayGateway::class);
