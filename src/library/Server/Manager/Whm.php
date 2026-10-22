@@ -663,6 +663,12 @@ class Server_Manager_Whm extends Server_Manager
             $this->throwWhmError($action, $reason);
         }
 
+        if (isset($json->metadata->result) && $json->metadata->result == '0') {
+            $reason = (string) ($json->metadata->reason ?? 'Unknown error');
+
+            $this->throwWhmError($action, $reason);
+        }
+
         // Return the response
         return $json;
     }
