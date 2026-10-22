@@ -128,8 +128,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% set categories = admin.product_category_get_list({ 'per_page': 100 }) %}
-                    {% for category in categories.list %}
+                    {% for category in admin.product_category_get_list %}
                     <tr>
                         <td>{{ category.id }}</td>
                         <td>

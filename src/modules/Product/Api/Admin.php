@@ -324,19 +324,21 @@ class Admin extends \FOSSBilling\Api\AbstractApi
     }
 
     /**
-     * Get paginated list of product categories for the admin panel, ordered by priority.
+     * Get list of all product categories for the admin panel, ordered by priority.
+     * Returns lean id/title/priority rows (not paginated) so every category is
+     * visible for bulk reordering. Use category_get for full category details.
      *
      * @optional string $search - filter by category title
      * @optional string $sort - sort column: 'id', 'title', 'priority', 'created_at' or 'updated_at'
      * @optional string $direction - sort direction: 'ASC' or 'DESC'
      *
-     * @return array
+     * @return list<array{id: int|null, title: string|null, priority: int|null}>
      */
     public function category_get_list($data)
     {
         $this->checkPermissions('product', 'view');
 
-        return $this->getService()->getPaginatedProductCategoriesForAdmin($data, $this->getIdentity());
+        return $this->getService()->getAdminCategoryList($data);
     }
 
     /**

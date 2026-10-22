@@ -285,7 +285,7 @@ test('updates a category', function (): void {
 test('gets category list', function (): void {
     $api = apiEndpoint(new Admin());
     $serviceMock = Mockery::mock(Service::class);
-    $serviceMock->shouldReceive('getPaginatedProductCategoriesForAdmin')->once()->andReturn(['list' => []]);
+    $serviceMock->shouldReceive('getAdminCategoryList')->once()->andReturn([]);
 
     $api->setService($serviceMock);
     $api->setDi(container());

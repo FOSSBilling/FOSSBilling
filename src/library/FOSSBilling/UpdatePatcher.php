@@ -262,6 +262,12 @@ class UpdatePatcher implements InjectionAwareInterface
         // structural changes that land on metadata without a patch being written at all).
         $this->syncPortableSchema();
 
+        // Backfill category priorities on every driver, after the sync above: on non-MySQL
+        // installs the priority column only comes into existence there, and patch132's
+        // DDL never runs there. Idempotent - only NULL priorities are touched, so
+        // administrator-set values are preserved.
+        $this->backfillProductCategoryPriorities();
+
         // Baseline the invoice journal on every driver, after the sync above: on non-MySQL
         // installs the invoice_event table only comes into existence there, and backfilling
         // first would find no table and leave existing invoices without baseline entries.
@@ -349,6 +355,14 @@ class UpdatePatcher implements InjectionAwareInterface
                 $this->healInvoiceJournal();
             } catch (\Throwable $e) {
                 $this->logUpdate('error', 'Invoice journal healing failed: ' . $e->getMessage());
+            }
+
+            // Same gap as in applyCorePatches(): a drift-created priority column
+            // arrives with NULLs. Failure must not fail the sync itself.
+            try {
+                $this->backfillProductCategoryPriorities();
+            } catch (\Throwable $e) {
+                $this->logUpdate('error', 'Category priority backfill failed: ' . $e->getMessage());
             }
 
             return true;
@@ -4837,14 +4851,25 @@ class UpdatePatcher implements InjectionAwareInterface
     private function patch132(): void
     {
         // Product category priority (#4499). Mirrors product.priority so categories
-        // can be ordered explicitly instead of by insertion id. Guarded so reruns
-        // are no-ops; non-MySQL drivers get the column from the portable schema sync.
+        // can be ordered explicitly instead of by insertion id. MySQL/MariaDB DDL
+        // only - the data backfill lives in backfillProductCategoryPriorities(),
+        // which runs portably on every driver. Guarded so reruns are no-ops;
+        // non-MySQL drivers get the column from the portable schema sync.
         if (!$this->tableHasColumn('product_category', 'priority')) {
             $this->executeSql('ALTER TABLE `product_category` ADD COLUMN `priority` BIGINT DEFAULT NULL');
         }
+    }
 
-        // Preserve the current insertion-order display for existing installs.
-        $this->executeSql('UPDATE `product_category` SET `priority` = `id` * 10 WHERE `priority` IS NULL');
+    /**
+     * Assigns an initial priority to product categories that don't have one yet
+     * (#4499). Plain portable SQL and idempotent, so it runs unconditionally
+     * from applyCorePatches() on every platform - patch132() only ever runs on
+     * MySQL/MariaDB, and other drivers only gain the column from the additive
+     * schema sync, which never touches data.
+     */
+    private function backfillProductCategoryPriorities(): void
+    {
+        $this->executeSql('UPDATE product_category SET priority = id * 10 WHERE priority IS NULL');
     }
 
     /**

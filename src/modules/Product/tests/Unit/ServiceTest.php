@@ -1356,6 +1356,31 @@ test('update category priority', function (): void {
     expect($model->getPriority())->toEqual(20);
 });
 
+test('admin category list returns lean rows without loading products', function (): void {
+    $service = new Service();
+    $category = productTestCreateProductCategoryEntity(1)
+        ->setTitle('Category')
+        ->setPriority(10);
+
+    $query = Mockery::mock(Doctrine\ORM\Query::class);
+    $query->shouldReceive('getResult')->once()->andReturn([$category]);
+
+    $qb = Mockery::mock(Doctrine\ORM\QueryBuilder::class);
+    $qb->shouldReceive('getQuery')->once()->andReturn($query);
+
+    $categoryRepo = Mockery::mock(ProductCategoryRepository::class);
+    $categoryRepo->shouldReceive('getAdminSearchQueryBuilder')->once()->with([])->andReturn($qb);
+
+    $di = container();
+    $di['em'] = productTestCreateEntityManagerWithRepositories(null, null, null, null, $categoryRepo);
+
+    $service->setDi($di);
+
+    expect($service->getAdminCategoryList([]))->toEqual([
+        ['id' => 1, 'title' => 'Category', 'priority' => 10],
+    ]);
+});
+
 test('remove product category category has products exception', function (): void {
     $service = new Service();
     $modelProductCategory = productTestCreateProductCategoryEntity(1);

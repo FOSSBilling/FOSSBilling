@@ -799,13 +799,24 @@ class Service implements InjectionAwareInterface
         );
     }
 
-    public function getPaginatedProductCategoriesForAdmin(array $data, $identity = null): array
+    /**
+     * Lean id/title/priority rows for the admin category table, ordered by
+     * priority. Deliberately not paginated and without product details - every
+     * category must be visible for bulk reordering, and the table only needs
+     * these three fields. Use toProductCategoryApiArray()/category_get for
+     * full category details.
+     *
+     * @return list<array{id: int|null, title: string|null, priority: int|null}>
+     */
+    public function getAdminCategoryList(array $data = []): array
     {
-        return $this->di['pager']->paginateMappedQuery(
-            $this->getProductCategoryRepository()->getAdminSearchQueryBuilder($data),
-            PaginationOptions::fromArray($data),
-            fn (ProductCategory $category): array => $this->toProductCategoryApiArray($category, true, $identity),
-        );
+        $categories = $this->getProductCategoryRepository()->getAdminSearchQueryBuilder($data)->getQuery()->getResult();
+
+        return array_map(static fn (ProductCategory $category): array => [
+            'id' => $category->getId(),
+            'title' => $category->getTitle(),
+            'priority' => $category->getPriority(),
+        ], $categories);
     }
 
     public function getStartingFromPrice(Product $model)
