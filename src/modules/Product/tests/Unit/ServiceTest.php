@@ -1356,6 +1356,47 @@ test('update category priority', function (): void {
     expect($model->getPriority())->toEqual(20);
 });
 
+test('update category preserves omitted fields on a priority-only update', function (): void {
+    $service = new Service();
+    $model = productTestCreateProductCategoryEntity(1)
+        ->setTitle('Original')
+        ->setDescription('Original description')
+        ->setIconUrl('http://urltoimg.com/original.jpg');
+
+    $di = container();
+    $di['em'] = productTestCreateEntityManagerWithRepositories();
+    $di['logger'] = new FOSSBilling\Logger();
+
+    $service->setDi($di);
+
+    $result = $service->updateCategory($model, null, null, null, 30);
+
+    expect($result)->toBeTrue();
+    expect($model->getTitle())->toBe('Original')
+        ->and($model->getDescription())->toBe('Original description')
+        ->and($model->getIconUrl())->toBe('http://urltoimg.com/original.jpg')
+        ->and($model->getPriority())->toEqual(30);
+});
+
+test('update category priority rejects non-numeric values without changing anything', function (): void {
+    $service = new Service();
+    $model = productTestCreateProductCategoryEntity(1);
+    $model->setPriority(10);
+
+    $categoryRepo = Mockery::mock(ProductCategoryRepository::class);
+    $categoryRepo->shouldReceive('find')->never();
+
+    $di = container();
+    $di['em'] = productTestCreateEntityManagerWithRepositories(null, null, null, null, $categoryRepo);
+    $di['logger'] = new FOSSBilling\Logger();
+
+    $service->setDi($di);
+
+    expect(fn (): bool => $service->updateCategoryPriority(['priority' => [1 => 20, 2 => 'high']]))
+        ->toThrow(FOSSBilling\InformationException::class, 'Priority must be an integer.');
+    expect($model->getPriority())->toEqual(10);
+});
+
 test('admin category list returns lean rows without loading products', function (): void {
     $service = new Service();
     $category = productTestCreateProductCategoryEntity(1)

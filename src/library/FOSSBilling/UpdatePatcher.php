@@ -262,12 +262,6 @@ class UpdatePatcher implements InjectionAwareInterface
         // structural changes that land on metadata without a patch being written at all).
         $this->syncPortableSchema();
 
-        // Backfill category priorities on every driver, after the sync above: on non-MySQL
-        // installs the priority column only comes into existence there, and patch132's
-        // DDL never runs there. Idempotent - only NULL priorities are touched, so
-        // administrator-set values are preserved.
-        $this->backfillProductCategoryPriorities();
-
         // Baseline the invoice journal on every driver, after the sync above: on non-MySQL
         // installs the invoice_event table only comes into existence there, and backfilling
         // first would find no table and leave existing invoices without baseline entries.
@@ -355,14 +349,6 @@ class UpdatePatcher implements InjectionAwareInterface
                 $this->healInvoiceJournal();
             } catch (\Throwable $e) {
                 $this->logUpdate('error', 'Invoice journal healing failed: ' . $e->getMessage());
-            }
-
-            // Same gap as in applyCorePatches(): a drift-created priority column
-            // arrives with NULLs. Failure must not fail the sync itself.
-            try {
-                $this->backfillProductCategoryPriorities();
-            } catch (\Throwable $e) {
-                $this->logUpdate('error', 'Category priority backfill failed: ' . $e->getMessage());
             }
 
             return true;
@@ -996,6 +982,10 @@ class UpdatePatcher implements InjectionAwareInterface
 
             $result = SchemaSynchronizer::syncEntities($entityManager, $eagerEntityClasses);
             $this->migrateClientGroupMemberships($connection);
+            // Data backfill gated on the hash below: like the membership copy above,
+            // a throw here fails the sync (recorded with cooldown for retry) instead
+            // of leaving NULL priorities behind a stored hash.
+            $this->backfillProductCategoryPriorities($connection);
             $this->storeSchemaMetadataHash(EntityManagerFactory::entityDefinitionsHash());
         } catch (\Throwable $e) {
             // Attach the metadata hash so the failure can be correlated with
@@ -4862,32 +4852,23 @@ class UpdatePatcher implements InjectionAwareInterface
 
     /**
      * Assigns an initial priority to product categories that don't have one yet
-     * (#4499). Portable and idempotent, so it runs unconditionally from
-     * applyCorePatches() on every driver - patch132() only ever runs on
-     * MySQL/MariaDB, and other drivers only gain the column from the additive
-     * schema sync, which never touches data. No-ops when the table or column
-     * doesn't exist yet, and only NULL priorities are touched, so
-     * administrator-set values are preserved.
+     * (#4499). Plain portable SQL and idempotent: only NULL priorities are
+     * touched, so administrator-set values are preserved. Runs inside
+     * {@see syncPortableSchema()}'s error boundary, before the metadata hash
+     * is stored - like {@see migrateClientGroupMemberships()}, a throw fails
+     * the sync (recorded with cooldown for retry) instead of leaving NULL
+     * priorities behind a stored hash. No-ops when the table or column
+     * doesn't exist yet.
      */
-    private function backfillProductCategoryPriorities(): void
+    private function backfillProductCategoryPriorities(\Doctrine\DBAL\Connection $connection): void
     {
-        if (!$this->di instanceof \Pimple\Container || !$this->di->offsetExists('dbal')) {
+        $schemaManager = $connection->createSchemaManager();
+        if (!$schemaManager->tablesExist(['product_category'])
+            || !$schemaManager->introspectTableByUnquotedName('product_category')->hasColumn('priority')) {
             return;
         }
 
-        $dbal = $this->di['dbal'];
-        $schemaManager = $dbal->createSchemaManager();
-        if (!$schemaManager->tablesExist(['product_category'])) {
-            return;
-        }
-
-        foreach ($schemaManager->listTableColumns('product_category') as $column) {
-            if (strtolower($column->getName()) === 'priority') {
-                $dbal->executeStatement('UPDATE product_category SET priority = id * 10 WHERE priority IS NULL');
-
-                return;
-            }
-        }
+        $connection->executeStatement('UPDATE product_category SET priority = id * 10 WHERE priority IS NULL');
     }
 
     /**

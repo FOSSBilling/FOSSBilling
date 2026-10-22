@@ -665,10 +665,19 @@ class Service implements InjectionAwareInterface
     {
         $this->validateIconUrl($icon_url);
 
-        $productCategory
-            ->setTitle($title)
-            ->setIconUrl($icon_url)
-            ->setDescription($description);
+        // Only touch supplied fields so a priority-only update (or any partial
+        // API call) never erases the rest - matches updateProduct(), which
+        // falls back to current values for omitted fields. The admin form
+        // always submits every field, so clearing one still works via ''.
+        if ($title !== null) {
+            $productCategory->setTitle($title);
+        }
+        if ($icon_url !== null) {
+            $productCategory->setIconUrl($icon_url);
+        }
+        if ($description !== null) {
+            $productCategory->setDescription($description);
+        }
         if ($priority !== null && $priority !== '') {
             $productCategory->setPriority((int) $priority);
         }
@@ -682,10 +691,20 @@ class Service implements InjectionAwareInterface
 
     public function updateCategoryPriority($data): bool
     {
+        // Validate everything up front so one bad value can't half-apply a
+        // reorder: non-numeric input is rejected instead of casting to 0.
+        $priorities = [];
         foreach ($data['priority'] as $id => $p) {
-            $model = $this->getProductCategoryRepository()->find((int) $id);
+            if (filter_var($p, FILTER_VALIDATE_INT) === false) {
+                throw new \FOSSBilling\InformationException('Priority must be an integer.');
+            }
+            $priorities[(int) $id] = (int) $p;
+        }
+
+        foreach ($priorities as $id => $p) {
+            $model = $this->getProductCategoryRepository()->find($id);
             if ($model instanceof ProductCategory) {
-                $model->setPriority((int) $p);
+                $model->setPriority($p);
                 $model->setUpdatedAt(new \DateTime());
             }
         }
