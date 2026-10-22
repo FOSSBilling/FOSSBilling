@@ -1551,8 +1551,9 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface, FOS
     /**
      * Find the local invoice a dashboard refund belongs to: first by the
      * refund's charge or payment intent matching a processed transaction,
-     * then via the charge's Stripe invoice for subscription payments, whose
-     * local transactions are stored under the Stripe invoice ID.
+     * then via the charge's Stripe invoice or the invoice-payment list for
+     * subscription payments, whose local transactions are stored under the
+     * Stripe invoice ID.
      */
     private function findInvoiceForDashboardRefund(object $refund, int $gateway_id): ?Invoice
     {

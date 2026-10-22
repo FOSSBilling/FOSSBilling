@@ -2237,7 +2237,7 @@ class Service implements InjectionAwareInterface
     /**
      * Fail fast when the wallet credit a deposit refund must reverse exceeds
      * the client's balance. The locked re-check inside reverseDepositCredit
-     * stays authoritative; this only avoids pointless Stripe calls.
+     * stays authoritative; this only avoids pointless gateway preparation.
      */
     private function assertDepositReversalAvailable(Invoice $invoice, float $amount): void
     {
