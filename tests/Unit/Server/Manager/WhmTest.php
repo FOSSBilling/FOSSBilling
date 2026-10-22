@@ -252,7 +252,6 @@ test('addpkg already-exists does not leak the WHM reason to callers', function (
 
     // Directly verify the typed exception carries the generic message, not the WHM reason.
     $ref = new ReflectionMethod($manager, 'request');
-    $ref->setAccessible(true);
 
     try {
         $ref->invoke($manager, 'addpkg', ['name' => 'admin_FOSSBilling']);

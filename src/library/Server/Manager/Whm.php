@@ -725,7 +725,7 @@ class Server_Manager_Whm extends Server_Manager
 
             try {
                 $this->request('addpkg', $varHash);
-            } catch (Server_PackageExistsException $e) {
+            } catch (Server_PackageExistsException) {
                 // listpkgs only returns packages visible to the API user, while
                 // addpkg fails globally when the name is taken. When the
                 // package already exists (e.g. created manually or by another
