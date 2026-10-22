@@ -2846,12 +2846,9 @@ describe('handleRefundCreatedWebhook', function (): void {
         ];
         $event = (object) ['id' => 'evt_1', 'type' => 'refund.created', 'data' => (object) ['object' => $refund]];
 
-        $apiAdmin = Mockery::mock();
-        $apiAdmin->shouldNotReceive('invoice_refund');
-
         $this->adapter->setDi(container());
 
-        $result = invokePrivateMethod($this->adapter, 'handleRefundCreatedWebhook', [$apiAdmin, $tx, $event, 1]);
+        $result = invokePrivateMethod($this->adapter, 'handleRefundCreatedWebhook', [$tx, $event, 1]);
 
         expect($result)->toBeFalse();
     });
@@ -2882,18 +2879,16 @@ describe('handleRefundCreatedWebhook', function (): void {
         $paymentTx->setGateway($payGateway);
         $paymentTx->setInvoice($invoiceModel);
 
-        $apiAdmin = Mockery::mock();
-        $apiAdmin->shouldReceive('invoice_refund')
-            ->once()
-            ->withArgs(fn (array $data): bool => $data['id'] === 5 && ($data['gateway_refund'] ?? null) === false && ($data['gateway_returned'] ?? null) === true)
-            ->andReturn(7);
-
         ['em' => $em, 'txRepo' => $txRepo, 'invoiceRepo' => $invoiceRepo] = buildEntityManagerMocks();
         $txRepo->shouldReceive('findOneByTxnIdAndGatewayId')->once()->with('pi_9', 1)->andReturn($paymentTx);
         $invoiceRepo->shouldReceive('find')->once()->with(5)->andReturn($invoiceModel);
 
         $invoiceService = Mockery::mock();
         $invoiceService->shouldReceive('getTotalWithTax')->once()->with($invoiceModel)->andReturn(20.0);
+        $invoiceService->shouldReceive('refundInvoice')
+            ->once()
+            ->with($invoiceModel, 'Recorded from Stripe dashboard refund re_9', null, ['gateway_refund' => false, 'gateway_returned' => true])
+            ->andReturn(7);
 
         $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
         expectStripeObjectLock($dbalMock, 're_9', 1);
@@ -2905,7 +2900,7 @@ describe('handleRefundCreatedWebhook', function (): void {
         $di['mod_service'] = $di->protect(fn ($module, $service = null) => $invoiceService);
         $this->adapter->setDi($di);
 
-        $result = invokePrivateMethod($this->adapter, 'handleRefundCreatedWebhook', [$apiAdmin, $tx, $event, 1]);
+        $result = invokePrivateMethod($this->adapter, 'handleRefundCreatedWebhook', [$tx, $event, 1]);
 
         expect($result)->toBeFalse();
     });
@@ -2936,15 +2931,13 @@ describe('handleRefundCreatedWebhook', function (): void {
         $paymentTx->setGateway($payGateway);
         $paymentTx->setInvoice($invoiceModel);
 
-        $apiAdmin = Mockery::mock();
-        $apiAdmin->shouldNotReceive('invoice_refund');
-
         ['em' => $em, 'txRepo' => $txRepo, 'invoiceRepo' => $invoiceRepo] = buildEntityManagerMocks();
         $txRepo->shouldReceive('findOneByTxnIdAndGatewayId')->once()->with('pi_9', 1)->andReturn($paymentTx);
         $invoiceRepo->shouldReceive('find')->once()->with(5)->andReturn($invoiceModel);
 
         $invoiceService = Mockery::mock();
         $invoiceService->shouldReceive('getTotalWithTax')->once()->andReturn(20.0);
+        $invoiceService->shouldNotReceive('refundInvoice');
 
         $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
         expectStripeObjectLock($dbalMock, 're_9', 1);
@@ -2956,7 +2949,7 @@ describe('handleRefundCreatedWebhook', function (): void {
         $di['mod_service'] = $di->protect(fn ($module, $service = null) => $invoiceService);
         $this->adapter->setDi($di);
 
-        $result = invokePrivateMethod($this->adapter, 'handleRefundCreatedWebhook', [$apiAdmin, $tx, $event, 1]);
+        $result = invokePrivateMethod($this->adapter, 'handleRefundCreatedWebhook', [$tx, $event, 1]);
 
         expect($result)->toBeFalse();
     });
@@ -2995,17 +2988,15 @@ describe('handleRefundCreatedWebhook races', function (): void {
         $paymentTx->setGateway($payGateway);
         $paymentTx->setInvoice($invoiceModel);
 
-        $apiAdmin = Mockery::mock();
-        $apiAdmin->shouldReceive('invoice_refund')
-            ->once()
-            ->andThrow(new FOSSBilling\InformationException('Only paid invoices can be refunded'));
-
         ['em' => $em, 'txRepo' => $txRepo, 'invoiceRepo' => $invoiceRepo] = buildEntityManagerMocks();
         $txRepo->shouldReceive('findOneByTxnIdAndGatewayId')->once()->with('pi_9', 1)->andReturn($paymentTx);
         $invoiceRepo->shouldReceive('find')->twice()->with(5)->andReturn($invoiceModel, $settledInvoice);
 
         $invoiceService = Mockery::mock();
         $invoiceService->shouldReceive('getTotalWithTax')->once()->andReturn(20.0);
+        $invoiceService->shouldReceive('refundInvoice')
+            ->once()
+            ->andThrow(new FOSSBilling\InformationException('Only paid invoices can be refunded'));
 
         $dbalMock = Mockery::mock(Doctrine\DBAL\Connection::class);
         expectStripeObjectLock($dbalMock, 're_9', 1);
@@ -3017,7 +3008,7 @@ describe('handleRefundCreatedWebhook races', function (): void {
         $di['mod_service'] = $di->protect(fn ($module, $service = null) => $invoiceService);
         $this->adapter->setDi($di);
 
-        $result = invokePrivateMethod($this->adapter, 'handleRefundCreatedWebhook', [$apiAdmin, $tx, $event, 1]);
+        $result = invokePrivateMethod($this->adapter, 'handleRefundCreatedWebhook', [$tx, $event, 1]);
 
         expect($result)->toBeFalse()->and($tx->getStatus())->toBe(Transaction::STATUS_RECEIVED);
     });

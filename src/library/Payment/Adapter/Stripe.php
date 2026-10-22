@@ -911,7 +911,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface, FOS
                 'setup_intent.succeeded' => $this->handleSetupIntentSucceededWebhook($api_admin, $tx, $event, $gateway_id),
                 'setup_intent.setup_failed' => $this->handleSetupIntentFailedWebhook($api_admin, $tx, $event),
                 'charge.refunded' => $this->handleRefundWebhook($tx, $event),
-                'refund.created' => $this->handleRefundCreatedWebhook($api_admin, $tx, $event, $gateway_id),
+                'refund.created' => $this->handleRefundCreatedWebhook($tx, $event, $gateway_id),
             };
         } catch (Stripe\Exception\CardException|Stripe\Exception\InvalidRequestException|Stripe\Exception\AuthenticationException|Stripe\Exception\ApiConnectionException|Stripe\Exception\ApiErrorException $e) {
             $this->logError($e, $tx);
@@ -1436,7 +1436,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface, FOS
      * dashboard refunds are left for the admin: mapping an amount back onto
      * invoice lines is a judgment call, not something to guess.
      */
-    private function handleRefundCreatedWebhook($api_admin, Transaction $tx, object $event, int $gateway_id): bool
+    private function handleRefundCreatedWebhook(Transaction $tx, object $event, int $gateway_id): bool
     {
         $refund = $event->data->object;
         $refundId = is_string($refund->id ?? null) ? $refund->id : $event->id;
@@ -1448,11 +1448,11 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface, FOS
         return $this->withStripeObjectLock(
             $refundId,
             $gateway_id,
-            fn (): bool => $this->recordDashboardRefund($api_admin, $tx, $event, $refund, $refundId, $gateway_id)
+            fn (): bool => $this->recordDashboardRefund($tx, $event, $refund, $refundId, $gateway_id)
         );
     }
 
-    private function recordDashboardRefund($api_admin, Transaction $tx, object $event, object $refund, string $refundId, int $gateway_id): bool
+    private function recordDashboardRefund(Transaction $tx, object $event, object $refund, string $refundId, int $gateway_id): bool
     {
         $tx->setTxnId($refundId);
         $tx->setTxnStatus($event->type);
@@ -1489,9 +1489,7 @@ class Payment_Adapter_Stripe implements FOSSBilling\InjectionAwareInterface, FOS
         }
 
         try {
-            $api_admin->invoice_refund([
-                'id' => $invoice->getId(),
-                'note' => 'Recorded from Stripe dashboard refund ' . $refundId,
+            $invoiceService->refundInvoice($invoice, 'Recorded from Stripe dashboard refund ' . $refundId, null, [
                 'gateway_refund' => false,
                 'gateway_returned' => true,
             ]);

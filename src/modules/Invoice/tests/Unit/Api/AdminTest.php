@@ -1957,7 +1957,7 @@ test('refunding a deposit invoice as a gateway refund requires the balance permi
         ->toThrow(FOSSBilling\InformationException::class, 'client.manage_balance');
 });
 
-test('forwards the gateway_returned flag for recorded dashboard refunds', function (): void {
+test('ignores the gateway_returned flag from API callers', function (): void {
     $api = apiEndpoint(new Admin());
     $data = [
         'id' => 1,
@@ -1967,7 +1967,7 @@ test('forwards the gateway_returned flag for recorded dashboard refunds', functi
     $serviceMock = Mockery::mock(Service::class);
     $serviceMock->shouldReceive('refundInvoice')
         ->once()
-        ->with(Mockery::type(Invoice::class), null, null, ['gateway_refund' => false, 'gateway_returned' => true])
+        ->with(Mockery::type(Invoice::class), null, null, ['gateway_refund' => false])
         ->andReturn(3);
     $serviceMock->shouldReceive('isInvoiceTypeDeposit')->never();
 
