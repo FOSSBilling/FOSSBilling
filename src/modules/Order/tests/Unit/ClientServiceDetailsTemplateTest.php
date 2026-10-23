@@ -7,31 +7,19 @@
 
 declare(strict_types=1);
 
-use Symfony\Component\Filesystem\Filesystem;
-use Twig\Environment;
-use Twig\Loader\ArrayLoader;
+use Tests\Support\ClientThemeRenderer;
 use Twig\TwigFilter;
 use Twig\TwigFunction;
 
 function renderClientServiceDetails(array $orderOverrides = [], array $service = [], string $type = 'custom'): array
 {
-    $fs = new Filesystem();
     $templates = [
-        'partial_card_heading.html.twig' => (new Filesystem())->readFile(PATH_THEMES . '/default/client/html/partial_card_heading.html.twig'),
-        'partial_card_heading_shared.html.twig' => (new Filesystem())->readFile(PATH_THEMES . '/default/shared/html/partial_card_heading_shared.html.twig'),
-        'manage' => $fs->readFile(PATH_MODS . '/Order/templates/client/mod_order_manage.html.twig'),
         'layout_default.html.twig' => '{% block content %}{% endblock %}{% block js %}{% endblock %}',
         'macro_functions.html.twig' => '{% macro status_badge(status, type) %}<span>{{ status }}</span>{% endmacro %}',
-        'partial_order_attention.html.twig' => $fs->readFile(PATH_MODS . '/Order/templates/client/partial_order_attention.html.twig'),
         'mod_servicecustom_manage.html.twig' => '<h2>Custom service controls</h2>{{ service.marker }}',
     ];
-    if ($type !== 'custom') {
-        $templates['mod_service' . $type . '_manage.html.twig'] = $fs->readFile(PATH_MODS . '/Service' . $type . '/templates/client/mod_service' . $type . '_manage.html.twig');
-    }
-    $twig = new Environment(new ArrayLoader($templates), ['autoescape' => 'html', 'strict_variables' => true]);
-    $twig->addFilter(new TwigFilter('trans', static fn (string $text, array $params = []): string => strtr($text, $params)));
-    $twig->addFilter(new TwigFilter('url', static fn (string $text): string => '/' . $text));
-    $twig->addFilter(new TwigFilter('api_url', static fn (string $text, array $query = []): string => '/api/client/' . $text . '?' . http_build_query($query)));
+    $twig = ClientThemeRenderer::environment($templates, strict: true);
+    $twig->addFilter(new TwigFilter('api_url', static fn (string $text, array $query = []): string => '/api/client/' . $text . ($query ? '?' . http_build_query($query) : '')));
     foreach (['format_date', 'period_title', 'markdown_to_html'] as $filter) {
         $twig->addFilter(new TwigFilter($filter, static fn (mixed $value): string => (string) $value));
     }
@@ -69,7 +57,7 @@ function renderClientServiceDetails(array $orderOverrides = [], array $service =
             return $this->service;
         }
     };
-    $html = $twig->render('manage', [
+    $html = $twig->render('mod_order_manage.html.twig', [
         'order' => array_replace([
             'id' => 5, 'title' => 'Example <service>', 'status' => 'active', 'service_type' => $type,
             'total' => 20, 'discount' => 5, 'currency' => 'USD', 'period' => '1M', 'quantity' => 2,
@@ -135,4 +123,26 @@ test('hosting controls label changes and keep password values out of the page', 
         expect($xpath->query('//label[@for="' . $input->getAttribute('id') . '"]')->length)->toBe(1);
     }
     expect($xpath->query('//h1')->length)->toBe(1);
+});
+
+test('service request dialogs use labelled unique fields and the shared API form handler', function (): void {
+    [$html] = renderClientServiceDetails(['status' => 'pending_setup']);
+    $document = new DOMDocument();
+    @$document->loadHTML($html);
+    $xpath = new DOMXPath($document);
+    expect($xpath->query('//h1')->length)->toBe(1)
+        ->and($xpath->query('//form[@data-fb-api and @action="/api/client/support/ticket_create"]')->length)->toBe(3)
+        ->and($html)->toContain('editor-textarea', 'name="rel_task" value="cancel"', 'name="rel_task" value="upgrade"', 'onServiceTicketCreated');
+    $ids = [];
+    foreach ($xpath->query('//*[@id]') as $element) {
+        $id = $element->getAttribute('id');
+        expect($ids)->not->toContain($id);
+        $ids[] = $id;
+    }
+    foreach ($xpath->query('//label[@for]') as $label) {
+        expect($document->getElementById($label->getAttribute('for')))->not->toBeNull();
+    }
+    foreach ($xpath->query('//*[@aria-labelledby]') as $dialog) {
+        expect($document->getElementById($dialog->getAttribute('aria-labelledby')))->not->toBeNull();
+    }
 });

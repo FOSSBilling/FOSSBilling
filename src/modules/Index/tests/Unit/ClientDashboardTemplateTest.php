@@ -10,8 +10,6 @@ declare(strict_types=1);
 use Tests\Support\ClientThemeRenderer;
 use Tests\Support\PermissiveStub;
 
-require_once PATH_TESTS . '/Support/ClientThemeRenderer.php';
-
 test('dashboard supplies its profile to the real shell and links to outstanding actions', function (array $overrides, array $expected, array $absent): void {
     $profile = ['id' => 14, 'first_name' => 'Jane', 'last_name' => 'Doe', 'email' => 'client@example.test', 'company' => 'Acme', 'balance' => 99.5, 'currency' => 'USD'];
     $dashboard = array_replace_recursive([

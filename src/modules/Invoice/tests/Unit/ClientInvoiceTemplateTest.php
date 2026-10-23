@@ -9,26 +9,16 @@ declare(strict_types=1);
 
 // cspell:ignore demohash
 
-use Symfony\Component\Filesystem\Filesystem;
+use Tests\Support\ClientThemeRenderer;
 use Twig\Environment;
-use Twig\Loader\ArrayLoader;
 use Twig\TwigFilter;
 
-function clientInvoiceListTemplate(): Environment
+function clientInvoiceListTemplate(array $templates = []): Environment
 {
-    $twig = new Environment(new ArrayLoader([
-        'partial_page_heading.html.twig' => (new Filesystem())->readFile(PATH_THEMES . '/default/client/html/partial_page_heading.html.twig'),
-        'partial_page_heading_shared.html.twig' => (new Filesystem())->readFile(PATH_THEMES . '/default/shared/html/partial_page_heading_shared.html.twig'),
-        'partial_client_empty.html.twig' => (new Filesystem())->readFile(PATH_THEMES . '/default/client/html/partial_client_empty.html.twig'),
-        'partial_empty_state.html.twig' => (new Filesystem())->readFile(PATH_THEMES . '/default/shared/html/partial_empty_state.html.twig'),
-        'partial_card_heading.html.twig' => (new Filesystem())->readFile(PATH_THEMES . '/default/client/html/partial_card_heading.html.twig'),
-        'partial_card_heading_shared.html.twig' => (new Filesystem())->readFile(PATH_THEMES . '/default/shared/html/partial_card_heading_shared.html.twig'),
-        'invoices' => (new Filesystem())->readFile(PATH_MODS . '/Invoice/templates/client/mod_invoice_index.html.twig'),
+    $twig = ClientThemeRenderer::environment(array_replace([
         'layout_default.html.twig' => '{% block content %}{% endblock %}',
         'partial_pagination.html.twig' => '{{ page_param }}{{ hash }}',
-    ]), ['autoescape' => 'html']);
-    $twig->addFilter(new TwigFilter('trans', static fn (string $text, array $params = []): string => strtr($text, $params)));
-    $twig->addFilter(new TwigFilter('url', static fn (string $path): string => '/' . $path));
+    ], $templates));
     $twig->addFilter(new TwigFilter('format_date', static fn (?string $date): string => $date ?? ''));
     $twig->addFilter(new TwigFilter('format_currency', static fn (mixed $amount, string $currency): string => $amount . ' ' . $currency));
 
@@ -57,7 +47,7 @@ test('client invoice list prioritizes due payments and preserves separate histor
             return ['total' => count($list), 'list' => $list];
         }
     };
-    $html = clientInvoiceListTemplate()->render('invoices', [
+    $html = clientInvoiceListTemplate()->render('mod_invoice_index.html.twig', [
         'client' => $client,
         'request' => ['page' => 2, 'paid_page' => 3],
     ]);
@@ -81,19 +71,19 @@ test('client invoice list provides a clear all paid state without payment links'
             return ['total' => 0, 'list' => []];
         }
     };
-    $html = clientInvoiceListTemplate()->render('invoices', ['client' => $client, 'request' => []]);
+    $html = clientInvoiceListTemplate()->render('mod_invoice_index.html.twig', ['client' => $client, 'request' => []]);
     expect($html)->toContain('No Unpaid Invoices', 'There is nothing to pay right now.', 'No Paid Invoices Yet')
         ->and($html)->not->toContain('Pay Invoice', 'The list is empty');
 });
 
 test('invoice payment choices respect currency and subscription compatibility', function (string $status, bool $subscribable, array $currencies, bool $single, bool $recurrent, bool $visible): void {
-    $twig = clientInvoiceListTemplate();
-    $twig->getLoader()->setTemplate('payment', (new Filesystem())->readFile(PATH_MODS . '/Invoice/templates/client/mod_invoice_invoice.html.twig'));
-    $twig->getLoader()->setTemplate('macro_functions.html.twig', '{% macro status_badge(status, type) %}{{ status }}{% endmacro %}');
+    $twig = clientInvoiceListTemplate([
+        'macro_functions.html.twig' => '{% macro status_badge(status, type) %}{{ status }}{% endmacro %}',
+    ]);
     foreach (['country_name', 'markdown_to_html', 'period_title'] as $filter) {
         $twig->addFilter(new TwigFilter($filter, static fn (?string $text): string => $text ?? ''));
     }
-    $html = $twig->render('payment', [
+    $html = $twig->render('mod_invoice_invoice.html.twig', [
         'invoice' => [
             'status' => $status, 'issued' => true, 'serie_nr' => 'DEMO1', 'hash' => 'demohash',
             'currency' => 'USD', 'subscribable' => $subscribable, 'due_at' => null,
@@ -128,15 +118,15 @@ test('invoice payment choices respect currency and subscription compatibility', 
 
 function renderClientInvoiceDetails(array $invoiceOverrides = [], array $contextOverrides = []): string
 {
-    $twig = clientInvoiceListTemplate();
-    $twig->getLoader()->setTemplate('layout_default.html.twig', '{% block content %}{% endblock %}{% block js %}{% endblock %}');
-    $twig->getLoader()->setTemplate('details', (new Filesystem())->readFile(PATH_MODS . '/Invoice/templates/client/mod_invoice_invoice.html.twig'));
-    $twig->getLoader()->setTemplate('macro_functions.html.twig', '{% macro status_badge(status, type) %}<span>{{ status }}</span>{% endmacro %}');
+    $twig = clientInvoiceListTemplate([
+        'layout_default.html.twig' => '{% block content %}{% endblock %}{% block js %}{% endblock %}',
+        'macro_functions.html.twig' => '{% macro status_badge(status, type) %}<span>{{ status }}</span>{% endmacro %}',
+    ]);
     foreach (['country_name', 'markdown_to_html', 'period_title'] as $filter) {
         $twig->addFilter(new TwigFilter($filter, static fn (?string $text): string => $text ?? ''));
     }
 
-    return $twig->render('details', array_replace([
+    return $twig->render('mod_invoice_invoice.html.twig', array_replace([
         'client' => true, 'profile' => ['id' => 2, 'balance' => 6, 'currency' => 'USD'],
         'request' => [], 'settings' => [], 'guest' => ['invoice_gateways' => []],
     ], $contextOverrides, ['invoice' => array_replace([

@@ -13,8 +13,6 @@ declare(strict_types=1);
 use Tests\Support\ClientThemeRenderer;
 use Tests\Support\PermissiveStub;
 
-require_once PATH_TESTS . '/Support/ClientThemeRenderer.php';
-
 test('client shell renders one account menu and a shared active destination on both navigation surfaces', function (): void {
     $html = ClientThemeRenderer::render();
     $dom = new DOMDocument();

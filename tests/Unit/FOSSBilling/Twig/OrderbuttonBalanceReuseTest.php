@@ -10,8 +10,7 @@
 
 declare(strict_types=1);
 
-use Twig\Environment;
-use Twig\Loader\ArrayLoader;
+use Tests\Support\ClientThemeRenderer;
 use Twig\TwigFilter;
 use Twig\TwigFunction;
 
@@ -22,15 +21,8 @@ use Twig\TwigFunction;
  */
 function renderOrderbuttonCheckoutForBalance(array $contextOverrides = [], array $cartOverrides = []): array
 {
-    $template = file_get_contents(PATH_MODS . '/Orderbutton/templates/client/mod_orderbutton_checkout.html.twig');
-    if ($template === false) {
-        throw new RuntimeException('Unable to load the orderbutton checkout template.');
-    }
-
-    $twig = new Environment(new ArrayLoader(['checkout' => $template]), ['strict_variables' => true]);
-    foreach (['trans', 'period_title', 'url'] as $filterName) {
-        $twig->addFilter(new TwigFilter($filterName, static fn (string $value): string => $value));
-    }
+    $twig = ClientThemeRenderer::environment(strict: true);
+    $twig->addFilter(new TwigFilter('period_title', static fn (string $value): string => $value));
     $twig->addFilter(new TwigFilter(
         'api_url',
         static fn (string $value, ?array $query = null, ?string $role = null): string => '/' . $value,
@@ -86,7 +78,7 @@ function renderOrderbuttonCheckoutForBalance(array $contextOverrides = [], array
 
     $context['guest']['cart_get'] = array_replace($context['guest']['cart_get'], $cartOverrides);
 
-    return [$twig->render('checkout', $context), $client];
+    return [$twig->render('mod_orderbutton_checkout.html.twig', $context), $client];
 }
 
 test('checkout uses a defined zero profile balance without calling the balance API', function (): void {
@@ -153,7 +145,7 @@ test('checkout blocks an account and cart currency mismatch before creating an o
     $dom = new DOMDocument();
     @$dom->loadHTML($html);
     expect($dom->getElementById('checkoutButton')->hasAttribute('disabled'))->toBeTrue()
-        ->and($html)->toContain('Your account uses %currency%. Select that currency above')
+        ->and($html)->toContain('Your account uses USD. Select that currency above')
         ->not->toContain('Total amount will be deducted from account balance');
 });
 

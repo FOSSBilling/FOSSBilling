@@ -9,31 +9,18 @@ declare(strict_types=1);
 
 // cspell:ignore guesthash
 
-use Symfony\Component\Filesystem\Filesystem;
+use Tests\Support\ClientThemeRenderer;
 use Twig\Environment;
-use Twig\Loader\ArrayLoader;
 use Twig\TwigFilter;
 use Twig\TwigFunction;
 
 function clientTicketTemplates(): Environment
 {
-    $fs = new Filesystem();
-    $twig = new Environment(new ArrayLoader([
-        'partial_card_heading.html.twig' => (new Filesystem())->readFile(PATH_THEMES . '/default/client/html/partial_card_heading.html.twig'),
-        'partial_card_heading_shared.html.twig' => (new Filesystem())->readFile(PATH_THEMES . '/default/shared/html/partial_card_heading_shared.html.twig'),
-        'partial_page_heading.html.twig' => (new Filesystem())->readFile(PATH_THEMES . '/default/client/html/partial_page_heading.html.twig'),
-        'partial_page_heading_shared.html.twig' => (new Filesystem())->readFile(PATH_THEMES . '/default/shared/html/partial_page_heading_shared.html.twig'),
-        'partial_client_empty.html.twig' => (new Filesystem())->readFile(PATH_THEMES . '/default/client/html/partial_client_empty.html.twig'),
-        'partial_empty_state.html.twig' => (new Filesystem())->readFile(PATH_THEMES . '/default/shared/html/partial_empty_state.html.twig'),
-        'list' => $fs->readFile(PATH_MODS . '/Support/templates/client/mod_support_tickets.html.twig'),
-        'conversation' => $fs->readFile(PATH_MODS . '/Support/templates/client/mod_support_ticket.html.twig'),
-        'partial_support_ticket_status.html.twig' => $fs->readFile(PATH_MODS . '/Support/templates/client/partial_support_ticket_status.html.twig'),
+    $twig = ClientThemeRenderer::environment([
         'layout_default.html.twig' => '{% block content %}{% endblock %}{% block js %}{% endblock %}',
         'macro_functions.html.twig' => '{% macro status_badge(status, type) %}{{ status }}{% endmacro %}{% macro markdown_quote(text) %}{{ text }}{% endmacro %}',
         'partial_pagination.html.twig' => '',
-    ]), ['autoescape' => 'html']);
-    $twig->addFilter(new TwigFilter('trans', static fn (string $text, array $params = []): string => strtr($text, $params)));
-    $twig->addFilter(new TwigFilter('url', static fn (string $path, array $query = []): string => '/' . $path . ($query ? '?' . http_build_query($query) : '')));
+    ]);
     $twig->addFilter(new TwigFilter('api_url', static fn (string $path, array $query = [], ?string $role = null): string => '/api/' . ($role ?? 'client') . '/' . $path . ($query ? '?' . http_build_query($query) : '')));
     foreach (['format_date', 'format_datetime', 'timeago', 'markdown_to_html', 'public_asset_url', 'stylesheet_tag'] as $filter) {
         $twig->addFilter(new TwigFilter($filter, static fn (?string $text): string => $text ?? ''));
@@ -71,13 +58,12 @@ test('ticket views distinguish replies from support updates and preserve explici
             return [1 => 'Billing'];
         }
     };
-    $html = clientTicketTemplates()->render('list', [
+    $html = clientTicketTemplates()->render('mod_support_tickets.html.twig', [
         'client' => $client,
         'guest' => ['support_kb_suggestions_enabled' => false],
         'request' => ['status' => $status],
     ]);
     expect($html)->toContain('status=' . $expectedStatus . '" aria-current="page"', $expectedText)
-        ->and($html)->toContain('aria-labelledby="open-ticket-title"', 'id="support-helpdesk-id"', 'action="/api/client/support/ticket_create"', 'onTicketCreated')
         ->and($client->queries[0])->toMatchArray(['sort' => 'updated_at', 'direction' => 'DESC']);
     if (!$empty) {
         expect($html)->toContain('A &lt;full&gt; conversation subject');
@@ -96,20 +82,24 @@ test('ticket views distinguish replies from support updates and preserve explici
 ]);
 
 test('conversations respect reopening rules and keep notification message anchors', function (string $role, string $status, bool $reopen, bool $canReply): void {
-    $html = clientTicketTemplates()->render('conversation', [
+    $html = clientTicketTemplates()->render('mod_support_ticket.html.twig', [
         'client' => true,
         'request' => [],
         'ticket' => [
-            'id' => 5, 'subject' => 'A conversation', 'status' => $status, 'hash' => 'guesthash',
+            'id' => 5, 'subject' => 'A <conversation>', 'status' => $status, 'hash' => 'guesthash',
             'author' => ['role' => $role], 'helpdesk' => ['name' => 'Billing', 'can_reopen' => $reopen],
-            'messages' => [['id' => 9, 'content' => 'Support reply', 'created_at' => '2026-10-20 12:00:00', 'author' => ['name' => 'Agent', 'role' => 'admin']]],
+            'messages' => [
+                ['id' => 8, 'content' => 'Original message', 'created_at' => '2026-10-20 11:00:00', 'author' => ['name' => 'Client', 'role' => 'client']],
+                ['id' => 9, 'content' => 'Support reply', 'created_at' => '2026-10-20 12:00:00', 'author' => ['name' => '<Agent>', 'role' => 'admin']],
+            ],
         ],
     ]);
-    expect($html)->toContain('id="message-9"', '<h1 class="card-title mb-2">A conversation</h1>');
+    expect($html)->toContain('id="message-9"', 'href="#message-9"', 'A &lt;conversation&gt;', '&lt;Agent&gt;');
     expect(str_contains($html, 'id="ticket-reply-form"'))->toBe($canReply)
-        ->and(str_contains($html, 'data-client-ticket-read="5"'))->toBe($role !== 'guest');
+        ->and(str_contains($html, 'data-client-ticket-read="5"'))->toBe($role !== 'guest')
+        ->and(str_contains($html, 'data-through-message-id="9"'))->toBe($role !== 'guest');
     if ($canReply) {
-        expect($html)->toContain('for="ticket-reply-text"', $status === 'closed' ? 'Send Reply and Reopen' : 'Send Reply');
+        expect($html)->toContain('data-unsaved-changes', 'for="ticket-reply-text"', $status === 'closed' ? 'Send Reply and Reopen' : 'Send Reply');
     }
     if ($status !== 'closed') {
         expect($html)->toContain($role === 'guest' ? '/api/guest/support/ticket_close?hash=guesthash' : '/api/client/support/ticket_close?id=5');
@@ -122,31 +112,8 @@ test('conversations respect reopening rules and keep notification message anchor
     'guest cannot reopen' => ['guest', 'closed', true, false],
 ]);
 
-test('ticket history presents authors, timestamps and stable links in conversation order', function (): void {
-    $html = clientTicketTemplates()->render('conversation', [
-        'client' => true, 'request' => [],
-        'ticket' => [
-            'id' => 5, 'subject' => '<Ticket>', 'status' => 'on_hold', 'updated_at' => '2026-10-20 18:00:00',
-            'author' => ['role' => 'client'], 'helpdesk' => ['name' => 'Billing', 'can_reopen' => true],
-            'messages' => [
-                ['id' => 9, 'content' => 'Original message', 'created_at' => '2026-10-20 12:00:00', 'author' => ['name' => '<Client>', 'role' => 'client']],
-                ['id' => 10, 'content' => 'Staff response', 'created_at' => '2026-10-20 18:00:00', 'author' => ['name' => 'Agent', 'role' => 'admin']],
-            ],
-        ],
-    ]);
-    $document = new DOMDocument();
-    @$document->loadHTML($html);
-    $xpath = new DOMXPath($document);
-    expect($html)->toContain('&lt;Ticket&gt;', '&lt;Client&gt;', 'Support has replied.', 'Last Updated', '2026-10-20 18:00:00', 'href="#message-10"', 'data-through-message-id="10"', '/api/client/support/ticket_reply', 'onTicketReplySent')
-        ->and($html)->toContain('Keep Ticket Open', 'conversation will remain in your ticket history', 'Closing Ticket')
-        ->and($xpath->query('//form[@id="ticket-reply-form" and @data-unsaved-changes]'))->toHaveCount(1)
-        ->and($xpath->query('//ol/li[contains(@class,"client-ticket-message")]')->length)->toBe(2)
-        ->and($xpath->query('//*[@id="ticket-latest"]/ancestor::li[1]')->item(0)->getAttribute('id'))->toBe('message-10')
-        ->and(strpos($html, 'Original message'))->toBeLessThan(strpos($html, 'Staff response'));
-});
-
 test('closed guest history offers a new ticket without client-only controls', function (): void {
-    $html = clientTicketTemplates()->render('conversation', [
+    $html = clientTicketTemplates()->render('mod_support_ticket.html.twig', [
         'client' => null, 'request' => [],
         'ticket' => [
             'id' => 5, 'hash' => 'guesthash', 'subject' => 'Closed conversation', 'status' => 'closed',

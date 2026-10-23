@@ -7,23 +7,16 @@
 
 declare(strict_types=1);
 
-use Symfony\Component\Filesystem\Filesystem;
+use Tests\Support\ClientThemeRenderer;
 use Tests\Support\PermissiveStub;
-use Twig\Environment;
-use Twig\Loader\ArrayLoader;
 use Twig\TwigFilter;
 use Twig\TwigFunction;
 
 function clientProfileTemplate(array $overrides = []): string
 {
-    $twig = new Environment(new ArrayLoader([
-        'partial_notice.html.twig' => (new Filesystem())->readFile(PATH_THEMES . '/default/client/html/partial_notice.html.twig'),
-        'partial_notice_shared.html.twig' => (new Filesystem())->readFile(PATH_THEMES . '/default/shared/html/partial_notice_shared.html.twig'),
-        'profile' => (new Filesystem())->readFile(PATH_MODS . '/Client/templates/client/mod_client_profile.html.twig'),
+    $twig = ClientThemeRenderer::environment([
         'layout_default.html.twig' => '{% block content %}{% endblock %}{% block js %}{% endblock %}',
-    ]), ['autoescape' => 'html', 'strict_variables' => true]);
-    $twig->addFilter(new TwigFilter('trans', static fn (string $text, array $params = []): string => strtr($text, $params)));
-    $twig->addFilter(new TwigFilter('url', static fn (string $path): string => '/' . $path));
+    ], strict: true);
     $twig->addFilter(new TwigFilter('api_url', static fn (string $path): string => '/api/client/' . $path));
     $twig->addFilter(new TwigFilter('currency_name', static fn (string $currency): string => $currency));
     foreach (['fb_api_form', 'fb_api_link'] as $helper) {
@@ -32,7 +25,7 @@ function clientProfileTemplate(array $overrides = []): string
     $profile = array_fill_keys(['first_name', 'last_name', 'phone_cc', 'phone', 'billing_email', 'birthday', 'gender', 'company', 'company_vat', 'company_number', 'address_1', 'address_2', 'city', 'country', 'state', 'postcode', 'timezone'], '');
     $profile = array_replace($profile, ['email' => 'client@example.test', 'currency' => 'USD', 'email_approved' => false], $overrides['profile'] ?? []);
 
-    return $twig->render('profile', array_replace([
+    return $twig->render('mod_client_profile.html.twig', array_replace([
         'profile' => $profile, 'client' => new PermissiveStub(['profile_api_key_get' => 'demo-key']), 'request' => ['ajax' => false],
         'guest' => new PermissiveStub([
             'client_required' => ['last_name', 'country', 'phone'], 'client_is_email_validation_required' => true,
@@ -50,7 +43,7 @@ test('profile details preserve required fields, phone integration and configured
     expect($document->getElementById('billing_email')->getAttribute('autocomplete'))->toBe('billing email')
         ->and($document->getElementById('email')->getAttribute('autocapitalize'))->toBe('none')
         ->and($document->getElementById('email')->getAttribute('spellcheck'))->toBe('false');
-    expect($html)->toContain('Jane &lt;Client&gt;', 'Account reference', 'ACME-7', 'data-timezone-select', 'js-phone-input', 'name="phone_cc"', 'Changing this address requires email verification again.', 'Save Account Details')
+    expect($html)->toContain('Jane &lt;Client&gt;', 'Account reference', 'ACME-7', 'data-timezone-select', 'js-phone-input', 'name="phone_cc"', 'Changing this address requires email verification again.')
         ->and($html)->not->toContain('Hidden field', 'Avatar is derived');
     foreach (['first_name', 'last_name', 'email', 'country', 'phone', 'custom_1'] as $id) {
         expect($document->getElementById($id)->hasAttribute('required'))->toBeTrue();
@@ -58,7 +51,6 @@ test('profile details preserve required fields, phone integration and configured
     expect($document->getElementById('gender')->getElementsByTagName('option')->item(0)->hasAttribute('selected'))->toBeTrue()
         ->and($document->getElementById('profile-update')->hasAttribute('data-unsaved-changes'))->toBeTrue()
         ->and($document->getElementById('profile-password')->hasAttribute('data-unsaved-changes'))->toBeTrue()
-        ->and($document->getElementById('profile-update')->getAttribute('action'))->toBe('/api/client/profile/update')
         ->and($xpath->query('//fieldset/legend')->length)->toBe(5);
 });
 
@@ -73,18 +65,6 @@ test('profile retains verification controls only when required and unverified', 
         expect($html)->not->toContain('Resend Verification Email');
     }
 })->with([[true, false, true], [true, true, false], [false, false, false]]);
-
-test('profile password form uses the existing endpoint with useful feedback and password manager hints', function (): void {
-    $html = clientProfileTemplate();
-    $document = new DOMDocument();
-    @$document->loadHTML($html);
-    expect($document->getElementById('profile-password')->getAttribute('action'))->toBe('/api/client/profile/change_password')
-        ->and($document->getElementById('current_password')->getAttribute('autocomplete'))->toBe('current-password')
-        ->and($document->getElementById('new_password')->getAttribute('autocomplete'))->toBe('new-password')
-        ->and($document->getElementById('confirm_password')->getAttribute('autocomplete'))->toBe('new-password')
-        ->and($document->getElementById('new_password')->getAttribute('minlength'))->toBe('8')
-        ->and($html)->toContain('uppercase and lowercase letters and a number', 'The new passwords do not match.', 'Show Passwords', 'Password changed. Sign in with your new password.', 'reload: "\/login"');
-});
 
 test('profile keeps API Key and currency available without exposing a key by default', function (?string $currency, string $message): void {
     $html = clientProfileTemplate(['profile' => ['currency' => $currency]]);

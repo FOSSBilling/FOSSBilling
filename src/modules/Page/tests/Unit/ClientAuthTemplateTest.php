@@ -8,9 +8,8 @@
 declare(strict_types=1);
 
 use Symfony\Component\Filesystem\Filesystem;
+use Tests\Support\ClientThemeRenderer;
 use Tests\Support\PermissiveStub;
-use Twig\Environment;
-use Twig\Loader\ArrayLoader;
 use Twig\TwigFilter;
 use Twig\TwigFunction;
 
@@ -19,19 +18,14 @@ function renderClientAuth(string $template, array $overrides = []): string
     $fs = new Filesystem();
     $templates = [
         'layout_public.html.twig' => '{% block body %}{% endblock %}{% block js %}{% endblock %}',
-        'layout_auth.html.twig' => $fs->readFile(PATH_THEMES . '/default/client/html/layout_auth.html.twig'),
         'partial_company_logo.html.twig' => $fs->readFile(PATH_MODS . '/Page/templates/client/partial_company_logo.html.twig'),
-        'partial_company_logo_shared.html.twig' => $fs->readFile(PATH_THEMES . '/default/shared/html/partial_company_logo_shared.html.twig'),
-        'partial_auth_password_help.html.twig' => $fs->readFile(PATH_THEMES . '/default/client/html/partial_auth_password_help.html.twig'),
         'macro_functions.html.twig' => '{% macro recaptcha() %}<div data-test-captcha>CAPTCHA</div>{% endmacro %}',
         'new-password' => $fs->readFile(PATH_MODS . '/Client/templates/client/mod_client_set_new_password.html.twig'),
     ];
     foreach (['login', 'signup', 'password-reset'] as $name) {
         $templates[$name] = $fs->readFile(PATH_MODS . '/Page/templates/client/mod_page_' . $name . '.html.twig');
     }
-    $twig = new Environment(new ArrayLoader($templates), ['autoescape' => 'html', 'strict_variables' => true]);
-    $twig->addFilter(new TwigFilter('trans', static fn (string $text): string => $text));
-    $twig->addFilter(new TwigFilter('url', static fn (string $path): string => '/' . ltrim($path, '/')));
+    $twig = ClientThemeRenderer::environment($templates, strict: true);
     $twig->addFilter(new TwigFilter('api_url', static fn (string $path, ?string $role = null): string => '/api/' . ($role ?? 'guest') . '/' . $path));
     $twig->addFunction(new TwigFunction('fb_api_form', static fn (array $options): string => 'method="post" data-fb-api="' . htmlspecialchars(json_encode($options), ENT_QUOTES) . '"', ['is_safe' => ['html']]));
     $twig->addFunction(new TwigFunction('render_widgets', static fn (string $slot): string => '<!-- ' . $slot . ' -->', ['is_safe' => ['html']]));
@@ -51,13 +45,9 @@ test('login keeps redirect, branding, extension hooks and configurable links', f
     expect($hidden)->not->toContain('/light.svg', 'href="/signup"', 'href="/password-reset"');
 });
 
-test('authentication pages retain custom logo variants links and single-logo fallbacks', function (string $page): void {
+test('authentication pages retain custom logo variants links and visibility settings', function (string $page): void {
     $html = renderClientAuth($page, ['public_logo_url' => '/custom-light.svg', 'public_dark_logo_url' => '/custom-dark.svg']);
     expect($html)->toContain('class="fb-image-contain hide-theme-light img-fluid" src="/custom-dark.svg"', 'class="fb-image-contain hide-theme-dark img-fluid" src="/custom-light.svg"', 'href="/brand"', 'rel="noopener noreferrer"');
-    foreach (['public_logo_url', 'public_dark_logo_url'] as $variant) {
-        $html = renderClientAuth($page, ['public_logo_url' => null, 'public_dark_logo_url' => null, $variant => '/single.svg']);
-        expect(substr_count($html, 'src="/single.svg"'))->toBe(2);
-    }
     expect(renderClientAuth($page, ['settings' => ['login_page_show_logo' => false]]))->not->toContain('<img');
 })->with(['login', 'signup', 'password-reset', 'new-password']);
 

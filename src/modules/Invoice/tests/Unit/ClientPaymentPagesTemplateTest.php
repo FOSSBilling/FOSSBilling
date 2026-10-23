@@ -7,26 +7,19 @@
 
 declare(strict_types=1);
 
-use Symfony\Component\Filesystem\Filesystem;
-use Twig\Environment;
-use Twig\Loader\ArrayLoader;
+use Tests\Support\ClientThemeRenderer;
 use Twig\TwigFilter;
 
 function renderClientPaymentPage(string $page, array $overrides = []): string
 {
-    $fs = new Filesystem();
-    $twig = new Environment(new ArrayLoader([
-        'handoff' => $fs->readFile(PATH_MODS . '/Invoice/templates/client/mod_invoice_banklink.html.twig'),
-        'outcome' => $fs->readFile(PATH_MODS . '/Invoice/templates/client/mod_invoice_thankyou.html.twig'),
+    $twig = ClientThemeRenderer::environment([
         'layout_default.html.twig' => '{% block content %}{% endblock %}',
-    ]), ['strict_variables' => true, 'autoescape' => 'html']);
-    $twig->addFilter(new TwigFilter('trans', static fn (string $text): string => $text));
-    $twig->addFilter(new TwigFilter('url', static fn (string $path, array $query = []): string => '/' . $path . ($query ? '?' . http_build_query($query) : '')));
+    ], strict: true);
     $twig->addFilter(new TwigFilter('format_currency', static fn (float $value, string $currency): string => $currency . ' ' . number_format($value, 2)));
     $twig->addFilter(new TwigFilter('format_datetime', static fn (string $date): string => $date));
     $invoice = array_replace(['id' => 5, 'serie_nr' => 'DEMO5', 'hash' => 'demo-hash', 'status' => 'unpaid', 'issued' => true, 'total' => 24, 'currency' => 'USD', 'lines' => []], $overrides['invoice'] ?? []);
 
-    return $twig->render($page, array_replace(['request' => ['ajax' => false], 'client' => true], $overrides, ['invoice' => $invoice]));
+    return $twig->render($page === 'handoff' ? 'mod_invoice_banklink.html.twig' : 'mod_invoice_thankyou.html.twig', array_replace(['request' => ['ajax' => false], 'client' => true], $overrides, ['invoice' => $invoice]));
 }
 
 test('gateway handoff keeps provider fields and a visible manual fallback', function (): void {

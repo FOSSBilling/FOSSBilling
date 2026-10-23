@@ -14,21 +14,32 @@ namespace Tests\Support;
 use FOSSBilling\Twig\Enum\AppArea;
 use FOSSBilling\Twig\TwigLoader;
 use Twig\Environment;
+use Twig\Loader\ArrayLoader;
+use Twig\Loader\ChainLoader;
 use Twig\TwigFilter;
 use Twig\TwigFunction;
 
 /** Renders the client shell with deterministic API responses, without a database. */
 final class ClientThemeRenderer
 {
+    /** Use real client/module partials, with explicit replacements for API-dependent shells. */
+    public static function environment(array $templates = [], bool $strict = false): Environment
+    {
+        $twig = new Environment(new ChainLoader([
+            new ArrayLoader($templates),
+            new TwigLoader(AppArea::CLIENT, PATH_THEMES . '/default/client', PATH_THEMES . '/default/shared/html'),
+        ]), ['autoescape' => 'html', 'strict_variables' => $strict]);
+        $twig->addFilter(new TwigFilter('trans', static fn (string $text, array $params = []): string => strtr($text, $params)));
+        $twig->addFilter(new TwigFilter('url', static fn (string $path, array $query = []): string => '/' . ltrim($path, '/') . ($query ? '?' . http_build_query($query) : '')));
+
+        return $twig;
+    }
+
     public static function render(array $overrides = [], string $template = 'layout_default.html.twig'): string
     {
-        $twig = new Environment(new TwigLoader(AppArea::CLIENT,
-            PATH_THEMES . '/default/client', PATH_THEMES . '/default/shared/html',
-        ), ['strict_variables' => true]);
-        $twig->addFilter(new TwigFilter('trans', fn (string $text, array $params = []): string => strtr($text, $params)));
+        $twig = self::environment(strict: true);
         $twig->addFilter(new TwigFilter('markdown_to_html', fn (string $text): string => $text));
         $twig->addFilter(new TwigFilter('format_datetime', fn (?string $date): string => $date ?? ''));
-        $twig->addFilter(new TwigFilter('url', fn (string $path, array $query = []): string => '/' . ltrim($path, '/') . ($query ? '?' . http_build_query($query) : '')));
         $twig->addFilter(new TwigFilter('asset_url', fn (string $path): string => '/themes/default/client/assets/' . $path));
         $twig->addFilter(new TwigFilter('public_asset_url', fn (string $path): string => '/public/assets/' . $path));
         $twig->addFilter(new TwigFilter('script_tag', fn (string $path): string => '<script src="' . $path . '"></script>', ['is_safe' => ['html']]));

@@ -7,24 +7,18 @@
 
 declare(strict_types=1);
 
-use Symfony\Component\Filesystem\Filesystem;
+use Tests\Support\ClientThemeRenderer;
 use Twig\Environment;
-use Twig\Loader\ArrayLoader;
 use Twig\TwigFilter;
 use Twig\TwigFunction;
 
 function clientWalletTemplate(): Environment
 {
-    $twig = new Environment(new ArrayLoader([
-        'partial_client_empty.html.twig' => (new Filesystem())->readFile(PATH_THEMES . '/default/client/html/partial_client_empty.html.twig'),
-        'partial_empty_state.html.twig' => (new Filesystem())->readFile(PATH_THEMES . '/default/shared/html/partial_empty_state.html.twig'),
-        'wallet' => (new Filesystem())->readFile(PATH_MODS . '/Client/templates/client/mod_client_balance.html.twig'),
+    $twig = ClientThemeRenderer::environment([
         'layout_default.html.twig' => '{% block content %}{% endblock %}{% block js %}{% endblock %}',
         'layout_blank.html.twig' => '{% block content %}{% endblock %}{% block js %}{% endblock %}',
         'partial_pagination.html.twig' => '',
-    ]), ['autoescape' => 'html', 'strict_variables' => true]);
-    $twig->addFilter(new TwigFilter('trans', static fn (string $text): string => $text));
-    $twig->addFilter(new TwigFilter('url', static fn (string $path): string => '/' . $path));
+    ], strict: true);
     $twig->addFilter(new TwigFilter('api_url', static fn (string $path): string => '/api/client/' . $path));
     $twig->addFilter(new TwigFilter('format_date', static fn (?string $date): string => $date ?? ''));
     $twig->addFilter(new TwigFilter('format_currency', static fn (mixed $amount, string $currency): string => $amount . ' ' . $currency));
@@ -52,7 +46,7 @@ test('wallet retains available balance, funding actions and signed history', fun
             ]];
         }
     };
-    $html = clientWalletTemplate()->render('wallet', [
+    $html = clientWalletTemplate()->render('mod_client_balance.html.twig', [
         'client' => $client, 'guest' => ['invoice_funds_enabled' => true], 'request' => ['ajax' => false, 'page' => 2],
     ]);
     expect($client->query)->toBe(['per_page' => 10, 'page' => 2, 'sort' => 'id', 'direction' => 'DESC'])
@@ -64,7 +58,7 @@ test('wallet retains available balance, funding actions and signed history', fun
 });
 
 test('wallet handles unavailable funding and empty history without hiding balance', function (bool $enabled, ?string $currency, float $balance, bool $ajax, string $message, bool $hasForm): void {
-    $html = clientWalletTemplate()->render('wallet', [
+    $html = clientWalletTemplate()->render('mod_client_balance.html.twig', [
         'client' => new Tests\Support\PermissiveStub([
             'profile_get' => ['balance' => $balance, 'currency' => $currency],
             'client_balance_get_list' => ['list' => []],

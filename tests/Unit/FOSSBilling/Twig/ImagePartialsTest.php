@@ -21,11 +21,11 @@ function imagePartialTwig(string $theme): Environment
     return $twig;
 }
 
-test('logo entrypoints preserve branding options and fall back to the available variant', function (string $theme, string $template): void {
+test('logo entrypoints preserve branding options and fall back to the available variant', function (string $theme, string $template, string $variant): void {
     $twig = imagePartialTwig($theme);
     $html = $twig->render($template, [
         'company' => ['name' => 'A & B <Hosting>', 'logo_url' => '/must-not-override.png'],
-        'logo_url' => null, 'dark_logo_url' => '/custom-dark.svg',
+        'logo_url' => null, 'dark_logo_url' => null, $variant => '/custom-logo.svg',
         'link_url' => '/brand', 'link_class' => 'extension-logo', 'link_target' => '_blank', 'link_rel' => 'noopener',
         'image_class' => 'extension-image', 'image_width' => 120, 'image_height' => 40, 'image_style' => 'opacity: .9;',
     ]);
@@ -33,7 +33,7 @@ test('logo entrypoints preserve branding options and fall back to the available 
     @$document->loadHTML($html);
     $xpath = new DOMXPath($document);
     expect($xpath->query('//a[@href="/brand"][@class="extension-logo"][@target="_blank"][@rel="noopener"]'))->toHaveCount(1);
-    expect($xpath->query('//img[@src="/custom-dark.svg"][@width="120"][@height="40"][@style="opacity: .9;"]'))->toHaveCount(2);
+    expect($xpath->query('//img[@src="/custom-logo.svg"][@width="120"][@height="40"][@style="opacity: .9;"]'))->toHaveCount(2);
     expect($html)->toContain('hide-theme-light', 'hide-theme-dark', 'extension-image', 'A &amp; B &lt;Hosting&gt;')
         ->not->toContain('/must-not-override.png');
     $hidden = $twig->render($template, ['company' => ['name' => 'Text Brand', 'logo_url' => '/disabled.svg'], 'logo_url' => null, 'dark_logo_url' => null, 'fallback_class' => 'extension-fallback']);
@@ -42,4 +42,4 @@ test('logo entrypoints preserve branding options and fall back to the available 
     ['admin', 'partial_company_logo.html.twig'],
     ['client', 'partial_company_logo.html.twig'],
     ['client', '@Page/partial_company_logo.html.twig'],
-]);
+])->with(['logo_url', 'dark_logo_url']);

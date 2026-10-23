@@ -58,6 +58,7 @@ require_once __DIR__ . '/Helpers/Factories.php';
 require_once __DIR__ . '/Helpers/Api.php';
 require_once __DIR__ . '/Support/CombinedTwigLoader.php';
 require_once __DIR__ . '/Support/PermissiveStub.php';
+require_once __DIR__ . '/Support/ClientThemeRenderer.php';
 require_once __DIR__ . '/Support/PermissiveContainer.php';
 require_once __DIR__ . '/Support/VariableCollectorVisitor.php';
 require_once __DIR__ . '/Support/StrictTemplateRenderer.php';
