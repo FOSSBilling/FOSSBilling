@@ -147,9 +147,9 @@ test('deletePreset removes a theme preset', function (): void {
 test('getThemePresets returns available presets', function (): void {
     $service = new Service();
     $serviceMock = Mockery::mock(Service::class)->makePartial();
-    $serviceMock->shouldReceive('updateSettings')
-        ->atLeast()
-        ->once();
+
+    $staffMock = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffMock->shouldReceive('checkPermissionsAndThrowException')->byDefault();
 
     $repositoryMock = Mockery::mock(Box\Mod\Extension\Repository\ExtensionMetaRepository::class);
     $repositoryMock->shouldReceive('findByExtensionAndScope')
@@ -174,6 +174,7 @@ test('getThemePresets returns available presets', function (): void {
 
     $di = themeContainerWithRepository($repositoryMock);
     $di['theme'] = $di->protect(fn (): Mockery\MockInterface => $themeMock);
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $staffMock);
 
     $serviceMock->setDi($di);
     $result = $serviceMock->getThemePresets($themeMock, 'dark_blue');
@@ -328,12 +329,35 @@ test('updateSettings updates theme settings', function (): void {
         ->andReturn('default');
 
     $di = themeContainerWithRepository($repositoryMock, $emMock);
+    $staffMock = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffMock->shouldReceive('checkPermissionsAndThrowException')->once()->with('theme', 'manage_settings');
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $staffMock);
 
     $service->setDi($di);
-    $params = [];
+    $params = ['inject_javascript' => '<script>window.themeControl = true;</script>'];
     $result = $service->updateSettings($themeMock, 'default', $params);
     expect($result)->toBeBool();
     expect($result)->toBeTrue();
+});
+
+test('updateSettings denies unauthorized writes before persistence', function (): void {
+    $di = container();
+    $staffMock = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffMock->shouldReceive('checkPermissionsAndThrowException')->once()->with('theme', 'manage_settings')
+        ->andThrow(new FOSSBilling\InformationException('Permission denied', null, 403));
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $staffMock);
+    $repository = Mockery::mock(Box\Mod\Extension\Repository\ExtensionMetaRepository::class);
+    $repository->shouldNotReceive('findOneByExtensionAndScope');
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->andReturn($repository);
+    $em->shouldNotReceive('persist');
+    $em->shouldNotReceive('flush');
+    $di['em'] = $em;
+    $service = new Service();
+    $service->setDi($di);
+
+    expect(fn () => $service->updateSettings(new Model\Theme('default/client'), 'Default', ['inject_javascript' => '<script>alert(1)</script>']))
+        ->toThrow(FOSSBilling\InformationException::class, 'Permission denied', 403);
 });
 
 test('regenerateThemeSettingsDataFile regenerates settings file', function (): void {

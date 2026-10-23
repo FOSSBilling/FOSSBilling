@@ -38,10 +38,17 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
      */
     public function save_theme_settings(\Box_App $app, $theme): Response
     {
-        $body = $app->getRequest()->request->all();
-        $this->di['events_manager']->fire(['event' => 'onBeforeThemeSettingsSave', 'params' => $body]);
-
         $api = $this->di['api_admin'];
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('theme', 'manage_settings');
+
+        $body = $app->getRequest()->request->all();
+        $token = $body['CSRFToken'] ?? null;
+        $sessionToken = $this->di['session']->get('csrf_token');
+        if (!is_string($token) || !is_string($sessionToken) || $sessionToken === '' || !hash_equals($sessionToken, $token)) {
+            throw new \FOSSBilling\InformationException('CSRF token invalid', null, 403);
+        }
+        unset($body['CSRFToken']);
+        $this->di['events_manager']->fire(['event' => 'onBeforeThemeSettingsSave', 'params' => $body]);
 
         $mod = $this->di['mod']('theme');
         $service = $mod->getService();
@@ -88,6 +95,7 @@ class Admin implements \FOSSBilling\InjectionAwareInterface
     public function get_theme(\Box_App $app, $theme): string
     {
         $this->di['is_admin_logged'];
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('theme', 'view');
 
         $mod = $this->di['mod']('theme');
         $service = $mod->getService();

@@ -145,7 +145,7 @@ test('getTheme renders theme preset', function (): void {
     $controller->get_theme($boxAppMock, 'huraga');
 });
 
-test('save theme settings reads body from request and strips preset control keys', function (): void {
+test('save theme settings reads body from request and strips preset control keys', function (bool $newPreset): void {
     $controller = new Box\Mod\Theme\Controller\Admin();
     $di = container();
 
@@ -156,13 +156,16 @@ test('save theme settings reads body from request and strips preset control keys
     $themeServiceMock = Mockery::mock(Box\Mod\Theme\Service::class);
     $themeServiceMock->shouldReceive('getTheme')->andReturn($themeMock);
     $themeServiceMock->shouldReceive('getCurrentThemePreset')->andReturn('default');
-    $themeServiceMock->shouldReceive('setCurrentThemePreset')
-        ->once()
-        ->with($themeMock, 'MyPreset');
+    if ($newPreset) {
+        $themeServiceMock->shouldReceive('setCurrentThemePreset')->once()->with($themeMock, 'MyPreset');
+    } else {
+        $themeServiceMock->shouldNotReceive('setCurrentThemePreset');
+    }
     $themeServiceMock->shouldReceive('updateSettings')
         ->once()
-        ->with($themeMock, 'MyPreset', Mockery::on(fn (array $body): bool => !array_key_exists('save-current-setting', $body)
+        ->with($themeMock, $newPreset ? 'MyPreset' : 'default', Mockery::on(fn (array $body): bool => !array_key_exists('save-current-setting', $body)
             && !array_key_exists('save-current-setting-preset', $body)
+            && !array_key_exists('CSRFToken', $body)
             && $body['color'] === 'blue'));
     $themeServiceMock->shouldReceive('regenerateThemeCssAndJsFiles');
     $themeServiceMock->shouldReceive('regenerateThemeSettingsDataFile');
@@ -175,17 +178,24 @@ test('save theme settings reads body from request and strips preset control keys
         ->once()
         ->with(Mockery::on(fn (array $event): bool => $event['event'] === 'onBeforeThemeSettingsSave'
             && $event['params']['color'] === 'blue'
-            && $event['params']['save-current-setting'] === '1'));
+            && $event['params']['save-current-setting'] === ($newPreset ? '1' : '0')));
+
+    $staffMock = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffMock->shouldReceive('checkPermissionsAndThrowException')->once()->with('theme', 'manage_settings');
 
     $di['api_admin'] = Mockery::mock();
     $di['is_admin_logged'] = true;
     $di['mod'] = $di->protect(fn () => $modMock);
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $staffMock);
     $di['events_manager'] = $eventsManager;
+    $di['session'] = Mockery::mock(FOSSBilling\Session::class)->shouldIgnoreMissing();
+    $di['session']->shouldReceive('get')->with('csrf_token')->andReturn('valid-token');
     $controller->setDi($di);
 
     $request = Symfony\Component\HttpFoundation\Request::create('/theme/huraga', 'POST', [
+        'CSRFToken' => 'valid-token',
         'color' => 'blue',
-        'save-current-setting' => '1',
+        'save-current-setting' => $newPreset ? '1' : '0',
         'save-current-setting-preset' => 'My Preset',
     ]);
 
@@ -198,7 +208,75 @@ test('save theme settings reads body from request and strips preset control keys
 
     $response = $controller->save_theme_settings($boxAppMock, 'huraga');
     expect($response)->toBeInstanceOf(Symfony\Component\HttpFoundation\RedirectResponse::class);
+})->with([true, false]);
+
+test('theme save rejects restricted staff before any side effects', function (): void {
+    $controller = new Box\Mod\Theme\Controller\Admin();
+    $di = container();
+
+    $staffMock = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffMock->shouldReceive('checkPermissionsAndThrowException')->once()->with('theme', 'manage_settings')
+        ->andThrow(new FOSSBilling\InformationException('Permission denied', null, 403));
+
+    $di['api_admin'] = Mockery::mock();
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $staffMock);
+    $di['mod'] = $di->protect(static fn () => throw new LogicException('Module must not be resolved'));
+    $controller->setDi($di);
+
+    $app = Mockery::mock('\Box_App');
+    $app->shouldNotReceive('getRequest');
+
+    expect(fn () => $controller->save_theme_settings($app, 'huraga'))
+        ->toThrow(FOSSBilling\InformationException::class, 'Permission denied', 403);
 });
+
+test('theme settings page requires view permission', function (): void {
+    $controller = new Box\Mod\Theme\Controller\Admin();
+    $di = container();
+    $di['is_admin_logged'] = true;
+
+    $staffMock = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffMock->shouldReceive('checkPermissionsAndThrowException')->once()->with('theme', 'view')
+        ->andThrow(new FOSSBilling\InformationException('Permission denied', null, 403));
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $staffMock);
+    $controller->setDi($di);
+
+    expect(fn () => $controller->get_theme(Mockery::mock('\Box_App'), 'huraga'))
+        ->toThrow(FOSSBilling\InformationException::class, 'Permission denied', 403);
+});
+
+test('theme save rejects invalid CSRF tokens before any side effects', function (mixed $token, mixed $sessionToken): void {
+    $controller = new Box\Mod\Theme\Controller\Admin();
+    $di = container();
+    $di['api_admin'] = Mockery::mock();
+
+    $staffMock = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffMock->shouldReceive('checkPermissionsAndThrowException')->once()->with('theme', 'manage_settings');
+    $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $staffMock);
+
+    $sessionMock = Mockery::mock(FOSSBilling\Session::class);
+    $sessionMock->shouldReceive('get')->with('csrf_token')->andReturn($sessionToken);
+    $di['session'] = $sessionMock;
+
+    $di['mod'] = $di->protect(static fn () => throw new LogicException('Module must not be resolved'));
+    $controller->setDi($di);
+
+    $request = Symfony\Component\HttpFoundation\Request::create('/theme/huraga', 'POST', [
+        'CSRFToken' => $token,
+        'color' => 'blue',
+    ]);
+    $app = Mockery::mock('\Box_App');
+    $app->shouldReceive('getRequest')->once()->andReturn($request);
+
+    expect(fn () => $controller->save_theme_settings($app, 'huraga'))
+        ->toThrow(FOSSBilling\InformationException::class, 'CSRF token invalid', 403);
+})->with([
+    'missing' => [null, 'valid-token'],
+    'mismatch' => ['wrong-token', 'valid-token'],
+    'array' => [['valid-token'], 'valid-token'],
+    'empty session' => ['', ''],
+    'missing session' => ['valid-token', null],
+]);
 
 test('huraga footer link checkboxes submit canonical enabled values', function (): void {
     $checkboxes = renderHuragaFooterLinkCheckboxes([]);
@@ -223,4 +301,29 @@ test('theme settings restore checkbox values saved with the browser default', fu
     foreach ($checkboxes as $checkbox) {
         expect($checkbox->hasAttribute('checked'))->toBeTrue();
     }
+});
+
+test('theme settings form renders the session CSRF token', function (): void {
+    $renderer = new Tests\Support\StrictTemplateRenderer();
+    $html = $renderer->renderTemplate(PATH_MODS . '/Theme/templates/admin/mod_theme_preset.html.twig', [
+        'info' => null,
+        'error' => null,
+        'theme_code' => 'huraga',
+        'settings_html' => new Twig\Markup('<input name="color">', 'UTF-8'),
+        'current_preset' => 'Default',
+        'presets' => ['Default'],
+        'settings' => [],
+        'uploaded' => [],
+        'snippets' => [],
+        'CSRFToken' => 'session-token',
+    ]);
+    $document = new DOMDocument();
+    $previous = libxml_use_internal_errors(true);
+    $document->loadHTML($html);
+    libxml_clear_errors();
+    libxml_use_internal_errors($previous);
+    $tokens = (new DOMXPath($document))->query('//form[@method="post"]/input[@type="hidden" and @name="CSRFToken"]');
+
+    expect($tokens->length)->toBe(1)
+        ->and($tokens->item(0)->getAttribute('value'))->toBe('session-token');
 });
