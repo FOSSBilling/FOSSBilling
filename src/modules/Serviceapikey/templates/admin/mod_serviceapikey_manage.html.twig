@@ -36,7 +36,7 @@
             <div class="row g-3">
                 <div class="col-lg-4">
                     <label class="form-label">{{ 'Length'|trans }}</label>
-                    <input type="number" class="form-control" name="config[length]" value="{{ request.config.length|default(service.config.length) }}">
+                    <input type="number" class="form-control" name="config[length]" value="{{ request.config.length ?? service.config.length ?? 32 }}">
                 </div>
             </div>
         </div>
@@ -53,25 +53,25 @@
                     <label class="form-label">{{ 'Split API Key with Dashes'|trans }}</label>
                     <div class="d-flex flex-wrap gap-3 pt-1">
                         <label class="form-check">
-                            <input class="form-check-input" type="radio" name="config[split]" id="split_yes" value="1"{% if request.config.split|default(service.config.split) == 1 %} checked{% endif %}>
+                            <input class="form-check-input" type="radio" name="config[split]" id="split_yes" value="1"{% if (request.config.split ?? service.config.split ?? true) == 1 %} checked{% endif %}>
                             <span class="form-check-label">{{ 'Yes'|trans }}</span>
                         </label>
                         <label class="form-check">
-                            <input class="form-check-input" type="radio" name="config[split]" id="split_no" value="0"{% if request.config.split|default(service.config.split) == 0 %} checked{% endif %}>
+                            <input class="form-check-input" type="radio" name="config[split]" id="split_no" value="0"{% if (request.config.split ?? service.config.split ?? true) == 0 %} checked{% endif %}>
                             <span class="form-check-label">{{ 'No'|trans }}</span>
                         </label>
                     </div>
                 </div>
                 <div class="col-lg-4">
                     <label class="form-label">{{ 'Split Interval'|trans }}</label>
-                    <input type="number" class="form-control" name="config[split_interval]" value="{{ request.config.split_interval|default(service.config.split_interval) }}">
+                    <input type="number" class="form-control" name="config[split_interval]" value="{{ request.config.split_interval ?? service.config.split_interval ?? 8 }}">
                 </div>
                 <div class="col-lg-4">
                     <label class="form-label">{{ 'API Key Capitalization'|trans }}</label>
                     <select class="form-select" aria-label="API key capitalization options" name="config[case]">
-                        <option{% if request.config.case|default(service.config.case) == 'upper' %} selected{% endif %} value="upper">{{ 'Uppercase'|trans }}</option>
-                        <option{% if request.config.case|default(service.config.case) == 'lower' %} selected{% endif %} value="lower">{{ 'Lowercase'|trans }}</option>
-                        <option{% if request.config.case|default(service.config.case) == 'mixed' %} selected{% endif %} value="mixed">{{ 'Mixed'|trans }}</option>
+                        <option{% if (request.config.case ?? service.config.case ?? 'upper') == 'upper' %} selected{% endif %} value="upper">{{ 'Uppercase'|trans }}</option>
+                        <option{% if (request.config.case ?? service.config.case ?? 'upper') == 'lower' %} selected{% endif %} value="lower">{{ 'Lowercase'|trans }}</option>
+                        <option{% if (request.config.case ?? service.config.case ?? 'upper') == 'mixed' %} selected{% endif %} value="mixed">{{ 'Mixed'|trans }}</option>
                     </select>
                 </div>
             </div>

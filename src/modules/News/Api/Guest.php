@@ -63,7 +63,7 @@ class Guest extends \FOSSBilling\Api\AbstractApi
         }
 
         if (!$post || $post->getStatus() !== Post::STATUS_ACTIVE) {
-            throw new \FOSSBilling\InformationException('News item not found.');
+            throw new \FOSSBilling\InformationException('News item not found.', [], 404);
         }
 
         /**@todo Doctrine: Replace with actual Admin entity once it's migrated to Doctrine. */

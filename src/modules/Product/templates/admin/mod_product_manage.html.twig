@@ -181,7 +181,7 @@
 
         <div class="tab-pane fade" id="tab-config" role="tabpanel" aria-labelledby="config-tab">
             {% set service_partial = 'mod_service' ~ product.type ~ '_config.html.twig' %}
-            {% if admin.system_template_exists({ 'file': service_partial }) %}
+            {% if source(service_partial, ignore_missing: true) is not empty %}
                 <div class="p-3">
                     {{ include(service_partial, { 'product': product }) }}
                 </div>

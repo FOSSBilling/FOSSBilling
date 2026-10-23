@@ -15,7 +15,7 @@ use Twig\Loader\FilesystemLoader;
 use Twig\TwigFilter;
 use Twig\TwigFunction;
 
-test('product settings only load forms when staff can view them', function (bool $enabled, bool $allowed): void {
+test('product settings only load forms when staff can view them', function (bool $enabled, bool $allowed, bool $hasConfig): void {
     $admin = new class($allowed) {
         public int $formLookups = 0;
 
@@ -26,7 +26,7 @@ test('product settings only load forms when staff can view them', function (bool
         public function __call(string $name, array $arguments): mixed
         {
             if ($name === 'system_template_exists') {
-                return false;
+                throw new FOSSBilling\Exception('Settings management is not allowed');
             }
 
             if ($name === 'formbuilder_get_pairs') {
@@ -42,14 +42,14 @@ test('product settings only load forms when staff can view them', function (bool
         }
     };
     $twig = new Environment(new ChainLoader([
-        new ArrayLoader([
+        new ArrayLoader(array_merge($hasConfig ? ['mod_servicecustom_config.html.twig' => '<p>Service configuration</p>'] : [], [
             'layout_default.html.twig' => '{% block content %}{% endblock %}',
             'partial_admin_detail_tabs.html.twig' => '{% block detail_tab_content %}{% endblock %}',
             'partial_admin_form_card.html.twig' => '{% block form_content %}{% endblock %}',
             'partial_admin_related_section.html.twig' => '',
             'partial_pricing.html.twig' => '',
             'macro_functions.html.twig' => '{% macro selectbox(name, pairs, selected, empty, label) %}<select name="{{ name }}">{% for id, title in pairs %}<option value="{{ id }}">{{ title }}</option>{% endfor %}</select>{% endmacro %}',
-        ]),
+        ])),
         new FilesystemLoader(PATH_MODS . '/Product/templates/admin'),
     ]), ['strict_variables' => true]);
     foreach (['trans', 'api_url', 'markdown_to_html'] as $filter) {
@@ -72,10 +72,11 @@ test('product settings only load forms when staff can view them', function (bool
     ]);
 
     expect($html)->toContain('name="title"')
-        ->and($admin->formLookups)->toBe($enabled && $allowed ? 1 : 0);
+        ->and($admin->formLookups)->toBe($enabled && $allowed ? 1 : 0)
+        ->and(str_contains($html, '<p>Service configuration</p>'))->toBe($hasConfig);
     if ($enabled && $allowed) {
         expect($html)->toContain('name="form_id"')->toContain('Example form');
     } else {
         expect($html)->not->toContain('name="form_id"');
     }
-})->with([[true, false], [true, true], [false, false], [false, true]]);
+})->with([[true, false, false], [true, true, true], [false, false, true], [false, true, false]]);
