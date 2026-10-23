@@ -46,6 +46,7 @@ class PdoSessionHandler implements SessionHandlerInterface
     {
         $dbOptions = [
             'db_table' => 'session',
+            ...$dbOptions,
         ];
 
         if ($pdo->getAttribute(PDO::ATTR_ERRMODE) !== PDO::ERRMODE_EXCEPTION) {
