@@ -738,12 +738,12 @@ class Server_Manager_Whm extends Server_Manager
                 // of aborting the account creation.
                 try {
                     $this->request('editpkg', $varHash);
-                    $this->getLog()->info('Updated existing WHM package {package}', ['package' => $name]);
+                    $this->getLog()->info(sprintf('Updated existing WHM package "%s"', $name));
                 } catch (Server_Exception $editException) {
                     // The package exists but cannot be edited (e.g. owned by
                     // another user). Account creation can still use it, so do
                     // not block activation - just log and continue.
-                    $this->getLog()->warning('WHM package {package} already exists and could not be updated: {error}', ['package' => $name, 'error' => $editException->getMessage()]);
+                    $this->getLog()->warning(sprintf('WHM package "%s" already exists and could not be updated: "%s"', $name, $editException->getMessage()));
                 }
             }
         }

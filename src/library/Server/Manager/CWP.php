@@ -100,9 +100,9 @@ class Server_Manager_CWP extends Server_Manager
             }
 
             // Log the username only: the payload may contain single-use tokens and URLs.
-            $this->getLog()->error('CWP did not return a login URL for account {username}', ['username' => $account->getUsername()]);
+            $this->getLog()->error(sprintf('CWP did not return a login URL for account "%s"', $account->getUsername()));
         } catch (Server_Exception $e) {
-            $this->getLog()->error('Failed to generate CWP login URL for account {username}: {error}', ['username' => $account->getUsername(), 'error' => $e->getMessage()]);
+            $this->getLog()->error(sprintf('Failed to generate CWP login URL for account "%s": "%s"', $account->getUsername(), $e->getMessage()));
         }
 
         return $fallback;
