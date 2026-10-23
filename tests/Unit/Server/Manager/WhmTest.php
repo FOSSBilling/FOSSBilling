@@ -228,7 +228,7 @@ test('createAccount rethrows addpkg failures unrelated to already-exists', funct
     $account = createWhmAccount(new Server_Package(), false);
 
     // The WHM reason stays in the logs; API callers only see the generic message.
-    expect(fn () => $manager->createAccount($account))->toThrow(Server_Exception::class, 'Failed to addpkg on the cPanel server');
+    expect(fn (): bool => $manager->createAccount($account))->toThrow(Server_Exception::class, 'Failed to addpkg on the cPanel server');
 });
 
 test('addpkg already-exists does not leak the WHM reason to callers', function (): void {

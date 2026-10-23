@@ -146,7 +146,7 @@ test('profile email changes reset a concurrently approved database row despite s
     $module = Mockery::mock(FOSSBilling\Module::class);
     $module->shouldReceive('getConfig')->andReturn(['disable_change_email' => false]);
     $di['mod'] = $di->protect(fn () => $module);
-    $di['mod_config'] = $di->protect(fn () => ['require_email_confirmation' => $confirmationRequired]);
+    $di['mod_config'] = $di->protect(fn (): array => ['require_email_confirmation' => $confirmationRequired]);
     $service = new Service();
     $service->setDi($di);
     $emailService = Mockery::mock(Box\Mod\Email\Service::class);
@@ -167,7 +167,7 @@ test('profile email changes reset a concurrently approved database row despite s
     expect($profile->updateClient($client, ['email' => 'victim@example.com']))->toBeTrue();
     expect($connection->fetchOne('SELECT email FROM client WHERE id = :id', ['id' => $client->getId()]))->toBe('victim@example.com');
     expect((bool) $connection->fetchOne('SELECT email_approved FROM client WHERE id = :id', ['id' => $client->getId()]))->toBeFalse();
-    expect(fn () => $service->approveClientEmailByHash($oldHash))->toThrow(InformationException::class);
+    expect(fn (): bool => $service->approveClientEmailByHash($oldHash))->toThrow(InformationException::class);
     if ($confirmationRequired) {
         expect($service->approveClientEmailByHash($newHash))->toBeTrue();
     }

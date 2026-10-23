@@ -1017,7 +1017,7 @@ test('activateExistingExtension rejects mod with missing or invalid manifest bef
 
     $service->setDi($di);
 
-    expect(fn () => $service->activateExistingExtension(['type' => 'mod', 'id' => 'nonexistent']))
+    expect(fn (): array => $service->activateExistingExtension(['type' => 'mod', 'id' => 'nonexistent']))
         ->toThrow(FOSSBilling\InformationException::class, 'its manifest file is missing or invalid');
 })->with([
     'missing manifest' => 'Missing manifest file for the nonexistent module.',
@@ -1044,7 +1044,7 @@ test('activate rejects mod with missing manifest', function (): void {
 
     $service->setDi($di);
 
-    expect(fn () => $service->activate($ext))
+    expect(fn (): array => $service->activate($ext))
         ->toThrow(FOSSBilling\InformationException::class);
 });
 
@@ -1096,7 +1096,7 @@ test('downloadAndExtract rejects unsafe archives before writing any entry', func
 
     // Rejection must happen before destination resolution or a single extraction write.
     try {
-        expect(fn () => $service->downloadAndExtract('mod', 'example'))
+        expect(fn (): bool => $service->downloadAndExtract('mod', 'example'))
             ->toThrow(FOSSBilling\Exception::class, 'The extension archive contains an unsafe file path or file type');
         expect($paths)->toHaveCount(1)
             ->and(is_dir($paths[0]))->toBeFalse()

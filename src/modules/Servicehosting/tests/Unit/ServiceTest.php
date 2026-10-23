@@ -1032,10 +1032,8 @@ test('server usage stats split active from orphaned usages', function (): void {
         ->andReturn([['id' => 11], ['id' => 12]]);
     $dbMock->shouldReceive('getAll')
         ->once()
-        ->withArgs(function (string $sql, array $values): bool {
-            return str_contains($sql, 'client_order')
-                && $values === [Box\Mod\Product\Service::HOSTING, 11, 12];
-        })
+        ->withArgs(fn (string $sql, array $values): bool => str_contains($sql, 'client_order')
+            && $values === [Box\Mod\Product\Service::HOSTING, 11, 12])
         ->andReturn([['service_id' => 11]]);
 
     $di = container();
@@ -1069,10 +1067,8 @@ test('detach orphaned server usages nulls the server link', function (): void {
         ->andReturn([['id' => 12]]);
     $dbMock->shouldReceive('getAll')
         ->once()
-        ->withArgs(function (string $sql, array $values): bool {
-            return str_contains($sql, 'client_order')
-                && $values === [Box\Mod\Product\Service::HOSTING, 12];
-        })
+        ->withArgs(fn (string $sql, array $values): bool => str_contains($sql, 'client_order')
+            && $values === [Box\Mod\Product\Service::HOSTING, 12])
         ->andReturn([]);
     $dbMock->shouldReceive('load')->once()->with('ServiceHosting', 12)->andReturn($orphan);
     $dbMock->shouldReceive('store')->once()->with($orphan);

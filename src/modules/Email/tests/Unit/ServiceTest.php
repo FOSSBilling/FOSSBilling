@@ -215,7 +215,7 @@ test('setVars rejects variables that cannot be encoded', function (): void {
     $t = emailTemplate();
 
     expect(fn (): bool => $service->setVars($t, ['invalid' => INF]))
-        ->toThrow(\FOSSBilling\Exception::class, 'Failed to encode email template variables.');
+        ->toThrow(FOSSBilling\Exception::class, 'Failed to encode email template variables.');
 });
 
 test('getVars decrypts and returns variables', function (): void {

@@ -1458,7 +1458,7 @@ test('validateAdminMarkAsPaidRequest requires a gateway when neither request nor
     $service = new Service();
     $service->setDi($di);
 
-    expect(fn () => $service->validateAdminMarkAsPaidRequest([], $invoiceModel))
+    expect(fn (): Model_PayGateway => $service->validateAdminMarkAsPaidRequest([], $invoiceModel))
         ->toThrow(FOSSBilling\InformationException::class, 'Payment gateway is required when marking an invoice as paid.');
 });
 
@@ -1485,7 +1485,7 @@ test('validateAdminMarkAsPaidRequest rejects a disabled gateway', function (): v
     $service = new Service();
     $service->setDi($di);
 
-    expect(fn () => $service->validateAdminMarkAsPaidRequest(['gateway_id' => 5], $invoiceModel))
+    expect(fn (): Model_PayGateway => $service->validateAdminMarkAsPaidRequest(['gateway_id' => 5], $invoiceModel))
         ->toThrow(FOSSBilling\InformationException::class, 'Payment gateway is not enabled');
 });
 

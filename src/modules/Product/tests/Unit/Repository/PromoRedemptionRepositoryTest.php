@@ -22,7 +22,7 @@ test('locking checkout-application check requires a transaction', function (): v
         new Doctrine\ORM\Mapping\ClassMetadata(PromoRedemption::class)
     );
 
-    expect(fn () => $repository->clientHasActiveCheckoutApplicationForUpdate(5, 1))
+    expect(fn (): bool => $repository->clientHasActiveCheckoutApplicationForUpdate(5, 1))
         ->toThrow(FOSSBilling\Exception::class);
 });
 
