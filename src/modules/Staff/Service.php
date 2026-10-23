@@ -587,12 +587,11 @@ class Service implements InjectionAwareInterface
                 ->changePassword($admin, $this->di['password']->hashIt($password));
             // Keep the RedBean model in sync for callers holding it.
             $model->pass = $admin->getPass();
-            $model->updated_at = date('Y-m-d H:i:s');
         } else {
             $model->pass = $this->di['password']->hashIt($password);
-            $model->updated_at = date('Y-m-d H:i:s');
             $this->di['db']->store($model);
         }
+        $model->updated_at = date('Y-m-d H:i:s');
 
         $profileService = $this->di['mod_service']('profile');
         $profileService->invalidateSessions('admin', (int) $model->id);

@@ -182,11 +182,11 @@ class Guest extends \FOSSBilling\Api\AbstractApi
 
             $em = $this->getDi()['em'];
             $adminEntity = $em->getRepository(Admin::class)->find((int) $c->id);
-            if ($adminEntity instanceof Admin
-                && !$em->getRepository(AdminPasswordReset::class)->replaceReset($adminEntity, $hash, $this->ip)) {
-                return true;
-            }
-            if (!$adminEntity instanceof Admin) {
+            if ($adminEntity instanceof Admin) {
+                if (!$em->getRepository(AdminPasswordReset::class)->replaceReset($adminEntity, $hash, $this->ip)) {
+                    return true;
+                }
+            } else {
                 $reset = $this->getDi()['db']->dispense('AdminPasswordReset');
                 $reset->admin_id = $c->id;
                 $reset->ip = $this->ip;
