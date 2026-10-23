@@ -13,7 +13,7 @@ class Trigger {
   getBoundingClientRect() {return {left: 120, right: 170};}
 }
 function fixture(run: (f: any) => void, options: any = {}) {
-  const keys = ['document', 'window', 'location', 'history', 'Element'];
+  const keys = ['document', 'window', 'location', 'history', 'Element', 'tabler'];
   const old = new Map(keys.map(key => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
   const listeners = new Map<string, Function>();
   const windowListeners = new Map<string, Function>();
@@ -25,20 +25,21 @@ function fixture(run: (f: any) => void, options: any = {}) {
   const library = {getOrCreateInstance(trigger: Trigger) {return {show() {shown.push(trigger);}};}};
   const document = {querySelectorAll: () => triggers, getElementById: (id: string) => panes.get(id), addEventListener: (name: string, cb: Function) => listeners.set(name, cb)};
   const window = {addEventListener: (name: string, cb: Function, capture?: boolean) => {if (name === 'click') assert.equal(capture, true); windowListeners.set(name, cb);}};
-  Object.assign(globalThis, {document, window, Element: Trigger, location: {hash: '#two', href: 'https://example.test/account?search=demo&page=3#two'}, history: {state, replaceState(next: unknown, _: string, url: URL) {assert.equal(next, state);replaced.push(url);}}});
+  Object.assign(globalThis, {document, window, tabler: {Tab: library}, Element: Trigger, location: {hash: '#two', href: 'https://example.test/account?search=demo&page=3#two'}, history: {state, replaceState(next: unknown, _: string, url: URL) {assert.equal(next, state);replaced.push(url);}}});
   const emit = (trigger: Trigger) => listeners.get('shown.bs.tab')!({target: trigger});
   const click = (trigger: Trigger, extra = {}) => windowListeners.get('click')!({target: trigger, button: 0, preventDefault() {}, ...extra});
-  try {initTabNavigation(library as any, options);run({one, two, shown, replaced, panes, triggers, emit, click, listeners, windowListeners, library});}
+  try {initTabNavigation(options);run({one, two, shown, replaced, panes, triggers, emit, click, listeners, windowListeners, library});}
   finally {for (const key of keys) {const descriptor = old.get(key);if (descriptor) Object.defineProperty(globalThis, key, descriptor);else delete (globalThis as any)[key];}}
 }
 
 test('initial and subsequent hash links use Tabler without rewriting the initial query', () => fixture(f => {
   assert.deepEqual(f.shown, [f.two]);
   assert.equal(f.replaced.length, 0);
+  assert.equal(f.windowListeners.has('click'), false);
   globalThis.location.hash = '#one';
   f.windowListeners.get('hashchange')();
   assert.deepEqual(f.shown, [f.two, f.one]);
-  initTabNavigation(f.library);
+  initTabNavigation();
   assert.equal(f.shown.length, 2);
 }));
 

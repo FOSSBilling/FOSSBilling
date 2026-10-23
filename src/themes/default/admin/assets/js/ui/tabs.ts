@@ -1,9 +1,8 @@
-import type { Tab } from '@tabler/core';
 import { initTabNavigation } from '../../../../../../../frontend/ui/tab-navigation.ts';
 import { pruneListParamsForTab } from '../utils.ts';
 
 export default function initTabs(): void {
-  initTabNavigation({getOrCreateInstance: element => tabler.Tab.getOrCreateInstance(element) as Tab}, {
+  initTabNavigation({
     jumpLinks: true,
     updateUrl(url, pane) {
       const namespace = pane.getAttribute('data-list-ns');

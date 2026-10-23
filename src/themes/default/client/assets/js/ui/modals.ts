@@ -25,8 +25,6 @@ function createDialogContent(options: ClientModalOptions, labels: DOMStringMap, 
   element.className = 'modal fade';
   element.dataset.clientDialog = '';
   element.tabIndex = -1;
-  element.setAttribute('aria-modal', 'true');
-  element.setAttribute('role', 'dialog');
   element.innerHTML = '<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h2 class="modal-title"></h2><button class="btn-close" type="button" data-bs-dismiss="modal"></button></div><form class="client-modal-form"><div class="modal-body text-break"></div><div class="modal-footer"></div></form></div></div>';
   const title = element.querySelector<HTMLElement>('.modal-title')!;
   title.id = `client-api-dialog-${++nextDialogId}`;
@@ -68,7 +66,6 @@ function createDialogActions(element: HTMLElement, options: ClientModalOptions, 
   if (confirm) {
     button = document.createElement('button');
     button.type = 'submit';
-    button.disabled = true;
     const color = options.confirmButtonColor || (type === 'danger' ? 'danger' : 'primary');
     button.className = `btn btn-${['primary', 'secondary', 'danger', 'success', 'warning'].includes(color) ? color : 'primary'}`;
     button.textContent = options.confirmButton || labels.clientConfirm || 'Confirm';

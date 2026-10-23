@@ -27,7 +27,7 @@ function loadAdminFeature(loader, name) {
 document.addEventListener('DOMContentLoaded', () => {
   initEmailPreviewSupport();
   initNoticeDismissal();
-  initFloatingHelp(tabler);
+  initFloatingHelp();
   initDropdownFocus();
   initFormErrors();
   initFormLoading();

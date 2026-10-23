@@ -1,6 +1,5 @@
 export const tabTriggerSelector = '[data-bs-toggle="tab"], [data-bs-toggle="pill"], [data-bs-toggle="list"], [data-tblr-toggle="tab"], [data-tblr-toggle="pill"], [data-tblr-toggle="list"]';
 
-type TabLibrary = {getOrCreateInstance(element: HTMLElement): {show(): void}};
 type TabNavigationOptions = {
   updateUrl?: (url: URL, pane: HTMLElement) => void;
   onActiveClick?: (event: MouseEvent, trigger: HTMLElement, pane: HTMLElement) => void;
@@ -18,14 +17,14 @@ function enabled(trigger: HTMLElement): boolean {
   return !trigger.matches(':disabled, .disabled, [aria-disabled="true"]');
 }
 
-export function initTabNavigation(library: TabLibrary, options: TabNavigationOptions = {}): void {
+export function initTabNavigation(options: TabNavigationOptions = {}): void {
   if (initialized.has(document)) return;
   initialized.add(document);
   const showLinkedTab = (id = location.hash.slice(1)) => {
     if (!id || !document.getElementById(id)) return;
     const trigger = [...document.querySelectorAll<HTMLElement>(tabTriggerSelector)]
       .find(element => tabTarget(element) === id && enabled(element));
-    if (trigger) library.getOrCreateInstance(trigger).show();
+    if (trigger) tabler.Tab.getOrCreateInstance(trigger).show();
   };
 
   // Keep initial deep links from rewriting server-rendered list parameters.
@@ -51,6 +50,7 @@ export function initTabNavigation(library: TabLibrary, options: TabNavigationOpt
       else if (tabBounds.right > bounds.right) nav.scrollLeft += tabBounds.right - bounds.right;
     }
   });
+  if (!options.onActiveClick && !options.jumpLinks) return;
   // Capture before Tabler's document handler activates a newly clicked pane.
   window.addEventListener('click', event => {
     if (!(event.target instanceof Element) || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || event.button !== 0) return;

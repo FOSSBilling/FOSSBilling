@@ -22,40 +22,22 @@ globalThis.tabler = tabler;
 // Preserve the Bootstrap component API used by existing module and extension templates.
 globalThis.bootstrap = tabler.bootstrap;
 
+function reportError(error) {
+  let message = 'An unexpected error occurred';
+  if (error && typeof error === 'object') message = error.message || error.code || message;
+  else if (typeof error === 'string') message = error;
+  FOSSBilling.message(message, 'error');
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   initNoticeDismissal();
-  initFloatingHelp(tabler);
+  initFloatingHelp();
   initDropdownFocus();
-  /**
-   * Global error handler for unhandled Promise rejections
-   */
-  window.addEventListener('unhandledrejection', function(event) {
-    const error = event.reason;
-    let message = 'An unexpected error occurred';
-    if (error && typeof error === 'object') {
-      message = error.message || error.code || message;
-    } else if (typeof error === 'string') {
-      message = error;
-    }
-    FOSSBilling.message(message, 'error');
-  });
-
-  /**
-   * Global error handler for synchronous errors
-   */
-  window.onerror = function(message, source, lineno, colno, error) {
-    let displayMessage = message;
-    if (error && error.message) {
-      displayMessage = error.message;
-    }
-    FOSSBilling.message(displayMessage, 'error');
+  window.addEventListener('unhandledrejection', event => reportError(event.reason));
+  window.onerror = (message, source, lineno, colno, error) => {
+    FOSSBilling.message(error?.message || message, 'error');
   };
 
-  /**
-   * Wire up the light/dark theme controller. Runs on every page that
-   * includes the Huraga layout so user toggles are persisted in localStorage
-   * and the data-bs-theme attribute is kept in sync.
-   */
   initFormErrors();
   initFormLoading();
   initNavigation();
@@ -101,36 +83,13 @@ document.addEventListener('DOMContentLoaded', () => {
     select.addEventListener('change', function () {
       FOSSBilling.api.guest.post('cart/set_currency', {currency: select.value}, function(response) {
         location.reload();
-      }, function(error) {
-        let message = 'An unexpected error occurred';
-        if (error && typeof error === 'object') {
-          message = error.message || error.code || message;
-        } else if (typeof error === 'string') {
-          message = error;
-        }
-        FOSSBilling.message(message, 'error');
-      });
+      }, reportError);
     });
   });
 
-  /**
-   * Lazy load Tom Select only if language selector exists
-   * Includes error handling and ensures CSS is loaded before JS initializes
-   */
-  const languageSelector = document.querySelector('.js-locale-selector');
-  if (languageSelector) {
-    // Dynamically import TomSelect module with error handling
+  if (document.querySelector('.js-locale-selector')) {
     import('./js/tomselect.ts')
-      .then(module => {
-        if (typeof module.default === 'function') {
-          module.default();
-        } else {
-          console.error('TomSelect module does not export a default function');
-        }
-      })
-      .catch(err => {
-        console.error('Failed to load language selector:', err);
-      });
+      .then(({default: init}) => init())
+      .catch(error => console.error('Failed to load language selector:', error));
   }
-
 });

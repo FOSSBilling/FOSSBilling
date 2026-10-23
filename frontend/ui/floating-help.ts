@@ -1,13 +1,10 @@
 import { tabTarget } from './tab-navigation.ts';
 import { dropdownMenuFor } from './dropdown-focus.ts';
 
-type HelpInstance = {hide(): void};
-type HelpLibrary = {getInstance(element: HTMLElement): HelpInstance | null};
-type HelpLibraries = {Tooltip: HelpLibrary; Popover: HelpLibrary};
 const initialized = new WeakSet<Document>();
 
 /** Tabler owns rendering, sanitization, positioning and each trigger's configuration. */
-export default function initFloatingHelp(library: HelpLibraries): void {
+export default function initFloatingHelp(): void {
   if (initialized.has(document)) return;
   initialized.add(document);
   const visible = new Map<HTMLElement, {kind: 'Tooltip' | 'Popover'; tip: HTMLElement | null}>();
@@ -29,18 +26,18 @@ export default function initFloatingHelp(library: HelpLibraries): void {
   window.addEventListener('keydown', event => {
     if (event.key !== 'Escape' || event.defaultPrevented) return;
     for (const [trigger, {kind}] of visible) {
-      if (!trigger.isConnected || !library[kind].getInstance(trigger)) visible.delete(trigger);
+      if (!trigger.isConnected || !tabler[kind].getInstance(trigger)) visible.delete(trigger);
     }
     if (!visible.size) return;
     // Dismiss floating help before the surrounding menu/dialog handles Escape.
     event.preventDefault();
     event.stopPropagation();
-    for (const [trigger, {kind}] of visible) library[kind].getInstance(trigger)?.hide();
+    for (const [trigger, {kind}] of visible) tabler[kind].getInstance(trigger)?.hide();
   }, {capture: true});
   document.addEventListener('pointerdown', event => {
     for (const [trigger, {kind, tip}] of visible) {
       // Only the shared text-help control opts into outside dismissal.
-      if (trigger.hasAttribute('data-fb-help-popover') && !trigger.contains(event.target as Node) && !tip?.contains(event.target as Node)) library[kind].getInstance(trigger)?.hide();
+      if (trigger.hasAttribute('data-fb-help-popover') && !trigger.contains(event.target as Node) && !tip?.contains(event.target as Node)) tabler[kind].getInstance(trigger)?.hide();
     }
   });
   for (const name of ['collapse', 'modal', 'tab', 'dropdown']) {
@@ -49,7 +46,7 @@ export default function initFloatingHelp(library: HelpLibraries): void {
       const id = name === 'tab' ? tabTarget(target) : null;
       const container = name === 'dropdown' ? dropdownMenuFor(target) : id ? document.getElementById(id) : target;
       if (!container) return;
-      for (const [trigger, {kind}] of visible) if (container.contains(trigger)) library[kind].getInstance(trigger)?.hide();
+      for (const [trigger, {kind}] of visible) if (container.contains(trigger)) tabler[kind].getInstance(trigger)?.hide();
     });
   }
 }

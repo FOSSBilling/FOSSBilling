@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import initFloatingHelp from '../floating-help.ts';
 
 function fixture(run: (f: any) => void) {
-  const oldDocument = globalThis.document, oldWindow = globalThis.window;
+  const oldDocument = globalThis.document, oldWindow = globalThis.window, oldTabler = (globalThis as any).tabler;
   const events = new Map<string, Function>(), windowEvents = new Map<string, Function>(), nodes = new Map<string, any>();
   let hides = 0, connected = true, available = true;
   const tipChild = {}, outside = {};
@@ -16,12 +16,13 @@ function fixture(run: (f: any) => void) {
   const win = {addEventListener: (name: string, fn: Function, options: any) => {assert.equal(options.capture, true);windowEvents.set(name, fn);}};
   const library = {Tooltip: {getInstance: () => available ? {hide: () => hides++} : null}, Popover: {getInstance: () => available ? {hide: () => hides++} : null}};
   globalThis.document = doc as any;globalThis.window = win as any;
+  (globalThis as any).tabler = library as any;
   const emit = (name: string, target = trigger) => events.get(name)!({target});
   const escape = (overrides = {}) => {const event = {key: 'Escape', defaultPrevented: false, stopped: false,
     preventDefault() {this.defaultPrevented = true;}, stopPropagation() {this.stopped = true;}, ...overrides};windowEvents.get('keydown')!(event);return event;};
-  try {initFloatingHelp(library as any);run({events, doc, trigger, tip, tipChild, outside, attrs, emit, escape, library, nodes, hides: () => hides,
+  try {initFloatingHelp();run({events, doc, trigger, tip, tipChild, outside, attrs, emit, escape, library, nodes, hides: () => hides,
     disconnect: () => connected = false, dispose: () => available = false});}
-  finally {globalThis.document = oldDocument;globalThis.window = oldWindow;}
+  finally {globalThis.document = oldDocument;globalThis.window = oldWindow;(globalThis as any).tabler = oldTabler;}
 }
 
 test('Escape dismisses floating help first without replacing Tabler instances or configuration', () => fixture(f => {
@@ -53,7 +54,7 @@ test('detached or extension-disposed help never traps Escape', () => {
 });
 
 test('initialization is idempotent and already handled keyboard events remain handled', () => fixture(f => {
-  initFloatingHelp({Tooltip: {getInstance: () => assert.fail('rebound')}, Popover: {getInstance: () => assert.fail('rebound')}});
+  initFloatingHelp();
   f.emit('shown.bs.tooltip');f.escape({defaultPrevented: true});assert.equal(f.hides(), 0);
   f.escape();assert.equal(f.hides(), 1);
 }));

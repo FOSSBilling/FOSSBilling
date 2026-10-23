@@ -58,10 +58,9 @@ export function createFormErrors({
       }
     }
     const editor = editorFor(field);
-    if (editor) editor.focus();
-    else if (selectFor(field)) selectFor(field)!.focus();
-    else field.focus();
-    const target = editor?.getAccessibleElement?.() || selectFor(field)?.focus_node || field;
+    const select = selectFor(field);
+    (editor || select || field).focus();
+    const target = editor?.getAccessibleElement?.() || select?.focus_node || field;
     if (target.getClientRects().length) target.scrollIntoView({block: 'center', inline: 'nearest', behavior: 'instant'});
   }
 

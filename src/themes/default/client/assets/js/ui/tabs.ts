@@ -1,6 +1,2 @@
-import { Tab } from '@tabler/core';
-import { initTabNavigation } from '../../../../../../../frontend/ui/tab-navigation.ts';
-
-export default function initTabs(): void {
-  initTabNavigation({getOrCreateInstance: element => Tab.getOrCreateInstance(element) as Tab});
-}
+// Compatibility entrypoint; Tabler owns activation and the shared helper owns deep links.
+export {initTabNavigation as default} from '../../../../../../../frontend/ui/tab-navigation.ts';

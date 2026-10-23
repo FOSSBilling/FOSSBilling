@@ -49,7 +49,6 @@ export function bindModalLifecycle(
   }, {once: true});
 
   element.addEventListener('hidden.bs.modal', () => {
-    if (closed) return;
     closed = true;
     ready = false;
     instance.dispose();
@@ -75,7 +74,7 @@ export function bindModalLifecycle(
   }, {once: true});
 
   function settle(next: 'confirm' | 'cancel', result?: string): void {
-    if (!ready || action || closed) return;
+    if (!ready || action) return;
     action = next;
     value = result;
     disableConfirm(true);
