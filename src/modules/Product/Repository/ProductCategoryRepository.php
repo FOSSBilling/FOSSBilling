@@ -18,6 +18,14 @@ use Doctrine\ORM\QueryBuilder;
 
 class ProductCategoryRepository extends EntityRepository
 {
+    public function getMaxPriority(): int
+    {
+        return (int) $this->createQueryBuilder('c')
+            ->select('MAX(c.priority)')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
     /**
      * @return array<int, string|null>
      */
@@ -25,7 +33,8 @@ class ProductCategoryRepository extends EntityRepository
     {
         $rows = $this->createQueryBuilder('c')
             ->select('c.id, c.title')
-            ->orderBy('c.id', 'ASC')
+            ->orderBy('c.priority', 'ASC')
+            ->addOrderBy('c.id', 'ASC')
             ->getQuery()
             ->getArrayResult();
 
@@ -63,7 +72,24 @@ class ProductCategoryRepository extends EntityRepository
             ->setParameter('hidden', false)
             ->setParameter('isAddon', false)
             ->addSelect(sprintf('(%s) AS HIDDEN maxPriority', $maximumPriority->getDQL()))
-            ->orderBy('maxPriority', 'ASC');
+            ->orderBy('c.priority', 'ASC')
+            ->addOrderBy('maxPriority', 'ASC')
+            ->addOrderBy('c.id', 'ASC');
+    }
+
+    public function getAdminSearchQueryBuilder(array $data = []): QueryBuilder
+    {
+        $qb = $this->createQueryBuilder('c');
+
+        if (!empty($data['search'])) {
+            $qb->andWhere('c.title LIKE :search')
+                ->setParameter('search', '%' . $data['search'] . '%');
+        }
+
+        $qb->orderBy('c.priority', 'ASC')
+            ->addOrderBy('c.id', 'ASC');
+
+        return $qb;
     }
 
     private function applyEnabledVisibleProductFilters(QueryBuilder $queryBuilder, string $alias): QueryBuilder

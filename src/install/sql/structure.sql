@@ -886,6 +886,7 @@ CREATE TABLE `product_category` (
   `title` varchar(100) DEFAULT NULL,
   `description` text,
   `icon_url` varchar(255) DEFAULT NULL,
+  `priority` int(11) DEFAULT NULL,
   `created_at` datetime DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`)

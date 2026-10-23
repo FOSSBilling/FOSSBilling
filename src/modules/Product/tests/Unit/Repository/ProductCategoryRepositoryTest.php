@@ -40,6 +40,7 @@ test('enabled visible category query avoids a joined product paginator root', fu
     expect($dql)
         ->toContain(sprintf('EXISTS(SELECT 1 FROM %s p', Product::class))
         ->toContain(sprintf('(SELECT MAX(priorityProduct.priority) FROM %s priorityProduct', Product::class))
+        ->toContain('c.priority')
         ->not->toContain('GROUP BY');
 
     $parameters = $queryBuilder->getParameters()->toArray();

@@ -581,3 +581,37 @@ test('reserveNextNumericParamValue reserves from the winning row when seeding co
     // Must not be 101: that is the number the winner reserved.
     expect($service->reserveNextNumericParamValue('invoice_starting_number', 101))->toBe(102);
 });
+
+test('updateParams rejects an invalid reminder send time', function (mixed $value): void {
+    $di = container();
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldNotReceive('setParamValue');
+    $service->setDi($di);
+
+    expect(fn () => $service->updateParams(['invoice_reminder_send_time' => $value]))
+        ->toThrow(FOSSBilling\InformationException::class, 'Reminder send time must be empty or a valid 24-hour time');
+})->with([
+    'text' => ['morning'],
+    'hour too high' => ['24:00'],
+    'minute too high' => ['09:60'],
+    'missing minute' => ['9'],
+    'seconds included' => ['09:00:00'],
+    'single digit hour' => ['9:05'],
+    'array' => [[]],
+    'boolean' => [true],
+]);
+
+test('updateParams accepts an empty or valid reminder send time', function (mixed $value): void {
+    $di = container();
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('setParamValue')->once()->with('invoice_reminder_send_time', $value, true)->andReturnTrue();
+    $service->setDi($di);
+
+    expect($service->updateParams(['invoice_reminder_send_time' => $value]))->toBeTrue();
+})->with([
+    'empty disables' => [''],
+    'null disables' => [null],
+    'morning' => ['09:00'],
+    'midnight' => ['00:00'],
+    'late evening' => ['23:59'],
+]);

@@ -35,20 +35,20 @@
                     </ul>
                 </div>
                 <div class="tab-content border-top">
-        <div class="tab-pane fade show active" id="tab-index" role="tabpanel" aria-labelledby="index-tab">
+        <div class="tab-pane fade show active" id="tab-index" role="tabpanel" aria-labelledby="index-tab" data-list-ns="">
             {{ include('partial_search.html.twig', { search_toolbar_actions: product_toolbar_actions }) }}
             <div class="table-responsive">
                 <form method="post" action="{{ 'product/update_priority'|api_url }}" {{ fb_api_form({reload: true}) }}>
-                    <table class="table card-table table-vcenter table-striped text-nowrap sortable">
+                    <table class="table card-table table-vcenter table-striped text-nowrap">
                         <thead>
                             <tr>
-                                <th>{{  '#'|trans }}</th>
-                                <th>{{ 'Type'|trans }}</th>
+                                {{ include('partial_sortable_th.html.twig', { 'label': '#'|trans, 'sort_key': 'id', 'url': 'product', 'hash': '#tab-index', 'default_sort': 'priority', 'default_direction': 'ASC' }) }}
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'Type'|trans, 'sort_key': 'type', 'url': 'product', 'hash': '#tab-index', 'default_sort': 'priority', 'default_direction': 'ASC' }) }}
                                 <th>{{ 'Category'|trans }}</th>
-                                <th>{{ 'Title'|trans }}</th>
-                                <th>{{ 'Status'|trans }}</th>
-                                <th class="w-1 text-center">{{ 'Priority'|trans }}</th>
-                                <th class="w-1 no-sort"></th>
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'Title'|trans, 'sort_key': 'title', 'url': 'product', 'hash': '#tab-index', 'default_sort': 'priority', 'default_direction': 'ASC' }) }}
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'product', 'hash': '#tab-index', 'default_sort': 'priority', 'default_direction': 'ASC' }) }}
+                                {{ include('partial_sortable_th.html.twig', { 'label': 'Priority'|trans, 'sort_key': 'priority', 'url': 'product', 'hash': '#tab-index', 'th_class': 'w-1 text-center', 'default_sort': 'priority', 'default_direction': 'ASC' }) }}
+                                <th class="w-1"></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -117,28 +117,33 @@
                 </button>
             </div>
             <div class="table-responsive">
+            <form method="post" action="{{ 'product/category_update_priority'|api_url }}" {{ fb_api_form({reload: true}) }}>
             <table class="table card-table table-vcenter table-striped text-nowrap">
                 <thead>
                     <tr>
                         <th class="w-1">#</th>
                         <th>{{ 'Title'|trans }}</th>
+                        <th class="w-1 text-center">{{ 'Priority'|trans }}</th>
                         <th class="w-1"></th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for cat_id, cat_title in admin.product_category_get_pairs %}
+                    {% for category in admin.product_category_get_list %}
                     <tr>
-                        <td>{{ loop.index }}</td>
+                        <td>{{ category.id }}</td>
                         <td>
-                            <a href='{{ "product/category/#{cat_id}"|url }}'>{{ cat_title }}</a>
+                            <a href='{{ "product/category/#{category.id}"|url }}'>{{ category.title }}</a>
+                        </td>
+                        <td class="text-center">
+                            <input type="text" class="form-control form-control-sm" name="priority[{{ category.id }}]" value="{{ category.priority }}" size="2">
                         </td>
                         <td>
-                            <a class="btn btn-icon" href='{{ "product/category/#{cat_id}"|url }}'>
+                            <a class="btn btn-icon" href='{{ "product/category/#{category.id}"|url }}'>
                                 <svg class="icon">
                                     <use href="#edit" />
                                 </svg>
                             </a>
-                            <a class="btn btn-icon" href="{{ 'product/category_delete'|api_url(query: { 'id': cat_id }) }}"
+                            <a class="btn btn-icon" href="{{ 'product/category_delete'|api_url(query: { 'id': category.id }) }}"
                                 {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'product#tab-categories'|url}) }}>
                                 <svg class="icon">
                                     <use href="#trash" />
@@ -148,11 +153,21 @@
                     </tr>
                     {% else %}
                     <tr>
-                        <td class="text-muted" colspan="3">{{ 'The list is empty'|trans }}</td>
+                        <td class="text-muted" colspan="4">{{ 'The list is empty'|trans }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
+
+            <div class="card-footer text-end">
+                <button type="submit" class="btn btn-primary">
+                    <svg class="icon">
+                        <use href="#refresh" />
+                    </svg>
+                    {{ 'Update Priority'|trans }}
+                </button>
+            </div>
+            </form>
             </div>
         </div>
                 </div>
@@ -204,6 +219,10 @@
                             <label class="form-label" for="new-category-icon-url">{{ 'Icon URL'|trans }}</label>
                             <input type="text" class="form-control" id="new-category-icon-url" name="icon_url" value="">
                         </div>
+                        <div class="mb-3">
+                            <label class="form-label" for="new-category-priority">{{ 'Priority'|trans }}</label>
+                            <input type="number" class="form-control" id="new-category-priority" name="priority" value="" placeholder="{{ 'Optional. Lower values are shown first.'|trans }}">
+                        </div>
                         <div class="mb-0">
                             <label class="form-label" for="new-category-description">{{ 'Description'|trans }}</label>
                             <textarea class="form-control editor-textarea" id="new-category-description" name="description" rows="5">{{ request.cat_description }}</textarea>
@@ -233,7 +252,7 @@ document.addEventListener('DOMContentLoaded', function () {
             continue;
         }
 
-        const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+        const modal = tabler.Modal.getOrCreateInstance(modalElement);
         if (window.location.hash === hash) {
             modal.show();
         }

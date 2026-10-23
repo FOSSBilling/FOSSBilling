@@ -64,7 +64,7 @@ test('invoice item attempts patch follows the manual currency rate patch', funct
 test('tld periods patch follows the invoice item attempts patch', function (): void {
     $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 97);
 
-    expect($patches)->toHaveCount(7)
+    expect($patches)->toHaveCount(8)
         ->toHaveKey(98)
         ->and($patches[98][1])->toBe('patch98')
         ->and($patches)->toHaveKey(117)
@@ -74,7 +74,9 @@ test('tld periods patch follows the invoice item attempts patch', function (): v
         ->and($patches)->toHaveKey(119)
         ->and($patches[119][1])->toBe('patch119')
         ->and($patches)->toHaveKey(120)
-        ->and($patches[120][1])->toBe('patch120');
+        ->and($patches[120][1])->toBe('patch120')
+        ->and($patches)->toHaveKey(121)
+        ->and($patches[121][1])->toBe('patch121');
 });
 
 test('tld periods patch adds the column for existing installs', function (): void {
@@ -820,4 +822,74 @@ test('custom pages updated_at patch is a no-op when the column already exists', 
     $patcher = new UpdatePatcher();
     $patcher->setDi($di);
     (new ReflectionMethod($patcher, 'patch120'))->invoke($patcher);
+});
+
+test('product category priority patch follows the custom pages patch', function (): void {
+    $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 120);
+    expect($patches)->toHaveKey(121)->and($patches[121][1])->toBe('patch121');
+});
+
+test('product category priority patch adds the column and backfills existing installs', function (): void {
+    $tableExists = Mockery::mock(PDOStatement::class);
+    $tableExists->expects('execute')->with(['table' => 'product_category'])->andReturnTrue();
+    $tableExists->expects('fetchColumn')->andReturn('1');
+
+    $columns = Mockery::mock(PDOStatement::class);
+    $columns->expects('execute')->with([])->andReturnTrue();
+    $columns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([['Field' => 'id'], ['Field' => 'title']]);
+
+    $addColumn = Mockery::mock(PDOStatement::class);
+    $addColumn->expects('execute')->with([])->andReturnTrue();
+
+    $backfill = Mockery::mock(PDOStatement::class);
+    $backfill->expects('execute')->with([])->andReturnTrue();
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')
+        ->with('SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table LIMIT 1')
+        ->andReturn($tableExists);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `product_category`')->andReturn($columns);
+    $pdo->expects('prepare')
+        ->with('ALTER TABLE `product_category` ADD COLUMN `priority` int(11) DEFAULT NULL')
+        ->andReturn($addColumn);
+    $pdo->expects('prepare')
+        ->with('UPDATE `product_category` SET `priority` = `id` * 10 WHERE `priority` IS NULL')
+        ->andReturn($backfill);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch121'))->invoke($patcher);
+});
+
+test('product category priority patch is a no-op when the column already exists', function (): void {
+    $tableExists = Mockery::mock(PDOStatement::class);
+    $tableExists->expects('execute')->with(['table' => 'product_category'])->andReturnTrue();
+    $tableExists->expects('fetchColumn')->andReturn('1');
+
+    $columns = Mockery::mock(PDOStatement::class);
+    $columns->expects('execute')->with([])->andReturnTrue();
+    $columns->expects('fetchAll')->with(PDO::FETCH_ASSOC)->andReturn([['Field' => 'id'], ['Field' => 'priority']]);
+
+    $backfill = Mockery::mock(PDOStatement::class);
+    $backfill->expects('execute')->with([])->andReturnTrue();
+
+    $pdo = Mockery::mock(PDO::class);
+    $pdo->expects('prepare')
+        ->with('SELECT 1 FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table LIMIT 1')
+        ->andReturn($tableExists);
+    $pdo->expects('prepare')->with('SHOW COLUMNS FROM `product_category`')->andReturn($columns);
+    $pdo->shouldNotReceive('prepare')->with('ALTER TABLE `product_category` ADD COLUMN `priority` int(11) DEFAULT NULL');
+    $pdo->expects('prepare')
+        ->with('UPDATE `product_category` SET `priority` = `id` * 10 WHERE `priority` IS NULL')
+        ->andReturn($backfill);
+
+    $di = new Pimple\Container();
+    $di['pdo'] = $pdo;
+
+    $patcher = new UpdatePatcher();
+    $patcher->setDi($di);
+    (new ReflectionMethod($patcher, 'patch121'))->invoke($patcher);
 });

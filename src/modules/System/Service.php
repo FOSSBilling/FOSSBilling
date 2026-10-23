@@ -318,6 +318,12 @@ class Service
                     || filter_var($val, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => PHP_INT_MAX - 1]]) === false)) {
                 throw new \FOSSBilling\InformationException('Next invoice number must be a positive whole number no greater than :max.', [':max' => PHP_INT_MAX - 1]);
             }
+
+            if (strtolower((string) $key) === 'invoice_reminder_send_time'
+                && $val !== null && trim((string) $val) !== ''
+                && !preg_match('/^([01]\d|2[0-3]):[0-5]\d$/', trim((string) $val))) {
+                throw new \FOSSBilling\InformationException('Reminder send time must be empty or a valid 24-hour time (HH:MM).');
+            }
         }
 
         foreach ($data as $key => $val) {

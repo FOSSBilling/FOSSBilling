@@ -565,6 +565,7 @@ class UpdatePatcher implements InjectionAwareInterface
             // main's patch119 only adds columns/indexes also covered by its schema sync.
             119 => 'patch119',
             120 => 'patch120',
+            121 => 'patch121',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -3065,5 +3066,21 @@ class UpdatePatcher implements InjectionAwareInterface
         if (!$this->tableHasColumn('custom_pages', 'updated_at')) {
             $this->executeSql('ALTER TABLE `custom_pages` ADD COLUMN `updated_at` datetime DEFAULT NULL');
         }
+    }
+
+    private function patch121(): void
+    {
+        // Product category priority. Mirrors product.priority so categories
+        // can be ordered explicitly instead of by insertion id. Guarded so
+        // reruns are no-ops; the backfill preserves administrator-set values.
+        if (!$this->tableExists('product_category')) {
+            return;
+        }
+
+        if (!$this->tableHasColumn('product_category', 'priority')) {
+            $this->executeSql('ALTER TABLE `product_category` ADD COLUMN `priority` int(11) DEFAULT NULL');
+        }
+
+        $this->executeSql('UPDATE `product_category` SET `priority` = `id` * 10 WHERE `priority` IS NULL');
     }
 }

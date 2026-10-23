@@ -593,6 +593,12 @@ class Service implements InjectionAwareInterface
         $claimed = false;
 
         try {
+            // Defer until the configured send time; returning before the claim
+            // leaves reminded_at untouched so a later cron retries.
+            if (!$service->isReminderSendTimeReached()) {
+                return;
+            }
+
             if (!$service->isInvoiceReminderIntervalEnabled('invoice_reminder_before_due_days', (int) ($params['days_left'] ?? 0), '', $params['reminder_intervals'] ?? null)) {
                 return;
             }
@@ -652,6 +658,11 @@ class Service implements InjectionAwareInterface
         $claimed = false;
 
         try {
+            // Same deferral as the before-due handler; no claim is made yet.
+            if (!$service->isReminderSendTimeReached()) {
+                return;
+            }
+
             if (!$service->isInvoiceReminderIntervalEnabled('invoice_reminder_after_due_days', (int) ($params['days_passed'] ?? 0), '5', $params['reminder_intervals'] ?? null)) {
                 return;
             }
@@ -2113,6 +2124,41 @@ class Service implements InjectionAwareInterface
         sort($days);
 
         return $days;
+    }
+
+    /**
+     * Whether automatic reminders may be sent yet today. An empty or invalid
+     * `invoice_reminder_send_time` means disabled (legacy behavior); otherwise
+     * true once local time reaches `HH:MM`, so the first cron at/after the
+     * configured time sends.
+     */
+    public function isReminderSendTimeReached(?\DateTimeImmutable $now = null): bool
+    {
+        try {
+            $systemService = $this->di['mod_service']('system');
+            $configured = $systemService->getParamValue('invoice_reminder_send_time', '');
+        } catch (\Throwable) {
+            return true;
+        }
+
+        $configured = trim((string) ($configured ?? ''));
+        if ($configured === '') {
+            return true;
+        }
+
+        if (!preg_match('/^(\d{1,2}):(\d{2})$/', $configured, $matches)) {
+            return true;
+        }
+
+        $hour = (int) $matches[1];
+        $minute = (int) $matches[2];
+        if ($hour > 23 || $minute > 59) {
+            return true;
+        }
+
+        $now ??= new \DateTimeImmutable();
+
+        return ((int) $now->format('H')) * 60 + ((int) $now->format('i')) >= $hour * 60 + $minute;
     }
 
     private function _isAutoApproved(): bool
