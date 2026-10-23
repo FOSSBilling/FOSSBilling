@@ -18,7 +18,7 @@ test('updates profile details', async ({ clientPage }) => {
   };
 
   await clientPage.goto('/client/profile');
-  await expect(clientPage.locator('body')).toContainText('Update Details');
+  await expect(clientPage.getByRole('heading', { name: 'Profile', level: 1 })).toBeVisible();
 
   const form = clientPage.locator('form#profile-update');
   await form.locator('input[name="first_name"]').fill(updatedProfile.firstName);

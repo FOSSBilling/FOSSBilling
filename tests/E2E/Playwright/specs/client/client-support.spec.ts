@@ -49,11 +49,14 @@ test('opens, replies to, and closes a support ticket', async ({ clientPage }) =>
   await expect(clientPage.locator('article.markdown-body').last()).toContainText(replyMessage);
 
   // Close the ticket.
-  const ticketClose = waitForApiResponse(clientPage, '/api/client/support/ticket_close');
-  await clientPage.getByRole('button', { name: 'Close Ticket' }).click();
+  const ticketClose = waitForApiResponse(clientPage, '/api/client/support/ticket_close', 'GET');
+  await clientPage.getByRole('link', { name: 'Close Ticket', exact: true }).click();
+  const confirmation = clientPage.getByRole('dialog', { name: 'Close Ticket' });
+  await expect(confirmation).toBeVisible();
+  await confirmation.getByRole('button', { name: 'Close Ticket', exact: true }).click();
 
   expect((await ticketClose).status()).toBe(200);
-  await expect(clientPage.getByRole('button', { name: 'Close Ticket' })).toHaveCount(0);
+  await expect(clientPage.getByRole('link', { name: 'Close Ticket', exact: true })).toHaveCount(0);
 
   // Verify the final state through the API.
   const finalTicket = await authenticatedGet(clientPage.context(), '/api/client/support/ticket_get', {

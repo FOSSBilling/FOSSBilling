@@ -21,7 +21,7 @@ function clientKnowledgeBaseTemplates(): Environment
         'partial_client_empty.html.twig' => (new Filesystem())->readFile(PATH_THEMES . '/default/client/html/partial_client_empty.html.twig'),
         'partial_empty_state.html.twig' => (new Filesystem())->readFile(PATH_THEMES . '/default/shared/html/partial_empty_state.html.twig'),
         'layout_default.html.twig' => '{% block head %}{% endblock %}{% block content %}{% endblock %}',
-        'partial_pagination.html.twig' => '{{ url }}?q={{ request.q|default(\'\') }}&page={{ request.page|default(1) }}',
+        'partial_pagination.html.twig' => '',
     ];
     foreach (['mod_support_kb_index', 'mod_support_kb_category', 'mod_support_kb_article', 'partial_support_kb_search', 'partial_support_kb_help', 'partial_support_kb_articles'] as $name) {
         $templates[$name . '.html.twig'] = (new Filesystem())->readFile(PATH_MODS . '/Support/templates/client/' . $name . '.html.twig');
@@ -50,7 +50,7 @@ test('knowledge base search shows article matches without a false category empty
     };
     $html = clientKnowledgeBaseTemplates()->render('mod_support_kb_index.html.twig', ['guest' => $guest, 'client' => true, 'request' => ['ajax' => false, 'q' => ' invoice ', 'page' => 2]]);
     expect($guest->query)->toBe(['search' => 'invoice', 'per_page' => 10, 'page' => 2])
-        ->and($html)->toContain('name="q"', 'value="invoice"', 'Search Results', 'Pay an &lt;invoice&gt;', 'Billing', '/support/kb/billing/pay?q=invoice&amp;page=2', 'support/kb?q= invoice &page=2', '/support?ticket=1')
+        ->and($html)->toContain('name="q"', 'value="invoice"', 'Search Results', 'Pay an &lt;invoice&gt;', 'Billing', '/support/kb/billing/pay?q=invoice&amp;page=2', '/support?ticket=1')
         ->and($html)->not->toContain('No Matching Articles', 'No results found', 'Matching categories');
 });
 
@@ -67,7 +67,7 @@ test('knowledge base browsing paginates categories with active article counts', 
     };
     $html = clientKnowledgeBaseTemplates()->render('mod_support_kb_index.html.twig', ['guest' => $guest, 'client' => true, 'request' => ['ajax' => false, 'q' => ' ', 'page' => 2]]);
     expect($guest->query)->toBe(['per_page' => 12, 'page' => 2])
-        ->and($html)->toContain('Browse by Category', 'Invoices &amp; payments', '1 article', 'href="/support/kb/billing"', 'support/kb?q= &page=2');
+        ->and($html)->toContain('Browse by Category', 'Invoices &amp; payments', '1 article', 'href="/support/kb/billing"');
 });
 
 test('knowledge base category reads a paginated article list rather than embedding every article', function (): void {
@@ -86,7 +86,7 @@ test('knowledge base category reads a paginated article list rather than embeddi
         'guest' => $guest, 'client' => true, 'request' => ['ajax' => false, 'page' => 2],
     ]);
     expect($guest->query)->toBe(['kb_article_category_id' => 7, 'per_page' => 10, 'page' => 2])
-        ->and($html)->toContain('Current article', '/support/kb/billing/current?q=&amp;page=2', 'support/kb/billing?q=&page=2')
+        ->and($html)->toContain('Current article', '/support/kb/billing/current?q=&amp;page=2')
         ->and($html)->not->toContain('Do not render unpaginated articles');
 });
 

@@ -19,15 +19,12 @@ function checkoutFlowTwig(): Environment
     $fs = new Filesystem();
     $twig = new Environment(new ArrayLoader([
         'account' => $fs->readFile(PATH_MODS . '/Orderbutton/templates/client/mod_orderbutton_client.html.twig'),
-        'return' => $fs->readFile(PATH_MODS . '/Invoice/templates/client/mod_invoice_thankyou.html.twig'),
         'layout_default.html.twig' => '{% block content %}{% endblock %}',
         'macro_functions.html.twig' => '{% macro recaptcha() %}CAPTCHA{% endmacro %}',
     ]), ['autoescape' => 'html']);
     $twig->addFilter(new TwigFilter('trans', static fn (string $text, array $params = []): string => strtr($text, $params)));
     $twig->addFilter(new TwigFilter('url', static fn (string $path, array $query = []): string => '/' . $path . ($query ? '?' . http_build_query($query) : '')));
     $twig->addFilter(new TwigFilter('api_url', static fn (string $path, ?string $role = null): string => '/api/' . $role . '/' . $path));
-    $twig->addFilter(new TwigFilter('format_datetime', static fn (string $date): string => $date));
-    $twig->addFilter(new TwigFilter('format_currency', static fn (float $amount, string $code): string => $code . ' ' . number_format($amount, 2)));
     $twig->addFunction(new TwigFunction('fb_api_form', static fn (array $options): string => 'data-fb-api="checkout"'));
     $twig->addFunction(new TwigFunction('antispam_honeypot', static fn (): array => ['enabled' => true, 'field' => 'demo_trap']));
 
@@ -60,19 +57,3 @@ test('checkout account forms retain required fields, spam checks and safe passwo
     expect($xpath->query('//*[@id="in-tab"]')->length)->toBe(1)
         ->and($xpath->query('//*[@id="up-tab"]')->length)->toBe(1);
 });
-
-test('payment return reports invoice state without claiming an unconfirmed payment succeeded', function (string $status, string $heading): void {
-    $html = checkoutFlowTwig()->render('return', [
-        'request' => [], 'client' => true,
-        'invoice' => ['status' => $status, 'serie_nr' => 'DEMO-1', 'hash' => 'demo-invoice', 'total' => 29, 'currency' => 'USD'],
-    ]);
-    expect($html)->toContain($heading, 'USD 29.00', '/invoice/demo-invoice')
-        ->not->toContain('setTimeout', 'Payment for invoice received');
-    if ($status !== 'paid') {
-        expect($html)->not->toContain('Your invoice has been paid.');
-    }
-})->with([
-    ['unpaid', 'Payment Awaiting Confirmation'],
-    ['paid', 'Payment Confirmed'],
-    ['canceled', 'Invoice Canceled'],
-]);

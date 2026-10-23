@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createFormErrors } from '../form-errors.ts';
+import * as clientErrors from '../../../src/themes/default/client/assets/js/ui/form-errors.ts';
 
 class Node extends EventTarget {
   id = '';
@@ -49,7 +50,7 @@ function fixture(run: (state: ReturnType<typeof setup>) => void) {
 function setup() {
   const listeners = new Map<string, (event: any) => void>();
   const document = {
-    querySelector: () => ({dataset: {formError: 'Translated Problem', required: 'Translated Required'}}),
+    querySelector: () => ({dataset: {formError: 'Translated Problem', required: 'Translated Required', clientFormError: 'Client Problem', clientRequired: 'Client Required'}}),
     querySelectorAll: () => [],
     createElement: () => new Node(),
     addEventListener: (name: string, listener: any) => listeners.set(name, listener),
@@ -86,8 +87,7 @@ test('shared form errors render translated escaped summaries with recoverable fi
 }));
 
 test('adapters can preserve legacy IDs selectors and translated fallback messages', () => fixture(f => {
-  const presenter = createFormErrors({idPrefix: 'client', summaryDataKey: 'clientFormError',
-    getLabels: () => ({formError: 'Client Problem', required: 'Client Required'})});
+  const presenter = clientErrors;
   f.field.validationMessage = '';
   presenter.showFieldError(f.field as any);
   assert.match(f.form.children[1].id, /^client-field-error-/);
@@ -246,4 +246,38 @@ test('errors in modal forms stay inside the scrollable body and preserve the dia
   assert.equal(body.children[0].focused, true);
   f.presenter.clearFormError(f.form as any);
   assert.equal(body.children.length, 0);
+}));
+
+test('clearing feedback preserves an extension supplied invalid state', () => fixture(f => {
+  const {field, presenter} = f;
+  field.setAttribute('aria-invalid', 'grammar'); field.classes.add('is-invalid');
+  presenter.showFieldError(field as any); presenter.clearFieldError(field as any);
+  assert.equal(field.getAttribute('aria-invalid'), 'grammar');
+  assert.equal(field.classes.has('is-invalid'), true);
+}));
+
+test('input-group feedback stays outside the prefix and suffix layout', () => fixture(f => {
+  const {form, field, presenter} = f;
+  const group = new Node(); form.children = []; form.append(group); group.append(field);
+  field.closest = () => group;
+  presenter.showFieldError(field as any);
+  assert.equal(group.children.length, 1);
+  assert.equal(form.children[1].textContent, field.validationMessage);
+  presenter.clearFieldError(field as any);
+  assert.equal(form.children.length, 1);
+}));
+
+test('native radio invalid events show one group error and clear it when corrected', () => fixture(f => {
+  const {form, field, presenter, listeners} = f;
+  const second = new Node(); second.id = 'choice-two'; form.append(second); form.elements.push(second);
+  Object.assign(field, {type: 'radio', name: 'choice', form, disabled: false});
+  Object.assign(second, {type: 'radio', name: 'choice', form, disabled: false});
+  presenter.initFormErrors();
+  listeners.get('invalid')!({target: field});
+  listeners.get('invalid')!({target: second});
+  assert.equal(form.children.filter(node => node.className === 'invalid-feedback d-block text-break').length, 1);
+  field.validity.valid = true; second.validity.valid = true;
+  listeners.get('change')!({target: second});
+  assert.equal(field.getAttribute('aria-invalid'), null);
+  assert.equal(form.children.length, 2);
 }));

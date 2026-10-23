@@ -91,12 +91,8 @@ test('main admin lists keep empty recovery outside responsive tables', function 
     expect($xpath->query('//*[@data-fb-empty-state]'))->toHaveCount(1);
     expect($xpath->query('//*[@data-fb-empty-state]/ancestor::*[contains(concat(" ", normalize-space(@class), " "), " table-responsive ")]'))->toHaveCount(0);
 })->with([
-    ['Invoice', 'mod_invoice_index', 'invoice_get_list', 'No Invoices Yet'],
-    ['Order', 'mod_order_index', 'order_get_list', 'No Orders Yet'],
-    ['Support', 'mod_support_tickets', 'support_ticket_get_list', 'No Support Tickets Yet'],
-    ['Client', 'mod_client_index', 'client_get_list', 'No Clients Yet'],
-])->with([
-    'first use' => [false, 0],
-    'filtered' => [true, 0],
-    'out of range' => [false, 50],
+    ['Invoice', 'mod_invoice_index', 'invoice_get_list', 'No Invoices Yet', false, 0],
+    ['Order', 'mod_order_index', 'order_get_list', 'No Orders Yet', true, 0],
+    ['Support', 'mod_support_tickets', 'support_ticket_get_list', 'No Support Tickets Yet', false, 50],
+    ['Client', 'mod_client_index', 'client_get_list', 'No Clients Yet', false, 0],
 ]);

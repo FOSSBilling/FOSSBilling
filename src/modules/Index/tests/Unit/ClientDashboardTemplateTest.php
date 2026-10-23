@@ -7,95 +7,50 @@
 
 declare(strict_types=1);
 
-use Twig\Environment;
-use Twig\Loader\ArrayLoader;
-use Twig\TwigFilter;
-use Twig\TwigFunction;
+use Tests\Support\ClientThemeRenderer;
+use Tests\Support\PermissiveStub;
 
-test('client dashboard profile is available to its inherited layout', function (array $overrides, array $expected, array $absent): void {
-    $dashboardTemplate = file_get_contents(PATH_MODS . '/Index/templates/client/mod_index_dashboard.html.twig');
-    expect($dashboardTemplate)->toBeString();
+require_once PATH_TESTS . '/Support/ClientThemeRenderer.php';
 
-    $layoutTemplate = <<<'TWIG'
-        {% if client and profile is not defined %}
-            {% set profile = client.profile_get %}
-        {% endif %}
-        <header>{{ profile.balance }}</header>
-        {% block content %}{% endblock %}
-        TWIG;
-
-    $loader = new ArrayLoader([
-        'mod_index_dashboard.html.twig' => $dashboardTemplate,
-        'partial_notice.html.twig' => (new Symfony\Component\Filesystem\Filesystem())->readFile(PATH_THEMES . '/default/client/html/partial_notice.html.twig'),
-        'partial_notice_shared.html.twig' => (new Symfony\Component\Filesystem\Filesystem())->readFile(PATH_THEMES . '/default/shared/html/partial_notice_shared.html.twig'),
-        'layout_default.html.twig' => $layoutTemplate,
-        'layout_blank.html.twig' => $layoutTemplate,
-        'macro_functions.html.twig' => '{% macro status_badge(status, type) %}{{ status }}{% endmacro %}',
-    ]);
-    $twig = new Environment($loader, ['cache' => false]);
-    $identityFilter = static fn (?string $text): string => $text ?? '';
-    $twig->addFilter(new TwigFilter('trans', static fn (string $text, array $params = []): string => strtr($text, $params)));
-    foreach (['markdown_to_html', 'truncate', 'format_date', 'timeago'] as $filterName) {
-        $twig->addFilter(new TwigFilter($filterName, $identityFilter));
-    }
-    $twig->addFilter(new TwigFilter('url', static fn (string $path, ?array $query = null): string => $path . ($query ? '?' . http_build_query($query) : '')));
-    $twig->addFilter(new TwigFilter('format_currency', static fn (int|float|string $amount, ?string $currency = null): string => $amount . ' ' . $currency));
-    $twig->addFunction(new TwigFunction('render_widgets', static fn (string $name, array $context = []): string => ''));
-
-    $client = new class($overrides) {
-        public function __construct(private readonly array $overrides)
+test('dashboard supplies its profile to the real shell and links to outstanding actions', function (array $overrides, array $expected, array $absent): void {
+    $profile = ['id' => 14, 'first_name' => 'Jane', 'last_name' => 'Doe', 'email' => 'client@example.test', 'company' => 'Acme', 'balance' => 99.5, 'currency' => 'USD'];
+    $dashboard = array_replace_recursive([
+        'profile' => $profile,
+        'tickets' => ['on_hold' => 1], 'invoices' => ['unpaid' => 0], 'orders' => ['needs_review' => 0],
+    ], $overrides);
+    $client = new readonly class($dashboard) {
+        public function __construct(private array $dashboard)
         {
         }
-        public int $dashboardCalls = 0;
-        public int $profileCalls = 0;
 
-        public function index_get_dashboard(): array
+        public function __isset(string $name): bool
         {
-            ++$this->dashboardCalls;
-
-            return array_replace_recursive([
-                'profile' => [
-                    'id' => 14,
-                    'email' => 'client@example.test',
-                    'balance' => 42,
-                    'currency' => 'USD',
-                ],
-                'tickets' => ['total' => 1, 'open' => 0, 'on_hold' => 1],
-                'invoices' => ['total' => 0, 'paid' => 0, 'unpaid' => 0],
-                'orders' => ['total' => 0, 'active' => 0, 'expiring' => 0, 'needs_review' => 0],
-                'recent_orders' => [],
-                'recent_tickets' => [['id' => 9, 'subject' => 'A support conversation', 'status' => 'on_hold', 'updated_at' => '2026-10-20 12:00:00']],
-            ], $this->overrides);
+            return true;
         }
 
-        public function profile_get(): array
+        public function __get(string $name): mixed
         {
-            ++$this->profileCalls;
+            return match ($name) {
+                'index_get_dashboard' => $this->dashboard,
+                'support_notification_get_list' => ['unread_count' => 0, 'latest_id' => 0, 'list' => []],
+                default => new PermissiveStub(),
+            };
+        }
 
-            return ['balance' => 42];
+        public function profile_get(): never
+        {
+            throw new LogicException('The shell should reuse the dashboard profile.');
         }
     };
-
-    $html = $twig->render('mod_index_dashboard.html.twig', [
-        'client' => $client,
-        'guest' => [],
-        'request' => ['ajax' => false],
-        'settings' => ['showcase_enabled' => false],
-    ]);
-
-    expect($client->dashboardCalls)->toBe(1)
-        ->and($client->profileCalls)->toBe(0)
-        ->and($html)->toContain('<header>42</header>', '<h1 class="mb-4">Dashboard</h1>')
-        ->and($html)->not->toContain('A support conversation')
-        ->and($html)->not->toContain('Recent Orders')
-        ->and($html)->not->toContain('Support Tickets')
-        ->and($html)->not->toContain('was replied to')
-        ->and($html)->not->toContain('Client ID')
-        ->and($html)->not->toContain('href="client/profile"');
+    $html = ClientThemeRenderer::render([
+        'client' => $client, 'request' => ['ajax' => false],
+        'settings' => ['showcase_enabled' => false, 'sidebar_balance_enabled' => true],
+    ], 'mod_index_dashboard.html.twig');
+    expect($html)->toContain('$99.50');
     foreach ($expected as $text) {
         expect($html)->toContain($text);
     }
-    foreach (array_merge($absent, ['New Order', 'New Ticket', '>Total<', '>Paid<', '>Active<']) as $text) {
+    foreach ($absent as $text) {
         expect($html)->not->toContain($text);
     }
 })->with([
@@ -106,7 +61,7 @@ test('client dashboard profile is available to its inherited layout', function (
     ],
     'one action in each area' => [
         ['invoices' => ['unpaid' => 1], 'orders' => ['needs_review' => 1], 'tickets' => ['on_hold' => 1]],
-        ['1 invoice awaiting payment', '1 service to review', '1 ticket awaiting your reply', 'href="order/service?review=1"', 'href="support?status=on_hold"'],
+        ['1 invoice awaiting payment', '1 service to review', '1 ticket awaiting your reply', 'href="/order/service?review=1"', 'href="/support?status=on_hold"'],
         ['No Unpaid Invoices', 'No Services Need Review', 'No Replies Needed'],
     ],
     'multiple actions' => [

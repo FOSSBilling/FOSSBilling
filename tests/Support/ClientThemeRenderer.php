@@ -25,9 +25,10 @@ final class ClientThemeRenderer
         $twig = new Environment(new TwigLoader(AppArea::CLIENT,
             PATH_THEMES . '/default/client', PATH_THEMES . '/default/shared/html',
         ), ['strict_variables' => true]);
-        $twig->addFilter(new TwigFilter('trans', fn (string $text): string => $text));
+        $twig->addFilter(new TwigFilter('trans', fn (string $text, array $params = []): string => strtr($text, $params)));
+        $twig->addFilter(new TwigFilter('markdown_to_html', fn (string $text): string => $text));
         $twig->addFilter(new TwigFilter('format_datetime', fn (?string $date): string => $date ?? ''));
-        $twig->addFilter(new TwigFilter('url', fn (string $path): string => '/' . ltrim($path, '/')));
+        $twig->addFilter(new TwigFilter('url', fn (string $path, array $query = []): string => '/' . ltrim($path, '/') . ($query ? '?' . http_build_query($query) : '')));
         $twig->addFilter(new TwigFilter('asset_url', fn (string $path): string => '/themes/default/client/assets/' . $path));
         $twig->addFilter(new TwigFilter('public_asset_url', fn (string $path): string => '/public/assets/' . $path));
         $twig->addFilter(new TwigFilter('script_tag', fn (string $path): string => '<script src="' . $path . '"></script>', ['is_safe' => ['html']]));

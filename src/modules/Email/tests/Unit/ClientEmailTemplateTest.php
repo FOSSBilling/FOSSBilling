@@ -24,7 +24,7 @@ function clientEmailTemplates(): Environment
         'list' => (new Filesystem())->readFile(PATH_MODS . '/Email/templates/client/mod_email_index.html.twig'),
         'message' => (new Filesystem())->readFile(PATH_MODS . '/Email/templates/client/mod_email_email.html.twig'),
         'layout_default.html.twig' => '{% block content %}{% endblock %}',
-        'partial_pagination.html.twig' => '{{ url }}?search={{ request.search }}&page={{ request.page }}',
+        'partial_pagination.html.twig' => '',
     ]), ['strict_variables' => true, 'autoescape' => 'html']);
     $twig->addFilter(new TwigFilter('trans', static fn (string $text, array $params = []): string => strtr($text, $params)));
     $twig->addFilter(new TwigFilter('url', static fn (string $path, array $query = []): string => '/' . $path . ($query ? '?' . http_build_query($query) : '')));
@@ -35,7 +35,7 @@ function clientEmailTemplates(): Environment
     return $twig;
 }
 
-test('client email search covers history with full subjects and retains search when opening messages', function (): void {
+test('client email search sends page and filter parameters and retains context when opening messages', function (): void {
     $client = new class {
         public array $query = [];
 
@@ -48,7 +48,7 @@ test('client email search covers history with full subjects and retains search w
     };
     $html = clientEmailTemplates()->render('list', ['client' => $client, 'request' => ['ajax' => false, 'search' => ' invoice ', 'page' => 2]]);
     expect($client->query)->toBe(['per_page' => 10, 'page' => 2, 'search' => 'invoice', 'sort' => 'created_at', 'direction' => 'DESC'])
-        ->and($html)->toContain('method="get"', 'name="search"', 'value="invoice"', 'An invoice &lt;subject&gt; longer than the old truncated subject limit', 'aria-label="Read Email: An invoice &lt;subject&gt;', '/email/7?search=invoice&amp;page=2', 'email?search= invoice &page=2')
+        ->and($html)->toContain('method="get"', 'name="search"', 'value="invoice"', 'An invoice &lt;subject&gt; longer than the old truncated subject limit', 'aria-label="Read Email: An invoice &lt;subject&gt;', '/email/7?search=invoice&amp;page=2')
         ->and($html)->not->toContain('<iframe', 'email/resend', 'email/delete');
 });
 

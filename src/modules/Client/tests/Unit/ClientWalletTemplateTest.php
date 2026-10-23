@@ -21,7 +21,7 @@ function clientWalletTemplate(): Environment
         'wallet' => (new Filesystem())->readFile(PATH_MODS . '/Client/templates/client/mod_client_balance.html.twig'),
         'layout_default.html.twig' => '{% block content %}{% endblock %}{% block js %}{% endblock %}',
         'layout_blank.html.twig' => '{% block content %}{% endblock %}{% block js %}{% endblock %}',
-        'partial_pagination.html.twig' => '{{ url }}?page={{ request.page|default(1) }}{{ hash }}',
+        'partial_pagination.html.twig' => '',
     ]), ['autoescape' => 'html', 'strict_variables' => true]);
     $twig->addFilter(new TwigFilter('trans', static fn (string $text): string => $text));
     $twig->addFilter(new TwigFilter('url', static fn (string $path): string => '/' . $path));
@@ -33,7 +33,7 @@ function clientWalletTemplate(): Environment
     return $twig;
 }
 
-test('wallet makes balance and payment flow clear while keeping signed history and pagination', function (): void {
+test('wallet retains available balance, funding actions and signed history', function (): void {
     $client = new class {
         public array $query = [];
 
@@ -58,7 +58,7 @@ test('wallet makes balance and payment flow clear while keeping signed history a
     expect($client->query)->toBe(['per_page' => 10, 'page' => 2, 'sort' => 'id', 'direction' => 'DESC'])
         ->and($html)->toContain('Available Balance', '6 USD', 'Amount to Add', '(USD)', 'Continue to Payment', 'Funds become available once payment is received.')
         ->and($html)->toContain('action="/api/client/invoice/funds_invoice"', 'data-callback="onAfterInvoiceCreated"', 'min="0.01"', 'step="0.01"', "window.location = '/invoice/' + hash")
-        ->and($html)->toContain('Payment &lt;invoice&gt;', '-29.00 USD', '+40.00 EUR', 'Credit', 'Debit', 'client/balance?page=2#wallet-history-heading')
+        ->and($html)->toContain('Payment &lt;invoice&gt;', '-29.00 USD', '+40.00 EUR', 'Credit', 'Debit')
         ->and($html)->not->toContain('<tfoot>');
     expect(strpos($html, 'Available Balance'))->toBeLessThan(strpos($html, 'Transaction History'));
 });

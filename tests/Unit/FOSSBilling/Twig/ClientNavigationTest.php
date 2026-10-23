@@ -138,7 +138,7 @@ test('client layouts establish separate message regions and keep sidebar amounts
     }
 });
 
-test('client header keeps configured logos on mobile instead of substituting the company name', function (): void {
+test('client header renders configured logo variants without breakpoint visibility classes', function (): void {
     $dom = new DOMDocument();
     @$dom->loadHTML(ClientThemeRenderer::render());
     $xpath = new DOMXPath($dom);

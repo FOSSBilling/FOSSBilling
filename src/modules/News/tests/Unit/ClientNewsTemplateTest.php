@@ -27,7 +27,7 @@ function clientNewsTemplates(): Environment
         'list' => (new Filesystem())->readFile(PATH_MODS . '/News/templates/client/mod_news_index.html.twig'),
         'post' => (new Filesystem())->readFile(PATH_MODS . '/News/templates/client/mod_news_post.html.twig'),
         'layout_default.html.twig' => '{% block head %}{% endblock %}{% block content %}{% endblock %}',
-        'partial_pagination.html.twig' => '{{ url }}?search={{ request.search|default(\'\') }}&page={{ request.page|default(1) }}',
+        'partial_pagination.html.twig' => '',
     ]), ['autoescape' => 'html', 'strict_variables' => true]);
     $twig->addFilter(new TwigFilter('trans', static fn (string $text, array $params = []): string => strtr($text, $params)));
     $twig->addFilter(new TwigFilter('url', static fn (string $path, array $query = []): string => '/' . $path . ($query ? '?' . http_build_query($query) : '')));
@@ -48,7 +48,7 @@ function clientNewsTemplates(): Environment
     return $twig;
 }
 
-test('news search paginates history and keeps summaries readable without losing result context', function (): void {
+test('news search sends page and filter parameters and preserves result context', function (): void {
     $guest = new class {
         public array $query = [];
 
@@ -65,7 +65,7 @@ test('news search paginates history and keeps summaries readable without losing 
     };
     $html = clientNewsTemplates()->render('list', ['guest' => $guest, 'request' => ['ajax' => false, 'search' => ' maintenance ', 'page' => 2]]);
     expect($guest->query)->toBe(['page' => 2, 'per_page' => 5, 'search' => 'maintenance', 'sort' => 'created_at', 'direction' => 'DESC'])
-        ->and($html)->toContain('A maintenance &lt;update&gt;', 'Hosting', '2026-10-18', 'Short summary with details.', '/news/maintenance-update?search=maintenance&amp;page=2', 'name="search"', 'value="maintenance"', 'news?search= maintenance &page=2')
+        ->and($html)->toContain('A maintenance &lt;update&gt;', 'Hosting', '2026-10-18', 'Short summary with details.', '/news/maintenance-update?search=maintenance&amp;page=2', 'name="search"', 'value="maintenance"')
         ->and($html)->not->toContain('Unused description', 'Unused full content', '<strong>', '<p><p>');
 });
 

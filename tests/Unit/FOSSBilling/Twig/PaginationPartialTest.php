@@ -87,6 +87,25 @@ test('shared controls label arrows hide decorative icons and keep current and di
         ->and($xpath->query('//ul[contains(@class,"pagination")]/text()[normalize-space(.)!=""]'))->toHaveCount(0);
 })->with(['client', 'admin']);
 
+test('client pagination keeps a compact window even for large histories', function (): void {
+    $html = renderThemePagination('client', [
+        'request' => ['page' => 250], 'list' => ['total' => 12500, 'pages' => 500, 'per_page' => 25],
+    ]);
+    $xpath = paginationDocument($html);
+    expect($xpath->query('//ul[contains(@class,"pagination")]/li'))->toHaveCount(7)
+        ->and($html)->toContain('Page 250 of 500')
+        ->and($xpath->query('//a[normalize-space(.)="1"]'))->toHaveCount(0);
+});
+
+test('pagination edges disable unavailable directions without clickable links', function (string $theme, int $page, string $disabled): void {
+    $xpath = paginationDocument(renderThemePagination($theme, ['request' => ['page' => $page]]));
+    expect($xpath->query('//a[@aria-label="' . $disabled . '"]'))->toHaveCount(0)
+        ->and($xpath->query('//li[contains(@class,"disabled")]//a'))->toHaveCount(0);
+    if ($theme === 'client') {
+        expect($xpath->query('//span[@aria-disabled="true" and @aria-label="' . $disabled . '"]'))->toHaveCount(1);
+    }
+})->with(['client', 'admin'])->with([[1, 'Previous'], [20, 'Next']]);
+
 test('admin preserves its wider bounded range and valid ellipsis list items', function (): void {
     $xpath = paginationDocument(renderThemePagination('admin', [
         'request' => ['page' => 250], 'list' => ['total' => 12500, 'pages' => 500, 'per_page' => 25],

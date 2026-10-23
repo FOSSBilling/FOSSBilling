@@ -2,7 +2,7 @@ import { expect, test } from '../../fixtures/e2e';
 
 const pages = [
   { path: '/', text: 'Dashboard' },
-  { path: '/client/profile', text: 'Update Details' },
+  { path: '/client/profile', text: 'Profile' },
   { path: '/order/service', text: 'Services' },
   { path: '/invoice', text: 'Invoices' },
   { path: '/support', text: 'Support Tickets' },
@@ -16,6 +16,6 @@ test('loads core client pages successfully', async ({ clientContext, clientPage 
 
     await clientPage.goto(path);
     await expect(clientPage.locator('body')).toBeVisible();
-    await expect(clientPage.locator('body')).toContainText(text);
+    await expect(clientPage.getByRole('heading', { name: text, level: 1 })).toBeVisible();
   }
 });

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createFormLoading } from '../form-loading.ts';
+import initClientFormLoading, {setFormLoading as setClientFormLoading} from '../../../src/themes/default/client/assets/js/ui/form-loading.ts';
 
 function button(disabled = false, loading = false) {
   const classes = new Set(loading ? ['btn-loading'] : []);
@@ -21,7 +22,7 @@ function setup(modal: boolean) {
   const buttons = [button(), button(), button(true), button(false, true)];
   const statuses: any[] = [];
   const document = {
-    querySelector: () => ({dataset: {loading: 'Translated Submitting'}}),
+    querySelector: () => ({dataset: {loading: 'Translated Submitting', clientLoading: 'Client Translation'}}),
     createElement: () => ({className: '', textContent: '', attrs: new Map<string, string>(),
       setAttribute(name: string, value: string) {this.attrs.set(name, value);},
       remove() {statuses.splice(statuses.indexOf(this), 1);}}),
@@ -86,12 +87,11 @@ test('modal status stays outside the busy form without changing the dialog layou
 }, true));
 
 test('theme adapters can supply translated labels and leave extension loading hooks intact', () => fixture(f => {
-  const presenter = createFormLoading(() => 'Client Translation');
   const extension = () => {};
   (globalThis as any).FOSSBilling.ui.formLoading = extension;
-  presenter.initFormLoading();
+  initClientFormLoading();
   assert.equal((globalThis as any).FOSSBilling.ui.formLoading, extension);
-  presenter.setFormLoading(f.form as any, true);
+  setClientFormLoading(f.form as any, true);
   assert.equal(f.statuses[0].textContent, 'Client Translation');
-  presenter.setFormLoading(f.form as any, false);
+  setClientFormLoading(f.form as any, false);
 }));

@@ -17,6 +17,6 @@ for (const path of protectedPages) {
 
     await incognitoPage.goto(path);
     await expect(incognitoPage).toHaveURL((url) => /^\/login\/?$/.test(new URL(url).pathname));
-    await expect(incognitoPage.locator('body')).toContainText('Login to Your Account');
+    await expect(incognitoPage.getByRole('heading', { name: 'Sign In', level: 1 })).toBeVisible();
   });
 }
