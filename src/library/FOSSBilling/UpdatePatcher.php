@@ -3010,7 +3010,16 @@ class UpdatePatcher implements InjectionAwareInterface
             'SELECT DISTINCT COLUMN_NAME FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table',
             ['table' => 'custom_pages'],
         );
-        $collations = $this->fetchFirstColumn('SELECT COLLATION_NAME FROM information_schema.COLLATIONS WHERE CHARACTER_SET_NAME = :charset', ['charset' => 'utf8mb4']);
+        $collations = $this->fetchFirstColumn(
+            "SELECT COLLATION_NAME FROM information_schema.COLLATIONS WHERE CHARACTER_SET_NAME = :charset OR (CHARACTER_SET_NAME IS NULL AND COLLATION_NAME LIKE 'uca%')",
+            ['charset' => 'utf8mb4'],
+        );
+        // MariaDB lists UCA collations without a charset, although their
+        // charset-prefixed aliases are valid in column definitions.
+        $collations = array_map(
+            static fn (string $collation): string => str_starts_with($collation, 'uca') ? 'utf8mb4_' . $collation : $collation,
+            $collations,
+        );
         $changes = [];
         foreach ($this->fetchAll('SHOW FULL COLUMNS FROM `custom_pages`') as $column) {
             $name = $column['Field'];

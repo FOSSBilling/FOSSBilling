@@ -93,6 +93,43 @@ test('charset migration skips customized defaults, indexes, generated fields and
     expect($this->pdo->query('SHOW FULL COLUMNS FROM custom_pages')->fetchAll(PDO::FETCH_ASSOC))->toBe($before);
 });
 
+test('charset migration preserves MariaDB UCA collations and indexed slugs', function (string $collation): void {
+    $available = $this->pdo->prepare('SELECT 1 FROM information_schema.COLLATIONS WHERE COLLATION_NAME = ?');
+    $available->execute([$collation]);
+    if (!$available->fetchColumn()) {
+        $this->markTestSkipped('MariaDB UCA collations are not available on this server.');
+    }
+
+    $this->pdo->exec("CREATE TABLE custom_pages (
+        id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        title VARCHAR(255) NOT NULL COMMENT 'Page title',
+        description VARCHAR(555) NULL DEFAULT NULL,
+        keywords VARCHAR(555) NOT NULL,
+        content TEXT NOT NULL,
+        slug VARCHAR(255) NOT NULL UNIQUE
+    ) DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_{$collation}");
+    $this->connection->executeStatement('INSERT INTO custom_pages (title, keywords, content, slug) VALUES (?, ?, ?, ?)', ['Existing title', 'existing', 'Existing content', 'example']);
+
+    ($this->runPatch)();
+
+    $columns = $this->pdo->query('SHOW FULL COLUMNS FROM custom_pages')->fetchAll(PDO::FETCH_UNIQUE | PDO::FETCH_ASSOC);
+    expect($columns['slug']['Collation'])->toBe('utf8mb3_' . $collation)
+        ->and($columns['title']['Comment'])->toBe('Page title')
+        ->and($columns['description']['Null'])->toBe('YES')
+        ->and($columns['description']['Default'])->toBeNull()
+        ->and($columns['content']['Type'])->toBe('text')
+        ->and($this->connection->fetchOne('SELECT content FROM custom_pages'))->toBe('Existing content');
+
+    foreach (['title', 'description', 'keywords', 'content'] as $column) {
+        expect($columns[$column]['Collation'])->toBe('utf8mb4_' . $collation);
+        $this->connection->executeStatement('UPDATE custom_pages SET ' . $column . ' = ?', ['🚀']);
+        expect($this->connection->fetchOne('SELECT ' . $column . ' FROM custom_pages'))->toBe('🚀');
+    }
+
+    ($this->runPatch)();
+    expect($this->pdo->query('SHOW FULL COLUMNS FROM custom_pages')->fetchAll(PDO::FETCH_UNIQUE | PDO::FETCH_ASSOC))->toBe($columns);
+})->with(['uca1400_ai_ci', 'uca1400_nopad_as_cs']);
+
 test('charset migration is harmless when Custompages is not installed', function (): void {
     ($this->runPatch)();
     expect($this->pdo->query('SHOW TABLES')->fetchAll())->toBe([]);
