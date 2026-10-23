@@ -46,7 +46,7 @@ function catalogManager(array $result, bool $cached = false): ExtensionManager
     $cache = new ArrayAdapter();
     if ($cached) {
         foreach (['list', 'Example'] as $endpoint) {
-            $cache->get(catalogCacheKey($endpoint), static fn () => $result);
+            $cache->get(catalogCacheKey($endpoint), static fn (): array => $result);
         }
     }
     $di = new Pimple\Container();
@@ -111,8 +111,8 @@ it('throws without retrying while the directory is marked unavailable', function
         throw new TransportException('Connection refused.');
     }));
 
-    expect(fn () => $manager->getExtension('Example'))->toThrow(FOSSBilling\Exception::class);
-    expect(fn () => $manager->getExtension('Example'))->toThrow(FOSSBilling\Exception::class);
+    expect(fn (): array => $manager->getExtension('Example'))->toThrow(FOSSBilling\Exception::class);
+    expect(fn (): array => $manager->getExtension('Example'))->toThrow(FOSSBilling\Exception::class);
     expect($requests)->toBe(1);
 });
 
@@ -120,7 +120,7 @@ it('ignores directory cache entries stored without a version scope', function ()
     $staleEntry = catalogEntry();
     $staleEntry['name'] = 'Stale Name';
     $cache = new ArrayAdapter();
-    $cache->get('extension-manager-' . hash('xxh3', 'list' . serialize([])), static fn () => [$staleEntry]);
+    $cache->get('extension-manager-' . hash('xxh3', 'list' . serialize([])), static fn (): array => [$staleEntry]);
 
     $entry = catalogEntry();
     $requests = 0;
@@ -137,7 +137,7 @@ it('ignores directory cache entries stored without a version scope', function ()
 it('treats a corrupted fresh entry as a miss and falls back to stale data', function (): void {
     $entry = catalogEntry();
     $cache = new ArrayAdapter();
-    $cache->get(catalogCacheKey('list'), static fn () => 'corrupted');
+    $cache->get(catalogCacheKey('list'), static fn (): string => 'corrupted');
     $stale = $cache->getItem(catalogCacheKey('list') . '-stale');
     $stale->set([$entry]);
     $stale->expiresAfter(3600);
@@ -157,8 +157,8 @@ it('rejects unsafe directory metadata including cached responses', function (str
     } else {
         $entry[$field] = $value;
     }
-    expect(fn () => catalogManager([$entry], $cached)->getExtensionList())->toThrow(FOSSBilling\Exception::class);
-    expect(fn () => catalogManager($entry, $cached)->getExtension('Example'))->toThrow(FOSSBilling\Exception::class);
+    expect(fn (): array => catalogManager([$entry], $cached)->getExtensionList())->toThrow(FOSSBilling\Exception::class);
+    expect(fn (): array => catalogManager($entry, $cached)->getExtension('Example'))->toThrow(FOSSBilling\Exception::class);
 })->with([
     ['id', "Example');alert(1);//", false],
     ['id', '../Example', true],
@@ -190,7 +190,7 @@ it('rejects invalid requested identifiers before issuing a directory request', f
     });
     $manager = new ExtensionManager();
     $manager->setDi($di);
-    expect(fn () => $manager->getExtension($id))->toThrow(FOSSBilling\InformationException::class);
+    expect(fn (): array => $manager->getExtension($id))->toThrow(FOSSBilling\InformationException::class);
 })->with(['../Example', 'Example?query', 'Example#fragment', "Example\n", '']);
 
 it('preserves empty lists and metadata with no author URL', function (): void {

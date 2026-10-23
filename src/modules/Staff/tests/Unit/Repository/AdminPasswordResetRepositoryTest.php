@@ -180,7 +180,7 @@ test('credential writes acquire the same mutex before changing recovery state on
             ->andReturn(date('Y-m-d H:i:s'));
     }
     $connection->shouldReceive('delete')->once()->ordered()->with('admin_password_reset', ['admin_id' => 1])->andReturn(1);
-    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em = Mockery::mock(EntityManagerInterface::class);
     $em->shouldReceive('getConnection')->andReturn($connection);
     $em->shouldReceive('wrapInTransaction')->once()->andReturnUsing(static fn (callable $callback) => $callback());
     $em->shouldReceive('persist')->once();

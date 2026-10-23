@@ -226,7 +226,7 @@ test('theme save rejects restricted staff before any side effects', function ():
     $app = Mockery::mock('\Box_App');
     $app->shouldNotReceive('getRequest');
 
-    expect(fn () => $controller->save_theme_settings($app, 'huraga'))
+    expect(fn (): Symfony\Component\HttpFoundation\Response => $controller->save_theme_settings($app, 'huraga'))
         ->toThrow(FOSSBilling\InformationException::class, 'Permission denied', 403);
 });
 
@@ -241,7 +241,7 @@ test('theme settings page requires view permission', function (): void {
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $staffMock);
     $controller->setDi($di);
 
-    expect(fn () => $controller->get_theme(Mockery::mock('\Box_App'), 'huraga'))
+    expect(fn (): string => $controller->get_theme(Mockery::mock('\Box_App'), 'huraga'))
         ->toThrow(FOSSBilling\InformationException::class, 'Permission denied', 403);
 });
 
@@ -268,7 +268,7 @@ test('theme save rejects invalid CSRF tokens before any side effects', function 
     $app = Mockery::mock('\Box_App');
     $app->shouldReceive('getRequest')->once()->andReturn($request);
 
-    expect(fn () => $controller->save_theme_settings($app, 'huraga'))
+    expect(fn (): Symfony\Component\HttpFoundation\Response => $controller->save_theme_settings($app, 'huraga'))
         ->toThrow(FOSSBilling\InformationException::class, 'CSRF token invalid', 403);
 })->with([
     'missing' => [null, 'valid-token'],
