@@ -2,5 +2,7 @@
 {% block meta_title %}{{ 'Order'|trans }}{% endblock %}
 
 {% block body %}
-{{ include('mod_orderbutton_content.html.twig') }}
+<main class="container-fluid p-3" aria-label="{{ 'Order'|trans }}">
+    {{ include('mod_orderbutton_content.html.twig') }}
+</main>
 {% endblock %}

@@ -18,26 +18,13 @@
     {% else %}
     {% set alerts = admin.system_cas_messages()|merge(admin.system_messages()) %}
     {% for alert in alerts %}
-    {% set alertIcon = {danger: 'alert-triangle', warning: 'alert-triangle', success: 'circle-check', info: 'info-circle'}[alert.type]|default('info-circle') %}
-    <div class="alert alert-{{ alert.type }} {{ alert.dismissible ? "alert-dismissible" : "" }} fade show mb-3" role="alert">
-        <div class="alert-icon">
-            <svg class="icon alert-icon icon-2" aria-hidden="true">
-                <use href="#{{ alertIcon }}" />
-            </svg>
-        </div>
-        {% if alert.title %}
-            <strong>{{ alert.title }}</strong>{% if alert.message %} {% endif %}
-        {% endif %}
-        {{ alert.message }}
-        {% for button in alert.buttons %}
-            <a href="{{ button.link }}" class="alert-action">{{ button.text }}</a>
-        {% endfor %}
-        {% if alert.dismissible %}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="{{ 'Close'|trans }}"></button>
-        {% endif %}
-    </div>
+    {% include 'partial_notice.html.twig' with {
+        notice_type: alert.type, notice_title: alert.title, notice_message: alert.message,
+        notice_actions: alert.buttons, notice_dismissible: alert.dismissible,
+        notice_icon: true, notice_class: 'mb-3',
+        notice_role: alert.type in ['danger', 'error'] ? 'alert' : ''
+    } only %}
     {% endfor %}
-
 <div class="row row-deck row-cards">
     {% if admin.system_is_allowed({ 'mod': 'stats' }) %}
         {% set stats = admin.stats_get_summary %}
@@ -255,35 +242,26 @@
     {% if admin.system_is_allowed({ 'mod': 'stats' }) %}
     <div class="col-12">
         <div class="card">
-            <div class="card-header">
+            <div class="card-header flex-wrap gap-2">
                 <h3 class="card-title">{{ 'Income'|trans }}</h3>
-                <div class="card-actions">
+                <div class="card-actions flex-grow-1 mw-100 ms-0 ms-lg-auto">
                     <form method="get" action="">
-                        <div class="d-flex align-items-center gap-1">
-                            <div class="input-group">
-                                <div class="input-icon">
-                                    <input class="form-control datepicker" data-clear-label="{{ 'Clear date'|trans }}" data-invalid-date-label="{{ 'Enter a valid date in YYYY-MM-DD format.'|trans }}" style="width: 16rem" id="graph_interval"
-                                        value="{% if request.date_from %}{{ request.date_from|date('Y-m-d') }}{% endif %}{% if request.date_to %} to {{ request.date_to|date('Y-m-d') }}{% endif %}"
-                                        data-name-from="date_from" data-name-to="date_to">
-                                    <span class="input-icon-addon">
-                                        <svg class="icon">
-                                            <use href="#calendar" />
-                                        </svg>
-                                    </span>
-                                </div>
-                                <input type="submit" value="{{ 'Update Graphs'|trans }}" class="btn btn-primary">
+                        <div class="d-flex flex-wrap align-items-center justify-content-lg-end gap-2">
+                            <div class="input-icon w-100" style="max-width: 16rem">
+                                <input class="form-control datepicker" data-clear-label="{{ 'Clear date'|trans }}" data-invalid-date-label="{{ 'Enter a valid date in YYYY-MM-DD format.'|trans }}" id="graph_interval"
+                                    value="{% if request.date_from %}{{ request.date_from|date('Y-m-d') }}{% endif %}{% if request.date_to %} to {{ request.date_to|date('Y-m-d') }}{% endif %}"
+                                    data-name-from="date_from" data-name-to="date_to">
+                                <span class="input-icon-addon">
+                                    <svg class="icon">
+                                        <use href="#calendar" />
+                                    </svg>
+                                </span>
                             </div>
-                            <span
-                                class="ms-1 text-muted opacity-75 d-inline-flex align-items-center"
-                                data-bs-toggle="tooltip"
-                                data-bs-placement="top"
-                                data-bs-title="{{ 'Set a date range to update the dashboard graphs.'|trans }}"
-                                aria-label="{{ 'Graph date range help'|trans }}"
-                            >
-                                <svg class="icon icon-sm">
-                                    <use href="#info-circle" />
-                                </svg>
-                            </span>
+                            <input type="submit" value="{{ 'Update Graphs'|trans }}" class="btn btn-primary">
+                            {% include 'partial_help_popover.html.twig' with {
+                                help_label: 'Graph date range help'|trans,
+                                help_text: 'Set a date range to update the dashboard graphs.'|trans
+                            } only %}
                         </div>
                     </form>
                 </div>

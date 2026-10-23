@@ -25,7 +25,7 @@
                     <div class="card">
                         <div class="card-body">
                             {% if company.logo_url %}
-                                <img src="{{ company.logo_url }}" alt="Logo" class="img-fluid">
+                                <img src="{{ company.logo_url }}" alt="{{ company.name }}" class="img-fluid">
                             {% endif %}
                             <dl class="row">
                                 <dt class="col-sm-6">{{ 'Invoice Number'|trans }}:</dt>

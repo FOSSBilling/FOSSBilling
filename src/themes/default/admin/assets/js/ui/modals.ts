@@ -1,4 +1,6 @@
 // @ts-nocheck -- Runtime DOM/widget integration; converted to TS without changing behavior.
+import { bindModalLifecycle, hideModals, labelModal } from '../../../../../../../frontend/ui/tabler-modal.ts';
+
 /**
  * JavaScript for the FOSSBilling modals. No jQuery required.
  *
@@ -13,7 +15,7 @@
  * The modals object.
  * @type {Object}
  */
-globalThis.Modals = {
+if (!globalThis.Modals?.create) globalThis.Modals = {
   // The default options for the modals.
   defaultOptions: {
     title: "Are you sure?", // The default title for the modal.
@@ -48,7 +50,7 @@ globalThis.Modals = {
    */
   templates: {
     default: `<div class="modal modal-blur fade {{ extraClasses }}" tabindex="-1">
-          <div class="modal-dialog modal-dialog-centered" role="document">
+          <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" role="document">
             <div class="modal-content">
               <div class="modal-header">
                 <h5 class="modal-title">{{ title }}</h5>
@@ -64,7 +66,7 @@ globalThis.Modals = {
           </div>
         </div>`,
     small: `<div class="modal modal-blur fade {{ extraClasses }}" tabindex="-1">
-        <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+        <div class="modal-dialog modal-sm modal-dialog-centered modal-dialog-scrollable" role="document">
           <div class="modal-content">
             <div class="modal-body">
               <div class="modal-title">{{ title }}</div>
@@ -77,7 +79,7 @@ globalThis.Modals = {
         </div>
       </div>`,
     smallConfirm: `<div class="modal modal-blur fade {{ extraClasses }}" tabindex="-1">
-        <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+        <div class="modal-dialog modal-sm modal-dialog-centered modal-dialog-scrollable" role="document">
           <div class="modal-content">
             <div class="modal-body">
               <div class="modal-title">{{ title }}</div>
@@ -91,7 +93,7 @@ globalThis.Modals = {
         </div>
       </div>`,
     prompt: `<div class="modal modal-blur fade {{ extraClasses }}" tabindex="-1">
-        <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+        <div class="modal-dialog modal-sm modal-dialog-centered modal-dialog-scrollable" role="document">
           <div class="modal-content">
             <div class="modal-body">
               <div class="modal-title">{{ title }}</div>
@@ -108,7 +110,7 @@ globalThis.Modals = {
         </div>
       </div>`,
     emphasis: `<div class="modal modal-blur fade {{ extraClasses }}" tabindex="-1">
-        <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+        <div class="modal-dialog modal-sm modal-dialog-centered modal-dialog-scrollable" role="document">
           <div class="modal-content">
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             <div class="modal-status bg-{{ emphasis }}"></div>
@@ -122,12 +124,12 @@ globalThis.Modals = {
             <div class="modal-footer">
               <div class="w-100">
                 <div class="row">
-                  <div class="col"><a href="#" class="btn w-100" id="cancel-button" data-bs-dismiss="modal">
+                  <div class="col"><button type="button" class="btn w-100" id="cancel-button" data-bs-dismiss="modal">
                       {{ cancelButton }}
-                    </a></div>
-                  <div class="col"><a href="#" class="btn btn-{{ emphasis }}  w-100" id="confirm-button" data-bs-dismiss="modal">
+                    </button></div>
+                  <div class="col"><button type="button" class="btn btn-{{ emphasis }} w-100" id="confirm-button" data-bs-dismiss="modal">
                       {{ confirmButton }}
-                    </a></div>
+                    </button></div>
                 </div>
               </div>
             </div>
@@ -213,61 +215,44 @@ globalThis.Modals = {
     modalContainer.innerHTML = this.parseTemplate(options.type, options);
     modal = modalContainer.firstChild;
 
-    // Add the modal to the body.
+    // A malformed extension template must not break the rest of the page.
+    if (!(modal instanceof HTMLElement)) return;
+    labelModal(modal);
     document.body.appendChild(modal);
-
-    // Initialize the modal.
     const modalInstance = new tabler.Modal(modal);
-
-    // The event listeners.
-    modal.addEventListener("hidden.bs.modal", function () {
-      if (options.closeCallback) {
-        options.closeCallback();
-      }
-
-      modal.remove();
+    const cancelButton = modal.querySelector("#cancel-button");
+    const confirmButton = modal.querySelector("#confirm-button");
+    const promptConfirmButton = modal.querySelector("#prompt-confirm-button");
+    const input = modal.querySelector("#prompt-input");
+    const closeButton = modal.querySelector("#close-button");
+    const lifecycle = bindModalLifecycle(modal, modalInstance, tabler.Modal, {
+      confirmButton: promptConfirmButton || confirmButton,
+      initialFocus: input || cancelButton || closeButton || modal.querySelector(".btn-close"),
+      callbackTiming: 'action',
+      onConfirm: value => {
+        if (promptConfirmButton) options.promptConfirmCallback?.(value);
+        else options.confirmCallback?.();
+      },
+      onCancel: () => options.cancelCallback?.(),
+      onClose: () => options.closeCallback?.(),
     });
 
-    const closeButton = modal.querySelector("#close-button");
-    if (closeButton) {
-      closeButton.addEventListener("click", function () {
-        if (options.closeCallback) {
-          options.closeCallback();
-        }
+    for (const button of [confirmButton, promptConfirmButton]) {
+      if (!button) continue;
+      button.removeAttribute("data-bs-dismiss");
+      button.addEventListener("click", event => {
+        event.preventDefault();
+        lifecycle.confirm(input?.value);
       });
     }
-
-    const cancelButton = modal.querySelector("#cancel-button");
     if (cancelButton) {
-      cancelButton.addEventListener("click", function () {
-        if (options.cancelCallback) {
-          options.cancelCallback();
-        }
+      cancelButton.removeAttribute("data-bs-dismiss");
+      cancelButton.addEventListener("click", event => {
+        event.preventDefault();
+        lifecycle.cancel();
       });
     }
-
-    const confirmButton = modal.querySelector("#confirm-button");
-    if (confirmButton) {
-      confirmButton.addEventListener("click", function () {
-        if (options.confirmCallback) {
-          options.confirmCallback();
-        }
-      });
-    }
-
-    const promptConfirmButton = modal.querySelector("#prompt-confirm-button");
-    if (promptConfirmButton) {
-      promptConfirmButton.addEventListener("click", function () {
-        if (options.promptConfirmCallback) {
-          options.promptConfirmCallback(
-            document.getElementById("prompt-input").value
-          );
-        }
-      });
-    }
-
-    // Show the modal.
-    modalInstance.show();
+    lifecycle.show();
 
     return modalInstance;
   },
@@ -277,12 +262,11 @@ globalThis.Modals = {
    *
    * @returns void
    */
-  closeAll: function () {
-    const modals = document.querySelectorAll(".modal");
+  hideAll: function () {
+    this.closeAll();
+  },
 
-    modals.forEach(function (modal) {
-      const modalInstance = tabler.Modal.getInstance(modal);
-      modalInstance.hide();
-    });
+  closeAll: function () {
+    hideModals(tabler.Modal);
   },
 };

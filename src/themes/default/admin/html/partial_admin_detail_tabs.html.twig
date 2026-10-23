@@ -5,12 +5,12 @@
 
 <div class="card overflow-hidden{% if outer_card_class|default('') %} {{ outer_card_class }}{% endif %}">
     <div class="card-header">
-        <div>
-            <h3 class="card-title">{{ title }}</h3>
-            {% if subtitle is defined and subtitle %}
-                <p class="card-subtitle">{{ subtitle }}</p>
-            {% endif %}
-        </div>
+        {% embed 'partial_card_heading.html.twig' %}
+            {% block card_heading_content %}
+                <h3 class="card-title">{{ title }}</h3>
+                {% if subtitle is defined and subtitle %}<p class="card-subtitle">{{ subtitle }}</p>{% endif %}
+            {% endblock %}
+        {% endembed %}
     </div>
     <div class="card-body pt-3 pb-0 px-0">
         <div class="card border-0 shadow-none rounded-0{% if inner_card_class|default('') %} {{ inner_card_class }}{% endif %}">

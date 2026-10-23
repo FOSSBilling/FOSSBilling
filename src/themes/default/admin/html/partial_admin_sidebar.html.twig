@@ -18,7 +18,7 @@
         <div class="navbar-footer">
             <ul class="navbar-nav">
                 <li class="nav-item dropup flex-row align-items-center">
-                    <a class="nav-link text-reset flex-grow-1 overflow-hidden" href="{{ 'staff/profile'|url }}" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-label="{{ 'Open user menu'|trans }}" aria-expanded="false">
+                    <a id="admin-account-toggle" class="nav-link text-reset flex-grow-1 overflow-hidden" href="{{ 'staff/profile'|url }}" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-label="{{ 'Open user menu'|trans }}" aria-expanded="false" aria-controls="admin-account-menu">
                         {{ avatar(profile.email, 32, 'avatar avatar-sm') }}
                         <span class="nav-link-title overflow-hidden">
                             <span class="d-block text-truncate">{{ profile.name }}</span>
@@ -28,7 +28,7 @@
                     <a class="btn btn-icon btn-ghost-secondary admin-sidebar-logout" href="{{ 'profile/logout'|api_url }}" {{ fb_api_link({ redirect: 'staff/login'|url }) }} aria-label="{{ 'Logout'|trans }}" data-bs-toggle="tooltip" title="{{ 'Logout'|trans }}">
                         <svg class="icon" aria-hidden="true"><use href="#logout" /></svg>
                     </a>
-                    <div class="dropdown-menu dropdown-menu-end dropdown-menu-lg-start">
+                    <div class="dropdown-menu dropdown-menu-end dropdown-menu-lg-start" id="admin-account-menu" aria-labelledby="admin-account-toggle">
                         <a class="dropdown-item" href="{{ 'staff/profile'|url }}">{{ 'Profile'|trans }}</a>
                         <a class="dropdown-item" href="{{ 'system'|url }}">{{ 'Settings'|trans }}</a>
                         <div class="dropdown-divider"></div>
@@ -45,15 +45,7 @@
                         {% endif %}
                         <div class="px-3 py-2">
                             <div class="btn-group w-100" role="group" aria-label="{{ 'Appearance'|trans }}">
-                                <button type="button" class="btn btn-icon" data-theme-preference="system" aria-label="{{ 'System'|trans }}" aria-pressed="false" data-bs-toggle="tooltip" title="{{ 'System'|trans }}">
-                                    <svg class="icon" aria-hidden="true"><use href="#device-desktop" /></svg>
-                                </button>
-                                <button type="button" class="btn btn-icon" data-theme-preference="light" aria-label="{{ 'Light'|trans }}" aria-pressed="false" data-bs-toggle="tooltip" title="{{ 'Light'|trans }}">
-                                    <svg class="icon" aria-hidden="true"><use href="#sun" /></svg>
-                                </button>
-                                <button type="button" class="btn btn-icon" data-theme-preference="dark" aria-label="{{ 'Dark'|trans }}" aria-pressed="false" data-bs-toggle="tooltip" title="{{ 'Dark'|trans }}">
-                                    <svg class="icon" aria-hidden="true"><use href="#moon" /></svg>
-                                </button>
+                                {{ include('partial_theme_preferences.html.twig', {theme_choice_tooltips: true}, with_context: false) }}
                             </div>
                         </div>
                         <div class="dropdown-divider"></div>
@@ -75,11 +67,11 @@
                         {% if group.subpages %}
                             {% set expanded = current_active_menu == location or group.active %}
                             <li class="nav-item dropdown{% if expanded %} active{% endif %}">
-                                <button class="nav-link dropdown-toggle text-start" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-controls="admin-nav-{{ loop.index }}" aria-expanded="{{ expanded ? 'true' : 'false' }}">
+                                <button id="admin-nav-toggle-{{ loop.index }}" class="nav-link dropdown-toggle text-start" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-controls="admin-nav-{{ loop.index }}" aria-expanded="{{ expanded ? 'true' : 'false' }}">
                                     <span class="nav-link-icon"><svg class="icon" aria-hidden="true"><use href="#{{ group.class }}" /></svg></span>
                                     <span class="nav-link-title">{{ group.label|trans }}</span>
                                 </button>
-                                <ul class="dropdown-menu{% if expanded %} show{% endif %}" id="admin-nav-{{ loop.index }}">
+                                <ul class="dropdown-menu{% if expanded %} show{% endif %}" id="admin-nav-{{ loop.index }}" aria-labelledby="admin-nav-toggle-{{ loop.index }}">
                                     {% for subpage in group.subpages %}
                                         <li><a class="dropdown-item text-wrap{% if subpage.active %} active{% endif %}" href="{{ subpage.uri }}"{% if subpage.active %} aria-current="page"{% endif %}>{{ subpage.label|trans }}</a></li>
                                     {% endfor %}
@@ -88,11 +80,11 @@
                         {% endif %}
                     {% endfor %}
                     <li class="nav-item dropdown">
-                        <button class="nav-link dropdown-toggle text-start" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-controls="admin-nav-help" aria-expanded="false">
+                        <button id="admin-nav-help-toggle" class="nav-link dropdown-toggle text-start" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-controls="admin-nav-help" aria-expanded="false">
                             <span class="nav-link-icon"><svg class="icon" aria-hidden="true"><use href="#help" /></svg></span>
                             <span class="nav-link-title">{{ 'Help'|trans }}</span>
                         </button>
-                        <ul class="dropdown-menu" id="admin-nav-help">
+                        <ul class="dropdown-menu" id="admin-nav-help" aria-labelledby="admin-nav-help-toggle">
                             <li><a class="dropdown-item text-wrap" href="https://docs.fossbilling.org/" target="_blank" rel="noopener">{{ 'Documentation'|trans }}</a></li>
                             <li><a class="dropdown-item text-wrap" href="https://github.com/FOSSBilling/FOSSBilling" target="_blank" rel="noopener">GitHub</a></li>
                             <li><a class="dropdown-item text-wrap" href="https://github.com/FOSSBilling/FOSSBilling/issues" target="_blank" rel="noopener">{{ 'Report a Bug'|trans }}</a></li>

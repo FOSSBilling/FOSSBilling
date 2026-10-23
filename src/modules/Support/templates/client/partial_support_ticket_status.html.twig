@@ -1,0 +1,10 @@
+{% if ticket.status == 'on_hold' %}
+    <span class="fw-semibold">{{ 'Awaiting Your Reply'|trans }}</span>
+{% elseif ticket.status == 'open' %}
+    <span class="text-secondary">{{ 'Waiting for Support'|trans }}</span>
+{% elseif ticket.status == 'closed' %}
+    <span class="text-secondary">{{ 'Closed'|trans }}</span>
+{% else %}
+    {% import "macro_functions.html.twig" as mf %}
+    {{ mf.status_badge(ticket.status, 'ticket') }}
+{% endif %}

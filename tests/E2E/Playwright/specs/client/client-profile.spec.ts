@@ -18,7 +18,7 @@ test('updates profile details', async ({ clientPage }) => {
   };
 
   await clientPage.goto('/client/profile');
-  await expect(clientPage.locator('body')).toContainText('Update Details');
+  await expect(clientPage.getByRole('heading', { name: 'Profile', level: 1 })).toBeVisible();
 
   const form = clientPage.locator('form#profile-update');
   await form.locator('input[name="first_name"]').fill(updatedProfile.firstName);
@@ -32,12 +32,14 @@ test('updates profile details', async ({ clientPage }) => {
   await form.locator('input[name="postcode"]').fill(updatedProfile.postcode);
 
   const profileUpdate = waitForApiResponse(clientPage, '/api/client/profile/update');
+  const profileReload = clientPage.waitForEvent('load');
   await submitForm(form);
 
   // The reloaded form values below prove the update was persisted server-side.
   expect((await profileUpdate).status()).toBe(200);
 
-  await clientPage.reload();
+  await profileReload;
+  await expect(clientPage.locator('.toast')).toContainText('Account details saved');
   await expect(form.locator('input[name="first_name"]')).toHaveValue(updatedProfile.firstName);
   await expect(form.locator('input[name="last_name"]')).toHaveValue(updatedProfile.lastName);
   await expect(form.locator('input[name="company"]')).toHaveValue(updatedProfile.company);

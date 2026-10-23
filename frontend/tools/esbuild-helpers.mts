@@ -161,18 +161,22 @@ export async function purgeCssFile(cssFilePath: string, options: PurgeOptions) {
   try {
     const css = await readFile(cssFilePath, 'utf8');
     const modulesPath = resolve(dirname(fileURLToPath(import.meta.url)), '../../src/modules');
-    const moduleArea = area === 'client' ? 'client' : 'admin';
 
     const purgeCSSResult = await new PurgeCSS().purge({
       content: [
         `${themePath}/html/**/*.twig`,
         `${themePath}/assets/**/*.{js,ts}`,
-        `${modulesPath}/*/templates/${moduleArea}/**/*.twig`,
+        `${resolve(dirname(fileURLToPath(import.meta.url)), '../../src/themes/default/shared/html')}/**/*.twig`,
+        `${resolve(dirname(fileURLToPath(import.meta.url)), '../ui')}/**/*.ts`,
+        `${resolve(dirname(fileURLToPath(import.meta.url)), '../core')}/**/*.{ts,mts}`,
+        `${modulesPath}/*/templates/${area}/**/*.twig`,
       ],
       css: [{ raw: css, extension: 'css' } as unknown as { raw: string }],
       safelist: {
         standard: [
           /^fi-/,
+          /^db-avatar$/, // The shared PHP avatar() renderer emits this class.
+          /^ck($|-)/, // CKEditor creates its UI and source-editing classes at runtime.
           /^toast/,
           /^modal/,
           /^dropdown/,

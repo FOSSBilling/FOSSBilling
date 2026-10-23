@@ -31,7 +31,7 @@
     {% set default_action = 'subdomain' %}
 {% endif %}
 
-<h5 class="mb-1">{{ product_details }}</h5>
+<h5 class="h3 mb-1">{{ product_details }}</h5>
 
 {% if show_domain_config %}
 <hr />
@@ -40,24 +40,24 @@
 <div class="d-flex mb-3">
     <nav class="nav nav-pills flex-column border-end me-3 gap-2">
         {% if can_register %}
-            <a class="nav-link me-3 py-1 px-2 fs-7{% if default_action == 'register' %} active{% endif %}" href="#"
+            <a class="nav-link me-3 py-1 px-2 fs-4{% if default_action == 'register' %} active{% endif %}" href="#"
                id="register-tab" data-bs-toggle="tab" data-bs-target="#register-tab-pane"
                role="tab" aria-controls="register-tab-pane" data-action="register">{{ 'Register'|trans }}</a>
         {% endif %}
         {% if can_transfer %}
-            <a class="nav-link me-3 py-1 px-2 fs-7{% if default_action == 'transfer' %} active{% endif %}" href="#"
+            <a class="nav-link me-3 py-1 px-2 fs-4{% if default_action == 'transfer' %} active{% endif %}" href="#"
                id="transfer-tab" data-bs-toggle="tab" data-bs-target="#transfer-tab-pane"
                role="tab" aria-controls="transfer-tab-pane" data-action="transfer">{{ 'Transfer'|trans }}</a>
         {% endif %}
         {% if can_own %}
-            <a class="nav-link me-3 py-1 px-2 fs-7{% if default_action == 'owndomain' %} active{% endif %}" href="#"
+            <a class="nav-link me-3 py-1 px-2 fs-4{% if default_action == 'owndomain' %} active{% endif %}" href="#"
                id="owndomain-tab" data-bs-toggle="tab" data-bs-target="#owndomain-tab-pane"
-               role="tab" aria-controls="owndomain-tab-pane" data-action="owndomain">{{ 'Own domain'|trans }}</a>
+               role="tab" aria-controls="owndomain-tab-pane" data-action="owndomain">{{ 'Own Domain'|trans }}</a>
         {% endif %}
         {% if can_subdomain %}
-            <a class="nav-link me-3 py-1 px-2 fs-7{% if default_action == 'subdomain' %} active{% endif %}" href="#"
+            <a class="nav-link me-3 py-1 px-2 fs-4{% if default_action == 'subdomain' %} active{% endif %}" href="#"
                id="subdomain-tab" data-bs-toggle="tab" data-bs-target="#subdomain-tab-pane"
-               role="tab" aria-controls="subdomain-tab-pane" data-action="subdomain">{{ 'Free subdomain'|trans }}</a>
+               role="tab" aria-controls="subdomain-tab-pane" data-action="subdomain">{{ 'Free Subdomain'|trans }}</a>
         {% endif %}
     </nav>
 
@@ -67,7 +67,7 @@
                  role="tabpanel" aria-labelledby="register-tab" tabindex="0">
                 <div class="row">
                     <div class="col-sm-12">
-                        <label class="form-label">{{ 'Register a new domain'|trans }}</label>
+                        <label class="form-label">{{ 'Register a New Domain'|trans }}</label>
                         <div class="d-flex gap-2">
                             <div class="input-group" style="max-width: 320px;">
                                 <input class="form-control form-control-sm" type="text" name="domain[register_sld]"
@@ -98,7 +98,7 @@
                  role="tabpanel" aria-labelledby="transfer-tab" tabindex="0">
                 <div class="row">
                     <div class="col-sm-12">
-                        <label class="form-label">{{ 'Transfer your existing domain'|trans }}</label>
+                        <label class="form-label">{{ 'Transfer Your Existing Domain'|trans }}</label>
                         <div class="d-flex gap-2">
                             <div class="input-group" style="max-width: 320px;">
                                 <input class="form-control form-control-sm" type="text" name="domain[transfer_sld]"
@@ -115,7 +115,7 @@
                     </div>
                     <div class="col-sm-12">
                         <div id="transfer-config" style="display:none;">
-                            <p class="fs-7 mt-2">{{ 'Transfer price is'|trans }}&nbsp;<span class="fw-bold" id="transfer-price"></span></p>
+                            <p class="fs-4 mt-2">{{ 'Transfer price is'|trans }}&nbsp;<span class="fw-bold" id="transfer-price"></span></p>
                             <input class="form-control form-control-sm" type="text" name="domain[transfer_code]" id="transfer-code"
                                    value="{{ request.transfer_code }}" style="width: 200px" placeholder="{{ 'Enter domain transfer code'|trans }}">
                             <div class="form-hint" id="transfer-code-hint" style="display:none;">{{ 'This TLD requires a transfer code (EPP/auth code) to proceed.'|trans }}</div>
@@ -130,7 +130,7 @@
                  role="tabpanel" aria-labelledby="owndomain-tab" tabindex="0">
                 <div class="row">
                     <div class="col-sm-12">
-                        <label class="form-label">{{ 'Use your existing domain'|trans }}</label>
+                        <label class="form-label">{{ 'Use Your Existing Domain'|trans }}</label>
                         <div class="input-group" style="max-width: 320px;">
                             <input class="form-control form-control-sm" type="text" name="domain[owndomain_sld]"
                                    value="{{ request.owndomain_sld }}"
@@ -140,7 +140,7 @@
                                    value="{{ request.owndomain_tld|default('.com') }}"
                                    placeholder=".com">
                         </div>
-                        <p class="fs-7 text-muted mt-2">{{ 'You will need to update your nameservers to point to our servers.'|trans }}</p>
+                        <p class="fs-4 text-secondary mt-2">{{ 'You will need to update your nameservers to point to our servers.'|trans }}</p>
                     </div>
                 </div>
             </div>
@@ -151,14 +151,14 @@
                  role="tabpanel" aria-labelledby="subdomain-tab" tabindex="0">
                 <div class="row">
                     <div class="col-sm-12">
-                        <label class="form-label">{{ 'Choose your free subdomain'|trans }}</label>
+                        <label class="form-label">{{ 'Choose Your Free Subdomain'|trans }}</label>
                         <div class="input-group" style="max-width: 420px;">
                             <input class="form-control form-control-sm" type="text" name="domain[subdomain_sld]"
                                    value="{{ request.subdomain_sld }}"
                                    placeholder="{{ 'Subdomain'|trans }}">
                             <span class="input-group-text input-group-text-sm">.{{ subdomain_base_domain|trim('.') }}</span>
                         </div>
-                        <p class="fs-7 text-muted mt-2">{{ 'This free subdomain is provided by us. No domain registration or transfer will be added to this order.'|trans }}</p>
+                        <p class="fs-4 text-secondary mt-2">{{ 'This free subdomain is provided by us. No domain registration or transfer will be added to this order.'|trans }}</p>
                     </div>
                 </div>
             </div>

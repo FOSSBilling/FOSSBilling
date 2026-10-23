@@ -2,161 +2,68 @@
 {% set active_menu = 'emails' %}
 
 {% block meta_title %}{{ 'Emails'|trans }}{% endblock %}
-{% block breadcrumb %}
-    <li class="active breadcrumb-item" aria-current="page">{{ 'Emails'|trans }}</li>{% endblock %}
-
-{% set emails = client.email_get_list({"per_page":10, "page":request.page}) %}
-
+{% block breadcrumb %}<li class="breadcrumb-item active" aria-current="page">{{ 'Emails'|trans }}</li>{% endblock %}
 {% block body_class %}email-index{% endblock %}
+
 {% block content %}
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card mb-4">
-                <div class="card-header py-3">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h1 class="mb-1">{{ 'Emails'|trans }}</h1>
-                            <span class="small text-muted">{{ "Here you can find all the emails we've sent you."|trans }}</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-body p-0">
-                    {% if emails.list is empty %}
-                    <div class="m-2 alert alert-info"
-                         id="information-block">{{ 'There are no emails to display'|trans }}</div>
-                    {% else %}
-                    <div class="d-flex">
-                        <div class="nav nav-tabs flex-column col-md-4 border-0">
-                            <div class="list-group email-list" id="list-tab" role="tablist">
-                                {% for i, email in emails.list %}
-                                    <a class="list-group-item list-group-item-action mt-0{% if loop.first %} active{% endif %}"
-                                       href="#mail-{{ loop.index }}" data-bs-toggle="list" role="tab">
-                                        <div class="flex-column py-1">
-                                            <p class="m-0" style="font-size: 80%;">{{ email.subject|truncate }}</p>
-                                            <span class="text-muted small" style="font-size: 80%;">{{ email.created_at|format_datetime }}</span>
-                                        </div>
-                                    </a>
-                                {% endfor %}
-                            </div>
-                        </div>
-
-                        <div class="col-md-8 tab-content m-0 border-start">
-                            {% for i, email in emails.list %}
-                                <div class="tab-pane fade{% if loop.first %} show active{% endif %}"
-                                     id="mail-{{ loop.index }}" role="tabpanel">
-                                    <div class="card-body">
-                                        <h6 class="mb-0">{{ email.subject }}</h6>
-                                        <div class="card-header px-0">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <div class="d-flex flex-column gap-1">
-                                                    <span class="d-block"><span class="text-muted me-2">{{ 'From'|trans }}</span>{{ email.sender }}</span>
-                                                    <span class="d-block"><span class="text-muted me-2">{{ 'To'|trans }}</span>{{ email.recipients }}</span>
-                                                </div>
-                                                <div class="d-flex flex-column gap-2">
-                                                    <div class="btn-group d-flex" role="group" aria-label="{{ 'Mail Action'|trans }}">
-                                                        <a class="btn btn-sm btn-outline-secondary border-end-0" href='{{ "email/#{email.id}"|url }}' data-bs-toggle="tooltip" data-bs-title="{{ 'View'|trans }}">
-                                                            <svg class="icon"><use href="#eye" /></svg>
-                                                        </a>
-                                                        <a class="btn btn-sm btn-outline-secondary email-resend" href="#" data-id="{{ email.id }}" data-bs-toggle="tooltip" data-bs-title="{{ 'Resend'|trans }}">
-                                                            <svg class="icon"><use href="#arrows-exchange" /></svg>
-                                                        </a>
-                                                        <a class="btn btn-sm btn-outline-danger border-start-0" data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}"
-                                                           {{ fb_api_link({href: 'email/delete'|api_url(query: {id: email.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'email'|url}) }}>
-                                                            <svg class="icon"><use href="#trash" /></svg>
-                                                        </a>
-                                                    </div>
-                                                    <small class="text-muted">{{ email.created_at|format_date }}</small>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="card-body">
-                                            {# Workaround: email styling can effect the style of this page, so instead we use JS to insert the email contents into an iframe. A default height is set in case of errors #}
-                                            <iframe class="ratio ratio-1x1 email" id="email-content-{{ i }}" src="about:blank" sandbox="allow-same-origin allow-popups" style="height: 30em"></iframe>
-                                            <script>
-                                                (function () {
-                                                    const frame = document.getElementById("email-content-{{ i }}");
-                                                    frame.srcdoc = '{{ email.content_html|e('js') }}';
-                                                })();
-                                            </script>
-                                        </div>
-                                    </div>
-                                </div>
+    {% set search = request.search|default('')|trim %}
+    {% set emails = client.email_get_list({'per_page': 10, 'page': request.page|default(1), 'search': search, 'sort': 'created_at', 'direction': 'DESC'}) %}
+    <h1 class="mb-4">{{ 'Emails'|trans }}</h1>
+    <section class="card mb-4" aria-label="{{ 'Email History'|trans }}">
+        <div class="card-body">
+            {% include 'partial_client_search.html.twig' with {
+                search_action: 'email'|url, search_clear_url: 'email'|url,
+                search_id: 'email-search', search_label: 'Search Emails'|trans,
+                search_value: search, search_placeholder: 'Subject, sender or message text'|trans,
+                search_form_class: 'mb-4'
+            } only %}
+            {% if emails.list %}
+                <p class="small text-secondary">{{ search ? 'Search results, newest first'|trans : 'Newest messages first'|trans }}</p>
+                <div class="table-responsive">
+                    <table class="table table-vcenter table-hover client-email-list mb-0" aria-label="{{ 'Email History'|trans }}">
+                        <thead>
+                            <tr>
+                                <th scope="col">{{ 'Subject'|trans }}</th>
+                                <th scope="col">{{ 'Sent'|trans }}</th>
+                                <th scope="col"><span class="visually-hidden">{{ 'Actions'|trans }}</span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for email in emails.list %}
+                                {% set subject = email.subject|default('No Subject'|trans, true) %}
+                                {% set email_url = "email/#{email.id}"|url(query: {'search': search, 'page': request.page|default(1)}) %}
+                                <tr>
+                                    <td class="email-subject">
+                                        <a class="fw-semibold" href="{{ email_url }}">{{ subject }}</a>
+                                        <div class="small text-secondary">{{ email.sender }}</div>
+                                    </td>
+                                    <td class="email-date text-secondary"><span class="d-block d-md-none small" aria-hidden="true">{{ 'Sent'|trans }}</span>{{ email.created_at|format_datetime }}</td>
+                                    <td class="email-action text-end">
+                                        <a class="btn btn-sm btn-outline-secondary" href="{{ email_url }}" aria-label="{{ 'Read Email: %subject%'|trans({'%subject%': subject}) }}">{{ 'Read'|trans }}</a>
+                                    </td>
+                                </tr>
                             {% endfor %}
-                        </div>
-                    </div>
+                        </tbody>
+                    </table>
                 </div>
-                    {% if emails.pages >= 2 %}
-                        <div class="card-footer">
-                            {{ include('partial_pagination.html.twig', { 'list': emails, 'url': 'email' }) }}
-                        </div>
-                    {% endif %}
-                {% endif %}
-            </div>
+                <div class="mt-3">{{ include('partial_pagination.html.twig', {'list': emails, 'url': 'email'}) }}</div>
+            {% elseif emails.total|default(0) > 0 %}
+                {{ include('partial_client_empty.html.twig', {
+                    'empty_title': 'No Messages on This Page'|trans,
+                    'empty_action_label': 'Back to First Page'|trans,
+                    'empty_action_url': 'email'|url(query: {'search': search})
+                }, with_context: false) }}
+            {% elseif search %}
+                {{ include('partial_client_empty.html.twig', {
+                    'empty_title': 'No Matching Emails'|trans,
+                    'empty_description': 'Try different keywords or clear your search to see all messages.'|trans
+                }, with_context: false) }}
+            {% else %}
+                {{ include('partial_client_empty.html.twig', {
+                    'empty_title': 'No Emails Yet'|trans,
+                    'empty_description': 'Messages sent to you will appear here.'|trans
+                }, with_context: false) }}
+            {% endif %}
         </div>
-    </div>
-{% endblock %}
-
-{% block js %}
-    {% autoescape "js" %}
-        <script>
-            document.addEventListener("DOMContentLoaded", () => {
-                const resendEmailBtn = document.querySelectorAll('.email-resend');
-
-                resendEmailBtn.forEach((resendBtn) => {
-                    resendBtn.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        toggleLoader();
-                        FOSSBilling.api.client.post('email/resend', { id: resendBtn.dataset.id },
-                            () => {
-                                flashMessage({
-                                    message: 'Email resent',
-                                    reload: '{{ 'email'|url }}'
-                                });
-                            },
-                            (res) => {
-                                FOSSBilling.message(`${res.message} (${res.code})`, 'error');
-                                toggleLoader();
-                            }
-                        )
-                    });
-                });
-
-                const toggleLoader = () => {
-                    let loader = document.querySelector('.wait');
-                    if (loader.style.display === 'none') {
-                        loader.style.display = 'block';
-                    } else {
-                        loader.style.display = 'none';
-                    }
-                }
-
-                {# Resizing the email iframes proved to be temperamental. The below code does it automatically using events. We can't do it all at once as the hidden tabs end up with a height of 0 #}
-                function setEmailHeights(){
-                    const emails = document.querySelectorAll('.email');
-                    emails.forEach(email => {
-                        var body = email.contentDocument.body;
-                        var html = email.contentDocument.documentElement;
-                        if(body){
-                            var height = Math.max(body.scrollHeight, body.offsetHeight);
-                        } else if (html) {
-                            var height = Math.max(html.clientHeight, html.scrollHeight, html.offsetHeight);
-                        } else {
-                            return;
-                        }
-                        email.height = height;
-                    });
-                };
-
-                window.addEventListener("DOMContentLoaded", setEmailHeights());
-
-                var tabElms = document.querySelectorAll('a[data-bs-toggle="list"]');
-
-                tabElms.forEach(element => {
-                    element.addEventListener('shown.bs.tab', function() {
-                        setEmailHeights()
-                    });
-                });
-            });
-        </script>
-    {% endautoescape %}
+    </section>
 {% endblock %}

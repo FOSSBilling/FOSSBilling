@@ -9,6 +9,7 @@
         const deleteBtn = document.getElementById('batch-delete-selected-btn');
         const masterCheckbox = document.querySelector('input.batch-delete-master-checkbox');
         const checkboxes = document.querySelectorAll('input.batch-delete-checkbox');
+        if (!deleteBtn || !masterCheckbox) return;
 
         masterCheckbox.addEventListener('change', toggleDeleteBtn);
         checkboxes.forEach((cb) => {

@@ -5,11 +5,11 @@
 <div class="d-flex mb-3">
     <nav class="nav nav-pills flex-column border-end me-3 gap-2">
         {% if tlds is not empty %}
-            <a class="nav-link me-3 py-1 px-2 fs-7 active" href="#" id="register-tab" data-bs-toggle="tab" data-bs-target="#register-tab-pane"
+            <a class="nav-link me-3 py-1 px-2 fs-4 active" href="#" id="register-tab" data-bs-toggle="tab" data-bs-target="#register-tab-pane"
                 role="tab" aria-controls="register-tab-pane">{{ 'Register'|trans }}</a>
         {% endif %}
         {% if transfer_tlds is not empty %}
-        <a class="nav-link me-3 py-1 px-2 fs-7 {% if tlds is empty %} active {% endif %}" href="#" id="transfer-tab" data-bs-toggle="tab" data-bs-target="#transfer-tab-pane"
+        <a class="nav-link me-3 py-1 px-2 fs-4 {% if tlds is empty %} active {% endif %}" href="#" id="transfer-tab" data-bs-toggle="tab" data-bs-target="#transfer-tab-pane"
                role="tab" aria-controls="transfer-tab-pane">{{ 'Transfer'|trans }}</a>
         {% endif %}
     </nav>
@@ -18,7 +18,7 @@
             <div class="tab-pane show active" id="register-tab-pane" role="tabpanel" aria-labelledby="register-tab" tabindex="0">
                 <div class="row">
                     <div class="col-sm-12">
-                        <label class="form-label">{{ 'Register a new domain'|trans }}</label>
+                        <label class="form-label">{{ 'Register a New Domain'|trans }}</label>
                         <div class="d-flex gap-2">
                             <div class="input-group" style="max-width: 500px;">
                                 <input class="form-control form-control-sm" type="text" name="register_sld"
@@ -68,7 +68,7 @@
             <div class="tab-pane {% if tlds is empty %} show active {% endif %}" id="transfer-tab-pane" role="tabpanel" aria-labelledby="transfer-tab" tabindex="0">
                 <div class="row">
                     <div class="col-sm-12">
-                        <label class="form-label">{{ 'Transfer a new domain'|trans }}</label>
+                        <label class="form-label">{{ 'Transfer a New Domain'|trans }}</label>
                         <div class="d-flex gap-2">
                             <div class="input-group" style="max-width: 500px;">
                                 <input class="form-control form-control-sm" type="text" name="transfer_sld"
@@ -84,7 +84,7 @@
                         </div>
                     </div>
                     <div id="domain-transfer-config" style="display:none;">
-                        <p class="fs-7 mt-2">{{ 'Transfer price is'|trans }}&nbsp;<span class="fw-bold" id="transfer-price"></span></p>
+                        <p class="fs-4 mt-2">{{ 'Transfer price is'|trans }}&nbsp;<span class="fw-bold" id="transfer-price"></span></p>
                         <input class="form-control form-control-sm" type="text" name="transfer_code" id="transfer-code"
                                value="{{ request.transfer_code }}" style="width: 200px" placeholder="{{ 'Enter domain transfer code'|trans }}">
                         <div class="form-hint" id="transfer-code-hint" style="display:none;">{{ 'This TLD requires a transfer code (EPP/auth code) to proceed.'|trans }}</div>

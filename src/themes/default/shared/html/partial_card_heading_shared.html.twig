@@ -1,0 +1,13 @@
+{# Shared heading geometry; callers retain their heading levels, IDs and actions. #}
+{% set cardHeadingActions %}{% block card_heading_actions %}{% endblock %}{% endset %}
+<div class="fb-card-heading d-flex flex-wrap align-items-start gap-3 w-100{% if heading_class|default('') %} {{ heading_class }}{% endif %}">
+    <div class="fb-card-heading-content{% if heading_content_class|default('') %} {{ heading_content_class }}{% endif %}">
+        {% block card_heading_content %}
+            <h2 class="card-title mb-0">{{ title }}</h2>
+            {% if subtitle|default('') %}<p class="text-secondary mb-0 mt-1">{{ subtitle }}</p>{% endif %}
+        {% endblock %}
+    </div>
+    {% if cardHeadingActions|trim %}
+        <div class="fb-card-heading-actions d-flex flex-wrap align-items-center gap-2 ms-auto{% if heading_actions_class|default('') %} {{ heading_actions_class }}{% endif %}">{{ cardHeadingActions }}</div>
+    {% endif %}
+</div>

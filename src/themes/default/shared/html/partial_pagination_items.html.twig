@@ -1,0 +1,24 @@
+{#
+    Tabler page controls shared by the theme entrypoints. Only enabled links
+    receive URLs; page keys, filters and anchors are preserved in one place.
+#}
+<ul class="pagination {{ pagination_class|default('m-0') }}">
+    {% for item in pagination_items %}
+        {% if item.ellipsis|default(false) %}
+            <li class="page-item disabled"><span class="page-link" aria-hidden="true">…</span></li>
+        {% else %}
+            {% set active = item.page == currentPage and item.icon is not defined %}
+            {% set disabled = item.disabled|default(false) %}
+            {% set content %}{% if item.icon is defined %}<svg class="icon" aria-hidden="true">{% if item.icon == 'chevrons-left' %}<use href="#chevrons-left" />{% elseif item.icon == 'chevron-left' %}<use href="#chevron-left" />{% elseif item.icon == 'chevron-right' %}<use href="#chevron-right" />{% elseif item.icon == 'chevrons-right' %}<use href="#chevrons-right" />{% endif %}</svg>{% else %}{{ item.page }}{% endif %}{% endset %}
+            <li class="page-item{{ active ? ' active' : '' }}{{ disabled ? ' disabled' : '' }}{{ item.edge|default(false) ? ' client-pagination-edge' : '' }}">
+                {% if active %}
+                    <span class="page-link" aria-current="page">{{ content }}</span>
+                {% elseif disabled %}
+                    <span class="page-link" aria-disabled="true" aria-label="{{ item.label }}">{{ content }}</span>
+                {% else %}
+                    <a class="page-link" href="{{ url|url(query: paginationQuery|merge({(pageParam): item.page})) ~ hash }}"{% if item.label is defined %} aria-label="{{ item.label }}"{% endif %}{% if item.rel is defined %} rel="{{ item.rel }}"{% endif %}>{{ content }}</a>
+                {% endif %}
+            </li>
+        {% endif %}
+    {% endfor %}
+</ul>

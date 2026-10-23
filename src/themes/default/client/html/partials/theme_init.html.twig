@@ -1,14 +1,2 @@
-{# Inlined FOUC-prevention script. Resolves the active theme from localStorage
-   and the server-rendered default, sets data-bs-theme before paint to avoid
-   a flash of the wrong theme. Must be included in <head> before any stylesheet
-   link. Kept in a partial so both layouts share the same logic. #}
-<script>
-    (() => {
-        try {
-            const stored = localStorage.getItem('theme');
-            if (stored === 'light' || stored === 'dark') {
-                document.documentElement.setAttribute('data-bs-theme', stored);
-            }
-        } catch (_) { /* localStorage unavailable - leave server default */ }
-    })();
-</script>
+{# Compatibility entrypoint for client layout overrides. #}
+{{ include('partial_theme_init.html.twig', {theme_default: settings.theme|default('light')}, with_context: false) }}

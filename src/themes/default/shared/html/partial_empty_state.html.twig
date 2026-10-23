@@ -1,0 +1,8 @@
+{# Text-only Tabler empty state. Pass translated text and internal action URLs. #}
+<div class="empty text-break" data-fb-empty-state>
+    <p class="empty-title">{{ empty_title }}</p>
+    {% if empty_description|default('') %}<p class="empty-subtitle text-secondary">{{ empty_description }}</p>{% endif %}
+    {% if empty_action_url|default('') and empty_action_label|default('') %}
+        <div class="empty-action"><a class="btn btn-outline-secondary text-wrap" href="{{ empty_action_url }}">{{ empty_action_label }}</a></div>
+    {% endif %}
+</div>

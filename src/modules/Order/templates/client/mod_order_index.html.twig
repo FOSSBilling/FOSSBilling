@@ -4,9 +4,6 @@
 {% block meta_title %}{{ 'Order'|trans }}{% endblock %}
 {% block meta_description %}{{ 'Browse available products and services, compare options, and place your order online.'|trans }}{% endblock %}
 
-{% set loader_nr = request.loader|default("8")%}
-{% set loader_url = ('img/assets/loaders/loader'~loader_nr~'.gif') %}
-
 {% block body_class %}order-index{% endblock %}
 {% block breadcrumb %}
     <li class="active breadcrumb-item" aria-current="page">{{ 'Order'|trans }}</li>
@@ -14,36 +11,13 @@
 {% block content_before %}{% endblock %}
 
 {% block content %}
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card mb-4">
-                <div class="card-header py-3 py-3">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div class="w-100">
-                            <h1 class="mb-1">{{ 'Products'|trans }}</h1>
-                            {{ include('mod_orderbutton_currency.html.twig') }}
-                        </div>
-                    </div>
-                </div>
-                <div class="card-body overflow-hidden">
-                    {{ include('mod_orderbutton_content.html.twig') }}
-                </div>
-            </div>
-        </div>
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <h1 class="mb-0">{{ request.checkout ? 'Review Your Order'|trans : ((product|default(null) or request.product) ? 'Configure Your Order'|trans : 'Products'|trans) }}</h1>
+        {{ include('mod_orderbutton_currency.html.twig') }}
     </div>
+    {{ include('mod_orderbutton_content.html.twig') }}
 {% endblock %}
 
 {% block sidebar2 %}
     {{ include('partial_currency.html.twig') }}
-{% endblock %}
-
-{% block js %}
-{% autoescape "js" %}
-<script>
-    function resizeIframe(obj) {
-        obj.style.height = obj.contentWindow.document.documentElement.scrollHeight + 'px';
-        document.getElementById('loader-image').style.display = 'none';
-    }
-</script>
-{% endautoescape %}
 {% endblock %}

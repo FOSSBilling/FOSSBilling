@@ -458,7 +458,8 @@ test('payment selectors render AVIF with one PNG fallback and support images wit
         ]),
     ]);
     $html = (new Tests\Support\StrictTemplateRenderer())->renderTemplate(PATH_MODS . '/' . $template, [
-        'app_area' => 'client', 'client' => null, 'guest' => $guest,
+        'app_area' => 'client', 'client' => new Tests\Support\PermissiveStub(['client_is_taxable' => false]), 'guest' => $guest,
+        'profile' => ['id' => 2, 'balance' => 0, 'currency' => 'USD'],
         'invoice' => new Tests\Support\PermissiveStub([
             'status' => 'unpaid', 'currency' => 'USD', 'items' => [],
             'credit_note_for_invoice_id' => false, 'debit_note_for_invoice_id' => false,

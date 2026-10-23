@@ -280,7 +280,7 @@ test('sortable th partial passes through extra header classes', function (): voi
         emailMode: false,
     );
 
-    expect($html)->toContain('<th class="w-1">');
+    expect($html)->toContain('<th class="w-1" scope="col">');
 });
 
 test('client theme sortable th partial renders the same header', function (): void {
@@ -299,3 +299,36 @@ test('client theme sortable th partial renders the same header', function (): vo
         ->toContain('aria-sort="descending"')
         ->toContain('#chevron-down');
 });
+
+test('both sort entrypoints preserve filters independent pagination and anchors', function (string $theme): void {
+    $twig = new Twig\Environment(new Twig\Loader\FilesystemLoader([
+        PATH_THEMES . '/default/' . $theme . '/html', PATH_THEMES . '/default/shared/html',
+    ]), ['autoescape' => 'html', 'strict_variables' => true]);
+    $twig->addFilter(new Twig\TwigFilter('url', static fn (string $path, array $query = []): string => '/' . $path . '?' . http_build_query($query)));
+    $html = $twig->render('partial_sortable_th.html.twig', [
+        'request' => ['status' => 'active', 'page' => 3, 'related_page' => 8, 'related_sort' => 'title', 'related_direction' => 'ASC'],
+        'label' => 'Title <test>', 'sort_key' => 'title', 'url' => 'order', 'hash' => '#related',
+        'page_param' => 'related_page', 'sort_param' => 'related_sort', 'direction_param' => 'related_direction',
+        'th_class' => 'text-start',
+    ]);
+    $document = new DOMDocument();
+    @$document->loadHTML('<table><tr>' . $html . '</tr></table>');
+    $header = $document->getElementsByTagName('th')->item(0);
+    $link = $document->getElementsByTagName('a')->item(0);
+    $parts = parse_url($link->getAttribute('href'));
+    parse_str($parts['query'], $query);
+    expect($query)->toBe(['status' => 'active', 'page' => '3', 'related_page' => '1', 'related_sort' => 'title', 'related_direction' => 'DESC']);
+    expect($parts['fragment'])->toBe('related');
+    expect($header->getAttribute('scope'))->toBe('col');
+    expect($header->getAttribute('aria-sort'))->toBe('ascending');
+    expect($document->getElementsByTagName('svg')->item(0)->getAttribute('aria-hidden'))->toBe('true');
+    expect($html)->toContain('Title &lt;test&gt;', 'fb-table-sort');
+})->with(['client', 'admin']);
+
+test('sort headers recover from array query parameters', function (string $theme): void {
+    $html = (new StrictTemplateRenderer())->renderTemplate(PATH_THEMES . '/default/' . $theme . '/html/partial_sortable_th.html.twig', [
+        'request' => ['sort' => ['title'], 'direction' => ['DESC']],
+        'label' => 'Title', 'sort_key' => 'title', 'url' => 'order', 'default_sort' => 'title',
+    ]);
+    expect($html)->toContain('aria-sort="ascending"', '#chevron-up');
+})->with(['client', 'admin']);

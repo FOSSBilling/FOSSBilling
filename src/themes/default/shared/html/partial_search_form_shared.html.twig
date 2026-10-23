@@ -1,0 +1,28 @@
+{# Shared GET search. Callers own routes, filter allowlists and translated labels. #}
+{% set compact = search_compact|default(false) %}
+{% set searchName = search_name|default('search') %}
+{% set searchValue = search_value|default('') %}
+<form method="get" role="search" aria-label="{{ search_label|default('Search'|trans) }}" class="fb-search-form {{ search_form_class|default('') }}"{% if search_action|default('') %} action="{{ search_action }}"{% endif %}>
+    {% for field_name, field_value in search_hidden_fields|default({}) %}
+        {% if field_name != searchName and field_value is not iterable and field_value is not null %}<input type="hidden" name="{{ field_name }}" value="{{ field_value }}">{% endif %}
+    {% endfor %}
+    {% if not compact %}<label class="form-label" for="{{ search_id }}">{{ search_label }}</label>{% endif %}
+    <div class="{{ compact ? 'input-group input-group-flat search-input-group' : 'd-flex flex-column flex-sm-row gap-2' }}">
+        {% if compact %}
+            <span class="input-group-text">
+                <button class="search-submit-toggle" type="submit" aria-label="{{ 'Search'|trans }}" title="{{ 'Search'|trans }}"><svg class="icon" aria-hidden="true"><use href="#search" /></svg></button>
+            </span>
+        {% endif %}
+        <input class="form-control" type="search" name="{{ searchName }}" value="{{ searchValue is iterable ? '' : searchValue }}" placeholder="{{ search_placeholder|default('Enter search text...'|trans) }}"{% if search_id|default('') %} id="{{ search_id }}"{% endif %}{% if compact %} aria-label="{{ search_label|default('Search'|trans) }}"{% endif %} enterkeyhint="search">
+        {% if compact %}
+            {% if has_filter_panel|default(false) %}
+                <span class="input-group-text search-actions">
+                    <button class="search-filter-toggle {{ filter_panel_open|default(false) ? 'text-primary' : 'text-secondary' }}" type="button" data-bs-toggle="collapse" data-bs-target="#{{ filter_panel_id|default('page-search-filters') }}" aria-expanded="{{ filter_panel_open|default(false) ? 'true' : 'false' }}" aria-controls="{{ filter_panel_id|default('page-search-filters') }}" aria-label="{{ 'Search Settings'|trans }}" title="{{ 'Search Settings'|trans }}"><svg class="icon" aria-hidden="true"><use href="#settings" /></svg></button>
+                </span>
+            {% endif %}
+        {% else %}
+            <button class="btn btn-primary" type="submit">{{ 'Search'|trans }}</button>
+            {% if searchValue and search_clear_url|default('') %}<a class="btn btn-outline-secondary" href="{{ search_clear_url }}">{{ 'Clear'|trans }}</a>{% endif %}
+        {% endif %}
+    </div>
+</form>

@@ -75,6 +75,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         $api = $this->di['api_client'];
         $data = [
             'id' => $id,
+            'with_actions' => true,
         ];
         $order = $api->order_get($data);
 

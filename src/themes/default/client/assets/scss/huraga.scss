@@ -1,145 +1,22 @@
 @use "flags";
+@use "bootstrap-compat";
 @use "../../../../../../frontend/styles/shared-theme";
 
-html {
-    font-size: 1rem;
-}
-
-html,
-body {
-    width: 100%;
-    height: 100%;
-}
-
-body {
-    font-family: var(--bs-body-font-family, system-ui, -apple-system, sans-serif);
-    font-size: 1rem;
-    line-height: 1.42857143;
-}
-
-.modal-dialog {
-    margin-right: auto;
-    margin-left: auto;
-}
-
-.fs-7 {
-    font-size: .875rem;
-}
-
-.offcanvas-item {
-    border-bottom: 1px solid var(--bs-border-color);
-
-    &:first-child {
-        border-top: 1px solid var(--bs-border-color);
-    }
-
-    &:hover {
-        background: var(--bs-tertiary-bg);
-    }
-
-    >a {
-        color: var(--bs-secondary);
-    }
-}
-
-.card-header h1, .page-password-reset .card h1, .page-login .card h1, .page-signup .card h1 {
-    font-size: 1.25rem;
-}
-
-.card-body {
-    @at-root table {
-        >thead {
-            >tr {
-                >th {
-                    font-size: 0.765625rem;
-                    color: var(--bs-secondary);
-                    font-weight: 600;
-                    text-transform: uppercase;
-                }
-            }
-        }
-
-        >tbody {
-            >tr {
-                >td {
-                    vertical-align: middle;
-                }
-            }
-        }
-    }
-}
-
-.icon {
-    height: 20px;
-    width: 20px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-}
-
-// Order management accordion
-#orderManager {
-    --bs-accordion-btn-icon: none;
-    --bs-accordion-btn-active-icon: none;
-}
-
-// TomSelect dropdown
-.ts-input {
-    color: inherit;
-}
-
-.ts-wrapper {
-    &.form-select {
-        background-color: inherit;
-    }
-
-    .ts-control {
-        font-size: 14px;
-        width: 100%;
-        color: inherit;
-
-        &.locale {
-            width: 205px;
-        }
-
-        .dropdown-menu {
-            width: 100%;
-            height: auto;
-        }
-    }
-
-    .ts-dropdown {
-        font-size: 14px;
-
-        .active {
-            background-color: rgba(var(--bs-secondary-rgb), 0.06);
-            color: inherit;
-        }
-
-        .selected {
-            background-color: rgba(var(--bs-secondary-rgb), 0.1);
-        }
-    }
-}
-
-@media (max-width: 768px) {
-    .ts-wrapper.js-locale-selector {
-        width: 180px
-    }
+:root {
+    --tblr-body-font-size: 1rem;
+    --tblr-body-line-height: 1.5;
 }
 
 .invoice-gateway {
-    border: 1px solid var(--bs-border-color);
+    border: 1px solid var(--tblr-border-color);
 
     &:hover,
     &:has(.btn-check:checked) {
-        border: 1px solid var(--bs-primary);
+        border-color: var(--tblr-primary);
     }
 
-    // Bootstrap's .btn-check:checked + .btn draws its own border using
-    // --bs-btn-active-border-color, which is never set on a bare .btn (no
+    // The framework's .btn-check:checked + .btn draws its own border using
+    // --tblr-btn-active-border-color, which is never set on a bare .btn (no
     // color variant). That leaves the browser to fall back to the inherited
     // text color, drawing a stray dark border tight around the logo. The
     // highlight above on the container is enough, so suppress it here.
@@ -149,98 +26,31 @@ body {
 }
 
 .iti {
-    --iti-border-color: var(--bs-border-color);
-    --iti-country-selector-bg: var(--bs-body-bg);
-    --iti-hover-color: rgba(var(--bs-primary-rgb), 0.08);
-    --iti-icon-color: var(--bs-secondary-color);
+    --iti-border-color: var(--tblr-border-color);
+    --iti-country-selector-bg: var(--tblr-body-bg);
+    --iti-hover-color: rgba(var(--tblr-primary-rgb), 0.08);
+    --iti-icon-color: var(--tblr-secondary-color);
 
     width: 100%;
 }
 
 .iti__country-selector,
 .iti__search-input {
-    color: var(--bs-body-color);
+    color: var(--tblr-body-color);
 }
 
 .iti__search-input {
-    background-color: var(--bs-body-bg);
+    background-color: var(--tblr-body-bg);
 }
 
-.email-list {
-    border-radius: 0;
-
-    .list-group-item {
-        border: 0;
-        border-bottom: 1px solid var(--bs-border-color);
-        border-left: 2px solid transparent;
-
-        &.active {
-            border-left: 2px solid var(--bs-primary);
-            background: rgba(var(--bs-primary-rgb), 0.1);
-            color: var(--bs-dark);
-        }
-    }
-}
-
-// Badge text contrast fix - ensure white text on colored badges
-.badge[class*="bg-"],
-.badge[class*="text-bg-"] {
-    color: #ffffff !important;
-    font-weight: 600;
-}
-
-// Hide empty badges to prevent grey circle from showing
-.badge:empty {
-    display: none;
-}
-
-.card-header {
-    padding: 0.75rem 1.25rem;
-    background-color: var(--bs-tertiary-bg);
-}
-
-// Navbar and logo styling
-.navbar {
-    background-color: var(--bs-body-bg);
-    box-shadow: none;
-}
-
-.navbar-brand {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    min-height: 45px;
-}
-
-.navbar-brand img {
-    display: block;
-    height: 45px;
-    width: auto;
-}
-
-.locale-selector-dropdown {
-    background-color: var(--bs-body-bg);
-    border: 1px solid var(--bs-border-color);
-    border-radius: var(--bs-border-radius);
-    box-shadow: var(--bs-box-shadow);
-
-    .dropdown-item {
-        display: flex;
-        align-items: center;
-        padding: 0.5rem 1rem;
-
-        .locale-flag {
-            flex: 0 0 1.25em;
-        }
-    }
-}
-
+// Locale flags need consistent geometry inside Tom Select items.
 .fi {
     border-radius: 4px;
     vertical-align: middle;
 }
 
 .locale-flag {
+    flex-shrink: 0;
     display: inline-block;
     width: 1.25em;
     height: 1em;
@@ -249,163 +59,953 @@ body {
     vertical-align: middle;
 }
 
-.breadcrumb {
-    margin-bottom: 1.25rem;
+.db-avatar {
+    background-color: var(--tblr-secondary-bg);
 }
 
-.nav-link {
-    color: var(--bs-body-color);
-}
+// Shared client shell, using Tabler tokens for both color modes.
+.client-shell {
+    background: var(--tblr-tertiary-bg);
 
-.nav-link:hover {
-    color: var(--bs-primary) !important;
-}
+    .client-container {
+        max-width: 1440px;
+    }
 
-.nav-link.active,
-.offcanvas-item.active > .nav-link {
-    color: var(--bs-primary) !important;
-    font-weight: 600;
-}
+    .client-header {
+        margin-bottom: 1.5rem;
+        border-bottom: 1px solid var(--tblr-border-color);
 
-.nav-pills .nav-link.active {
-    color: var(--bs-nav-pills-link-active-color) !important;
-}
+        .navbar {
+            background: transparent;
+            gap: 1rem;
+        }
 
-.offcanvas-item.active {
-    background: rgba(var(--bs-primary-rgb), 0.08);
-}
+        .navbar-brand {
+            // Match the configured logo height without imposing it on widget images.
+            min-height: 45px;
+            min-width: 0;
+            max-width: calc(100% - 5rem);
+            white-space: normal;
+            overflow-wrap: anywhere;
+            flex-shrink: 1;
 
-// Client profile dropdown - inline with nav items, transparent background
-.client-dropdown {
-    .nav-link.dropdown-toggle {
-        color: var(--bs-body-color);
-        background-color: transparent;
-        border: none;
-        display: inline-flex;
-        align-items: center;
+            img {
+                height: 45px;
+                width: auto;
+            }
+        }
+
+        .nav-link,
+        .btn {
+            min-height: 44px;
+        }
+
+        .client-header-icon {
+            --tblr-btn-color: var(--tblr-body-color);
+            --tblr-btn-hover-color: var(--tblr-body-color);
+            --tblr-btn-hover-bg: var(--tblr-secondary-bg);
+            --tblr-btn-active-color: var(--tblr-body-color);
+            --tblr-btn-active-bg: var(--tblr-secondary-bg);
+            width: 44px;
+            height: 44px;
+            min-width: 44px;
+            flex-shrink: 0;
+
+            // Retain Tabler's animated menu icon with the same 20px visual width.
+            .navbar-toggler-icon {
+                width: 20px;
+                font-size: 16px;
+            }
+        }
+
+        .nav-link:hover,
+        .nav-link:focus-visible {
+            background: var(--tblr-secondary-bg);
+        }
+
+        .client-account-name {
+            min-width: 0;
+            max-width: 16rem;
+            white-space: normal;
+            overflow-wrap: anywhere;
+            text-align: start;
+        }
+    }
+
+    .client-header-menu {
         gap: 0.25rem;
-        padding: 0.5rem 0.75rem;
+    }
 
-        &:hover {
-            color: var(--bs-primary);
+    .client-language-menu {
+        align-items: center;
+
+        .ts-wrapper {
+            width: 13rem;
+            max-width: 100%;
         }
 
-        &::after {
-            margin-left: 0.25rem;
+        // The navbar's static mobile dropdown rule must not put Tom Select
+        // options alongside the selected language inside its flex control.
+        .ts-dropdown {
+            position: absolute;
+            width: 100%;
         }
     }
 
-    .dropdown-menu {
-        background-color: var(--bs-body-bg);
-        border: 1px solid var(--bs-border-color);
-        box-shadow: var(--bs-box-shadow);
-    }
+    .client-header .client-dropdown {
+        min-width: 0;
+        max-width: 100%;
 
-    .dropdown-item {
-        padding: 0.5rem 1rem;
-    }
-}
+        .dropdown-toggle {
+            gap: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            text-align: start;
 
-// Alert styling - use Bootstrap's native alert colors
-.alert-danger {
-    --bs-alert-bg: rgba(var(--bs-danger-rgb), 0.15);
-    --bs-alert-border-color: rgba(var(--bs-danger-rgb), 0.3);
-    --bs-alert-color: var(--bs-danger);
-}
+            &[aria-expanded="true"] {
+                background: var(--tblr-secondary-bg);
+            }
 
-.alert-warning {
-    --bs-alert-bg: rgba(var(--bs-warning-rgb), 0.15);
-    --bs-alert-border-color: rgba(var(--bs-warning-rgb), 0.3);
-    --bs-alert-color: var(--bs-warning);
-}
+            &::after {
+                flex-shrink: 0;
+            }
+        }
 
-.alert-info {
-    --bs-alert-bg: rgba(var(--bs-primary-rgb), 0.1);
-    --bs-alert-border-color: rgba(var(--bs-primary-rgb), 0.2);
-    --bs-alert-color: var(--bs-primary);
-}
+        .dropdown-menu {
+            min-width: 12rem;
+            max-width: calc(100vw - 2rem);
+        }
 
-// Order page text sizing
-.mod_orderbutton {
-    .accordion-body {
-        span:not(.badge) {
-            font-size: 0.875rem;
+        .dropdown-menu .dropdown-item {
+            padding-inline: 0.75rem;
+            white-space: normal;
+            overflow-wrap: anywhere;
         }
     }
+
+    .client-menu {
+        gap: 0.25rem;
+
+        .client-menu-label {
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .offcanvas-item {
+            > .nav-link {
+                min-height: 44px;
+                padding: 0.75rem;
+                color: var(--tblr-body-color);
+                overflow-wrap: anywhere;
+
+                .icon {
+                    flex-shrink: 0;
+                }
+
+                &:hover,
+                &:focus-visible {
+                    background: var(--tblr-hover-bg);
+                    border-radius: var(--tblr-border-radius);
+                }
+
+            }
+
+            &.active > .nav-link {
+                color: var(--tblr-link-color);
+                font-weight: var(--tblr-font-weight-semibold);
+                background: var(--tblr-active-bg);
+                border-radius: var(--tblr-border-radius);
+            }
+        }
+    }
+
+    .client-main-column {
+        min-width: 0;
+    }
+
+    #main-content {
+        scroll-margin-top: 1rem;
+    }
+
+    .client-footer {
+        padding-block: 1.5rem;
+        margin-top: 2rem;
+        border-top: 1px solid var(--tblr-border-color);
+        overflow-wrap: anywhere;
+    }
+
+    .client-skip-link:focus {
+        position: fixed;
+        inset: 0.75rem auto auto 0.75rem;
+        z-index: 1100;
+        padding: 0.75rem 1rem;
+        background: var(--tblr-body-bg);
+        border-radius: var(--tblr-border-radius);
+    }
+
+    .client-header-actions {
+        flex-shrink: 0;
+    }
+
+    .client-notification-count {
+        position: absolute;
+        top: 0;
+        inset-inline-end: 0;
+        min-width: 1rem;
+        padding: 0.2rem 0.3rem;
+        font-size: 0.625rem;
+        pointer-events: none;
+    }
+
+    .client-header .client-notification-menu {
+        z-index: var(--tblr-dropdown-zindex);
+        width: min(24rem, calc(100vw - 1.5rem));
+    }
+
+    .client-header .client-notifications .client-notification-list {
+        max-height: min(28rem, 60vh);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+
+        .dropdown-item {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 7rem;
+            align-items: start;
+            column-gap: .75rem;
+            overflow-wrap: anywhere;
+        }
+
+        .client-notification-time {
+            font-variant-numeric: tabular-nums;
+        }
+
+        [data-notification-read="0"] {
+            --tblr-secondary: var(--tblr-body-color);
+
+            &:not(:hover):not(:focus) {
+                background-color: var(--tblr-primary-bg-subtle);
+            }
+        }
+
+        [data-notification-read="1"] .client-notification-subject {
+            color: var(--tblr-secondary-color);
+        }
+
+        .client-notification-new-reply,
+        .client-notification-read-reply {
+            display: none;
+        }
+
+        [data-notification-read="0"] .client-notification-new-reply,
+        [data-notification-read="1"] .client-notification-read-reply {
+            display: block;
+        }
+    }
+
+    [id^="message-"] {
+        scroll-margin-top: 1rem;
+    }
+
 }
 
-// Dashboard and client area styling
-.dashboard,
-.mod_client {
-    // Card header h6 styling - larger and more prominent
-    .card-header {
-        h6 {
-            font-size: 1rem;
-            font-weight: 600;
-            margin: 0;
-            color: var(--bs-body-color);
-        }
+.client-email-list .email-subject,
+.client-email-heading,
+.support-ticket .card-header,
+.client-kb-category,
+.client-kb-articles,
+.order-manage,
+.invoice-payment,
+.kb-category #main-content {
+    overflow-wrap: anywhere;
+}
+
+.client-email-metadata {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.25rem 1rem;
+    min-width: 0;
+
+    dd {
+        margin-bottom: 0;
+        overflow-wrap: anywhere;
     }
 }
 
-// Language selector vertical alignment in navbar
-.nav-item {
+.client-email-content {
+    display: block;
+    width: 100%;
+    height: 65vh;
+    min-height: 28rem;
+    border: 1px solid var(--tblr-border-color);
+    background: var(--tblr-bg-surface);
+    color-scheme: inherit;
+}
+
+.support-ticket {
+    #reply-to,
+    .client-ticket-message,
+    #ticket-latest {
+        scroll-margin-top: 1rem;
+    }
+
+    .client-ticket-message {
+        overflow-wrap: anywhere;
+
+        &:target {
+            outline: 2px solid var(--tblr-primary);
+            outline-offset: 2px;
+        }
+    }
+
+    .client-message-author {
+        min-width: 0;
+        flex: 1 1 12rem;
+    }
+}
+
+#orderbutton {
+    .client-product-description {
+        flex: 1 1 18rem;
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .client-product-price {
+        flex: 0 1 14rem;
+    }
+
+    [data-product-entry][hidden],
+    [data-product-category][hidden],
+    [data-catalogue-controls][hidden],
+    #payment-step[hidden] {
+        display: none !important;
+    }
+
+    .client-cart-items td {
+        vertical-align: top;
+    }
+}
+
+.client-news-summary {
+    overflow-wrap: anywhere;
+
+    p {
+        max-width: 85ch;
+    }
+}
+
+.client-news-reader,
+.client-kb-reader {
+    max-width: 80ch;
+    overflow-wrap: anywhere;
+
+    .client-news-content,
+    .kb-article-content {
+        line-height: 1.7;
+    }
+}
+
+.client-profile {
+    .client-profile-form {
+        max-width: 60rem;
+    }
+
+    .client-password-form {
+        max-width: 32rem;
+    }
+}
+
+.client-auth-panel {
+    max-width: 30rem;
+    overflow-wrap: anywhere;
+
+    &.client-auth-wide {
+        max-width: 44rem;
+    }
+}
+
+.client-profile,
+.client-auth-panel,
+#orderbutton {
+    .form-control,
+    .form-select,
+    [data-client-form-error] {
+        scroll-margin-block: 1rem;
+    }
+}
+
+.order-manage .nav-tabs {
+    row-gap: .25rem;
+}
+
+.invoice-invoice {
+    overflow-wrap: anywhere;
+
+    #invoice-payment-heading {
+        scroll-margin-top: 1rem;
+    }
+
+    .invoice-lines td:first-child {
+        min-width: 10rem;
+    }
+
+    .invoice-cell-label {
+        display: none;
+    }
+}
+
+.invoice-payment iframe {
+    max-width: 100%;
+}
+
+// Keep outlined actions readable on dark surfaces without changing their handlers.
+[data-bs-theme="dark"] {
+    .btn-outline-primary {
+        --tblr-btn-color: var(--tblr-link-color);
+        --tblr-btn-border-color: var(--tblr-link-color);
+    }
+
+    .btn-outline-secondary {
+        --tblr-btn-color: var(--tblr-secondary-color);
+        --tblr-btn-border-color: var(--tblr-secondary-color);
+    }
+
+    .btn-outline-danger {
+        --tblr-btn-color: var(--tblr-danger-text-emphasis);
+        --tblr-btn-border-color: var(--tblr-danger-text-emphasis);
+    }
+}
+
+// Green-on-white and white-on-green addon choices need stronger text contrast.
+.btn-outline-success {
+    --tblr-btn-color: var(--tblr-success-text-emphasis);
+    --tblr-btn-border-color: var(--tblr-success-text-emphasis);
+    --tblr-btn-hover-color: var(--tblr-success-text-emphasis);
+    --tblr-btn-hover-bg: var(--tblr-success-bg-subtle);
+    --tblr-btn-active-color: var(--tblr-success-text-emphasis);
+    --tblr-btn-active-bg: var(--tblr-success-bg-subtle);
+}
+
+// Programmatic error focus must also be visible when a response follows a mouse click.
+[data-client-form-error]:focus {
+    outline: 2px solid var(--tblr-danger);
+    outline-offset: 2px;
+}
+
+// Keep the title and actions visible while long dialog content scrolls.
+.client-modal-form {
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
 
-    .form-select.js-locale-selector {
-        color: var(--bs-body-color);
-        padding: 0.5rem 2rem 0.5rem 0.75rem;
-        font-size: 0.875rem;
-        line-height: 1.5;
-        min-height: auto;
+.kb-category #main-content {
+    overflow-wrap: anywhere;
+}
+
+// Uploaded square or tall logos should not dominate sign-in and reset forms.
+.client-auth-logo {
+    display: block;
+    max-width: 100%;
+
+    img {
+        max-height: 50px;
+        width: auto;
         height: auto;
-        background-position: right 0.5rem center;
+        object-fit: contain;
     }
 }
 
-// Alert vertical centering and layout
-.alert {
-    align-items: center;
-    flex-direction: column !important;
-}
-
-.alert p {
-    margin-bottom: 0;
-}
-
-// Nav-link vertical alignment with language selector
-.navbar-nav {
-    align-items: center;
-    gap: 0.25rem;
-
-    .nav-link {
-        padding-top: 0.5rem;
-        padding-bottom: 0.5rem;
-    }
+// Client-owned action groups keep their document order and existing handlers.
+.client-shell .client-modal-form > .modal-footer {
+    gap: 0.5rem;
 
     > .btn {
-        margin-top: 0;
-        margin-bottom: 0;
-        display: inline-flex;
-        align-items: center;
+        margin: 0;
     }
 }
 
-// Dark mode support uses Bootstrap's native color mode system via data-bs-theme attribute in HTML tag.
-// Bootstrap 5.3+ automatically handles dark mode colors through CSS variables.
+@media (min-width: 992px) {
+    .client-shell .client-sidebar-column {
+        // Keep navigation compact as the content area grows on wider screens.
+        width: 15rem;
+    }
 
-// Dual logo: show only the logo matching the current color mode.
-[data-bs-theme="light"] .hide-theme-light,
-[data-bs-theme="dark"]  .hide-theme-dark { display: none !important; }
-
-// Theme toggler links share the navbar's icon style.
-.js-theme-toggler {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.5rem 0.75rem;
+    .client-shell .client-header .navbar-brand {
+        max-width: 16rem;
+    }
 }
 
-.db-avatar {
-    background-color: var(--bs-secondary-bg);
+@media (min-width: 768px) {
+    .client-invoice-list .invoice-amount {
+        white-space: nowrap;
+    }
+}
+
+@media (max-width: 991.98px) {
+    .client-shell {
+        .client-header-menu {
+            flex-direction: row;
+            flex-wrap: wrap;
+            align-items: stretch;
+            padding-top: 1rem;
+            gap: 0.5rem;
+
+            > .nav-item {
+                width: 100%;
+            }
+
+            > .client-account-menu-item {
+                flex: 1;
+                min-width: 0;
+                width: auto;
+            }
+
+            > .client-appearance-menu,
+            > .client-notification-item {
+                width: 44px;
+                align-self: flex-start;
+            }
+
+            > .client-language-menu {
+                flex-basis: 100%;
+                min-width: 0;
+                width: auto;
+            }
+
+            > .nav-item > .nav-link {
+                width: 100%;
+                padding-inline: 0.75rem;
+            }
+        }
+
+        .client-mobile-menu {
+            width: 100%;
+            margin-top: 0.5rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid var(--tblr-border-color);
+        }
+
+        .client-header .client-dropdown {
+            width: 100%;
+
+            .dropdown-toggle {
+                width: 100%;
+            }
+
+            .dropdown-menu {
+                min-width: 0;
+                max-width: 100%;
+                // Align menu text with the name after the 28px avatar and 8px gap.
+                padding-inline-start: 2.25rem;
+            }
+        }
+
+        .client-account-name {
+            flex: 1;
+        }
+
+        .client-header .ts-wrapper.js-locale-selector {
+            width: 100%;
+        }
+    }
+
+    .client-shell .client-header .navbar-brand {
+        flex: 1 1 0;
+        max-width: none;
+    }
+
+    // These two menus float; Tabler's mobile navbar submenus are otherwise inline.
+    .client-shell .client-header {
+        .client-notification-menu,
+        .client-theme-picker .dropdown-menu {
+            z-index: var(--tblr-dropdown-zindex);
+            position: absolute;
+            right: 0;
+            left: auto;
+            background: var(--tblr-dropdown-bg);
+            border: var(--tblr-dropdown-border-width) solid var(--tblr-dropdown-border-color);
+            box-shadow: var(--tblr-dropdown-box-shadow);
+            padding: var(--tblr-dropdown-padding-y) var(--tblr-dropdown-padding-x);
+
+            .dropdown-item {
+                padding-inline: var(--tblr-dropdown-item-padding-x);
+            }
+        }
+    }
+
+    .client-shell .client-header .client-notifications {
+        // Navbar dropdowns use static positioning instead of Popper's viewport correction.
+        position: static;
+
+        .client-notification-menu {
+            top: auto;
+        }
+    }
+
+    #orderbutton {
+        #checkoutButton,
+        .invoice-gateway,
+        .invoice-gateway .btn {
+            width: 100%;
+        }
+
+        .invoice-gateway {
+            min-width: 0;
+        }
+    }
+
+    .client-shell .client-action-group {
+        align-items: stretch;
+
+        > .btn {
+            --tblr-btn-font-size: 0.875rem;
+        }
+    }
+
+    .client-shell .client-header .client-theme-picker .dropdown-menu {
+        top: 100%;
+        min-width: 10rem;
+
+        .dropdown-item {
+            width: 100%;
+        }
+    }
+
+    .client-shell,
+    .client-auth-panel,
+    #orderbutton {
+        .btn,
+        .form-control,
+        .form-select,
+        .nav-tabs .nav-link,
+        .client-header .dropdown-item,
+        .page-link,
+        .client-content-link,
+        .client-kb-articles .list-group-item {
+            min-height: 44px;
+        }
+
+        .btn,
+        .nav-tabs .nav-link {
+            white-space: normal;
+            overflow-wrap: anywhere;
+        }
+
+        .page-link,
+        .cart-action .btn {
+            min-width: 44px;
+        }
+
+        .client-content-link {
+            display: inline-flex;
+            align-items: center;
+        }
+    }
+}
+
+@media (max-width: 767.98px) {
+    .client-invoice-list,
+    .client-wallet-history,
+    .client-email-list,
+    .client-service-list,
+    .client-ticket-list,
+    .client-service-addons,
+    #orderbutton .client-cart-items {
+        thead {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        tbody {
+            display: block;
+        }
+
+        tr {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            gap: 0.5rem 1rem;
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--tblr-border-color);
+        }
+
+        td {
+            min-width: 0;
+            padding: 0;
+            border: 0;
+            box-shadow: none;
+            overflow-wrap: anywhere;
+        }
+    }
+
+    .client-invoice-list,
+    .client-wallet-history,
+    .client-email-list {
+        tr {
+            grid-template-columns: minmax(0, 1fr) auto;
+        }
+
+        .invoice-reference,
+        .wallet-description,
+        .email-subject,
+        .invoice-action {
+            grid-column: 1 / -1;
+        }
+
+        .invoice-date,
+        .wallet-date,
+        .email-date {
+            grid-column: 1;
+            font-size: 0.875rem;
+        }
+
+        .invoice-amount,
+        .wallet-amount,
+        .email-action {
+            grid-column: 2;
+            grid-row: 2;
+        }
+    }
+
+    .client-invoice-list,
+    .client-service-list,
+    .client-ticket-list,
+    .client-service-addons {
+        .badge {
+            max-width: 100%;
+            white-space: normal;
+            overflow-wrap: anywhere;
+        }
+    }
+
+    .client-invoice-list tr {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .client-service-list .service-action .btn {
+        flex: 1 1 7rem;
+    }
+
+    .client-invoice-list .invoice-action .btn,
+    .support-ticket #post-reply-btn,
+    .client-ticket-list .ticket-action .btn {
+        width: 100%;
+    }
+
+    :is(.invoice-index, .support-tickets) .nav-tabs .nav-link {
+        padding: 0.65rem 0.6rem;
+        font-size: 0.875rem;
+    }
+
+    :is(.client-profile, .client-auth-panel, #orderbutton) {
+        .form-check-label {
+            display: block;
+            min-height: 44px;
+            padding-block: 0.625rem;
+        }
+
+        .form-check .form-check-input {
+            margin-top: 0.75rem;
+        }
+    }
+
+    #orderbutton {
+        overflow-wrap: anywhere;
+
+        .client-cart-items {
+            tr {
+                grid-template-columns: minmax(0, 1fr) auto;
+                align-items: center;
+            }
+
+            .cart-description,
+            .cart-custom-fields {
+                grid-column: 1 / -1;
+            }
+        }
+
+        .client-cart-totals {
+            width: 100%;
+            table-layout: fixed;
+
+            td {
+                text-align: end;
+            }
+        }
+    }
+
+    #orderbutton .invoice-gateway,
+    .invoice-payment-method {
+        picture {
+            flex-shrink: 0;
+        }
+
+        span {
+            min-width: 0;
+            overflow-wrap: anywhere;
+        }
+    }
+
+    .order-manage .client-service-properties {
+        width: 100%;
+        table-layout: fixed;
+
+        tr {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            padding-block: .5rem;
+        }
+
+        td {
+            min-width: 0;
+            padding-block: .25rem;
+            border: 0;
+            overflow-wrap: anywhere;
+        }
+
+        td:first-child {
+            color: var(--tblr-secondary-color);
+            font-size: .875rem;
+        }
+    }
+}
+
+@media (max-width: 575.98px) {
+    .support-tickets .card-header > .nav-tabs,
+    .order-list .card-header > .nav-tabs {
+        width: 100%;
+    }
+
+    .invoice-index .nav-tabs .nav-link,
+    .client-profile .nav-tabs .nav-link,
+    .support-tickets .nav-tabs .nav-link,
+    .order-list .nav-tabs .nav-link,
+    .client-domain-tabs .nav-link {
+        flex: 1 1 50%;
+        min-width: 0;
+        justify-content: center;
+        text-align: center;
+    }
+
+    .invoice-invoice .invoice-lines {
+        display: block;
+        width: 100%;
+
+        thead {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip-path: inset(50%);
+            white-space: nowrap;
+        }
+
+        tbody,
+        tr {
+            display: block;
+        }
+
+        tr {
+            padding: .75rem 0;
+            border-bottom: 1px solid var(--tblr-border-color);
+        }
+
+        td {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            min-width: 0;
+            text-align: end;
+            gap: 1rem;
+            padding: .25rem 0;
+            border: 0;
+            box-shadow: none;
+        }
+
+        td:first-child {
+            display: block;
+            min-width: 0;
+            text-align: start;
+            margin-bottom: .25rem;
+        }
+
+        .invoice-cell-label {
+            display: block;
+            color: var(--tblr-secondary-color);
+            text-align: start;
+        }
+    }
+
+    .client-payment-actions .btn,
+    .client-payment-action,
+    #payment_button {
+        width: 100%;
+    }
+
+    .invoice-invoice {
+
+        .invoice-totals {
+            width: 100%;
+            table-layout: fixed;
+        }
+    }
+
+    .order-manage .client-hosting-tabs > .nav-item {
+        flex: 0 0 50%;
+        min-width: 0;
+
+        .nav-link {
+            height: 100%;
+            justify-content: center;
+            text-align: center;
+        }
+    }
+
+    .news-index,
+    .kb-index,
+    .kb-category,
+    .email-index {
+        // Previous/next and nearby page numbers fit without a separate row.
+        .pagination .client-pagination-edge {
+            display: none;
+        }
+    }
+
+    .client-email-metadata {
+        grid-template-columns: minmax(0, 1fr);
+
+        dt {
+            color: var(--tblr-secondary-color);
+            font-size: .875rem;
+            font-weight: normal;
+        }
+
+        dd + dt {
+            margin-top: .5rem;
+        }
+    }
+
+    .client-shell .client-action-group,
+    .client-shell .client-modal-form > .modal-footer {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+
+        > .btn {
+            width: 100%;
+            min-width: 0;
+        }
+    }
+
+    .client-shell .client-action-group > .client-action-destructive:not(:first-child),
+    .client-shell .client-modal-form > .modal-footer > .btn-danger:not(:first-child) {
+        // Keep destructive choices visually separate from routine stacked actions.
+        margin-block-start: 0.5rem;
+    }
 }

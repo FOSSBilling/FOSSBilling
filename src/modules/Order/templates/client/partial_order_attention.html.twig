@@ -1,0 +1,18 @@
+{% import "macro_functions.html.twig" as mf %}
+{% if order.unpaid_invoice_hash|default(null) %}
+    <span class="text-danger-emphasis fw-semibold">{{ 'Payment Needed'|trans }}</span>
+{% elseif order.status == 'failed_setup' %}
+    <span class="text-danger-emphasis fw-semibold">{{ 'Setup Needs Support'|trans }}</span>
+{% elseif order.status == 'failed_renew' %}
+    <span class="text-danger-emphasis fw-semibold">{{ 'Renewal Needs Support'|trans }}</span>
+{% elseif order.status == 'suspended' %}
+    <span class="text-danger-emphasis fw-semibold">{{ 'Service Suspended'|trans }}</span>
+{% elseif order.meta.cancel_at_period_end|default(false) %}
+    <span class="text-secondary">{{ 'Cancellation Scheduled'|trans }}</span>
+{% elseif order.renewal_due|default(false) %}
+    <span class="fw-semibold">{{ order.expires_at|date('Y-m-d') < 'now'|date('Y-m-d') ? 'Renewal Overdue'|trans : 'Renewal Due'|trans }}</span>
+{% elseif order.status == 'pending_setup' %}
+    <span class="text-secondary">{{ 'Setup in Progress'|trans }}</span>
+{% else %}
+    {{ mf.status_badge(order.status, 'order') }}
+{% endif %}

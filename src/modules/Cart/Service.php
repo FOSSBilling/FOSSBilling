@@ -1244,7 +1244,7 @@ class Service implements InjectionAwareInterface
 
                     $clientBalanceService = $this->di['mod_service']('Client', 'Balance');
                     $balanceAmount = $clientBalanceService->getClientBalance($client);
-                    $useCredits = $balanceAmount >= $ca['total'];
+                    $useCredits = round($balanceAmount, 2) >= round($invoiceService->getTotalWithTax($invoiceModel), 2);
 
                     $invoiceService->issueInvoice($invoiceModel, ['id' => $invoiceModel->getId(), 'use_credits' => $useCredits]);
 

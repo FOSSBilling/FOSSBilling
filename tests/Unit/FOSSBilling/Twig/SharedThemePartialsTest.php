@@ -10,6 +10,7 @@
 
 declare(strict_types=1);
 
+use Tests\Support\PermissiveStub;
 use Tests\Support\StrictTemplateRenderer;
 
 /*
@@ -32,7 +33,7 @@ test('shared recaptcha partial renders nothing when the recaptcha config is disa
     $html = (new StrictTemplateRenderer())->renderTemplate(
         PATH_THEMES . '/default/shared/html/partial_recaptcha_shared.html.twig',
         [
-            'guest' => new PermissiveCallableStub([
+            'guest' => new PermissiveStub([
                 'extension_is_on' => true,
                 'antispam_recaptcha' => [
                     'enabled' => false,
@@ -50,7 +51,7 @@ test('shared recaptcha partial renders the reCAPTCHA v2 widget when configured',
     $html = (new StrictTemplateRenderer())->renderTemplate(
         PATH_THEMES . '/default/shared/html/partial_recaptcha_shared.html.twig',
         [
-            'guest' => new PermissiveCallableStub([
+            'guest' => new PermissiveStub([
                 'extension_is_on' => true,
                 'antispam_recaptcha' => [
                     'enabled' => true,
@@ -72,7 +73,7 @@ test('shared recaptcha partial renders the Turnstile widget when configured', fu
     $html = (new StrictTemplateRenderer())->renderTemplate(
         PATH_THEMES . '/default/shared/html/partial_recaptcha_shared.html.twig',
         [
-            'guest' => new PermissiveCallableStub([
+            'guest' => new PermissiveStub([
                 'extension_is_on' => true,
                 'antispam_recaptcha' => [
                     'enabled' => true,
@@ -133,7 +134,7 @@ test('shared company logo partial renders admin-style params: no height, inline 
     $html = (new StrictTemplateRenderer())->renderTemplate(
         PATH_THEMES . '/default/shared/html/partial_company_logo.html.twig',
         [
-            'company' => new Tests\Support\PermissiveStub(['name' => 'Acme Hosting']),
+            'company' => new PermissiveStub(['name' => 'Acme Hosting']),
             'logo_url' => 'https://example.com/logo-light.png',
             'dark_logo_url' => 'https://example.com/logo-dark.png',
             'link_url' => '/',
@@ -159,7 +160,7 @@ test('shared company logo partial renders the admin fallback span with fallback_
     $html = (new StrictTemplateRenderer())->renderTemplate(
         PATH_THEMES . '/default/shared/html/partial_company_logo.html.twig',
         [
-            'company' => new Tests\Support\PermissiveStub(['name' => 'Acme Hosting']),
+            'company' => new PermissiveStub(['name' => 'Acme Hosting']),
             'logo_url' => null,
             'dark_logo_url' => null,
             'fallback_class' => 'h1',
@@ -175,7 +176,7 @@ test('shared company logo partial renders client-style params: height, target, r
     $html = (new StrictTemplateRenderer())->renderTemplate(
         PATH_THEMES . '/default/shared/html/partial_company_logo.html.twig',
         [
-            'company' => new Tests\Support\PermissiveStub(['name' => 'Acme Hosting']),
+            'company' => new PermissiveStub(['name' => 'Acme Hosting']),
             'logo_url' => 'https://example.com/logo-light.png',
             'dark_logo_url' => 'https://example.com/logo-dark.png',
             'link_url' => '/',
@@ -196,7 +197,7 @@ test('shared company logo partial renders the mobile name span only when show_mo
     $html = (new StrictTemplateRenderer())->renderTemplate(
         PATH_THEMES . '/default/shared/html/partial_company_logo.html.twig',
         [
-            'company' => new Tests\Support\PermissiveStub(['name' => 'Acme Hosting']),
+            'company' => new PermissiveStub(['name' => 'Acme Hosting']),
             'logo_url' => 'https://example.com/logo-light.png',
             'dark_logo_url' => 'https://example.com/logo-dark.png',
             'link_url' => '/',
@@ -211,7 +212,7 @@ test('shared company logo partial renders the client fallback span without a cla
     $html = (new StrictTemplateRenderer())->renderTemplate(
         PATH_THEMES . '/default/shared/html/partial_company_logo.html.twig',
         [
-            'company' => new Tests\Support\PermissiveStub(['name' => 'Acme Hosting']),
+            'company' => new PermissiveStub(['name' => 'Acme Hosting']),
             'logo_url' => null,
             'dark_logo_url' => null,
         ],

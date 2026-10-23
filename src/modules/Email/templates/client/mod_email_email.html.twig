@@ -1,87 +1,38 @@
 {% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
 {% set active_menu = 'emails' %}
+{% set subject = email.subject|default('No Subject'|trans, true) %}
+{% set history_url = 'email'|url(query: {'search': request.search|default(''), 'page': request.page|default(1)}) %}
 
-{% block meta_title %}{{ 'Email'|trans }}{% endblock %}
-
+{% block meta_title %}{{ subject }}{% endblock %}
 {% block breadcrumb %}
-<li class="breadcrumb-item" aria-current="page"><a href="{{ 'email'|url }}">{{ 'Emails'|trans }}</a></li>
-<li class="breadcrumb-item active" aria-current="page">{{ email.subject }}</li>
+    <li class="breadcrumb-item"><a href="{{ history_url }}">{{ 'Emails'|trans }}</a></li>
+    <li class="breadcrumb-item active" aria-current="page">{{ subject }}</li>
 {% endblock %}
 {% block body_class %}email-email{% endblock %}
+
 {% block content %}
-<div class="row">
-<div class="col-md-12 card">
+    <a class="d-inline-flex align-items-center client-content-link mb-3" href="{{ history_url }}">{{ 'Back to Emails'|trans }}</a>
+    <h1 class="h2 client-email-heading mb-4">{{ subject }}</h1>
+    <article class="card mb-4" aria-label="{{ 'Email Message'|trans }}">
         <div class="card-body">
-            <h5 class="mb-0">{{ email.subject }}</h5>
-            <div class="card-header px-0">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div class="d-flex flex-column gap-1">
-                        <span class="d-block"><span class="text-muted me-2">{{ 'From'|trans }}</span>{{ email.sender }}</span>
-                        <span class="d-block"><span class="text-muted me-2">{{ 'To'|trans }}</span>{{ email.recipients }}</span>
-                    </div>
-                    <div class="d-flex flex-column gap-2">
-                        <div class="btn-group d-flex" role="group" aria-label="{{ 'Mail Action'|trans }}">
-                            <a class="btn btn-sm btn-outline-secondary email-resend" href="#" data-id="{{ email.id }}" data-bs-toggle="tooltip" data-bs-title="{{ 'Resend'|trans }}">
-                                <svg class="icon"><use href="#arrows-exchange" /></svg>
-                            </a>
-                            <a class="btn btn-sm btn-outline-danger border-start-0" data-bs-toggle="tooltip" data-bs-title="{{ 'Delete'|trans }}"
-                               {{ fb_api_link({href: 'email/delete'|api_url(query: {id: email.id}), modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'email'|url}) }}>
-                                <svg class="icon"><use href="#trash" /></svg>
-                            </a>
-                        </div>
-                        <small class="text-muted">{{ email.created_at|format_date }}</small>
-                    </div>
+            <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 mb-4">
+                <dl class="client-email-metadata mb-0">
+                    <dt>{{ 'From'|trans }}</dt><dd>{{ email.sender }}</dd>
+                    <dt>{{ 'To'|trans }}</dt><dd>{{ email.recipients }}</dd>
+                    <dt>{{ 'Sent'|trans }}</dt><dd>{{ email.created_at|format_datetime }}</dd>
+                </dl>
+                <div class="d-flex gap-2 align-items-start flex-wrap client-email-actions client-action-group">
+                    <a class="btn btn-outline-secondary" href="{{ 'email/resend'|api_url(query: {id: email.id}) }}"
+                       {{ fb_api_link({message: 'Email resent'|trans, modal: {type: 'confirm', title: 'Resend this email?'|trans}}) }}>{{ 'Resend Email'|trans }}</a>
+                    <a class="btn btn-outline-danger client-action-destructive" href="{{ 'email/delete'|api_url(query: {id: email.id}) }}"
+                       {{ fb_api_link({modal: {type: 'confirm', title: 'Delete Email'|trans, content: 'Delete "%subject%" from your email history? This cannot be undone. The delivered copy in your inbox will not be deleted.'|trans({'%subject%': email.subject|default('No Subject'|trans)}), button: 'Delete Email'|trans, buttonColor: 'danger', cancelButton: 'Keep Email'|trans}, loading: {button: 'Deleting Email…'|trans}, redirect: history_url}) }}>{{ 'Delete Email'|trans }}</a>
                 </div>
             </div>
-            <div class="card-body">
-                <iframe class="ratio ratio-1x1 email" id="email-content" src="about:blank" sandbox="allow-popups" style="height: 30em"></iframe>
-                <script>
-                    (function () {
-                        const frame = document.getElementById("email-content");
-                        frame.srcdoc = '{{ email.content_html|e('js') }}';
-                    })();
-                </script>
-            </div>
+            {% set message_content = email.content_html %}
+            {% if not message_content %}
+                {% set message_content %}<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"></head><body style="margin: 16px; color: CanvasText; font: 16px/1.6 system-ui, sans-serif;"><pre style="white-space: pre-wrap; overflow-wrap: anywhere; font: inherit;">{{ email.content_text|default('') }}</pre></body></html>{% endset %}
+            {% endif %}
+            <iframe class="client-email-content" title="{{ 'Message: %subject%'|trans({'%subject%': subject}) }}" sandbox="allow-popups" referrerpolicy="no-referrer" srcdoc="{{ message_content|e('html_attr') }}"></iframe>
         </div>
-</div>
-</div>
-{% endblock %}
-
-{% block js %}
-{% autoescape "js" %}
-<script>
-    document.addEventListener("DOMContentLoaded", () => {
-        const resendEmailBtn = document.querySelectorAll('.email-resend');
-
-        resendEmailBtn.forEach((resendBtn) => {
-            resendBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                toggleLoader();
-                FOSSBilling.api.client.post('email/resend',
-                    {id: resendBtn.dataset.id },
-                    () => {
-                        flashMessage({
-                            message: 'Email resent',
-                            reload: '{{ 'email'|url }}'
-                        });
-                    },
-                    (res) => {
-                        FOSSBilling.message(`${res.message} (${res.code})`, 'error');
-                        toggleLoader();
-                    }
-                )
-            });
-        });
-
-        const toggleLoader = () => {
-            let loader = document.querySelector('.wait');
-            if (loader.style.display === 'none') {
-                loader.style.display = 'block';
-            } else {
-                loader.style.display = 'none';
-            }
-        }
-    });
-</script>
-{% endautoescape %}
+    </article>
 {% endblock %}

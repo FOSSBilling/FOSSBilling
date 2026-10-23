@@ -1,0 +1,20 @@
+{# Resolve the saved preference before styles load. Keep the theme's configured default. #}
+<script>
+    (() => {
+        const root = document.documentElement;
+        const configured = {{ theme_default|default('system')|json_encode|raw }};
+        const valid = value => ['system', 'light', 'dark'].includes(value);
+        let preference = valid(configured) ? configured : 'system';
+        root.setAttribute('data-fb-theme-default', preference);
+        try {
+            const stored = localStorage.getItem('theme');
+            if (valid(stored)) preference = stored;
+            {% if restore_sidebar|default(false) %}
+            const sidebar = localStorage.getItem('tabler-sidebar');
+            if (sidebar === 'folded-hover') root.setAttribute('data-bs-sidebar', sidebar);
+            {% endif %}
+        } catch { /* Keep the configured default. */ }
+        const dark = preference === 'dark' || (preference === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        root.setAttribute('data-bs-theme', dark ? 'dark' : 'light');
+    })();
+</script>

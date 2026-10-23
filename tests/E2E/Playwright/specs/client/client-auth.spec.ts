@@ -11,7 +11,7 @@ test('creates a new client account and automatically logs in', async ({ incognit
   };
 
   await incognitoPage.goto('/signup');
-  await expect(incognitoPage.locator('body')).toContainText('Create a new account');
+  await expect(incognitoPage.getByRole('heading', { name: 'Create an Account', level: 1 })).toBeVisible();
 
   const signupResponse = waitForApiResponse(incognitoPage, '/api/guest/client/create');
 

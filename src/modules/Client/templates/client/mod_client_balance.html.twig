@@ -2,64 +2,89 @@
 {% set active_menu = 'payments' %}
 
 {% block meta_title %}{{ 'Wallet'|trans }}{% endblock %}
-{% block breadcrumb %} <li class="breadcrumb-item active" aria-current="page">{{ 'Wallet'|trans }}</li>{% endblock %}
+{% block breadcrumb %}<li class="breadcrumb-item active" aria-current="page">{{ 'Wallet'|trans }}</li>{% endblock %}
 
 {% set profile = client.profile_get %}
+{% set wallet_currency = profile.currency ?? default_currency %}
 
 {% block body_class %}client-balance{% endblock %}
 {% block content %}
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card mb-4">
-                <div class="card-header py-3">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h1 class="mb-1">{{ 'Wallet'|trans }}</h1>
-                            <span class="small text-muted">{{ 'Here you can manage and track your account balance.'|trans }}</span>
-                        </div>
-                        {% if guest.invoice_funds_enabled %}
-                            <form method="post" class="form-inline d-flex gap-2 justify-content-end" action="{{ 'invoice/funds_invoice'|api_url }}" {{ fb_api_form({callback: 'onAfterInvoiceCreated'}) }}>
-                                <input id="appendedPrependedInput" class="form-control w-50" type="text" name="amount" placeholder="0" required="required">
-                                <button class="btn btn-primary" type="submit">{{ 'Add Funds'|trans }}</button>
-                            </form>
-                        {% endif %}
-                    </div>
+    <h1 class="mb-4">{{ 'Wallet'|trans }}</h1>
+    <div class="row gy-4 mb-4">
+        <div class="col-lg-5">
+            <section class="card h-100" aria-labelledby="wallet-balance-heading">
+                <div class="card-body">
+                    <h2 class="h3 text-secondary" id="wallet-balance-heading">{{ 'Available Balance'|trans }}</h2>
+                    <p class="h1 mb-3{{ profile.balance < 0 ? ' text-danger-emphasis' : '' }}">{{ profile.balance|format_currency(wallet_currency) }}</p>
+                    <p class="mb-3 text-secondary">{{ 'Use your balance to pay invoices at checkout.'|trans }}</p>
+                    <a href="{{ 'invoice'|url }}">{{ 'View Invoices'|trans }}</a>
                 </div>
-                <div class="card-body table-responsive">
-                    <table class="table table-striped table-bordered table-hover">
+            </section>
+        </div>
+        <div class="col-lg-7">
+            <section class="card h-100" aria-labelledby="wallet-funds-heading">
+                <div class="card-body">
+                    <h2 class="h3" id="wallet-funds-heading">{{ 'Add Funds'|trans }}</h2>
+                    {% if not guest.invoice_funds_enabled %}
+                        <p class="text-secondary mb-0">{{ 'Adding funds is currently unavailable. You can still use your existing balance to pay invoices.'|trans }}</p>
+                    {% elseif not profile.currency %}
+                        <p class="text-secondary">{{ 'You need an active order before you can add funds to your wallet.'|trans }}</p>
+                        <a href="{{ 'order'|url }}">{{ 'Browse Products'|trans }}</a>
+                    {% else %}
+                        <p id="wallet-funds-help" class="text-secondary">{{ 'Choose an amount, then pay the invoice. Funds become available once payment is received.'|trans }}</p>
+                        <form method="post" action="{{ 'invoice/funds_invoice'|api_url }}" {{ fb_api_form({callback: 'onAfterInvoiceCreated'}) }}>
+                            <label class="form-label" for="wallet-amount">{{ 'Amount to Add'|trans }} ({{ wallet_currency }})</label>
+                            <div class="d-flex flex-column flex-sm-row gap-2 align-items-sm-start">
+                                <input id="wallet-amount" class="form-control" type="number" inputmode="decimal" name="amount" min="0.01" step="0.01" placeholder="0.00" required aria-describedby="wallet-funds-help">
+                                <button class="btn btn-primary flex-shrink-0" type="submit">{{ 'Continue to Payment'|trans }}</button>
+                            </div>
+                        </form>
+                    {% endif %}
+                </div>
+            </section>
+        </div>
+    </div>
+    {% set transactions = client.client_balance_get_list({'per_page': 10, 'page': request.page|default(1), 'sort': 'id', 'direction': 'DESC'}) %}
+    <section class="card mb-4" aria-labelledby="wallet-history-heading">
+        <div class="card-header">
+            <h2 class="h3 mb-0" id="wallet-history-heading">{{ 'Transaction History'|trans }}</h2>
+        </div>
+        <div class="card-body">
+            {% if transactions.list %}
+                <div class="table-responsive">
+                    <table class="table table-vcenter table-hover client-wallet-history mb-0" aria-label="{{ 'Transaction History'|trans }}">
+                        <caption class="visually-hidden">{{ 'Wallet transactions, newest first'|trans }}</caption>
                         <thead>
                             <tr>
-                                <th>{{ 'Description'|trans }}</th>
-                                <th>{{ 'Date'|trans }}</th>
-                                <th>{{ 'Amount'|trans }}</th>
+                                <th scope="col">{{ 'Description'|trans }}</th>
+                                <th scope="col">{{ 'Date'|trans }}</th>
+                                <th scope="col" class="text-end">{{ 'Amount'|trans }}</th>
                             </tr>
                         </thead>
                         <tbody>
-                        {% set transactions = client.client_balance_get_list({ "per_page": 10, "page": request.page }) %}
-                        {% for i, tx in transactions.list %}
-                            <tr>
-                                <td>{{ tx.description }}</td>
-                                <td>{{ tx.created_at|format_date }}</td>
-                                <td>{{ (tx.amount ?? 0)|format_currency(tx.currency ?? default_currency) }}</td>
-                            </tr>
-                        {% else %}
-                            <tr>
-                                <td colspan="3">{{ 'The list is empty'|trans }}</td>
-                            </tr>
-                        {% endfor %}
+                            {% for tx in transactions.list %}
+                                {% set amount = tx.amount ?? 0 %}
+                                <tr>
+                                    <td class="wallet-description">{{ tx.description }}</td>
+                                    <td class="wallet-date text-secondary">{{ tx.created_at|format_date }}</td>
+                                    <td class="wallet-amount text-end text-nowrap">
+                                        <span class="fw-semibold{{ amount > 0 ? ' text-success-emphasis' : '' }}">{{ amount > 0 ? '+' : '' }}{{ amount|format_currency(tx.currency ?? wallet_currency) }}</span>
+                                        <span class="d-block small text-secondary">{{ amount > 0 ? 'Credit'|trans : (amount < 0 ? 'Debit'|trans : 'No Change'|trans) }}</span>
+                                    </td>
+                                </tr>
+                            {% endfor %}
                         </tbody>
-                        <tfoot>
-                        <tr>
-                            <td colspan="2">{{ 'Total'|trans }}</td>
-                            <td><strong>{{ profile.balance|format_currency(profile.currency ?? default_currency) }}</strong></td>
-                        </tr>
-                        </tfoot>
                     </table>
-                    {{ include('partial_pagination.html.twig', { 'list': transactions, 'url': 'client/balance' }) }}
                 </div>
-            </div>
+                <div class="mt-3">{{ include('partial_pagination.html.twig', {'list': transactions, 'url': 'client/balance', 'hash': '#wallet-history-heading'}) }}</div>
+            {% else %}
+                {{ include('partial_client_empty.html.twig', {
+                    'empty_title': 'No Transactions Yet'|trans,
+                    'empty_description': 'Credits and payments made with your balance will appear here.'|trans
+                }, with_context: false) }}
+            {% endif %}
         </div>
-    </div>
+    </section>
 {% endblock %}
 
 {% block js %}

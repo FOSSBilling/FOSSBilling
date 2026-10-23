@@ -1,0 +1,39 @@
+{% set notifications = client.support_notification_get_list %}
+<div class="dropdown client-notifications" data-client-notifications data-latest-id="{{ notifications.latest_id }}">
+    <button id="client-notification-toggle" class="btn btn-icon btn-ghost-secondary client-header-icon" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" aria-controls="client-notification-menu">
+        <svg class="icon" aria-hidden="true"><use href="#bell" /></svg>
+        <span class="visually-hidden">{{ 'Notifications'|trans }}</span>
+        <span class="badge text-bg-secondary client-notification-count" aria-hidden="true" data-notification-count{% if not notifications.unread_count %} hidden{% endif %}>{{ notifications.unread_count }}</span>
+        <span class="visually-hidden"><span data-notification-count-label>{{ notifications.unread_count }}</span> {{ 'unread'|trans }}</span>
+    </button>
+    <div class="dropdown-menu dropdown-menu-end client-notification-menu" id="client-notification-menu" aria-labelledby="client-notification-toggle">
+        <div class="d-flex align-items-center justify-content-between gap-2 px-3 py-2 border-bottom">
+            <h2 class="h4 mb-0">{{ 'Notifications'|trans }}</h2>
+            <button class="btn btn-sm btn-link" type="button" data-notification-read-all{% if not notifications.unread_count %} hidden{% endif %}>{{ 'Mark All as Read'|trans }}</button>
+        </div>
+        {% if notifications.list %}
+            <ul class="list-unstyled mb-0 client-notification-list">
+                {% for notification in notifications.list %}
+                    <li>
+                        <a class="dropdown-item text-wrap py-3{% if not notification.read_at %} fw-semibold{% endif %}"
+                           href="{{ ('support/ticket/' ~ notification.ticket_id)|url }}#message-{{ notification.message_id }}"
+                           data-notification-id="{{ notification.id }}" data-notification-ticket="{{ notification.ticket_id }}" data-notification-message="{{ notification.message_id }}" data-notification-read="{{ notification.read_at ? '1' : '0' }}">
+                            <span>
+                                <span class="d-block client-notification-subject">{{ notification.subject }}</span>
+                                <span class="small text-secondary fw-normal client-notification-new-reply">{{ 'New Reply'|trans }}</span>
+                                <span class="small text-secondary fw-normal client-notification-read-reply">{{ 'Reply'|trans }}</span>
+                            </span>
+                            <time class="small text-secondary fw-normal text-end client-notification-time" datetime="{{ notification.created_at|date('c') }}">
+                                <span class="d-block">{{ notification.created_at|format_datetime('medium', 'none') }}</span>
+                                <span class="d-block">{{ notification.created_at|format_datetime('none', 'short') }}</span>
+                            </time>
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="px-3 py-4 mb-0 text-secondary">{{ 'No Notifications Yet'|trans }}</p>
+        {% endif %}
+        <a class="dropdown-item border-top py-3" href="{{ 'support'|url }}">{{ 'View Support Tickets'|trans }}</a>
+    </div>
+</div>

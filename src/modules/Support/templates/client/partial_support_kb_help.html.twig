@@ -1,0 +1,11 @@
+<section class="mb-4" aria-labelledby="kb-help-heading">
+    <h2 class="h3" id="kb-help-heading">{{ 'Still Need Help?'|trans }}</h2>
+    <p class="text-secondary mb-2">{{ 'If you cannot find an answer, our support team can help.'|trans }}</p>
+    {% if client %}
+        <a class="btn btn-outline-primary" href="{{ 'support'|url(query: {'ticket': 1}) }}">{{ 'Open a Ticket'|trans }}</a>
+    {% elseif guest.support_guest_tickets_enabled %}
+        <a class="btn btn-outline-primary" href="{{ 'support/contact-us'|url }}">{{ 'Contact Support'|trans }}</a>
+    {% else %}
+        <a class="btn btn-outline-primary" href="{{ 'login'|url }}">{{ 'Sign In to Contact Support'|trans }}</a>
+    {% endif %}
+</section>

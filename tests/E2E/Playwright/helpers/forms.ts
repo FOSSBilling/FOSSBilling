@@ -1,13 +1,13 @@
 import { expect, type Locator, type Page, type Response } from '@playwright/test';
 
 /**
- * Waits for the next POST response whose URL path contains the given API path fragment.
+ * Waits for the next API response with the requested method (POST by default).
  * Register the returned promise before triggering the action that fires the request.
  */
-export function waitForApiResponse(page: Page, apiPathFragment: string): Promise<Response> {
+export function waitForApiResponse(page: Page, apiPathFragment: string, method = 'POST'): Promise<Response> {
   return page.waitForResponse(
     (response) =>
-      response.request().method() === 'POST' &&
+      response.request().method() === method &&
       new URL(response.url()).pathname.includes(apiPathFragment),
   );
 }

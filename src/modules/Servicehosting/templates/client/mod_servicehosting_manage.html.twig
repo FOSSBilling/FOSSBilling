@@ -1,35 +1,43 @@
 {% if order.status == 'active' %}
 <div class="card mb-4">
     <div class="card-header">
-        <h2>{{ 'Manage Hosting Account'|trans }}</h2>
+        <h2 class="h3">{{ 'Manage Hosting Account'|trans }}</h2>
     </div>
     <div class="card-body">
-        <ul class="nav nav-tabs mb-2">
+        <div class="control-group mb-4">
+            <div class="controls d-flex flex-wrap gap-2 client-action-group">
+                <a class="btn btn-primary" href="{{ 'servicehosting/get_login_url'|api_url(query: { 'order_id':  order.id }) }}" {{ fb_api_link({callback: 'onAfterLoginLinkCreated'}) }}>{{ 'Login to Control Panel'|trans }}</a>
+                {% if service.domain_order_id %}
+                    <a class="btn btn-outline-secondary" href='{{ "order/service/manage/#{service.domain_order_id}"|url }}'>{{ 'Manage Domain'|trans }}</a>
+                {% endif %}
+            </div>
+        </div>
+        <ul class="nav nav-tabs mb-3 client-hosting-tabs" role="tablist" aria-label="{{ 'Hosting Management'|trans }}">
             <li class="nav-item">
-                <a class="nav-link active" data-bs-toggle="tab" href="#details">{{ 'Details'|trans }}</a>
+                <a class="nav-link active" id="hosting-details-tab" role="tab" aria-controls="hosting-details" aria-selected="true" data-bs-toggle="tab" href="#hosting-details">{{ 'Access Details'|trans }}</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" data-bs-toggle="tab" href="#password">{{ 'Password'|trans }}</a>
+                <a class="nav-link" id="hosting-password-tab" role="tab" aria-controls="hosting-password" aria-selected="false" data-bs-toggle="tab" href="#hosting-password">{{ 'Change Password'|trans }}</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" data-bs-toggle="tab" href="#domain">{{ 'Domain'|trans }}</a>
+                <a class="nav-link" id="hosting-domain-tab" role="tab" aria-controls="hosting-domain" aria-selected="false" data-bs-toggle="tab" href="#hosting-domain">{{ 'Change Domain'|trans }}</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" data-bs-toggle="tab" href="#username">{{ 'Username'|trans }}</a>
+                <a class="nav-link" id="hosting-username-tab" role="tab" aria-controls="hosting-username" aria-selected="false" data-bs-toggle="tab" href="#hosting-username">{{ 'Change Username'|trans }}</a>
             </li>
         </ul>
         <div class="tab-content">
             {# Hosting details #}
-            <div class="tab-pane fade active show" role="tabpanel" id="details">
-                <h3>{{ 'Details'|trans }}</h3>
+            <div class="tab-pane fade active show" role="tabpanel" id="hosting-details" aria-labelledby="hosting-details-tab" tabindex="0">
+                <h3 class="h4">{{ 'Details'|trans }}</h3>
                 {% set server = service.server %}
                 {% set hp = service.hosting_plan %}
-                <table class="table table-striped table-bordered table-sm">
+                <div class="table-responsive"><table class="table table-vcenter table-striped table-sm client-service-properties">
                     <tbody>
                         <tr>
                             <td>{{ 'Domain'|trans }}:</td>
                             <td>
-                                <a target="_blank" href="http://{{ service.domain }}">{{ service.domain }}</a>
+                                <a target="_blank" rel="noopener" href="http://{{ service.domain }}">{{ service.domain }}</a>
                             </td>
                         </tr>
 
@@ -68,31 +76,23 @@
                             <td>{% if hp.quota == 'unlimited' %}{{ 'Unlimited'|trans }}{% else %}{{ hp.quota }} MB{% endif %}</td>
                         </tr>
                     </tbody>
-                </table>
-                <div class="control-group">
-                    <div class="controls">
-                        {% if service.domain_order_id %}
-                            <a class="btn btn-primary" href='{{ "order/service/manage/#{service.domain_order_id}"|url }}'>{{ 'Manage Domain'|trans }}</a>
-                        {% endif %}
-                        <a class="btn btn-primary" href="{{ 'servicehosting/get_login_url'|api_url(query: { 'order_id':  order.id }) }}" {{ fb_api_link({callback: 'onAfterLoginLinkCreated'}) }}>{{ 'Login to Control Panel'|trans }}</a>
-                    </div>
-                </div>
+                </table></div>
             </div>
             {# Hosting password #}
-            <div class="tab-pane fade" role="tabpanel" id="password">
-                <h3>{{ 'Change Your Control Panel/FTP/SSH Password'|trans }}</h3>
-                <form action="{{ 'servicehosting/change_password'|api_url }}" method="post" {{ fb_api_form({message: 'Password Changed'|trans}) }}>
+            <div class="tab-pane fade" role="tabpanel" id="hosting-password" aria-labelledby="hosting-password-tab" tabindex="0">
+                <h3 class="h4">{{ 'Change Your Control Panel/FTP/SSH Password'|trans }}</h3>
+                <form action="{{ 'servicehosting/change_password'|api_url }}" method="post" {{ fb_api_form({message: 'Password Changed'|trans}) }} data-auth-passwords data-password-mismatch="{{ 'Passwords do not match.'|trans }}">
                     <fieldset>
                         <div class="control-group">
-                            <label class="col-form-label" >{{ 'Password'|trans }}: </label>
+                            <label class="col-form-label" for="hosting-new-password">{{ 'Password'|trans }}: </label>
                             <div class="controls">
-                                <input class="form-control" type="password" name="password" value="{{ request.password }}" required="required">
+                                <input class="form-control" type="password" name="password" id="hosting-new-password" autocomplete="new-password" data-auth-password data-auth-new-password required="required">
                             </div>
                         </div>
                         <div class="control-group">
-                            <label class="col-form-label" >{{ 'Password Confirm'|trans }}: </label>
+                            <label class="col-form-label" for="hosting-confirm-password">{{ 'Confirm Password'|trans }}: </label>
                             <div class="controls">
-                                <input class="form-control" type="password" name="password_confirm" value="{{ request.password_confirm }}" required="required">
+                                <input class="form-control" type="password" name="password_confirm" id="hosting-confirm-password" autocomplete="new-password" data-auth-password data-auth-confirm-password required="required">
                             </div>
                         </div>
 
@@ -106,15 +106,14 @@
                 </form>
             </div>
             {# Hosting domain #}
-            <div class="tab-pane fade" role="tabpanel" id="domain">
-                <h3>{{ 'Change Domain'|trans }}</h3>
+            <div class="tab-pane fade" role="tabpanel" id="hosting-domain" aria-labelledby="hosting-domain-tab" tabindex="0">
+                <h3 class="h4">{{ 'Change Domain'|trans }}</h3>
                 <form action="{{ 'servicehosting/change_domain'|api_url }}" method="post" {{ fb_api_form({message: 'Domain Name Changed'|trans}) }}>
                     <fieldset>
                         <div class="control-group">
-                            <label class="col-form-label" >{{ 'New Domain'|trans }}: </label>
-                            <div class="controls row">
-                                <input class="form-control w-50 ms-2" type="text" name="sld" value="{{ request.domain|default(service.sld) }}" required="required" class="span2">
-                                <input class="form-control w-25" type="text" name="tld" value="{{ request.domain|default(service.tld) }}" required="required" class="span1">
+                            <div class="row g-3">
+                                <div class="col-12 col-sm-8"><label class="form-label" for="hosting-sld">{{ 'Domain Name'|trans }}</label><input class="form-control" type="text" id="hosting-sld" name="sld" value="{{ request.sld|default(service.sld) }}" required></div>
+                                <div class="col-12 col-sm-4"><label class="form-label" for="hosting-tld">{{ 'Extension'|trans }}</label><input class="form-control" type="text" id="hosting-tld" name="tld" value="{{ request.tld|default(service.tld) }}" required></div>
                             </div>
                         </div>
                         <input type="hidden" name="order_id" value="{{ order.id }}">
@@ -127,14 +126,14 @@
                 </form>
             </div>
             {# Hosting username #}
-            <div class="tab-pane fade" role="tabpanel" id="username">
-                <h3>{{ 'Change Username'|trans }}</h3>
+            <div class="tab-pane fade" role="tabpanel" id="hosting-username" aria-labelledby="hosting-username-tab" tabindex="0">
+                <h3 class="h4">{{ 'Change Username'|trans }}</h3>
                 <form method="post" action="{{ 'servicehosting/change_username'|api_url }}" {{ fb_api_form({message: 'Username Changed'|trans}) }}>
                     <fieldset>
                     <div class="control-group">
-                        <label class="col-form-label" >{{ 'Username'|trans }}: </label>
+                        <label class="col-form-label" for="hosting-new-username">{{ 'Username'|trans }}: </label>
                         <div class="controls">
-                            <input class="form-control" type="text" name="username" value="{{ request.username|default(service.username) }}" required="required">
+                            <input class="form-control" type="text" name="username" id="hosting-new-username" autocomplete="username" value="{{ request.username|default(service.username) }}" required="required">
                         </div>
                     </div>
 

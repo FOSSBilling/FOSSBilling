@@ -98,14 +98,14 @@
                             <td>{{ mf.status_badge(post.status, 'post') }}</td>
                             <td>{{ post.created_at|format_datetime }}</td>
                             <td>
-                                <a class="btn btn-icon" href='{{ "news/post/#{post.id}"|url }}'>
-                                    <svg class="icon">
+                                <a class="btn btn-icon" href='{{ "news/post/#{post.id}"|url }}' aria-label="{{ 'Edit News'|trans }}" title="{{ 'Edit News'|trans }}">
+                                    <svg class="icon" aria-hidden="true" focusable="false">
                                         <use href="#edit" />
                                     </svg>
                                 </a>
                                 <a class="btn btn-icon" href="{{ 'news/delete'|api_url(query: { 'id': post.id }) }}"
-                                    {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'news'|url}) }}>
-                                    <svg class="icon">
+                                    {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'news'|url}) }} aria-label="{{ 'Delete News'|trans }}" title="{{ 'Delete News'|trans }}">
+                                    <svg class="icon" aria-hidden="true" focusable="false">
                                         <use href="#trash" />
                                     </svg>
                                 </a>

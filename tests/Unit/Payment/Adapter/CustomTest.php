@@ -134,3 +134,12 @@ test('approveTransaction throws when the transaction has no gateway', function (
         expect($e->getCode())->toBe(7011);
     }
 });
+
+test('custom gateway reports missing instructions before presenting a payment handoff', function (array $config, bool $subscription): void {
+    $adapter = new Payment_Adapter_Custom($config);
+    $api = new FOSSBilling\Api\Proxy(new Box\Mod\Staff\Entity\Admin());
+    expect(fn () => $adapter->getHtml($api, 11, $subscription))
+        ->toThrow(Payment_Exception::class, 'Payment instructions are not configured');
+})->with([
+    [[], false], [[], true], [['single' => '  '], false], [['recurrent' => ''], true], [['single' => []], false], [['single' => 'Configured'], true], [['recurrent' => 'Configured'], false],
+]);

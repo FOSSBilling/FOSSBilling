@@ -1,0 +1,9 @@
+<div class="list-group list-group-flush client-kb-articles">
+    {% for article in articles.list %}
+        <a class="list-group-item list-group-item-action px-0 py-3" href="{{ "support/kb/#{article.category.slug}/#{article.slug}"|url(query: {'q': request.q|default('')|trim, 'page': request.page|default(1)}) }}">
+            <span class="d-block fw-semibold">{{ article.title }}</span>
+            {% if show_category|default(false) %}<span class="d-block small text-secondary mt-1">{{ article.category.title }}</span>{% endif %}
+        </a>
+    {% endfor %}
+</div>
+<div class="mt-3">{{ include('partial_pagination.html.twig', {'list': articles, 'url': pagination_url}) }}</div>

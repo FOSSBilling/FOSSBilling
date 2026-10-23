@@ -100,14 +100,12 @@
 {% block content %}
     <div class="card">
         <div class="card-header">
-            <div>
-                <h3 class="card-title">{{ 'Support Tickets'|trans }}</h3>
-                <p class="card-subtitle">{{ 'Manage client and guest tickets, filter conversations, and open new support requests.'|trans }}</p>
-            </div>
+            {{ include('partial_page_heading.html.twig', {title: 'Support Tickets'|trans, page_title_class: 'card-title mb-0'}) }}
         </div>
         <div class="card-body p-0">
             {{ include('partial_search.html.twig', {
-                search_body_class: filter_panel_open ? 'pb-2 border-bottom-0' : '',
+                search_preserve_fields: ['auth', 'client_id', 'order_id', 'subject', 'name', 'email', 'content', 'priority', 'status', 'support_helpdesk_id', 'date_from', 'date_to', 'sort', 'direction', 'per_page'],
+                    search_body_class: filter_panel_open ? 'pb-2 border-bottom-0' : '',
                 search_toolbar_actions: support_toolbar_actions
             }) }}
             <section id="{{ filter_panel_id }}" class="card-body pt-0 px-3 pb-3 border-bottom collapse{% if filter_panel_open %} show{% endif %}">
@@ -219,22 +217,24 @@
                     </div>
                 </form>
             </section>
-            <div class="table-responsive">
+            {% set tickets = admin.support_ticket_get_list({ 'per_page': 25, 'page': request.page, 'deep': 0, 'include_first': 0 }|merge(request)) %}
+                {% if tickets.list %}
+                <div class="table-responsive">
             <table class="table card-table table-vcenter table-striped text-nowrap">
                 <thead>
                     <tr>
-                        <th class="w-1">
-                            <input class="form-check-input m-0 align-middle batch-delete-master-checkbox" type="checkbox">
+                        <th scope="col" class="w-1">
+                            <input class="form-check-input m-0 align-middle batch-delete-master-checkbox" type="checkbox" aria-label="{{ 'Select All'|trans }}">
                         </th>
-                        <th>{{ 'Author'|trans }}</th>
+                        <th scope="col">{{ 'Author'|trans }}</th>
                         {{ include('partial_sortable_th.html.twig', { 'label': 'Subject'|trans, 'sort_key': 'subject', 'url': 'support', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
                         {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'support', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
-                        <th>{{ 'Helpdesk'|trans }}</th>
-                        <th class="w-1"></th>
+                        <th scope="col">{{ 'Helpdesk'|trans }}</th>
+                        <th scope="col" class="w-1"><span class="visually-hidden">{{ 'Actions'|trans }}</span></th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% set tickets = admin.support_ticket_get_list({ 'per_page': 25, 'page': request.page, 'deep': 0, 'include_first': 0 }|merge(request)) %}
+
                     {% for i, ticket in tickets.list %}
                     <tr class="priority_{{ ticket.priority|default(100) }}">
                         <td>
@@ -282,31 +282,36 @@
                         <td>{{ mf.status_badge(ticket.status, 'ticket') }}</td>
                         <td>{{ ticket.helpdesk.name|default('-') }}</td>
                         <td>
-                            <a class="btn btn-icon" href='{{ "support/ticket/#{ticket.id}"|url }}#reply-box'>
-                                <svg class="icon">
+                            <a class="btn btn-icon" href='{{ "support/ticket/#{ticket.id}"|url }}#reply-box' aria-label="{{ 'Reply to Ticket'|trans }}" title="{{ 'Reply to Ticket'|trans }}">
+                                <svg class="icon" aria-hidden="true" focusable="false">
                                     <use href="#edit" />
                                 </svg>
                             </a>
                             <a class="btn btn-icon" href="{{ 'support/ticket_delete'|api_url(query: { 'id': ticket.id }) }}"
-                                {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support'|url }) }}>
-                                <svg class="icon">
+                                {{ fb_api_link({ message: 'Are you sure?'|trans, modal: {type: 'confirm', title: 'Are you sure?'|trans}, redirect: 'support'|url }) }} aria-label="{{ 'Delete Ticket'|trans }}" title="{{ 'Delete Ticket'|trans }}">
+                                <svg class="icon" aria-hidden="true" focusable="false">
                                     <use href="#trash" />
                                 </svg>
                             </a>
                         </td>
                     </tr>
-                    {% else %}
-                    <tr>
-                        <td class="text-muted" colspan="6">{{ 'The list is empty'|trans }}</td>
-                    </tr>
                     {% endfor %}
                 </tbody>
             </table>
             </div>
+                {% else %}
+                    <div class="card-body">
+                        {% include 'partial_admin_list_empty.html.twig' with {
+                            empty_list: tickets, empty_list_url: 'support',
+                            empty_title: 'No Support Tickets Yet'|trans,
+                            empty_description: 'Tickets will appear here when clients contact support or you open a ticket.'|trans
+                        } %}
+                    </div>
+                {% endif %}
 
             <div class="card-footer d-flex align-items-center justify-content-between">
                 {% include 'partial_batch_delete.html.twig' with { 'action': 'support/batch_delete' } %}
-                {% include 'partial_pagination.html.twig' with { 'list': tickets, 'url': 'support' } %}
+                {% if tickets.list %}{% include 'partial_pagination.html.twig' with { 'list': tickets, 'url': 'support' } %}{% endif %}
             </div>
         </div>
 

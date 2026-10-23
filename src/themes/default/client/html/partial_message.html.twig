@@ -1,8 +1,10 @@
 {% for label, messages in flashes %}
     {% for msg in messages %}
-        <div class="h-block {{label}}">
-            <h2>{{label}}</h2>
-            <p>{{msg}}</p>
-        </div>
+        {% include 'partial_notice.html.twig' with {
+            notice_type: label in ['notice', 'message'] ? 'info' : label,
+            notice_title: {'error': 'Error'|trans, 'danger': 'Error'|trans, 'success': 'Success'|trans, 'warning': 'Warning'|trans, 'info': 'Information'|trans, 'notice': 'Notice'|trans}[label]|default(label|trans), notice_message: msg,
+            notice_class: 'h-block ' ~ label,
+            notice_role: label in ['error', 'danger'] ? 'alert' : 'status'
+        } only %}
     {% endfor %}
 {% endfor %}

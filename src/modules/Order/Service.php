@@ -441,7 +441,7 @@ class Service implements InjectionAwareInterface
         return $this->di['em']->getConnection()->fetchAllAssociative($query, $bindings);
     }
 
-    public function getSoonExpiringActiveOrdersQuery($data = []): array
+    public function getSoonExpiringActiveOrdersQuery($data = [], bool $sort = true): array
     {
         $systemService = $this->di['mod_service']('system');
         $days_until_expiration = $systemService->getParamValue('invoice_issue_days_before_expire', 14);
@@ -494,7 +494,15 @@ class Service implements InjectionAwareInterface
         // row filter, not an aggregate condition, so it belongs in WHERE (via AND) - PostgreSQL
         // rejects a HAVING clause referencing an ungrouped, non-aggregate column outright, unlike
         // MySQL/SQLite's more permissive handling of HAVING without GROUP BY.
-        $query .= ' AND co.expires_at < :expires_before ORDER BY co.client_id DESC';
+        if (empty($data['include_future'])) {
+            $query .= ' AND co.expires_at < :expires_before';
+        }
+        if (!empty($data['hide_addons'])) {
+            $query .= ' AND co.group_master = 1';
+        }
+        if ($sort) {
+            $query .= ' ORDER BY co.client_id DESC';
+        }
         $bindings['status'] = Order::STATUS_ACTIVE;
         $bindings['invoice_option'] = 'issue-invoice';
         $bindings['unpaid_invoice_status'] = Invoice::STATUS_UNPAID;
@@ -504,11 +512,71 @@ class Service implements InjectionAwareInterface
         $bindings['pending_item_task'] = \Box\Mod\Invoice\Entity\InvoiceItem::TASK_RENEW;
         $bindings['pending_item_status'] = \Box\Mod\Invoice\Entity\InvoiceItem::STATUS_EXECUTED;
         $bindings['pending_invoice_status'] = Invoice::STATUS_PAID;
-        $bindings['expires_before'] = (new \DateTimeImmutable('today'))
+        $expiresBefore = (new \DateTimeImmutable('today'))
             ->modify('+' . ((int) $days_until_expiration + 1) . ' days')
             ->format('Y-m-d H:i:s');
+        if (empty($data['include_future'])) {
+            $bindings['expires_before'] = $expiresBefore;
+        }
 
         return [$query, $bindings];
+    }
+
+    /** Services with a payment, renewal, setup problem or suspension to review. */
+    public function getReviewOrdersQuery(int $clientId, bool $sort = true): array
+    {
+        [$renewals, $bindings] = $this->getSoonExpiringActiveOrdersQuery(['client_id' => $clientId, 'hide_addons' => true], sort: false);
+        $issues = "SELECT co.* FROM client_order co
+                   WHERE co.client_id = :client_id AND co.group_master = 1
+                   AND (co.status IN ('failed_setup', 'failed_renew', 'suspended')
+                       OR (co.status != 'canceled' AND EXISTS (
+                           SELECT 1 FROM invoice payment_invoice
+                           WHERE payment_invoice.id = co.unpaid_invoice_id
+                           AND payment_invoice.client_id = co.client_id
+                           AND payment_invoice.issued = true AND payment_invoice.status = 'unpaid'
+                       )))";
+
+        // Renewal candidates exclude unpaid invoices and failed/suspended services, so the sets cannot overlap.
+        return [$issues . ' UNION ALL ' . $renewals . ($sort ? ' ORDER BY id DESC' : ''), $bindings];
+    }
+
+    /** Add client payment and renewal actions for the displayed services only. */
+    public function getClientServiceActions(array $orders, int $clientId): array
+    {
+        if ($orders === []) {
+            return [];
+        }
+
+        $bindings = ['client_id' => $clientId];
+        $placeholders = [];
+        foreach (array_column($orders, 'id') as $index => $id) {
+            $key = 'action_id_' . $index;
+            $placeholders[] = ':' . $key;
+            $bindings[$key] = (int) $id;
+        }
+        $ids = implode(', ', $placeholders);
+        $connection = $this->di['em']->getConnection();
+        $invoices = $connection->fetchAllAssociative(
+            "SELECT co.id, i.hash FROM client_order co
+             INNER JOIN invoice i ON i.id = co.unpaid_invoice_id AND i.client_id = co.client_id
+             WHERE co.client_id = :client_id AND co.id IN ($ids)
+             AND co.status != 'canceled' AND i.issued = true AND i.status = 'unpaid'",
+            $bindings,
+        );
+        $invoiceHashes = array_column($invoices, 'hash', 'id');
+        [$renewalQuery, $renewalBindings] = $this->getSoonExpiringActiveOrdersQuery(['client_id' => $clientId, 'include_future' => true], sort: false);
+        $renewals = $connection->fetchAllAssociative($renewalQuery . " AND co.id IN ($ids)", array_merge($renewalBindings, $bindings));
+        $renewalDates = array_column($renewals, 'expires_at', 'id');
+        $days = (int) $this->di['mod_service']('system')->getParamValue('invoice_issue_days_before_expire', 14);
+        $expiresBefore = (new \DateTimeImmutable('today'))->modify('+' . ($days + 1) . ' days')->format('Y-m-d H:i:s');
+        foreach ($orders as &$order) {
+            $order['unpaid_invoice_hash'] = $invoiceHashes[$order['id']] ?? null;
+            $order['can_renew'] = isset($renewalDates[$order['id']]);
+            $order['renewal_due'] = $order['can_renew'] && $renewalDates[$order['id']] < $expiresBefore;
+        }
+        unset($order);
+
+        return $orders;
     }
 
     public function toApiArray(Order $model, $deep = true, $identity = null): array

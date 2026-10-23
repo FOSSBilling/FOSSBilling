@@ -32,6 +32,28 @@ test('exception', function (): void {
         ->toThrow(LoaderError::class);
 });
 
+test('client logo resolved by the production loader supports configured theme variants and fallbacks', function (): void {
+    $loader = new TwigLoader(AppArea::CLIENT, PATH_THEMES . '/default/client', PATH_THEMES . '/default/shared/html');
+    $twig = new Twig\Environment($loader, ['strict_variables' => true]);
+    $twig->addFilter(new Twig\TwigFilter('url', fn (string $path): string => $path));
+    $context = ['company' => ['name' => 'Acme Hosting'], 'link_url' => '/account', 'image_class' => 'brand-image'];
+
+    $html = $twig->render('partial_company_logo.html.twig', $context + [
+        'logo_url' => '/custom-light.svg', 'dark_logo_url' => '/custom-dark.svg',
+    ]);
+    expect($html)->toContain('class="fb-image-contain hide-theme-light brand-image" src="/custom-dark.svg"')
+        ->toContain('class="fb-image-contain hide-theme-dark brand-image" src="/custom-light.svg"')
+        ->toContain('href="/account"');
+
+    foreach (['logo_url', 'dark_logo_url'] as $variant) {
+        $html = $twig->render('partial_company_logo.html.twig', $context + [$variant => '/single-logo.svg']);
+        expect(substr_count($html, 'src="/single-logo.svg"'))->toBe(2);
+    }
+
+    $html = $twig->render('partial_company_logo.html.twig', $context + ['logo_url' => null, 'dark_logo_url' => null]);
+    expect($html)->toContain('<span>Acme Hosting</span>')->not->toContain('<img');
+});
+
 function makeFixturePackage(string $areaName, bool $withShared): array
 {
     $root = Path::join(sys_get_temp_dir(), 'fossbilling-twig-loader-test-' . bin2hex(random_bytes(8)));

@@ -49,6 +49,7 @@ function escapeHtmlAttribute(str) {
  * @param {string} content - The email HTML content
  */
 function showEmailPreview(subject, content) {
+    const preparedContent = FOSSBilling.ui.prepareEmailPreview?.(content) ?? content;
     const modalContent = `
         <div class="d-flex flex-column gap-4">
             <div>
@@ -64,9 +65,10 @@ function showEmailPreview(subject, content) {
                 <div class="border rounded overflow-hidden bg-body-tertiary">
                     {# Only trusted template-editor previews may open outside the sandbox. #}
                     <iframe
-                        style="width: 100%; min-height: 400px; border: none; display: block; background: white;"
+                        style="width: 100%; min-height: 400px; border: none; display: block; background: var(--tblr-bg-surface); color-scheme: inherit;"
                         sandbox="allow-popups{% if allow_popup_escape|default(false) %} allow-popups-to-escape-sandbox{% endif %}"
-                        srcdoc="${escapeHtmlAttribute(content)}"
+                        title="${escapeHtmlAttribute(subject)}"
+                        srcdoc="${escapeHtmlAttribute(preparedContent)}"
                     ></iframe>
                 </div>
             </div>

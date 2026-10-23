@@ -37,7 +37,7 @@
             <tr>
                 <td class="text-nowrap">
                     {% if extension.icon_url|default('') %}
-                        <img src="{{ extension.icon_url }}" alt="{{ extension.name|default('Extension') }}" style="width: 32px; height: 32px;">
+                        <img class="fb-image-contain" src="{{ extension.icon_url }}" alt="{{ extension.name|default('Extension') }}" style="width: 32px; height: 32px;">
                     {% else %}
                         <svg class="icon" style="width: 32px; height: 32px;"><use href="#settings" /></svg>
                     {% endif %}

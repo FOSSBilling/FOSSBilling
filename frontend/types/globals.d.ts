@@ -11,6 +11,9 @@ interface FOSSBillingApiNamespace {
 }
 
 interface FOSSBillingEditorInstance {
+  focus?: () => void;
+  getAccessibleElement?: () => HTMLElement;
+  setAccessibilityAttribute?: (name: string, value: string | null) => void;
   destroy?: () => void | Promise<void>;
   getData: () => string;
   setData: (data: string) => void;
@@ -86,7 +89,14 @@ interface FOSSBillingRuntime {
     serializeFormDataToObject: (formData: FormData) => Record<string, unknown>;
   };
   ui?: {
+    prepareEmailPreview?: (source: string) => string;
     notify: (message: string, type?: string) => void;
+    formError?: (form: HTMLFormElement, message: string) => void;
+    clearFormError?: (form: HTMLFormElement) => void;
+    formLoading?: (form: HTMLFormElement, busy: boolean, submitter?: HTMLElement | null) => void;
+    formSaved?: (form: HTMLFormElement) => void;
+    fieldError?: (field: HTMLElement, message?: string) => void;
+    clearFieldError?: (field: HTMLElement) => void;
   };
 }
 
@@ -111,7 +121,7 @@ interface ModalsRuntime {
 interface BootstrapConstructor<T = unknown> {
   new (element: Element, options?: Record<string, unknown>): T;
   getInstance?: (element: Element) => T | null;
-  getOrCreateInstance?: (element: Element) => T;
+  getOrCreateInstance?: (element: Element, options?: Record<string, unknown>) => T;
 }
 
 interface BootstrapRuntime {
@@ -119,7 +129,7 @@ interface BootstrapRuntime {
   Modal: BootstrapConstructor<{ hide: () => void; show: () => void }>;
   Popover: BootstrapConstructor<{ hide: () => void; show: () => void }>;
   Tab: BootstrapConstructor<{ show: () => void }>;
-  Toast: BootstrapConstructor<{ show: () => void }>;
+  Toast: BootstrapConstructor<{ show: () => void; dispose: () => void }>;
   Tooltip: BootstrapConstructor<{ dispose: () => void; hide: () => void; show: () => void }>;
 }
 
@@ -130,6 +140,7 @@ declare global {
   const Modals: ModalsRuntime | undefined;
 
   interface Window {
+    Modals?: ModalsRuntime;
     FOSSBilling: FOSSBillingRuntime;
   }
 

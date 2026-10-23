@@ -54,7 +54,7 @@
                                                     {{ source (ext.icon_path, ignore_missing = true) }}
                                                 </div>
                                             {% else %}
-                                                <img src="{{ ext.icon_url|default('assets/icons/cog.svg') }}" alt="{{ ext.name }}" style="width:32px;height:32px;">
+                                                <img class="fb-image-contain" src="{{ ext.icon_url|default('assets/icons/cog.svg') }}" alt="{{ ext.name }}" style="width:32px;height:32px;">
                                             {% endif %}
                                         </td>
                                         <td>

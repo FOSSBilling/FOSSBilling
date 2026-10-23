@@ -100,7 +100,7 @@ test('banklink renders the payment form for a payable invoice', function (): voi
     expect($controller->get_banklink($app, 'abc', 2))->toBe('banklink-html');
 });
 
-test('banklink redirects when payment is denied and rethrows other failures', function (): void {
+test('banklink redirects denied payment access and renders recovery for other failures', function (): void {
     $denied = new class {
         public function invoice_get(array $data): array
         {
@@ -127,8 +127,7 @@ test('banklink redirects when payment is denied and rethrows other failures', fu
 
     expect($controller->get_banklink($app, 'abc', 2))->toBeInstanceOf(RedirectResponse::class);
 
-    // A non-access failure (e.g. the already-paid guard) is not a redirect:
-    // only code 403 means "not yours".
+    // Non-access gateway failures keep the authorized invoice as a recovery point.
     $alreadyPaid = new class {
         public function invoice_get(array $data): array
         {
@@ -143,8 +142,12 @@ test('banklink redirects when payment is denied and rethrows other failures', fu
 
     $di['api_guest'] = $alreadyPaid;
 
-    expect(fn () => $controller->get_banklink($app, 'abc', 2))
-        ->toThrow(FOSSBilling\InformationException::class, 'already paid');
+    $di['logger'] = new Psr\Log\NullLogger();
+    $app->shouldReceive('render')->once()
+        ->with('mod_invoice_banklink', ['invoice' => ['id' => 7], 'payment_error' => true])
+        ->andReturn('payment-recovery');
+
+    expect($controller->get_banklink($app, 'abc', 2))->toBe('payment-recovery');
 });
 
 test('pdf download returns the response, redirects on denial, and rejects garbage', function (): void {
@@ -177,3 +180,39 @@ test('pdf download returns the response, redirects on denial, and rejects garbag
 
     expect($controller->get_pdf($app, 'abc'))->toBeInstanceOf(RedirectResponse::class);
 });
+
+test('payment handoff does not call a gateway for a settled or not payable invoice', function (array $state): void {
+    $invoice = array_replace(['id' => 7, 'status' => 'unpaid', 'issued' => true, 'total' => 25], $state);
+    $api = Mockery::mock();
+    $api->shouldReceive('invoice_get')->once()->with(Mockery::subset(['hash' => 'abc']))->andReturn($invoice);
+    $api->shouldNotReceive('invoice_payment');
+    $app = Mockery::mock(Box_App::class);
+    $app->shouldReceive('getRequest')->andReturn(new Symfony\Component\HttpFoundation\Request());
+    $app->shouldReceive('render')->once()->with('mod_invoice_thankyou', ['invoice' => $invoice])->andReturn('invoice-outcome');
+    $di = container();
+    $di['api_guest'] = $api;
+    $controller = new Client();
+    $controller->setDi($di);
+    expect($controller->get_banklink($app, 'abc', 2))->toBe('invoice-outcome');
+})->with([
+    [['status' => 'paid']], [['status' => 'refunded']], [['status' => 'canceled']], [['issued' => false]], [['total' => 0]], [['credit_note_for_invoice_id' => 3]], [['replaced_by_invoice_id' => 8]],
+]);
+
+test('gateway exceptions render recovery without exposing their diagnostic text', function (Throwable $failure): void {
+    $api = Mockery::mock();
+    $api->shouldReceive('invoice_get')->andReturn(['id' => 7, 'status' => 'unpaid']);
+    $api->shouldReceive('invoice_payment')->once()->andThrow($failure);
+    $app = Mockery::mock(Box_App::class);
+    $app->shouldReceive('getRequest')->andReturn(new Symfony\Component\HttpFoundation\Request());
+    $app->shouldReceive('render')->once()->with('mod_invoice_banklink', ['invoice' => ['id' => 7, 'status' => 'unpaid'], 'payment_error' => true])->andReturn('recovery');
+    $di = container();
+    $di['api_guest'] = $api;
+    $di['logger'] = new Psr\Log\NullLogger();
+    $controller = new Client();
+    $controller->setDi($di);
+    expect($controller->get_banklink($app, 'abc', 2))->toBe('recovery');
+})->with([
+    [new RuntimeException('Private provider diagnostic')],
+    [new Payment_Exception('Private adapter configuration')],
+    [new TypeError('Private adapter runtime diagnostic')],
+]);

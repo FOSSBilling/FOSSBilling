@@ -17,11 +17,61 @@ namespace Box\Mod\Support\Api;
 
 use Box\Mod\Support\Entity\Helpdesk;
 use Box\Mod\Support\Entity\SupportTicket;
+use FOSSBilling\InformationException;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\Validation\Api\RequiredParams;
 
 class Client extends \FOSSBilling\Api\AbstractApi
 {
+    public function notification_get_list(): array
+    {
+        return $this->notificationService()->getFeed((int) $this->getIdentity()->getId());
+    }
+
+    #[RequiredParams(['id' => 'Notification ID was not passed'])]
+    public function notification_mark_read(array $data): array
+    {
+        $this->requireNotificationPost();
+        $clientId = (int) $this->getIdentity()->getId();
+        $this->notificationService()->getRepository()->markRead($clientId, (int) $data['id']);
+
+        return $this->notificationService()->getRepository()->summary($clientId);
+    }
+
+    #[RequiredParams(['through_id' => 'Notification boundary was not passed'])]
+    public function notification_mark_all_read(array $data): array
+    {
+        $this->requireNotificationPost();
+        $clientId = (int) $this->getIdentity()->getId();
+        $this->notificationService()->getRepository()->markAllRead($clientId, (int) $data['through_id']);
+
+        return $this->notificationService()->getRepository()->summary($clientId);
+    }
+
+    #[RequiredParams(['ticket_id' => 'Ticket ID was not passed', 'through_message_id' => 'Message boundary was not passed'])]
+    public function notification_read_ticket(array $data): array
+    {
+        $this->requireNotificationPost();
+        $identity = $this->getIdentity();
+        $this->getService()->findOneByClient($identity, (int) $data['ticket_id']);
+        $clientId = (int) $identity->getId();
+        $this->notificationService()->getRepository()->markTicketRead($clientId, (int) $data['ticket_id'], (int) $data['through_message_id']);
+
+        return $this->notificationService()->getRepository()->summary($clientId);
+    }
+
+    private function notificationService(): \Box\Mod\Support\ServiceNotification
+    {
+        return $this->getDi()['mod_service']('support', 'notification');
+    }
+
+    private function requireNotificationPost(): void
+    {
+        if (!$this->getDi()['request']->isMethod('POST')) {
+            throw new InformationException('This action requires POST', null, 405);
+        }
+    }
+
     /**
      * Get the list of tickets for the logged in client.
      *
@@ -88,7 +138,7 @@ class Client extends \FOSSBilling\Api\AbstractApi
 
         $helpdesk = $repo->find((int) $data['support_helpdesk_id']);
         if (!$helpdesk instanceof Helpdesk) {
-            throw new \FOSSBilling\InformationException('Helpdesk invalid');
+            throw new InformationException('Helpdesk invalid');
         }
 
         $client = $this->getIdentity();
@@ -108,11 +158,11 @@ class Client extends \FOSSBilling\Api\AbstractApi
         $ticket = $this->getService()->getSupportTicketRepository()->findOneByClient((int) $client->getId(), (int) $data['id']);
 
         if (!$ticket instanceof SupportTicket) {
-            throw new \FOSSBilling\InformationException('Ticket not found');
+            throw new InformationException('Ticket not found');
         }
 
         if (!$this->getService()->canBeReopened($ticket)) {
-            throw new \FOSSBilling\InformationException('Ticket cannot be reopened.');
+            throw new InformationException('Ticket cannot be reopened.');
         }
 
         $result = $this->getService()->ticketReply($ticket, $client, $data['content']);

@@ -1,0 +1,9 @@
+{# Determinate work only: unknown-duration requests use a spinner and status text. #}
+{% set progressValue = min(100, max(0, progress_value|default(0) + 0)) %}
+{% set progressTone = progress_tone|default('primary') %}
+<div class="fb-progress d-flex align-items-center gap-2">
+    <div class="progress flex-fill" role="progressbar" aria-label="{{ progress_label }}" aria-valuenow="{{ progressValue }}" aria-valuemin="0" aria-valuemax="100">
+        <div class="progress-bar bg-{{ progressTone }}" style="width: {{ progressValue }}%"></div>
+    </div>
+    <span class="small text-secondary flex-shrink-0" aria-hidden="true">{{ progressValue }}%</span>
+</div>

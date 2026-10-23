@@ -1,1 +1,94 @@
 @import "github-markdown-css/github-markdown-light.css";
+
+/* Shared reading styles inherit each theme's typography and branding. */
+.markdown-body {
+  color-scheme: inherit;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  color: var(--tblr-body-color, inherit);
+  background-color: transparent;
+  overflow-wrap: anywhere;
+  --borderColor-muted: var(--tblr-border-color, #d1d9e0);
+  --borderColor-accent-emphasis: var(--tblr-primary, #0969da);
+}
+
+.markdown-body a {
+  color: var(--tblr-link-color, #0969da);
+}
+
+.markdown-body a:hover {
+  color: var(--tblr-link-hover-color, #0550ae);
+}
+
+.markdown-body :is(h1, h2, h3, h4, h5, h6) {
+  font-weight: var(--tblr-font-weight-semibold, 600);
+  margin-block: 1.5rem 0.75rem;
+  overflow-wrap: anywhere;
+}
+
+.markdown-body :is(h1, h2) {
+  border-bottom-color: var(--tblr-border-color, #d1d9e0);
+}
+
+.markdown-body :is(p, ul, ol, dl, blockquote, pre, table) {
+  margin-block: 0 1rem;
+}
+
+.markdown-body blockquote {
+  color: var(--tblr-secondary-color, #59636e);
+  border-inline-start-color: var(--tblr-border-color, #d1d9e0);
+}
+
+.markdown-body h6 {
+  color: var(--tblr-secondary-color, #59636e);
+}
+
+.markdown-body :is(img, video, iframe) {
+  max-width: 100%;
+}
+
+.markdown-body :is(code, kbd, pre, samp, tt) {
+  font-family: var(--tblr-font-monospace, monospace);
+}
+
+.markdown-body :is(code, tt, kbd) {
+  color: inherit;
+  background-color: var(--tblr-tertiary-bg, #f6f8fa);
+  border-radius: var(--tblr-border-radius, 6px);
+}
+
+.markdown-body pre,
+.markdown-body .highlight pre {
+  max-width: 100%;
+  overflow-x: auto;
+  color: var(--tblr-body-color, #1f2328);
+  background-color: var(--tblr-tertiary-bg, #f6f8fa);
+  border-radius: var(--tblr-border-radius, 6px);
+}
+
+.markdown-body pre :is(code, tt) {
+  background-color: transparent;
+}
+
+.markdown-body :is(table th, table td, table tr) {
+  border-color: var(--tblr-border-color, #d1d9e0);
+}
+
+.markdown-body table tr {
+  background-color: var(--tblr-bg-surface, #fff);
+}
+
+.markdown-body table tr:nth-child(2n) {
+  background-color: var(--tblr-tertiary-bg, #f6f8fa);
+}
+
+.markdown-body mark {
+  color: var(--tblr-warning-text-emphasis, #1f2328);
+  background-color: var(--tblr-warning-bg-subtle, #fff8c5);
+}
+
+.markdown-body hr {
+  background-color: var(--tblr-border-color, #d1d9e0);
+}

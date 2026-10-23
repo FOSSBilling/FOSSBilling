@@ -1,6 +1,6 @@
 {% if product.addons is defined and product.addons|length > 0 %}
 <h4 class="mt-4 mb-1"><strong>{{ 'Addons & Extras'|trans }}</strong></h4>
-<table class="table table-sm table-borderless table-striped">
+<div class="table-responsive"><table class="table table-vcenter table-sm table-borderless table-striped">
   <tbody>
     {% for addon in product.addons %}
     <tr>
@@ -10,7 +10,7 @@
 
       <td>
         <label>
-          <h6><strong>{{ addon.title }}</strong></h6>
+          <h6 class="h4"><strong>{{ addon.title }}</strong></h6>
         </label>
         {{ (addon.description ?? '')|markdown_to_html }}
       </td>
@@ -19,7 +19,7 @@
         <label class="currency">
           {% set cart_currency = guest.cart_get_currency %}
           {% if addon.pricing.type is same as('recurrent') %}
-          <select class="form-select" name="addons[{{ addon.id }}][period]" rel="addon-periods-{{ addon.id }}">
+          <select class="form-select" aria-label="{{ 'Billing Cycle for %product%'|trans({'%product%': addon.title}) }}" name="addons[{{ addon.id }}][period]" rel="addon-periods-{{ addon.id }}">
             {% for code, prices in addon.pricing.recurrent %}
             {% if prices.enabled %}
             <option value="{{ code }}">{{ (prices.price * cart_currency.conversion_rate)|format_currency(cart_currency.code) }} {% if prices.setup !=
@@ -30,7 +30,8 @@
           {% endif %}
 
           {% if addon.pricing.type is same as('once') %}
-          <span class="badge text-bg-success">{{ ((addon.pricing.once.price + addon.pricing.once.setup) * cart_currency.conversion_rate)|format_currency(cart_currency.code) }}</span>
+          <span>{{ (addon.pricing.once.price * cart_currency.conversion_rate)|format_currency(cart_currency.code) }} · {{ 'One-Time Payment'|trans }}</span>
+          {% if addon.pricing.once.setup %}<div class="small">+ {{ (addon.pricing.once.setup * cart_currency.conversion_rate)|format_currency(cart_currency.code) }} {{ 'setup fee'|trans }}</div>{% endif %}
           {% endif %}
 
           {% if addon.pricing.type is same as('free') %}
@@ -47,26 +48,26 @@
             min="1"
             class="form-control"
             style="max-width: 90px; text-align: center;"
-            aria-label="{{ 'Addon quantity'|trans }}"
+            aria-label="{{ 'Quantity for %product%'|trans({'%product%': addon.title}) }}"
           >
           {% endif %}
           <input type="radio" class="btn-check" name="addons[{{ addon.id }}][selected]" value="1"
             id="addon_{{ addon.id }}" autocomplete="off">
           <label class="btn btn-outline-success" for="addon_{{ addon.id }}" data-bs-toggle="tooltip"
-            data-bs-title="{{ 'Add to cart'|trans }}">
-            <svg class="icon"><use href="#check" /></svg>
+            data-bs-title="{{ 'Add to Cart'|trans }}">
+            {{ 'Include'|trans }}<span class="visually-hidden"> {{ addon.title }}</span>
           </label>
 
           <input type="radio" class="btn-check" name="addons[{{ addon.id }}][selected]" value="0"
             id="addon_{{ addon.id }}_decline" autocomplete="off" checked>
           <label class="btn btn-outline-danger" for="addon_{{ addon.id }}_decline" data-bs-toggle="tooltip"
-            data-bs-title="{{ 'Remove from cart'|trans }}">
-            <svg class="icon"><use href="#x" /></svg>
+            data-bs-title="{{ 'Remove from Cart'|trans }}">
+            {{ 'Not Included'|trans }}<span class="visually-hidden"> {{ addon.title }}</span>
           </label>
         </div>
       </td>
     </tr>
     {% endfor %}
   </tbody>
-</table>
+</table></div>
 {% endif %}

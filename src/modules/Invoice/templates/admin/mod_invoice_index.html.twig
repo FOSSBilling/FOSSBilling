@@ -84,14 +84,12 @@
 {% block content %}
     <div class="card">
         <div class="card-header">
-            <div>
-                <h3 class="card-title">{{ 'Invoices'|trans }}</h3>
-                <p class="card-subtitle">{{ 'Manage invoices, review billing records, and prepare new invoices for clients.'|trans }}</p>
-            </div>
+            {{ include('partial_page_heading.html.twig', {title: 'Invoices'|trans, page_title_class: 'card-title mb-0'}) }}
         </div>
         <div class="card-body pt-0 pb-0 px-0">
             <div class="card border-0 shadow-none rounded-0">
                 {{ include('partial_search.html.twig', {
+                    search_preserve_fields: ['id', 'nr', 'client_id', 'status', 'currency', 'date_from', 'date_to', 'sort', 'direction', 'per_page'],
                     search_body_class: filter_panel_open ? 'pb-2 border-bottom-0' : '',
                     search_toolbar_actions: new_invoice_action
                 }) }}
@@ -190,26 +188,28 @@
                         </div>
                     </form>
                 </section>
-              <div class="table-responsive">
+              {% set invoices = admin.invoice_get_list({ 'per_page': 25, 'page': request.page }|merge(request)|merge({ 'summary': 1 })) %}
+                {% if invoices.list %}
+                <div class="table-responsive">
                 <table class="table card-table table-vcenter table-striped text-nowrap">
                     <thead>
                         <tr>
-                            <th class="w-1">
-                                <input type="checkbox" class="form-check-input m-0 align-middle batch-delete-master-checkbox">
+                            <th scope="col" class="w-1">
+                                <input type="checkbox" class="form-check-input m-0 align-middle batch-delete-master-checkbox" aria-label="{{ 'Select All'|trans }}">
                             </th>
                             {{ include('partial_sortable_th.html.twig', { 'label': '#'|trans, 'sort_key': 'id', 'url': 'invoice', 'th_class': 'w-1', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
-                            <th class="w-1"></th>
-                            <th>{{ 'Name'|trans }}</th>
-                            <th class="text-center">{{ 'Amount'|trans }}</th>
+                            <th scope="col" class="w-1"></th>
+                            <th scope="col">{{ 'Name'|trans }}</th>
+                            <th scope="col" class="text-center">{{ 'Amount'|trans }}</th>
                             {{ include('partial_sortable_th.html.twig', { 'label': 'Issued at'|trans, 'sort_key': 'created_at', 'url': 'invoice', 'th_class': 'text-center', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
                             {{ include('partial_sortable_th.html.twig', { 'label': 'Due Date'|trans, 'sort_key': 'due_at', 'url': 'invoice', 'th_class': 'text-center', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
                             {{ include('partial_sortable_th.html.twig', { 'label': 'Paid at'|trans, 'sort_key': 'paid_at', 'url': 'invoice', 'th_class': 'text-center', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
                             {{ include('partial_sortable_th.html.twig', { 'label': 'Status'|trans, 'sort_key': 'status', 'url': 'invoice', 'default_sort': 'id', 'default_direction': 'DESC' }) }}
-                            <th class="w-1"></th>
+                            <th scope="col" class="w-1"><span class="visually-hidden">{{ 'Actions'|trans }}</span></th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% set invoices = admin.invoice_get_list({ 'per_page': 25, 'page': request.page }|merge(request)|merge({ 'summary': 1 })) %}
+
                         {% set params = admin.system_get_params %}
                         {% for invoice in invoices.list %}
                         <tr>
@@ -233,43 +233,48 @@
                             <td class="text-center">{% if invoice.paid_at %}{{ invoice.paid_at|date('Y-m-d') }}{% else %}-{% endif %}</td>
                             <td>{{ mf.status_badge(invoice.status, 'invoice') }}{% if not invoice.issued %} {{ mf.text_badge('Draft'|trans, 'text-bg-secondary') }}{% endif %}</td>
                             <td>
-                                <a class="btn btn-icon" href='{{ "invoice/manage/#{invoice.id}"|url }}'>
-                                    <svg class="icon">
+                                <a class="btn btn-icon" href='{{ "invoice/manage/#{invoice.id}"|url }}' aria-label="{{ 'Manage Invoice'|trans }}" title="{{ 'Manage Invoice'|trans }}">
+                                    <svg class="icon" aria-hidden="true" focusable="false">
                                         <use href="#edit" />
                                     </svg>
                                 </a>
                                 {% if invoice.cancellable %}
                                 <a class="btn btn-icon" href="{{ 'invoice/cancel'|api_url(query: { 'id': invoice.id }) }}"
-                                    {{ fb_api_link({modal: {type: 'confirm', title: 'Cancel this invoice without a replacement?'|trans}, reload: true}) }}>
-                                    <svg class="icon">
+                                    {{ fb_api_link({modal: {type: 'confirm', title: 'Cancel this invoice without a replacement?'|trans}, reload: true}) }} aria-label="{{ 'Cancel Invoice'|trans }}" title="{{ 'Cancel Invoice'|trans }}">
+                                    <svg class="icon" aria-hidden="true" focusable="false">
                                         <use href="#x" />
                                     </svg>
                                 </a>
                                 {% endif %}
                                 {% if (invoice.status == 'unpaid' and not invoice.issued) or (params.invoice_immutability|default('strict') == 'relaxed' and invoice.status == 'canceled') %}
                                 <a class="btn btn-icon" href="{{ 'invoice/delete'|api_url(query: { 'id': invoice.id }) }}"
-                                    {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }}>
-                                    <svg class="icon">
+                                    {{ fb_api_link({modal: {type: 'confirm', title: 'Are you sure?'|trans}, reload: true}) }} aria-label="{{ 'Delete Invoice'|trans }}" title="{{ 'Delete Invoice'|trans }}">
+                                    <svg class="icon" aria-hidden="true" focusable="false">
                                         <use href="#trash" />
                                     </svg>
                                 </a>
                                 {% endif %}
                             </td>
                         </tr>
-                        {% else %}
-                        <tr>
-                            <td class="text-muted" colspan="10">{{ 'The list is empty'|trans }}</td>
-                        </tr>
                         {% endfor %}
                     </tbody>
                 </table>
               </div>
+                {% else %}
+                    <div class="card-body">
+                        {% include 'partial_admin_list_empty.html.twig' with {
+                            empty_list: invoices, empty_list_url: 'invoice',
+                            empty_title: 'No Invoices Yet'|trans,
+                            empty_description: 'Invoices will appear here when they are created.'|trans
+                        } %}
+                    </div>
+                {% endif %}
                 <div class="card-footer d-flex align-items-center justify-content-between gap-3 flex-wrap">
                     <div>
                         {% include "partial_batch_delete.html.twig" with { 'action': 'invoice/batch_delete' } %}
                     </div>
                     <div class="d-flex align-items-center gap-2 flex-wrap">
-                        {% include "partial_pagination.html.twig" with { 'list': invoices, 'url': 'invoice' } %}
+                        {% if invoices.list %}{% include "partial_pagination.html.twig" with { 'list': invoices, 'url': 'invoice' } %}{% endif %}
                     </div>
                     <div class="d-flex align-items-center gap-2 ms-auto">
                         <a class="btn btn-secondary" href="{{ 'invoice/export_csv'|api_url(query: { CSRFToken: CSRFToken }) }}" title="{{ 'Export Invoices'|trans }}">
@@ -428,7 +433,9 @@
                 const deleteBtn = document.createElement('button');
                 deleteBtn.type = 'button';
                 deleteBtn.className = 'btn btn-icon btn-danger';
-                deleteBtn.innerHTML = '<svg class="icon"><use href="#trash" /></svg>';
+                deleteBtn.setAttribute('aria-label', {{ 'Remove Item'|trans|json_encode|raw }});
+                deleteBtn.title = deleteBtn.getAttribute('aria-label');
+                deleteBtn.innerHTML = '<svg class="icon" aria-hidden="true" focusable="false"><use href="#trash" /></svg>';
                 deleteBtn.addEventListener('click', function() {
                     productDiv.remove();
                 });

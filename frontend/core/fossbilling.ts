@@ -185,7 +185,10 @@ import {
     };
 
     syncElementData(element, editor);
-    editor.onChange(() => syncElementData(element, editor));
+    editor.onChange(() => {
+      syncElementData(element, editor);
+      if (editor.getData().trim()) FOSSBilling.ui.clearFieldError?.(element);
+    });
 
     editorsByElement.set(element, editor);
     if (editor.name) {
@@ -364,17 +367,19 @@ import {
     validateForm(form) {
       const formElements = new Set(Array.from(form.elements || []));
 
+      let valid = true;
       for (const editor of editorsByName.values()) {
         if (!formElements.has(editor.element)) {
           continue;
         }
 
         if (editor.required && editor.getData().trim() === '') {
-          return false;
+          FOSSBilling.ui.fieldError?.(editor.element);
+          valid = false;
         }
       }
 
-      return true;
+      return valid;
     },
   }, FOSSBilling.editor || {});
 

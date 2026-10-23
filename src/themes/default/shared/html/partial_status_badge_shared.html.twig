@@ -1,0 +1,121 @@
+{#
+Shared status semantics and Tabler palettes; macros select a solid or subtle variant.
+Keep public status_badge(status, type) wrappers for extension compatibility.
+Unknown statuses use primary; unknown types retain the generic fallback.
+#}
+{% set default_palette = {} %}
+{% for tone in ['success', 'warning', 'danger', 'secondary', 'info', 'primary'] %}
+    {% set default_palette = default_palette|merge({(tone): badge_variant|default('solid') == 'subtle' ? 'bg-' ~ tone ~ '-subtle text-' ~ tone ~ '-emphasis' : 'text-bg-' ~ tone}) %}
+{% endfor %}
+{% set badge_palette = default_palette|merge(badge_palette|default({})) %}
+{% set status_key = status|default('')|lower %}
+{% set status_colors = {
+    'order': {
+        'active': 'success',
+        'pending_setup': 'warning',
+        'failed_setup': 'danger',
+        'suspended': 'danger',
+        'failed_renew': 'danger',
+        'canceled': 'secondary',
+    },
+    'ticket': {
+        'open': 'success',
+        'on_hold': 'warning',
+        'closed': 'secondary',
+    },
+    'invoice': {
+        'paid': 'success',
+        'unpaid': 'warning',
+        'refunded': 'info',
+        'canceled': 'secondary',
+    },
+    'client': {
+        'active': 'success',
+        'suspended': 'danger',
+        'canceled': 'secondary',
+    },
+    'admin': {
+        'active': 'success',
+        'inactive': 'secondary',
+    },
+    'subscription': {
+        'active': 'success',
+        'pending_cancellation': 'warning',
+        'canceled': 'secondary',
+        'past_due': 'danger',
+    },
+    'post': {
+        'published': 'success',
+        'active': 'success',
+        'draft': 'secondary',
+    },
+    'product': {
+        'enabled': 'success',
+        'disabled': 'secondary',
+    },
+    'massmailer': {
+        'sent': 'success',
+        'draft': 'secondary',
+    },
+    'transaction': {
+        'approved': 'success',
+        'processed': 'success',
+        'received': 'warning',
+        'processing': 'warning',
+        'error': 'danger',
+    },
+    'gateway_tx': {
+        'approved': 'success',
+        'complete': 'success',
+        'completed': 'success',
+        'processed': 'success',
+        'success': 'success',
+        'succeeded': 'success',
+        'pending': 'warning',
+        'processing': 'warning',
+        'received': 'warning',
+        'requires_action': 'warning',
+        'requires_capture': 'warning',
+        'requires_confirmation': 'warning',
+        'canceled': 'danger',
+        'cancelled': 'danger',
+        'error': 'danger',
+        'failed': 'danger',
+        'requires_payment_method': 'danger',
+        'unknown': 'danger',
+    },
+    'mail_queue': {
+        'sent': 'success',
+        'sending': 'warning',
+        'unsent': 'danger',
+    },
+    'tx': {
+        'success': 'success',
+        'failed': 'danger',
+        'pending': 'warning',
+        'refunded': 'info',
+    },
+} %}
+{% set fallback_colors = {
+    'active': 'success',
+    'open': 'success',
+    'paid': 'success',
+    'published': 'success',
+    'pending_setup': 'warning',
+    'on_hold': 'warning',
+    'unpaid': 'warning',
+    'pending': 'warning',
+    'failed_setup': 'danger',
+    'suspended': 'danger',
+    'failed_renew': 'danger',
+    'canceled': 'danger',
+    'closed': 'danger',
+    'failed': 'danger',
+} %}
+
+{% set type_colors = status_colors[type]|default(null) %}
+{% set color = type_colors is not null
+? type_colors[status_key]|default('primary')
+: fallback_colors[status_key]|default('primary') %}
+{% set badge_class = badge_palette[color] %}
+<span class="badge {{ badge_class }}">{% include 'partial_status_name_shared.html.twig' with {status: status} %}</span>

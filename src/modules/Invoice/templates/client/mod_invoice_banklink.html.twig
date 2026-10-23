@@ -1,44 +1,47 @@
 {% extends request.ajax ? "layout_blank.html.twig" : "layout_default.html.twig" %}
 {% set active_menu = 'invoices' %}
+{% set payment_failed = payment_error|default(false) or payment.type|default('') not in ['html', 'form'] or (payment.type|default('') == 'form' and not payment.service_url|default('')) or (payment.type|default('') == 'html' and payment.result|default('')|trim == '') %}
 
-{% block meta_title %}{{ 'Processing Payment...'|trans }}{% endblock %}
-
-    {% block breadcrumb %}
-        <li class="breadcrumb-item"><a href="{{ 'invoice'|url }}">{{ 'Invoices'|trans }}</a></li>
-        <li class="breadcrumb-item active" aria-current="page">Payment</li>
-    {% endblock %}
+{% block meta_title %}{{ payment_failed ? 'Payment Could Not Be Started'|trans : 'Complete Your Payment'|trans }}{% endblock %}
+{% block body_class %}invoice-payment{% endblock %}
+{% block breadcrumb %}
+    <li class="breadcrumb-item"><a href="{{ ('invoice/' ~ invoice.hash)|url }}">{{ 'Invoice'|trans }} #{{ invoice.serie_nr }}</a></li>
+    <li class="breadcrumb-item active" aria-current="page">{{ 'Payment'|trans }}</li>
+{% endblock %}
 
 {% block content %}
-
-<div class="row">
-    <div class="col-md-12">
-        <div class="card mb-4">
-            <div class="card-header">
-                <h1>{{ 'Processing Payment...'|trans }}</h1>
-                <p>{{ 'Thank you for your patience.'|trans }}</p>
-            </div>
-            <div class="card-body">
-                {% if payment.type == 'html' %}
-                    {{ payment.result|raw }}
-                {% endif %}
-                {% if payment.type == 'form' %}
-                    <h2>{{ 'Redirecting to Payment Gateway...'|trans }}</h2>
-                    <form method="post" action="{{ payment.service_url }}" name="payment_form">
-                            {% for key, value in payment.result %}
-                                <input type="hidden" name="{{ key }}" value="{{ value }}" />
-                            {% endfor %}
-                        <input class="btn btn-primary" type="submit" value="{{ 'Please click here to continue if this page does not redirect automatically in 5 seconds'|trans }}" id="payment_button"/>
-                    </form>
-
-                    <script>
-                        document.addEventListener('DOMContentLoaded', function() {
-                            document.getElementById('payment_button').style.display = 'none';
-                            document.forms["payment_form"].submit();
-                        });
-                    </script>
-                {% endif %}
-            </div>
+<section class="card mb-4">
+    <div class="card-body">
+        <h1 class="h3">{{ payment_failed ? 'Payment Could Not Be Started'|trans : 'Complete Your Payment'|trans }}</h1>
+        <p>{{ 'Invoice'|trans }} #{{ invoice.serie_nr }} · <strong>{{ invoice.total|format_currency(invoice.currency) }} ({{ invoice.currency }})</strong></p>
+        {% if payment_failed %}
+            <p role="status">{{ 'We could not open this payment method. Check your invoice status before trying again or choosing another method.'|trans }}</p>
+            <p class="text-secondary">{{ 'If you already authorized a payment, allow time for confirmation. Contact support if you are unsure before paying again.'|trans }}</p>
+        {% elseif payment.type == 'form' %}
+            <p id="payment-progress" role="status">{{ 'Opening the payment provider. If you stay on this page, use the button below to continue.'|trans }}</p>
+            <form method="post" action="{{ payment.service_url }}" name="payment_form" id="gateway-payment-form">
+                {% for key, value in payment.result %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endfor %}
+                <button class="btn btn-primary mb-3" type="submit" id="payment_button">{{ 'Continue to Payment Provider'|trans }}</button>
+            </form>
+            <script>
+                document.addEventListener('DOMContentLoaded', () => {
+                    try {
+                        HTMLFormElement.prototype.submit.call(document.getElementById('gateway-payment-form'));
+                    } catch (error) {
+                        document.getElementById('payment-progress').textContent = {{ 'Automatic redirection did not start. Use the button below to continue.'|trans|json_encode|raw }};
+                    }
+                });
+            </script>
+        {% else %}
+            <p>{{ 'Complete the payment steps below. Your invoice will confirm when payment has been recorded.'|trans }}</p>
+        {% endif %}
+        <div class="d-flex flex-wrap gap-2 client-payment-actions client-action-group">
+            <a class="btn {{ payment_failed ? 'btn-primary' : 'btn-outline-secondary' }}" href="{{ ('invoice/' ~ invoice.hash)|url }}">{{ payment_failed ? 'Review Invoice and Payment Options'|trans : 'Check Invoice Status'|trans }}</a>
+            {% if client %}<a class="btn btn-outline-secondary" href="{{ 'support'|url(query: {ticket: 1}) }}">{{ 'Contact Support'|trans }}</a>{% endif %}
         </div>
     </div>
-</div>
+</section>
+{% if not payment_failed and payment.type == 'html' %}
+    <section aria-label="{{ 'Payment Instructions'|trans }}" class="card mb-4"><div class="card-body">{{ payment.result|raw }}</div></section>
+{% endif %}
 {% endblock %}

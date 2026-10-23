@@ -1,0 +1,59 @@
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import { createFormLoading } from '../form-loading.ts';
+import initClientFormLoading, {setFormLoading as setClientFormLoading} from '../../../src/themes/default/client/assets/js/ui/form-loading.ts';
+
+function button(disabled = false, loading = false) {
+  const classes = new Set(loading ? ['btn-loading'] : []);
+  return {disabled, classes, textContent: 'Save Details', matches: () => true,
+    classList: {contains: (name: string) => classes.has(name), add: (name: string) => classes.add(name), remove: (name: string) => classes.delete(name)}};
+}
+
+function fixture(run: (state: ReturnType<typeof setup>) => void, modal = false) {
+  const oldDocument = globalThis.document;
+  const oldRuntime = (globalThis as any).FOSSBilling;
+  const state = setup(modal);
+  globalThis.document = state.document as any;
+  (globalThis as any).FOSSBilling = {ui: {}};
+  try {run(state);} finally {globalThis.document = oldDocument; (globalThis as any).FOSSBilling = oldRuntime;}
+}
+
+function setup(modal: boolean) {
+  const buttons = [button(), button(), button(true), button(false, true)];
+  const statuses: any[] = [];
+  const document = {
+    querySelector: () => ({dataset: {loading: 'Translated Submitting', clientLoading: 'Client Translation'}}),
+    createElement: () => ({className: '', textContent: '', attrs: new Map<string, string>(),
+      setAttribute(name: string, value: string) {this.attrs.set(name, value);},
+      remove() {statuses.splice(statuses.indexOf(this), 1);}}),
+  };
+  const dialog = {append: (status: unknown) => statuses.push(status)};
+  const form = {elements: buttons, closest: () => modal ? dialog : null, before: (status: unknown) => statuses.push(status)};
+  const presenter = createFormLoading();
+  return {buttons, statuses, document, dialog, form, presenter};
+}
+
+test('only the submitted action spins while labels and prior disabled/loading states survive', () => fixture(f => {
+  f.presenter.setFormLoading(f.form as any, true, f.buttons[1] as any);
+  f.presenter.setFormLoading(f.form as any, true, f.buttons[0] as any);
+  assert.equal(f.statuses.length, 1);
+  assert.equal(f.statuses[0].textContent, 'Translated Submitting');
+  assert.equal(f.statuses[0].attrs.get('role'), 'status');
+  assert.equal(f.statuses[0].attrs.get('aria-atomic'), 'true');
+  assert.deepEqual(f.buttons.map(b => b.classes.has('btn-loading')), [false, true, false, true]);
+  assert.equal(f.buttons[1].textContent, 'Save Details');
+  f.presenter.setFormLoading(f.form as any, false);
+  f.presenter.setFormLoading(f.form as any, false);
+  assert.deepEqual(f.buttons.map(b => b.classes.has('btn-loading')), [false, false, false, true]);
+  assert.equal(f.statuses.length, 0);
+}));
+
+test('theme adapters can supply translated labels and leave extension loading hooks intact', () => fixture(f => {
+  const extension = () => {};
+  (globalThis as any).FOSSBilling.ui.formLoading = extension;
+  initClientFormLoading();
+  assert.equal((globalThis as any).FOSSBilling.ui.formLoading, extension);
+  setClientFormLoading(f.form as any, true);
+  assert.equal(f.statuses[0].textContent, 'Client Translation');
+  setClientFormLoading(f.form as any, false);
+}));

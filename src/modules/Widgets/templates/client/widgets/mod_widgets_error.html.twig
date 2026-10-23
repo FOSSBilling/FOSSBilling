@@ -1,13 +1,1 @@
-<div class="alert alert-danger" role="alert">
-    <h5 class="alert-heading">An error occurred while rendering this widget.</h5>
-    
-    <ul class="mb-1">
-        <li><strong>Slot:</strong> {{ widget.slot|default('')|e }}</li>
-        <li><strong>Module:</strong> {{ widget.mod_name|default('')|e }}</li>
-        <li><strong>Template:</strong> {{ widget.template|default('')|e }}.html.twig</li>
-    </ul>
-
-    {% if error %}
-        <pre class="mt-3 mb-0 bg-light p-2 border rounded text-danger small">{{ error|e }}</pre>
-    {% endif %}
-</div>
+{% include 'partial_widget_error_shared.html.twig' %}

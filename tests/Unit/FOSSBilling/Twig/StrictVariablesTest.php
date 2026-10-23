@@ -171,7 +171,7 @@ test('orderbutton checkout renders one-time items without a period under strict_
 
     $html = $renderer->renderTemplate(PATH_MODS . '/Orderbutton/templates/client/mod_orderbutton_checkout.html.twig', [
         'app_area' => 'client',
-        'client' => null,
+        'client' => new PermissiveStub(['client_is_taxable' => false, 'client_balance_get_total' => 0]),
         'request' => [
             'checkout' => true,
             'show_custom_form_values' => false,
@@ -235,7 +235,7 @@ test('orderbutton checkout renders one-time items without a period under strict_
         ],
     ]);
 
-    expect($html)->toContain('You must first login / create an account before you can checkout.')
+    expect($html)->toContain('Place Order and Continue to Payment')
         ->and($html)->toContain('Secondary Gateway')
         ->and($html)->toContain('id="order-gateway-3" value="3" autocomplete="off" checked')
         ->and($html)->not->toContain('Subscription Gateway');
@@ -304,6 +304,8 @@ test('signup renders country options with one default-country lookup', function 
     $twig = new Environment(new ChainLoader([
         $templateLoader,
         new ArrayLoader([
+            'layout_auth.html.twig' => '{% block auth_content %}{% endblock %}',
+            'partial_auth_password_help.html.twig' => '',
             'layout_public.html.twig' => '{% block body %}{% endblock %}',
             'macro_functions.html.twig' => '{% macro recaptcha() %}{% endmacro %}',
         ]),

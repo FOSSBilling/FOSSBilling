@@ -66,9 +66,7 @@
                                             {% else %}
                                                 {% set background = 'danger' %}
                                             {% endif %}
-                                            <div class="progress" style="height: 15px;">
-                                                <div class="progress-bar bg-{{ background }}" role="progressbar" style="width: {{ progress }}%" aria-valuenow="{{ progress }}" aria-valuemin="0" aria-valuemax="100">{{ progress }}%</div>
-                                            </div>
+                                            {{ include('partial_progress.html.twig', {progress_value: progress, progress_tone: background, progress_label: 'Translation Completion for %language%'|trans({'%language%': lang.locale|locale_name})}) }}
                                         </td>
                                         <td class="w-1">{{ lang.locale }}</td>
                                         <td class="w-1">
@@ -122,9 +120,7 @@
                                             {% else %}
                                                 {% set background = 'danger' %}
                                             {% endif %}
-                                            <div class="progress" style="height: 15px;">
-                                                <div class="progress-bar bg-{{ background }}" role="progressbar" style="width: {{ progress }}%" aria-valuenow="{{ progress }}" aria-valuemin="0" aria-valuemax="100">{{ progress }}%</div>
-                                            </div>
+                                            {{ include('partial_progress.html.twig', {progress_value: progress, progress_tone: background, progress_label: 'Translation Completion for %language%'|trans({'%language%': lang.locale|locale_name})}) }}
                                         </td>
                                         <td class="w-1">{{ lang.locale }}</td>
                                         <td class="w-1">

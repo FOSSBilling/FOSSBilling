@@ -103,14 +103,28 @@ class Client implements \FOSSBilling\InjectionAwareInterface
             return $invoice;
         }
 
+        if (($invoice['status'] ?? 'unpaid') !== 'unpaid'
+            || !($invoice['issued'] ?? true)
+            || isset($invoice['total']) && $invoice['total'] <= 0
+            || !empty($invoice['credit_note_for_invoice_id'])
+            || !empty($invoice['replaced_by_invoice_id'])) {
+            return $app->render('mod_invoice_thankyou', ['invoice' => $invoice]);
+        }
+
         try {
             $payment = $api->invoice_payment($data);
-        } catch (InformationException $e) {
-            if ($this->isInvoiceAccessDenied($e)) {
+        } catch (\Throwable $e) {
+            if ($e instanceof InformationException && $this->isInvoiceAccessDenied($e)) {
                 return $app->redirect('invoice');
             }
 
-            throw $e;
+            $this->di['logger']->warning('Could not start payment for invoice #{invoice_id} with gateway #{gateway_id}.', [
+                'invoice_id' => $invoice['id'],
+                'gateway_id' => $id,
+                'exception' => $e,
+            ]);
+
+            return $app->render('mod_invoice_banklink', ['invoice' => $invoice, 'payment_error' => true]);
         }
 
         return $app->render('mod_invoice_banklink', ['payment' => $payment, 'invoice' => $invoice]);

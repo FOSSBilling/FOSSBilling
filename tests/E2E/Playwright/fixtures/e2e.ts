@@ -201,10 +201,10 @@ export const test = base.extend<Fixtures>({
     await context.close();
   },
 
-  clientPage: async ({ clientContext, testClient }, use) => {
+  clientPage: async ({ clientContext }, use) => {
     const page = await clientContext.newPage();
     await page.goto('/');
-    await expect(page.locator('body')).toContainText(testClient.email);
+    await expect(page.getByRole('heading', { name: 'Dashboard', level: 1 })).toBeVisible();
 
     await use(page);
 
@@ -222,7 +222,7 @@ export async function openClientSession(browser: Browser, client: Credentials): 
   const page = await context.newPage();
 
   await page.goto('/');
-  await expect(page.locator('body')).toContainText(client.email);
+  await expect(page.getByRole('heading', { name: 'Dashboard', level: 1 })).toBeVisible();
 
   return context;
 }
