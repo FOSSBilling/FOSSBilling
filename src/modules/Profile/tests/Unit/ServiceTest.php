@@ -87,7 +87,7 @@ test('changes admin password', function (): void {
 
     $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
     $passwordMock->shouldReceive('hashIt')
-        ->with($password);
+        ->with($password)->andReturn('new-hash');
 
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
@@ -95,6 +95,10 @@ test('changes admin password', function (): void {
     $di['password'] = $passwordMock;
 
     $model = createEntity(Box\Mod\Staff\Entity\Admin::class);
+
+    $repository = Mockery::mock(Box\Mod\Staff\Repository\AdminPasswordResetRepository::class);
+    $repository->shouldReceive('changePassword')->once()->with($model, 'new-hash');
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\Staff\Entity\AdminPasswordReset::class)->andReturn($repository);
 
     $service = new Service();
     $service->setDi($di);
@@ -123,7 +127,11 @@ test('updates client', function (): void {
     $clientServiceMock->shouldReceive('emailAlreadyRegistered')
         ->andReturn(false);
 
+    $clientServiceMock->shouldReceive('revokeEmailConfirmations')->once()->with(0);
+
     $di = container();
+    $di['dbal']->shouldReceive('transactional')->once()->andReturnUsing(fn (callable $operation): mixed => $operation());
+    $di['dbal']->shouldReceive('executeStatement')->once()->with('UPDATE client SET email_approved = false WHERE id = :id', ['id' => 0])->andReturn(1);
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['events_manager'] = $emMock;
     $di['mod_service'] = $di->protect(fn ($name): Mockery\MockInterface => $clientServiceMock);
@@ -206,6 +214,7 @@ test('throws exception when email change is not allowed', function (): void {
         ->andReturn(false);
 
     $di = container();
+    $di['dbal']->shouldReceive('transactional')->once()->andReturnUsing(fn (callable $operation): mixed => $operation());
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['events_manager'] = $emMock;
     $di['db'] = $dbMock;
@@ -250,6 +259,7 @@ test('throws exception when email already registered', function (): void {
         ->andReturn(true);
 
     $di = container();
+    $di['dbal']->shouldReceive('transactional')->once()->andReturnUsing(fn (callable $operation): mixed => $operation());
     $di['logger'] = new Tests\Helpers\TestLogger();
     $di['events_manager'] = $emMock;
     $di['db'] = $dbMock;
@@ -296,7 +306,7 @@ test('changes client password', function (): void {
 
     $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
     $passwordMock->shouldReceive('hashIt')
-        ->with($password);
+        ->with($password)->andReturn('new-password-hash');
 
     $di = container();
     $di['logger'] = new Tests\Helpers\TestLogger();
@@ -307,6 +317,7 @@ test('changes client password', function (): void {
 
     $service = new Service();
     $service->setDi($di);
+    $di['em']->getRepository(Box\Mod\Client\Entity\ClientPasswordReset::class)->shouldReceive('changePassword')->once()->with($model, 'new-password-hash');
     $result = $service->changeClientPassword($model, $password);
     expect($result)->toBeTrue();
 });

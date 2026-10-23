@@ -514,7 +514,7 @@ test('updatePassword returns true', function (): void {
 
     $passwordResetRepository = Mockery::mock(Box\Mod\Client\Repository\ClientPasswordResetRepository::class);
     $passwordResetRepository->shouldReceive('findOneByHash')->atLeast()->once()->andReturn($passwordReset);
-    $passwordResetRepository->shouldReceive('changePassword')->atLeast()->once();
+    $passwordResetRepository->shouldReceive('changePassword')->once()->with(Mockery::type(Box\Mod\Client\Entity\Client::class), 'new-password-hash', $data['hash']);
 
     $client = new Box\Mod\Client\Entity\Client();
     $rp = new ReflectionProperty($client, 'id');
@@ -536,7 +536,7 @@ test('updatePassword returns true', function (): void {
     $eventMock->shouldReceive('fire')->times(2);
 
     $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
-    $passwordMock->shouldReceive('hashIt')->atLeast()->once();
+    $passwordMock->shouldReceive('hashIt')->atLeast()->once()->andReturn('new-password-hash');
 
     $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);
     $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once();

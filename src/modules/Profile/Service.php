@@ -121,6 +121,12 @@ class Service implements InjectionAwareInterface
 
     public function updateClient(Client $client, array $data = []): bool
     {
+        return $this->di['dbal']->transactional(fn (): bool => $this->updateClientProfile($client, $data));
+    }
+
+    private function updateClientProfile(Client $client, array $data): bool
+    {
+        $clientId = (int) $client->getId();
         $event_params = $data;
         $event_params['id'] = $client->getId();
         $this->di['events_manager']->fire(['event' => 'onBeforeClientProfileUpdate', 'params' => $event_params]);
@@ -145,6 +151,10 @@ class Service implements InjectionAwareInterface
             }
 
             if ($client->getEmail() !== $email) {
+                // Lock the row and reset the stored flag even if the managed entity
+                // still has its original false value after a concurrent confirmation.
+                $this->di['dbal']->executeStatement('UPDATE client SET email_approved = false WHERE id = :id', ['id' => $clientId]);
+                $clientService->revokeEmailConfirmations($clientId);
                 $client->setEmail($email);
                 $client->setEmailApproved(false);
 
