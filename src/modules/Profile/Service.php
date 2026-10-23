@@ -12,7 +12,9 @@ declare(strict_types=1);
 namespace Box\Mod\Profile;
 
 use Box\Mod\Client\Entity\Client;
+use Box\Mod\Client\Entity\ClientPasswordReset;
 use Box\Mod\Staff\Entity\Admin;
+use Box\Mod\Staff\Entity\AdminPasswordReset;
 use FOSSBilling\i18n;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
@@ -47,9 +49,8 @@ class Service implements InjectionAwareInterface
         $event_params = ['id' => $admin->getId()];
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffProfilePasswordChange', 'params' => $event_params]);
 
-        $admin->setPass($this->di['password']->hashIt($new_password));
-        $this->di['em']->persist($admin);
-        $this->di['em']->flush();
+        $this->di['em']->getRepository(AdminPasswordReset::class)
+            ->changePassword($admin, $this->di['password']->hashIt($new_password));
 
         $event_params = [];
         $event_params['id'] = $admin->getId();
@@ -244,9 +245,7 @@ class Service implements InjectionAwareInterface
         $event_params = ['id' => $client->getId()];
         $this->di['events_manager']->fire(['event' => 'onBeforeClientProfilePasswordChange', 'params' => $event_params]);
 
-        $client->setPass($this->di['password']->hashIt($new_password));
-        $this->di['em']->persist($client);
-        $this->di['em']->flush();
+        $this->di['em']->getRepository(ClientPasswordReset::class)->changePassword($client, $this->di['password']->hashIt($new_password));
 
         $this->di['events_manager']->fire(['event' => 'onAfterClientProfilePasswordChange', 'params' => ['id' => $client->getId()]]);
 

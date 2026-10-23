@@ -15,6 +15,8 @@ declare(strict_types=1);
 
 namespace Box\Mod\Staff\Api;
 
+use Box\Mod\Staff\Entity\Admin;
+use Box\Mod\Staff\Entity\AdminPasswordReset;
 use FOSSBilling\Security\RandomizedTimeFloor;
 use FOSSBilling\Validation\Api\RequiredParams;
 
@@ -99,8 +101,16 @@ class Guest extends \FOSSBilling\Api\AbstractApi
                 throw new \FOSSBilling\InformationException('The link has expired or you have already confirmed the password reset.');
             }
 
-            $admin->pass = $this->getDi()['password']->hashIt($data['password']);
-            $this->getDi()['db']->store($admin);
+            $em = $this->getDi()['em'];
+            $adminEntity = $em->getRepository(Admin::class)->find((int) $admin->id);
+            if ($adminEntity instanceof Admin) {
+                $em->getRepository(AdminPasswordReset::class)
+                    ->changePassword($adminEntity, $this->getDi()['password']->hashIt($data['password']), $data['code']);
+            } else {
+                $admin->pass = $this->getDi()['password']->hashIt($data['password']);
+                $this->getDi()['db']->store($admin);
+                $this->getDi()['db']->trash($reset);
+            }
 
             $profileService = $this->getDi()['mod_service']('profile');
             $profileService->invalidateSessions('admin', (int) $admin->id);
@@ -115,8 +125,6 @@ class Guest extends \FOSSBilling\Api\AbstractApi
             $email['code'] = 'mod_staff_password_reset_approve';
             $emailService = $this->getDi()['mod_service']('email');
             $emailService->sendTemplate($email);
-
-            $this->getDi()['db']->trash($reset);
         } finally {
             RandomizedTimeFloor::apply($startedAt, 300, 450);
         }
@@ -172,13 +180,21 @@ class Guest extends \FOSSBilling\Api\AbstractApi
 
             $hash = hash('sha256', random_bytes(32));
 
-            $reset = $this->getDi()['db']->dispense('AdminPasswordReset');
-            $reset->admin_id = $c->id;
-            $reset->ip = $this->ip;
-            $reset->hash = $hash;
-            $reset->created_at = date('Y-m-d H:i:s');
-            $reset->updated_at = date('Y-m-d H:i:s');
-            $this->getDi()['db']->store($reset);
+            $em = $this->getDi()['em'];
+            $adminEntity = $em->getRepository(Admin::class)->find((int) $c->id);
+            if ($adminEntity instanceof Admin
+                && !$em->getRepository(AdminPasswordReset::class)->replaceReset($adminEntity, $hash, $this->ip)) {
+                return true;
+            }
+            if (!$adminEntity instanceof Admin) {
+                $reset = $this->getDi()['db']->dispense('AdminPasswordReset');
+                $reset->admin_id = $c->id;
+                $reset->ip = $this->ip;
+                $reset->hash = $hash;
+                $reset->created_at = date('Y-m-d H:i:s');
+                $reset->updated_at = date('Y-m-d H:i:s');
+                $this->getDi()['db']->store($reset);
+            }
 
             // send email
             $email = [];

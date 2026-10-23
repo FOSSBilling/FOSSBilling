@@ -11,8 +11,10 @@ declare(strict_types=1);
 
 namespace Box\Mod\Staff;
 
+use Box\Mod\Staff\Entity\Admin;
 use Box\Mod\Staff\Entity\AdminGroup;
 use Box\Mod\Staff\Entity\AdminGroupMember;
+use Box\Mod\Staff\Entity\AdminPasswordReset;
 use Box\Mod\Staff\Repository\AdminGroupMemberRepository;
 use Box\Mod\Staff\Repository\AdminGroupRepository;
 use Box\Mod\Support\Entity\Helpdesk;
@@ -579,9 +581,18 @@ class Service implements InjectionAwareInterface
 
         $this->di['events_manager']->fire(['event' => 'onBeforeAdminStaffPasswordChange', 'params' => ['id' => $model->id]]);
 
-        $model->pass = $this->di['password']->hashIt($password);
-        $model->updated_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($model);
+        $admin = $this->di['em']->getRepository(Admin::class)->find($model->id);
+        if ($admin instanceof Admin) {
+            $this->di['em']->getRepository(AdminPasswordReset::class)
+                ->changePassword($admin, $this->di['password']->hashIt($password));
+            // Keep the RedBean model in sync for callers holding it.
+            $model->pass = $admin->getPass();
+            $model->updated_at = date('Y-m-d H:i:s');
+        } else {
+            $model->pass = $this->di['password']->hashIt($password);
+            $model->updated_at = date('Y-m-d H:i:s');
+            $this->di['db']->store($model);
+        }
 
         $profileService = $this->di['mod_service']('profile');
         $profileService->invalidateSessions('admin', (int) $model->id);

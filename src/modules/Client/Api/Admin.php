@@ -18,6 +18,7 @@ namespace Box\Mod\Client\Api;
 use Box\Mod\Client\Entity\Client;
 use Box\Mod\Client\Entity\ClientBalance;
 use Box\Mod\Client\Entity\ClientGroup;
+use Box\Mod\Client\Entity\ClientPasswordReset;
 use FOSSBilling\InformationException;
 use FOSSBilling\PaginationOptions;
 use FOSSBilling\Tools;
@@ -485,9 +486,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
 
         $this->getDi()['events_manager']->fire(['event' => 'onBeforeAdminClientPasswordChange', 'params' => ['id' => $client->getId()]]);
 
-        $client->setPass($this->getDi()['password']->hashIt($data['password']));
-        $this->getDi()['em']->persist($client);
-        $this->getDi()['em']->flush();
+        $this->getDi()['em']->getRepository(ClientPasswordReset::class)->changePassword($client, $this->getDi()['password']->hashIt($data['password']));
 
         $profileService = $this->getDi()['mod_service']('profile');
         $profileService->invalidateSessions('client', (int) $data['id']);

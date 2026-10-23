@@ -882,25 +882,29 @@ class Service implements InjectionAwareInterface
         $clientId = $this->getClientId($client);
         $clientIp = $client instanceof Client ? $client->getIp() : $client->ip;
 
-        $existingReset = $this->clientPasswordResetRepository->findOneBy(['clientId' => $clientId]);
-        if ($existingReset instanceof ClientPasswordReset) {
-            $this->di['em']->remove($existingReset);
-            $this->di['em']->flush();
-        }
-
         $requestIp = null;
         if (isset($this->di['request']) && is_object($this->di['request']) && method_exists($this->di['request'], 'getClientIp')) {
             $requestIp = $this->di['request']->getClientIp();
         }
 
         $hash = hash('sha256', random_bytes(32));
-        $reset = new ClientPasswordReset();
-        $reset->setClientId($clientId);
-        $reset->setIp($requestIp ?? $clientIp);
-        $reset->setHash($hash);
+        if ($client instanceof Client) {
+            $this->clientPasswordResetRepository->createRequest($client, $hash, $requestIp ?? $clientIp);
+        } else {
+            $existingReset = $this->clientPasswordResetRepository->findOneBy(['clientId' => $clientId]);
+            if ($existingReset instanceof ClientPasswordReset) {
+                $this->di['em']->remove($existingReset);
+                $this->di['em']->flush();
+            }
 
-        $this->di['em']->persist($reset);
-        $this->di['em']->flush();
+            $reset = new ClientPasswordReset();
+            $reset->setClientId($clientId);
+            $reset->setIp($requestIp ?? $clientIp);
+            $reset->setHash($hash);
+
+            $this->di['em']->persist($reset);
+            $this->di['em']->flush();
+        }
 
         return $hash;
     }
