@@ -356,7 +356,9 @@ test('updateSettings denies unauthorized writes before persistence', function ()
     $service = new Service();
     $service->setDi($di);
 
-    expect(fn () => $service->updateSettings(new Model\Theme('default/client'), 'Default', ['inject_javascript' => '<script>alert(1)</script>']))
+    $themeMock = Mockery::mock(Model\Theme::class);
+
+    expect(fn () => $service->updateSettings($themeMock, 'Default', ['inject_javascript' => '<script>alert(1)</script>']))
         ->toThrow(FOSSBilling\InformationException::class, 'Permission denied', 403);
 });
 
