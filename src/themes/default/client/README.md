@@ -1,5 +1,8 @@
 # Huraga client theme
 
+See [shared frontend components and extension contracts](../../../../frontend/README.md#shared-ui)
+for the common client/admin implementations. This file covers client-specific behaviour.
+
 Huraga uses the same `@tabler/core` version as the default admin theme. Tabler
 provides Bootstrap-compatible CSS and JavaScript; do not also load Bootstrap's
 stylesheet or JavaScript bundle. Tabler icons are compiled through the existing
@@ -109,26 +112,11 @@ Callbacks run after dismissal and cleanup; cancel does not confirm an action.
 Labels come from the translated layout attributes. `bootstrap.*` remains an
 alias for the same Tabler component instances, with Bootstrap event names.
 
-API forms preserve named submitters, uploads and existing disabled buttons,
-reject overlapping submissions, and restore their busy state after a response.
-Extension validators can cancel the submit event in capture phase before the API
-handler. Continue using `fb_api_form()` rather than adding another API submit
-handler to the same form. Password widgets can be initialized again safely.
-
 Accessibility: keep the skip link and labelled navigation landmarks, use native
 Tabler keyboard behaviour, and return focus when a disclosure or dialog closes.
 The client adds Escape handling to its mobile navigation and keeps focus on the
 visible appearance toggle when switching color mode. Existing modal libraries
 and explicit editor accessible names supplied by extensions take precedence.
-
-The client exposes optional `FOSSBilling.ui.formError`, `clearFormError`,
-`fieldError` and `clearFieldError` hooks. API failures remain in a focusable,
-labelled summary inside the originating form; native invalid fields gain linked
-feedback without losing their existing hints. Errors on hidden forms use a
-persistent notification instead of moving focus into hidden content. General
-success/status notifications are polite; error notifications remain until closed.
-The editor adapter transfers form labels, required state and hints to the editable
-surface. Preserve those associations when adding custom controls or editor adapters.
 
 Screen-reader support: include `partial_client_announcements.html.twig` once in
 custom layouts. Its initially empty status and alert regions receive plain-text
@@ -140,91 +128,9 @@ Payment dialogs describe the invoice amount/currency and the one-time or recurri
 payment terms. Mobile invoice headings remain in the accessibility tree; visual
 cell labels are hidden from it to avoid repeating each heading.
 
-### Accessibility review, 22 October 2026
-
-Verified using Chromium's accessibility tree and keyboard interaction, with
-sample data at desktop and 320px mobile widths:
-
-- Navigation exposes named landmarks, a skip link, current-page state and
-  expanded/collapsed controls. Hidden desktop/mobile navigation is excluded.
-  Sidebar balance and notes do not introduce unrelated level-five/six headings.
-- Password validation exposes named, required, invalid controls with error
-  descriptions while retaining password guidance. A server product-configuration
-  error and a simulated checkout error expose a focused, labelled summary.
-- Payment confirmation dialogs expose invoice amount, currency and payment
-  terms as their description. Escape returns focus to the payment-method button.
-  Mobile charges retain table, column-header and cell roles. Checkout has a named
-  payment-method group and row headers for totals. No purchase was completed.
-- Status and error messages update separate live regions without changing focus
-  or adding a second live announcement on the visible toast. Identical messages
-  can be repeated. Native speech output has not been verified.
-- Payment-return headings distinguish awaiting confirmation from confirmed
-  payment. Template tests cover startup failure, provider handoff/manual fallback,
-  refunded/canceled invoices, wallet deposits and unavailable payment methods.
-  Gateway HTML and third-party hosted payment pages retain their extension
-  contracts and require their own assistive-technology testing.
-
-Native VoiceOver/NVDA speech and browse-mode testing remains pending: this
-workspace's browser tools expose the accessibility tree but cannot operate a
-native screen reader or capture its speech. A browser-tree check is not a
-screen-reader listening test or a WCAG conformance claim.
-
-For a listening pass in VoiceOver/Safari and NVDA/Firefox or Chrome:
-
-1. Navigate by landmarks, headings and links. Activate the skip link; open/close
-   the mobile navigation and account/notification disclosures. Confirm the current
-   page and expanded state are spoken and focus returns on Escape.
-2. Submit empty sign-in/password fields. Listen for the control name, required
-   and invalid states, hints and error. Correct the value and confirm stale errors
-   disappear. Trigger a rejected form request, follow its summary links, and check
-   the editor label/error while entering a support reply without sending it.
-3. Review charges using table-navigation commands on desktop and mobile. Open a
-   payment method and listen for invoice, amount, currency and recurrence terms.
-   Tab both directions, cancel, and confirm focus returns to the method.
-4. In a payment-provider sandbox, test one-time/recurring handoff, decline,
-   cancellation, pending confirmation and success. Confirm the outcome heading,
-   manual fallback and retry/support links; do not make duplicate payments.
-5. Trigger status/error notifications, including repeating the same message.
-   Confirm each is spoken once, ordinary updates are polite, errors remain
-   available, and dismissing a toast restores focus appropriately.
-
-Reference patterns: [W3C status messages](https://www.w3.org/WAI/WCAG22/Techniques/aria/ARIA22)
-and [modal dialogs](https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/).
-
-### Final regression review, 22 October 2026
-
-The review fixed payment-panel focus after the checkout form is removed, and
-invoice recovery for missing/empty embedded gateway content or synchronous
-extension gateway errors. The invoice recovery link describes the payment status;
-focus moves after the panel becomes visible. Gateway HTML and parent-target
-continuation links retain their existing contracts. No purchase was completed.
-
-The standalone order widget now accepts both the legacy `order` product parameter
-emitted by the embed script and the current `product` parameter. A product supplied
-by the controller still takes precedence. Its public layout contains the grid
-inside a padded main landmark to prevent horizontal overflow.
-
-Verification covered all eleven main client routes at desktop and 320px widths,
-guest authentication pages, sample service/ticket/email/news/help details,
-checkout recovery, payment startup failure, and pending/confirmed outcomes.
-Browser checks found no remaining overflow, broken visible images or captured
-JavaScript errors on the main routes. Extension-supplied modal and form-error
-handlers survived initialization; dynamically inserted Tabler tabs worked and
-Bootstrap aliases resolved to the same component constructors. Existing widget
-hook names, logo settings and navigation visibility contracts remain covered.
-
-All 86 JavaScript tests, 274 final focused PHP tests, type/icon checks, formatting
-checks and production builds for core/admin/client passed. The broad PHP rerun
-excluded the unchanged `SessionTest.php`: 4,647 tests ran with four PostgreSQL
-checks skipped and no failures. Running that session file separately reproduces
-two failures because its fingerprint-validation expectations assume fingerprinting
-is enabled, while this workspace disables it. Production session behavior was
-not changed to satisfy those tests.
-
-Live payment-provider success, decline and recurring authorization still require
-a configured provider sandbox. This demo's Custom gateway has no payment
-instructions; its startup-failure recovery was verified. Native screen-reader
-speech testing remains pending as recorded above.
+Native screen-reader speech and live payment-provider outcomes need separate
+manual testing. Browser accessibility-tree checks cannot replace VoiceOver/NVDA
+listening tests; use a provider sandbox for success, decline and recurring payments.
 
 CKEditor colors are mapped to Tabler tokens in the shared theme stylesheet,
 including floating UI and source editing. Keep these variables on the theme

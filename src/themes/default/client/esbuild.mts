@@ -43,7 +43,6 @@ async function build() {
       isProduction,
       loader: sharedLoaders,
       splitting: true,
-      drop: isProduction ? ['console', 'debugger'] : []
     });
 
     await buildCssFile({

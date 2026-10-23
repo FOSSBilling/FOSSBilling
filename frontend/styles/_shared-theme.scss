@@ -94,8 +94,6 @@ $mobile-touch-target: 2.75rem;
     }
 }
 
-// Navigation menus share touch targets; Tom Select keeps its own option layout.
-
 // Shared notice copy uses emphasis colors on Tabler's tinted alert surfaces.
 @each $type in danger, warning, info, success {
     [data-fb-notice].alert-#{$type} {
@@ -144,11 +142,6 @@ $mobile-touch-target: 2.75rem;
     flex-basis: 0;
 }
 
-// Tabler retains icon sizing, currentColor, hover, focus and disabled styling.
-// Only the touch target grows; the glyph stays the same size as on desktop.
-
-// Shared components use one mobile touch-size rule; theme-specific layouts stay local.
-
 // Breadcrumb text, including extension-supplied subjects, can wrap at any width.
 .fb-breadcrumbs {
     min-width: 0;
@@ -178,8 +171,6 @@ $mobile-touch-target: 2.75rem;
         min-width: 0;
     }
 }
-
-// A static Tabler ring and readable status still indicate work without motion.
 
 @media (prefers-reduced-motion: reduce) {
     .fb-request-loader,

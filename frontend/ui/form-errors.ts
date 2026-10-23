@@ -1,4 +1,5 @@
 import initRequiredChoices from './required-choices.ts';
+import { tabTriggerSelector, tabTarget } from './tab-navigation.ts';
 
 type Field = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
 type ErrorLabels = {required?: string; formError?: string};
@@ -45,8 +46,8 @@ export function createFormErrors({
   function focusField(field: HTMLElement): void {
     const pane = field.closest<HTMLElement>('.tab-pane:not(.active)');
     if (pane?.id) {
-      const trigger = [...document.querySelectorAll<HTMLElement>('[data-bs-toggle="tab"], [data-bs-toggle="pill"], [data-bs-toggle="list"], [data-tblr-toggle="tab"], [data-tblr-toggle="pill"], [data-tblr-toggle="list"]')]
-        .find(tab => (tab.getAttribute('data-bs-target') || tab.getAttribute('data-tblr-target') || tab.getAttribute('href')) === `#${pane.id}`);
+      const trigger = [...document.querySelectorAll<HTMLElement>(tabTriggerSelector)]
+        .find(tab => tabTarget(tab) === pane.id);
       if (trigger && !trigger.matches('.disabled, :disabled, [aria-disabled="true"]') && typeof tabler !== 'undefined') {
         const instance = tabler.Tab?.getOrCreateInstance?.(trigger);
         if (instance) {

@@ -161,7 +161,6 @@ export async function purgeCssFile(cssFilePath: string, options: PurgeOptions) {
   try {
     const css = await readFile(cssFilePath, 'utf8');
     const modulesPath = resolve(dirname(fileURLToPath(import.meta.url)), '../../src/modules');
-    const moduleArea = area === 'client' ? 'client' : 'admin';
 
     const purgeCSSResult = await new PurgeCSS().purge({
       content: [
@@ -170,7 +169,7 @@ export async function purgeCssFile(cssFilePath: string, options: PurgeOptions) {
         `${resolve(dirname(fileURLToPath(import.meta.url)), '../../src/themes/default/shared/html')}/**/*.twig`,
         `${resolve(dirname(fileURLToPath(import.meta.url)), '../ui')}/**/*.ts`,
         `${resolve(dirname(fileURLToPath(import.meta.url)), '../core')}/**/*.{ts,mts}`,
-        `${modulesPath}/*/templates/${moduleArea}/**/*.twig`,
+        `${modulesPath}/*/templates/${area}/**/*.twig`,
       ],
       css: [{ raw: css, extension: 'css' } as unknown as { raw: string }],
       safelist: {
