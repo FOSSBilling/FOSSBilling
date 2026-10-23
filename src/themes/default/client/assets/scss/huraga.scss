@@ -12,7 +12,7 @@
 
     &:hover,
     &:has(.btn-check:checked) {
-        border: 1px solid var(--tblr-primary);
+        border-color: var(--tblr-primary);
     }
 
     // The framework's .btn-check:checked + .btn draws its own border using
@@ -121,10 +121,10 @@
         .nav-link:hover,
         .nav-link:focus-visible {
             background: var(--tblr-secondary-bg);
-            border-radius: var(--tblr-border-radius);
         }
 
         .client-account-name {
+            min-width: 0;
             max-width: 16rem;
             white-space: normal;
             overflow-wrap: anywhere;
@@ -137,7 +137,6 @@
     }
 
     .client-language-menu {
-        display: flex;
         align-items: center;
 
         .ts-wrapper {
@@ -161,7 +160,6 @@
             gap: 0.5rem;
             padding: 0.5rem 0.75rem;
             text-align: start;
-            border-radius: var(--tblr-border-radius);
 
             &[aria-expanded="true"] {
                 background: var(--tblr-secondary-bg);
@@ -172,17 +170,13 @@
             }
         }
 
-        .client-account-name {
-            min-width: 0;
-        }
-
         .dropdown-menu {
             min-width: 12rem;
             max-width: calc(100vw - 2rem);
         }
 
         .dropdown-menu .dropdown-item {
-            padding: 0.5rem 0.75rem;
+            padding-inline: 0.75rem;
             white-space: normal;
             overflow-wrap: anywhere;
         }
@@ -313,10 +307,14 @@
 
 }
 
-// Stack table rows on narrow screens while retaining accessible column headings.
-
 .client-email-list .email-subject,
-.client-email-heading {
+.client-email-heading,
+.support-ticket .card-header,
+.client-kb-category,
+.client-kb-articles,
+.order-manage,
+.invoice-payment,
+.kb-category #main-content {
     overflow-wrap: anywhere;
 }
 
@@ -343,10 +341,6 @@
 }
 
 .support-ticket {
-    .card-header {
-        overflow-wrap: anywhere;
-    }
-
     #reply-to,
     .client-ticket-message,
     #ticket-latest {
@@ -410,11 +404,6 @@
     }
 }
 
-.client-kb-category,
-.client-kb-articles {
-    overflow-wrap: anywhere;
-}
-
 .client-profile {
     .client-profile-form {
         max-width: 60rem;
@@ -444,13 +433,8 @@
     }
 }
 
-// Service names, keys and server details can be longer than a mobile viewport.
-.order-manage {
-    overflow-wrap: anywhere;
-
-    .nav-tabs {
-        row-gap: .25rem;
-    }
+.order-manage .nav-tabs {
+    row-gap: .25rem;
 }
 
 .invoice-invoice {
@@ -469,12 +453,8 @@
     }
 }
 
-.invoice-payment {
-    overflow-wrap: anywhere;
-
-    iframe {
-        max-width: 100%;
-    }
+.invoice-payment iframe {
+    max-width: 100%;
 }
 
 // Keep outlined actions readable on dark surfaces without changing their handlers.
@@ -611,10 +591,6 @@
 
             .dropdown-toggle {
                 width: 100%;
-
-                &::after {
-                    margin-inline-start: auto;
-                }
             }
 
             .dropdown-menu {
@@ -626,7 +602,6 @@
         }
 
         .client-account-name {
-            max-width: none;
             flex: 1;
         }
 
@@ -640,16 +615,14 @@
         max-width: none;
     }
 
-    .client-shell .client-header .client-notifications {
-        // Navbar dropdowns use static positioning instead of Popper's viewport correction.
-        position: static;
-
-        .client-notification-menu {
+    // These two menus float; Tabler's mobile navbar submenus are otherwise inline.
+    .client-shell .client-header {
+        .client-notification-menu,
+        .client-theme-picker .dropdown-menu {
+            z-index: var(--tblr-dropdown-zindex);
             position: absolute;
-            top: auto;
             right: 0;
             left: auto;
-            // Keep this a floating panel inside the expanded mobile navigation.
             background: var(--tblr-dropdown-bg);
             border: var(--tblr-dropdown-border-width) solid var(--tblr-dropdown-border-color);
             box-shadow: var(--tblr-dropdown-box-shadow);
@@ -658,6 +631,15 @@
             .dropdown-item {
                 padding-inline: var(--tblr-dropdown-item-padding-x);
             }
+        }
+    }
+
+    .client-shell .client-header .client-notifications {
+        // Navbar dropdowns use static positioning instead of Popper's viewport correction.
+        position: static;
+
+        .client-notification-menu {
+            top: auto;
         }
     }
 
@@ -682,21 +664,11 @@
     }
 
     .client-shell .client-header .client-theme-picker .dropdown-menu {
-        // Override inline navbar submenus for the compact appearance picker.
-        z-index: var(--tblr-dropdown-zindex);
-        position: absolute;
         top: 100%;
-        right: 0;
-        left: auto;
         min-width: 10rem;
-        background: var(--tblr-dropdown-bg);
-        border: var(--tblr-dropdown-border-width) solid var(--tblr-dropdown-border-color);
-        box-shadow: var(--tblr-dropdown-box-shadow);
-        padding: var(--tblr-dropdown-padding-y) var(--tblr-dropdown-padding-x);
 
         .dropdown-item {
             width: 100%;
-            padding-inline: var(--tblr-dropdown-item-padding-x);
         }
     }
 
@@ -806,10 +778,6 @@
     .client-service-list,
     .client-ticket-list,
     .client-service-addons {
-        td {
-            min-width: 0;
-        }
-
         .badge {
             max-width: 100%;
             white-space: normal;
@@ -817,20 +785,16 @@
         }
     }
 
-    .client-invoice-list {
-        tr {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-
-        .invoice-action .btn {
-            width: 100%;
-        }
+    .client-invoice-list tr {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .client-service-list .service-action .btn {
         flex: 1 1 7rem;
     }
 
+    .client-invoice-list .invoice-action .btn,
+    .support-ticket #post-reply-btn,
     .client-ticket-list .ticket-action .btn {
         width: 100%;
     }
@@ -910,10 +874,6 @@
             color: var(--tblr-secondary-color);
             font-size: .875rem;
         }
-    }
-
-    .support-ticket #post-reply-btn {
-        width: 100%;
     }
 }
 
@@ -1031,16 +991,11 @@
         }
     }
 
-    .client-email-actions .btn {
-        flex: 1 1 auto;
-    }
-
     .client-shell .client-action-group,
     .client-shell .client-modal-form > .modal-footer {
         width: 100%;
         flex-direction: column;
         align-items: stretch;
-        gap: 0.5rem;
 
         > .btn {
             width: 100%;

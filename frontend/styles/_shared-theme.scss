@@ -110,13 +110,6 @@ $mobile-touch-target: 2.75rem;
         white-space: pre-wrap;
         overflow-wrap: anywhere;
     }
-
-    .alert-action,
-    .fb-notice-content .btn {
-        max-width: 100%;
-        white-space: normal;
-        overflow-wrap: anywhere;
-    }
 }
 
 // Titles can shrink and wrap; actions stay at the trailing edge until they wrap.
@@ -129,12 +122,14 @@ $mobile-touch-target: 2.75rem;
 .fb-card-heading-actions {
     min-width: 0;
     max-width: 100%;
+}
 
-    .btn {
-        max-width: 100%;
-        white-space: normal;
-        overflow-wrap: anywhere;
-    }
+[data-fb-notice] .alert-action,
+[data-fb-notice] .fb-notice-content .btn,
+.fb-card-heading-actions .btn {
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
 }
 
 // Compact summary asides (for example avatars) stay beside a wrapping title.
@@ -147,7 +142,6 @@ $mobile-touch-target: 2.75rem;
     min-width: 0;
 
     .breadcrumb {
-        margin-bottom: 0;
         align-items: center;
     }
 
