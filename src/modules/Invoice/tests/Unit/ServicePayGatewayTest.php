@@ -576,3 +576,54 @@ test('returns null when description is empty', function (): void {
     $result = $serviceMock->getDescription($payGatewayModel);
     expect($result)->toBeNull();
 });
+
+test('payment handoffs contain no session capability and retain invoice context', function (bool $withInvoice): void {
+    $service = new ServicePayGateway();
+
+    $pg = new Model_PayGateway();
+    $pg->loadBean(new Tests\Helpers\DummyBean());
+    $pg->id = 2;
+    $pg->gateway = 'Custom';
+    $pg->test_mode = true;
+    $pg->config = json_encode([]);
+
+    $invoice = null;
+    if ($withInvoice) {
+        $invoice = new Model_Invoice();
+        $invoice->loadBean(new Tests\Helpers\DummyBean());
+        $invoice->id = 16;
+        $invoice->hash = 'abc123';
+    }
+
+    $url = new Box_Url();
+    $url->setBaseUri('https://billing.example/subdir/');
+
+    $toolsMock = Mockery::mock(FOSSBilling\Tools::class);
+    $toolsMock->shouldReceive('url')->andReturnUsing(fn (string $path): string => $url->link($path));
+
+    $sessionMock = Mockery::mock(FOSSBilling\Session::class);
+    $sessionMock->shouldNotReceive('getId');
+
+    $di = container();
+    $di['url'] = $url;
+    $di['tools'] = $toolsMock;
+    $di['session'] = $sessionMock;
+    $di['logger'] = new Tests\Helpers\TestLogger();
+    $service->setDi($di);
+
+    $adapter = $service->getPaymentAdapter($pg, $invoice);
+    $config = (new ReflectionClass($adapter))->getProperty('config')->getValue($adapter);
+
+    foreach (['return_url' => 'ok', 'cancel_url' => 'cancel'] as $key => $status) {
+        parse_str((string) parse_url($config[$key], PHP_URL_QUERY), $params);
+        expect(parse_url($config[$key], PHP_URL_PATH))->toBe('/subdir/invoice/payment-return')
+            ->and($params)->toBe($withInvoice ? ['status' => $status, 'hash' => 'abc123'] : ['status' => $status])
+            ->and($config[$key])->not->toContain('restore_token');
+    }
+
+    if ($withInvoice) {
+        parse_str((string) parse_url($config['thankyou_url'], PHP_URL_QUERY), $params);
+        expect(parse_url($config['thankyou_url'], PHP_URL_PATH))->toBe('/subdir/invoice/payment-return')
+            ->and($params)->toBe(['status' => 'thankyou', 'hash' => 'abc123']);
+    }
+})->with([true, false]);

@@ -19,6 +19,8 @@ class ServiceTransaction implements InjectionAwareInterface
 {
     private const int PROCESSING_RECOVERY_TIMEOUT = 300;
 
+    public const MAX_CALLBACK_BODY_SIZE = 1048576;
+
     protected ?\Pimple\Container $di = null;
     private ?bool $transactionIpnHashColumnExists = null;
 

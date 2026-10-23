@@ -39,7 +39,10 @@ if ($gatewayID !== null) {
     }
 }
 
-$rawBody = $request->getContent();
+$rawBody = stream_get_contents($request->getContent(true), Box\Mod\Invoice\ServiceTransaction::MAX_CALLBACK_BODY_SIZE + 1);
+if ($rawBody === false || strlen($rawBody) > Box\Mod\Invoice\ServiceTransaction::MAX_CALLBACK_BODY_SIZE) {
+    emitResponse(new JsonResponse(['result' => null, 'error' => ['message' => 'Callback body is too large']], 413));
+}
 
 $ipn = [
     'invoice_id' => $invoiceID,

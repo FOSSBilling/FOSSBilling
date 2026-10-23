@@ -10,16 +10,22 @@ declare(strict_types=1);
  */
 
 require __DIR__ . DIRECTORY_SEPARATOR . 'load.php';
-global $di;
+global $di, $request;
 
 use DebugBar\DataCollector\TimeDataCollector;
+use FOSSBilling\Http\PaymentReturn;
 use FOSSBilling\Http\RequestFactory;
 
 $config = FOSSBilling\Config::getConfig();
 $debugBar = null;
 $timeCollector = null;
-/* @var Symfony\Component\HttpFoundation\Request $request */
-global $request;
+
+// A cross-site payment return must not start a replacement session when the
+// browser withholds its Strict cookie. Resume through a same-site navigation.
+$paymentReturn = PaymentReturn::createResponse($request, $di['url']);
+if ($paymentReturn !== null) {
+    emitResponse($paymentReturn);
+}
 
 if ((bool) ($config['debug_and_monitoring']['debug'] ?? false)) {
     // Setting up the debug bar
@@ -58,18 +64,6 @@ $url = RequestFactory::normalizeRoutePath($request);
 $http_err_code = RequestFactory::getHttpErrorCode($request);
 
 $timeCollector?->startMeasure('session_start', 'Starting / restoring the session');
-
-/*
- * Workaround: Session IDs get reset when using PGs like PayPal because of the `samesite=strict` cookie attribute, resulting in the client getting logged out.
- * The return and cancel URLs include a signed restore_token that contains the session ID. We validate and extract it here.
- */
-if ($request->query->has('restore_token')) {
-    $restoreToken = $request->query->get('restore_token');
-    $restoredSessionId = is_string($restoreToken) ? FOSSBilling\Tools::validateSessionRestoreToken($restoreToken) : null;
-    if ($restoredSessionId !== null) {
-        session_id($restoredSessionId);
-    }
-}
 
 $di['session']->getId();
 $timeCollector?->stopMeasure('session_start');
