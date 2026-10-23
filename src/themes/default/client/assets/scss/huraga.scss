@@ -92,8 +92,6 @@
             img {
                 height: 45px;
                 width: auto;
-                max-width: 100%;
-                object-fit: contain;
             }
         }
 
@@ -108,17 +106,10 @@
             --tblr-btn-hover-bg: var(--tblr-secondary-bg);
             --tblr-btn-active-color: var(--tblr-body-color);
             --tblr-btn-active-bg: var(--tblr-secondary-bg);
-            border: 0;
-            box-shadow: none;
             width: 44px;
             height: 44px;
             min-width: 44px;
-            padding: 0;
             flex-shrink: 0;
-
-            .icon {
-                margin: 0;
-            }
 
             // Retain Tabler's animated menu icon with the same 20px visual width.
             .navbar-toggler-icon {
@@ -191,9 +182,6 @@
         }
 
         .dropdown-menu .dropdown-item {
-            display: flex;
-            align-items: center;
-            min-height: 44px;
             padding: 0.5rem 0.75rem;
             white-space: normal;
             overflow-wrap: anywhere;
@@ -277,10 +265,6 @@
     .client-header .client-notification-menu {
         z-index: var(--tblr-dropdown-zindex);
         width: min(24rem, calc(100vw - 1.5rem));
-
-        .btn {
-            min-height: 0;
-        }
     }
 
     .client-header .client-notifications .client-notification-list {
@@ -321,13 +305,261 @@
         [data-notification-read="1"] .client-notification-read-reply {
             display: block;
         }
-
     }
 
     [id^="message-"] {
         scroll-margin-top: 1rem;
     }
 
+}
+
+// Stack table rows on narrow screens while retaining accessible column headings.
+
+.client-email-list .email-subject,
+.client-email-heading {
+    overflow-wrap: anywhere;
+}
+
+.client-email-metadata {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.25rem 1rem;
+    min-width: 0;
+
+    dd {
+        margin-bottom: 0;
+        overflow-wrap: anywhere;
+    }
+}
+
+.client-email-content {
+    display: block;
+    width: 100%;
+    height: 65vh;
+    min-height: 28rem;
+    border: 1px solid var(--tblr-border-color);
+    background: var(--tblr-bg-surface);
+    color-scheme: inherit;
+}
+
+.support-ticket {
+    .card-header {
+        overflow-wrap: anywhere;
+    }
+
+    #reply-to,
+    .client-ticket-message,
+    #ticket-latest {
+        scroll-margin-top: 1rem;
+    }
+
+    .client-ticket-message {
+        overflow-wrap: anywhere;
+
+        &:target {
+            outline: 2px solid var(--tblr-primary);
+            outline-offset: 2px;
+        }
+    }
+
+    .client-message-author {
+        min-width: 0;
+        flex: 1 1 12rem;
+    }
+}
+
+#orderbutton {
+    .client-product-description {
+        flex: 1 1 18rem;
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .client-product-price {
+        flex: 0 1 14rem;
+    }
+
+    [data-product-entry][hidden],
+    [data-product-category][hidden],
+    [data-catalogue-controls][hidden],
+    #payment-step[hidden] {
+        display: none !important;
+    }
+
+    .client-cart-items td {
+        vertical-align: top;
+    }
+}
+
+.client-news-summary {
+    overflow-wrap: anywhere;
+
+    p {
+        max-width: 85ch;
+    }
+}
+
+.client-news-reader,
+.client-kb-reader {
+    max-width: 80ch;
+    overflow-wrap: anywhere;
+
+    .client-news-content,
+    .kb-article-content {
+        line-height: 1.7;
+    }
+}
+
+.client-kb-category,
+.client-kb-articles {
+    overflow-wrap: anywhere;
+}
+
+.client-profile {
+    .client-profile-form {
+        max-width: 60rem;
+    }
+
+    .client-password-form {
+        max-width: 32rem;
+    }
+}
+
+.client-auth-panel {
+    max-width: 30rem;
+    overflow-wrap: anywhere;
+
+    &.client-auth-wide {
+        max-width: 44rem;
+    }
+}
+
+.client-profile,
+.client-auth-panel,
+#orderbutton {
+    .form-control,
+    .form-select,
+    [data-client-form-error] {
+        scroll-margin-block: 1rem;
+    }
+}
+
+// Service names, keys and server details can be longer than a mobile viewport.
+.order-manage {
+    overflow-wrap: anywhere;
+
+    .nav-tabs {
+        row-gap: .25rem;
+    }
+}
+
+.invoice-invoice {
+    overflow-wrap: anywhere;
+
+    #invoice-payment-heading {
+        scroll-margin-top: 1rem;
+    }
+
+    .invoice-lines td:first-child {
+        min-width: 10rem;
+    }
+
+    .invoice-cell-label {
+        display: none;
+    }
+}
+
+.invoice-payment {
+    overflow-wrap: anywhere;
+
+    iframe {
+        max-width: 100%;
+    }
+}
+
+// Keep outlined actions readable on dark surfaces without changing their handlers.
+[data-bs-theme="dark"] {
+    .btn-outline-primary {
+        --tblr-btn-color: var(--tblr-link-color);
+        --tblr-btn-border-color: var(--tblr-link-color);
+    }
+
+    .btn-outline-secondary {
+        --tblr-btn-color: var(--tblr-secondary-color);
+        --tblr-btn-border-color: var(--tblr-secondary-color);
+    }
+
+    .btn-outline-danger {
+        --tblr-btn-color: var(--tblr-danger-text-emphasis);
+        --tblr-btn-border-color: var(--tblr-danger-text-emphasis);
+    }
+}
+
+// Green-on-white and white-on-green addon choices need stronger text contrast.
+.btn-outline-success {
+    --tblr-btn-color: var(--tblr-success-text-emphasis);
+    --tblr-btn-border-color: var(--tblr-success-text-emphasis);
+    --tblr-btn-hover-color: var(--tblr-success-text-emphasis);
+    --tblr-btn-hover-bg: var(--tblr-success-bg-subtle);
+    --tblr-btn-active-color: var(--tblr-success-text-emphasis);
+    --tblr-btn-active-bg: var(--tblr-success-bg-subtle);
+}
+
+// Programmatic error focus must also be visible when a response follows a mouse click.
+[data-client-form-error]:focus {
+    outline: 2px solid var(--tblr-danger);
+    outline-offset: 2px;
+}
+
+// Keep the title and actions visible while long dialog content scrolls.
+.client-modal-form {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.kb-category #main-content {
+    overflow-wrap: anywhere;
+}
+
+// Uploaded square or tall logos should not dominate sign-in and reset forms.
+.client-auth-logo {
+    display: block;
+    max-width: 100%;
+
+    img {
+        max-height: 50px;
+        width: auto;
+        height: auto;
+        object-fit: contain;
+    }
+}
+
+// Client-owned action groups keep their document order and existing handlers.
+.client-shell .client-modal-form > .modal-footer {
+    gap: 0.5rem;
+
+    > .btn {
+        margin: 0;
+    }
+}
+
+@media (min-width: 992px) {
+    .client-shell .client-sidebar-column {
+        // Keep navigation compact as the content area grows on wider screens.
+        width: 15rem;
+    }
+
+    .client-shell .client-header .navbar-brand {
+        max-width: 16rem;
+    }
+}
+
+@media (min-width: 768px) {
+    .client-invoice-list .invoice-amount {
+        white-space: nowrap;
+    }
 }
 
 @media (max-width: 991.98px) {
@@ -402,27 +634,12 @@
             width: 100%;
         }
     }
-}
 
-@media (min-width: 992px) {
-    .client-shell .client-sidebar-column {
-        // Keep navigation compact as the content area grows on wider screens.
-        width: 15rem;
-    }
-
-    .client-shell .client-header .navbar-brand {
-        max-width: 16rem;
-    }
-}
-
-@media (max-width: 991.98px) {
     .client-shell .client-header .navbar-brand {
         flex: 1 1 0;
         max-width: none;
     }
-}
 
-@media (max-width: 991.98px) {
     .client-shell .client-header .client-notifications {
         // Navbar dropdowns use static positioning instead of Popper's viewport correction.
         position: static;
@@ -443,16 +660,86 @@
             }
         }
     }
+
+    #orderbutton {
+        #checkoutButton,
+        .invoice-gateway,
+        .invoice-gateway .btn {
+            width: 100%;
+        }
+
+        .invoice-gateway {
+            min-width: 0;
+        }
+    }
+
+    .client-shell .client-action-group {
+        align-items: stretch;
+
+        > .btn {
+            --tblr-btn-font-size: 0.875rem;
+        }
+    }
+
+    .client-shell .client-header .client-theme-picker .dropdown-menu {
+        // Override inline navbar submenus for the compact appearance picker.
+        z-index: var(--tblr-dropdown-zindex);
+        position: absolute;
+        top: 100%;
+        right: 0;
+        left: auto;
+        min-width: 10rem;
+        background: var(--tblr-dropdown-bg);
+        border: var(--tblr-dropdown-border-width) solid var(--tblr-dropdown-border-color);
+        box-shadow: var(--tblr-dropdown-box-shadow);
+        padding: var(--tblr-dropdown-padding-y) var(--tblr-dropdown-padding-x);
+
+        .dropdown-item {
+            width: 100%;
+            padding-inline: var(--tblr-dropdown-item-padding-x);
+        }
+    }
+
+    .client-shell,
+    .client-auth-panel,
+    #orderbutton {
+        .btn,
+        .form-control,
+        .form-select,
+        .nav-tabs .nav-link,
+        .client-header .dropdown-item,
+        .page-link,
+        .client-content-link,
+        .client-kb-articles .list-group-item {
+            min-height: 44px;
+        }
+
+        .btn,
+        .nav-tabs .nav-link {
+            white-space: normal;
+            overflow-wrap: anywhere;
+        }
+
+        .page-link,
+        .cart-action .btn {
+            min-width: 44px;
+        }
+
+        .client-content-link {
+            display: inline-flex;
+            align-items: center;
+        }
+    }
 }
 
-// Stack table rows on narrow screens while retaining accessible column headings.
 @media (max-width: 767.98px) {
     .client-invoice-list,
     .client-wallet-history,
     .client-email-list,
     .client-service-list,
     .client-ticket-list,
-    .client-service-addons {
+    .client-service-addons,
+    #orderbutton .client-cart-items {
         thead {
             position: absolute;
             width: 1px;
@@ -478,6 +765,7 @@
         }
 
         td {
+            min-width: 0;
             padding: 0;
             border: 0;
             box-shadow: none;
@@ -513,29 +801,13 @@
             grid-row: 2;
         }
     }
-}
 
-// Keep row actions comfortable to tap on phones and tablets.
-@media (max-width: 991.98px) {
-    .client-invoice-list .btn,
-    .client-service-list .btn,
-    .client-ticket-list .btn {
-        min-height: 44px;
-    }
-}
-
-@media (max-width: 767.98px) {
     .client-invoice-list,
     .client-service-list,
     .client-ticket-list,
     .client-service-addons {
         td {
             min-width: 0;
-        }
-
-        .btn {
-            white-space: normal;
-            overflow-wrap: anywhere;
         }
 
         .badge {
@@ -562,186 +834,13 @@
     .client-ticket-list .ticket-action .btn {
         width: 100%;
     }
-}
 
-@media (min-width: 768px) {
-    .client-invoice-list .invoice-amount {
-        white-space: nowrap;
-    }
-}
-
-.client-email-list .email-subject,
-.client-email-heading {
-    overflow-wrap: anywhere;
-}
-
-.client-email-metadata {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    gap: 0.25rem 1rem;
-    min-width: 0;
-
-    dd {
-        margin-bottom: 0;
-        overflow-wrap: anywhere;
-    }
-}
-
-.client-email-content {
-    display: block;
-    width: 100%;
-    height: 65vh;
-    min-height: 28rem;
-    border: 1px solid var(--tblr-border-color);
-    background: var(--tblr-bg-surface);
-    color-scheme: inherit;
-}
-
-@media (max-width: 767.98px) {
-    .invoice-index .nav-tabs {
-        .nav-link {
-            padding: 0.65rem 0.6rem;
-            font-size: 0.875rem;
-            white-space: nowrap;
-        }
-    }
-}
-
-.support-ticket {
-    .card-header {
-        overflow-wrap: anywhere;
-    }
-
-    #reply-to,
-    .client-ticket-message,
-    #ticket-latest {
-        scroll-margin-top: 1rem;
-    }
-
-    .client-ticket-message {
-        overflow-wrap: anywhere;
-
-        &:target {
-            outline: 2px solid var(--tblr-primary);
-            outline-offset: 2px;
-        }
-    }
-
-    .client-message-author {
-        min-width: 0;
-        flex: 1 1 12rem;
-    }
-}
-
-@media (max-width: 767.98px) {
-    .support-tickets .nav-link {
+    :is(.invoice-index, .support-tickets) .nav-tabs .nav-link {
         padding: 0.65rem 0.6rem;
         font-size: 0.875rem;
     }
-}
 
-#orderbutton {
-    .client-product-description {
-        flex: 1 1 18rem;
-        min-width: 0;
-        overflow-wrap: anywhere;
-    }
-
-    .client-product-price {
-        flex: 0 1 14rem;
-    }
-
-    [data-product-entry][hidden],
-    [data-product-category][hidden],
-    [data-catalogue-controls][hidden],
-    #payment-step[hidden] {
-        display: none !important;
-    }
-
-    .client-cart-items td {
-        vertical-align: top;
-    }
-}
-
-.client-news-summary {
-    overflow-wrap: anywhere;
-
-    p {
-        max-width: 85ch;
-    }
-}
-
-.client-news-reader,
-.client-kb-reader {
-    max-width: 80ch;
-    overflow-wrap: anywhere;
-
-    .client-news-content,
-    .kb-article-content {
-        line-height: 1.7;
-    }
-}
-
-.client-kb-category,
-.client-kb-articles {
-    overflow-wrap: anywhere;
-}
-
-.client-profile {
-    .client-profile-form {
-        max-width: 60rem;
-    }
-
-    .client-password-form {
-        max-width: 32rem;
-    }
-}
-
-@media (max-width: 575.98px) {
-    .support-tickets .card-header > .nav-tabs,
-    .order-list .card-header > .nav-tabs {
-        width: 100%;
-    }
-
-    .invoice-index .nav-tabs .nav-link,
-    .client-profile .nav-tabs .nav-link,
-    .support-tickets .nav-tabs .nav-link,
-    .order-list .nav-tabs .nav-link,
-    .client-domain-tabs .nav-link {
-        flex: 1 1 50%;
-        min-width: 0;
-        justify-content: center;
-        text-align: center;
-    }
-}
-
-.client-auth-panel {
-    max-width: 30rem;
-    overflow-wrap: anywhere;
-
-    &.client-auth-wide {
-        max-width: 44rem;
-    }
-}
-
-.client-profile,
-.client-auth-panel,
-#orderbutton {
-    .form-control,
-    .form-select,
-    [data-client-form-error] {
-        scroll-margin-block: 1rem;
-    }
-}
-
-@media (max-width: 767.98px) {
     :is(.client-profile, .client-auth-panel, #orderbutton) {
-        .form-control,
-        .form-select,
-        form .btn {
-            min-height: 44px;
-        }
-
         .form-check-label {
             display: block;
             min-height: 44px;
@@ -752,226 +851,14 @@
             margin-top: 0.75rem;
         }
     }
-}
 
-// Service names, keys and server details can be longer than a mobile viewport.
-.order-manage {
-    overflow-wrap: anywhere;
-
-    .nav-tabs {
-        row-gap: .25rem;
-    }
-}
-
-.invoice-invoice {
-    overflow-wrap: anywhere;
-
-    #invoice-payment-heading {
-        scroll-margin-top: 1rem;
-    }
-
-    .invoice-lines td:first-child {
-        min-width: 10rem;
-    }
-
-    .invoice-cell-label {
-        display: none;
-    }
-}
-
-@media (max-width: 575.98px) {
-    .invoice-invoice .invoice-lines {
-        thead {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            overflow: hidden;
-            clip-path: inset(50%);
-            white-space: nowrap;
-        }
-
-        tbody,
-        tr {
-            display: block;
-        }
-
-        tr {
-            padding: .75rem 0;
-            border-bottom: 1px solid var(--tblr-border-color);
-        }
-
-        td {
-            display: flex;
-            justify-content: space-between;
-            gap: 1rem;
-            padding: .25rem 0;
-            border: 0;
-            box-shadow: none;
-        }
-
-        td:first-child {
-            display: block;
-            margin-bottom: .25rem;
-        }
-
-        .invoice-cell-label {
-            display: block;
-            color: var(--tblr-secondary-color);
-            text-align: start;
-        }
-    }
-}
-
-.invoice-payment {
-    overflow-wrap: anywhere;
-
-    iframe {
-        max-width: 100%;
-    }
-}
-
-// Keep outlined actions readable on dark surfaces without changing their handlers.
-[data-bs-theme="dark"] {
-    .btn-outline-primary {
-        --tblr-btn-color: var(--tblr-link-color);
-        --tblr-btn-border-color: var(--tblr-link-color);
-    }
-
-    .btn-outline-secondary {
-        --tblr-btn-color: var(--tblr-secondary-color);
-        --tblr-btn-border-color: var(--tblr-secondary-color);
-    }
-
-    .btn-outline-danger {
-        --tblr-btn-color: var(--tblr-danger-text-emphasis);
-        --tblr-btn-border-color: var(--tblr-danger-text-emphasis);
-    }
-}
-
-// Green-on-white and white-on-green addon choices need stronger text contrast.
-.btn-outline-success {
-    --tblr-btn-color: var(--tblr-success-text-emphasis);
-    --tblr-btn-border-color: var(--tblr-success-text-emphasis);
-    --tblr-btn-hover-color: var(--tblr-success-text-emphasis);
-    --tblr-btn-hover-bg: var(--tblr-success-bg-subtle);
-    --tblr-btn-active-color: var(--tblr-success-text-emphasis);
-    --tblr-btn-active-bg: var(--tblr-success-bg-subtle);
-}
-
-// Programmatic error focus must also be visible when a response follows a mouse click.
-[data-client-form-error]:focus {
-    outline: 2px solid var(--tblr-danger);
-    outline-offset: 2px;
-}
-
-// Tabler's emphasis token keeps error copy readable on tinted alert surfaces.
-[data-client-form-error] {
-    --tblr-alert-color: var(--tblr-danger-text-emphasis);
-}
-
-// Keep the title and actions visible while long dialog content scrolls.
-.client-modal-form {
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-    overflow: hidden;
-}
-
-@media (max-width: 991.98px) {
-    .client-shell {
-        .nav-tabs .nav-link,
-        .client-header .dropdown-item,
-        .modal .btn,
-        .modal .form-control,
-        .modal .form-select {
-            min-height: 44px;
-        }
-
-        .nav-tabs .nav-link,
-        .modal .btn {
-            white-space: normal;
-            overflow-wrap: anywhere;
-        }
-    }
-}
-
-// Keep client-owned payment controls usable without styling gateway HTML.
-@media (max-width: 991.98px) {
-    #orderbutton {
-        #checkoutButton {
-            width: 100%;
-            min-height: 44px;
-            white-space: normal;
-        }
-
-        .invoice-gateway {
-            width: 100%;
-            min-width: 0;
-
-            .btn {
-                width: 100%;
-                min-height: 44px;
-                white-space: normal;
-                overflow-wrap: anywhere;
-            }
-        }
-
-    }
-
-    #orderbutton .cart-action .btn {
-        min-height: 44px;
-        min-width: 44px;
-    }
-
-    #orderbutton [data-product-entry] .btn,
-    #orderbutton [data-catalogue-reset] {
-        min-height: 44px;
-        white-space: normal;
-        overflow-wrap: anywhere;
-    }
-
-    .invoice-payment-method,
-    .client-payment-actions .btn,
-    .client-payment-action,
-    #payment_button {
-        min-height: 44px;
-        white-space: normal;
-        overflow-wrap: anywhere;
-    }
-}
-
-@media (max-width: 767.98px) {
     #orderbutton {
         overflow-wrap: anywhere;
 
         .client-cart-items {
-            thead {
-                position: absolute;
-                width: 1px;
-                height: 1px;
-                overflow: hidden;
-                clip-path: inset(50%);
-                white-space: nowrap;
-            }
-
-            tbody {
-                display: block;
-            }
-
             tr {
-                display: grid;
                 grid-template-columns: minmax(0, 1fr) auto;
                 align-items: center;
-                gap: .5rem 1rem;
-                padding: 1rem 0;
-                border-bottom: 1px solid var(--tblr-border-color);
-            }
-
-            td {
-                min-width: 0;
-                padding: 0;
-                border: 0;
-                box-shadow: none;
             }
 
             .cart-description,
@@ -1001,35 +888,7 @@
             overflow-wrap: anywhere;
         }
     }
-}
 
-@media (max-width: 575.98px) {
-    .client-payment-actions .btn,
-    .client-payment-action,
-    #payment_button {
-        width: 100%;
-    }
-}
-
-// Detail-page actions keep their existing handlers and component markup.
-@media (max-width: 991.98px) {
-    .order-manage,
-    .invoice-invoice,
-    .support-ticket {
-        .btn {
-            min-height: 44px;
-            white-space: normal;
-            overflow-wrap: anywhere;
-        }
-    }
-
-    .order-manage .form-control,
-    .order-manage .form-select {
-        min-height: 44px;
-    }
-}
-
-@media (max-width: 767.98px) {
     .order-manage .client-service-properties {
         width: 100%;
         table-layout: fixed;
@@ -1059,24 +918,77 @@
 }
 
 @media (max-width: 575.98px) {
-    .invoice-invoice {
-        .invoice-lines {
-            display: block;
-            width: 100%;
+    .support-tickets .card-header > .nav-tabs,
+    .order-list .card-header > .nav-tabs {
+        width: 100%;
+    }
 
-            td {
-                display: grid;
-                grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-                min-width: 0;
-                text-align: end;
-            }
+    .invoice-index .nav-tabs .nav-link,
+    .client-profile .nav-tabs .nav-link,
+    .support-tickets .nav-tabs .nav-link,
+    .order-list .nav-tabs .nav-link,
+    .client-domain-tabs .nav-link {
+        flex: 1 1 50%;
+        min-width: 0;
+        justify-content: center;
+        text-align: center;
+    }
 
-            td:first-child {
-                display: block;
-                min-width: 0;
-                text-align: start;
-            }
+    .invoice-invoice .invoice-lines {
+        display: block;
+        width: 100%;
+
+        thead {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip-path: inset(50%);
+            white-space: nowrap;
         }
+
+        tbody,
+        tr {
+            display: block;
+        }
+
+        tr {
+            padding: .75rem 0;
+            border-bottom: 1px solid var(--tblr-border-color);
+        }
+
+        td {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            min-width: 0;
+            text-align: end;
+            gap: 1rem;
+            padding: .25rem 0;
+            border: 0;
+            box-shadow: none;
+        }
+
+        td:first-child {
+            display: block;
+            min-width: 0;
+            text-align: start;
+            margin-bottom: .25rem;
+        }
+
+        .invoice-cell-label {
+            display: block;
+            color: var(--tblr-secondary-color);
+            text-align: start;
+        }
+    }
+
+    .client-payment-actions .btn,
+    .client-payment-action,
+    #payment_button {
+        width: 100%;
+    }
+
+    .invoice-invoice {
 
         .invoice-totals {
             width: 100%;
@@ -1094,49 +1006,7 @@
             text-align: center;
         }
     }
-}
 
-.kb-category #main-content {
-    overflow-wrap: anywhere;
-}
-
-@media (max-width: 991.98px) {
-    .news-index,
-    .news-post,
-    .kb-index,
-    .kb-category,
-    .kb-article,
-    .email-index,
-    .email-email {
-        .btn,
-        .form-control {
-            min-height: 44px;
-        }
-
-        .page-link {
-            min-height: 44px;
-            min-width: 44px;
-        }
-
-        .btn {
-            white-space: normal;
-            overflow-wrap: anywhere;
-        }
-    }
-
-    .client-content-link {
-        display: inline-flex;
-        align-items: center;
-        min-height: 44px;
-        overflow-wrap: anywhere;
-    }
-
-    .client-kb-articles .list-group-item {
-        min-height: 44px;
-    }
-}
-
-@media (max-width: 575.98px) {
     .news-index,
     .kb-index,
     .kb-category,
@@ -1164,60 +1034,7 @@
     .client-email-actions .btn {
         flex: 1 1 auto;
     }
-}
 
-@media (max-width: 991.98px) {
-    .dashboard .btn,
-    .client-balance .btn,
-    .client-balance .form-control {
-        min-height: 44px;
-    }
-
-    .dashboard .btn,
-    .client-balance .btn {
-        white-space: normal;
-        overflow-wrap: anywhere;
-    }
-}
-
-// Uploaded square or tall logos should not dominate sign-in and reset forms.
-.client-auth-logo {
-    display: block;
-    max-width: 100%;
-
-    img {
-        max-height: 50px;
-        width: auto;
-        height: auto;
-        object-fit: contain;
-    }
-}
-
-// Client-owned action groups keep their document order and existing handlers.
-.client-shell .client-modal-form > .modal-footer {
-    gap: 0.5rem;
-
-    > .btn {
-        margin: 0;
-    }
-}
-
-@media (max-width: 991.98px) {
-    .client-shell .client-action-group {
-        align-items: stretch;
-
-        > .btn {
-            --tblr-btn-font-size: 0.875rem;
-            --tblr-btn-padding-x: 0.75rem;
-            --tblr-btn-padding-y: 0.5rem;
-            min-height: 44px;
-            white-space: normal;
-            overflow-wrap: anywhere;
-        }
-    }
-}
-
-@media (max-width: 575.98px) {
     .client-shell .client-action-group,
     .client-shell .client-modal-form > .modal-footer {
         width: 100%;
@@ -1230,33 +1047,10 @@
             min-width: 0;
         }
     }
-}
 
-@media (max-width: 575.98px) {
     .client-shell .client-action-group > .client-action-destructive:not(:first-child),
     .client-shell .client-modal-form > .modal-footer > .btn-danger:not(:first-child) {
         // Keep destructive choices visually separate from routine stacked actions.
         margin-block-start: 0.5rem;
-    }
-}
-
-@media (max-width: 991.98px) {
-    .client-shell .client-header .client-theme-picker .dropdown-menu {
-        // Override inline navbar submenus for the compact appearance picker.
-        z-index: var(--tblr-dropdown-zindex);
-        position: absolute;
-        top: 100%;
-        right: 0;
-        left: auto;
-        min-width: 10rem;
-        background: var(--tblr-dropdown-bg);
-        border: var(--tblr-dropdown-border-width) solid var(--tblr-dropdown-border-color);
-        box-shadow: var(--tblr-dropdown-box-shadow);
-        padding: var(--tblr-dropdown-padding-y) var(--tblr-dropdown-padding-x);
-
-        .dropdown-item {
-            width: 100%;
-            padding-inline: var(--tblr-dropdown-item-padding-x);
-        }
     }
 }

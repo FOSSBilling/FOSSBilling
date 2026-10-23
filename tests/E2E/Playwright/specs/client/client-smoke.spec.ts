@@ -7,6 +7,8 @@ const pages = [
   { path: '/invoice', text: 'Invoices' },
   { path: '/support', text: 'Support Tickets' },
   { path: '/email', text: 'Emails' },
+  { path: '/news', text: 'News & Announcements' },
+  { path: '/support/kb', text: 'Knowledge Base' },
 ];
 
 test('loads core client pages successfully', async ({ clientContext, clientPage }) => {

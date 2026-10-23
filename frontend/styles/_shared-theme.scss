@@ -61,7 +61,8 @@ $mobile-touch-target: 2.75rem;
 }
 
 // Use theme-aware emphasis text for the shared error summary in both modes.
-[data-fb-form-error] {
+[data-fb-form-error],
+[data-client-form-error] {
     --tblr-alert-color: var(--tblr-danger-text-emphasis);
 }
 
@@ -93,28 +94,7 @@ $mobile-touch-target: 2.75rem;
     }
 }
 
-@media (max-width: 991.98px) {
-    .fb-search-form {
-        .input-group-text {
-            padding: 0;
-        }
-
-        .search-submit-toggle,
-        .search-filter-toggle {
-            min-width: $mobile-touch-target;
-            margin: 0;
-        }
-    }
-}
-
 // Navigation menus share touch targets; Tom Select keeps its own option layout.
-@media (max-width: 991.98px) {
-    .navbar .dropdown-menu:not(.ts-dropdown) > .dropdown-item,
-    .navbar .dropdown-menu:not(.ts-dropdown) > li > .dropdown-item {
-        white-space: normal;
-        overflow-wrap: anywhere;
-    }
-}
 
 // Shared notice copy uses emphasis colors on Tabler's tinted alert surfaces.
 @each $type in danger, warning, info, success {
@@ -138,27 +118,6 @@ $mobile-touch-target: 2.75rem;
         max-width: 100%;
         white-space: normal;
         overflow-wrap: anywhere;
-    }
-}
-
-@media (max-width: 991.98px) {
-    [data-fb-notice] {
-        .btn-close {
-            min-width: $mobile-touch-target;
-            padding: 0;
-        }
-
-        .fb-notice-actions a {
-            display: inline-flex;
-            align-items: center;
-        }
-    }
-}
-
-@media (max-width: 991.98px) {
-    [data-fb-notice].alert-dismissible {
-        min-height: 56px;
-        --tblr-alert-padding-inline-end: 3.5rem;
     }
 }
 
@@ -187,31 +146,8 @@ $mobile-touch-target: 2.75rem;
 
 // Tabler retains icon sizing, currentColor, hover, focus and disabled styling.
 // Only the touch target grows; the glyph stays the same size as on desktop.
-@media (max-width: 991.98px) {
-    .btn.btn-icon {
-        min-width: $mobile-touch-target;
-        flex-shrink: 0;
-    }
-}
 
 // Shared components use one mobile touch-size rule; theme-specific layouts stay local.
-@media (max-width: 991.98px) {
-    [data-fb-empty-state] .empty-action .btn,
-    .fb-table-sort,
-    .fb-search-form .form-control,
-    .fb-search-form .btn,
-    .fb-search-form .search-submit-toggle,
-    .fb-search-form .search-filter-toggle,
-    .navbar .dropdown-menu:not(.ts-dropdown) > .dropdown-item,
-    .navbar .dropdown-menu:not(.ts-dropdown) > li > .dropdown-item,
-    .btn.btn-icon,
-    [data-fb-notice] .btn-close,
-    [data-fb-notice] .fb-notice-actions a,
-    [data-fb-notice] .fb-notice-content .btn,
-    .fb-card-heading-actions .btn {
-        min-height: $mobile-touch-target;
-    }
-}
 
 // Breadcrumb text, including extension-supplied subjects, can wrap at any width.
 .fb-breadcrumbs {
@@ -244,10 +180,69 @@ $mobile-touch-target: 2.75rem;
 }
 
 // A static Tabler ring and readable status still indicate work without motion.
+
 @media (prefers-reduced-motion: reduce) {
     .fb-request-loader,
     .btn.btn-loading::after {
         animation: none !important;
         transition: none !important;
+    }
+}
+
+@media (max-width: 991.98px) {
+    .fb-search-form {
+        .input-group-text {
+            padding: 0;
+        }
+
+        .search-submit-toggle,
+        .search-filter-toggle {
+            min-width: $mobile-touch-target;
+            margin: 0;
+        }
+    }
+
+    .navbar .dropdown-menu:not(.ts-dropdown) > .dropdown-item,
+    .navbar .dropdown-menu:not(.ts-dropdown) > li > .dropdown-item {
+        white-space: normal;
+        overflow-wrap: anywhere;
+    }
+
+    [data-fb-notice] {
+        .btn-close {
+            min-width: $mobile-touch-target;
+            padding: 0;
+        }
+
+        .fb-notice-actions a {
+            display: inline-flex;
+            align-items: center;
+        }
+    }
+
+    [data-fb-notice].alert-dismissible {
+        min-height: 56px;
+        --tblr-alert-padding-inline-end: 3.5rem;
+    }
+
+    .btn.btn-icon {
+        min-width: $mobile-touch-target;
+        flex-shrink: 0;
+    }
+
+    [data-fb-empty-state] .empty-action .btn,
+    .fb-table-sort,
+    .fb-search-form .form-control,
+    .fb-search-form .btn,
+    .fb-search-form .search-submit-toggle,
+    .fb-search-form .search-filter-toggle,
+    .navbar .dropdown-menu:not(.ts-dropdown) > .dropdown-item,
+    .navbar .dropdown-menu:not(.ts-dropdown) > li > .dropdown-item,
+    .btn.btn-icon,
+    [data-fb-notice] .btn-close,
+    [data-fb-notice] .fb-notice-actions a,
+    [data-fb-notice] .fb-notice-content .btn,
+    .fb-card-heading-actions .btn {
+        min-height: $mobile-touch-target;
     }
 }

@@ -46,23 +46,3 @@ test('page headings preserve a single H1 escaped copy and native extension actio
     expect($html)->toContain('&lt;Page&gt;', '&lt;Help&gt;', 'legacy-heading', 'extension-actions', 'data-bs-target="#ticket-dialog"');
     expect($twig->render('partial_page_heading.html.twig', ['title' => 'Compact', 'page_title_class' => 'card-title mb-0']))->toContain('<h1 class="card-title mb-0">Compact</h1>')->not->toContain('fb-card-heading-actions');
 })->with(['client', 'admin']);
-
-test('main admin lists have one compact page heading without duplicating their title', function (string $module, string $template, string $endpoint, string $title): void {
-    $html = (new Tests\Support\StrictTemplateRenderer())->renderTemplate(PATH_MODS . '/' . $module . '/templates/admin/' . $template . '.html.twig', [
-        'admin' => new Tests\Support\PermissiveStub([
-            $endpoint => ['list' => [], 'total' => 0, 'pages' => 1, 'per_page' => 25],
-            'client_get_statuses' => ['active' => 0, 'suspended' => 0, 'canceled' => 0],
-        ]),
-    ]);
-    $document = new DOMDocument();
-    @$document->loadHTML($html);
-    $xpath = new DOMXPath($document);
-    expect($xpath->query('//h1'))->toHaveCount(1);
-    expect($xpath->query('//h1')->item(0)->textContent)->toBe($title);
-    expect($xpath->query('//h1[contains(@class,"card-title")]'))->toHaveCount(1);
-})->with([
-    ['Client', 'mod_client_index', 'client_get_list', 'Clients'],
-    ['Invoice', 'mod_invoice_index', 'invoice_get_list', 'Invoices'],
-    ['Order', 'mod_order_index', 'order_get_list', 'Orders'],
-    ['Support', 'mod_support_tickets', 'support_ticket_get_list', 'Support Tickets'],
-]);

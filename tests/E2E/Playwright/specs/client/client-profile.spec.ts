@@ -39,6 +39,7 @@ test('updates profile details', async ({ clientPage }) => {
   expect((await profileUpdate).status()).toBe(200);
 
   await profileReload;
+  await expect(clientPage.locator('.toast')).toContainText('Account details saved');
   await expect(form.locator('input[name="first_name"]')).toHaveValue(updatedProfile.firstName);
   await expect(form.locator('input[name="last_name"]')).toHaveValue(updatedProfile.lastName);
   await expect(form.locator('input[name="company"]')).toHaveValue(updatedProfile.company);

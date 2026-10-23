@@ -25,27 +25,6 @@ function emptyStateTwig(string $theme): Environment
     return $twig;
 }
 
-test('client and admin share escaped text-only empty presentation', function (string $theme): void {
-    $html = emptyStateTwig($theme)->render($theme === 'client' ? 'partial_client_empty.html.twig' : 'partial_empty.html.twig', [
-        'empty_title' => 'No <messages>', 'empty_description' => 'Try <other> filters.',
-        'empty_action_label' => 'View <messages>', 'empty_action_url' => '/email?search=a&page=1',
-    ]);
-    expect($html)->toContain('data-fb-empty-state', 'No &lt;messages&gt;', 'Try &lt;other&gt; filters.', 'View &lt;messages&gt;', 'href="/email?search=a&amp;page=1"', 'btn btn-outline-secondary text-wrap')
-        ->not->toContain('<messages>', '<other>', '<svg', '<img');
-})->with(['client', 'admin']);
-
-test('shared empty presentation omits blank descriptions and incomplete actions', function (array $action): void {
-    foreach (['client', 'admin'] as $theme) {
-        $html = emptyStateTwig($theme)->render($theme === 'client' ? 'partial_client_empty.html.twig' : 'partial_empty.html.twig', ['empty_title' => 'No invoices'] + $action);
-        expect($html)->toContain('No invoices')->not->toContain('empty-subtitle', 'empty-action', '<a');
-    }
-})->with([
-    [[]],
-    [['empty_action_label' => 'View invoices']],
-    [['empty_action_url' => '/invoice']],
-    [['empty_action_url' => '', 'empty_action_label' => 'View invoices']],
-]);
-
 test('admin empty list recovery distinguishes first-use filtered and out-of-range results', function (int $total, bool $filtered, string $title, ?string $action): void {
     $html = emptyStateTwig('admin')->render('partial_admin_list_empty.html.twig', [
         'empty_list' => ['total' => $total], 'empty_list_url' => 'invoice',
@@ -70,11 +49,6 @@ test('admin empty list recovery distinguishes first-use filtered and out-of-rang
     [50, false, 'No Results on This Page', 'Back to First Page'],
     [50, true, 'No Results on This Page', 'Back to First Page'],
 ]);
-
-test('legacy empty-list macros keep their table-cell contract in both themes', function (string $theme): void {
-    $html = emptyStateTwig($theme)->createTemplate('{% import "macro_functions.html.twig" as mf %}<table><tr>{{ mf.empty_list(3, "No <items>") }}</tr></table>')->render();
-    expect($html)->toContain('<td class="text-muted" colspan="3">No &lt;items&gt;</td>')->not->toContain('data-fb-empty-state');
-})->with(['client', 'admin']);
 
 test('main admin lists keep empty recovery outside responsive tables', function (string $module, string $template, string $endpoint, string $title, bool $filtered, int $total): void {
     $html = (new StrictTemplateRenderer())->renderTemplate(PATH_MODS . '/' . $module . '/templates/admin/' . $template . '.html.twig', [

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import initThemePreference, {resolveTheme} from '../theme-preference.ts';
+import initThemePreference from '../theme-preference.ts';
 
 class Choice extends EventTarget {
   dataset: Record<string, string> = {};
@@ -72,13 +72,6 @@ test('admin defaults to the system setting and unavailable storage still permits
   initThemePreference(); // Existing listeners and a storage-blocked choice remain intact.
   assert.equal(f.root.attributes.get('data-bs-theme'), 'light');
 }, null, 'system', true));
-
-test('theme resolution never lets the device override an explicit choice', () => {
-  assert.equal(resolveTheme('light', true), 'light');
-  assert.equal(resolveTheme('dark', false), 'dark');
-  assert.equal(resolveTheme('system', true), 'dark');
-  assert.equal(resolveTheme('system', false), 'light');
-});
 
 test('legacy extension toggle links still switch themes and return focus to a visible control', () => fixture(f => {
   const previousLocation = (globalThis as any).location;

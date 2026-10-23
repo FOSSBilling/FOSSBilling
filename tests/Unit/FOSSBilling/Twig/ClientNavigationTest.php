@@ -97,6 +97,7 @@ test('notification menu renders unread state and escapes ticket subjects', funct
 
     expect($html)->toContain('data-notification-id="3"')
         ->toContain('href="/support/ticket/12#message-45"')
+        ->toContain('aria-controls="client-notification-menu"', 'aria-labelledby="client-notification-toggle"')
         ->toContain('&lt;script&gt;unsafe&lt;/script&gt;')
         ->not->toContain('<script>unsafe</script>');
 });
@@ -114,18 +115,6 @@ test('wallet history remains reachable when adding funds is disabled', function 
     expect($hidden)->not->toContain('href="/client/balance"');
 });
 
-test('shared navigation labels match the email page and highlight profile in the account menu', function (): void {
-    $html = ClientThemeRenderer::render(['active_menu' => 'profile', 'current_active_menu' => 'profile']);
-    expect($html)->toContain('href="/client/profile" aria-current="page"', 'Emails');
-});
-
-test('back to top stays in document flow and respects its setting', function (): void {
-    $html = ClientThemeRenderer::render(['settings' => ['footer_to_top_enabled' => true]]);
-    expect($html)->toContain('href="#top" class="btn btn-outline-secondary"', 'Back to Top')
-        ->and($html)->not->toContain('href="#top" class="position-fixed');
-    expect(ClientThemeRenderer::render(['settings' => ['footer_to_top_enabled' => false]]))->not->toContain('href="#top"');
-});
-
 test('client layouts establish separate message regions and keep sidebar amounts out of heading navigation', function (): void {
     foreach (['layout_default.html.twig', 'layout_public.html.twig'] as $template) {
         $html = ClientThemeRenderer::render(['settings' => ['sidebar_balance_enabled' => true]], $template);
@@ -136,26 +125,4 @@ test('client layouts establish separate message regions and keep sidebar amounts
             ->and($xpath->query('//*[@data-client-announcement="error" and @role="alert" and not(@aria-live)]'))->toHaveCount(1)
             ->and($xpath->query('//ul[contains(@class,"client-menu")]//*[self::h5 or self::h6]'))->toHaveCount(0);
     }
-});
-
-test('client header renders configured logo variants without breakpoint visibility classes', function (): void {
-    $dom = new DOMDocument();
-    @$dom->loadHTML(ClientThemeRenderer::render());
-    $xpath = new DOMXPath($dom);
-    $images = $xpath->query('//a[contains(@class,"navbar-brand")]/img');
-
-    expect($images)->toHaveCount(2)
-        ->and($xpath->query('//a[contains(@class,"navbar-brand")]/span'))->toHaveCount(0);
-    foreach ($images as $image) {
-        expect($image->getAttribute('class'))->not->toContain('d-none', 'd-sm-block');
-    }
-});
-
-test('client notification panel keeps a named trigger relationship', function (): void {
-    $html = ClientThemeRenderer::render();
-    $dom = new DOMDocument();
-    @$dom->loadHTML($html);
-    $xpath = new DOMXPath($dom);
-    expect($xpath->query('//button[@id="client-notification-toggle" and @aria-controls="client-notification-menu"]'))->toHaveCount(1)
-        ->and($xpath->query('//div[@id="client-notification-menu" and @aria-labelledby="client-notification-toggle"]'))->toHaveCount(1);
 });

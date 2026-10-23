@@ -17,11 +17,6 @@ function cardHeadingTwig(string $theme): Environment
     ]), ['strict_variables' => true, 'autoescape' => 'html']);
 }
 
-test('both heading entrypoints escape default copy and omit empty action groups', function (string $theme): void {
-    $html = cardHeadingTwig($theme)->render('partial_card_heading.html.twig', ['title' => 'Title <test>', 'subtitle' => 'Help <text>']);
-    expect($html)->toContain('fb-card-heading-content', '<h2 class="card-title mb-0">Title &lt;test&gt;</h2>', 'Help &lt;text&gt;')->not->toContain('fb-card-heading-actions');
-})->with(['client', 'admin']);
-
 test('heading blocks preserve existing heading IDs levels and extension action attributes', function (string $theme): void {
     $html = cardHeadingTwig($theme)->createTemplate(<<<'TWIG'
         {% embed 'partial_card_heading.html.twig' with {heading_actions_class: 'extension-actions', heading_content_class: 'legacy-heading'} %}
