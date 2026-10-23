@@ -32,12 +32,13 @@ test('updates profile details', async ({ clientPage }) => {
   await form.locator('input[name="postcode"]').fill(updatedProfile.postcode);
 
   const profileUpdate = waitForApiResponse(clientPage, '/api/client/profile/update');
+  const profileReload = clientPage.waitForEvent('load');
   await submitForm(form);
 
   // The reloaded form values below prove the update was persisted server-side.
   expect((await profileUpdate).status()).toBe(200);
 
-  await clientPage.reload();
+  await profileReload;
   await expect(form.locator('input[name="first_name"]')).toHaveValue(updatedProfile.firstName);
   await expect(form.locator('input[name="last_name"]')).toHaveValue(updatedProfile.lastName);
   await expect(form.locator('input[name="company"]')).toHaveValue(updatedProfile.company);
