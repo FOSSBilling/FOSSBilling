@@ -8,31 +8,6 @@ globalThis.bootstrap = { Tooltip, Toast, Modal, Collapse, Tab };
 
 document.addEventListener('DOMContentLoaded', () => {
   /**
-   * Global error handler for unhandled Promise rejections
-   */
-  window.addEventListener('unhandledrejection', function(event) {
-    const error = event.reason;
-    let message = 'An unexpected error occurred';
-    if (error && typeof error === 'object') {
-      message = error.message || error.code || message;
-    } else if (typeof error === 'string') {
-      message = error;
-    }
-    FOSSBilling.message(message, 'error');
-  });
-
-  /**
-   * Global error handler for synchronous errors
-   */
-  window.onerror = function(message, source, lineno, colno, error) {
-    let displayMessage = message;
-    if (error && error.message) {
-      displayMessage = error.message;
-    }
-    FOSSBilling.message(displayMessage, 'error');
-  };
-
-  /**
    * Wire up the light/dark theme controller. Runs on every page that
    * includes the Huraga layout so user toggles are persisted in localStorage
    * and the data-bs-theme attribute is kept in sync.

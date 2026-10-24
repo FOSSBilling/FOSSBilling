@@ -45,7 +45,8 @@
                         bootstrap.Collapse.getOrCreateInstance(paymentHtmlEl).show();
                         document.getElementById('redirect-to-gateway').click();
                     }
-                });
+                },
+                (error) => FOSSBilling.message(`${error.message} (${error.code})`, 'error'));
         } else {
             window.top.location.href = ('{{ "order/service/manage"|url }}' + '/' + result.order_id);
         }
@@ -80,6 +81,7 @@
                     registerEl.parentElement.remove();
                     bootstrap.Collapse.getOrCreateInstance(document.getElementById('checkout')).show();
                     }, 500);
-            });
+            },
+            (error) => FOSSBilling.message(`${error.message} (${error.code})`, 'error'));
     }
 </script>

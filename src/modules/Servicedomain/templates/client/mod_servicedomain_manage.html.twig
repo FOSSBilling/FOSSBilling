@@ -227,7 +227,8 @@
                                 document.getElementById('domain-lock').style.display === 'none' ? '' : 'none';
                             document.getElementById('domain-unlock').style.display =
                                 document.getElementById('domain-unlock').style.display === 'none' ? '' : 'none';
-                        });
+                        },
+                        (error) => FOSSBilling.message(`${error.message} (${error.code})`, 'error'));
                 });
 
                 document.getElementById('domain-unlock').addEventListener('click', function(event) {
@@ -241,7 +242,8 @@
                                 document.getElementById('domain-lock').style.display === 'none' ? '' : 'none';
                             document.getElementById('domain-unlock').style.display =
                                 document.getElementById('domain-unlock').style.display === 'none' ? '' : 'none';
-                        });
+                        },
+                        (error) => FOSSBilling.message(`${error.message} (${error.code})`, 'error'));
                 });
 
                 document.getElementById('domain-enable-pp').addEventListener('click', function(event) {
@@ -256,7 +258,8 @@
 
                             enableBtn.style.display = enableBtn.style.display === 'none' ? '' : 'none';
                             disableBtn.style.display = disableBtn.style.display === 'none' ? '' : 'none';
-                        });
+                        },
+                        (error) => FOSSBilling.message(`${error.message} (${error.code})`, 'error'));
                 });
 
                 document.getElementById('domain-disable-pp').addEventListener('click', function(event) {
@@ -271,8 +274,8 @@
 
                             enableBtn.style.display = enableBtn.style.display === 'none' ? '' : 'none';
                             disableBtn.style.display = disableBtn.style.display === 'none' ? '' : 'none';
-                        }
-                    );
+                        },
+                        (error) => FOSSBilling.message(`${error.message} (${error.code})`, 'error'));
                 });
 
                 document.getElementById('get-epp').addEventListener('click', function(event) {
@@ -281,7 +284,8 @@
                     FOSSBilling.api.client.post('servicedomain/get_transfer_code', { order_id: {{ order.id }} },
                         (result) => {
                             FOSSBilling.message('Domain transfer code is: ' + result);
-                        });
+                        },
+                        (error) => FOSSBilling.message(`${error.message} (${error.code})`, 'error'));
                 });
 
                 document.getElementById('domain-sync').addEventListener('click', function(event) {

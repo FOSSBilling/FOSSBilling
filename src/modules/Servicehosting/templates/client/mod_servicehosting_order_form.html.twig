@@ -248,6 +248,7 @@
                         domainChecked = true;
                         domainCheck.style.display = 'none';
                     },
+                    (error) => FOSSBilling.message(`${error.message} (${error.code})`, 'error')
                 );
             });
         }
@@ -306,6 +307,7 @@
                         transferCheck.style.display = 'none';
                         updateTransferCodeRequirement();
                     },
+                    (error) => FOSSBilling.message(`${error.message} (${error.code})`, 'error')
                 );
             });
         }
@@ -344,6 +346,7 @@
                         );
                     }
                 },
+                (error) => FOSSBilling.message(`${error.message} (${error.code})`, 'error')
             );
         }
 
@@ -355,6 +358,7 @@
                     const transferPriceEl = document.getElementById('transfer-price');
                     if (transferPriceEl) transferPriceEl.textContent = price;
                 },
+                (error) => FOSSBilling.message(`${error.message} (${error.code})`, 'error')
             );
         }
 
