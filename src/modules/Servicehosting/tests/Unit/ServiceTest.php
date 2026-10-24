@@ -1744,3 +1744,130 @@ test('cart product title falls back when owndomain fields are missing', function
 
     expect($service->getCartProductTitle($product, []))->toBe('Hosting');
 });
+
+test('refreshes provisioning defaults while preserving order choices', function (bool $hasService): void {
+    $original = ['server_id' => 1, 'hosting_plan_id' => 2, 'sld' => 'example', 'tld' => '.com', 'password' => 'secret', 'import' => false, 'period' => '1Y'];
+    $order = createEntity(Order::class, ['id' => 50, 'product_id' => 9, 'service_type' => 'hosting', 'status' => Order::STATUS_FAILED_SETUP, 'config' => json_encode($original)]);
+    $product = createEntity(Product::class, ['config' => json_encode(['server_id' => 3, 'hosting_plan_id' => 4, 'reseller' => true, 'period' => '1M'])]);
+    $server = createEntity(ServiceHostingServer::class, ['id' => 3, 'ip' => '192.0.2.3']);
+    $plan = createEntity(ServiceHostingHp::class, ['id' => 4]);
+    $model = $hasService ? new ServiceHosting() : null;
+    $orderService = Mockery::mock(OrderService::class);
+    $orderService->shouldReceive('getOrderService')->once()->with($order)->andReturn($model);
+    $orderService->shouldReceive('getConfig')->once()->with($order)->andReturn($original);
+    $serverRepo = Mockery::mock(ServiceHostingServerRepository::class);
+    $serverRepo->shouldReceive('find')->once()->with(3)->andReturn($server);
+    $planRepo = Mockery::mock(ServiceHostingHpRepository::class);
+    $planRepo->shouldReceive('find')->once()->with(4)->andReturn($plan);
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('find')->once()->with(Product::class, 9)->andReturn($product);
+    $em->shouldReceive('getRepository')->with(ServiceHostingServer::class)->andReturn($serverRepo);
+    $em->shouldReceive('getRepository')->with(ServiceHostingHp::class)->andReturn($planRepo);
+    $em->shouldReceive('flush')->once();
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(fn () => $orderService);
+    $service = new Service();
+    $service->setDi($di);
+
+    expect($service->refreshProductConfiguration($order))->toBeTrue();
+    expect(json_decode($order->getConfig(), true))->toBe(array_replace($original, ['server_id' => 3, 'hosting_plan_id' => 4, 'reseller' => true]));
+    if ($hasService) {
+        expect($model->getServiceHostingServer())->toBe($server);
+        expect($model->getServiceHostingHp())->toBe($plan);
+        expect($model->getIp())->toBe('192.0.2.3');
+    }
+})->with([true, false]);
+
+test('rejects refreshing active hosting orders', function (): void {
+    $service = new Service();
+    $order = createEntity(Order::class, ['service_type' => 'hosting', 'status' => Order::STATUS_ACTIVE]);
+    expect(fn () => $service->refreshProductConfiguration($order))->toThrow(FOSSBilling\InformationException::class);
+});
+
+test('rejects refreshing a failed order with a saved username', function (): void {
+    $order = createEntity(Order::class, ['service_type' => 'hosting', 'status' => Order::STATUS_FAILED_SETUP]);
+    $model = createEntity(ServiceHosting::class, ['username' => 'existing']);
+    $orderService = Mockery::mock(OrderService::class);
+    $orderService->shouldReceive('getOrderService')->once()->with($order)->andReturn($model);
+    $di = container();
+    $di['mod_service'] = $di->protect(fn () => $orderService);
+    $service = new Service();
+    $service->setDi($di);
+    expect(fn () => $service->refreshProductConfiguration($order))->toThrow(FOSSBilling\InformationException::class);
+});
+
+test('previews effective service values and product defaults without writing', function (bool $hasUsername): void {
+    $order = createEntity(Order::class, ['product_id' => 9, 'service_type' => 'hosting', 'status' => Order::STATUS_FAILED_SETUP]);
+    $server = createEntity(ServiceHostingServer::class, ['id' => 3, 'name' => 'New server']);
+    $plan = createEntity(ServiceHostingHp::class, ['id' => 4, 'name' => 'New plan']);
+    $oldServer = createEntity(ServiceHostingServer::class, ['id' => 1, 'name' => 'Old server']);
+    $oldPlan = createEntity(ServiceHostingHp::class, ['id' => 2, 'name' => 'Old plan']);
+    $model = new ServiceHosting();
+    $model->setServiceHostingServer($oldServer);
+    $model->setServiceHostingHp($oldPlan);
+    $model->setReseller(false);
+    if ($hasUsername) {
+        $model->setUsername('possibly-provisioned');
+    }
+    $product = createEntity(Product::class, ['config' => json_encode(['server_id' => 3, 'hosting_plan_id' => 4, 'reseller' => true])]);
+    $orderService = Mockery::mock(OrderService::class);
+    $orderService->shouldReceive('getOrderService')->once()->with($order)->andReturn($model);
+    // The service values take precedence over an independently edited order config.
+    $orderService->shouldReceive('getConfig')->once()->with($order)->andReturn(['server_id' => 3, 'hosting_plan_id' => 4]);
+    $serverRepo = Mockery::mock(ServiceHostingServerRepository::class);
+    $serverRepo->shouldReceive('find')->with(1)->andReturn($oldServer);
+    $serverRepo->shouldReceive('find')->with(3)->andReturn($server);
+    $planRepo = Mockery::mock(ServiceHostingHpRepository::class);
+    $planRepo->shouldReceive('find')->with(2)->andReturn($oldPlan);
+    $planRepo->shouldReceive('find')->with(4)->andReturn($plan);
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('find')->once()->with(Product::class, 9)->andReturn($product);
+    $em->shouldReceive('getRepository')->with(ServiceHostingServer::class)->andReturn($serverRepo);
+    $em->shouldReceive('getRepository')->with(ServiceHostingHp::class)->andReturn($planRepo);
+    $em->shouldNotReceive('flush');
+    $em->shouldNotReceive('persist');
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(fn () => $orderService);
+    $service = new Service();
+    $service->setDi($di);
+
+    $preview = $service->previewProductConfiguration($order);
+    expect($preview['current']['server_name'])->toBe('Old server');
+    expect($preview['current']['hosting_plan_name'])->toBe('Old plan');
+    expect($preview['current']['reseller'])->toBeFalse();
+    expect($preview['proposed']['server_name'])->toBe('New server');
+    expect($preview['proposed']['hosting_plan_name'])->toBe('New plan');
+    expect($preview['proposed']['reseller'])->toBeTrue();
+    expect($preview['has_saved_username'])->toBe($hasUsername);
+    expect($preview['can_refresh'])->toBe(!$hasUsername);
+})->with([true, false]);
+
+test('disables the preview when product provisioning defaults are missing', function (): void {
+    $order = createEntity(Order::class, ['product_id' => 9, 'service_type' => 'hosting', 'status' => Order::STATUS_PENDING_SETUP]);
+    $orderService = Mockery::mock(OrderService::class);
+    $orderService->shouldReceive('getOrderService')->once()->with($order)->andReturnNull();
+    $orderService->shouldReceive('getConfig')->once()->with($order)->andReturn(['server_id' => 1, 'hosting_plan_id' => 2]);
+    $serverRepo = Mockery::mock(ServiceHostingServerRepository::class);
+    $serverRepo->shouldReceive('find')->andReturnNull();
+    $planRepo = Mockery::mock(ServiceHostingHpRepository::class);
+    $planRepo->shouldReceive('find')->andReturnNull();
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('find')->once()->with(Product::class, 9)->andReturnNull();
+    $em->shouldReceive('getRepository')->with(ServiceHostingServer::class)->andReturn($serverRepo);
+    $em->shouldReceive('getRepository')->with(ServiceHostingHp::class)->andReturn($planRepo);
+    $em->shouldNotReceive('flush');
+    $di = container();
+    $di['em'] = $em;
+    $di['mod_service'] = $di->protect(fn () => $orderService);
+    $service = new Service();
+    $service->setDi($di);
+
+    $preview = $service->previewProductConfiguration($order);
+    expect($preview['current']['server_id'])->toBe(1);
+    expect($preview['current']['hosting_plan_id'])->toBe(2);
+    expect($preview['current']['server_name'])->toBeNull();
+    expect($preview['proposed']['valid'])->toBeFalse();
+    expect($preview['can_refresh'])->toBeFalse();
+});
