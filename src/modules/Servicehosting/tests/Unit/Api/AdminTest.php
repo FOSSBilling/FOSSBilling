@@ -829,3 +829,22 @@ test('testGetServiceOrderNotActivated', function (): void {
     $this->expectExceptionMessage('Order is not activated');
     $api->_getService($data);
 });
+
+test('refresh endpoints accept orders without an existing hosting service', function (string $endpoint, string $method, mixed $result): void {
+    $order = Tests\Helpers\createEntity(Box\Mod\Order\Entity\Order::class, ['id' => 50]);
+    $repo = Mockery::mock(Box\Mod\Order\Repository\OrderRepository::class);
+    $repo->shouldReceive('find')->with(50)->once()->andReturn($order);
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(Box\Mod\Order\Entity\Order::class)->andReturn($repo);
+    $service = Mockery::mock(Box\Mod\Servicehosting\Service::class);
+    $service->shouldReceive($method)->with($order)->once()->andReturn($result);
+    $di = container();
+    $di['em'] = $em;
+    $api = apiEndpoint(new Admin());
+    $api->setDi($di);
+    $api->setService($service);
+    expect($api->$endpoint(['order_id' => 50]))->toBe($result);
+})->with([
+    ['refresh_product_config', 'refreshProductConfiguration', true],
+    ['refresh_product_config_preview', 'previewProductConfiguration', ['can_refresh' => false]],
+]);

@@ -1608,3 +1608,92 @@ test('getOrderableHpPairs returns empty array when no products reference plans',
 
     expect($service->getOrderableHpPairs())->toBe([]);
 });
+
+test('refreshes provisioning defaults while preserving order choices', function (bool $hasService): void {
+    $original = ['server_id' => 1, 'hosting_plan_id' => 2, 'sld' => 'example', 'tld' => '.com', 'password' => 'secret', 'import' => false, 'period' => '1Y'];
+    $order = createEntity(Box\Mod\Order\Entity\Order::class, ['id' => 50, 'product_id' => 9, 'service_type' => 'hosting', 'status' => Box\Mod\Order\Entity\Order::STATUS_FAILED_SETUP, 'config' => json_encode($original)]);
+    $product = createEntity(Box\Mod\Product\Entity\Product::class, ['config' => json_encode(['server_id' => 3, 'hosting_plan_id' => 4, 'reseller' => true, 'period' => '1M'])]);
+    $server = Tests\Helpers\model(Model_ServiceHostingServer::class, ['id' => 3, 'ip' => '192.0.2.3']);
+    $plan = Tests\Helpers\model(Model_ServiceHostingHp::class, ['id' => 4]);
+    $model = $hasService ? Tests\Helpers\model(Model_ServiceHosting::class) : null;
+    $orderService = Mockery::mock(Box\Mod\Order\Service::class);
+    $orderService->shouldReceive('getOrderService')->once()->with($order)->andReturn($model);
+    $orderService->shouldReceive('getConfig')->once()->with($order)->andReturn($original);
+    $db = Mockery::mock(Box_Database::class);
+    $db->shouldReceive('getExistingModelById')->with('ServiceHostingServer', 3, Mockery::type('string'))->once()->andReturn($server);
+    $db->shouldReceive('getExistingModelById')->with('ServiceHostingHp', 4, Mockery::type('string'))->once()->andReturn($plan);
+    if ($hasService) {
+        $db->shouldReceive('store')->once()->with($model);
+    } else {
+        $db->shouldNotReceive('store');
+    }
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('find')->once()->with(Box\Mod\Product\Entity\Product::class, 9)->andReturn($product);
+    $em->shouldReceive('flush')->once();
+    $di = container();
+    $di['em'] = $em;
+    $di['db'] = $db;
+    $di['mod_service'] = $di->protect(fn () => $orderService);
+    $service = new Service();
+    $service->setDi($di);
+
+    expect($service->refreshProductConfiguration($order))->toBeTrue();
+    expect(json_decode($order->getConfig(), true))->toBe(array_replace($original, ['server_id' => 3, 'hosting_plan_id' => 4, 'reseller' => true]));
+    if ($hasService) {
+        expect($model->service_hosting_server_id)->toBe(3);
+        expect($model->service_hosting_hp_id)->toBe(4);
+        expect($model->ip)->toBe('192.0.2.3');
+        expect(FOSSBilling\Tools::normalizeBoolean($model->reseller))->toBeTrue();
+    }
+})->with([true, false]);
+
+test('rejects refreshing active hosting orders', function (): void {
+    $service = new Service();
+    $order = createEntity(Box\Mod\Order\Entity\Order::class, ['service_type' => 'hosting', 'status' => Box\Mod\Order\Entity\Order::STATUS_ACTIVE]);
+    expect(fn () => $service->refreshProductConfiguration($order))->toThrow(FOSSBilling\InformationException::class);
+});
+
+test('rejects refreshing a failed order with a saved username', function (): void {
+    $order = createEntity(Box\Mod\Order\Entity\Order::class, ['service_type' => 'hosting', 'status' => Box\Mod\Order\Entity\Order::STATUS_FAILED_SETUP]);
+    $model = Tests\Helpers\model(Model_ServiceHosting::class, ['username' => 'existing']);
+    $orderService = Mockery::mock(Box\Mod\Order\Service::class);
+    $orderService->shouldReceive('getOrderService')->once()->with($order)->andReturn($model);
+    $di = container();
+    $di['mod_service'] = $di->protect(fn () => $orderService);
+    $service = new Service();
+    $service->setDi($di);
+    expect(fn () => $service->refreshProductConfiguration($order))->toThrow(FOSSBilling\InformationException::class);
+});
+
+test('previews legacy hosting settings without writing', function (bool $hasUsername): void {
+    $order = createEntity(Box\Mod\Order\Entity\Order::class, ['product_id' => 9, 'service_type' => 'hosting', 'status' => 'failed_setup']);
+    $product = createEntity(Box\Mod\Product\Entity\Product::class, ['config' => json_encode(['server_id' => 3, 'hosting_plan_id' => 4, 'reseller' => true])]);
+    $model = Tests\Helpers\model(Model_ServiceHosting::class, ['service_hosting_server_id' => 1, 'service_hosting_hp_id' => 2, 'reseller' => false, 'username' => $hasUsername ? 'existing' : null]);
+    $orderService = Mockery::mock(Box\Mod\Order\Service::class);
+    $orderService->shouldReceive('getOrderService')->with($order)->once()->andReturn($model);
+    $orderService->shouldReceive('getConfig')->with($order)->once()->andReturn([]);
+    $db = Mockery::mock(Box_Database::class);
+    $db->shouldReceive('load')->with('ServiceHostingServer', 1)->once()->andReturn(Tests\Helpers\model(Model_ServiceHostingServer::class, ['id' => 1, 'name' => 'Old server']));
+    $db->shouldReceive('load')->with('ServiceHostingServer', 3)->once()->andReturn(Tests\Helpers\model(Model_ServiceHostingServer::class, ['id' => 3, 'name' => 'New server']));
+    $db->shouldReceive('load')->with('ServiceHostingHp', 2)->once()->andReturn(Tests\Helpers\model(Model_ServiceHostingHp::class, ['id' => 2, 'name' => 'Old plan']));
+    $db->shouldReceive('load')->with('ServiceHostingHp', 4)->once()->andReturn(Tests\Helpers\model(Model_ServiceHostingHp::class, ['id' => 4, 'name' => 'New plan']));
+    $db->shouldNotReceive('store');
+    $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $em->shouldReceive('find')->with(Box\Mod\Product\Entity\Product::class, 9)->once()->andReturn($product);
+    $em->shouldNotReceive('flush');
+    $di = container();
+    $di['em'] = $em;
+    $di['db'] = $db;
+    $di['mod_service'] = $di->protect(fn () => $orderService);
+    $service = new Service();
+    $service->setDi($di);
+
+    $preview = $service->previewProductConfiguration($order);
+    expect($preview['current']['server_name'])->toBe('Old server');
+    expect($preview['current']['hosting_plan_name'])->toBe('Old plan');
+    expect($preview['current']['reseller'])->toBeFalse();
+    expect($preview['proposed']['server_name'])->toBe('New server');
+    expect($preview['proposed']['hosting_plan_name'])->toBe('New plan');
+    expect($preview['proposed']['reseller'])->toBeTrue();
+    expect($preview['can_refresh'])->toBe(!$hasUsername);
+})->with([true, false]);

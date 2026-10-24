@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Box\Mod\Servicehosting;
 
+use Box\Mod\Order\Entity\Order;
 use Box\Mod\Product\Entity\Product;
 use FOSSBilling\Exception;
 use FOSSBilling\InformationException;
@@ -166,6 +167,92 @@ class Service implements InjectionAwareInterface
         if ($count > 0) {
             throw new InformationException('This free subdomain is already in use.');
         }
+    }
+
+    public function previewProductConfiguration(Order $order): array
+    {
+        $orderService = $this->di['mod_service']('order');
+        $model = $orderService->getOrderService($order);
+        $config = $orderService->getConfig($order);
+        $product = $this->di['em']->find(Product::class, $order->getProductId());
+        $defaults = $product instanceof Product ? (json_decode($product->getConfig() ?? '', true) ?? []) : [];
+        $describe = function (array $values): array {
+            $serverId = (int) ($values['server_id'] ?? 0);
+            $planId = (int) ($values['hosting_plan_id'] ?? 0);
+            $server = $this->di['db']->load('ServiceHostingServer', $serverId);
+            $plan = $this->di['db']->load('ServiceHostingHp', $planId);
+
+            return [
+                'server_id' => $serverId,
+                'server_name' => $server?->name,
+                'hosting_plan_id' => $planId,
+                'hosting_plan_name' => $plan?->name,
+                'reseller' => Tools::normalizeBoolean($values['reseller'] ?? false),
+                'valid' => !empty($server->id) && !empty($plan->id),
+            ];
+        };
+        // A failed activation may have saved service settings that differ from the order config.
+        if ($model instanceof \Model_ServiceHosting) {
+            $config = [
+                'server_id' => $model->service_hosting_server_id,
+                'hosting_plan_id' => $model->service_hosting_hp_id,
+                'reseller' => $model->reseller,
+            ];
+        }
+        $current = $describe($config);
+        $proposed = $describe($defaults);
+        $hasUsername = $model instanceof \Model_ServiceHosting && !empty($model->username);
+
+        return [
+            'current' => $current,
+            'proposed' => $proposed,
+            'has_saved_username' => $hasUsername,
+            'can_refresh' => $order->getServiceType() === 'hosting'
+                && in_array($order->getStatus(), [Order::STATUS_PENDING_SETUP, Order::STATUS_FAILED_SETUP], true)
+                && !$hasUsername && $product instanceof Product && $proposed['valid'],
+        ];
+    }
+
+    public function refreshProductConfiguration(Order $order): bool
+    {
+        if ($order->getServiceType() !== 'hosting'
+            || !in_array($order->getStatus(), [Order::STATUS_PENDING_SETUP, Order::STATUS_FAILED_SETUP], true)) {
+            throw new InformationException('Only pending or failed hosting orders can refresh product configuration.');
+        }
+
+        $orderService = $this->di['mod_service']('order');
+        $model = $orderService->getOrderService($order);
+        if ($model instanceof \Model_ServiceHosting && !empty($model->username)) {
+            throw new InformationException('Refresh is blocked because this account has a saved username. Provisioning may have succeeded or failed; check the hosting server before changing its settings.');
+        }
+
+        $product = $this->di['em']->find(Product::class, $order->getProductId());
+        if (!$product instanceof Product) {
+            throw new InformationException('Product not found.');
+        }
+        $defaults = json_decode($product->getConfig() ?? '', true) ?? [];
+        $server = $this->di['db']->getExistingModelById('ServiceHostingServer', (int) ($defaults['server_id'] ?? 0), 'Server from product configuration was not found');
+        $plan = $this->di['db']->getExistingModelById('ServiceHostingHp', (int) ($defaults['hosting_plan_id'] ?? 0), 'Hosting plan from product configuration was not found');
+        $config = $orderService->getConfig($order);
+        $config['server_id'] = $server->id;
+        $config['hosting_plan_id'] = $plan->id;
+        $config['reseller'] = Tools::normalizeBoolean($defaults['reseller'] ?? false);
+
+        // A failed activation may already have created the local service record.
+        if ($model instanceof \Model_ServiceHosting) {
+            $model->service_hosting_server_id = $server->id;
+            $model->service_hosting_hp_id = $plan->id;
+            $model->ip = $server->ip;
+            $model->reseller = $config['reseller'];
+            $model->updated_at = date('Y-m-d H:i:s');
+            $this->di['db']->store($model);
+        }
+        $order->setConfig(json_encode($config));
+        $order->setUpdatedAt(new \DateTime());
+        $this->di['em']->flush();
+        $this->di['logger']->info('Refreshed hosting provisioning configuration for order #{order_id}', ['order_id' => $order->getId()]);
+
+        return true;
     }
 
     /**
