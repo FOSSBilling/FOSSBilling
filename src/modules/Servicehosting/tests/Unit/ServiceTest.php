@@ -1776,6 +1776,7 @@ test('refreshes provisioning defaults while preserving order choices', function 
         expect($model->getServiceHostingServer())->toBe($server);
         expect($model->getServiceHostingHp())->toBe($plan);
         expect($model->getIp())->toBe('192.0.2.3');
+        expect($model->isReseller())->toBeTrue();
     }
 })->with([true, false]);
 
