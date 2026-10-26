@@ -162,7 +162,7 @@ class Session implements InjectionAwareInterface
 
         if (Config::getProperty('security.perform_session_fingerprinting', true)) {
             $fingerprint = $currentFingerprint ?? new Fingerprint($this->di['request']);
-            $storedFingerprint = json_decode((string) $session['fingerprint'], true);
+            $storedFingerprint = Doctrine\JsonDocument::fromJson((string) $session['fingerprint'])->arrayData();
             if (!is_array($storedFingerprint) || !$fingerprint->checkFingerprint($storedFingerprint, $sessionID)) {
                 $invalid = true;
                 $this->di['logger']->withChannel('security')->warning(
@@ -215,9 +215,9 @@ class Session implements InjectionAwareInterface
             }
 
             $connection->executeStatement('UPDATE session SET fingerprint = :fingerprint WHERE id = :id', [
-                'fingerprint' => json_encode($updatedFingerprint, JSON_THROW_ON_ERROR),
+                'fingerprint' => $updatedFingerprint,
                 'id' => $sessionID,
-            ]);
+            ], ['fingerprint' => Doctrine\Type\JsonDocumentType::NAME]);
         } catch (\Doctrine\DBAL\Exception|\JsonException) {
             return;
         }
