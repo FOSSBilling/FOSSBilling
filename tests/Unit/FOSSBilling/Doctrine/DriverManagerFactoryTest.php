@@ -202,10 +202,10 @@ test('getConnection actually connects for a file-based pdo_sqlite database', fun
     }
 });
 
-test('MySQL connections default to full Unicode and retain explicit supported charsets', function (?string $charset, string $expected): void {
+test('MySQL connections normalize legacy UTF-8 and retain other supported charsets', function (?string $charset, string $expected): void {
     $config = ['driver' => 'pdo_mysql', 'host' => 'localhost', 'port' => 3306, 'name' => 'db', 'user' => 'u', 'password' => 'p'];
     if ($charset !== null) {
         $config['charset'] = $charset;
     }
     expect(buildConnectionParams($config)['charset'])->toBe($expected);
-})->with([[null, 'utf8mb4'], ['utf8mb4', 'utf8mb4'], ['utf8', 'utf8'], ['latin1', 'latin1']]);
+})->with([[null, 'utf8mb4'], ['utf8mb4', 'utf8mb4'], ['utf8', 'utf8mb4'], ['latin1', 'latin1']]);

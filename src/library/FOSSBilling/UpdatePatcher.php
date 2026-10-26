@@ -1503,6 +1503,7 @@ class UpdatePatcher implements InjectionAwareInterface
             130 => 'patch130',
             131 => 'patch131',
             132 => 'patch132',
+            133 => 'patch133',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -4756,35 +4757,79 @@ class UpdatePatcher implements InjectionAwareInterface
 
     private function patch128(): void
     {
-        if (!$this->tableExists('custom_pages')) {
+        $this->widenLegacyTextColumns('custom_pages', ['title', 'description', 'keywords', 'content']);
+    }
+
+    /**
+     * Preserve column definitions and indexed identifiers while upgrading legacy text.
+     *
+     * @param list<string> $columns
+     */
+    private function widenLegacyTextColumns(string $table, array $columns, bool $repairTableDefault = false): void
+    {
+        if (!$this->tableExists($table)) {
             return;
         }
 
-        // QKM: widen user-authored page text without changing indexed slug equality or
+        // Widen user-authored text without changing indexed slug equality or
         // the size of TEXT columns (CONVERT TO CHARACTER SET can promote them to MEDIUMTEXT).
-        $indexedColumns = $this->fetchFirstColumn(
-            'SELECT DISTINCT COLUMN_NAME FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table',
-            ['table' => 'custom_pages'],
+        $indexes = $this->fetchAll(sprintf('SHOW INDEX FROM `%s`', $this->quoteIdentifier($table)));
+        // MariaDB's UCA-1400 collations appear without a charset prefix here
+        // (and with NULL charset in COLLATIONS); applicability includes their aliases.
+        $collations = array_map(
+            static fn (string $name): string => str_starts_with($name, 'utf8mb4_') ? $name : 'utf8mb4_' . $name,
+            $this->fetchFirstColumn('SELECT COLLATION_NAME FROM information_schema.COLLATION_CHARACTER_SET_APPLICABILITY WHERE CHARACTER_SET_NAME = :charset', ['charset' => 'utf8mb4']),
         );
-        $collations = $this->fetchFirstColumn('SELECT COLLATION_NAME FROM information_schema.COLLATIONS WHERE CHARACTER_SET_NAME = :charset', ['charset' => 'utf8mb4']);
         $changes = [];
-        foreach ($this->fetchAll('SHOW FULL COLUMNS FROM `custom_pages`') as $column) {
+        foreach ($this->fetchAll(sprintf('SHOW FULL COLUMNS FROM `%s`', $this->quoteIdentifier($table))) as $column) {
             $name = $column['Field'];
-            if (!in_array($name, ['title', 'description', 'keywords', 'content'], true)) {
+            if (!in_array($name, $columns, true)) {
                 continue;
             }
 
             $collation = $column['Collation'] ?? '';
             if (!preg_match('/^utf8(?:mb3)?_(.+)$/', $collation, $matches)) {
+                if ($repairTableDefault && $collation !== '' && !str_starts_with($collation, 'utf8mb4_')) {
+                    $this->logUpdate('warning', 'Skipped utf8mb4 conversion of ' . $table . '.' . $name . ': customized character set requires manual review.');
+                }
+
                 continue;
             }
             $targetCollation = 'utf8mb4_' . $matches[1];
-            if (in_array($name, $indexedColumns, true)
+            $columnIndexes = array_filter($indexes, static fn (array $index): bool => $index['Column_name'] === $name);
+            $canRebuildFulltext = $table === 'support_ticket_message' && $name === 'content';
+            foreach ($columnIndexes as $index) {
+                $indexColumns = array_filter($indexes, static fn (array $candidate): bool => $candidate['Key_name'] === $index['Key_name']);
+                if ($index['Index_type'] !== 'FULLTEXT' || count($indexColumns) !== 1) {
+                    $canRebuildFulltext = false;
+                }
+            }
+            $literalUnitDefault = null;
+            if ($name === 'unit' && in_array($table, ['product', 'client_order', 'invoice_item'], true)
+                && $column['Default'] !== null && $column['Extra'] === ''
+                && preg_match('/^varchar\([0-9]+\)$/', $column['Type'])) {
+                $connection = $this->di['dbal'];
+                // MySQL marks expression defaults DEFAULT_GENERATED. MariaDB quotes
+                // literal strings in information_schema (but not SHOW FULL COLUMNS).
+                // Never turn an expression into a quoted string default.
+                $isMariaDb = $connection->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\MariaDBPlatform;
+                $defaultDefinition = $isMariaDb ? $this->fetchOne(
+                    'SELECT COLUMN_DEFAULT FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table AND COLUMN_NAME = :column',
+                    ['table' => $table, 'column' => $name],
+                ) : $column['Default'];
+                if (!$isMariaDb || (is_string($defaultDefinition) && str_starts_with($defaultDefinition, "'") && str_ends_with($defaultDefinition, "'"))) {
+                    $default = $connection->createSchemaManager()->listTableColumns($table)[$name]->getDefault();
+                    if (is_string($default)) {
+                        $literalUnitDefault = $default;
+                    }
+                }
+            }
+            if (($columnIndexes !== [] && !$canRebuildFulltext)
                 || $column['Extra'] !== ''
-                || $column['Default'] !== null
+                || ($column['Default'] !== null && $literalUnitDefault === null)
                 || !preg_match('/^(?:varchar\([0-9]+\)|tinytext|text|mediumtext|longtext)$/', $column['Type'])
                 || !in_array($targetCollation, $collations, true)) {
-                $this->logUpdate('warning', 'Skipped utf8mb4 conversion of custom_pages.' . $name . ': customized column or index requires manual review.');
+                $this->logUpdate('warning', 'Skipped utf8mb4 conversion of ' . $table . '.' . $name . ': customized column or index requires manual review.');
 
                 continue;
             }
@@ -4795,17 +4840,38 @@ class UpdatePatcher implements InjectionAwareInterface
                 $this->quoteIdentifier($targetCollation),
                 $column['Null'] === 'YES' ? 'NULL' : 'NOT NULL',
             );
-            if ($column['Null'] === 'YES') {
+            if ($literalUnitDefault !== null) {
+                $definition .= ' DEFAULT ' . $this->di['dbal']->quote($literalUnitDefault);
+            } elseif ($column['Null'] === 'YES') {
                 $definition .= ' DEFAULT NULL';
             }
             $definition .= ' COMMENT ' . $this->di['dbal']->quote($column['Comment']);
             $changes[] = $definition;
         }
 
+        if ($repairTableDefault) {
+            $tableCollation = $this->fetchOne(
+                'SELECT TABLE_COLLATION FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :table',
+                ['table' => $table],
+            );
+            if (is_string($tableCollation) && preg_match('/^utf8(?:mb3)?_(.+)$/', $tableCollation, $matches)) {
+                $targetCollation = 'utf8mb4_' . $matches[1];
+                if (in_array($targetCollation, $collations, true)) {
+                    // DEFAULT changes only future columns; CONVERT would also widen indexed
+                    // slugs/identifiers and can promote TEXT to MEDIUMTEXT.
+                    $changes[] = 'DEFAULT CHARACTER SET utf8mb4 COLLATE ' . $this->quoteIdentifier($targetCollation);
+                } else {
+                    $this->logUpdate('warning', 'Skipped utf8mb4 default for ' . $table . ': collation requires manual review.');
+                }
+            } elseif (is_string($tableCollation) && !str_starts_with($tableCollation, 'utf8mb4_')) {
+                $this->logUpdate('warning', 'Skipped utf8mb4 default for ' . $table . ': customized character set requires manual review.');
+            }
+        }
+
         if ($changes !== []) {
             // One ALTER avoids rebuilding the table for each column. DDL failures stop the
-            // patch sequence, leaving patch128 pending; successful reruns skip widened columns.
-            $this->executeSql('ALTER TABLE `custom_pages` ' . implode(', ', $changes));
+            // patch sequence, leaving the patch pending; successful reruns skip widened columns.
+            $this->executeSql(sprintf('ALTER TABLE `%s` ', $this->quoteIdentifier($table)) . implode(', ', $changes));
         }
     }
 
@@ -4848,6 +4914,95 @@ class UpdatePatcher implements InjectionAwareInterface
         if (!$this->tableHasColumn('product_category', 'priority')) {
             $this->executeSql('ALTER TABLE `product_category` ADD COLUMN `priority` BIGINT DEFAULT NULL');
         }
+    }
+
+    private function patch133(): void
+    {
+        if ($this->fetchOne('SELECT @@character_set_connection') !== 'utf8mb4') {
+            $this->logUpdate('warning', 'The database connection uses a legacy character set. Set db.charset to utf8mb4 in config.php to store full Unicode after the schema repair.');
+        }
+
+        // #4579: repair legacy authored text and defaults for future columns.
+        // Only first-party tables are included; absent extension tables are skipped.
+        foreach ($this->legacyUnicodeColumns() as $table => $columns) {
+            $this->widenLegacyTextColumns($table, $columns, repairTableDefault: true);
+        }
+    }
+
+    /** @return array<string, list<string>> */
+    private function legacyUnicodeColumns(): array
+    {
+        return [
+            'activity_admin_history' => [],
+            'activity_client_email' => ['sender', 'recipients', 'subject', 'content_html', 'content_text', 'attachment_name'],
+            'activity_client_history' => [],
+            'activity_system' => ['message'],
+            'admin' => ['name', 'signature'],
+            'admin_group' => ['name'],
+            'admin_group_member' => [],
+            'admin_password_reset' => [],
+            'cart' => [],
+            'cart_product' => [],
+            'client' => ['first_name', 'last_name', 'company', 'company_vat', 'company_number', 'postcode', 'billing_email', 'address_1', 'address_2', 'city', 'state', 'notes',
+                'custom_1', 'custom_2', 'custom_3', 'custom_4', 'custom_5', 'custom_6', 'custom_7', 'custom_8', 'custom_9', 'custom_10',
+                'custom_11', 'custom_12', 'custom_13', 'custom_14', 'custom_15', 'custom_16', 'custom_17', 'custom_18', 'custom_19', 'custom_20'],
+            'client_balance' => ['description'],
+            'client_group' => ['title'],
+            'client_group_members' => [],
+            'client_order' => ['title', 'reason', 'notes', 'unit'],
+            'client_order_meta' => ['value'],
+            'client_order_status' => ['notes'],
+            'client_password_reset' => [],
+            'currency' => ['format_pattern'],
+            'custom_pages' => ['title', 'description', 'keywords', 'content'],
+            'email_template' => ['subject', 'content', 'description', 'last_error'],
+            'email_template_group' => [],
+            'email_queue' => ['recipient', 'sender', 'subject', 'content', 'to_name', 'from_name', 'attachment_name'],
+            'extension' => [],
+            'extension_meta' => ['meta_value'],
+            'form' => ['name'],
+            'form_field' => ['label', 'description', 'default_value', 'prefix', 'suffix', 'options'],
+            'invoice' => ['serie', 'notes', 'text_1', 'text_2', 'seller_company', 'seller_company_vat', 'seller_company_number', 'seller_phone', 'seller_email', 'seller_address', 'buyer_first_name', 'buyer_last_name',
+                'buyer_company', 'buyer_company_vat', 'buyer_company_number', 'buyer_zip', 'buyer_phone', 'buyer_email', 'buyer_address', 'buyer_city', 'buyer_state', 'taxname'],
+            'invoice_event' => [],
+            'invoice_item' => ['title', 'unit'],
+            'mod_massmailer' => ['from_email', 'from_name', 'subject', 'content'],
+            'pay_gateway' => ['name'],
+            'pay_gateway_customer' => [],
+            'pay_gateway_product' => ['name'],
+            'post' => ['title', 'description', 'content', 'section', 'image'],
+            'product' => ['title', 'description', 'unit', 'icon_url', 'plugin_config'],
+            'product_category' => ['title', 'description', 'icon_url'],
+            'product_payment' => [],
+            'product_payment_period' => [],
+            'promo' => ['description'],
+            'promo_redemption' => ['release_reason'],
+            'service_apikey' => [],
+            'service_custom' => ['plugin_config', 'f1', 'f2', 'f3', 'f4', 'f5', 'f6', 'f7', 'f8', 'f9', 'f10'],
+            'service_domain' => ['sld', 'tld', 'ns1', 'ns2', 'ns3', 'ns4', 'transfer_code', 'contact_email', 'contact_company', 'contact_first_name', 'contact_last_name', 'contact_address1', 'contact_address2', 'contact_city', 'contact_state', 'details', 'contact_postcode'],
+            'service_downloadable' => [],
+            'service_downloadable_file' => ['filename', 'label', 'description'],
+            'service_hosting' => ['sld', 'tld', 'username'],
+            'service_hosting_hp' => ['name'],
+            'service_hosting_server' => ['name', 'username', 'password', 'status_url', 'hostname', 'ns1', 'ns2', 'ns3', 'ns4'],
+            'service_license' => [],
+            'session' => [],
+            'setting' => ['value'],
+            'subscription' => [],
+            'support_helpdesk' => ['name', 'signature', 'email'],
+            'support_kb_article' => ['title', 'content'],
+            'support_kb_article_category' => ['title', 'description'],
+            'support_pr' => ['title', 'content'],
+            'support_pr_category' => ['title'],
+            'support_ticket' => ['author_name', 'author_email', 'subject', 'rel_new_value'],
+            'support_ticket_message' => ['content', 'attachment'],
+            'support_ticket_message_history' => ['content'],
+            'support_ticket_note' => ['note'],
+            'tax' => ['name', 'state'],
+            'tld' => [],
+            'tld_registrar' => ['name'],
+            'transaction' => ['error', 'note', 'output', 'txn_status'],
+        ];
     }
 
     /**
