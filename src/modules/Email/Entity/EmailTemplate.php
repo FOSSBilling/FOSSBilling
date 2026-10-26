@@ -40,9 +40,6 @@ class EmailTemplate implements ApiArrayInterface
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $description = null;
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
-    private ?string $vars = null;
-
     #[ORM\Column(name: 'last_error', type: Types::TEXT, nullable: true)]
     private ?string $lastError = null;
 
@@ -171,18 +168,6 @@ class EmailTemplate implements ApiArrayInterface
     public function setDescription(?string $description): self
     {
         $this->description = $description;
-
-        return $this;
-    }
-
-    public function getVars(): ?string
-    {
-        return $this->vars;
-    }
-
-    public function setVars(?string $vars): self
-    {
-        $this->vars = $vars;
 
         return $this;
     }

@@ -3350,7 +3350,7 @@ class Service implements InjectionAwareInterface
         }
 
         $product = $productService->findProductById((int) $order->getProductId());
-        $promoConfig = json_decode($order->getConfig() ?? '', true) ?? [];
+        $promoConfig = $order->getConfig() ?? [];
         if ($product->getType() !== \Box\Mod\Product\Service::DOMAIN && !isset($promoConfig['period']) && $order->getPeriod()) {
             $promoConfig['period'] = $order->getPeriod();
         }
@@ -3830,7 +3830,7 @@ class Service implements InjectionAwareInterface
             $product = $productService->findProductById((int) $order->getProductId());
 
             if ($productService instanceof \Box\Mod\Product\Service && $product->getType() === \Box\Mod\Product\Service::DOMAIN) {
-                $config = json_decode($order->getConfig() ?? '', true) ?? [];
+                $config = $order->getConfig() ?? [];
                 $currencyService = $this->di['mod_service']('Currency');
                 $currencyRepository = $currencyService->getCurrencyRepository();
                 $rate = $currencyRepository->getRateByCode($order->getCurrency());

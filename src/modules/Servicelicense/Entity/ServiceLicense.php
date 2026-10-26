@@ -48,17 +48,17 @@ class ServiceLicense implements TimestampInterface
     #[ORM\Column(name: 'validate_version', type: Types::BOOLEAN)]
     private bool $validateVersion = false;
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
-    private ?string $ips = null;
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $ips = null;
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
-    private ?string $hosts = null;
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $hosts = null;
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
-    private ?string $paths = null;
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $paths = null;
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
-    private ?string $versions = null;
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $versions = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $config = null;
@@ -149,48 +149,48 @@ class ServiceLicense implements TimestampInterface
         return $this;
     }
 
-    public function getIps(): ?string
+    public function getIps(): ?array
     {
         return $this->ips;
     }
 
-    public function setIps(?string $ips): self
+    public function setIps(?array $ips): self
     {
         $this->ips = $ips;
 
         return $this;
     }
 
-    public function getHosts(): ?string
+    public function getHosts(): ?array
     {
         return $this->hosts;
     }
 
-    public function setHosts(?string $hosts): self
+    public function setHosts(?array $hosts): self
     {
         $this->hosts = $hosts;
 
         return $this;
     }
 
-    public function getPaths(): ?string
+    public function getPaths(): ?array
     {
         return $this->paths;
     }
 
-    public function setPaths(?string $paths): self
+    public function setPaths(?array $paths): self
     {
         $this->paths = $paths;
 
         return $this;
     }
 
-    public function getVersions(): ?string
+    public function getVersions(): ?array
     {
         return $this->versions;
     }
 
-    public function setVersions(?string $versions): self
+    public function setVersions(?array $versions): self
     {
         $this->versions = $versions;
 
@@ -250,7 +250,7 @@ class ServiceLicense implements TimestampInterface
      */
     public function getAllowedIps(): array
     {
-        return $this->decodeList($this->ips);
+        return $this->getIps() ?? [];
     }
 
     /**
@@ -258,7 +258,7 @@ class ServiceLicense implements TimestampInterface
      */
     public function getAllowedVersions(): array
     {
-        return $this->decodeList($this->versions);
+        return $this->getVersions() ?? [];
     }
 
     /**
@@ -266,7 +266,7 @@ class ServiceLicense implements TimestampInterface
      */
     public function getAllowedHosts(): array
     {
-        return $this->decodeList($this->hosts);
+        return $this->getHosts() ?? [];
     }
 
     /**
@@ -274,14 +274,6 @@ class ServiceLicense implements TimestampInterface
      */
     public function getAllowedPaths(): array
     {
-        return $this->decodeList($this->paths);
-    }
-
-    /**
-     * @return array<int, string>
-     */
-    private function decodeList(?string $json): array
-    {
-        return json_decode($json ?? '', true) ?? [];
+        return $this->getPaths() ?? [];
     }
 }

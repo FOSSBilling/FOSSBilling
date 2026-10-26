@@ -41,16 +41,16 @@ test('service custom getters and setters round-trip values', function (): void {
 
     $entity->setClientId(10)
         ->setPlugin('MyPlugin')
-        ->setPluginConfig('{"key":"val"}')
+        ->setPluginConfig(['key' => 'val'])
         ->setF1('field1')
         ->setF10('field10')
-        ->setConfig('{"a":1}');
+        ->setConfig(['a' => 1]);
 
     expect($entity->getClientId())->toBe(10)
         ->and($entity->getPlugin())->toBe('MyPlugin')
-        ->and($entity->getPluginConfig())->toBe('{"key":"val"}')
+        ->and($entity->getPluginConfig())->toBe(['key' => 'val'])
         ->and($entity->getF1())->toBe('field1')
         ->and($entity->getF10())->toBe('field10')
-        ->and($entity->getConfig())->toBe('{"a":1}')
+        ->and($entity->getConfig())->toBe(['a' => 1])
         ->and($entity->getId())->toBeNull();
 });

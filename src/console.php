@@ -69,4 +69,4 @@ foreach ($modules as $module) {
     }
 }
 
-$application->run();
+$di['update_finalization']->withRuntimeLock(fn (): int => $application->run());

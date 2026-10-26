@@ -167,7 +167,7 @@ class ServicePayGateway implements InjectionAwareInterface
         ];
 
         if ($identity instanceof \Box\Mod\Staff\Entity\Admin) {
-            $config = json_decode($model->getConfig() ?? '', true) ?? [];
+            $config = $model->getConfig() ?? [];
             $secretFields = $this->getSecretFields($model);
             foreach ($secretFields as $field) {
                 $value = $config[$field] ?? null;
@@ -208,7 +208,7 @@ class ServicePayGateway implements InjectionAwareInterface
                 $declared = $class::getSecretFields();
                 $secrets = array_merge($secrets, $declared);
             }
-        } catch (\Throwable) {
+        } catch (\FOSSBilling\Exception) {
             // Gateway adapter could not be resolved; fall back to the form's own 'secret' flags below.
         }
 
@@ -222,7 +222,32 @@ class ServicePayGateway implements InjectionAwareInterface
             }
         }
 
-        return array_values(array_unique($secrets));
+        return array_values(array_unique([...$secrets, ...$this->secretCodec()->names($model->getConfig() ?? [])]));
+    }
+
+    private function secretCodec(): \FOSSBilling\SecretFields
+    {
+        return new \FOSSBilling\SecretFields($this->di['crypt']);
+    }
+
+    public function migrateConfigSecrets(): void
+    {
+        foreach ($this->getPayGatewayRepository()->findAll() as $model) {
+            $stored = $model->getConfig() ?? [];
+
+            try {
+                $fields = $this->getSecretFields($model);
+            } catch (\FOSSBilling\Exception) {
+                $this->di['logger']->warning('Credential encryption deferred for unavailable gateway adapter #{id}', ['id' => $model->getId()]);
+
+                continue;
+            }
+            $protected = $this->secretCodec()->store($stored, $fields);
+            if ($protected !== $stored) {
+                $model->setConfig($protected);
+            }
+        }
+        $this->di['em']->flush();
     }
 
     public function copy(PayGateway $model): int
@@ -247,7 +272,7 @@ class ServicePayGateway implements InjectionAwareInterface
     {
         $newEnabled = isset($data['enabled']) ? (bool) $data['enabled'] : $model->isEnabled();
         $newTestMode = isset($data['test_mode']) ? (bool) $data['test_mode'] : $model->isTestMode();
-        $existingConfig = json_decode($model->getConfig() ?? '', true) ?? [];
+        $existingConfig = $this->secretCodec()->reveal($model->getConfig() ?? []);
         $mergedConfig = $existingConfig;
         if (isset($data['config']) && is_array($data['config'])) {
             $secretFields = $this->getSecretFields($model);
@@ -275,11 +300,11 @@ class ServicePayGateway implements InjectionAwareInterface
         $model->setCustomLogo($customLogo);
 
         if (isset($data['config']) && is_array($data['config'])) {
-            $model->setConfig(json_encode($mergedConfig));
+            $model->setConfig($this->secretCodec()->store($mergedConfig, $this->getSecretFields($model)));
         }
 
         if (isset($data['accepted_currencies']) && is_array($data['accepted_currencies'])) {
-            $model->setAcceptedCurrencies(json_encode($data['accepted_currencies']));
+            $model->setAcceptedCurrencies($data['accepted_currencies']);
         }
 
         $model->setEnabled($newEnabled);
@@ -614,7 +639,7 @@ class ServicePayGateway implements InjectionAwareInterface
 
     public function getPaymentAdapter(PayGateway $pg, ?Invoice $model = null, $optional = []): object
     {
-        $config = json_decode($pg->getConfig() ?? '', true) ?? [];
+        $config = $this->secretCodec()->reveal($pg->getConfig() ?? []);
         $defaults = [];
         $defaults['auto_redirect'] = false;
         $defaults['gateway_id'] = (int) $pg->getId();
@@ -707,7 +732,7 @@ class ServicePayGateway implements InjectionAwareInterface
     public function getAcceptedCurrencies(PayGateway $model): array
     {
         $accepted = $model->getAcceptedCurrencies();
-        if ($accepted === null || empty($accepted)) {
+        if ($accepted === null) {
             $currencyService = $this->di['mod_service']('currency');
             /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
             $currencyRepository = $currencyService->getCurrencyRepository();
@@ -715,9 +740,7 @@ class ServicePayGateway implements InjectionAwareInterface
             return array_keys($currencyRepository->getPairs());
         }
 
-        $decoded = json_decode($accepted, true);
-
-        return is_array($decoded) ? $decoded : [];
+        return $accepted;
     }
 
     public function getFormElements(PayGateway $model): array

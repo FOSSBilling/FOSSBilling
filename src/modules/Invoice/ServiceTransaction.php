@@ -323,7 +323,7 @@ class ServiceTransaction implements InjectionAwareInterface
         }
         $transaction->setStatus(Transaction::STATUS_RECEIVED);
         $transaction->setIp($this->di['request']->getClientIp());
-        $transaction->setIpn(json_encode($ipn) ?: null);
+        $transaction->setIpn($ipn);
         $transaction->setNote($data['note'] ?? null);
         $this->di['em']->persist($transaction);
         $this->di['em']->flush();
@@ -492,39 +492,16 @@ class ServiceTransaction implements InjectionAwareInterface
             'updated_at' => $model->getUpdatedAt()?->format('Y-m-d H:i:s'),
         ];
         if ($deep) {
-            $result['ipn'] = $this->getDecodedIpn($model);
+            $result['ipn'] = $this->getIpnPayload($model);
         }
 
         return $result;
     }
 
-    /**
-     * Decode the stored IPN payload into the array shape adapters consume.
-     *
-     * A missing, empty, or corrupt payload decodes to an empty array instead
-     * of null, so typed `array $data` adapter signatures never see a
-     * TypeError. Adapters validate the shape they need and throw
-     * Payment_Exception on anything they cannot process.
-     *
-     * @return array<string, mixed>
-     */
-    public function getDecodedIpn(Transaction $model): array
+    /** @return array<string, mixed> */
+    public function getIpnPayload(Transaction $model): array
     {
-        $raw = $model->getIpn();
-        if ($raw === null || $raw === '') {
-            return [];
-        }
-
-        $decoded = json_decode($raw, true);
-        if (!is_array($decoded)) {
-            if (isset($this->di['logger'])) {
-                $this->di['logger']->warning('Transaction #{id} has an invalid IPN payload; using an empty payload', ['id' => $model->getId()]);
-            }
-
-            return [];
-        }
-
-        return $decoded;
+        return $model->getIpn() ?? [];
     }
 
     /**
@@ -776,7 +753,7 @@ class ServiceTransaction implements InjectionAwareInterface
             throw new \FOSSBilling\Exception('Payment adapter :adapter does not support action :action', [':adapter' => $gtw->getName(), ':action' => 'processTransaction'], 705);
         }
 
-        $ipn = $this->getDecodedIpn($tx);
+        $ipn = $this->getIpnPayload($tx);
 
         return $adapter->processTransaction($this->di['api_system'], (int) $id, $ipn, (int) $gtw->getId());
     }

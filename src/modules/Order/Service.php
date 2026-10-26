@@ -401,7 +401,7 @@ class Service implements InjectionAwareInterface
 
     public function getConfig(Order $model): array
     {
-        return json_decode($model->getConfig() ?? '', true) ?? [];
+        return $model->getConfig() ?? [];
     }
 
     public function productHasOrders(Product $product): bool
@@ -553,7 +553,7 @@ class Service implements InjectionAwareInterface
             'updated_at' => $model->getUpdatedAt()?->format('Y-m-d H:i:s'),
         ];
 
-        $data['config'] = json_decode($model->getConfig() ?? '', true) ?? [];
+        $data['config'] = $model->getConfig() ?? [];
         $data['total'] = $this->getTotal($model);
         $data['discount'] ??= 0;
         $data['meta'] = $this->getOrderMetaRepository()->getPairsForOrder($modelId);
@@ -650,7 +650,7 @@ class Service implements InjectionAwareInterface
         foreach ($orders as $order) {
             $clientId = $order['client_id'];
             $data = $order;
-            $data['config'] = json_decode($order['config'] ?? '', true) ?? [];
+            $data['config'] = json_decode($order['config'] ?? 'null', true, 512, JSON_THROW_ON_ERROR) ?? [];
             $data['total'] = $this->calculateTotal($order['price'], $order['quantity']);
             $data['title'] = $order['title'];
             $data['meta'] = $meta[$order['id']] ?? [];
@@ -964,7 +964,7 @@ class Service implements InjectionAwareInterface
             $order->setServiceType($this->getProductType($product));
             $order->setUnit($this->getProductUnit($product));
             $order->setStatus(Order::STATUS_PENDING_SETUP);
-            $order->setConfig(json_encode($config));
+            $order->setConfig($config);
             $order->setInvoiceOption($invoiceOption);
 
             if ($period) {
@@ -2117,7 +2117,7 @@ class Service implements InjectionAwareInterface
 
         $oldConfig = $order->getConfig();
 
-        $order->setConfig(json_encode($config));
+        $order->setConfig($config);
         $order->setUpdatedAt(new \DateTime());
         $this->di['em']->persist($order);
         $this->di['em']->flush();

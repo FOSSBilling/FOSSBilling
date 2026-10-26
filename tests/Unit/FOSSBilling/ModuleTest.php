@@ -58,3 +58,15 @@ test('get service sub', function (): void {
     $subService = $mod->getService($subServiceName);
     expect($subService)->toBeInstanceOf(Box\Mod\Invoice\ServiceTransaction::class);
 });
+
+test('module configuration rejects unreadable or non-document ciphertext consistently', function (string $stored): void {
+    $di = container();
+    $crypt = new FOSSBilling\Crypt();
+    $meta = new Box\Mod\Extension\Entity\ExtensionMeta();
+    $meta->setMetaValue($stored === 'tampered' ? $stored : $crypt->encrypt($stored));
+    $di['em']->getRepository(Box\Mod\Extension\Entity\ExtensionMeta::class)
+        ->shouldReceive('findOneByExtensionAndScope')->with('mod_api', 'config')->andReturn($meta);
+    $mod = new Module('api');
+    $mod->setDi($di);
+    expect(fn () => $mod->getConfig())->toThrow(FOSSBilling\InformationException::class, 'Encrypted extension configuration could not be read');
+})->with(['tampered', '{invalid', 'null', '"scalar"']);

@@ -73,17 +73,17 @@ class Promo implements ApiArrayInterface, TimestampInterface
     /** @phpstan-ignore property.unusedType (column is nullable in the DB) */
     private ?bool $active = false;
 
-    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::TEXT, nullable: true)]
-    private ?string $products = null;
+    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::JSON, nullable: true)]
+    private ?array $products = null;
 
-    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::TEXT, nullable: true)]
-    private ?string $periods = null;
+    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::JSON, nullable: true)]
+    private ?array $periods = null;
 
-    #[ORM\Column(name: 'client_groups', type: \Doctrine\DBAL\Types\Types::TEXT, nullable: true)]
-    private ?string $clientGroups = null;
+    #[ORM\Column(name: 'client_groups', type: \Doctrine\DBAL\Types\Types::JSON, nullable: true)]
+    private ?array $clientGroups = null;
 
-    #[ORM\Column(name: 'requires_products', type: \Doctrine\DBAL\Types\Types::TEXT, nullable: true)]
-    private ?string $requiresProducts = null;
+    #[ORM\Column(name: 'requires_products', type: \Doctrine\DBAL\Types\Types::JSON, nullable: true)]
+    private ?array $requiresProducts = null;
 
     #[ORM\Column(name: 'start_at', type: \Doctrine\DBAL\Types\Types::DATETIME_MUTABLE, nullable: true)]
     private ?\DateTime $startAt = null;
@@ -117,10 +117,10 @@ class Promo implements ApiArrayInterface, TimestampInterface
             'once_per_client' => $this->oncePerClient ?? false,
             'recurring' => $this->recurring ?? false,
             'active' => $this->active ?? false,
-            'products' => $this->products,
-            'periods' => $this->periods,
-            'client_groups' => $this->clientGroups,
-            'requires_products' => $this->requiresProducts,
+            'products' => $this->getProducts(),
+            'periods' => $this->getPeriods(),
+            'client_groups' => $this->getClientGroups(),
+            'requires_products' => $this->getRequiresProducts(),
             'start_at' => $this->startAt?->format('Y-m-d H:i:s'),
             'end_at' => $this->endAt?->format('Y-m-d H:i:s'),
             'auto_apply' => $this->autoApply ?? false,
@@ -256,48 +256,48 @@ class Promo implements ApiArrayInterface, TimestampInterface
         return $this;
     }
 
-    public function getProducts(): ?string
+    public function getProducts(): ?array
     {
         return $this->products;
     }
 
-    public function setProducts(?string $products): self
+    public function setProducts(?array $products): self
     {
         $this->products = $products;
 
         return $this;
     }
 
-    public function getPeriods(): ?string
+    public function getPeriods(): ?array
     {
         return $this->periods;
     }
 
-    public function setPeriods(?string $periods): self
+    public function setPeriods(?array $periods): self
     {
         $this->periods = $periods;
 
         return $this;
     }
 
-    public function getClientGroups(): ?string
+    public function getClientGroups(): ?array
     {
         return $this->clientGroups;
     }
 
-    public function setClientGroups(?string $clientGroups): self
+    public function setClientGroups(?array $clientGroups): self
     {
         $this->clientGroups = $clientGroups;
 
         return $this;
     }
 
-    public function getRequiresProducts(): ?string
+    public function getRequiresProducts(): ?array
     {
         return $this->requiresProducts;
     }
 
-    public function setRequiresProducts(?string $requiresProducts): self
+    public function setRequiresProducts(?array $requiresProducts): self
     {
         $this->requiresProducts = $requiresProducts;
 

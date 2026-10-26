@@ -33,8 +33,8 @@ class TldRegistrar
     #[ORM\Column(name: 'test_mode', type: Types::BOOLEAN, nullable: true, options: ['default' => false])]
     private ?bool $testMode = false;
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
-    private ?string $config = null;
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $config = null;
 
     public function getId(): ?int
     {
@@ -77,12 +77,12 @@ class TldRegistrar
         return $this;
     }
 
-    public function getConfig(): ?string
+    public function getConfig(): ?array
     {
         return $this->config;
     }
 
-    public function setConfig(?string $config): self
+    public function setConfig(?array $config): self
     {
         $this->config = $config;
 

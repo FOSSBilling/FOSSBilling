@@ -122,8 +122,8 @@ class Order implements TimestampInterface
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $notes = null;
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
-    private ?string $config = null;
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $config = null;
 
     #[ORM\Column(name: 'suspension_grace_days', type: Types::INTEGER, nullable: true)]
     private ?int $suspensionGraceDays = null;
@@ -415,12 +415,12 @@ class Order implements TimestampInterface
         return $this;
     }
 
-    public function getConfig(): ?string
+    public function getConfig(): ?array
     {
         return $this->config;
     }
 
-    public function setConfig(?string $config): self
+    public function setConfig(?array $config): self
     {
         $this->config = $config;
 

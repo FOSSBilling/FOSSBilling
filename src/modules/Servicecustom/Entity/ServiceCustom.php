@@ -36,8 +36,8 @@ class ServiceCustom implements TimestampInterface
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
     private ?string $plugin = null;
 
-    #[ORM\Column(name: 'plugin_config', type: Types::TEXT, nullable: true)]
-    private ?string $pluginConfig = null;
+    #[ORM\Column(name: 'plugin_config', type: Types::JSON, nullable: true)]
+    private ?array $pluginConfig = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $f1 = null;
@@ -69,8 +69,8 @@ class ServiceCustom implements TimestampInterface
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $f10 = null;
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
-    private ?string $config = null;
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $config = null;
 
     public function getId(): ?int
     {
@@ -101,12 +101,12 @@ class ServiceCustom implements TimestampInterface
         return $this;
     }
 
-    public function getPluginConfig(): ?string
+    public function getPluginConfig(): ?array
     {
         return $this->pluginConfig;
     }
 
-    public function setPluginConfig(?string $pluginConfig): self
+    public function setPluginConfig(?array $pluginConfig): self
     {
         $this->pluginConfig = $pluginConfig;
 
@@ -233,12 +233,12 @@ class ServiceCustom implements TimestampInterface
         return $this;
     }
 
-    public function getConfig(): ?string
+    public function getConfig(): ?array
     {
         return $this->config;
     }
 
-    public function setConfig(?string $config): self
+    public function setConfig(?array $config): self
     {
         $this->config = $config;
 

@@ -224,16 +224,16 @@ test('converts to api array masks secrets for an admin', function (): void {
         'id' => 1,
         'name' => 'Stripe',
         'gateway' => 'Stripe',
-        'acceptedCurrencies' => json_encode(['USD']),
+        'acceptedCurrencies' => ['USD'],
         'enabled' => true,
         'allowSingle' => true,
         'allowRecurrent' => true,
         'testMode' => false,
-        'config' => json_encode([
+        'config' => [
             'pub_key' => 'pk_live_visible',
             'api_key' => 'sk_live_secret',
             'webhook_secret' => 'whsec_secret',
-        ]),
+        ],
     ]);
 
     $service = payGatewayService();
@@ -259,7 +259,7 @@ test('update keeps the existing secret gateway value when the incoming value is 
         'name' => 'Stripe',
         'gateway' => 'Stripe',
         'enabled' => false,
-        'config' => json_encode(['api_key' => 'sk_live_existing', 'pub_key' => 'pk_live_existing']),
+        'config' => ['api_key' => 'sk_live_existing', 'pub_key' => 'pk_live_existing'],
     ]);
 
     $em = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
@@ -281,7 +281,7 @@ test('update keeps the existing secret gateway value when the incoming value is 
     ]);
 
     expect($result)->toBeTrue();
-    $config = json_decode((string) $payGateway->getConfig(), true);
+    $config = (new FOSSBilling\SecretFields(new FOSSBilling\Crypt()))->reveal($payGateway->getConfig());
     expect($config['api_key'])->toBe('sk_live_existing');
     expect($config['pub_key'])->toBe('pk_live_new');
 });
@@ -292,7 +292,7 @@ test('update rotates a secret gateway value when a new value is submitted', func
         'name' => 'Stripe',
         'gateway' => 'Stripe',
         'enabled' => false,
-        'config' => json_encode(['api_key' => 'sk_live_old']),
+        'config' => ['api_key' => 'sk_live_old'],
     ]);
 
     $em = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
@@ -309,7 +309,7 @@ test('update rotates a secret gateway value when a new value is submitted', func
     $result = $service->update($payGateway, ['config' => ['api_key' => 'sk_live_new']]);
 
     expect($result)->toBeTrue();
-    $config = json_decode((string) $payGateway->getConfig(), true);
+    $config = (new FOSSBilling\SecretFields(new FOSSBilling\Crypt()))->reveal($payGateway->getConfig());
     expect($config['api_key'])->toBe('sk_live_new');
 });
 
@@ -424,7 +424,7 @@ test('active gateways without an adapter logo get a default logo', function (): 
         'id' => 9,
         'gateway' => 'Custom',
         'name' => 'Custom',
-        'acceptedCurrencies' => json_encode(['USD']),
+        'acceptedCurrencies' => ['USD'],
     ]);
 
     $repo = Mockery::mock(PayGatewayRepository::class);
@@ -644,7 +644,7 @@ test('gets adapter class name', function (): void {
 test('gets accepted currencies', function (): void {
     $service = new ServicePayGateway();
     $service->setDi(payGatewayService()->getDi());
-    $payGateway = createEntity(PayGateway::class, ['acceptedCurrencies' => '{}']);
+    $payGateway = createEntity(PayGateway::class, ['acceptedCurrencies' => []]);
 
     $result = $service->getAcceptedCurrencies($payGateway);
     expect($result)->toBeArray();
@@ -729,7 +729,7 @@ test('PayPal handoffs contain no session capability and retain invoice and callb
         'id' => 2,
         'gateway' => 'PayPalEmail',
         'testMode' => false,
-        'config' => json_encode(['email' => 'merchant@example.com']),
+        'config' => ['email' => 'merchant@example.com'],
     ]);
     $invoice = $withInvoice ? createEntity(Invoice::class, ['id' => 16, 'hash' => 'abc123']) : null;
     $service = payGatewayService();
@@ -768,5 +768,27 @@ test('PayPal handoffs contain no session capability and retain invoice and callb
             ->and($fields['rm'])->toBe('1');
         parse_str((string) parse_url($fields['notify_url'], PHP_URL_QUERY), $callback);
         expect(FOSSBilling\Tools::verifyCallbackSignature(2, 16, $callback['sig'] ?? null))->toBeTrue();
+    }
+})->with([true, false]);
+
+test('credential migration defers missing adapters but propagates programming errors', function (bool $missing): void {
+    $repo = Mockery::mock(PayGatewayRepository::class);
+    $repo->shouldReceive('findAll')->once()->andReturn([(new PayGateway())->setConfig(['api_key' => 'secret'])]);
+    $service = Mockery::mock(ServicePayGateway::class)->makePartial();
+    $service->shouldReceive('getPayGatewayRepository')->andReturn($repo);
+    $error = $missing ? new FOSSBilling\InformationException('Missing adapter') : new TypeError('Broken adapter contract');
+    $service->shouldReceive('getSecretFields')->once()->andThrow($error);
+    $di = container();
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($repo);
+    $di['em'] = $em;
+    $service->setDi($di);
+    if ($missing) {
+        $em->shouldReceive('flush')->once();
+        $service->migrateConfigSecrets();
+        expect($di['logger']->calls[0]['params'][0])->toContain('deferred');
+    } else {
+        $em->shouldNotReceive('flush');
+        expect(fn () => $service->migrateConfigSecrets())->toThrow(TypeError::class, 'Broken adapter contract');
     }
 })->with([true, false]);

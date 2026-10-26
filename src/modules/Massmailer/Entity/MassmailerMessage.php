@@ -47,8 +47,8 @@ class MassmailerMessage implements ApiArrayInterface, TimestampInterface
     #[ORM\Column(type: \Doctrine\DBAL\Types\Types::TEXT, nullable: true)]
     private ?string $content = null;
 
-    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::TEXT, nullable: true)]
-    private ?string $filter = null;
+    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::JSON, nullable: true)]
+    private ?array $filter = null;
 
     #[ORM\Column(type: \Doctrine\DBAL\Types\Types::STRING, length: 255, nullable: true)]
     private ?string $status = self::STATUS_DRAFT;
@@ -64,7 +64,7 @@ class MassmailerMessage implements ApiArrayInterface, TimestampInterface
             'from_name' => $this->fromName,
             'subject' => $this->subject,
             'content' => $this->content,
-            'filter' => json_decode($this->filter ?? '', true) ?? [],
+            'filter' => $this->getFilter() ?? [],
             'status' => $this->status,
             'sent_at' => $this->sentAt?->format('Y-m-d H:i:s'),
             'created_at' => $this->createdAt?->format('Y-m-d H:i:s'),
@@ -125,12 +125,12 @@ class MassmailerMessage implements ApiArrayInterface, TimestampInterface
         return $this;
     }
 
-    public function getFilter(): ?string
+    public function getFilter(): ?array
     {
         return $this->filter;
     }
 
-    public function setFilter(?string $filter): self
+    public function setFilter(?array $filter): self
     {
         $this->filter = $filter;
 

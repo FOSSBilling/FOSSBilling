@@ -30,8 +30,8 @@ class PayGateway
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
     private ?string $gateway = null;
 
-    #[ORM\Column(name: 'accepted_currencies', type: Types::TEXT, nullable: true)]
-    private ?string $acceptedCurrencies = null;
+    #[ORM\Column(name: 'accepted_currencies', type: Types::JSON, nullable: true)]
+    private ?array $acceptedCurrencies = null;
 
     #[ORM\Column(type: Types::BOOLEAN, options: ['default' => true])]
     private bool $enabled = true;
@@ -45,8 +45,8 @@ class PayGateway
     #[ORM\Column(name: 'test_mode', type: Types::BOOLEAN, options: ['default' => false])]
     private bool $testMode = false;
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
-    private ?string $config = null;
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $config = null;
 
     #[ORM\Column(name: 'custom_logo', type: Types::STRING, length: 255, nullable: true)]
     private ?string $customLogo = null;
@@ -80,12 +80,12 @@ class PayGateway
         return $this;
     }
 
-    public function getAcceptedCurrencies(): ?string
+    public function getAcceptedCurrencies(): ?array
     {
         return $this->acceptedCurrencies;
     }
 
-    public function setAcceptedCurrencies(?string $acceptedCurrencies): self
+    public function setAcceptedCurrencies(?array $acceptedCurrencies): self
     {
         $this->acceptedCurrencies = $acceptedCurrencies;
 
@@ -140,12 +140,12 @@ class PayGateway
         return $this;
     }
 
-    public function getConfig(): ?string
+    public function getConfig(): ?array
     {
         return $this->config;
     }
 
-    public function setConfig(?string $config): self
+    public function setConfig(?array $config): self
     {
         $this->config = $config;
 

@@ -99,10 +99,10 @@ class Service implements InjectionAwareInterface
 
         $this->getDbal()->insert('form', [
             'name' => $data['name'],
-            'style' => json_encode($style, JSON_FORCE_OBJECT),
+            'style' => $style,
             'created_at' => date('Y-m-d H:i:s'),
             'updated_at' => date('Y-m-d H:i:s'),
-        ]);
+        ], ['style' => \Doctrine\DBAL\Types\Types::JSON]);
 
         $formId = (int) $this->getDbal()->lastInsertId();
         $this->di['logger']->info('Created new form {form_name} with id {form_id}', ['form_name' => $data['name'], 'form_id' => $formId]);
@@ -119,20 +119,12 @@ class Service implements InjectionAwareInterface
         $label = $field['label'] ?? $types[$type] . ' ' . $fieldNumber;
         $name = $field['name'] ?? $this->slugify('new_' . $type) . '_' . $fieldNumber;
 
-        if ($type == 'select' || $type == 'checkbox' || $type == 'radio') {
-            $field['options'] = '{"First option":"1", "Second option": "2", "Third option":"3"}';
+        if (in_array($type, ['select', 'checkbox', 'radio'], true) && !isset($field['options'])) {
+            $field['options'] = ['First option' => '1', 'Second option' => '2', 'Third option' => '3'];
         }
 
         if ($field['type'] == 'textarea' && !isset($field['options'])) {
-            $field['options'] = '{"height":"100", "width": "300"}';
-        }
-
-        if (isset($field['default_value'])) {
-            $field['default_value'] = is_array($field['default_value']) ? json_encode($field['default_value'], JSON_FORCE_OBJECT) : $field['default_value'];
-        }
-
-        if (isset($field['options']) && is_array($field['options'])) {
-            $field['options'] = json_encode($field['options'], JSON_FORCE_OBJECT);
+            $field['options'] = ['height' => '100', 'width' => '300'];
         }
 
         $this->getDbal()->insert('form_field', [
@@ -156,7 +148,7 @@ class Service implements InjectionAwareInterface
             'text_size' => $field['text_size'] ?? null,
             'created_at' => date('Y-m-d H:i:s'),
             'updated_at' => date('Y-m-d H:i:s'),
-        ]);
+        ], ['options' => \Doctrine\DBAL\Types\Types::JSON, 'default_value' => \Doctrine\DBAL\Types\Types::JSON]);
 
         $fieldId = (int) $this->getDbal()->lastInsertId();
         $this->di['logger']->info('Added new field {field_id} to form {form_id}', ['field_id' => $fieldId, 'form_id' => $field['form_id']]);
@@ -200,10 +192,7 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\InformationException('Unfortunately field with this name exists in this form already. Form must have different field names.', null, 7628);
         }
 
-        $field['options'] = isset($field['options']) ? json_encode($field['options']) : '';
-        if (isset($field['default_value'])) {
-            $field['default_value'] = is_array($field['default_value']) ? json_encode($field['default_value'], JSON_FORCE_OBJECT) : $field['default_value'];
-        }
+        $field['options'] ??= null;
 
         if (isset($field['type'])) {
             if ($field['type'] == 'checkbox' || $field['type'] == 'radio' || $field['type'] == 'select') {
@@ -217,7 +206,6 @@ class Service implements InjectionAwareInterface
 
                 $field['options'] = array_combine($field['labels'], $field['values']);
                 $field['options'] = array_filter($field['options'], fn ($v): bool => strlen((string) $v) > 0);
-                $field['options'] = json_encode($field['options'], JSON_FORCE_OBJECT);
             }
 
             if ($field['type'] == 'textarea') {
@@ -226,7 +214,6 @@ class Service implements InjectionAwareInterface
                 }
 
                 $field['options'] = array_combine($field['textarea_option'], $field['textarea_size']);
-                $field['options'] = json_encode($field['options'], JSON_FORCE_OBJECT);
             }
         }
 
@@ -248,7 +235,7 @@ class Service implements InjectionAwareInterface
             'show_suffix' => $field['show_suffix'] ?? null,
             'text_size' => $field['text_size'] ?? null,
             'updated_at' => date('Y-m-d H:i:s'),
-        ], ['id' => $fieldId]);
+        ], ['id' => $fieldId], ['options' => \Doctrine\DBAL\Types\Types::JSON, 'default_value' => \Doctrine\DBAL\Types\Types::JSON]);
 
         $this->di['logger']->info('Updated custom form {field_id}', ['field_id' => $fieldId]);
 
@@ -266,33 +253,28 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\InformationException('Form was not found');
         }
 
-        $result['style'] = json_decode($result['style'] ?? '', true);
+        $result['style'] = json_decode($result['style'] ?? 'null', true, 512, JSON_THROW_ON_ERROR);
         if (!is_array($result['style'])) {
             $result['style'] = ['type' => 'default', 'show_title' => '1'];
         }
-        $result['fields'] = $this->fieldsJsonDecode($this->getFormFields($result['id']));
+        $result['fields'] = $this->getFormFields($result['id']);
 
         return $result;
     }
 
     public function getFormFields($formId)
     {
-        return $this->getDbal()->executeQuery(
+        return $this->fieldsJsonDecode($this->getDbal()->executeQuery(
             'SELECT * FROM form_field WHERE form_id = ? ORDER BY id ASC',
             [$formId]
-        )->fetchAllAssociative();
+        )->fetchAllAssociative());
     }
 
     private function fieldsJsonDecode($fields)
     {
-        foreach ($fields as $key => $row) {
-            $fields[$key]['options'] = json_decode($row['options'] ?? '', true) ?: [];
-
-            if (!empty($row['default_value'])) {
-                $fields[$key]['default_value'] = json_decode($row['default_value'] ?? '', true) ?: $row['default_value'];
-            } else {
-                $fields[$key]['default_value'] = '';
-            }
+        foreach ($fields as &$row) {
+            $row['options'] = json_decode($row['options'] ?? 'null', true, 512, JSON_THROW_ON_ERROR) ?? [];
+            $row['default_value'] = json_decode($row['default_value'] ?? 'null', true, 512, JSON_THROW_ON_ERROR);
         }
 
         return $fields;
@@ -336,9 +318,8 @@ class Service implements InjectionAwareInterface
         ];
         $this->di['validator']->checkRequiredParamsForArray($required, $result, null, 2575);
 
-        if (str_starts_with((string) $result['options'], '{') || str_starts_with((string) $result['options'], '[')) {
-            $result['options'] = json_decode($result['options'] ?? '');
-        }
+        $result['options'] = json_decode($result['options'] ?? 'null', true, 512, JSON_THROW_ON_ERROR) ?? [];
+        $result['default_value'] = json_decode($result['default_value'] ?? 'null', true, 512, JSON_THROW_ON_ERROR);
 
         return $result;
     }
@@ -412,9 +393,9 @@ class Service implements InjectionAwareInterface
 
         $this->getDbal()->update('form', [
             'name' => $data['form_name'],
-            'style' => json_encode($style, JSON_FORCE_OBJECT),
+            'style' => $style,
             'updated_at' => date('Y-m-d H:i:s'),
-        ], ['id' => $data['form_id']]);
+        ], ['id' => $data['form_id']], ['style' => \Doctrine\DBAL\Types\Types::JSON]);
 
         $this->di['logger']->info('Updated form {form_id} name to {form_name}', ['form_id' => $data['form_id'], 'form_name' => $data['form_name']]);
         $this->di['logger']->info('Updated form {form_id} type to {form_type}', ['form_id' => $data['form_id'], 'form_type' => $data['type']]);

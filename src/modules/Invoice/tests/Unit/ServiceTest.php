@@ -3728,7 +3728,7 @@ test('generates domain renewal invoice with renewal title containing the domain'
         'price' => 25,
         'quantity' => 1,
         'title' => 'Domain registration (example.com)',
-        'config' => json_encode($orderConfig),
+        'config' => $orderConfig,
     ]);
 
     $product = Mockery::mock(Product::class)->makePartial();
@@ -5791,7 +5791,7 @@ test('promoAddToInvoice applies a promo to an order on an unpaid invoice', funct
         'quantity' => 1,
         'discount' => 0.0,
         'currency' => 'USD',
-        'config' => json_encode(['period' => '1Y']),
+        'config' => ['period' => '1Y'],
         'unpaid_invoice_id' => 10,
     ]);
 
@@ -5891,7 +5891,7 @@ test('promoAddToInvoice values a percentage promo from the invoice order line', 
         'quantity' => 1,
         'discount' => 0.0,
         'currency' => 'USD',
-        'config' => json_encode(['period' => '1Y']),
+        'config' => ['period' => '1Y'],
         'unpaid_invoice_id' => 10,
     ]);
 
@@ -6111,7 +6111,7 @@ test('promoAddToInvoice aborts when the invoice is paid concurrently', function 
         'price' => 100.0,
         'quantity' => 1,
         'currency' => 'USD',
-        'config' => json_encode([]),
+        'config' => [],
         'unpaid_invoice_id' => 10,
     ]);
     $promo = new Box\Mod\Product\Entity\Promo();

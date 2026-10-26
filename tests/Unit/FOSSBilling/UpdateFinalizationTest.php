@@ -277,3 +277,91 @@ test('reports schema drift state alongside the finalization status', function ()
         'last_sync_failure' => null,
     ]);
 });
+
+test('application readers share a lock that blocks an updater until active work drains', function (): void {
+    $service = new UpdateFinalization();
+    $service->acquireRuntimeLock();
+    $probe = fopen(Path::join(PATH_DATA, 'update-finalization.lock'), 'c');
+
+    try {
+        expect(flock($probe, LOCK_EX | LOCK_NB))->toBeFalse();
+        expect((new ReflectionMethod($service, 'withFinalizationLock'))->invoke($service, fn () => 'exclusive'))->toBe('exclusive');
+        expect(flock($probe, LOCK_EX | LOCK_NB))->toBeFalse();
+        $service->releaseRuntimeLock();
+        expect(flock($probe, LOCK_EX | LOCK_NB))->toBeTrue();
+    } finally {
+        $service->releaseRuntimeLock();
+        flock($probe, LOCK_UN);
+        fclose($probe);
+    }
+});
+
+test('normal finalization migrates JSON and clears retired previews before restoring maintenance mode', function (): void {
+    $config = Config::getConfig();
+    $config['maintenance_mode']['enabled'] = false;
+    Config::setConfig($config, false);
+    $c = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $c->executeStatement('CREATE TABLE product (id INTEGER PRIMARY KEY, config TEXT)');
+    $c->executeStatement('CREATE TABLE email_template (id INTEGER PRIMARY KEY, vars TEXT)');
+    $c->insert('product', ['id' => 1, 'config' => '{broken']);
+    $c->insert('email_template', ['id' => 1, 'vars' => 'old-live-reset-token']);
+    $di = new Pimple\Container([
+        'em' => FOSSBilling\Doctrine\EntityManagerFactory::create($c),
+        'crypt' => new FOSSBilling\Crypt(),
+        'cache' => new Symfony\Component\Cache\Adapter\ArrayAdapter(),
+    ]);
+    $patcher = new class extends UpdatePatcher {
+        public function applyConfigPatches(bool $force = false): void
+        {
+        }
+
+        public function applyCorePatches(bool $force = false): void
+        {
+            $this->applyJsonMigrations();
+        }
+
+        public function patchStatus(): array
+        {
+            return ['current' => 133, 'latest' => 133, 'pending' => 0];
+        }
+
+        public function availablePatches(): int
+        {
+            return 0;
+        }
+    };
+    $patcher->setDi($di);
+    $finalization = finalizationWithStubPatcher($patcher);
+    $finalization->setDi($di);
+    expect(fn () => $finalization->finalizeAndComplete())->toThrow(FOSSBilling\Doctrine\JsonMigrationException::class)
+        ->and(Config::getProperty('maintenance_mode.enabled'))->toBeTrue()
+        ->and(json_decode(file_get_contents($this->updateFinalizationStatePath), true)['status'])->toBe('pending')
+        ->and($c->fetchOne('SELECT vars FROM email_template'))->toBe('old-live-reset-token');
+    $c->update('product', ['config' => ''], ['id' => 1]);
+    $finalization->finalizeAndComplete();
+    expect($c->fetchOne('SELECT config FROM product'))->toBeNull()
+        ->and($c->fetchOne('SELECT vars FROM email_template'))->toBeNull()
+        ->and(Config::getProperty('maintenance_mode.enabled'))->toBeFalse()
+        ->and(json_decode(file_get_contents($this->updateFinalizationStatePath), true)['status'])->toBe('complete')
+        ->and((int) $c->fetchOne('SELECT COUNT(*) FROM json_migration_record'))->toBe(1);
+});
+
+test('manual update entry point delegates to the same locked finalization flow', function (): void {
+    $finalization = Mockery::mock(UpdateFinalization::class);
+    $finalization->shouldReceive('finalizeAndComplete')->once();
+    $updater = new FOSSBilling\Update();
+    $updater->setDi(new Pimple\Container(['update_finalization' => $finalization]));
+    $updater->performManualUpdate();
+});
+
+test('finalization preserves the configured PHP execution limit', function (int $limit): void {
+    $original = ini_get('max_execution_time');
+
+    try {
+        ini_set('max_execution_time', (string) $limit);
+        finalizationWithStubPatcher(stubUpdatePatcherWithPendingPatches())->finalizeUpdate();
+        expect((int) ini_get('max_execution_time'))->toBe($limit);
+    } finally {
+        ini_set('max_execution_time', $original);
+    }
+})->with([0, 30, 600]);

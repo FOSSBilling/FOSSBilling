@@ -41,10 +41,6 @@ function emailTemplate(string $actionCode = '', ?int $id = null, array $data = [
         $template->setDescription($data['description']);
     }
 
-    if (array_key_exists('vars', $data)) {
-        $template->setVars($data['vars']);
-    }
-
     if (array_key_exists('is_custom', $data)) {
         $template->setIsCustom((bool) $data['is_custom']);
     }
@@ -171,77 +167,25 @@ test('ActivityClientEmail toApiArray returns sanitized API array', function (): 
     expect($result)->toBe($expected);
 });
 
-test('setVars encrypts and sets variables', function (): void {
+test('preview variables use synthetic data without decrypting recipient secrets', function (): void {
     $service = new Box\Mod\Email\Service();
-
+    $crypt = Mockery::mock(FOSSBilling\Crypt::class);
+    $crypt->shouldNotReceive('decrypt');
     $di = container();
-    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
-    $cryptMock->shouldReceive('encrypt')
-        ->atLeast()->once()
-        ->andReturn('encrypted-vars');
-
-    $em = emailBuildEm();
-    $em->shouldReceive('flush')->atLeast()->once();
-
-    $di['em'] = $em;
-    $di['crypt'] = $cryptMock;
+    $di['crypt'] = $crypt;
     $service->setDi($di);
-
-    $t = emailTemplate();
-    $vars = [
-        'param1' => 'value1',
-    ];
-
-    $result = $service->setVars($t, $vars);
-    expect($result)->toBeTrue();
-});
-
-test('setVars rejects variables that cannot be encoded', function (): void {
-    $service = new Box\Mod\Email\Service();
-
-    $di = container();
-    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
-    $cryptMock->shouldNotReceive('encrypt');
-
-    $em = emailBuildEm();
-    $em->shouldNotReceive('flush');
-
-    $di['em'] = $em;
-    $di['crypt'] = $cryptMock;
-    $service->setDi($di);
-
-    $t = emailTemplate();
-
-    expect(fn (): bool => $service->setVars($t, ['invalid' => INF]))
-        ->toThrow(FOSSBilling\Exception::class, 'Failed to encode email template variables.');
-});
-
-test('getVars decrypts and returns variables', function (): void {
-    $service = new Box\Mod\Email\Service();
-
-    $di = container();
-    $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
-    $cryptMock->shouldReceive('decrypt')
-        ->atLeast()->once()
-        ->andReturn('{"param1":"value1"}');
-
-    $expected = ['param1' => 'value1'];
-
-    $di['crypt'] = $cryptMock;
-    $service->setDi($di);
-
-    $t = emailTemplate(data: ['vars' => 'haNUZYeNjo1oXhH6OkoKuHGPxakyKY10qR3O/DSy9Og=']);
-
-    $result = $service->getVars($t);
-    expect($result)->toBeArray();
-    expect($result)->toBe($expected);
+    $template = emailTemplate('mod_client_password_reset_request');
+    $preview = $service->getVars($template);
+    expect($preview['hash'])->toBe('preview-only-not-a-token')
+        ->and($preview['c']['email'])->toBe('client@example.com')
+        ->and(json_encode($preview))->not->toContain('old-recipient-secret');
 });
 
 test('getVars supplies the default currency for invoice template previews', function (): void {
     $service = new Box\Mod\Email\Service();
 
     $currencyRepository = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
-    $currencyRepository->shouldReceive('findDefault')->once()->andReturn(new Currency('USD'));
+    $currencyRepository->shouldReceive('findDefault')->once()->andReturn(new Currency('EUR'));
     $currencyService = Mockery::mock(Box\Mod\Currency\Service::class);
     $currencyService->shouldReceive('getCurrencyRepository')->once()->andReturn($currencyRepository);
 
@@ -251,12 +195,7 @@ test('getVars supplies the default currency for invoice template previews', func
 
     $template = emailTemplate('mod_invoice_paid');
 
-    expect($service->getVars($template))->toBe([
-        'invoice' => [
-            'total' => 0,
-            'currency' => 'USD',
-        ],
-    ]);
+    expect($service->getVars($template)['invoice'])->toMatchArray(['total' => 0, 'currency' => 'EUR']);
 });
 
 test('getVars supplies preview variables for support and staff templates before their first send', function (): void {
@@ -282,20 +221,20 @@ test('getVars supplies preview variables for support and staff templates before 
     expect($signupVars)->toHaveKeys(['c.email', 'c.first_name', 'c.last_name', 'staff.email']);
 });
 
-test('getVars merges stored examples over preview defaults', function (): void {
+test('getVars supplies synthetic support examples', function (): void {
     $service = new Box\Mod\Email\Service();
 
     $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
-    $cryptMock->shouldReceive('decrypt')->once()->andReturn('{"ticket":{"subject":"Stored subject"}}');
+    $cryptMock->shouldNotReceive('decrypt');
 
     $di = container();
     $di['crypt'] = $cryptMock;
     $service->setDi($di);
 
-    $template = emailTemplate('mod_staff_ticket_reply', data: ['vars' => 'encrypted']);
+    $template = emailTemplate('mod_staff_ticket_reply');
     $vars = $service->getVars($template);
 
-    expect($vars['ticket']['subject'])->toBe('Stored subject')
+    expect($vars['ticket']['subject'])->toBe('Example support ticket')
         ->and($vars)->toHaveKeys(['staff.email', 'ticket.priority', 'ticket.client.email']);
 });
 
@@ -320,8 +259,7 @@ test('sendTemplate returns false when template does not exist', function (): voi
     $em->shouldReceive('flush')->atLeast()->once();
 
     $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
-    $cryptMock->shouldReceive('encrypt')
-        ->atLeast()->once();
+    $cryptMock->shouldNotReceive('encrypt');
 
     $di['em'] = $em;
     $di['crypt'] = $cryptMock;
@@ -384,8 +322,7 @@ test('sendTemplate sends email when template exists', function (): void {
     $di['validator'] = $validatorMock;
 
     $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
-    $cryptMock->shouldReceive('encrypt')
-        ->atLeast()->once();
+    $cryptMock->shouldNotReceive('encrypt');
 
     $modMock = Mockery::mock(FOSSBilling\Module::class)->makePartial();
     $modMock->shouldReceive('getConfig')
@@ -409,7 +346,7 @@ test('sendTemplate sends email when template exists', function (): void {
     expect($result)->toBeTrue();
 });
 
-test('sendTemplate forwards the attachment to the queue and strips it from the stored vars', function (): void {
+test('sendTemplate forwards the attachment without retaining live template variables', function (): void {
     $data = [
         'code' => 'mod_email_test',
         'to' => 'example@example.com',
@@ -463,16 +400,8 @@ test('sendTemplate forwards the attachment to the queue and strips it from the s
     $validatorMock->shouldReceive('checkRequiredParamsForArray')->byDefault();
     $di['validator'] = $validatorMock;
 
-    $encryptedVars = null;
     $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
-    $cryptMock->shouldReceive('encrypt')
-        ->atLeast()->once()
-        ->with(Mockery::on(function ($json) use (&$encryptedVars): bool {
-            $encryptedVars = $json;
-
-            return true;
-        }), Mockery::any())
-        ->andReturn('encrypted');
+    $cryptMock->shouldNotReceive('encrypt');
 
     $modMock = Mockery::mock(FOSSBilling\Module::class)->makePartial();
     $modMock->shouldReceive('getConfig')
@@ -498,7 +427,6 @@ test('sendTemplate forwards the attachment to the queue and strips it from the s
     expect($persistedQueue->getAttachmentName())->toBe('Invoice-BB0001.pdf');
     expect($persistedQueue->getAttachmentContent())->toBe('%PDF-1.4 fake invoice contents');
     expect($persistedQueue->getAttachmentMime())->toBe('application/pdf');
-    expect($encryptedVars)->not->toContain('fake invoice contents');
 });
 
 test('sendTemplate renders the subject as plaintext, not HTML', function (): void {
@@ -556,8 +484,7 @@ test('sendTemplate renders the subject as plaintext, not HTML', function (): voi
     $di['validator'] = $validatorMock;
 
     $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
-    $cryptMock->shouldReceive('encrypt')
-        ->atLeast()->once();
+    $cryptMock->shouldNotReceive('encrypt');
 
     $modMock = Mockery::mock(FOSSBilling\Module::class)->makePartial();
     $modMock->shouldReceive('getConfig')
@@ -695,8 +622,7 @@ test('sendTemplate handles to_staff and to_client options', function (array $dat
     $twigStub = Mockery::mock(Twig\Environment::class);
 
     $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
-    $cryptMock->shouldReceive('encrypt')
-        ->atLeast()->once();
+    $cryptMock->shouldNotReceive('encrypt');
 
     $di['api_admin'] = function () use ($di) {
         $api = new FOSSBilling\Api\Proxy(\Tests\Helpers\admin());
@@ -774,7 +700,7 @@ test('sendTemplate renders client-bound email in the client language', function 
     $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class);
 
     $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
-    $cryptMock->shouldReceive('encrypt')->atLeast()->once();
+    $cryptMock->shouldNotReceive('encrypt');
 
     $modMock = Mockery::mock(FOSSBilling\Module::class)->makePartial();
     $modMock->shouldReceive('getConfig')->atLeast()->once()->andReturn([
@@ -849,7 +775,7 @@ test('sendTemplate falls back to the default locale when the client has no langu
     $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class);
 
     $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
-    $cryptMock->shouldReceive('encrypt')->atLeast()->once();
+    $cryptMock->shouldNotReceive('encrypt');
 
     $modMock = Mockery::mock(FOSSBilling\Module::class)->makePartial();
     $modMock->shouldReceive('getConfig')->atLeast()->once()->andReturn([
@@ -931,7 +857,7 @@ test('sendTemplate renders staff broadcast emails in each recipient language', f
     $clientServiceMock = Mockery::mock(Box\Mod\Client\Service::class);
 
     $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
-    $cryptMock->shouldReceive('encrypt')->atLeast()->once();
+    $cryptMock->shouldNotReceive('encrypt');
 
     $modMock = Mockery::mock(FOSSBilling\Module::class)->makePartial();
     $modMock->shouldReceive('getConfig')->atLeast()->once()->andReturn([
@@ -1026,7 +952,7 @@ test('sendTemplate only routes client-bound email to a validated billing address
     ]);
 
     $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
-    $cryptMock->shouldReceive('encrypt')->atLeast()->once();
+    $cryptMock->shouldNotReceive('encrypt');
 
     $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
     $validatorMock->shouldReceive('checkRequiredParamsForArray')->byDefault();
@@ -1114,7 +1040,7 @@ test('sendTemplate sends to a specific admin via to_admin using the Admin entity
     $clientServiceMock->shouldReceive('toApiArray')->never();
 
     $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
-    $cryptMock->shouldReceive('encrypt')->atLeast()->once();
+    $cryptMock->shouldNotReceive('encrypt');
 
     $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
     $validatorMock->shouldReceive('checkRequiredParamsForArray')->byDefault();
@@ -1213,7 +1139,7 @@ test('sendTemplate does not send to staff when template has no assigned groups',
     ]);
 
     $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
-    $cryptMock->shouldReceive('encrypt')->atLeast()->once();
+    $cryptMock->shouldNotReceive('encrypt');
 
     $validatorMock = Mockery::mock(FOSSBilling\Validate::class);
     $validatorMock->shouldReceive('checkRequiredParamsForArray')->byDefault();
@@ -1854,7 +1780,7 @@ test('validateAllTemplates reports invalid templates', function (): void {
     $systemMock->shouldReceive('renderEmailTplString')
         ->times(3)
         ->andReturnUsing(function (string $template, array $vars): string {
-            expect($vars)->toBe([]);
+            expect($vars)->toHaveKeys(['c', 'invoice', 'order', 'hash']);
 
             if ($template === 'Broken') {
                 throw new FOSSBilling\InformationException('Email template syntax error: Unknown "filter" filter');
@@ -1992,15 +1918,12 @@ test('validateAllTemplates renders templates with stored vars to enforce sandbox
         ->andReturn([$template]);
 
     $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
-    $cryptMock->shouldReceive('decrypt')
-        ->once()
-        ->with('encrypted-vars', Mockery::type('string'))
-        ->andReturn('{"name":"Ada","content":"Body"}');
+    $cryptMock->shouldNotReceive('decrypt');
 
     $systemMock = Mockery::mock();
     $systemMock->shouldReceive('renderEmailTplString')
         ->once()
-        ->with('{{ content|disallowed_filter }}', ['name' => 'Ada', 'content' => 'Body'])
+        ->with('{{ content|disallowed_filter }}', Mockery::type('array'))
         ->andThrow(new FOSSBilling\InformationException('Email template contains disallowed Twig syntax: Filter "disallowed_filter" is not allowed'));
     $systemMock->shouldReceive('renderEmailTplString')
         ->with('Hello {{ name }}', Mockery::any())

@@ -64,7 +64,7 @@ class Service implements InjectionAwareInterface
      */
     public function attachOrderConfig(Product $product, array $data): array
     {
-        $config = json_decode($product->getConfig() ?? '', true) ?? [];
+        $config = $product->getConfig() ?? [];
 
         return array_merge($config, $data);
     }
@@ -201,10 +201,10 @@ class Service implements InjectionAwareInterface
     {
         $this->di['event_dispatcher']->dispatch(new BeforeServiceLicenseResetEvent($model->getId(), $model->getClientId()));
 
-        $model->setIps(json_encode([]));
-        $model->setHosts(json_encode([]));
-        $model->setPaths(json_encode([]));
-        $model->setVersions(json_encode([]));
+        $model->setIps([]);
+        $model->setHosts([]);
+        $model->setPaths([]);
+        $model->setVersions([]);
         $this->di['em']->flush();
         $this->di['logger']->info('Reset license {model_id} information', ['model_id' => $model->getId()]);
 
@@ -375,13 +375,13 @@ class Service implements InjectionAwareInterface
             default => throw new \InvalidArgumentException("Unknown list key: {$key}"),
         };
         $allowed[] = $value;
-        $json = json_encode(array_unique($allowed));
+        $allowed = array_values(array_unique($allowed));
 
         match ($key) {
-            'ips' => $model->setIps($json),
-            'hosts' => $model->setHosts($json),
-            'paths' => $model->setPaths($json),
-            default => $model->setVersions($json),
+            'ips' => $model->setIps($allowed),
+            'hosts' => $model->setHosts($allowed),
+            'paths' => $model->setPaths($allowed),
+            default => $model->setVersions($allowed),
         };
         $this->di['em']->flush();
     }
@@ -420,12 +420,12 @@ class Service implements InjectionAwareInterface
                 $array = explode(PHP_EOL, $data[$key]);
                 $array = array_map(trim(...), $array);
                 $array = array_diff($array, ['']);
-                $json = json_encode(array_values($array));
+                $allowed = array_values($array);
                 match ($key) {
-                    'ips' => $s->setIps($json),
-                    'hosts' => $s->setHosts($json),
-                    'paths' => $s->setPaths($json),
-                    default => $s->setVersions($json),
+                    'ips' => $s->setIps($allowed),
+                    'hosts' => $s->setHosts($allowed),
+                    'paths' => $s->setPaths($allowed),
+                    default => $s->setVersions($allowed),
                 };
             }
         }
