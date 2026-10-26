@@ -69,8 +69,8 @@ class Product implements TimestampInterface
     #[ORM\Column(type: \Doctrine\DBAL\Types\Types::STRING, length: 50, options: ['default' => 'after_payment'])]
     private string $setup = 'after_payment';
 
-    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::TEXT, nullable: true)]
-    private ?string $addons = null;
+    #[ORM\Column(type: \FOSSBilling\Doctrine\Type\JsonDocumentType::NAME, nullable: true)]
+    private ?\FOSSBilling\Doctrine\JsonDocument $addons = null;
 
     #[ORM\Column(name: 'icon_url', type: \Doctrine\DBAL\Types\Types::STRING, length: 255, nullable: true)]
     private ?string $iconUrl = null;
@@ -93,14 +93,14 @@ class Product implements TimestampInterface
     #[ORM\Column(name: 'plugin_config', type: \Doctrine\DBAL\Types\Types::TEXT, nullable: true)]
     private ?string $pluginConfig = null;
 
-    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::TEXT, nullable: true)]
-    private ?string $upgrades = null;
+    #[ORM\Column(type: \FOSSBilling\Doctrine\Type\JsonDocumentType::NAME, nullable: true)]
+    private ?\FOSSBilling\Doctrine\JsonDocument $upgrades = null;
 
     #[ORM\Column(type: \Doctrine\DBAL\Types\Types::BIGINT, nullable: true)]
     private ?int $priority = null;
 
-    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::TEXT, nullable: true)]
-    private ?string $config = null;
+    #[ORM\Column(type: \FOSSBilling\Doctrine\Type\JsonDocumentType::NAME, nullable: true)]
+    private ?\FOSSBilling\Doctrine\JsonDocument $config = null;
 
     #[ORM\Column(type: \Doctrine\DBAL\Types\Types::STRING, length: 255, nullable: true)]
     private ?string $type = null;
@@ -256,12 +256,12 @@ class Product implements TimestampInterface
 
     public function getAddons(): ?string
     {
-        return $this->addons;
+        return $this->addons?->json();
     }
 
     public function setAddons(?string $addons): self
     {
-        $this->addons = $addons;
+        $this->addons = $addons === null ? null : \FOSSBilling\Doctrine\JsonDocument::fromJson($addons);
 
         return $this;
     }
@@ -352,12 +352,12 @@ class Product implements TimestampInterface
 
     public function getUpgrades(): ?string
     {
-        return $this->upgrades;
+        return $this->upgrades?->json();
     }
 
     public function setUpgrades(?string $upgrades): self
     {
-        $this->upgrades = $upgrades;
+        $this->upgrades = $upgrades === null ? null : \FOSSBilling\Doctrine\JsonDocument::fromJson($upgrades);
 
         return $this;
     }
@@ -376,12 +376,12 @@ class Product implements TimestampInterface
 
     public function getConfig(): ?string
     {
-        return $this->config;
+        return $this->config?->json();
     }
 
     public function setConfig(?string $config): self
     {
-        $this->config = $config;
+        $this->config = $config === null ? null : \FOSSBilling\Doctrine\JsonDocument::fromJson($config);
 
         return $this;
     }
@@ -394,6 +394,48 @@ class Product implements TimestampInterface
     public function setType(?string $type): self
     {
         $this->type = $type;
+
+        return $this;
+    }
+
+    /** @return array<mixed>|null */
+    public function getConfigData(): ?array
+    {
+        return $this->config?->arrayData();
+    }
+
+    /** @param array<mixed>|\stdClass|null $data */
+    public function setConfigData(array|\stdClass|null $data): self
+    {
+        $this->config = $data === null ? null : \FOSSBilling\Doctrine\JsonDocument::fromData($data);
+
+        return $this;
+    }
+
+    /** @return array<mixed>|null */
+    public function getAddonsData(): ?array
+    {
+        return $this->addons?->arrayData();
+    }
+
+    /** @param array<mixed>|\stdClass|null $data */
+    public function setAddonsData(array|\stdClass|null $data): self
+    {
+        $this->addons = $data === null ? null : \FOSSBilling\Doctrine\JsonDocument::fromData($data);
+
+        return $this;
+    }
+
+    /** @return array<mixed>|null */
+    public function getUpgradesData(): ?array
+    {
+        return $this->upgrades?->arrayData();
+    }
+
+    /** @param array<mixed>|\stdClass|null $data */
+    public function setUpgradesData(array|\stdClass|null $data): self
+    {
+        $this->upgrades = $data === null ? null : \FOSSBilling\Doctrine\JsonDocument::fromData($data);
 
         return $this;
     }

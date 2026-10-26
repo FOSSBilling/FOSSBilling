@@ -73,17 +73,17 @@ class Promo implements ApiArrayInterface, TimestampInterface
     /** @phpstan-ignore property.unusedType (column is nullable in the DB) */
     private ?bool $active = false;
 
-    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::TEXT, nullable: true)]
-    private ?string $products = null;
+    #[ORM\Column(type: \FOSSBilling\Doctrine\Type\JsonDocumentType::NAME, nullable: true)]
+    private ?\FOSSBilling\Doctrine\JsonDocument $products = null;
 
-    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::TEXT, nullable: true)]
-    private ?string $periods = null;
+    #[ORM\Column(type: \FOSSBilling\Doctrine\Type\JsonDocumentType::NAME, nullable: true)]
+    private ?\FOSSBilling\Doctrine\JsonDocument $periods = null;
 
-    #[ORM\Column(name: 'client_groups', type: \Doctrine\DBAL\Types\Types::TEXT, nullable: true)]
-    private ?string $clientGroups = null;
+    #[ORM\Column(name: 'client_groups', type: \FOSSBilling\Doctrine\Type\JsonDocumentType::NAME, nullable: true)]
+    private ?\FOSSBilling\Doctrine\JsonDocument $clientGroups = null;
 
-    #[ORM\Column(name: 'requires_products', type: \Doctrine\DBAL\Types\Types::TEXT, nullable: true)]
-    private ?string $requiresProducts = null;
+    #[ORM\Column(name: 'requires_products', type: \FOSSBilling\Doctrine\Type\JsonDocumentType::NAME, nullable: true)]
+    private ?\FOSSBilling\Doctrine\JsonDocument $requiresProducts = null;
 
     #[ORM\Column(name: 'start_at', type: \Doctrine\DBAL\Types\Types::DATETIME_MUTABLE, nullable: true)]
     private ?\DateTime $startAt = null;
@@ -117,10 +117,10 @@ class Promo implements ApiArrayInterface, TimestampInterface
             'once_per_client' => $this->oncePerClient ?? false,
             'recurring' => $this->recurring ?? false,
             'active' => $this->active ?? false,
-            'products' => $this->products,
-            'periods' => $this->periods,
-            'client_groups' => $this->clientGroups,
-            'requires_products' => $this->requiresProducts,
+            'products' => $this->getProducts(),
+            'periods' => $this->getPeriods(),
+            'client_groups' => $this->getClientGroups(),
+            'requires_products' => $this->getRequiresProducts(),
             'start_at' => $this->startAt?->format('Y-m-d H:i:s'),
             'end_at' => $this->endAt?->format('Y-m-d H:i:s'),
             'auto_apply' => $this->autoApply ?? false,
@@ -258,48 +258,48 @@ class Promo implements ApiArrayInterface, TimestampInterface
 
     public function getProducts(): ?string
     {
-        return $this->products;
+        return $this->products?->json();
     }
 
     public function setProducts(?string $products): self
     {
-        $this->products = $products;
+        $this->products = $products === null ? null : \FOSSBilling\Doctrine\JsonDocument::fromJson($products);
 
         return $this;
     }
 
     public function getPeriods(): ?string
     {
-        return $this->periods;
+        return $this->periods?->json();
     }
 
     public function setPeriods(?string $periods): self
     {
-        $this->periods = $periods;
+        $this->periods = $periods === null ? null : \FOSSBilling\Doctrine\JsonDocument::fromJson($periods);
 
         return $this;
     }
 
     public function getClientGroups(): ?string
     {
-        return $this->clientGroups;
+        return $this->clientGroups?->json();
     }
 
     public function setClientGroups(?string $clientGroups): self
     {
-        $this->clientGroups = $clientGroups;
+        $this->clientGroups = $clientGroups === null ? null : \FOSSBilling\Doctrine\JsonDocument::fromJson($clientGroups);
 
         return $this;
     }
 
     public function getRequiresProducts(): ?string
     {
-        return $this->requiresProducts;
+        return $this->requiresProducts?->json();
     }
 
     public function setRequiresProducts(?string $requiresProducts): self
     {
-        $this->requiresProducts = $requiresProducts;
+        $this->requiresProducts = $requiresProducts === null ? null : \FOSSBilling\Doctrine\JsonDocument::fromJson($requiresProducts);
 
         return $this;
     }
@@ -360,6 +360,62 @@ class Promo implements ApiArrayInterface, TimestampInterface
     public function setStackable(bool $stackable): self
     {
         $this->stackable = $stackable;
+
+        return $this;
+    }
+
+    /** @return array<mixed>|null */
+    public function getProductsData(): ?array
+    {
+        return $this->products?->arrayData();
+    }
+
+    /** @param array<mixed>|\stdClass|null $data */
+    public function setProductsData(array|\stdClass|null $data): self
+    {
+        $this->products = $data === null ? null : \FOSSBilling\Doctrine\JsonDocument::fromData($data);
+
+        return $this;
+    }
+
+    /** @return array<mixed>|null */
+    public function getPeriodsData(): ?array
+    {
+        return $this->periods?->arrayData();
+    }
+
+    /** @param array<mixed>|\stdClass|null $data */
+    public function setPeriodsData(array|\stdClass|null $data): self
+    {
+        $this->periods = $data === null ? null : \FOSSBilling\Doctrine\JsonDocument::fromData($data);
+
+        return $this;
+    }
+
+    /** @return array<mixed>|null */
+    public function getClientGroupsData(): ?array
+    {
+        return $this->clientGroups?->arrayData();
+    }
+
+    /** @param array<mixed>|\stdClass|null $data */
+    public function setClientGroupsData(array|\stdClass|null $data): self
+    {
+        $this->clientGroups = $data === null ? null : \FOSSBilling\Doctrine\JsonDocument::fromData($data);
+
+        return $this;
+    }
+
+    /** @return array<mixed>|null */
+    public function getRequiresProductsData(): ?array
+    {
+        return $this->requiresProducts?->arrayData();
+    }
+
+    /** @param array<mixed>|\stdClass|null $data */
+    public function setRequiresProductsData(array|\stdClass|null $data): self
+    {
+        $this->requiresProducts = $data === null ? null : \FOSSBilling\Doctrine\JsonDocument::fromData($data);
 
         return $this;
     }
