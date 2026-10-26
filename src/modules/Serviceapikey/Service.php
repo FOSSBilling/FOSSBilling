@@ -55,7 +55,7 @@ class Service implements InjectionAwareInterface
 
     public function attachOrderConfig(Product $product, array $data): array
     {
-        $config = json_decode($product->getConfig() ?? '', true) ?? [];
+        $config = $product->getConfigData() ?? [];
 
         return array_merge($config, $data);
     }
@@ -78,7 +78,7 @@ class Service implements InjectionAwareInterface
     public function action_activate(Order $order): bool
     {
         $model = $this->_getService($order);
-        $config = json_decode($order->getConfig() ?? '', true);
+        $config = $order->getConfigData();
         $model->setApiKey($this->generateKey($config));
 
         $this->di['em']->flush();
@@ -126,7 +126,7 @@ class Service implements InjectionAwareInterface
             'created_at' => $model->getCreatedAt()?->format('Y-m-d H:i:s'),
             'updated_at' => $model->getUpdatedAt()?->format('Y-m-d H:i:s'),
             'api_key' => $model->getApiKey(),
-            'config' => json_decode($model->getConfig() ?? '', true),
+            'config' => $model->getConfigData(),
         ];
     }
 
@@ -189,7 +189,7 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\InformationException('Order is not active');
         }
 
-        $config = json_decode($model->getConfig() ?? '', true);
+        $config = $model->getConfigData();
 
         $model->setApiKey($this->generateKey($config));
         $this->di['em']->flush();
