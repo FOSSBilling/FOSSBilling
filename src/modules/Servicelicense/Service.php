@@ -201,10 +201,10 @@ class Service implements InjectionAwareInterface
     {
         $this->di['event_dispatcher']->dispatch(new BeforeServiceLicenseResetEvent($model->getId(), $model->getClientId()));
 
-        $model->setIps(json_encode([]));
-        $model->setHosts(json_encode([]));
-        $model->setPaths(json_encode([]));
-        $model->setVersions(json_encode([]));
+        $model->setIpsData([]);
+        $model->setHostsData([]);
+        $model->setPathsData([]);
+        $model->setVersionsData([]);
         $this->di['em']->flush();
         $this->di['logger']->info('Reset license {model_id} information', ['model_id' => $model->getId()]);
 
