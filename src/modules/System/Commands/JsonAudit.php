@@ -19,7 +19,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
-#[AsCommand(name: 'database:json:audit', description: 'Inspect legacy JSON fields without modifying data or printing payloads')]
+#[AsCommand(name: 'database:json:audit', description: 'Inspect JSON fields without modifying data or printing payloads')]
 final class JsonAudit extends Command implements InjectionAwareInterface
 {
     private ?Container $di = null;
@@ -38,7 +38,7 @@ final class JsonAudit extends Command implements InjectionAwareInterface
     {
         $this->addOption('table', null, InputOption::VALUE_REQUIRED, 'Inspect one table from the JSON migration inventory')
             ->addOption('batch-size', null, InputOption::VALUE_REQUIRED, 'Rows per read', '500')
-            ->setHelp('Reports row IDs and issue classes only; session IDs are hashed. Empty, malformed, scalar and double-encoded documents remain byte-for-byte intact. Review and back up affected rows before explicit repairs; no blanket normalization is safe. Encrypted email_template.vars and already-mapped JSON fields are outside this migration.');
+            ->setHelp('Reports row IDs and issue categories without JSON payloads; session IDs are hashed. Uses the automatic migration\'s interpretation of old form defaults and interrupted work. Repair reported rows, then retry normal update finalization.');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int

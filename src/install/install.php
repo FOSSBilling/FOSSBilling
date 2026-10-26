@@ -566,6 +566,7 @@ final class FOSSBilling_Installer
         if (function_exists('opcache_invalidate')) {
             opcache_invalidate(PATH_CONFIG, true);
         }
+        FOSSBilling\Doctrine\JsonMigration::markInstalled(FOSSBilling\Doctrine\EntityManagerFactory::create($this->connection), new FOSSBilling\Crypt());
         (new FOSSBilling\UpdateFinalization())->writeCompleteState();
 
         // Installation completed successfully

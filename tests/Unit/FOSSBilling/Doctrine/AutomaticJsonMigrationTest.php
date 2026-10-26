@@ -24,10 +24,13 @@ test('automatic migration encrypts changed originals, resumes interrupted work a
     expect(fn () => $migration->automatic($em, $crypt))->toThrow(FOSSBilling\Doctrine\JsonMigrationException::class);
     expect($c->fetchFirstColumn('SELECT config FROM product ORDER BY id'))->toBe([null, ' ']);
     $journal = new FOSSBilling\Doctrine\JsonMigrationJournal($em, $crypt);
-    expect($journal->find('original:product.config:1')['base64'])->toBe('');
+    expect($journal->find('original:product.config:1')['base64'])->toBe('')
+        ->and($journal->find('original:product.config:2'))->toBeNull();
     $c->executeStatement('DROP TRIGGER interrupt_json');
     expect($migration->automatic($em, $crypt)['empty_values'])->toBe(1)
-        ->and($migration->automatic($em, $crypt))->toBe(['columns' => 0, 'empty_values' => 0]);
+        ->and($migration->automatic($em, $crypt))->toBe(['columns' => 0, 'empty_values' => 0])
+        ->and((int) $c->fetchOne('SELECT COUNT(*) FROM json_migration_record'))->toBe(1)
+        ->and($journal->find('original:product.config:1'))->toBeNull();
 });
 
 test('form defaults preserve text and false-like values while checkbox collections become JSON arrays', function (): void {
@@ -48,7 +51,7 @@ test('form defaults preserve text and false-like values while checkbox collectio
 
 test('extension configuration is re-encrypted without changing unrelated metadata or plaintext meaning', function (): void {
     $c = automaticJsonConnection();
-    $c->executeStatement('CREATE TABLE extension_meta (id INTEGER PRIMARY KEY, meta_key TEXT, meta_value TEXT, rel_type TEXT, rel_id TEXT, client_id BIGINT)');
+    $c->executeStatement('CREATE TABLE extension_meta (id INTEGER PRIMARY KEY, extension TEXT, meta_key TEXT, meta_value TEXT, rel_type TEXT, rel_id TEXT, client_id BIGINT)');
     $pass = FOSSBilling\Config::getProperty('info.salt');
     $plain = '{ "password":"secret", "unknown_extension_option":false }';
     $iv = str_repeat('x', 16);
@@ -102,4 +105,26 @@ test('an interrupted preflight resumes from its durable batch cursor before any 
     $logger->reads = [];
     (new JsonMigration())->automatic($em, $crypt);
     expect($logger->reads[0])->toBe('500')->and((int) $c->fetchOne('SELECT COUNT(*) FROM product WHERE config = ?', ['{}']))->toBe(600);
+});
+
+test('interrupted form default preparation retains originals and resumes without double encoding', function (): void {
+    $c = automaticJsonConnection();
+    $c->executeStatement('CREATE TABLE form_field (id INTEGER PRIMARY KEY, type TEXT, options TEXT, default_value VARCHAR(255))');
+    $c->insert('form_field', ['id' => 1, 'type' => 'text', 'options' => '{}', 'default_value' => 'false']);
+    $c->insert('form_field', ['id' => 2, 'type' => 'checkbox', 'options' => '{}', 'default_value' => '{"0":"a","1":"b"}']);
+    $c->executeStatement("CREATE TRIGGER interrupt_defaults BEFORE UPDATE ON form_field WHEN OLD.id = 2 BEGIN SELECT RAISE(ABORT, 'interrupted'); END");
+    $em = EntityManagerFactory::create($c);
+    $crypt = new Crypt();
+    expect(fn () => (new JsonMigration())->automatic($em, $crypt))->toThrow(FOSSBilling\Doctrine\JsonMigrationException::class);
+    $journal = new FOSSBilling\Doctrine\JsonMigrationJournal($em, $crypt);
+    expect(base64_decode($journal->find('prepared:form_field.default_value:1')['base64']))->toBe('false')
+        ->and(iterator_to_array((new FOSSBilling\Doctrine\JsonAudit())->inspect($c, 'form_field')))->toBe([]);
+    // Recovery payloads contain no plaintext default values at rest.
+    foreach ($c->fetchFirstColumn('SELECT payload FROM json_migration_record') as $payload) {
+        expect($payload)->toStartWith('v3:')->not->toContain('false');
+    }
+    $c->executeStatement('DROP TRIGGER interrupt_defaults');
+    (new JsonMigration())->automatic($em, $crypt);
+    expect(array_map(fn ($raw) => json_decode($raw, true, 512, JSON_THROW_ON_ERROR), $c->fetchFirstColumn('SELECT default_value FROM form_field ORDER BY id')))->toBe(['false', ['a', 'b']])
+        ->and((int) $c->fetchOne('SELECT COUNT(*) FROM json_migration_record'))->toBe(1);
 });

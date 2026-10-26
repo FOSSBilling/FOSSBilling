@@ -15,7 +15,7 @@ namespace FOSSBilling\Doctrine;
 final class JsonMigrationValidation
 {
     /** Reject values that cannot safely populate the structured entity fields. */
-    public static function assertCompatible(string $json, bool $scalar = false, bool $numericObjects = false): void
+    public static function assertCompatible(string $json, bool $scalar = false): void
     {
         $value = json_decode($json, false, 512, JSON_THROW_ON_ERROR);
         if (json_encode($value, JSON_THROW_ON_ERROR | JSON_PRESERVE_ZERO_FRACTION)
@@ -25,19 +25,11 @@ final class JsonMigrationValidation
         if (!$scalar && $value !== null && !is_array($value) && !$value instanceof \stdClass) {
             throw new \JsonException('JSON document must contain an object, array or null.');
         }
-        if (!$numericObjects) {
-            self::assertObjectShapes($value);
-        }
         // Validation above handles syntax. Track object keys without interpreting their values.
-        preg_match_all('/"(?:[^"\\\\]|\\\\.)*"|[{}\\[\\]:,]|-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?/s', $json, $tokens);
+        preg_match_all('/"(?:[^"\\\\]|\\\\.)*"|[{}\\[\\]:,]/s', $json, $tokens);
         $stack = [];
         foreach ($tokens[0] as $token) {
-            if ($token[0] === '-' || ctype_digit($token[0])) {
-                $roundTrip = json_encode(json_decode($token, false, 512, JSON_THROW_ON_ERROR), JSON_THROW_ON_ERROR | JSON_PRESERVE_ZERO_FRACTION);
-                if (self::numberValue($token) !== self::numberValue($roundTrip)) {
-                    throw new \JsonException('JSON number cannot round-trip without losing precision.');
-                }
-            } elseif ($token === '{' || $token === '[') {
+            if ($token === '{' || $token === '[') {
                 $stack[] = ['object' => $token === '{', 'key' => $token === '{', 'keys' => []];
             } elseif ($token === '}' || $token === ']') {
                 array_pop($stack);
@@ -57,43 +49,5 @@ final class JsonMigrationValidation
                 }
             }
         }
-    }
-
-    private static function assertObjectShapes(mixed $value): void
-    {
-        if ($value instanceof \stdClass) {
-            $properties = get_object_vars($value);
-            $keys = array_keys($properties);
-            sort($keys);
-            if ($keys !== [] && $keys === range(0, count($keys) - 1)) {
-                throw new \JsonException('Nonempty numeric-key JSON objects would become lists; review their intended shape.');
-            }
-            foreach ($properties as $child) {
-                self::assertObjectShapes($child);
-            }
-        } elseif (is_array($value)) {
-            foreach ($value as $child) {
-                self::assertObjectShapes($child);
-            }
-        }
-    }
-
-    /** Compare decimal meanings without rounding through floating point. */
-    private static function numberValue(string $number): string
-    {
-        $parts = preg_split('/[eE]/', $number);
-        $mantissa = $parts[0];
-        $negative = str_starts_with($mantissa, '-');
-        $mantissa = ltrim($mantissa, '-');
-        $dot = strpos($mantissa, '.');
-        $scale = $dot === false ? 0 : strlen($mantissa) - $dot - 1;
-        $digits = ltrim(str_replace('.', '', $mantissa), '0');
-        if ($digits === '') {
-            return '0';
-        }
-        $trimmed = rtrim($digits, '0');
-        $exponent = (int) ($parts[1] ?? 0) - $scale + strlen($digits) - strlen($trimmed);
-
-        return ($negative ? '-' : '') . $trimmed . 'e' . $exponent;
     }
 }

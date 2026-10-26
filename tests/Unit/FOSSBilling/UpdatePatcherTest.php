@@ -11,6 +11,15 @@ use FOSSBilling\UpdatePatcher;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 
+function patcherWithoutJsonMigration(): UpdatePatcher
+{
+    return new class extends UpdatePatcher {
+        public function applyJsonMigrations(): void
+        {
+        }
+    };
+}
+
 test('currency formatting patch follows the client balance gateway repair', function (): void {
     $patches = (new ReflectionMethod(UpdatePatcher::class, 'getPatches'))->invoke(new UpdatePatcher(), 89);
 
@@ -79,7 +88,7 @@ test('branding migration runs during non-MySQL update finalization', function ()
         $pdo->exec("INSERT INTO setting (param, value) VALUES ('company_logo', 'public/branding/logo.svg'), ('company_favicon', 'public/branding/favicon.ico')");
         $filesystem = Mockery::mock(Filesystem::class);
         $filesystem->shouldReceive('exists')->andReturn(false);
-        $patcher = new UpdatePatcher();
+        $patcher = patcherWithoutJsonMigration();
         $patcher->setDi(new Pimple\Container(['pdo' => $pdo, 'filesystem' => $filesystem]));
 
         $patcher->applyCorePatches(force: true);
@@ -1713,7 +1722,7 @@ test('applyCorePatches never runs a legacy MySQL patch on a non-MySQL driver, ev
         $di['pdo'] = $pdo;
         $di['logger'] = new Tests\Helpers\TestLogger();
 
-        $patcher = new UpdatePatcher();
+        $patcher = patcherWithoutJsonMigration();
         $patcher->setDi($di);
 
         // force: true is exactly the path finalizeUpdateLocked() calls unconditionally on every
@@ -1743,7 +1752,7 @@ test('applyCorePatches removes retired hook data on non-MySQL drivers and remain
         $di['pdo'] = $pdo;
         $di['logger'] = new Tests\Helpers\TestLogger();
 
-        $patcher = new UpdatePatcher();
+        $patcher = patcherWithoutJsonMigration();
         $patcher->setDi($di);
 
         // The portable cleanup runs from applyCorePatches on every driver. Running the
@@ -2037,7 +2046,7 @@ test('applyCorePatches migrates the theme setting values on a non-MySQL driver, 
         $di['pdo'] = $pdo;
         $di['logger'] = new Tests\Helpers\TestLogger();
 
-        $patcher = new UpdatePatcher();
+        $patcher = patcherWithoutJsonMigration();
         $patcher->setDi($di);
 
         $patcher->applyCorePatches(force: true);
@@ -2087,7 +2096,7 @@ test('applyCorePatches migrates saved theme settings/presets in extension_meta o
         $di['pdo'] = $pdo;
         $di['logger'] = new Tests\Helpers\TestLogger();
 
-        $patcher = new UpdatePatcher();
+        $patcher = patcherWithoutJsonMigration();
         $patcher->setDi($di);
 
         $patcher->applyCorePatches(force: true);
@@ -2113,7 +2122,7 @@ test('applyCorePatches runs a portable schema sync instead of legacy patches on 
         $di['em'] = $entityManager;
         $di['logger'] = new Tests\Helpers\TestLogger();
 
-        $patcher = new UpdatePatcher();
+        $patcher = patcherWithoutJsonMigration();
         $patcher->setDi($di);
 
         $patcher->applyCorePatches(force: true);
@@ -2136,7 +2145,7 @@ test('non-MySQL upgrades copy legacy groups after creating the membership table'
         $di['pdo'] = mockPdoAllowingThemeMigrationCalls();
         $di['em'] = $entityManager;
         $di['logger'] = new Tests\Helpers\TestLogger();
-        $patcher = new UpdatePatcher();
+        $patcher = patcherWithoutJsonMigration();
         $patcher->setDi($di);
         $patcher->applyCorePatches(force: true);
 
@@ -2207,7 +2216,7 @@ test('applyCorePatches also runs a portable schema sync after legacy patches on 
         $di['em'] = $entityManager;
         $di['logger'] = new Tests\Helpers\TestLogger();
 
-        $patcher = new UpdatePatcher();
+        $patcher = patcherWithoutJsonMigration();
         $patcher->setDi($di);
 
         $patcher->applyCorePatches(force: true);
@@ -2239,7 +2248,7 @@ test('applyCorePatches never recreates an inactive extension\'s table via the am
         $di['em'] = $entityManager;
         $di['logger'] = new Tests\Helpers\TestLogger();
 
-        $patcher = new UpdatePatcher();
+        $patcher = patcherWithoutJsonMigration();
         $patcher->setDi($di);
 
         $patcher->applyCorePatches(force: true);
@@ -2269,7 +2278,7 @@ test('applyCorePatches does resync an extension\'s table once it is marked insta
         $di['em'] = $entityManager;
         $di['logger'] = new Tests\Helpers\TestLogger();
 
-        $patcher = new UpdatePatcher();
+        $patcher = patcherWithoutJsonMigration();
         $patcher->setDi($di);
 
         $patcher->applyCorePatches(force: true);
@@ -2302,6 +2311,7 @@ test('applyCorePatches logs schema discovery failures and blocks the data migrat
         $di = new Pimple\Container();
         $di['pdo'] = $pdo;
         $di['em'] = $entityManager;
+        $di['crypt'] = new FOSSBilling\Crypt();
         $di['logger'] = $logger;
 
         $patcher = new UpdatePatcher();

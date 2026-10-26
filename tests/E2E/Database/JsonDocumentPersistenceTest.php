@@ -12,7 +12,6 @@ use Doctrine\ORM\Tools\SchemaTool;
 use FOSSBilling\Doctrine\JsonMigration;
 use FOSSBilling\Doctrine\JsonMigrationException;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
-use Symfony\Component\Filesystem\Filesystem;
 
 beforeEach(function (): void {
     $driver = getenv('JSON_TEST_DRIVER') ?: 'pdo_sqlite';
@@ -48,14 +47,9 @@ beforeEach(function (): void {
     }
     $this->em = new EntityManager($this->connection, $config);
     (new SchemaTool($this->em))->createSchema([$this->em->getClassMetadata(MassmailerMessage::class)]);
-    $this->jsonBackupDirectory = sys_get_temp_dir() . '/fb-json-native-' . bin2hex(random_bytes(6));
-    (new Filesystem())->mkdir($this->jsonBackupDirectory, 0o700);
 });
 
 afterEach(function (): void {
-    if (isset($this->jsonBackupDirectory)) {
-        (new Filesystem())->remove($this->jsonBackupDirectory);
-    }
     if (isset($this->connection)) {
         $this->em->close();
         $this->connection->close();
@@ -113,28 +107,23 @@ test('standard mappings create native JSON columns and persist compatible struct
     }
 });
 
-test('legacy TEXT upgrades retain JSON meaning, archive exact originals and safely repeat', function (): void {
+test('automatic TEXT upgrades retain JSON meaning and safely repeat', function (): void {
     makeLegacyJsonColumn($this->connection);
     $values = [null, '', " \t\n", 'null', '{}', '[]', '{ "id": "001", "n": 1.0, "label": "Résumé" }'];
     foreach ($values as $raw) {
         $this->connection->insert('mod_massmailer', ['filter' => $raw, 'subject' => 'Before']);
     }
-    $file = $this->jsonBackupDirectory . '/legacy.jsonl';
     $migration = new JsonMigration();
     expect(fn () => $migration->assertReady($this->connection))->toThrow(JsonMigrationException::class);
-    expect($migration->migrate($this->connection, $file))->toBe(['columns' => 1, 'empty_values' => 2]);
+    expect($migration->automatic(FOSSBilling\Doctrine\EntityManagerFactory::create($this->connection), new FOSSBilling\Crypt()))->toBe(['columns' => 1, 'empty_values' => 2]);
     $migration->assertReady($this->connection);
-    $records = array_map(fn ($line) => json_decode($line, true, 512, JSON_THROW_ON_ERROR), file($file, FILE_IGNORE_NEW_LINES));
-    $rows = array_values(array_filter($records, fn ($row) => array_key_exists('base64', $row)));
-    expect(array_map(fn ($row) => $row['base64'] === null ? null : base64_decode($row['base64'], true), $rows))->toBe($values)
-        ->and(end($records))->toBe(['complete' => true]);
     foreach ($this->em->getRepository(MassmailerMessage::class)->findBy([], ['id' => 'ASC']) as $index => $message) {
         expect($message->getFilter())->toEqual(json_decode($values[$index] ?? 'null', true));
         $message->setSubject('After');
     }
     $this->em->flush();
     $before = $this->connection->fetchAllAssociative('SELECT * FROM mod_massmailer ORDER BY id');
-    expect($migration->migrate($this->connection, $this->jsonBackupDirectory . '/retry.jsonl'))->toBe(['columns' => 1, 'empty_values' => 0])
+    expect($migration->automatic(FOSSBilling\Doctrine\EntityManagerFactory::create($this->connection), new FOSSBilling\Crypt()))->toBe(['columns' => 0, 'empty_values' => 0])
         ->and($this->connection->fetchAllAssociative('SELECT * FROM mod_massmailer ORDER BY id'))->toBe($before);
     $this->em->clear();
     $message = $this->em->getRepository(MassmailerMessage::class)->findOneBy([]);
@@ -151,7 +140,7 @@ test('unsafe legacy documents block conversion without changing earlier valid ro
     $before = $this->connection->fetchAllAssociative('SELECT * FROM mod_massmailer ORDER BY id');
 
     try {
-        (new JsonMigration())->migrate($this->connection, $this->jsonBackupDirectory . '/blocked.jsonl');
+        (new JsonMigration())->automatic(FOSSBilling\Doctrine\EntityManagerFactory::create($this->connection), new FOSSBilling\Crypt());
         $this->fail('Unsafe legacy JSON was accepted.');
     } catch (JsonMigrationException $exception) {
         expect($exception->getMessage())->not->toContain('private-secret', $raw);
@@ -184,8 +173,7 @@ test('the full JSON-column inventory migrates while encrypted and dormant exclus
     $c->executeStatement('CREATE TABLE email_template (id BIGINT PRIMARY KEY, vars TEXT)');
     $c->insert('email_template', ['id' => 1, 'vars' => 'encrypted-private-value']);
     $migration = new JsonMigration();
-    $file = $this->jsonBackupDirectory . '/inventory.jsonl';
-    expect($migration->migrate($c, $file))->toBe(['columns' => 27, 'empty_values' => 26]);
+    expect($migration->automatic(FOSSBilling\Doctrine\EntityManagerFactory::create($c), new FOSSBilling\Crypt()))->toBe(['columns' => 27, 'empty_values' => 26]);
     $migration->assertReady($c);
     foreach (FOSSBilling\Doctrine\JsonFields::FIELDS as $table => $definition) {
         $actual = $c->createSchemaManager()->introspectTableByUnquotedName($table);
@@ -204,8 +192,7 @@ test('the full JSON-column inventory migrates while encrypted and dormant exclus
         }
     }
     expect($c->fetchFirstColumn('SELECT config FROM service_license'))->toBe(['dormant-unstructured-value', 'dormant-unstructured-value'])
-        ->and($c->fetchOne('SELECT vars FROM email_template'))->toBe('encrypted-private-value')
-        ->and(file_get_contents($file))->not->toContain('encrypted-private-value', 'dormant-unstructured-value');
+        ->and($c->fetchOne('SELECT vars FROM email_template'))->toBe('encrypted-private-value');
 });
 
 test('JSON conversion and patch 133 compose in either upgrade order', function (bool $unicodeFirst): void {
@@ -222,7 +209,7 @@ test('JSON conversion and patch 133 compose in either upgrade order', function (
     $patcher = new FOSSBilling\UpdatePatcher();
     $patcher->setDi(new Pimple\Container(['pdo' => $c->getNativeConnection(), 'dbal' => $c, 'logger' => new Tests\Helpers\TestLogger()]));
     $unicode = (new ReflectionMethod($patcher, 'patch133'))->getClosure($patcher);
-    $json = fn () => (new JsonMigration())->migrate($c, $this->jsonBackupDirectory . '/combined.jsonl');
+    $json = fn () => (new JsonMigration())->automatic(FOSSBilling\Doctrine\EntityManagerFactory::create($c), new FOSSBilling\Crypt());
     if ($unicodeFirst) {
         $unicode();
         $json();
@@ -266,4 +253,30 @@ test('automatic updates convert mixed defaults and real binary session identifie
         ->and((int) $c->fetchOne('SELECT COUNT(*) FROM session WHERE fingerprint IS NULL'))->toBe(503)
         ->and(array_map(fn ($value) => json_decode($value, true), $c->fetchFirstColumn('SELECT default_value FROM form_field ORDER BY id')))->toBe(['false', '0', str_repeat('x', 255), ['one', 'two']])
         ->and($migration->automatic($sessionEm, new FOSSBilling\Crypt()))->toBe(['columns' => 0, 'empty_values' => 0]);
+});
+
+test('fresh JSON mappings preserve form defaults through later automatic upgrades', function (): void {
+    $c = $this->connection;
+    $em = FOSSBilling\Doctrine\EntityManagerFactory::create($c);
+    (new SchemaTool($em))->createSchema([
+        $em->getClassMetadata(Box\Mod\Formbuilder\Entity\Form::class),
+        $em->getClassMetadata(Box\Mod\Formbuilder\Entity\FormField::class),
+    ]);
+    JsonMigration::markInstalled($em, new FOSSBilling\Crypt());
+    $values = ['false', '0', '{"literal":true}', '', ['one', 'two'], false, 0];
+    $ids = [];
+    foreach ($values as $value) {
+        $field = (new Box\Mod\Formbuilder\Entity\FormField())->setType(is_array($value) ? 'checkbox' : 'text')->setDefaultValue($value);
+        $em->persist($field);
+        $em->flush();
+        $ids[] = $field->getId();
+    }
+    // A later release runs the normal portable update step again.
+    $patcher = new FOSSBilling\UpdatePatcher();
+    $patcher->setDi(new Pimple\Container(['em' => $em, 'crypt' => new FOSSBilling\Crypt(), 'cache' => new ArrayAdapter()]));
+    $patcher->applyJsonMigrations();
+    $patcher->applyJsonMigrations();
+    $em->clear();
+    expect(array_map(fn ($id) => $em->find(Box\Mod\Formbuilder\Entity\FormField::class, $id)->getDefaultValue(), $ids))->toBe($values)
+        ->and(iterator_to_array((new FOSSBilling\Doctrine\JsonAudit())->inspect($c, 'form_field')))->toBe([]);
 });

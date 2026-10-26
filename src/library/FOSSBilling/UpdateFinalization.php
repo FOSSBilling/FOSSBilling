@@ -351,12 +351,6 @@ class UpdateFinalization implements InjectionAwareInterface
             throw new InformationException('There are still :count: pending update patches (database level :current:, code level :latest:). Re-run finalization before completing the update.', [':count:' => $pendingPatches, ':current:' => $patchStatus['current'] ?? 'unknown', ':latest:' => $patchStatus['latest'] ?? 'unknown']);
         }
 
-        if ($this->di !== null) {
-            $patcher = $this->createPatcher();
-            $patcher->setDi($this->di);
-            $patcher->applyJsonMigrations();
-        }
-
         $state['completed_at'] = date(DATE_ATOM);
         // Restore the exact maintenance-mode state captured when the pending
         // state was created. If maintenance was already enabled before the update,

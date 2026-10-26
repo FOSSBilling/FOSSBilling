@@ -278,29 +278,6 @@ test('reports schema drift state alongside the finalization status', function ()
     ]);
 });
 
-test('completion keeps maintenance enabled until JSON preflight succeeds', function (): void {
-    $config = Config::getConfig();
-    $config['maintenance_mode']['enabled'] = true;
-    Config::setConfig($config, false);
-    seedFinalizedState($this->updateFinalizationFilesystem, $this->updateFinalizationStatePath);
-    $patcher = stubUpdatePatcherWithPendingPatches();
-    $patcher->pendingPatches = 0;
-    $finalization = finalizationWithStubPatcher($patcher);
-    $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
-    $connection->executeStatement('CREATE TABLE product (id INTEGER PRIMARY KEY, config TEXT)');
-    $connection->insert('product', ['id' => 1, 'config' => '{broken']);
-    $finalization->setDi(new Pimple\Container(['dbal' => $connection]));
-
-    expect(fn () => $finalization->completeFinalization())->toThrow(FOSSBilling\Doctrine\JsonMigrationException::class)
-        ->and(Config::getProperty('maintenance_mode.enabled'))->toBeTrue()
-        ->and(json_decode(file_get_contents($this->updateFinalizationStatePath), true)['status'])->toBe('finalized');
-
-    $connection->update('product', ['config' => null], ['id' => 1]);
-    $finalization->completeFinalization();
-    expect(json_decode(file_get_contents($this->updateFinalizationStatePath), true)['status'])->toBe('complete');
-    $connection->close();
-});
-
 test('application readers share a lock that blocks an updater until active work drains', function (): void {
     $service = new UpdateFinalization();
     $service->acquireRuntimeLock();
@@ -319,28 +296,54 @@ test('application readers share a lock that blocks an updater until active work 
     }
 });
 
-test('normal completion automatically migrates JSON and removes saved live email variables', function (): void {
+test('normal finalization migrates JSON and clears retired previews before restoring maintenance mode', function (): void {
     $config = Config::getConfig();
-    $config['maintenance_mode']['enabled'] = true;
+    $config['maintenance_mode']['enabled'] = false;
     Config::setConfig($config, false);
-    $state = ['status' => 'finalized', 'target_version' => Version::VERSION, 'maintenance_mode' => ['enabled' => false]];
-    $this->updateFinalizationFilesystem->dumpFile($this->updateFinalizationStatePath, json_encode($state, JSON_THROW_ON_ERROR));
-    $patcher = stubUpdatePatcherWithPendingPatches();
-    $patcher->pendingPatches = 0;
-    $finalization = finalizationWithStubPatcher($patcher);
     $c = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
     $c->executeStatement('CREATE TABLE product (id INTEGER PRIMARY KEY, config TEXT)');
     $c->executeStatement('CREATE TABLE email_template (id INTEGER PRIMARY KEY, vars TEXT)');
-    $c->insert('product', ['id' => 1, 'config' => '']);
+    $c->insert('product', ['id' => 1, 'config' => '{broken']);
     $c->insert('email_template', ['id' => 1, 'vars' => 'old-live-reset-token']);
-    $finalization->setDi(new Pimple\Container(['dbal' => $c]));
-    $finalization->completeFinalization();
+    $di = new Pimple\Container([
+        'em' => FOSSBilling\Doctrine\EntityManagerFactory::create($c),
+        'crypt' => new FOSSBilling\Crypt(),
+        'cache' => new Symfony\Component\Cache\Adapter\ArrayAdapter(),
+    ]);
+    $patcher = new class extends UpdatePatcher {
+        public function applyConfigPatches(bool $force = false): void
+        {
+        }
+
+        public function applyCorePatches(bool $force = false): void
+        {
+            $this->applyJsonMigrations();
+        }
+
+        public function patchStatus(): array
+        {
+            return ['current' => 133, 'latest' => 133, 'pending' => 0];
+        }
+
+        public function availablePatches(): int
+        {
+            return 0;
+        }
+    };
+    $patcher->setDi($di);
+    $finalization = finalizationWithStubPatcher($patcher);
+    $finalization->setDi($di);
+    expect(fn () => $finalization->finalizeAndComplete())->toThrow(FOSSBilling\Doctrine\JsonMigrationException::class)
+        ->and(Config::getProperty('maintenance_mode.enabled'))->toBeTrue()
+        ->and(json_decode(file_get_contents($this->updateFinalizationStatePath), true)['status'])->toBe('pending')
+        ->and($c->fetchOne('SELECT vars FROM email_template'))->toBe('old-live-reset-token');
+    $c->update('product', ['config' => ''], ['id' => 1]);
+    $finalization->finalizeAndComplete();
     expect($c->fetchOne('SELECT config FROM product'))->toBeNull()
         ->and($c->fetchOne('SELECT vars FROM email_template'))->toBeNull()
         ->and(Config::getProperty('maintenance_mode.enabled'))->toBeFalse()
-        ->and((int) $c->fetchOne('SELECT COUNT(*) FROM json_migration_record'))->toBeGreaterThanOrEqual(3);
-    $journal = new FOSSBilling\Doctrine\JsonMigrationJournal(FOSSBilling\Doctrine\EntityManagerFactory::create($c), new FOSSBilling\Crypt());
-    expect($journal->find('original:product.config:1')['base64'])->toBe('');
+        ->and(json_decode(file_get_contents($this->updateFinalizationStatePath), true)['status'])->toBe('complete')
+        ->and((int) $c->fetchOne('SELECT COUNT(*) FROM json_migration_record'))->toBe(1);
 });
 
 test('manual update entry point delegates to the same locked finalization flow', function (): void {

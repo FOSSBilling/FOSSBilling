@@ -17,9 +17,11 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\EntityManagerInterface;
 use FOSSBilling\Crypt;
 
-/** Per-column checkpoints and encrypted originals for automatic transformations. */
+/** Crash-recovery state and encrypted originals, discarded after successful conversion. */
 final readonly class JsonMigrationJournal
 {
+    public const string COMPLETE = 'complete:json-fields-v1';
+
     private Connection $connection;
 
     public function __construct(EntityManagerInterface $em, private Crypt $crypt)
@@ -30,7 +32,20 @@ final readonly class JsonMigrationJournal
 
     public function has(string $key): bool
     {
-        return $this->connection->fetchOne('SELECT id FROM json_migration_record WHERE record_key = ?', [hash('sha256', $key)], [Types::BINARY]) !== false;
+        return self::hasRecord($this->connection, $key);
+    }
+
+    public static function hasRecord(Connection $connection, string $key): bool
+    {
+        return $connection->fetchOne('SELECT id FROM json_migration_record WHERE record_key = ?', [hash('sha256', $key)], [Types::BINARY]) !== false;
+    }
+
+    public function complete(): void
+    {
+        $this->connection->transactional(function (): void {
+            $this->connection->executeStatement('DELETE FROM json_migration_record');
+            $this->save(self::COMPLETE, ['complete' => true]);
+        });
     }
 
     public function find(string $key): ?array
@@ -44,39 +59,10 @@ final readonly class JsonMigrationJournal
         }
         $plain = $this->crypt->decrypt($payload);
         if ($plain === false) {
-            throw new JsonMigrationException('Recovery record could not be decrypted; retain its encryption key.');
+            throw new JsonMigrationException('Recovery record could not be decrypted; retain the original installation salt.');
         }
 
         return json_decode($plain, true, 512, JSON_THROW_ON_ERROR);
-    }
-
-    public function rotate(): void
-    {
-        $id = $this->crypt->currentKeyId();
-        if (($this->find('encryption-key')['id'] ?? null) === $id) {
-            return;
-        }
-        $cursor = null;
-        do {
-            $rows = $this->connection->fetchAllAssociative('SELECT id, payload FROM json_migration_record' . ($cursor === null ? '' : ' WHERE id > ?') . ' ORDER BY id LIMIT 100', $cursor === null ? [] : [$cursor]);
-            foreach ($rows as $row) {
-                $cursor = $row['id'];
-                $stored = is_resource($row['payload']) ? stream_get_contents($row['payload']) : $row['payload'];
-                if (!$this->crypt->needsReEncryption($stored)) {
-                    continue;
-                }
-                $plain = $this->crypt->decrypt($stored);
-                if ($plain === false) {
-                    throw new JsonMigrationException('Retain the previous encryption key to rotate recovery records.');
-                }
-                $this->connection->update('json_migration_record', ['payload' => $this->crypt->encrypt($plain)], ['id' => $cursor], ['payload' => Types::BLOB]);
-            }
-        } while (count($rows) === 100);
-        if ($this->has('encryption-key')) {
-            $this->connection->update('json_migration_record', ['payload' => $this->crypt->encrypt(json_encode(['id' => $id], JSON_THROW_ON_ERROR))], ['record_key' => hash('sha256', 'encryption-key')], ['payload' => Types::BLOB, 'record_key' => Types::BINARY]);
-        } else {
-            $this->save('encryption-key', ['id' => $id]);
-        }
     }
 
     public function checkpoint(string $key, array $payload): void

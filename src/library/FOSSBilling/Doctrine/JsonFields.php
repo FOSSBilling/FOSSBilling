@@ -38,4 +38,43 @@ final class JsonFields
         'transaction' => ['entity' => \Box\Mod\Invoice\Entity\Transaction::class, 'columns' => ['ipn' => 'ipn']],
         'session' => ['entity' => \Box\Mod\System\Entity\Session::class, 'columns' => ['fingerprint' => 'fingerprint']],
     ];
+
+    /** @return \Generator<int, array{id: int|string, value: ?string, type: ?string, id_type: \Doctrine\DBAL\ParameterType}> */
+    public static function rows(\Doctrine\DBAL\Connection $connection, string $table, string $column, int $batchSize = 500, int|string|null $after = null, \Doctrine\DBAL\ParameterType $afterType = \Doctrine\DBAL\ParameterType::STRING): \Generator
+    {
+        $schema = $connection->createSchemaManager()->introspectTableByUnquotedName($table);
+        $platform = $connection->getDatabasePlatform();
+        $sqlite = $platform instanceof \Doctrine\DBAL\Platforms\SQLitePlatform;
+        $binary = $platform instanceof \Doctrine\DBAL\Platforms\PostgreSQLPlatform
+            && in_array($schema->getColumn('id')->getTypeName(), [\Doctrine\DBAL\Types\Types::BINARY, \Doctrine\DBAL\Types\Types::BLOB], true);
+        $type = $table === 'form_field' && $column === 'default_value' && $schema->hasColumn('type');
+        $cursor = $after;
+        $cursorType = $afterType;
+        do {
+            $rows = $connection->fetchAllAssociative('SELECT id, ' . $connection->quoteSingleIdentifier($column) . ' AS value' . ($type ? ', type' : '') . ($sqlite ? ', typeof(id) AS id_storage' : '') . ' FROM ' . $connection->quoteSingleIdentifier($table)
+                . ($cursor === null ? '' : ' WHERE id > :cursor') . ' ORDER BY id LIMIT ' . $batchSize, $cursor === null ? [] : ['cursor' => $cursor], $cursor === null ? [] : ['cursor' => $cursorType]);
+            foreach ($rows as $row) {
+                $cursor = is_resource($row['id']) ? stream_get_contents($row['id']) : $row['id'];
+                $cursorType = ($sqlite ? $row['id_storage'] === 'blob' : $binary) ? \Doctrine\DBAL\ParameterType::BINARY : \Doctrine\DBAL\ParameterType::STRING;
+                $value = is_resource($row['value']) ? stream_get_contents($row['value']) : $row['value'];
+                yield ['id' => $cursor, 'value' => $value, 'type' => $row['type'] ?? null, 'id_type' => $cursorType];
+            }
+        } while (count($rows) === $batchSize);
+    }
+
+    public static function prepareValue(array $row, bool $legacyDefault): ?string
+    {
+        if (!$legacyDefault || $row['value'] === null) {
+            return $row['value'];
+        }
+        // Only checkbox defaults were collections. JSON-looking text must remain text.
+        $decoded = $row['type'] === 'checkbox' ? json_decode($row['value'], true) : null;
+
+        return json_encode(is_array($decoded) ? $decoded : $row['value'], JSON_THROW_ON_ERROR);
+    }
+
+    public static function displayId(string $table, int|string $id): int|string
+    {
+        return $table === 'session' ? 'sha256:' . hash('sha256', (string) $id) : $id;
+    }
 }
