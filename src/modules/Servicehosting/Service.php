@@ -309,6 +309,8 @@ class Service implements InjectionAwareInterface
         $step = $model->getProvisioningStep();
         $username = $model->getUsername();
 
+        $adapter = null;
+        $account = null;
         if ($step !== null) {
             if (empty($username)) {
                 throw new Exception('Cannot resume provisioning without an account username.');
@@ -331,12 +333,25 @@ class Service implements InjectionAwareInterface
             }
         }
 
+        // Sync failures must not undo provisioning or prevent importing an existing account.
+        try {
+            if ($adapter === null) {
+                [$adapter, $account] = $this->_getAM($model);
+            }
+
+            $this->applySync($model, $adapter, $account);
+        } catch (\Server_UnsupportedOperationException) {
+            // Synchronization is optional for server managers.
+        } catch (\Exception $e) {
+            $this->di['logger']->warning('Skipped post-activation sync of hosting account {model_id}: {error}', ['model_id' => $model->getId(), 'error' => $e->getMessage()]);
+        }
+
         // Save the service
         $this->di['em']->flush();
 
         // Return the username for post-activation flows without exposing the password.
         return [
-            'username' => $username,
+            'username' => $model->getUsername(),
         ];
     }
 
@@ -584,20 +599,30 @@ class Service implements InjectionAwareInterface
     public function sync(Order $order, ServiceHosting $model): bool
     {
         [$adapter, $account] = $this->_getAM($model);
-        $updated = $adapter->synchronizeAccount($account);
-
-        if ($account->getUsername() != $updated->getUsername()) {
-            $model->setUsername($updated->getUsername());
-        }
-
-        if ($account->getIp() != $updated->getIp()) {
-            $model->setIp($updated->getIp());
-        }
+        $this->applySync($model, $adapter, $account);
 
         $this->di['em']->flush();
         $this->di['logger']->info('Synchronizing hosting account {model_id} with server', ['model_id' => $model->getId()]);
 
         return true;
+    }
+
+    private function applySync(ServiceHosting $model, \Server_Manager $adapter, \Server_Account $account): void
+    {
+        $updated = $adapter->synchronizeAccount($account);
+
+        // Keep stored values when a manager returns an incomplete account.
+        if (!empty($updated->getUsername()) && $updated->getUsername() !== $model->getUsername()) {
+            $model->setUsername($updated->getUsername());
+        } elseif (empty($updated->getUsername()) && !empty($model->getUsername())) {
+            $this->di['logger']->warning('Server reported no username for hosting account {model_id}, keeping the stored one', ['model_id' => $model->getId()]);
+        }
+
+        if (!empty($updated->getIp()) && $updated->getIp() !== $model->getIp()) {
+            $model->setIp($updated->getIp());
+        } elseif (empty($updated->getIp()) && !empty($model->getIp())) {
+            $this->di['logger']->warning('Server reported no IP for hosting account {model_id}, keeping the stored one', ['model_id' => $model->getId()]);
+        }
     }
 
     private function _getDomainOrderId(ServiceHosting $model)

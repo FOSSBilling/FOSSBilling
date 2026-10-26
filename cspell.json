@@ -625,6 +625,7 @@
         "unemailml",
         "listpkgs",
         "listaccts",
+        "accountsummary",
         "searchtype",
         "searchmethod",
         "addpkg",
