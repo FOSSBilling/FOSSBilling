@@ -383,7 +383,6 @@ class Service implements InjectionAwareInterface
                     'query' => [
                         'ipAddress' => $ip,
                         'maxAgeInDays' => $maxAge,
-                        'verbose' => false,
                     ],
                 ]);
 

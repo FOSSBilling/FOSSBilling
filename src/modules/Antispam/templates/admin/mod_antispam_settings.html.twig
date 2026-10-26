@@ -177,7 +177,7 @@
                                         <div class="col-6">
                                             <label class="form-label" for="abuseipdb_threshold">{{ 'Block Threshold'|trans }}</label>
                                             <input class="form-control" type="number" id="abuseipdb_threshold" name="abuseipdb_threshold" value="{{ params.abuseipdb_threshold|default(75) }}" min="0" max="100" step="1">
-                                            <small class="form-text">{{ '0-100. Higher is stricter.'|trans }}</small>
+                                            <small class="form-text">{{ '0-100. Lower is stricter.'|trans }}</small>
                                         </div>
                                         <div class="col-6">
                                             <label class="form-label" for="abuseipdb_max_age">{{ 'Max Age (days)'|trans }}</label>
