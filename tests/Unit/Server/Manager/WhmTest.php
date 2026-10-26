@@ -309,3 +309,36 @@ test('WHM preserves the pending setup step when the transport fails', function (
             ->and($e->getMessage())->not->toContain('Connection lost');
     }
 })->with(['setupreseller', 'setacls']);
+
+test('WHM refuses to checkpoint an account that existed before provisioning', function (): void {
+    $client = new MockHttpClient(fn (): MockResponse => new MockResponse(json_encode([
+        'metadata' => ['result' => 1], 'data' => ['acct' => [['user' => 'example']]],
+    ])));
+    $manager = createWhmManager($client);
+
+    expect(fn () => $manager->prepareAccountCreation(createWhmAccount(new Server_Package(), true)))
+        ->toThrow(Server_Exception::class, 'The hosting account already exists');
+});
+
+test('WHM does not resume account creation from an unverified lookup', function (array $response): void {
+    $client = new MockHttpClient(function (string $method, string $url, array $options) use ($response): MockResponse {
+        expect(basename((string) parse_url($url, PHP_URL_PATH)))->toBe('listaccts');
+        parse_str((string) $options['body'], $params);
+        expect($params)->toMatchArray(['search' => 'example', 'searchtype' => 'user', 'searchmethod' => 'exact']);
+
+        return new MockResponse(json_encode($response));
+    });
+    $manager = createWhmManager($client);
+
+    expect(fn () => $manager->resumeAccountProvisioning(createWhmAccount(new Server_Package(), true), 'create'))
+        ->toThrow(Server_Exception::class);
+})->with([
+    'permission denied' => [['metadata' => ['result' => 0, 'reason' => 'Permission denied']]],
+    'missing result' => [['data' => ['acct' => []]]],
+    'missing account list' => [['metadata' => ['result' => 1]]],
+    'invalid account entry' => [['metadata' => ['result' => 1], 'data' => ['acct' => [null]]]],
+    'different username' => [['metadata' => ['result' => 1], 'data' => ['acct' => [['user' => 'other', 'domain' => 'example.com', 'owner' => 'admin', 'plan' => 'admin_FOSSBilling']]]]],
+    'different domain' => [['metadata' => ['result' => 1], 'data' => ['acct' => [['user' => 'example', 'domain' => 'other.com', 'owner' => 'admin', 'plan' => 'admin_FOSSBilling']]]]],
+    'different owner' => [['metadata' => ['result' => 1], 'data' => ['acct' => [['user' => 'example', 'domain' => 'example.com', 'owner' => 'other', 'plan' => 'admin_FOSSBilling']]]]],
+    'different plan' => [['metadata' => ['result' => 1], 'data' => ['acct' => [['user' => 'example', 'domain' => 'example.com', 'owner' => 'admin', 'plan' => 'other']]]]],
+]);

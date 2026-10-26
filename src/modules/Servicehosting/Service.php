@@ -314,6 +314,9 @@ class Service implements InjectionAwareInterface
                 throw new Exception('Cannot resume provisioning without an account username.');
             }
             [$adapter, $account] = $this->_getAM($model);
+            if ($step === 'create') {
+                $account->setPassword(!empty($config['password']) ? $config['password'] : $this->di['tools']->generatePassword($serverManager->getPasswordLength(), true));
+            }
             $this->provisionAccount($model, $adapter, $account);
         } elseif (empty($username)) {
             $username = !empty($config['username']) ? $config['username'] : $serverManager->generateUsername($model->getSld() . $model->getTld());
@@ -427,9 +430,16 @@ class Service implements InjectionAwareInterface
 
     private function provisionAccount(ServiceHosting $model, \Server_Manager $adapter, \Server_Account $account): void
     {
+        $step = $model->getProvisioningStep();
+        if ($step === null && $adapter->prepareAccountCreation($account)) {
+            $model->setUsername($account->getUsername());
+            $model->setProvisioningStep('create');
+            $this->di['em']->flush();
+        }
+
         try {
-            if ($model->getProvisioningStep() !== null) {
-                $adapter->resumeAccountProvisioning($account, $model->getProvisioningStep());
+            if ($step !== null) {
+                $adapter->resumeAccountProvisioning($account, $step);
             } elseif ($adapter->createAccount($account) === false) {
                 throw new Exception('The server manager did not create the hosting account.');
             }

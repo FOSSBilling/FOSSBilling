@@ -209,6 +209,7 @@ test('action activate creates the account when it has not been provisioned yet',
     $serverManagerMock->shouldReceive('generateUsername')->atLeast()->once()->with('example.com')->andReturn('example');
 
     $adapterMock = Mockery::mock('\Server_Manager_Custom');
+    $adapterMock->shouldReceive('prepareAccountCreation')->once()->passthru();
     $adapterMock->shouldReceive('createAccount')->once()->andReturnTrue();
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
@@ -1886,19 +1887,30 @@ test('hosting provisioning retries failed steps without saving passwords', funct
         $snapshot = clone $model;
     });
 
+    $timedOut = $failedStep === 'createacct timeout';
+    $remoteAccount = null;
     $actions = [];
     $failuresRemaining = 2;
-    $client = new Symfony\Component\HttpClient\MockHttpClient(function (string $method, string $url, array $options) use (&$actions, &$failuresRemaining, &$model, $failedStep, $configuredPassword): Symfony\Component\HttpClient\Response\MockResponse {
+    $client = new Symfony\Component\HttpClient\MockHttpClient(function (string $method, string $url, array $options) use (&$actions, &$failuresRemaining, &$model, &$remoteAccount, $failedStep, $configuredPassword, $timedOut): Symfony\Component\HttpClient\Response\MockResponse {
         $action = basename((string) parse_url($url, PHP_URL_PATH));
         $actions[] = $action;
         // Even a flush inside the adapter must not save a transient password.
         expect($model->getPass())->toBe('********');
-        if ($action === 'listpkgs') {
+        if ($action === 'listaccts') {
+            $response = ['metadata' => ['result' => 1], 'data' => ['acct' => $remoteAccount ? [$remoteAccount] : []]];
+        } elseif ($action === 'listpkgs') {
             $response = ['package' => []];
         } elseif ($action === $failedStep && $failuresRemaining-- > 0) {
             $response = ['status' => 0, 'statusmsg' => 'Permission denied'];
         } elseif ($action === 'createacct') {
             parse_str((string) $options['body'], $fields);
+            expect($fields['username'])->toBe('example');
+            if ($timedOut) {
+                expect($remoteAccount)->toBeNull('createacct must not repeat after a lost success response');
+                $remoteAccount = ['user' => 'example', 'domain' => 'example.com', 'owner' => 'admin', 'plan' => 'admin_FOSSBilling'];
+
+                throw new Symfony\Component\HttpClient\Exception\TransportException('Response timed out');
+            }
             expect($fields['password'])->toBe($configuredPassword ? 'configured-secret' : 'generated-secret');
             $response = ['result' => [['status' => 1]]];
         } else {
@@ -1908,6 +1920,8 @@ test('hosting provisioning retries failed steps without saving passwords', funct
         return new Symfony\Component\HttpClient\Response\MockResponse(json_encode($response));
     });
     $manager = new class(['host' => 'whm.example.com', 'username' => 'admin', 'password' => 'secret'], $client) extends Server_Manager_Whm {
+        public int $usernameGenerations = 0;
+
         public function __construct(array $options, private readonly Symfony\Contracts\HttpClient\HttpClientInterface $client)
         {
             parent::__construct($options);
@@ -1920,6 +1934,8 @@ test('hosting provisioning retries failed steps without saving passwords', funct
 
         public function generateUsername(string $domain): string
         {
+            ++$this->usernameGenerations;
+
             return 'example';
         }
     };
@@ -1927,7 +1943,7 @@ test('hosting provisioning retries failed steps without saving passwords', funct
     $di = container();
     $di['em'] = $em;
     $tools = Mockery::mock(FOSSBilling\Tools::class);
-    $tools->shouldReceive('generatePassword')->times($configuredPassword ? 0 : ($failedStep === 'createacct' ? 3 : 1))->andReturn('generated-secret');
+    $tools->shouldReceive('generatePassword')->times($configuredPassword ? 0 : ($failedStep === 'createacct' ? 3 : ($timedOut ? 2 : 1)))->andReturn('generated-secret');
     $di['tools'] = $tools;
     $orderService = Mockery::mock(OrderService::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $orderService->shouldReceive('getOrderService')->andReturnUsing(function () use (&$model): ServiceHosting {
@@ -1942,7 +1958,7 @@ test('hosting provisioning retries failed steps without saving passwords', funct
     $serverRepo = Mockery::mock(ServiceHostingServerRepository::class);
     $serverRepo->shouldReceive('find')->andReturn(new ServiceHostingServer());
     $em->shouldReceive('getRepository')->with(ServiceHostingServer::class)->andReturn($serverRepo);
-    $hosting->shouldReceive('_getAM')->times(3)->andReturnUsing(function () use (&$model, $manager): array {
+    $hosting->shouldReceive('_getAM')->times($timedOut ? 2 : 3)->andReturnUsing(function () use (&$model, $manager): array {
         $account = (new Server_Account())
             ->setUsername($model->getUsername())->setPassword($model->getPass())
             ->setDomain('example.com')->setReseller(true)
@@ -1967,11 +1983,11 @@ test('hosting provisioning retries failed steps without saving passwords', funct
 
     $provision = fn () => $uncancel ? $orderService->uncancelFromOrder($order) : $orderService->createFromOrder($order);
 
-    for ($attempt = 0; $attempt < 2; ++$attempt) {
-        expect($provision)->toThrow($failedStep === 'createacct' ? Server_Exception::class : Server_PartialProvisioningException::class);
+    for ($attempt = 0; $attempt < ($timedOut ? 1 : 2); ++$attempt) {
+        expect($provision)->toThrow($timedOut ? Symfony\Component\HttpClient\Exception\TransportException::class : ($failedStep === 'createacct' ? Server_Exception::class : Server_PartialProvisioningException::class));
         expect($order->getStatus())->toBe($uncancel ? Order::STATUS_CANCELED : Order::STATUS_FAILED_SETUP)
-            ->and($snapshot->getUsername())->toBe($failedStep === 'createacct' ? null : 'example')
-            ->and($snapshot->getProvisioningStep())->toBe($failedStep === 'createacct' ? null : $failedStep);
+            ->and($snapshot->getUsername())->toBe('example')
+            ->and($snapshot->getProvisioningStep())->toBe($failedStep === 'createacct' || $timedOut ? 'create' : $failedStep);
         $model = clone $snapshot;
     }
 
@@ -1985,7 +2001,8 @@ test('hosting provisioning retries failed steps without saving passwords', funct
 
     $model = clone $snapshot;
     $hosting->action_activate($order);
-    expect(array_count_values($actions))->toBe($calls);
+    expect(array_count_values($actions))->toBe($calls)
+        ->and($manager->usernameGenerations)->toBe($uncancel ? 0 : 1);
 })->with([
     'account creation, configured password' => ['createacct', true, false],
     'account creation, generated password' => ['createacct', false, false],
@@ -1995,12 +2012,16 @@ test('hosting provisioning retries failed steps without saving passwords', funct
     'ACL assignment, generated password' => ['setacls', false, false],
     'uncancel reseller setup' => ['setupreseller', false, true],
     'uncancel ACL assignment' => ['setacls', false, true],
+    'lost creation response, configured password' => ['createacct timeout', true, false],
+    'lost creation response, generated password' => ['createacct timeout', false, false],
+    'uncancel lost creation response' => ['createacct timeout', false, true],
 ]);
 
 test('uncancel does not save credentials when account creation fails', function (): void {
     $order = createEntity(Order::class);
     $model = (new ServiceHosting())->setServiceHostingServer(new ServiceHostingServer());
     $adapter = Mockery::mock(Server_Manager_Custom::class);
+    $adapter->shouldReceive('prepareAccountCreation')->once()->passthru();
     $adapter->shouldReceive('getPasswordLength')->andReturn(12);
     $adapter->shouldReceive('createAccount')->once()->andReturnUsing(function (Server_Account $account) use ($model): never {
         expect($account->getPassword())->not->toBe('********')

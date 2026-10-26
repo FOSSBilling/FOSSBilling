@@ -283,8 +283,61 @@ class Server_Manager_Whm extends Server_Manager
         return $result;
     }
 
+    public function prepareAccountCreation(Server_Account $account): bool
+    {
+        if ($this->findProvisioningAccount($account) !== null) {
+            throw new Server_Exception('The hosting account already exists. Check the server before activating this order.');
+        }
+
+        return true;
+    }
+
+    private function findProvisioningAccount(Server_Account $account): ?object
+    {
+        $response = $this->request('listaccts', [
+            'api.version' => 1,
+            'search' => $account->getUsername(),
+            'searchtype' => 'user',
+            'searchmethod' => 'exact',
+        ]);
+        if (($response->metadata->result ?? null) != 1 || !isset($response->data->acct) || !is_array($response->data->acct) || count($response->data->acct) > 1) {
+            throw new Server_Exception('Could not verify the hosting account on the WHM server.');
+        }
+
+        if ($response->data->acct === []) {
+            return null;
+        }
+        $existing = $response->data->acct[0] ?? null;
+        if (!is_object($existing)) {
+            throw new Server_Exception('Could not verify the hosting account on the WHM server.');
+        }
+
+        return $existing;
+    }
+
     public function resumeAccountProvisioning(Server_Account $account, string $step): void
     {
+        if ($step === 'create') {
+            $existing = $this->findProvisioningAccount($account);
+            if ($existing === null) {
+                if (!$this->createAccount($account)) {
+                    throw new Server_Exception('The server manager did not create the hosting account.');
+                }
+
+                return;
+            }
+            if (($existing->user ?? null) !== $account->getUsername()
+                || ($existing->domain ?? null) !== $account->getDomain()
+                || ($existing->owner ?? null) !== $this->_config['username']
+                || ($existing->plan ?? null) !== $this->getPackageName($account->getPackage())) {
+                throw new Server_Exception('The existing WHM account does not match this order. Check the server before retrying.');
+            }
+            if (!$account->getReseller()) {
+                return;
+            }
+            $step = 'setupreseller';
+        }
+
         if (!in_array($step, ['setupreseller', 'setacls'], true) || !$account->getReseller()) {
             throw new Server_Exception('Invalid WHM provisioning step.');
         }

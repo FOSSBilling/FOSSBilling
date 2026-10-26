@@ -217,6 +217,15 @@ abstract class Server_Manager
     abstract public function createAccount(Server_Account $account);
 
     /**
+     * Checks a new account before saving a creation checkpoint.
+     * Returns true when the manager can reconcile an interrupted creation request.
+     */
+    public function prepareAccountCreation(Server_Account $account): bool
+    {
+        return false;
+    }
+
+    /**
      * Resumes setup after an account was created but provisioning did not finish.
      * Managers supporting partial provisioning must override this method.
      */
