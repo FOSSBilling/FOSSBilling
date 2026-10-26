@@ -417,11 +417,9 @@ test('abuseipdb check sends the api key and query parameters', function (): void
             $response->shouldReceive('toArray')->with(false)->andReturn(['data' => ['abuseConfidenceScore' => 0]]);
             $httpClient->shouldReceive('request')
                 ->once()
-                ->with('GET', 'https://api.abuseipdb.com/api/v2/check', Mockery::on(function (array $options): bool {
-                    return ($options['headers']['Key'] ?? null) === 'test-key'
-                        && ($options['query']['ipAddress'] ?? null) === '8.8.8.8'
-                        && ($options['query']['maxAgeInDays'] ?? null) === 30;
-                }))
+                ->with('GET', 'https://api.abuseipdb.com/api/v2/check', Mockery::on(fn (array $options): bool => ($options['headers']['Key'] ?? null) === 'test-key'
+                    && ($options['query']['ipAddress'] ?? null) === '8.8.8.8'
+                    && ($options['query']['maxAgeInDays'] ?? null) === 30))
                 ->andReturn($response);
         }
     );
