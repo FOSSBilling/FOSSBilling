@@ -147,6 +147,11 @@ class Service implements InjectionAwareInterface
             $antispamService = $di['mod_service']('Antispam');
             $antispamService->isInStopForumSpamDatabase($data);
         }
+
+        if (isset($config['abuseipdb_enabled']) && $config['abuseipdb_enabled']) {
+            $antispamService = $di['mod_service']('Antispam');
+            $antispamService->isInAbuseIPDBDatabase((string) ($data['ip'] ?? ''));
+        }
     }
 
     public function checkCaptcha(array $params): void
@@ -314,6 +319,97 @@ class Service implements InjectionAwareInterface
         }
 
         return true;
+    }
+
+    /**
+     * Checks an IP address against the AbuseIPDB database.
+     *
+     * Throws when the reported abuse confidence score meets the configured
+     * threshold. Missing configuration, private/reserved IPs, and API
+     * failures fail open (return false) so signups are never blocked by
+     * an unavailable reputation service.
+     */
+    public function isInAbuseIPDBDatabase(string $ip): bool
+    {
+        $config = $this->di['mod_config']('Antispam');
+
+        if (empty($config['abuseipdb_enabled'])) {
+            return false;
+        }
+
+        $apiKey = trim((string) ($config['abuseipdb_api_key'] ?? ''));
+        if ($apiKey === '') {
+            return false;
+        }
+
+        $ip = trim($ip);
+        if ($ip === '' || filter_var($ip, FILTER_VALIDATE_IP) === false) {
+            return false;
+        }
+
+        // Skip private and reserved ranges (local dev, CI, internal networks).
+        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
+            return false;
+        }
+
+        $threshold = min(100, max(0, (int) ($config['abuseipdb_threshold'] ?? 75)));
+        $maxAge = min(365, max(1, (int) ($config['abuseipdb_max_age'] ?? 30)));
+
+        $score = $this->getAbuseIPDBScore($ip, $apiKey, $maxAge);
+        if ($score === null) {
+            return false;
+        }
+
+        if ($score >= $threshold) {
+            throw new \FOSSBilling\InformationException('Your IP address is blacklisted in the AbuseIPDB database');
+        }
+
+        return true;
+    }
+
+    private function getAbuseIPDBScore(string $ip, string $apiKey, int $maxAge): ?int
+    {
+        $cacheKey = 'abuseipdb_' . hash('xxh3', $ip . '_' . $maxAge);
+
+        return $this->di['cache']->get($cacheKey, function (ItemInterface $item) use ($ip, $apiKey, $maxAge) {
+            $item->expiresAfter(86400); // Scores are cached for 24 hours to stay within the free API quota.
+
+            try {
+                $response = $this->di['http_client']->request('GET', 'https://api.abuseipdb.com/api/v2/check', [
+                    'headers' => [
+                        'Key' => $apiKey,
+                        'Accept' => 'application/json',
+                    ],
+                    'query' => [
+                        'ipAddress' => $ip,
+                        'maxAgeInDays' => $maxAge,
+                        'verbose' => false,
+                    ],
+                ]);
+
+                if ($response->getStatusCode() !== 200) {
+                    $item->expiresAfter(3600);
+                    $this->di['logger']->warning('AbuseIPDB check failed for IP :ip with status :status', [':ip' => $ip, ':status' => $response->getStatusCode()]);
+
+                    return null;
+                }
+
+                $content = $response->toArray(false);
+                $score = $content['data']['abuseConfidenceScore'] ?? null;
+                if (!is_numeric($score)) {
+                    $item->expiresAfter(3600);
+
+                    return null;
+                }
+
+                return min(100, max(0, (int) $score));
+            } catch (\Throwable $e) {
+                $item->expiresAfter(3600);
+                $this->di['logger']->warning('AbuseIPDB check failed for IP :ip: :error', [':ip' => $ip, ':error' => $e->getMessage()]);
+
+                return null;
+            }
+        });
     }
 
     /**

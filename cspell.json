@@ -306,6 +306,8 @@
         "multisite",
         "mcrypt",
         "stopforumspam",
+        "abuseipdb",
+        "AbuseIPDB",
         "yopmail",
         "Internetbs",
         "binded",
