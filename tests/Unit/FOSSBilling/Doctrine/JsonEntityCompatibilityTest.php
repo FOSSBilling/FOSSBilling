@@ -12,9 +12,7 @@ foreach (JsonFields::FIELDS as $definition) {
 }
 
 test('migrated JSON entity accessors preserve legacy strings and support structured updates', function (string $class, string $field): void {
-    if (!method_exists($class, 'get' . $field . 'Data')) {
-        $this->markTestSkipped('This module is not yet migrated.');
-    }
+    expect(method_exists($class, 'get' . $field . 'Data'))->toBeTrue();
     $entity = (new ReflectionClass($class))->newInstanceWithoutConstructor();
     $get = 'get' . $field;
     $set = 'set' . $field;
@@ -37,3 +35,19 @@ test('migrated JSON entity accessors preserve legacy strings and support structu
     $entity->$setData([]);
     expect($entity->$get())->toBe('[]');
 })->with($fields);
+
+test('the complete migration inventory uses the JSON document type and leaves encrypted fields alone', function (): void {
+    $em = FOSSBilling\Doctrine\EntityManagerFactory::create(Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]));
+    $count = 0;
+    foreach (JsonFields::FIELDS as $definition) {
+        $metadata = $em->getClassMetadata($definition['entity']);
+        foreach ($definition['columns'] as $property) {
+            expect($metadata->getTypeOfField($property))->toBe(FOSSBilling\Doctrine\Type\JsonDocumentType::NAME);
+            ++$count;
+        }
+    }
+    expect($count)->toBe(24)
+        ->and($em->getClassMetadata(Box\Mod\Email\Entity\EmailTemplate::class)->getTypeOfField('vars'))->toBe(Doctrine\DBAL\Types\Types::TEXT)
+        ->and($em->getClassMetadata(Box\Mod\Staff\Entity\AdminGroup::class)->getTypeOfField('permissions'))->toBe(Doctrine\DBAL\Types\Types::JSON)
+        ->and($em->getClassMetadata(Box\Mod\Invoice\Entity\InvoiceEvent::class)->getTypeOfField('snapshot'))->toBe(Doctrine\DBAL\Types\Types::JSON);
+});

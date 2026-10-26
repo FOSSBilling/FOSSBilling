@@ -1,6 +1,13 @@
 <?php
 
 declare(strict_types=1);
+/**
+ * Copyright 2022-2026 FOSSBilling
+ * SPDX-License-Identifier: Apache-2.0.
+ *
+ * @copyright FOSSBilling (https://www.fossbilling.org)
+ * @license http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
+ */
 
 namespace FOSSBilling\Doctrine;
 
@@ -23,16 +30,19 @@ final class JsonAudit
             if (($onlyTable !== null && $table !== $onlyTable) || !$schema->tablesExist([$table])) {
                 continue;
             }
-            $existing = $schema->listTableColumns($table);
+            $existing = array_fill_keys(array_map(
+                static fn (\Doctrine\DBAL\Schema\Column $column): string => $column->getObjectName()->getIdentifier()->getValue(),
+                $schema->introspectTableColumnsByUnquotedName($table),
+            ), true);
             $columns = array_keys(array_intersect_key($definition['columns'], $existing));
             if ($columns === []) {
                 continue;
             }
-            $selection = implode(', ', array_map($connection->quoteIdentifier(...), ['id', ...$columns]));
+            $selection = implode(', ', array_map($connection->quoteSingleIdentifier(...), ['id', ...$columns]));
             $cursor = null;
             do {
                 $rows = $connection->fetchAllAssociative(
-                    'SELECT ' . $selection . ' FROM ' . $connection->quoteIdentifier($table)
+                    'SELECT ' . $selection . ' FROM ' . $connection->quoteSingleIdentifier($table)
                     . ($cursor === null ? '' : ' WHERE id > :cursor') . ' ORDER BY id ASC LIMIT ' . $batchSize,
                     $cursor === null ? [] : ['cursor' => $cursor],
                 );
