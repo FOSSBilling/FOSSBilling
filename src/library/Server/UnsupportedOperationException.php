@@ -8,6 +8,6 @@ declare(strict_types=1);
  * @copyright FOSSBilling (https://www.fossbilling.org)
  * @license   http://www.apache.org/licenses/LICENSE-2.0 Apache-2.0
  */
-class Server_Exception_UnsupportedOperation extends Server_Exception
+class Server_UnsupportedOperationException extends Server_Exception
 {
 }

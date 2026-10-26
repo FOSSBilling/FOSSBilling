@@ -426,11 +426,11 @@ class Server_Manager_Directadmin extends Server_Manager
      *
      * @param Server_Account $account the server account
      *
-     * @throws Server_Exception_UnsupportedOperation
+     * @throws Server_UnsupportedOperationException
      */
     public function synchronizeAccount(Server_Account $account): Server_Account
     {
-        throw new Server_Exception_UnsupportedOperation(':type: does not support :action:', [':type:' => 'DirectAdmin', ':action:' => __trans('synchronizing the account')]);
+        throw new Server_UnsupportedOperationException(':type: does not support :action:', [':type:' => 'DirectAdmin', ':action:' => __trans('synchronizing the account')]);
     }
 
     /**

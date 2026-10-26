@@ -335,8 +335,7 @@ class Service implements InjectionAwareInterface
         $model->setUsername($username);
         $model->setPass($pass);
 
-        // If the order's configuration does not specify that the service should be imported, create an account for the service on the server.
-        // Kept out of the block below so a server that refuses to create the account still fails the activation.
+        // Account creation failures must fail activation.
         $adapter = null;
         $account = null;
         if (!$alreadyProvisioned && (!isset($config['import']) || !$config['import'])) {
@@ -347,15 +346,14 @@ class Service implements InjectionAwareInterface
         // Update the service's password to a placeholder value for security reasons
         $model->setPass(self::PASSWORD_PLACEHOLDER);
 
-        // Pull the username and IP the server assigned, or for an import, already has.
-        // Best effort: an unreachable server or a manager that cannot synchronize must not undo the activation.
+        // Sync failures must not undo provisioning or prevent importing an existing account.
         try {
             if ($adapter === null) {
                 [$adapter, $account] = $this->_getAM($model);
             }
 
             $this->applySync($model, $adapter, $account);
-        } catch (\Server_Exception_UnsupportedOperation) {
+        } catch (\Server_UnsupportedOperationException) {
             // Synchronization is optional for server managers.
         } catch (\Exception $e) {
             $this->di['logger']->warning('Skipped post-activation sync of hosting account {model_id}: {error}', ['model_id' => $model->getId(), 'error' => $e->getMessage()]);
@@ -594,7 +592,7 @@ class Service implements InjectionAwareInterface
     {
         $updated = $adapter->synchronizeAccount($account);
 
-        // Runs on every activation now, so an incomplete response must not wipe a stored value.
+        // Keep stored values when a manager returns an incomplete account.
         if (!empty($updated->getUsername()) && $updated->getUsername() !== $model->getUsername()) {
             $model->setUsername($updated->getUsername());
         } elseif (empty($updated->getUsername()) && !empty($model->getUsername())) {
