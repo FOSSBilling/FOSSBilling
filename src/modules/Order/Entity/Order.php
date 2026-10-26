@@ -122,8 +122,8 @@ class Order implements TimestampInterface
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $notes = null;
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
-    private ?string $config = null;
+    #[ORM\Column(type: \FOSSBilling\Doctrine\Type\JsonDocumentType::NAME, nullable: true)]
+    private ?\FOSSBilling\Doctrine\JsonDocument $config = null;
 
     #[ORM\Column(name: 'suspension_grace_days', type: Types::INTEGER, nullable: true)]
     private ?int $suspensionGraceDays = null;
@@ -417,12 +417,12 @@ class Order implements TimestampInterface
 
     public function getConfig(): ?string
     {
-        return $this->config;
+        return $this->config?->json();
     }
 
     public function setConfig(?string $config): self
     {
-        $this->config = $config;
+        $this->config = $config === null ? null : \FOSSBilling\Doctrine\JsonDocument::fromJson($config);
 
         return $this;
     }
@@ -507,6 +507,20 @@ class Order implements TimestampInterface
     public function setCanceledAt(?\DateTime $canceledAt): self
     {
         $this->canceledAt = $canceledAt;
+
+        return $this;
+    }
+
+    /** @return array<mixed>|null */
+    public function getConfigData(): ?array
+    {
+        return $this->config?->arrayData();
+    }
+
+    /** @param array<mixed>|\stdClass|null $data */
+    public function setConfigData(array|\stdClass|null $data): self
+    {
+        $this->config = $data === null ? null : \FOSSBilling\Doctrine\JsonDocument::fromData($data);
 
         return $this;
     }
