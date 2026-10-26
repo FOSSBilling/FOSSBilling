@@ -701,30 +701,17 @@ test('markTransactionError does not clobber an already processed transaction', f
     expect($transactionModel->getStatus())->toBe(Transaction::STATUS_PROCESSED);
 });
 
-test('decodes missing and corrupt IPN payloads to an empty array', function (): void {
+test('IPN payloads use arrays and reject serialized or corrupt strings at the entity boundary', function (): void {
     $service = transactionService();
-    $logger = new Tests\Helpers\TestLogger();
-    $service->getDi()['logger'] = $logger;
-
-    $missing = createEntity(Transaction::class, ['id' => 1]);
-    expect($service->getDecodedIpn($missing))->toBe([]);
-
-    $empty = createEntity(Transaction::class, ['id' => 2]);
-    $empty->setIpn('');
-    expect($service->getDecodedIpn($empty))->toBe([]);
-
-    $corrupt = createEntity(Transaction::class, ['id' => 3]);
-    $corrupt->setIpn('{not-json');
-    expect($service->getDecodedIpn($corrupt))->toBe([]);
-
-    $scalar = createEntity(Transaction::class, ['id' => 4]);
-    $scalar->setIpn('"just-a-string"');
-    expect($service->getDecodedIpn($scalar))->toBe([]);
-
-    $valid = createEntity(Transaction::class, ['id' => 5]);
-    $valid->setIpn(json_encode(['source' => 'ipn', 'get' => []]));
-    expect($service->getDecodedIpn($valid))->toBe(['source' => 'ipn', 'get' => []])
-        ->and($logger->calls)->toHaveCount(2);
+    $model = new Transaction();
+    expect($service->getIpnPayload($model))->toBe([]);
+    $model->setIpn([]);
+    expect($service->getIpnPayload($model))->toBe([]);
+    foreach (['', '{not-json', '"scalar"', '{"source":"ipn"}'] as $raw) {
+        expect(fn () => $model->setIpn($raw))->toThrow(TypeError::class);
+    }
+    $model->setIpn(['source' => 'ipn', 'get' => []]);
+    expect($service->getIpnPayload($model))->toBe(['source' => 'ipn', 'get' => []]);
 });
 
 test('processTransaction refuses offline gateways without resolving an adapter', function (): void {
@@ -980,17 +967,6 @@ test('processReceivedATransactions skips offline gateways', function (): void {
             'method' => 'info',
             'params' => ['Skipped processing transaction #{id}: manual approval required', ['id' => 1]],
         ]);
-});
-
-test('converts to api array with an invalid ipn payload', function (): void {
-    $service = transactionService();
-    $service->getDi()['logger'] = new Tests\Helpers\TestLogger();
-
-    $transactionModel = createEntity(Transaction::class, ['id' => 7]);
-    $transactionModel->setIpn('{not-json');
-
-    $result = $service->toApiArray($transactionModel, true);
-    expect($result['ipn'])->toBe([]);
 });
 
 test('exposes gateway capability flags in api arrays', function (): void {

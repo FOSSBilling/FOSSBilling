@@ -210,7 +210,7 @@ test('fingerprint update persists the current fingerprint', function (): void {
     $connection->shouldReceive('executeStatement')
         ->once()
         ->withArgs(fn (string $query, array $parameters, array $types): bool => $query === 'UPDATE session SET fingerprint = :fingerprint WHERE id = :id'
-            && $types === ['fingerprint' => FOSSBilling\Doctrine\Type\JsonDocumentType::NAME]
+            && $types === ['fingerprint' => Doctrine\DBAL\Types\Types::JSON]
             && $parameters['id'] === 'current-session'
             && is_array($parameters['fingerprint']))
         ->andReturn(1);
@@ -273,7 +273,7 @@ test('disabled fingerprinting skips validation and stores an empty fingerprint',
             ->with('UPDATE session SET fingerprint = :fingerprint WHERE id = :id', [
                 'fingerprint' => [],
                 'id' => 'fingerprinting-disabled',
-            ], ['fingerprint' => FOSSBilling\Doctrine\Type\JsonDocumentType::NAME])
+            ], ['fingerprint' => Doctrine\DBAL\Types\Types::JSON])
             ->andReturn(1);
 
         setSessionCookie('fingerprinting-disabled');

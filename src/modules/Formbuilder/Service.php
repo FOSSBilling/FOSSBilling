@@ -99,10 +99,10 @@ class Service implements InjectionAwareInterface
 
         $this->getDbal()->insert('form', [
             'name' => $data['name'],
-            'style' => (object) $style,
+            'style' => $style,
             'created_at' => date('Y-m-d H:i:s'),
             'updated_at' => date('Y-m-d H:i:s'),
-        ], ['style' => \FOSSBilling\Doctrine\Type\JsonDocumentType::NAME]);
+        ], ['style' => \Doctrine\DBAL\Types\Types::JSON]);
 
         $formId = (int) $this->getDbal()->lastInsertId();
         $this->di['logger']->info('Created new form {form_name} with id {form_id}', ['form_name' => $data['name'], 'form_id' => $formId]);
@@ -266,7 +266,7 @@ class Service implements InjectionAwareInterface
             throw new \FOSSBilling\InformationException('Form was not found');
         }
 
-        $result['style'] = \FOSSBilling\Doctrine\JsonDocument::fromJson($result['style'] ?? '')->arrayData();
+        $result['style'] = json_decode($result['style'] ?? 'null', true, 512, JSON_THROW_ON_ERROR);
         if (!is_array($result['style'])) {
             $result['style'] = ['type' => 'default', 'show_title' => '1'];
         }
@@ -412,9 +412,9 @@ class Service implements InjectionAwareInterface
 
         $this->getDbal()->update('form', [
             'name' => $data['form_name'],
-            'style' => (object) $style,
+            'style' => $style,
             'updated_at' => date('Y-m-d H:i:s'),
-        ], ['id' => $data['form_id']], ['style' => \FOSSBilling\Doctrine\Type\JsonDocumentType::NAME]);
+        ], ['id' => $data['form_id']], ['style' => \Doctrine\DBAL\Types\Types::JSON]);
 
         $this->di['logger']->info('Updated form {form_id} name to {form_name}', ['form_id' => $data['form_id'], 'form_name' => $data['form_name']]);
         $this->di['logger']->info('Updated form {form_id} type to {form_type}', ['form_id' => $data['form_id'], 'form_type' => $data['type']]);

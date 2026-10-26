@@ -167,7 +167,7 @@ class ServicePayGateway implements InjectionAwareInterface
         ];
 
         if ($identity instanceof \Box\Mod\Staff\Entity\Admin) {
-            $config = $model->getConfigData() ?? [];
+            $config = $model->getConfig() ?? [];
             $secretFields = $this->getSecretFields($model);
             foreach ($secretFields as $field) {
                 $value = $config[$field] ?? null;
@@ -247,7 +247,7 @@ class ServicePayGateway implements InjectionAwareInterface
     {
         $newEnabled = isset($data['enabled']) ? (bool) $data['enabled'] : $model->isEnabled();
         $newTestMode = isset($data['test_mode']) ? (bool) $data['test_mode'] : $model->isTestMode();
-        $existingConfig = $model->getConfigData() ?? [];
+        $existingConfig = $model->getConfig() ?? [];
         $mergedConfig = $existingConfig;
         if (isset($data['config']) && is_array($data['config'])) {
             $secretFields = $this->getSecretFields($model);
@@ -275,11 +275,11 @@ class ServicePayGateway implements InjectionAwareInterface
         $model->setCustomLogo($customLogo);
 
         if (isset($data['config']) && is_array($data['config'])) {
-            $model->setConfigData($mergedConfig);
+            $model->setConfig($mergedConfig);
         }
 
         if (isset($data['accepted_currencies']) && is_array($data['accepted_currencies'])) {
-            $model->setAcceptedCurrenciesData($data['accepted_currencies']);
+            $model->setAcceptedCurrencies($data['accepted_currencies']);
         }
 
         $model->setEnabled($newEnabled);
@@ -614,7 +614,7 @@ class ServicePayGateway implements InjectionAwareInterface
 
     public function getPaymentAdapter(PayGateway $pg, ?Invoice $model = null, $optional = []): object
     {
-        $config = $pg->getConfigData() ?? [];
+        $config = $pg->getConfig() ?? [];
         $defaults = [];
         $defaults['auto_redirect'] = false;
         $defaults['gateway_id'] = (int) $pg->getId();
@@ -707,7 +707,7 @@ class ServicePayGateway implements InjectionAwareInterface
     public function getAcceptedCurrencies(PayGateway $model): array
     {
         $accepted = $model->getAcceptedCurrencies();
-        if ($accepted === null || empty($accepted)) {
+        if ($accepted === null) {
             $currencyService = $this->di['mod_service']('currency');
             /** @var \Box\Mod\Currency\Repository\CurrencyRepository $currencyRepository */
             $currencyRepository = $currencyService->getCurrencyRepository();
@@ -715,9 +715,7 @@ class ServicePayGateway implements InjectionAwareInterface
             return array_keys($currencyRepository->getPairs());
         }
 
-        $decoded = json_decode($accepted, true);
-
-        return is_array($decoded) ? $decoded : [];
+        return $accepted;
     }
 
     public function getFormElements(PayGateway $model): array

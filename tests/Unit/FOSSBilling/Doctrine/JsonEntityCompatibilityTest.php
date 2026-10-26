@@ -11,38 +11,29 @@ foreach (JsonFields::FIELDS as $definition) {
     }
 }
 
-test('migrated JSON entity accessors preserve legacy strings and support structured updates', function (string $class, string $field): void {
-    expect(method_exists($class, 'get' . $field . 'Data'))->toBeTrue();
+test('all migrated fields expose nullable arrays without legacy string or Data adapters', function (string $class, string $field): void {
     $entity = (new ReflectionClass($class))->newInstanceWithoutConstructor();
     $get = 'get' . $field;
     $set = 'set' . $field;
-    $getData = $get . 'Data';
-    $setData = $set . 'Data';
-    foreach ([null, '', '{invalid', 'null', 'false', '42', '"legacy"', '{}', '[]', '{ "label": "🚀", "n": 1.0, "id": "001" }'] as $raw) {
-        $entity->$set($raw);
-        expect($entity->$get())->toBe($raw);
-        $entity->$getData();
-        expect($entity->$get())->toBe($raw);
+    expect(method_exists($class, $get . 'Data'))->toBeFalse();
+    foreach ([null, [], ['id' => '001', 'amount' => 1.0, 'enabled' => false, 'nested' => ['label' => '🚀']]] as $value) {
+        $entity->$set($value);
+        expect($entity->$get())->toBe($value);
     }
-    $entity->$setData(['id' => '001', 'enabled' => false, 'nested' => ['label' => '🚀']]);
-    expect($entity->$getData())->toBe(['id' => '001', 'enabled' => false, 'nested' => ['label' => '🚀']])
-        ->and(json_decode($entity->$get(), true, 512, JSON_THROW_ON_ERROR))->toBe($entity->$getData());
-    $data = $entity->$getData();
-    $data['nested']['label'] = 'changed';
-    expect($entity->$getData()['nested']['label'])->toBe('🚀');
-    $entity->$setData(new stdClass());
-    expect($entity->$get())->toBe('{}');
-    $entity->$setData([]);
-    expect($entity->$get())->toBe('[]');
+    $copy = $entity->$get();
+    $copy['nested']['label'] = 'changed';
+    expect($entity->$get()['nested']['label'])->toBe('🚀');
+    expect(fn () => $entity->$set('{"old":"string"}'))->toThrow(TypeError::class);
+    expect(fn () => $entity->$set(new stdClass()))->toThrow(TypeError::class);
 })->with($fields);
 
-test('the complete migration inventory uses the JSON document type and leaves encrypted fields alone', function (): void {
+test('the entire inventory uses standard JSON mappings and exclusions retain their intended types', function (): void {
     $em = FOSSBilling\Doctrine\EntityManagerFactory::create(Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]));
     $count = 0;
     foreach (JsonFields::FIELDS as $definition) {
         $metadata = $em->getClassMetadata($definition['entity']);
         foreach ($definition['columns'] as $property) {
-            expect($metadata->getTypeOfField($property))->toBe(FOSSBilling\Doctrine\Type\JsonDocumentType::NAME);
+            expect($metadata->getTypeOfField($property))->toBe(Doctrine\DBAL\Types\Types::JSON);
             ++$count;
         }
     }

@@ -42,8 +42,8 @@ class Session
     #[ORM\Column(type: Types::INTEGER)]
     private int $lifetime;
 
-    #[ORM\Column(type: \FOSSBilling\Doctrine\Type\JsonDocumentType::NAME, nullable: true)]
-    private ?\FOSSBilling\Doctrine\JsonDocument $fingerprint = null;
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $fingerprint = null;
 
     public function getId(): string
     {
@@ -105,28 +105,14 @@ class Session
         return $this;
     }
 
-    public function getFingerprint(): ?string
+    public function getFingerprint(): ?array
     {
-        return $this->fingerprint?->json();
+        return $this->fingerprint;
     }
 
-    public function setFingerprint(?string $fingerprint): self
+    public function setFingerprint(?array $fingerprint): self
     {
-        $this->fingerprint = $fingerprint === null ? null : \FOSSBilling\Doctrine\JsonDocument::fromJson($fingerprint);
-
-        return $this;
-    }
-
-    /** @return array<mixed>|null */
-    public function getFingerprintData(): ?array
-    {
-        return $this->fingerprint?->arrayData();
-    }
-
-    /** @param array<mixed>|\stdClass|null $data */
-    public function setFingerprintData(array|\stdClass|null $data): self
-    {
-        $this->fingerprint = $data === null ? null : \FOSSBilling\Doctrine\JsonDocument::fromData($data);
+        $this->fingerprint = $fingerprint;
 
         return $this;
     }

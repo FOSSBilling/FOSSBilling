@@ -178,7 +178,7 @@ class Service implements InjectionAwareInterface
 
     public function toApiArray(Product $model, $deep = true, $identity = null): array
     {
-        $config = $model->getConfigData() ?? [];
+        $config = $model->getConfig() ?? [];
         $pricing = $this->getProductPricingArray($model);
         $starting_from = $this->getStartingFromPrice($model);
         $isAdmin = $identity instanceof Admin;
@@ -303,7 +303,7 @@ class Service implements InjectionAwareInterface
 
     public function validateSelectedAddonsForProduct(Product $product, array $addons): void
     {
-        $validAddons = $product->getAddonsData();
+        $validAddons = $product->getAddons();
         if (empty($validAddons)) {
             $validAddons = [];
         }
@@ -491,9 +491,9 @@ class Service implements InjectionAwareInterface
         }
 
         if (isset($data['config']) && is_array($data['config'])) {
-            $current = $model->getConfigData() ?? [];
+            $current = $model->getConfig() ?? [];
             $c = array_merge($current, $data['config']);
-            $model->setConfigData($c);
+            $model->setConfig($c);
         }
 
         $form_id = $data['form_id'] ?? $model->getFormId();
@@ -515,7 +515,7 @@ class Service implements InjectionAwareInterface
             if (empty($upgrades)) {
                 $model->setUpgrades(null);
             } else {
-                $model->setUpgradesData($upgrades);
+                $model->setUpgrades($upgrades);
             }
         }
         if (is_array($data['addons'] ?? null)) {
@@ -523,7 +523,7 @@ class Service implements InjectionAwareInterface
             if (empty($addons)) {
                 $model->setAddons(null);
             } else {
-                $model->setAddonsData($addons);
+                $model->setAddons($addons);
             }
         }
 
@@ -562,7 +562,7 @@ class Service implements InjectionAwareInterface
     public function updateConfig(Product $model, $data): bool
     {
         /* add new config value */
-        $config = $model->getConfigData() ?? [];
+        $config = $model->getConfig() ?? [];
 
         if (isset($data['config']) && is_array($data['config'])) {
             $config = array_intersect_key($config, $data['config']);
@@ -583,7 +583,7 @@ class Service implements InjectionAwareInterface
             $config[$data['new_config_name']] = $data['new_config_value'];
         }
 
-        $model->setConfigData($config);
+        $model->setConfig($config);
         $model->setUpdatedAt(new \DateTime());
         $this->di['em']->flush();
 
@@ -859,7 +859,7 @@ class Service implements InjectionAwareInterface
      */
     public function getUpgradablePairs(Product $model): array
     {
-        $ids = $model->getUpgradesData();
+        $ids = $model->getUpgrades();
         $pids = $this->getProductTitlesByIds($ids);
         unset($pids[$model->getId()]);
 
@@ -1163,12 +1163,12 @@ class Service implements InjectionAwareInterface
 
     private function getPeriods(Promo $model): array
     {
-        return $this->decodePromoSelection($this->getPromoSourceArray($model)['periods'] ?? null);
+        return $this->getPromoSourceArray($model)['periods'] ?? [];
     }
 
     private function getProducts(Promo $model): array
     {
-        return $this->decodePromoSelection($this->getPromoSourceArray($model)['products'] ?? null);
+        return $this->getPromoSourceArray($model)['products'] ?? [];
     }
 
     /**
@@ -1190,7 +1190,7 @@ class Service implements InjectionAwareInterface
      */
     public function getProductAddons(Product $model, bool $includeUnavailable = false): array
     {
-        $ids = $this->normalizeProductIds($model->getAddonsData() ?? []);
+        $ids = $this->normalizeProductIds($model->getAddons() ?? []);
 
         if ($ids === []) {
             return [];
@@ -1257,7 +1257,7 @@ class Service implements InjectionAwareInterface
         $productId = $item->getProductId();
         $configValue = $item->getConfig();
         $product = $this->findProductById((int) $productId);
-        $config = json_decode($configValue ?? '', true) ?? [];
+        $config = $configValue ?? [];
         $line = $this->getProductOrderLineConfig($product, $config, $allowPriceOverride);
 
         return [
@@ -1297,7 +1297,7 @@ class Service implements InjectionAwareInterface
     {
         $productPayment = $this->requireProductPayment($model->getProductPayment());
         $pricing = $this->toProductPaymentApiArray($productPayment);
-        $config = $model->getConfigData() ?? [];
+        $config = $model->getConfig() ?? [];
 
         $result = [
             'id' => $model->getId(),
@@ -1434,7 +1434,7 @@ class Service implements InjectionAwareInterface
     public function isPromoAvailableForClientGroup(Promo $promo, ?Client $client = null): bool
     {
         $promoData = $this->getPromoSourceArray($promo);
-        $clientGroups = $this->decodePromoSelection($promoData['client_groups'] ?? null);
+        $clientGroups = ($promoData['client_groups'] ?? []);
 
         if (empty($clientGroups)) {
             return true;
@@ -2042,7 +2042,7 @@ class Service implements InjectionAwareInterface
             $discountAmount ??= max(0.0, (float) ($order->getDiscount() ?? 0) - $stackedDiscount);
         } else {
             $configValue = $order->getConfig();
-            $config = json_decode($configValue ?? '', true) ?? [];
+            $config = $configValue ?? [];
             $discountAmount = $this->getRenewalProductDiscount($product, $promo, $config);
 
             $currencyService = $this->di['mod_service']('Currency');
@@ -2082,7 +2082,7 @@ class Service implements InjectionAwareInterface
         $currency = $order->getCurrency() ?? '';
 
         if ($product->getType() === self::DOMAIN) {
-            $config = $order->getConfigData() ?? [];
+            $config = $order->getConfig() ?? [];
             $discountAmount = $this->getRenewalProductDiscount($product, $promo, $config);
 
             $currencyService = $this->di['mod_service']('Currency');
@@ -2117,19 +2117,19 @@ class Service implements InjectionAwareInterface
 
     public function enrichPromoApiArray(array $result, $deep = false, $identity = null): array
     {
-        $products = !empty($result['products']) ? $this->getProductTitlesByIds($this->decodePromoSelection($result['products'])) : null;
-        $requiredProducts = !empty($result['requires_products']) ? $this->getProductTitlesByIds($this->decodePromoSelection($result['requires_products'])) : null;
-        $clientGroups = !empty($result['client_groups']) ? $this->di['tools']->getPairsForTableByIds('client_group', $this->decodePromoSelection($result['client_groups'])) : null;
+        $products = !empty($result['products']) ? $this->getProductTitlesByIds($result['products']) : null;
+        $requiredProducts = !empty($result['requires_products']) ? $this->getProductTitlesByIds($result['requires_products']) : null;
+        $clientGroups = !empty($result['client_groups']) ? $this->di['tools']->getPairsForTableByIds('client_group', $result['client_groups']) : null;
         $usageStats = $deep ? $this->getPromoUsageStatsByValues((int) $result['id'], (int) ($result['used'] ?? 0), isset($result['maxuses']) ? (int) $result['maxuses'] : null) : null;
         $redemptionCount = $usageStats['recorded_applications'] ?? $this->getPromoRedemptionCountById((int) $result['id']);
 
         $result['applies_to'] = $products;
         $result['requires'] = $requiredProducts;
         $result['cgroups'] = $clientGroups;
-        $result['products'] = $this->decodePromoSelection($result['products'] ?? null);
-        $result['requires_products'] = $this->decodePromoSelection($result['requires_products'] ?? null);
-        $result['periods'] = $this->decodePromoSelection($result['periods'] ?? null);
-        $result['client_groups'] = $this->decodePromoSelection($result['client_groups'] ?? null);
+        $result['products'] ??= [];
+        $result['requires_products'] ??= [];
+        $result['periods'] ??= [];
+        $result['client_groups'] ??= [];
         $result['redemption_count'] = $redemptionCount;
         $result['can_be_deleted'] = !$this->hasPromoRedemptionHistoryById((int) $result['id'], $redemptionCount);
         if ($usageStats !== null) {
@@ -2632,7 +2632,7 @@ class Service implements InjectionAwareInterface
             'description' => $product->getDescription(),
             'unit' => $this->getProductUnit($product),
             'status' => $product->getStatus(),
-            'config' => $product->getConfigData() ?? [],
+            'config' => $product->getConfig() ?? [],
             'plugin' => $product->getPlugin(),
             'type' => $product->getType(),
         ];
@@ -2676,7 +2676,7 @@ class Service implements InjectionAwareInterface
      */
     public function getPromoRequiredProducts(Promo $promo): array
     {
-        return $this->normalizeProductIds($this->decodePromoSelection($this->getPromoSourceArray($promo)['requires_products'] ?? null));
+        return $this->normalizeProductIds($this->getPromoSourceArray($promo)['requires_products'] ?? []);
     }
 
     /**
@@ -3172,10 +3172,10 @@ class Service implements InjectionAwareInterface
             ->setAutoApply((bool) ($data['auto_apply'] ?? $promo->isAutoApply()))
             ->setPriority(isset($data['priority']) ? (int) $data['priority'] : $promo->getPriority())
             ->setStackable((bool) ($data['stackable'] ?? $promo->isStackable()))
-            ->setProductsData($this->normalizePromoSelection($data['products'] ?? ($promo->getProductsData() ?? [])))
-            ->setPeriodsData($this->normalizePromoSelection($data['periods'] ?? ($promo->getPeriodsData() ?? [])))
-            ->setClientGroupsData($this->normalizePromoSelection($data['client_groups'] ?? ($promo->getClientGroupsData() ?? [])))
-            ->setRequiresProductsData($this->normalizePromoSelection($this->normalizeProductIds((array) ($data['requires_products'] ?? ($promo->getRequiresProductsData() ?? [])))))
+            ->setProducts($this->normalizePromoSelection($data['products'] ?? ($promo->getProducts() ?? [])))
+            ->setPeriods($this->normalizePromoSelection($data['periods'] ?? ($promo->getPeriods() ?? [])))
+            ->setClientGroups($this->normalizePromoSelection($data['client_groups'] ?? ($promo->getClientGroups() ?? [])))
+            ->setRequiresProducts($this->normalizePromoSelection($this->normalizeProductIds((array) ($data['requires_products'] ?? ($promo->getRequiresProducts() ?? [])))))
             ->setStartAt($this->normalizePromoDateTimeObject($data['start_at'] ?? $promo->getStartAt()))
             ->setEndAt($this->normalizePromoDateTimeObject($data['end_at'] ?? $promo->getEndAt()));
     }
@@ -3192,14 +3192,6 @@ class Service implements InjectionAwareInterface
         $selection = array_values(array_filter($selection));
 
         return $selection === [] ? null : $selection;
-    }
-
-    /**
-     * @return array<mixed>
-     */
-    private function decodePromoSelection(?string $selection): array
-    {
-        return json_decode($selection ?? '', true) ?? [];
     }
 
     private function generateUniquePromoCode(?string $code): string

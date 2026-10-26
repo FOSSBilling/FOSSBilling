@@ -196,7 +196,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function getConfig(ServiceCustom $model): array
     {
-        return $model->getConfigData() ?? [];
+        return $model->getConfig() ?? [];
     }
 
     public function toApiArray(ServiceCustom $model): array
@@ -236,7 +236,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         $model = $this->getServiceCustomByOrderId($orderId);
-        $model->setConfigData($config);
+        $model->setConfig($config);
 
         $this->di['em']->flush();
 

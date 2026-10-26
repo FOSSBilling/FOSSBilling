@@ -26,8 +26,8 @@ class CartProduct
     #[ORM\Column(name: 'product_id', type: Types::BIGINT, nullable: true)]
     private ?int $productId = null;
 
-    #[ORM\Column(type: \FOSSBilling\Doctrine\Type\JsonDocumentType::NAME, nullable: true)]
-    private ?\FOSSBilling\Doctrine\JsonDocument $config = null;
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $config = null;
 
     public function getId(): ?int
     {
@@ -58,28 +58,14 @@ class CartProduct
         return $this;
     }
 
-    public function getConfig(): ?string
+    public function getConfig(): ?array
     {
-        return $this->config?->json();
+        return $this->config;
     }
 
-    public function setConfig(?string $config): self
+    public function setConfig(?array $config): self
     {
-        $this->config = $config === null ? null : \FOSSBilling\Doctrine\JsonDocument::fromJson($config);
-
-        return $this;
-    }
-
-    /** @return array<mixed>|null */
-    public function getConfigData(): ?array
-    {
-        return $this->config?->arrayData();
-    }
-
-    /** @param array<mixed>|\stdClass|null $data */
-    public function setConfigData(array|\stdClass|null $data): self
-    {
-        $this->config = $data === null ? null : \FOSSBilling\Doctrine\JsonDocument::fromData($data);
+        $this->config = $config;
 
         return $this;
     }

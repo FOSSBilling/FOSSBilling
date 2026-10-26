@@ -102,7 +102,7 @@ test('staff basket promo discounts use the overridden price', function (): void 
     $cartProduct = (new CartProduct())
         ->setCart($cart)
         ->setProductId(5)
-        ->setConfig(json_encode([ProductService::PRICE_OVERRIDE_KEY => 10]));
+        ->setConfig([ProductService::PRICE_OVERRIDE_KEY => 10]);
     $promo = createEntity(Promo::class);
     $promo->id = 7;
 
@@ -511,7 +511,7 @@ test('createOrdersFromCart allows disabled products for staff and strips the ove
 
     expect($createdOrders)->toHaveCount(1);
     expect((float) $createdOrders[0]->getPrice())->toBe(7.5);
-    expect(json_decode((string) $createdOrders[0]->getConfig(), true))->not->toHaveKey(ProductService::PRICE_OVERRIDE_KEY);
+    expect($createdOrders[0]->getConfig())->not->toHaveKey(ProductService::PRICE_OVERRIDE_KEY);
     expect($masterOrder)->toBe($createdOrders[0]);
     expect($invoiceModel)->toBeNull();
     expect($ids)->toBeArray()->toHaveCount(1);

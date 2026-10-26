@@ -237,7 +237,7 @@ test('action create', function (): void {
     $order = createEntity(Order::class, [
         'product_id' => 1,
         'client_id' => 1,
-        'config' => 'config',
+        'config' => ['setting' => 'value'],
     ]);
 
     $product = new Product();
@@ -270,7 +270,7 @@ test('action activate', function (): void {
     $service = new Service();
     $order = createEntity(Order::class, [
         'client_id' => 1,
-        'config' => 'config',
+        'config' => ['setting' => 'value'],
     ]);
 
     $serviceCustomModel = new ServiceCustom();
@@ -291,7 +291,7 @@ test('action activate order service not created exception', function (): void {
     $service = new Service();
     $order = createEntity(Order::class, [
         'client_id' => 1,
-        'config' => 'config',
+        'config' => ['setting' => 'value'],
     ]);
 
     $serviceMock = Mockery::mock(OrderService::class);
@@ -309,7 +309,7 @@ test('action renew', function (): void {
     $service = new Service();
     $order = createEntity(Order::class, [
         'client_id' => 1,
-        'config' => 'config',
+        'config' => ['setting' => 'value'],
     ]);
 
     $serviceCustomModel = new ServiceCustom();
@@ -335,7 +335,7 @@ test('active service not found exception', function (): void {
     $order = createEntity(Order::class, [
         'id' => 1,
         'client_id' => 1,
-        'config' => 'config',
+        'config' => ['setting' => 'value'],
     ]);
 
     $serviceMock = Mockery::mock(OrderService::class);
@@ -353,7 +353,7 @@ test('action suspend', function (): void {
     $service = new Service();
     $order = createEntity(Order::class, [
         'client_id' => 1,
-        'config' => 'config',
+        'config' => ['setting' => 'value'],
     ]);
 
     $serviceCustomModel = new ServiceCustom();
@@ -378,7 +378,7 @@ test('action unsuspend', function (): void {
     $service = new Service();
     $order = createEntity(Order::class, [
         'client_id' => 1,
-        'config' => 'config',
+        'config' => ['setting' => 'value'],
     ]);
 
     $serviceCustomModel = new ServiceCustom();
@@ -403,7 +403,7 @@ test('action cancel', function (): void {
     $service = new Service();
     $order = createEntity(Order::class, [
         'client_id' => 1,
-        'config' => 'config',
+        'config' => ['setting' => 'value'],
     ]);
 
     $serviceCustomModel = new ServiceCustom();
@@ -428,7 +428,7 @@ test('action uncancel', function (): void {
     $service = new Service();
     $order = createEntity(Order::class, [
         'client_id' => 1,
-        'config' => 'config',
+        'config' => ['setting' => 'value'],
     ]);
 
     $serviceCustomModel = new ServiceCustom();
@@ -453,7 +453,7 @@ test('action delete', function (): void {
     $service = new Service();
     $order = createEntity(Order::class, [
         'client_id' => 1,
-        'config' => 'config',
+        'config' => ['setting' => 'value'],
     ]);
 
     $serviceCustomModel = new ServiceCustom();
@@ -486,7 +486,7 @@ test('get config', function (): void {
     $service->setDi($di);
 
     $model = new ServiceCustom();
-    $model->setConfig(json_encode($decoded));
+    $model->setConfig($decoded);
 
     $result = $service->getConfig($model);
 
@@ -501,7 +501,7 @@ test('to api array', function (): void {
     $model = createEntity(ServiceCustom::class, ['id' => 1]);
     $model->setClientId(1);
     $model->setPlugin('plugin');
-    $model->setConfig('{"config_param":"config_value"}');
+    $model->setConfig(['config_param' => 'config_value']);
     $model->onPrePersist();
 
     $result = $service->toApiArray($model);

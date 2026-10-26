@@ -63,11 +63,11 @@ test('adds a new form', function (): void {
     $newFormId = 1;
     $data = [
         'name' => 'testName',
-        'style' => [],
+        'style' => null,
     ];
 
     $dbal = Mockery::mock(Connection::class);
-    $dbal->shouldReceive('insert')->once()->with('form', Mockery::on(fn (array $row): bool => $row['name'] === 'testName' && $row['style'] instanceof stdClass), ['style' => FOSSBilling\Doctrine\Type\JsonDocumentType::NAME]);
+    $dbal->shouldReceive('insert')->once()->with('form', Mockery::on(fn (array $row): bool => $row['name'] === 'testName' && is_array($row['style'])), ['style' => Doctrine\DBAL\Types\Types::JSON]);
     $dbal->shouldReceive('lastInsertId')->once()->andReturn($newFormId);
 
     $di = container();
@@ -244,7 +244,7 @@ test('throws exception when textarea size is invalid', function (): void {
 test('gets a form', function (): void {
     $service = new Service();
     $modelArray = [
-        'style' => '',
+        'style' => null,
         'id' => 1,
     ];
     $getAllResult = [

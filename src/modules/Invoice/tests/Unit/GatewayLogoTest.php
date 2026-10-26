@@ -164,7 +164,7 @@ test('gateway image rejects redirects to private networks', function (): void {
 
 test('active gateways use the imported local image and fall back if it is missing', function (bool $exists): void {
     $filename = str_repeat('a', 64) . '.png';
-    $gateway = createEntity(PayGateway::class, ['gateway' => 'Custom', 'customLogo' => $filename, 'acceptedCurrencies' => '["USD"]']);
+    $gateway = createEntity(PayGateway::class, ['gateway' => 'Custom', 'customLogo' => $filename, 'acceptedCurrencies' => ['USD']]);
     $filesystem = Mockery::mock(Filesystem::class);
     $filesystem->shouldReceive('exists')->with(Path::join(PATH_ROOT, 'public', 'gateways', 'custom', $filename))->andReturn($exists);
     $filesystem->shouldReceive('exists')->with(Path::join(PATH_ROOT, 'public', 'gateways', 'custom', str_repeat('a', 64) . '.avif'))->andReturn(false);
@@ -181,7 +181,7 @@ test('active gateways use the imported local image and fall back if it is missin
 
 test('active gateways keep the adapter display size for custom logos', function (array $adapterLogo, string $expectedHeight, string $expectedWidth): void {
     $filename = str_repeat('a', 64) . '.png';
-    $gateway = createEntity(PayGateway::class, ['gateway' => 'Custom', 'customLogo' => $filename, 'acceptedCurrencies' => '["USD"]']);
+    $gateway = createEntity(PayGateway::class, ['gateway' => 'Custom', 'customLogo' => $filename, 'acceptedCurrencies' => ['USD']]);
     $filesystem = Mockery::mock(Filesystem::class);
     $filesystem->shouldReceive('exists')->byDefault()->andReturn(false);
     $filesystem->shouldReceive('exists')->with(Path::join(PATH_ROOT, 'public', 'gateways', 'custom', $filename))->andReturn(true);
@@ -428,7 +428,7 @@ test('raster images store PNG and at most one AVIF generated from the same decod
 
 test('active gateways offer AVIF only when its stored companion exists', function (bool $hasAvif): void {
     $filename = str_repeat('a', 64) . '.png';
-    $gateway = createEntity(PayGateway::class, ['gateway' => 'Custom', 'customLogo' => $filename, 'acceptedCurrencies' => '["USD"]']);
+    $gateway = createEntity(PayGateway::class, ['gateway' => 'Custom', 'customLogo' => $filename, 'acceptedCurrencies' => ['USD']]);
     $filesystem = Mockery::mock(Filesystem::class);
     $filesystem->shouldReceive('exists')->andReturnUsing(static fn (string $path): bool => str_ends_with($path, '/custom/' . $filename) || ($hasAvif && str_ends_with($path, '/custom/' . str_repeat('a', 64) . '.avif')));
     $service = gatewayLogoService(new MockHttpClient(), $filesystem);

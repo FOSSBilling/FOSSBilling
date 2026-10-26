@@ -1246,7 +1246,7 @@ test('create hp', function (array $data, string $expectedBandwidth, string $expe
 test('get server package', function (): void {
     $service = new Service();
     $model = new ServiceHostingHp();
-    $model->setConfig('{}');
+    $model->setConfig([]);
 
     $di = container();
 
@@ -1389,7 +1389,7 @@ test('get free tlds', function (): void {
 
     $service->setDi($di);
     $product = new Product();
-    $product->setConfig(json_encode($config));
+    $product->setConfig($config);
 
     $result = $service->getFreeTlds($product);
     expect($result)->toBeArray();
@@ -1612,7 +1612,7 @@ test('clientSettableConfigKeys returns the hosting allowlist', function (): void
 test('validateOrderData rejects admin-controlled values differing from product config', function (string $field, mixed $injectedValue): void {
     $service = new Service();
     $product = createEntity(Product::class, [
-        'config' => json_encode(['server_id' => 1, 'hosting_plan_id' => 2, 'reseller' => false]),
+        'config' => ['server_id' => 1, 'hosting_plan_id' => 2, 'reseller' => false],
     ]);
     $data = [
         'server_id' => 1,
@@ -1640,7 +1640,7 @@ test('validateOrderData rejects admin-controlled values differing from product c
 test('validateOrderData accepts values matching product config', function (): void {
     $service = new Service();
     $product = createEntity(Product::class, [
-        'config' => json_encode(['server_id' => 1, 'hosting_plan_id' => 2, 'reseller' => false]),
+        'config' => ['server_id' => 1, 'hosting_plan_id' => 2, 'reseller' => false],
     ]);
     $data = [
         'server_id' => 1,
@@ -1658,10 +1658,10 @@ test('getOrderableHpPairs returns only plans referenced by enabled products', fu
     $service = new Service();
 
     $hostingProduct = createEntity(Product::class, [
-        'config' => json_encode(['server_id' => 1, 'hosting_plan_id' => 3]),
+        'config' => ['server_id' => 1, 'hosting_plan_id' => 3],
     ]);
     $unrelatedProduct = createEntity(Product::class, [
-        'config' => '{}',
+        'config' => [],
     ]);
 
     $plan = new ServiceHostingHp();
@@ -1724,7 +1724,7 @@ test('get domain product from config returns false when no domain action is supp
 
     $product = createEntity(Product::class, [
         'title' => 'Hosting',
-        'config' => json_encode(['server_id' => 1, 'hosting_plan_id' => 2]),
+        'config' => ['server_id' => 1, 'hosting_plan_id' => 2],
     ]);
     $data = ['server_id' => 1, 'hosting_plan_id' => 2, 'sld' => 'example', 'tld' => '.com'];
 
@@ -1739,7 +1739,7 @@ test('cart product title falls back when owndomain fields are missing', function
 
     $product = createEntity(Product::class, [
         'title' => 'Hosting',
-        'config' => json_encode(['domain' => ['action' => 'owndomain']]),
+        'config' => ['domain' => ['action' => 'owndomain']],
     ]);
 
     expect($service->getCartProductTitle($product, []))->toBe('Hosting');
@@ -1747,8 +1747,8 @@ test('cart product title falls back when owndomain fields are missing', function
 
 test('refreshes provisioning defaults while preserving order choices', function (bool $hasService): void {
     $original = ['server_id' => 1, 'hosting_plan_id' => 2, 'sld' => 'example', 'tld' => '.com', 'password' => 'secret', 'import' => false, 'period' => '1Y'];
-    $order = createEntity(Order::class, ['id' => 50, 'product_id' => 9, 'service_type' => 'hosting', 'status' => Order::STATUS_FAILED_SETUP, 'config' => json_encode($original)]);
-    $product = createEntity(Product::class, ['config' => json_encode(['server_id' => 3, 'hosting_plan_id' => 4, 'reseller' => true, 'period' => '1M'])]);
+    $order = createEntity(Order::class, ['id' => 50, 'product_id' => 9, 'service_type' => 'hosting', 'status' => Order::STATUS_FAILED_SETUP, 'config' => $original]);
+    $product = createEntity(Product::class, ['config' => ['server_id' => 3, 'hosting_plan_id' => 4, 'reseller' => true, 'period' => '1M']]);
     $server = createEntity(ServiceHostingServer::class, ['id' => 3, 'ip' => '192.0.2.3']);
     $plan = createEntity(ServiceHostingHp::class, ['id' => 4]);
     $model = $hasService ? new ServiceHosting() : null;
@@ -1771,7 +1771,7 @@ test('refreshes provisioning defaults while preserving order choices', function 
     $service->setDi($di);
 
     expect($service->refreshProductConfiguration($order))->toBeTrue();
-    expect(json_decode($order->getConfig(), true))->toBe(array_replace($original, ['server_id' => 3, 'hosting_plan_id' => 4, 'reseller' => true]));
+    expect($order->getConfig())->toBe(array_replace($original, ['server_id' => 3, 'hosting_plan_id' => 4, 'reseller' => true]));
     if ($hasService) {
         expect($model->getServiceHostingServer())->toBe($server);
         expect($model->getServiceHostingHp())->toBe($plan);
@@ -1811,7 +1811,7 @@ test('previews effective service values and product defaults without writing', f
     if ($hasUsername) {
         $model->setUsername('possibly-provisioned');
     }
-    $product = createEntity(Product::class, ['config' => json_encode(['server_id' => 3, 'hosting_plan_id' => 4, 'reseller' => true])]);
+    $product = createEntity(Product::class, ['config' => ['server_id' => 3, 'hosting_plan_id' => 4, 'reseller' => true]]);
     $orderService = Mockery::mock(OrderService::class);
     $orderService->shouldReceive('getOrderService')->once()->with($order)->andReturn($model);
     // The service values take precedence over an independently edited order config.

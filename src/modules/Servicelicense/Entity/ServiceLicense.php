@@ -48,17 +48,17 @@ class ServiceLicense implements TimestampInterface
     #[ORM\Column(name: 'validate_version', type: Types::BOOLEAN)]
     private bool $validateVersion = false;
 
-    #[ORM\Column(type: \FOSSBilling\Doctrine\Type\JsonDocumentType::NAME, nullable: true)]
-    private ?\FOSSBilling\Doctrine\JsonDocument $ips = null;
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $ips = null;
 
-    #[ORM\Column(type: \FOSSBilling\Doctrine\Type\JsonDocumentType::NAME, nullable: true)]
-    private ?\FOSSBilling\Doctrine\JsonDocument $hosts = null;
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $hosts = null;
 
-    #[ORM\Column(type: \FOSSBilling\Doctrine\Type\JsonDocumentType::NAME, nullable: true)]
-    private ?\FOSSBilling\Doctrine\JsonDocument $paths = null;
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $paths = null;
 
-    #[ORM\Column(type: \FOSSBilling\Doctrine\Type\JsonDocumentType::NAME, nullable: true)]
-    private ?\FOSSBilling\Doctrine\JsonDocument $versions = null;
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $versions = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $config = null;
@@ -149,50 +149,50 @@ class ServiceLicense implements TimestampInterface
         return $this;
     }
 
-    public function getIps(): ?string
+    public function getIps(): ?array
     {
-        return $this->ips?->json();
+        return $this->ips;
     }
 
-    public function setIps(?string $ips): self
+    public function setIps(?array $ips): self
     {
-        $this->ips = $ips === null ? null : \FOSSBilling\Doctrine\JsonDocument::fromJson($ips);
+        $this->ips = $ips;
 
         return $this;
     }
 
-    public function getHosts(): ?string
+    public function getHosts(): ?array
     {
-        return $this->hosts?->json();
+        return $this->hosts;
     }
 
-    public function setHosts(?string $hosts): self
+    public function setHosts(?array $hosts): self
     {
-        $this->hosts = $hosts === null ? null : \FOSSBilling\Doctrine\JsonDocument::fromJson($hosts);
+        $this->hosts = $hosts;
 
         return $this;
     }
 
-    public function getPaths(): ?string
+    public function getPaths(): ?array
     {
-        return $this->paths?->json();
+        return $this->paths;
     }
 
-    public function setPaths(?string $paths): self
+    public function setPaths(?array $paths): self
     {
-        $this->paths = $paths === null ? null : \FOSSBilling\Doctrine\JsonDocument::fromJson($paths);
+        $this->paths = $paths;
 
         return $this;
     }
 
-    public function getVersions(): ?string
+    public function getVersions(): ?array
     {
-        return $this->versions?->json();
+        return $this->versions;
     }
 
-    public function setVersions(?string $versions): self
+    public function setVersions(?array $versions): self
     {
-        $this->versions = $versions === null ? null : \FOSSBilling\Doctrine\JsonDocument::fromJson($versions);
+        $this->versions = $versions;
 
         return $this;
     }
@@ -250,7 +250,7 @@ class ServiceLicense implements TimestampInterface
      */
     public function getAllowedIps(): array
     {
-        return $this->getIpsData() ?? [];
+        return $this->getIps() ?? [];
     }
 
     /**
@@ -258,7 +258,7 @@ class ServiceLicense implements TimestampInterface
      */
     public function getAllowedVersions(): array
     {
-        return $this->getVersionsData() ?? [];
+        return $this->getVersions() ?? [];
     }
 
     /**
@@ -266,7 +266,7 @@ class ServiceLicense implements TimestampInterface
      */
     public function getAllowedHosts(): array
     {
-        return $this->getHostsData() ?? [];
+        return $this->getHosts() ?? [];
     }
 
     /**
@@ -274,62 +274,6 @@ class ServiceLicense implements TimestampInterface
      */
     public function getAllowedPaths(): array
     {
-        return $this->getPathsData() ?? [];
-    }
-
-    /** @return array<mixed>|null */
-    public function getIpsData(): ?array
-    {
-        return $this->ips?->arrayData();
-    }
-
-    /** @param array<mixed>|\stdClass|null $data */
-    public function setIpsData(array|\stdClass|null $data): self
-    {
-        $this->ips = $data === null ? null : \FOSSBilling\Doctrine\JsonDocument::fromData($data);
-
-        return $this;
-    }
-
-    /** @return array<mixed>|null */
-    public function getHostsData(): ?array
-    {
-        return $this->hosts?->arrayData();
-    }
-
-    /** @param array<mixed>|\stdClass|null $data */
-    public function setHostsData(array|\stdClass|null $data): self
-    {
-        $this->hosts = $data === null ? null : \FOSSBilling\Doctrine\JsonDocument::fromData($data);
-
-        return $this;
-    }
-
-    /** @return array<mixed>|null */
-    public function getPathsData(): ?array
-    {
-        return $this->paths?->arrayData();
-    }
-
-    /** @param array<mixed>|\stdClass|null $data */
-    public function setPathsData(array|\stdClass|null $data): self
-    {
-        $this->paths = $data === null ? null : \FOSSBilling\Doctrine\JsonDocument::fromData($data);
-
-        return $this;
-    }
-
-    /** @return array<mixed>|null */
-    public function getVersionsData(): ?array
-    {
-        return $this->versions?->arrayData();
-    }
-
-    /** @param array<mixed>|\stdClass|null $data */
-    public function setVersionsData(array|\stdClass|null $data): self
-    {
-        $this->versions = $data === null ? null : \FOSSBilling\Doctrine\JsonDocument::fromData($data);
-
-        return $this;
+        return $this->getPaths() ?? [];
     }
 }

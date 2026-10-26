@@ -54,7 +54,7 @@ test('update stores normalized filter', function (): void {
     ]);
 
     expect($result)->toBeTrue();
-    expect($model->getFilter())->toBe('{"client_status":["active","canceled"],"has_order_with_status":["active","suspended"]}');
+    expect($model->getFilter())->toBe(['client_status' => ['active', 'canceled'], 'has_order_with_status' => ['active', 'suspended']]);
 });
 
 test('update rejects invalid filter', function (): void {

@@ -30,7 +30,7 @@ function payGatewayEntityManager(): EntityManager
 test('custom gateway image persists independently of adapter credentials', function (): void {
     $em = payGatewayEntityManager();
     (new SchemaTool($em))->createSchema([$em->getClassMetadata(PayGateway::class)]);
-    $gateway = (new PayGateway())->setGateway('Custom')->setConfig('{"api_key":"secret"}')->setCustomLogo(str_repeat('a', 64) . '.png');
+    $gateway = (new PayGateway())->setGateway('Custom')->setConfig(['api_key' => 'secret'])->setCustomLogo(str_repeat('a', 64) . '.png');
     $em->persist($gateway);
     $em->flush();
     $id = $gateway->getId();
@@ -38,7 +38,7 @@ test('custom gateway image persists independently of adapter credentials', funct
 
     $stored = $em->find(PayGateway::class, $id);
     expect($stored->getCustomLogo())->toBe(str_repeat('a', 64) . '.png')
-        ->and($stored->getConfig())->toBe('{"api_key":"secret"}');
+        ->and($stored->getConfig())->toBe(['api_key' => 'secret']);
 });
 
 test('schema synchronization adds custom images to existing gateways', function (): void {

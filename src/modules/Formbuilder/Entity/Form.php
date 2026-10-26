@@ -32,8 +32,8 @@ class Form implements TimestampInterface
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
     private ?string $name = null;
 
-    #[ORM\Column(type: \FOSSBilling\Doctrine\Type\JsonDocumentType::NAME, nullable: true)]
-    private ?\FOSSBilling\Doctrine\JsonDocument $style = null;
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $style = null;
 
     public function getId(): ?int
     {
@@ -52,28 +52,14 @@ class Form implements TimestampInterface
         return $this;
     }
 
-    public function getStyle(): ?string
+    public function getStyle(): ?array
     {
-        return $this->style?->json();
+        return $this->style;
     }
 
-    public function setStyle(?string $style): self
+    public function setStyle(?array $style): self
     {
-        $this->style = $style === null ? null : \FOSSBilling\Doctrine\JsonDocument::fromJson($style);
-
-        return $this;
-    }
-
-    /** @return array<mixed>|null */
-    public function getStyleData(): ?array
-    {
-        return $this->style?->arrayData();
-    }
-
-    /** @param array<mixed>|\stdClass|null $data */
-    public function setStyleData(array|\stdClass|null $data): self
-    {
-        $this->style = $data === null ? null : \FOSSBilling\Doctrine\JsonDocument::fromData($data);
+        $this->style = $style;
 
         return $this;
     }

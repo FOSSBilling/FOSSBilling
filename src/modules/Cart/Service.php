@@ -254,7 +254,7 @@ class Service implements InjectionAwareInterface
         // explicitly by staff callers (client add_item has no such param).
         unset($data[ProductService::PRICE_OVERRIDE_KEY]);
 
-        $productConfig = $product->getConfigData() ?? [];
+        $productConfig = $product->getConfig() ?? [];
 
         // Collect all domains that will be added: top-level (direct domain product) and
         // nested under $data['domain'] (domain bundled with a hosting product).
@@ -273,7 +273,7 @@ class Service implements InjectionAwareInterface
         if (!empty($domainsBeingAdded)) {
             $existingItems = $this->findCartProducts($cart);
             foreach ($existingItems as $item) {
-                $itemConfig = $item->getConfigData();
+                $itemConfig = $item->getConfig();
                 if (!is_array($itemConfig)) {
                     continue;
                 }
@@ -379,7 +379,7 @@ class Service implements InjectionAwareInterface
         $item = new CartProduct();
         $item->setCart($cart);
         $item->setProductId($this->getProductId($product));
-        $item->setConfigData($data);
+        $item->setConfig($data);
         $this->di['em']->persist($item);
         $this->di['em']->flush();
 
@@ -477,11 +477,11 @@ class Service implements InjectionAwareInterface
         }
 
         if ($removeAddons) {
-            $config_main = $cartProduct->getConfigData();
+            $config_main = $cartProduct->getConfig();
             $domain_name = $config_main['domain_name'] ?? '';
             $allCartProducts = $this->findCartProducts($cart);
             foreach ($allCartProducts as $cProduct) {
-                $config = $cProduct->getConfigData();
+                $config = $cProduct->getConfig();
                 if (isset($config['parent_id']) && $config['parent_id'] == $cartProduct->getProductId()) {
                     $domain_name_addon = $config['domain_name'] ?? '';
                     if ($domain_name && $domain_name != $domain_name_addon) {
@@ -1169,7 +1169,7 @@ class Service implements InjectionAwareInterface
                     $order->setDiscount($item['discount_price'] * $currency->getConversionRate());
                     $order->setStatus(Order::STATUS_PENDING_SETUP);
                     $order->setNotes($item['notes'] ?? null);
-                    $order->setConfigData($item);
+                    $order->setConfig($item);
                     $this->di['em']->persist($order);
                     $this->di['em']->flush();
 
@@ -1386,7 +1386,7 @@ class Service implements InjectionAwareInterface
 
     public function getItemConfig(CartProduct $model): array
     {
-        return $model->getConfigData() ?? [];
+        return $model->getConfig() ?? [];
     }
 
     private function getProductService(): ProductService

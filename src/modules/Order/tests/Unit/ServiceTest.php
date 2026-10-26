@@ -120,7 +120,7 @@ test('batch order serialization does not expose admin-only client details', func
             'id' => 11,
             'client_id' => 7,
             'product_id' => 3,
-            'config' => '{}',
+            'config' => [],
             'price' => 10,
             'quantity' => 1,
             'title' => 'Example order',
@@ -1495,7 +1495,7 @@ test('getLogger returns logger with event items', function (): void {
 test('toApiArray returns expected keys', function (): void {
     $model = createEntity(Order::class, [
         'id' => 1,
-        'config' => '{}',
+        'config' => [],
         'price' => 10,
         'quantity' => 1,
         'client_id' => 1,
@@ -1594,7 +1594,7 @@ test('toApiArray reads meta through the repository', function (): void {
 
     $order = createEntity(Order::class, [
         'id' => 7,
-        'config' => '{}',
+        'config' => [],
         'price' => 10,
         'quantity' => 1,
         'client_id' => 1,
@@ -3745,14 +3745,14 @@ test('updateOrderConfig succeeds with valid form data', function (): void {
 
     $order = createEntity(Order::class);
     $order->form_id = 11;
-    $order->setConfig(json_encode([
+    $order->setConfig([
         'period' => '1M',
         'price' => 12.5,
         'quantity' => 2,
         'service_options' => ['region' => 'eu'],
         'hostname' => 'old.example.com',
         'addons' => ['backup', 'ssl'],
-    ]));
+    ]);
 
     $result = $svc->updateOrderConfig($order, ['hostname' => 'myhost.example.com', 'plan' => 'pro']);
 

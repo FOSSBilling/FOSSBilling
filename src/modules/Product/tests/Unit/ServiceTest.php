@@ -276,7 +276,7 @@ test('to api array', function (): void {
     $model = productTestCreateProductEntity(1)
         ->setProductCategory($modelProductCategory)
         ->setProductPayment($modelProductPayment)
-        ->setConfig('{}');
+        ->setConfig([]);
 
     $di = container();
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $serviceMock);
@@ -448,7 +448,7 @@ test('get selected addons for cart coerces quantity to one when addon disallows 
 });
 
 test('validate selected addons rejects quantity for addons without quantity selection', function (): void {
-    $parentProduct = productTestCreateProductEntity(10)->setAddons(json_encode([20]));
+    $parentProduct = productTestCreateProductEntity(10)->setAddons([20]);
     $addon = productTestCreateProductEntity(20)->setStatus('enabled')->setIsAddon(true)->setAllowQuantitySelect(false);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
@@ -460,7 +460,7 @@ test('validate selected addons rejects quantity for addons without quantity sele
 });
 
 test('validate selected addons allows quantity for addons with quantity selection', function (): void {
-    $parentProduct = productTestCreateProductEntity(10)->setAddons(json_encode([20]));
+    $parentProduct = productTestCreateProductEntity(10)->setAddons([20]);
     $addon = productTestCreateProductEntity(20)->setStatus('enabled')->setIsAddon(true)->setAllowQuantitySelect(true);
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
@@ -1188,7 +1188,7 @@ test('update priority', function (): void {
 
 test('update config', function (): void {
     $service = new Service();
-    $modelProduct = productTestCreateProductEntity(1)->setConfig('{"settings":5,"max":"10"}');
+    $modelProduct = productTestCreateProductEntity(1)->setConfig(['settings' => 5, 'max' => '10']);
 
     $data = [
         'config' => [
@@ -1510,10 +1510,10 @@ test('duplicate promo', function (): void {
         ->setRecurring(true)
         ->setUsed(5)
         ->setMaxUses(10)
-        ->setProducts('[1]')
-        ->setPeriods('["1M"]')
-        ->setClientGroups('[2]')
-        ->setRequiresProducts('[5]')
+        ->setProducts([1])
+        ->setPeriods(['1M'])
+        ->setClientGroups([2])
+        ->setRequiresProducts([5])
         ->setStartAt(new DateTime('2012-01-01'))
         ->setEndAt(new DateTime('2012-01-02'));
 
@@ -1562,10 +1562,10 @@ test('duplicate promo', function (): void {
     expect($emMock->captured->isFreeSetup())->toBeTrue();
     expect($emMock->captured->isOncePerClient())->toBeTrue();
     expect($emMock->captured->isRecurring())->toBeTrue();
-    expect($emMock->captured->getProducts())->toBe('[1]');
-    expect($emMock->captured->getPeriods())->toBe('["1M"]');
-    expect($emMock->captured->getClientGroups())->toBe('[2]');
-    expect($emMock->captured->getRequiresProducts())->toBe('[5]');
+    expect($emMock->captured->getProducts())->toBe([1]);
+    expect($emMock->captured->getPeriods())->toBe(['1M']);
+    expect($emMock->captured->getClientGroups())->toBe([2]);
+    expect($emMock->captured->getRequiresProducts())->toBe([5]);
 });
 
 test('duplicate promo generates alternate code when copy code already exists', function (): void {
@@ -1616,8 +1616,8 @@ test('duplicate promo generates alternate code when copy code already exists', f
 test('to promo api array', function (): void {
     $service = new Service();
     $model = productTestCreatePromoEntity(1)
-        ->setProducts('{}')
-        ->setPeriods('{}');
+        ->setProducts([])
+        ->setPeriods([]);
 
     $repoMock = Mockery::mock(PromoRedemptionRepository::class);
     $repoMock->shouldReceive('countByPromoId')->once()->with(1)->andReturn(0);
@@ -1651,8 +1651,8 @@ test('to promo api array includes usage stats for deep requests', function (): v
     $model = productTestCreatePromoEntity(1)
         ->setUsed(5)
         ->setMaxUses(10)
-        ->setProducts('{}')
-        ->setPeriods('{}');
+        ->setProducts([])
+        ->setPeriods([]);
 
     $repoMock = Mockery::mock(PromoRedemptionRepository::class);
     $repoMock->shouldReceive('getUsageStatsByPromoId')->once()->with(1)->andReturn([
@@ -2028,7 +2028,7 @@ test('get renewal promo adjustment for domain order', function (): void {
         'product_id' => 17,
         'discount' => 2.0,
         'currency' => 'EUR',
-        'config' => json_encode(['period' => '1Y']),
+        'config' => ['period' => '1Y'],
     ]);
 
     // The Order entity uses isPromoRecurring() but production code accesses ->promo_recurring.
@@ -2182,14 +2182,14 @@ test('is promo available for client group', function (Promo $promo, ?Client $cli
 
     expect($service->isPromoAvailableForClientGroup($promo))->toBe($expectedResult);
 })->with([
-    'no restrictions' => [fn (): Promo => productTestCreatePromoEntity(1)->setClientGroups(json_encode([])), fn (): Client => createEntity(Client::class), true],
-    'restricted and no client group' => [fn (): Promo => productTestCreatePromoEntity(2)->setClientGroups(json_encode([1, 2])), fn (): object => productTestClientWithGroups(), false],
-    'restricted and wrong client group' => [fn (): Promo => productTestCreatePromoEntity(3)->setClientGroups(json_encode([1, 2])), fn (): object => productTestClientWithGroups(3), false],
-    'restricted and matching client group' => [fn (): Promo => productTestCreatePromoEntity(4)->setClientGroups(json_encode([1, 2])), fn (): object => productTestClientWithGroups(2), true],
-    'restricted and matching one of several client groups' => [fn (): Promo => productTestCreatePromoEntity(7)->setClientGroups(json_encode([1, 2])), fn (): object => productTestClientWithGroups(3, 2), true],
-    'restricted and none of several client groups match' => [fn (): Promo => productTestCreatePromoEntity(8)->setClientGroups(json_encode([1, 2])), fn (): object => productTestClientWithGroups(3, 4), false],
-    'no restrictions and no client' => [fn (): Promo => productTestCreatePromoEntity(5)->setClientGroups(json_encode([])), null, true],
-    'restricted and no client' => [fn (): Promo => productTestCreatePromoEntity(6)->setClientGroups(json_encode([1, 2])), null, false],
+    'no restrictions' => [fn (): Promo => productTestCreatePromoEntity(1)->setClientGroups([]), fn (): Client => createEntity(Client::class), true],
+    'restricted and no client group' => [fn (): Promo => productTestCreatePromoEntity(2)->setClientGroups([1, 2]), fn (): object => productTestClientWithGroups(), false],
+    'restricted and wrong client group' => [fn (): Promo => productTestCreatePromoEntity(3)->setClientGroups([1, 2]), fn (): object => productTestClientWithGroups(3), false],
+    'restricted and matching client group' => [fn (): Promo => productTestCreatePromoEntity(4)->setClientGroups([1, 2]), fn (): object => productTestClientWithGroups(2), true],
+    'restricted and matching one of several client groups' => [fn (): Promo => productTestCreatePromoEntity(7)->setClientGroups([1, 2]), fn (): object => productTestClientWithGroups(3, 2), true],
+    'restricted and none of several client groups match' => [fn (): Promo => productTestCreatePromoEntity(8)->setClientGroups([1, 2]), fn (): object => productTestClientWithGroups(3, 4), false],
+    'no restrictions and no client' => [fn (): Promo => productTestCreatePromoEntity(5)->setClientGroups([]), null, true],
+    'restricted and no client' => [fn (): Promo => productTestCreatePromoEntity(6)->setClientGroups([1, 2]), null, false],
 ]);
 
 test('release reserved promo redemptions for invoice releases reservations and decrements operational counter', function (): void {
@@ -2530,7 +2530,7 @@ test('is promo linked to tld returns true when promo has no product restrictions
 test('is promo linked to tld uses main domain product linkage', function (): void {
     $service = new Service();
     $promo = new Promo();
-    $promo->setProducts(json_encode([10]));
+    $promo->setProducts([10]);
 
     $domainProduct = productTestCreateProductEntity(10)
         ->setIsAddon(false);
@@ -2546,7 +2546,7 @@ test('is promo linked to tld uses main domain product linkage', function (): voi
 test('is promo linked to tld returns false when domain product is not linked', function (): void {
     $service = new Service();
     $promo = new Promo();
-    $promo->setProducts(json_encode([25]));
+    $promo->setProducts([25]);
 
     $domainProduct = productTestCreateProductEntity(10)
         ->setIsAddon(false);
@@ -2750,7 +2750,7 @@ test('get starting from price domain type', function (): void {
 
 test('get upgradable pairs', function (): void {
     $service = new Service();
-    $productModel = productTestCreateProductEntity(1)->setUpgrades('{}');
+    $productModel = productTestCreateProductEntity(1)->setUpgrades([]);
 
     $expected = [];
 
@@ -3021,7 +3021,7 @@ test('prepareCartProductConfig strips client-supplied admin-controlled keys', fu
 
     $product = productTestCreateProductEntity(1)
         ->setType('hosting')
-        ->setConfig('{"hosting_plan_id":1,"server_id":2,"allow_domain_register":true}');
+        ->setConfig(['hosting_plan_id' => 1, 'server_id' => 2, 'allow_domain_register' => true]);
 
     // Real class implementing the contract. Using stdClass + a closure property
     // would NOT satisfy method_exists(), which is how the central filter detects
@@ -3072,7 +3072,7 @@ test('prepareCartProductConfig preserves all allowlisted client keys', function 
 
     $product = productTestCreateProductEntity(1)
         ->setType('hosting')
-        ->setConfig('{"hosting_plan_id":1}');
+        ->setConfig(['hosting_plan_id' => 1]);
 
     $hostingService = new class {
         public function clientSettableConfigKeys(): array
@@ -3110,7 +3110,7 @@ test('prepareCartProductConfig does not filter when service has no clientSettabl
     // A custom service that does NOT implement the contract.
     $product = productTestCreateProductEntity(1)
         ->setType('custom')
-        ->setConfig('{"some_admin_field":"admin_value"}');
+        ->setConfig(['some_admin_field' => 'admin_value']);
 
     $customService = new stdClass();
 
@@ -3400,12 +3400,12 @@ test('getPromoRequiredProducts decodes and normalizes the bundle condition', fun
     $service = new Service();
 
     expect($service->getPromoRequiredProducts(productTestCreatePromoEntity(1)))->toBe([]);
-    expect($service->getPromoRequiredProducts(productTestCreatePromoEntity(2)->setRequiresProducts('[5,"7",0,-2,5]')))->toBe([5, 7]);
+    expect($service->getPromoRequiredProducts(productTestCreatePromoEntity(2)->setRequiresProducts([5, '7', 0, -2, 5])))->toBe([5, 7]);
 });
 
 test('findMissingRequiredProductIds reports only the absent products', function (): void {
     $service = new Service();
-    $promo = productTestCreatePromoEntity(7)->setRequiresProducts('[5,9]');
+    $promo = productTestCreatePromoEntity(7)->setRequiresProducts([5, 9]);
 
     expect($service->findMissingRequiredProductIds($promo, [5, 9, 12]))->toBe([]);
     expect($service->findMissingRequiredProductIds($promo, [5]))->toBe([9]);
@@ -3414,7 +3414,7 @@ test('findMissingRequiredProductIds reports only the absent products', function 
 
 test('isPromoCartConditionMet checks line products against the bundle condition', function (): void {
     $service = new Service();
-    $promo = productTestCreatePromoEntity(7)->setRequiresProducts('[5,9]');
+    $promo = productTestCreatePromoEntity(7)->setRequiresProducts([5, 9]);
 
     $lines = [
         ['product' => productTestCreateProductEntity(5), 'config' => []],
@@ -3429,7 +3429,7 @@ test('isPromoCartConditionMet checks line products against the bundle condition'
 test('findEligibleAutoPromos skips promos whose bundle condition is unmet', function (): void {
     $client = createEntity(Client::class, ['id' => 9]);
     $product = productTestCreateProductEntity(5);
-    $promo = productTestCreatePromoEntity(7)->setAutoApply(true)->setRequiresProducts('[5,9]');
+    $promo = productTestCreatePromoEntity(7)->setAutoApply(true)->setRequiresProducts([5, 9]);
 
     $promoRepo = Mockery::mock(PromoRepository::class);
     $promoRepo->shouldReceive('findAutoApplyPromos')->once()->andReturn([$promo]);
