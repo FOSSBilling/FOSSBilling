@@ -277,3 +277,26 @@ test('reports schema drift state alongside the finalization status', function ()
         'last_sync_failure' => null,
     ]);
 });
+
+test('completion keeps maintenance enabled until JSON preflight succeeds', function (): void {
+    $config = Config::getConfig();
+    $config['maintenance_mode']['enabled'] = true;
+    Config::setConfig($config, false);
+    seedFinalizedState($this->updateFinalizationFilesystem, $this->updateFinalizationStatePath);
+    $patcher = stubUpdatePatcherWithPendingPatches();
+    $patcher->pendingPatches = 0;
+    $finalization = finalizationWithStubPatcher($patcher);
+    $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $connection->executeStatement('CREATE TABLE product (id INTEGER PRIMARY KEY, config TEXT)');
+    $connection->insert('product', ['id' => 1, 'config' => '']);
+    $finalization->setDi(new Pimple\Container(['dbal' => $connection]));
+
+    expect(fn () => $finalization->completeFinalization())->toThrow(FOSSBilling\Doctrine\JsonMigrationException::class)
+        ->and(Config::getProperty('maintenance_mode.enabled'))->toBeTrue()
+        ->and(json_decode(file_get_contents($this->updateFinalizationStatePath), true)['status'])->toBe('finalized');
+
+    $connection->update('product', ['config' => null], ['id' => 1]);
+    $finalization->completeFinalization();
+    expect(json_decode(file_get_contents($this->updateFinalizationStatePath), true)['status'])->toBe('complete');
+    $connection->close();
+});

@@ -16,7 +16,7 @@ use Doctrine\DBAL\Connection;
 /** Read-only, bounded inspection; reports identifiers and issue classes, never JSON payloads. */
 final class JsonAudit
 {
-    /** @return \Generator<int, array{table: string, column: string, id: int, issue: string}> */
+    /** @return \Generator<int, array{table: string, column: string, id: int|string, issue: string}> */
     public function inspect(Connection $connection, ?string $onlyTable = null, int $batchSize = 500): \Generator
     {
         if ($batchSize < 1 || $batchSize > 10000) {
@@ -47,7 +47,7 @@ final class JsonAudit
                     $cursor === null ? [] : ['cursor' => $cursor],
                 );
                 foreach ($rows as $row) {
-                    $cursor = (int) $row['id'];
+                    $cursor = $row['id'];
                     foreach ($columns as $column) {
                         $raw = $row[$column];
                         if (is_resource($raw)) {
@@ -55,7 +55,7 @@ final class JsonAudit
                         }
                         $issue = $this->issue($raw);
                         if ($issue !== null) {
-                            yield ['table' => $table, 'column' => $column, 'id' => $cursor, 'issue' => $issue];
+                            yield ['table' => $table, 'column' => $column, 'id' => $table === 'session' ? 'sha256:' . hash('sha256', (string) $cursor) : $cursor, 'issue' => $issue];
                         }
                     }
                 }
@@ -76,16 +76,22 @@ final class JsonAudit
         }
 
         try {
-            $value = JsonDocument::fromJson($raw)->value();
+            $value = json_decode($raw, false, 512, JSON_THROW_ON_ERROR);
         } catch (\JsonException) {
             return 'invalid_json';
         }
         if ($value === null || is_array($value) || $value instanceof \stdClass) {
+            try {
+                JsonMigrationValidation::assertCompatible($raw);
+            } catch (\JsonException) {
+                return 'unsafe_json';
+            }
+
             return null;
         }
         if (is_string($value)) {
             try {
-                $nested = JsonDocument::fromJson($value)->value();
+                $nested = json_decode($value, false, 512, JSON_THROW_ON_ERROR);
                 if (is_array($nested) || $nested instanceof \stdClass) {
                     return 'double_encoded_json';
                 }

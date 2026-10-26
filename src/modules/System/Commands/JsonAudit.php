@@ -38,7 +38,7 @@ final class JsonAudit extends Command implements InjectionAwareInterface
     {
         $this->addOption('table', null, InputOption::VALUE_REQUIRED, 'Inspect one table from the JSON migration inventory')
             ->addOption('batch-size', null, InputOption::VALUE_REQUIRED, 'Rows per read', '500')
-            ->setHelp('Reports row IDs and issue classes only. Empty, malformed, scalar and double-encoded documents remain byte-for-byte intact. Review and back up affected rows before explicit repairs; no blanket normalization is safe. Encrypted email_template.vars and already-mapped JSON fields are outside this migration.');
+            ->setHelp('Reports row IDs and issue classes only; session IDs are hashed. Empty, malformed, scalar and double-encoded documents remain byte-for-byte intact. Review and back up affected rows before explicit repairs; no blanket normalization is safe. Encrypted email_template.vars and already-mapped JSON fields are outside this migration.');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -53,7 +53,7 @@ final class JsonAudit extends Command implements InjectionAwareInterface
 
         try {
             foreach ((new \FOSSBilling\Doctrine\JsonAudit())->inspect($this->di['dbal'], $input->getOption('table'), $batch) as $issue) {
-                $output->writeln(sprintf('%s.%s id=%d %s', $issue['table'], $issue['column'], $issue['id'], $issue['issue']));
+                $output->writeln(sprintf('%s.%s id=%s %s', $issue['table'], $issue['column'], $issue['id'], $issue['issue']));
                 ++$count;
             }
         } catch (\InvalidArgumentException $exception) {
