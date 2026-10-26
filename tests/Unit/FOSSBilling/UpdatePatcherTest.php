@@ -3575,3 +3575,42 @@ test('custom gateway image migration adds the column and skips already migrated 
 
     (new ReflectionMethod($patcher, 'patch129'))->invoke($patcher);
 })->with([false, true]);
+
+test('legacy Unicode repair is scheduled for existing installations', function (): void {
+    $patcher = new UpdatePatcher();
+    $patches = (new ReflectionMethod($patcher, 'getPatches'))->invoke($patcher, 132);
+    expect($patches)->toHaveKey(133)->and($patches[133][1])->toBe('patch133');
+});
+
+test('Unicode migration classifies every current text and JSON field', function (): void {
+    $patcher = new UpdatePatcher();
+    $tables = (new ReflectionMethod($patcher, 'legacyUnicodeColumns'))->invoke($patcher);
+    $candidates = [];
+    foreach ($tables as $table => $columns) {
+        foreach ($columns as $column) {
+            $candidates[] = $table . '.' . $column;
+        }
+    }
+    $groups = require PATH_TESTS . '/Fixtures/unicode-migration-exclusions.php';
+    $excluded = [];
+    foreach ($groups as $columns) {
+        array_push($excluded, ...$columns);
+    }
+    expect(count(array_unique($excluded)))->toBe(count($excluded))
+        ->and(array_intersect($candidates, $excluded))->toBe([]);
+
+    $em = FOSSBilling\Doctrine\EntityManagerFactory::create(Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]));
+    $textColumns = [];
+    foreach ($em->getMetadataFactory()->getAllMetadata() as $metadata) {
+        foreach ($metadata->fieldMappings as $field) {
+            if (in_array($field->type, ['string', 'text', 'ascii_string', 'json', 'jsonb'], true)) {
+                $textColumns[] = trim($metadata->getTableName(), '`') . '.' . $field->columnName;
+            }
+        }
+    }
+    // Exact inventory forces a deliberate decision on schema additions and removals.
+    $reviewed = array_merge($candidates, $excluded);
+    sort($reviewed);
+    sort($textColumns);
+    expect($reviewed)->toBe($textColumns);
+});
