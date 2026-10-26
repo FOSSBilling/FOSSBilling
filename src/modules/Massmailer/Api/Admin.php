@@ -72,7 +72,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         $model->setSubject($data['subject'] ?? $model->getSubject());
         $model->setStatus($data['status'] ?? $model->getStatus());
         if (isset($data['filter'])) {
-            $model->setFilter($this->getService()->serializeFilter($data['filter']));
+            $model->setFilterData($this->getService()->normalizeFilter($data['filter'], true));
         }
 
         if (isset($data['from_name'])) {
@@ -131,7 +131,7 @@ Order our services at {{ "order"|url }}
             ->setFromName($company['name'])
             ->setSubject($data['subject'])
             ->setContent($data['content'] ?? $default_content)
-            ->setFilter(json_encode([], JSON_THROW_ON_ERROR))
+            ->setFilterData([])
             ->setStatus(MassmailerMessage::STATUS_DRAFT);
 
         $this->getDi()['em']->persist($model);
