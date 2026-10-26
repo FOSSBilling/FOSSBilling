@@ -7,8 +7,12 @@ declare(strict_types=1);
 use Doctrine\ORM\Tools\SchemaTool;
 use FOSSBilling\Doctrine\DriverManagerFactory;
 use FOSSBilling\Doctrine\EntityManagerFactory;
+use FOSSBilling\Doctrine\InstallSeeder;
+use FOSSBilling\Doctrine\SchemaInstaller;
 use FOSSBilling\Doctrine\SchemaSynchronizer;
 use FOSSBilling\UpdatePatcher;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Filesystem\Path;
 
 final class UnicodeMigrationPdo extends PDO
 {
@@ -427,10 +431,23 @@ test('Unicode repair leaves missing tables uncreated', function (): void {
     expect($this->pdo->query('SHOW TABLES')->fetchAll())->toBe([]);
 });
 
-test('fresh Doctrine news tables support supplementary Unicode even in a legacy database', function (): void {
+test('fresh installation supports supplementary Unicode in a legacy database without running patches', function (): void {
+    $databaseCharset = $this->connection->fetchOne('SELECT @@character_set_database');
+    expect($databaseCharset)->toBeIn(['utf8', 'utf8mb3']);
+
     $em = EntityManagerFactory::create($this->connection);
-    $metadata = $em->getClassMetadata(Box\Mod\News\Entity\Post::class);
-    (new SchemaTool($em))->createSchema([$metadata]);
+    SchemaInstaller::createSchema($em);
+    InstallSeeder::seedContent(
+        $this->connection,
+        $em,
+        (new Filesystem())->readFile(Path::join(PATH_ROOT, 'install', 'sql', 'content.sql')),
+        new DateTimeImmutable(),
+    );
+
+    expect((int) $this->connection->fetchOne("SELECT value FROM setting WHERE param = 'last_patch'"))->toBe($this->patcher->latestPatchLevel());
+    foreach ($this->connection->fetchFirstColumn('SELECT TABLE_COLLATION FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE()') as $collation) {
+        expect($collation)->toStartWith('utf8mb4_');
+    }
     $post = (new Box\Mod\News\Entity\Post('🚀 Release', 'release'))
         ->setDescription('🎧 News')->setContent('🚀 🎧 🔒')->setSection('🔒 Security');
     $em->persist($post);
@@ -441,5 +458,6 @@ test('fresh Doctrine news tables support supplementary Unicode even in a legacy 
     expect($saved->getTitle())->toBe('🚀 Release')
         ->and($saved->getDescription())->toBe('🎧 News')
         ->and($saved->getContent())->toBe('🚀 🎧 🔒')
-        ->and($saved->getSection())->toBe('🔒 Security');
+        ->and($saved->getSection())->toBe('🔒 Security')
+        ->and($this->connection->fetchOne('SELECT @@character_set_database'))->toBe($databaseCharset);
 });
