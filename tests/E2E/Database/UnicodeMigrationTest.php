@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+// cspell:ignore Résumé boîtes
+
 use Doctrine\ORM\Tools\SchemaTool;
 use FOSSBilling\Doctrine\DriverManagerFactory;
 use FOSSBilling\Doctrine\EntityManagerFactory;
