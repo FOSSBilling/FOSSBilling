@@ -127,44 +127,15 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return true;
     }
 
-    public function setVars(EmailTemplate $template, array $vars): bool
-    {
-        $encoded = json_encode($vars);
-        if ($encoded === false) {
-            throw new \FOSSBilling\Exception('Failed to encode email template variables.');
-        }
-        $template->setVars($this->di['crypt']->encrypt($encoded, Config::getProperty('info.salt')));
-        $this->di['em']->flush();
-
-        return true;
-    }
-
+    /** Synthetic preview data only; live delivery variables are never retained on templates. */
     public function getVars(EmailTemplate $template): array
     {
-        $vars = [];
-        if ($template->getVars() !== null && $template->getVars() !== '') {
-            $json = $this->di['crypt']->decrypt($template->getVars(), Config::getProperty('info.salt'));
-            $decoded = is_string($json) ? json_decode($json, true) : null;
-            $vars = is_array($decoded) ? $decoded : [];
-        }
-
-        // Invoice templates must remain previewable before an invoice email has
-        // populated the stored example variables.
+        $vars = $this->getTemplateVarDefaults($template->getActionCode());
         if (str_starts_with($template->getActionCode(), 'mod_invoice_')) {
-            $invoice = is_array($vars['invoice'] ?? null) ? $vars['invoice'] : [];
-            $invoice['total'] ??= 0;
-            if (empty($invoice['currency'])) {
-                $currency = $this->di['mod_service']('currency')->getCurrencyRepository()->findDefault();
-                if ($currency instanceof Currency) {
-                    $invoice['currency'] = $currency->getCode();
-                }
+            $currency = $this->di['mod_service']('currency')->getCurrencyRepository()->findDefault();
+            if ($currency instanceof Currency) {
+                $vars['invoice']['currency'] = $currency->getCode();
             }
-            $vars['invoice'] = $invoice;
-        }
-
-        $defaults = $this->getTemplateVarDefaults($template->getActionCode());
-        if ($defaults !== []) {
-            $vars = array_replace_recursive($defaults, $vars);
         }
 
         return $vars;
@@ -245,7 +216,15 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $staffTicket = $ticket;
         $staffTicket['client'] = $client;
 
-        return match ($actionCode) {
+        $base = [
+            'c' => $client, 'client' => $client, 'staff' => $staff, 'ticket' => $ticket,
+            'order' => ['id' => 1, 'title' => 'Example service', 'currency' => 'USD', 'price' => 10, 'quantity' => 1, 'total' => 10, 'period' => '1M', 'config' => [], 'service' => [], 'status' => 'active'],
+            'invoice' => ['id' => 1, 'total' => 0, 'currency' => '', 'items' => [], 'hash' => 'preview-invoice', 'series' => 'INV', 'nr' => 1, 'status' => 'unpaid', 'created_at' => '2026-01-01', 'due_at' => '2026-01-15', 'client' => $client],
+            'service' => ['domain' => 'example.com', 'sld' => 'example', 'tld' => '.com', 'username' => 'example', 'password' => 'preview-only', 'nameserver1' => 'ns1.example.com', 'nameserver2' => 'ns2.example.com'],
+            'hash' => 'preview-only-not-a-token', 'password' => 'preview-only', 'email_confirmation_link' => 'https://example.com/preview-only', 'message' => 'Example message',
+        ];
+
+        return array_replace($base, match ($actionCode) {
             'mod_support_ticket_staff_open',
             'mod_support_ticket_staff_close',
             'mod_support_ticket_staff_reply' => ['c' => $client, 'ticket' => $ticket],
@@ -255,7 +234,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             'mod_staff_password_reset_approve' => ['c' => $staff],
             'mod_staff_client_signup' => ['c' => $client, 'staff' => $staff],
             default => [],
-        };
+        });
     }
 
     public function sendTemplate($data)
@@ -315,8 +294,6 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 throw new \FOSSBilling\InformationException('Admin not found');
             }
         }
-
-        $this->setVars($template, $vars);
 
         // do not send inactive template
         if (!$template->isEnabled()) {
