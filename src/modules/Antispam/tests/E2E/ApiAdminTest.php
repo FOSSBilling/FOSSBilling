@@ -62,6 +62,10 @@ test('saves antispam config', function () use (&$originalAntispamConfig): void {
         'captcha_recaptcha_v3_threshold' => '0.7',
         'check_temp_emails' => false,
         'sfs' => false,
+        'abuseipdb_enabled' => true,
+        'abuseipdb_api_key' => 'test-key',
+        'abuseipdb_threshold' => 80,
+        'abuseipdb_max_age' => 30,
     ]);
     expect($result->wasSuccessful())->toBeTrue();
 
@@ -76,7 +80,11 @@ test('saves antispam config', function () use (&$originalAntispamConfig): void {
         ->and($config['hcaptcha_secret_key'])->toBe('secret-key')
         ->and($config['captcha_recaptcha_v3_threshold'])->toBe('0.7')
         ->and((bool) $config['check_temp_emails'])->toBeFalse()
-        ->and((bool) $config['sfs'])->toBeFalse();
+        ->and((bool) $config['sfs'])->toBeFalse()
+        ->and((bool) $config['abuseipdb_enabled'])->toBeTrue()
+        ->and($config['abuseipdb_api_key'])->toBe('test-key')
+        ->and((int) $config['abuseipdb_threshold'])->toBe(80)
+        ->and((int) $config['abuseipdb_max_age'])->toBe(30);
 });
 
 test('gets recaptcha config', function () use (&$originalAntispamConfig): void {
