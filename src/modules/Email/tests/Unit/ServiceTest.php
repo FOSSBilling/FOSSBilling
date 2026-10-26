@@ -185,7 +185,7 @@ test('getVars supplies the default currency for invoice template previews', func
     $service = new Box\Mod\Email\Service();
 
     $currencyRepository = Mockery::mock(Box\Mod\Currency\Repository\CurrencyRepository::class);
-    $currencyRepository->shouldReceive('findDefault')->once()->andReturn(new Currency('USD'));
+    $currencyRepository->shouldReceive('findDefault')->once()->andReturn(new Currency('EUR'));
     $currencyService = Mockery::mock(Box\Mod\Currency\Service::class);
     $currencyService->shouldReceive('getCurrencyRepository')->once()->andReturn($currencyRepository);
 
@@ -195,7 +195,7 @@ test('getVars supplies the default currency for invoice template previews', func
 
     $template = emailTemplate('mod_invoice_paid');
 
-    expect($service->getVars($template)['invoice'])->toMatchArray(['total' => 0, 'currency' => 'USD']);
+    expect($service->getVars($template)['invoice'])->toMatchArray(['total' => 0, 'currency' => 'EUR']);
 });
 
 test('getVars supplies preview variables for support and staff templates before their first send', function (): void {

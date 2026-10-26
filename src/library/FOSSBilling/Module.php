@@ -251,11 +251,11 @@ class Module implements InjectionAwareInterface
         }
 
         $decrypted = $this->di['crypt']->decrypt($meta->getMetaValue(), Config::getProperty('info.salt'));
-        if (!is_string($decrypted) || !json_validate($decrypted)) {
-            return [];
+        if (!is_string($decrypted) || !is_array($config = json_decode($decrypted, true))) {
+            throw new InformationException('Encrypted extension configuration could not be read.');
         }
 
-        return json_decode($decrypted, true);
+        return $config;
     }
 
     public function getName(): string
