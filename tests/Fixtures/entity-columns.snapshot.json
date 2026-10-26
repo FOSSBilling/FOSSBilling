@@ -557,6 +557,7 @@
     "service_hosting.id",
     "service_hosting.ip",
     "service_hosting.pass",
+    "service_hosting.provisioning_step",
     "service_hosting.reseller",
     "service_hosting.service_hosting_hp_id",
     "service_hosting.service_hosting_server_id",
