@@ -373,6 +373,7 @@ function init(): void
 
     if (!Environment::isCLI() && !Environment::isTesting()) {
         $di['update_finalization']->finalizePendingUpdate();
+        $di['update_finalization']->acquireRuntimeLock();
     }
 
     // Now that the config file is loaded, we can enable Sentry.

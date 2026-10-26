@@ -262,6 +262,8 @@ class UpdatePatcher implements InjectionAwareInterface
         // structural changes that land on metadata without a patch being written at all).
         $this->syncPortableSchema();
 
+        $this->applyJsonMigrations();
+
         // Baseline the invoice journal on every driver, after the sync above: on non-MySQL
         // installs the invoice_event table only comes into existence there, and backfilling
         // first would find no table and leave existing invoices without baseline entries.
@@ -269,6 +271,28 @@ class UpdatePatcher implements InjectionAwareInterface
         $this->backfillInvoiceJournal();
 
         $this->checkInvoiceNumberCounter();
+    }
+
+    public function applyJsonMigrations(): void
+    {
+        if (!$this->di instanceof \Pimple\Container || (!isset($this->di['em']) && !isset($this->di['dbal']))) {
+            return;
+        }
+        $em = $this->di['em'] ?? EntityManagerFactory::create($this->di['dbal']);
+        (new Doctrine\JsonMigration())->automatic($em, $this->di['crypt'] ?? new Crypt());
+        $connection = $em->getConnection();
+        (new Doctrine\EncryptedConfigurationMigration())->run($connection, $this->di['crypt'] ?? new Crypt(), $this->di['cache'] ?? null);
+        if ($connection->createSchemaManager()->tablesExist(['email_template'])) {
+            $connection->executeStatement('UPDATE email_template SET vars = NULL WHERE vars IS NOT NULL');
+        }
+        if (isset($this->di['mod_service'])) {
+            if ($connection->createSchemaManager()->tablesExist(['pay_gateway'])) {
+                $this->di['mod_service']('Invoice', 'PayGateway')->migrateConfigSecrets();
+            }
+            if ($connection->createSchemaManager()->tablesExist(['tld_registrar'])) {
+                $this->di['mod_service']('Servicedomain')->migrateConfigSecrets();
+            }
+        }
     }
 
     private function checkInvoiceNumberCounter(): void

@@ -288,7 +288,7 @@ test('completion keeps maintenance enabled until JSON preflight succeeds', funct
     $finalization = finalizationWithStubPatcher($patcher);
     $connection = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
     $connection->executeStatement('CREATE TABLE product (id INTEGER PRIMARY KEY, config TEXT)');
-    $connection->insert('product', ['id' => 1, 'config' => '']);
+    $connection->insert('product', ['id' => 1, 'config' => '{broken']);
     $finalization->setDi(new Pimple\Container(['dbal' => $connection]));
 
     expect(fn () => $finalization->completeFinalization())->toThrow(FOSSBilling\Doctrine\JsonMigrationException::class)
@@ -299,4 +299,54 @@ test('completion keeps maintenance enabled until JSON preflight succeeds', funct
     $finalization->completeFinalization();
     expect(json_decode(file_get_contents($this->updateFinalizationStatePath), true)['status'])->toBe('complete');
     $connection->close();
+});
+
+test('application readers share a lock that blocks an updater until active work drains', function (): void {
+    $service = new UpdateFinalization();
+    $service->acquireRuntimeLock();
+    $probe = fopen(Path::join(PATH_DATA, 'update-finalization.lock'), 'c');
+
+    try {
+        expect(flock($probe, LOCK_EX | LOCK_NB))->toBeFalse();
+        expect((new ReflectionMethod($service, 'withFinalizationLock'))->invoke($service, fn () => 'exclusive'))->toBe('exclusive');
+        expect(flock($probe, LOCK_EX | LOCK_NB))->toBeFalse();
+        $service->releaseRuntimeLock();
+        expect(flock($probe, LOCK_EX | LOCK_NB))->toBeTrue();
+    } finally {
+        $service->releaseRuntimeLock();
+        flock($probe, LOCK_UN);
+        fclose($probe);
+    }
+});
+
+test('normal completion automatically migrates JSON and removes saved live email variables', function (): void {
+    $config = Config::getConfig();
+    $config['maintenance_mode']['enabled'] = true;
+    Config::setConfig($config, false);
+    $state = ['status' => 'finalized', 'target_version' => Version::VERSION, 'maintenance_mode' => ['enabled' => false]];
+    $this->updateFinalizationFilesystem->dumpFile($this->updateFinalizationStatePath, json_encode($state, JSON_THROW_ON_ERROR));
+    $patcher = stubUpdatePatcherWithPendingPatches();
+    $patcher->pendingPatches = 0;
+    $finalization = finalizationWithStubPatcher($patcher);
+    $c = Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]);
+    $c->executeStatement('CREATE TABLE product (id INTEGER PRIMARY KEY, config TEXT)');
+    $c->executeStatement('CREATE TABLE email_template (id INTEGER PRIMARY KEY, vars TEXT)');
+    $c->insert('product', ['id' => 1, 'config' => '']);
+    $c->insert('email_template', ['id' => 1, 'vars' => 'old-live-reset-token']);
+    $finalization->setDi(new Pimple\Container(['dbal' => $c]));
+    $finalization->completeFinalization();
+    expect($c->fetchOne('SELECT config FROM product'))->toBeNull()
+        ->and($c->fetchOne('SELECT vars FROM email_template'))->toBeNull()
+        ->and(Config::getProperty('maintenance_mode.enabled'))->toBeFalse()
+        ->and((int) $c->fetchOne('SELECT COUNT(*) FROM json_migration_record'))->toBeGreaterThanOrEqual(3);
+    $journal = new FOSSBilling\Doctrine\JsonMigrationJournal(FOSSBilling\Doctrine\EntityManagerFactory::create($c), new FOSSBilling\Crypt());
+    expect($journal->find('original:product.config:1')['base64'])->toBe('');
+});
+
+test('manual update entry point delegates to the same locked finalization flow', function (): void {
+    $finalization = Mockery::mock(UpdateFinalization::class);
+    $finalization->shouldReceive('finalizeAndComplete')->once();
+    $updater = new FOSSBilling\Update();
+    $updater->setDi(new Pimple\Container(['update_finalization' => $finalization]));
+    $updater->performManualUpdate();
 });

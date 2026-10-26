@@ -2287,7 +2287,7 @@ test('applyCorePatches does resync an extension\'s table once it is marked insta
  * during installedExtensionModules()'s own tablesExist() call, before SchemaSynchronizer::
  * syncEntities() is ever reached.
  */
-test('applyCorePatches logs, rather than throws, when scope discovery itself fails to reach the database', function (): void {
+test('applyCorePatches logs schema discovery failures and blocks the data migration when the database is unavailable', function (): void {
     withNonMysqlDbDriver(function (): void {
         $brokenConnection = Doctrine\DBAL\DriverManager::getConnection([
             'driver' => 'pdo_sqlite',
@@ -2307,9 +2307,7 @@ test('applyCorePatches logs, rather than throws, when scope discovery itself fai
         $patcher = new UpdatePatcher();
         $patcher->setDi($di);
 
-        // Must not throw - the whole point of the try/catch this scope discovery has to live
-        // inside.
-        $patcher->applyCorePatches(force: true);
+        expect(fn () => $patcher->applyCorePatches(force: true))->toThrow(FOSSBilling\Doctrine\JsonMigrationException::class);
 
         $errorCalls = array_values(array_filter($logger->calls, static fn (array $call): bool => $call['method'] === 'error'));
         expect($errorCalls)->not->toBe([])
