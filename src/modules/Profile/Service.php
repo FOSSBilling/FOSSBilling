@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Box\Mod\Profile;
 
 use Box\Mod\Client\Entity\Client;
+use Box\Mod\Client\Entity\ClientPasswordReset;
 use Box\Mod\Profile\Event\AfterAdminApiKeyChangeEvent;
 use Box\Mod\Profile\Event\AfterAdminProfilePasswordChangeEvent;
 use Box\Mod\Profile\Event\AfterAdminProfileUpdateEvent;
@@ -23,6 +24,7 @@ use Box\Mod\Profile\Event\BeforeAdminProfileUpdateEvent;
 use Box\Mod\Profile\Event\BeforeClientProfilePasswordChangeEvent;
 use Box\Mod\Profile\Event\BeforeClientProfileUpdateEvent;
 use Box\Mod\Staff\Entity\Admin;
+use Box\Mod\Staff\Entity\AdminPasswordReset;
 use FOSSBilling\i18n;
 use FOSSBilling\InformationException;
 use FOSSBilling\InjectionAwareInterface;
@@ -69,9 +71,8 @@ class Service implements InjectionAwareInterface
         $adminId = (int) $admin->getId();
         $this->di['event_dispatcher']->dispatch(new BeforeAdminProfilePasswordChangeEvent($adminId));
 
-        $admin->setPass($this->di['password']->hashIt($new_password));
-        $this->di['em']->persist($admin);
-        $this->di['em']->flush();
+        $this->di['em']->getRepository(AdminPasswordReset::class)
+            ->changePassword($admin, $this->di['password']->hashIt($new_password));
 
         $this->di['event_dispatcher']->dispatch(new AfterAdminProfilePasswordChangeEvent($adminId));
 
@@ -136,6 +137,11 @@ class Service implements InjectionAwareInterface
 
     public function updateClient(Client $client, array $data = []): bool
     {
+        return $this->di['dbal']->transactional(fn (): bool => $this->updateClientProfile($client, $data));
+    }
+
+    private function updateClientProfile(Client $client, array $data): bool
+    {
         $clientId = (int) $client->getId();
         $this->di['event_dispatcher']->dispatch(new BeforeClientProfileUpdateEvent($clientId, $this->profileEventData($data)));
 
@@ -159,6 +165,10 @@ class Service implements InjectionAwareInterface
             }
 
             if ($client->getEmail() !== $email) {
+                // Lock the row and reset the stored flag even if the managed entity
+                // still has its original false value after a concurrent confirmation.
+                $this->di['dbal']->executeStatement('UPDATE client SET email_approved = false WHERE id = :id', ['id' => $clientId]);
+                $clientService->revokeEmailConfirmations($clientId);
                 $client->setEmail($email);
                 $client->setEmailApproved(false);
 
@@ -273,9 +283,7 @@ class Service implements InjectionAwareInterface
         $clientId = (int) $client->getId();
         $this->di['event_dispatcher']->dispatch(new BeforeClientProfilePasswordChangeEvent($clientId));
 
-        $client->setPass($this->di['password']->hashIt($new_password));
-        $this->di['em']->persist($client);
-        $this->di['em']->flush();
+        $this->di['em']->getRepository(ClientPasswordReset::class)->changePassword($client, $this->di['password']->hashIt($new_password));
 
         $this->di['event_dispatcher']->dispatch(new AfterClientProfilePasswordChangeEvent($clientId));
 

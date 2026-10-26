@@ -24,7 +24,9 @@ use Box\Mod\Invoice\Event\BeforeAdminTransactionProcessEvent;
 use Box\Mod\Order\Entity\Order;
 use FOSSBilling\InformationException;
 use FOSSBilling\PaginationOptions;
+use FOSSBilling\Tools;
 use FOSSBilling\Validation\Api\RequiredParams;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Response;
 
 class Admin extends \FOSSBilling\Api\AbstractApi
@@ -182,6 +184,7 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      *
      * @optional string $note - note for refund
      * @optional array $items - line id => quantity map for a partial refund; omit for a full refund
+     * @optional bool $gateway_refund - also return the money through the payment gateway when it supports refunds (default true). Pass false to record an offline-only refund.
      *
      * @return int $id - newly generated refund document ID
      */
@@ -196,8 +199,19 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         if ($items !== null && (!is_array($items) || $items === [])) {
             throw new InformationException('Refund lines are invalid');
         }
+        $gatewayRefund = !array_key_exists('gateway_refund', $data) || Tools::normalizeBoolean($data['gateway_refund'], true);
+        $options = [];
+        if (array_key_exists('gateway_refund', $data)) {
+            $options['gateway_refund'] = $gatewayRefund;
+        }
 
-        return $this->getService()->refundInvoice($model, $note, $items);
+        // Refunding a deposit returns wallet credit as card money, so it
+        // needs the same permission as crediting the balance directly.
+        if ($gatewayRefund && $this->getService()->isInvoiceTypeDeposit($model)) {
+            $this->checkPermissions('client', 'manage_balance');
+        }
+
+        return $this->getService()->refundInvoice($model, $note, $items, $options);
     }
 
     /**
@@ -934,6 +948,9 @@ class Admin extends \FOSSBilling\Api\AbstractApi
      * Change gateway settings.
      *
      * @optional string $title - gateway title
+     * @optional string $logo_url - public HTTP(S) image URL to download and store locally; blank keeps the current image
+     * @optional file $logo_file - custom image uploaded in a multipart request; takes precedence over logo_url
+     * @optional bool $remove_custom_logo - restore the adapter's default image
      * @optional array $config - gateway config array
      * @optional array $accepted_currencies - list of currencies this gateway supports
      * @optional bool $enabled - flag to enable or disable gateway
@@ -956,7 +973,12 @@ class Admin extends \FOSSBilling\Api\AbstractApi
         }
         $gatewayService = $this->getDi()['mod_service']('Invoice', 'PayGateway');
 
-        return $gatewayService->update($model, $data);
+        $file = $this->getDi()['request']->files->get('logo_file');
+        if ($file !== null && !$file instanceof UploadedFile) {
+            throw new \FOSSBilling\Exception('Payment gateway image upload failed.');
+        }
+
+        return $gatewayService->update($model, $data, $file);
     }
 
     /**

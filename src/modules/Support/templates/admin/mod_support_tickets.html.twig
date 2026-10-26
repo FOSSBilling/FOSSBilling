@@ -406,7 +406,8 @@
 
                 result.notes.forEach(function(entry) {
                     var div = document.createElement('div');
-                    div.innerHTML = entry.note;
+                    div.textContent = entry.note;
+                    div.style.whiteSpace = 'pre-wrap';
 
                     html.appendChild(div);
                     html.appendChild(document.createElement('hr'));

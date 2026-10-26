@@ -52,6 +52,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use FOSSBilling\Doctrine\EntityManagerFactory;
+use FOSSBilling\Doctrine\NamedLock;
 use FOSSBilling\Doctrine\RowLock;
 use FOSSBilling\Doctrine\SqlExpr;
 use FOSSBilling\Environment;
@@ -848,6 +849,12 @@ class Service implements InjectionAwareInterface
         $claimed = false;
 
         try {
+            // Defer until the configured send time; returning before the claim
+            // leaves reminded_at untouched so a later cron retries.
+            if (!$this->isReminderSendTimeReached()) {
+                return;
+            }
+
             if (!$this->isInvoiceReminderIntervalEnabled('invoice_reminder_before_due_days', $event->daysLeft, '', $event->reminderIntervals)) {
                 return;
             }
@@ -955,6 +962,11 @@ class Service implements InjectionAwareInterface
         $claimed = false;
 
         try {
+            // Same deferral as the before-due handler; no claim is made yet.
+            if (!$this->isReminderSendTimeReached()) {
+                return;
+            }
+
             if (!$this->isInvoiceReminderIntervalEnabled('invoice_reminder_after_due_days', $event->daysPassed, '5', $event->reminderIntervals)) {
                 return;
             }
@@ -1749,9 +1761,92 @@ class Service implements InjectionAwareInterface
         return (float) $total;
     }
 
-    public function refundInvoice(Invoice $invoice, $note = null, ?array $items = null): int
+    public function refundInvoice(Invoice $invoice, $note = null, ?array $items = null, array $options = []): int
     {
         $this->di['event_dispatcher']->dispatch(new BeforeAdminInvoiceRefundEvent((int) $invoice->getId()));
+
+        // The locked read inside the credit-note transaction below stays
+        // authoritative, but don't move money for a clearly unpaid invoice.
+        if ($invoice->getStatus() !== Invoice::STATUS_PAID) {
+            throw new InformationException('Only paid invoices can be refunded');
+        }
+
+        $new = $this->withInvoiceRefundLock($invoice, fn (): Invoice => $this->createRefundDocument($invoice, $note, $items, $options));
+
+        try {
+            $this->sendRefundEmail($invoice, $new);
+        } catch (\Throwable $exception) {
+            $this->di['logger']->withChannel('email')->error('Failed to send refund email', [
+                'invoice_id' => $invoice->getId(),
+                'credit_note_id' => $new->getId(),
+                'exception' => $exception,
+            ]);
+        }
+
+        $this->di['event_dispatcher']->dispatch(new AfterAdminInvoiceRefundEvent((int) $invoice->getId()));
+
+        $this->di['logger']->info('Refunded invoice #{invoice_id}', ['invoice_id' => $invoice->getId()]);
+
+        return (int) $new->getId();
+    }
+
+    /**
+     * Serialize refunds of one invoice across processes. The gateway refund
+     * executes inside the credit-note transaction below, but that transaction
+     * starts with the invoice row lock, so without this outer lock two
+     * concurrent refunds with different line selections could both pass
+     * their read-only preparation before either commits; the loser's
+     * rollback would then orphan its already-issued refund. Holding the lock
+     * makes the second attempt see the first one's committed state before
+     * anything is prepared, so overlapping lines fail fast with nothing
+     * moved. Split out so tests can simulate a busy lock without a real
+     * database lock manager.
+     */
+    protected function withInvoiceRefundLock(Invoice $invoice, callable $callback): Invoice
+    {
+        $lockName = 'fb:invoice-refund:' . (int) $invoice->getId();
+        if (!NamedLock::acquire($this->di['dbal'], $lockName, 30)) {
+            $this->di['logger']->warning('Timed out waiting for invoice refund lock for invoice #{id}', ['id' => $invoice->getId()]);
+
+            throw new InformationException('Another refund for this invoice is already in progress. Please retry.');
+        }
+
+        try {
+            return $callback();
+        } finally {
+            NamedLock::release($this->di['dbal'], $lockName);
+        }
+    }
+
+    /**
+     * Build and persist the credit-note (or negative-invoice) document for a
+     * refund, moving the gateway money first. Runs under the per-invoice
+     * named lock held by refundInvoice so concurrent attempts serialize.
+     */
+    private function createRefundDocument(Invoice $invoice, $note, ?array $items, array $options): Invoice
+    {
+        $gatewayRefundRequested = (bool) ($options['gateway_refund'] ?? true);
+        $gatewayReturned = (bool) ($options['gateway_returned'] ?? false);
+
+        // A dashboard refund already returned the card payment, so a deposit
+        // invoice's wallet credit must be reversed when recording it.
+        if ($gatewayReturned && $this->isInvoiceTypeDeposit($invoice)) {
+            $this->assertDepositReversalAvailable($invoice, $this->previewRefundAmount($invoice, $items));
+        }
+
+        $gatewayPlan = [];
+        if ($gatewayRefundRequested && !$gatewayReturned) {
+            // Read-only preparation: adapter, transaction, amount and any
+            // already-issued but unrecorded refund. The money-moving
+            // refundPayment call itself runs inside the credit-note
+            // transaction below, after the deposit credit is reversed under
+            // lock, so a shortfall aborts before Stripe is touched.
+            $gatewayPlan = $this->planGatewayRefund($invoice, $items);
+        }
+
+        // Offline-only refunds of deposits keep the pre-existing paper trail:
+        // no card money moves, so there is no credit to reverse.
+        $reverseDeposit = ($gatewayPlan !== [] || $gatewayReturned) && $this->isInvoiceTypeDeposit($invoice);
 
         $systemService = $this->di['mod_service']('system');
         $logic = $systemService->getParamValue('invoice_refund_logic', 'manual');
@@ -1762,151 +1857,495 @@ class Service implements InjectionAwareInterface
         $offline = $logic === 'manual';
         $documentLogic = $offline ? 'credit_note' : $logic;
 
-        switch ($documentLogic) {
-            case 'credit_note':
-            case 'negative_invoice':
-                $new = $this->di['em']->wrapInTransaction(function () use ($invoice, $items, $documentLogic, $note, $systemService, $offline): Invoice {
-                    // Reserve the number before any invoice reads. SQLite must acquire its write
-                    // lock before the locking read; the outer transaction rolls this back on failure.
-                    $nextNumber = $documentLogic === 'negative_invoice'
-                        ? $this->getNextInvoiceNumber()
-                        : $systemService->reserveNextNumericParamValue('invoice_cn_starting_number', 1);
-                    if ($nextNumber === null) {
-                        throw new \FOSSBilling\Exception('Unable to determine the next invoice number');
-                    }
-
-                    // Use the current locked status rather than the possibly stale entity state.
-                    if ($this->getInvoiceRepository()->lockAndGetStatus((int) $invoice->getId()) !== Invoice::STATUS_PAID) {
-                        throw new InformationException('Only paid invoices can be refunded');
-                    }
-                    $this->di['em']->refresh($invoice);
-
-                    $total = $this->getTotalWithTax($invoice);
-                    if ($total <= 0) {
-                        throw new InformationException('Cannot refund invoice with negative amount');
-                    }
-
-                    $creditLines = $this->resolveRefundLines($invoice, $items);
-
-                    $new = new Invoice();
-                    $new->setClientId($invoice->getClientId());
-                    $new->setCreditNoteForInvoiceId($invoice->getId());
-                    $new->setHash(bin2hex(random_bytes(random_int(15, 30))));
-                    $new->setHashExpiresAt($this->computeHashExpiration());
-                    $new->setStatus(Invoice::STATUS_REFUNDED);
-                    $new->setCurrency($invoice->getCurrency());
-                    $new->setIssued(true);
-                    $new->setTaxname($invoice->getTaxname());
-                    $new->setTaxrate($invoice->getTaxrate());
-
-                    $new->setSellerCompany($invoice->getSellerCompany());
-                    $new->setSellerCompanyVat($invoice->getSellerCompanyVat());
-                    $new->setSellerCompanyNumber($invoice->getSellerCompanyNumber());
-                    $new->setSellerAddress($invoice->getSellerAddress());
-                    $new->setSellerPhone($invoice->getSellerPhone());
-                    $new->setSellerEmail($invoice->getSellerEmail());
-
-                    $new->setBuyerFirstName($invoice->getBuyerFirstName());
-                    $new->setBuyerLastName($invoice->getBuyerLastName());
-                    $new->setBuyerCompany($invoice->getBuyerCompany());
-                    $new->setBuyerCompanyVat($invoice->getBuyerCompanyVat());
-                    $new->setBuyerCompanyNumber($invoice->getBuyerCompanyNumber());
-                    $new->setBuyerAddress($invoice->getBuyerAddress());
-                    $new->setBuyerCity($invoice->getBuyerCity());
-                    $new->setBuyerState($invoice->getBuyerState());
-                    $new->setBuyerCountry($invoice->getBuyerCountry());
-                    $new->setBuyerPhone($invoice->getBuyerPhone());
-                    $new->setBuyerEmail($invoice->getBuyerEmail());
-                    $new->setBuyerZip($invoice->getBuyerZip());
-                    $new->setText1($invoice->getText1());
-                    $new->setText2($invoice->getText2());
-                    // Each serie draws from exactly one counter: negative invoices continue
-                    // the invoice numbering, credit notes (and offline refunds) use the
-                    // credit-note counter. Sharing a prefix across counters would mint
-                    // duplicate numbers within one serie.
-                    $new->setSerie($documentLogic === 'negative_invoice'
-                        ? $systemService->getParamValue('invoice_series')
-                        : $systemService->getParamValue('invoice_cn_series', 'CN-'));
-                    $new->setNr($nextNumber);
-
-                    $new->setPaidAt(new \DateTime());
-                    $this->di['em']->persist($new);
-                    $this->di['em']->flush();
-
-                    $entityManager = $this->di['em'];
-                    foreach ($creditLines as [$item, $qty]) {
-                        $pi = new InvoiceItem();
-                        $pi->setInvoice($new);
-                        $pi->setType($item->getType());
-                        $pi->setRelId($item->getRelId());
-                        $pi->setRefundedItemId($item->getId());
-                        $pi->setTask($item->getTask());
-                        $pi->setStatus(InvoiceItem::STATUS_EXECUTED); // Mark refund invoice as executed
-                        $pi->setTitle($item->getTitle());
-                        $pi->setPeriod($item->getPeriod());
-                        $pi->setQuantity($qty);
-                        $pi->setUnit($item->getUnit());
-                        $pi->setCharged(1);
-                        $pi->setPrice(-($item->getPrice() ?? 0));
-                        $pi->setTaxed($item->getTaxed());
-                        $entityManager->persist($pi);
-                    }
-                    $entityManager->flush();
-
-                    // Credit notes carry no income themselves; the offset is
-                    // tracked on the original below so reporting nets out.
-                    $creditAmount = round(abs($this->getTotalWithTax($new)), 2);
-                    $remaining = round($total - (float) ($invoice->getRefund() ?? 0), 2);
-                    if ($creditAmount - $remaining > 0.005) {
-                        throw new InformationException('Refund amount exceeds the remaining refundable amount of :amount', [':amount' => $remaining]);
-                    }
-
-                    $invoice->setRefund(round((float) ($invoice->getRefund() ?? 0) + $creditAmount, 2));
-                    if (round($total - (float) $invoice->getRefund(), 2) <= 0.005) {
-                        $invoice->setStatus(Invoice::STATUS_REFUNDED);
-                    }
-                    $this->countIncome($invoice);
-
-                    $this->addNote($invoice, "Refund invoice #{$new->getId()} generated.");
-                    $this->addNote($new, "Refund for #{$invoice->getId()} invoice.");
-                    if (!empty($note)) {
-                        $this->addNote($new, $note);
-                    }
-                    if ($offline) {
-                        $this->addNote($new, 'Offline refund: the amount was returned outside FOSSBilling; this credit note records it.');
-                    }
-
-                    // Commits atomically with the credit note above.
-                    $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_REFUNDED, array_filter([
-                        'offline' => $offline ?: null,
-                        'credit_note_id' => (int) $new->getId(),
-                    ]));
-
-                    return $new;
-                });
-                $result = (int) $new->getId();
-
-                try {
-                    $this->sendRefundEmail($invoice, $new);
-                } catch (\Throwable $exception) {
-                    $this->di['logger']->withChannel('email')->error('Failed to send refund email', [
-                        'invoice_id' => $invoice->getId(),
-                        'credit_note_id' => $new->getId(),
-                        'exception' => $exception,
-                    ]);
+        return match ($documentLogic) {
+            'credit_note', 'negative_invoice' => $this->di['em']->wrapInTransaction(function () use ($invoice, $items, $documentLogic, $note, $systemService, $offline, $gatewayPlan, $reverseDeposit): Invoice {
+                // Reserve the number before any invoice reads. SQLite must acquire its write
+                // lock before the locking read; the outer transaction rolls this back on failure.
+                $nextNumber = $documentLogic === 'negative_invoice'
+                    ? $this->getNextInvoiceNumber()
+                    : $systemService->reserveNextNumericParamValue('invoice_cn_starting_number', 1);
+                if ($nextNumber === null) {
+                    throw new \FOSSBilling\Exception('Unable to determine the next invoice number');
                 }
 
-                break;
+                // Use the current locked status rather than the possibly stale entity state.
+                if ($this->getInvoiceRepository()->lockAndGetStatus((int) $invoice->getId()) !== Invoice::STATUS_PAID) {
+                    throw new InformationException('Only paid invoices can be refunded');
+                }
+                $this->di['em']->refresh($invoice);
 
-            default:
-                throw new InformationException('Unknown invoice refund logic: :logic', [':logic' => $logic]);
+                $total = $this->getTotalWithTax($invoice);
+                if ($total <= 0) {
+                    throw new InformationException('Cannot refund invoice with negative amount');
+                }
+
+                $creditLines = $this->resolveRefundLines($invoice, $items);
+
+                $new = new Invoice();
+                $new->setClientId($invoice->getClientId());
+                $new->setCreditNoteForInvoiceId($invoice->getId());
+                $new->setHash(bin2hex(random_bytes(random_int(15, 30))));
+                $new->setHashExpiresAt($this->computeHashExpiration());
+                $new->setStatus(Invoice::STATUS_REFUNDED);
+                $new->setCurrency($invoice->getCurrency());
+                $new->setIssued(true);
+                $new->setTaxname($invoice->getTaxname());
+                $new->setTaxrate($invoice->getTaxrate());
+
+                $new->setSellerCompany($invoice->getSellerCompany());
+                $new->setSellerCompanyVat($invoice->getSellerCompanyVat());
+                $new->setSellerCompanyNumber($invoice->getSellerCompanyNumber());
+                $new->setSellerAddress($invoice->getSellerAddress());
+                $new->setSellerPhone($invoice->getSellerPhone());
+                $new->setSellerEmail($invoice->getSellerEmail());
+
+                $new->setBuyerFirstName($invoice->getBuyerFirstName());
+                $new->setBuyerLastName($invoice->getBuyerLastName());
+                $new->setBuyerCompany($invoice->getBuyerCompany());
+                $new->setBuyerCompanyVat($invoice->getBuyerCompanyVat());
+                $new->setBuyerCompanyNumber($invoice->getBuyerCompanyNumber());
+                $new->setBuyerAddress($invoice->getBuyerAddress());
+                $new->setBuyerCity($invoice->getBuyerCity());
+                $new->setBuyerState($invoice->getBuyerState());
+                $new->setBuyerCountry($invoice->getBuyerCountry());
+                $new->setBuyerPhone($invoice->getBuyerPhone());
+                $new->setBuyerEmail($invoice->getBuyerEmail());
+                $new->setBuyerZip($invoice->getBuyerZip());
+                $new->setText1($invoice->getText1());
+                $new->setText2($invoice->getText2());
+                // Each serie draws from exactly one counter: negative invoices continue
+                // the invoice numbering, credit notes (and offline refunds) use the
+                // credit-note counter. Sharing a prefix across counters would mint
+                // duplicate numbers within one serie.
+                $new->setSerie($documentLogic === 'negative_invoice'
+                    ? $systemService->getParamValue('invoice_series')
+                    : $systemService->getParamValue('invoice_cn_series', 'CN-'));
+                $new->setNr($nextNumber);
+
+                $new->setPaidAt(new \DateTime());
+                $this->di['em']->persist($new);
+                $this->di['em']->flush();
+
+                $entityManager = $this->di['em'];
+                foreach ($creditLines as [$item, $qty]) {
+                    $pi = new InvoiceItem();
+                    $pi->setInvoice($new);
+                    $pi->setType($item->getType());
+                    $pi->setRelId($item->getRelId());
+                    $pi->setRefundedItemId($item->getId());
+                    $pi->setTask($item->getTask());
+                    $pi->setStatus(InvoiceItem::STATUS_EXECUTED); // Mark refund invoice as executed
+                    $pi->setTitle($item->getTitle());
+                    $pi->setPeriod($item->getPeriod());
+                    $pi->setQuantity($qty);
+                    $pi->setUnit($item->getUnit());
+                    $pi->setCharged(1);
+                    $pi->setPrice(-($item->getPrice() ?? 0));
+                    $pi->setTaxed($item->getTaxed());
+                    $entityManager->persist($pi);
+                }
+                $entityManager->flush();
+
+                // Credit notes carry no income themselves; the offset is
+                // tracked on the original below so reporting nets out.
+                $creditAmount = round(abs($this->getTotalWithTax($new)), 2);
+                $remaining = round($total - (float) ($invoice->getRefund() ?? 0), 2);
+                if ($creditAmount - $remaining > 0.005) {
+                    throw new InformationException('Refund amount exceeds the remaining refundable amount of :amount', [':amount' => $remaining]);
+                }
+
+                if ($reverseDeposit) {
+                    $this->reverseDepositCredit($invoice, $creditAmount);
+                }
+
+                // The deposit credit above is locked and debited before the
+                // gateway moves money: a concurrent spend either committed
+                // first (and this locked recheck already threw) or waits on
+                // the balance lock, so a shortfall can never orphan an
+                // already-issued Stripe refund.
+                $gatewayRefundId = $gatewayPlan['refund_id'] ?? null;
+                $gatewayName = $gatewayPlan['gateway'] ?? null;
+                if (isset($gatewayPlan['pending'])) {
+                    $executed = $this->executeGatewayRefund($gatewayPlan['pending']);
+                    $gatewayRefundId = $executed['refund_id'];
+                    $gatewayName = $executed['gateway'];
+                    // Stripe replays the cached refund when a request repeats
+                    // an idempotency key. Refusing an already-recorded ID
+                    // keeps one Stripe refund from backing two credit notes.
+                    if (in_array($gatewayRefundId, $gatewayPlan['pending']['recorded'], true)) {
+                        throw new InformationException('Stripe refund :refund is already recorded for this invoice; the duplicate was not recorded again.', [':refund' => $gatewayRefundId]);
+                    }
+                }
+
+                $invoice->setRefund(round((float) ($invoice->getRefund() ?? 0) + $creditAmount, 2));
+                if (round($total - (float) $invoice->getRefund(), 2) <= 0.005) {
+                    $invoice->setStatus(Invoice::STATUS_REFUNDED);
+                }
+                $this->countIncome($invoice);
+
+                $this->addNote($invoice, "Refund invoice #{$new->getId()} generated.");
+                $this->addNote($new, "Refund for #{$invoice->getId()} invoice.");
+                if (!empty($note)) {
+                    $this->addNote($new, $note);
+                }
+                if ($gatewayRefundId !== null) {
+                    $gatewayLabel = $gatewayName ?? 'Stripe';
+                    $this->addNote($new, "Gateway refund {$gatewayRefundId} issued via {$gatewayLabel} for {$creditAmount} {$invoice->getCurrency()}.");
+                    $this->addNote($invoice, "Gateway refund {$gatewayRefundId} issued via {$gatewayLabel}.");
+                    $this->recordGatewayRefundTransaction($invoice, $gatewayRefundId, $creditAmount);
+                } elseif ($offline) {
+                    $this->addNote($new, 'Offline refund: the amount was returned outside FOSSBilling; this credit note records it.');
+                }
+
+                // Commits atomically with the credit note above.
+                $this->recordJournalEvent($invoice, InvoiceEvent::TYPE_REFUNDED, array_filter([
+                    'offline' => $offline && $gatewayRefundId === null ? true : null,
+                    'gateway_refund_id' => $gatewayRefundId,
+                    'credit_note_id' => (int) $new->getId(),
+                ]));
+
+                return $new;
+            }),
+            default => throw new InformationException('Unknown invoice refund logic: :logic', [':logic' => $logic]),
+        };
+    }
+
+    /**
+     * Read-only gateway refund preparation: finds the adapter, the refundable
+     * transaction and the amount, and reuses an already-issued but unrecorded
+     * Stripe refund when one matches. Moves no money; when a new refund is
+     * needed the returned pending plan is executed inside the credit-note
+     * transaction by executeGatewayRefund, after the deposit credit is
+     * reversed under lock. Throws when a gateway refund was requested but the
+     * gateway adapter cannot be loaded or no refundable payment exists,
+     * instead of silently recording an offline refund the admin did not ask
+     * for.
+     *
+     * @return array{refund_id: string, gateway: string}|array{pending: array{adapter: object, txn_id: string, amount: float, currency: string, metadata: array<string, string>, gateway: string, recorded: list<string>}}|array{}
+     */
+    private function planGatewayRefund(Invoice $invoice, ?array $items): array
+    {
+        $gateway = $invoice->getGateway();
+        if (!$gateway instanceof PayGateway) {
+            return [];
         }
 
-        $this->di['event_dispatcher']->dispatch(new AfterAdminInvoiceRefundEvent((int) $invoice->getId()));
+        $payGatewayService = $this->di['mod_service']('Invoice', 'PayGateway');
 
-        $this->di['logger']->info('Refunded invoice #{invoice_id}', ['invoice_id' => $invoice->getId()]);
+        try {
+            $adapter = $payGatewayService->getPaymentAdapter($gateway);
+        } catch (\Throwable $e) {
+            throw new InformationException('Could not load the payment gateway for invoice #:id: :error. Return the payment in the gateway dashboard, or record an offline-only refund.', [':id' => $invoice->getId(), ':error' => $e->getMessage()]);
+        }
 
-        return $result;
+        if (!method_exists($adapter, 'refundPayment') || (method_exists($adapter, 'supportsRefunds') && !$adapter::supportsRefunds())) {
+            return [];
+        }
+
+        $paymentTx = $this->findRefundablePaymentTransaction($invoice);
+        if (!$paymentTx instanceof Transaction) {
+            throw new InformationException('No refundable gateway payment found for invoice #:id. Return the payment in the gateway dashboard, or record an offline-only refund.', ['id' => $invoice->getId()]);
+        }
+
+        $amount = $this->previewRefundAmount($invoice, $items);
+        if ($amount <= 0) {
+            return [];
+        }
+
+        // A deposit's wallet credit is reversed under the credit-note lock
+        // below; confirm it exists before preparing the gateway call.
+        if ($this->isInvoiceTypeDeposit($invoice)) {
+            $this->assertDepositReversalAvailable($invoice, $amount);
+        }
+
+        if (method_exists($adapter, 'listRefundsForTransaction')) {
+            $recordedIds = $this->getRecordedGatewayRefundIds($invoice);
+            $reused = $this->reuseUnrecordedStripeRefund($adapter, $paymentTx, $invoice, $amount, $gateway, $recordedIds, $this->refundItemsFingerprint($items));
+            if ($reused !== null) {
+                return $reused;
+            }
+        } else {
+            $recordedIds = [];
+        }
+
+        return ['pending' => [
+            'adapter' => $adapter,
+            'txn_id' => (string) $paymentTx->getTxnId(),
+            'amount' => $amount,
+            'currency' => (string) ($invoice->getCurrency() ?? $paymentTx->getCurrency()),
+            // The attempt nonce makes every refund its own idempotency scope:
+            // repeating the same line selection is a new refund (a new Stripe
+            // ID), while a retry of the same attempt reuses the unrecorded
+            // refund above instead of minting another. The line selection
+            // stays in the key so two distinct same-amount partials never
+            // share one either.
+            'metadata' => [
+                'invoice_id' => (string) $invoice->getId(),
+                'gateway_id' => (string) $gateway->getId(),
+                'lines' => $this->refundItemsFingerprint($items),
+                'attempt' => bin2hex(random_bytes(16)),
+            ],
+            'gateway' => $gateway->getName() ?: $gateway->getGateway(),
+            // Recorded IDs seen during planning, carried for the duplicate
+            // check after execution: under the per-invoice lock no same-
+            // invoice refund can record between planning and execution.
+            'recorded' => $recordedIds,
+        ]];
+    }
+
+    /**
+     * Issue the prepared gateway refund. Runs inside the credit-note
+     * transaction after the deposit credit is reversed under lock, so a
+     * failure rolls the reversal back with it and no credit note is created
+     * for money that never moved.
+     *
+     * @param array{adapter: object, txn_id: string, amount: float, currency: string, metadata: array<string, string>, gateway: string, recorded: list<string>} $pending
+     *
+     * @return array{refund_id: string, gateway: string}
+     */
+    private function executeGatewayRefund(array $pending): array
+    {
+        $adapter = $pending['adapter'];
+        if (!method_exists($adapter, 'refundPayment')) {
+            throw new InformationException('Gateway refund failed: payment adapter cannot issue refunds');
+        }
+        $invoiceId = $pending['metadata']['invoice_id'] ?? '?';
+
+        try {
+            $refundId = $adapter->refundPayment(
+                $pending['txn_id'],
+                $pending['amount'],
+                $pending['currency'],
+                $pending['metadata']
+            );
+        } catch (\Payment_Exception $e) {
+            throw new InformationException('Gateway refund failed: :error', [':error' => $e->getMessage()]);
+        } catch (\Throwable $e) {
+            $this->di['logger']->error('Gateway refund failed for invoice #{id}: {error}', ['id' => $invoiceId, 'error' => $e->getMessage()]);
+
+            throw new InformationException('Gateway refund failed: :error', [':error' => $e->getMessage()]);
+        }
+
+        $this->di['logger']->info('Issued gateway refund {refund} for invoice #{id}', ['refund' => $refundId, 'id' => $invoiceId]);
+
+        return ['refund_id' => $refundId, 'gateway' => $pending['gateway']];
+    }
+
+    /**
+     * Most recent processed payment transaction that can be refunded remotely.
+     * Skips setup-intent rows (seti_...), which authorize but move no money.
+     */
+    private function findRefundablePaymentTransaction(Invoice $invoice): ?Transaction
+    {
+        $rows = $this->di['em']->getRepository(Transaction::class)->findBy(
+            ['invoice' => $this->di['em']->getReference(Invoice::class, $invoice->getId()), 'status' => Transaction::STATUS_PROCESSED],
+            ['id' => 'DESC']
+        );
+        foreach ($rows as $tx) {
+            if (!$tx instanceof Transaction) {
+                continue;
+            }
+            $txnId = $tx->getTxnId() ?? '';
+            if ($txnId === '' || str_starts_with($txnId, 'seti_')) {
+                continue;
+            }
+            $code = $tx->getGateway()?->getGateway();
+            if ($code !== 'Stripe' && $tx->getGateway()?->getId() !== $invoice->getGateway()?->getId()) {
+                continue;
+            }
+            if (!str_starts_with($txnId, 'pi_') && !str_starts_with($txnId, 'ch_') && !str_starts_with($txnId, 'in_')) {
+                continue;
+            }
+
+            return $tx;
+        }
+
+        return null;
+    }
+
+    /**
+     * Reuse a Stripe refund a previous attempt already moved but failed to
+     * record, so a retry doesn't move the money twice. Only refunds stamped
+     * with this invoice's ID qualify; anything else is someone else's money.
+     * A same-amount orphan for the same line selection is reused, a divergent
+     * one aborts with its IDs so the admin reconciles deliberately instead of
+     * stacking another refund.
+     *
+     * @param list<string> $recordedIds
+     *
+     * @return ?array{refund_id: string, gateway: string}
+     */
+    private function reuseUnrecordedStripeRefund(object $adapter, Transaction $paymentTx, Invoice $invoice, float $amount, PayGateway $gateway, array $recordedIds, string $lines): ?array
+    {
+        try {
+            $stripeRefunds = $adapter->listRefundsForTransaction(
+                (string) $paymentTx->getTxnId(),
+                (string) ($invoice->getCurrency() ?? $paymentTx->getCurrency())
+            );
+        } catch (\Throwable $e) {
+            $this->di['logger']->error('Could not list previous Stripe refunds for invoice #{id}; aborting instead of risking a duplicate refund: {error}', ['id' => $invoice->getId(), 'error' => $e->getMessage()]);
+
+            throw new InformationException('Could not verify previous gateway refunds: :error. Please retry.', [':error' => $e->getMessage()]);
+        }
+
+        $unrecorded = array_values(array_filter(
+            $stripeRefunds,
+            static fn (array $r): bool => ($r['invoice_id'] ?? null) === (string) $invoice->getId() && !in_array($r['id'], $recordedIds, true)
+        ));
+        foreach ($unrecorded as $candidate) {
+            // The selection must match exactly: a refund stamped without a
+            // line selection cannot be attributed to specific lines, so
+            // unknown selections never reuse and fall through to manual
+            // reconciliation below instead of being misattributed.
+            $linesMatch = ($candidate['lines'] ?? null) === $lines;
+            if ($linesMatch && abs((float) $candidate['amount'] - $amount) <= 0.005) {
+                $this->di['logger']->info('Reusing unrecorded Stripe refund {refund} for invoice #{id}', ['refund' => $candidate['id'], 'id' => $invoice->getId()]);
+
+                return ['refund_id' => $candidate['id'], 'gateway' => $gateway->getName() ?: $gateway->getGateway()];
+            }
+        }
+        if ($unrecorded !== []) {
+            $ids = implode(', ', array_column($unrecorded, 'id'));
+
+            throw new InformationException('Stripe already shows refunds (:ids) for this invoice that FOSSBilling has not recorded. Retry with matching lines to reuse them, or record them manually.', [':ids' => $ids]);
+        }
+
+        return null;
+    }
+
+    /**
+     * Stripe refund IDs already recorded against the invoice.
+     *
+     * @return list<string>
+     */
+    private function getRecordedGatewayRefundIds(Invoice $invoice): array
+    {
+        $rows = $this->di['em']->getRepository(Transaction::class)->findBy([
+            'invoice' => $this->di['em']->getReference(Invoice::class, $invoice->getId()),
+            'type' => \Payment_Transaction::TXTYPE_REFUND,
+        ]);
+        $ids = [];
+        foreach ($rows as $row) {
+            if ($row instanceof Transaction && is_string($row->getTxnId()) && $row->getTxnId() !== '') {
+                $ids[] = $row->getTxnId();
+            }
+        }
+
+        return $ids;
+    }
+
+    /**
+     * Fail fast when the wallet credit a deposit refund must reverse exceeds
+     * the client's balance. The locked re-check inside reverseDepositCredit
+     * stays authoritative; this only avoids pointless gateway preparation.
+     */
+    private function assertDepositReversalAvailable(Invoice $invoice, float $amount): void
+    {
+        $client = $this->di['em']->getRepository(Client::class)->find((int) $invoice->getClientId());
+        if (!$client instanceof Client) {
+            throw new InformationException('Client not found');
+        }
+        $available = $this->di['mod_service']('Client', 'Balance')->getClientBalance($client);
+        if (round($available, 2) < round($amount, 2)) {
+            throw new InformationException('Client balance of :balance is insufficient to reverse the deposit credit of :amount for this refund.', [':balance' => $available, ':amount' => $amount]);
+        }
+    }
+
+    /**
+     * Debit the wallet credit a deposit invoice created, so returning the
+     * card payment cannot leave spendable credit behind. Runs inside the
+     * refund's database transaction: the balance row is locked until the
+     * credit note commits, and a shortfall rolls everything back.
+     */
+    private function reverseDepositCredit(Invoice $invoice, float $amount): void
+    {
+        if ($amount <= 0) {
+            return;
+        }
+        $clientId = (int) $invoice->getClientId();
+        $available = $this->di['mod_service']('Client', 'Balance')->getClientBalanceForUpdate($clientId);
+        if (round($available, 2) < round($amount, 2)) {
+            throw new InformationException('Client balance of :balance is insufficient to reverse the deposit credit of :amount for this refund.', [':balance' => $available, ':amount' => $amount]);
+        }
+
+        $debit = new ClientBalance();
+        $debit->setClient($this->di['em']->getReference(Client::class, $clientId));
+        $debit->setType('invoice');
+        $debit->setRelId((string) $invoice->getId());
+        $debit->setDescription('Reversal of deposit credit for refunded invoice #' . ($invoice->getNr() ?: $invoice->getId()) . '.');
+        $debit->setAmount((string) (-$amount));
+        $this->di['em']->persist($debit);
+        $this->di['em']->flush();
+    }
+
+    /**
+     * Preview the credit-note total for the requested lines without persisting
+     * anything, mirroring how refundInvoice prices the note it is about to
+     * create (negative line prices plus tax on taxed lines).
+     */
+    private function previewRefundAmount(Invoice $invoice, ?array $items): float
+    {
+        $creditLines = $this->resolveRefundLines($invoice, $items);
+        $subtotal = 0.0;
+        $taxable = 0.0;
+        foreach ($creditLines as [$item, $qty]) {
+            $line = (float) ($item->getPrice() ?? 0) * $qty;
+            $subtotal += $line;
+            if ($item->getTaxed()) {
+                $taxable += $line;
+            }
+        }
+        $tax = 0.0;
+        if ((float) ($invoice->getTaxrate() ?? 0) > 0 && $taxable != 0.0) {
+            $tax = round($taxable * (float) $invoice->getTaxrate() / 100, 2);
+        }
+
+        return round(abs($subtotal + $tax), 2);
+    }
+
+    /**
+     * Canonical fingerprint of the refunded lines for the gateway refund's
+     * idempotency key. Keys are strings here (form posts decode quantities
+     * as strings) while the API also accepts ints, so both normalize to
+     * the same value.
+     */
+    private function refundItemsFingerprint(?array $items): string
+    {
+        if (empty($items)) {
+            return 'full';
+        }
+        $pairs = [];
+        foreach ($items as $id => $qty) {
+            $pairs[(int) $id] = (int) $qty;
+        }
+        ksort($pairs);
+        $parts = [];
+        foreach ($pairs as $id => $qty) {
+            $parts[] = $id . ':' . $qty;
+        }
+
+        return implode(',', $parts);
+    }
+
+    /**
+     * Persist an audit trail for money returned through the gateway. Runs
+     * inside the same database transaction as the credit note above.
+     */
+    private function recordGatewayRefundTransaction(Invoice $invoice, string $refundId, float $amount): void
+    {
+        $tx = new Transaction();
+        $tx->setInvoice($invoice);
+        $tx->setGateway($invoice->getGateway());
+        $tx->setTxnId($refundId);
+        $tx->setTxnStatus('refunded');
+        $tx->setAmount((string) $amount);
+        $tx->setCurrency($invoice->getCurrency());
+        $tx->setType(\Payment_Transaction::TXTYPE_REFUND);
+        $tx->setStatus(Transaction::STATUS_PROCESSED);
+        $tx->setNote('Gateway refund for invoice #' . $invoice->getId());
+        $tx->setUpdatedAt(new \DateTime());
+        $this->di['em']->persist($tx);
+        $this->di['em']->flush();
     }
 
     /**
@@ -4078,10 +4517,10 @@ class Service implements InjectionAwareInterface
         $sellerLines = 0;
         $buyerLines = 0;
         $logoSource = '';
+        $options->set('isRemoteEnabled', false);
 
         if (!empty($c['logo_url'])) {
-            [$logoSource, $remote] = $this->getPdfLogoSource($c['logo_url']);
-            $options->set('isRemoteEnabled', $remote);
+            [$logoSource] = $this->getPdfLogoSource($c['logo_url']);
         }
 
         $vars = [
@@ -4208,6 +4647,41 @@ class Service implements InjectionAwareInterface
         sort($days);
 
         return $days;
+    }
+
+    /**
+     * Whether automatic reminders may be sent yet today. An empty or invalid
+     * `invoice_reminder_send_time` means disabled (legacy behavior); otherwise
+     * true once local time reaches `HH:MM`, so the first cron at/after the
+     * configured time sends.
+     */
+    public function isReminderSendTimeReached(?\DateTimeImmutable $now = null): bool
+    {
+        try {
+            $systemService = $this->di['mod_service']('system');
+            $configured = $systemService->getParamValue('invoice_reminder_send_time', '');
+        } catch (\Throwable) {
+            return true;
+        }
+
+        $configured = trim((string) ($configured ?? ''));
+        if ($configured === '') {
+            return true;
+        }
+
+        if (!preg_match('/^(\d{1,2}):(\d{2})$/', $configured, $matches)) {
+            return true;
+        }
+
+        $hour = (int) $matches[1];
+        $minute = (int) $matches[2];
+        if ($hour > 23 || $minute > 59) {
+            return true;
+        }
+
+        $now ??= new \DateTimeImmutable();
+
+        return ((int) $now->format('H')) * 60 + ((int) $now->format('i')) >= $hour * 60 + $minute;
     }
 
     private function _isAutoIssued(): bool
@@ -4724,6 +5198,9 @@ class Service implements InjectionAwareInterface
     {
         $source = parse_url($originalUrl, PHP_URL_PATH);
         $remote = false;
+        if (!is_string($source) || $source === '') {
+            return [$this->fetchPdfLogo($originalUrl), false];
+        }
 
         // prevent openbasedir error from preventing pdf creation when debug mode is enabled
         if (@!$this->filesystem->exists($source)) {
@@ -4746,23 +5223,120 @@ class Service implements InjectionAwareInterface
             }
         }
 
-        // Only permit http/https remote URLs. Other schemes such as file://, php://, or phar://
-        // could be passed to Dompdf with remote loading enabled, leading to local file disclosure
-        // or other server-side vulnerabilities. Malformed URLs (where parse_url returns non-string)
-        // are also rejected by skipping the logo entirely.
         if ($remote) {
-            $scheme = parse_url($source, PHP_URL_SCHEME);
-            if (!is_string($scheme) || !in_array(strtolower($scheme), ['http', 'https'], true)) {
-                return ['', false];
-            }
+            return [$this->fetchPdfLogo($originalUrl), false];
         }
 
-        if (!$remote && str_ends_with($source, '.svg')) {
+        if (str_ends_with($source, '.svg')) {
             $source = 'data:image/svg+xml;base64,' . base64_encode($this->filesystem->readFile($source));
             $remote = false;
         }
 
         return [$source, $remote];
+    }
+
+    /** Fetch logos without allowing the PDF renderer to access the network. */
+    private function fetchPdfLogo(string $url): string
+    {
+        $scheme = parse_url($url, PHP_URL_SCHEME);
+        if (!is_string($scheme) || !in_array(strtolower($scheme), ['http', 'https'], true)) {
+            return '';
+        }
+
+        $client = new \Symfony\Component\HttpClient\NoPrivateNetworkHttpClient($this->di['http_client']);
+        $response = null;
+
+        try {
+            $response = $client->request('GET', $url, [
+                'max_redirects' => 3,
+                'timeout' => 5,
+                'max_duration' => 10,
+                'on_progress' => static function (int $downloaded, int $size): void {
+                    if ($downloaded > 2 * 1024 * 1024 || $size > 2 * 1024 * 1024) {
+                        throw new \Symfony\Component\HttpClient\Exception\TransportException('Invoice logo is too large');
+                    }
+                },
+            ]);
+            if ($response->getStatusCode() !== 200) {
+                return '';
+            }
+            $mime = strtolower(trim(explode(';', $response->getHeaders()['content-type'][0] ?? '')[0]));
+            $mime = match ($mime) {
+                'image/x-png' => 'image/png',
+                'image/jpg', 'image/pjpeg' => 'image/jpeg',
+                'image/x-ms-bmp' => 'image/bmp',
+                default => $mime,
+            };
+            if (!in_array($mime, ['', 'application/octet-stream', 'image/png', 'image/jpeg', 'image/gif', 'image/bmp', 'image/webp', 'image/svg+xml'], true)) {
+                return '';
+            }
+            $bytes = '';
+            foreach ($client->stream($response) as $chunk) {
+                $bytes .= $chunk->getContent();
+                if (strlen($bytes) > 2 * 1024 * 1024) {
+                    return '';
+                }
+            }
+            $image = @getimagesizefromstring($bytes);
+            if ($image !== false && $image['mime'] !== 'image/svg+xml') {
+                if (!in_array($image['mime'], ['image/png', 'image/jpeg', 'image/gif', 'image/bmp', 'image/webp'], true)
+                    || !in_array($mime, ['', 'application/octet-stream', $image['mime']], true)
+                    || 16 * 1024 * 1024 < $image[0] * $image[1]) {
+                    return '';
+                }
+                $mime = $image['mime'];
+            } elseif (in_array($mime, ['', 'application/octet-stream', 'image/svg+xml'], true) && $this->isSelfContainedPdfSvg($bytes)) {
+                $mime = 'image/svg+xml';
+            } else {
+                return '';
+            }
+
+            return 'data:' . $mime . ';base64,' . base64_encode($bytes);
+        } catch (\Symfony\Contracts\HttpClient\Exception\ExceptionInterface) {
+            // An unavailable or unsafe logo must not prevent invoice generation.
+            return '';
+        } finally {
+            $response?->cancel();
+        }
+    }
+
+    /** Remote SVGs may use internal fragments, but may not load other resources. */
+    private function isSelfContainedPdfSvg(string $bytes): bool
+    {
+        $document = new \DOMDocument();
+        if (!@$document->loadXML($bytes, LIBXML_NONET) || $document->doctype !== null
+            || $document->documentElement?->localName !== 'svg') {
+            return false;
+        }
+        $content = $document->textContent;
+        foreach ($document->getElementsByTagName('*') as $element) {
+            foreach ($element->attributes as $attribute) {
+                $content .= "\n" . $attribute->value;
+                if ($attribute->localName === 'href' && !str_starts_with(trim($attribute->value), '#')) {
+                    if (!preg_match('~^data:(image/(?:png|jpeg|gif|bmp|webp));base64,([A-Za-z0-9+/=]+)$~D', $attribute->value, $data)) {
+                        return false;
+                    }
+                    $imageBytes = base64_decode($data[2], true);
+                    $image = $imageBytes === false ? false : @getimagesizefromstring($imageBytes);
+                    if ($image === false || $image['mime'] !== $data[1] || 16 * 1024 * 1024 < $image[0] * $image[1]) {
+                        return false;
+                    }
+                }
+            }
+        }
+        // Inspect decoded XML values so character references cannot hide CSS URLs.
+        if (str_contains($content, '\\') || stripos($content, '@import') !== false
+            || stripos($bytes, '<?xml-stylesheet') !== false) {
+            return false;
+        }
+        preg_match_all('/url\(([^)]*)\)/i', $content, $urls);
+        foreach ($urls[1] as $url) {
+            if (!str_starts_with(trim($url, " \t\r\n\"'"), '#')) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private function getSellerData(array $invoice, int &$lines): array

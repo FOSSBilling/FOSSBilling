@@ -198,8 +198,43 @@ class ServiceTransaction implements InjectionAwareInterface
         }
     }
 
+    public const MAX_CALLBACK_BODY_SIZE = 1048576;
+
+    private function authenticateJsonCallback(array $data): void
+    {
+        $rawBody = $data['http_raw_post_data'] ?? '';
+        if (!is_string($rawBody) || strlen($rawBody) > self::MAX_CALLBACK_BODY_SIZE) {
+            throw new \FOSSBilling\InformationException('Invalid callback body');
+        }
+
+        $body = ltrim($rawBody);
+        $server = is_array($data['server'] ?? null) ? $data['server'] : [];
+        $contentType = $server['CONTENT_TYPE'] ?? '';
+        $isJson = str_starts_with($body, '{') || str_starts_with($body, '[')
+            || (is_string($contentType) && str_contains(strtolower($contentType), 'json'))
+            || isset($server['HTTP_STRIPE_SIGNATURE'])
+            || ($body !== '' && json_validate($rawBody));
+        if (!$isJson) {
+            return;
+        }
+
+        // Authenticate before lifecycle listeners, deduplication, logging or storage.
+        // Neither the claimed source nor skip_validation grants callback authority.
+        $gateway = empty($data['gateway_id']) ? null
+            : $this->di['em']->getRepository(PayGateway::class)->find((int) $data['gateway_id']);
+        if (!$gateway instanceof PayGateway) {
+            throw new \FOSSBilling\InformationException('Invalid payment gateway');
+        }
+        $adapter = $this->di['mod_service']('Invoice', 'PayGateway')->getPaymentAdapter($gateway);
+        if (!$adapter instanceof \FOSSBilling\Payment\JsonWebhookAuthenticatorInterface) {
+            throw new \FOSSBilling\InformationException('Payment gateway does not support authenticated JSON callbacks');
+        }
+        $adapter->authenticateJsonWebhook($data);
+    }
+
     public function create(array $data): ?int
     {
+        $this->authenticateJsonCallback($data);
         $this->di['event_dispatcher']->dispatch(new BeforeAdminTransactionCreateEvent($this->getSafeCreateEventInput($data)));
 
         $skip_validation = Tools::normalizeBoolean($data['skip_validation'] ?? false);

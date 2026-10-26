@@ -30,15 +30,15 @@
     "src/themes/default/admin"
   ],
   "devDependencies": {
-    "@playwright/test": "1.63.0",
-    "@types/node": "24.19.0",
+    "@playwright/test": "1.64.1",
+    "@types/node": "24.19.2",
     "autoprefixer": "10.6.1",
-    "ckeditor5": "48.5.2",
+    "ckeditor5": "49.0.0",
     "esbuild": "0.28.2",
     "github-markdown-css": "5.9.0",
-    "postcss": "8.5.28",
+    "postcss": "8.5.31",
     "purgecss": "8.0.0",
-    "sass": "1.105.1",
+    "sass": "1.106.1",
     "svg-sprite": "2.0.4",
     "typescript": "7.0.2"
   },

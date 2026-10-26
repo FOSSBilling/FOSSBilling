@@ -191,10 +191,10 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             $allowedPeriods = $tld->getPeriodsArray();
             if ($allowedPeriods !== null) {
                 if (!in_array($years, $allowedPeriods, true)) {
-                    throw new \FOSSBilling\Exception(':tld can only be registered for :periods years', [':tld' => $tld->getTld(), ':periods' => implode(', ', $allowedPeriods)]);
+                    throw new \FOSSBilling\InformationException(':tld can only be registered for :periods years', [':tld' => $tld->getTld(), ':periods' => implode(', ', $allowedPeriods)]);
                 }
             } elseif ($years < ($tld->getMinYears() ?? 1)) {
-                throw new \FOSSBilling\Exception(':tld can be registered for at least :years years', [':tld' => $tld->getTld(), ':years' => $tld->getMinYears()]);
+                throw new \FOSSBilling\InformationException(':tld can be registered for at least :years years', [':tld' => $tld->getTld(), ':years' => $tld->getMinYears()]);
             }
 
             $domain = $data['register_sld'] . $tld->getTld();
@@ -831,8 +831,11 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         try {
             $this->batchSyncExpirationDates();
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->di['logger']->error($e->getMessage());
+            if ($e instanceof \Error) {
+                \Sentry\captureException($e);
+            }
         }
     }
 
@@ -847,16 +850,24 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         }
 
         $list = $this->getDomainRepository()->findAll();
+        $hadProgrammingError = false;
 
         foreach ($list as $domain) {
             try {
                 $this->syncExpirationDate($domain);
-            } catch (\Exception $e) {
-                $this->di['logger']->error($e->getMessage());
+            } catch (\Throwable $e) {
+                $this->di['logger']->error($e->getMessage(), ['domain_id' => $domain->getId()]);
+                // Caught programming errors still need to reach Sentry.
+                if ($e instanceof \Error) {
+                    $hadProgrammingError = true;
+                    \Sentry\captureException($e);
+                }
             }
         }
 
-        $ss->setParamValue($key, date('Y-m-d H:i:s'));
+        if (!$hadProgrammingError) {
+            $ss->setParamValue($key, date('Y-m-d H:i:s'));
+        }
 
         $this->di['logger']->info('Executed action to synchronize domain expiration dates with registrar');
 

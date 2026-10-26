@@ -465,6 +465,48 @@
 
         <div class="tab-pane fade" id="tab-config" role="tabpanel">
             <div class="card-body">
+                {% if order.service_type == 'hosting' and order.status in ['pending_setup', 'failed_setup'] and has_permission('servicehosting', 'manage_accounts') %}
+                    {% set refresh_preview = admin.servicehosting_refresh_product_config_preview({order_id: order.id}) %}
+                    <details class="mb-3">
+                        <summary>{{ 'Refresh hosting configuration'|trans }}</summary>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>{{ 'Setting'|trans }}</th>
+                                    <th>{{ 'Current'|trans }}</th>
+                                    <th>{{ 'From product'|trans }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <th>{{ 'Server'|trans }}</th>
+                                    <td>{{ refresh_preview.current.server_name|default('Missing server'|trans) }} (#{{ refresh_preview.current.server_id }})</td>
+                                    <td>{{ refresh_preview.proposed.server_name|default('Missing server'|trans) }} (#{{ refresh_preview.proposed.server_id }})</td>
+                                </tr>
+                                <tr>
+                                    <th>{{ 'Hosting plan'|trans }}</th>
+                                    <td>{{ refresh_preview.current.hosting_plan_name|default('Missing hosting plan'|trans) }} (#{{ refresh_preview.current.hosting_plan_id }})</td>
+                                    <td>{{ refresh_preview.proposed.hosting_plan_name|default('Missing hosting plan'|trans) }} (#{{ refresh_preview.proposed.hosting_plan_id }})</td>
+                                </tr>
+                                <tr>
+                                    <th>{{ 'Reseller'|trans }}</th>
+                                    <td>{{ refresh_preview.current.reseller ? 'Yes'|trans : 'No'|trans }}</td>
+                                    <td>{{ refresh_preview.proposed.reseller ? 'Yes'|trans : 'No'|trans }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        {% if refresh_preview.has_saved_username %}
+                            <p class="alert alert-warning">{{ 'Refresh is blocked because this account has a saved username. Provisioning may have succeeded or failed; check the hosting server before changing its settings.'|trans }}</p>
+                        {% elseif not refresh_preview.proposed.valid %}
+                            <p class="alert alert-warning">{{ 'Configure a valid server and hosting plan for the product before refreshing.'|trans }}</p>
+                        {% endif %}
+                        <form method="post" action="{{ 'servicehosting/refresh_product_config'|api_url }}" {{ fb_api_form({reload: true, message: 'Hosting configuration refreshed'|trans}) }}>
+                            <p>{{ 'Apply these product settings to this order. The domain, credentials and billing terms will stay the same.'|trans }}</p>
+                            <input type="hidden" name="order_id" value="{{ order.id }}">
+                            <button class="btn btn-secondary mb-3" type="submit" {% if not refresh_preview.can_refresh %}disabled{% endif %}>{{ 'Refresh hosting configuration from product'|trans }}</button>
+                        </form>
+                    </details>
+                {% endif %}
                 <form method="post" action="{{ 'order/update_config'|api_url }}" {{ fb_api_form({ reload: true}) }}>
                     {% embed 'partial_admin_form_card.html.twig' with {
                         title: 'Order Configuration'|trans,

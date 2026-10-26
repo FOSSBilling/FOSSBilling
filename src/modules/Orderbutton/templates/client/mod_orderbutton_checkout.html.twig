@@ -184,9 +184,16 @@
                                                     <input type="radio" class="btn-check border-0" name="gateway_id" id="{{ gateway_input_id }}" value="{{ gtw.id }}" autocomplete="off" {{ not gateway_selected ? 'checked' : '' }}/>
                                                     {% if gtw.logo.logo %}
                                                         <label class="btn" for="{{ gateway_input_id }}"
-                                                            style="background: transparent url('{{ gtw.logo.logo }}') no-repeat center center; background-size: contain; height:{{ gtw.logo.height }}; width:{{ gtw.logo.width }};"
+                                                            style="height:{{ gtw.logo.height }}; width:{{ gtw.logo.width }}; padding: 0;"
                                                             data-bs-toggle="tooltip" data-bs-title="{{ gtw.title }}"
-                                                            aria-label="{{ gtw.title }}"></label>
+                                                            aria-label="{{ gtw.title }}">
+                                                            <picture class="d-block h-100">
+                                                                {% if gtw.logo.avif|default(null) %}
+                                                                    <source srcset="{{ gtw.logo.avif }}" type="image/avif">
+                                                                {% endif %}
+                                                                <img src="{{ gtw.logo.logo }}" alt="{{ gtw.title }}" style="width: 100%; height: 100%; object-fit: contain;">
+                                                            </picture>
+                                                        </label>
                                                     {% else %}
                                                         <label class="btn text-nowrap" for="{{ gateway_input_id }}">{{ gtw.title }}</label>
                                                     {% endif %}

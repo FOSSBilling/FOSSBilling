@@ -32,7 +32,6 @@ import '@ckeditor/ckeditor5-typing/dist/index.css';
 import '@ckeditor/ckeditor5-undo/dist/index.css';
 import '@ckeditor/ckeditor5-upload/dist/index.css';
 import '@ckeditor/ckeditor5-utils/dist/index.css';
-import '@ckeditor/ckeditor5-watchdog/dist/index.css';
 import '@ckeditor/ckeditor5-widget/dist/index.css';
 
 import '@ckeditor/ckeditor5-autoformat/dist/index.css';
@@ -99,8 +98,28 @@ class FOSSBillingCKEditor extends ClassicEditor {
 
 window.FOSSBilling.editor.registerAdapter('ckeditor', {
   create(element, options = {}) {
-    const { adapter, ...editorOptions } = options;
+    const { adapter, initialData, ...editorOptions } = options;
 
-    return FOSSBillingCKEditor.create(element, editorOptions);
+    const config = { ...editorOptions, attachTo: element };
+    if (initialData !== undefined) {
+      config.root = { ...config.root, initialData };
+    }
+
+    return FOSSBillingCKEditor.create(config);
+  },
+
+  // Reports runtime errors that escape the given editor instance so the
+  // wrapper can recover from them (v49 removed the Watchdog).
+  onFatalError(editor, callback) {
+    return FOSSBillingCKEditor.onEditorError(({ error, source }) => {
+      if (source === editor) {
+        callback(error);
+      }
+    });
+  },
+
+  // Stops further editing while keeping the content visible and submittable.
+  lock(editor) {
+    editor.enableReadOnlyMode('fossbilling-editor-crash');
   },
 });

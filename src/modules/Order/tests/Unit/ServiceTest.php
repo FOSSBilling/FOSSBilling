@@ -3745,10 +3745,26 @@ test('updateOrderConfig succeeds with valid form data', function (): void {
 
     $order = createEntity(Order::class);
     $order->form_id = 11;
+    $order->setConfig(json_encode([
+        'period' => '1M',
+        'price' => 12.5,
+        'quantity' => 2,
+        'service_options' => ['region' => 'eu'],
+        'hostname' => 'old.example.com',
+        'addons' => ['backup', 'ssl'],
+    ]));
 
-    $result = $svc->updateOrderConfig($order, ['hostname' => 'myhost.example.com', 'plan' => 'pro', 'addons' => ['backup', 'ssl']]);
+    $result = $svc->updateOrderConfig($order, ['hostname' => 'myhost.example.com', 'plan' => 'pro']);
 
-    expect($result)->toBeTrue();
+    expect($result)->toBeTrue()
+        ->and($svc->getConfig($order))->toBe([
+            'period' => '1M',
+            'price' => 12.5,
+            'quantity' => 2,
+            'service_options' => ['region' => 'eu'],
+            'hostname' => 'myhost.example.com',
+            'plan' => 'pro',
+        ]);
 });
 
 test('createOrder rejects invalid price and quantity', function (array $data, string $message): void {

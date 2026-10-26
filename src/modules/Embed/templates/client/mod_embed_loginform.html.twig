@@ -8,6 +8,7 @@
 
 <body>
 <form action="" method="post" id="client-login" class="embed-shell embed-stack">
+    <input type="hidden" name="CSRFToken" value="{{ CSRFToken }}">
     <h1 class="embed-title">{{ 'Login to Client Area'|trans }}</h1>
     <div class="embed-field">
         <label class="embed-sr-only" for="embed-login-email">{{ 'Email'|trans }}</label>

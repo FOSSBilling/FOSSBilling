@@ -10,16 +10,22 @@ declare(strict_types=1);
  */
 
 require __DIR__ . DIRECTORY_SEPARATOR . 'load.php';
-global $di;
+global $di, $request;
 
 use DebugBar\DataCollector\TimeDataCollector;
+use FOSSBilling\Http\PaymentReturn;
 use FOSSBilling\Http\RequestFactory;
+
+// A cross-site payment return must not start a replacement session when the
+// browser withholds its Strict cookie. Resume through a same-site navigation.
+$paymentReturn = PaymentReturn::createResponse($request, $di['url']);
+if ($paymentReturn !== null) {
+    emitResponse($paymentReturn);
+}
 
 $config = FOSSBilling\Config::getConfig();
 $debugBar = null;
 $timeCollector = null;
-/* @var Symfony\Component\HttpFoundation\Request $request */
-global $request;
 
 if ((bool) ($config['debug_and_monitoring']['debug'] ?? false)) {
     // Setting up the debug bar
@@ -55,7 +61,7 @@ if ((bool) ($config['debug_and_monitoring']['debug'] ?? false)) {
 }
 
 $url = RequestFactory::normalizeRoutePath($request);
-$http_err_code = $request->query->get('_errcode');
+$http_err_code = RequestFactory::getHttpErrorCode($request);
 
 $timeCollector?->startMeasure('session_start', 'Starting / restoring the session');
 
@@ -83,7 +89,6 @@ $timeCollector?->stopMeasure('translate');
 
 // If HTTP error code has been passed, handle it.
 if (!is_null($http_err_code)) {
-    $http_err_code = intval($http_err_code);
     switch ($http_err_code) {
         case 404:
             $e = new FOSSBilling\Exception('Page :url not found', [':url' => $url], 404);

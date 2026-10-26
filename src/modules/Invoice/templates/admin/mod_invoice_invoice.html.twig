@@ -269,13 +269,44 @@
                         {% endif %}
 
                         {% if invoice.status == 'paid' %}
-                        <a class="btn btn-primary"
-                            {{ fb_api_link({href: 'invoice/refund'|api_url(query: {'id': invoice.id}), modal: {type: 'confirm', title: 'Refund the full remaining amount?'|trans}, redirect: 'invoice'|url}) }}>
+                        <a class="btn btn-primary" href="#" data-bs-toggle="modal" data-bs-target="#fullRefundModal">
                             <svg class="icon" width="24" height="24">
                                 <use href="#receipt-refund" />
                             </svg>
                             <span>{{ 'Refund'|trans }}</span>
                         </a>
+                        <div class="modal fade" id="fullRefundModal" tabindex="-1" aria-labelledby="fullRefundModalLabel" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <form class="modal-content" method="post" action="{{ 'invoice/refund'|api_url }}" {{ fb_api_form({redirect: 'invoice'|url}) }}>
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="fullRefundModalLabel">{{ 'Refund the full remaining amount?'|trans }}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Close'|trans }}"></button>
+                            </div>
+                            <div class="modal-body">
+                                <input type="hidden" name="id" value="{{ invoice.id }}">
+                                <p class="text-secondary">
+                                    {{ 'The full remaining amount is refunded and a credit note is issued. The payment gateway is refunded automatically when supported.'|trans }}
+                                </p>
+                                <div>
+                                    <label class="form-label" for="full-refund-note">{{ 'Note'|trans }}</label>
+                                    <input class="form-control" type="text" name="note" id="full-refund-note">
+                                </div>
+                                <div class="mt-3">
+                                    <input type="hidden" name="gateway_refund" value="0">
+                                    <label class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="gateway_refund" value="1" checked>
+                                        <span class="form-check-label">{{ 'Also refund in the payment gateway when supported'|trans }}</span>
+                                    </label>
+                                    <small class="form-text">{{ 'Uncheck to record an offline-only refund and return the money manually.'|trans }}</small>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <a href="#" class="btn btn-link link-secondary" data-bs-dismiss="modal">{{ 'Cancel'|trans }}</a>
+                                <input type="submit" class="btn btn-primary" value="{{ 'Refund'|trans }}">
+                            </div>
+                            </form>
+                        </div>
+                        </div>
                         <a href="#" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#refundModal">
                             <span>{{ 'Partial refund'|trans }}</span>
                         </a>
@@ -302,6 +333,14 @@
                                 <div>
                                     <label class="form-label" for="refund-note">{{ 'Note'|trans }}</label>
                                     <input class="form-control" type="text" name="note" id="refund-note">
+                                </div>
+                                <div class="mt-3">
+                                    <input type="hidden" name="gateway_refund" value="0">
+                                    <label class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="gateway_refund" value="1" checked>
+                                        <span class="form-check-label">{{ 'Also refund in the payment gateway when supported'|trans }}</span>
+                                    </label>
+                                    <small class="form-text">{{ 'Uncheck to record an offline-only refund and return the money manually.'|trans }}</small>
                                 </div>
                             </div>
                             <div class="modal-footer">

@@ -570,6 +570,7 @@ test('updatePassword returns true', function (): void {
 
     $passwordResetRepository = Mockery::mock(Box\Mod\Client\Repository\ClientPasswordResetRepository::class);
     $passwordResetRepository->shouldReceive('findOneByHash')->atLeast()->once()->andReturn($passwordReset);
+    $passwordResetRepository->shouldReceive('changePassword')->once()->with($client, 'new-password-hash', $data['hash']);
 
     $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class)->shouldIgnoreMissing();
     $em->shouldReceive('getRepository')->andReturnUsing(static fn (string $class): object => match ($class) {
@@ -580,7 +581,7 @@ test('updatePassword returns true', function (): void {
     $eventDispatcher = clientGuestTestEventDispatcher();
 
     $passwordMock = Mockery::mock(FOSSBilling\PasswordManager::class);
-    $passwordMock->shouldReceive('hashIt')->atLeast()->once();
+    $passwordMock->shouldReceive('hashIt')->atLeast()->once()->andReturn('new-password-hash');
 
     $emailServiceMock = Mockery::mock(Box\Mod\Email\Service::class);
     $emailServiceMock->shouldReceive('sendTemplate')->atLeast()->once();

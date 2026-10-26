@@ -27,7 +27,7 @@ jobs:
 
       - name: 'Login to GitHub Container Registry'
         if: inputs.write-cache
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -92,7 +92,7 @@ jobs:
 
       - name: 'Upload Test Image Artifact'
         if: matrix.php == '8.5'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           archive: false
           path: /tmp/test-image-8.5.tar.zst
