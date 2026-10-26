@@ -796,7 +796,6 @@ test('sendTemplate renders client-bound email in the client language', function 
         'system' => $system,
         'client' => $clientServiceMock,
     ]));
-    $di['tools'] = new FOSSBilling\Core\Security\Credential();
 
     $service->setDi($di);
 
@@ -871,7 +870,6 @@ test('sendTemplate falls back to the default locale when the client has no langu
         'system' => $system,
         'client' => $clientServiceMock,
     ]));
-    $di['tools'] = new FOSSBilling\Core\Security\Credential();
 
     $service->setDi($di);
 
@@ -953,7 +951,6 @@ test('sendTemplate renders staff broadcast emails in each recipient language', f
         'system' => $system,
         'client' => $clientServiceMock,
     ]));
-    $di['tools'] = new FOSSBilling\Core\Security\Credential();
 
     $service->setDi($di);
 

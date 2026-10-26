@@ -17,9 +17,8 @@ class Patch128 implements PatchInterface
 {
     public function apply(Patcher $patcher): void
     {
-        // Repair the legacy (utf8) character set for cleaned-up custom page text so
-        // stored page content is consistent with the utf8mb4 connection. The generic
-        // widening skips customized columns/indexes with a logged warning.
+        // Repair legacy (utf8) custom page text for the utf8mb4 connection;
+        // customized columns/indexes are skipped with a logged warning.
         $patcher->widenLegacyTextColumns('custom_pages', ['title', 'description', 'keywords', 'content']);
     }
 }

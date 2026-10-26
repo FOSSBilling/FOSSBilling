@@ -2031,8 +2031,8 @@ test('hosting provisioning retries failed steps without saving passwords', funct
 
                 throw new Symfony\Component\HttpClient\Exception\TransportException('Response timed out');
             }
-            // The generated password is random; verify a fresh non-placeholder
-            // secret of the configured length was provisioned (never the sentinel).
+            // The generated password is random: only assert it is a fresh,
+            // non-placeholder secret of the configured length.
             if ($configuredPassword) {
                 expect($fields['password'])->toBe('configured-secret');
             } else {

@@ -7,6 +7,9 @@ use Box\Mod\Order\Entity\Order;
 use Box\Mod\System\Entity\Session;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use FOSSBilling\Core\Update\Patch\Patch129;
+use FOSSBilling\Core\Update\Patch\Patch134;
+use FOSSBilling\Core\Update\Patch\Patch135;
 use FOSSBilling\Core\Update\Patcher;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
@@ -3533,7 +3536,7 @@ test('library cleanup follows the main migrations and preserves adapter director
         $filesystem->expects('remove')->with($path);
     }
     $patcher->filesystem = $filesystem;
-    (new FOSSBilling\Core\Update\Patch\Patch135())->apply($patcher);
+    (new Patch135())->apply($patcher);
 });
 
 test('custom page charset repair follows the promotion patch', function (): void {
@@ -3552,7 +3555,7 @@ test('custom gateway image migration adds the column and skips already migrated 
         $patcher->shouldReceive('executeSql')->with($alterSql)->atLeast()->once();
     }
 
-    (new FOSSBilling\Core\Update\Patch\Patch129())->apply($patcher);
+    (new Patch129())->apply($patcher);
 })->with([false, true]);
 
 test('legacy Unicode repair is scheduled for existing installations', function (): void {
@@ -3604,5 +3607,5 @@ test('hosting recovery migration adds the pending step only when missing', funct
         $patcher->shouldReceive('executeSql')->with($alterSql)->atLeast()->once();
     }
 
-    (new FOSSBilling\Core\Update\Patch\Patch134())->apply($patcher);
+    (new Patch134())->apply($patcher);
 })->with([false, true]);
