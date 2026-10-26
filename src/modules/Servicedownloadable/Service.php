@@ -324,16 +324,18 @@ class Service implements InjectionAwareInterface
             return true;
         }
 
-        $count = (int) $this->di['em']->getConnection()->fetchOne(
-            'SELECT COUNT(*) FROM product WHERE config LIKE :pattern',
+        $connection = $this->di['em']->getConnection();
+        $config = $connection->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\PostgreSQLPlatform ? 'CAST(config AS TEXT)' : 'config';
+        $count = (int) $connection->fetchOne(
+            "SELECT COUNT(*) FROM product WHERE $config LIKE :pattern",
             ['pattern' => '%' . $storedFilename . '%']
         );
         if ($count > 0) {
             return true;
         }
 
-        $count = (int) $this->di['em']->getConnection()->fetchOne(
-            'SELECT COUNT(*) FROM client_order WHERE config LIKE :pattern',
+        $count = (int) $connection->fetchOne(
+            "SELECT COUNT(*) FROM client_order WHERE $config LIKE :pattern",
             ['pattern' => '%' . $storedFilename . '%']
         );
 

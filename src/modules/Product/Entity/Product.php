@@ -90,8 +90,8 @@ class Product implements TimestampInterface
     #[ORM\Column(type: \Doctrine\DBAL\Types\Types::STRING, length: 255, nullable: true)]
     private ?string $plugin = null;
 
-    #[ORM\Column(name: 'plugin_config', type: \Doctrine\DBAL\Types\Types::TEXT, nullable: true)]
-    private ?string $pluginConfig = null;
+    #[ORM\Column(name: 'plugin_config', type: \Doctrine\DBAL\Types\Types::JSON, nullable: true)]
+    private ?array $pluginConfig = null;
 
     #[ORM\Column(type: \Doctrine\DBAL\Types\Types::JSON, nullable: true)]
     private ?array $upgrades = null;
@@ -338,12 +338,12 @@ class Product implements TimestampInterface
         return $this;
     }
 
-    public function getPluginConfig(): ?string
+    public function getPluginConfig(): ?array
     {
         return $this->pluginConfig;
     }
 
-    public function setPluginConfig(?string $pluginConfig): self
+    public function setPluginConfig(?array $pluginConfig): self
     {
         $this->pluginConfig = $pluginConfig;
 

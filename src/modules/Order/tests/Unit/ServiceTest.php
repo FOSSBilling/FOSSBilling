@@ -120,7 +120,7 @@ test('batch order serialization does not expose admin-only client details', func
             'id' => 11,
             'client_id' => 7,
             'product_id' => 3,
-            'config' => [],
+            'config' => '{"enabled":false,"code":"001"}',
             'price' => 10,
             'quantity' => 1,
             'title' => 'Example order',
@@ -149,7 +149,8 @@ test('batch order serialization does not expose admin-only client details', func
     // The batch boundary forwards no identity, so the embedded client must be
     // the general (non-admin) representation: UI fields present, admin-only
     // fields absent.
-    expect($result[0]['client'])->toBe($generalClient);
+    expect($result[0]['client'])->toBe($generalClient)
+        ->and($result[0]['config'])->toBe(['enabled' => false, 'code' => '001']);
     foreach (['aid', 'status', 'notes', 'ip', 'billing_email', 'group', 'client_groups', 'api_token'] as $adminOnlyKey) {
         expect($result[0]['client'])->not->toHaveKey($adminOnlyKey);
     }

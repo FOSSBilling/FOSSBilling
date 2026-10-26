@@ -173,7 +173,7 @@ test('the full JSON-column inventory migrates while encrypted and dormant exclus
     $c->executeStatement('CREATE TABLE email_template (id BIGINT PRIMARY KEY, vars TEXT)');
     $c->insert('email_template', ['id' => 1, 'vars' => 'encrypted-private-value']);
     $migration = new JsonMigration();
-    expect($migration->automatic(FOSSBilling\Doctrine\EntityManagerFactory::create($c), new FOSSBilling\Crypt()))->toBe(['columns' => 27, 'empty_values' => 26]);
+    expect($migration->automatic(FOSSBilling\Doctrine\EntityManagerFactory::create($c), new FOSSBilling\Crypt()))->toBe(['columns' => 29, 'empty_values' => 28]);
     $migration->assertReady($c);
     foreach (FOSSBilling\Doctrine\JsonFields::FIELDS as $table => $definition) {
         $actual = $c->createSchemaManager()->introspectTableByUnquotedName($table);
@@ -203,7 +203,9 @@ test('JSON conversion and patch 133 compose in either upgrade order', function (
     makeLegacyJsonColumn($c);
     $c->executeStatement('ALTER TABLE mod_massmailer DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci');
     $c->executeStatement('ALTER TABLE mod_massmailer MODIFY COLUMN subject VARCHAR(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL');
+    $c->executeStatement('CREATE TABLE product (id BIGINT PRIMARY KEY, plugin_config TEXT NULL) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci');
     $original = '{"label":"Résumé","id":"001"}';
+    $c->insert('product', ['id' => 1, 'plugin_config' => $original]);
     $c->insert('mod_massmailer', ['subject' => 'Résumé', 'filter' => $original]);
     $id = (int) $c->lastInsertId();
     $patcher = new FOSSBilling\UpdatePatcher();
@@ -226,6 +228,10 @@ test('JSON conversion and patch 133 compose in either upgrade order', function (
     $this->em->clear();
     $saved = $this->em->find(MassmailerMessage::class, $id);
     expect($saved->getSubject())->toBe('🚀 Release')->and($saved->getFilter())->toEqual(['label' => '🚀', 'id' => '001']);
+    $c->update('product', ['plugin_config' => ['label' => '🚀']], ['id' => 1], ['plugin_config' => Doctrine\DBAL\Types\Types::JSON]);
+    $unicode();
+    expect($c->createSchemaManager()->introspectTableByUnquotedName('product')->getColumn('plugin_config')->getTypeName())->toBe(Doctrine\DBAL\Types\Types::JSON)
+        ->and(json_decode($c->fetchOne('SELECT plugin_config FROM product WHERE id = 1'), true))->toBe(['label' => '🚀']);
     (new JsonMigration())->assertReady($c);
 })->with(['Unicode first' => true, 'JSON first' => false]);
 
@@ -279,4 +285,76 @@ test('fresh JSON mappings preserve form defaults through later automatic upgrade
     $em->clear();
     expect(array_map(fn ($id) => $em->find(Box\Mod\Formbuilder\Entity\FormField::class, $id)->getDefaultValue(), $ids))->toBe($values)
         ->and(iterator_to_array((new FOSSBilling\Doctrine\JsonAudit())->inspect($c, 'form_field')))->toBe([]);
+});
+
+test('native JSON runtime reads, plugin configuration and text searches remain compatible', function (): void {
+    $c = $this->connection;
+    $c->executeStatement('DROP TABLE mod_massmailer');
+    $em = FOSSBilling\Doctrine\EntityManagerFactory::create($c);
+    FOSSBilling\Doctrine\SchemaInstaller::createSchema($em);
+    $filename = str_repeat('b', 64);
+    $document = ['files' => [['stored_filename' => $filename]], 'code' => '001', 'enabled' => false];
+    $product = (new Box\Mod\Product\Entity\Product())->setTitle('Example')->setConfig($document)->setPluginConfig(['endpoint' => 'plugin.example', 'enabled' => false]);
+    $order = (new Box\Mod\Order\Entity\Order())->setTitle('Example')->setPrice(10)->setQuantity(1)->setConfig($document);
+    $service = (new Box\Mod\Servicecustom\Entity\ServiceCustom())->setPluginConfig($product->getPluginConfig());
+    $transaction = (new Box\Mod\Invoice\Entity\Transaction())->setIpn(['reference' => 'Unique-IPN-Reference']);
+    foreach ([$product, $order, $service, $transaction] as $model) {
+        $em->persist($model);
+    }
+    $em->flush();
+    $productId = $product->getId();
+    $orderId = $order->getId();
+    $serviceId = $service->getId();
+    $em->clear();
+    expect($em->find(Box\Mod\Product\Entity\Product::class, $productId)->getPluginConfig())->toEqual(['endpoint' => 'plugin.example', 'enabled' => false])
+        ->and($em->find(Box\Mod\Servicecustom\Entity\ServiceCustom::class, $serviceId)->getPluginConfig())->toEqual(['endpoint' => 'plugin.example', 'enabled' => false]);
+    $di = Tests\Helpers\container();
+    $di['em'] = $em;
+    $orderService = new Box\Mod\Order\Service();
+    $orderService->setDi($di);
+    expect($orderService->getBatchForApi([$orderId])[0]['config'])->toEqual($document);
+    $downloadable = new Box\Mod\Servicedownloadable\Service();
+    $downloadable->setDi($di);
+    $referenced = (new ReflectionMethod($downloadable, 'isStoredFilenameReferenced'))->getClosure($downloadable);
+    expect($referenced($filename))->toBeTrue();
+    $em->find(Box\Mod\Product\Entity\Product::class, $productId)->setConfig([]);
+    $em->flush();
+    expect($referenced($filename))->toBeTrue();
+    $em->find(Box\Mod\Order\Entity\Order::class, $orderId)->setConfig([]);
+    $em->flush();
+    expect($referenced($filename))->toBeFalse();
+    $matches = $em->getRepository(Box\Mod\Invoice\Entity\Transaction::class)->getSearchQueryBuilder(['search' => 'unique-ipn-reference'])->getQuery()->getResult();
+    expect($matches)->toHaveCount(1)->and($matches[0][0]->getIpn())->toBe(['reference' => 'Unique-IPN-Reference']);
+});
+
+test('interruption after native conversion keeps column progress and resumes remaining changes', function (): void {
+    $c = $this->connection;
+    if ($c->getDatabasePlatform() instanceof Doctrine\DBAL\Platforms\SQLitePlatform) {
+        $this->markTestSkipped('SQLite uses TEXT fallback without conversion DDL.');
+    }
+    makeLegacyJsonColumn($c);
+    $c->insert('mod_massmailer', ['filter' => '{"code":"001"}']);
+    $c->executeStatement('CREATE TABLE form_field (id BIGINT PRIMARY KEY, type VARCHAR(30), options TEXT, default_value VARCHAR(255))');
+    $c->insert('form_field', ['id' => 1, 'type' => 'text', 'options' => '{}', 'default_value' => 'false']);
+    $logger = new class extends Psr\Log\AbstractLogger {
+        public function log($level, string|Stringable $message, array $context = []): void
+        {
+            if (preg_match('/^ALTER TABLE .*form_field/i', $context['sql'] ?? '')) {
+                throw new RuntimeException('Simulated interruption after first column conversion');
+            }
+        }
+    };
+    $configuration = new Doctrine\DBAL\Configuration();
+    $configuration->setMiddlewares([new Doctrine\DBAL\Logging\Middleware($logger)]);
+    $interrupted = DriverManager::getConnection($c->getParams(), $configuration);
+    expect(fn () => (new JsonMigration())->automatic(FOSSBilling\Doctrine\EntityManagerFactory::create($interrupted), new FOSSBilling\Crypt()))
+        ->toThrow(RuntimeException::class, 'Simulated interruption');
+    $interrupted->close();
+    expect($c->createSchemaManager()->introspectTableByUnquotedName('mod_massmailer')->getColumn('filter')->getTypeName())->toBe(Doctrine\DBAL\Types\Types::JSON)
+        ->and(FOSSBilling\Doctrine\JsonMigrationJournal::hasRecord($c, 'column:mod_massmailer.filter'))->toBeTrue()
+        ->and(FOSSBilling\Doctrine\JsonMigrationJournal::hasRecord($c, FOSSBilling\Doctrine\JsonMigrationJournal::COMPLETE))->toBeFalse();
+    (new JsonMigration())->automatic(FOSSBilling\Doctrine\EntityManagerFactory::create($c), new FOSSBilling\Crypt());
+    expect(json_decode($c->fetchOne('SELECT default_value FROM form_field'), true, 512, JSON_THROW_ON_ERROR))->toBe('false')
+        ->and(json_decode($c->fetchOne('SELECT ' . $c->quoteSingleIdentifier('filter') . ' FROM mod_massmailer'), true, 512, JSON_THROW_ON_ERROR))->toBe(['code' => '001'])
+        ->and((int) $c->fetchOne('SELECT COUNT(*) FROM json_migration_record'))->toBe(1);
 });

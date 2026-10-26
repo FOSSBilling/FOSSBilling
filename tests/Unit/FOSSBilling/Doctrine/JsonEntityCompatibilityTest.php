@@ -14,7 +14,7 @@ test('the entire inventory uses standard JSON mappings and exclusions retain the
             ++$count;
         }
     }
-    expect($count)->toBe(27)
+    expect($count)->toBe(29)
         ->and($em->getClassMetadata(Box\Mod\Email\Entity\EmailTemplate::class)->hasField('vars'))->toBeFalse()
         ->and($em->getClassMetadata(Box\Mod\Staff\Entity\AdminGroup::class)->getTypeOfField('permissions'))->toBe(Doctrine\DBAL\Types\Types::JSON)
         ->and($em->getClassMetadata(Box\Mod\Invoice\Entity\InvoiceEvent::class)->getTypeOfField('snapshot'))->toBe(Doctrine\DBAL\Types\Types::JSON);

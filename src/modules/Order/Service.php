@@ -650,7 +650,7 @@ class Service implements InjectionAwareInterface
         foreach ($orders as $order) {
             $clientId = $order['client_id'];
             $data = $order;
-            $data['config'] = $order['config'] ?? [];
+            $data['config'] = json_decode($order['config'] ?? 'null', true, 512, JSON_THROW_ON_ERROR) ?? [];
             $data['total'] = $this->calculateTotal($order['price'], $order['quantity']);
             $data['title'] = $order['title'];
             $data['meta'] = $meta[$order['id']] ?? [];

@@ -295,7 +295,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
         require_once Path::normalize($file);
 
-        $config = json_decode($model->getPluginConfig() ?? '', true) ?? [];
+        $config = $model->getPluginConfig() ?? [];
 
         $adapter = new $plugin($config);
 

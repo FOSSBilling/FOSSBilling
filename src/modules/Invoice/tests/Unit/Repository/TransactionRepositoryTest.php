@@ -155,9 +155,9 @@ test('getSearchQueryBuilder applies the search filter on note, invoice id, txn i
 
     $dql = $query->getDQL();
     expect($dql)->toContain('t.note LIKE :note')
-        ->and($dql)->toContain('IDENTITY(t.invoice) LIKE :search_invoice_id')
+        ->and($dql)->toContain("CONCAT(IDENTITY(t.invoice), '') LIKE :search_invoice_id")
         ->and($dql)->toContain('t.txnId LIKE :search_txn_id')
-        ->and($dql)->toContain('t.ipn LIKE :ipn');
+        ->and($dql)->toContain("LOWER(CONCAT(t.ipn, '')) LIKE :ipn");
 
     expect($query->getParameter('note')->getValue())->toBe('%keyword%')
         ->and($query->getParameter('search_invoice_id')->getValue())->toBe('%keyword%')

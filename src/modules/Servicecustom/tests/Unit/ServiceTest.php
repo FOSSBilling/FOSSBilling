@@ -242,7 +242,7 @@ test('action create', function (): void {
 
     $product = new Product();
     $product->setPlugin('plugin');
-    $product->setPluginConfig('plugin_config');
+    $product->setPluginConfig(['endpoint' => 'plugin.example']);
 
     $em = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
     $em->shouldReceive('persist')->atLeast()->once();
@@ -263,7 +263,8 @@ test('action create', function (): void {
     $service->setDi($di);
 
     $result = $service->action_create($order);
-    expect($result)->toBeInstanceOf(ServiceCustom::class);
+    expect($result)->toBeInstanceOf(ServiceCustom::class)
+        ->and($result->getPluginConfig())->toBe(['endpoint' => 'plugin.example']);
 });
 
 test('action activate', function (): void {
