@@ -1204,7 +1204,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     public function registrarGetConfiguration(TldRegistrar $model): array
     {
-        return json_decode($model->getConfig() ?? '', true) ?? [];
+        return $model->getConfigData() ?? [];
     }
 
     public function registrarGetRegistrarAdapterConfig(TldRegistrar $model)
@@ -1345,7 +1345,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 }
             }
 
-            $model->setConfig(json_encode($configuration, JSON_THROW_ON_ERROR));
+            $model->setConfigData($configuration);
             $this->registrarValidateConfiguration($model);
         }
 
