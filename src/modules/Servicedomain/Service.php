@@ -1204,7 +1204,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
     private function secretCodec(): \FOSSBilling\SecretFields
     {
-        return new \FOSSBilling\SecretFields($this->di['crypt'] ?? new \FOSSBilling\Crypt());
+        return new \FOSSBilling\SecretFields($this->di['crypt']);
     }
 
     public function migrateConfigSecrets(): void
@@ -1214,7 +1214,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
 
             try {
                 $fields = $this->resolveRegistrarSecretFields($model, $this->registrarGetRegistrarAdapterConfig($model));
-            } catch (\Throwable) {
+            } catch (\FOSSBilling\Exception) {
                 $this->di['logger']->warning('Credential encryption deferred for unavailable registrar adapter #{id}', ['id' => $model->getId()]);
 
                 continue;
@@ -1475,7 +1475,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 $declared = $class::getSecretFields();
                 $secrets = array_merge($secrets, $declared);
             }
-        } catch (\Throwable) {
+        } catch (\FOSSBilling\Exception) {
             // Registrar adapter could not be resolved; fall back to the form's own 'secret' flags below.
         }
 

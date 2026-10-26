@@ -708,8 +708,6 @@ class Service implements InjectionAwareInterface
 
     public function getConfig(string $ext): array
     {
-        // Retire the former plaintext cache entry. Persistent caches contain ciphertext only.
-        $this->di['cache']->delete("config_{$ext}");
         $encrypted = $this->di['cache']->get("encrypted_config_{$ext}", function (ItemInterface $item) use ($ext): ?string {
             $item->expiresAfter(60 * 60);
 
@@ -718,7 +716,7 @@ class Service implements InjectionAwareInterface
         $config = [];
         if ($encrypted !== null && $encrypted !== '') {
             $decrypted = $this->di['crypt']->decrypt($encrypted, $this->_getSalt());
-            if (!is_string($decrypted) || !json_validate($decrypted) || !is_array($config = json_decode($decrypted, true))) {
+            if (!is_string($decrypted) || !is_array($config = json_decode($decrypted, true))) {
                 throw new \FOSSBilling\InformationException('Encrypted extension configuration could not be read.');
             }
         }
@@ -758,7 +756,6 @@ class Service implements InjectionAwareInterface
 
         $this->di['event_dispatcher']->dispatch(new AfterAdminExtensionConfigSaveEvent($ext, $configurationKeys));
         $this->di['logger']->info("Updated extension {$ext} configuration.");
-        $this->di['cache']->delete("config_{$ext}");
         $this->di['cache']->delete("encrypted_config_{$ext}");
 
         return true;

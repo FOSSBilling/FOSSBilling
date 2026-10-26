@@ -41,10 +41,6 @@ function emailTemplate(string $actionCode = '', ?int $id = null, array $data = [
         $template->setDescription($data['description']);
     }
 
-    if (array_key_exists('vars', $data)) {
-        $template->setVars($data['vars']);
-    }
-
     if (array_key_exists('is_custom', $data)) {
         $template->setIsCustom((bool) $data['is_custom']);
     }
@@ -171,14 +167,14 @@ test('ActivityClientEmail toApiArray returns sanitized API array', function (): 
     expect($result)->toBe($expected);
 });
 
-test('preview variables never decrypt or reuse stored recipient secrets', function (): void {
+test('preview variables use synthetic data without decrypting recipient secrets', function (): void {
     $service = new Box\Mod\Email\Service();
     $crypt = Mockery::mock(FOSSBilling\Crypt::class);
     $crypt->shouldNotReceive('decrypt');
     $di = container();
     $di['crypt'] = $crypt;
     $service->setDi($di);
-    $template = emailTemplate('mod_client_password_reset_request', data: ['vars' => 'old-recipient-secret']);
+    $template = emailTemplate('mod_client_password_reset_request');
     $preview = $service->getVars($template);
     expect($preview['hash'])->toBe('preview-only-not-a-token')
         ->and($preview['c']['email'])->toBe('client@example.com')
@@ -225,7 +221,7 @@ test('getVars supplies preview variables for support and staff templates before 
     expect($signupVars)->toHaveKeys(['c.email', 'c.first_name', 'c.last_name', 'staff.email']);
 });
 
-test('getVars ignores stored examples and uses synthetic defaults', function (): void {
+test('getVars supplies synthetic support examples', function (): void {
     $service = new Box\Mod\Email\Service();
 
     $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
@@ -235,7 +231,7 @@ test('getVars ignores stored examples and uses synthetic defaults', function ():
     $di['crypt'] = $cryptMock;
     $service->setDi($di);
 
-    $template = emailTemplate('mod_staff_ticket_reply', data: ['vars' => 'encrypted']);
+    $template = emailTemplate('mod_staff_ticket_reply');
     $vars = $service->getVars($template);
 
     expect($vars['ticket']['subject'])->toBe('Example support ticket')
@@ -431,7 +427,6 @@ test('sendTemplate forwards the attachment without retaining live template varia
     expect($persistedQueue->getAttachmentName())->toBe('Invoice-BB0001.pdf');
     expect($persistedQueue->getAttachmentContent())->toBe('%PDF-1.4 fake invoice contents');
     expect($persistedQueue->getAttachmentMime())->toBe('application/pdf');
-    expect($emailTemplate->getVars())->toBeNull();
 });
 
 test('sendTemplate renders the subject as plaintext, not HTML', function (): void {

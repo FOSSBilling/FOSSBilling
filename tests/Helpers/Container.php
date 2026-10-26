@@ -22,6 +22,7 @@ use Symfony\Component\HttpFoundation\Request;
 function container(): Container
 {
     $di = new Container();
+    $di['crypt'] = fn (): \FOSSBilling\Crypt => new \FOSSBilling\Crypt();
     $di['config'] = [
         'salt' => 'test_salt_' . uniqid(),
         'url' => 'http://localhost/',

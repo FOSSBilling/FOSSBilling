@@ -33,12 +33,9 @@ final readonly class SecretFields
                 if (!is_string($value[self::MARKER]) || !str_starts_with($value[self::MARKER], Crypt::CURRENT_FORMAT_PREFIX)) {
                     throw new InformationException('Stored credential uses an invalid encryption envelope.');
                 }
-                if (!$this->crypt->needsReEncryption($value[self::MARKER])) {
-                    $this->reveal([$field => $value]);
+                $this->reveal([$field => $value]);
 
-                    continue;
-                }
-                $value = $this->reveal([$field => $value])[$field];
+                continue;
             }
             if ($value === null || $value === '') {
                 continue;

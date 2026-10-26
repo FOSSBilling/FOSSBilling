@@ -217,11 +217,29 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         $staffTicket['client'] = $client;
 
         $base = [
-            'c' => $client, 'client' => $client, 'staff' => $staff, 'ticket' => $ticket,
-            'order' => ['id' => 1, 'title' => 'Example service', 'currency' => 'USD', 'price' => 10, 'quantity' => 1, 'total' => 10, 'period' => '1M', 'config' => [], 'service' => [], 'status' => 'active'],
-            'invoice' => ['id' => 1, 'total' => 0, 'currency' => '', 'items' => [], 'hash' => 'preview-invoice', 'series' => 'INV', 'nr' => 1, 'status' => 'unpaid', 'created_at' => '2026-01-01', 'due_at' => '2026-01-15', 'client' => $client],
-            'service' => ['domain' => 'example.com', 'sld' => 'example', 'tld' => '.com', 'username' => 'example', 'password' => 'preview-only', 'nameserver1' => 'ns1.example.com', 'nameserver2' => 'ns2.example.com'],
-            'hash' => 'preview-only-not-a-token', 'password' => 'preview-only', 'email_confirmation_link' => 'https://example.com/preview-only', 'message' => 'Example message',
+            'c' => $client,
+            'client' => $client,
+            'staff' => $staff,
+            'ticket' => $ticket,
+            'order' => [
+                'id' => 1, 'title' => 'Example service', 'currency' => 'USD',
+                'price' => 10, 'quantity' => 1, 'total' => 10, 'period' => '1M',
+                'config' => [], 'service' => [], 'status' => 'active',
+            ],
+            'invoice' => [
+                'id' => 1, 'total' => 0, 'currency' => '', 'items' => [],
+                'hash' => 'preview-invoice', 'series' => 'INV', 'nr' => 1, 'status' => 'unpaid',
+                'created_at' => '2026-01-01', 'due_at' => '2026-01-15', 'client' => $client,
+            ],
+            'service' => [
+                'domain' => 'example.com', 'sld' => 'example', 'tld' => '.com',
+                'username' => 'example', 'password' => 'preview-only',
+                'nameserver1' => 'ns1.example.com', 'nameserver2' => 'ns2.example.com',
+            ],
+            'hash' => 'preview-only-not-a-token',
+            'password' => 'preview-only',
+            'email_confirmation_link' => 'https://example.com/preview-only',
+            'message' => 'Example message',
         ];
 
         return array_replace($base, match ($actionCode) {

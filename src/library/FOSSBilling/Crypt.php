@@ -42,8 +42,8 @@ class Crypt implements InjectionAwareInterface
 
     public function encrypt(string $text, ?string $pass = null): string
     {
-        [$keyId, $key] = $this->encryptionKey($pass);
-        $header = self::CURRENT_FORMAT_PREFIX . $keyId . ':';
+        $key = $this->authenticatedKey($pass);
+        $header = self::CURRENT_FORMAT_PREFIX;
         $nonce = random_bytes(12);
         $tag = '';
         $ciphertext = openssl_encrypt($text, self::METHOD, $key, OPENSSL_RAW_DATA, $nonce, $tag, $header, 16);
@@ -61,21 +61,12 @@ class Crypt implements InjectionAwareInterface
         }
 
         if (str_starts_with($text, self::CURRENT_FORMAT_PREFIX)) {
-            $parts = explode(':', $text, 3);
-            if (count($parts) !== 3) {
-                return false;
-            }
-            $keyId = $parts[1];
-            $key = $this->decryptionKey($keyId, $pass);
-            if ($key === null) {
-                return false;
-            }
-            $raw = base64_decode($parts[2], true);
+            $raw = base64_decode(substr($text, strlen(self::CURRENT_FORMAT_PREFIX)), true);
             if ($raw === false || strlen($raw) < 28) {
                 return false;
             }
 
-            return openssl_decrypt(substr($raw, 28), self::METHOD, $key, OPENSSL_RAW_DATA, substr($raw, 0, 12), substr($raw, 12, 16), self::CURRENT_FORMAT_PREFIX . $keyId . ':');
+            return openssl_decrypt(substr($raw, 28), self::METHOD, $this->authenticatedKey($pass), OPENSSL_RAW_DATA, substr($raw, 0, 12), substr($raw, 12, 16), self::CURRENT_FORMAT_PREFIX);
         }
         if (str_starts_with($text, 'v2:')) {
             return $this->decryptWithKey(substr($text, 3), $this->getCurrentKey($pass));
@@ -145,55 +136,6 @@ class Crypt implements InjectionAwareInterface
     private function authenticatedKey(?string $pass): string
     {
         return hash_hkdf('sha256', $this->getCurrentKey($pass), 32, 'fossbilling:crypt:v3');
-    }
-
-    public function currentKeyId(): string
-    {
-        return $this->encryptionKey(null)[0];
-    }
-
-    /** Configuration key IDs permit rotation while previous keys remain available for old records. */
-    public function needsReEncryption(string $ciphertext): bool
-    {
-        [$id] = $this->encryptionKey(null);
-
-        return !str_starts_with($ciphertext, self::CURRENT_FORMAT_PREFIX . $id . ':');
-    }
-
-    private function encryptionKey(?string $pass): array
-    {
-        $id = Config::getProperty('security.encryption_active_key');
-        if ($id !== null && ($pass === null || $pass === Config::getProperty('info.salt'))) {
-            if (!is_string($id) || !preg_match('/^[a-zA-Z0-9_-]{1,32}$/', $id) || $id === 'salt') {
-                throw new \RuntimeException('Invalid active encryption key ID.');
-            }
-            $key = $this->decryptionKey($id, $pass);
-            if ($key === null) {
-                throw new \RuntimeException('Active encryption key is unavailable.');
-            }
-
-            return [$id, $key];
-        }
-
-        return ['salt', $this->authenticatedKey($pass)];
-    }
-
-    private function decryptionKey(string $id, ?string $pass): ?string
-    {
-        if ($id === 'salt') {
-            return $this->authenticatedKey($pass);
-        }
-        if ($pass !== null && $pass !== Config::getProperty('info.salt')) {
-            return null;
-        }
-        $keys = Config::getProperty('security.encryption_keys', []);
-        $encoded = is_array($keys) ? ($keys[$id] ?? null) : null;
-        $key = is_string($encoded) ? base64_decode($encoded, true) : false;
-        if ($key === false || strlen($key) !== 32) {
-            return null;
-        }
-
-        return hash_hkdf('sha256', $key, 32, 'fossbilling:crypt:v3:' . $id);
     }
 
     private function getLegacyKey(?string $pass = null): string

@@ -236,7 +236,6 @@
     "email_template.is_overridden",
     "email_template.last_error",
     "email_template.subject",
-    "email_template.vars",
     "email_template_group.admin_group_id",
     "email_template_group.created_at",
     "email_template_group.email_template_id",

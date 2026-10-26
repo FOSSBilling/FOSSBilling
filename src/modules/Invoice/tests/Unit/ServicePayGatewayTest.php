@@ -770,3 +770,25 @@ test('PayPal handoffs contain no session capability and retain invoice and callb
         expect(FOSSBilling\Tools::verifyCallbackSignature(2, 16, $callback['sig'] ?? null))->toBeTrue();
     }
 })->with([true, false]);
+
+test('credential migration defers missing adapters but propagates programming errors', function (bool $missing): void {
+    $repo = Mockery::mock(PayGatewayRepository::class);
+    $repo->shouldReceive('findAll')->once()->andReturn([(new PayGateway())->setConfig(['api_key' => 'secret'])]);
+    $service = Mockery::mock(ServicePayGateway::class)->makePartial();
+    $service->shouldReceive('getPayGatewayRepository')->andReturn($repo);
+    $error = $missing ? new FOSSBilling\InformationException('Missing adapter') : new TypeError('Broken adapter contract');
+    $service->shouldReceive('getSecretFields')->once()->andThrow($error);
+    $di = container();
+    $em = Mockery::mock(EntityManagerInterface::class);
+    $em->shouldReceive('getRepository')->with(PayGateway::class)->andReturn($repo);
+    $di['em'] = $em;
+    $service->setDi($di);
+    if ($missing) {
+        $em->shouldReceive('flush')->once();
+        $service->migrateConfigSecrets();
+        expect($di['logger']->calls[0]['params'][0])->toContain('deferred');
+    } else {
+        $em->shouldNotReceive('flush');
+        expect(fn () => $service->migrateConfigSecrets())->toThrow(TypeError::class, 'Broken adapter contract');
+    }
+})->with([true, false]);

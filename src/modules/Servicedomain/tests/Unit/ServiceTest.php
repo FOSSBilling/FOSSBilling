@@ -2167,6 +2167,7 @@ test('converts registrar to api array', function (): void {
     $model->setName('ResellerClub');
     $model->setTestMode(true);
 
+    $serviceMock->setDi(container());
     $serviceMock->registrarToApiArray($model);
 });
 

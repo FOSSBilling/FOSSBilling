@@ -14,7 +14,7 @@ namespace FOSSBilling\Doctrine;
 use Doctrine\DBAL\Connection;
 use FOSSBilling\Crypt;
 
-/** Re-key only the encrypted, global extension-config scope; other metadata remains opaque. */
+/** Upgrade existing global extension configuration to authenticated encryption. */
 final class EncryptedConfigurationMigration
 {
     public function run(Connection $connection, Crypt $crypt, ?\Psr\Cache\CacheItemPoolInterface $cache = null): void
@@ -23,29 +23,23 @@ final class EncryptedConfigurationMigration
         if (!$schema->tablesExist(['extension_meta'])) {
             return;
         }
-        $table = $schema->introspectTableByUnquotedName('extension_meta');
-        foreach (['id', 'meta_key', 'meta_value', 'rel_type', 'rel_id', 'client_id'] as $column) {
-            if (!$table->hasColumn($column)) {
-                return;
-            }
-        }
         $cursor = null;
         do {
-            $rows = $connection->fetchAllAssociative('SELECT id, meta_value' . ($table->hasColumn('extension') ? ', extension' : '') . " FROM extension_meta WHERE meta_key = 'config' AND rel_type IS NULL AND rel_id IS NULL AND client_id IS NULL" . ($cursor === null ? '' : ' AND id > :cursor') . ' ORDER BY id LIMIT 100', $cursor === null ? [] : ['cursor' => $cursor]);
+            $rows = $connection->fetchAllAssociative('SELECT id, meta_value, extension' . " FROM extension_meta WHERE meta_key = 'config' AND rel_type IS NULL AND rel_id IS NULL AND client_id IS NULL" . ($cursor === null ? '' : ' AND id > :cursor') . ' ORDER BY id LIMIT 100', $cursor === null ? [] : ['cursor' => $cursor]);
             foreach ($rows as $row) {
                 $cursor = $row['id'];
                 $stored = $row['meta_value'];
                 if (isset($row['extension'])) {
                     $cache?->deleteItem('config_' . $row['extension']);
                 }
-                if ($stored === null || $stored === '' || !$crypt->needsReEncryption($stored)) {
+                if ($stored === null || $stored === '' || str_starts_with($stored, Crypt::CURRENT_FORMAT_PREFIX)) {
                     continue;
                 }
                 $plain = $crypt->decrypt($stored);
                 if ($plain === false) {
                     throw new JsonMigrationException('Encrypted extension configuration id=' . $cursor . ' cannot be decrypted; existing data was retained.');
                 }
-                if (!json_validate($plain) || !is_array(json_decode($plain, true))) {
+                if (!is_array(json_decode($plain, true))) {
                     throw new JsonMigrationException('Encrypted extension configuration id=' . $cursor . ' is not a configuration document; existing data was retained.');
                 }
                 $changed = $connection->executeStatement('UPDATE extension_meta SET meta_value = ? WHERE id = ? AND meta_value = ?', [$crypt->encrypt($plain), $cursor, $stored]);
