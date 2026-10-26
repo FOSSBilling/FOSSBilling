@@ -297,6 +297,7 @@ class Service implements InjectionAwareInterface
     {
         // Retrieve the service associated with the order
         $model = $this->_getOrderService($order);
+        $model->setPass(self::PASSWORD_PLACEHOLDER);
 
         // Retrieve the order's configuration
         $orderService = $this->di['mod_service']('order');
@@ -305,51 +306,52 @@ class Service implements InjectionAwareInterface
         // Retrieve the server manager for the order
         $serverManager = $this->_getServerManagerForOrder($model);
 
-        // A username is only ever persisted below once the account has
-        // actually been created on the server. If one is already present,
-        // a previous activation attempt already provisioned this account -
-        // most likely the order's status update afterwards failed to save,
-        // and this call is a retry. Re-running createAccount() in that case
-        // would only fail with a "domain/account already exists" server
-        // error, so treat the account as already provisioned instead.
-        $alreadyProvisioned = !empty($model->getUsername());
+        $step = $model->getProvisioningStep();
+        $username = $model->getUsername();
 
-        // Generate a password for the service
-        $pass = $this->di['tools']->generatePassword($serverManager->getPasswordLength(), true);
-
-        // If a password is already specified in the order's configuration, use that instead
-        if (isset($config['password']) && !empty($config['password'])) {
-            $pass = $config['password'];
-        }
-
-        // Generate a username for the service
-        if ($alreadyProvisioned) {
-            $username = $model->getUsername();
-        } elseif (isset($config['username']) && !empty($config['username'])) {
-            $username = $config['username'];
-        } else {
-            $username = $serverManager->generateUsername($model->getSld() . $model->getTld());
-        }
-
-        // Update the service's username and password
-        $model->setUsername($username);
-        $model->setPass($pass);
-
-        // If the order's configuration does not specify that the service should be imported, create an account for the service on the server
-        if (!$alreadyProvisioned && (!isset($config['import']) || !$config['import'])) {
+        $adapter = null;
+        $account = null;
+        if ($step !== null) {
+            if (empty($username)) {
+                throw new Exception('Cannot resume provisioning without an account username.');
+            }
             [$adapter, $account] = $this->_getAM($model);
-            $adapter->createAccount($account);
+            if ($step === 'create') {
+                $account->setPassword(!empty($config['password']) ? $config['password'] : $this->di['tools']->generatePassword($serverManager->getPasswordLength(), true));
+            }
+            $this->provisionAccount($model, $adapter, $account);
+        } elseif (empty($username)) {
+            $username = !empty($config['username']) ? $config['username'] : $serverManager->generateUsername($model->getSld() . $model->getTld());
+
+            if (empty($config['import'])) {
+                $pass = !empty($config['password']) ? $config['password'] : $this->di['tools']->generatePassword($serverManager->getPasswordLength(), true);
+                [$adapter, $account] = $this->_getAM($model);
+                $account->setUsername($username)->setPassword($pass);
+                $this->provisionAccount($model, $adapter, $account);
+            } else {
+                $model->setUsername($username);
+            }
         }
 
-        // Update the service's password to a placeholder value for security reasons
-        $model->setPass(self::PASSWORD_PLACEHOLDER);
+        // Sync failures must not undo provisioning or prevent importing an existing account.
+        try {
+            if ($adapter === null) {
+                [$adapter, $account] = $this->_getAM($model);
+            }
+
+            $this->applySync($model, $adapter, $account);
+        } catch (\Server_UnsupportedOperationException) {
+            // Synchronization is optional for server managers.
+        } catch (\Exception $e) {
+            $this->di['logger']->warning('Skipped post-activation sync of hosting account {model_id}: {error}', ['model_id' => $model->getId(), 'error' => $e->getMessage()]);
+        }
 
         // Save the service
         $this->di['em']->flush();
 
         // Return the username for post-activation flows without exposing the password.
         return [
-            'username' => $username,
+            'username' => $model->getUsername(),
         ];
     }
 
@@ -414,6 +416,13 @@ class Service implements InjectionAwareInterface
      */
     public function action_uncancel(Order $order): bool
     {
+        $model = $this->_getOrderService($order);
+        if ($model->getProvisioningStep() !== null) {
+            $this->action_activate($order);
+
+            return true;
+        }
+
         $this->action_create($order);
         $model = $this->_getOrderService($order);
 
@@ -422,19 +431,44 @@ class Service implements InjectionAwareInterface
 
         // As we replace the password internally with asterisks, generate a new password
         $pass = $this->di['tools']->generatePassword($serverManager->getPasswordLength(), true);
-        $model->setPass($pass);
-
-        // Retrieve the adapter and account, then create the account on the server
-        [$adapter, $account] = $this->_getAM($model);
-        $adapter->createAccount($account);
-
-        // Update the service's password to a placeholder value for security reasons
         $model->setPass(self::PASSWORD_PLACEHOLDER);
+
+        [$adapter, $account] = $this->_getAM($model);
+        $account->setPassword($pass);
+        $this->provisionAccount($model, $adapter, $account);
 
         // Save the service
         $this->di['em']->flush();
 
         return true;
+    }
+
+    private function provisionAccount(ServiceHosting $model, \Server_Manager $adapter, \Server_Account $account): void
+    {
+        $step = $model->getProvisioningStep();
+        if ($step === null && $adapter->prepareAccountCreation($account)) {
+            $model->setUsername($account->getUsername());
+            $model->setProvisioningStep('create');
+            $this->di['em']->flush();
+        }
+
+        try {
+            if ($step !== null) {
+                $adapter->resumeAccountProvisioning($account, $step);
+            } elseif ($adapter->createAccount($account) === false) {
+                throw new Exception('The server manager did not create the hosting account.');
+            }
+        } catch (\Server_PartialProvisioningException $e) {
+            $model->setUsername($account->getUsername());
+            $model->setProvisioningStep($e->nextStep);
+            // Uncancel has no order-level failure flush, so save this checkpoint here.
+            $this->di['em']->flush();
+
+            throw $e;
+        }
+
+        $model->setUsername($account->getUsername());
+        $model->setProvisioningStep(null);
     }
 
     public function action_delete(Order $order, bool $forceDelete = false): void
@@ -565,20 +599,30 @@ class Service implements InjectionAwareInterface
     public function sync(Order $order, ServiceHosting $model): bool
     {
         [$adapter, $account] = $this->_getAM($model);
-        $updated = $adapter->synchronizeAccount($account);
-
-        if ($account->getUsername() != $updated->getUsername()) {
-            $model->setUsername($updated->getUsername());
-        }
-
-        if ($account->getIp() != $updated->getIp()) {
-            $model->setIp($updated->getIp());
-        }
+        $this->applySync($model, $adapter, $account);
 
         $this->di['em']->flush();
         $this->di['logger']->info('Synchronizing hosting account {model_id} with server', ['model_id' => $model->getId()]);
 
         return true;
+    }
+
+    private function applySync(ServiceHosting $model, \Server_Manager $adapter, \Server_Account $account): void
+    {
+        $updated = $adapter->synchronizeAccount($account);
+
+        // Keep stored values when a manager returns an incomplete account.
+        if (!empty($updated->getUsername()) && $updated->getUsername() !== $model->getUsername()) {
+            $model->setUsername($updated->getUsername());
+        } elseif (empty($updated->getUsername()) && !empty($model->getUsername())) {
+            $this->di['logger']->warning('Server reported no username for hosting account {model_id}, keeping the stored one', ['model_id' => $model->getId()]);
+        }
+
+        if (!empty($updated->getIp()) && $updated->getIp() !== $model->getIp()) {
+            $model->setIp($updated->getIp());
+        } elseif (empty($updated->getIp()) && !empty($model->getIp())) {
+            $this->di['logger']->warning('Server reported no IP for hosting account {model_id}, keeping the stored one', ['model_id' => $model->getId()]);
+        }
     }
 
     private function _getDomainOrderId(ServiceHosting $model)

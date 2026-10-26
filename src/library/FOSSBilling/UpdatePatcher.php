@@ -1524,6 +1524,7 @@ class UpdatePatcher implements InjectionAwareInterface
             131 => 'patch131',
             132 => 'patch132',
             133 => 'patch133',
+            134 => 'patch134',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -4946,6 +4947,13 @@ class UpdatePatcher implements InjectionAwareInterface
         // Only first-party tables are included; absent extension tables are skipped.
         foreach ($this->legacyUnicodeColumns() as $table => $columns) {
             $this->widenLegacyTextColumns($table, $columns, repairTableDefault: true);
+        }
+    }
+
+    private function patch134(): void
+    {
+        if (!$this->tableHasColumn('service_hosting', 'provisioning_step')) {
+            $this->executeSql('ALTER TABLE `service_hosting` ADD COLUMN `provisioning_step` VARCHAR(32) DEFAULT NULL');
         }
     }
 

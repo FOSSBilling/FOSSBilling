@@ -275,26 +275,89 @@ class Server_Manager_Whm extends Server_Manager
         $json = $this->request($action, $varHash);
         $result = ($json->result[0]->status == 1);
 
-        // If the account is a reseller account and was successfully created, set up the reseller and, if the hosting plan defines a custom 'acl' value, assign that ACL list to it
         if ($result && $account->getReseller()) {
-            $params = [
-                'user' => $account->getUsername(),
-                'makeowner' => 0,
-            ];
-            $this->request('setupreseller', $params);
-
-            $acl = $package->getCustomValue('acl');
-            if (!empty($acl)) {
-                $params = [
-                    'reseller' => $account->getUsername(),
-                    'acllist' => $acl,
-                ];
-                $this->request('setacls', $params);
-            }
+            $this->resumeAccountProvisioning($account, 'setupreseller');
         }
 
         // Return the result of the account creation
         return $result;
+    }
+
+    public function prepareAccountCreation(Server_Account $account): bool
+    {
+        if ($this->findProvisioningAccount($account) !== null) {
+            throw new Server_Exception('The hosting account already exists. Check the server before activating this order.');
+        }
+
+        return true;
+    }
+
+    private function findProvisioningAccount(Server_Account $account): ?object
+    {
+        $response = $this->request('listaccts', [
+            'api.version' => 1,
+            'search' => $account->getUsername(),
+            'searchtype' => 'user',
+            'searchmethod' => 'exact',
+        ]);
+        if (($response->metadata->result ?? null) != 1 || !isset($response->data->acct) || !is_array($response->data->acct) || count($response->data->acct) > 1) {
+            throw new Server_Exception('Could not verify the hosting account on the WHM server.');
+        }
+
+        if ($response->data->acct === []) {
+            return null;
+        }
+        $existing = $response->data->acct[0] ?? null;
+        if (!is_object($existing)) {
+            throw new Server_Exception('Could not verify the hosting account on the WHM server.');
+        }
+
+        return $existing;
+    }
+
+    public function resumeAccountProvisioning(Server_Account $account, string $step): void
+    {
+        if (!in_array($step, ['create', 'setupreseller', 'setacls'], true) || ($step !== 'create' && !$account->getReseller())) {
+            throw new Server_Exception('Invalid WHM provisioning step.');
+        }
+
+        $existing = $this->findProvisioningAccount($account);
+        if ($step === 'create' && $existing === null) {
+            if (!$this->createAccount($account)) {
+                throw new Server_Exception('The server manager did not create the hosting account.');
+            }
+
+            return;
+        }
+        if ($existing === null
+            || ($existing->user ?? null) !== $account->getUsername()
+            || ($existing->domain ?? null) !== $account->getDomain()
+            || ($existing->owner ?? null) !== $this->_config['username']
+            || ($existing->plan ?? null) !== $this->getPackageName($account->getPackage())) {
+            throw new Server_Exception('The existing WHM account does not match this order. Check the server before retrying.');
+        }
+
+        if ($step === 'create') {
+            if (!$account->getReseller()) {
+                return;
+            }
+            $step = 'setupreseller';
+        }
+
+        try {
+            if ($step === 'setupreseller') {
+                $this->request('setupreseller', ['user' => $account->getUsername(), 'makeowner' => 0]);
+                $step = 'setacls';
+            }
+
+            $acl = $account->getPackage()->getCustomValue('acl');
+            if (!empty($acl)) {
+                $this->request('setacls', ['reseller' => $account->getUsername(), 'acllist' => $acl]);
+            }
+        } catch (Throwable) {
+            // createacct succeeded; preserve the pending step instead of creating the account again.
+            throw new Server_PartialProvisioningException($step);
+        }
     }
 
     /**
@@ -677,7 +740,7 @@ class Server_Manager_Whm extends Server_Manager
      * Logs the WHM failure reason and throws a generic exception.
      *
      * The full WHM reason stays in the logs and is never exposed to API
-     * callers or stored in order history. An "already exists" WHM response
+     * callers or stored in order history. An "already exists" addpkg response
      * is translated to a dedicated exception so callers can handle it
      * without matching on message text.
      *
@@ -689,7 +752,7 @@ class Server_Manager_Whm extends Server_Manager
         $placeholders = [':action:' => $action, ':type:' => 'cPanel'];
         $message = 'Failed to :action: on the :type: server, check the error logs for further details';
 
-        if (str_contains(strtolower($reason), 'already exists')) {
+        if ($action === 'addpkg' && str_contains(strtolower($reason), 'already exists')) {
             throw new Server_PackageExistsException($message, $placeholders);
         }
 

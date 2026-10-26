@@ -194,6 +194,7 @@ return [
         'promo_redemption.status',
         'service_custom.plugin',
         'service_domain.action',
+        'service_hosting.provisioning_step',
         'service_hosting_server.manager',
         'service_license.plugin',
         'setting.category',

@@ -46,6 +46,10 @@ function createWhmAccountCreationClient(array &$requests): MockHttpClient
             return new MockResponse(json_encode(['package' => []]));
         }
 
+        if (str_contains($url, 'listaccts')) {
+            return new MockResponse(json_encode(['metadata' => ['result' => 1], 'data' => ['acct' => [['user' => 'example', 'domain' => 'example.com', 'owner' => 'admin', 'plan' => 'admin_FOSSBilling']]]]));
+        }
+
         if (str_contains($url, 'createacct')) {
             return new MockResponse(json_encode(['result' => [['status' => 1]]]));
         }
@@ -65,7 +69,7 @@ test('createAccount sets up the reseller but does not touch the ACL list when th
 
     // Calling "setacls" with an empty acllist would strip the initial privileges "setupreseller"
     // just granted, so it must be skipped when the plan has no 'acl' custom value.
-    expect($actions)->toBe(['listpkgs', 'addpkg', 'createacct', 'setupreseller'])
+    expect($actions)->toBe(['listpkgs', 'addpkg', 'createacct', 'listaccts', 'setupreseller'])
         ->and($actions)->not->toContain('setacls');
 });
 
@@ -78,7 +82,7 @@ test('createAccount assigns the plan\'s acl custom value to the reseller via set
     expect($manager->createAccount($account))->toBeTrue();
 
     $actions = array_map(actionOf(...), $requests);
-    expect($actions)->toBe(['listpkgs', 'addpkg', 'createacct', 'setupreseller', 'setacls']);
+    expect($actions)->toBe(['listpkgs', 'addpkg', 'createacct', 'listaccts', 'setupreseller', 'setacls']);
 
     $setaclsRequest = $requests[array_search('setacls', $actions, true)];
     parse_str((string) $setaclsRequest['options']['body'], $fields);
@@ -261,3 +265,113 @@ test('addpkg already-exists does not leak the WHM reason to callers', function (
             ->and($e->getMessage())->toContain('Failed to addpkg');
     }
 });
+
+test('already-exists responses only use the package exception for addpkg', function (string $action, string $exceptionClass): void {
+    $client = new MockHttpClient(fn (): MockResponse => new MockResponse(json_encode([
+        'result' => [['status' => 0, 'statusmsg' => 'The requested resource already exists.']],
+    ])));
+    $manager = createWhmManager($client);
+    $ref = new ReflectionMethod($manager, 'request');
+
+    try {
+        $ref->invoke($manager, $action);
+        $this->fail('Expected a WHM exception');
+    } catch (Server_Exception $e) {
+        expect($e::class)->toBe($exceptionClass)
+            ->and($e->getMessage())->toContain('Failed to ' . $action)
+            ->and($e->getMessage())->not->toContain('already exists');
+    }
+})->with([
+    'package creation' => ['addpkg', Server_PackageExistsException::class],
+    'account creation' => ['createacct', Server_Exception::class],
+    'reseller setup' => ['setupreseller', Server_Exception::class],
+]);
+
+test('WHM refuses invalid recovery steps without sending requests', function (string $step, bool $reseller): void {
+    $client = new MockHttpClient(function (): never {
+        $this->fail('Invalid recovery must not contact WHM');
+    });
+    $manager = createWhmManager($client);
+    $account = createWhmAccount(new Server_Package(), $reseller);
+
+    expect(fn () => $manager->resumeAccountProvisioning($account, $step))->toThrow(Server_Exception::class, 'Invalid WHM provisioning step');
+})->with([
+    ['createacct', true],
+    ['setupreseller', false],
+]);
+
+test('WHM preserves the pending setup step when the transport fails', function (string $step): void {
+    $client = new MockHttpClient(function (string $method, string $url): MockResponse {
+        if (str_contains($url, 'listaccts')) {
+            return new MockResponse(json_encode(['metadata' => ['result' => 1], 'data' => ['acct' => [['user' => 'example', 'domain' => 'example.com', 'owner' => 'admin', 'plan' => 'admin_FOSSBilling']]]]));
+        }
+
+        throw new Symfony\Component\HttpClient\Exception\TransportException('Connection lost');
+    });
+    $manager = createWhmManager($client);
+    $account = createWhmAccount((new Server_Package())->setCustomValues(['acl' => 'reseller_basic']), true);
+
+    try {
+        $manager->resumeAccountProvisioning($account, $step);
+        $this->fail('Expected a partial provisioning exception');
+    } catch (Server_PartialProvisioningException $e) {
+        expect($e->nextStep)->toBe($step)
+            ->and($e->getMessage())->not->toContain('Connection lost');
+    }
+})->with(['setupreseller', 'setacls']);
+
+test('WHM refuses to checkpoint an account that existed before provisioning', function (): void {
+    $client = new MockHttpClient(fn (): MockResponse => new MockResponse(json_encode([
+        'metadata' => ['result' => 1], 'data' => ['acct' => [['user' => 'example']]],
+    ])));
+    $manager = createWhmManager($client);
+
+    expect(fn () => $manager->prepareAccountCreation(createWhmAccount(new Server_Package(), true)))
+        ->toThrow(Server_Exception::class, 'The hosting account already exists');
+});
+
+test('WHM does not resume provisioning from an unverified lookup', function (array $response, string $step): void {
+    $client = new MockHttpClient(function (string $method, string $url, array $options) use ($response): MockResponse {
+        expect(basename((string) parse_url($url, PHP_URL_PATH)))->toBe('listaccts');
+        parse_str((string) $options['body'], $params);
+        expect($params)->toMatchArray(['search' => 'example', 'searchtype' => 'user', 'searchmethod' => 'exact']);
+
+        return new MockResponse(json_encode($response));
+    });
+    $manager = createWhmManager($client);
+
+    try {
+        $manager->resumeAccountProvisioning(createWhmAccount(new Server_Package(), true), $step);
+        $this->fail('Expected an account verification failure');
+    } catch (Server_Exception $e) {
+        expect($e::class)->toBe(Server_Exception::class);
+    }
+})->with([
+    'permission denied' => [['metadata' => ['result' => 0, 'reason' => 'Permission denied']]],
+    'missing result' => [['data' => ['acct' => []]]],
+    'missing account list' => [['metadata' => ['result' => 1]]],
+    'invalid account entry' => [['metadata' => ['result' => 1], 'data' => ['acct' => [null]]]],
+    'different username' => [['metadata' => ['result' => 1], 'data' => ['acct' => [['user' => 'other', 'domain' => 'example.com', 'owner' => 'admin', 'plan' => 'admin_FOSSBilling']]]]],
+    'different domain' => [['metadata' => ['result' => 1], 'data' => ['acct' => [['user' => 'example', 'domain' => 'other.com', 'owner' => 'admin', 'plan' => 'admin_FOSSBilling']]]]],
+    'different owner' => [['metadata' => ['result' => 1], 'data' => ['acct' => [['user' => 'example', 'domain' => 'example.com', 'owner' => 'other', 'plan' => 'admin_FOSSBilling']]]]],
+    'different plan' => [['metadata' => ['result' => 1], 'data' => ['acct' => [['user' => 'example', 'domain' => 'example.com', 'owner' => 'admin', 'plan' => 'other']]]]],
+])->with(['create', 'setupreseller', 'setacls']);
+
+test('WHM refuses reseller recovery when the account has disappeared', function (string $step): void {
+    $actions = [];
+    $client = new MockHttpClient(function (string $method, string $url) use (&$actions): MockResponse {
+        $actions[] = basename((string) parse_url($url, PHP_URL_PATH));
+
+        return new MockResponse(json_encode(['metadata' => ['result' => 1], 'data' => ['acct' => []]]));
+    });
+    $manager = createWhmManager($client);
+    $account = createWhmAccount((new Server_Package())->setCustomValues(['acl' => 'reseller_basic']), true);
+
+    try {
+        $manager->resumeAccountProvisioning($account, $step);
+        $this->fail('Expected an account verification failure');
+    } catch (Server_Exception $e) {
+        expect($e::class)->toBe(Server_Exception::class)
+            ->and($actions)->toBe(['listaccts']);
+    }
+})->with(['setupreseller', 'setacls']);
