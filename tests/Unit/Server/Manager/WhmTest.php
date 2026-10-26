@@ -261,3 +261,24 @@ test('addpkg already-exists does not leak the WHM reason to callers', function (
             ->and($e->getMessage())->toContain('Failed to addpkg');
     }
 });
+
+test('already-exists responses only use the package exception for addpkg', function (string $action, string $exceptionClass): void {
+    $client = new MockHttpClient(fn (): MockResponse => new MockResponse(json_encode([
+        'result' => [['status' => 0, 'statusmsg' => 'The requested resource already exists.']],
+    ])));
+    $manager = createWhmManager($client);
+    $ref = new ReflectionMethod($manager, 'request');
+
+    try {
+        $ref->invoke($manager, $action);
+        $this->fail('Expected a WHM exception');
+    } catch (Server_Exception $e) {
+        expect($e::class)->toBe($exceptionClass)
+            ->and($e->getMessage())->toContain('Failed to ' . $action)
+            ->and($e->getMessage())->not->toContain('already exists');
+    }
+})->with([
+    'package creation' => ['addpkg', Server_PackageExistsException::class],
+    'account creation' => ['createacct', Server_Exception::class],
+    'reseller setup' => ['setupreseller', Server_Exception::class],
+]);

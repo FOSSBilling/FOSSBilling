@@ -677,7 +677,7 @@ class Server_Manager_Whm extends Server_Manager
      * Logs the WHM failure reason and throws a generic exception.
      *
      * The full WHM reason stays in the logs and is never exposed to API
-     * callers or stored in order history. An "already exists" WHM response
+     * callers or stored in order history. An "already exists" addpkg response
      * is translated to a dedicated exception so callers can handle it
      * without matching on message text.
      *
@@ -689,7 +689,7 @@ class Server_Manager_Whm extends Server_Manager
         $placeholders = [':action:' => $action, ':type:' => 'cPanel'];
         $message = 'Failed to :action: on the :type: server, check the error logs for further details';
 
-        if (str_contains(strtolower($reason), 'already exists')) {
+        if ($action === 'addpkg' && str_contains(strtolower($reason), 'already exists')) {
             throw new Server_PackageExistsException($message, $placeholders);
         }
 
