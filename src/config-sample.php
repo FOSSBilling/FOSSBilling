@@ -17,6 +17,11 @@ return [
      * The default values are what we recommended running unless they are causing issues.
      */
     'security' => [
+        // Optional named 32-byte base64 encryption keys. Keep previous keys until stored data
+        // and backups have been rotated. Empty defaults continue using the installation salt.
+        'encryption_keys' => [],
+        'encryption_active_key' => null,
+
         'mode' => 'strict',
         'force_https' => true,
         /*
