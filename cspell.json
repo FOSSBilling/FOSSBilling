@@ -120,7 +120,8 @@
         "pjpeg",
         "imageavif",
         "webp",
-        "webmoney"
+        "webmoney",
+        "dasharray"
     ],
 
     "ignoreWords": [
