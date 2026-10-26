@@ -282,3 +282,30 @@ test('already-exists responses only use the package exception for addpkg', funct
     'account creation' => ['createacct', Server_Exception::class],
     'reseller setup' => ['setupreseller', Server_Exception::class],
 ]);
+
+test('WHM refuses invalid recovery steps without sending requests', function (string $step, bool $reseller): void {
+    $client = new MockHttpClient(function (): never {
+        $this->fail('Invalid recovery must not contact WHM');
+    });
+    $manager = createWhmManager($client);
+    $account = createWhmAccount(new Server_Package(), $reseller);
+
+    expect(fn () => $manager->resumeAccountProvisioning($account, $step))->toThrow(Server_Exception::class, 'Invalid WHM provisioning step');
+})->with([
+    ['createacct', true],
+    ['setupreseller', false],
+]);
+
+test('WHM preserves the pending setup step when the transport fails', function (string $step): void {
+    $client = new MockHttpClient(fn (): never => throw new Symfony\Component\HttpClient\Exception\TransportException('Connection lost'));
+    $manager = createWhmManager($client);
+    $account = createWhmAccount((new Server_Package())->setCustomValues(['acl' => 'reseller_basic']), true);
+
+    try {
+        $manager->resumeAccountProvisioning($account, $step);
+        $this->fail('Expected a partial provisioning exception');
+    } catch (Server_PartialProvisioningException $e) {
+        expect($e->nextStep)->toBe($step)
+            ->and($e->getMessage())->not->toContain('Connection lost');
+    }
+})->with(['setupreseller', 'setacls']);

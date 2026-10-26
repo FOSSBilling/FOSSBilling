@@ -275,26 +275,34 @@ class Server_Manager_Whm extends Server_Manager
         $json = $this->request($action, $varHash);
         $result = ($json->result[0]->status == 1);
 
-        // If the account is a reseller account and was successfully created, set up the reseller and, if the hosting plan defines a custom 'acl' value, assign that ACL list to it
         if ($result && $account->getReseller()) {
-            $params = [
-                'user' => $account->getUsername(),
-                'makeowner' => 0,
-            ];
-            $this->request('setupreseller', $params);
-
-            $acl = $package->getCustomValue('acl');
-            if (!empty($acl)) {
-                $params = [
-                    'reseller' => $account->getUsername(),
-                    'acllist' => $acl,
-                ];
-                $this->request('setacls', $params);
-            }
+            $this->resumeAccountProvisioning($account, 'setupreseller');
         }
 
         // Return the result of the account creation
         return $result;
+    }
+
+    public function resumeAccountProvisioning(Server_Account $account, string $step): void
+    {
+        if (!in_array($step, ['setupreseller', 'setacls'], true) || !$account->getReseller()) {
+            throw new Server_Exception('Invalid WHM provisioning step.');
+        }
+
+        try {
+            if ($step === 'setupreseller') {
+                $this->request('setupreseller', ['user' => $account->getUsername(), 'makeowner' => 0]);
+                $step = 'setacls';
+            }
+
+            $acl = $account->getPackage()->getCustomValue('acl');
+            if (!empty($acl)) {
+                $this->request('setacls', ['reseller' => $account->getUsername(), 'acllist' => $acl]);
+            }
+        } catch (Throwable) {
+            // createacct succeeded; preserve the pending step instead of creating the account again.
+            throw new Server_PartialProvisioningException($step);
+        }
     }
 
     /**
