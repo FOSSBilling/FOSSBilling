@@ -202,3 +202,37 @@ test('the full 24-column inventory migrates while encrypted and dormant exclusio
         ->and($c->fetchOne('SELECT vars FROM email_template'))->toBe('encrypted-private-value')
         ->and(file_get_contents($file))->not->toContain('encrypted-private-value', 'dormant-unstructured-value');
 });
+
+test('JSON conversion and patch 133 compose in either upgrade order', function (bool $unicodeFirst): void {
+    $c = $this->connection;
+    if (!$c->getDatabasePlatform() instanceof Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
+        $this->markTestSkipped('Patch 133 applies only to MySQL/MariaDB.');
+    }
+    makeLegacyJsonColumn($c);
+    $c->executeStatement('ALTER TABLE mod_massmailer DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci');
+    $c->executeStatement('ALTER TABLE mod_massmailer MODIFY COLUMN subject VARCHAR(255) CHARACTER SET utf8 COLLATE utf8_general_ci NULL');
+    $original = '{"label":"Résumé","id":"001"}';
+    $c->insert('mod_massmailer', ['subject' => 'Résumé', 'filter' => $original]);
+    $id = (int) $c->lastInsertId();
+    $patcher = new FOSSBilling\UpdatePatcher();
+    $patcher->setDi(new Pimple\Container(['pdo' => $c->getNativeConnection(), 'dbal' => $c, 'logger' => new Tests\Helpers\TestLogger()]));
+    $unicode = (new ReflectionMethod($patcher, 'patch133'))->getClosure($patcher);
+    $json = fn () => (new JsonMigration())->migrate($c, $this->jsonBackupDirectory . '/combined.jsonl');
+    if ($unicodeFirst) {
+        $unicode();
+        $json();
+    } else {
+        $json();
+        $unicode();
+    }
+    expect($c->createSchemaManager()->introspectTableByUnquotedName('mod_massmailer')->getColumn('filter')->getTypeName())->toBe(Doctrine\DBAL\Types\Types::JSON)
+        ->and(json_decode($c->fetchOne('SELECT ' . $c->quoteSingleIdentifier('filter') . ' FROM mod_massmailer WHERE id = ?', [$id]), true))->toEqual(json_decode($original, true));
+    $model = $this->em->find(MassmailerMessage::class, $id);
+    $model->setSubject('🚀 Release')->setFilter(['label' => '🚀', 'id' => '001']);
+    $this->em->flush();
+    $unicode();
+    $this->em->clear();
+    $saved = $this->em->find(MassmailerMessage::class, $id);
+    expect($saved->getSubject())->toBe('🚀 Release')->and($saved->getFilter())->toEqual(['label' => '🚀', 'id' => '001']);
+    (new JsonMigration())->assertReady($c);
+})->with(['Unicode first' => true, 'JSON first' => false]);
