@@ -25,6 +25,8 @@ class EntityManagerFactory
 {
     public static function create(?Connection $connection = null): EntityManager
     {
+        Type\JsonDocumentType::register();
+
         $moduleEntityPaths = self::moduleEntityPaths();
 
         // ORMSetup uses this as the metadata, query, AND result cache. Always pass an explicit,

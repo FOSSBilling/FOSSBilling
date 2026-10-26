@@ -52,6 +52,8 @@ if (!function_exists('__pluralTrans')) {
 require_once __DIR__ . '/../src/load.php';
 require_once __DIR__ . '/../src/vendor/autoload.php';
 
+FOSSBilling\Doctrine\Type\JsonDocumentType::register();
+
 // Load test helpers
 require_once __DIR__ . '/Helpers/Container.php';
 require_once __DIR__ . '/Helpers/Factories.php';

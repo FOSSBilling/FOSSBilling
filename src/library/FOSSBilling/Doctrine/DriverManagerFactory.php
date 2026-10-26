@@ -109,6 +109,8 @@ class DriverManagerFactory
      */
     public static function getConnection(array $driverOptions = [], ?array $dbConfig = null): Connection
     {
+        Type\JsonDocumentType::register();
+
         $dbConfig ??= self::getDatabaseConfig();
 
         if (!in_array($dbConfig['driver'], self::SUPPORTED_DRIVERS, true)) {
