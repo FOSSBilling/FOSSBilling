@@ -12,6 +12,7 @@
 !/src/data/log/index.html
 !/src/data/uploads/index.html
 /src/public/assets
+/src/public/gateways/custom/
 /src/vendor/*
 build
 

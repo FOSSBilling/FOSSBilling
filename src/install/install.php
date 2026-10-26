@@ -128,7 +128,7 @@ final class FOSSBilling_Installer
                 // Installer validation
                 try {
                     // Make sure we are not already installed. Prevents tampered requests from being able to trigger the installer.
-                    if (!$this->isDebug && $this->isAlreadyInstalled()) {
+                    if ($this->isAlreadyInstalled()) {
                         throw new Exception('FOSSBilling is already installed.');
                     }
 
@@ -308,7 +308,7 @@ final class FOSSBilling_Installer
         // Open the connection
         $databasePort = FOSSBilling\Core\Utils\Normalizer::normalizePort($this->session->get('database_port'), 3306);
 
-        $this->pdo = new PDO('mysql:host=' . $this->session->get('database_hostname') . ';port=' . $databasePort,
+        $this->pdo = new PDO('mysql:host=' . $this->session->get('database_hostname') . ';port=' . $databasePort . ';charset=utf8mb4',
             $this->session->get('database_username'),
             $this->session->get('database_password'),
             [
@@ -318,17 +318,12 @@ final class FOSSBilling_Installer
         );
 
         // Set required MySQL environment settings
-        $this->pdo->exec('SET NAMES "utf8"');
-        $this->pdo->exec('SET CHARACTER SET utf8');
-        $this->pdo->exec('SET CHARACTER_SET_CONNECTION = utf8');
-        $this->pdo->exec('SET character_set_results = utf8');
-        $this->pdo->exec('SET character_set_server = utf8');
         $this->pdo->exec('SET SESSION interactive_timeout = 28800');
         $this->pdo->exec('SET SESSION wait_timeout = 28800');
 
         // Attempt to create the database.
         try {
-            $this->pdo->exec('CREATE DATABASE ' . $databaseName . ' CHARACTER SET utf8 COLLATE utf8_general_ci;');
+            $this->pdo->exec('CREATE DATABASE ' . $databaseName . ' CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;');
         } catch (PDOException) {
             // Silently fail if the database already exists.
         }
@@ -480,7 +475,7 @@ final class FOSSBilling_Installer
      */
     public function isAlreadyInstalled(): bool
     {
-        return !$this->isDebug && $this->filesystem->exists(PATH_CONFIG);
+        return $this->filesystem->exists(PATH_CONFIG);
     }
 
     private function getExistingConfig(): ?array

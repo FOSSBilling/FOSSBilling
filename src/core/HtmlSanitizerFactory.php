@@ -166,6 +166,66 @@ final class HtmlSanitizerFactory
     }
 
     /**
+     * Sanitize general content for storage.
+     *
+     * Text-only callers pass $allowHtml = false: the content is HTML-encoded so no
+     * markup survives, since the HTML sanitizer incorrectly strips text that follows
+     * unrecognized tags like <foo>.
+     *
+     * @param string $content   The content to sanitize. If empty, returns an empty string.
+     * @param bool   $allowHtml Whether to allow safe HTML tags (default: true for rich content)
+     */
+    public static function sanitizeContent(string $content = '', bool $allowHtml = true): string
+    {
+        if ($content === '') {
+            return '';
+        }
+
+        $content = str_replace("\0", '', $content);
+
+        if (!$allowHtml) {
+            // Strip all HTML tags for plain text
+            return htmlspecialchars(self::sanitizePlainText($content), ENT_QUOTES | ENT_HTML5, 'UTF-8', false);
+        }
+
+        return trim(self::getSanitizer('content')->sanitize($content));
+    }
+
+    /**
+     * Sanitize plain text for storage without HTML-encoding it.
+     *
+     * Output contexts must still escape the returned value. Encoding during input would store HTML
+     * entities as data and cause them to be displayed literally when the output is escaped again.
+     */
+    public static function sanitizePlainText(string $content = ''): string
+    {
+        return trim(strip_tags(str_replace("\0", '', $content)));
+    }
+
+    /**
+     * Sanitize Markdown content for storage.
+     *
+     * Unlike sanitizeContent(), this does NOT run an HTML sanitizer because the content is Markdown,
+     * not HTML. Running an HTML sanitizer on Markdown corrupts it: characters like < and > that users
+     * type as literal text get misinterpreted as unknown HTML elements and dropped together with all
+     * subsequent text.
+     *
+     * XSS protection for Markdown content is handled at render time by the markdown_to_html Twig
+     * filter, which is configured with html_input=escape so any raw HTML in the Markdown is safely
+     * escaped rather than executed.
+     *
+     * @param string $content the Markdown content to sanitize
+     */
+    public static function sanitizeMarkdownContent(string $content = ''): string
+    {
+        if ($content === '') {
+            return '';
+        }
+
+        return trim(str_replace("\0", '', $content));
+    }
+
+    /**
      * Convenience wrapper that mirrors Symfony's sanitize() but centralizes
      * the null-byte strip and trim that Symfony handles as `�` (visible) while
      * FOSSBilling historically strips silently to `''`. Keeps the 7 HTML call

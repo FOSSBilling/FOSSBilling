@@ -648,7 +648,7 @@ test('claimForProcessing executes on SQLite despite the reserved table name', fu
     // A real connection, not a mock, is the only way to prove the quoting works.
     $config = Doctrine\ORM\ORMSetup::createAttributeMetadataConfig([Symfony\Component\Filesystem\Path::join(__DIR__, '..', '..', '..', 'Entity')], true);
     $config->setProxyDir(sys_get_temp_dir());
-    $config->setProxyNamespace('FOSSBilling\\Tests\\DoctrineProxies');
+    $config->setProxyNamespace('FOSSBilling\\Core\\Tests\\DoctrineProxies');
     $entityManager = new Doctrine\ORM\EntityManager(
         Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]),
         $config
@@ -855,7 +855,7 @@ test('offline approval rejects overlapping requests and processed retries', func
     $database = $filesystem->tempnam(sys_get_temp_dir(), 'approval-race-');
     $config = Doctrine\ORM\ORMSetup::createAttributeMetadataConfig([], true);
     $config->setProxyDir(sys_get_temp_dir());
-    $config->setProxyNamespace('FOSSBilling\\Tests\\DoctrineProxies');
+    $config->setProxyNamespace('FOSSBilling\\Core\\Tests\\DoctrineProxies');
     $firstEm = new Doctrine\ORM\EntityManager(
         Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'path' => $database]),
         $config

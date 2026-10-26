@@ -19,6 +19,7 @@ use Box\Mod\Client\Entity\Client;
 use Box\Mod\Client\Entity\ClientBalance;
 use Box\Mod\Client\Entity\ClientGroup;
 use Box\Mod\Client\Entity\ClientGroupMembership;
+use Box\Mod\Client\Entity\ClientPasswordReset;
 use Box\Mod\Client\Event\AfterAdminClientDeleteEvent;
 use Box\Mod\Client\Event\AfterAdminClientPasswordChangeEvent;
 use Box\Mod\Client\Event\AfterAdminClientUpdateEvent;
@@ -234,7 +235,12 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
     {
         $this->checkPermissions('client', 'delete');
 
-        $model = $this->getDi()['em']->getRepository(Client::class)->find($data['id']) ?? throw new InformationException('Client not found');
+        $id = $data['id'];
+        if ((!is_int($id) && !is_string($id)) || filter_var($id, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) === false) {
+            throw new InformationException('Invalid client ID');
+        }
+
+        $model = $this->getDi()['em']->getRepository(Client::class)->find((int) $id) ?? throw new InformationException('Client not found');
 
         $clientId = (int) $model->getId();
 
@@ -404,6 +410,10 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
             'custom_20' => 'setCustom20',
         ];
 
+        if (isset($data['email']) && $client->getEmail() !== trim((string) $data['email'])) {
+            $service->revokeEmailConfirmations((int) $client->getId());
+        }
+
         foreach ($simpleFields as $field => $setter) {
             if (array_key_exists($field, $data)) {
                 $client->{$setter}($data[$field]);
@@ -488,9 +498,7 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
 
         $this->getDi()['event_dispatcher']->dispatch(new BeforeAdminClientPasswordChangeEvent((int) $client->getId()));
 
-        $client->setPass($this->getDi()['password']->hashIt($data['password']));
-        $this->getDi()['em']->persist($client);
-        $this->getDi()['em']->flush();
+        $this->getDi()['em']->getRepository(ClientPasswordReset::class)->changePassword($client, $this->getDi()['password']->hashIt($data['password']));
 
         $profileService = $this->getDi()['mod_service']('profile');
         $profileService->invalidateSessions('client', (int) $data['id']);

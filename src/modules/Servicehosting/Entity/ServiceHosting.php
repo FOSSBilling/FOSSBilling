@@ -55,6 +55,9 @@ class ServiceHosting implements TimestampInterface
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
     private ?string $username = null;
 
+    #[ORM\Column(name: 'provisioning_step', type: Types::STRING, length: 32, nullable: true)]
+    private ?string $provisioningStep = null;
+
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
     private ?string $pass = null;
 
@@ -146,6 +149,18 @@ class ServiceHosting implements TimestampInterface
     public function setUsername(?string $username): self
     {
         $this->username = $username;
+
+        return $this;
+    }
+
+    public function getProvisioningStep(): ?string
+    {
+        return $this->provisioningStep;
+    }
+
+    public function setProvisioningStep(?string $step): self
+    {
+        $this->provisioningStep = $step;
 
         return $this;
     }

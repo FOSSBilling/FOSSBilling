@@ -563,6 +563,12 @@ class Admin extends \FOSSBilling\Core\Api\AbstractApi
 
         $ticket = $this->getService()->getTicketById((int) $data['ticket_id']);
 
+        $data['note'] = \FOSSBilling\Core\HtmlSanitizerFactory::sanitizePlainText($data['note']);
+
+        if ($data['note'] === '') {
+            throw new \FOSSBilling\Core\Exception\InformationException('Note is empty');
+        }
+
         return $this->getService()->noteCreate($ticket, $this->getIdentity(), $data['note']);
     }
 

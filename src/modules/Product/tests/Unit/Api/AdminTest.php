@@ -125,6 +125,22 @@ test('updates a product', function (): void {
     expect($api->update($data))->toBeTrue();
 });
 
+test('product mutations reject missing IDs during API validation', function (string $method, string $message, array $data): void {
+    $dispatcher = new FOSSBilling\Core\Api\Dispatcher();
+
+    expect(fn () => $dispatcher->validateRequiredParams(new Admin(), $method, $data))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, $message);
+})->with([
+    ['update', 'Product ID was not passed'],
+    ['update_config', 'Product ID was not passed'],
+    ['delete', 'Product ID was not passed'],
+    ['addon_delete', 'Addon ID was not passed'],
+])->with([
+    'omitted' => [[]],
+    'null' => [['id' => null]],
+    'blank' => [['id' => '   ']],
+]);
+
 test('throws exception when updating priority without priority param', function (): void {
     $api = apiEndpoint(new Admin());
     $api->setDi(container());
@@ -264,6 +280,34 @@ test('updates a category', function (): void {
     $api->setDi(container());
 
     expect($api->category_update($data))->toBeTrue();
+});
+
+test('gets category list', function (): void {
+    $api = apiEndpoint(new Admin());
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('getAdminCategoryList')->once()->andReturn([]);
+
+    $api->setService($serviceMock);
+    $api->setDi(container());
+
+    expect($api->category_get_list([]))->toBeArray();
+});
+
+test('throws exception when updating category priority without priority param', function (): void {
+    $api = apiEndpoint(new Admin());
+    $api->setDi(container());
+
+    expect(fn () => $api->category_update_priority([]))
+        ->toThrow(FOSSBilling\Core\Exception\BaseException::class, 'priority params is missing');
+});
+
+test('updates category priority', function (): void {
+    $api = apiEndpoint(new Admin());
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('updateCategoryPriority')->atLeast()->once()->andReturn(true);
+
+    $api->setService($serviceMock);
+    expect($api->category_update_priority(['priority' => []]))->toBeTrue();
 });
 
 test('gets a category', function (): void {

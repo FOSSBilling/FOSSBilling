@@ -41,6 +41,11 @@ test('before client signup checks spam and disposable email without re-verifying
         ->with(['ip' => $input['ip'], 'email' => $input['email']])
         ->ordered()
         ->andReturnFalse();
+    $spamCheckerService->shouldReceive('isInAbuseIPDBDatabase')
+        ->once()
+        ->with($input['ip'])
+        ->ordered()
+        ->andReturnFalse();
     $spamCheckerService->shouldReceive('isATempEmail')
         ->once()
         ->with($input['email'], true)
@@ -53,6 +58,7 @@ test('before client signup checks spam and disposable email without re-verifying
     $di['mod_config'] = $di->protect(fn (): array => [
         'block_ips' => false,
         'sfs' => true,
+        'abuseipdb_enabled' => true,
         'check_temp_emails' => true,
         'honeypot_enabled' => true,
         'captcha_enabled' => true,
@@ -105,6 +111,10 @@ test('before guest ticket creation checks blocked IP, captcha, spam, and disposa
         ->once()
         ->with(['ip' => '1.2.3.4', 'email' => 'guest@example.com'])
         ->andReturnTrue();
+    $service->shouldReceive('isInAbuseIPDBDatabase')
+        ->once()
+        ->with('1.2.3.4')
+        ->andReturnFalse();
     $service->shouldReceive('isATempEmail')
         ->once()
         ->with('guest@example.com', true)
@@ -114,6 +124,7 @@ test('before guest ticket creation checks blocked IP, captcha, spam, and disposa
     $di['mod_config'] = $di->protect(fn (): array => [
         'block_ips' => false,
         'sfs' => true,
+        'abuseipdb_enabled' => true,
         'check_temp_emails' => true,
     ]);
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $service);
@@ -131,6 +142,7 @@ test('before guest ticket creation skips non-guest submissions', function (): vo
     $service = Mockery::mock(Box\Mod\Antispam\Service::class)->makePartial();
     $service->shouldReceive('checkCaptcha')->never();
     $service->shouldReceive('isInStopForumSpamDatabase')->never();
+    $service->shouldReceive('isInAbuseIPDBDatabase')->never();
     $service->shouldReceive('isATempEmail')->never();
 
     $di = container();
@@ -238,3 +250,213 @@ dataset('spam responses', fn (): array => [
         '{"success" : "true", "ip" : {"appears" : "true" }}', 'Your IP address is blacklisted in the Stop Forum Spam database',
     ],
 ]);
+
+function abuseIPDBServiceWithCachedScore(array $config, mixed $cachedScore): Box\Mod\Antispam\Service
+{
+    $service = new Box\Mod\Antispam\Service();
+    $di = container();
+    $di['mod_config'] = $di->protect(fn (): array => $config);
+    $cache = Mockery::mock();
+    $cache->shouldReceive('get')->andReturn($cachedScore);
+    $di['cache'] = $cache;
+    $service->setDi($di);
+
+    return $service;
+}
+
+test('abuseipdb check is skipped when disabled', function (): void {
+    $httpClient = Mockery::mock();
+    $httpClient->shouldReceive('request')->never();
+
+    $service = new Box\Mod\Antispam\Service();
+    $di = container();
+    $di['mod_config'] = $di->protect(fn (): array => ['abuseipdb_enabled' => false, 'abuseipdb_api_key' => 'key']);
+    $di['http_client'] = $httpClient;
+    $service->setDi($di);
+
+    expect($service->isInAbuseIPDBDatabase('8.8.8.8'))->toBeFalse();
+});
+
+test('abuseipdb check is skipped without an api key', function (): void {
+    $httpClient = Mockery::mock();
+    $httpClient->shouldReceive('request')->never();
+
+    $service = new Box\Mod\Antispam\Service();
+    $di = container();
+    $di['mod_config'] = $di->protect(fn (): array => ['abuseipdb_enabled' => true]);
+    $di['http_client'] = $httpClient;
+    $service->setDi($di);
+
+    expect($service->isInAbuseIPDBDatabase('8.8.8.8'))->toBeFalse();
+});
+
+test('abuseipdb check skips private and invalid ips without calling the api', function (string $ip): void {
+    $httpClient = Mockery::mock();
+    $httpClient->shouldReceive('request')->never();
+
+    $service = new Box\Mod\Antispam\Service();
+    $di = container();
+    $di['mod_config'] = $di->protect(fn (): array => ['abuseipdb_enabled' => true, 'abuseipdb_api_key' => 'key']);
+    $di['http_client'] = $httpClient;
+    $service->setDi($di);
+
+    expect($service->isInAbuseIPDBDatabase($ip))->toBeFalse();
+})->with([
+    ['127.0.0.1'],
+    ['10.0.0.1'],
+    ['192.168.1.1'],
+    ['not-an-ip'],
+    [''],
+]);
+
+test('abuseipdb check allows ips below the threshold', function (): void {
+    $service = abuseIPDBServiceWithCachedScore(
+        ['abuseipdb_enabled' => true, 'abuseipdb_api_key' => 'key', 'abuseipdb_threshold' => 75, 'abuseipdb_max_age' => 30],
+        10
+    );
+
+    expect($service->isInAbuseIPDBDatabase('8.8.8.8'))->toBeTrue();
+});
+
+test('abuseipdb check blocks ips at or above the threshold', function (): void {
+    $service = abuseIPDBServiceWithCachedScore(
+        ['abuseipdb_enabled' => true, 'abuseipdb_api_key' => 'key', 'abuseipdb_threshold' => 75, 'abuseipdb_max_age' => 30],
+        100
+    );
+
+    expect(fn () => $service->isInAbuseIPDBDatabase('8.8.8.8'))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Your IP address is blacklisted in the AbuseIPDB database');
+});
+
+test('abuseipdb check fails open when the cached score is unavailable', function (): void {
+    $service = abuseIPDBServiceWithCachedScore(
+        ['abuseipdb_enabled' => true, 'abuseipdb_api_key' => 'key'],
+        null
+    );
+
+    expect($service->isInAbuseIPDBDatabase('8.8.8.8'))->toBeFalse();
+});
+
+test('abuseipdb check clamps an out of range threshold', function (): void {
+    $service = abuseIPDBServiceWithCachedScore(
+        ['abuseipdb_enabled' => true, 'abuseipdb_api_key' => 'key', 'abuseipdb_threshold' => 150],
+        100
+    );
+
+    expect(fn () => $service->isInAbuseIPDBDatabase('8.8.8.8'))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Your IP address is blacklisted in the AbuseIPDB database');
+});
+
+test('abuseipdb check falls back to defaults for empty or invalid settings', function (mixed $threshold, mixed $maxAge): void {
+    $service = abuseIPDBServiceWithCachedScore(
+        ['abuseipdb_enabled' => true, 'abuseipdb_api_key' => 'key', 'abuseipdb_threshold' => $threshold, 'abuseipdb_max_age' => $maxAge],
+        50
+    );
+
+    // Score 50 is allowed with the default threshold of 75. A plain (int)
+    // cast would turn '' into 0 and block every checked IP instead.
+    expect($service->isInAbuseIPDBDatabase('8.8.8.8'))->toBeTrue();
+})->with([
+    ['', ''],
+    ['not-a-number', 'not-a-number'],
+]);
+
+function abuseIPDBServiceWithHttpMock(array $config, mixed $httpCallback): Box\Mod\Antispam\Service
+{
+    $service = new Box\Mod\Antispam\Service();
+    $di = container();
+    $di['mod_config'] = $di->protect(fn (): array => $config);
+
+    $httpClient = Mockery::mock();
+    $httpCallback($httpClient);
+    $di['http_client'] = $httpClient;
+
+    $cache = Mockery::mock();
+    $cache->shouldReceive('get')->andReturnUsing(function (string $key, callable $callback) {
+        $item = Mockery::mock(Symfony\Contracts\Cache\ItemInterface::class);
+        $item->shouldReceive('expiresAfter')->andReturnSelf();
+
+        return $callback($item);
+    });
+    $di['cache'] = $cache;
+    $service->setDi($di);
+
+    return $service;
+}
+
+test('abuseipdb check fails open on http errors', function (): void {
+    $service = abuseIPDBServiceWithHttpMock(
+        ['abuseipdb_enabled' => true, 'abuseipdb_api_key' => 'key'],
+        function ($httpClient): void {
+            $httpClient->shouldReceive('request')->once()->andThrow(new RuntimeException('connection failed'));
+        }
+    );
+
+    expect($service->isInAbuseIPDBDatabase('8.8.8.8'))->toBeFalse();
+});
+
+test('abuseipdb check fails open on non-200 responses', function (): void {
+    $service = abuseIPDBServiceWithHttpMock(
+        ['abuseipdb_enabled' => true, 'abuseipdb_api_key' => 'key'],
+        function ($httpClient): void {
+            $response = Mockery::mock(Symfony\Contracts\HttpClient\ResponseInterface::class);
+            $response->shouldReceive('getStatusCode')->andReturn(401);
+            $httpClient->shouldReceive('request')->once()->andReturn($response);
+        }
+    );
+
+    expect($service->isInAbuseIPDBDatabase('8.8.8.8'))->toBeFalse();
+});
+
+test('abuseipdb check fails open on malformed responses', function (): void {
+    $service = abuseIPDBServiceWithHttpMock(
+        ['abuseipdb_enabled' => true, 'abuseipdb_api_key' => 'key'],
+        function ($httpClient): void {
+            $response = Mockery::mock(Symfony\Contracts\HttpClient\ResponseInterface::class);
+            $response->shouldReceive('getStatusCode')->andReturn(200);
+            $response->shouldReceive('toArray')->with(false)->andReturn(['unexpected' => 'shape']);
+            $httpClient->shouldReceive('request')->once()->andReturn($response);
+        }
+    );
+
+    expect($service->isInAbuseIPDBDatabase('8.8.8.8'))->toBeFalse();
+});
+
+test('abuseipdb check sends default max age for empty settings', function (): void {
+    $service = abuseIPDBServiceWithHttpMock(
+        ['abuseipdb_enabled' => true, 'abuseipdb_api_key' => 'key', 'abuseipdb_threshold' => '', 'abuseipdb_max_age' => ''],
+        function ($httpClient): void {
+            $response = Mockery::mock(Symfony\Contracts\HttpClient\ResponseInterface::class);
+            $response->shouldReceive('getStatusCode')->andReturn(200);
+            $response->shouldReceive('toArray')->with(false)->andReturn(['data' => ['abuseConfidenceScore' => 0]]);
+            $httpClient->shouldReceive('request')
+                ->once()
+                ->with('GET', 'https://api.abuseipdb.com/api/v2/check', Mockery::on(fn (array $options): bool => ($options['query']['maxAgeInDays'] ?? null) === 30))
+                ->andReturn($response);
+        }
+    );
+
+    expect($service->isInAbuseIPDBDatabase('8.8.8.8'))->toBeTrue();
+});
+
+test('abuseipdb check sends the api key, query parameters, and timeouts', function (): void {
+    $service = abuseIPDBServiceWithHttpMock(
+        ['abuseipdb_enabled' => true, 'abuseipdb_api_key' => 'test-key', 'abuseipdb_threshold' => 75, 'abuseipdb_max_age' => 30],
+        function ($httpClient): void {
+            $response = Mockery::mock(Symfony\Contracts\HttpClient\ResponseInterface::class);
+            $response->shouldReceive('getStatusCode')->andReturn(200);
+            $response->shouldReceive('toArray')->with(false)->andReturn(['data' => ['abuseConfidenceScore' => 0]]);
+            $httpClient->shouldReceive('request')
+                ->once()
+                ->with('GET', 'https://api.abuseipdb.com/api/v2/check', Mockery::on(fn (array $options): bool => ($options['headers']['Key'] ?? null) === 'test-key'
+                    && ($options['query']['ipAddress'] ?? null) === '8.8.8.8'
+                    && ($options['query']['maxAgeInDays'] ?? null) === 30
+                    && !array_key_exists('verbose', $options['query'] ?? [])
+                    && ($options['timeout'] ?? null) === 5
+                    && ($options['max_duration'] ?? null) === 10))
+                ->andReturn($response);
+        }
+    );
+
+    expect($service->isInAbuseIPDBDatabase('8.8.8.8'))->toBeTrue();
+});

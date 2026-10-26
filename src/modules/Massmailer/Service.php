@@ -225,8 +225,10 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         $clientArr = $clientService->toApiArray($client, true, null);
 
         $vars = ['c' => $clientArr];
-        $ps = $systemService->renderEmailSubjectString($model->getSubject(), $vars);
-        $pc = $systemService->renderEmailTplString($model->getContent(), $vars);
+        $clientTimezone = !empty($clientArr['timezone']) ? (string) $clientArr['timezone'] : null;
+        $clientLocale = !empty($clientArr['lang']) ? (string) $clientArr['lang'] : null;
+        $ps = $systemService->renderEmailSubjectString($model->getSubject(), $vars, $clientTimezone, $clientLocale);
+        $pc = $systemService->renderEmailTplString($model->getContent(), $vars, $clientTimezone, $clientLocale);
 
         return [$ps, $pc];
     }

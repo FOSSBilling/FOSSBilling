@@ -23,6 +23,104 @@ test('currency formatting patch follows the client balance gateway repair', func
         ->and($patches[93][1])->toBe('apply');
 });
 
+test('branding filename migration runs for installs past the original branding patch', function (): void {
+    $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 129);
+
+    expect($patches)->toHaveKey(130)->and($patches[130][1])->toBe('apply');
+});
+
+test('branding migration updates default paths and preserves custom settings on repeated upgrades', function (string $param, string $oldValue, string $expected): void {
+    $pdo = new PDO('sqlite::memory:');
+    $pdo->exec('CREATE TABLE setting (param TEXT PRIMARY KEY, value TEXT)');
+    $pdo->prepare('INSERT INTO setting (param, value) VALUES (?, ?)')->execute([$param, $oldValue]);
+    $filesystem = Mockery::mock(Filesystem::class);
+    foreach (['logo.svg', 'favicon.ico'] as $filename) {
+        $path = Path::join(PATH_ROOT, 'public', 'branding', $filename);
+        if ($expected === 'public/branding/' . $filename) {
+            $filesystem->shouldNotReceive('exists')->with($path);
+            $filesystem->shouldNotReceive('remove')->with($path);
+
+            continue;
+        }
+
+        $filesystem->shouldReceive('exists')->with($path)->andReturn(true, false);
+        $filesystem->expects('remove')->with($path)->once();
+    }
+    $patcher = new Patcher();
+    $patcher->setDi(new Pimple\Container(['pdo' => $pdo, 'filesystem' => $filesystem]));
+
+    for ($run = 0; $run < 2; ++$run) {
+        (new FOSSBilling\Core\Update\Patch\Patch130())->apply($patcher);
+        expect($pdo->query('SELECT value FROM setting')->fetchColumn())->toBe($expected);
+    }
+})->with([
+    'public logo' => ['company_logo', 'public/branding/logo.svg', 'public/branding/logo-light.svg'],
+    'legacy logo' => ['company_logo', 'themes/huraga/assets/img/logo.svg', 'public/branding/logo-light.svg'],
+    'built legacy logo' => ['company_logo', 'themes/huraga/assets/build/img/logo.svg', 'public/branding/logo-light.svg'],
+    'public favicon' => ['company_favicon', 'public/branding/favicon.ico', 'public/branding/favicon.svg'],
+    'legacy favicon' => ['company_favicon', 'themes/huraga/assets/favicon.ico', 'public/branding/favicon.svg'],
+    'built legacy favicon' => ['company_favicon', 'themes/huraga/assets/build/favicon.ico', 'public/branding/favicon.svg'],
+    'current logo' => ['company_logo', 'public/branding/logo-light.svg', 'public/branding/logo-light.svg'],
+    'current favicon' => ['company_favicon', 'public/branding/favicon.svg', 'public/branding/favicon.svg'],
+    'dark logo' => ['company_logo_dark', 'public/branding/logo-dark.svg', 'public/branding/logo-dark.svg'],
+    'old logo used in dark mode' => ['company_logo_dark', 'public/branding/logo.svg', 'public/branding/logo.svg'],
+    'old favicon used as a logo' => ['company_logo_dark', 'public/branding/favicon.ico', 'public/branding/favicon.ico'],
+    'custom logo' => ['company_logo', 'data/uploads/logo.svg', 'data/uploads/logo.svg'],
+    'custom favicon' => ['company_favicon', 'https://example.com/favicon.ico', 'https://example.com/favicon.ico'],
+    'unrelated setting' => ['custom_asset', 'public/branding/logo.svg', 'public/branding/logo.svg'],
+]);
+
+test('branding migration runs during non-MySQL update finalization', function (): void {
+    withNonMysqlDbDriver(function (): void {
+        $pdo = new PDO('sqlite::memory:');
+        $pdo->exec('CREATE TABLE setting (param TEXT PRIMARY KEY, value TEXT, public INTEGER, created_at TEXT, updated_at TEXT)');
+        $pdo->exec('CREATE TABLE extension_meta (extension TEXT, rel_type TEXT, rel_id TEXT, meta_key TEXT)');
+        $pdo->exec('CREATE TABLE extension (type TEXT)');
+        $pdo->exec("INSERT INTO setting (param, value) VALUES ('company_logo', 'public/branding/logo.svg'), ('company_favicon', 'public/branding/favicon.ico')");
+        $filesystem = Mockery::mock(Filesystem::class);
+        $filesystem->shouldReceive('exists')->andReturn(false);
+        $patcher = new Patcher();
+        $patcher->setDi(new Pimple\Container(['pdo' => $pdo, 'filesystem' => $filesystem]));
+
+        $patcher->applyCorePatches(force: true);
+
+        expect($pdo->query("SELECT value FROM setting WHERE param = 'company_logo'")->fetchColumn())->toBe('public/branding/logo-light.svg')
+            ->and($pdo->query("SELECT value FROM setting WHERE param = 'company_favicon'")->fetchColumn())->toBe('public/branding/favicon.svg');
+    });
+});
+
+test('upgrade checks report invalid invoice counters without changing stored values', function (?string $counter, bool $warning): void {
+    $pdo = new PDO('sqlite::memory:');
+    $pdo->exec('CREATE TABLE setting (param TEXT PRIMARY KEY, value TEXT)');
+    if ($counter !== null) {
+        $pdo->prepare('INSERT INTO setting (param, value) VALUES (?, ?)')->execute(['invoice_starting_number', $counter]);
+    }
+
+    $logger = Mockery::mock(FOSSBilling\Core\Logging\Logger::class);
+    if ($warning) {
+        $logger->shouldReceive('withChannel')->once()->with('update')->andReturnSelf();
+        $logger->shouldReceive('log')->once()->with('warning', Mockery::pattern('/Review invoice history and set an unused positive whole number/'), []);
+    } else {
+        $logger->shouldNotReceive('log');
+    }
+    $patcher = new Patcher();
+    $patcher->setDi(new Pimple\Container(['pdo' => $pdo, 'logger' => $logger]));
+    $before = $pdo->query('SELECT * FROM setting')->fetchAll(PDO::FETCH_ASSOC);
+
+    (new ReflectionMethod($patcher, 'checkInvoiceNumberCounter'))->invoke($patcher);
+
+    expect($pdo->query('SELECT * FROM setting')->fetchAll(PDO::FETCH_ASSOC))->toBe($before);
+})->with([
+    'missing' => [null, true],
+    'empty' => ['', true],
+    'fraction' => ['5.5', true],
+    'text' => ['INV-1', true],
+    'zero' => ['0', true],
+    'maximum' => [(string) PHP_INT_MAX, true],
+    'valid' => ['42', false],
+    'largest valid' => [(string) (PHP_INT_MAX - 1), false],
+]);
+
 test('stock reservation backfill patch follows the TLD periods patch', function (): void {
     $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 99);
 
@@ -1855,22 +1953,23 @@ test('migrateThemePackageLayout does nothing on a fresh install where neither ol
 
 test('applyCorePatches migrates the theme setting values on a non-MySQL driver, since patch115 never runs there', function (): void {
     withNonMysqlDbDriver(function (): void {
-        $adminThemeStatement = Mockery::mock(PDOStatement::class);
-        $adminThemeStatement->expects('execute')
+        $settingStatement = Mockery::mock(PDOStatement::class);
+        $settingStatement->expects('execute')
             ->with(['new_value' => 'default/admin', 'param' => 'admin_theme', 'old_value' => 'admin_default'])
             ->andReturnTrue();
-        $clientThemeStatement = Mockery::mock(PDOStatement::class);
-        $clientThemeStatement->expects('execute')
+        $settingStatement->expects('execute')
             ->with(['new_value' => 'default/client', 'param' => 'theme', 'old_value' => 'huraga'])
+            ->andReturnTrue();
+        $settingStatement->shouldReceive('execute')
+            ->with(Mockery::on(fn (array $params): bool => in_array($params['param'], ['company_logo', 'company_logo_dark', 'company_favicon'], true)))
             ->andReturnTrue();
         $extensionMetaStatement = Mockery::mock(PDOStatement::class);
         $extensionMetaStatement->shouldReceive('execute')->andReturnTrue();
 
         $pdo = Mockery::mock(PDO::class);
-        $pdo->expects('prepare')
+        $pdo->shouldReceive('prepare')
             ->with('UPDATE setting SET value = :new_value WHERE param = :param AND value = :old_value')
-            ->twice()
-            ->andReturn($adminThemeStatement, $clientThemeStatement);
+            ->andReturn($settingStatement);
         $pdo->shouldReceive('prepare')
             ->with(Mockery::on(fn (string $sql): bool => str_starts_with($sql, 'UPDATE extension_meta')))
             ->andReturn($extensionMetaStatement);
@@ -3421,10 +3520,12 @@ test('ensureSchemaInSync restores promo bundle and auto-apply columns missing fr
 });
 
 test('library cleanup follows the main migrations and preserves adapter directories', function (): void {
-    $patcher = new Patcher();
-    $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke($patcher, 127);
-    expect(array_keys($patches))->toBe([128]);
+    $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 134);
+    expect($patches)->toHaveKey(135)
+        ->and($patches[135][1])->toBe('apply')
+        ->and($patches)->not->toHaveKey(136);
 
+    $patcher = new Patcher();
     $filesystem = Mockery::mock(Filesystem::class);
     foreach (['FOSSBilling', 'Box'] as $directory) {
         $path = Path::join(PATH_LIBRARY, $directory);
@@ -3432,5 +3533,76 @@ test('library cleanup follows the main migrations and preserves adapter director
         $filesystem->expects('remove')->with($path);
     }
     $patcher->filesystem = $filesystem;
-    (new FOSSBilling\Core\Update\Patch\Patch128())->apply($patcher);
+    (new FOSSBilling\Core\Update\Patch\Patch135())->apply($patcher);
 });
+
+test('custom page charset repair follows the promotion patch', function (): void {
+    $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 127);
+    expect($patches)->toHaveKey(128)->and($patches[128][1])->toBe('apply');
+});
+
+test('custom gateway image migration adds the column and skips already migrated gateways', function (bool $migrated): void {
+    $sql = 'SHOW COLUMNS FROM `pay_gateway`';
+    $alterSql = 'ALTER TABLE `pay_gateway` ADD COLUMN `custom_logo` VARCHAR(255) DEFAULT NULL';
+    $patcher = Mockery::mock(Patcher::class)->makePartial();
+    $patcher->shouldReceive('fetchAll')->with($sql)->atLeast()->once()->andReturn($migrated ? [['Field' => 'custom_logo'], ['Field' => 'id']] : [['Field' => 'id']]);
+    if ($migrated) {
+        $patcher->shouldNotReceive('executeSql')->with($alterSql);
+    } else {
+        $patcher->shouldReceive('executeSql')->with($alterSql)->atLeast()->once();
+    }
+
+    (new FOSSBilling\Core\Update\Patch\Patch129())->apply($patcher);
+})->with([false, true]);
+
+test('legacy Unicode repair is scheduled for existing installations', function (): void {
+    $patches = (new ReflectionMethod(Patcher::class, 'getPatches'))->invoke(new Patcher(), 132);
+    expect($patches)->toHaveKey(133)->and($patches[133][1])->toBe('apply');
+});
+
+test('Unicode migration classifies every current text and JSON field', function (): void {
+    $patcher = new Patcher();
+    $tables = $patcher->legacyUnicodeColumns();
+    $candidates = [];
+    foreach ($tables as $table => $columns) {
+        foreach ($columns as $column) {
+            $candidates[] = $table . '.' . $column;
+        }
+    }
+    $groups = require PATH_TESTS . '/Fixtures/unicode-migration-exclusions.php';
+    $excluded = [];
+    foreach ($groups as $columns) {
+        array_push($excluded, ...$columns);
+    }
+    expect(count(array_unique($excluded)))->toBe(count($excluded))
+        ->and(array_intersect($candidates, $excluded))->toBe([]);
+
+    $em = FOSSBilling\Core\Doctrine\EntityManagerFactory::create(Doctrine\DBAL\DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true]));
+    $textColumns = [];
+    foreach ($em->getMetadataFactory()->getAllMetadata() as $metadata) {
+        foreach ($metadata->fieldMappings as $field) {
+            if (in_array($field->type, ['string', 'text', 'ascii_string', 'json', 'jsonb'], true)) {
+                $textColumns[] = trim($metadata->getTableName(), '`') . '.' . $field->columnName;
+            }
+        }
+    }
+    // Exact inventory forces a deliberate decision on schema additions and removals.
+    $reviewed = array_merge($candidates, $excluded);
+    sort($reviewed);
+    sort($textColumns);
+    expect($reviewed)->toBe($textColumns);
+});
+
+test('hosting recovery migration adds the pending step only when missing', function (bool $migrated): void {
+    $sql = 'SHOW COLUMNS FROM `service_hosting`';
+    $alterSql = 'ALTER TABLE `service_hosting` ADD COLUMN `provisioning_step` VARCHAR(32) DEFAULT NULL';
+    $patcher = Mockery::mock(Patcher::class)->makePartial();
+    $patcher->shouldReceive('fetchAll')->with($sql)->atLeast()->once()->andReturn($migrated ? [['Field' => 'provisioning_step'], ['Field' => 'id']] : [['Field' => 'id']]);
+    if ($migrated) {
+        $patcher->shouldNotReceive('executeSql')->with($alterSql);
+    } else {
+        $patcher->shouldReceive('executeSql')->with($alterSql)->atLeast()->once();
+    }
+
+    (new FOSSBilling\Core\Update\Patch\Patch134())->apply($patcher);
+})->with([false, true]);

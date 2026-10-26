@@ -110,12 +110,15 @@ class Service
             $slug = $this->generateUniqueSlug($title);
 
             try {
+                $now = date('Y-m-d H:i:s');
                 $connection->insert('custom_pages', [
                     'title' => $title,
                     'description' => $description ?? '',
                     'keywords' => $keywords ?? '',
                     'content' => $content,
                     'slug' => $slug,
+                    'created_at' => $now,
+                    'updated_at' => $now,
                 ]);
 
                 $id = (int) $connection->lastInsertId();

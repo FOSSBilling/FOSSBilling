@@ -228,7 +228,7 @@ test('renderEmailSubjectString decodes the HTML autoescape pass', function (): v
     $service = Mockery::mock(Service::class)->makePartial();
     $service->shouldReceive('renderEmailTplString')
         ->once()
-        ->with('[A & B Ltd] Invoice', [], null)
+        ->with('[A & B Ltd] Invoice', [], null, null)
         ->andReturn('[A &amp; B Ltd] Invoice');
 
     expect($service->renderEmailSubjectString('[A & B Ltd] Invoice', []))->toBe('[A & B Ltd] Invoice');
@@ -372,6 +372,48 @@ test('updateParams updates system parameters in a single flush', function (): vo
     expect($eventDispatcher->events[0]->parameterNames)->not->toContain('do-not-expose-this-value');
     expect($eventDispatcher->events[1])->toBeInstanceOf(Box\Mod\System\Event\AfterAdminSettingsUpdateEvent::class);
 });
+
+test('updateParams rejects invalid invoice counters before writing any settings', function (mixed $value): void {
+    $repository = Mockery::mock(Box\Mod\System\Repository\SettingRepository::class);
+    $repository->shouldNotReceive('findOneByParam');
+    $di = container();
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\System\Entity\Setting::class)->andReturn($repository);
+    $di['em']->shouldNotReceive('persist');
+    $di['em']->shouldNotReceive('flush');
+    $service = new Service();
+    $service->setDi($di);
+
+    expect(fn () => $service->updateParams(['invoice_series' => 'NEW-', 'INVOICE_STARTING_NUMBER' => $value]))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Next invoice number must be a positive whole number');
+})->with([
+    'null' => [null],
+    'empty' => [''],
+    'blank' => ['   '],
+    'fraction' => ['5.5'],
+    'exponent' => ['1e3'],
+    'text' => ['INV-1'],
+    'zero' => [0],
+    'negative' => [-1],
+    'boolean' => [true],
+    'array' => [[]],
+    'float' => [1.0],
+    'maximum' => [(string) PHP_INT_MAX],
+    'overflow' => [PHP_INT_MAX . '0'],
+]);
+
+test('updateParams saves valid invoice counters', function (int|string $value): void {
+    $setting = Tests\Helpers\createEntity(Box\Mod\System\Entity\Setting::class, ['param' => 'invoice_starting_number', 'value' => '7']);
+    $repository = Mockery::mock(Box\Mod\System\Repository\SettingRepository::class);
+    $repository->shouldReceive('findOneByParam')->once()->with('invoice_starting_number')->andReturn($setting);
+    $di = container();
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\System\Entity\Setting::class)->andReturn($repository);
+    $di['em']->shouldReceive('flush')->once();
+    $service = new Service();
+    $service->setDi($di);
+
+    expect($service->updateParams(['invoice_starting_number' => $value]))->toBeTrue()
+        ->and($setting->getValue())->toBe((string) $value);
+})->with([1, '42', PHP_INT_MAX - 1]);
 
 test('updateParams denies a mixed-case guarded key without the company permission', function (): void {
     $service = new Service();
@@ -1008,3 +1050,46 @@ test('reserveNextNumericParamValue gives up and rethrows once contention exhaust
     expect(fn () => $service->reserveNextNumericParamValue('invoice_starting_number'))
         ->toThrow(Doctrine\DBAL\Exception\LockWaitTimeoutException::class);
 });
+
+test('updateParams rejects an invalid reminder send time', function (mixed $value): void {
+    $repository = Mockery::mock(Box\Mod\System\Repository\SettingRepository::class);
+    $repository->shouldNotReceive('findOneByParam');
+    $di = container();
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\System\Entity\Setting::class)->andReturn($repository);
+    $di['em']->shouldNotReceive('persist');
+    $di['em']->shouldNotReceive('flush');
+    $service = new Service();
+    $service->setDi($di);
+
+    expect(fn () => $service->updateParams(['invoice_reminder_send_time' => $value]))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Reminder send time must be empty or a valid 24-hour time');
+})->with([
+    'text' => ['morning'],
+    'hour too high' => ['24:00'],
+    'minute too high' => ['09:60'],
+    'missing minute' => ['9'],
+    'seconds included' => ['09:00:00'],
+    'single digit hour' => ['9:05'],
+    'array' => [[]],
+    'boolean' => [true],
+]);
+
+test('updateParams accepts an empty or valid reminder send time', function (mixed $value, mixed $expected): void {
+    $setting = Tests\Helpers\createEntity(Box\Mod\System\Entity\Setting::class, ['param' => 'invoice_reminder_send_time', 'value' => '']);
+    $repository = Mockery::mock(Box\Mod\System\Repository\SettingRepository::class);
+    $repository->shouldReceive('findOneByParam')->once()->with('invoice_reminder_send_time')->andReturn($setting);
+    $di = container();
+    $di['em']->shouldReceive('getRepository')->with(Box\Mod\System\Entity\Setting::class)->andReturn($repository);
+    $di['em']->shouldReceive('flush')->once();
+    $service = new Service();
+    $service->setDi($di);
+
+    expect($service->updateParams(['invoice_reminder_send_time' => $value]))->toBeTrue()
+        ->and($setting->getValue())->toBe($expected);
+})->with([
+    'empty disables' => ['', ''],
+    'null disables' => [null, null],
+    'morning' => ['09:00', '09:00'],
+    'midnight' => ['00:00', '00:00'],
+    'late evening' => ['23:59', '23:59'],
+]);

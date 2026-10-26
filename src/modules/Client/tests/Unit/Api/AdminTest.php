@@ -170,9 +170,33 @@ test('create throws exception when email is already registered', function (): vo
     $adminClient->create($data);
 })->throws(FOSSBilling\Core\Exception\BaseException::class, 'This email address is already registered.');
 
-test('delete returns true', function (): void {
+test('delete rejects malformed client IDs before accessing the repository', function (mixed $id): void {
     $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
-    $data = ['id' => 1];
+    $di = container();
+    $entityManager = Mockery::mock(Doctrine\ORM\EntityManagerInterface::class);
+    $entityManager->shouldNotReceive('getRepository');
+    $di['em'] = $entityManager;
+    $adminClient->setDi($di);
+
+    (new FOSSBilling\Core\Api\Dispatcher())->validateRequiredParams($adminClient, 'delete', ['id' => $id]);
+
+    expect(fn () => $adminClient->delete(['id' => $id]))
+        ->toThrow(FOSSBilling\Core\Exception\InformationException::class, 'Invalid client ID');
+})->with([
+    'array without identifier' => [['unexpected' => 1]],
+    'identifier array' => [['id' => 1]],
+    'boolean' => [true],
+    'fraction' => [1.5],
+    'fraction string' => ['1.5'],
+    'zero' => [0],
+    'negative' => [-1],
+    'text' => ['invalid'],
+    'overflow' => ['9223372036854775808'],
+]);
+
+test('delete returns true', function (int|string $id): void {
+    $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
+    $data = ['id' => $id];
 
     $calls = new ArrayObject();
     $dispatcher = new readonly class($calls) {
@@ -209,7 +233,7 @@ test('delete returns true', function (): void {
         'remove',
         new Box\Mod\Client\Event\AfterAdminClientDeleteEvent(1),
     ]);
-});
+})->with([1, '1']);
 
 test('update returns true', function (): void {
     $adminClient = apiEndpoint(new Box\Mod\Client\Api\Admin());
@@ -254,6 +278,7 @@ test('update returns true', function (): void {
 
     $serviceMock = Mockery::mock(Box\Mod\Client\Service::class);
     $serviceMock->shouldReceive('emailAlreadyRegistered')->atLeast()->once()->andReturn(false);
+    $serviceMock->shouldReceive('revokeEmailConfirmations')->once()->with(1);
     $serviceMock->shouldReceive('canChangeCurrency')->atLeast()->once()->andReturn(true);
 
     $dispatcher = new class {
@@ -492,8 +517,8 @@ test('changePassword returns true', function (): void {
         }
     };
 
-    $passwordMock = Mockery::mock(FOSSBilling\Core\PasswordManager::class);
-    $passwordMock->shouldReceive('hashIt')->atLeast()->once()->with($data['password']);
+    $passwordMock = Mockery::mock(FOSSBilling\Core\Security\PasswordManager::class);
+    $passwordMock->shouldReceive('hashIt')->atLeast()->once()->with($data['password'])->andReturn('new-password-hash');
 
     $profileService = Mockery::mock(Box\Mod\Profile\Service::class);
     $profileService->shouldReceive('invalidateSessions')->atLeast()->once();
@@ -508,6 +533,7 @@ test('changePassword returns true', function (): void {
 
     $adminClient->setDi($di);
 
+    $di['em']->getRepository(Box\Mod\Client\Entity\ClientPasswordReset::class)->shouldReceive('changePassword')->once()->with(Mockery::type(Box\Mod\Client\Entity\Client::class), 'new-password-hash');
     $result = $adminClient->change_password($data);
     expect($result)->toBeTrue();
     expect($dispatcher->events)->toEqual([

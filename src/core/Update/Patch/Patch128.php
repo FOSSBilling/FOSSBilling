@@ -12,16 +12,14 @@ declare(strict_types=1);
 namespace FOSSBilling\Core\Update\Patch;
 
 use FOSSBilling\Core\Update\Patcher;
-use Symfony\Component\Filesystem\Path;
 
 class Patch128 implements PatchInterface
 {
     public function apply(Patcher $patcher): void
     {
-        // Remove obsolete files left behind by the core library reorganization.
-        $patcher->executeFileActions([
-            Path::join(PATH_LIBRARY, 'FOSSBilling') => 'unlink',
-            Path::join(PATH_LIBRARY, 'Box') => 'unlink',
-        ]);
+        // Repair the legacy (utf8) character set for cleaned-up custom page text so
+        // stored page content is consistent with the utf8mb4 connection. The generic
+        // widening skips customized columns/indexes with a logged warning.
+        $patcher->widenLegacyTextColumns('custom_pages', ['title', 'description', 'keywords', 'content']);
     }
 }

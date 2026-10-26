@@ -38,9 +38,13 @@
                         <label class="form-label">{{ 'Title'|trans }}</label>
                         <input class="form-control" type="text" name="title" value="{{ category.title }}" required>
                     </div>
-                    <div class="col-lg-6">
+                    <div class="col-lg-3">
                         <label class="form-label">{{ 'Icon'|trans }}</label>
                         <input class="form-control" type="text" name="icon_url" id="bb-icon" value="{{ category.icon_url }}">
+                    </div>
+                    <div class="col-lg-3">
+                        <label class="form-label">{{ 'Priority'|trans }}</label>
+                        <input class="form-control" type="number" name="priority" value="{{ category.priority }}">
                     </div>
                     <div class="col-12">
                         <label class="form-label">{{ 'Description'|trans }}</label>

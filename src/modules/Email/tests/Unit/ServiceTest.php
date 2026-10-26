@@ -733,6 +733,238 @@ test('sendTemplate handles to_staff and to_client options', function (array $dat
     expect($persistedQueue->getRecipient())->toBe($expectedRecipient);
 })->with('sendTemplateExistsStaffProvider');
 
+test('sendTemplate renders client-bound email in the client language', function (): void {
+    $service = new Box\Mod\Email\Service();
+    $di = container();
+
+    $emailTemplate = emailTemplate(data: ['enabled' => true]);
+
+    $templateRepo = Mockery::mock(Box\Mod\Email\Repository\EmailTemplateRepository::class);
+    $templateRepo->shouldReceive('findOneByActionCode')->andReturn($emailTemplate);
+
+    $em = emailBuildEm(null, $templateRepo);
+    $em->shouldReceive('persist')->atLeast()->once();
+    $em->shouldReceive('flush')->atLeast()->once();
+
+    $seenLocales = [];
+    $captureLocale = function (string $tpl, array $vars, ?string $timezone = null, ?string $locale = null) use (&$seenLocales): string {
+        $seenLocales[] = $locale;
+
+        return 'value';
+    };
+    $system = Mockery::mock(Box\Mod\System\Service::class);
+    $system->shouldReceive('getParamValue')->atLeast()->once()->andReturn('value');
+    $system->shouldReceive('renderEmailTplString')->atLeast()->once()->andReturnUsing($captureLocale);
+    $system->shouldReceive('renderEmailSubjectString')->atLeast()->once()->andReturnUsing($captureLocale);
+
+    $clientServiceMock = Mockery::mock(Box\Mod\Client\Service::class);
+    $clientServiceMock->shouldReceive('get')->atLeast()->once()->andReturn(createEntity(Box\Mod\Client\Entity\Client::class));
+    $clientServiceMock->shouldReceive('toApiArray')->atLeast()->once()->andReturn([
+        'id' => 1,
+        'email' => 'client@example.com',
+        'first_name' => 'John',
+        'last_name' => 'Smith',
+        'lang' => 'es_ES',
+        'timezone' => 'UTC',
+    ]);
+    $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class);
+
+    $cryptMock = Mockery::mock(FOSSBilling\Core\Security\Crypt::class);
+    $cryptMock->shouldReceive('encrypt')->atLeast()->once();
+
+    $modMock = Mockery::mock(FOSSBilling\Core\Module::class)->makePartial();
+    $modMock->shouldReceive('getConfig')->atLeast()->once()->andReturn([
+        'from_name' => 'Test',
+        'from_email' => 'test@test.com',
+    ]);
+
+    $di['api_admin'] = function () use ($di) {
+        $api = new FOSSBilling\Core\Api\Proxy(\Tests\Helpers\admin());
+        $api->setDi($di);
+
+        return $api;
+    };
+    $validatorMock = Mockery::mock(FOSSBilling\Core\Validation\Validator::class);
+    $validatorMock->shouldReceive('checkRequiredParamsForArray')->byDefault();
+    $di['validator'] = $validatorMock;
+
+    $di['em'] = $em;
+    $di['crypt'] = $cryptMock;
+    $di['mod'] = $di->protect(fn () => $modMock);
+    $di['mod_service'] = $di->protect(moduleService([
+        'staff' => $staffServiceMock,
+        'system' => $system,
+        'client' => $clientServiceMock,
+    ]));
+    $di['tools'] = new FOSSBilling\Core\Security\Credential();
+
+    $service->setDi($di);
+
+    $result = $service->sendTemplate(['code' => 'mod_email_test', 'to_client' => 1]);
+
+    expect($result)->toBeTrue();
+    expect($seenLocales)->not->toBeEmpty();
+    foreach ($seenLocales as $locale) {
+        expect($locale)->toBe('es_ES');
+    }
+});
+
+test('sendTemplate falls back to the default locale when the client has no language', function (): void {
+    $service = new Box\Mod\Email\Service();
+    $di = container();
+
+    $emailTemplate = emailTemplate(data: ['enabled' => true]);
+
+    $templateRepo = Mockery::mock(Box\Mod\Email\Repository\EmailTemplateRepository::class);
+    $templateRepo->shouldReceive('findOneByActionCode')->andReturn($emailTemplate);
+
+    $em = emailBuildEm(null, $templateRepo);
+    $em->shouldReceive('persist')->atLeast()->once();
+    $em->shouldReceive('flush')->atLeast()->once();
+
+    $seenLocales = [];
+    $captureLocale = function (string $tpl, array $vars, ?string $timezone = null, ?string $locale = null) use (&$seenLocales): string {
+        $seenLocales[] = $locale;
+
+        return 'value';
+    };
+    $system = Mockery::mock(Box\Mod\System\Service::class);
+    $system->shouldReceive('getParamValue')->atLeast()->once()->andReturn('value');
+    $system->shouldReceive('renderEmailTplString')->atLeast()->once()->andReturnUsing($captureLocale);
+    $system->shouldReceive('renderEmailSubjectString')->atLeast()->once()->andReturnUsing($captureLocale);
+
+    $clientServiceMock = Mockery::mock(Box\Mod\Client\Service::class);
+    $clientServiceMock->shouldReceive('get')->atLeast()->once()->andReturn(createEntity(Box\Mod\Client\Entity\Client::class));
+    $clientServiceMock->shouldReceive('toApiArray')->atLeast()->once()->andReturn([
+        'id' => 1,
+        'email' => 'client@example.com',
+        'first_name' => 'John',
+        'last_name' => 'Smith',
+        'timezone' => 'UTC',
+    ]);
+    $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class);
+
+    $cryptMock = Mockery::mock(FOSSBilling\Core\Security\Crypt::class);
+    $cryptMock->shouldReceive('encrypt')->atLeast()->once();
+
+    $modMock = Mockery::mock(FOSSBilling\Core\Module::class)->makePartial();
+    $modMock->shouldReceive('getConfig')->atLeast()->once()->andReturn([
+        'from_name' => 'Test',
+        'from_email' => 'test@test.com',
+    ]);
+
+    $di['api_admin'] = function () use ($di) {
+        $api = new FOSSBilling\Core\Api\Proxy(\Tests\Helpers\admin());
+        $api->setDi($di);
+
+        return $api;
+    };
+    $validatorMock = Mockery::mock(FOSSBilling\Core\Validation\Validator::class);
+    $validatorMock->shouldReceive('checkRequiredParamsForArray')->byDefault();
+    $di['validator'] = $validatorMock;
+
+    $di['em'] = $em;
+    $di['crypt'] = $cryptMock;
+    $di['mod'] = $di->protect(fn () => $modMock);
+    $di['mod_service'] = $di->protect(moduleService([
+        'staff' => $staffServiceMock,
+        'system' => $system,
+        'client' => $clientServiceMock,
+    ]));
+    $di['tools'] = new FOSSBilling\Core\Security\Credential();
+
+    $service->setDi($di);
+
+    $result = $service->sendTemplate(['code' => 'mod_email_test', 'to_client' => 1]);
+
+    expect($result)->toBeTrue();
+    expect($seenLocales)->not->toBeEmpty();
+    foreach ($seenLocales as $locale) {
+        expect($locale)->toBeNull();
+    }
+});
+
+test('sendTemplate renders staff broadcast emails in each recipient language', function (): void {
+    $service = new Box\Mod\Email\Service();
+    $di = container();
+
+    $emailTemplate = emailTemplate(data: ['enabled' => true]);
+
+    $templateRepo = Mockery::mock(Box\Mod\Email\Repository\EmailTemplateRepository::class);
+    $templateRepo->shouldReceive('findOneByActionCode')->andReturn($emailTemplate);
+
+    $templateGroupRepo = Mockery::mock(Box\Mod\Email\Repository\EmailTemplateGroupRepository::class);
+    $templateGroupRepo->shouldReceive('getGroupIdsForTemplate')->andReturn([3]);
+
+    $em = emailBuildEm(null, $templateRepo, null, true, $templateGroupRepo);
+    $em->shouldReceive('persist')->atLeast()->once();
+    $em->shouldReceive('flush')->atLeast()->once();
+
+    $seenLocales = [];
+    $captureLocale = function (string $tpl, array $vars, ?string $timezone = null, ?string $locale = null) use (&$seenLocales): string {
+        $seenLocales[] = $locale;
+
+        return 'value';
+    };
+    $system = Mockery::mock(Box\Mod\System\Service::class);
+    $system->shouldReceive('getParamValue')->atLeast()->once()->andReturn('value');
+    $system->shouldReceive('renderEmailTplString')->atLeast()->once()->andReturnUsing($captureLocale);
+    $system->shouldReceive('renderEmailSubjectString')->atLeast()->once()->andReturnUsing($captureLocale);
+
+    $groupMemberRepo = Mockery::mock(Box\Mod\Staff\Repository\AdminGroupMemberRepository::class);
+    $groupMemberRepo->shouldReceive('getActiveStaffInGroups')->atLeast()->once()->with([3])->andReturn([
+        [
+            'id' => 1,
+            'email' => 'staff@example.com',
+            'name' => 'George',
+            'signature' => '',
+            'timezone' => null,
+            'lang' => 'de_DE',
+        ],
+    ]);
+    $staffServiceMock = Mockery::mock(Box\Mod\Staff\Service::class);
+    $staffServiceMock->shouldReceive('getAdminGroupMemberRepository')->atLeast()->once()->andReturn($groupMemberRepo);
+    $clientServiceMock = Mockery::mock(Box\Mod\Client\Service::class);
+
+    $cryptMock = Mockery::mock(FOSSBilling\Core\Security\Crypt::class);
+    $cryptMock->shouldReceive('encrypt')->atLeast()->once();
+
+    $modMock = Mockery::mock(FOSSBilling\Core\Module::class)->makePartial();
+    $modMock->shouldReceive('getConfig')->atLeast()->once()->andReturn([
+        'from_name' => 'Test',
+        'from_email' => 'test@test.com',
+    ]);
+
+    $di['api_admin'] = function () use ($di) {
+        $api = new FOSSBilling\Core\Api\Proxy(\Tests\Helpers\admin());
+        $api->setDi($di);
+
+        return $api;
+    };
+    $validatorMock = Mockery::mock(FOSSBilling\Core\Validation\Validator::class);
+    $validatorMock->shouldReceive('checkRequiredParamsForArray')->byDefault();
+    $di['validator'] = $validatorMock;
+
+    $di['em'] = $em;
+    $di['crypt'] = $cryptMock;
+    $di['mod'] = $di->protect(fn () => $modMock);
+    $di['mod_service'] = $di->protect(moduleService([
+        'staff' => $staffServiceMock,
+        'system' => $system,
+        'client' => $clientServiceMock,
+    ]));
+    $di['tools'] = new FOSSBilling\Core\Security\Credential();
+
+    $service->setDi($di);
+
+    $result = $service->sendTemplate(['code' => 'mod_email_test', 'to_staff' => true]);
+
+    expect($result)->toBeTrue();
+    // The pre-loop generic parse uses the default locale; the per-recipient
+    // re-parse must use the staff member's language.
+    expect($seenLocales)->toContain('de_DE');
+});
+
 dataset('sendTemplateClientBillingProvider', fn (): array => [
     'validated billing override' => [
         ['client_billing_email' => 'billing@example.com'],

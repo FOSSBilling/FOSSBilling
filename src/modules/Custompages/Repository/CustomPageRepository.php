@@ -47,6 +47,7 @@ class CustomPageRepository extends EntityRepository
             'title' => 'p.title',
             'slug' => 'p.slug',
             'created_at' => 'p.createdAt',
+            'updated_at' => 'p.updatedAt',
         ]);
         if ($sort->isSorted()) {
             $qb->orderBy($sort->expression, $sort->direction);

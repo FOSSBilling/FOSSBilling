@@ -205,6 +205,7 @@
 
                         updateTransferCodeRequirement();
                     },
+                    (error) => FOSSBilling.message(`${error.message} (${error.code})`, 'error')
                 );
 
                 return false;
@@ -231,6 +232,7 @@
                         const registerOrderButton = document.querySelector('#register .order-button');
                         if (registerOrderButton) registerOrderButton.style.display = '';
                     },
+                    (error) => FOSSBilling.message(`${error.message} (${error.code})`, 'error')
                 );
 
                 return false;
@@ -284,6 +286,7 @@
                     configNext.style.display = '';
                     configNext.disabled = false;
                 },
+                (error) => FOSSBilling.message(`${error.message} (${error.code})`, 'error')
             );
         }
 
@@ -298,6 +301,7 @@
                     configNext.style.display = '';
                     configNext.disabled = false;
                 },
+                (error) => FOSSBilling.message(`${error.message} (${error.code})`, 'error')
             );
         }
 

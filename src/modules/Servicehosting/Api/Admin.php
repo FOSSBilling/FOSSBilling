@@ -23,6 +23,30 @@ use FOSSBilling\Core\Validation\Api\RequiredParams;
  */
 class Admin extends \FOSSBilling\Core\Api\AbstractApi
 {
+    #[RequiredParams(['order_id' => 'Order ID is missing'])]
+    public function refresh_product_config_preview($data): array
+    {
+        $this->checkPermissions('servicehosting', 'manage_accounts');
+        $order = $this->getDi()['em']->getRepository(Order::class)->find((int) $data['order_id']);
+        if (!$order instanceof Order) {
+            throw new \FOSSBilling\Core\Exception\BaseException('Order not found');
+        }
+
+        return $this->getService()->previewProductConfiguration($order);
+    }
+
+    #[RequiredParams(['order_id' => 'Order ID is missing'])]
+    public function refresh_product_config($data): bool
+    {
+        $this->checkPermissions('servicehosting', 'manage_accounts');
+        $order = $this->getDi()['em']->getRepository(Order::class)->find((int) $data['order_id']);
+        if (!$order instanceof Order) {
+            throw new \FOSSBilling\Core\Exception\BaseException('Order not found');
+        }
+
+        return $this->getService()->refreshProductConfiguration($order);
+    }
+
     /**
      * Change hosting account plan.
      */

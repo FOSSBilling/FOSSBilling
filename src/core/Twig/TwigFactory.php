@@ -27,6 +27,7 @@ use FOSSBilling\Core\Twig\Markdown\FOSSBillingMarkdown;
 use FOSSBilling\Core\Url;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Intl\Currencies;
+use Symfony\Component\Intl\Locales;
 use Twig\Environment;
 use Twig\Extension\AttributeExtension;
 use Twig\Extension\CoreExtension;
@@ -177,21 +178,27 @@ class TwigFactory
      * Used for database-stored templates (email templates, mass mailer).
      *
      * The env is built per-call (not memoized) so each email can be rendered
-     * with the recipient's timezone.
+     * with the recipient's timezone and locale.
      *
      * @param string|null $timezone IANA timezone to use for date formatting;
      *                              pass the recipient's timezone so emails
      *                              render in their local time. Defaults to
      *                              the active user's timezone / config.
+     * @param string|null $locale   ICU locale to use for date formatting;
+     *                              pass the recipient's language so emails
+     *                              render in their language. An explicit
+     *                              recipient language outranks browser
+     *                              auto-detection. Defaults to the active
+     *                              locale / config.
      */
-    public function createEmailEnvironment(?string $timezone = null): Environment
+    public function createEmailEnvironment(?string $timezone = null, ?string $locale = null): Environment
     {
         $timezone ??= $this->resolveTimezoneForActiveUser();
 
         // Create Twig environment with ArrayLoader
         $loader = new ArrayLoader();
         $twig = new Environment($loader, $this->baseConfig);
-        $this->configureRendering($twig, $timezone);
+        $this->configureRendering($twig, $timezone, $locale);
 
         // Add only essential extensions for email templates
         $twig->addExtension(new StringLoaderExtension());
@@ -418,7 +425,7 @@ class TwigFactory
         return 2;
     }
 
-    private function configureRendering(Environment $twig, string $timezone): void
+    private function configureRendering(Environment $twig, string $timezone, ?string $locale = null): void
     {
         $twig->getExtension(CoreExtension::class)->setNumberFormat($this->getDefaultCurrencyFractionDigits(), '.', '');
         $twig->getExtension(CoreExtension::class)->setTimezone($timezone);
@@ -426,13 +433,30 @@ class TwigFactory
         $dateFormat = strtoupper((string) Config::getProperty('i18n.date_format', 'MEDIUM'));
         $timeFormat = strtoupper((string) Config::getProperty('i18n.time_format', 'SHORT'));
         $twig->addExtension(new IntlExtension(new \IntlDateFormatter(
-            I18n::getActiveLocale($this->di['request'], true, $this->di['cookie_queue']),
+            $this->resolveLocale($locale),
             constant("\IntlDateFormatter::$dateFormat"),
             constant("\IntlDateFormatter::$timeFormat"),
             $timezone,
             null,
             Config::getProperty('i18n.datetime_pattern'),
         )));
+    }
+
+    /**
+     * Resolve the locale date filters should render in.
+     *
+     * An explicit recipient language outranks browser auto-detection. Any
+     * valid ICU locale is accepted (date formatting needs no FOSSBilling
+     * translation files); anything else falls back to the active locale,
+     * which itself falls back to the configured `i18n.locale` default.
+     */
+    private function resolveLocale(?string $locale): string
+    {
+        if (!empty($locale) && Locales::exists($locale)) {
+            return $locale;
+        }
+
+        return I18n::getActiveLocale($this->di['request'], true, $this->di['cookie_queue']);
     }
 
     /**

@@ -35,6 +35,9 @@ final class PhoneValidator
             throw new InformationException('Please use the separate field for the phone country code.');
         }
 
-        return $number;
+        // Normalizing to digits keeps formatting variants (spaces, dashes,
+        // punctuation, Unicode direction marks) from reaching registrar APIs
+        // while preserving leading zeroes.
+        return (string) $digitsOnly;
     }
 }

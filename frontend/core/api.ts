@@ -416,7 +416,7 @@ const API = {
 
           const formMethod = (formElement.getAttribute('method') || 'post').toLowerCase();
           const data = formMethod !== 'get'
-            ? Tools.serializeFormDataToJSON(formData)
+            ? (formElement.enctype === 'multipart/form-data' ? formData : Tools.serializeFormDataToJSON(formData))
             : Tools.serializeFormData(formData);
 
           const buttons = formElement.querySelectorAll('button:not([disabled])');

@@ -17,13 +17,21 @@ use Box\Mod\Invoice\Entity\Subscription;
 use Box\Mod\Invoice\Entity\Transaction;
 use Box\Mod\Invoice\Repository\PayGatewayRepository;
 use FOSSBilling\Core\Container\InjectionAwareInterface;
+use FOSSBilling\Core\Sanitizer\GatewaySvgSanitizer;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
 use Symfony\Component\Finder\Exception\DirectoryNotFoundException;
 use Symfony\Component\Finder\Finder;
+use Symfony\Component\HttpClient\Exception\TransportException;
+use Symfony\Component\HttpClient\NoPrivateNetworkHttpClient;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Symfony\Contracts\HttpClient\Exception\ExceptionInterface;
 
 class ServicePayGateway implements InjectionAwareInterface
 {
+    private const int MAX_LOGO_BYTES = 2 * 1024 * 1024;
+    private const int MAX_LOGO_PIXELS = 4_000_000;
+
     /**
      * Sent by the admin UI in place of a secret config field's value to mean
      * "keep the currently stored value". Blank input means the same thing;
@@ -175,6 +183,8 @@ class ServicePayGateway implements InjectionAwareInterface
             $result['enabled'] = $model->isEnabled();
             $result['test_mode'] = $model->isTestMode();
             $result['callback'] = $this->getCallbackUrl($model);
+            $result['custom_logo_url'] = $this->getCustomLogoUrl($model);
+            $result['custom_logo_avif_url'] = $this->getCustomLogoUrl($model, true);
         }
 
         return $result;
@@ -223,6 +233,7 @@ class ServicePayGateway implements InjectionAwareInterface
         $new->setAcceptedCurrencies($model->getAcceptedCurrencies());
         $new->setTestMode($model->isTestMode());
         $new->setConfig($model->getConfig());
+        $new->setCustomLogo($model->getCustomLogo());
         $this->di['em']->persist($new);
         $this->di['em']->flush();
         $newId = (int) $new->getId();
@@ -231,10 +242,8 @@ class ServicePayGateway implements InjectionAwareInterface
         return $newId;
     }
 
-    public function update(PayGateway $model, array $data): bool
+    public function update(PayGateway $model, array $data, ?UploadedFile $file = null): bool
     {
-        $model->setName($data['title'] ?? $model->getName());
-
         $newEnabled = isset($data['enabled']) ? (bool) $data['enabled'] : $model->isEnabled();
         $newTestMode = isset($data['test_mode']) ? (bool) $data['test_mode'] : $model->isTestMode();
         $existingConfig = json_decode($model->getConfig() ?? '', true) ?? [];
@@ -251,6 +260,18 @@ class ServicePayGateway implements InjectionAwareInterface
         if ($newEnabled) {
             $this->validateGatewayConfig($model, $mergedConfig, $newTestMode);
         }
+
+        $customLogo = $model->getCustomLogo();
+        if (\FOSSBilling\Core\Utils\Normalizer::normalizeBoolean($data['remove_custom_logo'] ?? false)) {
+            $customLogo = null;
+        } elseif ($file !== null) {
+            $customLogo = $this->storeUploadedLogo($file);
+        } elseif (array_key_exists('logo_url', $data) && $data['logo_url'] !== '') {
+            $customLogo = $this->importGatewayLogo($data['logo_url']);
+        }
+
+        $model->setName($data['title'] ?? $model->getName());
+        $model->setCustomLogo($customLogo);
 
         if (isset($data['config']) && is_array($data['config'])) {
             $model->setConfig(json_encode($mergedConfig));
@@ -373,11 +394,172 @@ class ServicePayGateway implements InjectionAwareInterface
                     ];
                 }
 
+                if (($customLogoUrl = $this->getCustomLogoUrl($gtw)) !== null) {
+                    // Custom images reuse the adapter's display size.
+                    $height = $gateway['logo']['height'] ?? '50px';
+                    $width = $gateway['logo']['width'] ?? '150px';
+                    $gateway['logo'] = ['logo' => $customLogoUrl, 'avif' => $this->getCustomLogoUrl($gtw, true), 'height' => $height, 'width' => $width];
+                }
+
                 $result[] = $gateway;
             }
         }
 
         return $result;
+    }
+
+    private function getCustomLogoUrl(PayGateway $model, bool $avif = false): ?string
+    {
+        $filename = $model->getCustomLogo();
+        if ($avif) {
+            if ($filename === null || !str_ends_with($filename, '.png')) {
+                return null;
+            }
+            $filename = substr($filename, 0, -4) . '.avif';
+        }
+        if ($filename === null || !preg_match('/\A[a-f0-9]{64}\.(?:png|jpg|webp|avif|svg)\z/', $filename)
+            || !$this->filesystem->exists(Path::join(PATH_ROOT, 'public', 'gateways', 'custom', $filename))) {
+            return null;
+        }
+
+        return $this->di['url']->link('/public/gateways/custom/' . $filename);
+    }
+
+    /** Import once; client pages always use the stored local image. */
+    private function importGatewayLogo(mixed $url): string
+    {
+        if (!is_string($url) || strlen($url) > 2048 || !filter_var($url, FILTER_VALIDATE_URL)
+            || !in_array(strtolower((string) parse_url($url, PHP_URL_SCHEME)), ['http', 'https'], true)
+            || parse_url($url, PHP_URL_USER) !== null || parse_url($url, PHP_URL_PASS) !== null) {
+            throw new \FOSSBilling\Core\Exception\InformationException('Enter a valid HTTP or HTTPS image URL without credentials.');
+        }
+
+        $client = new NoPrivateNetworkHttpClient($this->di['http_client']);
+        $response = null;
+
+        try {
+            $response = $client->request('GET', $url, [
+                'max_redirects' => 3,
+                'timeout' => 5,
+                'max_duration' => 10,
+                'on_progress' => static function (int $downloaded, int $size): void {
+                    if ($downloaded > self::MAX_LOGO_BYTES || $size > self::MAX_LOGO_BYTES) {
+                        throw new TransportException('Payment gateway image is too large.');
+                    }
+                },
+            ]);
+            if ($response->getStatusCode() !== 200) {
+                throw new \FOSSBilling\Core\Exception\InformationException('Could not download the payment gateway image.');
+            }
+            $bytes = '';
+            foreach ($client->stream($response) as $chunk) {
+                $bytes .= $chunk->getContent();
+                if (strlen($bytes) > self::MAX_LOGO_BYTES) {
+                    throw new \FOSSBilling\Core\Exception\InformationException('Payment gateway images must be no larger than 2 MB.');
+                }
+            }
+        } catch (ExceptionInterface) {
+            throw new \FOSSBilling\Core\Exception\InformationException('Could not download the payment gateway image. Use a publicly accessible image URL, no larger than 2 MB.');
+        } finally {
+            $response?->cancel();
+        }
+
+        return $this->storeGatewayLogo($bytes);
+    }
+
+    private function storeUploadedLogo(UploadedFile $file): string
+    {
+        if (!$file->isValid()) {
+            throw new \FOSSBilling\Core\Exception\InformationException('Payment gateway image upload failed.');
+        }
+        if ($file->getSize() > self::MAX_LOGO_BYTES) {
+            throw new \FOSSBilling\Core\Exception\InformationException('Payment gateway images must be no larger than 2 MB.');
+        }
+
+        return $this->storeGatewayLogo($this->filesystem->readFile($file->getPathname()));
+    }
+
+    private function storeGatewayLogo(string $bytes): string
+    {
+        if (strlen($bytes) > self::MAX_LOGO_BYTES) {
+            throw new \FOSSBilling\Core\Exception\InformationException('Payment gateway images must be no larger than 2 MB.');
+        }
+
+        $avif = null;
+        $image = @getimagesizefromstring($bytes);
+        $extension = $image === false ? null : match ($image['mime']) {
+            'image/png' => 'png',
+            'image/jpeg' => 'jpg',
+            'image/webp' => 'webp',
+            'image/avif' => 'avif',
+            default => null,
+        };
+        if ($image === false) {
+            $bytes = GatewaySvgSanitizer::sanitize($bytes);
+            $extension = 'svg';
+        } elseif ($extension === null || $image[0] <= 0 || $image[1] <= 0 || $image[0] * $image[1] > self::MAX_LOGO_PIXELS) {
+            throw new \FOSSBilling\Core\Exception\InformationException('Use a PNG, JPEG, WebP, AVIF, or SVG image with no more than 4 million pixels.');
+        } else {
+            [$bytes, $extension, $avif] = $this->normalizeRasterLogo($bytes, $extension);
+        }
+        if (strlen($bytes) > self::MAX_LOGO_BYTES || ($avif !== null && strlen($avif) > self::MAX_LOGO_BYTES)) {
+            throw new \FOSSBilling\Core\Exception\InformationException('The processed payment gateway image exceeds 2 MB. Use a smaller image.');
+        }
+
+        // Gateway copies share stored images.
+        $basename = hash('sha256', $bytes);
+        $filename = $basename . '.' . $extension;
+        $this->filesystem->dumpFile(Path::join(PATH_ROOT, 'public', 'gateways', 'custom', $filename), $bytes);
+        if ($avif !== null) {
+            $this->filesystem->dumpFile(Path::join(PATH_ROOT, 'public', 'gateways', 'custom', $basename . '.avif'), $avif);
+        }
+
+        return $filename;
+    }
+
+    /** @return array{string, string, ?string} PNG fallback (or unsupported original), extension, optional AVIF. */
+    private function normalizeRasterLogo(string $bytes, string $extension): array
+    {
+        if (!function_exists('imagecreatefromstring') || !function_exists('imagepng')) {
+            return [$bytes, $extension, null];
+        }
+        $type = match ($extension) {
+            'png' => IMG_PNG,
+            'jpg' => IMG_JPG,
+            'webp' => IMG_WEBP,
+            'avif' => IMG_AVIF,
+            default => throw new \LogicException('Unsupported raster image format.'),
+        };
+        if (!(imagetypes() & $type) || !(imagetypes() & IMG_PNG)) {
+            return [$bytes, $extension, null];
+        }
+        $image = @imagecreatefromstring($bytes);
+        if ($image === false) {
+            throw new \FOSSBilling\Core\Exception\InformationException('Could not decode the payment gateway image.');
+        }
+        imagepalettetotruecolor($image);
+        imagesavealpha($image, true);
+        $png = $this->encodeRasterLogo($image, 'imagepng', 6);
+        $avif = function_exists('imageavif') && (imagetypes() & IMG_AVIF)
+            ? $this->encodeRasterLogo($image, 'imageavif', 80)
+            : null;
+
+        return [$png, 'png', $avif];
+    }
+
+    private function encodeRasterLogo(\GdImage $image, string $encoder, int $quality): string
+    {
+        ob_start();
+
+        try {
+            if (!@$encoder($image, null, $quality) || ob_get_length() === 0) {
+                throw new \FOSSBilling\Core\Exception\InformationException('Could not process the payment gateway image.');
+            }
+
+            return (string) ob_get_contents();
+        } finally {
+            ob_end_clean();
+        }
     }
 
     public function resolveGatewayLogo(array $logoConfig): string
@@ -443,7 +625,7 @@ class ServicePayGateway implements InjectionAwareInterface
         $defaults['continue_shopping_url'] = $this->di['url']->link('/order');
         $defaults['single_page'] = true;
         if ($model instanceof Invoice) {
-            $defaults['thankyou_url'] = $this->di['url']->link("/invoice/thank-you/{$model->getHash()}", ['restore_token' => \FOSSBilling\Core\Security\Credential::createSessionRestoreToken($this->di['session']->getId())]);
+            $defaults['thankyou_url'] = $this->getPaymentReturnUrl($model, 'thankyou');
             $defaults['invoice_url'] = $this->di['url']->link("/invoice/{$model->getHash()}");
         }
 
@@ -568,20 +750,22 @@ class ServicePayGateway implements InjectionAwareInterface
 
     private function getReturnUrl(PayGateway $pg, ?Invoice $model = null): string
     {
-        if ($model instanceof Invoice) {
-            return $this->di['url']->link("/invoice/{$model->getHash()}", ['status' => 'ok', 'restore_token' => \FOSSBilling\Core\Security\Credential::createSessionRestoreToken($this->di['session']->getId())]);
-        }
-
-        return $this->di['url']->link('/invoice', ['status' => 'ok', 'restore_token' => \FOSSBilling\Core\Security\Credential::createSessionRestoreToken($this->di['session']->getId())]);
+        return $this->getPaymentReturnUrl($model, 'ok');
     }
 
     private function getCancelUrl(PayGateway $pg, ?Invoice $model = null): string
     {
+        return $this->getPaymentReturnUrl($model, 'cancel');
+    }
+
+    private function getPaymentReturnUrl(?Invoice $model, string $status): string
+    {
+        $params = ['status' => $status];
         if ($model instanceof Invoice) {
-            return $this->di['url']->link("/invoice/{$model->getHash()}", ['status' => 'cancel', 'restore_token' => \FOSSBilling\Core\Security\Credential::createSessionRestoreToken($this->di['session']->getId())]);
+            $params['hash'] = $model->getHash();
         }
 
-        return $this->di['url']->link('/invoice', ['status' => 'cancel', 'restore_token' => \FOSSBilling\Core\Security\Credential::createSessionRestoreToken($this->di['session']->getId())]);
+        return $this->di['url']->link('/invoice/payment-return', $params);
     }
 
     private function getCallbackRedirect(PayGateway $pg, ?Invoice $model = null): string

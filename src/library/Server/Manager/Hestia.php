@@ -46,8 +46,11 @@ class Server_Manager_Hestia extends Server_Manager
      * Method is called just after object construct is complete.
      * Add required parameters checks here.
      */
-    public function init()
+    public function init(): void
     {
+        if (trim((string) ($this->_config['host'] ?? '')) === '') {
+            throw new Server_Exception('The HestiaCP server hostname is missing. Please configure it in the server settings.');
+        }
     }
 
     /**

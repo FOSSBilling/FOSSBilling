@@ -57,6 +57,14 @@ class ApiClient
 
         $url = rtrim($baseUrl, '/') . '/api/' . ltrim($endpoint, '/');
 
+        // Guarded guest endpoints (login, signup, staff login, and the
+        // session-bound cart) require the pre-login nonce; the dispatcher strips
+        // the parameter for calls that ignore it, so attach it to every guest
+        // request rather than keep a second copy of the guard's endpoint list.
+        if (str_starts_with(trim($endpoint, '/'), 'guest/') && !isset($payload['CSRFToken'])) {
+            $payload['CSRFToken'] = self::getPreLoginToken($baseUrl);
+        }
+
         $ch = curl_init();
         curl_setopt_array($ch, [
             CURLOPT_URL => $url,
@@ -71,6 +79,11 @@ class ApiClient
         if (strcasecmp($method, 'POST') === 0) {
             curl_setopt($ch, CURLOPT_POST, true);
             curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($payload));
+        } elseif (str_starts_with(trim($endpoint, '/'), 'guest/') && $payload !== []) {
+            // GET requests carrying a nonce (e.g. guarded cart mutations) need
+            // it in the query string; the payload is otherwise unused on GET.
+            $url .= (str_contains($url, '?') ? '&' : '?') . http_build_query($payload);
+            curl_setopt($ch, CURLOPT_URL, $url);
         }
 
         $output = curl_exec($ch);
@@ -84,6 +97,74 @@ class ApiClient
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
         return new ApiResponse($httpCode, $output);
+    }
+
+    private static function getPreLoginToken(string $baseUrl): string
+    {
+        $html = self::fetchLoginPage($baseUrl);
+
+        // Prefer the double-submit cookie: it mirrors the session token
+        // (FOSSBilling\Core\Http\CookieNames::CSRF, set on every client page
+        // render) and stays valid across session-id rotation. Unlike the
+        // login form markup, it is also available when /login redirects
+        // because the jar's session is already authenticated, so back to
+        // back signup calls stay on the same session (preserving e.g. the
+        // guest cart).
+        $token = self::readCookieJarValue('fossbilling_csrf');
+        if (is_string($token) && $token !== '') {
+            return $token;
+        }
+
+        if (is_string($html) && preg_match('/name="CSRFToken" value="([^"]+)"/', $html, $matches)) {
+            return $matches[1];
+        }
+
+        throw new \RuntimeException('Could not obtain the pre-login CSRF token');
+    }
+
+    private static function fetchLoginPage(string $baseUrl): mixed
+    {
+        $ch = curl_init($baseUrl . '/login');
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_COOKIEJAR => self::getCookiePath(),
+            CURLOPT_COOKIEFILE => self::getCookiePath(),
+        ]);
+
+        try {
+            return curl_exec($ch);
+        } finally {
+            // Flush the anonymous session cookie before the following API request.
+            curl_close($ch);
+        }
+    }
+
+    private static function readCookieJarValue(string $name): ?string
+    {
+        $path = self::getCookiePath();
+        if (!is_file($path)) {
+            return null;
+        }
+
+        $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        if ($lines === false) {
+            return null;
+        }
+
+        // The jar may hold several generations of cookies; the last non-empty match wins.
+        $value = null;
+        foreach ($lines as $line) {
+            if (str_starts_with($line, '#') && !str_starts_with($line, '#HttpOnly.')) {
+                continue;
+            }
+            $parts = explode("\t", (string) preg_replace('/^#HttpOnly\./', '', $line));
+            if (count($parts) === 7 && $parts[5] === $name && $parts[6] !== '') {
+                $value = $parts[6];
+            }
+        }
+
+        return $value;
     }
 
     public static function resetCookies(): void

@@ -81,54 +81,6 @@ test('password_reset_valid dispatches a safe event without exposing the reset ha
     expect(get_object_vars($events[0]))->toBe(['ip' => '192.0.2.7']);
 });
 
-test('approveClientEmailByHash returns true', function (): void {
-    $service = new Box\Mod\Client\Service();
-
-    $dbal = Mockery::mock(Doctrine\DBAL\Connection::class);
-    $dbal->shouldReceive('fetchAssociative')->atLeast()->once()->andReturn(['client_id' => 2, 'id' => 1]);
-    $dbal->shouldReceive('executeStatement')->atLeast()->once()->andReturn(1);
-
-    $di = container();
-    $di['dbal'] = $dbal;
-
-    $service->setDi($di);
-    $result = $service->approveClientEmailByHash('');
-
-    expect($result)->toBeTrue();
-});
-
-test('approveClientEmailByHash throws exception for invalid hash', function (): void {
-    $service = new Box\Mod\Client\Service();
-
-    $di = container();
-
-    $service->setDi($di);
-
-    $service->approveClientEmailByHash('');
-})->throws(FOSSBilling\Core\Exception\BaseException::class, 'Invalid email confirmation link');
-
-test('generateEmailConfirmationLink returns string', function (): void {
-    $service = new Box\Mod\Client\Service();
-
-    $model = createEntity(Box\Mod\Extension\Entity\ExtensionMeta::class);
-
-    $urlMock = Mockery::mock(FOSSBilling\Core\Url::class);
-    $urlMock->shouldReceive('link')
-        ->atLeast()->once()
-        ->andReturnUsing(fn (string $path): string => 'https://fossbilling.org' . $path);
-
-    $di = container();
-    $di['url'] = $urlMock;
-
-    $service->setDi($di);
-
-    $clientId = 1;
-    $result = $service->generateEmailConfirmationLink($clientId);
-
-    expect($result)->toBeString();
-    expect(str_contains((string) $result, '/client/confirm-email/'))->toBeTrue();
-});
-
 test('sendSignupEmail sends the client signup email', function (): void {
     $service = new Box\Mod\Client\Service();
 

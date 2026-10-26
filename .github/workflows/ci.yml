@@ -57,7 +57,7 @@ jobs:
     runs-on: ubuntu-slim
     timeout-minutes: 5
     steps:
-      - uses: release-drafter/release-drafter@72967cdc98ddd3160f1fc3dff619de365e137dd0 # v7
+      - uses: release-drafter/release-drafter@978bb0b30c5ee8cdd332ced253758157150d43f0 # v7
         with:
           config-name: release-drafter.yml
         env:
@@ -75,7 +75,7 @@ jobs:
           persist-credentials: false
 
       - name: 'Perform Spellcheck'
-        uses: streetsidesoftware/cspell-action@6f3c77c1406bc930f944ba97e9801a22e42caf58 # v9
+        uses: streetsidesoftware/cspell-action@ce1816e4ce36532956ac6e983737392774b6e169 # v9
         with:
           incremental_files_only: true
 
@@ -188,7 +188,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: 'Download Preview Release Archive'
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: preview-build
           path: '/tmp'
@@ -229,7 +229,7 @@ jobs:
           SOURCE_DIR: './dist'
 
       - name: 'Upload Downloadable Preview to GitHub'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           if-no-files-found: 'error'
           name: 'FOSSBilling-preview-${{ env.GITHUB_SHORT_SHA }}.zip'

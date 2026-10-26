@@ -31,7 +31,7 @@ final class CookieQueue
         ?string $domain = null,
         bool $secure = false,
         bool $httpOnly = false,
-        ?string $sameSite = null,
+        ?string $sameSite = 'Lax',
     ): void {
         $this->cookies[] = new Cookie(
             $name,

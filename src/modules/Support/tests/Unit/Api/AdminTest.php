@@ -896,6 +896,55 @@ test('note create', function (): void {
     expect($result)->toBeInt();
 });
 
+test('note create strips html from the note content', function (): void {
+    $api = apiEndpoint(new Box\Mod\Support\Api\Admin());
+    $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
+    $serviceMock->shouldReceive('noteCreate')->atLeast()->once()
+        ->with(
+            Mockery::on(fn ($ticket): bool => $ticket instanceof SupportTicket),
+            Mockery::on(fn ($identity): bool => $identity instanceof Box\Mod\Staff\Entity\Admin),
+            'Note alert(1)bold text',
+        )
+        ->andReturn(1);
+    $serviceMock->shouldReceive('getTicketById')->atLeast()->once()
+        ->andReturn(new SupportTicket());
+
+    $di = container();
+    $api->setDi($di);
+
+    $api->setService($serviceMock);
+    $api->setIdentity(\Tests\Helpers\admin());
+
+    $data = [
+        'ticket_id' => 1,
+        'note' => 'Note <script>alert(1)</script><b>bold</b> text',
+    ];
+    $result = $api->note_create($data);
+
+    expect($result)->toBeInt();
+});
+
+test('note create rejects notes that are empty after sanitization', function (): void {
+    $api = apiEndpoint(new Box\Mod\Support\Api\Admin());
+    $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();
+    $serviceMock->shouldNotReceive('noteCreate');
+    $serviceMock->shouldReceive('getTicketById')->atLeast()->once()
+        ->andReturn(new SupportTicket());
+
+    $di = container();
+    $api->setDi($di);
+
+    $api->setService($serviceMock);
+    $api->setIdentity(\Tests\Helpers\admin());
+
+    $data = [
+        'ticket_id' => 1,
+        'note' => '<b></b>',
+    ];
+
+    expect(fn (): int => $api->note_create($data))->toThrow(FOSSBilling\Core\Exception\InformationException::class);
+});
+
 test('note delete', function (): void {
     $api = apiEndpoint(new Box\Mod\Support\Api\Admin());
     $serviceMock = Mockery::mock(Box\Mod\Support\Service::class)->makePartial();

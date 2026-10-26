@@ -906,3 +906,32 @@ test('testGetServiceOrderNotActivated', function (): void {
     $this->expectExceptionMessage('Order is not activated');
     $api->_getService($data);
 });
+
+test('refreshes configuration for an order without requiring an existing service', function (): void {
+    $order = createEntity(Order::class, ['id' => 50]);
+    $repo = Mockery::mock(OrderRepository::class);
+    $repo->shouldReceive('find')->once()->with(50)->andReturn($order);
+    $di = container();
+    $di['em'] = serviceHostingAdminEmWith([Order::class => $repo]);
+    $service = Mockery::mock(Service::class);
+    $service->shouldReceive('refreshProductConfiguration')->once()->with($order)->andReturn(true);
+    $api = apiEndpoint(new Admin());
+    $api->setDi($di);
+    $api->setService($service);
+    expect($api->refresh_product_config(['order_id' => 50]))->toBeTrue();
+});
+
+test('previews configuration without requiring an existing service', function (): void {
+    $order = createEntity(Order::class, ['id' => 50]);
+    $repo = Mockery::mock(OrderRepository::class);
+    $repo->shouldReceive('find')->once()->with(50)->andReturn($order);
+    $di = container();
+    $di['em'] = serviceHostingAdminEmWith([Order::class => $repo]);
+    $service = Mockery::mock(Service::class);
+    $preview = ['current' => [], 'proposed' => [], 'can_refresh' => false, 'has_saved_username' => true];
+    $service->shouldReceive('previewProductConfiguration')->once()->with($order)->andReturn($preview);
+    $api = apiEndpoint(new Admin());
+    $api->setDi($di);
+    $api->setService($service);
+    expect($api->refresh_product_config_preview(['order_id' => 50]))->toBe($preview);
+});

@@ -1390,16 +1390,36 @@ test('batch syncs expiration dates', function (): void {
     expect($result)->toBeTrue();
 });
 
-test('advances the last sync marker when a domain sync fails', function (): void {
+test('handles domain sync failures without blocking other domains', function (Throwable $failure): void {
+    $retryAfterFailure = $failure instanceof Error;
+    $failedDomain = new ServiceDomain();
+    $healthyDomain = new ServiceDomain();
+    $attempts = 0;
     $serviceMock = Mockery::mock(Service::class)->makePartial()->shouldAllowMockingProtectedMethods();
     $serviceMock->shouldReceive('syncExpirationDate')
-        ->once()
-        ->andThrow(new Exception('registrar unavailable'));
+        ->times($retryAfterFailure ? 2 : 1)
+        ->with($failedDomain)
+        ->andReturnUsing(static function () use (&$attempts, $failure): void {
+            if (++$attempts === 1) {
+                throw $failure;
+            }
+        });
+    $serviceMock->shouldReceive('syncExpirationDate')
+        ->times($retryAfterFailure ? 2 : 1)
+        ->with($healthyDomain);
+
+    $previousHub = Sentry\SentrySdk::getCurrentHub();
+    $hub = Mockery::mock(Sentry\State\HubInterface::class);
+    if ($failure instanceof Error) {
+        $hub->shouldReceive('captureException')->once()->with($failure, null)->andReturn(null);
+    } else {
+        $hub->shouldNotReceive('captureException');
+    }
 
     $lastSync = null;
     $systemServiceMock = Mockery::mock(SystemService::class);
     $systemServiceMock->shouldReceive('getParamValue')
-        ->twice()
+        ->times(3)
         ->andReturnUsing(static function () use (&$lastSync): ?string {
             return $lastSync;
         });
@@ -1412,9 +1432,8 @@ test('advances the last sync marker when a domain sync fails', function (): void
             return true;
         });
 
-    $domainModel = new ServiceDomain();
     $domainRepo = Mockery::mock(DomainRepository::class);
-    $domainRepo->shouldReceive('findAll')->andReturn([$domainModel]);
+    $domainRepo->shouldReceive('findAll')->times($retryAfterFailure ? 2 : 1)->andReturn([$failedDomain, $healthyDomain]);
     $domainRepo->shouldIgnoreMissing();
 
     $emMock = Mockery::mock(EntityManagerInterface::class)->shouldIgnoreMissing();
@@ -1426,11 +1445,50 @@ test('advances the last sync marker when a domain sync fails', function (): void
     $di['logger'] = new Tests\Helpers\TestLogger();
     $serviceMock->setDi($di);
 
-    $firstResult = $serviceMock->batchSyncExpirationDates();
-    $secondResult = $serviceMock->batchSyncExpirationDates();
+    Sentry\SentrySdk::setCurrentHub($hub);
+
+    try {
+        $firstResult = $serviceMock->batchSyncExpirationDates();
+        expect($lastSync === null)->toBe($retryAfterFailure);
+
+        $secondResult = $serviceMock->batchSyncExpirationDates();
+        expect($lastSync)->not->toBeNull();
+
+        $thirdResult = $serviceMock->batchSyncExpirationDates();
+    } finally {
+        Sentry\SentrySdk::setCurrentHub($previousHub);
+    }
 
     expect($firstResult)->toBeTrue()
-        ->and($secondResult)->toBeFalse();
+        ->and($secondResult)->toBe($retryAfterFailure)
+        ->and($thirdResult)->toBeFalse();
+})->with([
+    'registrar exception' => [new Exception('registrar unavailable')],
+    'adapter type error' => [new TypeError('broken registrar adapter')],
+]);
+
+test('a domain sync programming error does not interrupt the before cron event', function (): void {
+    $failure = new TypeError('domain sync setup failed');
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('batchSyncExpirationDates')->once()->andThrow($failure);
+    $logger = new Tests\Helpers\TestLogger();
+    $di = container();
+    $di['logger'] = $logger;
+    $service->setDi($di);
+
+    $previousHub = Sentry\SentrySdk::getCurrentHub();
+    $hub = Mockery::mock(Sentry\State\HubInterface::class);
+    $hub->shouldReceive('captureException')->once()->with($failure, null)->andReturn(null);
+    Sentry\SentrySdk::setCurrentHub($hub);
+
+    try {
+        $service->syncExpirationDatesBeforeAdminCronRun(new Box\Mod\Cron\Event\BeforeAdminCronRunEvent());
+    } finally {
+        Sentry\SentrySdk::setCurrentHub($previousHub);
+    }
+
+    expect($logger->calls)->toHaveCount(1)
+        ->and($logger->calls[0]['params'][0])->toBe('domain sync setup failed');
 });
 
 test('returns false when batch sync already run today', function (): void {

@@ -48,17 +48,6 @@ class DriverManagerFactory
     ];
 
     /**
-     * List of supported charset values for MySQL/MariaDB connections.
-     *
-     * @var string[]
-     */
-    public const SUPPORTED_CHARSETS = [
-        'utf8',
-        'utf8mb4',
-        'latin1',
-    ];
-
-    /**
      * Default TCP port per driver, used when the config doesn't specify one.
      *
      * @var array<string, int>
@@ -176,8 +165,15 @@ class DriverManagerFactory
             'driverOptions' => $driverOptions,
         ];
 
+        // Legacy installs configured 'utf8'; upgrade that to its modern alias so
+        // new columns land with full Unicode. Unsupported charsets fall back to
+        // utf8mb4 rather than erroring out of the whole update path.
         if ($driverEnum?->isMysql() === true) {
-            $charset = Charset::tryFrom($dbConfig['charset'] ?? 'utf8') ?? Charset::Utf8;
+            $requestedCharset = $dbConfig['charset'] ?? 'utf8mb4';
+            if ($requestedCharset === 'utf8') {
+                $requestedCharset = 'utf8mb4';
+            }
+            $charset = Charset::tryFrom($requestedCharset) ?? Charset::Utf8mb4;
             $params['charset'] = $charset->value;
         } elseif (isset($dbConfig['charset'])) {
             // MySQL's charset vocabulary (utf8/utf8mb4/latin1) doesn't apply to other platforms,
@@ -200,9 +196,6 @@ class DriverManagerFactory
         if (Driver::tryFrom($dbConfig['driver'] ?? '')?->isMysql() !== true) {
             return;
         }
-
-        // Set server default charset for newly created tables. Connection charset is handled by DBAL via DSN.
-        $connection->executeStatement('SET character_set_server = utf8');
 
         // Only override session timeouts when explicitly configured, otherwise preserve server defaults.
         if (isset($dbConfig['interactive_timeout'])) {

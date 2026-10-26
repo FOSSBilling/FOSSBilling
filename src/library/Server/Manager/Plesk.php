@@ -102,11 +102,11 @@ class Server_Manager_Plesk extends Server_Manager
      *
      * @param Server_Account $account the account to be synchronized
      *
-     * @throws Server_Exception always throws an exception
+     * @throws Server_UnsupportedOperationException always throws an exception
      */
     public function synchronizeAccount(Server_Account $account): never
     {
-        throw new Server_Exception(':type: does not support :action:', [':type:' => 'Plesk', ':action:' => __trans('account synchronization')]);
+        throw new Server_UnsupportedOperationException(':type: does not support :action:', [':type:' => 'Plesk', ':action:' => __trans('account synchronization')]);
     }
 
     /**

@@ -275,26 +275,89 @@ class Server_Manager_Whm extends Server_Manager
         $json = $this->request($action, $varHash);
         $result = ($json->result[0]->status == 1);
 
-        // If the account is a reseller account and was successfully created, set up the reseller and, if the hosting plan defines a custom 'acl' value, assign that ACL list to it
         if ($result && $account->getReseller()) {
-            $params = [
-                'user' => $account->getUsername(),
-                'makeowner' => 0,
-            ];
-            $this->request('setupreseller', $params);
-
-            $acl = $package->getCustomValue('acl');
-            if (!empty($acl)) {
-                $params = [
-                    'reseller' => $account->getUsername(),
-                    'acllist' => $acl,
-                ];
-                $this->request('setacls', $params);
-            }
+            $this->resumeAccountProvisioning($account, 'setupreseller');
         }
 
         // Return the result of the account creation
         return $result;
+    }
+
+    public function prepareAccountCreation(Server_Account $account): bool
+    {
+        if ($this->findProvisioningAccount($account) !== null) {
+            throw new Server_Exception('The hosting account already exists. Check the server before activating this order.');
+        }
+
+        return true;
+    }
+
+    private function findProvisioningAccount(Server_Account $account): ?object
+    {
+        $response = $this->request('listaccts', [
+            'api.version' => 1,
+            'search' => $account->getUsername(),
+            'searchtype' => 'user',
+            'searchmethod' => 'exact',
+        ]);
+        if (($response->metadata->result ?? null) != 1 || !isset($response->data->acct) || !is_array($response->data->acct) || count($response->data->acct) > 1) {
+            throw new Server_Exception('Could not verify the hosting account on the WHM server.');
+        }
+
+        if ($response->data->acct === []) {
+            return null;
+        }
+        $existing = $response->data->acct[0] ?? null;
+        if (!is_object($existing)) {
+            throw new Server_Exception('Could not verify the hosting account on the WHM server.');
+        }
+
+        return $existing;
+    }
+
+    public function resumeAccountProvisioning(Server_Account $account, string $step): void
+    {
+        if (!in_array($step, ['create', 'setupreseller', 'setacls'], true) || ($step !== 'create' && !$account->getReseller())) {
+            throw new Server_Exception('Invalid WHM provisioning step.');
+        }
+
+        $existing = $this->findProvisioningAccount($account);
+        if ($step === 'create' && $existing === null) {
+            if (!$this->createAccount($account)) {
+                throw new Server_Exception('The server manager did not create the hosting account.');
+            }
+
+            return;
+        }
+        if ($existing === null
+            || ($existing->user ?? null) !== $account->getUsername()
+            || ($existing->domain ?? null) !== $account->getDomain()
+            || ($existing->owner ?? null) !== $this->_config['username']
+            || ($existing->plan ?? null) !== $this->getPackageName($account->getPackage())) {
+            throw new Server_Exception('The existing WHM account does not match this order. Check the server before retrying.');
+        }
+
+        if ($step === 'create') {
+            if (!$account->getReseller()) {
+                return;
+            }
+            $step = 'setupreseller';
+        }
+
+        try {
+            if ($step === 'setupreseller') {
+                $this->request('setupreseller', ['user' => $account->getUsername(), 'makeowner' => 0]);
+                $step = 'setacls';
+            }
+
+            $acl = $account->getPackage()->getCustomValue('acl');
+            if (!empty($acl)) {
+                $this->request('setacls', ['reseller' => $account->getUsername(), 'acllist' => $acl]);
+            }
+        } catch (Throwable) {
+            // createacct succeeded; preserve the pending step instead of creating the account again.
+            throw new Server_PartialProvisioningException($step);
+        }
     }
 
     /**
@@ -534,30 +597,37 @@ class Server_Manager_Whm extends Server_Manager
      */
     public function getPackages(): array
     {
-        // Send a request to the WHM server to list the packages
-        $pkgs = $this->request('listpkgs');
+        // Send a request to the WHM server to list the packages.
+        // `want=all` ensures reseller tokens also see packages they cannot
+        // create accounts with, which plain `listpkgs` may filter out.
+        $pkgs = $this->request('listpkgs', ['want' => 'all']);
+        $packages = $this->extractPackageList($pkgs);
         $return = [];
 
         // Iterate over the packages and add their details to the return array
-        foreach ($pkgs->package as $pkg) {
+        foreach ($packages as $pkg) {
+            $name = (string) $this->getPackageField($pkg, ['name'], '');
+            if ($name === '') {
+                continue;
+            }
             $return[] = [
-                'title' => $pkg->name,
-                'name' => $pkg->name,
-                'feature_list' => $pkg->FEATURELIST,
-                'theme' => $pkg->CPMOD,
-                'quota' => $pkg->QUOTA,
-                'bandwidth' => $pkg->BWLIMIT,
-                'max_ftp' => $pkg->MAXFTP,
-                'max_sql' => $pkg->MAXSQL,
-                'max_emails' => $pkg->MAXLST,
-                'max_sub' => $pkg->MAXSUB,
-                'max_pop' => $pkg->MAXPOP,
-                'max_park' => $pkg->MAXPARK,
-                'max_addon' => $pkg->MAXADDON,
-                'has_shell' => $pkg->HASSHELL == 'n' ? 0 : 1,
-                'has_ip' => $pkg->IP == 'n' ? 0 : 1,
-                'has_cgi' => $pkg->CGI == 'n' ? 0 : 1,
-                'has_frontpage' => $pkg->FRONTPAGE == 'n' ? 0 : 1,
+                'title' => $name,
+                'name' => $name,
+                'feature_list' => $this->getPackageField($pkg, ['FEATURELIST', 'featurelist']),
+                'theme' => $this->getPackageField($pkg, ['CPMOD', 'cpmod']),
+                'quota' => $this->getPackageField($pkg, ['QUOTA', 'quota']),
+                'bandwidth' => $this->getPackageField($pkg, ['BWLIMIT', 'bwlimit']),
+                'max_ftp' => $this->getPackageField($pkg, ['MAXFTP', 'maxftp']),
+                'max_sql' => $this->getPackageField($pkg, ['MAXSQL', 'maxsql']),
+                'max_emails' => $this->getPackageField($pkg, ['MAXLST', 'maxlst']),
+                'max_sub' => $this->getPackageField($pkg, ['MAXSUB', 'maxsub']),
+                'max_pop' => $this->getPackageField($pkg, ['MAXPOP', 'maxpop']),
+                'max_park' => $this->getPackageField($pkg, ['MAXPARK', 'maxpark']),
+                'max_addon' => $this->getPackageField($pkg, ['MAXADDON', 'maxaddon']),
+                'has_shell' => $this->getPackageField($pkg, ['HASSHELL', 'hasshell'], 'n') == 'n' ? 0 : 1,
+                'has_ip' => $this->getPackageField($pkg, ['IP', 'ip'], 'n') == 'n' ? 0 : 1,
+                'has_cgi' => $this->getPackageField($pkg, ['CGI', 'cgi'], 'n') == 'n' ? 0 : 1,
+                'has_frontpage' => $this->getPackageField($pkg, ['FRONTPAGE', 'frontpage'], 'n') == 'n' ? 0 : 1,
                 'free_registration' => 0,
                 'free_transfer' => 0,
                 'free_renewal' => 0,
@@ -633,35 +703,60 @@ class Server_Manager_Whm extends Server_Manager
         }
 
         if (isset($json->cpanelresult->error)) {
-            $this->getLog()->critical('WHM server response error calling action {action}: "{error}"', ['action' => $action, 'error' => $json->cpanelresult->error]);
-            $placeholders = ['action' => $action, 'type' => 'cPanel'];
+            $reason = (string) $json->cpanelresult->error;
 
-            throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
+            $this->throwWhmError($action, $reason);
         }
 
         if (isset($json->data->result) && $json->data->result == '0') {
-            $this->getLog()->critical('WHM server response error calling action {action}: "{error}"', ['action' => $action, 'error' => $json->data->reason]);
-            $placeholders = [':action:' => $action, ':type:' => 'cPanel'];
+            $reason = (string) ($json->data->reason ?? 'Unknown error');
 
-            throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
+            $this->throwWhmError($action, $reason);
         }
 
         if (isset($json->result) && is_array($json->result) && $json->result[0]->status == 0) {
-            $this->getLog()->critical('WHM server response error calling action {action}: "{error}"', ['action' => $action, 'error' => $json->result[0]->statusmsg]);
-            $placeholders = [':action:' => $action, ':type:' => 'cPanel'];
+            $reason = (string) ($json->result[0]->statusmsg ?? 'Unknown error');
 
-            throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
+            $this->throwWhmError($action, $reason);
         }
 
         if (isset($json->status) && $json->status != '1') {
-            $this->getLog()->critical('WHM server response error calling action {action}: "{error}"', ['action' => $action, 'error' => $json->statusmsg]);
-            $placeholders = [':action:' => $action, ':type:' => 'cPanel'];
+            $reason = (string) ($json->statusmsg ?? 'Unknown error');
 
-            throw new Server_Exception('Failed to :action: on the :type: server, check the error logs for further details', $placeholders);
+            $this->throwWhmError($action, $reason);
+        }
+
+        if (isset($json->metadata->result) && $json->metadata->result == '0') {
+            $reason = (string) ($json->metadata->reason ?? 'Unknown error');
+
+            $this->throwWhmError($action, $reason);
         }
 
         // Return the response
         return $json;
+    }
+
+    /**
+     * Logs the WHM failure reason and throws a generic exception.
+     *
+     * The full WHM reason stays in the logs and is never exposed to API
+     * callers or stored in order history. An "already exists" addpkg response
+     * is translated to a dedicated exception so callers can handle it
+     * without matching on message text.
+     *
+     * @throws Server_Exception
+     */
+    private function throwWhmError(string $action, string $reason): never
+    {
+        $this->getLog()->critical('WHM server response error calling action {action}: "{error}"', ['action' => $action, 'error' => $reason]);
+        $placeholders = [':action:' => $action, ':type:' => 'cPanel'];
+        $message = 'Failed to :action: on the :type: server, check the error logs for further details';
+
+        if ($action === 'addpkg' && str_contains(strtolower($reason), 'already exists')) {
+            throw new Server_PackageExistsException($message, $placeholders);
+        }
+
+        throw new Server_Exception($message, $placeholders);
     }
 
     /**
@@ -677,14 +772,16 @@ class Server_Manager_Whm extends Server_Manager
         // Get the name of the package
         $name = $this->getPackageName($package);
 
-        // Send a request to the WHM server to list the packages
-        $json = $this->request('listpkgs');
-        $packages = $json->package;
+        // Send a request to the WHM server to list the packages.
+        // `want=all` lists every package on the system instead of only the
+        // ones the API user may use during account creation (see #4560).
+        $json = $this->request('listpkgs', ['want' => 'all']);
+        $packages = $this->extractPackageList($json);
 
         // Check if the package exists
         $exists = false;
         foreach ($packages as $p) {
-            if ($p->name == $name) {
+            if ((string) $this->getPackageField($p, ['name'], '') === $name) {
                 $exists = true;
 
                 break;
@@ -693,25 +790,102 @@ class Server_Manager_Whm extends Server_Manager
 
         // If the package does not exist and the $create parameter is true, create the package
         if (!$exists && $create) {
-            $varHash = [
-                'name' => $name,
-                'quota' => $package->getQuota(),
-                'bwlimit' => $package->getBandwidth(),
-                'maxsub' => $package->getMaxSubdomains(),
-                'maxpark' => $package->getMaxParkedDomains(),
-                'maxaddon' => $package->getMaxDomains(),
-                'maxftp' => $package->getMaxFtp(),
-                'maxsql' => $package->getMaxSql(),
-                'maxpop' => $package->getMaxPop(),
-                'cgi' => $package->getCustomValue('cgi'),
-                'cpmod' => $package->getCustomValue('cpmod'),
-                'maxlst' => $package->getCustomValue('maxlst'),
-                'hasshell' => $package->getCustomValue('hasshell'),
-            ];
+            $varHash = $this->buildPackageParams($package, $name);
 
-            // Send a request to the WHM server to add the package
-            $this->request('addpkg', $varHash);
+            try {
+                $this->request('addpkg', $varHash);
+            } catch (Server_PackageExistsException) {
+                // listpkgs only returns packages visible to the API user, while
+                // addpkg fails globally when the name is taken. When the
+                // package already exists (e.g. created manually or by another
+                // user), sync its limits via editpkg instead of aborting the
+                // account creation. See #4560.
+                try {
+                    $this->request('editpkg', $varHash);
+                    $this->getLog()->info('Updated existing WHM package {package}', ['package' => $name]);
+                } catch (Server_Exception $editException) {
+                    // The package exists but cannot be edited (e.g. owned by
+                    // another user). Account creation can still use it, so do
+                    // not block activation - just log and continue.
+                    $this->getLog()->warning('WHM package {package} already exists and could not be updated: {error}', ['package' => $name, 'error' => $editException->getMessage()]);
+                }
+            }
         }
+    }
+
+    /**
+     * Builds the WHM API parameters for creating or updating a package.
+     * addpkg and editpkg share the same shape, differing only in the verb.
+     *
+     * @return array<string, mixed>
+     */
+    private function buildPackageParams(Server_Package $package, string $name): array
+    {
+        return [
+            'name' => $name,
+            'quota' => $package->getQuota(),
+            'bwlimit' => $package->getBandwidth(),
+            'maxsub' => $package->getMaxSubdomains(),
+            'maxpark' => $package->getMaxParkedDomains(),
+            'maxaddon' => $package->getMaxDomains(),
+            'maxftp' => $package->getMaxFtp(),
+            'maxsql' => $package->getMaxSql(),
+            'maxpop' => $package->getMaxPop(),
+            'cgi' => $package->getCustomValue('cgi'),
+            'cpmod' => $package->getCustomValue('cpmod'),
+            'maxlst' => $package->getCustomValue('maxlst'),
+            'hasshell' => $package->getCustomValue('hasshell'),
+        ];
+    }
+
+    /**
+     * Extracts the raw package entries from a listpkgs response.
+     * Handles both the legacy `{"package": [...]}` shape and the modern
+     * WHM API `{"data": {"pkg": [...]}}` shape.
+     *
+     * @return array<int, object>
+     */
+    private function extractPackageList(mixed $json): array
+    {
+        $raw = null;
+        if (is_object($json)) {
+            if (isset($json->package)) {
+                $raw = $json->package;
+            } elseif (isset($json->data->pkg)) {
+                $raw = $json->data->pkg;
+            }
+        }
+
+        if ($raw === null) {
+            return [];
+        }
+
+        if (is_object($raw)) {
+            return [$raw];
+        }
+
+        return is_array($raw) ? array_values($raw) : [];
+    }
+
+    /**
+     * Case-insensitive field lookup for listpkgs entries, whose keys are
+     * upper-case in the legacy API and lower-case in the modern WHM API.
+     */
+    private function getPackageField(mixed $pkg, array $candidates, mixed $default = null): mixed
+    {
+        if (!is_object($pkg)) {
+            return $default;
+        }
+
+        $lowered = array_change_key_case(get_object_vars($pkg), CASE_LOWER);
+        foreach ($candidates as $candidate) {
+            $lookup = strtolower((string) $candidate);
+            if (array_key_exists($lookup, $lowered)) {
+                return $lowered[$lookup];
+            }
+        }
+
+        return $default;
     }
 
     /**

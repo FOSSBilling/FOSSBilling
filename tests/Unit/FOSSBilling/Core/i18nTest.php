@@ -210,6 +210,40 @@ test('getActiveLocale returns the configured default when no cookie and no Accep
     expect(I18n::getActiveLocale(Request::create('/'), false))->toBe('en_US');
 });
 
+test('getActiveLocale falls back to config default with auto-detect and no Accept-Language header (cron/CLI)', function (): void {
+    Config::setProperty('i18n.locale', 'de_DE');
+
+    // Symfony's Request::create() seeds a default Accept-Language header,
+    // so strip it to simulate a header-less CLI/cron request.
+    $request = Request::create('/');
+    $request->headers->remove('Accept-Language');
+
+    expect(I18n::getActiveLocale($request, true))->toBe('de_DE');
+});
+
+test('getActiveLocale falls back to config default with auto-detect and an unparsable Accept-Language header', function (): void {
+    Config::setProperty('i18n.locale', 'de_DE');
+
+    $request = Request::create('/', 'GET', [], [], [], ['HTTP_ACCEPT_LANGUAGE' => '*']);
+
+    expect(I18n::getActiveLocale($request, true))->toBe('de_DE');
+});
+
+test('getActiveLocale with auto-detect and no header does not queue a locale cookie', function (): void {
+    Config::setProperty('i18n.locale', 'de_DE');
+
+    $cookies = new CookieQueue();
+    $request = Request::create('/');
+    $request->headers->remove('Accept-Language');
+
+    expect(I18n::getActiveLocale($request, true, $cookies))->toBe('de_DE');
+
+    $response = new Response();
+    $cookies->applyToResponse($response);
+
+    expect($response->headers->getCookies())->toBe([]);
+});
+
 test('getActiveTimezone migrates and expires the legacy timezone cookie', function (): void {
     $request = requestWithTimezoneCookie('Europe/Berlin', CookieNames::LEGACY_TIMEZONE);
     $cookies = new CookieQueue();

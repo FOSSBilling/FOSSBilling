@@ -37,6 +37,9 @@ class ProductCategory implements TimestampInterface
     #[ORM\Column(name: 'icon_url', type: \Doctrine\DBAL\Types\Types::STRING, length: 255, nullable: true)]
     private ?string $iconUrl = null;
 
+    #[ORM\Column(type: \Doctrine\DBAL\Types\Types::BIGINT, nullable: true)]
+    private ?int $priority = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -74,6 +77,18 @@ class ProductCategory implements TimestampInterface
     public function setIconUrl(?string $iconUrl): self
     {
         $this->iconUrl = $iconUrl;
+
+        return $this;
+    }
+
+    public function getPriority(): ?int
+    {
+        return $this->priority;
+    }
+
+    public function setPriority(?int $priority): self
+    {
+        $this->priority = $priority;
 
         return $this;
     }

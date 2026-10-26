@@ -168,7 +168,7 @@ class Service implements InjectionAwareInterface
             $presets = [];
             foreach ($core_presets as $preset => $params) {
                 $presets[$preset] = $preset;
-                $this->updateSettings($theme, $preset, $params);
+                $this->persistSettings($theme, $preset, $params);
             }
         }
 
@@ -200,6 +200,14 @@ class Service implements InjectionAwareInterface
     }
 
     public function updateSettings(Model\Theme $theme, $preset, array $params): bool
+    {
+        $this->di['mod_service']('Staff')->checkPermissionsAndThrowException('theme', 'manage_settings');
+
+        return $this->persistSettings($theme, $preset, $params);
+    }
+
+    /** Persist settings from an authorized write or shipped preset initialization. */
+    private function persistSettings(Model\Theme $theme, $preset, array $params): bool
     {
         $meta = $this->getExtensionMetaRepository()->findOneByExtensionAndScope('mod_theme', (string) $preset, 'settings', $theme->getName());
 

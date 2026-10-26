@@ -324,11 +324,12 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         }
         $systemService = $this->di['mod_service']('system');
 
-        // Pick a timezone for the date filters. Client-bound and individual
-        // staff-bound emails render in the recipient's timezone; broadcasts and
-        // misc fall through to the config default. Staff broadcasts parse per
-        // recipient in the send loop below; the value computed here is unused
-        // for that branch.
+        // Pick a timezone and locale for the date filters. Client-bound and
+        // individual staff-bound emails render in the recipient's timezone
+        // and language; broadcasts and misc fall through to the config
+        // defaults. An explicit recipient language outranks browser
+        // auto-detection. Staff broadcasts parse per recipient in the send
+        // loop below; the values computed here are unused for that branch.
         $recipientTimezone = null;
         if (isset($customer) && !empty($customer['timezone'])) {
             $recipientTimezone = (string) $customer['timezone'];
@@ -336,7 +337,14 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
             $recipientTimezone = $oneStaff['timezone'];
         }
 
-        [$subject, $content] = $this->_parse($template, $vars, $recipientTimezone);
+        $recipientLocale = null;
+        if (isset($customer)) {
+            $recipientLocale = $this->resolveRecipientLocale($customer);
+        } elseif (isset($oneStaff)) {
+            $recipientLocale = $this->resolveRecipientLocale($oneStaff);
+        }
+
+        [$subject, $content] = $this->_parse($template, $vars, $recipientTimezone, $recipientLocale);
 
         $emailMod = $this->di['mod']('email');
         $emailSettings = $emailMod->getConfig();
@@ -361,7 +369,7 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
                 $staffVars = $vars;
                 $staffVars['staff'] = $this->safeStaffTemplateVars($staff);
                 $staffTimezone = !empty($staff['timezone'] ?? null) ? (string) $staff['timezone'] : null;
-                [$subject, $content] = $this->_parse($template, $staffVars, $staffTimezone);
+                [$subject, $content] = $this->_parse($template, $staffVars, $staffTimezone, $this->resolveRecipientLocale($staff));
 
                 $to = $staff['email'];
                 $to_name = $staff['name'];
@@ -695,14 +703,29 @@ class Service implements \FOSSBilling\Core\Container\InjectionAwareInterface
         return $str . '{% endapply %}';
     }
 
-    private function _parse(EmailTemplate $template, array $vars, ?string $timezone = null): array
+    /**
+     * Resolve the locale an email should be rendered in for the given recipient.
+     *
+     * Returns the recipient's language (client `lang`, staff `lang` when
+     * present) when set, otherwise null to fall back to the active locale /
+     * config default. Validity is checked where the locale is consumed
+     * (TwigFactory), so this stays a pure extraction helper.
+     */
+    private function resolveRecipientLocale(array $recipient): ?string
+    {
+        $lang = $recipient['lang'] ?? null;
+
+        return is_string($lang) && $lang !== '' ? $lang : null;
+    }
+
+    private function _parse(EmailTemplate $template, array $vars, ?string $timezone = null, ?string $locale = null): array
     {
         $systemService = $this->di['mod_service']('System');
         [$subjectTemplate, $contentTemplate] = $this->getEffectiveTemplateParts($template);
 
         try {
-            $pc = $systemService->renderEmailTplString($contentTemplate, $vars, $timezone);
-            $ps = $systemService->renderEmailSubjectString($subjectTemplate, $vars, $timezone);
+            $pc = $systemService->renderEmailTplString($contentTemplate, $vars, $timezone, $locale);
+            $ps = $systemService->renderEmailSubjectString($subjectTemplate, $vars, $timezone, $locale);
 
             if ($template->hasError()) {
                 $template->clearError();
