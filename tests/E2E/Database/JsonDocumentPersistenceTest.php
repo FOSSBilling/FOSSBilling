@@ -11,7 +11,10 @@ use Doctrine\ORM\ORMSetup;
 use Doctrine\ORM\Tools\SchemaTool;
 use FOSSBilling\Doctrine\JsonMigration;
 use FOSSBilling\Doctrine\JsonMigrationException;
+use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
+
+uses(MockeryPHPUnitIntegration::class);
 
 beforeEach(function (): void {
     $driver = getenv('JSON_TEST_DRIVER') ?: 'pdo_sqlite';
@@ -287,42 +290,106 @@ test('fresh JSON mappings preserve form defaults through later automatic upgrade
         ->and(iterator_to_array((new FOSSBilling\Doctrine\JsonAudit())->inspect($c, 'form_field')))->toBe([]);
 });
 
-test('native JSON runtime reads, plugin configuration and text searches remain compatible', function (): void {
-    $c = $this->connection;
-    $c->executeStatement('DROP TABLE mod_massmailer');
-    $em = FOSSBilling\Doctrine\EntityManagerFactory::create($c);
-    FOSSBilling\Doctrine\SchemaInstaller::createSchema($em);
+/** @param list<class-string> $classes */
+function jsonRuntimeSchema(Doctrine\DBAL\Connection $connection, array $classes): Doctrine\ORM\EntityManagerInterface
+{
+    $em = FOSSBilling\Doctrine\EntityManagerFactory::create($connection);
+    (new SchemaTool($em))->createSchema(array_map($em->getClassMetadata(...), $classes));
+
+    return $em;
+}
+
+test('plugin configuration hydrates through native JSON mappings', function (): void {
+    $em = jsonRuntimeSchema($this->connection, [
+        Box\Mod\Product\Entity\ProductCategory::class,
+        Box\Mod\Product\Entity\ProductPayment::class,
+        Box\Mod\Product\Entity\Product::class,
+        Box\Mod\Servicecustom\Entity\ServiceCustom::class,
+    ]);
+    $config = ['endpoint' => 'plugin.example', 'enabled' => false];
+    $product = (new Box\Mod\Product\Entity\Product())->setTitle('Example')->setPluginConfig($config);
+    $service = (new Box\Mod\Servicecustom\Entity\ServiceCustom())->setPluginConfig($config);
+    $em->persist($product);
+    $em->persist($service);
+    $em->flush();
+    $productId = $product->getId();
+    $serviceId = $service->getId();
+    $em->clear();
+    expect($em->find(Box\Mod\Product\Entity\Product::class, $productId)->getPluginConfig())->toEqual($config)
+        ->and($em->find(Box\Mod\Servicecustom\Entity\ServiceCustom::class, $serviceId)->getPluginConfig())->toEqual($config);
+});
+
+test('order batch responses decode native JSON configuration', function (): void {
+    $em = jsonRuntimeSchema($this->connection, [
+        Box\Mod\Order\Entity\Order::class,
+        Box\Mod\Order\Entity\OrderMeta::class,
+        Box\Mod\Support\Entity\Helpdesk::class,
+        Box\Mod\Support\Entity\SupportTicket::class,
+    ]);
+    $config = ['files' => [['stored_filename' => str_repeat('b', 64)]], 'code' => '001', 'enabled' => false];
+    $order = (new Box\Mod\Order\Entity\Order())->setTitle('Example')->setPrice(10)->setQuantity(1)->setConfig($config);
+    $em->persist($order);
+    $em->flush();
+    $di = Tests\Helpers\container();
+    $di['em'] = $em;
+    $service = new Box\Mod\Order\Service();
+    $service->setDi($di);
+    expect($service->getBatchForApi([$order->getId()])[0]['config'])->toEqual($config);
+});
+
+test('removing product files preserves shared JSON references and deletes only orphaned files', function (): void {
+    $em = jsonRuntimeSchema($this->connection, [
+        Box\Mod\Product\Entity\ProductCategory::class,
+        Box\Mod\Product\Entity\ProductPayment::class,
+        Box\Mod\Product\Entity\Product::class,
+        Box\Mod\Order\Entity\Order::class,
+        Box\Mod\Servicedownloadable\Entity\ServiceDownloadable::class,
+        Box\Mod\Servicedownloadable\Entity\ServiceDownloadableFile::class,
+    ]);
+    $fileKey = str_repeat('a', 32);
     $filename = str_repeat('b', 64);
-    $document = ['files' => [['stored_filename' => $filename]], 'code' => '001', 'enabled' => false];
-    $product = (new Box\Mod\Product\Entity\Product())->setTitle('Example')->setConfig($document)->setPluginConfig(['endpoint' => 'plugin.example', 'enabled' => false]);
-    $order = (new Box\Mod\Order\Entity\Order())->setTitle('Example')->setPrice(10)->setQuantity(1)->setConfig($document);
-    $service = (new Box\Mod\Servicecustom\Entity\ServiceCustom())->setPluginConfig($product->getPluginConfig());
-    $transaction = (new Box\Mod\Invoice\Entity\Transaction())->setIpn(['reference' => 'Unique-IPN-Reference']);
-    foreach ([$product, $order, $service, $transaction] as $model) {
+    $config = ['files' => [['id' => $fileKey, 'filename' => 'example.zip', 'stored_filename' => $filename]]];
+    $target = (new Box\Mod\Product\Entity\Product())->setTitle('Target')->setConfig($config);
+    $reference = (new Box\Mod\Product\Entity\Product())->setTitle('Reference')->setConfig($config);
+    $order = (new Box\Mod\Order\Entity\Order())->setConfig([]);
+    foreach ([$target, $reference, $order] as $model) {
         $em->persist($model);
     }
     $em->flush();
-    $productId = $product->getId();
-    $orderId = $order->getId();
-    $serviceId = $service->getId();
-    $em->clear();
-    expect($em->find(Box\Mod\Product\Entity\Product::class, $productId)->getPluginConfig())->toEqual(['endpoint' => 'plugin.example', 'enabled' => false])
-        ->and($em->find(Box\Mod\Servicecustom\Entity\ServiceCustom::class, $serviceId)->getPluginConfig())->toEqual(['endpoint' => 'plugin.example', 'enabled' => false]);
+    $path = Symfony\Component\Filesystem\Path::join(PATH_UPLOADS, $filename);
+    $filesystem = Mockery::mock(Symfony\Component\Filesystem\Filesystem::class);
+    $filesystem->shouldReceive('exists')->once()->with($path)->andReturnTrue();
+    $filesystem->shouldReceive('remove')->once()->with($path);
     $di = Tests\Helpers\container();
     $di['em'] = $em;
-    $orderService = new Box\Mod\Order\Service();
-    $orderService->setDi($di);
-    expect($orderService->getBatchForApi([$orderId])[0]['config'])->toEqual($document);
-    $downloadable = new Box\Mod\Servicedownloadable\Service();
-    $downloadable->setDi($di);
-    $referenced = (new ReflectionMethod($downloadable, 'isStoredFilenameReferenced'))->getClosure($downloadable);
-    expect($referenced($filename))->toBeTrue();
-    $em->find(Box\Mod\Product\Entity\Product::class, $productId)->setConfig([]);
+    $di['filesystem'] = $filesystem;
+    $service = new Box\Mod\Servicedownloadable\Service();
+    $service->setDi($di);
+    // A second product still references the file: no filesystem operation is allowed yet.
+    expect($service->removeProductFile($target, $fileKey))->toBeTrue();
+    $target->setConfig($config);
+    $reference->setConfig([]);
+    $order->setConfig($config);
     $em->flush();
-    expect($referenced($filename))->toBeTrue();
-    $em->find(Box\Mod\Order\Entity\Order::class, $orderId)->setConfig([]);
+    // Only an order now references it; removing the product copy must still retain it.
+    expect($service->removeProductFile($target, $fileKey))->toBeTrue();
+    $target->setConfig($config);
+    $order->setConfig([]);
     $em->flush();
-    expect($referenced($filename))->toBeFalse();
+    expect($service->removeProductFile($target, $fileKey))->toBeTrue()
+        ->and($target->getConfig())->toBe(['files' => []]);
+});
+
+test('transaction searches match native JSON payloads', function (): void {
+    $em = jsonRuntimeSchema($this->connection, [
+        Box\Mod\Invoice\Entity\PayGateway::class,
+        Box\Mod\Invoice\Entity\Invoice::class,
+        Box\Mod\Invoice\Entity\Transaction::class,
+    ]);
+    $transaction = (new Box\Mod\Invoice\Entity\Transaction())->setIpn(['reference' => 'Unique-IPN-Reference']);
+    $em->persist($transaction);
+    $em->flush();
+    $em->clear();
     $matches = $em->getRepository(Box\Mod\Invoice\Entity\Transaction::class)->getSearchQueryBuilder(['search' => 'unique-ipn-reference'])->getQuery()->getResult();
     expect($matches)->toHaveCount(1)->and($matches[0][0]->getIpn())->toBe(['reference' => 'Unique-IPN-Reference']);
 });

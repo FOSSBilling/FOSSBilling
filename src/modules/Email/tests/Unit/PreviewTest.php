@@ -11,12 +11,19 @@ test('bundled email previews render using only synthetic contexts in the real sa
     $currencyService = Mockery::mock(Box\Mod\Currency\Service::class);
     $currencyService->shouldReceive('getCurrencyRepository')->andReturn($repo);
     $currencyService->shouldReceive('formatCurrency')->andReturnUsing(fn ($amount, $code, $attributes = [], $locale = null) => (new Twig\Extra\Intl\IntlExtension())->formatCurrency($amount, $code, $attributes, $locale ?? 'en_US'));
-    $di['mod_service'] = $di->protect(fn () => $currencyService);
-    $di['mod'] = $di->protect(fn () => new class {
+    $di['mod_service'] = $di->protect(fn (string $name) => match (strtolower($name)) {
+        'currency' => $currencyService,
+        default => throw new LogicException('Unexpected preview service: ' . $name),
+    });
+    $emailModule = new class {
         public function getConfig(): array
         {
             return [];
         }
+    };
+    $di['mod'] = $di->protect(fn (string $name) => match (strtolower($name)) {
+        'email' => $emailModule,
+        default => throw new LogicException('Unexpected preview module: ' . $name),
     });
     $di['api_guest'] = new class {
         public function system_period_title(array $data): string
