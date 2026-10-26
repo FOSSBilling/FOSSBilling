@@ -67,7 +67,7 @@ test('adds a new form', function (): void {
     ];
 
     $dbal = Mockery::mock(Connection::class);
-    $dbal->shouldReceive('insert')->once()->with('form', Mockery::on(fn (array $row): bool => $row['name'] === 'testName'));
+    $dbal->shouldReceive('insert')->once()->with('form', Mockery::on(fn (array $row): bool => $row['name'] === 'testName' && $row['style'] instanceof stdClass), ['style' => FOSSBilling\Doctrine\Type\JsonDocumentType::NAME]);
     $dbal->shouldReceive('lastInsertId')->once()->andReturn($newFormId);
 
     $di = container();
