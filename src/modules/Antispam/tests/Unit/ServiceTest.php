@@ -347,6 +347,20 @@ test('abuseipdb check clamps an out of range threshold', function (): void {
         ->toThrow(FOSSBilling\InformationException::class, 'Your IP address is blacklisted in the AbuseIPDB database');
 });
 
+test('abuseipdb check falls back to defaults for empty or invalid settings', function (mixed $threshold, mixed $maxAge): void {
+    $service = abuseIPDBServiceWithCachedScore(
+        ['abuseipdb_enabled' => true, 'abuseipdb_api_key' => 'key', 'abuseipdb_threshold' => $threshold, 'abuseipdb_max_age' => $maxAge],
+        50
+    );
+
+    // Score 50 is allowed with the default threshold of 75. A plain (int)
+    // cast would turn '' into 0 and block every checked IP instead.
+    expect($service->isInAbuseIPDBDatabase('8.8.8.8'))->toBeTrue();
+})->with([
+    ['', ''],
+    ['not-a-number', 'not-a-number'],
+]);
+
 function abuseIPDBServiceWithHttpMock(array $config, mixed $httpCallback): Box\Mod\Antispam\Service
 {
     $service = new Box\Mod\Antispam\Service();
@@ -406,6 +420,23 @@ test('abuseipdb check fails open on malformed responses', function (): void {
     );
 
     expect($service->isInAbuseIPDBDatabase('8.8.8.8'))->toBeFalse();
+});
+
+test('abuseipdb check sends default max age for empty settings', function (): void {
+    $service = abuseIPDBServiceWithHttpMock(
+        ['abuseipdb_enabled' => true, 'abuseipdb_api_key' => 'key', 'abuseipdb_threshold' => '', 'abuseipdb_max_age' => ''],
+        function ($httpClient): void {
+            $response = Mockery::mock(Symfony\Contracts\HttpClient\ResponseInterface::class);
+            $response->shouldReceive('getStatusCode')->andReturn(200);
+            $response->shouldReceive('toArray')->with(false)->andReturn(['data' => ['abuseConfidenceScore' => 0]]);
+            $httpClient->shouldReceive('request')
+                ->once()
+                ->with('GET', 'https://api.abuseipdb.com/api/v2/check', Mockery::on(fn (array $options): bool => ($options['query']['maxAgeInDays'] ?? null) === 30))
+                ->andReturn($response);
+        }
+    );
+
+    expect($service->isInAbuseIPDBDatabase('8.8.8.8'))->toBeTrue();
 });
 
 test('abuseipdb check sends the api key and query parameters', function (): void {

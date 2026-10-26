@@ -352,8 +352,13 @@ class Service implements InjectionAwareInterface
             return false;
         }
 
-        $threshold = min(100, max(0, (int) ($config['abuseipdb_threshold'] ?? 75)));
-        $maxAge = min(365, max(1, (int) ($config['abuseipdb_max_age'] ?? 30)));
+        $threshold = $config['abuseipdb_threshold'] ?? 75;
+        $threshold = is_numeric($threshold) ? (int) $threshold : 75;
+        $threshold = min(100, max(0, $threshold));
+
+        $maxAge = $config['abuseipdb_max_age'] ?? 30;
+        $maxAge = is_numeric($maxAge) ? (int) $maxAge : 30;
+        $maxAge = min(365, max(1, $maxAge));
 
         $score = $this->getAbuseIPDBScore($ip, $apiKey, $maxAge);
         if ($score === null) {
