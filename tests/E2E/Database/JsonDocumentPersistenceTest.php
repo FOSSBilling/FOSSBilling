@@ -7,9 +7,10 @@ use Doctrine\DBAL\DriverManager;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\ORMSetup;
 use Doctrine\ORM\Tools\SchemaTool;
-use FOSSBilling\Doctrine\JsonAudit;
-use FOSSBilling\Doctrine\Type\JsonDocumentType;
+use FOSSBilling\Doctrine\JsonMigration;
+use FOSSBilling\Doctrine\JsonMigrationException;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
+use Symfony\Component\Filesystem\Filesystem;
 
 beforeEach(function (): void {
     $driver = getenv('JSON_TEST_DRIVER') ?: 'pdo_sqlite';
@@ -35,7 +36,6 @@ beforeEach(function (): void {
     } else {
         throw new InvalidArgumentException('Unsupported JSON test driver.');
     }
-    JsonDocumentType::register();
     $this->connection = DriverManager::getConnection($params);
     $config = ORMSetup::createAttributeMetadataConfig([PATH_MODS . '/Massmailer/Entity'], true, cache: new ArrayAdapter());
     if (PHP_VERSION_ID >= 80400) {
@@ -46,13 +46,14 @@ beforeEach(function (): void {
     }
     $this->em = new EntityManager($this->connection, $config);
     (new SchemaTool($this->em))->createSchema([$this->em->getClassMetadata(MassmailerMessage::class)]);
-    if ($driver === 'pdo_mysql') {
-        // The JSON migration must work even before patch 133 repairs legacy charsets.
-        $this->connection->executeStatement('ALTER TABLE mod_massmailer MODIFY COLUMN `filter` TEXT CHARACTER SET utf8 COLLATE utf8_general_ci NULL');
-    }
+    $this->jsonBackupDirectory = sys_get_temp_dir() . '/fb-json-native-' . bin2hex(random_bytes(6));
+    (new Filesystem())->mkdir($this->jsonBackupDirectory, 0o700);
 });
 
 afterEach(function (): void {
+    if (isset($this->jsonBackupDirectory)) {
+        (new Filesystem())->remove($this->jsonBackupDirectory);
+    }
     if (isset($this->connection)) {
         $this->em->close();
         $this->connection->close();
@@ -63,50 +64,139 @@ afterEach(function (): void {
     }
 });
 
-test('JSON hydration and unrelated updates preserve legacy bytes on every supported database', function (): void {
-    foreach ([null, '', '{broken-secret', 'null', '42', '"scalar"', '"{\\"a\\":1}"', '{}', '[]', '{ "id": "001", "n": 1.0, "label": "Résumé" }'] as $raw) {
-        $message = (new MassmailerMessage())->setFilter($raw)->setSubject('Before');
-        $this->em->persist($message);
-        $this->em->flush();
-        $id = $message->getId();
-        $this->em->clear();
-        $loaded = $this->em->find(MassmailerMessage::class, $id);
-        expect($loaded->getFilter())->toBe($raw);
-        $loaded->getFilterData();
-        $loaded->setSubject('After');
-        $this->em->flush();
-        expect($this->connection->fetchOne('SELECT ' . $this->connection->quoteSingleIdentifier('filter') . ' FROM mod_massmailer WHERE id = ?', [$id]))->toBe($raw);
+function makeLegacyJsonColumn(Doctrine\DBAL\Connection $connection): void
+{
+    $platform = $connection->getDatabasePlatform();
+    if ($platform instanceof Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
+        // Upgrade coverage is independent of patch 133.
+        $connection->executeStatement('ALTER TABLE mod_massmailer MODIFY COLUMN `filter` TEXT CHARACTER SET utf8 COLLATE utf8_general_ci NULL');
+    } elseif ($platform instanceof Doctrine\DBAL\Platforms\PostgreSQLPlatform) {
+        $connection->executeStatement('ALTER TABLE mod_massmailer ALTER COLUMN filter TYPE TEXT USING filter::text');
     }
-    $before = $this->connection->fetchAllAssociative('SELECT * FROM mod_massmailer ORDER BY id');
-    $issues = iterator_to_array((new JsonAudit())->inspect($this->connection, 'mod_massmailer', 2));
-    expect(array_column($issues, 'issue'))->toBe(['empty_string', 'invalid_json', 'unexpected_root', 'unexpected_root', 'double_encoded_json'])
-        ->and($this->connection->fetchAllAssociative('SELECT * FROM mod_massmailer ORDER BY id'))->toBe($before);
-});
+}
 
-test('structured JSON updates persist once, retain Unicode and track replacements', function (): void {
-    $data = ['id' => '001', 'enabled' => false, 'nested' => ['label' => '🚀'], 'list' => []];
-    $message = (new MassmailerMessage())->setFilterData($data);
+test('standard mappings create native JSON columns and persist compatible structured values', function (): void {
+    $data = ['id' => '001', 'fraction' => 1.0, 'enabled' => false, 'nested' => ['label' => '🚀'], 'list' => []];
+    $message = (new MassmailerMessage())->setFilter($data)->setSubject('Before');
     $this->em->persist($message);
     $this->em->flush();
     $id = $message->getId();
     $this->em->clear();
     $loaded = $this->em->find(MassmailerMessage::class, $id);
-    expect($loaded->getFilterData())->toBe($data)
-        ->and($loaded->getFilter())->toBe(json_encode($data, JSON_THROW_ON_ERROR));
-    $copy = $loaded->getFilterData();
+    expect($loaded->getFilter())->toEqual($data);
+    $raw = $this->connection->fetchOne('SELECT ' . $this->connection->quoteSingleIdentifier('filter') . ' FROM mod_massmailer WHERE id = ?', [$id]);
+    expect(json_decode($raw, true, 512, JSON_THROW_ON_ERROR))->toEqual($data);
+    $copy = $loaded->getFilter();
     $copy['nested']['label'] = 'Changed';
+    $loaded->setSubject('After');
     $this->em->flush();
-    expect($this->connection->fetchOne('SELECT ' . $this->connection->quoteSingleIdentifier('filter') . ' FROM mod_massmailer WHERE id = ?', [$id]))
-        ->toBe(json_encode($data, JSON_THROW_ON_ERROR));
-    $loaded->setFilterData($copy);
+    expect($this->connection->fetchOne('SELECT ' . $this->connection->quoteSingleIdentifier('filter') . ' FROM mod_massmailer WHERE id = ?', [$id]))->toBe($raw);
+    $loaded->setFilter($copy);
     $this->em->flush();
     $this->em->clear();
-    expect($this->em->find(MassmailerMessage::class, $id)->getFilterData())->toBe($copy);
+    expect($this->em->find(MassmailerMessage::class, $id)->getFilter())->toEqual($copy);
     $loaded = $this->em->find(MassmailerMessage::class, $id);
-    foreach ([new stdClass(), []] as $empty) {
-        $loaded->setFilterData($empty);
+    foreach ([null, [], ['replacement' => true]] as $empty) {
+        $loaded->setFilter($empty);
         $this->em->flush();
-        expect($this->connection->fetchOne('SELECT ' . $this->connection->quoteSingleIdentifier('filter') . ' FROM mod_massmailer WHERE id = ?', [$id]))
-            ->toBe(json_encode($empty, JSON_THROW_ON_ERROR));
+        $this->em->clear();
+        $loaded = $this->em->find(MassmailerMessage::class, $id);
+        expect($loaded->getFilter())->toBe($empty);
     }
+    (new JsonMigration())->assertReady($this->connection);
+    if (!$this->connection->getDatabasePlatform() instanceof Doctrine\DBAL\Platforms\SQLitePlatform) {
+        expect($this->connection->createSchemaManager()->introspectTableByUnquotedName('mod_massmailer')->getColumn('filter')->getTypeName())
+            ->toBe(Doctrine\DBAL\Types\Types::JSON);
+        expect(fn () => $this->connection->insert('mod_massmailer', ['filter' => '{invalid']))->toThrow(Doctrine\DBAL\Exception\DriverException::class);
+    }
+});
+
+test('legacy TEXT upgrades retain JSON meaning, archive exact originals and safely repeat', function (): void {
+    makeLegacyJsonColumn($this->connection);
+    $values = [null, '', " \t\n", 'null', '{}', '[]', '{ "id": "001", "n": 1.0, "label": "Résumé" }'];
+    foreach ($values as $raw) {
+        $this->connection->insert('mod_massmailer', ['filter' => $raw, 'subject' => 'Before']);
+    }
+    $file = $this->jsonBackupDirectory . '/legacy.jsonl';
+    $migration = new JsonMigration();
+    expect(fn () => $migration->assertReady($this->connection))->toThrow(JsonMigrationException::class);
+    expect($migration->migrate($this->connection, $file))->toBe(['columns' => 1, 'empty_values' => 2]);
+    $migration->assertReady($this->connection);
+    $records = array_map(fn ($line) => json_decode($line, true, 512, JSON_THROW_ON_ERROR), file($file, FILE_IGNORE_NEW_LINES));
+    $rows = array_values(array_filter($records, fn ($row) => array_key_exists('base64', $row)));
+    expect(array_map(fn ($row) => $row['base64'] === null ? null : base64_decode($row['base64'], true), $rows))->toBe($values)
+        ->and(end($records))->toBe(['complete' => true]);
+    foreach ($this->em->getRepository(MassmailerMessage::class)->findBy([], ['id' => 'ASC']) as $index => $message) {
+        expect($message->getFilter())->toEqual(json_decode($values[$index] ?? 'null', true));
+        $message->setSubject('After');
+    }
+    $this->em->flush();
+    $before = $this->connection->fetchAllAssociative('SELECT * FROM mod_massmailer ORDER BY id');
+    expect($migration->migrate($this->connection, $this->jsonBackupDirectory . '/retry.jsonl'))->toBe(['columns' => 1, 'empty_values' => 0])
+        ->and($this->connection->fetchAllAssociative('SELECT * FROM mod_massmailer ORDER BY id'))->toBe($before);
+    $this->em->clear();
+    $message = $this->em->getRepository(MassmailerMessage::class)->findOneBy([]);
+    $message->setFilter(['unicode' => '🚀', 'id' => '001']);
+    $this->em->flush();
+    $this->em->clear();
+    expect($this->em->find(MassmailerMessage::class, $message->getId())->getFilter())->toEqual(['unicode' => '🚀', 'id' => '001']);
+});
+
+test('unsafe legacy documents block conversion without changing earlier valid rows or exposing secrets', function (string $raw): void {
+    makeLegacyJsonColumn($this->connection);
+    $this->connection->insert('mod_massmailer', ['filter' => '']);
+    $this->connection->insert('mod_massmailer', ['filter' => $raw]);
+    $before = $this->connection->fetchAllAssociative('SELECT * FROM mod_massmailer ORDER BY id');
+
+    try {
+        (new JsonMigration())->migrate($this->connection, $this->jsonBackupDirectory . '/blocked.jsonl');
+        $this->fail('Unsafe legacy JSON was accepted.');
+    } catch (JsonMigrationException $exception) {
+        expect($exception->getMessage())->not->toContain('private-secret', $raw);
+    }
+    expect($this->connection->fetchAllAssociative('SELECT * FROM mod_massmailer ORDER BY id'))->toBe($before);
+})->with(['{private-secret', '{"private-secret":1,"private-secret":2}', '{"private-secret":9223372036854775808}', 'false', '42', '"scalar"', '"{\\"a\\":1}"']);
+
+test('the full 24-column inventory migrates while encrypted and dormant exclusions remain unchanged', function (): void {
+    $c = $this->connection;
+    $c->executeStatement('DROP TABLE mod_massmailer');
+    $payload = '{"id":"001","fraction":1.0,"nested":{"enabled":false},"label":"Résumé"}';
+    foreach (FOSSBilling\Doctrine\JsonFields::FIELDS as $table => $definition) {
+        $idType = $table === 'session' ? 'VARCHAR(255)' : 'BIGINT';
+        $columns = array_map(static fn ($column): string => $c->quoteSingleIdentifier($column) . ' TEXT NULL', array_keys($definition['columns']));
+        if ($table === 'service_license') {
+            $columns[] = 'config TEXT NULL';
+        }
+        $c->executeStatement('CREATE TABLE ' . $c->quoteSingleIdentifier($table) . ' (id ' . $idType . ' PRIMARY KEY, ' . implode(', ', $columns) . ')');
+        foreach ([-1, 0] as $id) {
+            $row = ['id' => $table === 'session' ? 'session-' . $id : $id];
+            foreach (array_keys($definition['columns']) as $column) {
+                $row[$column] = $id === -1 ? $payload : '';
+            }
+            if ($table === 'service_license') {
+                $row['config'] = 'dormant-unstructured-value';
+            }
+            $c->insert($c->quoteSingleIdentifier($table), $row);
+        }
+    }
+    $c->executeStatement('CREATE TABLE email_template (id BIGINT PRIMARY KEY, vars TEXT)');
+    $c->insert('email_template', ['id' => 1, 'vars' => 'encrypted-private-value']);
+    $migration = new JsonMigration();
+    $file = $this->jsonBackupDirectory . '/inventory.jsonl';
+    expect($migration->migrate($c, $file))->toBe(['columns' => 24, 'empty_values' => 24]);
+    $migration->assertReady($c);
+    foreach (FOSSBilling\Doctrine\JsonFields::FIELDS as $table => $definition) {
+        $actual = $c->createSchemaManager()->introspectTableByUnquotedName($table);
+        foreach (array_keys($definition['columns']) as $column) {
+            $values = $c->fetchFirstColumn('SELECT ' . $c->quoteSingleIdentifier($column) . ' FROM ' . $c->quoteSingleIdentifier($table) . ' ORDER BY id');
+            expect($values[1])->toBeNull()
+                ->and(json_decode($values[0], true, 512, JSON_THROW_ON_ERROR))->toEqual(json_decode($payload, true, 512, JSON_THROW_ON_ERROR));
+            if (!$c->getDatabasePlatform() instanceof Doctrine\DBAL\Platforms\SQLitePlatform) {
+                expect($actual->getColumn($column)->getTypeName())->toBe(Doctrine\DBAL\Types\Types::JSON);
+            }
+        }
+    }
+    expect($c->fetchFirstColumn('SELECT config FROM service_license'))->toBe(['dormant-unstructured-value', 'dormant-unstructured-value'])
+        ->and($c->fetchOne('SELECT vars FROM email_template'))->toBe('encrypted-private-value')
+        ->and(file_get_contents($file))->not->toContain('encrypted-private-value', 'dormant-unstructured-value');
 });
