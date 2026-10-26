@@ -92,7 +92,7 @@ class Service implements InjectionAwareInterface
     public function getCartProductTitle(Product $product, array $data): ?string
     {
         try {
-            $data = array_merge(json_decode($product->getConfig() ?? '', true) ?? [], $data);
+            $data = array_merge($product->getConfigData() ?? [], $data);
             [$sld, $tld] = $this->_getDomainTuple($data);
 
             return __trans(':hosting for :domain', [':hosting' => $product->getTitle(), ':domain' => $sld . $tld]);
@@ -143,7 +143,7 @@ class Service implements InjectionAwareInterface
      */
     private function assertAdminControlledValuesMatch(array $data, Product $product): void
     {
-        $productConfig = json_decode((string) $product->getConfig(), true) ?? [];
+        $productConfig = $product->getConfigData() ?? [];
 
         foreach (['server_id', 'hosting_plan_id'] as $key) {
             if ((int) ($data[$key] ?? 0) !== (int) ($productConfig[$key] ?? 0)) {
@@ -183,7 +183,7 @@ class Service implements InjectionAwareInterface
         $model = $orderService->getOrderService($order);
         $config = $orderService->getConfig($order);
         $product = $this->di['em']->find(Product::class, $order->getProductId());
-        $defaults = $product instanceof Product ? (json_decode($product->getConfig() ?? '', true) ?? []) : [];
+        $defaults = $product instanceof Product ? ($product->getConfigData() ?? []) : [];
         $describe = function (array $values): array {
             $serverId = (int) ($values['server_id'] ?? 0);
             $planId = (int) ($values['hosting_plan_id'] ?? 0);
@@ -238,7 +238,7 @@ class Service implements InjectionAwareInterface
         if (!$product instanceof Product) {
             throw new InformationException('Product not found.');
         }
-        $defaults = json_decode($product->getConfig() ?? '', true) ?? [];
+        $defaults = $product->getConfigData() ?? [];
         $server = $this->getExistingServer((int) ($defaults['server_id'] ?? 0), 'Server from product configuration was not found');
         $plan = $this->getExistingHp((int) ($defaults['hosting_plan_id'] ?? 0), 'Hosting plan from product configuration was not found');
         $config = $orderService->getConfig($order);
@@ -253,7 +253,7 @@ class Service implements InjectionAwareInterface
             $model->setIp($server->getIp());
             $model->setReseller($config['reseller']);
         }
-        $order->setConfig(json_encode($config));
+        $order->setConfigData($config);
         $order->setUpdatedAt(new \DateTime());
         $this->di['em']->flush();
         $this->di['logger']->info('Refreshed hosting provisioning configuration for order #{order_id}', ['order_id' => $order->getId()]);
@@ -723,7 +723,7 @@ class Service implements InjectionAwareInterface
             $result['status_url'] = $model->getStatusUrl();
             $result['max_accounts'] = $model->getMaxAccounts();
             $result['manager'] = $model->getManager();
-            $result['config'] = json_decode($model->getConfig() ?? '', true) ?? [];
+            $result['config'] = $model->getConfigData() ?? [];
             $result['port'] = Tools::normalizePort($model->getPort());
             $result['passwordLength'] = $model->getPasswordLength();
             $result['created_at'] = $this->formatDateTime($model->getCreatedAt());
@@ -1137,7 +1137,7 @@ class Service implements InjectionAwareInterface
         $model->setAccesshash($data['accesshash'] ?? null);
         $normalizedPort = Tools::normalizePort($data['port'] ?? null);
         $model->setPort($normalizedPort !== null ? (string) $normalizedPort : null);
-        $model->setConfig(isset($data['config']) ? json_encode($data['config']) : null);
+        $model->setConfigData($data['config'] ?? null);
         $model->setPasswordLength(is_numeric($data['passwordLength'] ?? '') ? intval($data['passwordLength']) : null);
         $model->setSecure(Tools::normalizeBoolean($data['secure'] ?? true));
 
@@ -1187,7 +1187,9 @@ class Service implements InjectionAwareInterface
         }
         $port = Tools::normalizePort($data['port'] ?? null);
         $model->setPort($port !== null ? (string) $port : $model->getPort());
-        $model->setConfig(isset($data['config']) ? json_encode($data['config']) : $model->getConfig());
+        if (isset($data['config'])) {
+            $model->setConfigData($data['config']);
+        }
         $model->setSecure(array_key_exists('secure', $data) ? Tools::normalizeBoolean($data['secure']) : $model->isSecure());
         $model->setUsername($this->normalizeCredential('username', $data['username'] ?? null, $model->getUsername(), $model->getId(), false));
         $model->setPassword($this->normalizeCredential('password', $data['password'] ?? null, $model->getPassword(), $model->getId(), true));
@@ -1241,7 +1243,7 @@ class Service implements InjectionAwareInterface
         $config['host'] = $model->getHostname();
         $config['port'] = Tools::normalizePort($model->getPort());
         $config['config'] = [];
-        $config['config'] = json_decode($model->getConfig() ?? '', true) ?? [];
+        $config['config'] = $model->getConfigData() ?? [];
         $config['secure'] = $model->isSecure();
         $config['username'] = $model->getUsername();
         $config['password'] = $model->getPassword();
@@ -1299,7 +1301,7 @@ class Service implements InjectionAwareInterface
 
         $planIds = [];
         foreach ($products as $product) {
-            $config = json_decode((string) $product->getConfig(), true);
+            $config = $product->getConfigData();
             if (is_array($config) && isset($config['hosting_plan_id'])) {
                 $planIds[(int) $config['hosting_plan_id']] = true;
             }
@@ -1444,7 +1446,7 @@ class Service implements InjectionAwareInterface
             'max_sub' => $model->getMaxSub(),
             'max_park' => $model->getMaxPark(),
             'max_addon' => $model->getMaxAddon(),
-            'config' => json_decode($model->getConfig() ?? '', true),
+            'config' => $model->getConfigData(),
 
             'created_at' => $this->formatDateTime($model->getCreatedAt()),
             'updated_at' => $this->formatDateTime($model->getUpdatedAt()),
@@ -1464,7 +1466,7 @@ class Service implements InjectionAwareInterface
         $model->setMaxPark($data['max_park'] ?? $model->getMaxPark());
 
         /* add new config value to hosting plan */
-        $config = json_decode($model->getConfig() ?? '', true) ?? [];
+        $config = $model->getConfigData() ?? [];
 
         $inConfig = $data['config'] ?? null;
 
@@ -1484,7 +1486,7 @@ class Service implements InjectionAwareInterface
             $config[$newConfigName] = $newConfigValue;
         }
 
-        $model->setConfig(json_encode($config));
+        $model->setConfigData($config);
         $this->di['em']->flush();
 
         $this->di['logger']->info('Updated hosting plan {model_id}', ['model_id' => $model->getId()]);
@@ -1519,7 +1521,7 @@ class Service implements InjectionAwareInterface
 
     public function getServerPackage(ServiceHostingHp $model): \Server_Package
     {
-        $config = json_decode($model->getConfig() ?? '', true);
+        $config = $model->getConfigData();
         if (!is_array($config)) {
             $config = [];
         }
@@ -1608,7 +1610,7 @@ class Service implements InjectionAwareInterface
 
     public function attachOrderConfig(Product $product, array $data): array
     {
-        $c = json_decode($product->getConfig() ?? '', true) ?? [];
+        $c = $product->getConfigData() ?? [];
 
         $data = array_merge($c, $data);
         if (($data['domain']['action'] ?? null) === 'subdomain' && array_key_exists('subdomain_base_domain', $c)) {
@@ -1659,7 +1661,7 @@ class Service implements InjectionAwareInterface
         $data = $this->attachOrderConfig($product, $data);
         $this->validateOrderData($data, $product);
 
-        $c = json_decode($product->getConfig() ?? '', true) ?? [];
+        $c = $product->getConfigData() ?? [];
 
         $dc = $data['domain'] ?? null;
 
@@ -1709,7 +1711,7 @@ class Service implements InjectionAwareInterface
 
     public function getFreeTlds(Product $product, $identity = null): array
     {
-        $config = json_decode($product->getConfig() ?? '', true) ?? [];
+        $config = $product->getConfigData() ?? [];
         $freeTlds = $config['free_tlds'] ?? [];
         $result = [];
         foreach ($freeTlds as $tld) {
