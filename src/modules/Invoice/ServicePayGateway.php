@@ -222,7 +222,32 @@ class ServicePayGateway implements InjectionAwareInterface
             }
         }
 
-        return array_values(array_unique($secrets));
+        return array_values(array_unique([...$secrets, ...$this->secretCodec()->names($model->getConfig() ?? [])]));
+    }
+
+    private function secretCodec(): \FOSSBilling\SecretFields
+    {
+        return new \FOSSBilling\SecretFields($this->di['crypt'] ?? new \FOSSBilling\Crypt());
+    }
+
+    public function migrateConfigSecrets(): void
+    {
+        foreach ($this->getPayGatewayRepository()->findAll() as $model) {
+            $stored = $model->getConfig() ?? [];
+
+            try {
+                $fields = $this->getSecretFields($model);
+            } catch (\Throwable) {
+                $this->di['logger']->warning('Credential encryption deferred for unavailable gateway adapter #{id}', ['id' => $model->getId()]);
+
+                continue;
+            }
+            $protected = $this->secretCodec()->store($stored, $fields);
+            if ($protected !== $stored) {
+                $model->setConfig($protected);
+            }
+        }
+        $this->di['em']->flush();
     }
 
     public function copy(PayGateway $model): int
@@ -247,7 +272,7 @@ class ServicePayGateway implements InjectionAwareInterface
     {
         $newEnabled = isset($data['enabled']) ? (bool) $data['enabled'] : $model->isEnabled();
         $newTestMode = isset($data['test_mode']) ? (bool) $data['test_mode'] : $model->isTestMode();
-        $existingConfig = $model->getConfig() ?? [];
+        $existingConfig = $this->secretCodec()->reveal($model->getConfig() ?? []);
         $mergedConfig = $existingConfig;
         if (isset($data['config']) && is_array($data['config'])) {
             $secretFields = $this->getSecretFields($model);
@@ -275,7 +300,7 @@ class ServicePayGateway implements InjectionAwareInterface
         $model->setCustomLogo($customLogo);
 
         if (isset($data['config']) && is_array($data['config'])) {
-            $model->setConfig($mergedConfig);
+            $model->setConfig($this->secretCodec()->store($mergedConfig, $this->getSecretFields($model)));
         }
 
         if (isset($data['accepted_currencies']) && is_array($data['accepted_currencies'])) {
@@ -614,7 +639,7 @@ class ServicePayGateway implements InjectionAwareInterface
 
     public function getPaymentAdapter(PayGateway $pg, ?Invoice $model = null, $optional = []): object
     {
-        $config = $pg->getConfig() ?? [];
+        $config = $this->secretCodec()->reveal($pg->getConfig() ?? []);
         $defaults = [];
         $defaults['auto_redirect'] = false;
         $defaults['gateway_id'] = (int) $pg->getId();

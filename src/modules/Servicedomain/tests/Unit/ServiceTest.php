@@ -2224,7 +2224,7 @@ test('registrarUpdate keeps the existing secret when the incoming value is blank
     ]);
 
     expect($result)->toBeTrue();
-    $config = $model->getConfig();
+    $config = (new FOSSBilling\SecretFields(new FOSSBilling\Crypt()))->reveal($model->getConfig());
     expect($config['api-key'])->toBe('existing-secret');
     expect($config['api-user-id'])->toBe('new-reseller-id');
 });
@@ -2252,7 +2252,7 @@ test('registrarUpdate rotates a secret when a new value is submitted', function 
     $result = $service->registrarUpdate($model, ['config' => ['api-key' => 'new-secret']]);
 
     expect($result)->toBeTrue();
-    $config = $model->getConfig();
+    $config = (new FOSSBilling\SecretFields(new FOSSBilling\Crypt()))->reveal($model->getConfig());
     expect($config['api-key'])->toBe('new-secret');
 });
 

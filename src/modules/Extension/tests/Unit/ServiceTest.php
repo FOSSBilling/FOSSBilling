@@ -919,7 +919,7 @@ test('getConfig returns extension config', function (): void {
         ->andReturn($meta);
 
     $cryptMock = Mockery::mock(FOSSBilling\Crypt::class);
-    $cryptMock->shouldReceive('decrypt')->atLeast()->once();
+    $cryptMock->shouldReceive('decrypt')->atLeast()->once()->andReturn('{}');
 
     $em = extensionBuildEm(null, $metaRepo);
 
@@ -1015,14 +1015,16 @@ test('configuration reads do not create rows and authorized writes preserve publ
     expect($service->setConfig($data))->toBeTrue()
         ->and($connection->fetchOne('SELECT COUNT(*) FROM extension_meta'))->toBe(1)
         ->and($service->getConfig('mod_staff'))->toBe($data)
-        ->and($api->settings(['ext' => 'mod_staff']))->toBe($data['public']);
+        ->and($api->settings(['ext' => 'mod_staff']))->toBe($data['public'])
+        ->and(json_encode($cache->getValues()))->not->toContain('secret', 'Welcome');
     $meta = $em->getRepository(ExtensionMeta::class)->findOneByExtensionAndScope('mod_staff', 'config');
     expect($meta->getMetaValue())->not->toContain('secret');
 
     $data['public']['login_note'] = 'Updated';
     expect($service->setConfig($data))->toBeTrue()
         ->and($connection->fetchOne('SELECT COUNT(*) FROM extension_meta'))->toBe(1)
-        ->and($api->settings(['ext' => 'mod_staff']))->toBe($data['public']);
+        ->and($api->settings(['ext' => 'mod_staff']))->toBe($data['public'])
+        ->and(json_encode($cache->getValues()))->not->toContain('secret', 'Welcome');
 });
 
 test('setConfig sets extension config', function (): void {

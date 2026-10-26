@@ -1202,9 +1202,34 @@ class Service implements \FOSSBilling\InjectionAwareInterface
         return $this->getTldRegistrarRepository()->findActiveRegistrar();
     }
 
+    private function secretCodec(): \FOSSBilling\SecretFields
+    {
+        return new \FOSSBilling\SecretFields($this->di['crypt'] ?? new \FOSSBilling\Crypt());
+    }
+
+    public function migrateConfigSecrets(): void
+    {
+        foreach ($this->getTldRegistrarRepository()->findAll() as $model) {
+            $stored = $model->getConfig() ?? [];
+
+            try {
+                $fields = $this->resolveRegistrarSecretFields($model, $this->registrarGetRegistrarAdapterConfig($model));
+            } catch (\Throwable) {
+                $this->di['logger']->warning('Credential encryption deferred for unavailable registrar adapter #{id}', ['id' => $model->getId()]);
+
+                continue;
+            }
+            $protected = $this->secretCodec()->store($stored, $fields);
+            if ($protected !== $stored) {
+                $model->setConfig($protected);
+            }
+        }
+        $this->di['em']->flush();
+    }
+
     public function registrarGetConfiguration(TldRegistrar $model): array
     {
-        return $model->getConfig() ?? [];
+        return $this->secretCodec()->reveal($model->getConfig() ?? []);
     }
 
     public function registrarGetRegistrarAdapterConfig(TldRegistrar $model)
@@ -1345,7 +1370,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
                 }
             }
 
-            $model->setConfig($configuration);
+            $model->setConfig($this->secretCodec()->store($configuration, $secretFields));
             $this->registrarValidateConfiguration($model);
         }
 
@@ -1464,7 +1489,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
             }
         }
 
-        return array_values(array_unique($secrets));
+        return array_values(array_unique([...$secrets, ...$this->secretCodec()->names($model->getConfig() ?? [])]));
     }
 
     public function updateDomain(ServiceDomain $s, $data): bool

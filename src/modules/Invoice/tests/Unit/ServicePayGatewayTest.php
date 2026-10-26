@@ -281,7 +281,7 @@ test('update keeps the existing secret gateway value when the incoming value is 
     ]);
 
     expect($result)->toBeTrue();
-    $config = $payGateway->getConfig();
+    $config = (new FOSSBilling\SecretFields(new FOSSBilling\Crypt()))->reveal($payGateway->getConfig());
     expect($config['api_key'])->toBe('sk_live_existing');
     expect($config['pub_key'])->toBe('pk_live_new');
 });
@@ -309,7 +309,7 @@ test('update rotates a secret gateway value when a new value is submitted', func
     $result = $service->update($payGateway, ['config' => ['api_key' => 'sk_live_new']]);
 
     expect($result)->toBeTrue();
-    $config = $payGateway->getConfig();
+    $config = (new FOSSBilling\SecretFields(new FOSSBilling\Crypt()))->reveal($payGateway->getConfig());
     expect($config['api_key'])->toBe('sk_live_new');
 });
 

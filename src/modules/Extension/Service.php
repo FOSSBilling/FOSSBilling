@@ -708,24 +708,26 @@ class Service implements InjectionAwareInterface
 
     public function getConfig(string $ext): array
     {
-        return $this->di['cache']->get("config_{$ext}", function (ItemInterface $item) use ($ext) {
+        // Retire the former plaintext cache entry. Persistent caches contain ciphertext only.
+        $this->di['cache']->delete("config_{$ext}");
+        $encrypted = $this->di['cache']->get("encrypted_config_{$ext}", function (ItemInterface $item) use ($ext): ?string {
             $item->expiresAfter(60 * 60);
 
-            $meta = $this->getExtensionMetaRepository()->findOneByExtensionAndScope($ext, 'config');
-            if ($meta === null) {
-                $config = [];
-            } else {
-                $decrypted = $this->di['crypt']->decrypt($meta->getMetaValue(), $this->_getSalt());
-                $config = is_string($decrypted) ? json_decode($decrypted, true) : [];
-            }
-
-            $config['ext'] = $ext;
-
-            return $config;
+            return $this->getExtensionMetaRepository()->findOneByExtensionAndScope($ext, 'config')?->getMetaValue();
         });
+        $config = [];
+        if ($encrypted !== null && $encrypted !== '') {
+            $decrypted = $this->di['crypt']->decrypt($encrypted, $this->_getSalt());
+            if (!is_string($decrypted) || !json_validate($decrypted) || !is_array($config = json_decode($decrypted, true))) {
+                throw new \FOSSBilling\InformationException('Encrypted extension configuration could not be read.');
+            }
+        }
+        $config['ext'] = $ext;
+
+        return $config;
     }
 
-    public function setConfig($data): bool
+    public function setConfig(array $data): bool
     {
         // Intentional defense-in-depth: this method stores sensitive configuration,
         // so authorization is enforced here independently of any caller-side checks.
@@ -740,7 +742,7 @@ class Service implements InjectionAwareInterface
         $this->di['event_dispatcher']->dispatch(new BeforeAdminExtensionConfigSaveEvent($ext, $configurationKeys));
 
         $meta = $this->getExtensionMetaRepository()->findOneByExtensionAndScope($ext, 'config');
-        $config = json_encode($data);
+        $config = json_encode($data, JSON_THROW_ON_ERROR);
         $encrypted = $this->di['crypt']->encrypt($config, $this->_getSalt());
 
         if ($meta === null) {
@@ -757,6 +759,7 @@ class Service implements InjectionAwareInterface
         $this->di['event_dispatcher']->dispatch(new AfterAdminExtensionConfigSaveEvent($ext, $configurationKeys));
         $this->di['logger']->info("Updated extension {$ext} configuration.");
         $this->di['cache']->delete("config_{$ext}");
+        $this->di['cache']->delete("encrypted_config_{$ext}");
 
         return true;
     }
