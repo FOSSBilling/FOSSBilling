@@ -439,7 +439,7 @@ test('abuseipdb check sends default max age for empty settings', function (): vo
     expect($service->isInAbuseIPDBDatabase('8.8.8.8'))->toBeTrue();
 });
 
-test('abuseipdb check sends the api key and query parameters', function (): void {
+test('abuseipdb check sends the api key, query parameters, and timeouts', function (): void {
     $service = abuseIPDBServiceWithHttpMock(
         ['abuseipdb_enabled' => true, 'abuseipdb_api_key' => 'test-key', 'abuseipdb_threshold' => 75, 'abuseipdb_max_age' => 30],
         function ($httpClient): void {
@@ -451,7 +451,9 @@ test('abuseipdb check sends the api key and query parameters', function (): void
                 ->with('GET', 'https://api.abuseipdb.com/api/v2/check', Mockery::on(fn (array $options): bool => ($options['headers']['Key'] ?? null) === 'test-key'
                     && ($options['query']['ipAddress'] ?? null) === '8.8.8.8'
                     && ($options['query']['maxAgeInDays'] ?? null) === 30
-                    && !array_key_exists('verbose', $options['query'] ?? [])))
+                    && !array_key_exists('verbose', $options['query'] ?? [])
+                    && ($options['timeout'] ?? null) === 5
+                    && ($options['max_duration'] ?? null) === 10))
                 ->andReturn($response);
         }
     );

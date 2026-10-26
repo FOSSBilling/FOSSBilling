@@ -389,6 +389,11 @@ class Service implements InjectionAwareInterface
                         'ipAddress' => $ip,
                         'maxAgeInDays' => $maxAge,
                     ],
+                    // Bound the user-facing wait: without these, a stalled
+                    // connection hangs signups until Symfony's 60s idle
+                    // timeout instead of failing open quickly.
+                    'timeout' => 5,
+                    'max_duration' => 10,
                 ]);
 
                 if ($response->getStatusCode() !== 200) {
