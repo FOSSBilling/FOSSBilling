@@ -225,7 +225,7 @@ test('action activate creates the account when it has not been provisioned yet',
         ->and($model->getUsername())->toBe('example');
 });
 
-test('action activate stores the username and ip the server reports after creating the account', function (): void {
+test('action activate stores the username and ip the server reports after creating the account', function (string $mutation): void {
     $orderModel = createEntity(Order::class);
 
     $model = new ServiceHosting();
@@ -254,11 +254,21 @@ test('action activate stores the username and ip the server reports after creati
     $serverManagerMock->shouldReceive('generateUsername')->atLeast()->once()->andReturn('example');
 
     $account = (new Server_Account())->setUsername('example')->setIp('10.0.0.1');
-    $synced = (clone $account)->setUsername('client@example.com')->setIp('203.0.113.10');
-
     $adapterMock = Mockery::mock('\Server_Manager_Custom');
-    $adapterMock->shouldReceive('createAccount')->once();
-    $adapterMock->shouldReceive('synchronizeAccount')->once()->andReturn($synced);
+    $adapterMock->shouldReceive('createAccount')->once()->andReturnUsing(function (Server_Account $account) use ($mutation): bool {
+        if ($mutation === 'creation') {
+            $account->setUsername('client@example.com')->setIp('203.0.113.10');
+        }
+
+        return true;
+    });
+    $adapterMock->shouldReceive('synchronizeAccount')->once()->andReturnUsing(function (Server_Account $account) use ($mutation): Server_Account {
+        if ($mutation === 'synchronization') {
+            return $account->setUsername('client@example.com')->setIp('203.0.113.10');
+        }
+
+        return (clone $account)->setUsername('client@example.com')->setIp('203.0.113.10');
+    });
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('getServerManager')->atLeast()->once()->andReturn($serverManagerMock);
@@ -271,9 +281,9 @@ test('action activate stores the username and ip the server reports after creati
         ->and($model->getUsername())->toBe('client@example.com')
         ->and($model->getIp())->toBe('203.0.113.10')
         ->and($model->getPass())->toBe('********');
-});
+})->with(['returned account', 'creation', 'synchronization']);
 
-test('action activate still succeeds when the server manager cannot synchronize', function (): void {
+test('action activate distinguishes unsupported synchronization from a failure', function (string $managerClass, int $expectedWarnings): void {
     $orderModel = createEntity(Order::class);
 
     $model = new ServiceHosting();
@@ -296,13 +306,18 @@ test('action activate still succeeds when the server manager cannot synchronize'
     $di['em'] = $emMock;
     $di['mod_service'] = $di->protect(fn (): Mockery\MockInterface => $orderServiceMock);
 
+    $logger = new Tests\Helpers\TestLogger();
+    $di['logger'] = $logger;
+
     $serverManagerMock = Mockery::mock('\Server_Manager_Custom');
     $serverManagerMock->shouldReceive('getPasswordLength')->atLeast()->once()->andReturn(12);
     $serverManagerMock->shouldReceive('generateUsername')->atLeast()->once()->andReturn('example');
 
-    $adapterMock = Mockery::mock('\Server_Manager_Custom');
+    $adapterMock = Mockery::mock($managerClass)->makePartial();
     $adapterMock->shouldReceive('createAccount')->once();
-    $adapterMock->shouldReceive('synchronizeAccount')->once()->andThrow(new Server_Exception('Custom does not support synchronization'));
+    if ($managerClass === Server_Manager_Custom::class) {
+        $adapterMock->shouldReceive('synchronizeAccount')->once()->andThrow(new Server_Exception('Server unavailable'));
+    }
 
     $serviceMock = Mockery::mock(Service::class)->makePartial();
     $serviceMock->shouldReceive('getServerManager')->atLeast()->once()->andReturn($serverManagerMock);
@@ -312,8 +327,13 @@ test('action activate still succeeds when the server manager cannot synchronize'
     $result = $serviceMock->action_activate($orderModel);
 
     expect($result)->toBe(['username' => 'example'])
-        ->and($model->getUsername())->toBe('example');
-});
+        ->and($model->getUsername())->toBe('example')
+        ->and(array_filter($logger->calls, static fn (array $call): bool => $call['method'] === 'warning'))->toHaveCount($expectedWarnings);
+})->with([
+    'sync failure' => [Server_Manager_Custom::class, 1],
+    'Plesk' => [Server_Manager_Plesk::class, 0],
+    'DirectAdmin' => [Server_Manager_Directadmin::class, 0],
+]);
 
 test('action activate synchronizes an imported account without creating it', function (): void {
     $orderModel = createEntity(Order::class);
@@ -974,6 +994,17 @@ test('sync', function (): void {
     $result = $serviceMock->sync($orderModel, $model);
     expect($result)->toBeTrue();
 });
+
+test('manual sync reports unsupported synchronization', function (string $managerClass): void {
+    $service = Mockery::mock(Service::class)->makePartial();
+    $service->shouldReceive('_getAM')->once()->andReturn([
+        Mockery::mock($managerClass)->makePartial(),
+        new Server_Account(),
+    ]);
+
+    expect(fn () => $service->sync(createEntity(Order::class), new ServiceHosting()))
+        ->toThrow(Server_Exception_UnsupportedOperation::class);
+})->with([Server_Manager_Plesk::class, Server_Manager_Directadmin::class]);
 
 test('to api array', function (): void {
     $service = new Service();

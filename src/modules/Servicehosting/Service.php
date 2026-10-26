@@ -271,6 +271,8 @@ class Service implements InjectionAwareInterface
             }
 
             $this->applySync($model, $adapter, $account);
+        } catch (\Server_Exception_UnsupportedOperation) {
+            // Synchronization is optional for server managers.
         } catch (\Exception $e) {
             $this->di['logger']->warning('Skipped post-activation sync of hosting account {model_id}: {error}', ['model_id' => $model->getId(), 'error' => $e->getMessage()]);
         }
@@ -509,15 +511,15 @@ class Service implements InjectionAwareInterface
         $updated = $adapter->synchronizeAccount($account);
 
         // Runs on every activation now, so an incomplete response must not wipe a stored value.
-        if (!empty($updated->getUsername()) && $updated->getUsername() !== $account->getUsername()) {
+        if (!empty($updated->getUsername()) && $updated->getUsername() !== $model->getUsername()) {
             $model->setUsername($updated->getUsername());
-        } elseif (empty($updated->getUsername()) && !empty($account->getUsername())) {
+        } elseif (empty($updated->getUsername()) && !empty($model->getUsername())) {
             $this->di['logger']->warning('Server reported no username for hosting account {model_id}, keeping the stored one', ['model_id' => $model->getId()]);
         }
 
-        if (!empty($updated->getIp()) && $updated->getIp() !== $account->getIp()) {
+        if (!empty($updated->getIp()) && $updated->getIp() !== $model->getIp()) {
             $model->setIp($updated->getIp());
-        } elseif (empty($updated->getIp()) && !empty($account->getIp())) {
+        } elseif (empty($updated->getIp()) && !empty($model->getIp())) {
             $this->di['logger']->warning('Server reported no IP for hosting account {model_id}, keeping the stored one', ['model_id' => $model->getId()]);
         }
     }

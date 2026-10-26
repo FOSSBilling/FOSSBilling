@@ -422,18 +422,15 @@ class Server_Manager_Directadmin extends Server_Manager
     }
 
     /**
-     * Synchronizes the server account with the DirectAdmin server.
-     * This method currently does nothing and simply returns the account as is.
+     * Account synchronization is not supported by this manager.
      *
      * @param Server_Account $account the server account
      *
-     * @return Server_Account the same server account
-     *
-     * @throws Server_Exception
+     * @throws Server_Exception_UnsupportedOperation
      */
     public function synchronizeAccount(Server_Account $account): Server_Account
     {
-        throw new Server_Exception(':type: does not support :action:', [':type:' => 'DirectAdmin', ':action:' => __trans('synchronizing the account')]);
+        throw new Server_Exception_UnsupportedOperation(':type: does not support :action:', [':type:' => 'DirectAdmin', ':action:' => __trans('synchronizing the account')]);
     }
 
     /**
