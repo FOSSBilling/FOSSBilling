@@ -15,7 +15,7 @@ namespace FOSSBilling\Doctrine;
 final class JsonFields
 {
     /** @var array<string, array{entity: class-string, columns: array<string, string>}> */
-    public const FIELDS = [
+    public const array FIELDS = [
         'mod_massmailer' => ['entity' => \Box\Mod\Massmailer\Entity\MassmailerMessage::class, 'columns' => ['filter' => 'filter']],
         'form' => ['entity' => \Box\Mod\Formbuilder\Entity\Form::class, 'columns' => ['style' => 'style']],
         'product' => ['entity' => \Box\Mod\Product\Entity\Product::class, 'columns' => ['config' => 'config', 'addons' => 'addons', 'upgrades' => 'upgrades']],

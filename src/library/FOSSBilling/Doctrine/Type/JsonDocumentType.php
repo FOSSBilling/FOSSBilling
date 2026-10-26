@@ -23,7 +23,7 @@ use FOSSBilling\Doctrine\JsonDocument;
  */
 final class JsonDocumentType extends JsonType
 {
-    public const NAME = 'json_document';
+    public const string NAME = 'json_document';
 
     public static function register(): void
     {

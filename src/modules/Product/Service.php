@@ -565,7 +565,7 @@ class Service implements InjectionAwareInterface
         $config = $model->getConfigData() ?? [];
 
         if (isset($data['config']) && is_array($data['config'])) {
-            $config = array_intersect_key((array) $config, $data['config']);
+            $config = array_intersect_key($config, $data['config']);
             foreach ($data['config'] as $key => $val) {
                 $config[$key] = $val;
                 if (isset($config[$key]) && empty($val) && !is_numeric($val)) {
