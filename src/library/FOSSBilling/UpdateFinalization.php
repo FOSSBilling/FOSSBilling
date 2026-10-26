@@ -232,10 +232,6 @@ class UpdateFinalization implements InjectionAwareInterface
 
     private function finalizeUpdateLocked(?array $state): array
     {
-        if (function_exists('set_time_limit')) {
-            set_time_limit(180);
-        }
-
         try {
             $this->clearCache();
 

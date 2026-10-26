@@ -29,10 +29,7 @@ final readonly class SecretFields
     {
         foreach (array_unique([...$fields, ...$this->names($config)]) as $field) {
             $value = $config[$field] ?? null;
-            if (is_array($value) && isset($value[self::MARKER])) {
-                if (!is_string($value[self::MARKER]) || !str_starts_with($value[self::MARKER], Crypt::CURRENT_FORMAT_PREFIX)) {
-                    throw new InformationException('Stored credential uses an invalid encryption envelope.');
-                }
+            if (is_array($value) && array_key_exists(self::MARKER, $value)) {
                 $this->reveal([$field => $value]);
 
                 continue;

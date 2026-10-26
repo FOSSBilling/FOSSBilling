@@ -353,3 +353,15 @@ test('manual update entry point delegates to the same locked finalization flow',
     $updater->setDi(new Pimple\Container(['update_finalization' => $finalization]));
     $updater->performManualUpdate();
 });
+
+test('finalization preserves the configured PHP execution limit', function (int $limit): void {
+    $original = ini_get('max_execution_time');
+
+    try {
+        ini_set('max_execution_time', (string) $limit);
+        finalizationWithStubPatcher(stubUpdatePatcherWithPendingPatches())->finalizeUpdate();
+        expect((int) ini_get('max_execution_time'))->toBe($limit);
+    } finally {
+        ini_set('max_execution_time', $original);
+    }
+})->with([0, 30, 600]);
