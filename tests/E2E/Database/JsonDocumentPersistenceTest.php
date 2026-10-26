@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+// cspell:ignore Résumé
+
 use Box\Mod\Massmailer\Entity\MassmailerMessage;
 use Doctrine\DBAL\DriverManager;
 use Doctrine\ORM\EntityManager;

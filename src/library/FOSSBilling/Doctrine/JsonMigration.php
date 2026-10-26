@@ -71,6 +71,7 @@ final class JsonMigration
                         continue;
                     }
                     $field = $old->getColumn($column);
+                    // cspell:ignore Notnull
                     if ($field->getNotnull() || $field->getDefault() !== null || $field->getColumnDefinition() !== null) {
                         throw new JsonMigrationException("Review customized definition for $table.$column before migration.");
                     }
