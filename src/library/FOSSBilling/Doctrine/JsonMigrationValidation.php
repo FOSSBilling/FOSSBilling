@@ -15,17 +15,19 @@ namespace FOSSBilling\Doctrine;
 final class JsonMigrationValidation
 {
     /** Reject values that cannot safely populate the structured entity fields. */
-    public static function assertCompatible(string $json): void
+    public static function assertCompatible(string $json, bool $scalar = false, bool $numericObjects = false): void
     {
         $value = json_decode($json, false, 512, JSON_THROW_ON_ERROR);
         if (json_encode($value, JSON_THROW_ON_ERROR | JSON_PRESERVE_ZERO_FRACTION)
             !== json_encode(json_decode($json, false, 512, JSON_THROW_ON_ERROR | JSON_BIGINT_AS_STRING), JSON_THROW_ON_ERROR | JSON_PRESERVE_ZERO_FRACTION)) {
             throw new \JsonException('JSON integers exceed the supported PHP integer range.');
         }
-        if ($value !== null && !is_array($value) && !$value instanceof \stdClass) {
+        if (!$scalar && $value !== null && !is_array($value) && !$value instanceof \stdClass) {
             throw new \JsonException('JSON document must contain an object, array or null.');
         }
-        self::assertObjectShapes($value);
+        if (!$numericObjects) {
+            self::assertObjectShapes($value);
+        }
         // Validation above handles syntax. Track object keys without interpreting their values.
         preg_match_all('/"(?:[^"\\\\]|\\\\.)*"|[{}\\[\\]:,]|-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?/s', $json, $tokens);
         $stack = [];

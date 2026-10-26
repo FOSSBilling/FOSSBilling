@@ -42,13 +42,13 @@ final class JsonMigrate extends Command implements InjectionAwareInterface
         $this->addOption('backup-file', null, InputOption::VALUE_REQUIRED, 'New absolute private JSONL backup path outside the application root')
             ->addOption('apply', null, InputOption::VALUE_NONE, 'Explicitly apply the migration')
             ->addOption('writers-stopped', null, InputOption::VALUE_NONE, 'Confirm web requests, cron and queue workers have all been stopped')
-            ->setHelp('Take a full database backup, enable maintenance mode, and stop ALL writers before --apply --writers-stopped --backup-file=/private/path/new.jsonl. The backup contains secrets: keep it private. Malformed JSON, scalar roots, double encoding, duplicate keys, unsupported numbers, numeric-key objects, custom indexes/defaults and native database validation failures block before source changes. Empty strings become SQL NULL; empty objects decode as arrays under the new API contract; scalar and double-encoded documents require explicit repair before conversion. MySQL DDL is not atomic: keep maintenance enabled after failure, retain the original complete backup, and retry with a NEW backup path after addressing the cause. Restore the full database backup before reverting application code. No web-triggered DDL or silent repair is performed.');
+            ->setHelp('Normal upgrades migrate JSON automatically through UpdatePatcher under the application update lock. This command is an optional offline diagnostic/recovery tool. Take a full database backup, enable maintenance mode, and stop ALL writers before --apply --writers-stopped --backup-file=/private/path/new.jsonl. The backup contains secrets: keep it private. Malformed JSON, scalar roots, double encoding, duplicate keys, unsupported numbers, numeric-key objects, custom indexes/defaults and native database validation failures block before source changes. Empty strings become SQL NULL; empty objects decode as arrays under the new API contract; scalar and double-encoded documents require explicit repair before conversion. MySQL DDL is not atomic: keep maintenance enabled after failure, retain the original complete backup, and retry with a NEW backup path after addressing the cause. Restore the full database backup before reverting application code. Ambiguous source data is never silently discarded.');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         if (!$input->getOption('apply')) {
-            $output->writeln('No data was modified. Run database:json:audit to inspect rows; see --help for the offline upgrade procedure.');
+            $output->writeln('No data was modified. Run database:json:audit to inspect rows; normal updates perform the migration automatically; see --help for optional offline recovery.');
 
             return Command::SUCCESS;
         }

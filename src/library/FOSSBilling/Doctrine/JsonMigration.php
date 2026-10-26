@@ -19,9 +19,13 @@ use Doctrine\DBAL\Schema\ColumnEditor;
 use Doctrine\DBAL\Types\Types;
 use Symfony\Component\Filesystem\Path;
 
-/** Offline, explicit migration. Callers must stop every writer before invoking this class. */
+/** Portable JSON conversion; automatic upgrades run under the updater lock. */
 final class JsonMigration
 {
+    private array $nativeColumns = [];
+    private ?bool $formHasType = null;
+    private array $idTypes = [];
+
     /**
      * Back up and preflight the ENTIRE inventory before changing any source row or column.
      * DDL can commit implicitly on MySQL: this is deliberately resumable, not advertised as atomic.
@@ -52,13 +56,51 @@ final class JsonMigration
         if ($backup === false) {
             throw new JsonMigrationException('Cannot create the private JSON backup. Choose a new file.');
         }
+
+        try {
+            return $this->convert($connection, fn (array $record) => $this->write($backup, $record), function () use ($backup): void {
+                if (!fflush($backup) || !fsync($backup)) {
+                    throw new JsonMigrationException('Cannot durably flush the JSON backup. No source data was changed.');
+                }
+            });
+        } finally {
+            fclose($backup);
+        }
+    }
+
+    public function automatic(\Doctrine\ORM\EntityManagerInterface $em, \FOSSBilling\Crypt $crypt): array
+    {
+        if ($em->getConnection()->isTransactionActive()) {
+            throw new JsonMigrationException('JSON migration cannot run inside an existing transaction.');
+        }
+
+        try {
+            $journal = new JsonMigrationJournal($em, $crypt);
+            $journal->rotate();
+            $key = 'complete:' . hash('sha256', json_encode(JsonFields::FIELDS, JSON_THROW_ON_ERROR));
+            if ($journal->has($key)) {
+                return ['columns' => 0, 'empty_values' => 0];
+            }
+            $result = $this->convert($em->getConnection(), static function (array $record): void {}, static function (): void {}, $journal);
+            $this->assertReady($em->getConnection());
+            $journal->save($key, ['complete' => true]);
+
+            return $result;
+        } catch (\Doctrine\DBAL\Exception) {
+            throw new JsonMigrationException('Automatic JSON conversion did not complete. Source data and migration progress were retained. Check database availability and constraints before retrying update finalization.');
+        }
+    }
+
+    private function convert(Connection $connection, \Closure $write, \Closure $flush, ?JsonMigrationJournal $journal = null): array
+    {
+        $platform = $connection->getDatabasePlatform();
         $schema = $connection->createSchemaManager();
         $targets = [];
         $temp = 'fb_json_preflight_' . bin2hex(random_bytes(6));
         $quotedTemp = $connection->quoteSingleIdentifier($temp);
 
         try {
-            $this->write($backup, ['format' => 'fossbilling-json-backup-v1', 'database' => $connection->getDatabase(), 'platform' => $platform::class]);
+            $write(['format' => 'fossbilling-json-backup-v1', 'database' => $connection->getDatabase(), 'platform' => $platform::class]);
             // The database itself validates every nonempty value using its native declaration.
             $connection->executeStatement('CREATE TEMPORARY TABLE ' . $quotedTemp . ' (document ' . $platform->getJsonTypeDeclarationSQL([]) . ')');
             foreach (JsonFields::FIELDS as $table => $definition) {
@@ -80,58 +122,105 @@ final class JsonMigration
                             throw new JsonMigrationException("Review customized index for $table.$column before migration.");
                         }
                     }
+                    if ($journal?->has('column:' . $table . '.' . $column)) {
+                        continue;
+                    }
                     $targets[] = [$table, $column];
-                    $this->write($backup, ['table' => $table, 'column' => $column, 'definition' => $field->toArray(true)]);
-                    foreach ($this->rows($connection, $table, $column) as $row) {
+                    $write(['table' => $table, 'column' => $column, 'definition' => $field->toArray(true)]);
+                    if ($journal?->has('scanned:' . $table . '.' . $column)) {
+                        continue;
+                    }
+                    $checkpoint = $journal?->find('scan:' . $table . '.' . $column);
+                    $after = isset($checkpoint['cursor']) ? base64_decode($checkpoint['cursor'], true) : null;
+                    $afterType = !empty($checkpoint['binary']) ? \Doctrine\DBAL\ParameterType::BINARY : \Doctrine\DBAL\ParameterType::STRING;
+                    $batch = [];
+                    $bytes = 0;
+                    $rowsRead = 0;
+                    foreach ($this->rows($connection, $table, $column, $after, $afterType) as $row) {
+                        ++$rowsRead;
                         $raw = $row['value'];
-                        $this->write($backup, ['table' => $table, 'column' => $column, 'id' => $row['id'], 'base64' => $raw === null ? null : base64_encode($raw)]);
-                        if ($raw === null || trim($raw) === '') {
-                            continue;
+                        $write(['table' => $table, 'column' => $column, 'id' => $row['id'], 'base64' => $raw === null ? null : base64_encode($raw)]);
+                        if ($raw !== null && trim($raw) !== '') {
+                            try {
+                                $prepared = $this->preparedValue($connection, $table, $column, $row, $journal);
+                                JsonMigrationValidation::assertCompatible($prepared, $table === 'form_field' && $column === 'default_value', $table === 'form_field');
+                                $batch[] = ['row' => $row, 'value' => $prepared];
+                                $bytes += strlen($prepared);
+                            } catch (\Throwable) {
+                                throw new JsonMigrationException("JSON preflight failed for $table.$column id={$this->displayId($table, $row['id'])}; no source data was changed. Review this row with database:json:audit.");
+                            }
                         }
-
-                        try {
-                            JsonMigrationValidation::assertCompatible($raw);
-                            $connection->insert($temp, ['document' => $raw]);
-                            $connection->executeStatement('DELETE FROM ' . $quotedTemp);
-                        } catch (\Throwable) {
-                            // Do not include DB exception text: it can contain secrets from the document.
-                            throw new JsonMigrationException("JSON preflight failed for $table.$column id={$this->displayId($table, $row['id'])}; no source data was changed. Review this row with database:json:audit.");
+                        if ($rowsRead >= 500 || $bytes >= 262144) {
+                            $this->validateBatch($connection, $temp, $batch, $table, $column);
+                            $journal?->checkpoint('scan:' . $table . '.' . $column, ['cursor' => base64_encode((string) $row['id']), 'binary' => $row['id_type'] === \Doctrine\DBAL\ParameterType::BINARY]);
+                            $batch = [];
+                            $bytes = 0;
+                            $rowsRead = 0;
                         }
                     }
+                    $this->validateBatch($connection, $temp, $batch, $table, $column);
+                    $journal?->save('scanned:' . $table . '.' . $column, ['validated' => true]);
                 }
             }
-            $this->write($backup, ['complete' => true]);
-            if (!fflush($backup) || !fsync($backup)) {
-                throw new JsonMigrationException('Cannot durably flush the JSON backup. No source data was changed.');
-            }
+            $write(['complete' => true]);
+            $flush();
         } finally {
-            fclose($backup);
             $connection->executeStatement('DROP TABLE IF EXISTS ' . $quotedTemp);
         }
         $empty = 0;
         foreach ($targets as [$table, $column]) {
+            $native = in_array($schema->introspectTableByUnquotedName($table)->getColumn($column)->getTypeName(), [Types::JSON, Types::JSONB], true);
+            if ($table === 'form_field' && $column === 'default_value' && !$native) {
+                $journal ??= new JsonMigrationJournal(EntityManagerFactory::create($connection), new \FOSSBilling\Crypt());
+                $originalDefinition = $schema->introspectTableByUnquotedName($table)->getColumn($column);
+                $journal->save('schema:' . $table . '.' . $column, $originalDefinition->toArray(true));
+                if ($platform instanceof PostgreSQLPlatform) {
+                    $connection->executeStatement('ALTER TABLE form_field ALTER COLUMN default_value TYPE TEXT');
+                } elseif ($platform instanceof AbstractMySQLPlatform && $originalDefinition->getTypeName() === Types::STRING) {
+                    $old = $schema->introspectTableByUnquotedName($table);
+                    $new = $old->edit()->modifyColumnByUnquotedName($column, static function (ColumnEditor $editor): void {
+                        $editor->setTypeName(Types::TEXT)->setLength(null);
+                    })->create();
+                    $schema->alterTable($schema->createComparator()->compareTables($old, $new));
+                }
+                foreach ($this->rows($connection, $table, $column) as $row) {
+                    if ($row['value'] === null || $journal->has('prepared:' . $table . '.' . $column . ':' . $row['id'])) {
+                        continue;
+                    }
+                    $prepared = $this->preparedValue($connection, $table, $column, $row, $journal);
+                    $connection->transactional(function () use ($connection, $journal, $table, $column, $row, $prepared): void {
+                        $journal->save('prepared:' . $table . '.' . $column . ':' . $row['id'], ['table' => $table, 'column' => $column, 'id' => $row['id'], 'base64' => base64_encode($row['value'])]);
+                        $changed = $connection->executeStatement('UPDATE form_field SET default_value = ? WHERE id = ? AND default_value = ?', [$prepared, $row['id'], $row['value']]);
+                        if ($changed !== 1) {
+                            throw new JsonMigrationException('Form default changed during migration; retry finalization.');
+                        }
+                    });
+                }
+            }
             // Normalize only the empty sentinel; ambiguous documents were rejected during preflight.
             foreach ($this->rows($connection, $table, $column) as $row) {
                 if ($row['value'] !== null && trim($row['value']) === '') {
-                    $connection->update($connection->quoteSingleIdentifier($table), [$connection->quoteSingleIdentifier($column) => null], ['id' => $row['id']]);
+                    $connection->transactional(function () use ($connection, $journal, $table, $column, $row): void {
+                        $journal?->save('original:' . $table . '.' . $column . ':' . $row['id'], ['table' => $table, 'column' => $column, 'id' => $row['id'], 'base64' => base64_encode($row['value'])]);
+                        $connection->executeStatement('UPDATE ' . $connection->quoteSingleIdentifier($table) . ' SET ' . $connection->quoteSingleIdentifier($column) . ' = NULL WHERE id = ? AND ' . $connection->quoteSingleIdentifier($column) . ' = ?', [$row['id'], $row['value']], [$row['id_type'], \Doctrine\DBAL\ParameterType::STRING]);
+                    });
                     ++$empty;
                 }
             }
             $quotedTable = $connection->quoteSingleIdentifier($table);
             $quotedColumn = $connection->quoteSingleIdentifier($column);
-            if (in_array($schema->introspectTableByUnquotedName($table)->getColumn($column)->getTypeName(), [Types::JSON, Types::JSONB], true)) {
-                continue;
-            }
-            if ($platform instanceof PostgreSQLPlatform) {
+            $native = in_array($schema->introspectTableByUnquotedName($table)->getColumn($column)->getTypeName(), [Types::JSON, Types::JSONB], true);
+            if (!$native && $platform instanceof PostgreSQLPlatform) {
                 // PostgreSQL needs an explicit USING cast when the old column is TEXT.
                 $connection->executeStatement("ALTER TABLE $quotedTable ALTER COLUMN $quotedColumn TYPE JSON USING $quotedColumn::json");
-            } elseif ($platform instanceof AbstractMySQLPlatform) {
+            } elseif (!$native && $platform instanceof AbstractMySQLPlatform) {
                 $old = $schema->introspectTableByUnquotedName($table);
                 $new = $old->edit()->modifyColumnByUnquotedName($column, static function (ColumnEditor $editor): void {
                     $editor->setTypeName(Types::JSON)->setCharset(null)->setCollation(null)->setLength(null);
                 })->create();
                 $schema->alterTable($schema->createComparator()->compareTables($old, $new));
             }
+            $journal?->save('column:' . $table . '.' . $column, ['converted' => true]);
             // SQLite's standard Doctrine JSON declaration is already CLOB/TEXT; no table rebuild.
         }
 
@@ -153,7 +242,7 @@ final class JsonMigration
                 }
                 if (!$connection->getDatabasePlatform() instanceof SQLitePlatform
                     && !in_array($actual->getColumn($column)->getTypeName(), [Types::JSON, Types::JSONB], true)) {
-                    throw new JsonMigrationException("Run database:json:migrate offline before completing this update ($table.$column is not JSON).");
+                    throw new JsonMigrationException("JSON conversion has not completed; retry update finalization ($table.$column is not JSON).");
                 }
                 foreach ($this->rows($connection, $table, $column) as $row) {
                     if ($row['value'] === null) {
@@ -164,31 +253,86 @@ final class JsonMigration
                         if (trim($row['value']) === '') {
                             throw new \JsonException('Empty JSON sentinel.');
                         }
-                        JsonMigrationValidation::assertCompatible($row['value']);
+                        JsonMigrationValidation::assertCompatible($row['value'], $table === 'form_field' && $column === 'default_value', $table === 'form_field');
                     } catch (\JsonException) {
-                        throw new JsonMigrationException("Review $table.$column id={$this->displayId($table, $row['id'])} and run database:json:migrate offline before completing this update.");
+                        throw new JsonMigrationException("Review $table.$column id={$this->displayId($table, $row['id'])} before retrying update finalization.");
                     }
                 }
             }
         }
     }
 
-    /** @return \Generator<int, array{id: int|string, value: ?string}> */
-    private function rows(Connection $connection, string $table, string $column): \Generator
+    /** Native validation is batched and byte-bounded; isolate a failing row only on errors. */
+    private function validateBatch(Connection $connection, string $temp, array $batch, string $table, string $column): void
     {
-        $cursor = null;
+        if ($batch === []) {
+            return;
+        }
+        $quoted = $connection->quoteSingleIdentifier($temp);
+
+        try {
+            $connection->executeStatement('INSERT INTO ' . $quoted . ' (document) VALUES ' . implode(', ', array_fill(0, count($batch), '(?)')), array_column($batch, 'value'));
+            $connection->executeStatement('DELETE FROM ' . $quoted);
+        } catch (\Throwable) {
+            $connection->executeStatement('DELETE FROM ' . $quoted);
+            foreach ($batch as $entry) {
+                try {
+                    $connection->insert($temp, ['document' => $entry['value']]);
+                    $connection->executeStatement('DELETE FROM ' . $quoted);
+                } catch (\Throwable) {
+                    throw new JsonMigrationException("Native JSON validation failed for $table.$column id={$this->displayId($table, $entry['row']['id'])}; source data was retained.");
+                }
+            }
+
+            throw new JsonMigrationException('Native JSON batch validation failed; source data was retained. Check database limits and retry finalization.');
+        }
+    }
+
+    private function preparedValue(Connection $connection, string $table, string $column, array $row, ?JsonMigrationJournal $journal): ?string
+    {
+        $raw = $row['value'];
+        if ($table !== 'form_field' || $column !== 'default_value' || $raw === null) {
+            return $raw;
+        }
+        if ($journal?->has('prepared:' . $table . '.' . $column . ':' . $row['id'])
+            || ($this->nativeColumns[$table . '.' . $column] ??= in_array($connection->createSchemaManager()->introspectTableByUnquotedName($table)->getColumn($column)->getTypeName(), [Types::JSON, Types::JSONB], true))) {
+            return $raw;
+        }
+        // Only checkbox defaults were historically encoded as collections. Text such as "false"
+        // and JSON-looking textarea content must remain strings, not guessed scalar values.
+        $type = $row['type'] ?? null;
+        $decoded = $type === 'checkbox' ? json_decode($raw, true) : null;
+
+        return json_encode(is_array($decoded) ? $decoded : $raw, JSON_THROW_ON_ERROR);
+    }
+
+    /** @return \Generator<int, array{id: int|string, value: ?string, type: ?string, id_type: \Doctrine\DBAL\ParameterType}> */
+    private function rows(Connection $connection, string $table, string $column, int|string|null $after = null, \Doctrine\DBAL\ParameterType $afterType = \Doctrine\DBAL\ParameterType::STRING): \Generator
+    {
+        $cursor = $after;
+        $cursorType = $afterType;
+        $sqlite = $connection->getDatabasePlatform() instanceof SQLitePlatform;
+        $type = $table === 'form_field' && $column === 'default_value' && ($this->formHasType ??= $connection->createSchemaManager()->introspectTableByUnquotedName('form_field')->hasColumn('type'));
         do {
-            $rows = $connection->fetchAllAssociative('SELECT id, ' . $connection->quoteSingleIdentifier($column) . ' AS value FROM ' . $connection->quoteSingleIdentifier($table)
-                . ($cursor === null ? '' : ' WHERE id > :cursor') . ' ORDER BY id LIMIT 500', $cursor === null ? [] : ['cursor' => $cursor]);
+            $rows = $connection->fetchAllAssociative('SELECT id, ' . $connection->quoteSingleIdentifier($column) . ' AS value' . ($type ? ', type' : '') . ($sqlite ? ', typeof(id) AS id_storage' : '') . ' FROM ' . $connection->quoteSingleIdentifier($table)
+                . ($cursor === null ? '' : ' WHERE id > :cursor') . ' ORDER BY id LIMIT 500', $cursor === null ? [] : ['cursor' => $cursor], $cursor === null ? [] : ['cursor' => $cursorType]);
             foreach ($rows as $row) {
-                $cursor = $row['id'];
+                $cursor = is_resource($row['id']) ? stream_get_contents($row['id']) : $row['id'];
+                $cursorType = $sqlite ? (($row['id_storage'] ?? null) === 'blob' ? \Doctrine\DBAL\ParameterType::BINARY : \Doctrine\DBAL\ParameterType::STRING) : $this->idType($connection, $table);
                 $value = $row['value'];
                 if (is_resource($value)) {
                     $value = stream_get_contents($value);
                 }
-                yield ['id' => $cursor, 'value' => $value];
+                yield ['id' => $cursor, 'value' => $value, 'type' => $row['type'] ?? null, 'id_type' => $cursorType];
             }
         } while (count($rows) === 500);
+    }
+
+    private function idType(Connection $connection, string $table): \Doctrine\DBAL\ParameterType
+    {
+        return $this->idTypes[$table] ??= ($connection->getDatabasePlatform() instanceof PostgreSQLPlatform
+            && in_array($connection->createSchemaManager()->introspectTableByUnquotedName($table)->getColumn('id')->getTypeName(), [Types::BINARY, Types::BLOB], true)
+                ? \Doctrine\DBAL\ParameterType::BINARY : \Doctrine\DBAL\ParameterType::STRING);
     }
 
     private function displayId(string $table, int|string $id): string

@@ -26,6 +26,7 @@ final class JsonAudit
             throw new \InvalidArgumentException('Unknown JSON migration table.');
         }
         $schema = $connection->createSchemaManager();
+        $sqlite = $connection->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\SQLitePlatform;
         foreach (JsonFields::FIELDS as $table => $definition) {
             if (($onlyTable !== null && $table !== $onlyTable) || !$schema->tablesExist([$table])) {
                 continue;
@@ -40,20 +41,36 @@ final class JsonAudit
             }
             $selection = implode(', ', array_map($connection->quoteSingleIdentifier(...), ['id', ...$columns]));
             $cursor = null;
+            $cursorType = $connection->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\PostgreSQLPlatform && in_array($schema->introspectTableByUnquotedName($table)->getColumn('id')->getTypeName(), [\Doctrine\DBAL\Types\Types::BINARY, \Doctrine\DBAL\Types\Types::BLOB], true) ? \Doctrine\DBAL\ParameterType::BINARY : \Doctrine\DBAL\ParameterType::STRING;
+            if ($sqlite) {
+                $selection .= ', typeof(id) AS id_storage';
+            }
             do {
                 $rows = $connection->fetchAllAssociative(
                     'SELECT ' . $selection . ' FROM ' . $connection->quoteSingleIdentifier($table)
                     . ($cursor === null ? '' : ' WHERE id > :cursor') . ' ORDER BY id ASC LIMIT ' . $batchSize,
                     $cursor === null ? [] : ['cursor' => $cursor],
+                    $cursor === null ? [] : ['cursor' => $cursorType],
                 );
                 foreach ($rows as $row) {
-                    $cursor = $row['id'];
+                    $cursor = is_resource($row['id']) ? stream_get_contents($row['id']) : $row['id'];
+                    if ($sqlite) {
+                        $cursorType = $row['id_storage'] === 'blob' ? \Doctrine\DBAL\ParameterType::BINARY : \Doctrine\DBAL\ParameterType::STRING;
+                    }
                     foreach ($columns as $column) {
                         $raw = $row[$column];
                         if (is_resource($raw)) {
                             $raw = stream_get_contents($raw);
                         }
-                        $issue = $this->issue($raw);
+                        $scalar = $table === 'form_field' && $column === 'default_value';
+                        if ($scalar && $raw !== null && !in_array($schema->introspectTableByUnquotedName($table)->getColumn($column)->getTypeName(), [\Doctrine\DBAL\Types\Types::JSON, \Doctrine\DBAL\Types\Types::JSONB], true)) {
+                            try {
+                                $raw = json_encode($raw, JSON_THROW_ON_ERROR);
+                            } catch (\JsonException) {
+                                $raw = "\xFF";
+                            }
+                        }
+                        $issue = $this->issue($raw, $scalar, $table === 'form_field');
                         if ($issue !== null) {
                             yield ['table' => $table, 'column' => $column, 'id' => $table === 'session' ? 'sha256:' . hash('sha256', (string) $cursor) : $cursor, 'issue' => $issue];
                         }
@@ -63,7 +80,7 @@ final class JsonAudit
         }
     }
 
-    private function issue(mixed $raw): ?string
+    private function issue(mixed $raw, bool $scalar = false, bool $numericObjects = false): ?string
     {
         if ($raw === null) {
             return null;
@@ -80,9 +97,9 @@ final class JsonAudit
         } catch (\JsonException) {
             return 'invalid_json';
         }
-        if ($value === null || is_array($value) || $value instanceof \stdClass) {
+        if ($scalar || $value === null || is_array($value) || $value instanceof \stdClass) {
             try {
-                JsonMigrationValidation::assertCompatible($raw);
+                JsonMigrationValidation::assertCompatible($raw, $scalar, $numericObjects);
             } catch (\JsonException) {
                 return 'unsafe_json';
             }

@@ -23,7 +23,12 @@ test('all migrated fields expose nullable arrays without legacy string or Data a
     $copy = $entity->$get();
     $copy['nested']['label'] = 'changed';
     expect($entity->$get()['nested']['label'])->toBe('🚀');
-    expect(fn () => $entity->$set('{"old":"string"}'))->toThrow(TypeError::class);
+    if ($class === Box\Mod\Formbuilder\Entity\FormField::class && $field === 'DefaultValue') {
+        $entity->$set('false');
+        expect($entity->$get())->toBe('false');
+    } else {
+        expect(fn () => $entity->$set('{"old":"string"}'))->toThrow(TypeError::class);
+    }
     expect(fn () => $entity->$set(new stdClass()))->toThrow(TypeError::class);
 })->with($fields);
 
@@ -37,7 +42,7 @@ test('the entire inventory uses standard JSON mappings and exclusions retain the
             ++$count;
         }
     }
-    expect($count)->toBe(24)
+    expect($count)->toBe(27)
         ->and($em->getClassMetadata(Box\Mod\Email\Entity\EmailTemplate::class)->getTypeOfField('vars'))->toBe(Doctrine\DBAL\Types\Types::TEXT)
         ->and($em->getClassMetadata(Box\Mod\Staff\Entity\AdminGroup::class)->getTypeOfField('permissions'))->toBe(Doctrine\DBAL\Types\Types::JSON)
         ->and($em->getClassMetadata(Box\Mod\Invoice\Entity\InvoiceEvent::class)->getTypeOfField('snapshot'))->toBe(Doctrine\DBAL\Types\Types::JSON);

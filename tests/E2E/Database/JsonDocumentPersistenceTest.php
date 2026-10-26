@@ -159,7 +159,7 @@ test('unsafe legacy documents block conversion without changing earlier valid ro
     expect($this->connection->fetchAllAssociative('SELECT * FROM mod_massmailer ORDER BY id'))->toBe($before);
 })->with(['{private-secret', '{"private-secret":1,"private-secret":2}', '{"private-secret":9223372036854775808}', 'false', '42', '"scalar"', '"{\\"a\\":1}"']);
 
-test('the full 24-column inventory migrates while encrypted and dormant exclusions remain unchanged', function (): void {
+test('the full JSON-column inventory migrates while encrypted and dormant exclusions remain unchanged', function (): void {
     $c = $this->connection;
     $c->executeStatement('DROP TABLE mod_massmailer');
     $payload = '{"id":"001","fraction":1.0,"nested":{"enabled":false},"label":"Résumé"}';
@@ -185,14 +185,19 @@ test('the full 24-column inventory migrates while encrypted and dormant exclusio
     $c->insert('email_template', ['id' => 1, 'vars' => 'encrypted-private-value']);
     $migration = new JsonMigration();
     $file = $this->jsonBackupDirectory . '/inventory.jsonl';
-    expect($migration->migrate($c, $file))->toBe(['columns' => 24, 'empty_values' => 24]);
+    expect($migration->migrate($c, $file))->toBe(['columns' => 27, 'empty_values' => 26]);
     $migration->assertReady($c);
     foreach (FOSSBilling\Doctrine\JsonFields::FIELDS as $table => $definition) {
         $actual = $c->createSchemaManager()->introspectTableByUnquotedName($table);
         foreach (array_keys($definition['columns']) as $column) {
             $values = $c->fetchFirstColumn('SELECT ' . $c->quoteSingleIdentifier($column) . ' FROM ' . $c->quoteSingleIdentifier($table) . ' ORDER BY id');
-            expect($values[1])->toBeNull()
-                ->and(json_decode($values[0], true, 512, JSON_THROW_ON_ERROR))->toEqual(json_decode($payload, true, 512, JSON_THROW_ON_ERROR));
+            if ($table === 'form_field' && $column === 'default_value') {
+                expect(json_decode($values[1], true, 512, JSON_THROW_ON_ERROR))->toBe('')
+                    ->and(json_decode($values[0], true, 512, JSON_THROW_ON_ERROR))->toBe($payload);
+            } else {
+                expect($values[1])->toBeNull()
+                    ->and(json_decode($values[0], true, 512, JSON_THROW_ON_ERROR))->toEqual(json_decode($payload, true, 512, JSON_THROW_ON_ERROR));
+            }
             if (!$c->getDatabasePlatform() instanceof Doctrine\DBAL\Platforms\SQLitePlatform) {
                 expect($actual->getColumn($column)->getTypeName())->toBe(Doctrine\DBAL\Types\Types::JSON);
             }
@@ -236,3 +241,29 @@ test('JSON conversion and patch 133 compose in either upgrade order', function (
     expect($saved->getSubject())->toBe('🚀 Release')->and($saved->getFilter())->toEqual(['label' => '🚀', 'id' => '001']);
     (new JsonMigration())->assertReady($c);
 })->with(['Unicode first' => true, 'JSON first' => false]);
+
+test('automatic updates convert mixed defaults and real binary session identifiers without manual files', function (): void {
+    $c = $this->connection;
+    $sessionEm = FOSSBilling\Doctrine\EntityManagerFactory::create($c);
+    (new SchemaTool($sessionEm))->createSchema([$sessionEm->getClassMetadata(Box\Mod\System\Entity\Session::class)]);
+    $platform = $c->getDatabasePlatform();
+    if ($platform instanceof Doctrine\DBAL\Platforms\AbstractMySQLPlatform) {
+        $c->executeStatement('ALTER TABLE session MODIFY fingerprint TEXT NULL');
+    } elseif ($platform instanceof Doctrine\DBAL\Platforms\PostgreSQLPlatform) {
+        $c->executeStatement('ALTER TABLE session ALTER COLUMN fingerprint TYPE TEXT USING fingerprint::text');
+    }
+    $c->executeStatement('CREATE TABLE form_field (id BIGINT PRIMARY KEY, type VARCHAR(30), options TEXT, default_value VARCHAR(255))');
+    foreach ([['text', 'false'], ['text', '0'], ['text', str_repeat('x', 255)], ['checkbox', '{"0":"one","1":"two"}']] as $id => [$type, $value]) {
+        $c->insert('form_field', ['id' => $id, 'type' => $type, 'options' => '{}', 'default_value' => $value]);
+    }
+    for ($id = 0; $id < 503; ++$id) {
+        $c->insert('session', ['id' => sprintf('session-%04d', $id), 'fingerprint' => '', 'modified_at' => 1, 'content' => '', 'lifetime' => 7200], ['id' => Doctrine\DBAL\Types\Types::BINARY, 'content' => Doctrine\DBAL\Types\Types::BLOB]);
+    }
+    $migration = new JsonMigration();
+    expect(count(iterator_to_array((new FOSSBilling\Doctrine\JsonAudit())->inspect($c, 'session', 100))))->toBe(503);
+    $result = $migration->automatic($sessionEm, new FOSSBilling\Crypt());
+    expect($result['empty_values'])->toBe(503)
+        ->and((int) $c->fetchOne('SELECT COUNT(*) FROM session WHERE fingerprint IS NULL'))->toBe(503)
+        ->and(array_map(fn ($value) => json_decode($value, true), $c->fetchFirstColumn('SELECT default_value FROM form_field ORDER BY id')))->toBe(['false', '0', str_repeat('x', 255), ['one', 'two']])
+        ->and($migration->automatic($sessionEm, new FOSSBilling\Crypt()))->toBe(['columns' => 0, 'empty_values' => 0]);
+});

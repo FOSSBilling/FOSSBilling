@@ -143,19 +143,6 @@ class AdminGroup implements ApiArrayInterface, TimestampInterface
         return $this;
     }
 
-    public function getPermissionsJson(): ?string
-    {
-        return $this->permissions === null ? null : json_encode($this->permissions, JSON_THROW_ON_ERROR);
-    }
-
-    public function setPermissionsJson(?string $permissions): self
-    {
-        $decodedPermissions = $permissions === null ? null : json_decode($permissions, true, flags: JSON_THROW_ON_ERROR);
-        $this->permissions = is_array($decodedPermissions) ? $decodedPermissions : null;
-
-        return $this;
-    }
-
     public function isProtected(): bool
     {
         return $this->protected;

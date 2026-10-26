@@ -719,7 +719,7 @@ class Service implements InjectionAwareInterface
             $result['id'] = $model->getId();
             $result['active'] = $model->isActive();
             $result['secure'] = $model->isSecure();
-            $result['assigned_ips'] = json_decode($model->getAssignedIps() ?? '[]', true) ?? [];
+            $result['assigned_ips'] = $model->getAssignedIps() ?? [];
             $result['status_url'] = $model->getStatusUrl();
             $result['max_accounts'] = $model->getMaxAccounts();
             $result['manager'] = $model->getManager();
@@ -1741,9 +1741,9 @@ class Service implements InjectionAwareInterface
      *
      * @param string $assigned_ips Raw string from the form data (example form: /admin/servicehosting/server/{ip})
      *
-     * @return string JSON encoded array of filtered valid IPs
+     * @return array List of filtered valid IP addresses
      */
-    public static function processAssignedIPs(string $assigned_ips): string
+    public static function processAssignedIPs(string $assigned_ips): array
     {
         // Split the input by any type of line break (\n, \r\n, or \r)
         $array = preg_split('/\r\n|\r|\n/', $assigned_ips);
@@ -1755,7 +1755,7 @@ class Service implements InjectionAwareInterface
         // Validate that each entry is a valid IP address (works both with IPv4 and IPv6)
         $array = array_filter($array, fn ($ip): bool => (bool) filter_var($ip, FILTER_VALIDATE_IP));
 
-        return json_encode(array_values($array));
+        return array_values($array);
     }
 
     private function formatDateTime(?\DateTime $dateTime): ?string

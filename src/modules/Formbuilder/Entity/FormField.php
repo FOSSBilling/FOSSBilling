@@ -49,8 +49,8 @@ class FormField implements TimestampInterface
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
     private ?string $type = null;
 
-    #[ORM\Column(name: 'default_value', type: Types::STRING, length: 255, nullable: true)]
-    private ?string $defaultValue = null;
+    #[ORM\Column(name: 'default_value', type: Types::JSON, nullable: true)]
+    private array|string|bool|int|float|null $defaultValue = null;
 
     #[ORM\Column(type: Types::BOOLEAN, nullable: true)]
     private ?bool $required = null;
@@ -70,8 +70,8 @@ class FormField implements TimestampInterface
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
     private ?string $suffix = null;
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
-    private ?string $options = null;
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $options = null;
 
     #[ORM\Column(name: 'show_initial', type: Types::STRING, length: 255, nullable: true)]
     private ?string $showInitial = null;
@@ -165,12 +165,12 @@ class FormField implements TimestampInterface
         return $this;
     }
 
-    public function getDefaultValue(): ?string
+    public function getDefaultValue(): array|string|bool|int|float|null
     {
         return $this->defaultValue;
     }
 
-    public function setDefaultValue(?string $defaultValue): self
+    public function setDefaultValue(array|string|bool|int|float|null $defaultValue): self
     {
         $this->defaultValue = $defaultValue;
 
@@ -249,12 +249,12 @@ class FormField implements TimestampInterface
         return $this;
     }
 
-    public function getOptions(): ?string
+    public function getOptions(): ?array
     {
         return $this->options;
     }
 
-    public function setOptions(?string $options): self
+    public function setOptions(?array $options): self
     {
         $this->options = $options;
 

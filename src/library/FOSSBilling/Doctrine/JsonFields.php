@@ -11,12 +11,18 @@ declare(strict_types=1);
 
 namespace FOSSBilling\Doctrine;
 
-/** The migration inventory; encrypted email variables intentionally remain encrypted TEXT. */
+/**
+ * Structured documents with whole-value application reads. ID selections retain their existing
+ * domain validation; they are not used as substitutes for new queryable Doctrine associations.
+ * Generic extension metadata mixes settings, encrypted configuration and token hashes, so it
+ * stays opaque TEXT. Retired email preview storage is cleared by the portable update step.
+ */
 final class JsonFields
 {
     /** @var array<string, array{entity: class-string, columns: array<string, string>}> */
     public const array FIELDS = [
         'mod_massmailer' => ['entity' => \Box\Mod\Massmailer\Entity\MassmailerMessage::class, 'columns' => ['filter' => 'filter']],
+        'form_field' => ['entity' => \Box\Mod\Formbuilder\Entity\FormField::class, 'columns' => ['options' => 'options', 'default_value' => 'defaultValue']],
         'form' => ['entity' => \Box\Mod\Formbuilder\Entity\Form::class, 'columns' => ['style' => 'style']],
         'product' => ['entity' => \Box\Mod\Product\Entity\Product::class, 'columns' => ['config' => 'config', 'addons' => 'addons', 'upgrades' => 'upgrades']],
         'promo' => ['entity' => \Box\Mod\Product\Entity\Promo::class, 'columns' => ['products' => 'products', 'periods' => 'periods', 'client_groups' => 'clientGroups', 'requires_products' => 'requiresProducts']],
@@ -25,7 +31,7 @@ final class JsonFields
         'service_custom' => ['entity' => \Box\Mod\Servicecustom\Entity\ServiceCustom::class, 'columns' => ['config' => 'config']],
         'service_apikey' => ['entity' => \Box\Mod\Serviceapikey\Entity\ServiceApiKey::class, 'columns' => ['config' => 'config']],
         'service_hosting_hp' => ['entity' => \Box\Mod\Servicehosting\Entity\ServiceHostingHp::class, 'columns' => ['config' => 'config']],
-        'service_hosting_server' => ['entity' => \Box\Mod\Servicehosting\Entity\ServiceHostingServer::class, 'columns' => ['config' => 'config']],
+        'service_hosting_server' => ['entity' => \Box\Mod\Servicehosting\Entity\ServiceHostingServer::class, 'columns' => ['config' => 'config', 'assigned_ips' => 'assignedIps']],
         'service_license' => ['entity' => \Box\Mod\Servicelicense\Entity\ServiceLicense::class, 'columns' => ['ips' => 'ips', 'hosts' => 'hosts', 'paths' => 'paths', 'versions' => 'versions']],
         'pay_gateway' => ['entity' => \Box\Mod\Invoice\Entity\PayGateway::class, 'columns' => ['config' => 'config', 'accepted_currencies' => 'acceptedCurrencies']],
         'tld_registrar' => ['entity' => \Box\Mod\Servicedomain\Entity\TldRegistrar::class, 'columns' => ['config' => 'config']],
