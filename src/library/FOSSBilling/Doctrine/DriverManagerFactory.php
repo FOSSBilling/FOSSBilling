@@ -177,6 +177,9 @@ class DriverManagerFactory
 
         if ($driver === 'pdo_mysql') {
             $charset = $dbConfig['charset'] ?? 'utf8mb4';
+            if ($charset === 'utf8') {
+                $charset = 'utf8mb4';
+            }
             if (!in_array($charset, self::SUPPORTED_CHARSETS, true)) {
                 $charset = 'utf8mb4';
             }
