@@ -317,29 +317,31 @@ class Server_Manager_Whm extends Server_Manager
 
     public function resumeAccountProvisioning(Server_Account $account, string $step): void
     {
-        if ($step === 'create') {
-            $existing = $this->findProvisioningAccount($account);
-            if ($existing === null) {
-                if (!$this->createAccount($account)) {
-                    throw new Server_Exception('The server manager did not create the hosting account.');
-                }
+        if (!in_array($step, ['create', 'setupreseller', 'setacls'], true) || ($step !== 'create' && !$account->getReseller())) {
+            throw new Server_Exception('Invalid WHM provisioning step.');
+        }
 
-                return;
+        $existing = $this->findProvisioningAccount($account);
+        if ($step === 'create' && $existing === null) {
+            if (!$this->createAccount($account)) {
+                throw new Server_Exception('The server manager did not create the hosting account.');
             }
-            if (($existing->user ?? null) !== $account->getUsername()
-                || ($existing->domain ?? null) !== $account->getDomain()
-                || ($existing->owner ?? null) !== $this->_config['username']
-                || ($existing->plan ?? null) !== $this->getPackageName($account->getPackage())) {
-                throw new Server_Exception('The existing WHM account does not match this order. Check the server before retrying.');
-            }
+
+            return;
+        }
+        if ($existing === null
+            || ($existing->user ?? null) !== $account->getUsername()
+            || ($existing->domain ?? null) !== $account->getDomain()
+            || ($existing->owner ?? null) !== $this->_config['username']
+            || ($existing->plan ?? null) !== $this->getPackageName($account->getPackage())) {
+            throw new Server_Exception('The existing WHM account does not match this order. Check the server before retrying.');
+        }
+
+        if ($step === 'create') {
             if (!$account->getReseller()) {
                 return;
             }
             $step = 'setupreseller';
-        }
-
-        if (!in_array($step, ['setupreseller', 'setacls'], true) || !$account->getReseller()) {
-            throw new Server_Exception('Invalid WHM provisioning step.');
         }
 
         try {

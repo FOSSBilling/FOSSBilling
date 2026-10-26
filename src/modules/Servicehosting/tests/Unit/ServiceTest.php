@@ -1912,6 +1912,7 @@ test('hosting provisioning retries failed steps without saving passwords', funct
                 throw new Symfony\Component\HttpClient\Exception\TransportException('Response timed out');
             }
             expect($fields['password'])->toBe($configuredPassword ? 'configured-secret' : 'generated-secret');
+            $remoteAccount = ['user' => 'example', 'domain' => 'example.com', 'owner' => 'admin', 'plan' => 'admin_FOSSBilling'];
             $response = ['result' => [['status' => 1]]];
         } else {
             $response = ['status' => 1];
