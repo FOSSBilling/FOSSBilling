@@ -323,7 +323,7 @@ class ServiceTransaction implements InjectionAwareInterface
         }
         $transaction->setStatus(Transaction::STATUS_RECEIVED);
         $transaction->setIp($this->di['request']->getClientIp());
-        $transaction->setIpn(json_encode($ipn) ?: null);
+        $transaction->setIpnData($ipn);
         $transaction->setNote($data['note'] ?? null);
         $this->di['em']->persist($transaction);
         $this->di['em']->flush();
@@ -515,7 +515,7 @@ class ServiceTransaction implements InjectionAwareInterface
             return [];
         }
 
-        $decoded = json_decode($raw, true);
+        $decoded = $model->getIpnData();
         if (!is_array($decoded)) {
             if (isset($this->di['logger'])) {
                 $this->di['logger']->warning('Transaction #{id} has an invalid IPN payload; using an empty payload', ['id' => $model->getId()]);

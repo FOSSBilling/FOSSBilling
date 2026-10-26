@@ -78,8 +78,8 @@ class Transaction implements TimestampInterface
     #[ORM\Column(name: 'error_code', type: Types::INTEGER, nullable: true)]
     private ?int $errorCode = null;
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
-    private ?string $ipn = null;
+    #[ORM\Column(type: \FOSSBilling\Doctrine\Type\JsonDocumentType::NAME, nullable: true)]
+    private ?\FOSSBilling\Doctrine\JsonDocument $ipn = null;
 
     #[ORM\Column(name: 'ipn_hash', type: Types::STRING, length: 64, nullable: true)]
     private ?string $ipnHash = null;
@@ -253,12 +253,12 @@ class Transaction implements TimestampInterface
 
     public function getIpn(): ?string
     {
-        return $this->ipn;
+        return $this->ipn?->json();
     }
 
     public function setIpn(?string $ipn): self
     {
-        $this->ipn = $ipn;
+        $this->ipn = $ipn === null ? null : \FOSSBilling\Doctrine\JsonDocument::fromJson($ipn);
 
         return $this;
     }
@@ -295,6 +295,20 @@ class Transaction implements TimestampInterface
     public function setNote(?string $note): self
     {
         $this->note = $note;
+
+        return $this;
+    }
+
+    /** @return array<mixed>|null */
+    public function getIpnData(): ?array
+    {
+        return $this->ipn?->arrayData();
+    }
+
+    /** @param array<mixed>|\stdClass|null $data */
+    public function setIpnData(array|\stdClass|null $data): self
+    {
+        $this->ipn = $data === null ? null : \FOSSBilling\Doctrine\JsonDocument::fromData($data);
 
         return $this;
     }
