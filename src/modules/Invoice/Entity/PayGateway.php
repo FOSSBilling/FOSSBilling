@@ -30,8 +30,8 @@ class PayGateway
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
     private ?string $gateway = null;
 
-    #[ORM\Column(name: 'accepted_currencies', type: Types::TEXT, nullable: true)]
-    private ?string $acceptedCurrencies = null;
+    #[ORM\Column(name: 'accepted_currencies', type: \FOSSBilling\Doctrine\Type\JsonDocumentType::NAME, nullable: true)]
+    private ?\FOSSBilling\Doctrine\JsonDocument $acceptedCurrencies = null;
 
     #[ORM\Column(type: Types::BOOLEAN, options: ['default' => true])]
     private bool $enabled = true;
@@ -45,8 +45,8 @@ class PayGateway
     #[ORM\Column(name: 'test_mode', type: Types::BOOLEAN, options: ['default' => false])]
     private bool $testMode = false;
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
-    private ?string $config = null;
+    #[ORM\Column(type: \FOSSBilling\Doctrine\Type\JsonDocumentType::NAME, nullable: true)]
+    private ?\FOSSBilling\Doctrine\JsonDocument $config = null;
 
     #[ORM\Column(name: 'custom_logo', type: Types::STRING, length: 255, nullable: true)]
     private ?string $customLogo = null;
@@ -82,12 +82,12 @@ class PayGateway
 
     public function getAcceptedCurrencies(): ?string
     {
-        return $this->acceptedCurrencies;
+        return $this->acceptedCurrencies?->json();
     }
 
     public function setAcceptedCurrencies(?string $acceptedCurrencies): self
     {
-        $this->acceptedCurrencies = $acceptedCurrencies;
+        $this->acceptedCurrencies = $acceptedCurrencies === null ? null : \FOSSBilling\Doctrine\JsonDocument::fromJson($acceptedCurrencies);
 
         return $this;
     }
@@ -142,12 +142,12 @@ class PayGateway
 
     public function getConfig(): ?string
     {
-        return $this->config;
+        return $this->config?->json();
     }
 
     public function setConfig(?string $config): self
     {
-        $this->config = $config;
+        $this->config = $config === null ? null : \FOSSBilling\Doctrine\JsonDocument::fromJson($config);
 
         return $this;
     }
@@ -160,6 +160,34 @@ class PayGateway
     public function setCustomLogo(?string $customLogo): self
     {
         $this->customLogo = $customLogo;
+
+        return $this;
+    }
+
+    /** @return array<mixed>|null */
+    public function getConfigData(): ?array
+    {
+        return $this->config?->arrayData();
+    }
+
+    /** @param array<mixed>|\stdClass|null $data */
+    public function setConfigData(array|\stdClass|null $data): self
+    {
+        $this->config = $data === null ? null : \FOSSBilling\Doctrine\JsonDocument::fromData($data);
+
+        return $this;
+    }
+
+    /** @return array<mixed>|null */
+    public function getAcceptedCurrenciesData(): ?array
+    {
+        return $this->acceptedCurrencies?->arrayData();
+    }
+
+    /** @param array<mixed>|\stdClass|null $data */
+    public function setAcceptedCurrenciesData(array|\stdClass|null $data): self
+    {
+        $this->acceptedCurrencies = $data === null ? null : \FOSSBilling\Doctrine\JsonDocument::fromData($data);
 
         return $this;
     }

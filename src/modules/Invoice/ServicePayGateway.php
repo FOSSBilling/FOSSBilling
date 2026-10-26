@@ -167,7 +167,7 @@ class ServicePayGateway implements InjectionAwareInterface
         ];
 
         if ($identity instanceof \Box\Mod\Staff\Entity\Admin) {
-            $config = json_decode($model->getConfig() ?? '', true) ?? [];
+            $config = $model->getConfigData() ?? [];
             $secretFields = $this->getSecretFields($model);
             foreach ($secretFields as $field) {
                 $value = $config[$field] ?? null;
@@ -247,7 +247,7 @@ class ServicePayGateway implements InjectionAwareInterface
     {
         $newEnabled = isset($data['enabled']) ? (bool) $data['enabled'] : $model->isEnabled();
         $newTestMode = isset($data['test_mode']) ? (bool) $data['test_mode'] : $model->isTestMode();
-        $existingConfig = json_decode($model->getConfig() ?? '', true) ?? [];
+        $existingConfig = $model->getConfigData() ?? [];
         $mergedConfig = $existingConfig;
         if (isset($data['config']) && is_array($data['config'])) {
             $secretFields = $this->getSecretFields($model);
@@ -275,11 +275,11 @@ class ServicePayGateway implements InjectionAwareInterface
         $model->setCustomLogo($customLogo);
 
         if (isset($data['config']) && is_array($data['config'])) {
-            $model->setConfig(json_encode($mergedConfig));
+            $model->setConfigData($mergedConfig);
         }
 
         if (isset($data['accepted_currencies']) && is_array($data['accepted_currencies'])) {
-            $model->setAcceptedCurrencies(json_encode($data['accepted_currencies']));
+            $model->setAcceptedCurrenciesData($data['accepted_currencies']);
         }
 
         $model->setEnabled($newEnabled);
@@ -614,7 +614,7 @@ class ServicePayGateway implements InjectionAwareInterface
 
     public function getPaymentAdapter(PayGateway $pg, ?Invoice $model = null, $optional = []): object
     {
-        $config = json_decode($pg->getConfig() ?? '', true) ?? [];
+        $config = $pg->getConfigData() ?? [];
         $defaults = [];
         $defaults['auto_redirect'] = false;
         $defaults['gateway_id'] = (int) $pg->getId();
