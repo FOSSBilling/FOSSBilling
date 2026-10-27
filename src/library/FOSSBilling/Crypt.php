@@ -17,6 +17,15 @@ class Crypt implements InjectionAwareInterface
 {
     protected ?Container $di = null;
 
+    /**
+     * Derived keys for this PHP process, keyed by a hash of the passphrase. Deriving a key takes
+     * 100,000 PBKDF2 rounds (around 200 ms), so doing it on every encrypt and decrypt made reading
+     * encrypted settings expensive. Never persisted.
+     *
+     * @var array<string, string>
+     */
+    private static array $derivedKeys = [];
+
     final public const string METHOD = 'aes-256-cbc';
     final public const string CURRENT_FORMAT_PREFIX = 'v2:';
 
@@ -120,7 +129,9 @@ class Crypt implements InjectionAwareInterface
 
     private function getCurrentKey(?string $pass = null): string
     {
-        return hash_pbkdf2('sha256', $this->resolvePassphrase($pass), 'fossbilling_salt', 100000, 32, true);
+        $passphrase = $this->resolvePassphrase($pass);
+
+        return self::$derivedKeys[hash('sha256', $passphrase)] ??= hash_pbkdf2('sha256', $passphrase, 'fossbilling_salt', 100000, 32, true);
     }
 
     private function getLegacyKey(?string $pass = null): string
