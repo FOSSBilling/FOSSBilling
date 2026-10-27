@@ -123,8 +123,12 @@ class Validate
         });
 
         if (!$validTlds) {
-            // Fallback behavior if we fail to get a valid list
-            return str_starts_with($tld, 'xn--') || preg_match('/^[a-z]+$/', $tld) === 1;
+            // Fallback behavior if we fail to get a valid list. Accept punycode suffixes and dot-separated
+            // labels of letters, digits and inner hyphens, so multi-level public suffixes such as com.np
+            // or co.uk still validate. The last label must start with a letter because TLDs are never
+            // all-numeric, and empty labels or labels starting/ending with a hyphen are rejected.
+            return str_starts_with($tld, 'xn--')
+                || preg_match('/^(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)*[a-z](?:[a-z0-9-]*[a-z0-9])?$/', $tld) === 1;
         }
 
         return $validTlds[$tld] ?? false;
