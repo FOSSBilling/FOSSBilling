@@ -72,12 +72,7 @@ class Service implements \FOSSBilling\InjectionAwareInterface
     {
         $redirects = $this->getExtensionMetaRepository()->findByExtensionAndScope('mod_redirect', null, null, null, ['id' => \SortDirection::Ascending]);
 
-        $mapped = array_map($this->toApiArray(...), $redirects);
-
-        return array_values(array_filter(
-            $mapped,
-            static fn (array $redirect): bool => ($redirect['path'] ?? '') !== '' && ($redirect['target'] ?? '') !== ''
-        ));
+        return array_map($this->toApiArray(...), $redirects);
     }
 
     public function getRedirectByPath($path): ?string
