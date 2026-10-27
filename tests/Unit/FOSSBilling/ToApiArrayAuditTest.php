@@ -47,7 +47,7 @@ test('toApiArray conditional fields remain intentional', function (): void {
 });
 
 test('toApiArray audit walks try, catch and finally bodies', function (): void {
-    $srcDir = sys_get_temp_dir() . '/toapiarray-audit-' . bin2hex(random_bytes(4));
+    $srcDir = sys_get_temp_dir() . '/api-array-audit-' . bin2hex(random_bytes(4));
     mkdir($srcDir . '/modules/Example', 0o755, true);
     file_put_contents($srcDir . '/modules/Example/Service.php', <<<'PHP'
         <?php
