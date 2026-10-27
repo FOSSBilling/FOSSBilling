@@ -1505,6 +1505,7 @@ class UpdatePatcher implements InjectionAwareInterface
             132 => 'patch132',
             133 => 'patch133',
             134 => 'patch134',
+            135 => 'patch135',
         ];
         ksort($patches, SORT_NATURAL);
 
@@ -4934,6 +4935,18 @@ class UpdatePatcher implements InjectionAwareInterface
     {
         if (!$this->tableHasColumn('service_hosting', 'provisioning_step')) {
             $this->executeSql('ALTER TABLE `service_hosting` ADD COLUMN `provisioning_step` VARCHAR(32) DEFAULT NULL');
+        }
+    }
+
+    private function patch135(): void
+    {
+        // The activity retention sweep deletes by created_at on every cron run. Without an index each
+        // sweep is a full scan of the table.
+        foreach (['activity_admin_history', 'activity_client_email', 'activity_client_history', 'activity_system'] as $table) {
+            $index = $table . '_created_at_idx';
+            if (!$this->tableHasIndex($table, $index)) {
+                $this->executeSql(sprintf('ALTER TABLE `%s` ADD INDEX `%s` (`created_at`)', $table, $index));
+            }
         }
     }
 

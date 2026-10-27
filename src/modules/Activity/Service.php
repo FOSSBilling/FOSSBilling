@@ -20,6 +20,7 @@ use Box\Mod\Client\Entity\Client;
 use Box\Mod\Client\Event\AfterClientLoginEvent;
 use Box\Mod\Cron\Event\BeforeAdminCronRunEvent;
 use Box\Mod\Staff\Event\AfterAdminLoginEvent;
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Types\Types;
 use FOSSBilling\InjectionAwareInterface;
@@ -28,6 +29,9 @@ use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 
 class Service implements InjectionAwareInterface
 {
+    final public const int RETENTION_BATCH_SIZE = 5000;
+    private const int RETENTION_TIME_BUDGET_SECONDS = 15;
+
     protected ?\Pimple\Container $di = null;
 
     public function setDi(\Pimple\Container $di): void
@@ -127,19 +131,43 @@ class Service implements InjectionAwareInterface
         try {
             if ($retention !== 0) {
                 $createdAt = date('Y-m-d H:i:s', time() - $ageInSeconds);
-                $dbal->executeStatement('DELETE FROM activity_admin_history WHERE created_at <= ?', [$createdAt]);
-                $dbal->executeStatement('DELETE FROM activity_client_history WHERE created_at <= ?', [$createdAt]);
-                $dbal->executeStatement('DELETE FROM activity_system WHERE created_at <= ?', [$createdAt]);
+                $this->purgeOlderThan('activity_admin_history', $createdAt);
+                $this->purgeOlderThan('activity_client_history', $createdAt);
+                $this->purgeOlderThan('activity_system', $createdAt);
             }
 
             if ($emailRetention !== 0) {
-                $dbal->executeStatement('DELETE FROM activity_client_email WHERE created_at <= ?', [
-                    date('Y-m-d H:i:s', time() - $emailAgeInSeconds),
-                ]);
+                $this->purgeOlderThan('activity_client_email', date('Y-m-d H:i:s', time() - $emailAgeInSeconds));
             }
         } catch (\Exception $e) {
             $this->di['logger']->error($e->getMessage());
         }
+    }
+
+    /**
+     * Delete rows older than the cutoff in bounded batches, so a large backlog (a long-lived install, or
+     * retention just switched on) is worked off over a few cron runs instead of one huge DELETE that
+     * holds locks and can exceed the time limit. Whatever is left is picked up on the next run.
+     */
+    private function purgeOlderThan(string $table, string $cutoff): void
+    {
+        $dbal = $this->getDbal();
+        $deadline = microtime(true) + self::RETENTION_TIME_BUDGET_SECONDS;
+
+        do {
+            $ids = $dbal->fetchFirstColumn(
+                sprintf('SELECT id FROM %s WHERE created_at <= ? ORDER BY id LIMIT %d', $table, self::RETENTION_BATCH_SIZE),
+                [$cutoff],
+            );
+            if ($ids === []) {
+                return;
+            }
+            $dbal->executeStatement(
+                sprintf('DELETE FROM %s WHERE id IN (?)', $table),
+                [$ids],
+                [ArrayParameterType::INTEGER],
+            );
+        } while (count($ids) === self::RETENTION_BATCH_SIZE && microtime(true) < $deadline);
     }
 
     public function getSearchQuery($data): array
