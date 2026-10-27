@@ -416,8 +416,12 @@ class FOSSBillingExtension
     }
 
     #[AsTwigFilter('url', isSafe: ['html'], needsEnvironment: true)]
-    public function url(Environment $env, string $path, ?array $query = null, ?string $area = null): string
+    public function url(Environment $env, ?string $path, ?array $query = null, ?string $area = null): string
     {
+        if ($path === null) {
+            return '';
+        }
+
         $globals = $env->getGlobals();
 
         if ($area === null && isset($globals['app_area'])) {
