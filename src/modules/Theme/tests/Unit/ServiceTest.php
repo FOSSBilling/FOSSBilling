@@ -238,6 +238,7 @@ test('getThemeSettings returns theme settings', function (): void {
         ->atLeast()
         ->once()
         ->andReturn([]);
+    $themeMock->shouldReceive('getCurrentPreset')->andReturn('default');
 
     $di = themeContainerWithRepository($repositoryMock);
 
@@ -274,6 +275,25 @@ test('getThemeSettings fills keys missing from saved presets with shipped defaul
     expect($result)->toBe(['custom_key' => 'saved', 'new_key' => 'default-value']);
 });
 
+test('getThemeSettings falls back to the shipped preset for a preset created in the admin', function (): void {
+    $service = new Service();
+    $extensionMetaModel = (new ExtensionMeta())->setMetaValue(json_encode(['custom_key' => 'saved']));
+
+    $repositoryMock = Mockery::mock(Box\Mod\Extension\Repository\ExtensionMetaRepository::class);
+    $repositoryMock->shouldReceive('findOneByExtensionAndScope')->andReturn($extensionMetaModel);
+
+    $themeMock = Mockery::mock(Model\Theme::class);
+    $themeMock->shouldReceive('getName')->andReturn('default');
+    // 'My preset' exists only in the database, so settings_data.json has no entry for it.
+    $themeMock->shouldReceive('getPresetFromSettingsDataFile')->with('My preset')->andReturn([]);
+    $themeMock->shouldReceive('getCurrentPreset')->andReturn('Default');
+    $themeMock->shouldReceive('getPresetFromSettingsDataFile')->with('Default')->andReturn(['custom_key' => 'shipped', 'new_key' => 'shipped-value']);
+
+    $service->setDi(themeContainerWithRepository($repositoryMock));
+
+    expect($service->getThemeSettings($themeMock, 'My preset'))->toBe(['custom_key' => 'saved', 'new_key' => 'shipped-value']);
+});
+
 test('getThemeSettings with empty presets returns empty array', function (): void {
     $service = new Service();
     $serviceMock = Mockery::mock(Service::class)->makePartial();
@@ -297,6 +317,7 @@ test('getThemeSettings with empty presets returns empty array', function (): voi
         ->atLeast()
         ->once()
         ->andReturn([]);
+    $themeMock->shouldReceive('getCurrentPreset')->andReturn('default');
 
     $di = themeContainerWithRepository($repositoryMock);
     $serviceMock->setDi($di);
