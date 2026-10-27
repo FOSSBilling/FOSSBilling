@@ -45,3 +45,49 @@ test('toApiArray conditional fields remain intentional', function (): void {
         ],
     ]);
 });
+
+test('toApiArray audit walks try, catch and finally bodies', function (): void {
+    $srcDir = sys_get_temp_dir() . '/toapiarray-audit-' . bin2hex(random_bytes(4));
+    mkdir($srcDir . '/modules/Example', 0o755, true);
+    file_put_contents($srcDir . '/modules/Example/Service.php', <<<'PHP'
+        <?php
+        class Service
+        {
+            public function toApiArray($model, $deep = false, $identity = null): array
+            {
+                $data = [];
+                try {
+                    $data['always'] = 1;
+                    if ($deep) {
+                        $data['in_try'] = 2;
+                    }
+                } catch (\Exception) {
+                    if ($deep) {
+                        $data['in_catch'] = 3;
+                    }
+                } finally {
+                    if ($deep) {
+                        $data['in_finally'] = 4;
+                    }
+                }
+
+                return $data;
+            }
+        }
+        PHP);
+
+    try {
+        expect((new ToApiArrayAuditor($srcDir))->audit())->toBe([
+            'modules/Example/Service.php' => [
+                'in_try' => ['if'],
+                'in_catch' => ['if'],
+                'in_finally' => ['if'],
+            ],
+        ]);
+    } finally {
+        unlink($srcDir . '/modules/Example/Service.php');
+        rmdir($srcDir . '/modules/Example');
+        rmdir($srcDir . '/modules');
+        rmdir($srcDir);
+    }
+});
