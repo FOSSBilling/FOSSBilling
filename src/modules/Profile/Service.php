@@ -150,7 +150,7 @@ class Service implements InjectionAwareInterface
         $email = $data['email'] ?? '';
         // An omitted email leaves it unchanged (see below), so only a submitted one can be a change.
         if (
-            $email !== ''
+            !empty($email)
             && $client->getEmail() != $email
             && isset($config['disable_change_email'])
             && $config['disable_change_email']
