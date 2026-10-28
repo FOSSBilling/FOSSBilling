@@ -207,8 +207,9 @@ test('a rejected invoice read does not spend the invoice per-hash budget', funct
     $api->setService($serviceMock);
 
     // Whoever holds the link must not be able to lock the owner out by sending requests that are refused.
+    // The probe spends nothing, so only the per-IP bucket is charged.
     expect(fn () => $api->get(['hash' => md5('1')]))->toThrow(FOSSBilling\InformationException::class, 'Not allowed')
-        ->and($log)->toBe(['consume:invoice_get_ip']);
+        ->and($log)->toBe(['consume:invoice_get_ip', 'probe:invoice_get_hash']);
 });
 
 test('an allowed invoice read spends the per-hash budget after authorization', function (): void {
@@ -234,7 +235,26 @@ test('an allowed invoice read spends the per-hash budget after authorization', f
 
     $api->get(['hash' => md5('1')]);
 
-    expect($log)->toBe(['consume:invoice_get_ip', 'auth', 'consume:invoice_get_hash']);
+    expect($log)->toBe(['consume:invoice_get_ip', 'probe:invoice_get_hash', 'auth', 'consume:invoice_get_hash']);
+});
+
+test('an exhausted invoice read budget is refused before the database is touched', function (): void {
+    $log = [];
+    $di = container();
+    $di['rate_limiter'] = invoiceRecordingLimiter($log, ['invoice_get_hash']);
+
+    $invoiceRepo = $di['em']->getRepository(Invoice::class);
+    $invoiceRepo->shouldReceive('findByHash')->never();
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('getInvoiceRepository')->andReturn($invoiceRepo);
+    $serviceMock->shouldReceive('checkInvoiceAuth')->never();
+
+    $api = apiEndpoint(new Guest());
+    $api->setDi($di);
+    $api->setService($serviceMock);
+
+    expect(fn () => $api->get(['hash' => md5('1')]))->toThrow(FOSSBilling\Security\RateLimitException::class)
+        ->and($log)->toBe(['consume:invoice_get_ip', 'probe:invoice_get_hash']);
 });
 
 test('a refused PDF request does not spend the per-hash budget', function (): void {
@@ -250,12 +270,25 @@ test('a refused PDF request does not spend the per-hash budget', function (): vo
     $api->setService($serviceMock);
 
     expect(fn () => $api->pdf(['hash' => str_repeat('a', 32)]))->toThrow(FOSSBilling\InformationException::class)
-        ->and($log)->toBe(['consume:invoice_pdf_ip']);
+        ->and($log)->toBe(['consume:invoice_pdf_ip', 'probe:invoice_pdf_hash']);
 });
 
-test('a refused payment does not spend the per-hash budget, a successful one does', function (): void {
-    $hash = str_repeat('a', 32);
+test('an exhausted PDF budget is refused before the PDF is rendered', function (): void {
+    $log = [];
+    $di = container();
+    $di['rate_limiter'] = invoiceRecordingLimiter($log, ['invoice_pdf_hash']);
+    $serviceMock = Mockery::mock(Service::class);
+    $serviceMock->shouldReceive('generatePDF')->never();
 
+    $api = apiEndpoint(new Guest());
+    $api->setDi($di);
+    $api->setService($serviceMock);
+
+    expect(fn () => $api->pdf(['hash' => str_repeat('a', 32)]))->toThrow(FOSSBilling\Security\RateLimitException::class)
+        ->and($log)->toBe(['consume:invoice_pdf_ip', 'probe:invoice_pdf_hash']);
+});
+
+test('a refused payment does not spend the per-hash budget', function (): void {
     $log = [];
     $di = container();
     $di['rate_limiter'] = invoiceRecordingLimiter($log);
@@ -265,19 +298,25 @@ test('a refused payment does not spend the per-hash budget, a successful one doe
     $api->setDi($di);
     $api->setService($refused);
 
-    expect(fn () => $api->payment(['hash' => $hash, 'gateway_id' => 1]))->toThrow(FOSSBilling\InformationException::class)
+    expect(fn () => $api->payment(['hash' => str_repeat('a', 32), 'gateway_id' => 1]))->toThrow(FOSSBilling\InformationException::class)
         ->and($log)->toBe(['consume:invoice_payment_ip', 'probe:invoice_payment_hash']);
+});
 
+test('a successful payment spends the per-hash budget after authorization', function (): void {
     $log = [];
+    $di = container();
+    $di['rate_limiter'] = invoiceRecordingLimiter($log);
     $ok = Mockery::mock(Service::class);
     $ok->shouldReceive('processInvoice')->andReturnUsing(function () use (&$log): array {
         $log[] = 'process';
 
         return ['type' => 'html'];
     });
+    $api = apiEndpoint(new Guest());
+    $api->setDi($di);
     $api->setService($ok);
 
-    $api->payment(['hash' => $hash, 'gateway_id' => 1]);
+    $api->payment(['hash' => str_repeat('a', 32), 'gateway_id' => 1]);
     expect($log)->toBe(['consume:invoice_payment_ip', 'probe:invoice_payment_hash', 'process', 'consume:invoice_payment_hash']);
 });
 
