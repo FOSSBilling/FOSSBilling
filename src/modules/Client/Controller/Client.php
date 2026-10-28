@@ -34,7 +34,7 @@ class Client implements \FOSSBilling\InjectionAwareInterface
         $app->get('/client', 'get_client_index', [], static::class);
         $app->get('/client/logout', 'get_client_logout', [], static::class);
         $app->get('/client/:page', 'get_client_page', ['page' => '[a-z0-9-]+'], static::class);
-        $app->get('/client/confirm-email/:hash', 'get_client_confirmation', ['page' => '[a-z0-9-]+'], static::class);
+        $app->get('/client/confirm-email/:hash', 'get_client_confirmation', ['hash' => '[a-z0-9]+'], static::class);
     }
 
     public function get_client_index(\Box_App $app): string
