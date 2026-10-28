@@ -38,3 +38,22 @@ test('password reset confirmation passes the validated hash to the template', fu
 
     expect($controller->get_reset_password_confirm($boxAppMock, $hash))->toBe('rendered');
 });
+
+test('route constraints are keyed by parameters that exist in the route', function (): void {
+    $routes = [];
+    $app = Mockery::mock('\Box_App');
+    $app->shouldReceive('get')->andReturnUsing(function (string $url, string $method, array $conditions) use (&$routes): void {
+        $routes[$url] = $conditions;
+    });
+
+    $controller = new Client();
+    $controller->register($app);
+
+    expect($routes)->not->toBeEmpty();
+    foreach ($routes as $url => $conditions) {
+        preg_match_all('/:(\w+)/', $url, $matches);
+        // A constraint keyed by a name that is not in the path is silently ignored, leaving the real
+        // parameter unconstrained.
+        expect(array_diff(array_keys($conditions), $matches[1]))->toBe([], "unknown constraint key on {$url}");
+    }
+});
