@@ -20,11 +20,14 @@ class Crypt implements InjectionAwareInterface
     /**
      * Derived keys for this PHP process, keyed by a hash of the passphrase. Deriving a key takes
      * 100,000 PBKDF2 rounds (around 200 ms), so doing it on every encrypt and decrypt made reading
-     * encrypted settings expensive. Never persisted.
+     * encrypted settings expensive. Never persisted. Capped so a long-lived worker fed many distinct
+     * passphrases cannot grow memory without bound; the oldest entry is evicted first.
      *
      * @var array<string, string>
      */
     private static array $derivedKeys = [];
+
+    private const int MAX_CACHED_KEYS = 32;
 
     final public const string METHOD = 'aes-256-cbc';
     final public const string CURRENT_FORMAT_PREFIX = 'v2:';
@@ -130,8 +133,25 @@ class Crypt implements InjectionAwareInterface
     private function getCurrentKey(?string $pass = null): string
     {
         $passphrase = $this->resolvePassphrase($pass);
+        $id = hash('sha256', $passphrase);
 
-        return self::$derivedKeys[hash('sha256', $passphrase)] ??= hash_pbkdf2('sha256', $passphrase, 'fossbilling_salt', 100000, 32, true);
+        if (!isset(self::$derivedKeys[$id])) {
+            if (count(self::$derivedKeys) >= self::MAX_CACHED_KEYS) {
+                array_shift(self::$derivedKeys);
+            }
+
+            self::$derivedKeys[$id] = hash_pbkdf2('sha256', $passphrase, 'fossbilling_salt', 100000, 32, true);
+        }
+
+        return self::$derivedKeys[$id];
+    }
+
+    /**
+     * @internal exposed for tests so they can reset the in-memory memo
+     */
+    public static function clearDerivedKeys(): void
+    {
+        self::$derivedKeys = [];
     }
 
     private function getLegacyKey(?string $pass = null): string

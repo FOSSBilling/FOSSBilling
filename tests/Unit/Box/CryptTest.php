@@ -20,11 +20,6 @@ test('crypt', function (): void {
     expect($decoded)->toEqual($text);
 });
 
-function cryptDerivedKeys(): array
-{
-    return (new ReflectionClass(FOSSBilling\Crypt::class))->getProperty('derivedKeys')->getValue();
-}
-
 test('a ciphertext is only readable with the passphrase that produced it', function (): void {
     $crypt = new FOSSBilling\Crypt();
 
@@ -33,22 +28,27 @@ test('a ciphertext is only readable with the passphrase that produced it', funct
 
     expect($crypt->decrypt($a, 'passphrase-A'))->toBe('secret for A')
         ->and($crypt->decrypt($b, 'passphrase-B'))->toBe('secret for B')
-        ->and($crypt->decrypt($a, 'passphrase-B'))->toBeFalse()
-        ->and($crypt->decrypt($b, 'passphrase-A'))->toBeFalse();
+        // A wrong key usually fails padding and returns false, but it can occasionally
+        // decrypt to unrelated garbage, so assert it never returns the other secret.
+        ->and($crypt->decrypt($a, 'passphrase-B'))->not->toBe('secret for A')
+        ->and($crypt->decrypt($b, 'passphrase-A'))->not->toBe('secret for B');
 });
 
 test('the derived key is computed once per passphrase and kept only in memory', function (): void {
+    FOSSBilling\Crypt::clearDerivedKeys();
+    $derivedKeyCount = fn (): int => count((new ReflectionClass(FOSSBilling\Crypt::class))->getStaticPropertyValue('derivedKeys'));
+
     $crypt = new FOSSBilling\Crypt();
-    $before = count(cryptDerivedKeys());
 
     $cipher = $crypt->encrypt('repeat me', 'memo-passphrase-1');
     $crypt->decrypt($cipher, 'memo-passphrase-1');
     $crypt->decrypt($cipher, 'memo-passphrase-1');
-    expect(count(cryptDerivedKeys()))->toBe($before + 1);
+    expect($derivedKeyCount())->toBe(1);
 
     $crypt->encrypt('another', 'memo-passphrase-2');
-    expect(count(cryptDerivedKeys()))->toBe($before + 2);
+    expect($derivedKeyCount())->toBe(2);
 
     // The memo is keyed by a hash, so the passphrase itself is never held as an array key.
-    expect(array_keys(cryptDerivedKeys()))->not->toContain('memo-passphrase-1');
+    $keys = (new ReflectionClass(FOSSBilling\Crypt::class))->getStaticPropertyValue('derivedKeys');
+    expect(array_keys($keys))->not->toContain('memo-passphrase-1');
 });
